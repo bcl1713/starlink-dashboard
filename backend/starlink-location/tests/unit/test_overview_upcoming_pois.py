@@ -160,3 +160,74 @@ def test_in_flight_retention_uses_dynamic_eta_not_scheduled_arrival():
     )
 
     assert response.pois[0].map_retained is True
+
+
+def test_in_flight_ahead_poi_is_upcoming_even_when_estimated_eta_is_negative():
+    response = project_overview_upcoming_pois(
+        pois=[poi("Ahead", "x_band_transition", 70)],
+        eta_results={"ahead": -1.0},
+        flight_phase="in_flight",
+        current_progress=50,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "available"
+    assert response.pois[0].upcoming is True
+
+
+def test_in_flight_behind_poi_is_not_upcoming_even_with_positive_eta():
+    response = project_overview_upcoming_pois(
+        pois=[poi("Behind", "x_band_transition", 20)],
+        eta_results={"behind": 60.0},
+        flight_phase="in_flight",
+        current_progress=50,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "no_upcoming_pois"
+    assert response.pois[0].upcoming is False
+
+
+def test_in_flight_poi_at_current_route_position_is_not_upcoming():
+    response = project_overview_upcoming_pois(
+        pois=[poi("Current", "x_band_transition", 50)],
+        eta_results={"current": 60.0},
+        flight_phase="in_flight",
+        current_progress=50,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "no_upcoming_pois"
+    assert response.pois[0].upcoming is False
+
+
+def test_anticipated_historical_pois_are_available_in_route_order():
+    response = project_overview_upcoming_pois(
+        pois=[
+            poi("Later on route", "x_band_transition", 70),
+            poi("Earlier on route", "ka_coverage_exit", 30),
+        ],
+        eta_results={"later-on-route": -60.0, "earlier-on-route": -3600.0},
+        flight_phase="pre_departure",
+        current_progress=0,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "available"
+    assert [projected.name for projected in response.pois if projected.upcoming] == [
+        "Earlier on route",
+        "Later on route",
+    ]
+
+
+def test_post_arrival_pois_are_not_upcoming():
+    response = project_overview_upcoming_pois(
+        pois=[poi("Destination", "arrival", 100)],
+        eta_results={"destination": 60.0},
+        flight_phase="post_arrival",
+        current_progress=100,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "no_upcoming_pois"
+    assert response.pois[0].upcoming is False
