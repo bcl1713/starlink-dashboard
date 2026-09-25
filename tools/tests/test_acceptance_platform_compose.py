@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import subprocess
 import sys
@@ -85,6 +86,19 @@ def test_task_topology_rejects_missing_override_at_compose_boundary(tmp_path: Pa
 
     with pytest.raises(ValueError, match="rendered override path is required"):
         _ = topology.argv
+
+
+def test_typed_topology_tests_do_not_dereference_optional_override_path() -> None:
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    direct_dereferences = [
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute)
+        and node.attr == "override_path"
+        and isinstance(node.value, ast.Name)
+    ]
+
+    assert direct_dereferences == []
 
 
 def _complete_two_image_log(project: str = "acceptance-abc") -> str:
@@ -217,7 +231,7 @@ def test_build_stall_closes_candidate_ledger_and_blocks_startup(
     ledger = BuildLedger(tmp_path / "ledger")
     clock = FakeClock()
     resolve_topology(topology, CONTRACT, executor)
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert {
         name: service["build"]["args"]
         for name, service in rendered["services"].items()
@@ -447,7 +461,7 @@ def test_real_root_config_uses_public_example_and_retains_only_contract_services
 
     resolved = resolve_topology(topology, CONTRACT, SubprocessComposeExecutor())
 
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert resolved.project == topology.project
     assert set(rendered["services"]) == set(CONTRACT.services)
     assert '      - ".env"\n' not in topology.root_override_path.read_text(
@@ -468,7 +482,7 @@ def test_final_topology_binds_every_contract_service_to_the_exact_candidate_sha(
 
     resolve_topology(topology, CONTRACT, _executor(config=config))
 
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert topology.candidate_sha == SHA
     assert {
         name: rendered["services"][name]["build"]["args"] for name in CONTRACT.services
@@ -518,7 +532,7 @@ def test_resolve_rejects_tampered_final_candidate_build_arguments(
         if "config" in argv and any(
             Path(item).name == "compose.acceptance.json" for item in argv
         ):
-            final = json.loads(topology.override_path.read_text(encoding="utf-8"))
+            final = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
             services = final["services"]
             assert isinstance(services, dict)
             for service in services.values():
@@ -553,7 +567,7 @@ def test_resolve_rejects_tampered_final_build_cache_authority(
         if "config" in argv and any(
             Path(item).name == "compose.acceptance.json" for item in argv
         ):
-            final = json.loads(topology.override_path.read_text(encoding="utf-8"))
+            final = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
             services = final["services"]
             assert isinstance(services, dict)
             for service in services.values():
@@ -599,7 +613,7 @@ def test_resolve_rejects_external_resources_and_replaces_inherited_ports(
         "route_data": {"external": True, "name": "foreign-volume"}
     }
     resolve_topology(topology, CONTRACT, _executor(config=root_with_external_resources))
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert rendered["networks"] == {"acceptance": {"name": "acceptance-abc-network"}}
     assert all(
         value["name"].startswith("acceptance-abc-")
@@ -611,7 +625,7 @@ def test_resolve_rejects_external_resources_and_replaces_inherited_ports(
         {"host_ip": "127.0.0.1", "published": "18000", "target": 9999}
     ]
     resolve_topology(topology, CONTRACT, _executor(config=wrong_port))
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert rendered["services"]["starlink-location"]["ports"] == [
         {
             "host_ip": "127.0.0.1",
@@ -638,7 +652,7 @@ def test_resolve_allowlists_task_owned_resources_and_removes_live_root_fields(
     )
 
     resolve_topology(topology, CONTRACT, _executor(config=config))
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     service = rendered["services"]["starlink-location"]
     assert "extra_hosts" not in service
     assert "restart" not in service
@@ -801,7 +815,7 @@ def test_failed_or_stale_build_never_starts(tmp_path: Path) -> None:
         successful_ledger,
         successful_executor,
     ).usable
-    successful_topology.override_path.write_text("{}", encoding="utf-8")
+    successful_topology.rendered_override_path.write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError, match="stale"):
         start_no_build(
             successful_topology, CONTRACT, KEY, successful_ledger, successful_executor
