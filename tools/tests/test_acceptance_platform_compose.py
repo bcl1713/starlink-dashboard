@@ -89,16 +89,25 @@ def test_task_topology_rejects_missing_override_at_compose_boundary(tmp_path: Pa
 
 
 def test_typed_topology_tests_do_not_dereference_optional_override_path() -> None:
-    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    policy_examples = ast.parse(
+        "get_topology().override_path\nholder.topology.override_path\n"
+    )
     direct_dereferences = [
         node.lineno
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Attribute)
-        and node.attr == "override_path"
-        and isinstance(node.value, ast.Name)
+        for node in ast.walk(policy_examples)
+        if isinstance(node, ast.Attribute) and node.attr == "override_path"
     ]
 
-    assert direct_dereferences == []
+    assert direct_dereferences == [1, 2]
+
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    optional_override_dereferences = [
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and node.attr == "override_path"
+    ]
+
+    assert optional_override_dereferences == []
 
 
 def _complete_two_image_log(project: str = "acceptance-abc") -> str:
