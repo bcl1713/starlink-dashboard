@@ -40,24 +40,39 @@ function parse(argv) {
   return values;
 }
 
+function pngCrc32(chunk) {
+  let crc = 0xffffffff;
+  for (const value of chunk) {
+    crc ^= value;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 async function pngDimensions(png) {
   if (png.length > 12 * 1024 * 1024 || !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error('screenshot is not a decoded PNG');
-  let offset = 8; let width = 0; let height = 0; let channels = 0; let ihdr = false; let iend = false; const idat = [];
+  let offset = 8; let width = 0; let height = 0; let channels = 0; let ihdr = false; let iend = false; let plte = false; let idatStarted = false; let idatEnded = false; const idat = [];
   while (offset < png.length) {
     if (offset + 12 > png.length) throw new Error('screenshot is not a decoded PNG');
     const length = png.readUInt32BE(offset); const end = offset + 12 + length;
     if (end > png.length) throw new Error('screenshot is not a decoded PNG');
     const kind = png.toString('ascii', offset + 4, offset + 8); const data = png.subarray(offset + 8, offset + 8 + length);
+    if (pngCrc32(png.subarray(offset + 4, offset + 8 + length)) !== png.readUInt32BE(offset + 8 + length)) throw new Error('screenshot is not a decoded PNG');
+    if (!ihdr && kind !== 'IHDR') throw new Error('screenshot is not a decoded PNG');
+    if (idatStarted && kind !== 'IDAT' && kind !== 'IEND') idatEnded = true;
     if (kind === 'IHDR') {
-      if (ihdr || length !== 13 || data.readUInt32BE(0) !== 1920 || data.readUInt32BE(4) !== 1080 || data[8] !== 8 || ![2, 6].includes(data[9]) || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
+      if (ihdr || offset !== 8 || length !== 13 || data.readUInt32BE(0) !== 1920 || data.readUInt32BE(4) !== 1080 || data[8] !== 8 || ![2, 6].includes(data[9]) || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
       width = 1920; height = 1080; channels = data[9] === 2 ? 3 : 4; ihdr = true;
+    } else if (kind === 'PLTE') {
+      if (plte || idatStarted || channels !== 3 || !length || length > 768 || length % 3) throw new Error('screenshot is not a decoded PNG');
+      plte = true;
     } else if (kind === 'IDAT') {
-      if (!ihdr || iend) throw new Error('screenshot is not a decoded PNG');
-      idat.push(data);
+      if (iend || idatEnded) throw new Error('screenshot is not a decoded PNG');
+      idatStarted = true; idat.push(data);
     } else if (kind === 'IEND') {
-      if (!ihdr || iend || length || end !== png.length) throw new Error('screenshot is not a decoded PNG');
+      if (iend || !idatStarted || length || end !== png.length) throw new Error('screenshot is not a decoded PNG');
       iend = true;
-    }
+    } else if ((png[offset + 4] & 0x20) === 0) throw new Error('screenshot is not a decoded PNG');
     offset = end;
   }
   const expected = height * (width * channels + 1);

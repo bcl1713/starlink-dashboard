@@ -282,6 +282,78 @@ def test_production_adapter_accepts_valid_opaque_rgb_viewport_screenshot(
     assert json.loads(completed.stdout) == {"width": 1920, "height": 1080}
 
 
+def test_production_adapter_rejects_png_with_corrupt_ihdr_crc(tmp_path: Path) -> None:
+    """IHDR must be structurally authentic before its dimensions are trusted."""
+
+    png = bytearray(_decoded_png(2))
+    png[29] ^= 1
+    completed = _run_production_png_parser(tmp_path, bytes(png))
+
+    assert completed.returncode != 0
+    assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_rejects_png_with_corrupt_chunk_crc(tmp_path: Path) -> None:
+    """Every critical structural chunk is checksummed, not just IHDR."""
+
+    for kind in (b"IHDR", b"IDAT", b"IEND"):
+        png = bytearray(_decoded_png(2))
+        cursor = 8
+        while png[cursor + 4 : cursor + 8] != kind:
+            cursor += 12 + struct.unpack(">I", png[cursor : cursor + 4])[0]
+        length = struct.unpack(">I", png[cursor : cursor + 4])[0]
+        png[cursor + 8 + length] ^= 1
+        completed = _run_production_png_parser(tmp_path, bytes(png))
+
+        assert completed.returncode != 0, kind
+        assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_rejects_png_with_corrupt_ancillary_chunk_crc(tmp_path: Path) -> None:
+    """CRC validation applies to ancillary chunks too."""
+
+    ihdr = _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, 2, 0, 0, 0))
+    text = bytearray(_png_chunk(b"tEXt", b"source=platform"))
+    text[-1] ^= 1
+    idat = _png_chunk(b"IDAT", zlib.compress(b"\0" * (1080 * (1920 * 3 + 1))))
+    completed = _run_production_png_parser(
+        tmp_path, b"\x89PNG\r\n\x1a\n" + ihdr + bytes(text) + idat + _png_chunk(b"IEND", b"")
+    )
+
+    assert completed.returncode != 0
+    assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_requires_ihdr_first_and_rejects_unknown_critical_chunks(
+    tmp_path: Path,
+) -> None:
+    """Only recognized critical chunks may surround the IDAT stream."""
+
+    ihdr = _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, 2, 0, 0, 0))
+    idat = _png_chunk(b"IDAT", zlib.compress(b"\0" * (1080 * (1920 * 3 + 1))))
+    iend = _png_chunk(b"IEND", b"")
+    for png in (
+        b"\x89PNG\r\n\x1a\n" + _png_chunk(b"ABCD", b"") + ihdr + idat + iend,
+        b"\x89PNG\r\n\x1a\n" + ihdr + idat + _png_chunk(b"ABCD", b"") + iend,
+    ):
+        completed = _run_production_png_parser(tmp_path, png)
+
+        assert completed.returncode != 0
+        assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_accepts_only_safe_rgb_plte_structure(tmp_path: Path) -> None:
+    """The only additional known critical chunk is bounded to valid RGB placement."""
+
+    ihdr = _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, 2, 0, 0, 0))
+    idat = _png_chunk(b"IDAT", zlib.compress(b"\0" * (1080 * (1920 * 3 + 1))))
+    png = b"\x89PNG\r\n\x1a\n" + ihdr + _png_chunk(b"PLTE", b"\0\0\0") + idat + _png_chunk(b"IEND", b"")
+    completed = _run_production_png_parser(tmp_path, png)
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"width": 1920, "height": 1080}
+
+
 def test_production_adapter_retains_rgba_viewport_screenshot_validation(
     tmp_path: Path,
 ) -> None:
