@@ -38,8 +38,8 @@ _TRANSFER_BYTES = re.compile(
     re.IGNORECASE,
 )
 _RUN_STATUS_FRAME = re.compile(
-    r"^(?:\d+(?:\.\d+)?s\s+)?(?:[/\\|\-]\s+)?(?:running|run\b|waiting|"
-    r"building|exporting|loading|resolving)\b",
+    r"^(?:\d+(?:\.\d+)?s\s+)?(?:\[[^\]]+\]\s+)?(?:[/\\|\-]\s+)?"
+    r"(?:running|run\b|waiting|building|exporting|loading|resolving)\b",
     re.IGNORECASE,
 )
 

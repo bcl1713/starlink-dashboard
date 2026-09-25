@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+
 from acceptance.platform.compose import (
     BoundedComposeDiagnostics,
     BuildLedger,
@@ -110,6 +111,24 @@ def test_progress_parser_does_not_count_changing_run_status_or_truncation(
     clock.advance(599)
     assert monitor.observe(frame) is None
     clock.advance(1)
+
+    with pytest.raises(BuildSupervisionFailure, match="build_stalled"):
+        monitor.check()
+
+
+def test_progress_parser_does_not_count_elapsed_buildkit_run_status_frames() -> None:
+    clock = FakeClock()
+    monitor = BuildProgressMonitor(clock.monotonic)
+
+    assert monitor.observe("#3 [builder] RUN npm run build\n") is not None
+    for frame in (
+        "#3 100.0s [builder 5/7] RUN npm run build\n",
+        "#3 200.5s [builder 6/7] RUN npm run build\n",
+        "#3 300.0s [builder 6/7] RUN npm run build -- --mode production\n",
+    ):
+        clock.advance(100)
+        assert monitor.observe(frame) is None
+    clock.advance(300)
 
     with pytest.raises(BuildSupervisionFailure, match="build_stalled"):
         monitor.check()
