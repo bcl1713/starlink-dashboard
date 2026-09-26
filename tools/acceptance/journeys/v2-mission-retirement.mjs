@@ -278,7 +278,7 @@ async function main() {
     browser = await chromium.connectOverCDP(values.session);
     const context = browser.contexts()[0];
     if (!context) throw new Error('platform-supplied browser session has no context');
-    const page = context.pages()[0] ?? await context.newPage();
+    const page = await context.newPage();
     const result = await runV2MissionRetirement({ page, origin: values.origin, kmlPath: values.kml });
     process.stdout.write(`${JSON.stringify({ status: 'passed', ...result })}\n`);
   } finally {

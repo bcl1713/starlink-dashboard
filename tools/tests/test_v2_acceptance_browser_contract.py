@@ -417,6 +417,63 @@ exports.chromium = { connectOverCDP: async () => ({
     assert closed.read_text(encoding="utf-8") == "closed"
 
 
+def test_production_adapter_creates_a_fresh_page_instead_of_reusing_platform_page(
+    tmp_path: Path,
+) -> None:
+    """The V2 journey must not navigate the platform browser's initial blank page."""
+
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    package = repository / "frontend/mission-planner/package.json"
+    playwright = repository / "frontend/mission-planner/node_modules/@playwright/test"
+    page_selection = tmp_path / "page-selection"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text(ADAPTER_SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
+    package.parent.mkdir(parents=True)
+    package.write_text('{"name":"fresh-page-contract-test"}\n', encoding="utf-8")
+    playwright.mkdir(parents=True)
+    (playwright / "index.js").write_text(
+        """const { writeFileSync } = require('node:fs');
+const selection = process.env.PAGE_SELECTION;
+const existingPage = new Proxy({}, { get() {
+  writeFileSync(selection, 'reused');
+  return undefined;
+} });
+exports.chromium = { connectOverCDP: async () => ({
+  contexts: () => [{
+    pages: () => [existingPage],
+    newPage: async () => { writeFileSync(selection, 'fresh'); return {}; },
+  }],
+  close: async () => {},
+}) };
+""",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            "node",
+            str(adapter),
+            "--repository-root",
+            str(repository),
+            "--session",
+            "http://127.0.0.1:9222",
+            "--origin",
+            "http://127.0.0.1:5173",
+            "--kml",
+            str(tmp_path / "fixture.kml"),
+        ],
+        capture_output=True,
+        check=False,
+        env={**os.environ, "PAGE_SELECTION": str(page_selection)},
+        text=True,
+        timeout=3,
+    )
+
+    assert completed.returncode == 1
+    assert page_selection.read_text(encoding="utf-8") == "fresh"
+
+
 def _png_chunk(kind: bytes, content: bytes) -> bytes:
     return (
         struct.pack(">I", len(content))
