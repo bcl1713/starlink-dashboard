@@ -49,7 +49,18 @@ jobs:
             git fetch --no-tags origin "$PR_BASE_REF:refs/remotes/origin/$PR_BASE_REF"
             policy_base_sha="$(git merge-base HEAD "origin/$PR_BASE_REF")"
           else
-            policy_base_sha="$PUSH_BASE_SHA"
+            policy_base_sha=""
+            if [[ "$PUSH_BASE_SHA" != "0000000000000000000000000000000000000000" ]] && \
+              git cat-file -e "${PUSH_BASE_SHA}^{commit}" 2>/dev/null; then
+              policy_base_sha="$(git merge-base HEAD "$PUSH_BASE_SHA" || true)"
+            fi
+            if [[ -z "$policy_base_sha" ]] && git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+              policy_base_sha="$(git rev-parse HEAD^)"
+            fi
+            if [[ -z "$policy_base_sha" ]]; then
+              echo "Unable to derive a comparable policy base for this push event" >&2
+              exit 1
+            fi
           fi
           git cat-file -e "${policy_base_sha}^{commit}"
           git merge-base --is-ancestor "$policy_base_sha" HEAD
