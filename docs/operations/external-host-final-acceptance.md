@@ -218,9 +218,10 @@ and build ledger must be distinct from health and static. Do not pass
 CDP endpoint, task profile, and loopback frontend origin.
 
 ```bash
-FINAL_TASK_ROOT=$HOST_STATE/tasks/final/$SHA-$(date -u +%Y%m%dT%H%M%SZ)
+FINAL_ATTEMPT_ID="$(date -u +%Y%m%dT%H%M%SZ)-$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+FINAL_TASK_ROOT=$HOST_STATE/tasks/final/$SHA-$FINAL_ATTEMPT_ID
 FINAL_LEDGER_ROOT=$HOST_STATE/ledgers/final/$SHA
-mkdir -p "$FINAL_TASK_ROOT" "$FINAL_LEDGER_ROOT" "$LOG_ROOT"
+mkdir -p "$FINAL_LEDGER_ROOT" "$LOG_ROOT"
 timeout --foreground --signal=TERM --kill-after=30s 1800s \
   ./tools/run-acceptance-platform.sh \
   --lane final \
@@ -231,42 +232,43 @@ timeout --foreground --signal=TERM --kill-after=30s 1800s \
   --evidence-root "$FINAL_EVIDENCE_ROOT" \
   --task-root "$FINAL_TASK_ROOT" \
   --ledger-root "$FINAL_LEDGER_ROOT" \
-  2>&1 | tee "$LOG_ROOT/final-$SHA-$(date -u +%Y%m%dT%H%M%SZ).log"
+  2>&1 | tee "$LOG_ROOT/final-$SHA-$FINAL_ATTEMPT_ID.log"
 FINAL_STATUS=${PIPESTATUS[0]}
 printf 'final exit=%s\n' "$FINAL_STATUS"
 ```
 
 **Stop** after this one final invocation regardless of result. Never silently
-retry a final lane. Classify a profile, browser, Xvfb, Docker, provisioning, or
-health failure as host/provisioning failure. Classify a failure after healthy
-platform validation by the sealed static, control, journey, build, or cleanup
-evidence; only call it a product failure when that evidence supports it. A new
-final attempt requires explicit operator authorization, fresh health/static, a
-new task root, and a recorded retry budget.
+retry a final lane. Classify profile, browser, Xvfb, Docker, provisioning, or
+health failure as host/provisioning; call a post-validation failure a product
+failure only when sealed static, control, journey, build, or cleanup evidence
+supports it. A new attempt requires explicit authorization, fresh health/static,
+a new task root, and a recorded retry budget.
 
 ## 9. Inspect publication and cleanup
 
-Only a passed final lane with sealed, published evidence and successful cleanup
-can claim final acceptance. The candidate root contains the sealed runner
-manifest; its fingerprint envelope binds the candidate SHA, ref, health
-digest, and runner-manifest digest, but it is not the final outcome authority.
-Verify the candidate root first. Then require its sealed runner manifest to claim
-a passed final acceptance. Independently verify the separate discoverable authority.
+Only a passed final lane with sealed, published evidence and cleanup can claim
+final acceptance. Its candidate envelope binds SHA/ref and health/runner digests,
+but it is not the outcome authority. Verify the candidate root, require its sealed
+runner manifest to claim passed final acceptance, then verify discovery authority.
 
 ```bash
 FINAL_CANDIDATE_ROOT=$FINAL_EVIDENCE_ROOT/candidates/$SHA
 FINAL_DISCOVERY_ROOT=$FINAL_EVIDENCE_ROOT/candidates/.discoverable/$SHA
 PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 - \
-  "$FINAL_CANDIDATE_ROOT" "$FINAL_DISCOVERY_ROOT" "$SHA" <<'PY'
+  "$FINAL_CANDIDATE_ROOT" "$FINAL_DISCOVERY_ROOT" "$SHA" "$REF" "$HEALTH_FINGERPRINT" <<'PY'
 import hashlib, json, os, sys
 from pathlib import Path
 from acceptance.platform.evidence import read_fingerprint_authority, read_nofollow, verify_manifest
-candidate, discovery = map(Path, sys.argv[1:3]); sha = sys.argv[3]
+candidate, discovery = map(Path, sys.argv[1:3]); sha, ref = sys.argv[3:5]
+health_fingerprint = Path(sys.argv[5])
 verify_manifest(candidate)
 runner_manifest = read_nofollow(candidate / "runner-manifest.json")
 manifest = json.loads(runner_manifest)
 if manifest.get("outcome") != "passed" or manifest.get("final_acceptance") is not True:
     raise SystemExit("sealed runner manifest does not claim passed final acceptance")
+expected_candidate = {"sha": sha, "ref": ref, "health_fingerprint_sha256": hashlib.sha256(read_nofollow(health_fingerprint)).hexdigest(), "runner_manifest_sha256": hashlib.sha256(runner_manifest).hexdigest()}
+if json.loads(read_fingerprint_authority(candidate)) != expected_candidate:
+    raise SystemExit("candidate fingerprint envelope does not bind this final run")
 if os.path.lexists(candidate.parent / ".revoked" / sha):
     raise SystemExit("candidate has a revocation entry")
 verify_manifest(discovery)
@@ -284,16 +286,14 @@ pgrep -af "Xvfb|chrome|chromium" || true
 test ! -e "$FINAL_TASK_ROOT"
 ```
 
-**Stop** unless candidate and discoverable manifests validate; the runner
-manifest reports `outcome` `passed` and `final_acceptance` true; the sealed
-discoverable `candidate-authority.json` binds exactly the SHA and raw sealed
-runner-manifest SHA-256; and no revocation entry exists. Also require the
-filtered Docker list and task-root process query to be empty and the task root
-to be absent. Use the sealed cleanup result plus the runner-retained browser/Xvfb
-logs to establish that the runner-owned browser and Xvfb exited; the broad process
-listing is an audit aid and may show unrelated host processes. Do not remove
-persistent volumes unless separately authorized.
+**Stop** unless both manifests validate; the candidate envelope binds exactly
+the SHA/ref and raw health and runner-manifest digests; the runner manifest
+reports `outcome` `passed` and `final_acceptance` true; the sealed discoverable
+`candidate-authority.json` binds exactly the SHA and raw runner-manifest SHA-256;
+and no revocation entry exists. Require empty filtered Docker and task-root
+process queries, an absent task root, and sealed cleanup/browser/Xvfb evidence;
+the broad process listing is an audit aid and may show unrelated host processes.
+Do not remove persistent volumes unless separately authorized.
 
-Record the exact SHA/ref, external host identity, profile version/checksum,
-health fingerprint path, static result, final log, published manifest path, and
-cleanup observations with the release evidence.
+Record the SHA/ref, host identity, profile version/checksum, health fingerprint
+path, static result, final log, manifest path, and cleanup evidence.
