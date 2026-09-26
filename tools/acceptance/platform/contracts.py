@@ -33,30 +33,39 @@ _OPERATIONAL_TOKENS = (
     "retry",
     "cleanup",
 )
-_COMMAND_PREFIXES = frozenset(
+_V2_BACKEND_COMMANDS = frozenset(
     {
-        "npm",
-        "npx",
-        "pnpm",
-        "yarn",
-        "pip",
-        "uv",
-        "poetry",
-        "bun",
-        "docker",
-        "docker-compose",
-        "compose",
+        (
+            "uv",
+            "run",
+            "--with-requirements",
+            "requirements-dev.txt",
+            "black",
+            "--check",
+            "app",
+            "tests",
+        ),
+        (
+            "uv",
+            "run",
+            "--with-requirements",
+            "requirements-dev.txt",
+            "ruff",
+            "check",
+            "app",
+            "tests",
+        ),
+        (
+            "uv",
+            "run",
+            "--with-requirements",
+            "requirements-dev.txt",
+            "pytest",
+            "-q",
+        ),
     }
 )
-_SHELL_WRAPPERS = frozenset({"sh", "bash", "dash", "zsh"})
-_V2_BACKEND_VERIFICATION = (
-    "uv",
-    "run",
-    "--with-requirements",
-    "requirements-dev.txt",
-    "pytest",
-    "-q",
-)
+_STATIC_COMMANDS = _V2_BACKEND_COMMANDS | frozenset({("lint",), ("test:unit",)})
 
 
 def load_product_contract(path: Path) -> ProductContract:
@@ -160,15 +169,7 @@ def _is_operational_command(command: str) -> bool:
         return True
     if not words:
         return True
-    if tuple(words) == _V2_BACKEND_VERIFICATION:
-        return False
-    if any(word in _COMMAND_PREFIXES or word == "install" for word in words):
-        return True
-    return any(
-        _is_operational_command(words[index + 1])
-        for index, word in enumerate(words[:-1])
-        if word == "-c" and index and words[index - 1] in _SHELL_WRAPPERS
-    )
+    return tuple(words) not in _STATIC_COMMANDS
 
 
 def _tables(raw: Mapping[str, Any], field: str) -> list[Mapping[str, Any]]:
