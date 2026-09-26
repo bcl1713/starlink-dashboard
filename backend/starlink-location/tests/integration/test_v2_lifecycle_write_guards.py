@@ -9,7 +9,7 @@ import zipfile
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 from uuid import uuid4
 
 import pytest
@@ -41,6 +41,8 @@ KML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><LineString>
 <coordinates>-120.0,35.0,0 -121.0,36.0,0</coordinates>
 </LineString></Placemark></Document></kml>"""
+
+WORKER_READY_TIMEOUT_SECONDS = 60
 
 
 @pytest.fixture(autouse=True)
@@ -368,7 +370,33 @@ def _run_isolated_lifecycle_worker(
         results.put((label, "error", f"{error}\n{traceback.format_exc()}"))
 
 
+def _collect_worker_roots(ready, worker_count: int):
+    """Wait for each spawned worker's bounded readiness signal."""
+    return [
+        ready.get(timeout=WORKER_READY_TIMEOUT_SECONDS) for _ in range(worker_count)
+    ]
+
+
 class TestV2LifecycleWriteGuards:
+    def test_worker_readiness_wait_uses_named_bounded_policy(self) -> None:
+        ready = MagicMock()
+        ready.get.side_effect = [
+            ("worker-one", "/tmp/worker-one/missions"),
+            ("worker-two", "/tmp/worker-two/missions"),
+        ]
+
+        roots = _collect_worker_roots(ready, 2)
+
+        assert WORKER_READY_TIMEOUT_SECONDS == 60
+        assert roots == [
+            ("worker-one", "/tmp/worker-one/missions"),
+            ("worker-two", "/tmp/worker-two/missions"),
+        ]
+        assert ready.get.call_args_list == [
+            call(timeout=WORKER_READY_TIMEOUT_SECONDS),
+            call(timeout=WORKER_READY_TIMEOUT_SECONDS),
+        ]
+
     def test_two_process_lifecycles_keep_distinct_fixture_roots(
         self, tmp_path: Path
     ) -> None:
@@ -392,7 +420,7 @@ class TestV2LifecycleWriteGuards:
             for worker in workers:
                 worker.start()
                 started_workers.append(worker)
-            roots = [ready.get(timeout=15) for _ in workers]
+            roots = _collect_worker_roots(ready, len(workers))
             assert {root for _, root in roots} == {
                 str(tmp_path / "worker-one" / "missions"),
                 str(tmp_path / "worker-two" / "missions"),
