@@ -226,6 +226,14 @@ separately, verifies that owned resources are gone, and re-verifies evidence
 checksums after cleanup. A cleanup failure downgrades a would-be final result to
 `failed`; it does not overwrite the primary diagnostic.
 
+## External-host final authority
+
+When Oracle lacks the required Linux host capacity, use the
+[External-Host Final Acceptance](external-host-final-acceptance.md) runbook. It
+requires a fresh detached exact-SHA checkout, an administrator-created host-local
+browser profile, canonical health authority, and one tracked final lane; neither
+Oracle's profile nor the unprovisioned default template may be copied or used.
+
 ## Product contract references
 
 The platform owns operational authority; each product contract owns only its
