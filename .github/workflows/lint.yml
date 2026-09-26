@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -37,7 +39,21 @@ jobs:
         with:
           tool: lychee@0.20.1
       - name: Run static quality gate
-        run: ./tools/verify static
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git fetch --no-tags origin "$PR_BASE_REF:refs/remotes/origin/$PR_BASE_REF"
+            policy_base_sha="$(git merge-base HEAD "origin/$PR_BASE_REF")"
+          else
+            policy_base_sha="$PUSH_BASE_SHA"
+          fi
+          git cat-file -e "${policy_base_sha}^{commit}"
+          git merge-base --is-ancestor "$policy_base_sha" HEAD
+          ACCEPTANCE_POLICY_BASE_SHA="$policy_base_sha" ./tools/verify static
 
   backend:
     name: Backend Test Gate

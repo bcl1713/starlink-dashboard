@@ -62,6 +62,19 @@ def test_static_job_installs_its_runner_prerequisites():
     assert "lychee@0.20.1" in static
 
 
+def test_static_job_supplies_a_reachable_typing_policy_base_to_the_verifier():
+    static = job_block(workflow_text(), "static", "backend")
+
+    assert "fetch-depth: 0" in static
+    assert "github.event.pull_request.base.ref" in static
+    assert "github.event.before" in static
+    assert "git merge-base HEAD" in static
+    assert "ACCEPTANCE_POLICY_BASE_SHA=" in static
+    assert static.index("ACCEPTANCE_POLICY_BASE_SHA=") < static.index(
+        "./tools/verify static"
+    )
+
+
 def test_static_runner_invokes_the_markdownlint_executable_ci_installs():
     runner = VERIFY.read_text(encoding="utf-8")
 
