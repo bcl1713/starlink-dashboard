@@ -25,7 +25,13 @@ formatting tools. All code must pass these checks before merge.
 
 ### Python Local Usage
 
+Black and Ruff versions are pinned for contributors and CI in
+`backend/starlink-location/requirements-dev.txt`. Install them from that
+committed manifest before running the checks:
+
 ```bash
+pip install --requirement backend/starlink-location/requirements-dev.txt
+
 # Format with Black
 black backend/starlink-location/app
 
@@ -192,17 +198,21 @@ cat .git/hooks/pre-commit
 ### Linting Failures Don't Match CI
 
 ```bash
-# Update tools to match CI versions
-pip install --upgrade black ruff
+# Install the committed backend formatter/linter versions used by CI
+pip install --requirement backend/starlink-location/requirements-dev.txt
 cd frontend/mission-planner
 npm update prettier eslint
 npm install -g markdownlint-cli2@latest
 ```
 
+The backend Black and Ruff versions are pinned in
+`backend/starlink-location/requirements-dev.txt`. Reinstall from that manifest
+instead of upgrading those tools independently.
+
 ### Black and Ruff Conflict
 
 Black and Ruff are configured to work together without conflicts. If you see
-conflicting suggestions, ensure both tools are up-to-date.
+conflicting suggestions, reinstall both from the committed dev-tool manifest.
 
 ### ESLint or Prettier Not Found
 
@@ -218,7 +228,7 @@ npm install
 ### Format All Code
 
 ```bash
-# Python
+# Python (after installing backend/starlink-location/requirements-dev.txt)
 black backend/starlink-location/app
 ruff check --fix backend/starlink-location/app
 
@@ -233,7 +243,7 @@ npx prettier --write "docs/**/*.md"
 ### Check Linting Without Formatting
 
 ```bash
-# Python
+# Python (after installing backend/starlink-location/requirements-dev.txt)
 black --check backend/starlink-location/app
 ruff check backend/starlink-location/app
 

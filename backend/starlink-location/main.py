@@ -39,11 +39,9 @@ from app.core.logging import get_logger, setup_logging
 from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
 from app.mission import (
-    routes as mission_routes,
-)
-from app.mission import (
     routes_v2 as mission_routes_v2,
 )
+from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
 from app.services.ground_entry_point import (
@@ -154,6 +152,12 @@ async def startup_event():
 
         initialize_overview_history_runtime()
         initialize_overview_clock_settings_runtime()
+
+        reconciliation = reconcile_active_legs_on_startup()
+        logger.info_json(
+            "Reconciled persisted Mission V2 active legs at startup",
+            extra_fields=reconciliation,
+        )
 
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
@@ -365,10 +369,7 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown."""
     global _background_task, _overview_history_client
-    global \
-        _overview_history_settings_store, \
-        _overview_clock_settings_store, \
-        _route_manager
+    global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
@@ -620,7 +621,6 @@ app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
-app.include_router(mission_routes.router, tags=["Missions"])
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])

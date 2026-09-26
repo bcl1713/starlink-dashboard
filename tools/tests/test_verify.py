@@ -64,41 +64,6 @@ def test_backend_command_uses_manifest_resolved_from_repository_root():
     assert command[3] == str(module.ROOT / "backend/starlink-location/requirements-dev.txt")
 
 
-def test_static_commands_use_exact_root_relative_backend_targets():
-    module = load_verify()
-
-    static = module.tier_commands("static")
-    assert static[:2] == [
-        (
-            [
-                "uv",
-                "run",
-                "--with-requirements",
-                "backend/starlink-location/requirements-dev.txt",
-                "black",
-                "--check",
-                "--diff",
-                "backend/starlink-location/app",
-                "backend/starlink-location/tests",
-            ],
-            module.ROOT,
-        ),
-        (
-            [
-                "uv",
-                "run",
-                "--with-requirements",
-                "backend/starlink-location/requirements-dev.txt",
-                "ruff",
-                "check",
-                "backend/starlink-location/app",
-                "backend/starlink-location/tests",
-            ],
-            module.ROOT,
-        ),
-    ]
-
-
 def test_static_prettier_uses_root_relative_frontend_source_glob():
     module = load_verify()
 

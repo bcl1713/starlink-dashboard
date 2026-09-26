@@ -50,5 +50,8 @@ frontend/mission-planner/test-results/
 frontend/mission-planner/playwright-report/
 frontend/mission-planner/dist/
 
+# Plan workspaces (local scratch reports and execution evidence)
+.superpowers/sdd/
+
 # Exceptions
 !frontend/mission-planner/src/lib/

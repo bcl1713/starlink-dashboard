@@ -226,55 +226,46 @@ class ETAProjection:
             ETA in seconds (time until expected arrival) if available, None to fall back
         """
         # Early return if no timing data on route
-        if (
-            not active_route.timing_profile
-            or not active_route.timing_profile.has_timing_data
-        ):
+        timing_profile = active_route.timing_profile
+        if not timing_profile or not timing_profile.has_timing_data:
             return None
 
-        # Check if route has departure time for reference
-        if not active_route.timing_profile.departure_time:
+        departure_time = timing_profile.departure_time
+        if not departure_time:
             return None
 
         try:
             current_time = datetime.now(timezone.utc)
 
-            # First, try to find matching waypoint on route by name
-            # This handles explicitly named waypoints in the KML
+            def anticipated_eta_for_waypoint(waypoint: "RouteWaypoint") -> float | None:
+                if not waypoint.expected_arrival_time:
+                    return None
+
+                planned_duration = waypoint.expected_arrival_time - departure_time
+                if planned_duration.total_seconds() < 0:
+                    return None
+
+                if departure_time > current_time:
+                    return (
+                        waypoint.expected_arrival_time - current_time
+                    ).total_seconds()
+
+                return planned_duration.total_seconds()
+
+            # First, try to find matching waypoint on route by name.
+            # This handles explicitly named waypoints in the KML.
             for waypoint in active_route.waypoints:
-                if (
-                    waypoint.name
-                    and waypoint.name.upper() == poi.name.upper()
-                    and waypoint.expected_arrival_time
-                ):
-                    # Found matching waypoint with expected arrival time
-                    time_until_arrival = waypoint.expected_arrival_time - current_time
-                    eta_seconds = time_until_arrival.total_seconds()
+                if waypoint.name and waypoint.name.upper() == poi.name.upper():
+                    return anticipated_eta_for_waypoint(waypoint)
 
-                    # Return positive ETA or -1 if time has passed
-                    if eta_seconds > 0:
-                        return eta_seconds
-                    else:
-                        return -1.0
-
-            # Second, try to use POI's projected waypoint index
-            # This is set by route-aware projection for off-route POIs
+            # Second, try to use POI's projected waypoint index.
+            # This is set by route-aware projection for off-route POIs.
             if poi.projected_waypoint_index is not None:
                 waypoint_idx = poi.projected_waypoint_index
                 if 0 <= waypoint_idx < len(active_route.waypoints):
-                    waypoint = active_route.waypoints[waypoint_idx]
-                    if waypoint.expected_arrival_time:
-                        # Calculate time until expected arrival at projected waypoint
-                        time_until_arrival = (
-                            waypoint.expected_arrival_time - current_time
-                        )
-                        eta_seconds = time_until_arrival.total_seconds()
-
-                        # Return positive ETA or -1 if time has passed
-                        if eta_seconds > 0:
-                            return eta_seconds
-                        else:
-                            return -1.0
+                    return anticipated_eta_for_waypoint(
+                        active_route.waypoints[waypoint_idx]
+                    )
 
             # If no waypoint found, return None to fall back to distance/speed
             return None

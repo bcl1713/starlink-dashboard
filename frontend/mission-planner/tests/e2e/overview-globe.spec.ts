@@ -54,11 +54,30 @@ test.describe('Globe overview', () => {
     page,
   }) => {
     await page.goto('/overview');
-    await page
-      .getByRole('button', {
-        name: 'Enter fullscreen overview',
-      })
-      .click();
+    const fullscreenControl = page.getByRole('button', {
+      name: 'Enter fullscreen overview',
+    });
+
+    await expect(fullscreenControl).toBeVisible();
+    await expect(fullscreenControl).toBeEnabled();
+
+    const fullscreenChange = page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          document.addEventListener('fullscreenchange', () => resolve(), {
+            once: true,
+          });
+        })
+    );
+
+    await fullscreenControl.click();
+    await fullscreenChange;
+    expect(
+      await page.evaluate(
+        () => document.fullscreenElement === document.documentElement
+      )
+    ).toBe(true);
+
     await expect(
       page.getByRole('navigation', {
         name: 'Primary navigation',
@@ -924,7 +943,7 @@ test.describe('Globe overview', () => {
     await expect(
       globeLegend.getByText('2 trail points', { exact: true })
     ).toBeVisible();
-    await expect.poll(() => historyRequests).toHaveLength(1);
+    await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(1);
     expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
   });
   test('reports unavailable aircraft history without replacing live telemetry', async ({

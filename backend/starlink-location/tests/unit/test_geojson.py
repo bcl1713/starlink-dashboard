@@ -1,6 +1,7 @@
 """Unit tests for GeoJSON generation service."""
 
 import pytest
+
 from app.models.poi import POI
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.models.telemetry import PositionData

@@ -24,7 +24,10 @@ Starlink Dashboard releases follow semantic versioning (`MAJOR.MINOR.PATCH`):
 - **Minor** (`x.Y.z`): behavior-compatible feature additions or improvements
   that do not require consumers to change.
 - **Major** (`X.y.z`): incompatible API, output, export-schema, or
-  operator-workflow changes.
+  operator-workflow changes. `/api/missions` has been removed and now returns
+  404; requiring Mission V2 leg activation is a required major compatibility
+  change. Release notes must state that flat v1 mission artifacts remain
+  retained but inert, with no automatic migration or cleanup.
 
 When in doubt, choose the larger version bump. Silent incompatibility is a
 rather tiresome gift to future us.

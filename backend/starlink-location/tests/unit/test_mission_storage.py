@@ -1,901 +1,395 @@
-"""Unit tests for mission storage utilities."""
+"""Unit tests for scoped v2 mission storage."""
 
 import json
-import tempfile
-from pathlib import Path
 
 import pytest
+
 from app.mission import storage
-from app.mission.models import Mission, MissionLeg, TransportConfig
+from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TransportConfig
 from app.mission.storage import (
-    compute_file_checksum,
-    compute_mission_checksum,
-    delete_mission,
     delete_mission_timeline,
-    get_mission_checksum_path,
-    get_mission_directory,
+    get_active_leg_lock,
+    get_leg_timeline_path,
     get_mission_file_path,
     get_mission_leg_file_path,
-    get_mission_legs_dir,
-    get_mission_path,
-    list_missions,
-    load_mission,
+    list_mission_metadata_v2,
     load_mission_metadata_v2,
     load_mission_timeline,
     load_mission_v2,
-    mission_exists,
-    save_mission,
     save_mission_timeline,
     save_mission_v2,
 )
 
 
+class RecordingLock:
+    def __init__(self, name, events):
+        self.name = name
+        self.events = events
+
+    def __enter__(self):
+        self.events.append(f"enter:{self.name}")
+        return self
+
+    def __exit__(self, *_):
+        self.events.append(f"exit:{self.name}")
+
+
 @pytest.fixture
-def sample_mission():
-    """Create a sample mission for testing."""
-    return MissionLeg(
-        id="test-mission-001",
-        name="Test Mission",
-        description="A test mission",
-        route_id="test-route",
-        transports=TransportConfig(initial_x_satellite_id="X-1"),
-        notes="Test notes",
+def temp_missions_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    return tmp_path
+
+
+@pytest.fixture
+def scoped_mission():
+    return Mission(
+        id="scoped",
+        name="Scoped mission",
+        legs=[
+            MissionLeg(
+                id="leg-1",
+                name="Leg 1",
+                route_id="route-1",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
     )
 
 
-@pytest.fixture
-def temp_missions_dir(monkeypatch):
-    """Create a temporary directory for mission storage."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        temp_path = Path(tmpdir)
-        monkeypatch.setattr("app.mission.storage.MISSIONS_DIR", temp_path)
-        yield temp_path
+def test_save_mission_v2_persists_only_scoped_parent_and_leg_files(
+    temp_missions_dir, scoped_mission
+):
+    save_mission_v2(scoped_mission)
+
+    assert get_mission_file_path("scoped").is_file()
+    assert get_mission_leg_file_path("scoped", "leg-1").is_file()
+    assert not (temp_missions_dir / "scoped.json").exists()
+    assert not (temp_missions_dir / "scoped.sha256").exists()
 
 
-class TestMissionStorage:
-    """Tests for mission storage functions."""
+def test_load_mission_v2_round_trips_parent_and_legs(temp_missions_dir, scoped_mission):
+    save_mission_v2(scoped_mission)
 
-    def test_get_mission_path(self):
-        """Test get_mission_path returns correct path."""
-        path = get_mission_path("mission-001")
-        assert "mission-001.json" in str(path)
+    loaded = load_mission_v2("scoped")
 
-    def test_get_mission_checksum_path(self):
-        """Test get_mission_checksum_path returns correct path."""
-        path = get_mission_checksum_path("mission-001")
-        assert "mission-001.sha256" in str(path)
+    assert loaded is not None
+    assert loaded.id == "scoped"
+    assert [leg.id for leg in loaded.legs] == ["leg-1"]
 
-    def test_compute_mission_checksum(self, sample_mission):
-        """Test mission checksum computation."""
-        checksum1 = compute_mission_checksum(sample_mission)
-        checksum2 = compute_mission_checksum(sample_mission)
 
-        # Same mission should produce same checksum
-        assert checksum1 == checksum2
-        # Checksum should be 64 character hex string
-        assert len(checksum1) == 64
-        assert all(c in "0123456789abcdef" for c in checksum1)
+def test_v2_listing_ignores_flat_legacy_artifacts(temp_missions_dir, scoped_mission):
+    legacy_artifacts = {
+        "legacy.json": b'{"id": "legacy"}',
+        "legacy.sha256": b"legacy-checksum",
+        "legacy-leg.timeline.json": b'{"mission_leg_id": "legacy-leg"}',
+    }
+    for name, contents in legacy_artifacts.items():
+        (temp_missions_dir / name).write_bytes(contents)
+    save_mission_v2(scoped_mission)
 
-    def test_save_mission(self, sample_mission, temp_missions_dir):
-        """Test saving a mission."""
-        result = save_mission(sample_mission)
+    assert [item.id for item in list_mission_metadata_v2()] == ["scoped"]
+    assert {
+        name: (temp_missions_dir / name).read_bytes() for name in legacy_artifacts
+    } == legacy_artifacts
 
-        assert result["mission_id"] == "test-mission-001"
-        assert "path" in result
-        assert "checksum" in result
-        assert "saved_at" in result
 
-        # Verify file exists
-        mission_file = temp_missions_dir / "test-mission-001.json"
-        assert mission_file.exists()
+def test_scoped_timeline_read_does_not_probe_or_migrate_flat_artifact(
+    temp_missions_dir,
+):
+    timeline = MissionLegTimeline(mission_leg_id="legacy-leg")
+    legacy_path = temp_missions_dir / "legacy-leg.timeline.json"
+    legacy_bytes = json.dumps(timeline.model_dump(), default=str).encode()
+    legacy_path.write_bytes(legacy_bytes)
 
-        # Verify checksum file exists
-        checksum_file = temp_missions_dir / "test-mission-001.sha256"
-        assert checksum_file.exists()
+    assert load_mission_timeline("legacy-leg", parent_mission_id="scoped") is None
+    assert legacy_path.read_bytes() == legacy_bytes
 
-    def test_load_mission(self, sample_mission, temp_missions_dir):
-        """Test loading a saved mission."""
-        # Save first
-        save_mission(sample_mission)
 
-        # Load
-        loaded = load_mission("test-mission-001")
+def test_scoped_timeline_api_requires_a_parent_mission_id():
+    with pytest.raises(TypeError):
+        save_mission_timeline("leg-1", MissionLegTimeline(mission_leg_id="leg-1"))
 
-        assert loaded is not None
-        assert loaded.id == "test-mission-001"
-        assert loaded.name == "Test Mission"
-        assert loaded.route_id == "test-route"
-        assert loaded.notes == "Test notes"
 
-    def test_load_mission_not_found(self, temp_missions_dir):
-        """Test loading a non-existent mission."""
-        loaded = load_mission("nonexistent-mission")
-        assert loaded is None
+def test_scoped_timeline_round_trip_and_deletion_do_not_touch_flat_artifact(
+    temp_missions_dir,
+):
+    timeline = MissionLegTimeline(mission_leg_id="leg-1")
+    flat_path = temp_missions_dir / "leg-1.timeline.json"
+    flat_bytes = b"must-survive"
+    flat_path.write_bytes(flat_bytes)
 
-    def test_mission_roundtrip(self, sample_mission, temp_missions_dir):
-        """Test save and load roundtrip preserves data."""
-        # Save
-        save_mission(sample_mission)
+    save_mission_timeline("leg-1", timeline, parent_mission_id="scoped")
+    assert load_mission_timeline("leg-1", parent_mission_id="scoped") == timeline
+    assert get_leg_timeline_path("leg-1", "scoped").is_file()
 
-        # Load
-        loaded = load_mission("test-mission-001")
+    delete_mission_timeline("leg-1", parent_mission_id="scoped")
+    assert not get_leg_timeline_path("leg-1", "scoped").exists()
+    assert flat_path.read_bytes() == flat_bytes
 
-        # Verify all fields match
-        assert loaded.id == sample_mission.id
-        assert loaded.name == sample_mission.name
-        assert loaded.route_id == sample_mission.route_id
-        assert loaded.transports.initial_x_satellite_id == "X-1"
-        assert loaded.notes == sample_mission.notes
 
-    def test_mission_exists(self, sample_mission, temp_missions_dir):
-        """Test mission_exists checks."""
-        assert not mission_exists("test-mission-001")
+def test_active_leg_lock_is_reused_for_the_scoped_repository(temp_missions_dir):
+    assert get_active_leg_lock() is get_active_leg_lock()
 
-        save_mission(sample_mission)
 
-        assert mission_exists("test-mission-001")
+@pytest.mark.parametrize(
+    "missions",
+    (
+        [
+            Mission(
+                id="valid-active",
+                name="Valid active",
+                legs=[
+                    MissionLeg(
+                        id="leg-1",
+                        name="Leg 1",
+                        route_id="route-1",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            )
+        ],
+        [
+            Mission(
+                id="first-active",
+                name="First active",
+                legs=[
+                    MissionLeg(
+                        id="leg-1",
+                        name="Leg 1",
+                        route_id="route-1",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            ),
+            Mission(
+                id="second-active",
+                name="Second active",
+                legs=[
+                    MissionLeg(
+                        id="leg-2",
+                        name="Leg 2",
+                        route_id="route-2",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            ),
+        ],
+        [
+            Mission(
+                id="missing-route",
+                name="Missing route",
+                legs=[
+                    MissionLeg(
+                        id="leg-1",
+                        name="Leg 1",
+                        route_id="not-present-on-startup",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            )
+        ],
+    ),
+)
+def test_startup_reconciler_clears_every_persisted_active_leg(
+    temp_missions_dir, missions
+):
+    for mission in missions:
+        save_mission_v2(mission)
 
-    def test_delete_mission(self, sample_mission, temp_missions_dir):
-        """Test deleting a mission."""
-        save_mission(sample_mission)
-        assert mission_exists("test-mission-001")
+    result = storage.reconcile_active_legs_on_startup()
 
-        deleted = delete_mission("test-mission-001")
+    assert result == {"missions": len(missions), "legs": len(missions)}
+    assert all(
+        not leg.is_active
+        for mission in missions
+        for leg in load_mission_v2(mission.id).legs
+    )
 
-        assert deleted is True
-        assert not mission_exists("test-mission-001")
 
-    def test_delete_nonexistent_mission(self, temp_missions_dir):
-        """Test deleting a non-existent mission returns False."""
-        deleted = delete_mission("nonexistent-mission")
-        assert deleted is False
-
-    def test_list_missions(self, temp_missions_dir):
-        """Test listing missions."""
-        # Create multiple missions
-        for i in range(3):
-            mission = MissionLeg(
-                id=f"mission-{i:03d}",
-                name=f"Test Mission {i}",
-                route_id=f"route-{i}",
+def test_startup_reconciler_uses_global_lock_before_each_changed_parent_lock(
+    temp_missions_dir, monkeypatch
+):
+    mission = Mission(
+        id="active-parent",
+        name="Active parent",
+        legs=[
+            MissionLeg(
+                id="leg-1",
+                name="Leg 1",
+                route_id="route-1",
+                is_active=True,
                 transports=TransportConfig(initial_x_satellite_id="X-1"),
             )
-            save_mission(mission)
+        ],
+    )
+    save_mission_v2(mission)
+    events = []
+    monkeypatch.setattr(
+        storage, "get_active_leg_lock", lambda: RecordingLock("active", events)
+    )
+    monkeypatch.setattr(
+        storage,
+        "get_mission_lock",
+        lambda mission_id: RecordingLock(f"mission:{mission_id}", events),
+    )
 
-        missions = list_missions()
+    storage.reconcile_active_legs_on_startup()
 
-        assert len(missions) == 3
-        ids = [m["id"] for m in missions]
-        assert "mission-000" in ids
-        assert "mission-001" in ids
-        assert "mission-002" in ids
+    assert events == [
+        "enter:active",
+        "enter:mission:active-parent",
+        "exit:mission:active-parent",
+        "exit:active",
+    ]
 
-    def test_list_missions_empty(self, temp_missions_dir):
-        """Test listing missions when none exist."""
-        missions = list_missions()
-        assert missions == []
 
-    def test_mission_update_timestamp(self, sample_mission, temp_missions_dir):
-        """Test that updated_at changes when mission is saved."""
-        import time
+def test_v2_metadata_listing_orders_persisted_timestamps(temp_missions_dir):
+    def write_metadata(mission_id, **metadata):
+        mission_dir = temp_missions_dir / mission_id
+        mission_dir.mkdir()
+        (mission_dir / "mission.json").write_text(
+            json.dumps({"id": mission_id, "name": mission_id, **metadata})
+        )
 
-        original_time = sample_mission.updated_at
+    write_metadata("newest", updated_at="2026-09-22T12:00:00Z")
+    write_metadata("created-only", created_at="2026-09-21T12:00:00Z")
+    write_metadata("invalid", updated_at="not-a-timestamp")
+    write_metadata("missing")
 
-        # Small delay to ensure timestamp changes
-        time.sleep(0.01)
+    missions = list_mission_metadata_v2()
 
-        save_mission(sample_mission)
-        loaded = load_mission("test-mission-001")
+    assert [mission.id for mission in missions] == [
+        "newest",
+        "created-only",
+        "invalid",
+        "missing",
+    ]
 
-        assert loaded.updated_at > original_time
 
-    def test_compute_file_checksum(self, temp_missions_dir):
-        """Test file checksum computation."""
-        test_file = temp_missions_dir / "test-file.txt"
-        test_file.write_text("test content")
-
-        checksum = compute_file_checksum(test_file)
-
-        # Verify checksum is valid hex
-        assert len(checksum) == 64
-        assert all(c in "0123456789abcdef" for c in checksum)
-
-    def test_checksum_integrity(self, sample_mission, temp_missions_dir):
-        """Test checksum verification on load."""
-        save_mission(sample_mission)
-
-        # Verify checksum matches
-        loaded = load_mission("test-mission-001")
-        assert loaded is not None
-
-        # Modify the mission file directly
-        mission_file = temp_missions_dir / "test-mission-001.json"
-        data = json.loads(mission_file.read_text())
-        data["name"] = "Modified Name"
-        mission_file.write_text(json.dumps(data))
-
-        # Should still load but checksum will differ (logged as warning)
-        loaded_modified = load_mission("test-mission-001")
-        assert loaded_modified.name == "Modified Name"
-
-    def test_mission_with_complex_transports(self, temp_missions_dir, sample_mission):
-        """Test saving/loading mission with complex transport configuration."""
-        from datetime import datetime, timezone
-
-        from app.mission.models import AARWindow, KaOutage, XTransition
-
-        mission = MissionLeg(
-            id="complex-mission",
-            name="Complex Mission",
-            route_id="complex-route",
-            transports=TransportConfig(
-                initial_x_satellite_id="X-1",
-                x_transitions=[
-                    XTransition(
-                        id="trans-1",
-                        latitude=35.0,
-                        longitude=-120.0,
-                        target_satellite_id="X-2",
-                    ),
-                ],
-                aar_windows=[
-                    AARWindow(
-                        id="aar-1",
-                        start_waypoint_name="AAR-Start",
-                        end_waypoint_name="AAR-End",
-                    ),
-                ],
-                ka_outages=[
-                    KaOutage(
-                        id="ka-out-1",
-                        start_time=datetime.now(timezone.utc),
-                        duration_seconds=300.0,
-                    ),
-                ],
+def test_v2_metadata_load_returns_leg_stubs_and_handles_invalid_data(temp_missions_dir):
+    mission = Mission(
+        id="metadata",
+        name="Metadata mission",
+        legs=[
+            MissionLeg(
+                id="leg-b",
+                name="Leg B",
+                route_id="route-b",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
             ),
-        )
+            MissionLeg(
+                id="leg-a",
+                name="Leg A",
+                route_id="route-a",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+        ],
+        metadata={"customer": "Test Corp"},
+    )
+    save_mission_v2(mission)
 
-        save_mission(mission)
-        loaded = load_mission("complex-mission")
+    loaded = load_mission_metadata_v2("metadata")
 
-        assert len(loaded.transports.x_transitions) == 1
-        assert len(loaded.transports.aar_windows) == 1
-        assert len(loaded.transports.ka_outages) == 1
-        assert loaded.transports.x_transitions[0].target_satellite_id == "X-2"
+    assert loaded is not None
+    assert loaded.metadata == {"customer": "Test Corp"}
+    assert [leg.id for leg in loaded.legs] == ["leg-a", "leg-b"]
+    assert [leg.name for leg in loaded.legs] == ["leg-a", "leg-b"]
 
-    def test_list_missions_metadata(self, temp_missions_dir):
-        """Test that list_missions returns correct metadata."""
-        mission = MissionLeg(
-            id="meta-mission",
-            name="Metadata Test",
-            route_id="meta-route",
-            is_active=True,
-            transports=TransportConfig(initial_x_satellite_id="X-1"),
-        )
-        save_mission(mission)
-
-        missions = list_missions()
-
-        assert len(missions) == 1
-        meta = missions[0]
-        assert meta["id"] == "meta-mission"
-        assert meta["name"] == "Metadata Test"
-        assert meta["route_id"] == "meta-route"
-        assert meta["is_active"] is True
+    invalid_dir = temp_missions_dir / "invalid"
+    invalid_dir.mkdir()
+    (invalid_dir / "mission.json").write_text("{ not valid JSON")
+    assert load_mission_metadata_v2("invalid") is None
+    assert [mission.id for mission in list_mission_metadata_v2()] == ["metadata"]
 
 
-class TestHierarchicalMissionStorageV2:
-    """Tests for hierarchical v2 mission storage (Mission with nested Legs)."""
+def test_v2_save_overwrites_metadata_and_prunes_stale_leg_files(temp_missions_dir):
+    initial = Mission(
+        id="overwrite",
+        name="Initial name",
+        legs=[
+            MissionLeg(
+                id="keep",
+                name="Keep",
+                route_id="route-keep",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+            MissionLeg(
+                id="stale",
+                name="Stale",
+                route_id="route-stale",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+        ],
+        metadata={"revision": 1},
+    )
+    save_mission_v2(initial)
 
-    @pytest.fixture
-    def sample_mission_with_legs(self):
-        """Create a sample hierarchical mission with multiple legs."""
-        leg1 = MissionLeg(
-            id="leg-1",
-            name="Leg 1",
-            description="First leg",
-            route_id="route-1",
-            transports=TransportConfig(initial_x_satellite_id="X-1"),
-            notes="First leg notes",
-        )
-        leg2 = MissionLeg(
-            id="leg-2",
-            name="Leg 2",
-            description="Second leg",
-            route_id="route-2",
-            transports=TransportConfig(initial_x_satellite_id="X-2"),
-            notes="Second leg notes",
-        )
-
-        return Mission(
-            id="operation-falcon",
-            name="Operation Falcon",
-            description="Multi-leg transcontinental mission",
-            legs=[leg1, leg2],
-            metadata={"customer": "Test Corp", "classification": "unclassified"},
-        )
-
-    def test_save_mission_v2_creates_directory_structure(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that save_mission_v2 creates correct directory structure."""
-        result = save_mission_v2(sample_mission_with_legs)
-
-        # Verify result metadata
-        assert result["mission_id"] == "operation-falcon"
-        assert result["leg_count"] == 2
-        assert "path" in result
-        assert "saved_at" in result
-
-        # Verify mission directory exists
-        mission_dir = temp_missions_dir / "operation-falcon"
-        assert mission_dir.exists()
-        assert mission_dir.is_dir()
-
-        # Verify legs directory exists
-        legs_dir = mission_dir / "legs"
-        assert legs_dir.exists()
-        assert legs_dir.is_dir()
-
-    def test_save_mission_v2_saves_mission_metadata(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that mission metadata is saved without legs."""
-        save_mission_v2(sample_mission_with_legs)
-
-        mission_file = temp_missions_dir / "operation-falcon" / "mission.json"
-        assert mission_file.exists()
-
-        # Load and verify content
-        with open(mission_file, "r") as f:
-            mission_data = json.load(f)
-
-        assert mission_data["id"] == "operation-falcon"
-        assert mission_data["name"] == "Operation Falcon"
-        assert mission_data["description"] == "Multi-leg transcontinental mission"
-        # Legs should be empty (stored separately)
-        assert mission_data["legs"] == []
-        assert mission_data["metadata"]["customer"] == "Test Corp"
-
-    def test_save_mission_v2_saves_legs_separately(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that each leg is saved to separate file."""
-        save_mission_v2(sample_mission_with_legs)
-
-        legs_dir = temp_missions_dir / "operation-falcon" / "legs"
-
-        # Verify leg files exist
-        leg1_file = legs_dir / "leg-1.json"
-        leg2_file = legs_dir / "leg-2.json"
-
-        assert leg1_file.exists()
-        assert leg2_file.exists()
-
-        # Verify leg 1 content
-        with open(leg1_file, "r") as f:
-            leg1_data = json.load(f)
-
-        assert leg1_data["id"] == "leg-1"
-        assert leg1_data["name"] == "Leg 1"
-        assert leg1_data["description"] == "First leg"
-        assert leg1_data["route_id"] == "route-1"
-        assert leg1_data["notes"] == "First leg notes"
-
-        # Verify leg 2 content
-        with open(leg2_file, "r") as f:
-            leg2_data = json.load(f)
-
-        assert leg2_data["id"] == "leg-2"
-        assert leg2_data["name"] == "Leg 2"
-        assert leg2_data["description"] == "Second leg"
-        assert leg2_data["route_id"] == "route-2"
-        assert leg2_data["notes"] == "Second leg notes"
-
-    def test_load_mission_v2_loads_metadata(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that mission metadata is loaded correctly."""
-        save_mission_v2(sample_mission_with_legs)
-
-        loaded = load_mission_v2("operation-falcon")
-
-        assert loaded is not None
-        assert loaded.id == "operation-falcon"
-        assert loaded.name == "Operation Falcon"
-        assert loaded.description == "Multi-leg transcontinental mission"
-        assert loaded.metadata["customer"] == "Test Corp"
-
-    def test_load_mission_v2_loads_all_legs(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that all legs are loaded and reconstructed."""
-        save_mission_v2(sample_mission_with_legs)
-
-        loaded = load_mission_v2("operation-falcon")
-
-        # Verify legs are loaded
-        assert len(loaded.legs) == 2
-
-        # Verify leg 1
-        assert loaded.legs[0].id == "leg-1"
-        assert loaded.legs[0].name == "Leg 1"
-        assert loaded.legs[0].route_id == "route-1"
-
-        # Verify leg 2
-        assert loaded.legs[1].id == "leg-2"
-        assert loaded.legs[1].name == "Leg 2"
-        assert loaded.legs[1].route_id == "route-2"
-
-    def test_load_mission_v2_ignores_scoped_timeline_files(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Timeline cache files in legs/ must not be parsed as MissionLegs."""
-        from app.mission.models import MissionLegTimeline
-
-        save_mission_v2(sample_mission_with_legs)
-        save_mission_timeline(
-            "leg-1",
-            MissionLegTimeline(mission_leg_id="leg-1", segments=[]),
-            parent_mission_id="operation-falcon",
-        )
-
-        loaded = load_mission_v2("operation-falcon")
-
-        assert loaded is not None
-        assert [leg.id for leg in loaded.legs] == ["leg-1", "leg-2"]
-
-    def test_load_mission_metadata_v2_ignores_scoped_timeline_files(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Metadata loads should count only actual leg JSON files."""
-        from app.mission.models import MissionLegTimeline
-
-        save_mission_v2(sample_mission_with_legs)
-        save_mission_timeline(
-            "leg-1",
-            MissionLegTimeline(mission_leg_id="leg-1", segments=[]),
-            parent_mission_id="operation-falcon",
-        )
-
-        loaded = load_mission_metadata_v2("operation-falcon")
-
-        assert loaded is not None
-        assert [leg.id for leg in loaded.legs] == ["leg-1", "leg-2"]
-
-    def test_load_mission_v2_preserves_leg_order(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that leg loading preserves sorted order."""
-        save_mission_v2(sample_mission_with_legs)
-
-        loaded = load_mission_v2("operation-falcon")
-
-        # Legs should be sorted alphabetically by filename (leg-1.json, leg-2.json)
-        leg_ids = [leg.id for leg in loaded.legs]
-        assert leg_ids == ["leg-1", "leg-2"]
-
-    def test_load_mission_v2_not_found(self, temp_missions_dir):
-        """Test that loading nonexistent mission returns None."""
-        loaded = load_mission_v2("nonexistent-mission")
-        assert loaded is None
-
-    def test_load_mission_v2_with_no_legs(self, temp_missions_dir):
-        """Test loading mission with empty legs directory."""
-        mission_dir = temp_missions_dir / "empty-mission"
-        mission_dir.mkdir(parents=True, exist_ok=True)
-
-        legs_dir = mission_dir / "legs"
-        legs_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create mission.json
-        mission_data = {
-            "id": "empty-mission",
-            "name": "Empty Mission",
-            "description": None,
-            "created_at": "2025-11-24T00:00:00+00:00",
-            "updated_at": "2025-11-24T00:00:00+00:00",
-            "metadata": {},
-            "legs": [],
+    save_mission_timeline(
+        "stale",
+        MissionLegTimeline(mission_leg_id="stale"),
+        parent_mission_id="overwrite",
+    )
+    updated = initial.model_copy(
+        update={
+            "name": "Updated name",
+            "legs": [
+                MissionLeg(
+                    id="keep",
+                    name="Keep",
+                    route_id="route-keep",
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                )
+            ],
+            "metadata": {"revision": 2},
         }
+    )
+    save_mission_v2(updated)
 
-        mission_file = mission_dir / "mission.json"
-        with open(mission_file, "w") as f:
-            json.dump(mission_data, f)
+    loaded = load_mission_v2("overwrite")
+    assert loaded is not None
+    assert loaded.name == "Updated name"
+    assert loaded.metadata == {"revision": 2}
+    assert [leg.id for leg in loaded.legs] == ["keep"]
+    assert not get_mission_leg_file_path("overwrite", "stale").exists()
+    assert get_leg_timeline_path("stale", "overwrite").is_file()
 
-        # Load should succeed with empty legs list
-        loaded = load_mission_v2("empty-mission")
 
-        assert loaded is not None
-        assert loaded.id == "empty-mission"
-        assert len(loaded.legs) == 0
-
-    def test_mission_v2_roundtrip(self, sample_mission_with_legs, temp_missions_dir):
-        """Test that save and load v2 preserves complete mission structure."""
-        # Save
-        save_mission_v2(sample_mission_with_legs)
-
-        # Load
-        loaded = load_mission_v2("operation-falcon")
-
-        # Verify complete structure
-        assert loaded.id == sample_mission_with_legs.id
-        assert loaded.name == sample_mission_with_legs.name
-        assert loaded.description == sample_mission_with_legs.description
-        assert len(loaded.legs) == len(sample_mission_with_legs.legs)
-
-        # Verify first leg details
-        assert loaded.legs[0].id == sample_mission_with_legs.legs[0].id
-        assert loaded.legs[0].name == sample_mission_with_legs.legs[0].name
-        assert (
-            loaded.legs[0].transports.initial_x_satellite_id
-            == sample_mission_with_legs.legs[0].transports.initial_x_satellite_id
-        )
-
-        # Verify second leg details
-        assert loaded.legs[1].id == sample_mission_with_legs.legs[1].id
-        assert loaded.legs[1].name == sample_mission_with_legs.legs[1].name
-
-    def test_save_mission_v2_overwrites_existing(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that saving existing mission overwrites files."""
-        # Save first version
-        save_mission_v2(sample_mission_with_legs)
-
-        # Create modified version with different metadata
-        modified_mission = Mission(
-            id="operation-falcon",
-            name="Operation Falcon (Updated)",
-            description="Updated description",
-            legs=sample_mission_with_legs.legs,
-            metadata={"customer": "Updated Corp"},
-        )
-
-        # Save again
-        save_mission_v2(modified_mission)
-
-        # Load and verify overwrite
-        loaded = load_mission_v2("operation-falcon")
-
-        assert loaded.name == "Operation Falcon (Updated)"
-        assert loaded.description == "Updated description"
-        assert loaded.metadata["customer"] == "Updated Corp"
-
-    def test_save_mission_v2_with_complex_transports(self, temp_missions_dir):
-        """Test v2 storage with complex transport configurations."""
-        from datetime import datetime, timezone
-
-        from app.mission.models import AARWindow, KaOutage, XTransition
-
-        leg = MissionLeg(
-            id="complex-leg",
-            name="Complex Leg",
-            route_id="complex-route",
-            transports=TransportConfig(
-                initial_x_satellite_id="X-1",
-                x_transitions=[
-                    XTransition(
-                        id="trans-1",
-                        latitude=35.0,
-                        longitude=-120.0,
-                        target_satellite_id="X-2",
-                    ),
-                ],
-                aar_windows=[
-                    AARWindow(
-                        id="aar-1",
-                        start_waypoint_name="AAR-Start",
-                        end_waypoint_name="AAR-End",
-                    ),
-                ],
-                ka_outages=[
-                    KaOutage(
-                        id="ka-out-1",
-                        start_time=datetime.now(timezone.utc),
-                        duration_seconds=300.0,
-                    ),
-                ],
+def test_v2_loads_exclude_scoped_timelines_from_full_and_metadata_legs(
+    temp_missions_dir,
+):
+    mission = Mission(
+        id="timeline-exclusion",
+        name="Timeline exclusion",
+        legs=[
+            MissionLeg(
+                id="leg-2",
+                name="Leg 2",
+                route_id="route-2",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
             ),
-        )
-
-        mission = Mission(
-            id="complex-mission",
-            name="Complex Mission",
-            legs=[leg],
-        )
-
-        # Save and load
-        save_mission_v2(mission)
-        loaded = load_mission_v2("complex-mission")
-
-        # Verify complex structures are preserved
-        assert len(loaded.legs) == 1
-        loaded_leg = loaded.legs[0]
-        assert len(loaded_leg.transports.x_transitions) == 1
-        assert len(loaded_leg.transports.aar_windows) == 1
-        assert len(loaded_leg.transports.ka_outages) == 1
-        assert loaded_leg.transports.x_transitions[0].target_satellite_id == "X-2"
-
-    def test_get_mission_directory_path(self):
-        """Test get_mission_directory returns correct path."""
-        path = get_mission_directory("test-mission")
-        assert "test-mission" in str(path)
-        assert str(path).endswith("test-mission")
-
-    def test_get_mission_file_path(self):
-        """Test get_mission_file_path returns correct path."""
-        path = get_mission_file_path("test-mission")
-        assert "test-mission" in str(path)
-        assert str(path).endswith("mission.json")
-
-    def test_get_mission_legs_dir(self):
-        """Test get_mission_legs_dir returns correct path."""
-        path = get_mission_legs_dir("test-mission")
-        assert "test-mission" in str(path)
-        assert str(path).endswith("legs")
-
-    def test_get_mission_leg_file_path(self):
-        """Test get_mission_leg_file_path returns correct path."""
-        path = get_mission_leg_file_path("test-mission", "leg-1")
-        assert "test-mission" in str(path)
-        assert "legs" in str(path)
-        assert str(path).endswith("leg-1.json")
-
-    def test_save_mission_v2_with_single_leg(self, temp_missions_dir):
-        """Test v2 storage with single leg mission."""
-        leg = MissionLeg(
-            id="single-leg",
-            name="Single Leg",
-            route_id="route-1",
-            transports=TransportConfig(initial_x_satellite_id="X-1"),
-        )
-
-        mission = Mission(
-            id="single-mission",
-            name="Single Mission",
-            legs=[leg],
-        )
-
-        result = save_mission_v2(mission)
-
-        assert result["leg_count"] == 1
-
-        # Verify structure
-        loaded = load_mission_v2("single-mission")
-        assert len(loaded.legs) == 1
-        assert loaded.legs[0].id == "single-leg"
-
-    def test_load_mission_v2_handles_missing_mission_file(self, temp_missions_dir):
-        """Test that load_mission_v2 handles missing mission.json gracefully."""
-        # Create mission directory but no mission.json
-        mission_dir = temp_missions_dir / "incomplete-mission"
-        mission_dir.mkdir(parents=True, exist_ok=True)
-
-        loaded = load_mission_v2("incomplete-mission")
-        assert loaded is None
-
-    def test_load_mission_metadata_v2_returns_leg_stubs(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that metadata loading returns mission with leg stubs."""
-        # Save mission with legs
-        save_mission_v2(sample_mission_with_legs)
-
-        # Load metadata only
-        loaded = load_mission_metadata_v2("operation-falcon")
-
-        assert loaded is not None
-        assert loaded.id == "operation-falcon"
-        assert loaded.name == "Operation Falcon"
-        assert loaded.description == "Multi-leg transcontinental mission"
-        assert loaded.metadata["customer"] == "Test Corp"
-        # Critical: legs should contain stubs with correct count
-        assert len(loaded.legs) == 2
-        # Verify stubs have IDs but minimal data
-        assert loaded.legs[0].id == "leg-1"
-        assert loaded.legs[1].id == "leg-2"
-
-    def test_load_mission_metadata_v2_not_found(self, temp_missions_dir):
-        """Test metadata loading for non-existent mission."""
-        loaded = load_mission_metadata_v2("nonexistent")
-        assert loaded is None
-
-    def test_load_mission_metadata_v2_preserves_metadata(
-        self, sample_mission_with_legs, temp_missions_dir
-    ):
-        """Test that all metadata fields are preserved."""
-        save_mission_v2(sample_mission_with_legs)
-
-        loaded = load_mission_metadata_v2("operation-falcon")
-
-        assert loaded is not None
-        assert loaded.id == sample_mission_with_legs.id
-        assert loaded.name == sample_mission_with_legs.name
-        assert loaded.description == sample_mission_with_legs.description
-        assert loaded.created_at == sample_mission_with_legs.created_at
-        assert loaded.updated_at == sample_mission_with_legs.updated_at
-        assert loaded.metadata == sample_mission_with_legs.metadata
-        # Verify leg count matches
-        assert len(loaded.legs) == len(sample_mission_with_legs.legs)
-
-    def test_list_mission_metadata_v2_orders_newest_first_with_legacy_fallback(
-        self, temp_missions_dir
-    ):
-        """List ordering uses persisted timestamps before deterministic legacy IDs."""
-
-        def write_metadata(mission_id, **metadata):
-            mission_dir = temp_missions_dir / mission_id
-            mission_dir.mkdir()
-            (mission_dir / "mission.json").write_text(
-                json.dumps({"id": mission_id, "name": mission_id, **metadata})
-            )
-
-        for index in range(27):
-            write_metadata(
-                f"mission-{index:02d}",
-                updated_at=f"2026-01-{index + 1:02d}T00:00:00Z",
-            )
-        write_metadata("legacy-created", created_at="2025-12-31T00:00:00Z")
-        write_metadata("legacy-invalid", updated_at="not-a-timestamp")
-        write_metadata("legacy-missing")
-
-        missions = storage.list_mission_metadata_v2()
-
-        assert len(missions) == 30
-        assert [mission.id for mission in missions[:2]] == [
-            "mission-26",
-            "mission-25",
-        ]
-        assert [mission.id for mission in missions[-2:]] == [
-            "legacy-invalid",
-            "legacy-missing",
-        ]
-
-    def test_load_mission_metadata_v2_handles_invalid_json(self, temp_missions_dir):
-        """Test that invalid JSON is handled gracefully."""
-        # Create mission directory with invalid JSON
-        mission_dir = temp_missions_dir / "invalid-mission"
-        mission_dir.mkdir(parents=True, exist_ok=True)
-
-        mission_file = mission_dir / "mission.json"
-        mission_file.write_text("{invalid json content")
-
-        loaded = load_mission_metadata_v2("invalid-mission")
-        assert loaded is None
-
-    def test_load_mission_metadata_v2_with_empty_mission(self, temp_missions_dir):
-        """Test loading metadata for mission with no legs."""
-        mission = Mission(
-            id="empty-mission",
-            name="Empty Mission",
-            description="Mission with no legs",
-            legs=[],
-        )
-
-        save_mission_v2(mission)
-        loaded = load_mission_metadata_v2("empty-mission")
-
-        assert loaded is not None
-        assert loaded.id == "empty-mission"
-        assert loaded.name == "Empty Mission"
-        assert loaded.legs == []
-
-
-class TestTimelineStorage:
-    """Tests for mission-scoped leg timeline storage.
-
-    These tests encode the bug fixed in PR #34: slugified leg IDs colliding
-    across missions caused stale timeline data to bleed into unrelated exports.
-    """
-
-    @pytest.fixture
-    def sample_timeline(self):
-        from app.mission.models import MissionLegTimeline
-
-        return MissionLegTimeline(mission_leg_id="leg-1")
-
-    @pytest.fixture
-    def sample_timeline_b(self):
-        from app.mission.models import MissionLegTimeline
-
-        # Distinct mission_leg_id so test_cross_mission_collision_is_fixed can
-        # assert the two timelines didn't bleed into each other — both are stored
-        # under leg_id="leg-1" but in different mission directories.
-        return MissionLegTimeline(mission_leg_id="leg-1-mission-b")
-
-    def test_scoped_path_used_when_mission_id_provided(
-        self, sample_timeline, temp_missions_dir
-    ):
-        """Timeline is stored inside {mission_id}/legs/ when parent_mission_id is given."""
-        save_mission_timeline("leg-1", sample_timeline, parent_mission_id="mission-a")
-
-        scoped = temp_missions_dir / "mission-a" / "legs" / "leg-1.timeline.json"
-        flat = temp_missions_dir / "leg-1.timeline.json"
-
-        assert scoped.exists()
-        assert not flat.exists()
-
-    def test_legacy_fallback_reads_flat_file(self, sample_timeline, temp_missions_dir):
-        """load_mission_timeline falls back to the flat file for pre-fix data."""
-        # Write directly to the legacy flat path (simulating pre-fix data)
-        import json
-
-        flat_path = temp_missions_dir / "leg-1.timeline.json"
-        flat_path.write_text(json.dumps(sample_timeline.model_dump(), default=str))
-
-        # Load with a mission ID whose scoped path doesn't exist
-        loaded = load_mission_timeline("leg-1", parent_mission_id="mission-a")
-
-        assert loaded is not None
-        assert loaded.mission_leg_id == "leg-1"
-
-    def test_cross_mission_collision_is_fixed(
-        self, sample_timeline, sample_timeline_b, temp_missions_dir
-    ):
-        """Two missions with the same leg slug use independent timeline files."""
-        save_mission_timeline("leg-1", sample_timeline, parent_mission_id="mission-a")
-        save_mission_timeline("leg-1", sample_timeline_b, parent_mission_id="mission-b")
-
-        loaded_a = load_mission_timeline("leg-1", parent_mission_id="mission-a")
-        loaded_b = load_mission_timeline("leg-1", parent_mission_id="mission-b")
-
-        assert loaded_a is not None
-        assert loaded_b is not None
-        assert loaded_a.mission_leg_id == "leg-1"
-        assert loaded_b.mission_leg_id == "leg-1-mission-b"
-
-    def test_delete_leg_removes_scoped_timeline(
-        self, sample_timeline, temp_missions_dir
-    ):
-        """delete_mission_timeline removes the scoped timeline file."""
-        save_mission_timeline("leg-1", sample_timeline, parent_mission_id="mission-a")
-
-        scoped = temp_missions_dir / "mission-a" / "legs" / "leg-1.timeline.json"
-        assert scoped.exists()
-
-        delete_mission_timeline("leg-1", parent_mission_id="mission-a")
-
-        assert not scoped.exists()
-
-    def test_delete_also_removes_legacy_flat_file(
-        self, sample_timeline, temp_missions_dir
-    ):
-        """delete_mission_timeline cleans up legacy flat files to prevent future pollution."""
-        import json
-
-        # Simulate a legacy flat file left over from before the fix
-        flat_path = temp_missions_dir / "leg-1.timeline.json"
-        flat_path.write_text(json.dumps(sample_timeline.model_dump(), default=str))
-
-        delete_mission_timeline("leg-1", parent_mission_id="mission-a")
-
-        assert not flat_path.exists()
-
-    def test_save_and_load_without_mission_id_uses_flat_path(
-        self, sample_timeline, temp_missions_dir
-    ):
-        """save/load without parent_mission_id round-trips through the legacy flat path."""
-        save_mission_timeline("leg-1", sample_timeline)
-
-        flat = temp_missions_dir / "leg-1.timeline.json"
-        assert flat.exists()
-
-        loaded = load_mission_timeline("leg-1")
-        assert loaded is not None
-        assert loaded.mission_leg_id == "leg-1"
-
-    def test_legacy_fallback_auto_migrates_to_scoped_path(
-        self, sample_timeline, temp_missions_dir
-    ):
-        """Loading a legacy flat file with parent_mission_id migrates it to the scoped path."""
-        import json as _json
-
-        flat_path = temp_missions_dir / "leg-1.timeline.json"
-        flat_path.write_text(_json.dumps(sample_timeline.model_dump(), default=str))
-
-        load_mission_timeline("leg-1", parent_mission_id="mission-a")
-
-        scoped = temp_missions_dir / "mission-a" / "legs" / "leg-1.timeline.json"
-        assert scoped.exists()
-        assert not flat_path.exists()
+            MissionLeg(
+                id="leg-1",
+                name="Leg 1",
+                route_id="route-1",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+        ],
+    )
+    save_mission_v2(mission)
+    save_mission_timeline(
+        "leg-1",
+        MissionLegTimeline(mission_leg_id="leg-1"),
+        parent_mission_id="timeline-exclusion",
+    )
+
+    full = load_mission_v2("timeline-exclusion")
+    metadata = load_mission_metadata_v2("timeline-exclusion")
+
+    assert full is not None
+    assert metadata is not None
+    assert [leg.id for leg in full.legs] == ["leg-1", "leg-2"]
+    assert [leg.id for leg in metadata.legs] == ["leg-1", "leg-2"]

@@ -16,7 +16,9 @@ const STATE_MESSAGES: Record<
   Exclude<OverviewUpcomingPoisState, 'available'>,
   string
 > = {
-  no_active_route: 'No active route.',
+  no_active_mission: 'No active mission leg.',
+  route_unavailable: 'Active mission leg is not bound to the active route.',
+  inconsistent_active_mission: 'Active mission state is inconsistent.',
   no_generated_pois: 'No generated POIs.',
   no_upcoming_pois: 'No upcoming POIs.',
   unavailable: 'Upcoming POIs unavailable.',
