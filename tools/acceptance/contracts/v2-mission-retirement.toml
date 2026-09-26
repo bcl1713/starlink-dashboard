@@ -6,7 +6,7 @@ assets = ["docs/missions/acceptance-assets/v2-activation-route.kml"]
 [[static_groups]]
 name = "backend"
 working_directory = "backend/starlink-location"
-commands = ["black --check app tests", "ruff check app tests", ".venv/bin/python -m pytest -q"]
+commands = ["black --check app tests", "ruff check app tests", "uv run --with-requirements requirements-dev.txt pytest -q"]
 
 [[static_groups]]
 name = "frontend"

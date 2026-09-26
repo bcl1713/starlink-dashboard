@@ -130,7 +130,11 @@ def test_v2_contract_has_only_product_authority() -> None:
     assert contract.static_groups[0].commands == (
         "black --check app tests",
         "ruff check app tests",
-        ".venv/bin/python -m pytest -q",
+        "uv run --with-requirements requirements-dev.txt pytest -q",
+    )
+    assert all(
+        ".venv/bin/python" not in command
+        for command in contract.static_groups[0].commands
     )
     assert contract.static_groups[1].commands == ("lint", "test:unit")
     assert len(contract.controls) == 5

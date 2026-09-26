@@ -49,6 +49,14 @@ _COMMAND_PREFIXES = frozenset(
     }
 )
 _SHELL_WRAPPERS = frozenset({"sh", "bash", "dash", "zsh"})
+_V2_BACKEND_VERIFICATION = (
+    "uv",
+    "run",
+    "--with-requirements",
+    "requirements-dev.txt",
+    "pytest",
+    "-q",
+)
 
 
 def load_product_contract(path: Path) -> ProductContract:
@@ -152,6 +160,8 @@ def _is_operational_command(command: str) -> bool:
         return True
     if not words:
         return True
+    if tuple(words) == _V2_BACKEND_VERIFICATION:
+        return False
     if any(word in _COMMAND_PREFIXES or word == "install" for word in words):
         return True
     return any(
