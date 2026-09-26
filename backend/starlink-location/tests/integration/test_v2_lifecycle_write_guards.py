@@ -1,8 +1,11 @@
 """HTTP regressions for server-owned V2 lifecycle state and route replacement."""
 
+import ast
+import inspect
 import io
 import json
 import multiprocessing
+import textwrap
 import threading
 import traceback
 import zipfile
@@ -378,43 +381,56 @@ def _collect_worker_roots(ready, worker_count: int):
     ]
 
 
-def _wait_for_active_coordination(signal: threading.Event) -> bool:
-    """Receive a bounded signal from an active import/activation thread."""
-    return signal.wait(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
-
-
-def _join_active_coordination(*threads: threading.Thread) -> None:
-    """Bound completion waits for the active import/activation threads."""
-    for thread in threads:
-        thread.join(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
-
-
 class TestV2LifecycleWriteGuards:
-    def test_active_coordination_waits_use_named_bounded_policy(self) -> None:
-        side_effect_entered = MagicMock()
-        side_effect_entered.wait.return_value = True
-        activation_attempted = MagicMock()
-        activation_attempted.wait.return_value = True
-        importer = MagicMock()
-        activator = MagicMock()
-
-        assert _wait_for_active_coordination(side_effect_entered)
-        assert _wait_for_active_coordination(activation_attempted)
-        _join_active_coordination(importer, activator)
+    def test_active_coordination_scenario_uses_named_bounded_policy(self) -> None:
+        scenario = ast.parse(
+            textwrap.dedent(
+                inspect.getsource(
+                    self.test_import_holds_active_coordination_through_route_side_effect
+                )
+            )
+        )
+        timeout_calls = [
+            ((call.func.value.id, call.func.attr), call.keywords[0].value)
+            for call in ast.walk(scenario)
+            if isinstance(call, ast.Call)
+            and isinstance(call.func, ast.Attribute)
+            and isinstance(call.func.value, ast.Name)
+            and call.func.value.id
+            in {
+                "side_effect_entered",
+                "activation_attempted",
+                "release_import",
+                "importer",
+                "activator",
+            }
+            and call.func.attr in {"wait", "join"}
+            and len(call.keywords) == 1
+            and call.keywords[0].arg == "timeout"
+        ]
+        timeout_arguments = dict(timeout_calls)
 
         assert ACTIVE_COORDINATION_TIMEOUT_SECONDS == 10
-        assert side_effect_entered.wait.call_args_list == [
-            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
-        ]
-        assert activation_attempted.wait.call_args_list == [
-            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
-        ]
-        assert importer.join.call_args_list == [
-            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
-        ]
-        assert activator.join.call_args_list == [
-            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
-        ]
+        assert len(timeout_calls) == 5
+        assert set(timeout_arguments) == {
+            ("side_effect_entered", "wait"),
+            ("activation_attempted", "wait"),
+            ("release_import", "wait"),
+            ("importer", "join"),
+            ("activator", "join"),
+        }
+        for target in (
+            ("side_effect_entered", "wait"),
+            ("activation_attempted", "wait"),
+            ("importer", "join"),
+            ("activator", "join"),
+        ):
+            timeout = timeout_arguments[target]
+            assert isinstance(timeout, ast.Name)
+            assert timeout.id == "ACTIVE_COORDINATION_TIMEOUT_SECONDS"
+        release_timeout = timeout_arguments["release_import", "wait"]
+        assert isinstance(release_timeout, ast.Constant)
+        assert release_timeout.value == 2
 
     def test_worker_readiness_wait_uses_named_bounded_policy(self) -> None:
         ready = MagicMock()
@@ -1008,13 +1024,14 @@ class TestV2LifecycleWriteGuards:
 
         importer = threading.Thread(target=run_import)
         importer.start()
-        assert _wait_for_active_coordination(side_effect_entered)
+        assert side_effect_entered.wait(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
         activator = threading.Thread(target=run_activation)
         activator.start()
-        assert _wait_for_active_coordination(activation_attempted)
+        assert activation_attempted.wait(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
         assert not activation_result
         release_import.set()
-        _join_active_coordination(importer, activator)
+        importer.join(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+        activator.join(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
 
         assert not importer.is_alive()
         assert not activator.is_alive()
