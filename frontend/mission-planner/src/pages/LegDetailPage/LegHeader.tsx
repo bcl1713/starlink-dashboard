@@ -2,14 +2,14 @@ import { useRef } from 'react';
 import { Button } from '../../components/ui/button';
 import { useUpdateLegRoute } from '../../hooks/api/useMissions';
 
-const ACTIVE_ROUTE_REPLACEMENT_CODE =
-  'ACTIVE_LEG_ROUTE_REPLACEMENT_FORBIDDEN';
+const ACTIVE_ROUTE_REPLACEMENT_CODE = 'ACTIVE_LEG_ROUTE_REPLACEMENT_FORBIDDEN';
 const ACTIVE_ROUTE_REPLACEMENT_INSTRUCTION =
   'Deactivate the leg, upload the replacement route, then activate the leg again.';
 
 function routeUploadErrorMessage(error: unknown): string | null {
-  const response = (error as { response?: { data?: { detail?: { code?: string } } } })
-    ?.response;
+  const response = (
+    error as { response?: { data?: { detail?: { code?: string } } } }
+  )?.response;
   return response?.data?.detail?.code === ACTIVE_ROUTE_REPLACEMENT_CODE
     ? ACTIVE_ROUTE_REPLACEMENT_INSTRUCTION
     : null;
@@ -63,7 +63,8 @@ export function LegHeader({
     } catch (error) {
       console.error('Failed to update route:', error);
       alert(
-        routeUploadErrorMessage(error) ?? 'Failed to update route. Please try again.'
+        routeUploadErrorMessage(error) ??
+          'Failed to update route. Please try again.'
       );
       if (fileInputRef.current) {
         fileInputRef.current.value = '';

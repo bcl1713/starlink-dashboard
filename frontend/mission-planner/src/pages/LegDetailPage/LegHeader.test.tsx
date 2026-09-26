@@ -23,14 +23,22 @@ describe('LegHeader route replacement feedback', () => {
       },
     });
     const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     render(
       <LegHeader missionId="mission-1" legId="leg-1" onBackClick={vi.fn()} />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Update Route' }));
     fireEvent.change(document.querySelector('input[type="file"]')!, {
-      target: { files: [new File(['kml'], 'replacement.kml', { type: 'application/vnd.google-earth.kml+xml' })] },
+      target: {
+        files: [
+          new File(['kml'], 'replacement.kml', {
+            type: 'application/vnd.google-earth.kml+xml',
+          }),
+        ],
+      },
     });
 
     await waitFor(() =>

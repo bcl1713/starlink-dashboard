@@ -125,7 +125,10 @@ describe('UpcomingPoisPanel', () => {
 
   it.each([
     ['no_active_mission', 'No active mission leg.'],
-    ['route_unavailable', 'Active mission leg is not bound to the active route.'],
+    [
+      'route_unavailable',
+      'Active mission leg is not bound to the active route.',
+    ],
     ['inconsistent_active_mission', 'Active mission state is inconsistent.'],
   ] as const)('renders truthful %s copy', (state, message) => {
     render(<UpcomingPoisPanel state={state} pois={[]} currentTime={now} />);
