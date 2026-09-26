@@ -205,10 +205,10 @@ def test_browser_card_requires_pre_and_post_neutral_metrics_and_journey_assets()
     assert "v2-activation-route.kml" in card
 
 
-def test_v2_adapter_reaches_an_enabled_missions_control_despite_background_networking(
+def test_v2_adapter_uses_bounded_commit_before_semantic_missions_readiness(
     tmp_path: Path,
 ) -> None:
-    """Initial navigation must not require transport silence before Missions is actionable."""
+    """Initial navigation commits promptly, then waits for an actionable Missions control."""
     repository = tmp_path / "repository"
     adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
     package = repository / "frontend/mission-planner/package.json"
@@ -234,8 +234,8 @@ const control = {
 const page = {
   backgroundNetworking: true,
   async goto(origin, options) {
-    if (options.waitUntil === 'networkidle') throw new Error('background networking never becomes idle');
-    if (options.waitUntil !== 'domcontentloaded') throw new Error(`unexpected navigation readiness ${options.waitUntil}`);
+    if (options.waitUntil === 'networkidle' || options.waitUntil === 'domcontentloaded') throw new Error(`forbidden navigation readiness ${options.waitUntil}`);
+    if (options.waitUntil !== 'commit' || options.timeout !== 10_000) throw new Error(`unexpected navigation readiness ${JSON.stringify(options)}`);
     if (origin !== 'http://missions.test') throw new Error('unexpected origin');
   },
   getByRole(role, options) {

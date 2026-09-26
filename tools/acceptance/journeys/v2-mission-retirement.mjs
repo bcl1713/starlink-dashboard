@@ -211,7 +211,7 @@ function scopedLifecycle(page) {
 }
 
 async function waitForMissionCreationReadiness(page, origin) {
-  await page.goto(origin, { waitUntil: 'domcontentloaded' });
+  await page.goto(origin, { waitUntil: 'commit', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
   const control = page.getByRole('button', { name: 'Create New Mission', exact: true });
   await control.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
   const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
