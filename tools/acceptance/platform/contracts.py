@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import shlex
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -35,37 +34,12 @@ _OPERATIONAL_TOKENS = (
 )
 _V2_BACKEND_COMMANDS = frozenset(
     {
-        (
-            "uv",
-            "run",
-            "--with-requirements",
-            "requirements-dev.txt",
-            "black",
-            "--check",
-            "app",
-            "tests",
-        ),
-        (
-            "uv",
-            "run",
-            "--with-requirements",
-            "requirements-dev.txt",
-            "ruff",
-            "check",
-            "app",
-            "tests",
-        ),
-        (
-            "uv",
-            "run",
-            "--with-requirements",
-            "requirements-dev.txt",
-            "pytest",
-            "-q",
-        ),
+        "uv run --with-requirements requirements-dev.txt black --check app tests",
+        "uv run --with-requirements requirements-dev.txt ruff check app tests",
+        "uv run --with-requirements requirements-dev.txt pytest -q",
     }
 )
-_STATIC_COMMANDS = _V2_BACKEND_COMMANDS | frozenset({("lint",), ("test:unit",)})
+_STATIC_COMMANDS = _V2_BACKEND_COMMANDS | frozenset({"lint", "test:unit"})
 
 
 def load_product_contract(path: Path) -> ProductContract:
@@ -163,13 +137,7 @@ def _parse_control(raw: Mapping[str, Any]) -> RuntimeControl:
 
 
 def _is_operational_command(command: str) -> bool:
-    try:
-        words = shlex.split(command)
-    except ValueError:
-        return True
-    if not words:
-        return True
-    return tuple(words) not in _STATIC_COMMANDS
+    return command not in _STATIC_COMMANDS
 
 
 def _tables(raw: Mapping[str, Any], field: str) -> list[Mapping[str, Any]]:

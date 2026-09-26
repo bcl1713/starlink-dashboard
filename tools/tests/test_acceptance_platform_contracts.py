@@ -108,6 +108,11 @@ def test_contract_rejects_package_manager_or_install_commands(
         "uv run --with-requirements requirements-dev.txt pytest -q tests/unit",
         "uv pip install -r requirements-dev.txt",
         "uv run --with-requirements requirements-dev.txt pytest -q && echo unsafe",
+        "uv  run --with-requirements requirements-dev.txt pytest -q",
+        "uv run --with-requirements 'requirements-dev.txt' pytest -q",
+        'uv run --with-requirements "requirements-dev.txt" pytest -q',
+        "uv run --with-requirements requirements-dev.txt pytest -q ",
+        "uv run --with-requirements requirements-dev.txt pytest -q\t",
     ],
 )
 def test_contract_rejects_noncanonical_static_commands(
