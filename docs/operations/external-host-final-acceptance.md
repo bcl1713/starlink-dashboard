@@ -81,7 +81,7 @@ NPM_EXECUTABLE=$(realpath "$(command -v npm)")
 mkdir -p "$BROWSER_ROOT" "$PROVISION_TASK_ROOT"
 node tools/acceptance/browser/provision-v2-mission-retirement-chromium.mjs \
   --mode provision \
-  --project-dir "$PWD" \
+  --project-dir "$PWD/frontend/mission-planner" \
   --browser-root "$BROWSER_ROOT" \
   --task-root "$PROVISION_TASK_ROOT" \
   --provenance-file "$PROVENANCE_FILE" \
@@ -247,28 +247,52 @@ new task root, and a recorded retry budget.
 ## 9. Inspect publication and cleanup
 
 Only a passed final lane with sealed, published evidence and successful cleanup
-can claim final acceptance. Inspect the published candidate manifest and
-checksums, then verify that the final task owns no remaining Docker resources,
-browser/Xvfb process, or task root.
+can claim final acceptance. The candidate root contains the sealed runner
+manifest; its fingerprint envelope binds the candidate SHA, ref, health
+digest, and runner-manifest digest, but it is not the final outcome authority.
+Verify the candidate root first. Then require its sealed runner manifest to claim
+a passed final acceptance. Independently verify the separate discoverable authority.
 
 ```bash
 FINAL_CANDIDATE_ROOT=$FINAL_EVIDENCE_ROOT/candidates/$SHA
-PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 -c 'from pathlib import Path; from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest; import sys; root = Path(sys.argv[1]); verify_manifest(root); print(read_fingerprint_authority(root).decode())' \
-  "$FINAL_CANDIDATE_ROOT"
-cat "$FINAL_CANDIDATE_ROOT/SHA256SUMS"
+FINAL_DISCOVERY_ROOT=$FINAL_EVIDENCE_ROOT/candidates/.discoverable/$SHA
+PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 - \
+  "$FINAL_CANDIDATE_ROOT" "$FINAL_DISCOVERY_ROOT" "$SHA" <<'PY'
+import hashlib, json, os, sys
+from pathlib import Path
+from acceptance.platform.evidence import read_fingerprint_authority, read_nofollow, verify_manifest
+candidate, discovery = map(Path, sys.argv[1:3]); sha = sys.argv[3]
+verify_manifest(candidate)
+runner_manifest = read_nofollow(candidate / "runner-manifest.json")
+manifest = json.loads(runner_manifest)
+if manifest.get("outcome") != "passed" or manifest.get("final_acceptance") is not True:
+    raise SystemExit("sealed runner manifest does not claim passed final acceptance")
+if os.path.lexists(candidate.parent / ".revoked" / sha):
+    raise SystemExit("candidate has a revocation entry")
+verify_manifest(discovery)
+sealed_authority = read_fingerprint_authority(discovery)
+if sealed_authority != read_nofollow(discovery / "candidate-authority.json"):
+    raise SystemExit("candidate-authority.json is not the sealed discovery authority")
+expected = {"sha": sha, "runner_manifest_sha256": hashlib.sha256(runner_manifest).hexdigest()}
+if json.loads(sealed_authority) != expected:
+    raise SystemExit("discoverable authority does not bind this runner manifest")
+print("sealed passed final authority verified")
+PY
 docker ps --filter "label=com.docker.compose.project=accept-${SHA:0:12}"
 pgrep -af "$FINAL_TASK_ROOT" || true
 pgrep -af "Xvfb|chrome|chromium" || true
 test ! -e "$FINAL_TASK_ROOT"
 ```
 
-**Stop** unless the published manifest/checksum validation succeeds, the final
-authority reports `outcome` `passed` and `final` true, the filtered Docker list
-is empty, the task-root process query is empty, and the task root is absent. Use
-the sealed cleanup result plus the runner-retained browser/Xvfb logs to establish
-that the runner-owned browser and Xvfb exited; the broad process listing is an
-audit aid and may show unrelated host processes. Do not remove persistent volumes
-unless separately authorized.
+**Stop** unless candidate and discoverable manifests validate; the runner
+manifest reports `outcome` `passed` and `final_acceptance` true; the sealed
+discoverable `candidate-authority.json` binds exactly the SHA and raw sealed
+runner-manifest SHA-256; and no revocation entry exists. Also require the
+filtered Docker list and task-root process query to be empty and the task root
+to be absent. Use the sealed cleanup result plus the runner-retained browser/Xvfb
+logs to establish that the runner-owned browser and Xvfb exited; the broad process
+listing is an audit aid and may show unrelated host processes. Do not remove
+persistent volumes unless separately authorized.
 
 Record the exact SHA/ref, external host identity, profile version/checksum,
 health fingerprint path, static result, final log, published manifest path, and
