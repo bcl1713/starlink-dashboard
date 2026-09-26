@@ -42,6 +42,7 @@ KML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <coordinates>-120.0,35.0,0 -121.0,36.0,0</coordinates>
 </LineString></Placemark></Document></kml>"""
 
+ACTIVE_COORDINATION_TIMEOUT_SECONDS = 10
 WORKER_READY_TIMEOUT_SECONDS = 60
 
 
@@ -377,7 +378,44 @@ def _collect_worker_roots(ready, worker_count: int):
     ]
 
 
+def _wait_for_active_coordination(signal: threading.Event) -> bool:
+    """Receive a bounded signal from an active import/activation thread."""
+    return signal.wait(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+
+
+def _join_active_coordination(*threads: threading.Thread) -> None:
+    """Bound completion waits for the active import/activation threads."""
+    for thread in threads:
+        thread.join(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+
+
 class TestV2LifecycleWriteGuards:
+    def test_active_coordination_waits_use_named_bounded_policy(self) -> None:
+        side_effect_entered = MagicMock()
+        side_effect_entered.wait.return_value = True
+        activation_attempted = MagicMock()
+        activation_attempted.wait.return_value = True
+        importer = MagicMock()
+        activator = MagicMock()
+
+        assert _wait_for_active_coordination(side_effect_entered)
+        assert _wait_for_active_coordination(activation_attempted)
+        _join_active_coordination(importer, activator)
+
+        assert ACTIVE_COORDINATION_TIMEOUT_SECONDS == 10
+        assert side_effect_entered.wait.call_args_list == [
+            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+        ]
+        assert activation_attempted.wait.call_args_list == [
+            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+        ]
+        assert importer.join.call_args_list == [
+            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+        ]
+        assert activator.join.call_args_list == [
+            call(timeout=ACTIVE_COORDINATION_TIMEOUT_SECONDS)
+        ]
+
     def test_worker_readiness_wait_uses_named_bounded_policy(self) -> None:
         ready = MagicMock()
         ready.get.side_effect = [
@@ -970,14 +1008,13 @@ class TestV2LifecycleWriteGuards:
 
         importer = threading.Thread(target=run_import)
         importer.start()
-        assert side_effect_entered.wait(timeout=2)
+        assert _wait_for_active_coordination(side_effect_entered)
         activator = threading.Thread(target=run_activation)
         activator.start()
-        assert activation_attempted.wait(timeout=2)
+        assert _wait_for_active_coordination(activation_attempted)
         assert not activation_result
         release_import.set()
-        importer.join(timeout=2)
-        activator.join(timeout=2)
+        _join_active_coordination(importer, activator)
 
         assert not importer.is_alive()
         assert not activator.is_alive()
