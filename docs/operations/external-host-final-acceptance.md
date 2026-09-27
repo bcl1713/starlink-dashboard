@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MAX_LINES -->
+
 # External-Host Final Acceptance
 
 Use this runbook when the Oracle host cannot provide the required Linux browser,
@@ -161,6 +163,49 @@ ACCEPTANCE_POLICY_BASE_SHA="$BASE_SHA" ./tools/verify static
 
 **Stop** on any nonzero result. This verifies the complete repository static tier;
 it is not final acceptance.
+
+## 5a. Retention maintenance is report-first and separate from a final lane
+
+Run maintenance only with the external host's repository-owned state and
+checkout roots. It is not a way to repair a failed health, static, or final lane.
+First generate and retain a report-only JSON result; the [platform operations
+runbook](acceptance-platform.md#retention-maintenance) is the detailed authority:
+
+```bash
+STATE_ROOT=$HOST_STATE/state
+CHECKOUT_RECOVERY_ROOT=$HOST_STATE/checkouts
+./tools/run-acceptance-platform.sh --maintenance retention \
+  --state-root "$STATE_ROOT" \
+  --policy tools/acceptance/platform/retention_policy.toml \
+  --checkout-root "$CHECKOUT_RECOVERY_ROOT" \
+  | tee "$LOG_ROOT/retention-report-$(date -u +%Y%m%dT%H%M%SZ).json"
+```
+
+Before an apply operation, inspect the protected final candidate, proposed
+deletions, anomalies, scoped `docker ps` output, and free disk space. Stop on an
+anomaly, unavailable lease, malformed report, or nonzero exit. Confirm mode,
+planned deletions, reclaimed-byte estimate, post-action status, and anomaly count.
+
+Only after that documented review may the operator add `--apply` to the exact
+same command and retain the resulting JSON. The policy preserves the protected
+latest final authority plus two newer completed generations per lane. The tool
+may remove only policy-selected sealed evidence and exact, fully runner-owned,
+unreferenced Docker image IDs. Never run `docker system prune`, `docker image
+prune`, `docker volume prune`, `git clean`, `git gc`, or broad deletion commands;
+volumes are inventory-only and must not be deleted.
+
+Checkout recovery is equally narrow. It removes a checkout only when a regular
+mode-0600 runner marker, exact detached SHA, clean worktree, and inactive exact
+`--acceptance-task` process all validate. Missing marker, symlink, liveness,
+authority, SHA, or cleanliness ambiguity is a retained anomaly; investigate it
+without manual deletion.
+
+The GitHub Actions retention job is the only Actions artifact lifecycle here: it
+uses complete pagination and completion-time ordering, preserves the current run
+and two newer completed runs, and deletes only selected `dockerbuild` artifact
+IDs. It never deletes workflow runs, releases, or arbitrary artifacts. GHCR is
+inventory-only: never delete GHCR versions from this runbook or the workflow.
+Missing/tied completion timestamps and incomplete pagination remain anomalies.
 
 ## 6. Certify health and verify its canonical authority
 

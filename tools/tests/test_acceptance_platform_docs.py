@@ -3,6 +3,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DOC = PROJECT_ROOT / "docs/operations/acceptance-platform.md"
+EXTERNAL_HOST_DOC = PROJECT_ROOT / "docs/operations/external-host-final-acceptance.md"
 V2_DOC = PROJECT_ROOT / "docs/missions/v2-mission-retirement-acceptance.md"
 MISSION_INDEX = PROJECT_ROOT / "docs/missions/README.md"
 V2_CONTRACT = PROJECT_ROOT / "tools/acceptance/contracts/v2-mission-retirement.toml"
@@ -34,6 +35,13 @@ def test_platform_doc_defines_administrative_browser_authority() -> None:
         assert required in lowered
     for prohibited in ("`npm`", "`npx`", "playwright installer", "inherited `path`"):
         assert prohibited in lowered
+
+
+def test_operations_docs_cover_retention() -> None:
+    for document in (PLATFORM_DOC, EXTERNAL_HOST_DOC):
+        content = document.read_text(encoding="utf-8")
+        assert "--maintenance retention" in content
+        assert "never delete GHCR" in content
 
 
 def test_platform_doc_defines_complete_health_fingerprint_validation() -> None:
