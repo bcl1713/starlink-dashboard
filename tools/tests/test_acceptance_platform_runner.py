@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import os
+import shutil
 import signal
 import struct
 import subprocess
@@ -362,9 +363,43 @@ def test_task_owned_buildx_builder_lifecycle_uses_exact_labelled_builder_without
     scoped_executor = runner._TaskBuilderComposeExecutor(executor, builder)
     scoped_executor.run(("docker", "compose", "build", "--pull"))
     assert executor.commands[-1] == (
-        "docker", "compose", "--builder", builder, "build", "--pull"
+        "docker", "compose", "build", "--builder", builder, "--pull"
     )
     assert not any("prune" in item for command in executor.commands for item in command)
+
+
+def test_task_builder_compose_uses_the_build_subcommand_builder_position() -> None:
+    """Compose treats --builder as a build option, not a global option."""
+    if shutil.which("docker") is None:
+        pytest.skip("Docker CLI is unavailable")
+    compose_version = subprocess.run(
+        ["docker", "compose", "version"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    if compose_version.returncode:
+        pytest.skip("Docker Compose CLI is unavailable")
+
+    global_position = subprocess.run(
+        ["docker", "compose", "--builder", "acceptance-contract", "build", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    subcommand_position = subprocess.run(
+        ["docker", "compose", "build", "--builder", "acceptance-contract", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+
+    assert global_position.returncode != 0
+    assert subcommand_position.returncode == 0
+    assert "--builder" in subcommand_position.stdout
 
 
 def test_cleanup_default_attempts_all_scoped_actions_and_aggregates_failures(

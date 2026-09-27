@@ -253,7 +253,7 @@ class _TaskBuilderComposeExecutor:
         if "build" not in argv:
             return self._executor.run(argv, timeout_seconds=timeout_seconds)
         build_index = argv.index("build")
-        scoped = (*argv[:build_index], "--builder", self._builder_name, *argv[build_index:])
+        scoped = (*argv[: build_index + 1], "--builder", self._builder_name, *argv[build_index + 1 :])
         return self._executor.run(scoped, timeout_seconds=timeout_seconds)
 
     def inspect_image(self, tag: str) -> str | None:

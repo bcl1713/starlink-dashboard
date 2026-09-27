@@ -95,3 +95,19 @@ No publish workflow, user documentation, plan, or retention ledger files were mo
 ### Specification compatibility note
 
 The earlier wording requiring four Docker labels on the Buildx daemon container cannot be implemented through `docker buildx create --buildkitd-flags`: BuildKit daemon flags do not support Docker `--label`. This repair uses documented Buildx selection (`docker compose --builder <name> build`) and fail-closed ownership proof via deterministic name, no-follow marker, and exact `docker buildx inspect` instead. Compose images/resources retain the four required Docker ownership labels.
+
+## Review repair round 4
+
+- Corrected `_TaskBuilderComposeExecutor` so it emits `docker compose [global args] build --builder <task-builder> ...`. The builder option is now passed to Compose's `build` subcommand rather than rejected as a global Compose option.
+- Corrected the mocked lifecycle assertion to match that command order.
+- Added a Docker Compose CLI help contract regression. When the Docker Compose CLI is available, it proves global-position `--builder` is rejected and `docker compose build --builder <name> --help` succeeds and advertises the option.
+
+### RED → GREEN evidence
+
+1. RED: `PYTHONPATH=tools pytest -q tools/tests/test_acceptance_platform_runner.py::test_task_owned_buildx_builder_lifecycle_uses_exact_labelled_builder_without_prune tools/tests/test_acceptance_platform_runner.py::test_task_builder_compose_uses_the_build_subcommand_builder_position` → `1 failed, 1 passed`; the wrapper emitted `docker compose --builder <name> build --pull`.
+2. GREEN: the same command → `2 passed in 0.51s`.
+
+### Verification
+
+- `PYTHONPATH=tools pytest -q tools/tests/test_acceptance_platform_compose.py tools/tests/test_acceptance_platform_retention.py tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_scoped_resources.py` → `186 passed in 8.70s`.
+- `python -m py_compile tools/acceptance/platform/runner.py tools/tests/test_acceptance_platform_runner.py && git diff --check` → passed.
