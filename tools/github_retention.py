@@ -33,6 +33,7 @@ class GhcrInventory:
     """Report-only GHCR classification; it deliberately has no mutation method."""
 
     old_sha_versions: tuple[GhcrVersion, ...]
+    retained_sha_versions: tuple[GhcrVersion, ...]
     non_sha_versions: tuple[str, ...]
     anomalies: tuple[str, ...]
 
@@ -42,35 +43,50 @@ def select_expired_dockerbuild_artifacts(
     artifacts: Mapping[str, Any],
     workflow_path: str,
     ref: str,
+    *,
+    current_run_id: int,
 ) -> tuple[DockerbuildArtifact, ...]:
-    """Select build records older than the newest three exact completed workflow runs."""
+    """Select expired artifacts while retaining the current run and two prior runs."""
     if not isinstance(workflow_path, str) or not workflow_path:
         raise GitHubRetentionError("workflow path must be an exact nonempty string")
     if not isinstance(ref, str) or not ref:
         raise GitHubRetentionError("ref must be an exact nonempty string")
+    _positive_id(current_run_id, "current run")
     run_records = _complete_list(runs, "workflow_runs", "runs")
     artifact_records = _complete_list(artifacts, "artifacts", "artifacts")
 
-    parsed_runs: list[tuple[datetime, int]] = []
+    completed_prior_runs: list[tuple[datetime, int]] = []
     seen_run_ids: set[int] = set()
+    current_found = False
     for record in run_records:
         mapping = _mapping(record, "run")
         run_id = _positive_id(mapping.get("id"), "run")
         if run_id in seen_run_ids:
             raise GitHubRetentionError(f"duplicate run id: {run_id}")
         seen_run_ids.add(run_id)
-        if (
-            mapping.get("path") != workflow_path
-            or mapping.get("head_branch") != ref
-            or mapping.get("status") != "completed"
-        ):
+        if mapping.get("path") != workflow_path or mapping.get("head_branch") != ref:
+            if run_id == current_run_id:
+                raise GitHubRetentionError(
+                    "current workflow run does not match workflow or ref"
+                )
             raise GitHubRetentionError("foreign or incomplete workflow run")
-        parsed_runs.append((_timestamp(mapping.get("created_at"), "run"), run_id))
+        if run_id == current_run_id:
+            current_found = True
+            if mapping.get("status") == "completed":
+                _timestamp(mapping.get("updated_at"), "run completion")
+            continue
+        if mapping.get("status") != "completed":
+            raise GitHubRetentionError("foreign or incomplete workflow run")
+        completed_prior_runs.append(
+            (_timestamp(mapping.get("updated_at"), "run completion"), run_id)
+        )
 
-    parsed_runs.sort(reverse=True)
-    if len(parsed_runs) != len({stamp for stamp, _ in parsed_runs}):
+    if not current_found:
+        raise GitHubRetentionError("current workflow run is missing")
+    completed_prior_runs.sort(reverse=True)
+    if len(completed_prior_runs) != len({stamp for stamp, _ in completed_prior_runs}):
         raise GitHubRetentionError("ambiguous run completion dates")
-    expired_ids = {run_id for _, run_id in parsed_runs[3:]}
+    expired_ids = {run_id for _, run_id in completed_prior_runs[2:]}
 
     selected: list[DockerbuildArtifact] = []
     seen_artifact_ids: set[int] = set()
@@ -96,7 +112,7 @@ def select_expired_dockerbuild_artifacts(
 def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
     """Classify exact immutable SHA tags without mutating GHCR."""
     records = _complete_list(versions, "versions", "GHCR versions")
-    old_sha_versions: list[GhcrVersion] = []
+    sha_versions: list[tuple[datetime, GhcrVersion]] = []
     non_sha_tags: list[str] = []
     anomalies: list[str] = []
     seen_ids: set[int] = set()
@@ -109,7 +125,7 @@ def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
             if version_id in seen_ids:
                 raise GitHubRetentionError(f"duplicate GHCR version id: {version_id}")
             seen_ids.add(version_id)
-            _timestamp(mapping.get("updated_at"), "GHCR version")
+            updated_at = _timestamp(mapping.get("updated_at"), "GHCR version")
             tags = _ghcr_tags(mapping)
             if len(tags) != len(set(tags)):
                 raise GitHubRetentionError(
@@ -126,14 +142,18 @@ def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
             if other_tags:
                 non_sha_tags.extend(other_tags)
             if exact_sha_tags and not other_tags:
-                old_sha_versions.append(GhcrVersion(version_id, exact_sha_tags))
+                sha_versions.append(
+                    (updated_at, GhcrVersion(version_id, exact_sha_tags))
+                )
         except GitHubRetentionError as error:
             anomalies.append(str(error))
 
+    sha_versions.sort(key=lambda item: item[0], reverse=True)
+    retained_sha_versions = tuple(version for _, version in sha_versions[:3])
+    old_sha_versions = tuple(version for _, version in sha_versions[3:])
     return GhcrInventory(
-        old_sha_versions=tuple(
-            sorted(old_sha_versions, key=lambda version: version.version_id)
-        ),
+        old_sha_versions=old_sha_versions,
+        retained_sha_versions=retained_sha_versions,
         non_sha_versions=tuple(sorted(non_sha_tags)),
         anomalies=tuple(anomalies),
     )

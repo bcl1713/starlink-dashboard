@@ -31,6 +31,7 @@ def runs_fixture(*, has_next_page: bool = False) -> dict[str, object]:
                 "head_branch": "dev",
                 "status": "completed",
                 "created_at": "2026-09-27T12:00:00Z",
+                "updated_at": "2026-09-27T12:00:00Z",
             },
             {
                 "id": 12,
@@ -38,6 +39,7 @@ def runs_fixture(*, has_next_page: bool = False) -> dict[str, object]:
                 "head_branch": "dev",
                 "status": "completed",
                 "created_at": "2026-09-27T11:00:00Z",
+                "updated_at": "2026-09-27T11:00:00Z",
             },
             {
                 "id": 13,
@@ -45,6 +47,7 @@ def runs_fixture(*, has_next_page: bool = False) -> dict[str, object]:
                 "head_branch": "dev",
                 "status": "completed",
                 "created_at": "2026-09-27T10:00:00Z",
+                "updated_at": "2026-09-27T10:00:00Z",
             },
             {
                 "id": 14,
@@ -52,6 +55,7 @@ def runs_fixture(*, has_next_page: bool = False) -> dict[str, object]:
                 "head_branch": "dev",
                 "status": "completed",
                 "created_at": "2026-09-27T09:00:00Z",
+                "updated_at": "2026-09-27T09:00:00Z",
             },
             {
                 "id": 15,
@@ -59,6 +63,7 @@ def runs_fixture(*, has_next_page: bool = False) -> dict[str, object]:
                 "head_branch": "dev",
                 "status": "completed",
                 "created_at": "2026-09-27T08:00:00Z",
+                "updated_at": "2026-09-27T08:00:00Z",
             },
         ],
         "pagination": {"complete": not has_next_page},
@@ -97,7 +102,7 @@ def package_versions_fixture() -> dict[str, object]:
 
 def test_selector_keeps_current_plus_two_prior_dev_runs() -> None:
     selected = select_expired_dockerbuild_artifacts(
-        runs_fixture(), artifacts_fixture(), WORKFLOW, "dev"
+        runs_fixture(), artifacts_fixture(), WORKFLOW, "dev", current_run_id=11
     )
 
     assert [artifact.artifact_id for artifact in selected] == [101, 102]
@@ -106,7 +111,8 @@ def test_selector_keeps_current_plus_two_prior_dev_runs() -> None:
 def test_ghcr_inventory_never_returns_deletion() -> None:
     inventory = inventory_ghcr_versions(package_versions_fixture())
 
-    assert [version.version_id for version in inventory.old_sha_versions] == [1]
+    assert inventory.old_sha_versions == ()
+    assert [version.version_id for version in inventory.retained_sha_versions] == [1]
     assert inventory.non_sha_versions == ("latest",)
     assert inventory.anomalies == ()
     assert not hasattr(inventory, "delete")
@@ -115,7 +121,7 @@ def test_ghcr_inventory_never_returns_deletion() -> None:
 def test_incomplete_pagination_blocks_partial_deletion() -> None:
     with pytest.raises(GitHubRetentionError, match="pagination"):
         select_expired_dockerbuild_artifacts(
-            runs_fixture(has_next_page=True), {}, WORKFLOW, "dev"
+            runs_fixture(has_next_page=True), {}, WORKFLOW, "dev", current_run_id=11
         )
 
 
@@ -132,7 +138,9 @@ def test_foreign_or_in_progress_run_blocks_selection() -> None:
     )
 
     with pytest.raises(GitHubRetentionError, match="foreign or incomplete"):
-        select_expired_dockerbuild_artifacts(runs, artifacts_fixture(), WORKFLOW, "dev")
+        select_expired_dockerbuild_artifacts(
+            runs, artifacts_fixture(), WORKFLOW, "dev", current_run_id=11
+        )
 
 
 def test_cli_emits_report_only_json_inventory(tmp_path: Path) -> None:
@@ -156,7 +164,8 @@ def test_cli_emits_report_only_json_inventory(tmp_path: Path) -> None:
     assert json.loads(completed.stdout) == {
         "anomalies": [],
         "non_sha_versions": ["latest"],
-        "old_sha_versions": [{"tags": [f"sha-{SHA_A}"], "version_id": 1}],
+        "old_sha_versions": [],
+        "retained_sha_versions": [{"tags": [f"sha-{SHA_A}"], "version_id": 1}],
     }
 
 
