@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from dataclasses import FrozenInstanceError
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -116,8 +117,8 @@ def test_retention_entry_is_an_immutable_classification_record() -> None:
     )
 
     assert entry.disposition is RetentionDisposition.RETAIN
-    with pytest.raises(AttributeError):
-        entry.reason = "mutated"  # type: ignore[misc]
+    with pytest.raises(FrozenInstanceError):
+        setattr(entry, "reason", "mutated")
 
 
 def test_safe_relative_returns_posix_path_within_descriptor_confined_root(

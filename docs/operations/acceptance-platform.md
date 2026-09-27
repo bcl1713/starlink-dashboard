@@ -284,9 +284,8 @@ mutable ordering timestamp, not authoritative publish completion; until an
 authoritative field exists every SHA-only version remains retained and the
 inventory reports that authority gap as an anomaly.
 
-## External-host final authority
-
-When Oracle lacks the required Linux host capacity, use the
+**External-host final authority.** When Oracle lacks the required Linux host
+capacity, use the
 [External-Host Final Acceptance](external-host-final-acceptance.md) runbook. It
 requires a fresh detached exact-SHA checkout, an administrator-created host-local
 browser profile, canonical health authority, and one tracked final lane; neither
