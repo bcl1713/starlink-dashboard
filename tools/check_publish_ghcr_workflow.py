@@ -160,22 +160,50 @@ def _without_inline_comment(value: str) -> str:
     return value.rstrip()
 
 
+def _strip_outer_parentheses(expression: str) -> str:
+    """Remove one wrapping parenthesis pair, but not a partial grouping."""
+    if not (expression.startswith("(") and expression.endswith(")")):
+        return expression
+
+    depth = 0
+    quote: str | None = None
+    for index, character in enumerate(expression):
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif quote is None and character == "(":
+            depth += 1
+        elif quote is None and character == ")":
+            depth -= 1
+            if depth == 0:
+                return expression[1:-1] if index == len(expression) - 1 else expression
+    return expression
+
+
 def _constant_boolean(expression: str) -> bool | None:
     """Evaluate the small, literal-only subset of GitHub ``if`` expressions."""
     expression = expression.strip()
     if expression.startswith("${{") and expression.endswith("}}"):
         expression = expression[3:-2].strip()
     expression = re.sub(r"\s+", "", expression).lower()
+    expression = _strip_outer_parentheses(expression)
 
     if expression in {"true", "false"}:
         return expression == "true"
     if expression.startswith("!"):
         operand = _constant_boolean(expression[1:])
         return None if operand is None else not operand
-    for operator, combine in (("||", any), ("&&", all)):
+    for operator, identity, short_circuit in (
+        ("||", False, True),
+        ("&&", True, False),
+    ):
         if operator in expression:
             operands = [_constant_boolean(part) for part in expression.split(operator)]
-            return None if any(operand is None for operand in operands) else combine(operands)
+            if short_circuit in operands:
+                return short_circuit
+            return identity if all(operand is identity for operand in operands) else None
 
     comparison = re.fullmatch(
         r"(?P<left>true|false|[0-9]+|'[^']*'|\"[^\"]*\")"

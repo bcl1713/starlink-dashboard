@@ -25,3 +25,19 @@
 
 - `c8787026 ci: retain bounded publish build records`
 - `c72376f1 fix(ci): harden retention workflow checks`
+
+## Fix round 2: short-circuit disabled-step detection
+
+- Corrected literal boolean evaluation to apply short-circuit dominance even when the other operand is dynamic: `false && dynamic` evaluates false, and `true || dynamic` evaluates true.
+- Added mutation regressions proving the checker rejects a deletion step disabled by `false && github.ref == 'refs/heads/dev'` and an upload step disabled by `!(true || github.ref == 'refs/heads/dev')`.
+- Added balanced outer-parenthesis handling so the negated disjunction is evaluated before the surrounding negation.
+
+## Fix round 2 verification
+
+- RED against base `93350a71`: both new conditions were misclassified as enabled (`[False, False]`).
+- Focused mutation suite — 2 tests passed.
+- `python -m unittest tools/tests/test_publish_ghcr_workflow.py -v` — 22 tests passed.
+- `python tools/check_publish_ghcr_workflow.py` — passed.
+- PyYAML parse of `.github/workflows/publish-ghcr.yml` — passed.
+- `python -m compileall -q tools/check_publish_ghcr_workflow.py tools/tests/test_publish_ghcr_workflow.py` — passed.
+- `git diff --check` — passed.

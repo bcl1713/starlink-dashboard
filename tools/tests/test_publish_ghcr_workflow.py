@@ -269,6 +269,38 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("GHCR inventory step must be report-only", errors)
 
+    def test_rejects_disabled_artifact_deletion_step_with_false_and_dynamic_operand(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Delete only selected artifact IDs\n        run:",
+            "      - name: Delete only selected artifact IDs\n"
+            "        if: ${{ false && github.ref == 'refs/heads/dev' }}\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
+    def test_rejects_disabled_upload_step_with_negated_true_or_dynamic_operand(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Upload retention plan\n        uses:",
+            "      - name: Upload retention plan\n"
+            "        if: ${{ !(true || github.ref == 'refs/heads/dev') }}\n"
+            "        uses:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn("retention job must upload the selected artifact plan", errors)
+
     def test_rejects_retention_without_uploaded_plan(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
