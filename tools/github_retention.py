@@ -151,6 +151,17 @@ def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
     sha_versions.sort(key=lambda item: item[0], reverse=True)
     retained_sha_versions = tuple(version for _, version in sha_versions[:3])
     old_sha_versions = tuple(version for _, version in sha_versions[3:])
+    if len(sha_versions) > 3 and sha_versions[2][0] == sha_versions[3][0]:
+        boundary = sha_versions[2][0]
+        retained_sha_versions = tuple(
+            version for updated_at, version in sha_versions if updated_at >= boundary
+        )
+        old_sha_versions = tuple(
+            version for updated_at, version in sha_versions if updated_at < boundary
+        )
+        anomalies.append(
+            "ambiguous GHCR version update dates across retention boundary"
+        )
     return GhcrInventory(
         old_sha_versions=old_sha_versions,
         retained_sha_versions=retained_sha_versions,

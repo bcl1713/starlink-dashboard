@@ -150,6 +150,81 @@ def test_ghcr_inventory_only_reports_sha_versions_beyond_newest_three() -> None:
     assert inventory.non_sha_versions == ("latest",)
 
 
+def test_ghcr_inventory_fails_closed_for_ties_across_three_version_boundary() -> None:
+    versions = [
+        {
+            "id": version_id,
+            "updated_at": updated_at,
+            "metadata": {"container": {"tags": [f"sha-{str(version_id) * 40}"]}},
+        }
+        for version_id, updated_at in (
+            (1, "2026-09-27T05:00:00Z"),
+            (2, "2026-09-27T04:00:00Z"),
+            (3, "2026-09-27T03:00:00Z"),
+            (4, "2026-09-27T03:00:00Z"),
+        )
+    ]
+
+    forward = inventory_ghcr_versions(_complete(versions, "versions"))
+    reversed_inventory = inventory_ghcr_versions(
+        _complete(list(reversed(versions)), "versions")
+    )
+
+    for inventory in (forward, reversed_inventory):
+        assert inventory.old_sha_versions == ()
+        assert {version.version_id for version in inventory.retained_sha_versions} == {
+            1,
+            2,
+            3,
+            4,
+        }
+        assert inventory.anomalies == (
+            "ambiguous GHCR version update dates across retention boundary",
+        )
+
+
+def test_cli_reports_tied_ghcr_boundary_as_anomaly_and_exits_nonzero(
+    tmp_path: Path,
+) -> None:
+    versions = _complete(
+        [
+            {
+                "id": version_id,
+                "updated_at": updated_at,
+                "metadata": {"container": {"tags": [f"sha-{str(version_id) * 40}"]}},
+            }
+            for version_id, updated_at in (
+                (1, "2026-09-27T05:00:00Z"),
+                (2, "2026-09-27T04:00:00Z"),
+                (3, "2026-09-27T03:00:00Z"),
+                (4, "2026-09-27T03:00:00Z"),
+            )
+        ],
+        "versions",
+    )
+    versions_path = tmp_path / "versions.json"
+    versions_path.write_text(json.dumps(versions), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(CLI_PATH),
+            "ghcr-inventory",
+            "--versions",
+            str(versions_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert json.loads(completed.stdout)["old_sha_versions"] == []
+    assert json.loads(completed.stdout)["anomalies"] == [
+        "ambiguous GHCR version update dates across retention boundary"
+    ]
+
+
 @pytest.mark.parametrize("argv", [[], ["select-artifacts"], ["bad-command"]])
 def test_cli_invalid_arguments_emit_json_error_envelope(argv: list[str]) -> None:
     completed = subprocess.run(
