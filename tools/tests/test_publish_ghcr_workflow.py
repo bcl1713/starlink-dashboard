@@ -286,6 +286,23 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             "retention deletion step must delete only selected artifact IDs", errors
         )
 
+    def test_rejects_disabled_artifact_deletion_step_with_nested_dynamic_or_true(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Delete only selected artifact IDs\n        run:",
+            "      - name: Delete only selected artifact IDs\n"
+            "        if: ${{ false && (github.ref == 'refs/heads/dev' || true) }}\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
     def test_rejects_disabled_upload_step_with_negated_true_or_dynamic_operand(
         self,
     ) -> None:

@@ -41,3 +41,19 @@
 - PyYAML parse of `.github/workflows/publish-ghcr.yml` — passed.
 - `python -m compileall -q tools/check_publish_ghcr_workflow.py tools/tests/test_publish_ghcr_workflow.py` — passed.
 - `git diff --check` — passed.
+
+## Fix round 3: nested disabled-step bypass
+
+- Replaced naïve `&&`/`||` string splitting with quote-aware, parenthesis-depth-aware top-level tokenization.
+- Preserved literal whitespace while compacting expression syntax, then recursively evaluated grouping, negation, conjunction, and disjunction with short-circuit dominance.
+- Added an adversarial workflow mutation regression for `false && (github.ref == 'refs/heads/dev' || true)`, which must make the protected deletion step unavailable.
+
+## Fix round 3 verification
+
+- RED: the new focused mutation test failed before the parser change because the nested `|| true` was split as a top-level disjunction and the condition was misclassified as enabled.
+- Focused regression — 1 test passed after the change.
+- `python3 -m unittest discover -s tools/tests -p 'test_publish_ghcr_workflow.py' -v` — 23 tests passed.
+- `python3 tools/check_publish_ghcr_workflow.py` — passed.
+- PyYAML parse of `.github/workflows/publish-ghcr.yml` — passed.
+- `python3 -m compileall -q tools/check_publish_ghcr_workflow.py tools/tests/test_publish_ghcr_workflow.py` — passed.
+- `git diff --check` — passed.

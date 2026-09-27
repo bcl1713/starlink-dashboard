@@ -182,12 +182,58 @@ def _strip_outer_parentheses(expression: str) -> str:
     return expression
 
 
+def _compact_expression(expression: str) -> str:
+    """Drop whitespace outside quotes while preserving literal values."""
+    compacted: list[str] = []
+    quote: str | None = None
+    for character in expression:
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        if quote is not None or not character.isspace():
+            compacted.append(character)
+    return "".join(compacted).lower()
+
+
+def _split_top_level(expression: str, operator: str) -> list[str] | None:
+    """Split an expression only at unquoted, ungrouped boolean operators."""
+    operands: list[str] = []
+    start = 0
+    depth = 0
+    quote: str | None = None
+    index = 0
+    while index < len(expression):
+        character = expression[index]
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif quote is None:
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+            elif depth == 0 and expression.startswith(operator, index):
+                operands.append(expression[start:index])
+                start = index + len(operator)
+                index += len(operator)
+                continue
+        index += 1
+    if not operands:
+        return None
+    operands.append(expression[start:])
+    return operands
+
+
 def _constant_boolean(expression: str) -> bool | None:
     """Evaluate the small, literal-only subset of GitHub ``if`` expressions."""
     expression = expression.strip()
     if expression.startswith("${{") and expression.endswith("}}"):
         expression = expression[3:-2].strip()
-    expression = re.sub(r"\s+", "", expression).lower()
+    expression = _compact_expression(expression)
     expression = _strip_outer_parentheses(expression)
 
     if expression in {"true", "false"}:
@@ -199,11 +245,12 @@ def _constant_boolean(expression: str) -> bool | None:
         ("||", False, True),
         ("&&", True, False),
     ):
-        if operator in expression:
-            operands = [_constant_boolean(part) for part in expression.split(operator)]
-            if short_circuit in operands:
+        operands = _split_top_level(expression, operator)
+        if operands is not None:
+            values = [_constant_boolean(operand) for operand in operands]
+            if short_circuit in values:
                 return short_circuit
-            return identity if all(operand is identity for operand in operands) else None
+            return identity if all(value is identity for value in values) else None
 
     comparison = re.fullmatch(
         r"(?P<left>true|false|[0-9]+|'[^']*'|\"[^\"]*\")"
