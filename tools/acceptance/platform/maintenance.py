@@ -13,7 +13,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Protocol
 
+from .compose import AcceptanceOwnershipLabels
 from .model import Lane, validate_candidate_inputs
 from .retention import (
     RetentionLockUnavailable,
@@ -32,6 +34,122 @@ class CheckoutRecoveryReport:
     @property
     def has_anomalies(self) -> bool:
         return bool(self.anomalies)
+
+
+@dataclass(frozen=True)
+class DockerResource:
+    kind: str
+    identifier: str
+
+
+class DockerCommand(Protocol):
+    def run(self, argv: tuple[str, ...]) -> str: ...
+
+
+@dataclass(frozen=True)
+class DockerImage:
+    """A listed image and its exact post-list inspection identity."""
+
+    identifier: str
+    inspected_id: str
+    labels: dict[str, str]
+    container_references: tuple[str, ...] = ()
+    ledger_references: tuple[str, ...] = ()
+
+
+class DockerRetentionDocker(Protocol):
+    def list_images(self) -> tuple[DockerImage, ...]: ...
+
+    def inspect_image(self, identifier: str) -> DockerImage | None: ...
+
+    def remove_image(self, inspected_id: str) -> None: ...
+
+
+@dataclass(frozen=True)
+class DockerRetentionReport:
+    removed: tuple[str, ...]
+    anomalies: tuple[str, ...]
+
+    @property
+    def has_anomalies(self) -> bool:
+        return bool(self.anomalies)
+
+
+def remove_scoped_docker_resource(
+    docker: DockerRetentionDocker,
+    image: DockerImage,
+    eligible_shas: set[str],
+    *,
+    apply: bool,
+) -> str | None:
+    """Remove only an unchanged, fully-owned, unreferenced inspected image ID."""
+    inspected = docker.inspect_image(image.identifier)
+    if inspected is None or inspected.inspected_id != image.inspected_id:
+        return f"retained image {image.identifier}: exact inspected ID is unavailable"
+    labels = inspected.labels
+    required = {
+        "io.starlink.acceptance.owner",
+        "io.starlink.acceptance.lane",
+        "io.starlink.acceptance.sha",
+        "io.starlink.acceptance.task",
+    }
+    if (
+        set(labels) != required
+        or labels.get("io.starlink.acceptance.owner") != "runner"
+        or not all(labels.get(key) for key in required)
+        or labels.get("io.starlink.acceptance.sha") not in eligible_shas
+        or labels != image.labels
+    ):
+        return f"retained image {image.identifier}: ownership labels are not eligible"
+    if inspected.container_references or inspected.ledger_references:
+        return f"retained image {image.identifier}: container or ledger reference remains"
+    if not apply:
+        return None
+    docker.remove_image(inspected.inspected_id)
+    remaining = docker.inspect_image(image.identifier)
+    if remaining is not None and remaining.inspected_id == inspected.inspected_id:
+        return f"retained image {image.identifier}: exact ID remains after removal"
+    return None
+
+
+def retain_docker_resources(
+    docker: DockerRetentionDocker, eligible_shas: set[str], *, apply: bool
+) -> DockerRetentionReport:
+    """Apply eligibility only to exact inspected images; volumes remain inventory-only."""
+    removed: list[str] = []
+    anomalies: list[str] = []
+    for image in docker.list_images():
+        anomaly = remove_scoped_docker_resource(
+            docker, image, eligible_shas, apply=apply
+        )
+        if anomaly:
+            anomalies.append(anomaly)
+        elif apply:
+            removed.append(image.inspected_id)
+    return DockerRetentionReport(tuple(removed), tuple(anomalies))
+
+
+def scoped_docker_inventory(
+    docker: DockerCommand, labels: AcceptanceOwnershipLabels
+) -> tuple[DockerResource, ...]:
+    """List, but never prune, only resources with the full runner label set."""
+    filters = tuple(
+        item for label in labels.as_docker_args() for item in ("--filter", f"label={label}")
+    )
+    resources: list[DockerResource] = []
+    for kind, argv in (
+        ("container", ("docker", "ps", "-aq", *filters)),
+        ("image", ("docker", "image", "ls", "-q", *filters)),
+        ("network", ("docker", "network", "ls", "-q", *filters)),
+        # Volumes are retained for evidence inspection; inventory is intentionally read-only.
+        ("volume", ("docker", "volume", "ls", "-q", *filters)),
+    ):
+        resources.extend(
+            DockerResource(kind, identifier)
+            for identifier in docker.run(argv).splitlines()
+            if identifier
+        )
+    return tuple(resources)
 
 
 def _read_marker(path: Path) -> dict[str, str]:
