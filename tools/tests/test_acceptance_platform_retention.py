@@ -356,6 +356,94 @@ def test_truncated_maintenance_report_blocks_deletion(tmp_path: Path) -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda payload: payload.update({"mode": "report"}),
+        lambda payload: payload.update({"deletions": []}),
+        lambda payload: payload["entries"].append(payload["protected_final"]),
+        lambda payload: payload["entries"].__setitem__(
+            0, {**payload["entries"][0], "reason": "wrong protected reason"}
+        ),
+    ],
+    ids=(
+        "report-only-claims-deletion",
+        "deletion-record-does-not-match-entry",
+        "protected-final-is-duplicated",
+        "protected-final-reason-disagrees",
+    ),
+)
+def test_semantically_impossible_maintenance_reports_block_deletion(
+    tmp_path: Path, mutation: object
+) -> None:
+    state = _state_with_generations(tmp_path)
+    policy = _policy(tmp_path)
+    protected_sha = "d" * 40
+    deleted_sha = "a" * 40
+    payload = _valid_maintenance_report(state, policy)
+    payload.update(
+        {
+            "mode": "apply",
+            "protected_final": {
+                "path": f"final/{protected_sha}",
+                "lane": "final",
+                "sha": protected_sha,
+                "reason": "protected final authority",
+            },
+            "entries": [
+                {
+                    "path": f"final/{protected_sha}",
+                    "lane": "final",
+                    "sha": protected_sha,
+                    "disposition": "retain",
+                    "reason": "protected final authority",
+                    "bytes": 7,
+                },
+                {
+                    "path": f"final/{deleted_sha}",
+                    "lane": "final",
+                    "sha": deleted_sha,
+                    "disposition": "delete",
+                    "reason": "expired completed generation",
+                    "bytes": 5,
+                },
+            ],
+            "deletions": [
+                {
+                    "path": f"final/{deleted_sha}",
+                    "sha": deleted_sha,
+                    "post_action": "absent",
+                }
+            ],
+            "totals": {"bytes_reclaimed": 5},
+            "counts": {
+                "entries": 2,
+                "deletions": 1,
+                "anomalies": 0,
+                "pruned_reports": 0,
+                "planned_report_prunes": 0,
+            },
+            "post_run_verification": True,
+            "anomalies": [],
+        }
+    )
+    assert callable(mutation)
+    mutation(payload)
+    reports = state / "maintenance" / "retention"
+    reports.mkdir(parents=True)
+    (reports / "impossible.json").write_text(json.dumps(payload))
+
+    plan = plan_retention(state, policy)
+
+    assert plan.has_anomalies
+    assert any(
+        "invalid maintenance retention report" in anomaly for anomaly in plan.anomalies
+    )
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
 def test_leftover_quarantine_content_blocks_future_deletion(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
     stranded = state / ".retention-quarantine" / "stranded"
@@ -380,13 +468,18 @@ def test_report_only_never_removes(tmp_path: Path) -> None:
     assert report.deletions == ()
 
 
-def test_apply_quarantines_then_verifies_absence(tmp_path: Path) -> None:
+def test_apply_fails_closed_without_destructive_mutation(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
 
-    assert not (state / "final" / ("a" * 40)).exists()
-    assert report.deletions[0].post_action == "absent"
-    assert not list((state / ".retention-quarantine").iterdir())
+    assert (state / "final" / ("a" * 40)).exists()
+    assert report.deletions == ()
+    assert report.bytes_reclaimed == 0
+    assert report.pruned_reports == 0
+    assert any(
+        "no identity-conditional directory rename" in anomaly
+        for anomaly in report.anomalies
+    )
     assert (report.path.stat().st_mode & 0o777) == 0o700
 
 
@@ -410,8 +503,9 @@ def test_parent_swap_cannot_delete_external_candidate(
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
 
     assert (external_candidate / "must-survive.txt").read_text() == "external"
-    assert not (moved_parent / ("a" * 40)).exists()
-    assert report.deletions[0].post_action == "absent"
+    assert (moved_parent / ("a" * 40)).exists()
+    assert report.deletions == ()
+    assert any("apply refused" in anomaly for anomaly in report.anomalies)
 
 
 def test_real_generation_swap_after_plan_is_retained_as_anomaly(tmp_path: Path) -> None:
@@ -430,9 +524,33 @@ def test_real_generation_swap_after_plan_is_retained_as_anomaly(tmp_path: Path) 
     assert (replacement / "must-survive.txt").read_text() == "replacement"
     assert displaced.exists()
     assert report.deletions == ()
-    assert any(
-        "planned candidate identity mismatch" in anomaly for anomaly in report.anomalies
+    assert any("apply refused" in anomaly for anomaly in report.anomalies)
+
+
+def test_replacement_at_rename_seam_survives_at_original_source_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state = _state_with_generations(tmp_path)
+    plan = plan_retention(state, _policy(tmp_path))
+    source = state / "final" / ("a" * 40)
+    displaced = state / "displaced-generation"
+
+    def replace_after_validation() -> None:
+        os.rename(source, displaced)
+        source.mkdir()
+        (source / "must-survive.txt").write_text("replacement")
+
+    monkeypatch.setattr(
+        retention, "_before_destructive_mutation", replace_after_validation
     )
+
+    report = apply_retention(plan, apply=True)
+
+    assert (source / "must-survive.txt").read_text() == "replacement"
+    assert source.exists()
+    assert displaced.exists()
+    assert not (state / ".retention-quarantine").exists()
+    assert report.deletions == ()
 
 
 @pytest.mark.parametrize("lane", [Lane.HEALTH, Lane.STATIC, Lane.DIAGNOSTIC])

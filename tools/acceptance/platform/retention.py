@@ -202,28 +202,18 @@ def plan_retention(state_root: Path, policy: RetentionPolicy) -> RetentionPlan:
 
 
 def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
-    """Write a private report; apply mode quarantines only prevalidated entries."""
+    """Write a report and fail closed rather than rename mutable evidence paths."""
     started = _utc_now()
     deletions: list[RetentionDeletion] = []
     reclaimed = 0
     anomalies = list(plan.anomalies)
-    if apply and not anomalies:
-        for entry in plan.entries:
-            if entry.disposition is not RetentionDisposition.DELETE:
-                continue
-            try:
-                _delete_entry(plan.root, entry)
-                reclaimed += entry.byte_size
-                deletions.append(RetentionDeletion(entry.path, entry.sha, "absent"))
-            except (OSError, ValueError) as error:
-                anomalies.append(f"delete failed for {entry.path}: {error}")
-    planned_prunes = _valid_report_prunes(plan.root, plan.policy, include_current=True)
     if apply:
-        for report in planned_prunes:
-            try:
-                _prune_report(plan.root, report)
-            except (OSError, ValueError) as error:
-                anomalies.append(f"report prune failed for {report.name}: {error}")
+        _before_destructive_mutation()
+        anomalies.append(
+            "apply refused: portable Python/POSIX has no identity-conditional "
+            "directory rename; mutable planned paths cannot be deleted safely"
+        )
+    planned_prunes = _valid_report_prunes(plan.root, plan.policy, include_current=True)
     ended = _utc_now()
     report_path = _write_report(
         plan.root,
@@ -233,8 +223,8 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         plan.entries,
         deletions,
         reclaimed,
-        not anomalies and all(item.post_action == "absent" for item in deletions),
-        len(planned_prunes) if apply else 0,
+        not anomalies,
+        0,
         len(planned_prunes),
         tuple(anomalies),
         mode="apply" if apply else "report",
@@ -249,8 +239,8 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         plan.entries,
         tuple(deletions),
         reclaimed,
-        not anomalies and all(item.post_action == "absent" for item in deletions),
-        len(planned_prunes) if apply else 0,
+        not anomalies,
+        0,
         len(planned_prunes),
         tuple(anomalies),
     )
@@ -416,50 +406,6 @@ def _parse_utc(value: Any) -> datetime:
     return parsed
 
 
-def _identity_tuple(metadata: os.stat_result) -> tuple[int, int, int, int]:
-    return (
-        metadata.st_dev,
-        metadata.st_ino,
-        stat.S_IFMT(metadata.st_mode),
-        stat.S_IMODE(metadata.st_mode),
-    )
-
-
-def _revalidate_planned_entry(
-    root: Path,
-    entry: RetentionEntry,
-    candidate_fd: int,
-    actual: os.stat_result,
-) -> None:
-    """Bind mutation to the plan's inode and freshly sealed candidate authority."""
-    planned = (
-        entry.planned_st_dev,
-        entry.planned_st_ino,
-        entry.planned_st_type,
-        entry.planned_st_mode,
-    )
-    if any(value is None for value in planned) or _identity_tuple(actual) != planned:
-        raise ValueError("planned candidate identity mismatch")
-    classified, valid, error = _classify_generation(
-        root, root / Path(entry.path), entry.lane
-    )
-    if (
-        valid is None
-        or error
-        or (
-            classified.sha != entry.sha
-            or (
-                classified.planned_st_dev,
-                classified.planned_st_ino,
-                classified.planned_st_type,
-                classified.planned_st_mode,
-            )
-            != planned
-        )
-    ):
-        raise ValueError("planned candidate sealed authority mismatch")
-
-
 def _report_protected_final(entry: RetentionEntry | None) -> dict[str, str] | None:
     if entry is None:
         return None
@@ -549,6 +495,71 @@ def _validate_report_payload(payload: Any, root: Path, policy: RetentionPolicy) 
         or type(payload["post_run_verification"]) is not bool
     ):
         raise ValueError("report counts, totals, or verification are invalid")
+    _validate_report_semantics(payload, entries, deletions, anomalies)
+
+
+def _validate_report_semantics(
+    payload: dict[str, Any],
+    entries: list[Any],
+    deletions: list[Any],
+    anomalies: list[Any],
+) -> None:
+    """Reject typed reports whose declared facts cannot all be true together."""
+    entry_by_identity: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for entry in entries:
+        identity = (entry["path"], entry["lane"], entry["sha"])
+        if identity in entry_by_identity:
+            raise ValueError("report entries are duplicated")
+        entry_by_identity[identity] = entry
+    protected = payload["protected_final"]
+    protected_entries = [
+        entry for entry in entries if entry["reason"] == "protected final authority"
+    ]
+    if protected is None:
+        if protected_entries:
+            raise ValueError("report protected final is missing")
+    else:
+        protected_identity = (
+            protected["path"],
+            protected["lane"],
+            protected["sha"],
+        )
+        if (
+            len(protected_entries) != 1
+            or tuple(protected_entries[0][key] for key in ("path", "lane", "sha"))
+            != protected_identity
+            or protected_entries[0]["disposition"] != RetentionDisposition.RETAIN.value
+            or protected_entries[0]["reason"] != protected["reason"]
+        ):
+            raise ValueError("report protected final does not match one retained entry")
+    deletion_identities: set[tuple[str, str]] = set()
+    reclaimed = 0
+    for deletion in deletions:
+        matching = [
+            entry
+            for entry in entries
+            if entry["path"] == deletion["path"] and entry["sha"] == deletion["sha"]
+        ]
+        if (
+            len(matching) != 1
+            or matching[0]["disposition"] != RetentionDisposition.DELETE.value
+        ):
+            raise ValueError("report deletion does not match a delete entry")
+        identity = (deletion["path"], deletion["sha"])
+        if identity in deletion_identities:
+            raise ValueError("report deletions are duplicated")
+        deletion_identities.add(identity)
+        reclaimed += matching[0]["bytes"]
+    if payload["totals"]["bytes_reclaimed"] != reclaimed:
+        raise ValueError("report reclaimed bytes do not match deletions")
+    if payload["mode"] == "report" and (
+        deletions or reclaimed or payload["counts"]["pruned_reports"]
+    ):
+        raise ValueError("report-only mode claims completed mutation")
+    if payload["counts"]["pruned_reports"] > payload["counts"]["planned_report_prunes"]:
+        raise ValueError("report prunes exceed planned prunes")
+    if payload["post_run_verification"] != (not anomalies):
+        raise ValueError("report verification disagrees with anomalies")
 
 
 def _validate_report_entry(item: Any, *, protected: bool) -> None:
@@ -586,88 +597,7 @@ def _byte_size(path: Path) -> int:
 
 
 def _before_destructive_mutation() -> None:
-    """Deterministic test seam; descriptors are already pinned when it runs."""
-
-
-def _delete_entry(root: Path, entry: RetentionEntry) -> None:
-    """Rename and remove one verified generation through pinned no-follow descriptors."""
-    if entry.path.parts != (entry.lane.value, entry.sha):
-        raise ValueError("invalid deletion entry path")
-    root_fd = _open_confined_directory(root)
-    lane_fd = candidate_fd = quarantine_fd = None
-    quarantine_name = str(uuid.uuid4())
-    try:
-        lane_fd = os.open(entry.lane.value, _DIRECTORY_FLAGS, dir_fd=root_fd)
-        candidate_fd = os.open(entry.sha, _DIRECTORY_FLAGS, dir_fd=lane_fd)
-        expected = os.fstat(candidate_fd)
-        _revalidate_planned_entry(root, entry, candidate_fd, expected)
-        try:
-            os.mkdir(".retention-quarantine", 0o700, dir_fd=root_fd)
-        except FileExistsError:
-            pass
-        quarantine_fd = os.open(
-            ".retention-quarantine", _DIRECTORY_FLAGS, dir_fd=root_fd
-        )
-        os.fchmod(quarantine_fd, 0o700)
-        _before_destructive_mutation()
-        actual = os.fstat(candidate_fd)
-        if _identity_tuple(actual) != _identity_tuple(expected):
-            raise ValueError("candidate identity changed before quarantine")
-        os.rename(
-            entry.sha,
-            quarantine_name,
-            src_dir_fd=lane_fd,
-            dst_dir_fd=quarantine_fd,
-        )
-        moved_fd = None
-        try:
-            moved_fd = os.open(quarantine_name, _DIRECTORY_FLAGS, dir_fd=quarantine_fd)
-            moved = os.fstat(moved_fd)
-            if (moved.st_dev, moved.st_ino) != (expected.st_dev, expected.st_ino):
-                raise ValueError("quarantined candidate identity mismatch")
-            _delete_tree_fd(moved_fd)
-        except (OSError, ValueError) as error:
-            raise ValueError(
-                f"quarantine retained at .retention-quarantine/{quarantine_name}: {error}"
-            ) from error
-        finally:
-            if moved_fd is not None:
-                os.close(moved_fd)
-        os.rmdir(quarantine_name, dir_fd=quarantine_fd)
-        try:
-            os.stat(entry.sha, dir_fd=lane_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            pass
-        else:
-            raise ValueError("source still present after quarantine deletion")
-        try:
-            os.stat(quarantine_name, dir_fd=quarantine_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            return
-        raise ValueError("quarantine still present after deletion")
-    finally:
-        for fd in (candidate_fd, lane_fd, quarantine_fd, root_fd):
-            if fd is not None:
-                os.close(fd)
-
-
-def _delete_tree_fd(directory_fd: int) -> None:
-    """Recursively delete a directory's children without reopening pathnames."""
-    for name in os.listdir(directory_fd):
-        metadata = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-        if stat.S_ISLNK(metadata.st_mode):
-            raise ValueError("quarantine contains symlink")
-        if stat.S_ISDIR(metadata.st_mode):
-            child_fd = os.open(name, _DIRECTORY_FLAGS, dir_fd=directory_fd)
-            try:
-                _delete_tree_fd(child_fd)
-            finally:
-                os.close(child_fd)
-            os.rmdir(name, dir_fd=directory_fd)
-        elif stat.S_ISREG(metadata.st_mode):
-            os.unlink(name, dir_fd=directory_fd)
-        else:
-            raise ValueError("quarantine contains non-regular entry")
+    """Deterministic adversarial seam before apply fails closed without mutation."""
 
 
 def _valid_report_prunes(
@@ -688,27 +618,6 @@ def _valid_report_prunes(
             continue
     limit = policy.maintenance_report_count - (1 if include_current else 0)
     return sorted(valid)[: max(0, len(valid) - limit)]
-
-
-def _prune_report(root: Path, report: Path) -> None:
-    """Unlink one planned report only if its pinned inode survives to mutation."""
-    expected = os.stat(report, follow_symlinks=False)
-    root_fd = _open_confined_directory(root)
-    maintenance_fd = retention_fd = None
-    try:
-        maintenance_fd = os.open("maintenance", _DIRECTORY_FLAGS, dir_fd=root_fd)
-        retention_fd = os.open("retention", _DIRECTORY_FLAGS, dir_fd=maintenance_fd)
-        current = os.stat(report.name, dir_fd=retention_fd, follow_symlinks=False)
-        if not stat.S_ISREG(current.st_mode) or (
-            current.st_dev,
-            current.st_ino,
-        ) != (expected.st_dev, expected.st_ino):
-            raise ValueError("report identity changed before prune")
-        os.unlink(report.name, dir_fd=retention_fd)
-    finally:
-        for fd in (retention_fd, maintenance_fd, root_fd):
-            if fd is not None:
-                os.close(fd)
 
 
 def _write_report(
