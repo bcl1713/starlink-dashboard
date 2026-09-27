@@ -141,9 +141,60 @@ def named_step_lines(workflow_text: str, job_name: str, step_name: str) -> list[
         if step and line.startswith("      - "):
             break
         step.append(line)
-    if any(line.strip() in {"if: false", "if: ${{ false }}"} for line in step):
+    if any(_is_disabled_if_line(line) for line in step):
         return []
     return step
+
+
+def _without_inline_comment(value: str) -> str:
+    """Remove a YAML inline comment without treating quoted hashes as comments."""
+    quote: str | None = None
+    for index, character in enumerate(value):
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif character == "#" and quote is None:
+            return value[:index].rstrip()
+    return value.rstrip()
+
+
+def _constant_boolean(expression: str) -> bool | None:
+    """Evaluate the small, literal-only subset of GitHub ``if`` expressions."""
+    expression = expression.strip()
+    if expression.startswith("${{") and expression.endswith("}}"):
+        expression = expression[3:-2].strip()
+    expression = re.sub(r"\s+", "", expression).lower()
+
+    if expression in {"true", "false"}:
+        return expression == "true"
+    if expression.startswith("!"):
+        operand = _constant_boolean(expression[1:])
+        return None if operand is None else not operand
+    for operator, combine in (("||", any), ("&&", all)):
+        if operator in expression:
+            operands = [_constant_boolean(part) for part in expression.split(operator)]
+            return None if any(operand is None for operand in operands) else combine(operands)
+
+    comparison = re.fullmatch(
+        r"(?P<left>true|false|[0-9]+|'[^']*'|\"[^\"]*\")"
+        r"(?P<operator>==|!=)"
+        r"(?P<right>true|false|[0-9]+|'[^']*'|\"[^\"]*\")",
+        expression,
+    )
+    if comparison is None:
+        return None
+    equal = comparison.group("left") == comparison.group("right")
+    return equal if comparison.group("operator") == "==" else not equal
+
+
+def _is_disabled_if_line(line: str) -> bool:
+    """Return whether a step's literal ``if`` condition is structurally disabled."""
+    stripped = line.strip()
+    if not stripped.startswith("if:"):
+        return False
+    return _constant_boolean(_without_inline_comment(stripped[3:])) is False
 
 
 def resolve_from_repo(repo_root: Path, value: str) -> Path:
@@ -201,6 +252,10 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
         "      packages: read",
     ]:
         errors.append("retention job permissions must be least-privileged")
+    if "    env:\n      GH_TOKEN: ${{ github.token }}" not in "\n".join(
+        retention_lines
+    ):
+        errors.append("retention gh commands must receive GH_TOKEN")
 
     selection_step = named_step_lines(
         workflow_text, "retention", "Select exact expired artifact IDs"

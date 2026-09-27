@@ -179,6 +179,15 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("retention job permissions must be least-privileged", errors)
 
+    def test_rejects_retention_without_github_token_for_gh_commands(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("    env:\n      GH_TOKEN: ${{ github.token }}\n", "")
+        )
+
+        self.assertIn("retention gh commands must receive GH_TOKEN", errors)
+
     def test_rejects_retention_selection_without_paginated_json_plan(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
@@ -218,6 +227,21 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             "retention deletion step must delete only selected artifact IDs", errors
         )
 
+    def test_rejects_disabled_artifact_deletion_step_with_inline_comment(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Delete only selected artifact IDs\n        run:",
+            "      - name: Delete only selected artifact IDs\n"
+            "        if: ${{ false }} # disabled\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
     def test_rejects_ghcr_inventory_step_with_package_delete(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
@@ -232,12 +256,38 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("GHCR inventory step must be report-only", errors)
 
+    def test_rejects_equivalently_disabled_ghcr_inventory_step(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Inventory GHCR versions without mutation\n        run:",
+            "      - name: Inventory GHCR versions without mutation\n"
+            "        if: ${{ 1 == 0 }} # disabled\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn("GHCR inventory step must be report-only", errors)
+
     def test_rejects_retention_without_uploaded_plan(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         errors = self.validate_workflow_text(
             workflow_text.replace("uses: actions/upload-artifact@v4", "run: true")
         )
+
+        self.assertIn("retention job must upload the selected artifact plan", errors)
+
+    def test_rejects_equivalently_disabled_upload_step_with_inline_comment(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Upload retention plan\n        uses:",
+            "      - name: Upload retention plan\n"
+            "        if: ${{ !true }} # disabled\n"
+            "        uses:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
 
         self.assertIn("retention job must upload the selected artifact plan", errors)
 

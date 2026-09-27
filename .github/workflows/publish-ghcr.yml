@@ -72,6 +72,8 @@ jobs:
     needs: publish
     if: ${{ github.ref == 'refs/heads/dev' && needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     permissions:
       actions: write
       contents: read
