@@ -35,6 +35,46 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
+    def test_rejects_missing_candidate_sha_build_argument(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "          build-args: |\n"
+            "            ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}\n",
+            "",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "build action must pass ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}",
+            errors,
+        )
+
+    def test_rejects_candidate_sha_build_argument_relocated_to_metadata_action(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        candidate_sha_build_arg = (
+            "          build-args: |\n"
+            "            ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}\n"
+        )
+        mutated_workflow = workflow_text.replace(candidate_sha_build_arg, "").replace(
+            "          tags: |\n"
+            "            type=sha,format=long,prefix=sha-\n"
+            "            type=ref,event=tag\n",
+            "          tags: |\n"
+            "            type=sha,format=long,prefix=sha-\n"
+            "            type=ref,event=tag\n"
+            + candidate_sha_build_arg,
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "build action must pass ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}",
+            errors,
+        )
+
     def test_rejects_stale_publish_action_when_expected_pin_is_commented(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated_workflow = workflow_text.replace(
