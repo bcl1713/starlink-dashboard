@@ -66,6 +66,8 @@ def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
         str(tmp_path / "evidence"),
         "--task-root",
         str(tmp_path / "task"),
+        "--acceptance-task",
+        "task-marker",
     ]
 
 
@@ -340,9 +342,18 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
         ports: Mapping[str, int],
         *,
         candidate_sha: str,
+        lane: str,
+        task_id: str,
     ) -> TaskTopology:
         topology = original_render(
-            repository, contract, task_root, project, ports, candidate_sha=candidate_sha
+            repository,
+            contract,
+            task_root,
+            project,
+            ports,
+            candidate_sha=candidate_sha,
+            lane=lane,
+            task_id=task_id,
         )
         executor.topology = topology
         return topology
@@ -388,6 +399,8 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
 
     topology = executor.topology
     assert topology is not None
+    assert topology.docker_labels.lane == "final"
+    assert topology.docker_labels.task == "task-marker"
     rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert {
         name: service["build"]["args"]
@@ -1093,7 +1106,9 @@ def test_wrapper_resolves_explicit_relative_contract_from_repository_root(
             str(tmp_path / "evidence"),
             "--task-root",
             str(tmp_path / "task"),
-        ],
+            "--acceptance-task",
+            "task-marker",
+            ],
         cwd=ROOT,
         check=False,
         capture_output=True,

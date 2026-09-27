@@ -33,7 +33,10 @@ while (($#)); do
         --state-root) state_root=$2 ;;
         --policy) policy=$2 ;;
         --checkout-root) checkout_root=$2 ;;
-        --acceptance-task) task=$2 ;;
+        --acceptance-task)
+          task=$2
+          runner_args+=("$1" "$2")
+          ;;
       esac
       shift 2
       ;;

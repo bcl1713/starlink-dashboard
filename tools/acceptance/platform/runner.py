@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import selectors
 import shlex
 import shutil
@@ -57,6 +58,7 @@ from .health import (
     start_final_browser_session,
     validate_fingerprint,
 )
+from .maintenance import DockerImage
 from .model import (
     BrowserProfile,
     BuildLedgerKey,
@@ -68,7 +70,73 @@ from .model import (
     validate_candidate_inputs,
 )
 
+
+class _ScopedDocker:
+    """Exact-ID Docker adapter limited to this runner's fully-labelled resources."""
+
+    def __init__(self, executor: Any, ledger_root: Path, labels: Any) -> None:
+        self._executor = executor
+        self._ledger_root = ledger_root
+        self._labels = labels
+
+    def run(self, argv: tuple[str, ...]) -> str:
+        result = self._executor.run(argv)
+        if result.returncode:
+            raise ValueError(f"scoped Docker command failed: {' '.join(argv[:4])}")
+        return result.output
+
+    def list_images(self) -> tuple[DockerImage, ...]:
+        filters = tuple(
+            item
+            for label in self._labels.as_docker_args()
+            for item in ("--filter", f"label={label}")
+        )
+        identifiers = self.run(("docker", "image", "ls", "-q", *filters)).splitlines()
+        return tuple(image for identifier in identifiers if (image := self.inspect_image(identifier)))
+
+    def inspect_image(self, identifier: str) -> DockerImage | None:
+        result = self._executor.run(("docker", "image", "inspect", identifier))
+        if result.returncode:
+            return None
+        try:
+            raw = json.loads(result.output)
+            item = raw[0] if isinstance(raw, list) else raw
+            if not isinstance(item, dict):
+                return None
+            labels = item.get("Config", {}).get("Labels", {})
+            image_id = item.get("Id")
+            if not isinstance(labels, dict) or not isinstance(image_id, str):
+                return None
+            references = self.run(("docker", "ps", "-aq", "--filter", f"ancestor={image_id}"))
+            protected = image_id in self._protected_image_ids()
+            return DockerImage(
+                identifier,
+                image_id,
+                {str(key): str(value) for key, value in labels.items()},
+                tuple(references.splitlines()),
+                ("build-ledger",) if protected else (),
+            )
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+
+    def remove_image(self, inspected_id: str) -> None:
+        self.run(("docker", "image", "rm", inspected_id))
+
+    def _protected_image_ids(self) -> set[str]:
+        protected: set[str] = set()
+        if not self._ledger_root.is_dir():
+            return protected
+        for path in self._ledger_root.glob("*.json"):
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+                values = record.get("image_ids", {}).values()
+                protected.update(value for value in values if isinstance(value, str))
+            except (OSError, ValueError, json.JSONDecodeError, AttributeError):
+                continue
+        return protected
+
 _REPOSITORY = Path(__file__).resolve().parents[3]
+_TASK_ID = re.compile(r"[A-Za-z0-9._-]+")
 _VIEWPORT = {
     "innerWidth": 1920,
     "innerHeight": 1080,
@@ -150,6 +218,7 @@ class RunnerInputs:
     lane: Lane
     sha: str
     ref: str
+    task_id: str
     profile_path: Path
     contract_path: Path
     fingerprint: Path
@@ -188,6 +257,7 @@ def _parse(argv: Sequence[str]) -> RunnerInputs:
     parser.add_argument("--lane", required=True, choices=[lane.value for lane in Lane])
     parser.add_argument("--sha", required=True)
     parser.add_argument("--ref", required=True)
+    parser.add_argument("--acceptance-task", required=True)
     parser.add_argument(
         "--profile",
         type=Path,
@@ -208,6 +278,8 @@ def _parse(argv: Sequence[str]) -> RunnerInputs:
     parser.add_argument("--deployed-origin", default="")
     parsed = parser.parse_args(list(argv))
     sha, ref = validate_candidate_inputs(parsed.sha, parsed.ref)
+    if not _TASK_ID.fullmatch(parsed.acceptance_task):
+        raise ValueError("acceptance task identity is invalid")
     evidence_root = parsed.evidence_root.absolute()
     fingerprint = parsed.fingerprint
     if fingerprint == Path("current"):
@@ -216,6 +288,7 @@ def _parse(argv: Sequence[str]) -> RunnerInputs:
         lane=Lane(parsed.lane),
         sha=sha,
         ref=ref,
+        task_id=parsed.acceptance_task,
         profile_path=parsed.profile.absolute(),
         contract_path=parsed.contract.absolute(),
         fingerprint=fingerprint.absolute(),
@@ -743,6 +816,8 @@ def _final_steps(
             "mission-planner": inputs.frontend_port,
         },
         candidate_sha=inputs.sha,
+        lane=inputs.lane.value,
+        task_id=inputs.task_id,
     )
     resource_ready((topology, executor))
     try:
@@ -823,6 +898,22 @@ def _cleanup_default(resource: object) -> None:
     topology, executor = resource
     if topology is not None:
         cleanup_compose(topology, executor)
+        from .maintenance import retain_docker_resources, scoped_docker_inventory
+
+        if not all(
+            hasattr(topology, field)
+            for field in ("rendered_override_path", "docker_labels", "candidate_sha")
+        ):
+            return
+        docker = _ScopedDocker(
+            executor,
+            topology.rendered_override_path.parent / "build-ledger",
+            topology.docker_labels,
+        )
+        scoped_docker_inventory(docker, topology.docker_labels)
+        report = retain_docker_resources(docker, {topology.candidate_sha}, apply=True)
+        if report.has_anomalies:
+            raise ValueError("scoped Docker cleanup retained protected or unsafe resources")
 
 
 def _outcome_for(error: BaseException) -> Outcome:
