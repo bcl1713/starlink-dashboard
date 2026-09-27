@@ -84,6 +84,7 @@ class RetentionReport:
 _DIRECTORY_FLAGS = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
 _FILE_FLAGS = os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC
 _SHA_LENGTH = 40
+_REPORT_TOOL_VERSION = "acceptance-retention-v1"
 _ALLOWED_TOP_LEVEL = frozenset({lane.value for lane in Lane}) | {
     "maintenance",
     "logs",
@@ -182,6 +183,10 @@ def plan_retention(state_root: Path, policy: RetentionPolicy) -> RetentionPlan:
                 else "newest completed generation"
             ),
             byte_size=entry.byte_size,
+            planned_st_dev=entry.planned_st_dev,
+            planned_st_ino=entry.planned_st_ino,
+            planned_st_type=entry.planned_st_type,
+            planned_st_mode=entry.planned_st_mode,
         )
         for entry in entries
     )
@@ -232,6 +237,8 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         len(planned_prunes) if apply else 0,
         len(planned_prunes),
         tuple(anomalies),
+        mode="apply" if apply else "report",
+        protected_final=plan.protected_final,
     )
     return RetentionReport(
         report_path,
@@ -295,6 +302,9 @@ def _classify_generation(
         ended = _parse_utc(capture.get("ended_at"))
         if manifest.get("outcome") != "passed":
             raise ValueError("incomplete runner outcome")
+        identity = os.stat(generation, follow_symlinks=False)
+        if not stat.S_ISDIR(identity.st_mode):
+            raise ValueError("generation must be a directory")
         return (
             RetentionEntry(
                 path,
@@ -303,6 +313,10 @@ def _classify_generation(
                 RetentionDisposition.RETAIN,
                 "valid sealed generation",
                 size,
+                identity.st_dev,
+                identity.st_ino,
+                stat.S_IFMT(identity.st_mode),
+                stat.S_IMODE(identity.st_mode),
             ),
             (ended, final),
             "",
@@ -380,11 +394,7 @@ def _validate_maintenance(
                 continue
             try:
                 payload = json.loads(read_nofollow(report))
-                if not isinstance(payload, dict) or (
-                    payload.get("root") != str(root)
-                    or payload.get("policy_digest") != policy.digest
-                ):
-                    raise ValueError("report authority mismatch")
+                _validate_report_payload(payload, root, policy)
             except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
                 anomalies.append(
                     f"invalid maintenance retention report: {report.name}: {error}"
@@ -404,6 +414,166 @@ def _parse_utc(value: Any) -> datetime:
     if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
         raise ValueError("capture timestamp must be UTC")
     return parsed
+
+
+def _identity_tuple(metadata: os.stat_result) -> tuple[int, int, int, int]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        stat.S_IFMT(metadata.st_mode),
+        stat.S_IMODE(metadata.st_mode),
+    )
+
+
+def _revalidate_planned_entry(
+    root: Path,
+    entry: RetentionEntry,
+    candidate_fd: int,
+    actual: os.stat_result,
+) -> None:
+    """Bind mutation to the plan's inode and freshly sealed candidate authority."""
+    planned = (
+        entry.planned_st_dev,
+        entry.planned_st_ino,
+        entry.planned_st_type,
+        entry.planned_st_mode,
+    )
+    if any(value is None for value in planned) or _identity_tuple(actual) != planned:
+        raise ValueError("planned candidate identity mismatch")
+    classified, valid, error = _classify_generation(
+        root, root / Path(entry.path), entry.lane
+    )
+    if (
+        valid is None
+        or error
+        or (
+            classified.sha != entry.sha
+            or (
+                classified.planned_st_dev,
+                classified.planned_st_ino,
+                classified.planned_st_type,
+                classified.planned_st_mode,
+            )
+            != planned
+        )
+    ):
+        raise ValueError("planned candidate sealed authority mismatch")
+
+
+def _report_protected_final(entry: RetentionEntry | None) -> dict[str, str] | None:
+    if entry is None:
+        return None
+    return {
+        "path": str(entry.path),
+        "lane": entry.lane.value,
+        "sha": entry.sha,
+        "reason": entry.reason,
+    }
+
+
+def _validate_report_payload(payload: Any, root: Path, policy: RetentionPolicy) -> None:
+    """Recognize only the complete, typed report layout emitted by this module."""
+    expected_keys = {
+        "root",
+        "policy_digest",
+        "tool_version",
+        "mode",
+        "started_at",
+        "ended_at",
+        "protected_final",
+        "entries",
+        "deletions",
+        "totals",
+        "counts",
+        "post_run_verification",
+        "anomalies",
+    }
+    if not isinstance(payload, dict) or set(payload) != expected_keys:
+        raise ValueError("report schema mismatch")
+    if (
+        payload["root"] != str(root)
+        or payload["policy_digest"] != policy.digest
+        or payload["tool_version"] != _REPORT_TOOL_VERSION
+        or payload["mode"] not in {"report", "apply"}
+    ):
+        raise ValueError("report authority mismatch")
+    started, ended = _parse_utc(payload["started_at"]), _parse_utc(payload["ended_at"])
+    if ended < started:
+        raise ValueError("report UTC bounds are invalid")
+    protected = payload["protected_final"]
+    if protected is not None:
+        _validate_report_entry(protected, protected=True)
+    entries, deletions, anomalies = (
+        payload["entries"],
+        payload["deletions"],
+        payload["anomalies"],
+    )
+    if (
+        not isinstance(entries, list)
+        or not isinstance(deletions, list)
+        or not isinstance(anomalies, list)
+    ):
+        raise TypeError("report collection types are invalid")
+    for item in entries:
+        _validate_report_entry(item, protected=False)
+    for item in deletions:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"path", "sha", "post_action"}
+            or not isinstance(item["path"], str)
+            or not _is_sha(item["sha"])
+            or item["post_action"] != "absent"
+        ):
+            raise ValueError("report deletion layout is invalid")
+    if not all(isinstance(item, str) for item in anomalies):
+        raise ValueError("report anomalies are invalid")
+    totals, counts = payload["totals"], payload["counts"]
+    if (
+        not isinstance(totals, dict)
+        or set(totals) != {"bytes_reclaimed"}
+        or type(totals["bytes_reclaimed"]) is not int
+        or totals["bytes_reclaimed"] < 0
+        or not isinstance(counts, dict)
+        or set(counts)
+        != {
+            "entries",
+            "deletions",
+            "anomalies",
+            "pruned_reports",
+            "planned_report_prunes",
+        }
+        or any(type(value) is not int or value < 0 for value in counts.values())
+        or counts["entries"] != len(entries)
+        or counts["deletions"] != len(deletions)
+        or counts["anomalies"] != len(anomalies)
+        or type(payload["post_run_verification"]) is not bool
+    ):
+        raise ValueError("report counts, totals, or verification are invalid")
+
+
+def _validate_report_entry(item: Any, *, protected: bool) -> None:
+    expected = {"path", "lane", "sha", "reason"}
+    if not protected:
+        expected |= {"disposition", "bytes"}
+    if not isinstance(item, dict) or set(item) != expected:
+        raise ValueError("report entry layout is invalid")
+    lane, sha = item["lane"], item["sha"]
+    if (
+        lane not in {member.value for member in Lane}
+        or not _is_sha(sha)
+        or item["path"] != f"{lane}/{sha}"
+        or not isinstance(item["reason"], str)
+    ):
+        raise ValueError("report entry authority is invalid")
+    if protected:
+        if lane != Lane.FINAL.value or item["reason"] != "protected final authority":
+            raise ValueError("protected final report identity is invalid")
+    elif (
+        item["disposition"] not in {member.value for member in RetentionDisposition}
+        or type(item["bytes"]) is not int
+        or item["bytes"] < 0
+    ):
+        raise ValueError("report entry values are invalid")
 
 
 def _byte_size(path: Path) -> int:
@@ -430,6 +600,7 @@ def _delete_entry(root: Path, entry: RetentionEntry) -> None:
         lane_fd = os.open(entry.lane.value, _DIRECTORY_FLAGS, dir_fd=root_fd)
         candidate_fd = os.open(entry.sha, _DIRECTORY_FLAGS, dir_fd=lane_fd)
         expected = os.fstat(candidate_fd)
+        _revalidate_planned_entry(root, entry, candidate_fd, expected)
         try:
             os.mkdir(".retention-quarantine", 0o700, dir_fd=root_fd)
         except FileExistsError:
@@ -440,7 +611,7 @@ def _delete_entry(root: Path, entry: RetentionEntry) -> None:
         os.fchmod(quarantine_fd, 0o700)
         _before_destructive_mutation()
         actual = os.fstat(candidate_fd)
-        if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
+        if _identity_tuple(actual) != _identity_tuple(expected):
             raise ValueError("candidate identity changed before quarantine")
         os.rename(
             entry.sha,
@@ -511,11 +682,8 @@ def _valid_report_prunes(
             if path.is_symlink() or not path.is_file():
                 continue
             payload = json.loads(read_nofollow(path))
-            if (
-                payload.get("root") == str(root)
-                and payload.get("policy_digest") == policy.digest
-            ):
-                valid.append(path)
+            _validate_report_payload(payload, root, policy)
+            valid.append(path)
         except (OSError, ValueError, TypeError, json.JSONDecodeError):
             continue
     limit = policy.maintenance_report_count - (1 if include_current else 0)
@@ -555,6 +723,9 @@ def _write_report(
     pruned: int,
     planned_prunes: int,
     anomalies: tuple[str, ...],
+    *,
+    mode: str,
+    protected_final: RetentionEntry | None,
 ) -> Path:
     root_fd = _open_confined_directory(root)
     maintenance_fd = retention_fd = None
@@ -566,12 +737,18 @@ def _write_report(
         payload = {
             "root": str(root),
             "policy_digest": policy.digest,
+            "tool_version": _REPORT_TOOL_VERSION,
+            "mode": mode,
             "started_at": started,
             "ended_at": ended,
-            "dispositions": [
+            "protected_final": _report_protected_final(protected_final),
+            "entries": [
                 {
                     "path": str(entry.path),
+                    "lane": entry.lane.value,
+                    "sha": entry.sha,
                     "disposition": entry.disposition.value,
+                    "reason": entry.reason,
                     "bytes": entry.byte_size,
                 }
                 for entry in entries
@@ -584,10 +761,15 @@ def _write_report(
                 }
                 for item in deletions
             ],
-            "bytes_reclaimed": reclaimed,
-            "post_action_verified": verified,
-            "pruned_reports": pruned,
-            "planned_report_prunes": planned_prunes,
+            "totals": {"bytes_reclaimed": reclaimed},
+            "counts": {
+                "entries": len(entries),
+                "deletions": len(deletions),
+                "anomalies": len(anomalies),
+                "pruned_reports": pruned,
+                "planned_report_prunes": planned_prunes,
+            },
+            "post_run_verification": verified,
             "anomalies": list(anomalies),
         }
         fd = os.open(

@@ -179,6 +179,32 @@ def _policy(tmp_path: Path) -> RetentionPolicy:
     return RetentionPolicy.parse(path)
 
 
+def _valid_maintenance_report(
+    state: Path, policy: RetentionPolicy
+) -> dict[str, object]:
+    return {
+        "root": str(state),
+        "policy_digest": policy.digest,
+        "tool_version": "acceptance-retention-v1",
+        "mode": "report",
+        "started_at": "2026-09-27T00:00:00+00:00",
+        "ended_at": "2026-09-27T00:00:01+00:00",
+        "protected_final": None,
+        "entries": [],
+        "deletions": [],
+        "totals": {"bytes_reclaimed": 0},
+        "counts": {
+            "entries": 0,
+            "deletions": 0,
+            "anomalies": 0,
+            "pruned_reports": 0,
+            "planned_report_prunes": 0,
+        },
+        "post_run_verification": True,
+        "anomalies": [],
+    }
+
+
 def _write_generation(
     state: Path,
     lane: Lane,
@@ -311,6 +337,25 @@ def test_unknown_maintenance_content_blocks_deletion(tmp_path: Path) -> None:
     )
 
 
+def test_truncated_maintenance_report_blocks_deletion(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    reports = state / "maintenance" / "retention"
+    reports.mkdir(parents=True)
+    (reports / "invented.json").write_text(
+        json.dumps({"root": str(state), "policy_digest": _policy(tmp_path).digest})
+    )
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert any(
+        "invalid maintenance retention report" in anomaly for anomaly in plan.anomalies
+    )
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
 def test_leftover_quarantine_content_blocks_future_deletion(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
     stranded = state / ".retention-quarantine" / "stranded"
@@ -367,6 +412,27 @@ def test_parent_swap_cannot_delete_external_candidate(
     assert (external_candidate / "must-survive.txt").read_text() == "external"
     assert not (moved_parent / ("a" * 40)).exists()
     assert report.deletions[0].post_action == "absent"
+
+
+def test_real_generation_swap_after_plan_is_retained_as_anomaly(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    plan = plan_retention(state, _policy(tmp_path))
+    original = state / "final" / ("a" * 40)
+    displaced = state / "displaced-generation"
+    replacement = state / "final" / ("a" * 40)
+
+    os.rename(original, displaced)
+    replacement.mkdir()
+    (replacement / "must-survive.txt").write_text("replacement")
+
+    report = apply_retention(plan, apply=True)
+
+    assert (replacement / "must-survive.txt").read_text() == "replacement"
+    assert displaced.exists()
+    assert report.deletions == ()
+    assert any(
+        "planned candidate identity mismatch" in anomaly for anomaly in report.anomalies
+    )
 
 
 @pytest.mark.parametrize("lane", [Lane.HEALTH, Lane.STATIC, Lane.DIAGNOSTIC])
@@ -453,10 +519,11 @@ def test_prunes_only_valid_maintenance_reports_above_ninety(tmp_path: Path) -> N
     state = _state_with_generations(tmp_path)
     reports = state / "maintenance" / "retention"
     reports.mkdir(parents=True)
+    policy = _policy(tmp_path)
     for index in range(91):
-        (reports / f"2026-09-27T00-00-{index:02d}-report.json").write_text(
-            json.dumps({"root": str(state), "policy_digest": _policy(tmp_path).digest})
-        )
+        path = reports / f"2026-09-27T00-00-{index:02d}-report.json"
+        path.write_text(json.dumps(_valid_maintenance_report(state, policy)))
+        path.chmod(0o700)
     (reports / "corrupt.json").write_text("not json")
 
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=False)

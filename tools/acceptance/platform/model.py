@@ -41,6 +41,10 @@ class RetentionEntry:
     disposition: RetentionDisposition
     reason: str
     byte_size: int
+    planned_st_dev: int | None = None
+    planned_st_ino: int | None = None
+    planned_st_type: int | None = None
+    planned_st_mode: int | None = None
 
 
 @dataclass(frozen=True)
