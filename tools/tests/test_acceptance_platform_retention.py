@@ -40,6 +40,33 @@ def test_policy_rejects_nonfixed_completed_generation_count(
 
 
 @pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("version", "true"),
+        ("version", "1.0"),
+        ("completed_generations_per_lane", "true"),
+        ("completed_generations_per_lane", "3.0"),
+        ("maintenance_report_count", "true"),
+        ("maintenance_report_count", "90.0"),
+    ],
+)
+def test_policy_rejects_type_confused_fixed_values(
+    tmp_path: Path, key: str, value: str
+) -> None:
+    policy_path = tmp_path / "retention-policy.toml"
+    values = {
+        "version": "1",
+        "completed_generations_per_lane": "3",
+        "maintenance_report_count": "90",
+    }
+    values[key] = value
+    policy_path.write_text("".join(f"{name} = {number}\n" for name, number in values.items()))
+
+    with pytest.raises(ValueError):
+        RetentionPolicy.parse(policy_path)
+
+
+@pytest.mark.parametrize(
     "content",
     [
         "version = 2\ncompleted_generations_per_lane = 3\nmaintenance_report_count = 90\n",
@@ -100,6 +127,14 @@ def test_safe_relative_rejects_lexical_escape(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError):
         safe_relative(canonical_root(root), root / ".." / "outside")
+
+
+def test_safe_relative_rejects_retention_root_itself(tmp_path: Path) -> None:
+    root = tmp_path / "state"
+    root.mkdir()
+
+    with pytest.raises(ValueError):
+        safe_relative(canonical_root(root), root)
 
 
 def test_canonical_root_rejects_symlink(tmp_path: Path) -> None:

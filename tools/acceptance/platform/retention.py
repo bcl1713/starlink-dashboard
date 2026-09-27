@@ -33,7 +33,7 @@ class RetentionPolicy:
             "completed_generations_per_lane": 3,
             "maintenance_report_count": 90,
         }
-        if values != expected:
+        if values != expected or any(type(values[key]) is not int for key in expected):
             raise ValueError("retention policy must match the fixed contract")
         return cls(**expected, digest=hashlib.sha256(raw).hexdigest())
 
@@ -58,7 +58,7 @@ def safe_relative(root: Path, candidate: Path) -> PurePosixPath:
         relative = candidate.relative_to(root)
     except ValueError as error:
         raise ValueError("candidate escapes retention root") from error
-    if any(part in {"", ".", ".."} for part in relative.parts):
+    if not relative.parts or any(part in {"", ".", ".."} for part in relative.parts):
         raise ValueError("candidate escapes retention root")
     root_fd = _open_confined_directory(root)
     _walk_existing_components(root_fd, relative)
