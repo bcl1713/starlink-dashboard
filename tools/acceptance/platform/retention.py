@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import json
 import os
+import platform
 import stat
 import uuid
 from dataclasses import dataclass
@@ -85,6 +87,8 @@ _DIRECTORY_FLAGS = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
 _FILE_FLAGS = os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC
 _SHA_LENGTH = 40
 _REPORT_TOOL_VERSION = "acceptance-retention-v1"
+_RENAME_EXCHANGE = 0x2
+_RENAMEAT2_NUMBERS = {"x86_64": 316, "aarch64": 276, "armv7l": 382}
 _ALLOWED_TOP_LEVEL = frozenset({lane.value for lane in Lane}) | {
     "maintenance",
     "logs",
@@ -207,12 +211,20 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
     deletions: list[RetentionDeletion] = []
     reclaimed = 0
     anomalies = list(plan.anomalies)
-    if apply:
-        _before_destructive_mutation()
-        anomalies.append(
-            "apply refused: portable Python/POSIX has no identity-conditional "
-            "directory rename; mutable planned paths cannot be deleted safely"
-        )
+    if apply and not anomalies:
+        for entry in plan.entries:
+            if entry.disposition is not RetentionDisposition.DELETE:
+                continue
+            try:
+                _delete_planned_entry(plan.root, entry)
+                deletions.append(RetentionDeletion(entry.path, entry.sha, "absent"))
+                reclaimed += entry.byte_size
+            except _AtomicExchangeUnavailable as error:
+                anomalies.append(f"atomic exchange unavailable: {error}")
+                break
+            except (OSError, ValueError) as error:
+                anomalies.append(f"retained {entry.path}: {error}")
+                break
     planned_prunes = _valid_report_prunes(plan.root, plan.policy, include_current=True)
     ended = _utc_now()
     report_path = _write_report(
@@ -223,7 +235,7 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         plan.entries,
         deletions,
         reclaimed,
-        not anomalies,
+        not anomalies and (not apply or len(deletions) == _delete_count(plan.entries)),
         0,
         len(planned_prunes),
         tuple(anomalies),
@@ -239,7 +251,7 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         plan.entries,
         tuple(deletions),
         reclaimed,
-        not anomalies,
+        not anomalies and (not apply or len(deletions) == _delete_count(plan.entries)),
         0,
         len(planned_prunes),
         tuple(anomalies),
@@ -552,10 +564,21 @@ def _validate_report_semantics(
         reclaimed += matching[0]["bytes"]
     if payload["totals"]["bytes_reclaimed"] != reclaimed:
         raise ValueError("report reclaimed bytes do not match deletions")
+    delete_entries = [
+        entry
+        for entry in entries
+        if entry["disposition"] == RetentionDisposition.DELETE.value
+    ]
     if payload["mode"] == "report" and (
         deletions or reclaimed or payload["counts"]["pruned_reports"]
     ):
         raise ValueError("report-only mode claims completed mutation")
+    if (
+        payload["mode"] == "apply"
+        and not anomalies
+        and len(deletions) != len(delete_entries)
+    ):
+        raise ValueError("successful apply omits planned deletion reconciliation")
     if payload["counts"]["pruned_reports"] > payload["counts"]["planned_report_prunes"]:
         raise ValueError("report prunes exceed planned prunes")
     if payload["post_run_verification"] != (not anomalies):
@@ -596,8 +619,95 @@ def _byte_size(path: Path) -> int:
     return total
 
 
-def _before_destructive_mutation() -> None:
-    """Deterministic adversarial seam before apply fails closed without mutation."""
+class _AtomicExchangeUnavailable(RuntimeError):
+    """The host cannot provide the required atomic renameat2 exchange."""
+
+
+def _renameat2_exchange(
+    old_dir_fd: int, old_name: str, new_dir_fd: int, new_name: str
+) -> None:
+    """Call Linux renameat2(RENAME_EXCHANGE) without a third-party dependency."""
+    number = _RENAMEAT2_NUMBERS.get(platform.machine().lower())
+    if os.name != "posix" or number is None:
+        raise _AtomicExchangeUnavailable("renameat2 is unsupported on this host")
+    libc = ctypes.CDLL(None, use_errno=True)
+    result = libc.syscall(
+        number,
+        old_dir_fd,
+        os.fsencode(old_name),
+        new_dir_fd,
+        os.fsencode(new_name),
+        _RENAME_EXCHANGE,
+    )
+    if result != 0:
+        error = ctypes.get_errno()
+        if error in {38, 22, 95}:
+            raise _AtomicExchangeUnavailable(os.strerror(error))
+        raise OSError(error, os.strerror(error))
+
+
+def _after_exchange(_quarantined: Path, _entry: RetentionEntry) -> None:
+    """Deterministic test seam after exchange and before identity inspection."""
+
+
+def _delete_planned_entry(root: Path, entry: RetentionEntry) -> None:
+    """Exchange the mutable source with an empty sentinel before deleting it."""
+    root_fd = _open_confined_directory(root)
+    lane_fd = quarantine_fd = None
+    sentinel = str(uuid.uuid4())
+    quarantine_path = root / ".retention-quarantine" / sentinel
+    try:
+        lane_fd = os.open(entry.lane.value, _DIRECTORY_FLAGS, dir_fd=root_fd)
+        quarantine_fd = _mkdir_open(".retention-quarantine", root_fd)
+        os.mkdir(sentinel, 0o700, dir_fd=quarantine_fd)
+        _renameat2_exchange(lane_fd, entry.sha, quarantine_fd, sentinel)
+        _after_exchange(quarantine_path, entry)
+        quarantined = os.stat(sentinel, dir_fd=quarantine_fd, follow_symlinks=False)
+        if not _matches_planned_identity(quarantined, entry):
+            _renameat2_exchange(lane_fd, entry.sha, quarantine_fd, sentinel)
+            raise ValueError("atomic exchange identity mismatch; replacement restored")
+        _remove_tree_at(quarantine_fd, sentinel)
+        os.rmdir(entry.sha, dir_fd=lane_fd)
+        _assert_absent(lane_fd, entry.sha)
+        _assert_absent(quarantine_fd, sentinel)
+    finally:
+        for fd in (quarantine_fd, lane_fd, root_fd):
+            if fd is not None:
+                os.close(fd)
+
+
+def _matches_planned_identity(identity: os.stat_result, entry: RetentionEntry) -> bool:
+    return (
+        identity.st_dev == entry.planned_st_dev
+        and identity.st_ino == entry.planned_st_ino
+        and stat.S_IFMT(identity.st_mode) == entry.planned_st_type
+        and stat.S_IMODE(identity.st_mode) == entry.planned_st_mode
+    )
+
+
+def _remove_tree_at(parent_fd: int, name: str) -> None:
+    directory_fd = os.open(name, _DIRECTORY_FLAGS, dir_fd=parent_fd)
+    try:
+        for child in os.scandir(directory_fd):
+            if child.is_dir(follow_symlinks=False):
+                _remove_tree_at(directory_fd, child.name)
+            else:
+                os.unlink(child.name, dir_fd=directory_fd)
+    finally:
+        os.close(directory_fd)
+    os.rmdir(name, dir_fd=parent_fd)
+
+
+def _assert_absent(parent_fd: int, name: str) -> None:
+    try:
+        os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    raise ValueError("post-action path remains present")
+
+
+def _delete_count(entries: tuple[RetentionEntry, ...]) -> int:
+    return sum(entry.disposition is RetentionDisposition.DELETE for entry in entries)
 
 
 def _valid_report_prunes(

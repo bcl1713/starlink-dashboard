@@ -468,66 +468,21 @@ def test_report_only_never_removes(tmp_path: Path) -> None:
     assert report.deletions == ()
 
 
-def test_apply_fails_closed_without_destructive_mutation(tmp_path: Path) -> None:
+def test_apply_deletes_planned_generation_with_atomic_exchange(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
 
-    assert (state / "final" / ("a" * 40)).exists()
-    assert report.deletions == ()
-    assert report.bytes_reclaimed == 0
+    assert not (state / "final" / ("a" * 40)).exists()
+    assert len(report.deletions) == 1
+    assert report.deletions[0].sha == "a" * 40
+    assert report.deletions[0].post_action == "absent"
+    assert report.bytes_reclaimed > 0
     assert report.pruned_reports == 0
-    assert any(
-        "no identity-conditional directory rename" in anomaly
-        for anomaly in report.anomalies
-    )
+    assert report.anomalies == ()
     assert (report.path.stat().st_mode & 0o777) == 0o700
 
 
-def test_parent_swap_cannot_delete_external_candidate(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    state = _state_with_generations(tmp_path)
-    external_parent = tmp_path / "external"
-    external_candidate = external_parent / ("a" * 40)
-    external_candidate.mkdir(parents=True)
-    (external_candidate / "must-survive.txt").write_text("external")
-    original_parent = state / "final"
-    moved_parent = state / "held-final"
-
-    def swap_parent() -> None:
-        os.rename(original_parent, moved_parent)
-        original_parent.symlink_to(external_parent, target_is_directory=True)
-
-    monkeypatch.setattr(retention, "_before_destructive_mutation", swap_parent)
-
-    report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
-
-    assert (external_candidate / "must-survive.txt").read_text() == "external"
-    assert (moved_parent / ("a" * 40)).exists()
-    assert report.deletions == ()
-    assert any("apply refused" in anomaly for anomaly in report.anomalies)
-
-
-def test_real_generation_swap_after_plan_is_retained_as_anomaly(tmp_path: Path) -> None:
-    state = _state_with_generations(tmp_path)
-    plan = plan_retention(state, _policy(tmp_path))
-    original = state / "final" / ("a" * 40)
-    displaced = state / "displaced-generation"
-    replacement = state / "final" / ("a" * 40)
-
-    os.rename(original, displaced)
-    replacement.mkdir()
-    (replacement / "must-survive.txt").write_text("replacement")
-
-    report = apply_retention(plan, apply=True)
-
-    assert (replacement / "must-survive.txt").read_text() == "replacement"
-    assert displaced.exists()
-    assert report.deletions == ()
-    assert any("apply refused" in anomaly for anomaly in report.anomalies)
-
-
-def test_replacement_at_rename_seam_survives_at_original_source_path(
+def test_exchange_identity_mismatch_rolls_replacement_back_to_source(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     state = _state_with_generations(tmp_path)
@@ -535,22 +490,39 @@ def test_replacement_at_rename_seam_survives_at_original_source_path(
     source = state / "final" / ("a" * 40)
     displaced = state / "displaced-generation"
 
-    def replace_after_validation() -> None:
-        os.rename(source, displaced)
-        source.mkdir()
-        (source / "must-survive.txt").write_text("replacement")
+    def replace_quarantined_entry(quarantined: Path, _entry: RetentionEntry) -> None:
+        os.rename(quarantined, displaced)
+        quarantined.mkdir()
+        (quarantined / "must-survive.txt").write_text("replacement")
 
-    monkeypatch.setattr(
-        retention, "_before_destructive_mutation", replace_after_validation
-    )
+    monkeypatch.setattr(retention, "_after_exchange", replace_quarantined_entry)
 
     report = apply_retention(plan, apply=True)
 
     assert (source / "must-survive.txt").read_text() == "replacement"
-    assert source.exists()
     assert displaced.exists()
-    assert not (state / ".retention-quarantine").exists()
     assert report.deletions == ()
+    assert any("identity mismatch" in anomaly for anomaly in report.anomalies)
+
+
+def test_apply_without_atomic_exchange_capability_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state = _state_with_generations(tmp_path)
+    plan = plan_retention(state, _policy(tmp_path))
+    source = state / "final" / ("a" * 40)
+
+    def unavailable(*_args: object) -> None:
+        raise retention._AtomicExchangeUnavailable("unsupported")
+
+    monkeypatch.setattr(retention, "_renameat2_exchange", unavailable)
+
+    report = apply_retention(plan, apply=True)
+
+    assert source.exists()
+    assert report.deletions == ()
+    assert report.bytes_reclaimed == 0
+    assert any("atomic exchange unavailable" in anomaly for anomaly in report.anomalies)
 
 
 @pytest.mark.parametrize("lane", [Lane.HEALTH, Lane.STATIC, Lane.DIAGNOSTIC])
