@@ -59,21 +59,26 @@ def workflow_entries(workflow_path: Path) -> list[dict[str, str]]:
     return entries
 
 
-def publish_job_lines(workflow_text: str) -> list[str]:
-    """Return only lines belonging to the publish job."""
+def job_lines(workflow_text: str, job_name: str) -> list[str]:
+    """Return only lines belonging to an enabled top-level job."""
     lines: list[str] = []
-    in_publish_job = False
+    in_job = False
 
     for line in workflow_text.splitlines():
-        if PUBLISH_JOB_PATTERN.match(line):
-            in_publish_job = True
+        if line == f"  {job_name}:":
+            in_job = True
             continue
-        if in_publish_job and JOB_PATTERN.match(line):
+        if in_job and JOB_PATTERN.match(line):
             break
-        if in_publish_job:
+        if in_job:
             lines.append(line)
 
     return lines
+
+
+def publish_job_lines(workflow_text: str) -> list[str]:
+    """Return only lines belonging to the publish job."""
+    return job_lines(workflow_text, "publish")
 
 
 def publish_actions(workflow_text: str) -> list[str]:
@@ -123,6 +128,24 @@ def build_action_with_text(workflow_text: str) -> str:
     return "\n".join(step_lines[with_start:])
 
 
+def named_step_lines(workflow_text: str, job_name: str, step_name: str) -> list[str]:
+    """Return an enabled named step from its job, never a commented decoy."""
+    lines = job_lines(workflow_text, job_name)
+    header = f"      - name: {step_name}"
+    try:
+        start = lines.index(header)
+    except ValueError:
+        return []
+    step: list[str] = []
+    for line in lines[start:]:
+        if step and line.startswith("      - "):
+            break
+        step.append(line)
+    if any(line.strip() in {"if: false", "if: ${{ false }}"} for line in step):
+        return []
+    return step
+
+
 def resolve_from_repo(repo_root: Path, value: str) -> Path:
     """Resolve a repository-relative workflow value without following outside it."""
     resolved = (repo_root / value).resolve()
@@ -158,6 +181,75 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
 
     if "matrix.file || 'Dockerfile'" in workflow_text:
         errors.append("build action must not fall back to an ambiguous Dockerfile")
+
+    retention_lines = job_lines(workflow_text, "retention")
+    if "    needs: publish" not in retention_lines:
+        errors.append("retention job must depend on successful publish")
+    if (
+        "    if: ${{ github.ref == 'refs/heads/dev' && needs.publish.result == 'success' }}"
+        not in retention_lines
+    ):
+        errors.append("retention job must run only for a successful publish on dev")
+    retention_permissions = (
+        retention_lines[retention_lines.index("    permissions:") + 1 :][:3]
+        if "    permissions:" in retention_lines
+        else []
+    )
+    if retention_permissions != [
+        "      actions: write",
+        "      contents: read",
+        "      packages: read",
+    ]:
+        errors.append("retention job permissions must be least-privileged")
+
+    selection_step = named_step_lines(
+        workflow_text, "retention", "Select exact expired artifact IDs"
+    )
+    selection_text = "\n".join(selection_step)
+    if (
+        selection_step == []
+        or selection_text.count("gh api --paginate --slurp") < 2
+        or "--current-run-id \"$GITHUB_RUN_ID\"" not in selection_text
+        or "pagination: {complete: true}" not in selection_text
+    ):
+        errors.append("retention selection step must paginate complete JSON inputs")
+    if 'map(.workflow_runs[] | .path |= split("@")[0])' not in selection_text:
+        errors.append(
+            "retention selection step must normalize workflow paths for the CLI plan"
+        )
+
+    deletion_step = named_step_lines(
+        workflow_text, "retention", "Delete only selected artifact IDs"
+    )
+    deletion_text = "\n".join(deletion_step)
+    if (
+        deletion_step == []
+        or ".expired_dockerbuild_artifacts[].artifact_id" not in deletion_text
+        or 'gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"'
+        not in deletion_text
+    ):
+        errors.append("retention deletion step must delete only selected artifact IDs")
+
+    ghcr_step = named_step_lines(
+        workflow_text, "retention", "Inventory GHCR versions without mutation"
+    )
+    ghcr_text = "\n".join(ghcr_step)
+    if (
+        ghcr_step == []
+        or "python tools/github_retention_cli.py ghcr-inventory" not in ghcr_text
+        or "gh api --paginate --slurp" not in ghcr_text
+        or "gh api --method" in ghcr_text
+    ):
+        errors.append("GHCR inventory step must be report-only")
+
+    upload_step = named_step_lines(workflow_text, "retention", "Upload retention plan")
+    upload_text = "\n".join(upload_step)
+    if (
+        upload_step == []
+        or "uses: actions/upload-artifact@v4" not in upload_text
+        or "path: retention/artifact-plan.json" not in upload_text
+    ):
+        errors.append("retention job must upload the selected artifact plan")
 
     expected_entry_count = len(EXPECTED_IMAGES)
     if len(entries) != expected_entry_count:

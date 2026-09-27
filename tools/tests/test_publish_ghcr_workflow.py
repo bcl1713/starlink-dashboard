@@ -150,6 +150,97 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
         self.assertIn("publish matrix must contain exactly 4 entries, got 3", errors)
         self.assertIn("missing publish matrix images: grafana", errors)
 
+    def test_rejects_retention_without_publish_dependency(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("needs: publish", "")
+        )
+
+        self.assertIn("retention job must depend on successful publish", errors)
+
+    def test_rejects_retention_without_dev_success_condition(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("needs.publish.result == 'success'", "true")
+        )
+
+        self.assertIn(
+            "retention job must run only for a successful publish on dev", errors
+        )
+
+    def test_rejects_retention_without_actions_write_permission(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("      actions: write", "      actions: read")
+        )
+
+        self.assertIn("retention job permissions must be least-privileged", errors)
+
+    def test_rejects_retention_selection_without_paginated_json_plan(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("gh api --paginate --slurp", "gh api --slurp")
+        )
+
+        self.assertIn(
+            "retention selection step must paginate complete JSON inputs", errors
+        )
+
+    def test_rejects_retention_runs_with_ref_qualified_workflow_paths(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            'map(.workflow_runs[] | .path |= split("@")[0]) | unique_by(.id)',
+            "map(.workflow_runs[]) | unique_by(.id)",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention selection step must normalize workflow paths for the CLI plan",
+            errors,
+        )
+
+    def test_rejects_artifact_deletion_that_is_not_exact_selected_id_endpoint(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace(
+                "gh api --method DELETE \"repos/${{ github.repository }}/actions/artifacts/$artifact_id\"",
+                "gh api --method DELETE \"repos/${{ github.repository }}/actions/artifacts\"",
+            )
+        )
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
+    def test_rejects_ghcr_inventory_step_with_package_delete(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace(
+                "          set -euo pipefail\n          for package",
+                "          set -euo pipefail\n"
+                "          gh api --method DELETE \"orgs/${{ github.repository_owner }}/packages/container/example/versions/1\"\n"
+                "          for package",
+            )
+        )
+
+        self.assertIn("GHCR inventory step must be report-only", errors)
+
+    def test_rejects_retention_without_uploaded_plan(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("uses: actions/upload-artifact@v4", "run: true")
+        )
+
+        self.assertIn("retention job must upload the selected artifact plan", errors)
+
 
 if __name__ == "__main__":
     unittest.main()
