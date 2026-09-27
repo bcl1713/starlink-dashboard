@@ -1034,16 +1034,32 @@ def test_final_wrapper_retains_checkout_when_marker_creation_fails(tmp_path: Pat
         """
 case "$*" in
   *'rev-parse '*) printf '%s\\n' "$SHA" ;;
-  *'worktree add'*) mkdir -p "${@: -2:1}" ;;
+  *'worktree add'*)
+    checkout="${@: -2:1}"
+    "$REAL_GIT" init -q "$checkout"
+    "$REAL_GIT" -C "$checkout" config user.email acceptance@example.invalid
+    "$REAL_GIT" -C "$checkout" config user.name Acceptance
+    printf 'tracked\\n' > "$checkout/tracked.txt"
+    "$REAL_GIT" -C "$checkout" add tracked.txt
+    "$REAL_GIT" -C "$checkout" commit -qm initial
+    "$REAL_GIT" -C "$checkout" checkout --detach -q
+    ;;
 esac
 """,
     )
-    _recording_executable(commands / "chmod", "exit 1")
+    _recording_executable(commands / "chmod", "rm -- \"$2\"\nexit 1")
 
     result = subprocess.run(
         [str(ROOT / "tools/run-acceptance-platform.sh"), "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance", "--evidence-root", str(state_root), "--task-root", str(task_root), "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"), "--checkout-root", str(checkout_root), "--acceptance-task", "task-marker"],
         cwd=ROOT,
-        env={**os.environ, "PATH": f"{commands}:{os.environ['PATH']}", "SHA": SHA},
+        env={
+            **os.environ,
+            "PATH": f"{commands}:{os.environ['PATH']}",
+            "SHA": SHA,
+            "REAL_GIT": subprocess.run(
+                ["bash", "-c", "command -v git"], check=True, text=True, capture_output=True
+            ).stdout.strip(),
+        },
         check=False,
         text=True,
         capture_output=True,
@@ -1054,6 +1070,7 @@ esac
     report = maintenance.recover_abandoned_checkouts(checkout_root, _retention_policy())
     assert report.has_anomalies
     assert any(checkout_root.iterdir())
+    assert any("ownership marker is missing" in anomaly for anomaly in report.anomalies)
 
 
 def test_wrapper_resolves_explicit_relative_contract_from_repository_root(

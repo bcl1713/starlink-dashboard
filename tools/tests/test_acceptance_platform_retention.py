@@ -383,6 +383,54 @@ def test_unmarked_immediate_checkout_child_is_retained_as_an_anomaly(tmp_path: P
     assert any("unmarked-checkout" in anomaly and "ownership marker" in anomaly for anomaly in report.anomalies)
 
 
+@pytest.mark.parametrize(
+    ("failure_mode", "expected_anomaly"),
+    [
+        ("absent", "ownership marker is missing"),
+        ("malformed", "ownership marker fields are invalid"),
+        ("mismatched", "checkout HEAD does not match marker SHA"),
+    ],
+)
+def test_recovery_retains_real_detached_checkout_after_marker_creation_failure(
+    tmp_path: Path, failure_mode: str, expected_anomaly: str
+) -> None:
+    checkout_root = tmp_path / "checkouts"
+    checkout_root.mkdir()
+    checkout = _marked_checkout(checkout_root, mutation="safe")
+    marker = checkout / ".acceptance-runner-owner.json"
+    failing_chmod = tmp_path / "chmod"
+    failing_chmod.write_text(
+        "#!/usr/bin/env bash\n"
+        "case \"$MARKER_FAILURE_MODE\" in\n"
+        "  absent) rm -- \"$2\" ;;\n"
+        "  malformed) printf '{}' > \"$2\" ;;\n"
+        "  mismatched) printf '%s\\n' \"$MISMATCHED_MARKER\" > \"$2\" ;;\n"
+        "esac\n"
+        "exit 1\n"
+    )
+    failing_chmod.chmod(0o755)
+    mismatched = json.loads(marker.read_text())
+    mismatched["sha"] = "b" * 40
+    creation = subprocess.run(
+        ["bash", "-c", "umask 077; printf '{}' > \"$1\"; \"$2\" 0600 \"$1\"", "_", str(marker), str(failing_chmod)],
+        check=False,
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "MARKER_FAILURE_MODE": failure_mode,
+            "MISMATCHED_MARKER": json.dumps(mismatched),
+        },
+    )
+
+    assert creation.returncode == 1
+    report = maintenance.recover_abandoned_checkouts(checkout_root, _policy(tmp_path))
+
+    assert checkout.exists()
+    assert report.has_anomalies
+    assert any(expected_anomaly in anomaly for anomaly in report.anomalies)
+
+
 def test_keeps_protected_final_and_two_newest(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
 
