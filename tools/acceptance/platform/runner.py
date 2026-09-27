@@ -35,6 +35,7 @@ from .compose import (
     BuildLedger,
     BuildSupervisionFailure,
     SubprocessComposeExecutor,
+    TaskTopology,
     build_final,
     cleanup_compose,
     render_task_override,
@@ -121,6 +122,82 @@ class _ScopedDocker:
 
     def remove_image(self, inspected_id: str) -> None:
         self.run(("docker", "image", "rm", inspected_id))
+
+    @property
+    def task_builder_name(self) -> str:
+        """A deterministic builder namespace derived only from task identity and SHA."""
+        return f"acceptance-{self._labels.task}-{self._labels.sha[:12]}"
+
+    @property
+    def _task_builder_container(self) -> str:
+        return f"buildx_buildkit_{self.task_builder_name}0"
+
+    def create_task_builder(self) -> None:
+        """Create/select and verify one labelled BuildKit builder before the final build."""
+        buildkitd_flags = " ".join(
+            f"--label {shlex.quote(label)}" for label in self._labels.as_docker_args()
+        )
+        self._run_buildx(
+            (
+                "create",
+                "--name",
+                self.task_builder_name,
+                "--driver",
+                "docker-container",
+                "--buildkitd-flags",
+                buildkitd_flags,
+                "--use",
+            )
+        )
+        self._run_buildx(("inspect", self.task_builder_name, "--bootstrap"))
+        self._validate_task_builder_labels()
+
+    def remove_task_builder(self) -> None:
+        """Remove only a verified task builder (and its builder-local cache), then recheck."""
+        if not self._task_builder_exists():
+            return
+        self._validate_task_builder_labels()
+        self._run_buildx(("rm", self.task_builder_name))
+        if self._task_builder_exists():
+            raise ValueError("task Buildx builder remains after exact removal")
+
+    def _task_builder_exists(self) -> bool:
+        result = self._executor.run(("docker", "buildx", "inspect", self.task_builder_name))
+        if result.returncode:
+            self._raise_if_buildx_unsupported(result.output)
+            return False
+        return True
+
+    def _run_buildx(self, arguments: tuple[str, ...]) -> str:
+        result = self._executor.run(("docker", "buildx", *arguments))
+        if result.returncode:
+            self._raise_if_buildx_unsupported(result.output)
+            raise ValueError(f"task Buildx command failed: {' '.join(arguments[:2])}")
+        return result.output
+
+    @staticmethod
+    def _raise_if_buildx_unsupported(output: str) -> None:
+        message = output.lower()
+        if any(
+            marker in message
+            for marker in ("not a docker command", "unknown command", "buildx is not installed")
+        ):
+            raise ValueError("Buildx unsupported for task-owned cleanup")
+
+    def _validate_task_builder_labels(self) -> None:
+        result = self._executor.run(("docker", "inspect", self._task_builder_container))
+        if result.returncode:
+            raise ValueError("task Buildx builder container is unavailable")
+        try:
+            raw = json.loads(result.output)
+            item = raw[0] if isinstance(raw, list) else raw
+            labels = item.get("Config", {}).get("Labels", {})
+        except (AttributeError, IndexError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError("task Buildx builder labels are invalid") from error
+        if not isinstance(labels, dict) or any(
+            labels.get(key) != value for key, value in self._labels.values().items()
+        ):
+            raise ValueError("task Buildx builder ownership labels are invalid")
 
     def _protected_image_ids(self) -> set[str]:
         protected: set[str] = set()
@@ -819,9 +896,13 @@ def _final_steps(
         lane=inputs.lane.value,
         task_id=inputs.task_id,
     )
-    resource_ready((topology, executor))
+    resource_ready((topology, executor, inputs.ledger_root))
     try:
         resolve_topology(topology, contract, executor)
+        if isinstance(topology, TaskTopology):
+            _ScopedDocker(
+                executor, inputs.ledger_root, topology.docker_labels
+            ).create_task_builder()
         key = BuildLedgerKey(inputs.sha, profile.checksum, contract.checksum)
         ledger = BuildLedger(inputs.ledger_root)
         built = build_final(topology, profile, contract, key, ledger, executor)
@@ -895,7 +976,10 @@ def _final_steps(
 
 
 def _cleanup_default(resource: object) -> None:
-    topology, executor = resource
+    if not isinstance(resource, tuple) or len(resource) not in {2, 3}:
+        raise ValueError("final cleanup resource is invalid")
+    topology, executor = resource[:2]
+    ledger_root = resource[2] if len(resource) == 3 else None
     if topology is not None:
         cleanup_compose(topology, executor)
         from .maintenance import retain_docker_resources, scoped_docker_inventory
@@ -903,13 +987,14 @@ def _cleanup_default(resource: object) -> None:
         if not all(
             hasattr(topology, field)
             for field in ("rendered_override_path", "docker_labels", "candidate_sha")
-        ):
+        ) or not isinstance(ledger_root, Path):
             return
         docker = _ScopedDocker(
             executor,
-            topology.rendered_override_path.parent / "build-ledger",
+            ledger_root,
             topology.docker_labels,
         )
+        docker.remove_task_builder()
         scoped_docker_inventory(docker, topology.docker_labels)
         report = retain_docker_resources(docker, {topology.candidate_sha}, apply=True)
         if report.has_anomalies:

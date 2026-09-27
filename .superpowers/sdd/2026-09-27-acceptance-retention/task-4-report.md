@@ -56,3 +56,23 @@ No publish workflow, user documentation, plan, or retention ledger files were mo
 - Focused GREEN: `pytest -q tools/tests/test_acceptance_platform_scoped_resources.py tools/tests/test_acceptance_platform_compose.py tools/tests/test_acceptance_platform_runner.py` → `121 passed in 15.61s`.
 - Broad suite: `pytest -q tools/tests` → `1381 passed, 1 skipped, 3 failed`. The failures are outside this change set: missing Grafana Infinity plugin declaration and two `tools/verify` tests blocked by required `ACCEPTANCE_POLICY_BASE_SHA`.
 - `git diff --check` passed.
+
+## Review repair round 2
+
+- Passed the configured `RunnerInputs.ledger_root` into the final cleanup resource. `_ScopedDocker` now reads that exact ledger root, so a protected image referenced only by an alternate ledger is retained and no exact-ID image removal is issued.
+- Added a task-owned Buildx lifecycle through `_ScopedDocker`: the final path creates and selects deterministic `acceptance-<task>-<sha12>` `docker-container` builder before the final build, applies all four ownership labels through BuildKit daemon flags, bootstraps it, and validates the builder-container labels.
+- Cleanup re-inspects the exact builder and its labels, runs only `docker buildx rm <exact-name>` (which removes that builder's local cache), then verifies the named builder is absent. It never invokes a Docker/Buildx prune command. Wrong labels refuse removal; unsupported Buildx produces a bounded cleanup failure rather than a broad fallback.
+
+### RED → GREEN evidence
+
+1. Alternate-ledger cleanup test RED: `_cleanup_default` unpacked only `(topology, executor)`, producing `too many values to unpack (expected 2)` when passed the configured ledger root.
+2. After threading `inputs.ledger_root` through the resource, that regression passed and confirmed no `docker image rm sha256:protected` command.
+3. Buildx lifecycle tests RED: `_ScopedDocker` had no `create_task_builder` / `remove_task_builder` methods (`AttributeError`).
+4. Implemented the adapter lifecycle; deterministic creation, four-label validation, exact removal/absence, unsupported Buildx, and no-prune assertions pass without calling local Buildx.
+
+### Verification
+
+- `pytest -q tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_scoped_resources.py` → `79 passed in 5.39s`.
+- `pytest -q tools/tests/test_acceptance_platform_compose.py tools/tests/test_acceptance_platform_retention.py tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_scoped_resources.py` → `184 passed in 8.90s`.
+- `python -m compileall -q tools/acceptance/platform/runner.py tools/tests/test_acceptance_platform_runner.py && git diff --check` → passed.
+- Repository-wide `pytest -q` remains blocked at collection by pre-existing environment/test-root problems: missing `spacex_api`, incompatible protobuf runtime for `grpc_reflection`, and `test_bounds.py` requiring `/app`.

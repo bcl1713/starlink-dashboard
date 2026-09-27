@@ -16,6 +16,7 @@ from typing import ClassVar
 import pytest
 from acceptance.platform import maintenance, runner
 from acceptance.platform.compose import (
+    AcceptanceOwnershipLabels,
     BuildLedger,
     BuildLedgerKey,
     BuildProgressEvent,
@@ -35,7 +36,7 @@ from acceptance.platform.model import (
     ProductContract,
 )
 from acceptance.platform.retention import RetentionPolicy
-from acceptance.platform.runner import RunnerDependencies, main, run
+from acceptance.platform.runner import RunnerDependencies, _ScopedDocker, main, run
 
 SHA = "a" * 40
 ROOT = Path(__file__).resolve().parents[2]
@@ -252,6 +253,150 @@ def test_missing_health_fingerprint_skips_product_executor(tmp_path: Path) -> No
     assert calls == []
 
 
+def test_cleanup_default_preserves_image_protected_by_configured_alternate_ledger_root(
+    tmp_path: Path,
+) -> None:
+    """Cleanup must use the runner's configured ledger, not the topology directory."""
+
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+    topology = TaskTopology(
+        repository=tmp_path,
+        project="accept-cleanup",
+        candidate_sha=SHA,
+        services=(),
+        env_file=tmp_path / "compose.env",
+        override_path=tmp_path / "task" / "compose.acceptance.json",
+        root_override_path=tmp_path / "compose.root-public-env.yml",
+        validation_path=tmp_path / "topology.validated.json",
+        ports={},
+        docker_labels=labels,
+    )
+    topology.rendered_override_path.parent.mkdir(parents=True)
+    alternate_ledger = tmp_path / "alternate-ledger"
+    alternate_ledger.mkdir()
+    (alternate_ledger / "protected.json").write_text(
+        json.dumps({"image_ids": {"service": "sha256:protected"}}),
+        encoding="utf-8",
+    )
+
+    class CleanupExecutor:
+        def __init__(self) -> None:
+            self.commands: list[tuple[str, ...]] = []
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(1, "no such builder")
+            if argv[:3] == ("docker", "image", "ls"):
+                return CommandResult(0, "candidate-tag\n")
+            if argv[:3] == ("docker", "image", "inspect"):
+                return CommandResult(
+                    0,
+                    json.dumps(
+                        [{"Id": "sha256:protected", "Config": {"Labels": labels.values()}}]
+                    ),
+                )
+            return CommandResult(0, "")
+
+    executor = CleanupExecutor()
+
+    with pytest.raises(ValueError, match="retained protected or unsafe"):
+        runner._cleanup_default((topology, executor, alternate_ledger))
+
+    assert ("docker", "image", "rm", "sha256:protected") not in executor.commands
+
+
+def test_task_owned_buildx_builder_lifecycle_uses_exact_labelled_builder_without_prune(
+    tmp_path: Path,
+) -> None:
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+
+    class BuildxExecutor:
+        def __init__(self) -> None:
+            self.commands: list[tuple[str, ...]] = []
+            self.present = False
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if argv[:3] == ("docker", "buildx", "create"):
+                self.present = True
+                return CommandResult(0, "acceptance-task-marker-aaaaaaaaaaaa\n")
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(0 if self.present else 1, "")
+            if argv[:2] == ("docker", "inspect"):
+                return CommandResult(
+                    0 if self.present else 1,
+                    json.dumps([{"Config": {"Labels": labels.values()}}])
+                    if self.present
+                    else "",
+                )
+            if argv[:3] == ("docker", "buildx", "rm"):
+                self.present = False
+                return CommandResult(0, "")
+            return CommandResult(0, "")
+
+    executor = BuildxExecutor()
+    docker = _ScopedDocker(executor, tmp_path / "ledger", labels)
+
+    docker.create_task_builder()
+    docker.remove_task_builder()
+
+    builder = "acceptance-task-marker-aaaaaaaaaaaa"
+    create = executor.commands[0]
+    assert create[:6] == (
+        "docker",
+        "buildx",
+        "create",
+        "--name",
+        builder,
+        "--driver",
+    )
+    assert "--use" in create
+    flags = create[create.index("--buildkitd-flags") + 1]
+    assert all(f"--label {label}" in flags for label in labels.as_docker_args())
+    assert ("docker", "buildx", "rm", builder) in executor.commands
+    assert executor.commands[-1] == ("docker", "buildx", "inspect", builder)
+    assert not any("prune" in item for command in executor.commands for item in command)
+
+
+def test_task_owned_buildx_cleanup_refuses_wrong_labels_and_unsupported_buildx(
+    tmp_path: Path,
+) -> None:
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+
+    class WrongLabelExecutor:
+        def __init__(self, unsupported: bool = False) -> None:
+            self.commands: list[tuple[str, ...]] = []
+            self.unsupported = unsupported
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if self.unsupported and argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(1, "docker: 'buildx' is not a docker command")
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(0, "")
+            if argv[:2] == ("docker", "inspect"):
+                return CommandResult(0, json.dumps([{"Config": {"Labels": {}}}]))
+            return CommandResult(0, "")
+
+    wrong = WrongLabelExecutor()
+    with pytest.raises(ValueError, match="ownership labels"):
+        _ScopedDocker(wrong, tmp_path / "ledger", labels).remove_task_builder()
+    assert not any(command[:3] == ("docker", "buildx", "rm") for command in wrong.commands)
+
+    unsupported = WrongLabelExecutor(unsupported=True)
+    with pytest.raises(ValueError, match="Buildx unsupported"):
+        _ScopedDocker(unsupported, tmp_path / "ledger", labels).remove_task_builder()
+    assert not any(command[:3] == ("docker", "buildx", "rm") for command in unsupported.commands)
+    assert not any("prune" in item for command in unsupported.commands for item in command)
+
+
 def test_final_requires_every_required_result(tmp_path: Path) -> None:
     result = run(
         _argv(tmp_path, "final"),
@@ -360,6 +505,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
 
     monkeypatch.setattr(runner, "render_task_override", render)
     monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda _: executor)
+    monkeypatch.setattr(runner._ScopedDocker, "create_task_builder", lambda _: None)
     monkeypatch.setattr(runner, "_cleanup_task_root", lambda _: None)
 
     result = run(
@@ -625,6 +771,7 @@ def _install_supervised_final_build(
 
     monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: Adapter())
     monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
+    monkeypatch.setattr(runner._ScopedDocker, "create_task_builder", lambda _: None)
 
     def fail_build(
         _topology: TaskTopology,
