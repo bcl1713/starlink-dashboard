@@ -109,6 +109,7 @@ class PlatformBrowserSession:
     _bundle: BrowserBundle
     _launch: BrowserLaunchSpec
     _browser: Any
+    _browser_group: int | None
     _xvfb: Any
     _xvfb_socket_identity: tuple[int, int] | None = None
     _closed: bool = False
@@ -132,7 +133,16 @@ class PlatformBrowserSession:
             ) as error:
                 errors.append(error)
 
-        attempt(lambda: _terminate_browser_group(self._browser))
+        def terminate_browser() -> None:
+            try:
+                _terminate_browser_group(self._browser, self._browser_group)
+            except _BrowserGroupCleanupError as error:
+                self.artifacts["browser-cleanup.json"] = json.dumps(
+                    {"pgid": error.pgid, "pids": error.pids}, sort_keys=True
+                ).encode()
+                raise
+
+        attempt(terminate_browser)
         attempt(lambda: _terminate(self._xvfb))
         attempt(
             lambda: _remove_xvfb_socket_after_exit(
@@ -149,7 +159,7 @@ class PlatformBrowserSession:
                 self.display,
                 int(self.cdp_url.rsplit(":", 1)[1]),
                 self.profile_dir,
-                _browser_group_id(self._browser),
+                self._browser_group,
                 self._xvfb_socket_identity,
             )
         )
@@ -171,6 +181,7 @@ def start_final_browser_session(
     bundle: BrowserBundle | None = None
     launch: BrowserLaunchSpec | None = None
     browser = xvfb = None
+    browser_group: int | None = None
     xvfb_socket_identity: tuple[int, int] | None = None
     profile_dir: Path | None = None
     try:
@@ -188,6 +199,7 @@ def start_final_browser_session(
             "--no-default-browser-check",
             "about:blank",
         )
+        browser_group = _browser_group_id(browser)
         cdp_url = f"http://127.0.0.1:{port}"
         _wait_ready(browser, xvfb, cdp_url, executor)
         probe = (executor.run_card or _platform_card(card_path, cdp_url))(
@@ -205,6 +217,7 @@ def start_final_browser_session(
             bundle,
             launch,
             browser,
+            browser_group,
             xvfb,
             xvfb_socket_identity,
         )
@@ -221,6 +234,7 @@ def start_final_browser_session(
                 bundle,
                 launch,
                 browser,
+                browser_group,
                 xvfb,
                 xvfb_socket_identity,
             )
@@ -286,11 +300,17 @@ def run_platform_health(
         if isinstance(cause, _CardFailure):
             artifacts["card.stdout.log"] = cause.stdout
             artifacts["card.stderr.log"] = cause.stderr
-            outcome, reason = Outcome.ENVIRONMENT_BLOCKED, f"platform health failed: {cause}"
+            outcome, reason = (
+                Outcome.ENVIRONMENT_BLOCKED,
+                f"platform health failed: {cause}",
+            )
         elif isinstance(cause, _Blocked):
             outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(cause)
         else:
-            outcome, reason = Outcome.ENVIRONMENT_BLOCKED, f"platform health failed: {cause}"
+            outcome, reason = (
+                Outcome.ENVIRONMENT_BLOCKED,
+                f"platform health failed: {cause}",
+            )
     except _CardFailure as error:
         artifacts["card.stdout.log"] = error.stdout
         artifacts["card.stderr.log"] = error.stderr
@@ -315,9 +335,11 @@ def run_platform_health(
         try:
             if session is not None:
                 session.close()
-                artifacts.update(session.artifacts)
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             cleanup_error = str(error)
+        finally:
+            if session is not None:
+                artifacts.update(session.artifacts)
     if cleanup_error:
         outcome = Outcome.ENVIRONMENT_BLOCKED
         values["cleanup_reason"] = cleanup_error
@@ -612,36 +634,88 @@ def _process_group_exists(pgid: int) -> bool:
     return True
 
 
-def _terminate_browser_group(process: Any) -> None:
-    """Terminate/reap Chrome's private session, including browser descendants."""
+def _process_group_members(pgid: int, *, limit: int = 64) -> tuple[int, ...]:
+    """Read only the recorded PGID's current members for bounded diagnostics."""
+    members: list[int] = []
+    try:
+        entries = Path("/proc").iterdir()
+        for entry in entries:
+            if len(members) >= limit:
+                break
+            if not entry.name.isdigit():
+                continue
+            try:
+                fields = (
+                    (entry / "stat")
+                    .read_text(encoding="utf-8")
+                    .rsplit(")", 1)[1]
+                    .split()
+                )
+                if len(fields) >= 3 and int(fields[2]) == pgid:
+                    members.append(int(entry.name))
+            except (
+                FileNotFoundError,
+                PermissionError,
+                IndexError,
+                ValueError,
+                OSError,
+            ):
+                continue
+    except OSError as error:
+        raise ValueError(
+            "unable to inspect task browser process group members"
+        ) from error
+    return tuple(sorted(members))
+
+
+def _wait_for_process_group_exit(pgid: int, *, timeout: float = 5.0) -> bool:
+    """Poll one recorded group at a fixed cadence without broad process matching."""
+    deadline = time.monotonic() + timeout
+    while _process_group_exists(pgid):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        time.sleep(min(0.05, remaining))
+    return True
+
+
+def _reap_direct_child(process: Any) -> None:
     if process is None:
         return
-    if (pgid := _browser_group_id(process)) is None:
-        _terminate(process)
-        return
-    try:
-        os.killpg(pgid, 15)
-    except ProcessLookupError:
-        return
-    except OSError as error:
-        raise ValueError("unable to terminate task browser process group") from error
     try:
         process.wait(timeout=5)
     except subprocess.TimeoutExpired:
-        pass
-    if _process_group_exists(pgid):
+        return
+
+
+def _terminate_browser_group(process: Any, pgid: int | None = None) -> None:
+    """Terminate/reap Chrome's private session, including browser descendants."""
+    if process is None:
+        return
+    if pgid is None:
+        pgid = _browser_group_id(process)
+        if pgid is None:
+            _terminate(process)
+            return
+    try:
+        os.killpg(pgid, 15)
+    except ProcessLookupError:
+        _reap_direct_child(process)
+        return
+    except OSError as error:
+        raise ValueError("unable to terminate task browser process group") from error
+    _reap_direct_child(process)
+    if not _wait_for_process_group_exit(pgid):
         try:
             os.killpg(pgid, 9)
         except ProcessLookupError:
+            _reap_direct_child(process)
             return
         except OSError as error:
             raise ValueError("unable to kill task browser process group") from error
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            pass
-    if _process_group_exists(pgid):
-        raise ValueError("task browser process group remains after cleanup")
+        _reap_direct_child(process)
+        if not _wait_for_process_group_exit(pgid):
+            raise _BrowserGroupCleanupError(pgid, _process_group_members(pgid))
 
 
 def _verify_browser_cleanup(
@@ -694,6 +768,16 @@ def _sha256_file(path: Path) -> str:
 
 class _Blocked(Exception):
     pass
+
+
+class _BrowserGroupCleanupError(ValueError):
+    def __init__(self, pgid: int, pids: tuple[int, ...]) -> None:
+        self.pgid = pgid
+        self.pids = pids
+        super().__init__(
+            "task browser process group remains after cleanup "
+            f"(pgid={pgid} pids={list(pids)})"
+        )
 
 
 class _CardFailure(Exception):

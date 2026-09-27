@@ -284,7 +284,9 @@ def test_final_session_waits_for_its_xvfb_socket_before_launching_browser(
         lambda _: (display, 45679, profile_dir),
     )
     monkeypatch.setattr(
-        health, "_xvfb_socket_path", lambda allocated: socket_path if allocated == display else None
+        health,
+        "_xvfb_socket_path",
+        lambda allocated: socket_path if allocated == display else None,
     )
     executor = _executor(bundle)
     executor = PlatformHealthExecutor(
@@ -405,7 +407,9 @@ def test_final_session_fails_closed_when_xvfb_exits_after_socket_identity(
         lambda _: (display, 45678, profile_dir),
     )
     monkeypatch.setattr(
-        health, "_xvfb_socket_path", lambda allocated: socket_path if allocated == display else None
+        health,
+        "_xvfb_socket_path",
+        lambda allocated: socket_path if allocated == display else None,
     )
     monkeypatch.setattr(health, "_socket_identity", socket_identity)
     executor = _executor(bundle)
@@ -583,7 +587,7 @@ def test_xvfb_termination_failure_drains_every_remaining_session_resource(
     cleanup_verification: list[tuple[bool, bool, bool]] = []
     original_terminate_browser_group = health._terminate_browser_group
 
-    def terminate_browser_group(process: object) -> None:
+    def terminate_browser_group(process: object, _pgid: int | None = None) -> None:
         browser_cleanup_calls.append(process)
         original_terminate_browser_group(process)
 
@@ -690,8 +694,153 @@ def test_browser_group_cleanup_kills_descendant_after_leader_exits(
             raise ProcessLookupError
 
     monkeypatch.setattr(health.os, "killpg", killpg)
+    monkeypatch.setattr(health.time, "monotonic", iter((0.0, 5.0, 5.0, 10.0)).__next__)
+    monkeypatch.setattr(health.time, "sleep", lambda _: None)
     health._terminate_browser_group(DeadLeader())
     assert signals == [15, 0, 9, 0]
+
+
+def test_browser_group_cleanup_waits_for_descendant_to_leave_after_term(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A descendant that exits during the bounded post-signal wait is not a leak."""
+    from acceptance.platform import health
+
+    class Leader:
+        pid = 4242
+
+        def poll(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            waits.append(timeout)
+            return 0
+
+    signals: list[int] = []
+    waits: list[float | None] = []
+    group_states = iter((True, False))
+    sleeps: list[float] = []
+
+    def killpg(pgid: int, signal: int) -> None:
+        assert pgid == 4242
+        signals.append(signal)
+        if signal == 0 and not next(group_states):
+            raise ProcessLookupError
+
+    monkeypatch.setattr(health.os, "killpg", killpg)
+    monkeypatch.setattr(health.time, "sleep", sleeps.append)
+    health._terminate_browser_group(Leader(), 4242)
+
+    assert signals == [15, 0, 0]
+    assert waits == [5]
+    assert sleeps == [0.05]
+
+
+def test_browser_group_cleanup_reports_only_surviving_exact_group_members(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A genuine surviving group blocks final evidence with bounded exact-PGID data."""
+    from acceptance.platform import health
+
+    class Leader:
+        pid = 4242
+
+        def poll(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    signals: list[int] = []
+    clocks = iter((0.0, 5.0, 5.0, 10.0))
+
+    monkeypatch.setattr(
+        health.os, "killpg", lambda _pgid, signal: signals.append(signal)
+    )
+    monkeypatch.setattr(health, "_process_group_exists", lambda _pgid: True)
+    monkeypatch.setattr(health, "_process_group_members", lambda _pgid: (777, 778))
+    monkeypatch.setattr(health.time, "monotonic", clocks.__next__)
+    monkeypatch.setattr(health.time, "sleep", lambda _: None)
+
+    with pytest.raises(ValueError, match=r"pgid=4242 pids=\[777, 778\]"):
+        health._terminate_browser_group(Leader(), 4242)
+
+    assert signals == [15, 9]
+
+
+def test_browser_group_cleanup_reaps_direct_child_even_when_group_is_dead(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The browser child is reaped even when its recorded group already vanished."""
+    from acceptance.platform import health
+
+    class DeadLeader:
+        pid = 4242
+
+        def poll(self) -> int:
+            return 1
+
+        def wait(self, timeout: float | None = None) -> int:
+            waits.append(timeout)
+            return 1
+
+    waits: list[float | None] = []
+    monkeypatch.setattr(
+        health.os, "killpg", lambda *_: (_ for _ in ()).throw(ProcessLookupError)
+    )
+
+    health._terminate_browser_group(DeadLeader(), 4242)
+
+    assert waits == [5]
+
+
+def test_browser_group_cleanup_allows_already_dead_exact_group(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No residual failure is fabricated when the retained group is gone."""
+    from acceptance.platform import health
+
+    class Leader:
+        pid = 4242
+
+        def poll(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    monkeypatch.setattr(
+        health.os, "killpg", lambda *_: (_ for _ in ()).throw(ProcessLookupError)
+    )
+
+    health._terminate_browser_group(Leader(), 4242)
+
+
+def test_surviving_browser_group_is_sealed_as_bounded_cleanup_evidence(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Real group survival remains non-final and retains only exact-PGID members."""
+    from acceptance.platform import health
+
+    bundle = _Bundle()
+    bundle.launch.process.pid = 4242
+    monkeypatch.setattr(health.os, "killpg", lambda *_: None)
+    monkeypatch.setattr(health, "_process_group_exists", lambda _pgid: True)
+    monkeypatch.setattr(health, "_process_group_members", lambda _pgid: (777,))
+    monkeypatch.setattr(health.time, "monotonic", iter((0.0, 5.0, 5.0, 10.0)).__next__)
+    monkeypatch.setattr(health.time, "sleep", lambda _: None)
+    root = tmp_path / ("0" * 40)
+
+    result = run_platform_health(
+        _profile(), root, _executor(bundle), card_path=PLATFORM_CARD
+    )
+
+    assert result.outcome is Outcome.ENVIRONMENT_BLOCKED
+    assert "pgid=4242 pids=[777]" in result.cleanup_reason
+    assert json.loads((root / "browser-cleanup.json").read_text()) == {
+        "pgid": 4242,
+        "pids": [777],
+    }
 
 
 def test_readiness_timeout_retains_diagnostics_and_never_runs_card(
@@ -734,7 +883,7 @@ def test_cleanup_failure_preserves_primary_health_diagnostics(
     monkeypatch.setattr(
         health,
         "_terminate_browser_group",
-        lambda _: (_ for _ in ()).throw(ValueError(cleanup_reason)),
+        lambda *_: (_ for _ in ()).throw(ValueError(cleanup_reason)),
     )
     root = tmp_path / ("e" * 40)
     executor = _executor(_Bundle(), ready=False)
