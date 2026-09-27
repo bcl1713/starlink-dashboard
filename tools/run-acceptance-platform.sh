@@ -77,16 +77,23 @@ git -C "$repo_root" worktree add --detach "$checkout" "$sha"
 cleanup_failed=0
 marker="$checkout/.acceptance-runner-owner.json"
 created_at=$(date --utc --iso-8601=seconds)
-umask 077
-printf '{"lane":"final","sha":"%s","ref":"%s","task":"%s","creator":"acceptance-runner-v1","time":"%s"}\n' \
-  "$sha" "$ref" "$task" "$created_at" > "$marker"
-chmod 0600 "$marker"
+if ! (
+  umask 077
+  printf '{"lane":"final","sha":"%s","ref":"%s","task":"%s","creator":"acceptance-runner-v1","time":"%s"}\n' \
+    "$sha" "$ref" "$task" "$created_at" > "$marker"
+  chmod 0600 "$marker"
+); then
+  printf 'runner checkout marker creation failed; retaining checkout\n' >&2
+  exit 1
+fi
 
 # The runner must return so its sealed evidence exists before checkout cleanup.
 cd "$checkout"
 export PYTHONPATH="$checkout/tools${PYTHONPATH:+:$PYTHONPATH}"
 set +e
-python3 -m acceptance.platform.runner "${runner_args[@]}"
+# Keep an exact task label in the runner process argv for cooperative recovery.
+bash -c 'exec -a "$1" python3 -m acceptance.platform.runner "${@:2}"' \
+  _ "--acceptance-task=$task" "${runner_args[@]}"
 runner_status=$?
 set -e
 

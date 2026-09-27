@@ -359,13 +359,28 @@ def test_unsafe_marked_checkout_is_retained_as_an_anomaly(
 
 
 def test_safe_marked_checkout_is_removed_after_validation(tmp_path: Path) -> None:
-    checkout = _marked_checkout(tmp_path, mutation="safe")
+    checkout_root = tmp_path / "checkouts"
+    checkout_root.mkdir()
+    checkout = _marked_checkout(checkout_root, mutation="safe")
+    policy_root = tmp_path / "policy"
+    policy_root.mkdir()
 
-    report = maintenance.recover_abandoned_checkouts(checkout.parent, _policy(tmp_path))
+    report = maintenance.recover_abandoned_checkouts(checkout_root, _policy(policy_root))
 
     assert not report.has_anomalies
     assert report.removed == (checkout,)
     assert not checkout.exists()
+
+
+def test_unmarked_immediate_checkout_child_is_retained_as_an_anomaly(tmp_path: Path) -> None:
+    checkout = tmp_path / "unmarked-checkout"
+    checkout.mkdir()
+
+    report = maintenance.recover_abandoned_checkouts(tmp_path, _policy(tmp_path))
+
+    assert report.has_anomalies
+    assert checkout.exists()
+    assert any("unmarked-checkout" in anomaly and "ownership marker" in anomaly for anomaly in report.anomalies)
 
 
 def test_keeps_protected_final_and_two_newest(tmp_path: Path) -> None:

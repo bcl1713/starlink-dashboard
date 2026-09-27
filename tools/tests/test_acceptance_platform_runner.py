@@ -4,15 +4,17 @@ import base64
 import hashlib
 import json
 import os
+import signal
 import struct
 import subprocess
+import time
 import zlib
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import ClassVar
 
 import pytest
-from acceptance.platform import runner
+from acceptance.platform import maintenance, runner
 from acceptance.platform.compose import (
     BuildLedger,
     BuildLedgerKey,
@@ -32,6 +34,7 @@ from acceptance.platform.model import (
     PlatformProfile,
     ProductContract,
 )
+from acceptance.platform.retention import RetentionPolicy
 from acceptance.platform.runner import RunnerDependencies, main, run
 
 SHA = "a" * 40
@@ -39,6 +42,10 @@ ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "tools/acceptance/contracts/v2-mission-retirement.toml"
 PROFILE = ROOT / "tools/acceptance/platform/profiles/default.toml"
 V2_ADAPTER = ROOT / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+
+
+def _retention_policy() -> RetentionPolicy:
+    return RetentionPolicy.parse(ROOT / "tools/acceptance/platform/retention_policy.toml")
 
 
 def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
@@ -967,6 +974,86 @@ exit "$RUNNER_EXIT"
     assert "marker=600" in recorded
     assert f"cwd={checkout_root}" not in recorded[cleanup]
     assert not any(checkout_root.iterdir())
+
+
+def test_final_wrapper_keeps_recovery_identifiable_task_label_while_runner_is_live(
+    tmp_path: Path,
+) -> None:
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    checkout_root = tmp_path / "checkouts"
+    state_root = tmp_path / "state"
+    task_root = tmp_path / "task"
+    checkout_root.mkdir()
+    state_root.mkdir()
+    runner_started = tmp_path / "runner-started"
+    _recording_executable(
+        commands / "git",
+        """
+case "$*" in
+  *'rev-parse refs/heads/feat/acceptance'*) printf '%s\\n' "$SHA" ;;
+  *'worktree add'*) checkout="${@: -2:1}"; mkdir -p "$checkout/tools"; cp -a "$ROOT/tools/acceptance" "$checkout/tools/"; printf 'gitdir: /nonexistent\\n' > "$checkout/.git"; printf 'import pathlib, time\\npathlib.Path("%s").touch()\\ntime.sleep(30)\\n' "$RUNNER_STARTED" > "$checkout/tools/acceptance/platform/runner.py" ;;
+esac
+""",
+    )
+    process = subprocess.Popen(
+        [
+            str(ROOT / "tools/run-acceptance-platform.sh"),
+            "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance",
+            "--evidence-root", str(state_root), "--task-root", str(task_root),
+            "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"),
+            "--checkout-root", str(checkout_root), "--acceptance-task", "task-live",
+        ],
+        cwd=ROOT,
+        env={**os.environ, "PATH": f"{commands}:{os.environ['PATH']}", "SHA": SHA, "ROOT": str(ROOT), "RUNNER_STARTED": str(runner_started)},
+        start_new_session=True,
+    )
+    try:
+        for _ in range(100):
+            if runner_started.exists():
+                break
+            time.sleep(0.02)
+        assert runner_started.exists()
+        report = maintenance.recover_abandoned_checkouts(checkout_root, _retention_policy())
+        assert report.has_anomalies
+        assert any("task-labelled process is still live" in anomaly for anomaly in report.anomalies)
+        assert any(checkout_root.iterdir())
+    finally:
+        os.killpg(process.pid, signal.SIGTERM)
+        process.wait(timeout=5)
+
+
+def test_final_wrapper_retains_checkout_when_marker_creation_fails(tmp_path: Path) -> None:
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    checkout_root, state_root, task_root = tmp_path / "checkouts", tmp_path / "state", tmp_path / "task"
+    checkout_root.mkdir()
+    state_root.mkdir()
+    _recording_executable(
+        commands / "git",
+        """
+case "$*" in
+  *'rev-parse '*) printf '%s\\n' "$SHA" ;;
+  *'worktree add'*) mkdir -p "${@: -2:1}" ;;
+esac
+""",
+    )
+    _recording_executable(commands / "chmod", "exit 1")
+
+    result = subprocess.run(
+        [str(ROOT / "tools/run-acceptance-platform.sh"), "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance", "--evidence-root", str(state_root), "--task-root", str(task_root), "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"), "--checkout-root", str(checkout_root), "--acceptance-task", "task-marker"],
+        cwd=ROOT,
+        env={**os.environ, "PATH": f"{commands}:{os.environ['PATH']}", "SHA": SHA},
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 1
+    assert "marker creation failed; retaining checkout" in result.stderr
+    report = maintenance.recover_abandoned_checkouts(checkout_root, _retention_policy())
+    assert report.has_anomalies
+    assert any(checkout_root.iterdir())
 
 
 def test_wrapper_resolves_explicit_relative_contract_from_repository_root(

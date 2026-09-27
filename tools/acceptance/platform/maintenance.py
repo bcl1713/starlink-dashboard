@@ -157,7 +157,15 @@ def recover_abandoned_checkouts(
     anomalies: list[str] = []
     for checkout in checkout_root.iterdir():
         marker_path = checkout / ".acceptance-runner-owner.json"
-        if not marker_path.exists():
+        try:
+            os.lstat(marker_path)
+        except FileNotFoundError:
+            anomalies.append(
+                f"retained checkout {checkout.name}: ownership marker is missing"
+            )
+            continue
+        except OSError as error:
+            anomalies.append(f"retained checkout {checkout.name}: {error}")
             continue
         try:
             identity = os.lstat(checkout)
