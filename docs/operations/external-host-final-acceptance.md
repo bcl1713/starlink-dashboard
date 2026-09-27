@@ -172,6 +172,7 @@ First generate and retain a report-only JSON result; the [platform operations
 runbook](acceptance-platform.md#retention-maintenance) is the detailed authority:
 
 ```bash
+set -o pipefail
 STATE_ROOT=$HOST_STATE/state
 CHECKOUT_RECOVERY_ROOT=$HOST_STATE/checkouts
 ./tools/run-acceptance-platform.sh --maintenance retention \

@@ -44,6 +44,17 @@ def test_operations_docs_cover_retention() -> None:
         assert "never delete GHCR" in content
 
 
+def test_external_host_report_only_retention_pipe_preserves_failure() -> None:
+    content = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    retention_section = content[content.index("## 5a. Retention maintenance") :]
+    report_only_block = retention_section.split("```bash", maxsplit=1)[1].split(
+        "```", maxsplit=1
+    )[0]
+
+    assert "set -o pipefail" in report_only_block
+    assert report_only_block.index("set -o pipefail") < report_only_block.index("| tee")
+
+
 def test_platform_doc_defines_complete_health_fingerprint_validation() -> None:
     text = PLATFORM_DOC.read_text(encoding="utf-8")
     lowered = " ".join(text.lower().split())

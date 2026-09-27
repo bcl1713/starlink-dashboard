@@ -11,3 +11,19 @@
 - Cleanup verification now independently checks the process group as well as the task CDP listener, X display, and profile path; cleanup signal/verification errors convert health authority to `ENVIRONMENT_BLOCKED` instead of recording success.
 - Added deterministic leader-exits-first regression coverage in `tools/tests/test_acceptance_platform_health.py`; it models an exited group leader with a surviving descendant and verifies `SIGTERM`, probe, `SIGKILL`, and final absence probe.
 - Verification: `python -m pytest -q tools/tests/test_acceptance_platform_health.py` (16 passed); `python -m pytest -q tools/tests/test_acceptance_platform_*.py` (83 passed); `black --check tools/acceptance/platform/health.py tools/tests/test_acceptance_platform_health.py`; `ruff check tools/acceptance/platform/health.py tools/tests/test_acceptance_platform_health.py`; `python -m compileall -q tools/acceptance/platform/health.py`; `git diff --check`.
+
+## Task 7 — retention report-only pipeline failure propagation
+
+- Added `set -o pipefail` before the report-only retention command's `tee`
+  pipeline in `docs/operations/external-host-final-acceptance.md`, so a nonzero
+  maintenance exit remains a stop condition rather than being masked by `tee`.
+- Added `test_external_host_report_only_retention_pipe_preserves_failure`, which
+  scopes the assertion to the retention report-only command block and requires
+  `pipefail` before the pipeline.
+- RED observed: the new focused test failed because that block had no
+  `set -o pipefail`.
+- GREEN/verification: focused test passed; `python -m pytest -q
+  tools/tests/test_acceptance_platform_docs.py` passed (13);
+  `npx --no-install markdownlint-cli2
+  docs/operations/external-host-final-acceptance.md` passed; `git diff --check`
+  passed.
