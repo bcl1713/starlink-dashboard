@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from pathlib import Path, PurePosixPath
 
 import pytest
-from acceptance.platform import retention
+from acceptance.platform import maintenance, retention
 from acceptance.platform.evidence import seal_fingerprint, write_artifacts
 from acceptance.platform.model import Lane, RetentionDisposition, RetentionEntry
 from acceptance.platform.retention import (
@@ -258,6 +259,113 @@ def _entry(plan: object, lane: Lane, sha: str) -> RetentionEntry:
     return next(
         entry for entry in plan.entries if entry.lane is lane and entry.sha == sha
     )
+
+
+def test_cli_defaults_to_report_only_and_closes_its_plan_lease(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    state = _state_with_generations(tmp_path)
+    policy_path = tmp_path / "retention-policy.toml"
+    policy_path.write_text(
+        "version = 1\ncompleted_generations_per_lane = 3\nmaintenance_report_count = 90\n"
+    )
+
+    assert (
+        maintenance.main(
+            ["retention", "--state-root", str(state), "--policy", str(policy_path)]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["mode"] == "report"
+    follow_up = plan_retention(state, RetentionPolicy.parse(policy_path))
+    follow_up.close()
+
+
+def test_cli_returns_nonzero_when_checkout_recovery_refuses_an_unsafe_checkout(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    state = _state_with_generations(tmp_path)
+    checkout_root = tmp_path / "checkouts"
+    checkout_root.mkdir()
+    checkout = _marked_checkout(checkout_root, mutation="dirty")
+    policy_path = tmp_path / "retention-policy.toml"
+    policy_path.write_text(
+        "version = 1\ncompleted_generations_per_lane = 3\nmaintenance_report_count = 90\n"
+    )
+
+    assert (
+        maintenance.main(
+            [
+                "retention", "--state-root", str(state), "--policy", str(policy_path),
+                "--checkout-root", str(checkout.parent),
+            ]
+        )
+        == 1
+    )
+
+    assert checkout.exists()
+    assert "checkout_anomalies" in json.loads(capsys.readouterr().out)
+
+
+def _marked_checkout(root: Path, *, mutation: str) -> Path:
+    checkout = root / "checkout"
+    checkout.mkdir()
+    for command in (
+        ["git", "init", "-q"],
+        ["git", "config", "user.email", "acceptance@example.invalid"],
+        ["git", "config", "user.name", "Acceptance"],
+    ):
+        subprocess.run(command, cwd=checkout, check=True)
+    (checkout / "tracked.txt").write_text("tracked\n")
+    subprocess.run(["git", "add", "tracked.txt"], cwd=checkout, check=True)
+    subprocess.run(["git", "commit", "-qm", "initial"], cwd=checkout, check=True)
+    subprocess.run(["git", "checkout", "--detach", "-q"], cwd=checkout, check=True)
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=checkout, check=True, text=True, capture_output=True
+    ).stdout.strip()
+    marker = {
+        "lane": "final",
+        "sha": sha,
+        "ref": "refs/heads/feat/acceptance",
+        "task": "task-123",
+        "creator": "acceptance-runner-v1",
+        "time": "2026-09-27T00:00:00+00:00",
+    }
+    if mutation == "dirty":
+        (checkout / "tracked.txt").write_text("dirty\n")
+    elif mutation == "attached":
+        subprocess.run(["git", "switch", "-qc", "attached"], cwd=checkout, check=True)
+    elif mutation == "marker_sha_mismatch":
+        marker["sha"] = "b" * 40
+    (checkout / ".acceptance-runner-owner.json").write_text(json.dumps(marker))
+    (checkout / ".acceptance-runner-owner.json").chmod(0o600)
+    return checkout
+
+
+@pytest.mark.parametrize("state", ["dirty", "attached", "active_process", "marker_sha_mismatch"])
+def test_unsafe_marked_checkout_is_retained_as_an_anomaly(
+    tmp_path: Path, state: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    checkout = _marked_checkout(tmp_path, mutation=state)
+    if state == "active_process":
+        monkeypatch.setattr(maintenance, "_task_is_live", lambda _task: True)
+
+    report = maintenance.recover_abandoned_checkouts(checkout.parent, _policy(tmp_path))
+
+    assert report.has_anomalies
+    assert checkout.exists()
+
+
+def test_safe_marked_checkout_is_removed_after_validation(tmp_path: Path) -> None:
+    checkout = _marked_checkout(tmp_path, mutation="safe")
+
+    report = maintenance.recover_abandoned_checkouts(checkout.parent, _policy(tmp_path))
+
+    assert not report.has_anomalies
+    assert report.removed == (checkout,)
+    assert not checkout.exists()
 
 
 def test_keeps_protected_final_and_two_newest(tmp_path: Path) -> None:

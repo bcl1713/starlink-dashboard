@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import struct
 import subprocess
 import zlib
@@ -893,6 +894,79 @@ def test_candidate_identity_is_rejected_before_paths_are_constructed(
         runner._parse(argv)
 
     assert not (tmp_path / "escape").exists()
+
+
+def _recording_executable(path: Path, content: str) -> None:
+    path.write_text("#!/usr/bin/env bash\nset -eu\n" + content)
+    path.chmod(0o755)
+
+
+@pytest.mark.parametrize("runner_exit", [0, 7])
+def test_final_wrapper_preflights_before_allocation_and_cleans_after_python_returns(
+    tmp_path: Path, runner_exit: int
+) -> None:
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    events = tmp_path / "events"
+    checkout_root, state_root, task_root = (
+        tmp_path / "checkouts",
+        tmp_path / "state",
+        tmp_path / "task",
+    )
+    checkout_root.mkdir()
+    state_root.mkdir()
+    _recording_executable(
+        commands / "git",
+        """
+printf 'git %s|cwd=%s\\n' "$*" "$PWD" >> "$EVENTS"
+case "$*" in
+  *'rev-parse '*) printf '%s\\n' "$SHA" ;;
+  *'symbolic-ref -q HEAD'*) exit 1 ;;
+  *'status --porcelain'*) : ;;
+  *'worktree add'*) mkdir -p "${@: -2:1}" ;;
+  *'worktree remove'*) stat -c 'marker=%a' "${@: -1}/.acceptance-runner-owner.json" >> "$EVENTS"; rm -rf "${@: -1}" ;;
+esac
+""",
+    )
+    _recording_executable(
+        commands / "python3",
+        """
+printf 'python3 %s|cwd=%s\\n' "$*" "$PWD" >> "$EVENTS"
+case "$*" in *'acceptance.platform.maintenance'*) exit 0 ;; *' -c '*) exit 0 ;; esac
+exit "$RUNNER_EXIT"
+""",
+    )
+    result = subprocess.run(
+        [
+            str(ROOT / "tools/run-acceptance-platform.sh"),
+            "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance",
+            "--evidence-root", str(state_root), "--task-root", str(task_root),
+            "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"),
+            "--checkout-root", str(checkout_root), "--acceptance-task", "task-123",
+        ],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PATH": f"{commands}:{os.environ['PATH']}",
+            "EVENTS": str(events),
+            "SHA": SHA,
+            "RUNNER_EXIT": str(runner_exit),
+        },
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == runner_exit, result.stderr
+    recorded = events.read_text().splitlines()
+    preflight = next(index for index, event in enumerate(recorded) if "maintenance retention" in event)
+    allocation = next(index for index, event in enumerate(recorded) if "worktree add" in event)
+    runner_call = next(index for index, event in enumerate(recorded) if "acceptance.platform.runner" in event)
+    cleanup = next(index for index, event in enumerate(recorded) if "worktree remove" in event)
+    assert preflight < allocation < runner_call < cleanup
+    assert "marker=600" in recorded
+    assert f"cwd={checkout_root}" not in recorded[cleanup]
+    assert not any(checkout_root.iterdir())
 
 
 def test_wrapper_resolves_explicit_relative_contract_from_repository_root(
