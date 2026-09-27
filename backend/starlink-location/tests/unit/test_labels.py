@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 
 import pytest
+
 from app.core.labels import (
     apply_common_labels,
     get_geographic_labels,

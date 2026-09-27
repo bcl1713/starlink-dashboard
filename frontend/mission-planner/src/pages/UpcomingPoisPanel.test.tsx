@@ -124,7 +124,20 @@ describe('UpcomingPoisPanel', () => {
   });
 
   it.each([
-    ['no_active_route', 'No active route.'],
+    ['no_active_mission', 'No active mission leg.'],
+    [
+      'route_unavailable',
+      'Active mission leg is not bound to the active route.',
+    ],
+    ['inconsistent_active_mission', 'Active mission state is inconsistent.'],
+  ] as const)('renders truthful %s copy', (state, message) => {
+    render(<UpcomingPoisPanel state={state} pois={[]} currentTime={now} />);
+
+    expect(screen.getByText(message)).not.toBeNull();
+    expect(screen.queryByText(/mission-[a-z0-9]/i)).toBeNull();
+  });
+
+  it.each([
     ['no_generated_pois', 'No generated POIs.'],
     ['no_upcoming_pois', 'No upcoming POIs.'],
     ['unavailable', 'Upcoming POIs unavailable.'],

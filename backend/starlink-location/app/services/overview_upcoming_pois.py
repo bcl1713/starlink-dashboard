@@ -72,7 +72,7 @@ def project_overview_upcoming_pois(
     current_progress: float | None,
     calculated_at: datetime,
 ) -> OverviewUpcomingPoisResponse:
-    """Project generated POIs using dynamic ETA for in-flight decisions."""
+    """Project generated POIs with route-relative in-flight eligibility."""
     if calculated_at.tzinfo is None:
         calculated_at = calculated_at.replace(tzinfo=timezone.utc)
     else:
@@ -91,16 +91,17 @@ def project_overview_upcoming_pois(
             else None
         )
         ahead_on_route = (
-            current_progress is None
-            or poi.projected_route_progress is None
-            or poi.projected_route_progress >= current_progress
+            current_progress is not None
+            and poi.projected_route_progress is not None
+            and 0 <= poi.projected_route_progress <= 100
+            and poi.projected_route_progress > current_progress
         )
         if flight_phase == "in_flight":
-            upcoming = ahead_on_route and (eta_seconds is None or eta_seconds >= 0)
+            upcoming = ahead_on_route
         elif flight_phase == "post_arrival":
             upcoming = False
         else:
-            upcoming = eta_seconds is None or eta_seconds >= 0
+            upcoming = True
 
         if (
             poi.kind in {"departure", "arrival"}
@@ -132,19 +133,32 @@ def project_overview_upcoming_pois(
             )
         )
 
-    projected.sort(
-        key=lambda poi: (
-            not poi.upcoming,
-            poi.eta_seconds is None,
-            poi.eta_seconds if poi.eta_seconds is not None else float("inf"),
-            (
-                poi.projected_route_progress
-                if poi.projected_route_progress is not None
-                else float("inf")
-            ),
-            poi.poi_id,
+    if flight_phase == "in_flight":
+        projected.sort(
+            key=lambda poi: (
+                not poi.upcoming,
+                poi.eta_seconds is None,
+                poi.eta_seconds if poi.eta_seconds is not None else float("inf"),
+                (
+                    poi.projected_route_progress
+                    if poi.projected_route_progress is not None
+                    else float("inf")
+                ),
+                poi.poi_id,
+            )
         )
-    )
+    else:
+        projected.sort(
+            key=lambda poi: (
+                not poi.upcoming,
+                (
+                    poi.projected_route_progress
+                    if poi.projected_route_progress is not None
+                    else float("inf")
+                ),
+                poi.poi_id,
+            )
+        )
     state = (
         "available" if any(poi.upcoming for poi in projected) else "no_upcoming_pois"
     )

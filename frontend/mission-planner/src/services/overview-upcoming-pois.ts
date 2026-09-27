@@ -27,7 +27,9 @@ export interface OverviewUpcomingPoi {
 export interface OverviewUpcomingPoisResponse {
   state:
     | 'available'
-    | 'no_active_route'
+    | 'no_active_mission'
+    | 'route_unavailable'
+    | 'inconsistent_active_mission'
     | 'no_generated_pois'
     | 'no_upcoming_pois'
     | 'unavailable';

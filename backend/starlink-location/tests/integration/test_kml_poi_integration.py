@@ -6,6 +6,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+
 from app.models.poi import POICreate
 from app.services.geojson import GeoJSONBuilder
 from app.services.kml_parser import parse_kml_file

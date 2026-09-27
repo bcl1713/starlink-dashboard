@@ -35,7 +35,9 @@ estimate from current telemetry position and speed against active-route
 geometry. Scheduled `expected_arrival_time` is provenance only;
 `estimated_arrival_time` drives the live urgency colour and ordering and is not
 telemetry. See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
-for states, timing provenance, and retention details.
+for all final states, timing provenance, and retention details. A route-only
+active route is not an active Mission V2 leg: Overview may therefore report
+`no_active_mission` while a route remains active.
 
 This feature does not modify, retire, or replace Grafana; Grafana remains the
 supported fallback and parity comparator.

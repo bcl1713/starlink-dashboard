@@ -1,16 +1,8 @@
-"""Mission storage utilities for persisting mission plans to portable flat files.
+"""Scoped v2 mission storage utilities."""
 
-Missions are stored as JSON files under data/missions/ with optional assets.
-This design allows mission plans to be portable across instances and systems.
-"""
-
-# FR-004: File exceeds 300 lines (445 lines) because mission storage handles
-# v1/v2 format compatibility, JSON serialization, timeline building, and file I/O
-# operations. Refactoring would fragment format handling logic. Deferred to v0.4.0.
-
-import hashlib
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,6 +15,8 @@ logger = logging.getLogger(__name__)
 # Base directory for mission storage
 MISSIONS_DIR = Path("data/missions")
 TIMELINE_SUFFIX = ".timeline.json"
+_active_leg_locks: dict[str, FileLock] = {}
+_active_leg_locks_guard = threading.Lock()
 
 
 def ensure_missions_directory():
@@ -44,26 +38,26 @@ def get_mission_lock(mission_id: str) -> FileLock:
     return FileLock(str(lock_path))
 
 
-def get_mission_path(mission_id: str) -> Path:
-    """Get the file path for a mission by ID."""
-    return MISSIONS_DIR / f"{mission_id}.json"
+def get_active_leg_lock() -> FileLock:
+    """Get the canonical repository-wide v2 active-leg read/write lock.
 
-
-def get_mission_checksum_path(mission_id: str) -> Path:
-    """Get the checksum file path for a mission."""
-    return MISSIONS_DIR / f"{mission_id}.sha256"
-
-
-def get_leg_timeline_path(leg_id: str, parent_mission_id: str | None = None) -> Path:
-    """Get the file path for a leg's cached timeline.
-
-    When parent_mission_id is provided the timeline is stored inside the
-    mission directory alongside its leg file, preventing name collisions
-    between legs with the same name in different missions.
+    FileLock 3.12.0 re-enters only when the same instance is acquired again in
+    a thread. Cache the lock by its canonical path rather than relying on the
+    newer ``is_singleton`` constructor option.
     """
-    if parent_mission_id:
-        return get_mission_legs_dir(parent_mission_id) / f"{leg_id}{TIMELINE_SUFFIX}"
-    return MISSIONS_DIR / f"{leg_id}{TIMELINE_SUFFIX}"
+    ensure_missions_directory()
+    lock_path = str(MISSIONS_DIR / ".active-leg.lock")
+    with _active_leg_locks_guard:
+        lock = _active_leg_locks.get(lock_path)
+        if lock is None:
+            lock = FileLock(lock_path)
+            _active_leg_locks[lock_path] = lock
+        return lock
+
+
+def get_leg_timeline_path(leg_id: str, parent_mission_id: str) -> Path:
+    """Get the scoped file path for a leg's cached timeline."""
+    return get_mission_legs_dir(parent_mission_id) / f"{leg_id}{TIMELINE_SUFFIX}"
 
 
 def get_mission_directory(mission_id: str) -> Path:
@@ -94,67 +88,6 @@ def _iter_mission_leg_files(legs_dir: Path):
         yield leg_file
 
 
-def compute_file_checksum(file_path: Path) -> str:
-    """Compute SHA256 checksum of a file."""
-    sha256 = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            sha256.update(chunk)
-    return sha256.hexdigest()
-
-
-def compute_mission_checksum(mission) -> str:
-    """Compute checksum of a mission object (JSON-serialized)."""
-    # Use model_dump for consistent serialization with sorted keys
-    mission_dict = mission.model_dump()
-    mission_json = json.dumps(mission_dict, sort_keys=True, default=str)
-    return hashlib.sha256(mission_json.encode()).hexdigest()
-
-
-def save_mission(mission: MissionLeg) -> dict:
-    """Save a mission to persistent storage.
-
-    Args:
-        mission: Mission object to save
-
-    Returns:
-        Dictionary with save metadata (path, checksum, timestamp)
-
-    Raises:
-        IOError: If file write fails
-    """
-    ensure_missions_directory()
-
-    mission_path = get_mission_path(mission.id)
-    checksum_path = get_mission_checksum_path(mission.id)
-
-    try:
-        # Update timestamp
-        mission.updated_at = datetime.now(timezone.utc)
-
-        # Write mission JSON
-        with open(mission_path, "w") as f:
-            json.dump(mission.model_dump(), f, indent=2, default=str)
-
-        # Compute and save checksum
-        checksum = compute_mission_checksum(mission)
-        with open(checksum_path, "w") as f:
-            f.write(checksum)
-
-        logger.info(f"Mission {mission.id} saved to {mission_path}")
-
-        return {
-            "mission_id": mission.id,
-            "path": str(mission_path),
-            "checksum": checksum,
-            "saved_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-    except OSError as e:
-        logger.error(f"Failed to save mission {mission.id}: {e}")
-        raise
-
-
 def save_mission_v2(mission: Mission) -> dict:
     """Save a hierarchical mission with nested legs.
 
@@ -164,6 +97,16 @@ def save_mission_v2(mission: Mission) -> dict:
     Returns:
         Dictionary with save metadata
     """
+    # This lock deliberately covers every v2 mission write because each write
+    # can add, remove, or change a persisted active leg.  Keep the unlocked
+    # implementation private so callers cannot accidentally take this lock
+    # twice while coordinating a broader v2 operation.
+    with get_active_leg_lock():
+        return _save_mission_v2_unlocked(mission)
+
+
+def _save_mission_v2_unlocked(mission: Mission) -> dict:
+    """Write a v2 mission while the active-leg repository lock is held."""
     mission_dir = get_mission_directory(mission.id)
     mission_dir.mkdir(parents=True, exist_ok=True)
 
@@ -182,6 +125,11 @@ def save_mission_v2(mission: Mission) -> dict:
         leg_file = get_mission_leg_file_path(mission.id, leg.id)
         with open(leg_file, "w") as f:
             json.dump(leg.model_dump(), f, indent=2, default=str)
+
+    persisted_leg_ids = {leg.id for leg in mission.legs}
+    for leg_file in _iter_mission_leg_files(legs_dir):
+        if leg_file.stem not in persisted_leg_ids:
+            leg_file.unlink()
 
     logger.info(f"Mission {mission.id} saved with {len(mission.legs)} legs")
 
@@ -363,151 +311,55 @@ def list_mission_metadata_v2() -> list[Mission]:
     ]
 
 
-def load_mission(mission_id: str) -> MissionLeg | None:
-    """Load a mission leg from persistent storage.
+def reconcile_active_legs_on_startup() -> dict[str, int]:
+    """Clear persisted V2 active-leg flags before runtime managers initialize.
 
-    Args:
-        mission_id: ID of the mission to load
-
-    Returns:
-        MissionLeg object if found and valid, None otherwise
-
-    Raises:
-        ValueError: If loaded data doesn't match integrity check
-    """
-    mission_path = get_mission_path(mission_id)
-    checksum_path = get_mission_checksum_path(mission_id)
-
-    if not mission_path.exists():
-        logger.warning(f"Mission {mission_id} not found at {mission_path}")
-        return None
-
-    try:
-        # Load mission JSON
-        with open(mission_path, "r") as f:
-            mission_data = json.load(f)
-
-        mission = MissionLeg(**mission_data)
-
-        # Verify checksum if it exists
-        if checksum_path.exists():
-            with open(checksum_path, "r") as f:
-                stored_checksum = f.read().strip()
-
-            computed_checksum = compute_mission_checksum(mission)
-
-            if stored_checksum != computed_checksum:
-                logger.warning(
-                    f"Mission {mission_id} checksum mismatch: "
-                    f"stored={stored_checksum}, computed={computed_checksum}"
-                )
-                # Log but don't fail; data might have been updated manually
-
-        logger.info(f"Mission {mission_id} loaded from {mission_path}")
-        return mission
-
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse mission {mission_id}: {e}")
-        raise ValueError(f"Invalid JSON in mission file: {e}")
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:
-        logger.error(f"Failed to load mission {mission_id}: {e}")
-        raise
-
-
-def list_missions() -> list[dict]:
-    """List all saved missions.
-
-    Returns:
-        List of mission metadata dictionaries (id, name, path, updated_at)
+    Startup deliberately does not restore route, flight, or clock state. The
+    repository-wide active-leg lock precedes every parent lock, matching V2
+    mutation ordering and making the persisted lifecycle state unambiguous
+    before readiness.
     """
     ensure_missions_directory()
+    changed_missions = 0
+    changed_legs = 0
 
-    missions = []
-    for mission_path in sorted(MISSIONS_DIR.glob("*.json")):
-        if mission_path.name.endswith(TIMELINE_SUFFIX):
-            continue
-        try:
-            with open(mission_path, "r") as f:
-                mission_data = json.load(f)
+    with get_active_leg_lock():
+        mission_ids = sorted(
+            mission_dir.name
+            for mission_dir in MISSIONS_DIR.iterdir()
+            if mission_dir.is_dir() and (mission_dir / "mission.json").is_file()
+        )
+        for mission_id in mission_ids:
+            with get_mission_lock(mission_id):
+                mission = load_mission_v2(mission_id)
+                if mission is None:
+                    continue
+                active_legs = [leg for leg in mission.legs if leg.is_active]
+                if not active_legs:
+                    continue
+                reconciled = mission.model_copy(
+                    update={
+                        "legs": [
+                            (
+                                leg.model_copy(update={"is_active": False})
+                                if leg.is_active
+                                else leg
+                            )
+                            for leg in mission.legs
+                        ]
+                    }
+                )
+                _save_mission_v2_unlocked(reconciled)
+                changed_missions += 1
+                changed_legs += len(active_legs)
 
-            mission_id = mission_data.get("id") or mission_path.stem
-
-            missions.append(
-                {
-                    "id": mission_id,
-                    "name": mission_data.get("name"),
-                    "route_id": mission_data.get("route_id"),
-                    "is_active": mission_data.get("is_active", False),
-                    "path": str(mission_path),
-                    "updated_at": mission_data.get("updated_at"),
-                }
-            )
-
-        except json.JSONDecodeError as e:
-            logger.warning(f"Skipping invalid mission file {mission_path}: {e}")
-            continue
-
-    return missions
-
-
-def delete_mission(mission_id: str) -> bool:
-    """Delete a mission from persistent storage.
-
-    Args:
-        mission_id: ID of the mission to delete
-
-    Returns:
-        True if deletion succeeded, False if mission not found
-    """
-    mission_path = get_mission_path(mission_id)
-    checksum_path = get_mission_checksum_path(mission_id)
-
-    deleted = False
-
-    if mission_path.exists():
-        try:
-            mission_path.unlink()
-            logger.info(f"Deleted mission file {mission_path}")
-            deleted = True
-        except OSError as e:
-            logger.error(f"Failed to delete mission file {mission_path}: {e}")
-            raise
-
-    if checksum_path.exists():
-        try:
-            checksum_path.unlink()
-            logger.info(f"Deleted checksum file {checksum_path}")
-        except OSError as e:
-            logger.error(f"Failed to delete checksum file {checksum_path}: {e}")
-            raise
-
-    # Scoped leg timelines live inside the mission directory and are removed
-    # automatically when the v2 delete endpoint calls shutil.rmtree(mission_dir).
-    # The old flat-file timeline ({mission_id}.timeline.json) never existed in
-    # practice because timelines were always keyed by leg_id, not mission_id.
-
-    if not deleted:
-        logger.warning(f"Mission {mission_id} not found for deletion")
-
-    return deleted
+    return {"missions": changed_missions, "legs": changed_legs}
 
 
 def save_mission_timeline(
     leg_id: str,
     timeline: MissionLegTimeline,
-    parent_mission_id: str | None = None,
+    parent_mission_id: str,
 ) -> Path:
     """Persist a leg timeline to disk."""
     ensure_missions_directory()
@@ -521,89 +373,24 @@ def save_mission_timeline(
 
 def load_mission_timeline(
     leg_id: str,
-    parent_mission_id: str | None = None,
+    parent_mission_id: str,
 ) -> MissionLegTimeline | None:
-    """Load a previously computed leg timeline.
-
-    Checks the mission-scoped path first (new layout), then falls back to the
-    legacy flat-file path so existing data continues to work after upgrades.
-
-    Note: callers that omit parent_mission_id will never find a scoped file and
-    will only hit the legacy flat-file path.  After migration is complete (all
-    flat files removed) those call sites will always return None.  Pass
-    parent_mission_id whenever the mission context is available.
-    """
-    if parent_mission_id:
-        scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
-        if scoped_path.exists():
-            with open(scoped_path, "r") as handle:
-                return MissionLegTimeline(**json.load(handle))
-    # Legacy fallback: flat file written before the scoped-path fix.
-    # Two missions whose legs share a slug will still collide here until each
-    # leg is loaded at least once after the upgrade (auto-migration below).
-    legacy_path = get_leg_timeline_path(leg_id)
-    if not legacy_path.exists():
+    """Load a cached timeline from its parent mission's scoped storage."""
+    timeline_path = get_leg_timeline_path(leg_id, parent_mission_id)
+    if not timeline_path.exists():
         return None
-    logger.warning(
-        "Loading timeline for leg %s from legacy flat-file path; migrating now.",
-        leg_id,
-    )
-    with open(legacy_path, "r") as handle:
-        timeline = MissionLegTimeline(**json.load(handle))
-    # Auto-migrate: write the scoped file and remove the flat one so future
-    # loads go through the per-mission path and the warning disappears.
-    # Not atomic — a crash between the write and the unlink leaves both files,
-    # which is safe: the scoped path wins on the next load.
-    if parent_mission_id:
-        try:
-            scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
-            scoped_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(scoped_path, "w") as handle:
-                json.dump(timeline.model_dump(), handle, indent=2, default=str)
-            legacy_path.unlink(missing_ok=True)
-            logger.info("Migrated timeline for leg %s to scoped path", leg_id)
-        except OSError as exc:
-            logger.warning("Failed to migrate timeline for leg %s: %s", leg_id, exc)
-    return timeline
+    with open(timeline_path, "r") as handle:
+        return MissionLegTimeline(**json.load(handle))
 
 
 def delete_mission_timeline(
     leg_id: str,
-    parent_mission_id: str | None = None,
+    parent_mission_id: str,
 ) -> None:
-    """Remove a cached leg timeline without touching mission data.
-
-    Deletes both the mission-scoped path (when parent_mission_id is given) and
-    the legacy flat-file path, so stale flat files can't bleed into future legs
-    that happen to share the same slug.
-    """
-    if parent_mission_id:
-        scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
-        if scoped_path.exists():
-            try:
-                scoped_path.unlink()
-            except OSError as exc:
-                logger.warning(
-                    "Failed to delete scoped timeline %s: %s", scoped_path, exc
-                )
-
-    # Always attempt to remove the legacy flat file to prevent future pollution.
-    # TODO: remove this probe once all deployments have migrated to scoped paths.
-    legacy_path = get_leg_timeline_path(leg_id)
-    if legacy_path.exists():
+    """Remove a scoped cached leg timeline without touching mission data."""
+    timeline_path = get_leg_timeline_path(leg_id, parent_mission_id)
+    if timeline_path.exists():
         try:
-            legacy_path.unlink()
+            timeline_path.unlink()
         except OSError as exc:
-            logger.warning("Failed to delete legacy timeline %s: %s", leg_id, exc)
-
-
-def mission_exists(mission_id: str) -> bool:
-    """Check if a mission exists in storage.
-
-    Args:
-        mission_id: ID of the mission to check
-
-    Returns:
-        True if mission file exists, False otherwise
-    """
-    return get_mission_path(mission_id).exists()
+            logger.warning("Failed to delete timeline %s: %s", timeline_path, exc)

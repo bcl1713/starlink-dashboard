@@ -38,37 +38,18 @@ The Mission Data Exporter provides:
 
 ### Usage
 
-```bash
-# Export active mission to PDF
-curl -X POST http://localhost:8000/api/missions/active/export/pdf \
-  -o mission-report.pdf
-
-# Export to PowerPoint
-curl -X POST http://localhost:8000/api/missions/active/export/pptx \
-  -o mission-briefing.pptx
-
-# Export to Excel
-curl -X POST http://localhost:8000/api/missions/active/export/xlsx \
-  -o mission-data.xlsx
-```
+The retired mission API does not provide supported export commands. Mission V2
+introduces no replacement exporter endpoint in this documentation; retain
+approved reports through the operational archive process rather than calling a
+retired route.
 
 ---
 
-## Architecture
+## Retired exporter architecture
 
-The exporter is organized into focused modules:
-
-```text
-app/api/missions/export/
-├── __main__.py           # Export orchestration
-├── map_generator.py      # Generate mission maps
-├── chart_generator.py    # Generate charts and graphs
-├── csv_exporter.py       # CSV export
-├── xlsx_exporter.py      # Excel export
-├── pdf_exporter.py       # PDF export
-├── pptx_exporter.py      # PowerPoint export
-└── data_transform.py     # Data transformation utilities
-```
+The listed exporter implementation belongs to the retired mission API and is
+not an operator interface. Mission V2 does not define a replacement exporter
+endpoint in this documentation.
 
 ---
 

@@ -1,0 +1,13 @@
+# DELIBERATELY UNPROVISIONED PLATFORM TEMPLATE.
+# A platform administrator must replace every browser identity field with a
+# provisioned, internally consistent bundle before health can run. Branch runs
+# must treat this marker as environment-blocked; they must not install a browser.
+version = "unprovisioned-template"
+checksum = "0000000000000000000000000000000000000000000000000000000000000000"
+
+[browser]
+store_root = "/opt/acceptance-platform/browser"
+executable = "/opt/acceptance-platform/browser/chrome"
+version = "UNPROVISIONED_BROWSER_DO_NOT_LAUNCH"
+byte_size = 0
+sha256 = "0000000000000000000000000000000000000000000000000000000000000000"

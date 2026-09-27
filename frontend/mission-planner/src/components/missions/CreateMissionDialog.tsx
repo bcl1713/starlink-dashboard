@@ -8,14 +8,17 @@ import { Label } from '../ui/label';
 interface CreateMissionDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess: (missionId: string) => void;
 }
 
 export function CreateMissionDialog({
   open,
   onClose,
+  onSuccess,
 }: CreateMissionDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
   const createMission = useCreateMission();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,17 +27,27 @@ export function CreateMissionDialog({
     if (!name.trim()) return;
 
     const id = name.toLowerCase().replace(/\s+/g, '-');
+    setCreateError(null);
 
-    await createMission.mutateAsync({
-      id,
-      name,
-      description: description || undefined,
-      legs: [],
-    });
+    try {
+      const mission = await createMission.mutateAsync({
+        id,
+        name,
+        description: description || undefined,
+        legs: [],
+      });
 
-    setName('');
-    setDescription('');
-    onClose();
+      setName('');
+      setDescription('');
+      onSuccess(mission.id);
+      onClose();
+    } catch (error) {
+      setCreateError(
+        error instanceof Error
+          ? `Unable to create mission: ${error.message}`
+          : 'Unable to create mission. Please try again.'
+      );
+    }
   };
 
   return (
@@ -63,6 +76,11 @@ export function CreateMissionDialog({
               placeholder="Multi-leg transcontinental mission"
             />
           </div>
+          {createError && (
+            <p role="alert" className="text-sm text-destructive">
+              {createError}
+            </p>
+          )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel

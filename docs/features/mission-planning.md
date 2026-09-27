@@ -104,11 +104,9 @@ Generate mission briefing documents in multiple formats.
 - Satellite geometry data
 - Recommendations and notes
 
-**APIs:**
-
-- `POST /api/missions/{id}/export/pdf`
-- `POST /api/missions/{id}/export/csv`
-- `POST /api/missions/{id}/export/xlsx`
+Mission V2 does not publish replacement export endpoints in this reference.
+Do not use retired mission API paths for export; retain approved briefing
+artifacts through the normal operational archive process.
 
 **See:** [Mission Communication SOP](../missions/mission-comm-sop.md)
 

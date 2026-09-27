@@ -36,9 +36,15 @@ manually managed and unrelated generic POIs are excluded.
 
 `state` is one of:
 
-- `available` — at least one generated POI is upcoming;
-- `no_active_route` — there is no active mission or route;
-- `no_generated_pois` — the active mission/route has no generated POIs;
+- `available` — an active Mission V2 leg has at least one generated POI that is
+  upcoming;
+- `no_active_mission` — no Mission V2 leg is active. This can coexist with a
+  route-only active route; the route alone does not fabricate a mission context;
+- `route_unavailable` — the active Mission V2 leg has no resolvable matching
+  route;
+- `inconsistent_active_mission` — active Mission V2 records are inconsistent;
+- `no_generated_pois` — the active Mission V2 leg and route have no generated
+  POIs;
 - `no_upcoming_pois` — generated records exist but none is upcoming; or
 - `unavailable` — required in-flight telemetry is unavailable.
 

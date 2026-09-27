@@ -19,6 +19,7 @@ import {
 } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
 import { EditableField } from '../components/missions/EditableField';
+import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
 
 export function MissionDetailPage() {
@@ -65,7 +66,7 @@ export function MissionDetailPage() {
         navigate('/missions');
       } catch (error) {
         console.error('Failed to delete mission:', error);
-        alert('Failed to delete mission. Please try again.');
+        alert(formatMissionDeletionError(error));
       }
     }
   };
@@ -76,7 +77,7 @@ export function MissionDetailPage() {
         await deleteLegMutation.mutateAsync(leg.id);
       } catch (error) {
         console.error('Failed to delete leg:', error);
-        alert('Failed to delete leg. Please try again.');
+        alert(formatMissionDeletionError(error));
       }
     }
   };

@@ -11,7 +11,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 90s
     # Network configuration for Starlink dish access
     # For live mode, the container needs to reach the Starlink dish at 192.168.100.1:9200
     #

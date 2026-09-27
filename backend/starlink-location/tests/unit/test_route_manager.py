@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import pytest
+
 from app.services.route_manager import RouteManager
 
 VALID_KML_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
@@ -78,6 +79,7 @@ class TestRouteManager:
         assert route_manager.routes_dir.exists()
         assert len(route_manager.list_routes()) == 0
         assert route_manager.get_active_route() is None
+        assert route_manager.get_active_route_id() is None
 
     def test_load_existing_routes(self, temp_routes_dir):
         """Test loading existing routes on startup."""
@@ -124,6 +126,7 @@ class TestRouteManager:
         result = route_manager_with_file.activate_route("route1")
 
         assert result is True
+        assert route_manager_with_file.get_active_route_id() == "route1"
         assert route_manager_with_file.get_active_route() is not None
         assert route_manager_with_file.get_active_route().metadata.name == "Test Route"
 

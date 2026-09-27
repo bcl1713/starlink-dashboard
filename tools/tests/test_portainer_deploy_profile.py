@@ -72,3 +72,15 @@ def test_local_developer_compose_contract_remains_separate() -> None:
     assert "build: ./backend/starlink-location/" in local_compose
     assert "env_file: .env" in local_compose
     assert "container_name: starlink-location" in local_compose
+
+
+def test_backend_compose_healthchecks_allow_observed_cold_start() -> None:
+    expected_healthcheck = """    healthcheck:
+      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8000/health\"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s"""
+
+    for compose_path in (LOCAL_COMPOSE_PATH, DEPLOY_COMPOSE_PATH):
+        assert expected_healthcheck in compose_path.read_text(encoding="utf-8")

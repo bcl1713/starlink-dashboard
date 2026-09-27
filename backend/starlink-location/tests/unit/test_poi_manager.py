@@ -5,8 +5,14 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from app.models.poi import POICreate, POIUpdate
+
+from app.api.pois.helpers import calculate_poi_active_status
+from app.mission.models import Mission, MissionLeg, TransportConfig
+from app.mission.storage import save_mission_v2
+from app.models.poi import POI, POICreate, POIUpdate
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 
 @pytest.fixture
@@ -21,6 +27,130 @@ def temp_pois_file():
 def poi_manager(temp_pois_file):
     """Create a POI manager with temp file."""
     return POIManager(pois_file=temp_pois_file)
+
+
+@pytest.fixture
+def route_manager(tmp_path):
+    manager = RouteManager(routes_dir=tmp_path / "routes")
+    for route_id in ("route-a", "route-b"):
+        manager.add_route(
+            route_id,
+            ParsedRoute(
+                metadata=RouteMetadata(
+                    name=route_id,
+                    file_path=f"/tmp/{route_id}.kml",
+                    point_count=2,
+                ),
+                points=[
+                    RoutePoint(latitude=0.0, longitude=0.0, sequence=0),
+                    RoutePoint(latitude=1.0, longitude=1.0, sequence=1),
+                ],
+            ),
+        )
+    return manager
+
+
+def arrange_active_v2_context(
+    route_manager, mission_id="mission-a", route_id="route-a"
+):
+    save_mission_v2(
+        Mission(
+            id=mission_id,
+            name=mission_id,
+            legs=[
+                MissionLeg(
+                    id="leg-a",
+                    name="leg-a",
+                    route_id=route_id,
+                    is_active=True,
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                )
+            ],
+        )
+    )
+    assert route_manager.activate_route(route_id) is True
+
+
+def test_mission_and_route_bound_poi_requires_matching_v2_parent_and_leg_route(
+    route_manager,
+):
+    arrange_active_v2_context(route_manager)
+    poi = POI(
+        id="generated",
+        name="Generated",
+        latitude=1.0,
+        longitude=1.0,
+        mission_id="mission-a",
+        route_id="route-b",
+    )
+
+    assert calculate_poi_active_status(poi, route_manager) is False
+
+
+def test_mission_bound_poi_is_active_only_for_matching_v2_parent(route_manager):
+    arrange_active_v2_context(route_manager)
+    poi = POI(
+        id="generated",
+        name="Generated",
+        latitude=1.0,
+        longitude=1.0,
+        mission_id="mission-a",
+    )
+
+    assert calculate_poi_active_status(poi, route_manager) is True
+
+
+def test_global_and_route_only_pois_keep_their_existing_active_rules(route_manager):
+    assert (
+        calculate_poi_active_status(
+            POI(id="global", name="Global", latitude=1.0, longitude=1.0), route_manager
+        )
+        is True
+    )
+    assert route_manager.activate_route("route-a") is True
+    assert (
+        calculate_poi_active_status(
+            POI(
+                id="route-a",
+                name="Route A",
+                latitude=1.0,
+                longitude=1.0,
+                route_id="route-a",
+            ),
+            route_manager,
+        )
+        is True
+    )
+    assert (
+        calculate_poi_active_status(
+            POI(
+                id="route-b",
+                name="Route B",
+                latitude=1.0,
+                longitude=1.0,
+                route_id="route-b",
+            ),
+            route_manager,
+        )
+        is False
+    )
+
+
+def test_mission_bound_pois_are_inactive_for_missing_or_mismatched_v2_context(
+    route_manager,
+):
+    poi = POI(
+        id="generated",
+        name="Generated",
+        latitude=1.0,
+        longitude=1.0,
+        mission_id="mission-a",
+    )
+    assert calculate_poi_active_status(poi, route_manager) is False
+
+    arrange_active_v2_context(route_manager, mission_id="mission-b")
+
+    assert calculate_poi_active_status(poi, route_manager) is False
 
 
 class TestPOIManager:

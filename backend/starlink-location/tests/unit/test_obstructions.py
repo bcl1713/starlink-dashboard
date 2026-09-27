@@ -1,6 +1,7 @@
 """Tests for obstruction simulator."""
 
 import pytest
+
 from app.simulation.obstructions import ObstructionSimulator
 
 

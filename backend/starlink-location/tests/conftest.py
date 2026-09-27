@@ -58,6 +58,8 @@ def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
 poi_manager_module.POIManager.__init__ = patched_poi_init
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.core.config import ConfigManager
 from app.models.config import (
     NetworkConfig,
@@ -74,7 +76,6 @@ from app.models.telemetry import (
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
-from fastapi.testclient import TestClient
 from main import app
 
 
@@ -171,21 +172,6 @@ def client(test_client):
 
 
 @pytest.fixture(autouse=True)
-def reset_mission_active_state():
-    """Reset global _active_mission_id before each test to prevent state leakage."""
-    # Import here to avoid circular imports
-    import app.mission.routes as mission_routes
-
-    # Reset before test starts
-    mission_routes._active_mission_id = None
-
-    yield
-
-    # Reset after test completes
-    mission_routes._active_mission_id = None
-
-
-@pytest.fixture(autouse=True)
 def ensure_eta_service_initialized():
     """Ensure ETA service is initialized before each test.
 
@@ -242,8 +228,9 @@ def reset_prometheus_registry():
     """
     # Before each test, reset all gauge metrics to prevent pollution from NaN values
     try:
-        from app.core import metrics
         from prometheus_client.core import Gauge
+
+        from app.core import metrics
 
         # Reset the custom position collector data
         metrics._current_position["latitude"] = 0.0
@@ -343,18 +330,17 @@ def _clean_directory(directory: Path):
 
 
 @pytest.fixture(autouse=True)
-def isolate_mission_storage():
-    """Force mission storage to use a temp directory with full cleanup."""
+def isolate_mission_storage(tmp_path: Path):
+    """Use a per-test mission root so parallel workers never clear each other."""
     from app.mission import storage
 
     original_dir = storage.MISSIONS_DIR
-    storage.MISSIONS_DIR = TEST_MISSIONS_DIR
+    test_missions_dir = tmp_path / "missions"
+    storage.MISSIONS_DIR = test_missions_dir
     storage.ensure_missions_directory()
-    _clean_directory(TEST_MISSIONS_DIR)
 
     yield
 
-    _clean_directory(TEST_MISSIONS_DIR)
     storage.MISSIONS_DIR = original_dir
 
 

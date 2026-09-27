@@ -17,6 +17,16 @@ The uploaded ZIP is limited to 100 MiB. See the [mission-package upload
 limit](../setup/configuration/mission-package-upload-limits.md) for proxy and
 application-limit details.
 
+## Lifecycle Safety
+
+Imported `is_active` values are accepted for package compatibility but are
+server-managed returned state: every imported leg is persisted inactive. The
+activation endpoint remains the only way to activate a V2 leg. If the package
+targets an existing mission with an active leg, import returns 409 without
+changing mission, route, POI, or timeline data. Deactivate that leg, re-import,
+and activate it again when ready. Likewise, replacing an active leg route
+requires deactivate → upload → activate.
+
 ## Endpoint POIs Restored During Import
 
 For every imported leg whose referenced route is available and has endpoints,

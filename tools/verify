@@ -3,13 +3,19 @@
 
 from __future__ import annotations
 
+import io
+import os
+import re
 import subprocess
 import sys
+import tokenize
+from collections.abc import Mapping
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend/starlink-location"
 Command = tuple[list[str], Path]
+HUNK_HEADER = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
 STATIC: list[Command] = [
     (
@@ -31,13 +37,13 @@ STATIC: list[Command] = [
             "uv",
             "run",
             "--with-requirements",
-            "backend/starlink-location/requirements-dev.txt",
+            "requirements-dev.txt",
             "ruff",
             "check",
-            "backend/starlink-location/app",
-            "backend/starlink-location/tests",
+            "app",
+            "tests",
         ],
-        ROOT,
+        BACKEND,
     ),
     (["python", "tools/check_filename_convention.py"], ROOT),
     (
@@ -56,6 +62,16 @@ STATIC: list[Command] = [
     (["npm", "--prefix", "frontend/mission-planner", "run", "lint"], ROOT),
     (["markdownlint-cli2", "docs/**/*.md"], ROOT),
     (["lychee", "--no-progress", "docs/"], ROOT),
+    (
+        [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tools/tests/test_acceptance_platform_typing_policy.py",
+        ],
+        ROOT,
+    ),
 ]
 BACKEND_COMMANDS: list[Command] = [
     (
@@ -77,6 +93,122 @@ FRONTEND: list[Command] = [
 ]
 
 
+def _type_ignore_comment_lines(source: str) -> set[int]:
+    """Return full-source line numbers containing typing comment directives."""
+
+    try:
+        return {
+            token.start[0]
+            for token in tokenize.generate_tokens(io.StringIO(source).readline)
+            if token.type == tokenize.COMMENT and "type: ignore" in token.string
+        }
+    except tokenize.TokenError as error:
+        raise ValueError("candidate Python source could not be tokenized") from error
+
+
+def added_type_ignore_violations(
+    diff: str, post_images: Mapping[str, str]
+) -> tuple[str, ...]:
+    """Return added Python typing directives using complete post-image sources."""
+
+    path: str | None = None
+    line_number: int | None = None
+    additions: dict[str, list[tuple[int, str]]] = {}
+    for line in diff.splitlines():
+        if line.startswith("+++ "):
+            diff_path = line.removeprefix("+++ ")
+            path = None if diff_path == "/dev/null" else diff_path.removeprefix("b/")
+            continue
+        header = HUNK_HEADER.match(line)
+        if header is not None:
+            line_number = int(header.group(1))
+            continue
+        if line.startswith("+") and not line.startswith("+++"):
+            source_line = line[1:]
+            if (
+                path is not None
+                and path.endswith(".py")
+                and line_number is not None
+            ):
+                additions.setdefault(path, []).append((line_number, source_line))
+            if line_number is not None:
+                line_number += 1
+            continue
+        if line.startswith(" ") and line_number is not None:
+            line_number += 1
+    violations: list[str] = []
+    for path, added_lines in additions.items():
+        try:
+            comment_lines = _type_ignore_comment_lines(post_images[path])
+        except KeyError as error:
+            raise ValueError(f"missing post-image source for {path}") from error
+        violations.extend(
+            f"{path}:{line_number}: {source_line}"
+            for line_number, source_line in added_lines
+            if line_number in comment_lines
+        )
+    return tuple(violations)
+
+
+def _candidate_base() -> str:
+    """Validate that the configured candidate base is a reachable commit."""
+
+    base = os.environ.get("ACCEPTANCE_POLICY_BASE_SHA")
+    if base is None:
+        raise ValueError("ACCEPTANCE_POLICY_BASE_SHA is required")
+    if re.fullmatch(r"[0-9a-f]{40}", base) is None:
+        raise ValueError("ACCEPTANCE_POLICY_BASE_SHA must be an exact 40-hex SHA")
+    if subprocess.run(
+        ["git", "cat-file", "-e", f"{base}^{{commit}}"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+    ).returncode:
+        raise ValueError("ACCEPTANCE_POLICY_BASE_SHA must resolve to a commit")
+    if subprocess.run(
+        ["git", "merge-base", "--is-ancestor", base, "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+    ).returncode:
+        raise ValueError("ACCEPTANCE_POLICY_BASE_SHA must be an ancestor of HEAD")
+    return base
+
+
+def _head_python_post_images(diff: str) -> dict[str, str]:
+    """Read complete HEAD sources for each Python file touched by the candidate."""
+
+    paths = {
+        line.removeprefix("+++ b/")
+        for line in diff.splitlines()
+        if line.startswith("+++ b/") and line.removeprefix("+++ b/").endswith(".py")
+    }
+    return {
+        path: subprocess.run(
+            ["git", "show", f"HEAD:{path}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        for path in paths
+    }
+
+
+def candidate_type_ignore_violations() -> tuple[str, ...]:
+    """Inspect the configured candidate delta without contacting the network."""
+
+    base = _candidate_base()
+    diff = subprocess.run(
+        ["git", "diff", "--unified=0", f"{base}..HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return added_type_ignore_violations(diff, _head_python_post_images(diff))
+
+
 def tier_commands(tier: str) -> list[Command]:
     """Return commands for a supported verification tier."""
     commands = {"static": STATIC, "backend": BACKEND_COMMANDS, "frontend": FRONTEND}
@@ -90,6 +222,16 @@ def main(argv: list[str] | None = None) -> int:
     if len(args) != 2 or args[1] not in {"static", "backend", "frontend", "all"}:
         print("usage: tools/verify {static|backend|frontend|all}", file=sys.stderr)
         return 2
+
+    if args[1] in {"static", "all"}:
+        try:
+            violations = candidate_type_ignore_violations()
+        except ValueError as error:
+            print(f"candidate typing policy error: {error}", file=sys.stderr)
+            return 2
+        if violations:
+            print(*violations, sep="\n", file=sys.stderr)
+            return 1
 
     for command, cwd in tier_commands(args[1]):
         print(f"({cwd}) $ {' '.join(command)}")

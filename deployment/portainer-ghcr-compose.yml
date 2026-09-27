@@ -17,7 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 90s
     volumes:
       - type: bind
         source: ${STARLINK_APP_DATA_PATH:?Set the persistent application data host path}

@@ -2,6 +2,7 @@ import asyncio
 
 import httpx
 import pytest
+
 from app.services.overview_history_prometheus import (
     MAX_OVERVIEW_HISTORY_SAMPLES,
     OVERVIEW_HISTORY_METRICS,
