@@ -226,9 +226,66 @@ separately, verifies that owned resources are gone, and re-verifies evidence
 checksums after cleanup. A cleanup failure downgrades a would-be final result to
 `failed`; it does not overwrite the primary diagnostic.
 
-## External-host final authority
+## Retention maintenance
 
-When Oracle lacks the required Linux host capacity, use the
+Run retention separately from a candidate lane, with the state root, policy, and
+optional checkout root already resolved to the repository-owned acceptance
+paths. Start with report-only mode; it acquires the repository retention lease,
+validates sealed authority, and writes JSON without removing evidence.
+
+```bash
+./tools/run-acceptance-platform.sh --maintenance retention \
+  --state-root "$STATE_ROOT" \
+  --policy tools/acceptance/platform/retention_policy.toml \
+  --checkout-root "$CHECKOUT_ROOT"
+```
+
+Before considering `--apply`, review the report's protected final candidate,
+each planned disposition and anomaly, the scoped `docker ps` inventory, and
+available disk capacity. An anomaly, unavailable lease, invalid policy, or
+nonzero report-only exit is a stop condition. Preserve the JSON report with the
+maintenance evidence; do not treat a structurally valid payload as sufficient
+without checking its planned deletions, reclaimed bytes, post-action status, and
+anomaly totals.
+
+Only after that review, run the same command with `--apply` once and retain its
+JSON output:
+
+```bash
+./tools/run-acceptance-platform.sh --maintenance retention \
+  --state-root "$STATE_ROOT" \
+  --policy tools/acceptance/platform/retention_policy.toml \
+  --checkout-root "$CHECKOUT_ROOT" \
+  --apply
+```
+
+The fixed policy retains the protected latest final authority and two newer
+completed generations per lane. Apply is fail-closed: it may remove only
+unambiguous sealed evidence selected by that policy and exact, fully
+runner-owned, unreferenced Docker image IDs. It inventories labeled containers,
+networks, and volumes, but never deletes volumes. Never run `docker system
+prune`, `docker image prune`, `docker volume prune`, `git clean`, `git gc`, or
+an unscoped `rm` as a substitute for this command.
+
+When `--checkout-root` is supplied, recovery inspects every immediate child. It
+removes an abandoned checkout only when its mode-0600 ownership marker, exact
+SHA, detached HEAD, clean status, and inactive exact `--acceptance-task` process
+all validate. Missing markers, symlinks, authority mismatch, liveness, or any
+other ambiguity are retained anomalies; investigate them manually and do not
+delete them by hand merely to make maintenance pass.
+
+Actions retention is a separate lifecycle: the publish workflow selects exact
+expired `dockerbuild` artifact IDs only after complete workflow-run and artifact
+pagination, ordered by completion time, while preserving the current run and two
+newer completed runs. It must not delete a run, workflow, release, or arbitrary
+artifact. GHCR inventory is report-only: never delete GHCR versions from this
+maintenance procedure or from the publish workflow. GHCR `updated_at` is a
+mutable ordering timestamp, not authoritative publish completion; until an
+authoritative field exists every SHA-only version remains retained and the
+inventory reports that authority gap as an anomaly.
+
+**External-host final authority.** When Oracle lacks the required Linux host
+capacity, use the
 [External-Host Final Acceptance](external-host-final-acceptance.md) runbook. It
 requires a fresh detached exact-SHA checkout, an administrator-created host-local
 browser profile, canonical health authority, and one tracked final lane; neither

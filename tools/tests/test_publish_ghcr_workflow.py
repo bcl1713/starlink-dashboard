@@ -150,6 +150,196 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
         self.assertIn("publish matrix must contain exactly 4 entries, got 3", errors)
         self.assertIn("missing publish matrix images: grafana", errors)
 
+    def test_rejects_retention_without_publish_dependency(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("needs: publish", "")
+        )
+
+        self.assertIn("retention job must depend on successful publish", errors)
+
+    def test_rejects_retention_without_dev_success_condition(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("needs.publish.result == 'success'", "true")
+        )
+
+        self.assertIn(
+            "retention job must run only for a successful publish on dev", errors
+        )
+
+    def test_rejects_retention_without_actions_write_permission(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("      actions: write", "      actions: read")
+        )
+
+        self.assertIn("retention job permissions must be least-privileged", errors)
+
+    def test_rejects_retention_without_github_token_for_gh_commands(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("    env:\n      GH_TOKEN: ${{ github.token }}\n", "")
+        )
+
+        self.assertIn("retention gh commands must receive GH_TOKEN", errors)
+
+    def test_rejects_retention_selection_without_paginated_json_plan(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("gh api --paginate --slurp", "gh api --slurp")
+        )
+
+        self.assertIn(
+            "retention selection step must paginate complete JSON inputs", errors
+        )
+
+    def test_rejects_retention_runs_with_ref_qualified_workflow_paths(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            'map(.workflow_runs[] | .path |= split("@")[0]) | unique_by(.id)',
+            "map(.workflow_runs[]) | unique_by(.id)",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention selection step must normalize workflow paths for the CLI plan",
+            errors,
+        )
+
+    def test_rejects_artifact_deletion_that_is_not_exact_selected_id_endpoint(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace(
+                "gh api --method DELETE \"repos/${{ github.repository }}/actions/artifacts/$artifact_id\"",
+                "gh api --method DELETE \"repos/${{ github.repository }}/actions/artifacts\"",
+            )
+        )
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
+    def test_rejects_disabled_artifact_deletion_step_with_inline_comment(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Delete only selected artifact IDs\n        run:",
+            "      - name: Delete only selected artifact IDs\n"
+            "        if: ${{ false }} # disabled\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
+    def test_rejects_ghcr_inventory_step_with_package_delete(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace(
+                "          set -euo pipefail\n          for package",
+                "          set -euo pipefail\n"
+                "          gh api --method DELETE \"orgs/${{ github.repository_owner }}/packages/container/example/versions/1\"\n"
+                "          for package",
+            )
+        )
+
+        self.assertIn("GHCR inventory step must be report-only", errors)
+
+    def test_rejects_equivalently_disabled_ghcr_inventory_step(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Inventory GHCR versions without mutation\n        run:",
+            "      - name: Inventory GHCR versions without mutation\n"
+            "        if: ${{ 1 == 0 }} # disabled\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn("GHCR inventory step must be report-only", errors)
+
+    def test_rejects_disabled_artifact_deletion_step_with_false_and_dynamic_operand(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Delete only selected artifact IDs\n        run:",
+            "      - name: Delete only selected artifact IDs\n"
+            "        if: ${{ false && github.ref == 'refs/heads/dev' }}\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
+    def test_rejects_disabled_artifact_deletion_step_with_nested_dynamic_or_true(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Delete only selected artifact IDs\n        run:",
+            "      - name: Delete only selected artifact IDs\n"
+            "        if: ${{ false && (github.ref == 'refs/heads/dev' || true) }}\n"
+            "        run:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "retention deletion step must delete only selected artifact IDs", errors
+        )
+
+    def test_rejects_disabled_upload_step_with_negated_true_or_dynamic_operand(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Upload retention plan\n        uses:",
+            "      - name: Upload retention plan\n"
+            "        if: ${{ !(true || github.ref == 'refs/heads/dev') }}\n"
+            "        uses:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn("retention job must upload the selected artifact plan", errors)
+
+    def test_rejects_retention_without_uploaded_plan(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        errors = self.validate_workflow_text(
+            workflow_text.replace("uses: actions/upload-artifact@v4", "run: true")
+        )
+
+        self.assertIn("retention job must upload the selected artifact plan", errors)
+
+    def test_rejects_equivalently_disabled_upload_step_with_inline_comment(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Upload retention plan\n        uses:",
+            "      - name: Upload retention plan\n"
+            "        if: ${{ !true }} # disabled\n"
+            "        uses:",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn("retention job must upload the selected artifact plan", errors)
+
 
 if __name__ == "__main__":
     unittest.main()

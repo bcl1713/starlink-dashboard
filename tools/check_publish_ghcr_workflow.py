@@ -59,21 +59,26 @@ def workflow_entries(workflow_path: Path) -> list[dict[str, str]]:
     return entries
 
 
-def publish_job_lines(workflow_text: str) -> list[str]:
-    """Return only lines belonging to the publish job."""
+def job_lines(workflow_text: str, job_name: str) -> list[str]:
+    """Return only lines belonging to an enabled top-level job."""
     lines: list[str] = []
-    in_publish_job = False
+    in_job = False
 
     for line in workflow_text.splitlines():
-        if PUBLISH_JOB_PATTERN.match(line):
-            in_publish_job = True
+        if line == f"  {job_name}:":
+            in_job = True
             continue
-        if in_publish_job and JOB_PATTERN.match(line):
+        if in_job and JOB_PATTERN.match(line):
             break
-        if in_publish_job:
+        if in_job:
             lines.append(line)
 
     return lines
+
+
+def publish_job_lines(workflow_text: str) -> list[str]:
+    """Return only lines belonging to the publish job."""
+    return job_lines(workflow_text, "publish")
 
 
 def publish_actions(workflow_text: str) -> list[str]:
@@ -123,6 +128,150 @@ def build_action_with_text(workflow_text: str) -> str:
     return "\n".join(step_lines[with_start:])
 
 
+def named_step_lines(workflow_text: str, job_name: str, step_name: str) -> list[str]:
+    """Return an enabled named step from its job, never a commented decoy."""
+    lines = job_lines(workflow_text, job_name)
+    header = f"      - name: {step_name}"
+    try:
+        start = lines.index(header)
+    except ValueError:
+        return []
+    step: list[str] = []
+    for line in lines[start:]:
+        if step and line.startswith("      - "):
+            break
+        step.append(line)
+    if any(_is_disabled_if_line(line) for line in step):
+        return []
+    return step
+
+
+def _without_inline_comment(value: str) -> str:
+    """Remove a YAML inline comment without treating quoted hashes as comments."""
+    quote: str | None = None
+    for index, character in enumerate(value):
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif character == "#" and quote is None:
+            return value[:index].rstrip()
+    return value.rstrip()
+
+
+def _strip_outer_parentheses(expression: str) -> str:
+    """Remove one wrapping parenthesis pair, but not a partial grouping."""
+    if not (expression.startswith("(") and expression.endswith(")")):
+        return expression
+
+    depth = 0
+    quote: str | None = None
+    for index, character in enumerate(expression):
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif quote is None and character == "(":
+            depth += 1
+        elif quote is None and character == ")":
+            depth -= 1
+            if depth == 0:
+                return expression[1:-1] if index == len(expression) - 1 else expression
+    return expression
+
+
+def _compact_expression(expression: str) -> str:
+    """Drop whitespace outside quotes while preserving literal values."""
+    compacted: list[str] = []
+    quote: str | None = None
+    for character in expression:
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        if quote is not None or not character.isspace():
+            compacted.append(character)
+    return "".join(compacted).lower()
+
+
+def _split_top_level(expression: str, operator: str) -> list[str] | None:
+    """Split an expression only at unquoted, ungrouped boolean operators."""
+    operands: list[str] = []
+    start = 0
+    depth = 0
+    quote: str | None = None
+    index = 0
+    while index < len(expression):
+        character = expression[index]
+        if character in {"'", '"'}:
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif quote is None:
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+            elif depth == 0 and expression.startswith(operator, index):
+                operands.append(expression[start:index])
+                start = index + len(operator)
+                index += len(operator)
+                continue
+        index += 1
+    if not operands:
+        return None
+    operands.append(expression[start:])
+    return operands
+
+
+def _constant_boolean(expression: str) -> bool | None:
+    """Evaluate the small, literal-only subset of GitHub ``if`` expressions."""
+    expression = expression.strip()
+    if expression.startswith("${{") and expression.endswith("}}"):
+        expression = expression[3:-2].strip()
+    expression = _compact_expression(expression)
+    expression = _strip_outer_parentheses(expression)
+
+    if expression in {"true", "false"}:
+        return expression == "true"
+    if expression.startswith("!"):
+        operand = _constant_boolean(expression[1:])
+        return None if operand is None else not operand
+    for operator, identity, short_circuit in (
+        ("||", False, True),
+        ("&&", True, False),
+    ):
+        operands = _split_top_level(expression, operator)
+        if operands is not None:
+            values = [_constant_boolean(operand) for operand in operands]
+            if short_circuit in values:
+                return short_circuit
+            return identity if all(value is identity for value in values) else None
+
+    comparison = re.fullmatch(
+        r"(?P<left>true|false|[0-9]+|'[^']*'|\"[^\"]*\")"
+        r"(?P<operator>==|!=)"
+        r"(?P<right>true|false|[0-9]+|'[^']*'|\"[^\"]*\")",
+        expression,
+    )
+    if comparison is None:
+        return None
+    equal = comparison.group("left") == comparison.group("right")
+    return equal if comparison.group("operator") == "==" else not equal
+
+
+def _is_disabled_if_line(line: str) -> bool:
+    """Return whether a step's literal ``if`` condition is structurally disabled."""
+    stripped = line.strip()
+    if not stripped.startswith("if:"):
+        return False
+    return _constant_boolean(_without_inline_comment(stripped[3:])) is False
+
+
 def resolve_from_repo(repo_root: Path, value: str) -> Path:
     """Resolve a repository-relative workflow value without following outside it."""
     resolved = (repo_root / value).resolve()
@@ -158,6 +307,79 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
 
     if "matrix.file || 'Dockerfile'" in workflow_text:
         errors.append("build action must not fall back to an ambiguous Dockerfile")
+
+    retention_lines = job_lines(workflow_text, "retention")
+    if "    needs: publish" not in retention_lines:
+        errors.append("retention job must depend on successful publish")
+    if (
+        "    if: ${{ github.ref == 'refs/heads/dev' && needs.publish.result == 'success' }}"
+        not in retention_lines
+    ):
+        errors.append("retention job must run only for a successful publish on dev")
+    retention_permissions = (
+        retention_lines[retention_lines.index("    permissions:") + 1 :][:3]
+        if "    permissions:" in retention_lines
+        else []
+    )
+    if retention_permissions != [
+        "      actions: write",
+        "      contents: read",
+        "      packages: read",
+    ]:
+        errors.append("retention job permissions must be least-privileged")
+    if "    env:\n      GH_TOKEN: ${{ github.token }}" not in "\n".join(
+        retention_lines
+    ):
+        errors.append("retention gh commands must receive GH_TOKEN")
+
+    selection_step = named_step_lines(
+        workflow_text, "retention", "Select exact expired artifact IDs"
+    )
+    selection_text = "\n".join(selection_step)
+    if (
+        selection_step == []
+        or selection_text.count("gh api --paginate --slurp") < 2
+        or "--current-run-id \"$GITHUB_RUN_ID\"" not in selection_text
+        or "pagination: {complete: true}" not in selection_text
+    ):
+        errors.append("retention selection step must paginate complete JSON inputs")
+    if 'map(.workflow_runs[] | .path |= split("@")[0])' not in selection_text:
+        errors.append(
+            "retention selection step must normalize workflow paths for the CLI plan"
+        )
+
+    deletion_step = named_step_lines(
+        workflow_text, "retention", "Delete only selected artifact IDs"
+    )
+    deletion_text = "\n".join(deletion_step)
+    if (
+        deletion_step == []
+        or ".expired_dockerbuild_artifacts[].artifact_id" not in deletion_text
+        or 'gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"'
+        not in deletion_text
+    ):
+        errors.append("retention deletion step must delete only selected artifact IDs")
+
+    ghcr_step = named_step_lines(
+        workflow_text, "retention", "Inventory GHCR versions without mutation"
+    )
+    ghcr_text = "\n".join(ghcr_step)
+    if (
+        ghcr_step == []
+        or "python tools/github_retention_cli.py ghcr-inventory" not in ghcr_text
+        or "gh api --paginate --slurp" not in ghcr_text
+        or "gh api --method" in ghcr_text
+    ):
+        errors.append("GHCR inventory step must be report-only")
+
+    upload_step = named_step_lines(workflow_text, "retention", "Upload retention plan")
+    upload_text = "\n".join(upload_step)
+    if (
+        upload_step == []
+        or "uses: actions/upload-artifact@v4" not in upload_text
+        or "path: retention/artifact-plan.json" not in upload_text
+    ):
+        errors.append("retention job must upload the selected artifact plan")
 
     expected_entry_count = len(EXPECTED_IMAGES)
     if len(entries) != expected_entry_count:

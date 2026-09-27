@@ -3,16 +3,21 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
+import shutil
+import signal
 import struct
 import subprocess
+import time
 import zlib
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import ClassVar
 
 import pytest
-from acceptance.platform import runner
+from acceptance.platform import maintenance, runner
 from acceptance.platform.compose import (
+    AcceptanceOwnershipLabels,
     BuildLedger,
     BuildLedgerKey,
     BuildProgressEvent,
@@ -31,13 +36,18 @@ from acceptance.platform.model import (
     PlatformProfile,
     ProductContract,
 )
-from acceptance.platform.runner import RunnerDependencies, main, run
+from acceptance.platform.retention import RetentionPolicy
+from acceptance.platform.runner import RunnerDependencies, _ScopedDocker, main, run
 
 SHA = "a" * 40
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "tools/acceptance/contracts/v2-mission-retirement.toml"
 PROFILE = ROOT / "tools/acceptance/platform/profiles/default.toml"
 V2_ADAPTER = ROOT / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+
+
+def _retention_policy() -> RetentionPolicy:
+    return RetentionPolicy.parse(ROOT / "tools/acceptance/platform/retention_policy.toml")
 
 
 def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
@@ -58,6 +68,8 @@ def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
         str(tmp_path / "evidence"),
         "--task-root",
         str(tmp_path / "task"),
+        "--acceptance-task",
+        "task-marker",
     ]
 
 
@@ -242,6 +254,238 @@ def test_missing_health_fingerprint_skips_product_executor(tmp_path: Path) -> No
     assert calls == []
 
 
+def test_cleanup_default_preserves_image_protected_by_configured_alternate_ledger_root(
+    tmp_path: Path,
+) -> None:
+    """Cleanup must use the runner's configured ledger, not the topology directory."""
+
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+    topology = TaskTopology(
+        repository=tmp_path,
+        project="accept-cleanup",
+        candidate_sha=SHA,
+        services=(),
+        env_file=tmp_path / "compose.env",
+        override_path=tmp_path / "task" / "compose.acceptance.json",
+        root_override_path=tmp_path / "compose.root-public-env.yml",
+        validation_path=tmp_path / "topology.validated.json",
+        ports={},
+        docker_labels=labels,
+    )
+    topology.rendered_override_path.parent.mkdir(parents=True)
+    alternate_ledger = tmp_path / "alternate-ledger"
+    alternate_ledger.mkdir()
+    (alternate_ledger / "protected.json").write_text(
+        json.dumps({"image_ids": {"service": "sha256:protected"}}),
+        encoding="utf-8",
+    )
+
+    class CleanupExecutor:
+        def __init__(self) -> None:
+            self.commands: list[tuple[str, ...]] = []
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(1, "no such builder")
+            if argv[:3] == ("docker", "image", "ls"):
+                return CommandResult(0, "candidate-tag\n")
+            if argv[:3] == ("docker", "image", "inspect"):
+                return CommandResult(
+                    0,
+                    json.dumps(
+                        [{"Id": "sha256:protected", "Config": {"Labels": labels.values()}}]
+                    ),
+                )
+            return CommandResult(0, "")
+
+    executor = CleanupExecutor()
+
+    with pytest.raises(ValueError, match="retained protected or unsafe"):
+        runner._cleanup_default((topology, executor, alternate_ledger))
+
+    assert ("docker", "image", "rm", "sha256:protected") not in executor.commands
+
+
+def test_task_owned_buildx_builder_lifecycle_uses_exact_labelled_builder_without_prune(
+    tmp_path: Path,
+) -> None:
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+
+    class BuildxExecutor:
+        def __init__(self) -> None:
+            self.commands: list[tuple[str, ...]] = []
+            self.present = False
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if argv[:3] == ("docker", "buildx", "create"):
+                self.present = True
+                return CommandResult(0, "acceptance-task-marker-aaaaaaaaaaaa\n")
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(0 if self.present else 1, "")
+            if argv[:2] == ("docker", "inspect"):
+                return CommandResult(
+                    0 if self.present else 1,
+                    json.dumps([{"Config": {"Labels": labels.values()}}])
+                    if self.present
+                    else "",
+                )
+            if argv[:3] == ("docker", "buildx", "rm"):
+                self.present = False
+                return CommandResult(0, "")
+            return CommandResult(0, "")
+
+    executor = BuildxExecutor()
+    docker = _ScopedDocker(executor, tmp_path / "ledger", labels)
+
+    docker.create_task_builder()
+    docker.remove_task_builder()
+
+    builder = "acceptance-task-marker-aaaaaaaaaaaa"
+    create = next(command for command in executor.commands if command[:3] == ("docker", "buildx", "create"))
+    assert create[:6] == (
+        "docker",
+        "buildx",
+        "create",
+        "--name",
+        builder,
+        "--driver",
+    )
+    assert "--use" not in create
+    assert "--buildkitd-flags" not in create
+    assert ("docker", "buildx", "rm", builder) in executor.commands
+    assert executor.commands[-1] == ("docker", "buildx", "inspect", builder)
+    scoped_executor = runner._TaskBuilderComposeExecutor(executor, builder)
+    scoped_executor.run(("docker", "compose", "build", "--pull"))
+    assert executor.commands[-1] == (
+        "docker", "compose", "build", "--builder", builder, "--pull"
+    )
+    assert not any("prune" in item for command in executor.commands for item in command)
+
+
+def test_task_builder_compose_uses_the_build_subcommand_builder_position() -> None:
+    """Compose treats --builder as a build option, not a global option."""
+    if shutil.which("docker") is None:
+        pytest.skip("Docker CLI is unavailable")
+    compose_version = subprocess.run(
+        ["docker", "compose", "version"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    if compose_version.returncode:
+        pytest.skip("Docker Compose CLI is unavailable")
+
+    global_position = subprocess.run(
+        ["docker", "compose", "--builder", "acceptance-contract", "build", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    subcommand_position = subprocess.run(
+        ["docker", "compose", "build", "--builder", "acceptance-contract", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+
+    assert global_position.returncode != 0
+    assert subcommand_position.returncode == 0
+    assert "--builder" in subcommand_position.stdout
+
+
+def test_cleanup_default_attempts_all_scoped_actions_and_aggregates_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed teardown must not skip builder or exact-image cleanup attempts."""
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+    topology = TaskTopology(
+        repository=tmp_path,
+        project="accept-cleanup",
+        candidate_sha=SHA,
+        services=(),
+        env_file=tmp_path / "compose.env",
+        override_path=tmp_path / "task" / "compose.acceptance.json",
+        root_override_path=tmp_path / "compose.root-public-env.yml",
+        validation_path=tmp_path / "topology.validated.json",
+        ports={},
+        docker_labels=labels,
+    )
+    ledger = tmp_path / "ledger"
+    calls: list[str] = []
+
+    class ScopedDocker:
+        def __init__(self, *_: object) -> None:
+            calls.append("docker")
+
+        def remove_task_builder(self) -> None:
+            calls.append("builder")
+            raise ValueError("builder failed")
+
+    monkeypatch.setattr(
+        runner, "cleanup_compose", lambda *_: (_ for _ in ()).throw(ValueError("down failed"))
+    )
+    monkeypatch.setattr(runner, "_ScopedDocker", ScopedDocker)
+    monkeypatch.setattr(
+        runner, "scoped_docker_inventory", lambda *_: calls.append("inventory")
+    )
+    monkeypatch.setattr(
+        runner,
+        "retain_docker_resources",
+        lambda *_args, **_kwargs: calls.append("retain") or type("Report", (), {"has_anomalies": False})(),
+    )
+
+    with pytest.raises(ValueError, match="down failed.*builder failed"):
+        runner._cleanup_default((topology, object(), ledger))
+
+    assert calls == ["docker", "builder", "inventory", "retain"]
+
+
+def test_task_owned_buildx_cleanup_refuses_wrong_labels_and_unsupported_buildx(
+    tmp_path: Path,
+) -> None:
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+
+    class WrongLabelExecutor:
+        def __init__(self, unsupported: bool = False) -> None:
+            self.commands: list[tuple[str, ...]] = []
+            self.unsupported = unsupported
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if self.unsupported and argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(1, "docker: 'buildx' is not a docker command")
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(0, "")
+            if argv[:2] == ("docker", "inspect"):
+                return CommandResult(0, json.dumps([{"Config": {"Labels": {}}}]))
+            return CommandResult(0, "")
+
+    wrong = WrongLabelExecutor()
+    with pytest.raises(ValueError, match="ownership marker"):
+        _ScopedDocker(wrong, tmp_path / "ledger", labels).remove_task_builder()
+    assert not any(command[:3] == ("docker", "buildx", "rm") for command in wrong.commands)
+
+    unsupported = WrongLabelExecutor(unsupported=True)
+    unsupported_root = tmp_path / "unsupported-ledger"
+    scoped = _ScopedDocker(unsupported, unsupported_root, labels)
+    scoped._write_task_builder_marker()
+    with pytest.raises(ValueError, match="Buildx unsupported"):
+        scoped.remove_task_builder()
+    assert not any(command[:3] == ("docker", "buildx", "rm") for command in unsupported.commands)
+    assert not any("prune" in item for command in unsupported.commands for item in command)
+
+
 def test_final_requires_every_required_result(tmp_path: Path) -> None:
     result = run(
         _argv(tmp_path, "final"),
@@ -332,15 +576,25 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
         ports: Mapping[str, int],
         *,
         candidate_sha: str,
+        lane: str,
+        task_id: str,
     ) -> TaskTopology:
         topology = original_render(
-            repository, contract, task_root, project, ports, candidate_sha=candidate_sha
+            repository,
+            contract,
+            task_root,
+            project,
+            ports,
+            candidate_sha=candidate_sha,
+            lane=lane,
+            task_id=task_id,
         )
         executor.topology = topology
         return topology
 
     monkeypatch.setattr(runner, "render_task_override", render)
     monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda _: executor)
+    monkeypatch.setattr(runner._ScopedDocker, "create_task_builder", lambda _: None)
     monkeypatch.setattr(runner, "_cleanup_task_root", lambda _: None)
 
     result = run(
@@ -380,6 +634,8 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
 
     topology = executor.topology
     assert topology is not None
+    assert topology.docker_labels.lane == "final"
+    assert topology.docker_labels.task == "task-marker"
     rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert {
         name: service["build"]["args"]
@@ -604,6 +860,7 @@ def _install_supervised_final_build(
 
     monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: Adapter())
     monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
+    monkeypatch.setattr(runner._ScopedDocker, "create_task_builder", lambda _: None)
 
     def fail_build(
         _topology: TaskTopology,
@@ -895,6 +1152,176 @@ def test_candidate_identity_is_rejected_before_paths_are_constructed(
     assert not (tmp_path / "escape").exists()
 
 
+def _recording_executable(path: Path, content: str) -> None:
+    path.write_text("#!/usr/bin/env bash\nset -eu\n" + content)
+    path.chmod(0o755)
+
+
+@pytest.mark.parametrize("runner_exit", [0, 7])
+def test_final_wrapper_preflights_before_allocation_and_cleans_after_python_returns(
+    tmp_path: Path, runner_exit: int
+) -> None:
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    events = tmp_path / "events"
+    checkout_root, state_root, task_root = (
+        tmp_path / "checkouts",
+        tmp_path / "state",
+        tmp_path / "task",
+    )
+    checkout_root.mkdir()
+    state_root.mkdir()
+    _recording_executable(
+        commands / "git",
+        """
+printf 'git %s|cwd=%s\\n' "$*" "$PWD" >> "$EVENTS"
+case "$*" in
+  *'rev-parse '*) printf '%s\\n' "$SHA" ;;
+  *'symbolic-ref -q HEAD'*) exit 1 ;;
+  *'status --porcelain'*) : ;;
+  *'worktree add'*) mkdir -p "${@: -2:1}" ;;
+  *'worktree remove'*) stat -c 'marker=%a' "${@: -1}/.acceptance-runner-owner.json" >> "$EVENTS"; rm -rf "${@: -1}" ;;
+esac
+""",
+    )
+    _recording_executable(
+        commands / "python3",
+        """
+printf 'python3 %s|cwd=%s\\n' "$*" "$PWD" >> "$EVENTS"
+case "$*" in *'acceptance.platform.maintenance'*) exit 0 ;; *' -c '*) exit 0 ;; esac
+exit "$RUNNER_EXIT"
+""",
+    )
+    result = subprocess.run(
+        [
+            str(ROOT / "tools/run-acceptance-platform.sh"),
+            "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance",
+            "--evidence-root", str(state_root), "--task-root", str(task_root),
+            "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"),
+            "--checkout-root", str(checkout_root), "--acceptance-task", "task-123",
+        ],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PATH": f"{commands}:{os.environ['PATH']}",
+            "EVENTS": str(events),
+            "SHA": SHA,
+            "RUNNER_EXIT": str(runner_exit),
+        },
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == runner_exit, result.stderr
+    recorded = events.read_text().splitlines()
+    preflight = next(index for index, event in enumerate(recorded) if "maintenance retention" in event)
+    allocation = next(index for index, event in enumerate(recorded) if "worktree add" in event)
+    runner_call = next(index for index, event in enumerate(recorded) if "acceptance.platform.runner" in event)
+    cleanup = next(index for index, event in enumerate(recorded) if "worktree remove" in event)
+    assert preflight < allocation < runner_call < cleanup
+    assert "marker=600" in recorded
+    assert f"cwd={checkout_root}" not in recorded[cleanup]
+    assert not any(checkout_root.iterdir())
+
+
+def test_final_wrapper_keeps_recovery_identifiable_task_label_while_runner_is_live(
+    tmp_path: Path,
+) -> None:
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    checkout_root = tmp_path / "checkouts"
+    state_root = tmp_path / "state"
+    task_root = tmp_path / "task"
+    checkout_root.mkdir()
+    state_root.mkdir()
+    runner_started = tmp_path / "runner-started"
+    _recording_executable(
+        commands / "git",
+        """
+case "$*" in
+  *'rev-parse refs/heads/feat/acceptance'*) printf '%s\\n' "$SHA" ;;
+  *'worktree add'*) checkout="${@: -2:1}"; mkdir -p "$checkout/tools"; cp -a "$ROOT/tools/acceptance" "$checkout/tools/"; printf 'gitdir: /nonexistent\\n' > "$checkout/.git"; printf 'import pathlib, time\\npathlib.Path("%s").touch()\\ntime.sleep(30)\\n' "$RUNNER_STARTED" > "$checkout/tools/acceptance/platform/runner.py" ;;
+esac
+""",
+    )
+    process = subprocess.Popen(
+        [
+            str(ROOT / "tools/run-acceptance-platform.sh"),
+            "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance",
+            "--evidence-root", str(state_root), "--task-root", str(task_root),
+            "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"),
+            "--checkout-root", str(checkout_root), "--acceptance-task", "task-live",
+        ],
+        cwd=ROOT,
+        env={**os.environ, "PATH": f"{commands}:{os.environ['PATH']}", "SHA": SHA, "ROOT": str(ROOT), "RUNNER_STARTED": str(runner_started)},
+        start_new_session=True,
+    )
+    try:
+        for _ in range(100):
+            if runner_started.exists():
+                break
+            time.sleep(0.02)
+        assert runner_started.exists()
+        report = maintenance.recover_abandoned_checkouts(checkout_root, _retention_policy())
+        assert report.has_anomalies
+        assert any("task-labelled process is still live" in anomaly for anomaly in report.anomalies)
+        assert any(checkout_root.iterdir())
+    finally:
+        os.killpg(process.pid, signal.SIGTERM)
+        process.wait(timeout=5)
+
+
+def test_final_wrapper_retains_checkout_when_marker_creation_fails(tmp_path: Path) -> None:
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    checkout_root, state_root, task_root = tmp_path / "checkouts", tmp_path / "state", tmp_path / "task"
+    checkout_root.mkdir()
+    state_root.mkdir()
+    _recording_executable(
+        commands / "git",
+        """
+case "$*" in
+  *'rev-parse '*) printf '%s\\n' "$SHA" ;;
+  *'worktree add'*)
+    checkout="${@: -2:1}"
+    "$REAL_GIT" init -q "$checkout"
+    "$REAL_GIT" -C "$checkout" config user.email acceptance@example.invalid
+    "$REAL_GIT" -C "$checkout" config user.name Acceptance
+    printf 'tracked\\n' > "$checkout/tracked.txt"
+    "$REAL_GIT" -C "$checkout" add tracked.txt
+    "$REAL_GIT" -C "$checkout" commit -qm initial
+    "$REAL_GIT" -C "$checkout" checkout --detach -q
+    ;;
+esac
+""",
+    )
+    _recording_executable(commands / "chmod", "rm -- \"$2\"\nexit 1")
+
+    result = subprocess.run(
+        [str(ROOT / "tools/run-acceptance-platform.sh"), "--lane", "final", "--sha", SHA, "--ref", "refs/heads/feat/acceptance", "--evidence-root", str(state_root), "--task-root", str(task_root), "--state-root", str(state_root), "--policy", str(ROOT / "tools/acceptance/platform/retention_policy.toml"), "--checkout-root", str(checkout_root), "--acceptance-task", "task-marker"],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PATH": f"{commands}:{os.environ['PATH']}",
+            "SHA": SHA,
+            "REAL_GIT": subprocess.run(
+                ["bash", "-c", "command -v git"], check=True, text=True, capture_output=True
+            ).stdout.strip(),
+        },
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 1
+    assert "marker creation failed; retaining checkout" in result.stderr
+    report = maintenance.recover_abandoned_checkouts(checkout_root, _retention_policy())
+    assert report.has_anomalies
+    assert any(checkout_root.iterdir())
+    assert any("ownership marker is missing" in anomaly for anomaly in report.anomalies)
+
+
 def test_wrapper_resolves_explicit_relative_contract_from_repository_root(
     tmp_path: Path,
 ) -> None:
@@ -915,7 +1342,9 @@ def test_wrapper_resolves_explicit_relative_contract_from_repository_root(
             str(tmp_path / "evidence"),
             "--task-root",
             str(tmp_path / "task"),
-        ],
+            "--acceptance-task",
+            "task-marker",
+            ],
         cwd=ROOT,
         check=False,
         capture_output=True,

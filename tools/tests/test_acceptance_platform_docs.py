@@ -3,6 +3,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DOC = PROJECT_ROOT / "docs/operations/acceptance-platform.md"
+EXTERNAL_HOST_DOC = PROJECT_ROOT / "docs/operations/external-host-final-acceptance.md"
 V2_DOC = PROJECT_ROOT / "docs/missions/v2-mission-retirement-acceptance.md"
 MISSION_INDEX = PROJECT_ROOT / "docs/missions/README.md"
 V2_CONTRACT = PROJECT_ROOT / "tools/acceptance/contracts/v2-mission-retirement.toml"
@@ -34,6 +35,40 @@ def test_platform_doc_defines_administrative_browser_authority() -> None:
         assert required in lowered
     for prohibited in ("`npm`", "`npx`", "playwright installer", "inherited `path`"):
         assert prohibited in lowered
+
+
+def test_operations_docs_cover_retention() -> None:
+    for document in (PLATFORM_DOC, EXTERNAL_HOST_DOC):
+        content = document.read_text(encoding="utf-8")
+        assert "--maintenance retention" in content
+        assert "never delete GHCR" in content
+
+
+def test_external_host_report_only_retention_pipe_preserves_failure() -> None:
+    content = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    retention_section = content[content.index("## 5a. Retention maintenance") :]
+    report_only_block = retention_section.split("```bash", maxsplit=1)[1].split(
+        "```", maxsplit=1
+    )[0]
+
+    assert "set -o pipefail" in report_only_block
+    assert report_only_block.index("set -o pipefail") < report_only_block.index("| tee")
+
+
+def test_external_host_final_command_supplies_wrapper_maintenance_contract() -> None:
+    content = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    final_section = content[content.index("## 8. Run exactly one final lane") :]
+    final_block = final_section.split("```bash", maxsplit=1)[1].split(
+        "```", maxsplit=1
+    )[0]
+
+    for required in (
+        "--state-root",
+        "--policy",
+        "--checkout-root",
+        "--acceptance-task",
+    ):
+        assert required in final_block
 
 
 def test_platform_doc_defines_complete_health_fingerprint_validation() -> None:
@@ -199,7 +234,9 @@ def test_v2_doc_is_product_only() -> None:
         assert excluded not in lowered
 
 
-def test_v2_documentation_separates_route_relative_poi_eligibility_from_eta_timing() -> None:
+def test_v2_documentation_separates_route_relative_poi_eligibility_from_eta_timing() -> (
+    None
+):
     text = " ".join(V2_DOC.read_text(encoding="utf-8").split())
 
     assert "Upcoming POI visibility derives from active-route position" in text

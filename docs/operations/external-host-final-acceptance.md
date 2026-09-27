@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MAX_LINES -->
+
 # External-Host Final Acceptance
 
 Use this runbook when the Oracle host cannot provide the required Linux browser,
@@ -27,6 +29,7 @@ BRANCH=feat/v2-mission-retirement
 REF=refs/heads/feat/v2-mission-retirement
 HOST_STATE=/srv/starlink-acceptance
 CHECKOUT_ROOT=$HOST_STATE/checkouts
+RUNNER_CHECKOUT_ROOT=$HOST_STATE/runner-checkouts
 PROFILE=$HOST_STATE/profiles/v2-mission-retirement-chromium.toml
 HEALTH_EVIDENCE_ROOT=$HOST_STATE/evidence/health
 STATIC_EVIDENCE_ROOT=$HOST_STATE/evidence/static
@@ -162,6 +165,52 @@ ACCEPTANCE_POLICY_BASE_SHA="$BASE_SHA" ./tools/verify static
 **Stop** on any nonzero result. This verifies the complete repository static tier;
 it is not final acceptance.
 
+## 5a. Retention maintenance is report-first and separate from a final lane
+
+Run maintenance only with the external host's repository-owned state and
+checkout roots. It is not a way to repair a failed health, static, or final lane.
+First generate and retain a report-only JSON result; the [platform operations
+runbook](acceptance-platform.md#retention-maintenance) is the detailed authority:
+
+```bash
+set -o pipefail
+STATE_ROOT=$HOST_STATE/state
+CHECKOUT_RECOVERY_ROOT=$HOST_STATE/checkouts
+./tools/run-acceptance-platform.sh --maintenance retention \
+  --state-root "$STATE_ROOT" \
+  --policy tools/acceptance/platform/retention_policy.toml \
+  --checkout-root "$CHECKOUT_RECOVERY_ROOT" \
+  | tee "$LOG_ROOT/retention-report-$(date -u +%Y%m%dT%H%M%SZ).json"
+```
+
+Before an apply operation, inspect the protected final candidate, proposed
+deletions, anomalies, scoped `docker ps` output, and free disk space. Stop on an
+anomaly, unavailable lease, malformed report, or nonzero exit. Confirm mode,
+planned deletions, reclaimed-byte estimate, post-action status, and anomaly count.
+
+Only after that documented review may the operator add `--apply` to the exact
+same command and retain the resulting JSON. The policy preserves the protected
+latest final authority plus two newer completed generations per lane. The tool
+may remove only policy-selected sealed evidence and exact, fully runner-owned,
+unreferenced Docker image IDs. Never run `docker system prune`, `docker image
+prune`, `docker volume prune`, `git clean`, `git gc`, or broad deletion commands;
+volumes are inventory-only and must not be deleted.
+
+Checkout recovery is equally narrow. It removes a checkout only when a regular
+mode-0600 runner marker, exact detached SHA, clean worktree, and inactive exact
+`--acceptance-task` process all validate. Missing marker, symlink, liveness,
+authority, SHA, or cleanliness ambiguity is a retained anomaly; investigate it
+without manual deletion.
+
+The GitHub Actions retention job is the only Actions artifact lifecycle here: it
+uses complete pagination and completion-time ordering, preserves the current run
+and two newer completed runs, and deletes only selected `dockerbuild` artifact
+IDs. It never deletes workflow runs, releases, or arbitrary artifacts. GHCR is
+inventory-only: never delete GHCR versions from this runbook or the workflow.
+GHCR `updated_at` is mutable ordering metadata, not publish-completion authority,
+so every SHA-only version remains retained and the inventory reports that gap
+until an authoritative completion field exists.
+
 ## 6. Certify health and verify its canonical authority
 
 Create separate SHA-qualified task roots. The health fingerprint is canonical
@@ -221,7 +270,7 @@ CDP endpoint, task profile, and loopback frontend origin.
 FINAL_ATTEMPT_ID="$(date -u +%Y%m%dT%H%M%SZ)-$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
 FINAL_TASK_ROOT=$HOST_STATE/tasks/final/$SHA-$FINAL_ATTEMPT_ID
 FINAL_LEDGER_ROOT=$HOST_STATE/ledgers/final/$SHA
-mkdir -p "$FINAL_LEDGER_ROOT" "$LOG_ROOT"
+mkdir -p "$FINAL_LEDGER_ROOT" "$LOG_ROOT" "$RUNNER_CHECKOUT_ROOT"
 timeout --foreground --signal=TERM --kill-after=30s 1800s \
   ./tools/run-acceptance-platform.sh \
   --lane final \
@@ -230,6 +279,10 @@ timeout --foreground --signal=TERM --kill-after=30s 1800s \
   --profile "$PROFILE" \
   --fingerprint "$HEALTH_FINGERPRINT" \
   --evidence-root "$FINAL_EVIDENCE_ROOT" \
+  --state-root "$FINAL_EVIDENCE_ROOT" \
+  --policy tools/acceptance/platform/retention_policy.toml \
+  --checkout-root "$RUNNER_CHECKOUT_ROOT" \
+  --acceptance-task "$FINAL_ATTEMPT_ID" \
   --task-root "$FINAL_TASK_ROOT" \
   --ledger-root "$FINAL_LEDGER_ROOT" \
   2>&1 | tee "$LOG_ROOT/final-$SHA-$FINAL_ATTEMPT_ID.log"

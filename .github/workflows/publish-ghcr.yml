@@ -67,3 +67,64 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ github.ref_name }}
+
+  retention:
+    needs: publish
+    if: ${{ github.ref == 'refs/heads/dev' && needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    permissions:
+      actions: write
+      contents: read
+      packages: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Select exact expired artifact IDs
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p retention
+          gh api --paginate --slurp "repos/${{ github.repository }}/actions/workflows/publish-ghcr.yml/runs?branch=dev&per_page=100" |
+            jq '{workflow_runs: map(.workflow_runs[] | .path |= split("@")[0]) | unique_by(.id), pagination: {complete: true}}' > retention/runs.json
+          : > retention/artifact-records.jsonl
+          while read -r run_id; do
+            gh api --paginate --slurp "repos/${{ github.repository }}/actions/runs/$run_id/artifacts?per_page=100" |
+              jq -c '.[] | .artifacts[]?' >> retention/artifact-records.jsonl
+          done < <(jq -r '.workflow_runs[].id' retention/runs.json)
+          jq -s '{artifacts: ., pagination: {complete: true}}' retention/artifact-records.jsonl > retention/artifacts.json
+          python tools/github_retention_cli.py select-artifacts \
+            --runs retention/runs.json \
+            --artifacts retention/artifacts.json \
+            --workflow .github/workflows/publish-ghcr.yml \
+            --ref dev \
+            --current-run-id "$GITHUB_RUN_ID" > retention/artifact-plan.json
+          jq '.' retention/artifact-plan.json
+
+      - name: Delete only selected artifact IDs
+        run: |
+          set -euo pipefail
+          jq -r '.expired_dockerbuild_artifacts[].artifact_id' retention/artifact-plan.json |
+            while read -r artifact_id; do
+              gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"
+            done
+
+      - name: Upload retention plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-retention-plan-${{ github.run_id }}
+          path: retention/artifact-plan.json
+          if-no-files-found: error
+
+      - name: Inventory GHCR versions without mutation
+        run: |
+          set -euo pipefail
+          for package in starlink-location mission-planner prometheus grafana; do
+            gh api --paginate --slurp "orgs/${{ github.repository_owner }}/packages/container/$package/versions?per_page=100" |
+              jq '{versions: flatten, pagination: {complete: true}}' > "retention/$package-versions.json"
+            python tools/github_retention_cli.py ghcr-inventory \
+              --versions "retention/$package-versions.json" | tee "retention/$package-ghcr-inventory.json"
+          done

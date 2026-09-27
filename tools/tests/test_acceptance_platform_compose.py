@@ -623,7 +623,8 @@ def test_resolve_rejects_external_resources_and_replaces_inherited_ports(
     }
     resolve_topology(topology, CONTRACT, _executor(config=root_with_external_resources))
     rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
-    assert rendered["networks"] == {"acceptance": {"name": "acceptance-abc-network"}}
+    assert rendered["networks"]["acceptance"]["name"] == "acceptance-abc-network"
+    assert rendered["networks"]["acceptance"]["labels"] == topology.docker_labels.values()
     assert all(
         value["name"].startswith("acceptance-abc-")
         for value in rendered["volumes"].values()
@@ -668,6 +669,37 @@ def test_resolve_allowlists_task_owned_resources_and_removes_live_root_fields(
     assert "secrets" not in service
     assert all(mount["type"] == "volume" for mount in service["volumes"])
     assert "192.168.100.1" not in json.dumps(rendered)
+
+
+
+def test_resolve_rejects_final_service_without_complete_ownership_labels(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    executor = _executor(config=_resolved_config(topology))
+    original_run = executor._run_default
+
+    def run_tampered_final_config(
+        argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if "config" in argv and any(
+            Path(item).name == "compose.acceptance.json" for item in argv
+        ):
+            final = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
+            service = final["services"]["starlink-location"]
+            assert isinstance(service, dict)
+            labels = service["labels"]
+            assert isinstance(labels, dict)
+            del labels["io.starlink.acceptance.owner"]
+            return CommandResult(0, json.dumps(final))
+        return original_run(argv, timeout_seconds=timeout_seconds)
+
+    executor.run_override = lambda argv, timeout_seconds: run_tampered_final_config(
+        argv, timeout_seconds=timeout_seconds
+    )
+
+    with pytest.raises(ValueError, match="ownership labels"):
+        resolve_topology(topology, CONTRACT, executor)
 
 
 def test_start_requires_validated_topology_and_usable_matching_ledger(

@@ -158,6 +158,31 @@ class CommandResult:
     output: str
 
 
+@dataclass(frozen=True)
+class AcceptanceOwnershipLabels:
+    """The complete label set required before a runner resource is actionable."""
+
+    lane: str
+    sha: str
+    task: str
+
+    def __post_init__(self) -> None:
+        if not self.lane or not self.task:
+            raise ValueError("acceptance ownership lane and task are required")
+        _validate_candidate_sha(self.sha)
+
+    def values(self) -> dict[str, str]:
+        return {
+            "io.starlink.acceptance.owner": "runner",
+            "io.starlink.acceptance.lane": self.lane,
+            "io.starlink.acceptance.sha": self.sha,
+            "io.starlink.acceptance.task": self.task,
+        }
+
+    def as_docker_args(self) -> tuple[str, ...]:
+        return tuple(f"{key}={value}" for key, value in self.values().items())
+
+
 class BoundedComposeDiagnostics:
     """Retain bounded, credential-redacted final Compose diagnostics."""
 
@@ -312,6 +337,9 @@ class TaskTopology:
     root_override_path: Path
     validation_path: Path
     ports: Mapping[str, int]
+    docker_labels: AcceptanceOwnershipLabels = field(
+        default_factory=lambda: AcceptanceOwnershipLabels("final", "0" * 40, "unassigned")
+    )
 
     @property
     def rendered_override_path(self) -> Path:
@@ -437,6 +465,8 @@ def render_task_override(
     ports: Mapping[str, int],
     *,
     candidate_sha: str,
+    lane: str = "final",
+    task_id: str | None = None,
 ) -> TaskTopology:
     """Prepare public input and a root env replacement; final config is rendered on resolve."""
     _validate_project(project)
@@ -462,6 +492,7 @@ def render_task_override(
     os.chmod(root_override_path, 0o600)
     override_path = task_root / "compose.acceptance.json"
     validation_path = task_root / "topology.validated.json"
+    labels = AcceptanceOwnershipLabels(lane, candidate_sha, task_id or task_root.name)
     return TaskTopology(
         repository,
         project,
@@ -472,6 +503,7 @@ def render_task_override(
         root_override_path,
         validation_path,
         dict(ports),
+        labels,
     )
 
 
@@ -720,6 +752,7 @@ def _isolated_service(
     ]
     result["networks"] = {"acceptance": {}}
     result["volumes"] = _task_volumes(service.get("volumes"), name)
+    result["labels"] = topology.docker_labels.values()
     if "depends_on" in service:
         result["depends_on"] = service["depends_on"]
     return result
@@ -734,7 +767,10 @@ def _bind_candidate_build(service: dict[str, object], candidate_sha: str) -> Non
         field: build[field]
         for field in _CANDIDATE_BUILD_FIELDS
         if field in build
-    } | {"args": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha}}
+    } | {
+        "args": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha},
+        "labels": service.get("labels", {}),
+    }
 
 
 def _allocate_task_resources(final: dict[str, object], topology: TaskTopology) -> None:
@@ -744,9 +780,18 @@ def _allocate_task_resources(final: dict[str, object], topology: TaskTopology) -
     for service in services.values():
         assert isinstance(service, dict)
         volume_names.update(_resource_sources(service.get("volumes")))
-    final["networks"] = {"acceptance": {"name": f"{topology.project}-network"}}
+    final["networks"] = {
+        "acceptance": {
+            "name": f"{topology.project}-network",
+            "labels": topology.docker_labels.values(),
+        }
+    }
     final["volumes"] = {
-        name: {"name": f"{topology.project}-{name}"} for name in sorted(volume_names)
+        name: {
+            "name": f"{topology.project}-{name}",
+            "labels": topology.docker_labels.values(),
+        }
+        for name in sorted(volume_names)
     }
 
 
@@ -786,7 +831,10 @@ def _validate_final_config(
             service.get("ports"), topology.ports[name], _container_port(name)
         )
         _validate_dependencies(service.get("depends_on"), contract.services)
-        _validate_candidate_build(service.get("build"), topology.candidate_sha)
+        _validate_ownership_labels(service.get("labels"), topology.docker_labels)
+        _validate_candidate_build(
+            service.get("build"), topology.candidate_sha, topology.docker_labels
+        )
         if any(
             field in service
             for field in (
@@ -801,8 +849,8 @@ def _validate_final_config(
                 "resolved topology retains host or unmanaged runtime authority"
             )
         _validate_task_mounts(service.get("volumes"))
-    _validate_resources(config.get("networks"), topology.project)
-    _validate_resources(config.get("volumes"), topology.project)
+    _validate_resources(config.get("networks"), topology.project, topology.docker_labels)
+    _validate_resources(config.get("volumes"), topology.project, topology.docker_labels)
 
 
 def _validated_topology(
@@ -835,12 +883,17 @@ def _validate_contract_checksum(contract: ProductContract, key: BuildLedgerKey) 
         raise ValueError("contract checksum does not match build ledger key")
 
 
-def _validate_candidate_build(value: object, candidate_sha: str) -> None:
+def _validate_candidate_build(
+    value: object, candidate_sha: str, labels: AcceptanceOwnershipLabels
+) -> None:
     if not isinstance(value, dict) or value.get("args") != {
         "ACCEPTANCE_CANDIDATE_SHA": candidate_sha
     }:
         raise ValueError("resolved topology has invalid candidate build binding")
-    _validate_root_candidate_build({key: item for key, item in value.items() if key != "args"})
+    _validate_root_candidate_build(
+        {key: item for key, item in value.items() if key not in {"args", "labels"}}
+    )
+    _validate_ownership_labels(value.get("labels"), labels)
 
 
 def _validate_root_candidate_build(build: Mapping[str, object]) -> None:
@@ -851,7 +904,7 @@ def _validate_root_candidate_build(build: Mapping[str, object]) -> None:
     ]
     if cache_fields:
         raise ValueError("resolved build cache control is not permitted")
-    if not set(build) <= _CANDIDATE_BUILD_FIELDS | {"args"}:
+    if not set(build) <= _CANDIDATE_BUILD_FIELDS | {"args", "labels"}:
         raise ValueError("resolved build field is not platform-permitted")
     if build.get("args") not in (None, {}):
         raise ValueError("resolved service build arguments are not permitted")
@@ -980,7 +1033,9 @@ def _validate_dependencies(value: object, services: tuple[str, ...]) -> None:
         raise ValueError("resolved topology contains an undeclared dependency")
 
 
-def _validate_resources(value: object, project: str) -> None:
+def _validate_resources(
+    value: object, project: str, labels: AcceptanceOwnershipLabels
+) -> None:
     if value is None:
         return
     if not isinstance(value, dict):
@@ -993,12 +1048,20 @@ def _validate_resources(value: object, project: str) -> None:
         name = resource.get("name")
         if name and not str(name).startswith((f"{project}-", f"{project}_")):
             raise ValueError("resolved resource escapes task namespace")
-        labels = resource.get("labels")
-        if labels is not None and (
-            not isinstance(labels, dict)
-            or labels.get("com.docker.compose.project") not in {None, project}
+        resource_labels = resource.get("labels")
+        if resource_labels is not None and (
+            not isinstance(resource_labels, dict)
+            or resource_labels.get("com.docker.compose.project") not in {None, project}
         ):
             raise ValueError("resolved resource is not task-owned")
+        _validate_ownership_labels(resource_labels, labels)
+
+
+def _validate_ownership_labels(
+    value: object, expected: AcceptanceOwnershipLabels
+) -> None:
+    if value != expected.values():
+        raise ValueError("resolved topology has invalid ownership labels")
 
 
 def _has_private_env(value: object) -> bool:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import StrEnum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 _SHA = re.compile(r"[0-9a-f]{40}")
 _CHECKSUM = re.compile(r"[0-9a-f]{64}")
@@ -25,6 +25,26 @@ class Outcome(StrEnum):
     ENVIRONMENT_BLOCKED = "environment_blocked"
     COVERAGE_GAP = "coverage_gap"
     DIAGNOSTIC_ONLY = "diagnostic_only"
+
+
+class RetentionDisposition(StrEnum):
+    RETAIN = "retain"
+    DELETE = "delete"
+    ANOMALY = "anomaly"
+
+
+@dataclass(frozen=True)
+class RetentionEntry:
+    path: PurePosixPath
+    lane: Lane
+    sha: str
+    disposition: RetentionDisposition
+    reason: str
+    byte_size: int
+    planned_st_dev: int | None = None
+    planned_st_ino: int | None = None
+    planned_st_type: int | None = None
+    planned_st_mode: int | None = None
 
 
 @dataclass(frozen=True)
