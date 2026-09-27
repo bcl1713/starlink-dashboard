@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -76,6 +77,7 @@ class RetentionReport:
     bytes_reclaimed: int
     post_action_verified: bool
     pruned_reports: int
+    planned_report_prunes: int
     anomalies: tuple[str, ...]
 
 
@@ -142,6 +144,11 @@ def plan_retention(state_root: Path, policy: RetentionPolicy) -> RetentionPlan:
                     valid[lane].append((ended, classified[0], final))
         elif child.name in {"logs", "ledgers"} or child.name == "tasks":
             auxiliary[child.name] = child
+        elif child.name == "maintenance":
+            _validate_maintenance(child, root, policy, anomalies)
+        elif child.name == ".retention-quarantine":
+            if _children(child, anomalies):
+                anomalies.append(f"retained quarantine content: {child}")
     known = {entry.sha for generations in valid.values() for _, entry, _ in generations}
     for name, path in auxiliary.items():
         _validate_auxiliary(name, path, known, anomalies)
@@ -199,14 +206,8 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         for entry in plan.entries:
             if entry.disposition is not RetentionDisposition.DELETE:
                 continue
-            candidate = plan.root / Path(entry.path)
             try:
-                safe_relative(plan.root, candidate)
-                quarantine = _quarantine_path(plan.root)
-                os.rename(candidate, quarantine)
-                _delete_tree(quarantine)
-                if candidate.exists() or os.path.lexists(quarantine):
-                    raise ValueError("post-action absence verification failed")
+                _delete_entry(plan.root, entry)
                 reclaimed += entry.byte_size
                 deletions.append(RetentionDeletion(entry.path, entry.sha, "absent"))
             except (OSError, ValueError) as error:
@@ -215,8 +216,8 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
     if apply:
         for report in planned_prunes:
             try:
-                report.unlink()
-            except OSError as error:
+                _prune_report(plan.root, report)
+            except (OSError, ValueError) as error:
                 anomalies.append(f"report prune failed for {report.name}: {error}")
     ended = _utc_now()
     report_path = _write_report(
@@ -228,6 +229,7 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         deletions,
         reclaimed,
         not anomalies and all(item.post_action == "absent" for item in deletions),
+        len(planned_prunes) if apply else 0,
         len(planned_prunes),
         tuple(anomalies),
     )
@@ -241,6 +243,7 @@ def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
         tuple(deletions),
         reclaimed,
         not anomalies and all(item.post_action == "absent" for item in deletions),
+        len(planned_prunes) if apply else 0,
         len(planned_prunes),
         tuple(anomalies),
     )
@@ -269,6 +272,9 @@ def _classify_generation(
             or fingerprint.get("sha") != generation.name
         ):
             raise ValueError("fingerprint SHA mismatch")
+        fingerprint_sha, fingerprint_ref = validate_candidate_inputs(
+            fingerprint.get("sha"), fingerprint.get("ref")
+        )
         sha, ref = validate_candidate_inputs(manifest.get("sha"), manifest.get("ref"))
         if (
             sha != generation.name
@@ -276,7 +282,11 @@ def _classify_generation(
             or not isinstance(ref, str)
         ):
             raise ValueError("runner manifest association mismatch")
+        if fingerprint_sha != sha or fingerprint_ref != ref:
+            raise ValueError("fingerprint ref mismatch")
         final = manifest.get("final_acceptance") is True
+        if final and lane is not Lane.FINAL:
+            raise ValueError("only final lane can claim final acceptance")
         if lane is Lane.FINAL and not final:
             raise ValueError("final lane must claim final acceptance")
         capture = manifest.get("capture")
@@ -354,8 +364,31 @@ def _validate_auxiliary(
             anomalies.append(f"unassociated {name} content")
 
 
-def _has_any_child(path: Path) -> bool:
-    return any(path.iterdir())
+def _validate_maintenance(
+    path: Path, root: Path, policy: RetentionPolicy, anomalies: list[str]
+) -> None:
+    """Permit only current-root, current-policy retention reports under maintenance."""
+    for child in _children(path, anomalies):
+        if child.name != "retention" or not child.is_dir():
+            anomalies.append(f"unknown maintenance content: {child.name}")
+            continue
+        for report in _children(child, anomalies):
+            if not report.is_file() or report.suffix != ".json":
+                anomalies.append(
+                    f"invalid maintenance retention content: {report.name}"
+                )
+                continue
+            try:
+                payload = json.loads(read_nofollow(report))
+                if not isinstance(payload, dict) or (
+                    payload.get("root") != str(root)
+                    or payload.get("policy_digest") != policy.digest
+                ):
+                    raise ValueError("report authority mismatch")
+            except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+                anomalies.append(
+                    f"invalid maintenance retention report: {report.name}: {error}"
+                )
 
 
 def _is_sha(value: str) -> bool:
@@ -382,24 +415,88 @@ def _byte_size(path: Path) -> int:
     return total
 
 
-def _quarantine_path(root: Path) -> Path:
-    directory = root / ".retention-quarantine"
-    directory.mkdir(mode=0o700, exist_ok=True)
-    os.chmod(directory, 0o700)
-    return directory / str(uuid.uuid4())
+def _before_destructive_mutation() -> None:
+    """Deterministic test seam; descriptors are already pinned when it runs."""
 
 
-def _delete_tree(path: Path) -> None:
-    if path.is_symlink():
-        raise ValueError("quarantine must not be a symlink")
-    for child in path.iterdir():
-        if child.is_symlink():
-            raise ValueError("quarantine contains symlink")
-        if child.is_dir():
-            _delete_tree(child)
+def _delete_entry(root: Path, entry: RetentionEntry) -> None:
+    """Rename and remove one verified generation through pinned no-follow descriptors."""
+    if entry.path.parts != (entry.lane.value, entry.sha):
+        raise ValueError("invalid deletion entry path")
+    root_fd = _open_confined_directory(root)
+    lane_fd = candidate_fd = quarantine_fd = None
+    quarantine_name = str(uuid.uuid4())
+    try:
+        lane_fd = os.open(entry.lane.value, _DIRECTORY_FLAGS, dir_fd=root_fd)
+        candidate_fd = os.open(entry.sha, _DIRECTORY_FLAGS, dir_fd=lane_fd)
+        expected = os.fstat(candidate_fd)
+        try:
+            os.mkdir(".retention-quarantine", 0o700, dir_fd=root_fd)
+        except FileExistsError:
+            pass
+        quarantine_fd = os.open(
+            ".retention-quarantine", _DIRECTORY_FLAGS, dir_fd=root_fd
+        )
+        os.fchmod(quarantine_fd, 0o700)
+        _before_destructive_mutation()
+        actual = os.fstat(candidate_fd)
+        if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
+            raise ValueError("candidate identity changed before quarantine")
+        os.rename(
+            entry.sha,
+            quarantine_name,
+            src_dir_fd=lane_fd,
+            dst_dir_fd=quarantine_fd,
+        )
+        moved_fd = None
+        try:
+            moved_fd = os.open(quarantine_name, _DIRECTORY_FLAGS, dir_fd=quarantine_fd)
+            moved = os.fstat(moved_fd)
+            if (moved.st_dev, moved.st_ino) != (expected.st_dev, expected.st_ino):
+                raise ValueError("quarantined candidate identity mismatch")
+            _delete_tree_fd(moved_fd)
+        except (OSError, ValueError) as error:
+            raise ValueError(
+                f"quarantine retained at .retention-quarantine/{quarantine_name}: {error}"
+            ) from error
+        finally:
+            if moved_fd is not None:
+                os.close(moved_fd)
+        os.rmdir(quarantine_name, dir_fd=quarantine_fd)
+        try:
+            os.stat(entry.sha, dir_fd=lane_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
         else:
-            child.unlink()
-    path.rmdir()
+            raise ValueError("source still present after quarantine deletion")
+        try:
+            os.stat(quarantine_name, dir_fd=quarantine_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            return
+        raise ValueError("quarantine still present after deletion")
+    finally:
+        for fd in (candidate_fd, lane_fd, quarantine_fd, root_fd):
+            if fd is not None:
+                os.close(fd)
+
+
+def _delete_tree_fd(directory_fd: int) -> None:
+    """Recursively delete a directory's children without reopening pathnames."""
+    for name in os.listdir(directory_fd):
+        metadata = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+        if stat.S_ISLNK(metadata.st_mode):
+            raise ValueError("quarantine contains symlink")
+        if stat.S_ISDIR(metadata.st_mode):
+            child_fd = os.open(name, _DIRECTORY_FLAGS, dir_fd=directory_fd)
+            try:
+                _delete_tree_fd(child_fd)
+            finally:
+                os.close(child_fd)
+            os.rmdir(name, dir_fd=directory_fd)
+        elif stat.S_ISREG(metadata.st_mode):
+            os.unlink(name, dir_fd=directory_fd)
+        else:
+            raise ValueError("quarantine contains non-regular entry")
 
 
 def _valid_report_prunes(
@@ -425,6 +522,27 @@ def _valid_report_prunes(
     return sorted(valid)[: max(0, len(valid) - limit)]
 
 
+def _prune_report(root: Path, report: Path) -> None:
+    """Unlink one planned report only if its pinned inode survives to mutation."""
+    expected = os.stat(report, follow_symlinks=False)
+    root_fd = _open_confined_directory(root)
+    maintenance_fd = retention_fd = None
+    try:
+        maintenance_fd = os.open("maintenance", _DIRECTORY_FLAGS, dir_fd=root_fd)
+        retention_fd = os.open("retention", _DIRECTORY_FLAGS, dir_fd=maintenance_fd)
+        current = os.stat(report.name, dir_fd=retention_fd, follow_symlinks=False)
+        if not stat.S_ISREG(current.st_mode) or (
+            current.st_dev,
+            current.st_ino,
+        ) != (expected.st_dev, expected.st_ino):
+            raise ValueError("report identity changed before prune")
+        os.unlink(report.name, dir_fd=retention_fd)
+    finally:
+        for fd in (retention_fd, maintenance_fd, root_fd):
+            if fd is not None:
+                os.close(fd)
+
+
 def _write_report(
     root: Path,
     policy: RetentionPolicy,
@@ -435,43 +553,69 @@ def _write_report(
     reclaimed: int,
     verified: bool,
     pruned: int,
+    planned_prunes: int,
     anomalies: tuple[str, ...],
 ) -> Path:
-    directory = root / "maintenance" / "retention"
-    directory.mkdir(parents=True, mode=0o700, exist_ok=True)
-    os.chmod(directory, 0o700)
-    path = directory / f"{ended.replace(':', '-')}-{uuid.uuid4()}.json"
-    payload = {
-        "root": str(root),
-        "policy_digest": policy.digest,
-        "started_at": started,
-        "ended_at": ended,
-        "dispositions": [
-            {
-                "path": str(entry.path),
-                "disposition": entry.disposition.value,
-                "bytes": entry.byte_size,
-            }
-            for entry in entries
-        ],
-        "deletions": [
-            {"path": str(item.path), "sha": item.sha, "post_action": item.post_action}
-            for item in deletions
-        ],
-        "bytes_reclaimed": reclaimed,
-        "post_action_verified": verified,
-        "pruned_reports": pruned,
-        "anomalies": list(anomalies),
-    }
-    fd = os.open(
-        path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o700
-    )
+    root_fd = _open_confined_directory(root)
+    maintenance_fd = retention_fd = None
     try:
-        os.write(fd, (json.dumps(payload, sort_keys=True) + "\n").encode())
-        os.fchmod(fd, 0o700)
+        maintenance_fd = _mkdir_open("maintenance", root_fd)
+        retention_fd = _mkdir_open("retention", maintenance_fd)
+        name = f"{ended.replace(':', '-')}-{uuid.uuid4()}.json"
+        path = root / "maintenance" / "retention" / name
+        payload = {
+            "root": str(root),
+            "policy_digest": policy.digest,
+            "started_at": started,
+            "ended_at": ended,
+            "dispositions": [
+                {
+                    "path": str(entry.path),
+                    "disposition": entry.disposition.value,
+                    "bytes": entry.byte_size,
+                }
+                for entry in entries
+            ],
+            "deletions": [
+                {
+                    "path": str(item.path),
+                    "sha": item.sha,
+                    "post_action": item.post_action,
+                }
+                for item in deletions
+            ],
+            "bytes_reclaimed": reclaimed,
+            "post_action_verified": verified,
+            "pruned_reports": pruned,
+            "planned_report_prunes": planned_prunes,
+            "anomalies": list(anomalies),
+        }
+        fd = os.open(
+            name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+            0o700,
+            dir_fd=retention_fd,
+        )
+        try:
+            os.write(fd, (json.dumps(payload, sort_keys=True) + "\n").encode())
+            os.fchmod(fd, 0o700)
+        finally:
+            os.close(fd)
+        return path
     finally:
-        os.close(fd)
-    return path
+        for fd in (retention_fd, maintenance_fd, root_fd):
+            if fd is not None:
+                os.close(fd)
+
+
+def _mkdir_open(name: str, parent_fd: int) -> int:
+    try:
+        os.mkdir(name, 0o700, dir_fd=parent_fd)
+    except FileExistsError:
+        pass
+    directory_fd = os.open(name, _DIRECTORY_FLAGS, dir_fd=parent_fd)
+    os.fchmod(directory_fd, 0o700)
+    return directory_fd
 
 
 def _utc_now() -> str:

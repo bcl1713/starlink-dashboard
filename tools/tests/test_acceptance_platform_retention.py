@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path, PurePosixPath
 
 import pytest
+from acceptance.platform import retention
 from acceptance.platform.evidence import seal_fingerprint, write_artifacts
 from acceptance.platform.model import Lane, RetentionDisposition, RetentionEntry
 from acceptance.platform.retention import (
@@ -185,6 +187,7 @@ def _write_generation(
     ended_at: str,
     final: bool = False,
     ref: str = REF,
+    fingerprint_ref: str | None = None,
 ) -> Path:
     root = state / lane.value / sha
     root.parent.mkdir(parents=True, exist_ok=True)
@@ -199,7 +202,14 @@ def _write_generation(
     raw = (json.dumps(manifest, sort_keys=True) + "\n").encode()
     write_artifacts(root, {"runner-manifest.json": raw, "artifact.txt": sha.encode()})
     seal_fingerprint(
-        root, json.dumps({"sha": sha, "ref": ref}, sort_keys=True).encode()
+        root,
+        json.dumps(
+            {
+                "sha": sha,
+                "ref": fingerprint_ref if fingerprint_ref is not None else ref,
+            },
+            sort_keys=True,
+        ).encode(),
     )
     return root
 
@@ -247,6 +257,75 @@ def test_ambiguous_protected_final_is_retained_anomaly(tmp_path: Path) -> None:
     )
 
 
+def test_conflicting_fingerprint_and_runner_refs_are_an_anomaly(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    _write_generation(
+        state,
+        Lane.FINAL,
+        "e" * 40,
+        ended_at="2026-09-27T00:00:05+00:00",
+        final=True,
+        fingerprint_ref="refs/heads/conflicting-authority",
+    )
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert any("fingerprint ref mismatch" in anomaly for anomaly in plan.anomalies)
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_nonfinal_lane_rejects_final_acceptance_claim(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path, Lane.HEALTH)
+    _write_generation(
+        state,
+        Lane.HEALTH,
+        "e" * 40,
+        ended_at="2026-09-27T00:00:05+00:00",
+        final=True,
+    )
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert any("only final lane" in anomaly for anomaly in plan.anomalies)
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_unknown_maintenance_content_blocks_deletion(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    maintenance = state / "maintenance"
+    maintenance.mkdir()
+    (maintenance / "unrecognized.json").write_text("do not ignore")
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert any("unknown maintenance content" in anomaly for anomaly in plan.anomalies)
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_leftover_quarantine_content_blocks_future_deletion(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    stranded = state / ".retention-quarantine" / "stranded"
+    stranded.mkdir(parents=True)
+    (stranded / "evidence.txt").write_text("never ignore")
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert any("retained quarantine content" in anomaly for anomaly in plan.anomalies)
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
 def test_report_only_never_removes(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=False)
@@ -264,6 +343,30 @@ def test_apply_quarantines_then_verifies_absence(tmp_path: Path) -> None:
     assert report.deletions[0].post_action == "absent"
     assert not list((state / ".retention-quarantine").iterdir())
     assert (report.path.stat().st_mode & 0o777) == 0o700
+
+
+def test_parent_swap_cannot_delete_external_candidate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state = _state_with_generations(tmp_path)
+    external_parent = tmp_path / "external"
+    external_candidate = external_parent / ("a" * 40)
+    external_candidate.mkdir(parents=True)
+    (external_candidate / "must-survive.txt").write_text("external")
+    original_parent = state / "final"
+    moved_parent = state / "held-final"
+
+    def swap_parent() -> None:
+        os.rename(original_parent, moved_parent)
+        original_parent.symlink_to(external_parent, target_is_directory=True)
+
+    monkeypatch.setattr(retention, "_before_destructive_mutation", swap_parent)
+
+    report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
+
+    assert (external_candidate / "must-survive.txt").read_text() == "external"
+    assert not (moved_parent / ("a" * 40)).exists()
+    assert report.deletions[0].post_action == "absent"
 
 
 @pytest.mark.parametrize("lane", [Lane.HEALTH, Lane.STATIC, Lane.DIAGNOSTIC])
@@ -358,5 +461,7 @@ def test_prunes_only_valid_maintenance_reports_above_ninety(tmp_path: Path) -> N
 
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=False)
 
-    assert report.pruned_reports == 2
+    assert report.pruned_reports == 0
+    assert report.planned_report_prunes == 2
+    assert len(list(reports.glob("*.json"))) == 93
     assert (reports / "corrupt.json").exists()
