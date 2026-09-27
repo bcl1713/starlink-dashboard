@@ -24,3 +24,4 @@
 ## Commit
 
 - `c8787026 ci: retain bounded publish build records`
+- `c72376f1 fix(ci): harden retention workflow checks`
