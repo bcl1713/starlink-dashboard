@@ -27,10 +27,9 @@ PUBLISH_JOB_PATTERN = re.compile(r"^  publish:\s*$")
 JOB_PATTERN = re.compile(r"^  [A-Za-z0-9_-]+:\s*$")
 RUNNER_PATTERN = re.compile(r"^\s+runs-on:\s*(?P<runner>\S+)\s*$")
 USES_PATTERN = re.compile(r"^\s+(?:-\s+)?uses:\s*(?P<action>\S+)\s*$")
-CANDIDATE_SHA_BUILD_ARG_PATTERN = re.compile(
-    r"^          build-args: \|\n"
-    r"^            ACCEPTANCE_CANDIDATE_SHA=\$\{\{ github\.sha \}\}$",
-    re.MULTILINE,
+EXPECTED_CANDIDATE_SHA_BUILD_ARG = (
+    "          build-args: |\n"
+    "            ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}"
 )
 EXPECTED_PUBLISH_ACTIONS = (
     "actions/checkout@v7",
@@ -95,6 +94,35 @@ def publish_runners(workflow_text: str) -> list[str]:
     ]
 
 
+def build_action_with_text(workflow_text: str) -> str:
+    """Return the ``with`` block for the named Docker Buildx publish step."""
+    publish_lines = publish_job_lines(workflow_text)
+    step_start = None
+    for index, line in enumerate(publish_lines):
+        if line == "      - name: Build and publish image":
+            step_start = index
+            break
+
+    if step_start is None:
+        return ""
+
+    step_lines = []
+    for line in publish_lines[step_start:]:
+        if step_lines and line.startswith("      - "):
+            break
+        step_lines.append(line)
+
+    if "        uses: docker/build-push-action@v7" not in step_lines:
+        return ""
+
+    try:
+        with_start = step_lines.index("        with:") + 1
+    except ValueError:
+        return ""
+
+    return "\n".join(step_lines[with_start:])
+
+
 def resolve_from_repo(repo_root: Path, value: str) -> Path:
     """Resolve a repository-relative workflow value without following outside it."""
     resolved = (repo_root / value).resolve()
@@ -123,8 +151,7 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
             "publish actions must be " + ", ".join(EXPECTED_PUBLISH_ACTIONS)
         )
 
-    publish_text = "\n".join(publish_job_lines(workflow_text))
-    if not CANDIDATE_SHA_BUILD_ARG_PATTERN.search(publish_text):
+    if EXPECTED_CANDIDATE_SHA_BUILD_ARG not in build_action_with_text(workflow_text):
         errors.append(
             "build action must pass ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}"
         )
