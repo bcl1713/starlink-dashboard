@@ -27,6 +27,11 @@ PUBLISH_JOB_PATTERN = re.compile(r"^  publish:\s*$")
 JOB_PATTERN = re.compile(r"^  [A-Za-z0-9_-]+:\s*$")
 RUNNER_PATTERN = re.compile(r"^\s+runs-on:\s*(?P<runner>\S+)\s*$")
 USES_PATTERN = re.compile(r"^\s+(?:-\s+)?uses:\s*(?P<action>\S+)\s*$")
+CANDIDATE_SHA_BUILD_ARG_PATTERN = re.compile(
+    r"^          build-args: \|\n"
+    r"^            ACCEPTANCE_CANDIDATE_SHA=\$\{\{ github\.sha \}\}$",
+    re.MULTILINE,
+)
 EXPECTED_PUBLISH_ACTIONS = (
     "actions/checkout@v7",
     "docker/login-action@v4",
@@ -116,6 +121,12 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
     if publish_actions(workflow_text) != list(EXPECTED_PUBLISH_ACTIONS):
         errors.append(
             "publish actions must be " + ", ".join(EXPECTED_PUBLISH_ACTIONS)
+        )
+
+    publish_text = "\n".join(publish_job_lines(workflow_text))
+    if not CANDIDATE_SHA_BUILD_ARG_PATTERN.search(publish_text):
+        errors.append(
+            "build action must pass ACCEPTANCE_CANDIDATE_SHA=${{ github.sha }}"
         )
 
     if "matrix.file || 'Dockerfile'" in workflow_text:
