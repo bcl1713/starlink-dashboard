@@ -114,7 +114,9 @@ def test_ghcr_inventory_never_returns_deletion() -> None:
     assert inventory.old_sha_versions == ()
     assert [version.version_id for version in inventory.retained_sha_versions] == [1]
     assert inventory.non_sha_versions == ("latest",)
-    assert inventory.anomalies == ()
+    assert inventory.anomalies == (
+        "GHCR updated_at is not authoritative publish completion time",
+    )
     assert not hasattr(inventory, "delete")
 
 
@@ -160,9 +162,9 @@ def test_cli_emits_report_only_json_inventory(tmp_path: Path) -> None:
         text=True,
     )
 
-    assert completed.returncode == 0
+    assert completed.returncode == 1
     assert json.loads(completed.stdout) == {
-        "anomalies": [],
+        "anomalies": ["GHCR updated_at is not authoritative publish completion time"],
         "non_sha_versions": ["latest"],
         "old_sha_versions": [],
         "retained_sha_versions": [{"tags": [f"sha-{SHA_A}"], "version_id": 1}],
@@ -192,5 +194,5 @@ def test_cli_returns_nonzero_when_ghcr_inventory_contains_anomalies(
 
     assert completed.returncode == 1
     assert json.loads(completed.stdout)["anomalies"] == [
-        "GHCR version has a missing or invalid date"
+        "GHCR updated_at is not authoritative publish completion time"
     ]

@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Protocol
+from typing import NoReturn, Protocol
 
 from .compose import AcceptanceOwnershipLabels
 from .model import Lane, validate_candidate_inputs
@@ -24,6 +24,18 @@ from .retention import (
     canonical_root,
     plan_retention,
 )
+
+
+class _JsonArgumentParser(argparse.ArgumentParser):
+    """Convert parser and validation failures into the maintenance JSON contract."""
+
+    def error(self, message: str) -> NoReturn:
+        raise ValueError(f"invalid arguments: {message}")
+
+    def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+        if status == 2:
+            raise ValueError(message.strip() if message else "invalid arguments")
+        super().exit(status, message)
 
 
 @dataclass(frozen=True)
@@ -102,7 +114,9 @@ def remove_scoped_docker_resource(
     ):
         return f"retained image {image.identifier}: ownership labels are not eligible"
     if inspected.container_references or inspected.ledger_references:
-        return f"retained image {image.identifier}: container or ledger reference remains"
+        return (
+            f"retained image {image.identifier}: container or ledger reference remains"
+        )
     if not apply:
         return None
     docker.remove_image(inspected.inspected_id)
@@ -134,7 +148,9 @@ def scoped_docker_inventory(
 ) -> tuple[DockerResource, ...]:
     """List, but never prune, only resources with the full runner label set."""
     filters = tuple(
-        item for label in labels.as_docker_args() for item in ("--filter", f"label={label}")
+        item
+        for label in labels.as_docker_args()
+        for item in ("--filter", f"label={label}")
     )
     resources: list[DockerResource] = []
     for kind, argv in (
@@ -258,7 +274,14 @@ def _remove_checkout(checkout: Path) -> None:
     if common.returncode or not common.stdout.strip():
         raise ValueError("checkout Git common directory is unavailable")
     subprocess.run(
-        ["git", f"--git-dir={common.stdout.strip()}", "worktree", "remove", "--force", str(checkout)],
+        [
+            "git",
+            f"--git-dir={common.stdout.strip()}",
+            "worktree",
+            "remove",
+            "--force",
+            str(checkout),
+        ],
         check=True,
         capture_output=True,
         text=True,
@@ -301,8 +324,10 @@ def recover_abandoned_checkouts(
 
 
 def _parse(argv: Sequence[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    commands = parser.add_subparsers(dest="command", required=True)
+    parser = _JsonArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(
+        dest="command", required=True, parser_class=_JsonArgumentParser
+    )
     retention = commands.add_parser("retention")
     retention.add_argument("--state-root", type=Path, required=True)
     retention.add_argument("--policy", type=Path, required=True)
@@ -316,7 +341,11 @@ def _retention(argv: argparse.Namespace) -> int:
     try:
         plan = plan_retention(argv.state_root, policy)
     except RetentionLockUnavailable as error:
-        print(json.dumps({"anomalies": [str(error)], "mode": "apply" if argv.apply else "report"}))
+        print(
+            json.dumps(
+                {"anomalies": [str(error)], "mode": "apply" if argv.apply else "report"}
+            )
+        )
         return 1
     checkout_anomalies: tuple[str, ...] = ()
     if argv.checkout_root is not None:
@@ -335,9 +364,13 @@ def _retention(argv: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parsed = _parse(sys.argv[1:] if argv is None else argv)
-    if parsed.command == "retention":
-        return _retention(parsed)
+    try:
+        parsed = _parse(sys.argv[1:] if argv is None else argv)
+        if parsed.command == "retention":
+            return _retention(parsed)
+    except ValueError as error:
+        print(json.dumps({"error": str(error)}, sort_keys=True))
+        return 2
     raise AssertionError("unreachable command")
 
 

@@ -110,7 +110,8 @@ Standalone invocation defaults to report-only and requires `--apply` for
 deletion. Final-lane preflight invokes the same command in apply mode before
 allocating a new checkout, task root, browser, or Compose resources. Both modes
 write a mode-0700, bounded JSON report below
-`<state-root>/maintenance/retention/<UTC>-<UUID>/` containing:
+`<state-root>/maintenance/retention/<UTC>-<UUID>.json` (a mode-0700 regular
+file) containing:
 
 - canonical state root and policy digest;
 - run mode, start/end UTC timestamps, and tool version;

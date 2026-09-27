@@ -123,6 +123,7 @@ _REPORT_TOOL_VERSION = "acceptance-retention-v1"
 _RENAME_EXCHANGE = 0x2
 _RENAMEAT2_NUMBERS = {"x86_64": 316, "aarch64": 276, "armv7l": 382}
 _ALLOWED_TOP_LEVEL = frozenset({lane.value for lane in Lane}) | {
+    "candidates",
     "maintenance",
     "logs",
     "ledgers",
@@ -225,6 +226,8 @@ def _plan_retention_locked(
                 else:
                     ended, final = classified[1]
                     valid[lane].append((ended, classified[0], final))
+        elif child.name == "candidates":
+            _classify_candidates(root, child, entries, valid, anomalies)
         elif child.name in {"logs", "ledgers"} or child.name == "tasks":
             auxiliary[child.name] = child
         elif child.name == "maintenance":
@@ -428,6 +431,97 @@ def _classify_generation(
         )
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         return fallback, None, f"invalid evidence {path}: {error}"
+
+
+def _classify_candidates(
+    root: Path,
+    candidates: Path,
+    entries: list[RetentionEntry],
+    valid: dict[Lane, list[tuple[datetime, RetentionEntry, bool]]],
+    anomalies: list[str],
+) -> None:
+    """Recognize the runner's sealed candidate and discovery authority pair."""
+    children = _children(candidates, anomalies)
+    direct = [child for child in children if not child.name.startswith(".")]
+    discovery_parent = candidates / ".discoverable"
+    for child in direct:
+        if not _is_sha(child.name) or not child.is_dir():
+            anomalies.append(f"invalid candidate path: {child}")
+            continue
+        try:
+            manifest = json.loads(read_nofollow(child / "runner-manifest.json"))
+            lane = Lane(manifest.get("lane"))
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+            path = PurePosixPath(child.relative_to(root).as_posix())
+            entries.append(
+                RetentionEntry(
+                    path,
+                    Lane.FINAL,
+                    child.name,
+                    RetentionDisposition.ANOMALY,
+                    "invalid sealed candidate",
+                    _byte_size(child),
+                )
+            )
+            anomalies.append(f"invalid candidate {path}: {error}")
+            continue
+        classified = _classify_generation(root, child, lane)
+        entries.append(classified[0])
+        discovery = discovery_parent / child.name
+        try:
+            _validate_candidate_discovery(child, discovery)
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+            anomalies.append(
+                f"invalid candidate discovery {child.relative_to(root)}: {error}"
+            )
+            continue
+        if classified[1] is None:
+            anomalies.append(classified[2])
+        else:
+            ended, final = classified[1]
+            valid[lane].append((ended, classified[0], final))
+    for special in children:
+        if special.name not in {".discoverable", ".pending", ".revoked"}:
+            continue
+        if not special.is_dir():
+            anomalies.append(f"invalid candidate control path: {special}")
+            continue
+        for child in _children(special, anomalies):
+            if (
+                special.name == ".discoverable"
+                and child.name == ".pending"
+                and child.is_dir()
+                and not _children(child, anomalies)
+            ):
+                continue
+            if not _is_sha(child.name) or not child.is_dir():
+                anomalies.append(f"invalid candidate control path: {child}")
+            elif special.name != ".discoverable" or child.name not in {
+                item.name for item in direct
+            }:
+                anomalies.append(f"unassociated candidate control content: {child}")
+
+
+def _validate_candidate_discovery(candidate: Path, discovery: Path) -> None:
+    """Bind a candidate root to the runner's independent discoverability seal."""
+    verify_manifest(candidate)
+    manifest = read_nofollow(candidate / "runner-manifest.json")
+    _validate_candidate_discovery_payload(discovery, candidate.name, manifest)
+
+
+def _validate_candidate_discovery_payload(
+    discovery: Path, sha: str, runner_manifest: bytes
+) -> None:
+    """Validate the discovery seal against a known candidate manifest payload."""
+    verify_manifest(discovery)
+    authority = read_fingerprint_authority(discovery)
+    if authority != read_nofollow(discovery / "candidate-authority.json"):
+        raise ValueError("candidate-authority.json is not sealed discovery authority")
+    if json.loads(authority) != {
+        "sha": sha,
+        "runner_manifest_sha256": hashlib.sha256(runner_manifest).hexdigest(),
+    }:
+        raise ValueError("discovery authority does not bind runner manifest")
 
 
 def _protected_final(
@@ -698,7 +792,7 @@ def _validate_report_entry(item: Any, *, protected: bool) -> None:
     if (
         lane not in {member.value for member in Lane}
         or not _is_sha(sha)
-        or item["path"] != f"{lane}/{sha}"
+        or item["path"] not in {f"{lane}/{sha}", f"candidates/{sha}"}
         or not isinstance(item["reason"], str)
     ):
         raise ValueError("report entry authority is invalid")
@@ -759,22 +853,65 @@ def _delete_planned_entry(root: Path, entry: RetentionEntry) -> None:
     lane_fd = quarantine_fd = None
     sentinel = str(uuid.uuid4())
     quarantine_path = root / ".retention-quarantine" / sentinel
+    candidate_manifest: bytes | None = None
+    if entry.path.parent == PurePosixPath("candidates"):
+        candidate_manifest = read_nofollow(
+            root / Path(entry.path) / "runner-manifest.json"
+        )
     try:
-        lane_fd = os.open(entry.lane.value, _DIRECTORY_FLAGS, dir_fd=root_fd)
+        lane_fd = _open_entry_parent(root_fd, entry.path.parent)
         quarantine_fd = _mkdir_open(".retention-quarantine", root_fd)
         os.mkdir(sentinel, 0o700, dir_fd=quarantine_fd)
-        _renameat2_exchange(lane_fd, entry.sha, quarantine_fd, sentinel)
+        _renameat2_exchange(lane_fd, entry.path.name, quarantine_fd, sentinel)
         _after_exchange(quarantine_path, entry)
         quarantined = os.stat(sentinel, dir_fd=quarantine_fd, follow_symlinks=False)
         if not _matches_planned_identity(quarantined, entry):
-            _renameat2_exchange(lane_fd, entry.sha, quarantine_fd, sentinel)
+            _renameat2_exchange(lane_fd, entry.path.name, quarantine_fd, sentinel)
             raise ValueError("atomic exchange identity mismatch; replacement restored")
         _remove_tree_at(quarantine_fd, sentinel)
-        os.rmdir(entry.sha, dir_fd=lane_fd)
-        _assert_absent(lane_fd, entry.sha)
+        os.rmdir(entry.path.name, dir_fd=lane_fd)
+        _assert_absent(lane_fd, entry.path.name)
+        if candidate_manifest is not None:
+            _delete_candidate_discovery(root, entry.sha, candidate_manifest)
         _assert_absent(quarantine_fd, sentinel)
     finally:
         for fd in (quarantine_fd, lane_fd, root_fd):
+            if fd is not None:
+                os.close(fd)
+
+
+def _open_entry_parent(root_fd: int, relative: PurePosixPath) -> int:
+    """Open an already-classified entry parent beneath the retention root."""
+    if not relative.parts or any(part in {"", ".", ".."} for part in relative.parts):
+        raise ValueError("retention entry parent is invalid")
+    current = root_fd
+    opened: list[int] = []
+    try:
+        for part in relative.parts:
+            next_fd = os.open(part, _DIRECTORY_FLAGS, dir_fd=current)
+            opened.append(next_fd)
+            current = next_fd
+        return current
+    except OSError as error:
+        raise ValueError("retention entry parent is unavailable") from error
+    finally:
+        for fd in opened[:-1]:
+            os.close(fd)
+
+
+def _delete_candidate_discovery(root: Path, sha: str, runner_manifest: bytes) -> None:
+    """Remove only the sealed discoverability envelope paired to a deleted root."""
+    discovery = root / "candidates" / ".discoverable" / sha
+    _validate_candidate_discovery_payload(discovery, sha, runner_manifest)
+    root_fd = _open_confined_directory(root)
+    candidates_fd = parent_fd = None
+    try:
+        candidates_fd = os.open("candidates", _DIRECTORY_FLAGS, dir_fd=root_fd)
+        parent_fd = os.open(".discoverable", _DIRECTORY_FLAGS, dir_fd=candidates_fd)
+        _remove_tree_at(parent_fd, sha)
+        _assert_absent(parent_fd, sha)
+    finally:
+        for fd in (parent_fd, candidates_fd, root_fd):
             if fd is not None:
                 os.close(fd)
 

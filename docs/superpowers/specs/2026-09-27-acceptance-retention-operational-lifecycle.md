@@ -62,9 +62,11 @@ deployed through an externally supplied `STARLINK_IMAGE_TAG`. Therefore GHCR
 retention is report-only until a deployment inventory establishes authoritative
 protected tags.
 
-The post-publish retention job reports package versions beyond the newest three
-SHA-only generations per image, all non-SHA tags, and any package/API anomaly. It
-does not delete a GHCR package version, retag an image, or infer active deployment
+The post-publish retention job inventories every SHA-only package version and
+all non-SHA tags. GHCR exposes mutable `updated_at`, not authoritative publish
+completion, so the inventory reports that limitation as an anomaly and selects
+no GHCR version as old until an authoritative completion field exists. It does
+not delete a GHCR package version, retag an image, or infer active deployment
 state from repository files. A future deletion design requires an independently
 verified deployment inventory and a new approved specification.
 

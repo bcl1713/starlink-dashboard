@@ -55,6 +55,22 @@ def test_external_host_report_only_retention_pipe_preserves_failure() -> None:
     assert report_only_block.index("set -o pipefail") < report_only_block.index("| tee")
 
 
+def test_external_host_final_command_supplies_wrapper_maintenance_contract() -> None:
+    content = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    final_section = content[content.index("## 8. Run exactly one final lane") :]
+    final_block = final_section.split("```bash", maxsplit=1)[1].split(
+        "```", maxsplit=1
+    )[0]
+
+    for required in (
+        "--state-root",
+        "--policy",
+        "--checkout-root",
+        "--acceptance-task",
+    ):
+        assert required in final_block
+
+
 def test_platform_doc_defines_complete_health_fingerprint_validation() -> None:
     text = PLATFORM_DOC.read_text(encoding="utf-8")
     lowered = " ".join(text.lower().split())
@@ -218,7 +234,9 @@ def test_v2_doc_is_product_only() -> None:
         assert excluded not in lowered
 
 
-def test_v2_documentation_separates_route_relative_poi_eligibility_from_eta_timing() -> None:
+def test_v2_documentation_separates_route_relative_poi_eligibility_from_eta_timing() -> (
+    None
+):
     text = " ".join(V2_DOC.read_text(encoding="utf-8").split())
 
     assert "Upcoming POI visibility derives from active-route position" in text

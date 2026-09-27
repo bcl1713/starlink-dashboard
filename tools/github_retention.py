@@ -112,7 +112,7 @@ def select_expired_dockerbuild_artifacts(
 def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
     """Classify exact immutable SHA tags without mutating GHCR."""
     records = _complete_list(versions, "versions", "GHCR versions")
-    sha_versions: list[tuple[datetime, GhcrVersion]] = []
+    sha_versions: list[GhcrVersion] = []
     non_sha_tags: list[str] = []
     anomalies: list[str] = []
     seen_ids: set[int] = set()
@@ -125,7 +125,6 @@ def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
             if version_id in seen_ids:
                 raise GitHubRetentionError(f"duplicate GHCR version id: {version_id}")
             seen_ids.add(version_id)
-            updated_at = _timestamp(mapping.get("updated_at"), "GHCR version")
             tags = _ghcr_tags(mapping)
             if len(tags) != len(set(tags)):
                 raise GitHubRetentionError(
@@ -142,29 +141,20 @@ def inventory_ghcr_versions(versions: Mapping[str, Any]) -> GhcrInventory:
             if other_tags:
                 non_sha_tags.extend(other_tags)
             if exact_sha_tags and not other_tags:
-                sha_versions.append(
-                    (updated_at, GhcrVersion(version_id, exact_sha_tags))
-                )
+                sha_versions.append(GhcrVersion(version_id, exact_sha_tags))
         except GitHubRetentionError as error:
             anomalies.append(str(error))
 
-    sha_versions.sort(key=lambda item: item[0], reverse=True)
-    retained_sha_versions = tuple(version for _, version in sha_versions[:3])
-    old_sha_versions = tuple(version for _, version in sha_versions[3:])
-    if len(sha_versions) > 3 and sha_versions[2][0] == sha_versions[3][0]:
-        boundary = sha_versions[2][0]
-        retained_sha_versions = tuple(
-            version for updated_at, version in sha_versions if updated_at >= boundary
-        )
-        old_sha_versions = tuple(
-            version for updated_at, version in sha_versions if updated_at < boundary
-        )
-        anomalies.append(
-            "ambiguous GHCR version update dates across retention boundary"
-        )
+    # GitHub exposes mutable updated_at, not immutable publish completion.  It
+    # may describe a tag or metadata edit, so it cannot select an expiry set.
+    # Keep every SHA-only version report-only until a completion authority exists.
+    if sha_versions:
+        anomalies.append("GHCR updated_at is not authoritative publish completion time")
     return GhcrInventory(
-        old_sha_versions=old_sha_versions,
-        retained_sha_versions=retained_sha_versions,
+        old_sha_versions=(),
+        retained_sha_versions=tuple(
+            sorted(sha_versions, key=lambda item: item.version_id)
+        ),
         non_sha_versions=tuple(sorted(non_sha_tags)),
         anomalies=tuple(anomalies),
     )

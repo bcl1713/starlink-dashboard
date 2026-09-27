@@ -6,9 +6,15 @@ import subprocess
 from pathlib import Path, PurePosixPath
 
 import pytest
-from acceptance.platform import maintenance, retention
+from acceptance.platform import maintenance, retention, runner
 from acceptance.platform.evidence import seal_fingerprint, write_artifacts
-from acceptance.platform.model import Lane, RetentionDisposition, RetentionEntry
+from acceptance.platform.model import (
+    BrowserProfile,
+    Lane,
+    PlatformProfile,
+    RetentionDisposition,
+    RetentionEntry,
+)
 from acceptance.platform.retention import (
     RetentionLockUnavailable,
     RetentionPolicy,
@@ -17,6 +23,7 @@ from acceptance.platform.retention import (
     plan_retention,
     safe_relative,
 )
+from acceptance.platform.runner import RunnerDependencies
 
 
 def test_policy_is_exact(tmp_path: Path) -> None:
@@ -261,6 +268,75 @@ def _entry(plan: object, lane: Lane, sha: str) -> RetentionEntry:
     )
 
 
+def _runner_profile() -> PlatformProfile:
+    return PlatformProfile(
+        "platform-v1",
+        "b" * 64,
+        BrowserProfile(
+            Path("/tmp/browser"), Path("/tmp/browser/chrome"), "1", 1, "d" * 64
+        ),
+    )
+
+
+def test_retention_recognizes_and_protects_runner_published_candidate(
+    tmp_path: Path,
+) -> None:
+    state = tmp_path / "state"
+    result = runner.run(
+        [
+            "--lane",
+            "final",
+            "--sha",
+            SHA,
+            "--ref",
+            REF,
+            "--profile",
+            str(tmp_path / "profile.toml"),
+            "--contract",
+            str(
+                Path(__file__).resolve().parents[2]
+                / "tools/acceptance/contracts/v2-mission-retirement.toml"
+            ),
+            "--fingerprint",
+            "current",
+            "--evidence-root",
+            str(state),
+            "--task-root",
+            str(tmp_path / "task"),
+            "--acceptance-task",
+            "retention-fixture",
+        ],
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: _runner_profile(),
+            validate_health=lambda *_: object(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert result.exit_code == 0
+    plan = plan_retention(state, _policy(tmp_path))
+    try:
+        assert not plan.has_anomalies
+        assert plan.protected_final is not None
+        assert plan.protected_final.path == PurePosixPath(f"candidates/{SHA}")
+        assert plan.protected_final.disposition is RetentionDisposition.RETAIN
+    finally:
+        apply_retention(plan, apply=False)
+
+
+def test_maintenance_invalid_arguments_emit_json_error_envelope(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert maintenance.main(["retention", "--unknown"]) == 2
+
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["error"]
+    assert captured.err == ""
+
+
 def test_cli_defaults_to_report_only_and_closes_its_plan_lease(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -298,8 +374,13 @@ def test_cli_returns_nonzero_when_checkout_recovery_refuses_an_unsafe_checkout(
     assert (
         maintenance.main(
             [
-                "retention", "--state-root", str(state), "--policy", str(policy_path),
-                "--checkout-root", str(checkout.parent),
+                "retention",
+                "--state-root",
+                str(state),
+                "--policy",
+                str(policy_path),
+                "--checkout-root",
+                str(checkout.parent),
             ]
         )
         == 1
@@ -323,7 +404,11 @@ def _marked_checkout(root: Path, *, mutation: str) -> Path:
     subprocess.run(["git", "commit", "-qm", "initial"], cwd=checkout, check=True)
     subprocess.run(["git", "checkout", "--detach", "-q"], cwd=checkout, check=True)
     sha = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=checkout, check=True, text=True, capture_output=True
+        ["git", "rev-parse", "HEAD"],
+        cwd=checkout,
+        check=True,
+        text=True,
+        capture_output=True,
     ).stdout.strip()
     marker = {
         "lane": "final",
@@ -344,7 +429,9 @@ def _marked_checkout(root: Path, *, mutation: str) -> Path:
     return checkout
 
 
-@pytest.mark.parametrize("state", ["dirty", "attached", "active_process", "marker_sha_mismatch"])
+@pytest.mark.parametrize(
+    "state", ["dirty", "attached", "active_process", "marker_sha_mismatch"]
+)
 def test_unsafe_marked_checkout_is_retained_as_an_anomaly(
     tmp_path: Path, state: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -365,14 +452,18 @@ def test_safe_marked_checkout_is_removed_after_validation(tmp_path: Path) -> Non
     policy_root = tmp_path / "policy"
     policy_root.mkdir()
 
-    report = maintenance.recover_abandoned_checkouts(checkout_root, _policy(policy_root))
+    report = maintenance.recover_abandoned_checkouts(
+        checkout_root, _policy(policy_root)
+    )
 
     assert not report.has_anomalies
     assert report.removed == (checkout,)
     assert not checkout.exists()
 
 
-def test_unmarked_immediate_checkout_child_is_retained_as_an_anomaly(tmp_path: Path) -> None:
+def test_unmarked_immediate_checkout_child_is_retained_as_an_anomaly(
+    tmp_path: Path,
+) -> None:
     checkout = tmp_path / "unmarked-checkout"
     checkout.mkdir()
 
@@ -380,7 +471,10 @@ def test_unmarked_immediate_checkout_child_is_retained_as_an_anomaly(tmp_path: P
 
     assert report.has_anomalies
     assert checkout.exists()
-    assert any("unmarked-checkout" in anomaly and "ownership marker" in anomaly for anomaly in report.anomalies)
+    assert any(
+        "unmarked-checkout" in anomaly and "ownership marker" in anomaly
+        for anomaly in report.anomalies
+    )
 
 
 @pytest.mark.parametrize(
@@ -401,10 +495,10 @@ def test_recovery_retains_real_detached_checkout_after_marker_creation_failure(
     failing_chmod = tmp_path / "chmod"
     failing_chmod.write_text(
         "#!/usr/bin/env bash\n"
-        "case \"$MARKER_FAILURE_MODE\" in\n"
-        "  absent) rm -- \"$2\" ;;\n"
+        'case "$MARKER_FAILURE_MODE" in\n'
+        '  absent) rm -- "$2" ;;\n'
         "  malformed) printf '{}' > \"$2\" ;;\n"
-        "  mismatched) printf '%s\\n' \"$MISMATCHED_MARKER\" > \"$2\" ;;\n"
+        '  mismatched) printf \'%s\\n\' "$MISMATCHED_MARKER" > "$2" ;;\n'
         "esac\n"
         "exit 1\n"
     )
@@ -412,7 +506,14 @@ def test_recovery_retains_real_detached_checkout_after_marker_creation_failure(
     mismatched = json.loads(marker.read_text())
     mismatched["sha"] = "b" * 40
     creation = subprocess.run(
-        ["bash", "-c", "umask 077; printf '{}' > \"$1\"; \"$2\" 0600 \"$1\"", "_", str(marker), str(failing_chmod)],
+        [
+            "bash",
+            "-c",
+            'umask 077; printf \'{}\' > "$1"; "$2" 0600 "$1"',
+            "_",
+            str(marker),
+            str(failing_chmod),
+        ],
         check=False,
         text=True,
         capture_output=True,

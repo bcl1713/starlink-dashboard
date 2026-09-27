@@ -119,7 +119,7 @@ def test_selector_rejects_current_run_with_wrong_workflow_or_ref() -> None:
         )
 
 
-def test_ghcr_inventory_only_reports_sha_versions_beyond_newest_three() -> None:
+def test_ghcr_inventory_retains_all_sha_versions_without_completion_authority() -> None:
     versions = _complete(
         [
             {
@@ -142,12 +142,44 @@ def test_ghcr_inventory_only_reports_sha_versions_beyond_newest_three() -> None:
     inventory = inventory_ghcr_versions(versions)
 
     assert [version.version_id for version in inventory.retained_sha_versions] == [
-        5,
-        4,
+        1,
+        2,
         3,
+        4,
+        5,
     ]
-    assert [version.version_id for version in inventory.old_sha_versions] == [2, 1]
+    assert inventory.old_sha_versions == ()
     assert inventory.non_sha_versions == ("latest",)
+    assert inventory.anomalies == (
+        "GHCR updated_at is not authoritative publish completion time",
+    )
+
+
+def test_ghcr_updated_at_is_reported_as_non_authoritative_ordering_only() -> None:
+    versions = _complete(
+        [
+            {
+                "id": version_id,
+                "updated_at": f"2026-09-27T0{version_id}:00:00Z",
+                "metadata": {"container": {"tags": [f"sha-{str(version_id) * 40}"]}},
+            }
+            for version_id in range(1, 5)
+        ],
+        "versions",
+    )
+
+    inventory = inventory_ghcr_versions(versions)
+
+    assert inventory.old_sha_versions == ()
+    assert {version.version_id for version in inventory.retained_sha_versions} == {
+        1,
+        2,
+        3,
+        4,
+    }
+    assert inventory.anomalies == (
+        "GHCR updated_at is not authoritative publish completion time",
+    )
 
 
 def test_ghcr_inventory_fails_closed_for_ties_across_three_version_boundary() -> None:
@@ -179,7 +211,7 @@ def test_ghcr_inventory_fails_closed_for_ties_across_three_version_boundary() ->
             4,
         }
         assert inventory.anomalies == (
-            "ambiguous GHCR version update dates across retention boundary",
+            "GHCR updated_at is not authoritative publish completion time",
         )
 
 
@@ -221,7 +253,7 @@ def test_cli_reports_tied_ghcr_boundary_as_anomaly_and_exits_nonzero(
     assert completed.returncode == 1
     assert json.loads(completed.stdout)["old_sha_versions"] == []
     assert json.loads(completed.stdout)["anomalies"] == [
-        "ambiguous GHCR version update dates across retention boundary"
+        "GHCR updated_at is not authoritative publish completion time"
     ]
 
 

@@ -279,8 +279,10 @@ expired `dockerbuild` artifact IDs only after complete workflow-run and artifact
 pagination, ordered by completion time, while preserving the current run and two
 newer completed runs. It must not delete a run, workflow, release, or arbitrary
 artifact. GHCR inventory is report-only: never delete GHCR versions from this
-maintenance procedure or from the publish workflow. Missing/tied completion
-times or incomplete pagination are anomalies, not authority to expire anything.
+maintenance procedure or from the publish workflow. GHCR `updated_at` is a
+mutable ordering timestamp, not authoritative publish completion; until an
+authoritative field exists every SHA-only version remains retained and the
+inventory reports that authority gap as an anomaly.
 
 ## External-host final authority
 
