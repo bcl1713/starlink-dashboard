@@ -240,7 +240,13 @@ def start_final_browser_session(
             )
             try:
                 session.close()
-            except ValueError as cleanup_failure:
+            except (
+                OSError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                subprocess.SubprocessError,
+            ) as cleanup_failure:
                 retained["cleanup-error.log"] = str(cleanup_failure).encode()
                 cleanup_error = str(cleanup_failure)
         else:

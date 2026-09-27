@@ -329,10 +329,22 @@ def test_final_session_fails_closed_when_xvfb_exits_before_its_socket_exists(
     assert bundle.launch.arguments == ()
 
 
-def test_final_session_wraps_primary_failure_with_cleanup_metadata(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+@pytest.mark.parametrize(
+    "cleanup_exception",
+    [
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ],
+)
+def test_final_session_wraps_primary_failure_with_expected_cleanup_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    cleanup_exception: type[Exception],
 ) -> None:
-    """The caller receives bounded cleanup diagnostics on the typed carrier."""
+    """Expected cleanup faults cannot mask the primary startup failure."""
     from acceptance.platform import health
 
     bundle = _Bundle()
@@ -345,7 +357,7 @@ def test_final_session_wraps_primary_failure_with_cleanup_metadata(
     )
 
     def fail_cleanup(self: object) -> None:
-        raise ValueError("cleanup")
+        raise cleanup_exception("cleanup")
 
     monkeypatch.setattr(health.PlatformBrowserSession, "close", fail_cleanup)
 
@@ -362,10 +374,30 @@ def test_final_session_wraps_primary_failure_with_cleanup_metadata(
     "interruption",
     [KeyboardInterrupt, SystemExit, GeneratorExit],
 )
-def test_platform_health_reraises_control_flow_from_browser_session(
-    tmp_path: Path, interruption: type[BaseException]
+def test_platform_health_reraises_control_flow_after_expected_cleanup_error(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    interruption: type[BaseException],
 ) -> None:
-    """Cancellation must escape health rather than become blocked evidence."""
+    """Cancellation escapes only after its expected cleanup fault is sealed."""
+    from acceptance.platform import health
+
+    captured_artifacts: list[dict[str, bytes]] = []
+    session_init = health.PlatformBrowserSession.__init__
+
+    def capture_session_artifacts(
+        self: object, *args: object, **kwargs: object
+    ) -> None:
+        session_init(self, *args, **kwargs)
+        captured_artifacts.append(self.artifacts)
+
+    def fail_cleanup(self: object) -> None:
+        raise OSError("cleanup")
+
+    monkeypatch.setattr(
+        health.PlatformBrowserSession, "__init__", capture_session_artifacts
+    )
+    monkeypatch.setattr(health.PlatformBrowserSession, "close", fail_cleanup)
     bundle = _Bundle()
     executor = _executor(bundle)
     executor = PlatformHealthExecutor(
@@ -377,6 +409,8 @@ def test_platform_health_reraises_control_flow_from_browser_session(
 
     with pytest.raises(interruption):
         run_platform_health(_profile(), tmp_path / ("c" * 40), executor)
+
+    assert captured_artifacts == [{"cleanup-error.log": b"cleanup"}]
 
 
 def test_final_session_fails_closed_when_xvfb_exits_after_socket_identity(
