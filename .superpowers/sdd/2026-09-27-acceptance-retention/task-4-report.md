@@ -76,3 +76,22 @@ No publish workflow, user documentation, plan, or retention ledger files were mo
 - `pytest -q tools/tests/test_acceptance_platform_compose.py tools/tests/test_acceptance_platform_retention.py tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_scoped_resources.py` → `184 passed in 8.90s`.
 - `python -m compileall -q tools/acceptance/platform/runner.py tools/tests/test_acceptance_platform_runner.py && git diff --check` → passed.
 - Repository-wide `pytest -q` remains blocked at collection by pre-existing environment/test-root problems: missing `spacex_api`, incompatible protobuf runtime for `grpc_reflection`, and `test_bounds.py` requiring `/app`.
+
+## Review repair round 3
+
+- Removed the invalid `docker buildx create --buildkitd-flags "--label ..."` path and removed `--use`; the runner never changes Docker Buildx's global selected builder.
+- Builder ownership is now bound to the deterministic task/SHA builder name plus an exact, no-follow, regular mode-0600 runner marker in the caller-supplied ledger root. Creation and removal both exact-inspect the named builder; cleanup removes only that name and verifies absence before deleting the marker.
+- The final Compose build is scoped only for that command by a wrapper that injects `--builder <task-builder>` before `build`; it does not use a persistent `BUILDX_BUILDER` environment mutation.
+- `_cleanup_default` now independently attempts Compose teardown, verified task-builder cleanup, exact-label inventory, and exact-ID image retention/removal. It reports all encountered failures after those attempts rather than letting an early failure skip the remaining safe cleanup work.
+
+### RED → GREEN evidence
+
+1. Updated lifecycle assertions to prohibit both `--use` and `--buildkitd-flags`; RED failed because the old builder command still used both flags.
+2. Added the independent cleanup regression; RED failed because `scoped_docker_inventory` was locally imported and cleanup stopped after Compose teardown failure.
+3. Added scoped builder-command coverage; final build command includes `--builder acceptance-task-marker-aaaaaaaaaaaa` only for the task build.
+4. GREEN: `PYTHONPATH=tools pytest -q tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_compose.py tools/tests/test_acceptance_platform_retention.py tools/tests/test_acceptance_platform_scoped_resources.py` → `185 passed in 18.93s`.
+5. `python -m py_compile tools/acceptance/platform/runner.py tools/acceptance/platform/compose.py && git diff --check` passed.
+
+### Specification compatibility note
+
+The earlier wording requiring four Docker labels on the Buildx daemon container cannot be implemented through `docker buildx create --buildkitd-flags`: BuildKit daemon flags do not support Docker `--label`. This repair uses documented Buildx selection (`docker compose --builder <name> build`) and fail-closed ownership proof via deterministic name, no-follow marker, and exact `docker buildx inspect` instead. Compose images/resources retain the four required Docker ownership labels.

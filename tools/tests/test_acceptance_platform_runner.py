@@ -346,7 +346,7 @@ def test_task_owned_buildx_builder_lifecycle_uses_exact_labelled_builder_without
     docker.remove_task_builder()
 
     builder = "acceptance-task-marker-aaaaaaaaaaaa"
-    create = executor.commands[0]
+    create = next(command for command in executor.commands if command[:3] == ("docker", "buildx", "create"))
     assert create[:6] == (
         "docker",
         "buildx",
@@ -355,12 +355,63 @@ def test_task_owned_buildx_builder_lifecycle_uses_exact_labelled_builder_without
         builder,
         "--driver",
     )
-    assert "--use" in create
-    flags = create[create.index("--buildkitd-flags") + 1]
-    assert all(f"--label {label}" in flags for label in labels.as_docker_args())
+    assert "--use" not in create
+    assert "--buildkitd-flags" not in create
     assert ("docker", "buildx", "rm", builder) in executor.commands
     assert executor.commands[-1] == ("docker", "buildx", "inspect", builder)
+    scoped_executor = runner._TaskBuilderComposeExecutor(executor, builder)
+    scoped_executor.run(("docker", "compose", "build", "--pull"))
+    assert executor.commands[-1] == (
+        "docker", "compose", "--builder", builder, "build", "--pull"
+    )
     assert not any("prune" in item for command in executor.commands for item in command)
+
+
+def test_cleanup_default_attempts_all_scoped_actions_and_aggregates_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed teardown must not skip builder or exact-image cleanup attempts."""
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+    topology = TaskTopology(
+        repository=tmp_path,
+        project="accept-cleanup",
+        candidate_sha=SHA,
+        services=(),
+        env_file=tmp_path / "compose.env",
+        override_path=tmp_path / "task" / "compose.acceptance.json",
+        root_override_path=tmp_path / "compose.root-public-env.yml",
+        validation_path=tmp_path / "topology.validated.json",
+        ports={},
+        docker_labels=labels,
+    )
+    ledger = tmp_path / "ledger"
+    calls: list[str] = []
+
+    class ScopedDocker:
+        def __init__(self, *_: object) -> None:
+            calls.append("docker")
+
+        def remove_task_builder(self) -> None:
+            calls.append("builder")
+            raise ValueError("builder failed")
+
+    monkeypatch.setattr(
+        runner, "cleanup_compose", lambda *_: (_ for _ in ()).throw(ValueError("down failed"))
+    )
+    monkeypatch.setattr(runner, "_ScopedDocker", ScopedDocker)
+    monkeypatch.setattr(
+        runner, "scoped_docker_inventory", lambda *_: calls.append("inventory")
+    )
+    monkeypatch.setattr(
+        runner,
+        "retain_docker_resources",
+        lambda *_args, **_kwargs: calls.append("retain") or type("Report", (), {"has_anomalies": False})(),
+    )
+
+    with pytest.raises(ValueError, match="down failed.*builder failed"):
+        runner._cleanup_default((topology, object(), ledger))
+
+    assert calls == ["docker", "builder", "inventory", "retain"]
 
 
 def test_task_owned_buildx_cleanup_refuses_wrong_labels_and_unsupported_buildx(
@@ -386,13 +437,16 @@ def test_task_owned_buildx_cleanup_refuses_wrong_labels_and_unsupported_buildx(
             return CommandResult(0, "")
 
     wrong = WrongLabelExecutor()
-    with pytest.raises(ValueError, match="ownership labels"):
+    with pytest.raises(ValueError, match="ownership marker"):
         _ScopedDocker(wrong, tmp_path / "ledger", labels).remove_task_builder()
     assert not any(command[:3] == ("docker", "buildx", "rm") for command in wrong.commands)
 
     unsupported = WrongLabelExecutor(unsupported=True)
+    unsupported_root = tmp_path / "unsupported-ledger"
+    scoped = _ScopedDocker(unsupported, unsupported_root, labels)
+    scoped._write_task_builder_marker()
     with pytest.raises(ValueError, match="Buildx unsupported"):
-        _ScopedDocker(unsupported, tmp_path / "ledger", labels).remove_task_builder()
+        scoped.remove_task_builder()
     assert not any(command[:3] == ("docker", "buildx", "rm") for command in unsupported.commands)
     assert not any("prune" in item for command in unsupported.commands for item in command)
 
