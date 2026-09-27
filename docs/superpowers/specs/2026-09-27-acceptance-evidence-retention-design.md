@@ -130,6 +130,21 @@ longer discoverable, and records the final absence. An error in one candidate
 must not expand scope; independent eligible entries may continue, while the
 command exits nonzero if any anomaly or deletion error occurred.
 
+### Cooperative runner ownership boundary
+
+The configured acceptance state root is exclusively runner-controlled. The
+maintenance command acquires a mode-0600, nonblocking exclusive lock beneath
+that root before it plans or applies retention and holds that lock through
+report sealing and every cleanup action. A concurrent repository-owned runner
+that cannot acquire the lock fails closed and makes no cleanup mutation.
+
+The lock serializes approved runner activity; it is not presented as a defense
+against a malicious same-UID process deliberately bypassing the lock. That
+process is outside this repository-owned lifecycle boundary. Descriptor/no-follow
+checks, ownership validation, and all anomaly handling remain mandatory. A
+future requirement to defend against a hostile same-UID writer needs a separate
+privileged maintenance authority and approved design.
+
 The command takes no caller-controlled arbitrary deletion path, remote-cache
 control, force flag, volume option, or scheduler option. It must reject a policy
 whose completed-generation count is not exactly three.

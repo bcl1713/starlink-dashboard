@@ -23,6 +23,7 @@ and `docs/superpowers/specs/2026-09-27-acceptance-retention-operational-lifecycl
 ## Global Constraints
 - Keep exactly three generations/lane: protected latest final plus two newer complete candidates.
 - Report-only is default; deletion needs `--apply`; all paths use canonical no-follow access.
+- The state root is exclusively runner-controlled; maintenance holds a mode-0600 nonblocking exclusive lock from planning through report sealing and cleanup. A runner that cannot acquire it fails closed. A malicious same-UID process deliberately bypassing this cooperative lock is outside this repository-owned boundary.
 - Ambiguous/corrupt/revoked/live/dirty/unmarked/legacy resources remain and cause an anomaly.
 - Never broad-prune Docker/Git; never delete volumes, profiles, user repos, shared caches, or legacy evidence.
 - Reports are `0700` JSON under maintenance, record policy SHA/action verification, retain 90 valid reports.
