@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import ctypes
+import fcntl
 import hashlib
 import json
 import os
 import platform
 import stat
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -47,6 +48,30 @@ class RetentionPolicy:
         return cls(**expected, digest=hashlib.sha256(raw).hexdigest())
 
 
+class RetentionLockUnavailable(RuntimeError):
+    """A repository-owned runner already holds the state-root lease."""
+
+
+@dataclass
+class _RetentionLease:
+    """Own the cooperative state-root flock until reporting is complete."""
+
+    fd: int | None
+
+    @property
+    def held(self) -> bool:
+        return self.fd is not None
+
+    def release(self) -> None:
+        if self.fd is None:
+            return
+        try:
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+        finally:
+            os.close(self.fd)
+            self.fd = None
+
+
 @dataclass(frozen=True)
 class RetentionPlan:
     root: Path
@@ -54,10 +79,18 @@ class RetentionPlan:
     protected_final: RetentionEntry | None
     entries: tuple[RetentionEntry, ...]
     anomalies: tuple[str, ...]
+    _lease: _RetentionLease = field(repr=False, compare=False)
 
     @property
     def has_anomalies(self) -> bool:
         return bool(self.anomalies)
+
+    def close(self) -> None:
+        """Release an unused planning lease without applying retention."""
+        self._lease.release()
+
+    def __del__(self) -> None:
+        self.close()
 
 
 @dataclass(frozen=True)
@@ -95,6 +128,7 @@ _ALLOWED_TOP_LEVEL = frozenset({lane.value for lane in Lane}) | {
     "ledgers",
     "tasks",
     ".retention-quarantine",
+    ".retention.lock",
 }
 
 
@@ -104,6 +138,38 @@ def canonical_root(path: Path) -> Path:
     root_fd = _open_confined_directory(root)
     os.close(root_fd)
     return root
+
+
+def _acquire_lease(root: Path) -> _RetentionLease:
+    """Create/open the runner-owned no-follow lock and take it without waiting."""
+    root_fd = _open_confined_directory(root)
+    lock_fd = None
+    try:
+        lock_fd = os.open(
+            ".retention.lock",
+            os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC,
+            0o600,
+            dir_fd=root_fd,
+        )
+        identity = os.fstat(lock_fd)
+        if not stat.S_ISREG(identity.st_mode):
+            raise RetentionLockUnavailable("retention lock is not a regular file")
+        os.fchmod(lock_fd, 0o600)
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise RetentionLockUnavailable("retention lock is already held") from error
+        lease = _RetentionLease(lock_fd)
+        lock_fd = None
+        return lease
+    except OSError as error:
+        raise RetentionLockUnavailable(
+            f"cannot open retention lock: {error}"
+        ) from error
+    finally:
+        if lock_fd is not None:
+            os.close(lock_fd)
+        os.close(root_fd)
 
 
 def safe_relative(root: Path, candidate: Path) -> PurePosixPath:
@@ -122,8 +188,20 @@ def safe_relative(root: Path, candidate: Path) -> PurePosixPath:
 
 
 def plan_retention(state_root: Path, policy: RetentionPolicy) -> RetentionPlan:
-    """Classify only sealed, unambiguous evidence; anything else is retained."""
+    """Acquire the root lease, then classify sealed unambiguous evidence."""
     root = canonical_root(state_root)
+    lease = _acquire_lease(root)
+    try:
+        return _plan_retention_locked(root, policy, lease)
+    except BaseException:
+        lease.release()
+        raise
+
+
+def _plan_retention_locked(
+    root: Path, policy: RetentionPolicy, lease: _RetentionLease
+) -> RetentionPlan:
+    """Classify only sealed, unambiguous evidence while the lease is held."""
     entries: list[RetentionEntry] = []
     anomalies: list[str] = []
     valid: dict[Lane, list[tuple[datetime, RetentionEntry, bool]]] = {
@@ -163,7 +241,9 @@ def plan_retention(state_root: Path, policy: RetentionPolicy) -> RetentionPlan:
         final_lane_present=(root / Lane.FINAL.value).is_dir(),
     )
     if anomalies:
-        return RetentionPlan(root, policy, protected, tuple(entries), tuple(anomalies))
+        return RetentionPlan(
+            root, policy, protected, tuple(entries), tuple(anomalies), lease
+        )
     selected: dict[tuple[Lane, str], RetentionDisposition] = {}
     for lane, generations in valid.items():
         newest = sorted(generations, key=lambda item: item[0], reverse=True)[
@@ -202,60 +282,83 @@ def plan_retention(state_root: Path, policy: RetentionPolicy) -> RetentionPlan:
         ),
         None,
     )
-    return RetentionPlan(root, policy, protected, resolved, ())
+    return RetentionPlan(root, policy, protected, resolved, (), lease)
 
 
 def apply_retention(plan: RetentionPlan, apply: bool) -> RetentionReport:
-    """Write a report and fail closed rather than rename mutable evidence paths."""
-    started = _utc_now()
-    deletions: list[RetentionDeletion] = []
-    reclaimed = 0
-    anomalies = list(plan.anomalies)
-    if apply and not anomalies:
-        for entry in plan.entries:
-            if entry.disposition is not RetentionDisposition.DELETE:
-                continue
-            try:
-                _delete_planned_entry(plan.root, entry)
-                deletions.append(RetentionDeletion(entry.path, entry.sha, "absent"))
-                reclaimed += entry.byte_size
-            except _AtomicExchangeUnavailable as error:
-                anomalies.append(f"atomic exchange unavailable: {error}")
-                break
-            except (OSError, ValueError) as error:
-                anomalies.append(f"retained {entry.path}: {error}")
-                break
-    planned_prunes = _valid_report_prunes(plan.root, plan.policy, include_current=True)
-    ended = _utc_now()
-    report_path = _write_report(
-        plan.root,
-        plan.policy,
-        started,
-        ended,
-        plan.entries,
-        deletions,
-        reclaimed,
-        not anomalies and (not apply or len(deletions) == _delete_count(plan.entries)),
-        0,
-        len(planned_prunes),
-        tuple(anomalies),
-        mode="apply" if apply else "report",
-        protected_final=plan.protected_final,
-    )
-    return RetentionReport(
-        report_path,
-        plan.root,
-        plan.policy.digest,
-        started,
-        ended,
-        plan.entries,
-        tuple(deletions),
-        reclaimed,
-        not anomalies and (not apply or len(deletions) == _delete_count(plan.entries)),
-        0,
-        len(planned_prunes),
-        tuple(anomalies),
-    )
+    """Apply one leased plan, seal its report, and then release the lease."""
+    if not plan._lease.held:
+        raise ValueError("retention plan no longer holds its state-root lease")
+    try:
+        started = _utc_now()
+        deletions: list[RetentionDeletion] = []
+        reclaimed = 0
+        anomalies = list(plan.anomalies)
+        if apply and not anomalies:
+            for entry in plan.entries:
+                if entry.disposition is not RetentionDisposition.DELETE:
+                    continue
+                try:
+                    _delete_planned_entry(plan.root, entry)
+                    deletions.append(RetentionDeletion(entry.path, entry.sha, "absent"))
+                    reclaimed += entry.byte_size
+                except _AtomicExchangeUnavailable as error:
+                    anomalies.append(f"atomic exchange unavailable: {error}")
+                    break
+                except (OSError, ValueError) as error:
+                    anomalies.append(f"retained {entry.path}: {error}")
+        planned_prunes = _valid_report_prunes(
+            plan.root, plan.policy, include_current=True
+        )
+        pruned = 0
+        if apply and not anomalies:
+            for report in planned_prunes:
+                try:
+                    _delete_planned_report(plan.root, report, plan.policy)
+                    pruned += 1
+                except (OSError, ValueError) as error:
+                    anomalies.append(
+                        f"retained maintenance report {report.name}: {error}"
+                    )
+        ended = _utc_now()
+        verified = not anomalies and (
+            not apply
+            or (
+                len(deletions) == _delete_count(plan.entries)
+                and pruned == len(planned_prunes)
+            )
+        )
+        report_path = _write_report(
+            plan.root,
+            plan.policy,
+            started,
+            ended,
+            plan.entries,
+            deletions,
+            reclaimed,
+            verified,
+            pruned,
+            len(planned_prunes),
+            tuple(anomalies),
+            mode="apply" if apply else "report",
+            protected_final=plan.protected_final,
+        )
+        return RetentionReport(
+            report_path,
+            plan.root,
+            plan.policy.digest,
+            started,
+            ended,
+            plan.entries,
+            tuple(deletions),
+            reclaimed,
+            verified,
+            pruned,
+            len(planned_prunes),
+            tuple(anomalies),
+        )
+    finally:
+        plan.close()
 
 
 def _classify_generation(
@@ -728,6 +831,28 @@ def _valid_report_prunes(
             continue
     limit = policy.maintenance_report_count - (1 if include_current else 0)
     return sorted(valid)[: max(0, len(valid) - limit)]
+
+
+def _delete_planned_report(root: Path, report: Path, policy: RetentionPolicy) -> None:
+    """Revalidate and remove one regular, root-confined maintenance report."""
+    if report.parent != root / "maintenance" / "retention":
+        raise ValueError("maintenance report escapes retention root")
+    root_fd = _open_confined_directory(root)
+    maintenance_fd = retention_fd = report_fd = None
+    try:
+        maintenance_fd = os.open("maintenance", _DIRECTORY_FLAGS, dir_fd=root_fd)
+        retention_fd = os.open("retention", _DIRECTORY_FLAGS, dir_fd=maintenance_fd)
+        report_fd = os.open(report.name, _FILE_FLAGS, dir_fd=retention_fd)
+        if not stat.S_ISREG(os.fstat(report_fd).st_mode):
+            raise ValueError("maintenance report is not regular")
+        payload = json.loads(os.read(report_fd, 10_000_000))
+        _validate_report_payload(payload, root, policy)
+        os.unlink(report.name, dir_fd=retention_fd)
+        _assert_absent(retention_fd, report.name)
+    finally:
+        for fd in (report_fd, retention_fd, maintenance_fd, root_fd):
+            if fd is not None:
+                os.close(fd)
 
 
 def _write_report(

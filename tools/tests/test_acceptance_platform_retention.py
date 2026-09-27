@@ -9,6 +9,7 @@ from acceptance.platform import retention
 from acceptance.platform.evidence import seal_fingerprint, write_artifacts
 from acceptance.platform.model import Lane, RetentionDisposition, RetentionEntry
 from acceptance.platform.retention import (
+    RetentionLockUnavailable,
     RetentionPolicy,
     apply_retention,
     canonical_root,
@@ -468,6 +469,62 @@ def test_report_only_never_removes(tmp_path: Path) -> None:
     assert report.deletions == ()
 
 
+def test_planning_holds_a_private_regular_mode_0600_lock_until_report_seals(
+    tmp_path: Path,
+) -> None:
+    state = _state_with_generations(tmp_path)
+    plan = plan_retention(state, _policy(tmp_path))
+    lock = state / ".retention.lock"
+
+    identity = os.lstat(lock)
+
+    assert not os.path.islink(lock)
+    assert (identity.st_mode & 0o170000) == 0o100000
+    assert (identity.st_mode & 0o777) == 0o600
+    assert (state / "final" / ("a" * 40)).exists()
+    apply_retention(plan, apply=False)
+
+
+def test_second_runner_cannot_plan_while_first_runner_lease_is_held(
+    tmp_path: Path,
+) -> None:
+    state = _state_with_generations(tmp_path)
+    first = plan_retention(state, _policy(tmp_path))
+
+    with pytest.raises(RetentionLockUnavailable):
+        plan_retention(state, _policy(tmp_path))
+
+    assert (state / "final" / ("a" * 40)).exists()
+    apply_retention(first, apply=False)
+
+
+def test_complete_apply_removes_generation_while_its_planning_lease_is_held(
+    tmp_path: Path,
+) -> None:
+    state = _state_with_generations(tmp_path)
+    plan = plan_retention(state, _policy(tmp_path))
+
+    report = apply_retention(plan, apply=True)
+
+    assert not (state / "final" / ("a" * 40)).exists()
+    assert report.anomalies == ()
+    follow_up = plan_retention(state, _policy(tmp_path))
+    apply_retention(follow_up, apply=False)
+
+
+def test_lease_releases_after_anomalous_report_seals(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    (state / "mystery").mkdir()
+    (state / "mystery" / "keep.txt").write_text("retained")
+    plan = plan_retention(state, _policy(tmp_path))
+
+    report = apply_retention(plan, apply=True)
+
+    assert report.anomalies
+    follow_up = plan_retention(state, _policy(tmp_path))
+    apply_retention(follow_up, apply=False)
+
+
 def test_apply_deletes_planned_generation_with_atomic_exchange(tmp_path: Path) -> None:
     state = _state_with_generations(tmp_path)
     report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
@@ -622,3 +679,22 @@ def test_prunes_only_valid_maintenance_reports_above_ninety(tmp_path: Path) -> N
     assert report.planned_report_prunes == 2
     assert len(list(reports.glob("*.json"))) == 93
     assert (reports / "corrupt.json").exists()
+
+
+def test_apply_prunes_only_planned_valid_reports_and_accounts_for_them(
+    tmp_path: Path,
+) -> None:
+    state = _state_with_generations(tmp_path)
+    reports = state / "maintenance" / "retention"
+    reports.mkdir(parents=True)
+    policy = _policy(tmp_path)
+    for index in range(91):
+        path = reports / f"2026-09-27T00-00-{index:02d}-report.json"
+        path.write_text(json.dumps(_valid_maintenance_report(state, policy)))
+        path.chmod(0o700)
+    report = apply_retention(plan_retention(state, policy), apply=True)
+
+    assert report.planned_report_prunes == 2
+    assert report.pruned_reports == 2
+    assert len(list(reports.glob("*.json"))) == 90
+    assert report.anomalies == ()
