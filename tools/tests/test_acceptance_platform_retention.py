@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path, PurePosixPath
 
 import pytest
-
+from acceptance.platform.evidence import seal_fingerprint, write_artifacts
 from acceptance.platform.model import Lane, RetentionDisposition, RetentionEntry
-from acceptance.platform.retention import RetentionPolicy, canonical_root, safe_relative
+from acceptance.platform.retention import (
+    RetentionPolicy,
+    apply_retention,
+    canonical_root,
+    plan_retention,
+    safe_relative,
+)
 
 
 def test_policy_is_exact(tmp_path: Path) -> None:
@@ -60,7 +67,9 @@ def test_policy_rejects_type_confused_fixed_values(
         "maintenance_report_count": "90",
     }
     values[key] = value
-    policy_path.write_text("".join(f"{name} = {number}\n" for name, number in values.items()))
+    policy_path.write_text(
+        "".join(f"{name} = {number}\n" for name, number in values.items())
+    )
 
     with pytest.raises(ValueError):
         RetentionPolicy.parse(policy_path)
@@ -154,3 +163,200 @@ def test_canonical_root_normalizes_lexical_components_without_resolving(
     root.mkdir()
 
     assert canonical_root(root / ".." / "state") == root
+
+
+SHA = "a" * 40
+REF = "refs/heads/retention-test"
+
+
+def _policy(tmp_path: Path) -> RetentionPolicy:
+    path = tmp_path / "retention-policy.toml"
+    path.write_text(
+        "version = 1\ncompleted_generations_per_lane = 3\nmaintenance_report_count = 90\n"
+    )
+    return RetentionPolicy.parse(path)
+
+
+def _write_generation(
+    state: Path,
+    lane: Lane,
+    sha: str,
+    *,
+    ended_at: str,
+    final: bool = False,
+    ref: str = REF,
+) -> Path:
+    root = state / lane.value / sha
+    root.parent.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "sha": sha,
+        "ref": ref,
+        "lane": lane.value,
+        "outcome": "passed",
+        "final_acceptance": final,
+        "capture": {"started_at": "2026-09-27T00:00:00+00:00", "ended_at": ended_at},
+    }
+    raw = (json.dumps(manifest, sort_keys=True) + "\n").encode()
+    write_artifacts(root, {"runner-manifest.json": raw, "artifact.txt": sha.encode()})
+    seal_fingerprint(
+        root, json.dumps({"sha": sha, "ref": ref}, sort_keys=True).encode()
+    )
+    return root
+
+
+def _state_with_generations(tmp_path: Path, lane: Lane = Lane.FINAL) -> Path:
+    state = tmp_path / "state"
+    for index, letter in enumerate("abcd", start=1):
+        _write_generation(
+            state,
+            lane,
+            letter * 40,
+            ended_at=f"2026-09-27T00:00:0{index}+00:00",
+            final=lane is Lane.FINAL,
+        )
+    return state
+
+
+def _entry(plan: object, lane: Lane, sha: str) -> RetentionEntry:
+    return next(
+        entry for entry in plan.entries if entry.lane is lane and entry.sha == sha
+    )
+
+
+def test_keeps_protected_final_and_two_newest(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.protected_final.sha == "d" * 40
+    assert _entry(plan, Lane.FINAL, "a" * 40).disposition is RetentionDisposition.DELETE
+    assert _entry(plan, Lane.FINAL, "b" * 40).disposition is RetentionDisposition.RETAIN
+
+
+def test_ambiguous_protected_final_is_retained_anomaly(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    _write_generation(
+        state, Lane.FINAL, "e" * 40, ended_at="2026-09-27T00:00:04+00:00", final=True
+    )
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_report_only_never_removes(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=False)
+
+    assert report.bytes_reclaimed == 0
+    assert (state / "final" / ("a" * 40)).exists()
+    assert report.deletions == ()
+
+
+def test_apply_quarantines_then_verifies_absence(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=True)
+
+    assert not (state / "final" / ("a" * 40)).exists()
+    assert report.deletions[0].post_action == "absent"
+    assert not list((state / ".retention-quarantine").iterdir())
+    assert (report.path.stat().st_mode & 0o777) == 0o700
+
+
+@pytest.mark.parametrize("lane", [Lane.HEALTH, Lane.STATIC, Lane.DIAGNOSTIC])
+def test_retains_newest_three_completed_generations_per_nonfinal_lane(
+    tmp_path: Path, lane: Lane
+) -> None:
+    state = _state_with_generations(tmp_path, lane)
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert _entry(plan, lane, "a" * 40).disposition is RetentionDisposition.DELETE
+    assert all(
+        _entry(plan, lane, letter * 40).disposition is RetentionDisposition.RETAIN
+        for letter in "bcd"
+    )
+
+
+def test_invalid_manifest_unknown_nonempty_parent_and_empty_task_parent_are_anomalies(
+    tmp_path: Path,
+) -> None:
+    state = _state_with_generations(tmp_path)
+    (state / "final" / ("a" * 40) / "artifact.txt").write_text("tampered")
+    (state / "mystery").mkdir()
+    (state / "mystery" / "unknown").write_text("keep")
+    (state / "tasks").mkdir()
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert (
+        _entry(plan, Lane.FINAL, "a" * 40).disposition is RetentionDisposition.ANOMALY
+    )
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_strict_sha_log_and_ledger_association_blocks_delete(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    (state / "logs" / "final").mkdir(parents=True)
+    (state / "logs" / "final" / ("a" * 39 + "b")).write_text("unassociated")
+    (state / "ledgers").mkdir()
+    (state / "ledgers" / "not-a-sha.json").write_text("unassociated")
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_exact_sha_logs_ledgers_and_task_parents_are_associated(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    sha = "a" * 40
+    (state / "logs" / "final" / sha).mkdir(parents=True)
+    (state / "logs" / "final" / sha / "run.log").write_text("associated")
+    (state / "ledgers" / sha).mkdir(parents=True)
+    (state / "ledgers" / sha / "ledger.json").write_text("associated")
+    (state / "tasks" / sha).mkdir(parents=True)
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert not plan.has_anomalies
+    assert _entry(plan, Lane.FINAL, sha).disposition is RetentionDisposition.DELETE
+
+
+def test_symlinked_generation_is_refused_without_removal(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    target = state / "final" / ("a" * 40)
+    alias = state / "final" / ("e" * 40)
+    alias.symlink_to(target, target_is_directory=True)
+
+    plan = plan_retention(state, _policy(tmp_path))
+
+    assert plan.has_anomalies
+    assert alias.is_symlink()
+    assert all(
+        entry.disposition is not RetentionDisposition.DELETE for entry in plan.entries
+    )
+
+
+def test_prunes_only_valid_maintenance_reports_above_ninety(tmp_path: Path) -> None:
+    state = _state_with_generations(tmp_path)
+    reports = state / "maintenance" / "retention"
+    reports.mkdir(parents=True)
+    for index in range(91):
+        (reports / f"2026-09-27T00-00-{index:02d}-report.json").write_text(
+            json.dumps({"root": str(state), "policy_digest": _policy(tmp_path).digest})
+        )
+    (reports / "corrupt.json").write_text("not json")
+
+    report = apply_retention(plan_retention(state, _policy(tmp_path)), apply=False)
+
+    assert report.pruned_reports == 2
+    assert (reports / "corrupt.json").exists()
