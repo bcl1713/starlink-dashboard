@@ -2257,4 +2257,11 @@ def test_static_maps_named_frontend_test_scripts_to_npm(
 
     runner._run_static(load_product_contract(CONTRACT))
 
-    assert calls[-2:] == [["npm", "run", "lint"], ["npm", "run", "test:unit"]]
+    frontend_calls = calls[-3:]
+
+    assert frontend_calls == [
+        ["npm", "ci"],
+        ["npm", "run", "lint"],
+        ["npm", "run", "test:unit"],
+    ]
+    assert calls.count(["npm", "ci"]) == 1

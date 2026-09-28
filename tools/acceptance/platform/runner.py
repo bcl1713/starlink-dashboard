@@ -470,8 +470,16 @@ def _probe(argv: tuple[str, ...]) -> str:
 def _run_static(contract: ProductContract) -> None:
     for group in contract.static_groups:
         cwd = _REPOSITORY / group.working_directory
-        for command in group.commands:
-            words = shlex.split(command)
+        commands = tuple(shlex.split(command) for command in group.commands)
+        uses_npm_scripts = any(
+            words and (words[0] == "lint" or words[0].startswith("test"))
+            for words in commands
+        )
+        if uses_npm_scripts:
+            completed = subprocess.run(["npm", "ci"], cwd=cwd, check=False)
+            if completed.returncode:
+                raise ValueError(f"static group {group.name} failed: npm ci")
+        for command, words in zip(group.commands, commands, strict=True):
             if words and (words[0] == "lint" or words[0].startswith("test")):
                 words = ["npm", "run", *words]
             completed = subprocess.run(words, cwd=cwd, check=False)
