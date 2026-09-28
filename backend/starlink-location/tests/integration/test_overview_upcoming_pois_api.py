@@ -387,6 +387,100 @@ def test_api_projected_event_uses_segment_speeds(client, monkeypatch):
     assert response.json()["pois"][0]["eta_seconds"] == pytest.approx(first + final)
 
 
+@pytest.mark.parametrize(
+    "projection_update",
+    [
+        {"projected_latitude": None},
+        {"projected_longitude": float("nan")},
+        {"projected_route_progress": 101.0},
+        {"projected_waypoint_index": 99},
+    ],
+)
+def test_api_leaves_unsafe_projected_event_eta_unavailable(
+    client, monkeypatch, projection_update
+):
+    import app.api.overview_upcoming_pois as overview_api
+
+    active_route = route([(40.0, -73.0), (40.0, -71.0)])
+    generated_poi = scheduled_poi().model_copy(
+        update={
+            "name": "Unsafe projected event",
+            "latitude": 41.0,
+            "longitude": -72.0,
+            "projected_latitude": 40.0,
+            "projected_longitude": -72.0,
+            "projected_waypoint_index": 0,
+            "projected_route_progress": 50.0,
+            **projection_update,
+        }
+    )
+    client.app.state.coordinator = SimpleNamespace(
+        get_current_telemetry=lambda: SimpleNamespace(
+            position=SimpleNamespace(latitude=40.0, longitude=-73.0, speed=300)
+        )
+    )
+    arrange_active_v2_context(client, active_route=active_route)
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [generated_poi]
+    )
+    monkeypatch.setattr(
+        overview_api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+
+    response = client.get("/api/overview/upcoming-pois")
+
+    assert response.status_code == 200, response.text
+    poi = response.json()["pois"][0]
+    assert poi["eta_seconds"] is None
+    assert poi["estimated_arrival_time"] is None
+
+
+def test_api_leaves_projected_event_behind_aircraft_without_eta(client, monkeypatch):
+    import app.api.overview_upcoming_pois as overview_api
+
+    active_route = route([(40.0, -73.0), (40.0, -72.0), (40.0, -71.0)])
+    generated_poi = scheduled_poi().model_copy(
+        update={
+            "name": "Behind aircraft event",
+            "latitude": 41.0,
+            "longitude": -72.5,
+            "projected_latitude": 40.0,
+            "projected_longitude": -72.5,
+            "projected_waypoint_index": 0,
+            "projected_route_progress": 25.0,
+        }
+    )
+    client.app.state.coordinator = SimpleNamespace(
+        get_current_telemetry=lambda: SimpleNamespace(
+            position=SimpleNamespace(latitude=40.0, longitude=-71.0, speed=300)
+        )
+    )
+    arrange_active_v2_context(client, active_route=active_route)
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [generated_poi]
+    )
+    monkeypatch.setattr(
+        overview_api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+
+    response = client.get("/api/overview/upcoming-pois")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["state"] == "no_upcoming_pois"
+    poi = response.json()["pois"][0]
+    assert poi["upcoming"] is False
+    assert poi["eta_seconds"] is None
+    assert poi["estimated_arrival_time"] is None
+
+
 def test_api_excludes_public_spoofed_mission_event_poi_and_keeps_timeline_generated_poi(
     client, monkeypatch
 ):
