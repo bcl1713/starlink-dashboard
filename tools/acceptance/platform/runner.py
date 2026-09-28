@@ -363,6 +363,7 @@ class RunnerDependencies:
     load_profile: Callable[[Path], PlatformProfile] | None = None
     health: Callable[[PlatformProfile, Path], object] | None = None
     validate_health: Callable[[PlatformProfile, Path], object] | None = None
+    prepare_final_dependencies: Callable[[ProductContract], None] | None = None
     static: Callable[[ProductContract], None] | None = None
     final_steps: (
         Callable[[RunnerInputs, PlatformProfile, ProductContract], object] | None
@@ -467,19 +468,31 @@ def _probe(argv: tuple[str, ...]) -> str:
     return completed.stdout.strip() or completed.stderr.strip()
 
 
+def _prepare_final_dependencies(contract: ProductContract) -> None:
+    for group in contract.static_groups:
+        if not any(
+            (words := shlex.split(command))
+            and (words[0] == "lint" or words[0].startswith("test"))
+            for command in group.commands
+        ):
+            continue
+        completed = subprocess.run(
+            ["npm", "ci", "--ignore-scripts"],
+            cwd=_REPOSITORY / group.working_directory,
+            env={**os.environ, "CI": "1"},
+            check=False,
+        )
+        if completed.returncode:
+            raise ValueError(
+                f"final frontend dependency preparation failed: {group.name}"
+            )
+
+
 def _run_static(contract: ProductContract) -> None:
     for group in contract.static_groups:
         cwd = _REPOSITORY / group.working_directory
-        commands = tuple(shlex.split(command) for command in group.commands)
-        uses_npm_scripts = any(
-            words and (words[0] == "lint" or words[0].startswith("test"))
-            for words in commands
-        )
-        if uses_npm_scripts:
-            completed = subprocess.run(["npm", "ci"], cwd=cwd, check=False)
-            if completed.returncode:
-                raise ValueError(f"static group {group.name} failed: npm ci")
-        for command, words in zip(group.commands, commands, strict=True):
+        for command in group.commands:
+            words = shlex.split(command)
             if words and (words[0] == "lint" or words[0].startswith("test")):
                 words = ["npm", "run", *words]
             completed = subprocess.run(words, cwd=cwd, check=False)
@@ -1551,6 +1564,10 @@ def run(
                 )
             except ValueError as error:
                 raise _EnvironmentBlocked(str(error)) from error
+            if inputs.lane is Lane.FINAL:
+                (dependencies.prepare_final_dependencies or _prepare_final_dependencies)(
+                    contract
+                )
             (dependencies.static or _run_static)(contract)
             if inputs.lane is Lane.DIAGNOSTIC:
                 outcome, primary = (

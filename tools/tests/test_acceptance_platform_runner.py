@@ -1218,8 +1218,10 @@ exit "$RUNNER_EXIT"
     preflight = next(index for index, event in enumerate(recorded) if "maintenance retention" in event)
     allocation = next(index for index, event in enumerate(recorded) if "worktree add" in event)
     runner_call = next(index for index, event in enumerate(recorded) if "acceptance.platform.runner" in event)
+    status = next(event for event in recorded if "status --porcelain" in event)
     cleanup = next(index for index, event in enumerate(recorded) if "worktree remove" in event)
     assert preflight < allocation < runner_call < cleanup
+    assert ":(exclude)frontend/mission-planner/node_modules" in status
     assert "marker=600" in recorded
     assert f"cwd={checkout_root}" not in recorded[cleanup]
     assert not any(checkout_root.iterdir())
@@ -2138,6 +2140,7 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
         dependencies=RunnerDependencies(
             load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=lambda *_: calls.append("prepare"),
             static=lambda *_: calls.append("static"),
             browser_card=lambda *_: None,
             final_steps=lambda *_: calls.append("final"),
@@ -2147,8 +2150,33 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
 
     assert result.exit_code == 0
     assert result.manifest["final_acceptance"] is True
-    assert calls == ["static", "final", "cleanup"]
+    assert calls == ["prepare", "static", "final", "cleanup"]
     assert result.manifest["lane"] == Lane.FINAL.value
+
+
+def test_final_dependency_failure_blocks_static_and_final_steps(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def fail_preparation(_: ProductContract) -> None:
+        calls.append("prepare")
+        raise ValueError("frontend dependency preparation failed")
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: _profile(),
+            validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=fail_preparation,
+            static=lambda *_: calls.append("static"),
+            final_steps=lambda *_: calls.append("final"),
+            cleanup=lambda *_: calls.append("cleanup"),
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    assert "frontend dependency preparation failed" in result.manifest["primary"]["detail"]
+    assert calls == ["prepare", "cleanup"]
 
 
 def test_compose_cleanup_failure_still_closes_browser_and_writes_its_logs(
@@ -2257,11 +2285,27 @@ def test_static_maps_named_frontend_test_scripts_to_npm(
 
     runner._run_static(load_product_contract(CONTRACT))
 
-    frontend_calls = calls[-3:]
+    assert calls[-2:] == [["npm", "run", "lint"], ["npm", "run", "test:unit"]]
+    assert ["npm", "ci"] not in calls
 
-    assert frontend_calls == [
-        ["npm", "ci"],
-        ["npm", "run", "lint"],
-        ["npm", "run", "test:unit"],
-    ]
-    assert calls.count(["npm", "ci"]) == 1
+
+def test_final_dependency_preparation_installs_frontend_without_scripts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[list[str], Path, dict[str, str]]] = []
+
+    def fake_run(
+        words: list[str], *, cwd: Path, env: dict[str, str], **_: object
+    ) -> subprocess.CompletedProcess[object]:
+        calls.append((words, cwd, env))
+        return subprocess.CompletedProcess(words, 0)
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+
+    runner._prepare_final_dependencies(load_product_contract(CONTRACT))
+
+    assert len(calls) == 1
+    words, cwd, env = calls[0]
+    assert words == ["npm", "ci", "--ignore-scripts"]
+    assert cwd == ROOT / "frontend/mission-planner"
+    assert env["CI"] == "1"
