@@ -456,6 +456,8 @@ class ETAProjection:
                         projection_progress,
                     )
                 )
+                or not -90 <= current_lat <= 90
+                or not -180 <= current_lon <= 180
                 or not -90 <= projection_latitude <= 90
                 or not -180 <= projection_longitude <= 180
                 or not 0 <= projection_progress <= 100
@@ -479,20 +481,20 @@ class ETAProjection:
             total_eta_seconds = 0.0
             for idx in range(nearest_point_index, projection_segment_index + 1):
                 current_point = active_route.points[idx]
+                segment_timing_point = active_route.points[idx + 1]
                 if idx == projection_segment_index:
                     segment_end_latitude = projection_latitude
                     segment_end_longitude = projection_longitude
                 else:
-                    next_point = active_route.points[idx + 1]
-                    segment_end_latitude = next_point.latitude
-                    segment_end_longitude = next_point.longitude
+                    segment_end_latitude = segment_timing_point.latitude
+                    segment_end_longitude = segment_timing_point.longitude
                 segment_distance = self.calculator.calculate_distance(
                     current_point.latitude,
                     current_point.longitude,
                     segment_end_latitude,
                     segment_end_longitude,
                 )
-                expected_speed = current_point.expected_segment_speed_knots or speed
+                expected_speed = segment_timing_point.expected_segment_speed_knots or speed
                 segment_speed_knots = (
                     (speed + expected_speed) / 2.0
                     if idx == nearest_point_index
