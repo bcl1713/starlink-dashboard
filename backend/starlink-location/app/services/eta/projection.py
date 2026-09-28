@@ -494,7 +494,9 @@ class ETAProjection:
                     segment_end_latitude,
                     segment_end_longitude,
                 )
-                expected_speed = segment_timing_point.expected_segment_speed_knots or speed
+                expected_speed = (
+                    segment_timing_point.expected_segment_speed_knots or speed
+                )
                 segment_speed_knots = (
                     (speed + expected_speed) / 2.0
                     if idx == nearest_point_index
