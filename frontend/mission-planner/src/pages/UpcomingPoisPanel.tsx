@@ -46,7 +46,8 @@ function etaLabel(
   if (!Number.isFinite(arrival.valueOf())) return 'ETA unavailable';
 
   const date = arrival.toISOString();
-  return `${date.slice(0, 10)} ${date.slice(11, 16)} UTC · ${etaType}`;
+  const utc = `${date.slice(0, 10)} ${date.slice(11, 16)} UTC`;
+  return etaType === 'estimated' ? utc : `${utc} · anticipated`;
 }
 
 export function UpcomingPoisPanel({
