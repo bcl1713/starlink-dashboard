@@ -254,6 +254,68 @@ def test_missing_health_fingerprint_skips_product_executor(tmp_path: Path) -> No
     assert calls == []
 
 
+def test_cleanup_allows_current_task_images_referenced_by_its_own_ledger(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+    topology = TaskTopology(
+        repository=tmp_path,
+        project="accept-cleanup",
+        candidate_sha=SHA,
+        services=(),
+        env_file=tmp_path / "compose.env",
+        override_path=tmp_path / "task" / "compose.acceptance.json",
+        root_override_path=tmp_path / "compose.root-public-env.yml",
+        validation_path=tmp_path / "topology.validated.json",
+        ports={},
+        docker_labels=labels,
+    )
+    ledger_root = tmp_path / "ledger"
+    key = BuildLedgerKey(SHA, "b" * 64, "c" * 64)
+    ledger = BuildLedger(ledger_root)
+    path = ledger.claim(key)
+    ledger.close(
+        path,
+        BuildReconciliation(True, False, {"service": "sha256:current"}),
+        "topology",
+    )
+
+    class CleanupExecutor:
+        def __init__(self) -> None:
+            self.commands: list[tuple[str, ...]] = []
+            self.present = True
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(1, "no such builder")
+            if argv[:3] == ("docker", "image", "ls"):
+                return CommandResult(0, "candidate-tag\n")
+            if argv[:3] == ("docker", "image", "inspect"):
+                return CommandResult(
+                    0 if self.present else 1,
+                    json.dumps(
+                        [{"Id": "sha256:current", "Config": {"Labels": labels.values()}}]
+                    )
+                    if self.present
+                    else "",
+                )
+            if argv[:3] == ("docker", "image", "rm"):
+                self.present = False
+            return CommandResult(0, "")
+
+    monkeypatch.setattr(runner, "cleanup_compose", lambda *_: None)
+    monkeypatch.setattr(runner._ScopedDocker, "remove_task_builder", lambda *_: None)
+    monkeypatch.setattr(runner, "scoped_docker_inventory", lambda *_: ())
+    executor = CleanupExecutor()
+
+    runner._cleanup_default((topology, executor, ledger_root, key))
+
+    assert ("docker", "image", "rm", "sha256:current") in executor.commands
+
+
 def test_cleanup_default_preserves_image_protected_by_configured_alternate_ledger_root(
     tmp_path: Path,
 ) -> None:
@@ -1218,8 +1280,10 @@ exit "$RUNNER_EXIT"
     preflight = next(index for index, event in enumerate(recorded) if "maintenance retention" in event)
     allocation = next(index for index, event in enumerate(recorded) if "worktree add" in event)
     runner_call = next(index for index, event in enumerate(recorded) if "acceptance.platform.runner" in event)
+    status = next(event for event in recorded if "status --porcelain" in event)
     cleanup = next(index for index, event in enumerate(recorded) if "worktree remove" in event)
     assert preflight < allocation < runner_call < cleanup
+    assert ":(exclude)frontend/mission-planner/node_modules" in status
     assert "marker=600" in recorded
     assert f"cwd={checkout_root}" not in recorded[cleanup]
     assert not any(checkout_root.iterdir())
@@ -1604,6 +1668,7 @@ def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
         dependencies=RunnerDependencies(
             load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=lambda *_: None,
             static=lambda *_: None,
             browser_card=lambda *_: None,
             final_steps=lambda *_: adapter.write_text("after launch"),
@@ -2138,6 +2203,7 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
         dependencies=RunnerDependencies(
             load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=lambda *_: calls.append("prepare"),
             static=lambda *_: calls.append("static"),
             browser_card=lambda *_: None,
             final_steps=lambda *_: calls.append("final"),
@@ -2147,8 +2213,33 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
 
     assert result.exit_code == 0
     assert result.manifest["final_acceptance"] is True
-    assert calls == ["static", "final", "cleanup"]
+    assert calls == ["prepare", "static", "final", "cleanup"]
     assert result.manifest["lane"] == Lane.FINAL.value
+
+
+def test_final_dependency_failure_blocks_static_and_final_steps(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def fail_preparation(_: ProductContract) -> None:
+        calls.append("prepare")
+        raise ValueError("frontend dependency preparation failed")
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: _profile(),
+            validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=fail_preparation,
+            static=lambda *_: calls.append("static"),
+            final_steps=lambda *_: calls.append("final"),
+            cleanup=lambda *_: calls.append("cleanup"),
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    assert "frontend dependency preparation failed" in result.manifest["primary"]["detail"]
+    assert calls == ["prepare", "cleanup"]
 
 
 def test_compose_cleanup_failure_still_closes_browser_and_writes_its_logs(
@@ -2258,3 +2349,26 @@ def test_static_maps_named_frontend_test_scripts_to_npm(
     runner._run_static(load_product_contract(CONTRACT))
 
     assert calls[-2:] == [["npm", "run", "lint"], ["npm", "run", "test:unit"]]
+    assert ["npm", "ci"] not in calls
+
+
+def test_final_dependency_preparation_installs_frontend_without_scripts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[list[str], Path, dict[str, str]]] = []
+
+    def fake_run(
+        words: list[str], *, cwd: Path, env: dict[str, str], **_: object
+    ) -> subprocess.CompletedProcess[object]:
+        calls.append((words, cwd, env))
+        return subprocess.CompletedProcess(words, 0)
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+
+    runner._prepare_final_dependencies(load_product_contract(CONTRACT))
+
+    assert len(calls) == 1
+    words, cwd, env = calls[0]
+    assert words == ["npm", "ci", "--ignore-scripts"]
+    assert cwd == ROOT / "frontend/mission-planner"
+    assert env["CI"] == "1"

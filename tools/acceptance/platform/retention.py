@@ -18,7 +18,13 @@ from typing import Any
 import tomllib
 
 from .evidence import read_fingerprint_authority, read_nofollow, verify_manifest
-from .model import Lane, RetentionDisposition, RetentionEntry, validate_candidate_inputs
+from .model import (
+    Lane,
+    Outcome,
+    RetentionDisposition,
+    RetentionEntry,
+    validate_candidate_inputs,
+)
 
 
 @dataclass(frozen=True)
@@ -399,17 +405,18 @@ def _classify_generation(
             raise ValueError("runner manifest association mismatch")
         if fingerprint_sha != sha or fingerprint_ref != ref:
             raise ValueError("fingerprint ref mismatch")
+        outcome = manifest.get("outcome")
+        if outcome not in {item.value for item in Outcome}:
+            raise ValueError("incomplete runner outcome")
         final = manifest.get("final_acceptance") is True
         if final and lane is not Lane.FINAL:
             raise ValueError("only final lane can claim final acceptance")
-        if lane is Lane.FINAL and not final:
-            raise ValueError("final lane must claim final acceptance")
+        if final and outcome != Outcome.PASSED.value:
+            raise ValueError("only a passed outcome can claim final acceptance")
         capture = manifest.get("capture")
         if not isinstance(capture, dict):
             raise TypeError("missing capture authority")
         ended = _parse_utc(capture.get("ended_at"))
-        if manifest.get("outcome") != "passed":
-            raise ValueError("incomplete runner outcome")
         identity = os.stat(generation, follow_symlinks=False)
         if not stat.S_ISDIR(identity.st_mode):
             raise ValueError("generation must be a directory")
@@ -467,19 +474,20 @@ def _classify_candidates(
             continue
         classified = _classify_generation(root, child, lane)
         entries.append(classified[0])
-        discovery = discovery_parent / child.name
-        try:
-            _validate_candidate_discovery(child, discovery)
-        except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
-            anomalies.append(
-                f"invalid candidate discovery {child.relative_to(root)}: {error}"
-            )
-            continue
         if classified[1] is None:
             anomalies.append(classified[2])
-        else:
-            ended, final = classified[1]
-            valid[lane].append((ended, classified[0], final))
+            continue
+        ended, final = classified[1]
+        if final:
+            discovery = discovery_parent / child.name
+            try:
+                _validate_candidate_discovery(child, discovery)
+            except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+                anomalies.append(
+                    f"invalid candidate discovery {child.relative_to(root)}: {error}"
+                )
+                continue
+        valid[lane].append((ended, classified[0], final))
     for special in children:
         if special.name not in {".discoverable", ".pending", ".revoked"}:
             continue
@@ -532,7 +540,7 @@ def _protected_final(
 ) -> RetentionEntry | None:
     finalists = [(ended, entry) for ended, entry, final in generations if final]
     if not finalists:
-        if final_lane_present:
+        if final_lane_present and not generations:
             anomalies.append("missing protected final authority")
         return None
     latest = max(ended for ended, _ in finalists)

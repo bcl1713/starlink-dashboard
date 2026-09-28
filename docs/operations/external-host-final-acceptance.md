@@ -65,9 +65,19 @@ printf 'HEAD=%s\nREMOTE=%s\nREF=%s\n' \
 that printed SHA as `SHA`; the runner requires lowercase full SHA and named ref.
 Record the commit's signed/reviewed identity according to local release policy.
 
-Install the candidate's ordinary project dependencies through the repository's
-approved workflow before the static and final lanes. Do not run a Playwright or
-Chromium installer as part of this branch phase.
+Install the candidate's locked frontend dependencies before health. From the
+checked-out candidate:
+
+```bash
+cd frontend/mission-planner
+env CI=1 npm ci --ignore-scripts
+cd ../..
+```
+
+This prepares the health card, ESLint, and Vitest from the committed lockfile.
+`--ignore-scripts` prevents branch-controlled lifecycle scripts from acting as
+a Playwright or Chromium installer. Do not substitute `npm install`, `npx`, a
+browser installer, or a pre-existing checkout's `node_modules` directory.
 
 ## 2. Administrator-only Chromium provisioning
 

@@ -71,6 +71,15 @@ def test_external_host_final_command_supplies_wrapper_maintenance_contract() -> 
         assert required in final_block
 
 
+def test_external_host_bootstraps_frontend_before_health() -> None:
+    content = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+
+    assert "env CI=1 npm ci --ignore-scripts" in content
+    assert content.index("env CI=1 npm ci --ignore-scripts") < content.index(
+        "## 6. Certify health"
+    )
+
+
 def test_platform_doc_defines_complete_health_fingerprint_validation() -> None:
     text = PLATFORM_DOC.read_text(encoding="utf-8")
     lowered = " ".join(text.lower().split())

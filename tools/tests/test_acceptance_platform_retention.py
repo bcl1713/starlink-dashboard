@@ -222,6 +222,7 @@ def _write_generation(
     *,
     ended_at: str,
     final: bool = False,
+    outcome: str = "passed",
     ref: str = REF,
     fingerprint_ref: str | None = None,
 ) -> Path:
@@ -231,7 +232,7 @@ def _write_generation(
         "sha": sha,
         "ref": ref,
         "lane": lane.value,
-        "outcome": "passed",
+        "outcome": outcome,
         "final_acceptance": final,
         "capture": {"started_at": "2026-09-27T00:00:00+00:00", "ended_at": ended_at},
     }
@@ -324,6 +325,27 @@ def test_retention_recognizes_and_protects_runner_published_candidate(
         assert plan.protected_final is not None
         assert plan.protected_final.path == PurePosixPath(f"candidates/{SHA}")
         assert plan.protected_final.disposition is RetentionDisposition.RETAIN
+    finally:
+        apply_retention(plan, apply=False)
+
+
+def test_retention_accepts_sealed_failed_final_as_non_authoritative_history(
+    tmp_path: Path,
+) -> None:
+    state = tmp_path / "state"
+    _write_generation(
+        state,
+        Lane.FINAL,
+        SHA,
+        ended_at="2026-09-27T00:00:01+00:00",
+        outcome="failed",
+    )
+
+    plan = plan_retention(state, _policy(tmp_path))
+    try:
+        assert not plan.has_anomalies
+        assert plan.protected_final is None
+        assert _entry(plan, Lane.FINAL, SHA).disposition is RetentionDisposition.RETAIN
     finally:
         apply_retention(plan, apply=False)
 
