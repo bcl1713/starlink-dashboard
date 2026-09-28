@@ -108,11 +108,16 @@ def test_nonfinal_resources_preserve_exact_lane_and_task_label(tmp_path) -> None
     )
 
 
-def test_successful_image_removal_reinspects_and_observes_exact_id_absent() -> None:
+def test_successful_image_removal_allows_nonownership_image_metadata() -> None:
+    labels = {
+        **AcceptanceOwnershipLabels("final", SHA, "task-1").values(),
+        "com.docker.compose.project": "accept-candidate",
+        "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>",
+    }
     image = DockerImage(
         identifier="candidate-tag",
         inspected_id="sha256:exact-candidate-id",
-        labels=AcceptanceOwnershipLabels("final", SHA, "task-1").values(),
+        labels=labels,
     )
     docker = FakeDocker(images=[image])
 
@@ -121,6 +126,20 @@ def test_successful_image_removal_reinspects_and_observes_exact_id_absent() -> N
     assert report.removed == ("sha256:exact-candidate-id",)
     assert docker.removed == ["sha256:exact-candidate-id"]
     assert docker.inspect_image("candidate-tag") is None
+
+
+def test_extra_acceptance_namespace_label_blocks_image_removal() -> None:
+    labels = {
+        **AcceptanceOwnershipLabels("final", SHA, "task-1").values(),
+        "io.starlink.acceptance.foreign": "not-owned",
+    }
+    image = DockerImage("candidate-tag", "sha256:exact-candidate-id", labels)
+    docker = FakeDocker(images=[image])
+
+    report = retain_docker_resources(docker, {SHA}, apply=True)
+
+    assert report.has_anomalies
+    assert docker.removed == []
 
 
 @pytest.mark.parametrize(

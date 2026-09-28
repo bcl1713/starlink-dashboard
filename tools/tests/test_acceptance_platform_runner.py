@@ -1606,6 +1606,7 @@ def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
         dependencies=RunnerDependencies(
             load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=lambda *_: None,
             static=lambda *_: None,
             browser_card=lambda *_: None,
             final_steps=lambda *_: adapter.write_text("after launch"),
