@@ -254,6 +254,68 @@ def test_missing_health_fingerprint_skips_product_executor(tmp_path: Path) -> No
     assert calls == []
 
 
+def test_cleanup_allows_current_task_images_referenced_by_its_own_ledger(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    labels = AcceptanceOwnershipLabels("final", SHA, "task-marker")
+    topology = TaskTopology(
+        repository=tmp_path,
+        project="accept-cleanup",
+        candidate_sha=SHA,
+        services=(),
+        env_file=tmp_path / "compose.env",
+        override_path=tmp_path / "task" / "compose.acceptance.json",
+        root_override_path=tmp_path / "compose.root-public-env.yml",
+        validation_path=tmp_path / "topology.validated.json",
+        ports={},
+        docker_labels=labels,
+    )
+    ledger_root = tmp_path / "ledger"
+    key = BuildLedgerKey(SHA, "b" * 64, "c" * 64)
+    ledger = BuildLedger(ledger_root)
+    path = ledger.claim(key)
+    ledger.close(
+        path,
+        BuildReconciliation(True, False, {"service": "sha256:current"}),
+        "topology",
+    )
+
+    class CleanupExecutor:
+        def __init__(self) -> None:
+            self.commands: list[tuple[str, ...]] = []
+            self.present = True
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            self.commands.append(argv)
+            if argv[:3] == ("docker", "buildx", "inspect"):
+                return CommandResult(1, "no such builder")
+            if argv[:3] == ("docker", "image", "ls"):
+                return CommandResult(0, "candidate-tag\n")
+            if argv[:3] == ("docker", "image", "inspect"):
+                return CommandResult(
+                    0 if self.present else 1,
+                    json.dumps(
+                        [{"Id": "sha256:current", "Config": {"Labels": labels.values()}}]
+                    )
+                    if self.present
+                    else "",
+                )
+            if argv[:3] == ("docker", "image", "rm"):
+                self.present = False
+            return CommandResult(0, "")
+
+    monkeypatch.setattr(runner, "cleanup_compose", lambda *_: None)
+    monkeypatch.setattr(runner._ScopedDocker, "remove_task_builder", lambda *_: None)
+    monkeypatch.setattr(runner, "scoped_docker_inventory", lambda *_: ())
+    executor = CleanupExecutor()
+
+    runner._cleanup_default((topology, executor, ledger_root, key))
+
+    assert ("docker", "image", "rm", "sha256:current") in executor.commands
+
+
 def test_cleanup_default_preserves_image_protected_by_configured_alternate_ledger_root(
     tmp_path: Path,
 ) -> None:

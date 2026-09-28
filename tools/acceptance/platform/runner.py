@@ -76,10 +76,17 @@ from .model import (
 class _ScopedDocker:
     """Exact-ID Docker adapter limited to this runner's fully-labelled resources."""
 
-    def __init__(self, executor: Any, ledger_root: Path, labels: Any) -> None:
+    def __init__(
+        self,
+        executor: Any,
+        ledger_root: Path,
+        labels: Any,
+        current_ledger_key: BuildLedgerKey | None = None,
+    ) -> None:
         self._executor = executor
         self._ledger_root = ledger_root
         self._labels = labels
+        self._current_ledger_key = current_ledger_key
 
     def run(self, argv: tuple[str, ...]) -> str:
         result = self._executor.run(argv)
@@ -230,7 +237,14 @@ class _ScopedDocker:
         protected: set[str] = set()
         if not self._ledger_root.is_dir():
             return protected
+        current_ledger = (
+            BuildLedger(self._ledger_root).path_for(self._current_ledger_key)
+            if self._current_ledger_key is not None
+            else None
+        )
         for path in self._ledger_root.glob("*.json"):
+            if path == current_ledger:
+                continue
             try:
                 record = json.loads(path.read_text(encoding="utf-8"))
                 values = record.get("image_ids", {}).values()
@@ -965,10 +979,10 @@ def _final_steps(
         lane=inputs.lane.value,
         task_id=inputs.task_id,
     )
-    resource_ready((topology, executor, inputs.ledger_root))
+    key = BuildLedgerKey(inputs.sha, profile.checksum, contract.checksum)
+    resource_ready((topology, executor, inputs.ledger_root, key))
     try:
         resolve_topology(topology, contract, executor)
-        key = BuildLedgerKey(inputs.sha, profile.checksum, contract.checksum)
         ledger = BuildLedger(inputs.ledger_root)
         if isinstance(topology, TaskTopology):
             scoped_docker = _ScopedDocker(
@@ -1055,10 +1069,11 @@ def _final_steps(
 
 
 def _cleanup_default(resource: object) -> None:
-    if not isinstance(resource, tuple) or len(resource) not in {2, 3}:
+    if not isinstance(resource, tuple) or len(resource) not in {2, 3, 4}:
         raise ValueError("final cleanup resource is invalid")
     topology, executor = resource[:2]
-    ledger_root = resource[2] if len(resource) == 3 else None
+    ledger_root = resource[2] if len(resource) >= 3 else None
+    current_ledger_key = resource[3] if len(resource) == 4 else None
     if topology is None:
         return
     errors: list[str] = []
@@ -1066,14 +1081,20 @@ def _cleanup_default(resource: object) -> None:
         cleanup_compose(topology, executor)
     except (OSError, RuntimeError, TypeError, ValueError, subprocess.SubprocessError) as error:
         errors.append(str(error))
-    if not all(
-        hasattr(topology, field)
-        for field in ("rendered_override_path", "docker_labels", "candidate_sha")
-    ) or not isinstance(ledger_root, Path):
+    if (
+        not all(
+            hasattr(topology, field)
+            for field in ("rendered_override_path", "docker_labels", "candidate_sha")
+        )
+        or not isinstance(ledger_root, Path)
+        or (current_ledger_key is not None and not isinstance(current_ledger_key, BuildLedgerKey))
+    ):
         if errors:
             raise ValueError("; ".join(errors))
         return
-    docker = _ScopedDocker(executor, ledger_root, topology.docker_labels)
+    docker = _ScopedDocker(
+        executor, ledger_root, topology.docker_labels, current_ledger_key
+    )
     try:
         docker.remove_task_builder()
     except (OSError, RuntimeError, TypeError, ValueError, subprocess.SubprocessError) as error:
