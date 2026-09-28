@@ -105,8 +105,13 @@ def remove_scoped_docker_resource(
         "io.starlink.acceptance.sha",
         "io.starlink.acceptance.task",
     }
+    ownership_labels = {
+        key: value
+        for key, value in labels.items()
+        if key.startswith("io.starlink.acceptance.")
+    }
     if (
-        set(labels) != required
+        ownership_labels != {key: labels[key] for key in required}
         or labels.get("io.starlink.acceptance.owner") != "runner"
         or not all(labels.get(key) for key in required)
         or labels.get("io.starlink.acceptance.sha") not in eligible_shas

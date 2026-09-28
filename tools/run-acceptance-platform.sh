@@ -112,7 +112,7 @@ elif [[ ! -f $marker || $(stat -c '%a' "$marker") != 600 ]]; then
   cleanup_failed=1
 elif [[ $(git -C "$checkout" rev-parse HEAD) != "$sha" ]] \
   || git -C "$checkout" symbolic-ref -q HEAD >/dev/null 2>&1 \
-  || [[ -n $(git -C "$checkout" status --porcelain=v1 --untracked-files=all -- . ':(exclude).acceptance-runner-owner.json') ]]; then
+  || [[ -n $(git -C "$checkout" status --porcelain=v1 --untracked-files=all -- . ':(exclude).acceptance-runner-owner.json' ':(exclude)frontend/mission-planner/node_modules') ]]; then
   printf 'runner checkout validation failed; retaining checkout\n' >&2
   cleanup_failed=1
 else
