@@ -514,6 +514,27 @@ def test_resolve_rejects_caller_controlled_build_arguments(tmp_path: Path) -> No
         resolve_topology(topology, CONTRACT, _executor(config=config))
 
 
+def test_resolve_rebinds_local_candidate_arg_to_final_candidate(tmp_path: Path) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    config = _resolved_config(topology)
+    services = config["services"]
+    assert isinstance(services, dict)
+    for service in services.values():
+        assert isinstance(service, dict)
+        service["build"] = {
+            "context": ".",
+            "args": {"ACCEPTANCE_CANDIDATE_SHA": "local-sha"},
+        }
+
+    resolve_topology(topology, CONTRACT, _executor(config=config))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
+    assert all(
+        rendered["services"][name]["build"]["args"]
+        == {"ACCEPTANCE_CANDIDATE_SHA": SHA}
+        for name in CONTRACT.services
+    )
+
+
 @pytest.mark.parametrize("field", ("cache_from", "cache_to"))
 def test_resolve_rejects_caller_controlled_build_cache_authority(
     tmp_path: Path, field: str

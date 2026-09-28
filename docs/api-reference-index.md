@@ -253,7 +253,8 @@ API versioning strategy:
 ## Related Documentation
 
 - [Backend README](../backend/starlink-location/README.md) - Service overview
-- [AGENTS.md](../AGENTS.md) - Development workflow and configuration guidance
+- [Development Workflow](./development/workflow.md) - Development and testing
+  guidance
 - [Setup Guide](./setup/README.md) - Installation instructions
 - [Metrics Reference](./metrics/overview.md) - Prometheus metrics details
 - [Grafana Setup](./grafana-dashboards.md) - Dashboard configuration

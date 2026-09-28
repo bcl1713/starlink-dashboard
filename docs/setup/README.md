@@ -108,7 +108,7 @@ cd starlink-dashboard
 cp .env.example .env
 
 # Start services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Verify
 curl <http://localhost:8000/health>
@@ -200,7 +200,7 @@ After successful setup:
 **Resources:**
 
 - [Design Document](../architecture/design-document.md) - Architecture overview
-- [AGENTS.md](../../AGENTS.md) - Development guide
+- [Development Workflow](../development/workflow.md) - Development guide
 - [Troubleshooting Guide](../troubleshooting/README.md) - Common problems
 
 ---

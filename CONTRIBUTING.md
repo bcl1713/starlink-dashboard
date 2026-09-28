@@ -87,8 +87,8 @@ This project uses `pre-commit` to ensure code quality.
 **CRITICAL**: Backend Python changes require full Docker rebuild:
 
 ```bash
-docker compose down && docker compose build --no-cache && \
-  docker compose up -d && docker compose ps
+./scripts/compose.sh down && ./scripts/compose.sh build --no-cache && \
+  ./scripts/compose.sh up -d && ./scripts/compose.sh ps
 curl http://localhost:8000/health  # Verify changes took effect
 ```
 

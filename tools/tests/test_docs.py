@@ -99,20 +99,10 @@ def test_root_relative_internal_links(file_path):
         Path("docs/features-overview.md"),
     ],
 )
-def test_current_repository_inventories_name_agents_file(inventory_path):
-    """Keep current-tree inventories aligned with the root agent guide."""
-    assert (PROJECT_ROOT / "AGENTS.md").is_file()
+def test_current_repository_inventories_match_current_tree(inventory_path):
+    """Current-tree inventories must not list removed root files."""
     content = (PROJECT_ROOT / inventory_path).read_text(encoding="utf-8")
-    assert "AGENTS.md" in content
-    assert "CLAUDE.md" not in content
-
-
-def test_reference_inventory_avoids_volatile_agents_size():
-    """Do not publish a numeric size for the frequently changing AGENTS file."""
-    content = (PROJECT_ROOT / "docs/index/reference.md").read_text(
-        encoding="utf-8"
-    )
-    assert not re.search(r"\|\s*AGENTS\.md\s*\|\s*\d+\s*(?:K?B|bytes?)", content)
+    assert "AGENTS.md" not in content
 
 
 QUALITY_GATE_DOCS = (

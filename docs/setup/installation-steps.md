@@ -37,7 +37,6 @@ backend/
 monitoring/
 docker-compose.yml
 .env.example
-AGENTS.md
 README.md
 ```
 
@@ -83,7 +82,7 @@ GRAFANA_ADMIN_PASSWORD=admin
 Build all services (takes 2-3 minutes on first run):
 
 ```bash
-docker compose build
+./scripts/compose.sh build
 ```
 
 **Expected output:**

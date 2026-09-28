@@ -8,9 +8,11 @@
 
 ### Using Docker Compose
 
+Run these commands from the repository root.
+
 ```bash
 # Build and start all services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Verify services are running
 docker compose ps
@@ -131,8 +133,11 @@ JSON_LOGS=true                    # Use JSON format for logs
 
 ### Build
 
+From `backend/starlink-location` (inside the repository):
+
 ```bash
-docker build -t starlink-location:0.2.0 .
+docker build --build-arg ACCEPTANCE_CANDIDATE_SHA="$(git rev-parse --verify HEAD)" \
+  -t starlink-location:0.2.0 .
 ```
 
 ### Run

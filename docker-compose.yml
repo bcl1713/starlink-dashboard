@@ -1,6 +1,9 @@
 services:
   starlink-location:
-    build: ./backend/starlink-location/
+    build:
+      context: ./backend/starlink-location/
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
     container_name: starlink-location
     env_file: .env
     ports:
@@ -82,6 +85,8 @@ services:
     build:
       context: ./frontend/mission-planner
       dockerfile: Dockerfile
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
     container_name: mission-planner
     ports:
       - "5173:80"

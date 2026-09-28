@@ -40,7 +40,7 @@ docker compose logs starlink-location
 ```bash
 # Rebuild without cache
 docker compose down
-docker compose build --no-cache
+./scripts/compose.sh build --no-cache
 docker compose up -d
 ```
 
@@ -138,7 +138,7 @@ docker compose exec grafana curl http://prometheus:9090
 
 ```bash
 docker system prune -a
-docker compose build --no-cache
+./scripts/compose.sh build --no-cache
 ```
 
 **Check disk space:**

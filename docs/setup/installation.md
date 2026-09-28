@@ -103,8 +103,7 @@ Common installation issues and solutions.
 git clone https://github.com/your-repo/starlink-dashboard.git
 cd starlink-dashboard
 cp .env.example .env
-docker compose build
-docker compose up -d
+./scripts/compose.sh up -d --build
 curl http://localhost:8000/health
 ```
 

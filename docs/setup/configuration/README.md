@@ -131,7 +131,7 @@ curl http://localhost:8000/health
 ```bash
 # Backend Python code changes require full rebuild
 docker compose down
-docker compose build --no-cache starlink-location
+./scripts/compose.sh build --no-cache starlink-location
 docker compose up -d
 ```
 

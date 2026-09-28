@@ -224,7 +224,8 @@ The Starlink Location Backend implementation is:
 
 Next steps:
 
-1. Build Docker image: `docker compose build --no-cache starlink-location`
+1. From the repository root, build the Docker image:
+   `./scripts/compose.sh build --no-cache starlink-location`
 2. Deploy with Docker Compose: `docker compose up -d`
 3. Verify with Prometheus: Navigate to <http://localhost:9090>
 4. Set up Grafana dashboards with the available metrics

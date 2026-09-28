@@ -25,8 +25,7 @@ cd starlink-dashboard
 cp .env.example .env
 
 # Build and start
-docker compose build
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Verify
 curl http://localhost:8000/health
