@@ -60,9 +60,11 @@ Spacing: 18° apart
 
 **Testing Workflow:**
 
+Run these commands from the repository root.
+
 ```bash
 # 1. Start the backend and Grafana
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # 2. Create test POIs
 python3 tools/setup_pois.py

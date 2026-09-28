@@ -8,9 +8,11 @@
 
 ### Using Docker Compose
 
+Run these commands from the repository root.
+
 ```bash
 # Build and start all services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Verify services are running
 docker compose ps

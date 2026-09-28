@@ -59,10 +59,12 @@ docker compose down && docker compose up -d
 
 **Restart to clear memory:**
 
+From the repository root, rebuild after pruning unused images:
+
 ```bash
 docker compose down
 docker system prune -a  # Remove unused images
-docker compose up -d
+./scripts/compose.sh up -d --build
 ```
 
 ### Symptom: Slow dashboard loading
