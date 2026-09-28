@@ -7,7 +7,6 @@
 
 import logging
 from datetime import datetime, timezone
-from math import isfinite
 from typing import TYPE_CHECKING, Optional
 
 from app.models.flight_status import ETAMode, FlightPhase
@@ -435,81 +434,84 @@ class ETAProjection:
                 if current_speed_knots is not None
                 else self.calculator._smoothed_speed
             )
-            projection_latitude = poi.projected_latitude
-            projection_longitude = poi.projected_longitude
-            projection_segment_index = poi.projected_waypoint_index
-            projection_progress = poi.projected_route_progress
 
-            # POIManager stores these values together from RouteETACalculator.
-            # Re-discovering the segment with a second geometry approximation can
-            # reject a valid interior projection, so this path treats that stored
-            # record as the route-projection contract.
-            if (
-                projection_latitude is None
-                or projection_longitude is None
-                or projection_segment_index is None
-                or projection_progress is None
-                or not all(
-                    isfinite(value)
-                    for value in (
-                        current_lat,
-                        current_lon,
-                        speed,
-                        projection_latitude,
-                        projection_longitude,
-                        projection_progress,
-                    )
+            # Find nearest route point to current position
+            nearest_point_index = 0
+            nearest_distance = float("inf")
+
+            for idx, point in enumerate(active_route.points):
+                dist = self.calculator.calculate_distance(
+                    current_lat, current_lon, point.latitude, point.longitude
                 )
-                or not -90 <= projection_latitude <= 90
-                or not -180 <= projection_longitude <= 180
-                or not 0 <= projection_progress <= 100
-                or speed <= 0.5
-                or not 0 <= projection_segment_index < len(active_route.points) - 1
-            ):
+                if dist < nearest_distance:
+                    nearest_distance = dist
+                    nearest_point_index = idx
+
+            # Find which route segment contains the projection point
+            projection_segment_index = None
+            for idx in range(len(active_route.points) - 1):
+                p1 = active_route.points[idx]
+                p2 = active_route.points[idx + 1]
+
+                # Check if projection point lies on this segment
+                dist_to_segment = self.calculator._distance_to_line_segment(
+                    poi.projected_latitude,
+                    poi.projected_longitude,
+                    p1.latitude,
+                    p1.longitude,
+                    p2.latitude,
+                    p2.longitude,
+                )
+
+                if (
+                    dist_to_segment < 1000
+                ):  # Within 1km of segment (projection tolerance)
+                    projection_segment_index = idx
+                    break
+
+            # If we couldn't find the projection segment, fall back to distance/speed
+            if projection_segment_index is None:
                 return None
 
-            nearest_point_index = min(
-                range(len(active_route.points)),
-                key=lambda idx: self.calculator.calculate_distance(
-                    current_lat,
-                    current_lon,
-                    active_route.points[idx].latitude,
-                    active_route.points[idx].longitude,
-                ),
-            )
-            if nearest_point_index > projection_segment_index:
-                return None
-
+            # Calculate remaining distance and time segment by segment with speed blending
             total_eta_seconds = 0.0
+
+            # Walk through segments from nearest point to projection point
             for idx in range(nearest_point_index, projection_segment_index + 1):
                 current_point = active_route.points[idx]
-                if idx == projection_segment_index:
-                    segment_end_latitude = projection_latitude
-                    segment_end_longitude = projection_longitude
-                else:
-                    next_point = active_route.points[idx + 1]
-                    segment_end_latitude = next_point.latitude
-                    segment_end_longitude = next_point.longitude
+                next_point = active_route.points[idx + 1]
 
+                # Calculate segment distance
                 segment_distance = self.calculator.calculate_distance(
                     current_point.latitude,
                     current_point.longitude,
-                    segment_end_latitude,
-                    segment_end_longitude,
-                )
-                expected_speed = current_point.expected_segment_speed_knots or speed
-                segment_speed_knots = (
-                    (speed + expected_speed) / 2.0
-                    if idx == nearest_point_index
-                    else expected_speed
-                )
-                if not isfinite(segment_speed_knots) or segment_speed_knots <= 0.5:
-                    return None
-                total_eta_seconds += (
-                    segment_distance / 1852.0 / segment_speed_knots * 3600.0
+                    next_point.latitude,
+                    next_point.longitude,
                 )
 
-            return total_eta_seconds if total_eta_seconds > 0 else None
+                # Determine speed for this segment with blending for current segment
+                if idx == nearest_point_index:
+                    # Current segment: blend current speed with expected speed
+                    expected_speed = current_point.expected_segment_speed_knots or speed
+                    blended_speed = (speed + expected_speed) / 2.0
+                    segment_speed_knots = blended_speed
+                else:
+                    # Future segments: use expected speed if available
+                    segment_speed_knots = (
+                        current_point.expected_segment_speed_knots or speed
+                    )
+
+                # Calculate time for this segment (avoid division by zero)
+                if segment_speed_knots > 0.5:
+                    distance_nm = segment_distance / 1852.0
+                    segment_time = (distance_nm / segment_speed_knots) * 3600.0
+                    total_eta_seconds += segment_time
+
+            # Return total ETA or None if calculation failed
+            if total_eta_seconds > 0:
+                return total_eta_seconds
+
+            return None
 
         except (
             RuntimeError,

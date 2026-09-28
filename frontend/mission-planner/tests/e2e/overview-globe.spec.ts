@@ -1236,13 +1236,12 @@ test.describe('Globe overview', () => {
     await expect(page.getByText('KADW', { exact: true })).toBeVisible();
     await expect(panel.getByText('RKSO', { exact: true })).toBeVisible();
     await expect(page.getByText('AAR complete', { exact: true })).toBeVisible();
-    await expect(panel).not.toContainText('estimated');
     await expect(panel.getByRole('row')).toHaveText([
       /POI.*Type.*ETA/,
-      /AAR start.*AAR start.*2026-09-22 12:10 UTC/,
-      /Ka swap.*Ka transition.*2026-09-22 12:20 UTC/,
-      /Ka entry.*Ka coverage entry.*2026-09-22 12:35 UTC/,
-      /X-band handoff.*X-band transition.*2026-09-22 12:45 UTC/,
+      /AAR start.*AAR start.*2026-09-22 12:10 UTC · estimated/,
+      /Ka swap.*Ka transition.*2026-09-22 12:20 UTC · estimated/,
+      /Ka entry.*Ka coverage entry.*2026-09-22 12:35 UTC · estimated/,
+      /X-band handoff.*X-band transition.*2026-09-22 12:45 UTC · estimated/,
       /RKSO.*Arrival.*2026-09-22 14:00 UTC · anticipated/,
     ]);
     const clusteredPoiIds = [
