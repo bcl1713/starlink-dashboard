@@ -48,7 +48,7 @@ cd starlink-dashboard
 cp .env.example .env
 
 # 3. Start services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
@@ -56,6 +56,10 @@ open http://localhost:3000                # Grafana (admin/admin)
 ```
 
 **Detailed setup:** See [Quick Start Guide](./docs/setup/quick-start.md)
+
+After `git pull`, use `./scripts/compose.sh up -d --build` again. The wrapper
+passes the full checked-out HEAD SHA to both image builds. A dirty worktree
+is not an exact acceptance candidate; use a clean commit for acceptance.
 
 ---
 

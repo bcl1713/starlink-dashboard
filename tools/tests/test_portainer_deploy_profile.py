@@ -69,7 +69,7 @@ def test_portainer_profile_uses_required_host_paths_and_packaged_monitoring_imag
 def test_local_developer_compose_contract_remains_separate() -> None:
     local_compose = LOCAL_COMPOSE_PATH.read_text(encoding="utf-8")
 
-    assert "build: ./backend/starlink-location/" in local_compose
+    assert "context: ./backend/starlink-location/" in local_compose
     assert "env_file: .env" in local_compose
     assert "container_name: starlink-location" in local_compose
 

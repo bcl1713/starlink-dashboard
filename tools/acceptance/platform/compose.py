@@ -906,7 +906,12 @@ def _validate_root_candidate_build(build: Mapping[str, object]) -> None:
         raise ValueError("resolved build cache control is not permitted")
     if not set(build) <= _CANDIDATE_BUILD_FIELDS | {"args", "labels"}:
         raise ValueError("resolved build field is not platform-permitted")
-    if build.get("args") not in (None, {}):
+    args = build.get("args")
+    if args not in (None, {}) and not (
+        isinstance(args, dict)
+        and set(args) == {"ACCEPTANCE_CANDIDATE_SHA"}
+        and isinstance(args["ACCEPTANCE_CANDIDATE_SHA"], str)
+    ):
         raise ValueError("resolved service build arguments are not permitted")
     context = build.get("context")
     if not isinstance(context, str) or not context:

@@ -41,7 +41,7 @@ that contains the configuration:
 
 ```bash
 docker compose down
-docker compose build --no-cache mission-planner
+./scripts/compose.sh build --no-cache mission-planner
 docker compose up -d
 docker compose ps
 ```
@@ -51,7 +51,7 @@ procedure instead:
 
 ```bash
 docker compose down
-docker compose build --no-cache
+./scripts/compose.sh build --no-cache
 docker compose up -d
 docker compose ps
 curl http://localhost:8000/health

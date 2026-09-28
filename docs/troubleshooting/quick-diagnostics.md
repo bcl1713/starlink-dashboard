@@ -42,7 +42,7 @@ cat .env | rg "^[A-Z_]+=.*"
 
 # Rebuild without cache
 docker compose down
-docker compose build --no-cache
+./scripts/compose.sh build --no-cache
 docker compose up -d
 ```
 

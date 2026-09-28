@@ -63,7 +63,7 @@ for i in {1..3}; do curl -s http://localhost:8000/api/status | jq '.position.lat
 ```bash
 # Rebuild backend
 docker compose down
-docker compose build --no-cache starlink-location
+./scripts/compose.sh build --no-cache starlink-location
 docker compose up -d
 
 # Check logs for simulation errors

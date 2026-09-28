@@ -93,7 +93,7 @@ proxy behavior, Nginx behavior, or rendered-browser behavior.
 From repository root, start only the isolated development backend:
 
 ```bash
-docker compose -p starlink-dashboard-dev \
+./scripts/compose.sh -p starlink-dashboard-dev \
   -f docker-compose.yml \
   -f docker-compose.dev.yml \
   up -d --build --no-deps starlink-location
@@ -134,12 +134,25 @@ For an ordinary backend-only source change with unchanged dependency manifests
 and Dockerfiles, run this cached narrow rebuild from repository root:
 
 ```bash
-docker compose up -d --build --no-deps starlink-location
+./scripts/compose.sh up -d --build --no-deps starlink-location
 ```
 
 This is a convenience control, not final acceptance. It does not replace
 isolated exact-SHA production-image verification, the Nginx proxy path, required
 CI, or rendered-browser evidence.
+
+After `git pull`, run `./scripts/compose.sh up -d --build` for the ordinary
+stack. The wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out
+HEAD before forwarding Compose flags. Raw `docker compose build` requires an
+explicit SHA, for example:
+
+```bash
+ACCEPTANCE_CANDIDATE_SHA=$(git rev-parse HEAD) docker compose build
+```
+
+Without it, the Dockerfile guards reject the build. A dirty working tree is
+not an exact acceptance candidate. The final acceptance runner injects its own
+reviewed candidate SHA independently.
 
 Use `--no-cache` when dependency manifests or Dockerfile instructions change,
 for explicit cache-integrity investigation, and when final or release-grade

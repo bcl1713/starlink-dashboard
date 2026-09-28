@@ -23,7 +23,7 @@ cd starlink-dashboard
 cp .env.example .env
 
 # 3. Start services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
@@ -99,7 +99,7 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 
 ```bash
 # Start all services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Stop all services
 docker compose down
@@ -111,14 +111,14 @@ docker compose logs -f
 docker compose logs -f starlink-location
 
 # Rebuild images
-docker compose build
-docker compose build --no-cache
+./scripts/compose.sh build
+./scripts/compose.sh build --no-cache
 
 # Restart services
 docker compose restart
 
 # Full reset (rebuild and restart)
-docker compose down && docker compose build --no-cache && docker compose up -d
+./scripts/compose.sh down && ./scripts/compose.sh build --no-cache && ./scripts/compose.sh up -d
 ```
 
 ---

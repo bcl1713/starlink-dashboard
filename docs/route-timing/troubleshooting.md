@@ -50,7 +50,7 @@ curl <http://localhost:8000/api/routes/{route_id}> | jq '.has_timing_data'
 4. Rebuild Docker:
 
    ```bash
-   docker compose down && docker compose build --no-cache && docker compose up -d
+   ./scripts/compose.sh down && ./scripts/compose.sh build --no-cache && ./scripts/compose.sh up -d
    ```
 
 ## High ETA Calculation Times
