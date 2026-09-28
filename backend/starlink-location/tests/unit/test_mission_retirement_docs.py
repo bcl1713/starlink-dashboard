@@ -69,6 +69,16 @@ def test_overview_api_docs_enumerate_all_final_states():
         assert f"`{state}`" in text
 
 
+def test_overview_api_docs_describe_route_aware_mission_event_eta():
+    text = (
+        REPOSITORY_ROOT / "docs/api/endpoints/overview-upcoming-pois.md"
+    ).read_text()
+
+    assert "stored route-segment projection" in text
+    assert "no direct-coordinate ETA fallback" in text
+    assert "ETA unavailable" in text
+
+
 def test_mission_docs_publish_the_only_supported_activation_route():
     activation_paths = [
         activation_path
