@@ -63,11 +63,17 @@ ordering, expiry, or the displayed ETA.
 
 Before departure, `eta_type: "anticipated"` may be schedule/route derived. In
 flight, `eta_type: "estimated"` is calculated from the current telemetry
-position and speed against active-route geometry. `estimated_arrival_time` is
-`calculated_at + eta_seconds`; it drives the live urgency cue and table ordering
-when present. It is a route-aware model estimate, not telemetry and not a
-promised schedule. When the estimate cannot be calculated, timing is null and
-the UI displays `ETA unavailable` rather than inventing an ETA.
+position and speed against active-route geometry. Generated mission events use
+their stored route-segment projection, including its interior projected point;
+current speed is blended only on the current route portion and planned segment
+speeds apply afterward. There is no direct-coordinate ETA fallback when
+projection, route geometry, travel direction, or telemetry is unsafe or
+unavailable. `estimated_arrival_time` is `calculated_at + eta_seconds`; it
+drives the live urgency cue and table ordering when present. It is a route-aware
+model estimate, not telemetry and not a promised schedule. When the estimate
+cannot be calculated, timing is null and the UI displays `ETA unavailable`
+rather than inventing an ETA. Ordinary estimates display as UTC time alone;
+anticipated times retain an explicit `anticipated` label.
 
 ### Table and map lifecycle
 

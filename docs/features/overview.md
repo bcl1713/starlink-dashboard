@@ -32,9 +32,12 @@ mission. Imported departure and arrival waypoint names are used as their labels;
 the compact **Upcoming POIs** panel is an unscrollable Top 5 queue, while the
 map retains operational context independently. In flight, ETA is a route-aware
 estimate from current telemetry position and speed against active-route
-geometry. Scheduled `expected_arrival_time` is provenance only;
-`estimated_arrival_time` drives the live urgency colour and ordering and is not
-telemetry. See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
+geometry, including stored interior projections for generated mission events.
+Unsafe or unavailable projection/telemetry leaves ETA unavailable rather than
+falling back to direct distance. Ordinary estimates display as UTC; anticipated
+times retain an explicit label. Scheduled `expected_arrival_time` is provenance
+only; `estimated_arrival_time` drives the live urgency colour and ordering and
+is not telemetry. See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
 for all final states, timing provenance, and retention details. A route-only
 active route is not an active Mission V2 leg: Overview may therefore report
 `no_active_mission` while a route remains active.
