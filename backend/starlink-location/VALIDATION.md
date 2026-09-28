@@ -13,8 +13,10 @@ implementation.
 
 ### 1. Build Docker Image
 
+From the repository root:
+
 ```bash
-docker compose build --no-cache starlink-location
+./scripts/compose.sh build --no-cache starlink-location
 ```
 
 Expected output:
