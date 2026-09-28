@@ -200,7 +200,7 @@ After successful setup:
 **Resources:**
 
 - [Design Document](../architecture/design-document.md) - Architecture overview
-- [AGENTS.md](../../AGENTS.md) - Development guide
+- [Development Workflow](../development/workflow.md) - Development guide
 - [Troubleshooting Guide](../troubleshooting/README.md) - Common problems
 
 ---

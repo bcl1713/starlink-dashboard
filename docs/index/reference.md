@@ -76,7 +76,7 @@
   [architecture/design-document.md](../architecture/design-document.md)
 - Development Status: [Development Plan](../development-plan.md)
 - Development Plan: [Development Plan](../development-plan.md)
-- Development Config: [AGENTS.md](../../AGENTS.md)
+- Development Workflow: [development/workflow.md](../development/workflow.md)
 
 **Troubleshooting:**
 
@@ -134,7 +134,6 @@
 | grafana-configuration.md             | 12 KB | How-to    | Dashboard configuration         |
 | metrics/overview.md                  | 8 KB  | Reference | Prometheus metrics              |
 | phased-development-plan.md           | 7 KB  | Plan      | Implementation roadmap          |
-| AGENTS.md                            | —     | Config    | Development configuration       |
 | Backend README                       | 14 KB | Overview  | Service documentation           |
 
 **Total Documentation:** ~154 KB of comprehensive guides
