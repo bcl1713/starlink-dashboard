@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD001 MD013 MD032 MD036 -->
+
 # Forge Frontend Dependency Lifecycle Implementation Plan
 
 > **For Hermes:** Execute this plan inline in the isolated worktree. Brian explicitly prohibited subagent dispatch for this delivery; preserve separate review/verification evidence without delegation.
