@@ -323,7 +323,14 @@ test.describe('Overview metric history', () => {
         response.ok()
     );
     await page.goto('/overview', { waitUntil: 'commit' });
-    await waitForGlobeVisualReady(page, texture);
+    const globeCanvas = await waitForGlobeVisualReady(page, texture);
+    expect(
+      await globeCanvas.evaluate(
+        (node) =>
+          node ===
+          [...document.querySelectorAll('.overview-page canvas')].at(-1)
+      )
+    ).toBe(true);
     const graphs = page
       .getByLabel('Overview metric history')
       .locator('[data-metric-panel]');
@@ -385,6 +392,37 @@ test.describe('Overview metric history', () => {
     expect(poiSizing.scroll, JSON.stringify(poiSizing)).toBeLessThanOrEqual(
       poiSizing.client
     );
+    for (const height of [900, 768, 640]) {
+      await page.setViewportSize({ width: 1920, height });
+      const metrics = await page
+        .getByLabel('Current network metrics')
+        .boundingBox();
+      const legend = await page.getByLabel('Globe legend').boundingBox();
+      expect(metrics && legend).toBeTruthy();
+      expect(
+        metrics!.y + metrics!.height <= legend!.y ||
+          legend!.y + legend!.height <= metrics!.y,
+        `height ${height}: metrics/legend ${JSON.stringify({ metrics, legend })}`
+      ).toBe(true);
+      expect(
+        await page
+          .locator('.overview-page')
+          .evaluate((node) => node.scrollHeight > node.clientHeight),
+        `height ${height}: short desktop remains scrollable`
+      ).toBe(true);
+      const shortPoiBox = await pois.boundingBox();
+      for (const panel of await graphs.all()) {
+        const box = await panel.boundingBox();
+        expect(
+          box && shortPoiBox && box.y + box.height <= shortPoiBox.y
+        ).toBeTruthy();
+        expect(box && box.width >= 200).toBeTruthy();
+      }
+      expect(
+        await pois.evaluate((node) => node.scrollHeight <= node.clientHeight),
+        `height ${height}: five POIs remain unclipped`
+      ).toBe(true);
+    }
   });
 
   test('reflows legibly before two graph columns become cramped', async ({

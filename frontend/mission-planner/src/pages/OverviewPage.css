@@ -364,7 +364,7 @@
   line-height: 2.5rem;
 }
 
-@media (max-width: 70rem) {
+@media (max-width: 70rem), (max-height: 60rem) {
   .overview-metrics {
     justify-self: start;
   }
@@ -411,5 +411,24 @@
     z-index: 1;
     width: auto;
     margin: 1rem;
+  }
+}
+
+@media (min-width: 70.001rem) and (max-height: 60rem) {
+  .globe-legend {
+    width: min(20rem, calc(100% - 2rem));
+    margin-left: auto;
+  }
+
+  .overview-metrics {
+    justify-self: end;
+  }
+
+  .overview-bottom-overlays {
+    width: min(45rem, calc(100% - 2rem));
+  }
+
+  .overview-metric-history-panels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
