@@ -49,6 +49,145 @@ function bundle(end = initial, windowSeconds = 1800) {
 
 test.describe('Overview metric history', () => {
   test.use({ viewport: { width: 1920, height: 1080 } });
+  test('rebases painted samples across three five-second history polls', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    const start = Math.floor(Date.now() / 1000);
+    let requests = 0;
+    const observed: [number, number][] = Array.from(
+      { length: 25 },
+      (_, index) => [start - 125 + index * 5, index === 19 ? 90 : 10]
+    );
+    await page.route('**/api/overview-history/settings', (route) =>
+      route.fulfill({ json: { window_seconds: 300 } })
+    );
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({ json: { state: 'no_active_mission', pois: [] } })
+    );
+    await page.route('**/api/overview-clocks/settings', (route) =>
+      route.fulfill({ json: { clocks: [] } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({
+        json: { timestamp: new Date(start * 1000).toISOString() },
+      })
+    );
+    await page.route('**/api/satellites', (route) =>
+      route.fulfill({ json: [] })
+    );
+    await page.route('**/api/active-x-link', (route) =>
+      route.fulfill({ json: { satellite_id: null } })
+    );
+    await page.route('**/api/overview-history', (route) => {
+      const poll = requests++;
+      if (poll > 0 && poll <= 3)
+        observed.push([start + (poll - 1) * 5, 10 + poll * 10]);
+      const end = start + poll * 5;
+      return route.fulfill({
+        json: {
+          window_seconds: 300,
+          start_timestamp_seconds: end - 300,
+          end_timestamp_seconds: end,
+          step_seconds: 5,
+          series: { [metrics[0]]: observed },
+          rolling_5m: {
+            [metrics[0]]: {
+              state: 'available',
+              min: observed.map(([time]) => [time, 5]),
+              avg: observed.map(([time]) => [time, 7]),
+              max: observed.map(([time]) => [time, 9]),
+            },
+          },
+        },
+      });
+    });
+    await page.goto('/overview', { waitUntil: 'commit' });
+    const panel = page.getByRole('region', { name: 'Network latency history' });
+    const canvas = panel.locator('.uplot canvas').first();
+    await expect(canvas).toBeVisible();
+    for (let poll = 0; poll <= 3; poll++) {
+      await expect
+        .poll(() => requests, { timeout: 10_000 })
+        .toBeGreaterThan(poll);
+      const end = start + poll * 5;
+      const expectedSpike = await canvas.evaluate(
+        (node, { end, spike }) => {
+          const el = node as HTMLCanvasElement;
+          const surface = el.closest('.overview-metric-history__surface')!;
+          const offset = new DOMMatrix(getComputedStyle(surface).transform).m41;
+          const image = el
+            .getContext('2d')!
+            .getImageData(0, 0, el.width, el.height);
+          const dpr = el.width / el.getBoundingClientRect().width;
+          // The cyan observed peak alone reaches the top fifth of this plot.
+          const painted: number[] = [];
+          for (let y = 1; y < el.height / 5; y++)
+            for (let x = 0; x < el.width; x++) {
+              const i = (y * el.width + x) * 4;
+              if (
+                image.data[i] < 170 &&
+                image.data[i + 1] > 175 &&
+                image.data[i + 2] > 185 &&
+                image.data[i + 3] > 0
+              )
+                painted.push(x / dpr + offset);
+            }
+          const expected =
+            ((spike - (end - 307.5)) / 315) * el.getBoundingClientRect().width +
+            offset;
+          return { painted, expected };
+        },
+        { end, spike: start - 30 }
+      );
+      expect(
+        expectedSpike.painted.length,
+        `poll ${poll}: observed peak is painted`
+      ).toBeGreaterThan(0);
+      const nearest = expectedSpike.painted.reduce((best, x) =>
+        Math.abs(x - expectedSpike.expected) <
+        Math.abs(best - expectedSpike.expected)
+          ? x
+          : best
+      );
+      expect(
+        Math.abs(nearest - expectedSpike.expected),
+        `poll ${poll}: fixed timestamp stays at its rebased canvas coordinate`
+      ).toBeLessThan(4);
+      if (poll > 0) {
+        const fresh = await canvas.evaluate(
+          (node, { end, time, value }) => {
+            const el = node as HTMLCanvasElement;
+            const pixels = el
+              .getContext('2d')!
+              .getImageData(0, 0, el.width, el.height);
+            const x = Math.round(((time - (end - 307.5)) / 315) * el.width);
+            const y = Math.round((1 - value / 99) * el.height);
+            for (let dy = -4; dy <= 4; dy++)
+              for (let dx = -4; dx <= 4; dx++) {
+                const i = ((y + dy) * el.width + x + dx) * 4;
+                if (
+                  pixels.data[i] < 170 &&
+                  pixels.data[i + 1] > 175 &&
+                  pixels.data[i + 2] > 185 &&
+                  pixels.data[i + 3] > 0
+                )
+                  return true;
+              }
+            return false;
+          },
+          { end, time: start + (poll - 1) * 5, value: 10 + poll * 10 }
+        );
+        expect(
+          fresh,
+          `poll ${poll}: arriving observed value is painted at its timestamp`
+        ).toBe(true);
+      }
+    }
+  });
   test('marks all five charts unavailable on the first failed fetch, then recovers', async ({
     page,
   }) => {

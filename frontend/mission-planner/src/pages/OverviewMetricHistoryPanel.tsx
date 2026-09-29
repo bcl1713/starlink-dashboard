@@ -212,7 +212,9 @@ export function OverviewMetricHistoryPanel({
           legend: { show: false },
           cursor: { show: false },
           scales: {
-            x: { time: true, range: [domain.min, domain.max] },
+            // An array range is a permanent clamp in uPlot. Use a dynamic
+            // range so subsequent setScale calls can rebase every new bundle.
+            x: { time: true, range: (_plot, min, max) => [min, max] },
             y: { range: [0, upper] },
           },
           series: [
@@ -230,9 +232,9 @@ export function OverviewMetricHistoryPanel({
     } else {
       plot.current.setSize({ width: overscanWidth, height: HEIGHT });
       plot.current.setData(data);
-      plot.current.setScale('x', domain);
-      plot.current.setScale('y', { min: 0, max: upper });
     }
+    plot.current.setScale('x', domain);
+    plot.current.setScale('y', { min: 0, max: upper });
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
     const remaining = Math.max(0, BUFFER_SECONDS - Math.max(0, motionElapsed));
