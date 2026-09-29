@@ -3,8 +3,61 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi.testclient import TestClient
 
 import main
+
+
+@pytest.mark.parametrize("background_enabled", [False, True])
+def test_poi_constructor_failure_aborts_lifespan_with_original_error(
+    monkeypatch, background_enabled
+):
+    """A failed required POI store must not expose a ready application."""
+    failure = RuntimeError("POI store unavailable")
+
+    def fail_poi_construction():
+        raise failure
+
+    monkeypatch.setattr(main, "POIManager", fail_poi_construction)
+    monkeypatch.setattr(main, "_background_updates_enabled", background_enabled)
+    monkeypatch.setattr(main, "_background_task", None)
+    monkeypatch.setattr(main, "_route_manager", None)
+    monkeypatch.delattr(main.app.state, "poi_manager", raising=False)
+
+    try:
+        with pytest.raises(RuntimeError) as caught, TestClient(main.app):
+            pytest.fail("Lifespan unexpectedly started")
+
+        assert caught.value is failure
+        assert not hasattr(main.app.state, "poi_manager")
+        assert main._background_task is None
+    finally:
+        asyncio.run(main.shutdown_event())
+        if hasattr(main.app.state, "poi_manager"):
+            monkeypatch.delattr(main.app.state, "poi_manager")
+
+
+def test_successful_startup_exposes_poi_manager_even_when_eta_is_unavailable(
+    monkeypatch,
+):
+    """Optional ETA failure must not suppress the required POI API state."""
+    monkeypatch.setattr(main, "_background_updates_enabled", False)
+    monkeypatch.setattr(main, "_background_task", None)
+    monkeypatch.setattr(main, "_route_manager", None)
+    monkeypatch.delattr(main.app.state, "poi_manager", raising=False)
+
+    def fail_eta_initialization(_poi_manager):
+        raise RuntimeError("ETA unavailable")
+
+    monkeypatch.setattr(main, "initialize_eta_service", fail_eta_initialization)
+
+    try:
+        with TestClient(main.app) as client:
+            assert isinstance(main.app.state.poi_manager, main.POIManager)
+            assert client.get("/health").status_code == 200
+    finally:
+        if hasattr(main.app.state, "poi_manager"):
+            monkeypatch.delattr(main.app.state, "poi_manager")
 
 
 @pytest.mark.asyncio

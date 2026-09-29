@@ -216,28 +216,20 @@ async def startup_event():
         config.set_coordinator(_coordinator)
         pois.set_coordinator(_coordinator)
 
-        # Initialize ETA service for POI calculations
+        # POI-dependent APIs require this state; constructor failure must abort startup.
+        logger.info_json("Initializing POIManager")
+        poi_manager = POIManager()
+        app.state.poi_manager = poi_manager
+        logger.info_json("POIManager injected successfully")
+
+        # ETA calculations are optional; their failure does not remove POI API state.
         logger.info_json("Initializing ETA service")
         try:
-            poi_manager = POIManager()
             initialize_eta_service(poi_manager)
             logger.info_json("ETA service initialized successfully")
-        except Exception as e:  # noqa: BLE001 - log POI/ETA setup errors; later code still needs POIManager
+        except Exception as e:  # noqa: BLE001 - ETA is optional
             logger.warning_json(
                 "Failed to initialize ETA service",
-                extra_fields={"error": str(e)},
-                exc_info=True,
-            )
-
-        # Inject POIManager singleton into all API modules
-        logger.info_json("Injecting POIManager into API modules")
-        try:
-            # Note: metrics_export also gets POIManager but via route_manager injection below
-            app.state.poi_manager = poi_manager
-            logger.info_json("POIManager injected successfully")
-        except Exception as e:  # noqa: BLE001 - log POI state injection errors; APIs may still need it
-            logger.warning_json(
-                "Failed to inject POIManager",
                 extra_fields={"error": str(e)},
                 exc_info=True,
             )

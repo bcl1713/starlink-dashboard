@@ -113,6 +113,15 @@ curl http://localhost:8000/api/status | jq .
 - Configuration management API
 - Real-time metric queries
 
+### Startup dependencies
+
+The POI manager is required by POI-dependent API endpoints. If its constructor
+fails, backend startup fails with the original error instead of reporting ready;
+this applies whether background updates are enabled or disabled. ETA service
+initialization is separate and optional: an ETA initialization failure is logged
+as a warning, while a successfully constructed POI manager remains available to
+the API.
+
 ---
 
 ## Contributing
