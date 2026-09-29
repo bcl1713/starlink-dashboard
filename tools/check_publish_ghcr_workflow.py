@@ -402,12 +402,15 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
         errors.append("GHCR inventory must query complete user package versions")
 
     upload_step = named_step_lines(workflow_text, "retention", "Upload retention plan")
-    upload_text = "\n".join(upload_step)
-    if (
-        upload_step == []
-        or "uses: actions/upload-artifact@v4" not in upload_text
-        or "path: retention/artifact-plan.json" not in upload_text
-    ):
+    if upload_step != [
+        "      - name: Upload retention plan",
+        "        uses: actions/upload-artifact@v7",
+        "        with:",
+        "          name: publish-retention-plan-${{ github.run_id }}",
+        "          path: retention/artifact-plan.json",
+        "          if-no-files-found: error",
+        "",
+    ]:
         errors.append("retention job must upload the selected artifact plan")
 
     expected_entry_count = len(EXPECTED_IMAGES)

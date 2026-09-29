@@ -429,11 +429,45 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("retention job must upload the selected artifact plan", errors)
 
+    def test_accepts_node24_retention_upload_with_exact_default_archive_contract(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertIn("uses: actions/upload-artifact@v7", workflow_text)
+        self.assertEqual(self.validate_workflow_text(workflow_text), [])
+
+    def test_rejects_node20_retention_upload(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace(
+            "uses: actions/upload-artifact@v7", "uses: actions/upload-artifact@v4"
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "retention job must upload the selected artifact plan",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_damaged_retention_upload_contract(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertIn("uses: actions/upload-artifact@v7", workflow_text)
+        self.assertEqual(self.validate_workflow_text(workflow_text), [])
+        for original, replacement in (
+            ("name: publish-retention-plan-${{ github.run_id }}", "name: other-plan"),
+            ("path: retention/artifact-plan.json", "path: retention/other.json"),
+            ("if-no-files-found: error", "if-no-files-found: warn"),
+            ("if-no-files-found: error", "archive: false\n          if-no-files-found: error"),
+        ):
+            with self.subTest(original=original, replacement=replacement):
+                mutated = workflow_text.replace(original, replacement)
+                self.assertNotEqual(mutated, workflow_text)
+                self.assertIn(
+                    "retention job must upload the selected artifact plan",
+                    self.validate_workflow_text(mutated),
+                )
+
     def test_rejects_retention_without_uploaded_plan(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         errors = self.validate_workflow_text(
-            workflow_text.replace("uses: actions/upload-artifact@v4", "run: true")
+            workflow_text.replace("uses: actions/upload-artifact@v7", "run: true")
         )
 
         self.assertIn("retention job must upload the selected artifact plan", errors)
