@@ -94,6 +94,40 @@ describe('overview metric history', () => {
     expect(result.observed).toEqual([4, null, 7]);
   });
 
+  it('does not connect a missing interval when no finite timestamp fits between samples', () => {
+    const response = bundle(metricCases[0][1]);
+    response.step_seconds = 1;
+    response.series[metricCases[0][1]] = [[1e16, 4], [1e16 + 2, 7]];
+    response.rolling_5m![metricCases[0][1]] = { state: 'available', min: [[1e16, 3], [1e16 + 2, 6]], avg: [], max: [] };
+    const result = projectMetricHistory(response, OVERVIEW_METRIC_GRAPHS[0], 117_500);
+    expect(result.times).toEqual([1e16, 1e16 + 2]);
+    expect(result.observed).toEqual([null, 7]);
+    expect(result.min).toEqual([null, 6]);
+  });
+
+  it('keeps a finite null gap marker between large positive timestamps', () => {
+    const response = bundle(metricCases[0][1]);
+    response.step_seconds = 1e306;
+    response.series[metricCases[0][1]] = [[1e308, 4], [1.1e308, 7]];
+    response.rolling_5m![metricCases[0][1]] = { state: 'available', min: [], avg: [], max: [] };
+    const result = projectMetricHistory(response, OVERVIEW_METRIC_GRAPHS[0], 117_500);
+    expect(result.times).toEqual([1e308, 1.05e308, 1.1e308]);
+    expect(result.observed).toEqual([4, null, 7]);
+  });
+
+  it('keeps separate null gaps across a very long window', () => {
+    const response = bundle(metricCases[0][1]);
+    response.step_seconds = 1e306;
+    response.start_timestamp_seconds = 1e308;
+    response.end_timestamp_seconds = 1.6e308;
+    response.series[metricCases[0][1]] = [[1e308, 4], [1.3e308, 5], [1.6e308, 7]];
+    response.rolling_5m![metricCases[0][1]] = { state: 'available', min: [], avg: [], max: [] };
+    const result = projectMetricHistory(response, OVERVIEW_METRIC_GRAPHS[0], 117_500);
+    expect(result.times).toEqual([1e308, 1.15e308, 1.3e308, 1.45e308, 1.6e308]);
+    expect(result.observed).toEqual([4, null, 5, null, 7]);
+    expect(result.times.every(Number.isFinite)).toBe(true);
+  });
+
   it('does not generate future timestamps for an old or empty bundle', () => {
     const response = bundle(metricCases[0][1]);
     response.series = {};

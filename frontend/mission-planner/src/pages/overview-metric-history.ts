@@ -50,17 +50,28 @@ export function projectMetricHistory(
   // A midpoint is a break marker, not a measurement. A missing poll must not
   // join two otherwise adjacent samples into a continuous line.
   const times: number[] = [];
+  const suppressed = new Set<number>();
   for (const time of sampledTimes) {
     const previous = times[times.length - 1];
     if (Number.isFinite(bundle.step_seconds) && bundle.step_seconds > 0 &&
       previous !== undefined && time - previous > bundle.step_seconds * 1.5) {
-      times.push((previous + time) / 2);
+      const difference = time - previous;
+      const marker = Number.isFinite(difference)
+        ? previous + difference / 2
+        : previous / 2 + time / 2;
+      if (Number.isFinite(marker) && previous < marker && marker < time) {
+        times.push(marker);
+      } else {
+        // No representable null-only timestamp: drop the earlier value so
+        // a chart cannot draw a line across the missing interval.
+        suppressed.add(previous);
+      }
     }
     times.push(time);
   }
   const at = (samples: OverviewHistorySample[]): (number | null)[] => {
     const byTime = new Map(samples);
-    return times.map((time) => byTime.get(time) ?? null);
+    return times.map((time) => suppressed.has(time) ? null : byTime.get(time) ?? null);
   };
   return {
     state: !aggregateAvailable ? 'unavailable' : sampledTimes.length ? 'available' : 'empty',
