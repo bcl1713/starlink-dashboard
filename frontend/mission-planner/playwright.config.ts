@@ -5,10 +5,10 @@ const port = process.env.PLAYWRIGHT_PORT || '5173';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  workers: undefined,
+  workers: 1,
   reporter: 'line',
   // Cold WebGL startup can exceed Playwright's 30s default before the first page
   // is ready; keep one bounded suite-wide budget rather than retrying failures.

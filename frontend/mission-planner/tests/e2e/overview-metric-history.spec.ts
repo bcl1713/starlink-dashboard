@@ -434,12 +434,19 @@ test.describe('Overview metric history', () => {
       'x_band_transition',
       'arrival',
     ];
+    let selectedWindowSeconds = 1800;
     await page.route('**/api/overview-history', (route) =>
-      route.fulfill({ json: bundle(Math.floor(Date.now() / 1000)) })
+      route.fulfill({
+        json: bundle(Math.floor(Date.now() / 1000), selectedWindowSeconds),
+      })
     );
-    await page.route('**/api/overview-history/settings', (route) =>
-      route.fulfill({ json: { window_seconds: 1800 } })
-    );
+    await page.route('**/api/overview-history/settings', (route) => {
+      if (route.request().method() === 'PUT')
+        selectedWindowSeconds = (
+          route.request().postDataJSON() as { window_seconds: number }
+        ).window_seconds;
+      return route.fulfill({ json: { window_seconds: selectedWindowSeconds } });
+    });
     await page.route('**/api/overview/upcoming-pois', (route) =>
       route.fulfill({
         json: {
@@ -521,12 +528,182 @@ test.describe('Overview metric history', () => {
       'height',
       '224px'
     );
+    await page.getByRole('button', { name: /fullscreen/i }).click();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.fullscreenElement === document.documentElement
+        )
+      )
+      .toBe(true);
+    await expect(page.getByRole('button', { name: /fullscreen/i })).toHaveCount(
+      0
+    );
+    await page.waitForTimeout(240); // Let the shipped POI disclosure transition settle.
     const viewport = await page.evaluate(() => ({
       width: innerWidth,
       height: innerHeight,
+      visualWidth: visualViewport?.width,
+      visualHeight: visualViewport?.height,
+      screenWidth: screen.width,
+      screenHeight: screen.height,
       dpr: devicePixelRatio,
     }));
-    expect(viewport).toEqual({ width: 1920, height: 1080, dpr: 1 });
+    expect(viewport).toEqual({
+      width: 1920,
+      height: 1080,
+      visualWidth: 1920,
+      visualHeight: 1080,
+      screenWidth: 1920,
+      screenHeight: 1080,
+      dpr: 1,
+    });
+    const layout = async () =>
+      page.evaluate(() => {
+        const boxes = [...document.querySelectorAll('[data-metric-panel]')].map(
+          (node) => node.getBoundingClientRect().toJSON()
+        );
+        const poi = document
+          .querySelector('[aria-label="Upcoming POIs"]')!
+          .getBoundingClientRect()
+          .toJSON();
+        const ticks = [
+          ...document.querySelectorAll('.overview-metric-history__time-axis'),
+        ].map((node) => ({
+          height: node.getBoundingClientRect().height,
+          lines: [...node.querySelectorAll('span')].map((span) => ({
+            height: span.getBoundingClientRect().height,
+            lineHeight: parseFloat(getComputedStyle(span).lineHeight),
+          })),
+        }));
+        const stack = document.querySelector('.overview-bottom-overlays')!;
+        return {
+          boxes,
+          poi,
+          ticks,
+          stackBottom: stack.getBoundingClientRect().bottom,
+          rowBottoms: [
+            ...document.querySelectorAll(
+              '[aria-label="Upcoming POIs"] tbody tr'
+            ),
+          ].map((row) => row.getBoundingClientRect().bottom),
+          poiScroll:
+            document.querySelector('[aria-label="Upcoming POIs"]')!
+              .scrollHeight >
+            document.querySelector('[aria-label="Upcoming POIs"]')!
+              .clientHeight,
+          poiSizes: (() => {
+            const p = document.querySelector('[aria-label="Upcoming POIs"]')!;
+            const b = p.querySelector('.upcoming-pois__body')!;
+            return {
+              scroll: p.scrollHeight,
+              client: p.clientHeight,
+              body: b.getBoundingClientRect().toJSON(),
+            };
+          })(),
+          scroll:
+            stack.scrollHeight > stack.clientHeight ||
+            document.querySelector('.overview-page')!.scrollHeight >
+              document.querySelector('.overview-page')!.clientHeight,
+        };
+      });
+    const assertLayout = (state: Awaited<ReturnType<typeof layout>>) => {
+      expect(state.boxes).toHaveLength(5);
+      expect(state.poi.width).toBeGreaterThanOrEqual(320);
+      expect(state.poi.width).toBeLessThanOrEqual(520);
+      for (let i = 0; i < 5; i++) {
+        const box = state.boxes[i];
+        expect(Math.abs(box.x - state.poi.x)).toBeLessThan(2);
+        expect(Math.abs(box.width - state.poi.width)).toBeLessThan(2);
+        if (i)
+          expect(
+            box.y - (state.boxes[i - 1].y + state.boxes[i - 1].height)
+          ).toBeGreaterThanOrEqual(0);
+        if (i)
+          expect(
+            box.y - (state.boxes[i - 1].y + state.boxes[i - 1].height)
+          ).toBeLessThanOrEqual(12);
+      }
+      expect(
+        state.poi.y - (state.boxes[4].y + state.boxes[4].height)
+      ).toBeGreaterThanOrEqual(0);
+      expect(
+        state.poi.y - (state.boxes[4].y + state.boxes[4].height)
+      ).toBeLessThanOrEqual(12);
+      expect(1080 - state.poi.y - state.poi.height).toBeGreaterThanOrEqual(0);
+      expect(1080 - state.poi.y - state.poi.height).toBeLessThanOrEqual(24);
+      expect(1080 - state.stackBottom).toBeLessThanOrEqual(24);
+      expect(state.scroll).toBe(false);
+      expect(state.poiScroll, JSON.stringify(state)).toBe(false);
+      expect(state.rowBottoms).toHaveLength(5);
+      for (const bottom of state.rowBottoms)
+        expect(bottom).toBeLessThanOrEqual(1080);
+      for (const tick of state.ticks) {
+        expect(tick.height).toBeLessThanOrEqual(18);
+        for (const line of tick.lines)
+          expect(line.height).toBeLessThanOrEqual(line.lineHeight + 1);
+      }
+    };
+    const firstLayout = await layout();
+    assertLayout(firstLayout);
+    const firstUtcTick = await graphs
+      .first()
+      .locator('.overview-metric-history__time-axis span:first-child')
+      .textContent();
+    await page.screenshot({
+      path: testInfo.outputPath('overview-native-fullscreen-1920x1080.png'),
+    });
+    await page.waitForTimeout(6_200);
+    const laterLayout = await layout();
+    assertLayout(laterLayout);
+    await expect
+      .poll(() =>
+        graphs
+          .first()
+          .locator('.overview-metric-history__time-axis span:first-child')
+          .textContent()
+      )
+      .not.toBe(firstUtcTick);
+    expect(
+      laterLayout.boxes.map(({ x, y, width, height }) => [x, y, width, height])
+    ).toEqual(
+      firstLayout.boxes.map(({ x, y, width, height }) => [x, y, width, height])
+    );
+    expect([
+      laterLayout.poi.x,
+      laterLayout.poi.y,
+      laterLayout.poi.width,
+      laterLayout.poi.height,
+    ]).toEqual([
+      firstLayout.poi.x,
+      firstLayout.poi.y,
+      firstLayout.poi.width,
+      firstLayout.poi.height,
+    ]);
+    await expect(page.getByLabel('Current network metrics')).toBeVisible();
+    await expect(page.getByLabel('Globe legend')).toBeVisible();
+    await expect(page.locator('.overview-clock-panel')).toBeVisible();
+    await expect(globeCanvas).toBeVisible();
+    await expect(page.getByRole('navigation')).toHaveCount(0);
+    const oldAxis = await graphs
+      .first()
+      .locator('.overview-metric-history__time-axis span:first-child')
+      .textContent();
+    await page.getByLabel('Aircraft history window').selectOption('900');
+    await expect.poll(() => selectedWindowSeconds).toBe(900);
+    await expect
+      .poll(() =>
+        graphs
+          .first()
+          .locator('.overview-metric-history__time-axis span:first-child')
+          .textContent()
+      )
+      .not.toBe(oldAxis);
+    assertLayout(await layout());
+    await page.evaluate(() => document.exitFullscreen());
+    await expect
+      .poll(() => page.evaluate(() => document.fullscreenElement))
+      .toBeNull();
     const poiBox = await pois.boundingBox();
     const legendBox = await page.getByLabel('Globe legend').boundingBox();
     const metricsBox = await page

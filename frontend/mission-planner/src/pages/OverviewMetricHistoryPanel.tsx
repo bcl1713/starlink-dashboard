@@ -10,7 +10,6 @@ import {
 import './OverviewMetricHistoryPanel.css';
 
 const BUFFER_SECONDS = 7.5;
-const HEIGHT = 80;
 const TRACES = [
   { label: 'Observed', stroke: '#67e8f9' },
   { label: 'Low (5m)', stroke: '#a78bfa' },
@@ -61,6 +60,7 @@ export function OverviewMetricHistoryPanel({
   const surface = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
   const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(80);
   const [tick, setTick] = useState(0);
   const [hidden, setHidden] = useState(
     () => typeof document !== 'undefined' && document.hidden
@@ -158,7 +158,10 @@ export function OverviewMetricHistoryPanel({
   useEffect(() => {
     const node = viewport.current;
     if (!node) return;
-    const measure = () => setWidth(Math.max(0, node.clientWidth));
+    const measure = () => {
+      setWidth(Math.max(0, node.clientWidth));
+      setHeight(Math.max(1, node.clientHeight));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
@@ -206,7 +209,7 @@ export function OverviewMetricHistoryPanel({
       plot.current = new uPlot(
         {
           width: overscanWidth,
-          height: HEIGHT,
+          height,
           padding: [0, 0, 0, 0],
           axes: [{ show: false }, { show: false }],
           legend: { show: false },
@@ -230,7 +233,7 @@ export function OverviewMetricHistoryPanel({
         host.current
       );
     } else {
-      plot.current.setSize({ width: overscanWidth, height: HEIGHT });
+      plot.current.setSize({ width: overscanWidth, height });
       plot.current.setData(data);
     }
     plot.current.setScale('x', domain);
@@ -247,7 +250,15 @@ export function OverviewMetricHistoryPanel({
     return () => window.clearTimeout(timer);
     // Deliberately exclude the status tick: CSS owns intermediate frames.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [validHistory, descriptor, width, hidden, error, selectedWindowSeconds]);
+  }, [
+    validHistory,
+    descriptor,
+    width,
+    height,
+    hidden,
+    error,
+    selectedWindowSeconds,
+  ]);
 
   const status = !validHistory
     ? error

@@ -61,8 +61,21 @@ and never extrapolates samples into the present.
 
 The aircraft trail and all five graphs share one history response every five
 seconds and the existing window selector in the globe legend (5, 15, 30, or 60
-minutes, plus a saved custom window). Current telemetry remains on its separate
-status feed. See the
+minutes, plus a saved custom window). Each graph shows that entire selected
+window, with a small right-edge buffer: real samples and the UTC axis move
+smoothly left between polls and rebase continuously as new observations arrive.
+At the default 30-minute scale, five seconds of motion is deliberately subtle;
+no future samples are invented. The UTC tick labels remain on one line.
+
+At 1920×1080 native fullscreen, the five plots form a single vertical column
+directly above the equally narrow five-row POI panel, without internal scrolling
+or the clearance reserved for the non-fullscreen button. The clocks, current
+metrics, globe and legend remain visible. Use the Overview Fullscreen button to
+enter native fullscreen; the app navigation and Fullscreen button disappear in
+that state. Exit with the browser's fullscreen shortcut (usually Escape) to
+restore the ordinary responsive layout and controls. Shorter or narrower
+screens use the scrollable responsive arrangement instead of forcing the
+1080p dashboard fit. Current telemetry remains on its separate status feed. See the
 [Overview History API](../api/endpoints/overview-history.md) for raw and rolling
 response shapes and error behavior. Moving window/cadence controls to a
 configuration page and per-panel visibility settings are future work, not

@@ -76,6 +76,12 @@ npx playwright test tests/e2e/api-origin.spec.ts --project=chromium --reporter=l
 npx playwright test --project=chromium --reporter=line
 ```
 
+The project runs Chromium E2E tests with one worker and `fullyParallel: false` by
+default. A single display needs deterministic WebGL/browser resources more than
+worker concurrency; the hidden cost is a longer full-suite wall time (roughly
+the sum of individual tests, plus one production build). Do not interpret older
+multi-worker runs as acceptance of this serial configuration.
+
 The owned cold focused invocation measured 56.71 seconds end-to-end on the
 development host. The Playwright web-server startup budget is 120 seconds,
 providing headroom above that healthy measurement. E2E runs use no retries and
