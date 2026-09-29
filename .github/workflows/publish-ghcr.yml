@@ -113,7 +113,7 @@ jobs:
             done
 
       - name: Upload retention plan
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-retention-plan-${{ github.run_id }}
           path: retention/artifact-plan.json
