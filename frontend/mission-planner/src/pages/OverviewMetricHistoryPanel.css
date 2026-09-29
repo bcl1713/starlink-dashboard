@@ -1,0 +1,86 @@
+.overview-metric-history {
+  min-width: 0;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.5rem;
+  color: #f8fafc;
+  background: rgb(3 3 7 / 86%);
+}
+.overview-metric-history__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.overview-metric-history__header h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+.overview-metric-history__unit,
+.overview-metric-history__value-axis,
+.overview-metric-history__time-axis {
+  color: #cbd5e1;
+  font-size: 0.7rem;
+}
+.overview-metric-history__status {
+  margin: 0.2rem 0;
+  color: #cbd5e1;
+  font-size: 0.7rem;
+}
+.overview-metric-history__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  padding: 0;
+  margin: 0.2rem 0;
+  list-style: none;
+  font-size: 0.68rem;
+}
+.overview-metric-history__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+.overview-metric-history__legend li span {
+  width: 0.6rem;
+  height: 0.12rem;
+  display: inline-block;
+}
+.overview-metric-history__chart {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.overview-metric-history__value-axis {
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  white-space: nowrap;
+  text-align: right;
+}
+.overview-metric-history__viewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 80px;
+  overflow: hidden;
+}
+.overview-metric-history__surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+.overview-metric-history__time-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+/* Override Overview's full-viewport canvas rule only for this plot surface. */
+.overview-page .overview-metric-history canvas {
+  width: auto;
+  height: auto;
+}
