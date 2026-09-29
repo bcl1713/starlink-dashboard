@@ -67,34 +67,32 @@ export function OverviewMetricHistoryPanel({
   );
   const clockAnchor = useRef({
     windowSeconds: selectedWindowSeconds,
+    bundleEnd: validHistory?.end_timestamp_seconds,
     nowMs,
     monotonicMs: performance.now(),
     effectiveMs: nowMs,
   });
   const monotonicMs = performance.now();
-  // CSS transitions and performance.now() share the browser's monotonic time
-  // domain. A wall-clock or nowMs rewind cannot stall the ticks while the
-  // compositor continues; only a selected-window change resets the timeline.
-  if (clockAnchor.current.windowSeconds !== selectedWindowSeconds)
+  // The compositor and performance.now() share a monotonic domain. Ignore
+  // wall-clock jumps within one bundle: moving UTC labels to nowMs would run
+  // ahead of the still-transitioning canvas. Re-anchor only on fresh data or
+  // a selected-window change (which also rebases the plot surface).
+  if (
+    clockAnchor.current.windowSeconds !== selectedWindowSeconds ||
+    clockAnchor.current.bundleEnd !== validHistory?.end_timestamp_seconds
+  )
     clockAnchor.current = {
       windowSeconds: selectedWindowSeconds,
+      bundleEnd: validHistory?.end_timestamp_seconds,
       nowMs,
       monotonicMs,
       effectiveMs: nowMs,
     };
-  const effectiveMs = Math.max(
+  clockAnchor.current.effectiveMs = Math.max(
     clockAnchor.current.effectiveMs,
     clockAnchor.current.nowMs +
       Math.max(0, monotonicMs - clockAnchor.current.monotonicMs)
   );
-  if (nowMs > effectiveMs)
-    clockAnchor.current = {
-      windowSeconds: selectedWindowSeconds,
-      nowMs,
-      monotonicMs,
-      effectiveMs: nowMs,
-    };
-  else clockAnchor.current.effectiveMs = effectiveMs;
   const currentSeconds = clockAnchor.current.effectiveMs / 1000;
   const elapsed = validHistory
     ? currentSeconds - validHistory.end_timestamp_seconds
@@ -106,7 +104,10 @@ export function OverviewMetricHistoryPanel({
       frozen.current = { key: freezeKey, elapsed };
   } else frozen.current = null;
   const motionElapsed = frozen.current?.elapsed ?? elapsed;
-  const exhausted = !!validHistory && elapsed >= BUFFER_SECONDS;
+  const exhausted =
+    !!validHistory &&
+    (elapsed >= BUFFER_SECONDS ||
+      nowMs / 1000 - validHistory.end_timestamp_seconds >= BUFFER_SECONDS);
   const windowSeconds = selectedWindowSeconds > 0 ? selectedWindowSeconds : 1;
   const overscanWidth = Math.max(
     1,

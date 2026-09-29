@@ -246,11 +246,31 @@
 
 .overview-bottom-overlays {
   position: absolute;
+  top: clamp(22rem, 39vh, 26rem);
   bottom: 4.5rem;
   left: 1rem;
   z-index: 1;
-  width: min(36rem, calc(100% - 2rem));
+  width: min(45rem, calc(100% - 2rem));
   pointer-events: none;
+}
+
+.overview-left-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.overview-metric-history-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.overview-metric-history-panels [data-metric-panel] {
+  min-width: 0;
 }
 
 .upcoming-pois {
@@ -275,8 +295,13 @@
 .upcoming-pois__body {
   overflow: hidden;
   margin-top: 0.625rem;
-  transition: height 180ms ease, max-height 180ms ease, padding 180ms ease,
-    opacity 150ms ease, border-color 180ms ease, background-color 180ms ease;
+  transition:
+    height 180ms ease,
+    max-height 180ms ease,
+    padding 180ms ease,
+    opacity 150ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
 }
 
 .upcoming-pois table {
@@ -343,6 +368,10 @@
     right: 22rem;
     width: auto;
   }
+
+  .overview-metric-history-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 44rem) {
@@ -354,6 +383,22 @@
     position: fixed;
     inset: 0;
     z-index: 0;
+  }
+
+  .overview-page .overview-metric-history canvas {
+    position: static;
+  }
+
+  .overview-bottom-overlays {
+    bottom: auto;
+  }
+
+  .overview-left-stack {
+    height: auto;
+  }
+
+  .overview-metric-history-panels {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .overview-fullscreen-control {

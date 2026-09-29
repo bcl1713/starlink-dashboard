@@ -21,9 +21,9 @@ with real-time ETA, and flight phase detection.
 
 ### 3. [Mission Communication Planning](./mission-planning.md)
 
-Pre-flight predictive planning tools, real-time timeline preview,
-satellite geometry analysis, multi-format briefing exports, and mission
-timeline visualization.
+Pre-flight predictive planning tools, real-time timeline preview, satellite
+geometry analysis, multi-format briefing exports, and mission timeline
+visualization.
 
 ### 4. Overview Upcoming POIs
 
@@ -37,15 +37,38 @@ Unsafe or unavailable projection/telemetry leaves ETA unavailable rather than
 falling back to direct distance. Ordinary estimates display as UTC; anticipated
 times retain an explicit label. Scheduled `expected_arrival_time` is provenance
 only; `estimated_arrival_time` drives the live urgency colour and ordering and
-is not telemetry. See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
-for all final states, timing provenance, and retention details. A route-only
-active route is not an active Mission V2 leg: Overview may therefore report
+is not telemetry. See the
+[Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md) for all
+final states, timing provenance, and retention details. A route-only active
+route is not an active Mission V2 leg: Overview may therefore report
 `no_active_mission` while a route remains active.
 
 This feature does not modify, retire, or replace Grafana; Grafana remains the
 supported fallback and parity comparator.
 
-### 5. [System Configuration & Simulation](./system.md)
+### 5. Overview Metric History
+
+Five compact, independent line graphs sit above Upcoming POIs on the native
+Overview: network latency (ms), downlink throughput (Mbps), uplink throughput
+(Mbps), packet loss (%), and dish obstruction (%). Each has named,
+non-color-only traces for observed samples and trailing five-minute low,
+average, and high. Prometheus calculates the five-minute statistics from the
+underlying source, not from the downsampled graph window. Gaps remain gaps;
+missing samples are never interpolated or presented as zero. Unavailable
+aggregates leave the raw trail intact and are identified on the graph. A failed
+history refresh retains last-good data only with an explicit unavailable status
+and never extrapolates samples into the present.
+
+The aircraft trail and all five graphs share one history response every five
+seconds and the existing window selector in the globe legend (5, 15, 30, or 60
+minutes, plus a saved custom window). Current telemetry remains on its separate
+status feed. See the
+[Overview History API](../api/endpoints/overview-history.md) for raw and rolling
+response shapes and error behavior. Moving window/cadence controls to a
+configuration page and per-panel visibility settings are future work, not
+current controls. Grafana remains a supported fallback and comparator.
+
+### 6. [System Configuration & Simulation](./system.md)
 
 Environment configuration, REST API documentation, and simulation mode
 capabilities (realistic telemetry, route following).

@@ -63,6 +63,7 @@ import {
   type PoiLabelLayout,
 } from './overview-poi-label-layout';
 import { UpcomingPoisPanel } from './UpcomingPoisPanel';
+import { OverviewMetricHistoryPanels } from './OverviewMetricHistoryPanels';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
 const AIRCRAFT_HISTORY_LINE = {
@@ -548,11 +549,19 @@ export function OverviewPage() {
         <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       </div>
       <div className="overview-bottom-overlays">
-        <UpcomingPoisPanel
-          state={upcomingPoiState}
-          pois={upcomingPoiView.topFive}
-          currentTime={new Date(currentTime)}
-        />
+        <div className="overview-left-stack">
+          <OverviewMetricHistoryPanels
+            history={overviewHistory}
+            error={isOverviewHistoryError}
+            selectedWindowSeconds={overviewHistorySettings?.window_seconds}
+            nowMs={currentTime}
+          />
+          <UpcomingPoisPanel
+            state={upcomingPoiState}
+            pois={upcomingPoiView.topFive}
+            currentTime={new Date(currentTime)}
+          />
+        </div>
       </div>
       <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
         <color attach="background" args={['#030307']} />

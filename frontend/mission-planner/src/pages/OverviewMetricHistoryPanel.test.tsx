@@ -188,6 +188,25 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(interpolatedOffset).toBeCloseTo(-400 * (7 / 30));
     expect(right()).toBe('00:01:59 UTC');
   });
+  it('keeps UTC ticks on the CSS edge after a forward nowMs jump', () => {
+    vi.setSystemTime(125_000);
+    const history = bundle(120);
+    const view = render(panel(history, false, 125_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    const right = () =>
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent;
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('transform 2.5s linear');
+    act(() => vi.advanceTimersByTime(500));
+    view.rerender(panel(history, false, 140_000));
+    // The compositor has moved half a second, not the 15 seconds of a wall-clock jump.
+    expect(right()).toBe('00:01:58 UTC');
+    expect(surface.style.transition).toBe('transform 2.5s linear');
+  });
   it('ignores an older same-window bundle then accepts a newer recovery', () => {
     const view = render(panel(bundle(120), false, 125_000));
     const right = () =>

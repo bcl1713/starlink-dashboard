@@ -11,6 +11,19 @@ const styles = readFileSync(
 );
 
 describe('OverviewPage generated POI legend and overlay layout contracts', () => {
+  it('reserves a structural left stack for history graphs before Upcoming POIs', () => {
+    expect(pageSource).toMatch(
+      /<div className="overview-left-stack">[\s\S]*?<OverviewMetricHistoryPanels[\s\S]*?<UpcomingPoisPanel/
+    );
+    expect(pageSource).toContain('history={overviewHistory}');
+    expect(pageSource).toContain('error={isOverviewHistoryError}');
+    expect(styles).toMatch(
+      /\.overview-left-stack \{[\s\S]*?display: (?:flex|grid);/
+    );
+    expect(styles).toMatch(
+      /\.overview-metric-history-panels \{[\s\S]*?display: (?:flex|grid);/
+    );
+  });
   it('describes generated POI urgency without obsolete fixed route endpoint entries', () => {
     expect(pageSource).not.toContain('<span>Origin</span>');
     expect(pageSource).not.toContain('<span>Destination</span>');
