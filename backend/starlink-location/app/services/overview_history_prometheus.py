@@ -217,7 +217,9 @@ def project_overview_history_matrix(
             if not isfinite(numeric_timestamp) or not isfinite(numeric_value):
                 continue
             if plan is not None and not (
-                plan.start_timestamp_seconds <= numeric_timestamp <= plan.end_timestamp_seconds
+                plan.start_timestamp_seconds
+                <= numeric_timestamp
+                <= plan.end_timestamp_seconds
             ):
                 continue
             samples_by_timestamp.setdefault(numeric_timestamp, numeric_value)
