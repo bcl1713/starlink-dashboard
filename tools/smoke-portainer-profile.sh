@@ -7,7 +7,12 @@ compose_file="$repo_root/deployment/portainer-ghcr-compose.yml"
 project="starlink-ghcr-smoke-$RANDOM-$RANDOM"
 network="${project}-proxy"
 # Match the immutable sha-* contract used by the GHCR publishing workflow.
-image_tag="sha-$(git -C "$repo_root" rev-parse HEAD)"
+if ! candidate_sha=$(git -C "$repo_root" rev-parse --verify HEAD) ||
+    [[ ! $candidate_sha =~ ^[0-9a-f]{40}$ ]]; then
+  printf '%s\n' 'Expected a full 40-character lowercase commit SHA from git' >&2
+  exit 1
+fi
+image_tag="sha-${candidate_sha}"
 data_dir=$(mktemp -d "${TMPDIR:-/tmp}/${project}.XXXXXX")
 
 cleanup() {
@@ -34,9 +39,11 @@ mkdir -p \
 chmod -R a+rwx "$data_dir"
 docker network create "$network" >/dev/null
 
-docker build --tag "ghcr.io/bcl1713/starlink-dashboard/starlink-location:${image_tag}" \
+docker build --build-arg "ACCEPTANCE_CANDIDATE_SHA=${candidate_sha}" \
+  --tag "ghcr.io/bcl1713/starlink-dashboard/starlink-location:${image_tag}" \
   "$repo_root/backend/starlink-location"
-docker build --tag "ghcr.io/bcl1713/starlink-dashboard/mission-planner:${image_tag}" \
+docker build --build-arg "ACCEPTANCE_CANDIDATE_SHA=${candidate_sha}" \
+  --tag "ghcr.io/bcl1713/starlink-dashboard/mission-planner:${image_tag}" \
   "$repo_root/frontend/mission-planner"
 docker build --file "$repo_root/deployment/prometheus/Dockerfile" \
   --tag "ghcr.io/bcl1713/starlink-dashboard/prometheus:${image_tag}" "$repo_root"
