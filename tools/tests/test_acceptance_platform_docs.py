@@ -1,5 +1,11 @@
 import re
+import shlex
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from acceptance.platform.runner import _parse
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DOC = PROJECT_ROOT / "docs/operations/acceptance-platform.md"
@@ -7,6 +13,101 @@ EXTERNAL_HOST_DOC = PROJECT_ROOT / "docs/operations/external-host-final-acceptan
 V2_DOC = PROJECT_ROOT / "docs/missions/v2-mission-retirement-acceptance.md"
 MISSION_INDEX = PROJECT_ROOT / "docs/missions/README.md"
 V2_CONTRACT = PROJECT_ROOT / "tools/acceptance/contracts/v2-mission-retirement.toml"
+
+
+def _lane_example(section: str) -> list[str]:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    block = text[text.index(section) :].split("```bash", 1)[1].split("```", 1)[0]
+    lines = block.splitlines()
+    start = next(
+        i for i, line in enumerate(lines) if "./tools/run-acceptance-platform.sh \\" in line
+    )
+    command = []
+    for line in lines[start:]:
+        command.append(line)
+        if not line.rstrip().endswith("\\"):
+            break
+    tokens = shlex.split(
+        "\n".join(command).replace("\\\n", " ").split(" 2>&1 | tee", 1)[0]
+    )
+    return tokens[tokens.index("./tools/run-acceptance-platform.sh") + 1 :]
+
+
+def test_external_host_lane_examples_parse_with_real_runner_cli() -> None:
+    sha = "a" * 40
+    ids = []
+    for section, lane in (
+        ("## 6. Certify health", "health"),
+        ("## 7. Run the tracked static lane", "static"),
+        ("## 8. Run exactly one final lane", "final"),
+    ):
+        args = _lane_example(section)
+        text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+        if lane != "final":
+            identity = f"${lane.upper()}_ATTEMPT_ID"
+            assert args[args.index("--acceptance-task") + 1] == identity
+            assert f'{lane.upper()}_ATTEMPT_ID="{lane}-$SHA-' in text
+        if lane == "final":
+            wrapper_only = {"--state-root", "--policy", "--checkout-root"}
+            args = [
+                item
+                for index, item in enumerate(args)
+                if item not in wrapper_only
+                and (index == 0 or args[index - 1] not in wrapper_only)
+            ]
+        substitutions = {
+            "$SHA": sha,
+            "$REF": "refs/heads/example",
+            "$PROFILE": "/srv/task/profiles/approved.toml",
+            "$CONTRACT": str(V2_CONTRACT),
+            "$HEALTH_EVIDENCE_ROOT": "/srv/task/evidence/health",
+            "$STATIC_EVIDENCE_ROOT": "/srv/task/evidence/static",
+            "$FINAL_EVIDENCE_ROOT": "/srv/task/evidence/final",
+            "$HEALTH_TASK_ROOT": "/srv/task/tasks/health",
+            "$STATIC_TASK_ROOT": "/srv/task/tasks/static",
+            "$FINAL_TASK_ROOT": "/srv/task/tasks/final",
+            "$FINAL_LEDGER_ROOT": "/srv/task/ledgers/final",
+            "$HEALTH_FINGERPRINT": "/srv/task/evidence/health/" + sha + "/fingerprint.json",
+            "$HEALTH_ATTEMPT_ID": "health-" + sha,
+            "$STATIC_ATTEMPT_ID": "static-" + sha,
+            "$FINAL_ATTEMPT_ID": "final-" + sha,
+        }
+        args = [substitutions.get(arg, arg) for arg in args]
+        parsed = _parse(args)
+        assert parsed.lane.value == lane
+        assert parsed.sha == sha
+        assert parsed.ref == "refs/heads/example"
+        assert parsed.contract_path == V2_CONTRACT
+        assert parsed.fingerprint == Path(substitutions["$HEALTH_FINGERPRINT"])
+        ids.append(parsed.task_id)
+    assert len(set(ids)) == len(ids)
+
+
+def test_external_host_preflights_task_owned_python_and_writable_roots() -> None:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    before_static = text[: text.index("## 5. Run static")]
+    for required in (
+        "uv venv",
+        "uv pip install",
+        "pytest",
+        "PyYAML",
+        "export PATH=",
+        "import pytest, yaml, acceptance.platform.runner",
+        "test -w",
+        "CHECKOUT_ROOT",
+    ):
+        assert required in before_static
+    assert "CHECKOUT_ROOT=$HOST_STATE/checkouts" not in text
+
+
+def test_external_host_verifies_static_candidate_authority_separately() -> None:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    static = text[text.index("## 7. Run the tracked static lane") : text.index("## 8. Run exactly one final lane")]
+    assert "STATIC_CANDIDATE_ROOT=$STATIC_EVIDENCE_ROOT/candidates/$SHA" in static
+    assert "verify_manifest(candidate)" in static
+    assert 'candidate / "runner-manifest.json"' in static
+    for claim in ('"lane"', '"outcome"', '"final_acceptance"', '"sha"', '"ref"'):
+        assert claim in static
 
 
 def _relative_markdown_targets(path: Path) -> list[Path]:

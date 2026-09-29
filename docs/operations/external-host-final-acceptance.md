@@ -27,20 +27,39 @@ for every attempt.
 ```bash
 BRANCH=feat/v2-mission-retirement
 REF=refs/heads/feat/v2-mission-retirement
-HOST_STATE=/srv/starlink-acceptance
-CHECKOUT_ROOT=$HOST_STATE/checkouts
+HOST_STATE=${STARLINK_ACCEPTANCE_ROOT:-$HOME/starlink-acceptance}
+CHECKOUT_ROOT=$HOST_STATE/tasks/checkouts
 RUNNER_CHECKOUT_ROOT=$HOST_STATE/runner-checkouts
-PROFILE=$HOST_STATE/profiles/v2-mission-retirement-chromium.toml
+PROFILE=/srv/starlink-acceptance/profiles/v2-mission-retirement-chromium.toml
+CONTRACT=tools/acceptance/contracts/v2-mission-retirement.toml
 HEALTH_EVIDENCE_ROOT=$HOST_STATE/evidence/health
 STATIC_EVIDENCE_ROOT=$HOST_STATE/evidence/static
 FINAL_EVIDENCE_ROOT=$HOST_STATE/evidence/final
 LOG_ROOT=$HOST_STATE/logs
+PYTHON_ENV=$HOST_STATE/tasks/python-env
 ```
 
 The host needs Git, Node/npm, Docker with the Compose plugin, Xvfb, Python 3,
 `uv`, the repository's frontend dependencies, `markdownlint-cli2`, and Lychee.
 Do not substitute a caller browser session or a deployed origin for the runner's
 owned browser and loopback origin.
+
+Before checkout, select a durable worker-owned `HOST_STATE` (override the example
+with `STARLINK_ACCEPTANCE_ROOT` if necessary). Do not assume
+`/srv/starlink-acceptance/checkouts` is writable. The immutable `PROFILE` is an
+administrator-provisioned host-local input, not a worker-created file. Stop if
+any allocation root cannot be created or written by the branch operator:
+
+```bash
+mkdir -p "$HOST_STATE" || exit 1
+for root in "$HOST_STATE" "$CHECKOUT_ROOT" "$RUNNER_CHECKOUT_ROOT" \
+  "$HEALTH_EVIDENCE_ROOT" "$STATIC_EVIDENCE_ROOT" "$FINAL_EVIDENCE_ROOT" \
+  "$HOST_STATE/tasks" "$HOST_STATE/state" "$HOST_STATE/ledgers/final" \
+  "$LOG_ROOT"; do
+  mkdir -p "$root" && test -w "$root" || exit 1
+done
+test -r "$PROFILE" || exit 1
+```
 
 ## 1. Obtain a fresh, detached exact-SHA candidate
 
@@ -49,7 +68,6 @@ accept a local branch name, a short SHA, or a ref whose remote target differs
 from the requested candidate.
 
 ```bash
-mkdir -p "$CHECKOUT_ROOT" "$LOG_ROOT"
 git clone --no-checkout https://github.com/bcl1713/starlink-dashboard.git \
   "$CHECKOUT_ROOT/v2-mission-retirement"
 cd "$CHECKOUT_ROOT/v2-mission-retirement"
@@ -57,6 +75,7 @@ git fetch --no-tags origin \
   "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
 SHA=$(git rev-parse "origin/$BRANCH^{commit}")
 git checkout --detach "$SHA"
+test -f "$CONTRACT" || exit 1
 printf 'HEAD=%s\nREMOTE=%s\nREF=%s\n' \
   "$(git rev-parse HEAD)" "$(git rev-parse "origin/$BRANCH^{commit}")" "$REF"
 ```
@@ -78,6 +97,26 @@ This prepares the health card, ESLint, and Vitest from the committed lockfile.
 `--ignore-scripts` prevents branch-controlled lifecycle scripts from acting as
 a Playwright or Chromium installer. Do not substitute `npm install`, `npx`, a
 browser installer, or a pre-existing checkout's `node_modules` directory.
+The final runner prepares its own fresh worktree's frontend with
+`npm ci --ignore-scripts`; do not change that separate lifecycle.
+
+Bootstrap task-owned host Python before the static verifier or any lane. Forge's
+`/usr/bin/python3` may have no pip or pytest; `./tools/verify static` runs
+`python3 -m pytest` and the runner imports `yaml`. The PyYAML requirement is
+declared in `backend/starlink-location/requirements.txt` as `PyYAML>=6.0`.
+Keep the environment outside the candidate; do not install into system Python.
+
+```bash
+uv venv --python python3 "$PYTHON_ENV"
+uv pip install --python "$PYTHON_ENV/bin/python" pytest 'PyYAML>=6.0'
+export PATH="$PYTHON_ENV/bin:$PATH"
+test "$(command -v python3)" = "$PYTHON_ENV/bin/python3" || exit 1
+PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 -c \
+  'import pytest, yaml, acceptance.platform.runner'
+```
+
+**Stop** if the imports fail or `python3` does not resolve into this task-owned
+environment. Keep this `PATH` for the verifier and all lane invocations.
 
 ## 2. Administrator-only Chromium provisioning
 
@@ -87,8 +126,9 @@ provisioner requires all six flags shown here, including the explicit npm binary
 
 ```bash
 cd "$CHECKOUT_ROOT/v2-mission-retirement"
-BROWSER_ROOT=$HOST_STATE/browser-store
-PROVISION_TASK_ROOT=$HOST_STATE/provisioning/v2-mission-retirement
+ADMIN_STATE=/srv/starlink-acceptance
+BROWSER_ROOT=$ADMIN_STATE/browser-store
+PROVISION_TASK_ROOT=$ADMIN_STATE/provisioning/v2-mission-retirement
 PROVENANCE_FILE=$PROVISION_TASK_ROOT/provenance.json
 NPM_EXECUTABLE=$(realpath "$(command -v npm)")
 mkdir -p "$BROWSER_ROOT" "$PROVISION_TASK_ROOT"
@@ -185,7 +225,7 @@ runbook](acceptance-platform.md#retention-maintenance) is the detailed authority
 ```bash
 set -o pipefail
 STATE_ROOT=$HOST_STATE/state
-CHECKOUT_RECOVERY_ROOT=$HOST_STATE/checkouts
+CHECKOUT_RECOVERY_ROOT=$RUNNER_CHECKOUT_ROOT
 ./tools/run-acceptance-platform.sh --maintenance retention \
   --state-root "$STATE_ROOT" \
   --policy tools/acceptance/platform/retention_policy.toml \
@@ -228,19 +268,29 @@ only at `<health-evidence-root>/<sha>/fingerprint.json`; do not use a
 `candidates/.discoverable` envelope as health authority.
 
 ```bash
-HEALTH_TASK_ROOT=$HOST_STATE/tasks/health/$SHA
+HEALTH_ATTEMPT_ID="health-$SHA-$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+HEALTH_TASK_ROOT=$HOST_STATE/tasks/health/$SHA-$HEALTH_ATTEMPT_ID
 mkdir -p "$HEALTH_TASK_ROOT"
 ./tools/run-acceptance-platform.sh \
   --lane health \
   --sha "$SHA" \
   --ref "$REF" \
   --profile "$PROFILE" \
+  --contract "$CONTRACT" \
+  --acceptance-task "$HEALTH_ATTEMPT_ID" \
   --evidence-root "$HEALTH_EVIDENCE_ROOT" \
   --task-root "$HEALTH_TASK_ROOT"
 
 HEALTH_FINGERPRINT=$HEALTH_EVIDENCE_ROOT/$SHA/fingerprint.json
-PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 -c 'from pathlib import Path; from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest; import sys; root = Path(sys.argv[1]); verify_manifest(root); print(read_fingerprint_authority(root).decode())' \
-  "$HEALTH_EVIDENCE_ROOT/$SHA"
+PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 - \
+  "$HEALTH_FINGERPRINT" "$PROFILE" <<'PY'
+import json, sys
+from pathlib import Path
+from acceptance.platform.health import validate_fingerprint
+from acceptance.platform.runner import _load_profile
+fingerprint = validate_fingerprint(_load_profile(Path(sys.argv[2])), Path(sys.argv[1]))
+print(json.dumps(fingerprint.to_dict(), sort_keys=True))
+PY
 ```
 
 **Stop** unless the health command and fingerprint validation both pass and the
@@ -254,20 +304,40 @@ The runner's static lane revalidates the sealed health fingerprint before it
 starts contract checks. It has its own evidence and task roots.
 
 ```bash
-STATIC_TASK_ROOT=$HOST_STATE/tasks/static/$SHA
+STATIC_ATTEMPT_ID="static-$SHA-$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+STATIC_TASK_ROOT=$HOST_STATE/tasks/static/$SHA-$STATIC_ATTEMPT_ID
 mkdir -p "$STATIC_TASK_ROOT"
 ./tools/run-acceptance-platform.sh \
   --lane static \
   --sha "$SHA" \
   --ref "$REF" \
   --profile "$PROFILE" \
+  --contract "$CONTRACT" \
+  --acceptance-task "$STATIC_ATTEMPT_ID" \
   --fingerprint "$HEALTH_FINGERPRINT" \
   --evidence-root "$STATIC_EVIDENCE_ROOT" \
   --task-root "$STATIC_TASK_ROOT"
+
+STATIC_CANDIDATE_ROOT=$STATIC_EVIDENCE_ROOT/candidates/$SHA
+PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 - \
+  "$STATIC_CANDIDATE_ROOT" "$SHA" "$REF" <<'PY'
+import json, sys
+from pathlib import Path
+from acceptance.platform.evidence import read_nofollow, verify_manifest
+candidate = Path(sys.argv[1]); sha, ref = sys.argv[2:]
+verify_manifest(candidate)
+manifest = json.loads(read_nofollow(candidate / "runner-manifest.json"))
+if (manifest.get("lane"), manifest.get("outcome"), manifest.get("final_acceptance"),
+    manifest.get("sha"), manifest.get("ref")) != ("static", "passed", False, sha, ref):
+    raise SystemExit("sealed static runner manifest does not match this candidate")
+print("sealed passed static authority verified")
+PY
 ```
 
-**Stop** on any nonzero result or non-passed static outcome. Do not repair a
-health or static failure by launching a final lane.
+Static authority lives under `candidates/<sha>`, unlike the health fingerprint
+under `<health-evidence-root>/<sha>`. **Stop** on any nonzero result or non-passed
+sealed static outcome. Do not repair a health or static failure by launching a
+final lane.
 
 ## 8. Run exactly one final lane
 
@@ -287,6 +357,7 @@ timeout --foreground --signal=TERM --kill-after=30s 1800s \
   --sha "$SHA" \
   --ref "$REF" \
   --profile "$PROFILE" \
+  --contract "$CONTRACT" \
   --fingerprint "$HEALTH_FINGERPRINT" \
   --evidence-root "$FINAL_EVIDENCE_ROOT" \
   --state-root "$FINAL_EVIDENCE_ROOT" \
