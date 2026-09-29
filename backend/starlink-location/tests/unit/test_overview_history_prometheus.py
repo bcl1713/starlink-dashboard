@@ -188,6 +188,49 @@ def test_projects_prometheus_matrix_samples_by_metric_name():
     }
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+def test_ambiguous_usable_raw_series_omits_only_that_metric(reverse):
+    latitude = [
+        raw_entry("starlink_dish_latitude_degrees", [[1782000000, "10"]]),
+        raw_entry("starlink_dish_latitude_degrees", [[1782000000, "41.2566"]]),
+    ]
+    if reverse:
+        latitude.reverse()
+    plan = plan_overview_history_query(end_timestamp_seconds=1782000000, window_seconds=1800)
+    assert project_overview_history_matrix(matrix(
+        *latitude,
+        raw_entry("starlink_dish_longitude_degrees", [[1782000000, "-95.9345"]]),
+    ), plan) == {
+        "starlink_dish_longitude_degrees": [[1782000000.0, -95.9345]],
+    }
+
+
+def test_unusable_duplicate_raw_series_does_not_hide_usable_series():
+    plan = plan_overview_history_query(end_timestamp_seconds=1782000000, window_seconds=1800)
+    assert project_overview_history_matrix(matrix(
+        raw_entry("starlink_dish_latitude_degrees", [[1782000000, "nan"]]),
+        raw_entry("starlink_dish_latitude_degrees", [[1782000000, "41.2566"]]),
+        raw_entry("starlink_dish_latitude_degrees", [[1781998199, "10"]]),
+    ), plan) == {
+        "starlink_dish_latitude_degrees": [[1782000000.0, 41.2566]],
+    }
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_raw_cap_keeps_newest_distinct_in_window_samples_chronologically(reverse):
+    plan = plan_overview_history_query(end_timestamp_seconds=1782000000, window_seconds=86400)
+    values = [[plan.end_timestamp_seconds - i, str(i)] for i in range(1900)]
+    if reverse:
+        values.reverse()
+    projected = project_overview_history_matrix(matrix(
+        raw_entry("starlink_dish_latitude_degrees", values),
+    ), plan)["starlink_dish_latitude_degrees"]
+    assert len(projected) == MAX_OVERVIEW_HISTORY_SAMPLES
+    assert projected[0] == [float(plan.end_timestamp_seconds - 1800), 1800.0]
+    assert projected[-1] == [float(plan.end_timestamp_seconds), 0.0]
+    assert [point[0] for point in projected] == sorted(point[0] for point in projected)
+
+
 def test_ignores_unapproved_or_non_finite_prometheus_samples():
     payload = {
         "status": "success",
@@ -437,7 +480,9 @@ async def test_bundle_preserves_raw_trail_and_exposes_five_rolling_traces():
                 raw_entry("starlink_dish_latitude_degrees", [[1782000000, "41.2566"]]),
                 raw_entry("starlink_dish_longitude_degrees", [[1782000000, "-95.9345"]]),
             ))
-        return httpx.Response(200, json=matrix(rollup_entry([[1782000000, "24.0"]])))
+        stat = request.url.params["query"].split("_over_time(", 1)[0]
+        value = {"min": "24.0", "avg": "25.0", "max": "26.0"}[stat]
+        return httpx.Response(200, json=matrix(rollup_entry([[1782000000, value]])))
 
     async with httpx.AsyncClient(base_url="http://prometheus:9090",
                                  transport=httpx.MockTransport(handler)) as client:
@@ -449,6 +494,8 @@ async def test_bundle_preserves_raw_trail_and_exposes_five_rolling_traces():
         "starlink_dish_longitude_degrees": [[1782000000.0, -95.9345]],
     }
     assert bundle["rolling_5m"]["starlink_network_latency_ms_current"]["min"] == [[1782000000.0, 24.0]]
+    assert bundle["rolling_5m"]["starlink_network_latency_ms_current"]["avg"] == [[1782000000.0, 25.0]]
+    assert bundle["rolling_5m"]["starlink_network_latency_ms_current"]["max"] == [[1782000000.0, 26.0]]
     assert bundle["step_seconds"] == plan_overview_history_query(
         end_timestamp_seconds=1782000000, window_seconds=1800
     ).step_seconds
@@ -468,7 +515,7 @@ async def test_custom_window_bounds_all_raw_and_aggregate_traces_in_one_plan():
         if request.url.params["query"].startswith("{__name__"):
             return httpx.Response(200, json=matrix(*(
                 raw_entry(metric, raw_values) for metric in OVERVIEW_HISTORY_METRICS
-            ), raw_entry("starlink_dish_latitude_degrees", [[plan.end_timestamp_seconds, "777"]])))
+            )))
         return httpx.Response(200, json=matrix(rollup_entry(raw_values)))
 
     async with httpx.AsyncClient(base_url="http://prometheus:9090",

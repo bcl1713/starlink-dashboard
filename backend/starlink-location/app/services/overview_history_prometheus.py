@@ -178,7 +178,7 @@ async def fetch_overview_history_from_prometheus(
 def project_overview_history_matrix(
     payload: dict, plan: OverviewHistoryQueryPlan | None = None
 ) -> dict[str, list[list[float]]]:
-    """Project approved finite Prometheus samples keyed by metric name."""
+    """Project finite raw traces; omit metrics with multiple usable series."""
     if payload.get("status") != "success":
         error = str(payload.get("error", "unknown Prometheus error"))
         raise OverviewHistoryPrometheusResponseError(
@@ -194,17 +194,17 @@ def project_overview_history_matrix(
             "Prometheus history query did not return a matrix"
         )
     projected: dict[str, list[list[float]]] = {}
+    ambiguous: set[str] = set()
     for series in data["result"]:
         if not isinstance(series, dict) or not isinstance(series.get("metric"), dict):
             continue
         metric_name = series["metric"].get("__name__")
-        if metric_name not in OVERVIEW_HISTORY_METRICS or metric_name in projected:
+        if metric_name not in OVERVIEW_HISTORY_METRICS or metric_name in ambiguous:
             continue
         values = series.get("values")
         if not isinstance(values, list):
             continue
-        samples = []
-        seen: set[float] = set()
+        samples_by_timestamp: dict[float, float] = {}
         for pair in values:
             if not isinstance(pair, (list, tuple)) or len(pair) != 2:
                 continue
@@ -220,14 +220,16 @@ def project_overview_history_matrix(
                 plan.start_timestamp_seconds <= numeric_timestamp <= plan.end_timestamp_seconds
             ):
                 continue
-            if numeric_timestamp in seen:
-                continue
-            samples.append([numeric_timestamp, numeric_value])
-            seen.add(numeric_timestamp)
-            if len(samples) == MAX_OVERVIEW_HISTORY_SAMPLES:
-                break
-        if samples:
-            projected[metric_name] = samples
+            samples_by_timestamp.setdefault(numeric_timestamp, numeric_value)
+        if samples_by_timestamp:
+            if metric_name in projected:
+                del projected[metric_name]
+                ambiguous.add(metric_name)
+            else:
+                newest = sorted(samples_by_timestamp)[-MAX_OVERVIEW_HISTORY_SAMPLES:]
+                projected[metric_name] = [
+                    [timestamp, samples_by_timestamp[timestamp]] for timestamp in newest
+                ]
     return projected
 
 
