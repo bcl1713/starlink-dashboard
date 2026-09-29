@@ -279,6 +279,44 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
                     self.validate_workflow_text(mutated),
                 )
 
+    def test_rejects_commented_ghcr_query_with_wrong_live_query(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        query = (
+            'gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/'
+            'container/starlink-dashboard%2F$package/versions?per_page=100"'
+        )
+        query_and_jq = (
+            query + " |\n"
+            "              jq '{versions: flatten, pagination: {complete: true}}'"
+            ' > "retention/$package-versions.json"'
+        )
+        mutated = workflow_text.replace(
+            query_and_jq,
+            query.replace("users/", "orgs/")
+            + " | jq '{versions: flatten, pagination: {complete: true}}'"
+            + ' > "retention/$package-versions.json" # '
+            + query,
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_commented_flatten_with_wrong_live_jq(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        flatten = "jq '{versions: flatten, pagination: {complete: true}}'"
+        mutated = workflow_text.replace(
+            flatten,
+            "jq '{versions: .[0], pagination: {complete: true}}'"
+            "\n              # " + flatten,
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
     def test_rejects_ghcr_inventory_with_extra_mutation(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated = workflow_text.replace(

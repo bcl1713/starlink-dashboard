@@ -373,14 +373,28 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
         errors.append("GHCR inventory step must be report-only")
     expected_ghcr_query = (
         'gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/'
-        'container/starlink-dashboard%2F$package/versions?per_page=100"'
+        'container/starlink-dashboard%2F$package/versions?per_page=100" |'
     )
+    # Check the live shell pipeline, not substrings in comments or disabled commands.
+    ghcr_commands: list[str] = []
+    if "        run: |" in ghcr_step:
+        ghcr_commands = [
+            line.strip()
+            for line in ghcr_step[ghcr_step.index("        run: |") + 1 :]
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+    expected_prefix = [
+        "set -euo pipefail",
+        "for package in starlink-location mission-planner prometheus grafana; do",
+        expected_ghcr_query,
+        (
+            "jq '{versions: flatten, pagination: {complete: true}}'"
+            ' > "retention/$package-versions.json"'
+        ),
+    ]
     if (
-        expected_ghcr_query not in ghcr_text
-        or "for package in starlink-location mission-planner prometheus grafana; do"
-        not in ghcr_text
-        or "jq '{versions: flatten, pagination: {complete: true}}'" not in ghcr_text
-        or len([line for line in ghcr_step if "gh api " in line]) != 1
+        ghcr_commands[:4] != expected_prefix
+        or len([line for line in ghcr_commands if "gh api " in line]) != 1
     ):
         errors.append("GHCR inventory must query complete user package versions")
 
