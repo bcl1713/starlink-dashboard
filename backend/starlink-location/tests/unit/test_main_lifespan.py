@@ -53,6 +53,11 @@ def test_successful_startup_exposes_poi_manager_even_when_eta_is_unavailable(
 
     try:
         with TestClient(main.app) as client:
+            response = client.get("/api/pois/")
+            assert response.status_code == 200
+            payload = response.json()
+            assert isinstance(payload["pois"], list)
+            assert payload["total"] == len(payload["pois"])
             assert isinstance(main.app.state.poi_manager, main.POIManager)
             assert client.get("/health").status_code == 200
     finally:
