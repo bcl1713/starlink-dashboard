@@ -32,6 +32,14 @@ def test_overview_history_returns_the_initialized_reader_bundle():
                     [1_782_000_000.0, 41.2566],
                 ],
             },
+            "rolling_5m": {
+                "starlink_network_latency_ms_current": {
+                    "state": "available",
+                    "min": [[1_782_000_000.0, 24.0]],
+                    "avg": [[1_782_000_000.0, 25.0]],
+                    "max": [[1_782_000_000.0, 26.0]],
+                },
+            },
         }
 
     overview_history.set_overview_history_reader(read_history)
@@ -51,6 +59,14 @@ def test_overview_history_returns_the_initialized_reader_bundle():
             "starlink_dish_latitude_degrees": [
                 [1_782_000_000.0, 41.2566],
             ],
+        },
+        "rolling_5m": {
+            "starlink_network_latency_ms_current": {
+                "state": "available",
+                "min": [[1_782_000_000.0, 24.0]],
+                "avg": [[1_782_000_000.0, 25.0]],
+                "max": [[1_782_000_000.0, 26.0]],
+            },
         },
     }
 

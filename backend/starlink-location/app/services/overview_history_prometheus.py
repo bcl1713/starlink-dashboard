@@ -175,8 +175,10 @@ async def fetch_overview_history_from_prometheus(
     return response.json()
 
 
-def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]]]:
-    """Project approved finite Prometheus samples keyed by metric name."""
+def project_overview_history_matrix(
+    payload: dict, plan: OverviewHistoryQueryPlan | None = None
+) -> dict[str, list[list[float]]]:
+    """Project finite raw traces; omit metrics with multiple usable series."""
     if payload.get("status") != "success":
         error = str(payload.get("error", "unknown Prometheus error"))
         raise OverviewHistoryPrometheusResponseError(
@@ -192,21 +194,44 @@ def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]
             "Prometheus history query did not return a matrix"
         )
     projected: dict[str, list[list[float]]] = {}
+    ambiguous: set[str] = set()
     for series in data["result"]:
-        metric_name = series["metric"]["__name__"]
-        if metric_name not in OVERVIEW_HISTORY_METRICS:
+        if not isinstance(series, dict) or not isinstance(series.get("metric"), dict):
             continue
-        samples = []
-        for timestamp, value in series["values"]:
+        metric_name = series["metric"].get("__name__")
+        if metric_name not in OVERVIEW_HISTORY_METRICS or metric_name in ambiguous:
+            continue
+        values = series.get("values")
+        if not isinstance(values, list):
+            continue
+        samples_by_timestamp: dict[float, float] = {}
+        for pair in values:
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                continue
+            timestamp, value = pair
             try:
                 numeric_timestamp = float(timestamp)
                 numeric_value = float(value)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 continue
-            if isfinite(numeric_timestamp) and isfinite(numeric_value):
-                samples.append([numeric_timestamp, numeric_value])
-        if samples:
-            projected[metric_name] = samples
+            if not isfinite(numeric_timestamp) or not isfinite(numeric_value):
+                continue
+            if plan is not None and not (
+                plan.start_timestamp_seconds
+                <= numeric_timestamp
+                <= plan.end_timestamp_seconds
+            ):
+                continue
+            samples_by_timestamp.setdefault(numeric_timestamp, numeric_value)
+        if samples_by_timestamp:
+            if metric_name in projected:
+                del projected[metric_name]
+                ambiguous.add(metric_name)
+            else:
+                newest = sorted(samples_by_timestamp)[-MAX_OVERVIEW_HISTORY_SAMPLES:]
+                projected[metric_name] = [
+                    [timestamp, samples_by_timestamp[timestamp]] for timestamp in newest
+                ]
     return projected
 
 
@@ -222,10 +247,16 @@ async def query_overview_history_bundle(
         window_seconds=window_seconds,
     )
     payload = await fetch_overview_history_from_prometheus(client, plan)
+    raw = project_overview_history_matrix(payload, plan)
+    # Imported here because the rollup projector shares this module's query plan.
+    from app.services.overview_history_rollups import query_overview_history_rollups
+
+    rollups = await query_overview_history_rollups(client, plan)
     return {
         "window_seconds": window_seconds,
         "start_timestamp_seconds": plan.start_timestamp_seconds,
         "end_timestamp_seconds": plan.end_timestamp_seconds,
         "step_seconds": plan.step_seconds,
-        "series": project_overview_history_matrix(payload),
+        "series": raw,
+        "rolling_5m": rollups,
     }

@@ -609,10 +609,33 @@ test.describe('Globe overview', () => {
       .getByText('X-Atlantic', { exact: true })
       .evaluate((label) => getComputedStyle(label).whiteSpace);
     expect(satelliteLabelWhiteSpace).toBe('nowrap');
+    const chartCanvases = page.locator('.overview-metric-history canvas');
+    await expect(chartCanvases).toHaveCount(5);
+    const globeCanvasSelector =
+      '.overview-page canvas:not(.overview-metric-history canvas)';
+    const globeCanvas = page.locator(globeCanvasSelector);
+    await expect(globeCanvas).toHaveCount(1);
+    expect(
+      await globeCanvas.evaluate((canvas) =>
+        Boolean((canvas as HTMLCanvasElement).getContext('webgl2'))
+      )
+    ).toBe(true);
+    expect(
+      await chartCanvases
+        .first()
+        .evaluate(
+          (chart, globe) =>
+            Boolean(
+              chart.compareDocumentPosition(globe) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+            ),
+          await globeCanvas.elementHandle()
+        )
+    ).toBe(true);
     const overlayInteraction = await page
       .locator('.overview-top-overlays')
-      .evaluate((topOverlay) => {
-        const canvas = document.querySelector('canvas');
+      .evaluate((topOverlay, selector) => {
+        const canvas = document.querySelector(selector);
         const overlayBounds = topOverlay.getBoundingClientRect();
         const x = overlayBounds.left + overlayBounds.width / 2;
         const y = overlayBounds.top + overlayBounds.height / 2;
@@ -624,12 +647,11 @@ test.describe('Globe overview', () => {
           x,
           y,
         };
-      });
+      }, globeCanvasSelector);
     expect(overlayInteraction.overlayPointerEvents).toBe('none');
     expect(overlayInteraction.canvasIsHitTarget).toBe(true);
     expect(overlayInteraction.canvasRect).not.toBeNull();
-    const canvas = page.locator('canvas');
-    const beforeDrag = await canvas.screenshot();
+    const beforeDrag = await globeCanvas.screenshot();
     await page.mouse.move(overlayInteraction.x, overlayInteraction.y);
     await page.mouse.down();
     await page.mouse.move(
@@ -641,7 +663,7 @@ test.describe('Globe overview', () => {
     );
     await page.mouse.up();
     await expect
-      .poll(async () => (await canvas.screenshot()).equals(beforeDrag))
+      .poll(async () => (await globeCanvas.screenshot()).equals(beforeDrag))
       .toBe(false);
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })

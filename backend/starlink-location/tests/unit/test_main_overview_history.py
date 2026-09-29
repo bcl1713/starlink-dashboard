@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 import main
 from app.api import overview_history
+from app.services.overview_history_rollups import ROLLUP_METRICS
 
 
 def test_initializes_the_history_reader_with_a_persistent_window_store(
@@ -104,6 +105,10 @@ def test_lifespan_initializes_and_closes_the_history_runtime(
             "end_timestamp_seconds": 1_782_000_000,
             "step_seconds": 1,
             "series": {},
+            "rolling_5m": {
+                metric: {"state": "available", "min": [], "avg": [], "max": []}
+                for metric in ROLLUP_METRICS
+            },
         }
     assert len(created_clients) == 1
     assert created_clients[0].closed is True
