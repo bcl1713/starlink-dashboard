@@ -95,6 +95,7 @@
 }
 .overview-metrics {
   width: min(20rem, 100%);
+  justify-self: end;
   border: 1px solid rgb(148 163 184 / 35%);
   border-radius: 0.75rem;
   padding: 0.875rem 1rem;
@@ -246,7 +247,7 @@
 
 .overview-bottom-overlays {
   position: absolute;
-  top: clamp(22rem, 39vh, 26rem);
+  top: clamp(12rem, 19vh, 14rem);
   bottom: 4.5rem;
   left: 1rem;
   z-index: 1;
@@ -363,18 +364,11 @@
   line-height: 2.5rem;
 }
 
-@media (max-width: 50rem) {
-  .overview-bottom-overlays {
-    right: 22rem;
-    width: auto;
+@media (max-width: 70rem) {
+  .overview-metrics {
+    justify-self: start;
   }
 
-  .overview-metric-history-panels {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 44rem) {
   .overview-page {
     overflow-y: auto;
   }

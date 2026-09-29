@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForGlobeVisualReady } from './support/globe-visual-ready';
 
 const metrics = [
   'starlink_network_latency_ms_current',
@@ -128,7 +129,7 @@ test.describe('Overview metric history', () => {
     const settledRequests = requests;
     expect(settledRequests).toBeGreaterThanOrEqual(1);
     const pois = await page.getByLabel('Upcoming POIs').boundingBox();
-    const top = await page.locator('.overview-metrics').boundingBox();
+    const top = await page.locator('.overview-clock-panel').boundingBox();
     const legend = await page.getByLabel('Globe legend').boundingBox();
     await page.screenshot({
       path: testInfo.outputPath('overview-history-1920x1080.png'),
@@ -137,7 +138,13 @@ test.describe('Overview metric history', () => {
     for (const panel of await graphs.all()) {
       const box = await panel.boundingBox();
       expect(box && pois && box.y + box.height <= pois.y).toBeTruthy();
-      expect(box && top && box.y >= top.y + top.height).toBeTruthy();
+      expect(
+        box &&
+          top &&
+          (box.y >= top.y + top.height ||
+            box.x + box.width <= top.x ||
+            box.x >= top.x + top.width)
+      ).toBeTruthy();
       expect(box && box.y >= 0 && box.y + box.height <= 1080).toBeTruthy();
       expect(box && legend && box.x + box.width <= legend.x).toBeTruthy();
       await expect(panel.getByText('Observed')).toBeVisible();
@@ -202,6 +209,11 @@ test.describe('Overview metric history', () => {
     await expect(graphs.first().getByRole('status')).toHaveText(
       'History available'
     );
+    const plottedBeforeFailure = await graphs
+      .first()
+      .locator('.uplot canvas')
+      .first()
+      .evaluate((node) => (node as HTMLCanvasElement).toDataURL());
     fail = true;
     const beforeFailure = requests;
     await expect
@@ -210,27 +222,211 @@ test.describe('Overview metric history', () => {
     await expect(graphs.first().getByRole('status')).toContainText(
       'Last-known history; refresh unavailable'
     );
+    expect(
+      await graphs
+        .first()
+        .locator('.uplot canvas')
+        .first()
+        .evaluate((node) => (node as HTMLCanvasElement).toDataURL())
+    ).toBe(plottedBeforeFailure);
+    fail = false;
+    const beforeRecovery = requests;
+    await expect
+      .poll(() => requests, { timeout: 8_000 })
+      .toBeGreaterThan(beforeRecovery);
+    await expect(graphs.first().getByRole('status')).toHaveText(
+      'History available'
+    );
   });
 
-  test('reflows as a single non-overlapping column at 44rem', async ({
+  test('fits populated plots and expanded five-row POIs together at 1920x1080', async ({
+    page,
+  }, testInfo) => {
+    const now = Date.now();
+    const names = [
+      'AAR start',
+      'Ka swap',
+      'Ka entry',
+      'X-band handoff',
+      'RKSO',
+    ];
+    const kinds = [
+      'aar_start',
+      'ka_transition',
+      'ka_coverage_entry',
+      'x_band_transition',
+      'arrival',
+    ];
+    await page.route('**/api/overview-history', (route) =>
+      route.fulfill({ json: bundle(Math.floor(Date.now() / 1000)) })
+    );
+    await page.route('**/api/overview-history/settings', (route) =>
+      route.fulfill({ json: { window_seconds: 1800 } })
+    );
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({
+        json: {
+          state: 'available',
+          calculated_at: new Date(now).toISOString(),
+          pois: names.map((name, index) => ({
+            poi_id: `busy-${index}`,
+            name,
+            kind: kinds[index],
+            latitude: 0,
+            longitude: -50,
+            expected_arrival_time: new Date(
+              now + (index + 1) * 600_000
+            ).toISOString(),
+            estimated_arrival_time: new Date(
+              now + (index + 1) * 600_000
+            ).toISOString(),
+            eta_seconds: (index + 1) * 600,
+            eta_type: 'estimated',
+            upcoming: true,
+            map_retained: true,
+          })),
+        },
+      })
+    );
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({
+        json: {
+          timestamp: new Date(now).toISOString(),
+          network: { latency_ms: 42 },
+        },
+      })
+    );
+    await page.route('**/api/satellites', (route) =>
+      route.fulfill({ json: [] })
+    );
+    await page.route('**/api/active-x-link', (route) =>
+      route.fulfill({ json: { satellite_id: null } })
+    );
+    await page.route('**/api/overview-clocks/settings', (route) =>
+      route.fulfill({
+        json: {
+          clocks: [
+            { label: 'Zulu / UTC', time_zone: 'UTC' },
+            { label: 'Washington, DC', time_zone: 'America/New_York' },
+            { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+            { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+          ],
+        },
+      })
+    );
+    const texture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.ok()
+    );
+    await page.goto('/overview', { waitUntil: 'commit' });
+    await waitForGlobeVisualReady(page, texture);
+    const graphs = page
+      .getByLabel('Overview metric history')
+      .locator('[data-metric-panel]');
+    const pois = page.getByLabel('Upcoming POIs');
+    await expect(graphs.locator('.uplot')).toHaveCount(5);
+    await expect(pois.locator('tbody tr')).toHaveCount(5);
+    await expect(pois.locator('tbody tr')).toHaveText(
+      names.map((name) => new RegExp(name))
+    );
+    await expect(pois.getByTestId('upcoming-pois-body')).toHaveCSS(
+      'height',
+      '224px'
+    );
+    const viewport = await page.evaluate(() => ({
+      width: innerWidth,
+      height: innerHeight,
+      dpr: devicePixelRatio,
+    }));
+    expect(viewport).toEqual({ width: 1920, height: 1080, dpr: 1 });
+    const poiBox = await pois.boundingBox();
+    const legendBox = await page.getByLabel('Globe legend').boundingBox();
+    const metricsBox = await page
+      .getByLabel('Current network metrics')
+      .boundingBox();
+    const clocksBox = await page.locator('.overview-clock-panel').boundingBox();
+    expect(poiBox && poiBox.y + poiBox.height <= 1080).toBeTruthy();
+    expect(
+      poiBox && legendBox && poiBox.x + poiBox.width <= legendBox.x
+    ).toBeTruthy();
+    for (const panel of await graphs.all()) {
+      const box = await panel.boundingBox();
+      expect(box && poiBox && box.y + box.height <= poiBox.y).toBeTruthy();
+      expect(box && legendBox && box.x + box.width <= legendBox.x).toBeTruthy();
+      expect(
+        box && metricsBox && box.x + box.width <= metricsBox.x
+      ).toBeTruthy();
+      expect(
+        box && clocksBox && box.y >= clocksBox.y + clocksBox.height
+      ).toBeTruthy();
+      expect(box && box.width >= 200).toBeTruthy();
+      for (const name of ['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)'])
+        await expect(panel.getByText(name)).toBeVisible();
+      expect(
+        await panel.evaluate((node) => node.scrollHeight <= node.clientHeight)
+      ).toBe(true);
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('overview-history-busy-1920x1080.png'),
+      animations: 'disabled',
+    });
+    const poiSizing = await pois.evaluate((node) => ({
+      scroll: node.scrollHeight,
+      client: node.clientHeight,
+      rows: [...node.querySelectorAll('tbody tr')].map((row) => ({
+        bottom: row.getBoundingClientRect().bottom,
+        panelBottom: node.getBoundingClientRect().bottom,
+      })),
+    }));
+    expect(poiSizing.scroll, JSON.stringify(poiSizing)).toBeLessThanOrEqual(
+      poiSizing.client
+    );
+  });
+
+  test('reflows legibly before two graph columns become cramped', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 704, height: 1080 });
     await page.route('**/api/overview-history', async (route) => {
       await route.fulfill({ json: bundle() });
     });
     await page.route('**/api/overview-history/settings', async (route) => {
       await route.fulfill({ json: { window_seconds: 1800 } });
     });
+    await page.setViewportSize({ width: 800, height: 1080 });
     await page.goto('/overview', { waitUntil: 'commit' });
     const panels = page
       .getByLabel('Overview metric history')
       .locator('[data-metric-panel]');
     await expect(panels).toHaveCount(5);
-    const pois = await page.getByLabel('Upcoming POIs').boundingBox();
-    for (const panel of await panels.all()) {
-      const box = await panel.boundingBox();
-      expect(box && pois && box.y + box.height <= pois.y).toBeTruthy();
+    for (const width of [800, 752, 705, 704]) {
+      await page.setViewportSize({ width, height: 1080 });
+      const pois = await page.getByLabel('Upcoming POIs').boundingBox();
+      const boxes = await Promise.all(
+        (await panels.all()).map((panel) => panel.boundingBox())
+      );
+      expect(boxes.every((box) => box && box.width >= 300)).toBe(true);
+      expect(
+        boxes.every((box) => box && pois && box.y + box.height <= pois.y)
+      ).toBe(true);
+      expect(
+        boxes.every(
+          (box, index) =>
+            index === 0 ||
+            (box &&
+              boxes[index - 1] &&
+              box.y >= boxes[index - 1]!.y + boxes[index - 1]!.height)
+        )
+      ).toBe(true);
+      expect(
+        await page
+          .locator('.overview-page')
+          .evaluate((node) => getComputedStyle(node).overflowY)
+      ).toBe('auto');
+      await expect(panels.first().getByText('Observed')).toBeVisible();
     }
   });
 });

@@ -35,13 +35,13 @@ describe('OverviewPage generated POI legend and overlay layout contracts', () =>
 
   it('keeps the POI panel clear of the bottom-right legend at narrow widths', () => {
     expect(styles).toMatch(
-      /@media \(max-width: 50rem\) \{[\s\S]*?\.overview-bottom-overlays \{[\s\S]*?right: 22rem;/
+      /@media \(max-width: 70rem\) \{[\s\S]*?\.overview-metric-history-panels \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/
     );
     expect(styles).toMatch(
-      /@media \(max-width: 44rem\) \{[\s\S]*?\.overview-page \{[\s\S]*?overflow-y: auto;/
+      /@media \(max-width: 70rem\) \{[\s\S]*?\.overview-page \{[\s\S]*?overflow-y: auto;/
     );
     expect(styles).toMatch(
-      /@media \(max-width: 44rem\) \{[\s\S]*?\.globe-legend,[\s\S]*?\.overview-bottom-overlays \{[\s\S]*?position: relative;[\s\S]*?width: auto;/
+      /@media \(max-width: 70rem\) \{[\s\S]*?\.globe-legend,[\s\S]*?\.overview-bottom-overlays \{[\s\S]*?position: relative;[\s\S]*?width: auto;/
     );
     expect(styles).toMatch(
       /\.overview-bottom-overlays \{[\s\S]*?pointer-events: none;/
@@ -50,10 +50,10 @@ describe('OverviewPage generated POI legend and overlay layout contracts', () =>
 
   it('places the fullscreen control in reserved normal flow beside narrow POI states', () => {
     expect(styles).toMatch(
-      /@media \(max-width: 44rem\) \{[\s\S]*?\.overview-fullscreen-control \{[\s\S]*?position: relative;[\s\S]*?bottom: auto;[\s\S]*?left: auto;[\s\S]*?margin: 1rem;/
+      /@media \(max-width: 70rem\) \{[\s\S]*?\.overview-fullscreen-control \{[\s\S]*?position: relative;[\s\S]*?bottom: auto;[\s\S]*?left: auto;[\s\S]*?margin: 1rem;/
     );
     expect(styles).toMatch(
-      /@media \(max-width: 44rem\) \{[\s\S]*?\.overview-bottom-overlays \{[\s\S]*?position: relative;/
+      /@media \(max-width: 70rem\) \{[\s\S]*?\.overview-bottom-overlays \{[\s\S]*?position: relative;/
     );
   });
 });
