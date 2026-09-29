@@ -4,8 +4,7 @@
 
 The acceptance platform is a shared operational capability. It owns platform
 provisioning, candidate identity validation, isolated runtime resources,
-evidence
-sealing, and cleanup. A product contract supplies only product semantics:
+evidence sealing, and cleanup. A product contract supplies only product semantics:
 services, static checks, public controls, deterministic assets, and a visible
 journey adapter.
 
@@ -13,8 +12,7 @@ An administrator provisions the browser bundle before a branch run. The
 administrator creates an immutable bundle record with its absolute executable
 path, executable version, revision, byte size, checksum, bundle identifier,
 creation time, platform-owned browser-store path, and package/runtime provenance
-where applicable. The platform record and executable identity are verified
-before
+where applicable. The platform record and executable identity are verified before
 launch.
 
 A branch run consumes that verified record; it does not install, replace, or
@@ -28,20 +26,17 @@ coherent bundle.
 
 Run the `health` lane before any product lane. Health certification verifies the
 profile and bundle identity, performs the neutral display/card check, retains
-its
-bounded artifacts, and seals a health fingerprint. The fingerprint binds the
-profile checksum, health-card checksum, bundle identity, Docker identity,
-Compose
+its bounded artifacts, and seals a health fingerprint. The fingerprint binds the
+profile checksum, health-card checksum, bundle identity, Docker identity, Compose
 identity, measured viewport metrics, bounded WebGL2 renderer/vendor/version
 (each nonempty UTF-8 field is at most 512 bytes and no extra identity keys are
-accepted),
-capture timestamp, retained-artifact checksums, outcome, and cleanup status.
+accepted), capture timestamp, retained-artifact checksums, outcome, and cleanup
+status.
 
 The platform launch authority adds exactly `--use-gl=angle` and
 `--use-angle=swiftshader` to every owned browser launch. Product contracts,
 runner inputs, and adapters cannot supply browser GL flags; unsafe SwiftShader
-is
-not enabled. Before any product static, Compose, or journey work, the neutral
+is not enabled. Before any product static, Compose, or journey work, the neutral
 card must create a WebGL2 context and return exactly nonempty renderer, vendor,
 and version strings within the 512-byte per-field limit. Missing, malformed, or
 over-limit WebGL2 identity blocks health and final
@@ -60,8 +55,7 @@ evidence root before treating platform health as current.
 The runner has four lanes:
 
 - `health` certifies the shared platform capability and can claim platform
-  health
-  only.
+  health only.
 
 - `static` runs contract-declared product checks after health validation and is
   non-final.
@@ -86,18 +80,13 @@ contract checksum as one build-ledger key. Its state machine is:
 2. Run the declared static checks.
 3. Prepare task-owned topology and arm cleanup.
 4. Resolve the scoped topology and perform one content-aware build for the
-   ledger
-   key. Final builds reuse content-addressed dependency layers only when their
-   lockfile inputs are unchanged. The runner injects the exact candidate SHA
-   after
-   dependency installation so application/output layers rebuild for every
-   candidate,
-   and invokes Docker Compose with `--pull` and `--progress=plain`. Build
-   supervision stops
-   after 600 seconds without meaningful BuildKit progress or at the 1800-second
-   total
-   deadline, recording `build_stalled` or `build_deadline_exceeded` in sealed
-   evidence;
+   ledger key. Final builds reuse content-addressed dependency layers only when
+   their lockfile inputs are unchanged. The runner injects the exact candidate SHA
+   after dependency installation so application/output layers rebuild for every
+   candidate, and invokes Docker Compose with `--pull` and `--progress=plain`. Build
+   supervision stops after 600 seconds without meaningful BuildKit progress or at
+   the 1800-second total deadline, recording `build_stalled` or
+   `build_deadline_exceeded` in sealed evidence;
    supervised-failure evidence records the observed UTC build start/end
    timestamps and
    monotonic elapsed duration rather than deriving elapsed time from the policy
@@ -282,7 +271,17 @@ artifact. GHCR inventory is report-only: never delete GHCR versions from this
 maintenance procedure or from the publish workflow. GHCR `updated_at` is a
 mutable ordering timestamp, not authoritative publish completion; until an
 authoritative field exists every SHA-only version remains retained and the
-inventory reports that authority gap as an anomaly.
+inventory reports that authority gap as an anomaly. The publish retention job
+queries the GitHub **user** packages API for each actual package name
+`starlink-dashboard/<image>` (URL-encoded as `starlink-dashboard%2F<image>`),
+reads all version pages, and makes no GHCR mutations. Its token is the workflow
+`GITHUB_TOKEN` with job-scoped `packages: read`; a successful local `gh api`
+request using an operator's credentials does not prove that token can access the
+package. The known `updated_at` authority-gap anomaly remains in each JSON
+inventory but, by itself, does not fail the inventory CLI or stop later images
+from being inventoried. Any other anomaly exits nonzero; malformed or
+incompletely paginated input exits with a JSON error. Investigate a failed
+inventory job rather than deleting GHCR versions or masking its exit status.
 
 **External-host final authority.** When Oracle lacks the required Linux host
 capacity, use the

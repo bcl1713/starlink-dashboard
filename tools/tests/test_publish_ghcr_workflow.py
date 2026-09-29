@@ -256,6 +256,117 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("GHCR inventory step must be report-only", errors)
 
+    def test_rejects_wrong_ghcr_package_endpoint_or_incomplete_pages(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        endpoint = (
+            "users/${{ github.repository_owner }}/packages/container/"
+            "starlink-dashboard%2F$package/versions"
+        )
+        pagination = f'gh api --paginate --slurp "{endpoint}?per_page=100"'
+        flatten = "jq '{versions: flatten, pagination: {complete: true}}'"
+        for original, replacement in (
+            (endpoint, endpoint.replace("users/", "orgs/")),
+            (endpoint, endpoint.replace("starlink-dashboard%2F", "")),
+            (endpoint, endpoint.replace("%2F", "/")),
+            (pagination, pagination.replace("--paginate ", "")),
+            (flatten, "jq '{versions: .[0], pagination: {complete: true}}'"),
+        ):
+            with self.subTest(replacement=replacement):
+                mutated = workflow_text.replace(original, replacement)
+                self.assertNotEqual(mutated, workflow_text)
+                self.assertIn(
+                    "GHCR inventory must query complete user package versions",
+                    self.validate_workflow_text(mutated),
+                )
+
+    def test_rejects_commented_ghcr_query_with_wrong_live_query(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        query = (
+            'gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/'
+            'container/starlink-dashboard%2F$package/versions?per_page=100"'
+        )
+        query_and_jq = (
+            query + " |\n"
+            "              jq '{versions: flatten, pagination: {complete: true}}'"
+            ' > "retention/$package-versions.json"'
+        )
+        mutated = workflow_text.replace(
+            query_and_jq,
+            query.replace("users/", "orgs/")
+            + " | jq '{versions: flatten, pagination: {complete: true}}'"
+            + ' > "retention/$package-versions.json" # '
+            + query,
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_commented_flatten_with_wrong_live_jq(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        flatten = "jq '{versions: flatten, pagination: {complete: true}}'"
+        mutated = workflow_text.replace(
+            flatten,
+            "jq '{versions: .[0], pagination: {complete: true}}'"
+            "\n              # " + flatten,
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_ghcr_inventory_that_exits_before_classification(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace(
+            "            python tools/github_retention_cli.py ghcr-inventory \\\n",
+            "            exit 0\n"
+            "            python tools/github_retention_cli.py ghcr-inventory \\\n",
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_ghcr_inventory_with_commented_classifier(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace(
+            "            python tools/github_retention_cli.py ghcr-inventory \\\n"
+            '              --versions "retention/$package-versions.json" | tee "retention/$package-ghcr-inventory.json"',
+            "            exit 0\n"
+            "            # python tools/github_retention_cli.py ghcr-inventory \\\n"
+            '            #   --versions "retention/$package-versions.json" | tee "retention/$package-ghcr-inventory.json"',
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_ghcr_inventory_with_extra_mutation(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace(
+            "          for package in starlink-location",
+            '          gh api --method DELETE "users/${{ github.repository_owner }}/'
+            'packages/container/starlink-dashboard%2Fstarlink-location/versions/1"\n'
+            "          for package in starlink-location",
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory step must be report-only",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_ghcr_inventory_without_packages_read(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace("      packages: read", "      packages: write")
+        self.assertIn(
+            "retention job permissions must be least-privileged",
+            self.validate_workflow_text(mutated),
+        )
+
     def test_rejects_equivalently_disabled_ghcr_inventory_step(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated_workflow = workflow_text.replace(

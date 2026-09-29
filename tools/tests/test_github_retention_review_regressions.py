@@ -215,7 +215,7 @@ def test_ghcr_inventory_fails_closed_for_ties_across_three_version_boundary() ->
         )
 
 
-def test_cli_reports_tied_ghcr_boundary_as_anomaly_and_exits_nonzero(
+def test_cli_reports_tied_ghcr_boundary_as_expected_nonfatal_anomaly(
     tmp_path: Path,
 ) -> None:
     versions = _complete(
@@ -250,7 +250,7 @@ def test_cli_reports_tied_ghcr_boundary_as_anomaly_and_exits_nonzero(
         text=True,
     )
 
-    assert completed.returncode == 1
+    assert completed.returncode == 0
     assert json.loads(completed.stdout)["old_sha_versions"] == []
     assert json.loads(completed.stdout)["anomalies"] == [
         "GHCR updated_at is not authoritative publish completion time"

@@ -371,6 +371,35 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
         or "gh api --method" in ghcr_text
     ):
         errors.append("GHCR inventory step must be report-only")
+    expected_ghcr_query = (
+        'gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/'
+        'container/starlink-dashboard%2F$package/versions?per_page=100" |'
+    )
+    # Check the live shell pipeline, not substrings in comments or disabled commands.
+    ghcr_commands: list[str] = []
+    if "        run: |" in ghcr_step:
+        ghcr_commands = [
+            line.strip()
+            for line in ghcr_step[ghcr_step.index("        run: |") + 1 :]
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+    expected_commands = [
+        "set -euo pipefail",
+        "for package in starlink-location mission-planner prometheus grafana; do",
+        expected_ghcr_query,
+        (
+            "jq '{versions: flatten, pagination: {complete: true}}'"
+            ' > "retention/$package-versions.json"'
+        ),
+        "python tools/github_retention_cli.py ghcr-inventory \\",
+        ('--versions "retention/$package-versions.json" | '
+         'tee "retention/$package-ghcr-inventory.json"'),
+        "done",
+    ]
+    # The fixed loop is a small shell contract: arbitrary commands can short-circuit
+    # classification, and an absent terminator can silently skip later packages.
+    if ghcr_commands != expected_commands:
+        errors.append("GHCR inventory must query complete user package versions")
 
     upload_step = named_step_lines(workflow_text, "retention", "Upload retention plan")
     upload_text = "\n".join(upload_step)
