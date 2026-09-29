@@ -173,7 +173,7 @@ async def startup_event():
                             "country": entry_point.country,
                         },
                     )
-            except Exception as e:  # pragma: no cover - defensive startup guard
+            except Exception as e:  # noqa: BLE001 - optional DNS/metrics discovery must not block startup
                 logger.warning_json(
                     "Failed to publish ground entry point metrics",
                     extra_fields={"error": str(e)},
@@ -222,7 +222,7 @@ async def startup_event():
             poi_manager = POIManager()
             initialize_eta_service(poi_manager)
             logger.info_json("ETA service initialized successfully")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - log POI/ETA setup errors; later code still needs POIManager
             logger.warning_json(
                 "Failed to initialize ETA service",
                 extra_fields={"error": str(e)},
@@ -235,7 +235,7 @@ async def startup_event():
             # Note: metrics_export also gets POIManager but via route_manager injection below
             app.state.poi_manager = poi_manager
             logger.info_json("POIManager injected successfully")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - log POI state injection errors; APIs may still need it
             logger.warning_json(
                 "Failed to inject POIManager",
                 extra_fields={"error": str(e)},
@@ -283,7 +283,7 @@ async def startup_event():
                         flight_state.update_route_context(
                             active_route, auto_reset=False, reason="startup"
                         )
-                except Exception as sync_exc:  # pragma: no cover - defensive guard
+                except Exception as sync_exc:  # noqa: BLE001 - route sync must not block startup
                     logger.debug_json(
                         "Failed to sync flight state with active route during startup",
                         extra_fields={"error": str(sync_exc)},
@@ -326,7 +326,7 @@ async def startup_event():
                     "CommKa KMZ file not found",
                     extra_fields={"expected_path": str(commka_kmz)},
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - optional KMZ import must not block startup
             logger.warning_json(
                 "Failed to initialize CommKa coverage",
                 extra_fields={"error": str(e)},
@@ -402,7 +402,7 @@ async def shutdown_event():
         shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - log and suppress cleanup errors; later steps may be skipped
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
@@ -410,8 +410,6 @@ async def shutdown_event():
 
 async def _background_update_loop(poi_manager=None):
     """Background task that updates simulator every interval."""
-    global _coordinator, _simulation_config
-
     update_count = 0
     error_count = 0
     try:
@@ -468,7 +466,7 @@ async def _background_update_loop(poi_manager=None):
                             starlink_metrics_last_update_timestamp_seconds.set(
                                 time.time()
                             )
-                        except Exception as metric_error:
+                        except Exception as metric_error:  # noqa: BLE001 - telemetry metrics must not stop updates
                             starlink_metrics_generation_errors_total.inc()
                             logger.warning_json(
                                 "Error updating metrics",
@@ -510,7 +508,7 @@ async def _background_update_loop(poi_manager=None):
                 # Sleep for configured update interval
                 await asyncio.sleep(_simulation_config.update_interval_seconds)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - log update errors and retry after backoff
                 error_count += 1
                 logger.warning_json(
                     "Error in background update",
@@ -580,7 +578,7 @@ try:
     logger.info_json(
         "Mounted static files for satellite coverage at /data/sat_coverage"
     )
-except Exception as e:
+except Exception as e:  # noqa: BLE001 - optional static mount must not block API import
     logger.warning_json(
         "Failed to mount satellite coverage static files",
         extra_fields={"error": str(e)},
