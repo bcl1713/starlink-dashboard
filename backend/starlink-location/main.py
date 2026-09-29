@@ -222,7 +222,7 @@ async def startup_event():
             poi_manager = POIManager()
             initialize_eta_service(poi_manager)
             logger.info_json("ETA service initialized successfully")
-        except Exception as e:  # noqa: BLE001 - optional POI/ETA initialization must not block startup
+        except Exception as e:  # noqa: BLE001 - log POI/ETA setup errors; later code still needs POIManager
             logger.warning_json(
                 "Failed to initialize ETA service",
                 extra_fields={"error": str(e)},
@@ -235,7 +235,7 @@ async def startup_event():
             # Note: metrics_export also gets POIManager but via route_manager injection below
             app.state.poi_manager = poi_manager
             logger.info_json("POIManager injected successfully")
-        except Exception as e:  # noqa: BLE001 - optional POI injection must not block startup
+        except Exception as e:  # noqa: BLE001 - log POI state injection errors; APIs may still need it
             logger.warning_json(
                 "Failed to inject POIManager",
                 extra_fields={"error": str(e)},
@@ -402,7 +402,7 @@ async def shutdown_event():
         shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
-    except Exception as e:  # noqa: BLE001 - log arbitrary cleanup failures without hiding shutdown
+    except Exception as e:  # noqa: BLE001 - log and suppress cleanup errors; later steps may be skipped
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
@@ -508,7 +508,7 @@ async def _background_update_loop(poi_manager=None):
                 # Sleep for configured update interval
                 await asyncio.sleep(_simulation_config.update_interval_seconds)
 
-            except Exception as e:  # noqa: BLE001 - transient update failures require retry/backoff
+            except Exception as e:  # noqa: BLE001 - log update errors and retry after backoff
                 error_count += 1
                 logger.warning_json(
                     "Error in background update",
