@@ -317,6 +317,34 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             self.validate_workflow_text(mutated),
         )
 
+    def test_rejects_ghcr_inventory_that_exits_before_classification(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace(
+            "            python tools/github_retention_cli.py ghcr-inventory \\\n",
+            "            exit 0\n"
+            "            python tools/github_retention_cli.py ghcr-inventory \\\n",
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
+    def test_rejects_ghcr_inventory_with_commented_classifier(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow_text.replace(
+            "            python tools/github_retention_cli.py ghcr-inventory \\\n"
+            '              --versions "retention/$package-versions.json" | tee "retention/$package-ghcr-inventory.json"',
+            "            exit 0\n"
+            "            # python tools/github_retention_cli.py ghcr-inventory \\\n"
+            '            #   --versions "retention/$package-versions.json" | tee "retention/$package-ghcr-inventory.json"',
+        )
+        self.assertNotEqual(mutated, workflow_text)
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
     def test_rejects_ghcr_inventory_with_extra_mutation(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated = workflow_text.replace(

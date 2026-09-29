@@ -383,7 +383,7 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
             for line in ghcr_step[ghcr_step.index("        run: |") + 1 :]
             if line.strip() and not line.lstrip().startswith("#")
         ]
-    expected_prefix = [
+    expected_commands = [
         "set -euo pipefail",
         "for package in starlink-location mission-planner prometheus grafana; do",
         expected_ghcr_query,
@@ -391,11 +391,14 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
             "jq '{versions: flatten, pagination: {complete: true}}'"
             ' > "retention/$package-versions.json"'
         ),
+        "python tools/github_retention_cli.py ghcr-inventory \\",
+        ('--versions "retention/$package-versions.json" | '
+         'tee "retention/$package-ghcr-inventory.json"'),
+        "done",
     ]
-    if (
-        ghcr_commands[:4] != expected_prefix
-        or len([line for line in ghcr_commands if "gh api " in line]) != 1
-    ):
+    # The fixed loop is a small shell contract: arbitrary commands can short-circuit
+    # classification, and an absent terminator can silently skip later packages.
+    if ghcr_commands != expected_commands:
         errors.append("GHCR inventory must query complete user package versions")
 
     upload_step = named_step_lines(workflow_text, "retention", "Upload retention plan")
