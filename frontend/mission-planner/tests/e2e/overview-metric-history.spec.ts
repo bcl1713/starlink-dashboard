@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { waitForGlobeVisualReady } from './support/globe-visual-ready';
 
@@ -40,6 +41,48 @@ function bundle(end = initial, windowSeconds = 1800) {
           max: Array.from({ length: 5 }, (_, sample) => [
             end - 25 + sample * 5,
             index + sample + 1.5,
+          ]),
+        },
+      ])
+    ),
+  };
+}
+
+function representativeBundle(end: number, windowSeconds = 1800) {
+  const times = Array.from(
+    { length: windowSeconds / 30 + 1 },
+    (_, sample) => end - windowSeconds + sample * 30
+  );
+  return {
+    window_seconds: windowSeconds,
+    start_timestamp_seconds: end - windowSeconds,
+    end_timestamp_seconds: end,
+    step_seconds: 30,
+    series: Object.fromEntries(
+      metrics.map((metric, index) => [
+        metric,
+        times.map((time, sample) => [
+          time,
+          10 + index * 8 + ((sample * (index + 3)) % 13),
+        ]),
+      ])
+    ),
+    rolling_5m: Object.fromEntries(
+      metrics.map((metric, index) => [
+        metric,
+        {
+          state: 'available',
+          min: times.map((time, sample) => [
+            time,
+            7 + index * 8 + (sample % 7),
+          ]),
+          avg: times.map((time, sample) => [
+            time,
+            11 + index * 8 + (sample % 7),
+          ]),
+          max: times.map((time, sample) => [
+            time,
+            15 + index * 8 + (sample % 7),
           ]),
         },
       ])
@@ -435,11 +478,16 @@ test.describe('Overview metric history', () => {
       'arrival',
     ];
     let selectedWindowSeconds = 1800;
-    await page.route('**/api/overview-history', (route) =>
-      route.fulfill({
-        json: bundle(Math.floor(Date.now() / 1000), selectedWindowSeconds),
-      })
-    );
+    let fulfilledHistory = 0;
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        json: representativeBundle(
+          Math.floor(Date.now() / 1000),
+          selectedWindowSeconds
+        ),
+      });
+      fulfilledHistory++;
+    });
     await page.route('**/api/overview-history/settings', (route) => {
       if (route.request().method() === 'PUT')
         selectedWindowSeconds = (
@@ -520,6 +568,38 @@ test.describe('Overview metric history', () => {
       .locator('[data-metric-panel]');
     const pois = page.getByLabel('Upcoming POIs');
     await expect(graphs.locator('.uplot')).toHaveCount(5);
+    await expect.poll(() => fulfilledHistory).toBeGreaterThan(0);
+    await expect(graphs.getByRole('status')).toHaveText(
+      Array(5).fill('History available')
+    );
+    const paintedRanges = async () =>
+      graphs.locator('.uplot canvas').evaluateAll((canvases) =>
+        canvases.map((node) => {
+          const canvas = node as HTMLCanvasElement;
+          const { width, height } = canvas;
+          const pixels = canvas
+            .getContext('2d')!
+            .getImageData(0, 0, width, height).data;
+          return [0.2, 0.5, 0.8].map((fraction) => {
+            const center = Math.floor(width * fraction);
+            for (let x = center - 5; x <= center + 5; x++)
+              for (let y = 0; y < height; y++) {
+                const offset = (y * width + x) * 4;
+                if (
+                  pixels[offset] < 170 &&
+                  pixels[offset + 1] > 175 &&
+                  pixels[offset + 2] > 185 &&
+                  pixels[offset + 3] > 0
+                )
+                  return true;
+              }
+            return false;
+          });
+        })
+      );
+    await expect
+      .poll(paintedRanges, { timeout: 10_000 })
+      .toEqual(Array.from({ length: 5 }, () => [true, true, true]));
     await expect(pois.locator('tbody tr')).toHaveCount(5);
     await expect(pois.locator('tbody tr')).toHaveText(
       names.map((name) => new RegExp(name))
@@ -539,7 +619,13 @@ test.describe('Overview metric history', () => {
     await expect(page.getByRole('button', { name: /fullscreen/i })).toHaveCount(
       0
     );
-    await page.waitForTimeout(240); // Let the shipped POI disclosure transition settle.
+    await pois.evaluate(async (node) => {
+      await Promise.all(
+        node
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished.catch(() => undefined))
+      );
+    });
     const viewport = await page.evaluate(() => ({
       width: innerWidth,
       height: innerHeight,
@@ -579,7 +665,21 @@ test.describe('Overview metric history', () => {
         const stack = document.querySelector('.overview-bottom-overlays')!;
         return {
           boxes,
+          panelScroll: [
+            ...document.querySelectorAll('[data-metric-panel]'),
+          ].map(
+            (node) =>
+              node.scrollHeight > node.clientHeight ||
+              node.scrollWidth > node.clientWidth
+          ),
           poi,
+          neighbors: [
+            '.overview-clock-panel',
+            '[aria-label="Current network metrics"]',
+            '[aria-label="Globe legend"]',
+          ].map((selector) =>
+            document.querySelector(selector)!.getBoundingClientRect().toJSON()
+          ),
           ticks,
           stackBottom: stack.getBoundingClientRect().bottom,
           rowBottoms: [
@@ -609,6 +709,16 @@ test.describe('Overview metric history', () => {
       });
     const assertLayout = (state: Awaited<ReturnType<typeof layout>>) => {
       expect(state.boxes).toHaveLength(5);
+      expect(state.panelScroll).toEqual(Array(5).fill(false));
+      for (const box of [...state.boxes, state.poi])
+        for (const neighbor of state.neighbors)
+          expect(
+            box.right <= neighbor.left ||
+              neighbor.right <= box.left ||
+              box.bottom <= neighbor.top ||
+              neighbor.bottom <= box.top,
+            `overlay collision: ${JSON.stringify({ box, neighbor })}`
+          ).toBe(true);
       expect(state.poi.width).toBeGreaterThanOrEqual(320);
       expect(state.poi.width).toBeLessThanOrEqual(520);
       for (let i = 0; i < 5; i++) {
@@ -637,7 +747,7 @@ test.describe('Overview metric history', () => {
       expect(state.poiScroll, JSON.stringify(state)).toBe(false);
       expect(state.rowBottoms).toHaveLength(5);
       for (const bottom of state.rowBottoms)
-        expect(bottom).toBeLessThanOrEqual(1080);
+        expect(bottom).toBeLessThanOrEqual(state.poi.bottom);
       for (const tick of state.ticks) {
         expect(tick.height).toBeLessThanOrEqual(18);
         for (const line of tick.lines)
@@ -650,9 +760,19 @@ test.describe('Overview metric history', () => {
       .first()
       .locator('.overview-metric-history__time-axis span:first-child')
       .textContent();
-    await page.screenshot({
+    const image = await page.screenshot({
       path: testInfo.outputPath('overview-native-fullscreen-1920x1080.png'),
     });
+    expect(image.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+    const raster = {
+      width: image.readUInt32BE(16),
+      height: image.readUInt32BE(20),
+    };
+    expect(raster).toEqual({ width: 1920, height: 1080 });
+    await writeFile(
+      testInfo.outputPath('overview-native-fullscreen-metrics.json'),
+      JSON.stringify({ viewport, raster, layout: firstLayout }, null, 2)
+    );
     await page.waitForTimeout(6_200);
     const laterLayout = await layout();
     assertLayout(laterLayout);

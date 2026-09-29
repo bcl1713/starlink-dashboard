@@ -18,4 +18,9 @@ describe('Playwright harness policy', () => {
     expect(config.use?.trace).toBe('retain-on-failure');
     expect(config.retries).toBe(0);
   });
+
+  it('runs one browser worker without fully parallel tests', () => {
+    expect(config.workers).toBe(1);
+    expect(config.fullyParallel).toBe(false);
+  });
 });
