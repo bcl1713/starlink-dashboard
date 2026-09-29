@@ -34,8 +34,25 @@ export function OverviewMetricHistoryPanel({
   selectedWindowSeconds,
   nowMs,
 }: Props) {
-  const validHistory =
+  const accepted = useRef<{
+    windowSeconds: number;
+    history: OverviewHistoryBundle | undefined;
+  }>({ windowSeconds: selectedWindowSeconds, history: undefined });
+  if (accepted.current.windowSeconds !== selectedWindowSeconds)
+    accepted.current = {
+      windowSeconds: selectedWindowSeconds,
+      history: undefined,
+    };
+  const incomingHistory =
     history?.window_seconds === selectedWindowSeconds ? history : undefined;
+  if (
+    incomingHistory &&
+    (!accepted.current.history ||
+      incomingHistory.end_timestamp_seconds >=
+        accepted.current.history.end_timestamp_seconds)
+  )
+    accepted.current.history = incomingHistory;
+  const validHistory = incomingHistory ? accepted.current.history : undefined;
   const projection = validHistory
     ? projectMetricHistory(validHistory, descriptor, nowMs)
     : undefined;
@@ -48,12 +65,35 @@ export function OverviewMetricHistoryPanel({
   const [hidden, setHidden] = useState(
     () => typeof document !== 'undefined' && document.hidden
   );
-  const wallAnchor = useRef({ nowMs, wallMs: Date.now() });
-  // Re-anchor the supplied clock on prop updates; timers do not invent samples.
-  if (wallAnchor.current.nowMs !== nowMs)
-    wallAnchor.current = { nowMs, wallMs: Date.now() };
-  const currentSeconds =
-    (nowMs + Math.max(0, Date.now() - wallAnchor.current.wallMs)) / 1000;
+  const wallAnchor = useRef({
+    windowSeconds: selectedWindowSeconds,
+    nowMs,
+    wallMs: Date.now(),
+    effectiveMs: nowMs,
+  });
+  const wallMs = Date.now();
+  // Both clocks may regress independently. Advance only within this window;
+  // a selected-window change is the sole reset of the display timeline.
+  if (wallAnchor.current.windowSeconds !== selectedWindowSeconds)
+    wallAnchor.current = {
+      windowSeconds: selectedWindowSeconds,
+      nowMs,
+      wallMs,
+      effectiveMs: nowMs,
+    };
+  const effectiveMs = Math.max(
+    wallAnchor.current.effectiveMs,
+    wallAnchor.current.nowMs + Math.max(0, wallMs - wallAnchor.current.wallMs)
+  );
+  if (nowMs > effectiveMs)
+    wallAnchor.current = {
+      windowSeconds: selectedWindowSeconds,
+      nowMs,
+      wallMs,
+      effectiveMs: nowMs,
+    };
+  else wallAnchor.current.effectiveMs = effectiveMs;
+  const currentSeconds = wallAnchor.current.effectiveMs / 1000;
   const elapsed = validHistory
     ? currentSeconds - validHistory.end_timestamp_seconds
     : 0;

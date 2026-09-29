@@ -136,6 +136,47 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.destroy).toHaveBeenCalledTimes(1);
     expect(observer.disconnect).toHaveBeenCalledTimes(1);
   });
+  it('keeps UTC ticks aligned with the canvas when nowMs reverses', () => {
+    vi.setSystemTime(125_000);
+    const history = bundle(120);
+    const view = render(panel(history, false, 125_000));
+    const right = () =>
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent;
+    const surface = () =>
+      view.container.querySelector(
+        '.overview-metric-history__surface'
+      ) as HTMLElement;
+    expect(right()).toBe('00:01:57 UTC');
+    const transform = surface().style.transform;
+    vi.setSystemTime(121_000);
+    view.rerender(panel(history, false, 121_000));
+    expect(right()).toBe('00:01:57 UTC');
+    expect(surface().style.transform).toBe(transform);
+    expect(plot.create.mock.calls[0][0].scales.x.range).toEqual([82.5, 127.5]);
+    expect(plot.setScale).not.toHaveBeenCalled();
+  });
+  it('ignores an older same-window bundle then accepts a newer recovery', () => {
+    const view = render(panel(bundle(120), false, 125_000));
+    const right = () =>
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent;
+    const surface = () =>
+      view.container.querySelector(
+        '.overview-metric-history__surface'
+      ) as HTMLElement;
+    const transform = surface().style.transform;
+    view.rerender(panel(bundle(115), false, 125_000));
+    expect(right()).toBe('00:01:57 UTC');
+    expect(surface().style.transform).toBe(transform);
+    expect(plot.setData).not.toHaveBeenCalled();
+    view.rerender(panel(bundle(130), false, 130_000));
+    expect(right()).toBe('00:02:02 UTC');
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    expect(plot.setScale).toHaveBeenCalledWith('x', { min: 92.5, max: 137.5 });
+  });
   it('resizes the existing plot without remounting', () => {
     render(panel());
     measuredWidth = 500;
