@@ -75,12 +75,24 @@ git fetch --no-tags origin \
   "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
 SHA=$(git rev-parse "origin/$BRANCH^{commit}")
 git checkout --detach "$SHA"
+test "$REF" = "refs/heads/$BRANCH" || exit 1
+test "$(git rev-parse HEAD)" = "$SHA" || exit 1
+test "$(git rev-parse "refs/remotes/origin/$BRANCH^{commit}")" = "$SHA" || exit 1
+# The final wrapper resolves the named ref locally, not origin/$BRANCH.
+# Refuse a pre-existing local ref rather than silently moving it.
+if git show-ref --verify --quiet "$REF"; then
+  test "$(git rev-parse "$REF^{commit}")" = "$SHA" || exit 1
+else
+  git update-ref "$REF" "$SHA" "0000000000000000000000000000000000000000" || exit 1
+fi
+test "$(git rev-parse "$REF^{commit}")" = "$SHA" || exit 1
 test -f "$CONTRACT" || exit 1
 printf 'HEAD=%s\nREMOTE=%s\nREF=%s\n' \
   "$(git rev-parse HEAD)" "$(git rev-parse "origin/$BRANCH^{commit}")" "$REF"
 ```
 
-**Stop** unless `HEAD` and `REMOTE` are the same full 40-character SHA. Preserve
+**Stop** unless `HEAD`, `REMOTE`, and the local named `REF` are the same full
+40-character SHA. Preserve
 that printed SHA as `SHA`; the runner requires lowercase full SHA and named ref.
 Record the commit's signed/reviewed identity according to local release policy.
 
@@ -271,6 +283,7 @@ only at `<health-evidence-root>/<sha>/fingerprint.json`; do not use a
 HEALTH_ATTEMPT_ID="health-$SHA-$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
 HEALTH_TASK_ROOT=$HOST_STATE/tasks/health/$SHA-$HEALTH_ATTEMPT_ID
 mkdir -p "$HEALTH_TASK_ROOT"
+test ! -e "$HEALTH_EVIDENCE_ROOT/$SHA" || exit 1
 ./tools/run-acceptance-platform.sh \
   --lane health \
   --sha "$SHA" \
@@ -279,7 +292,7 @@ mkdir -p "$HEALTH_TASK_ROOT"
   --contract "$CONTRACT" \
   --acceptance-task "$HEALTH_ATTEMPT_ID" \
   --evidence-root "$HEALTH_EVIDENCE_ROOT" \
-  --task-root "$HEALTH_TASK_ROOT"
+  --task-root "$HEALTH_TASK_ROOT" || exit 1
 
 HEALTH_FINGERPRINT=$HEALTH_EVIDENCE_ROOT/$SHA/fingerprint.json
 PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 - \
@@ -307,6 +320,7 @@ starts contract checks. It has its own evidence and task roots.
 STATIC_ATTEMPT_ID="static-$SHA-$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
 STATIC_TASK_ROOT=$HOST_STATE/tasks/static/$SHA-$STATIC_ATTEMPT_ID
 mkdir -p "$STATIC_TASK_ROOT"
+test ! -e "$STATIC_EVIDENCE_ROOT/candidates/$SHA" || exit 1
 ./tools/run-acceptance-platform.sh \
   --lane static \
   --sha "$SHA" \
@@ -316,20 +330,27 @@ mkdir -p "$STATIC_TASK_ROOT"
   --acceptance-task "$STATIC_ATTEMPT_ID" \
   --fingerprint "$HEALTH_FINGERPRINT" \
   --evidence-root "$STATIC_EVIDENCE_ROOT" \
-  --task-root "$STATIC_TASK_ROOT"
+  --task-root "$STATIC_TASK_ROOT" || exit 1
 
 STATIC_CANDIDATE_ROOT=$STATIC_EVIDENCE_ROOT/candidates/$SHA
 PYTHONPATH="$PWD/tools${PYTHONPATH:+:$PYTHONPATH}" python3 - \
-  "$STATIC_CANDIDATE_ROOT" "$SHA" "$REF" <<'PY'
-import json, sys
+  "$STATIC_CANDIDATE_ROOT" "$SHA" "$REF" "$HEALTH_FINGERPRINT" <<'PY'
+import hashlib, json, sys
 from pathlib import Path
-from acceptance.platform.evidence import read_nofollow, verify_manifest
-candidate = Path(sys.argv[1]); sha, ref = sys.argv[2:]
+from acceptance.platform.evidence import read_fingerprint_authority, read_nofollow, verify_manifest
+candidate = Path(sys.argv[1]); sha, ref, health_path = sys.argv[2:]
 verify_manifest(candidate)
-manifest = json.loads(read_nofollow(candidate / "runner-manifest.json"))
+runner_manifest = read_nofollow(candidate / "runner-manifest.json")
+manifest = json.loads(runner_manifest)
 if (manifest.get("lane"), manifest.get("outcome"), manifest.get("final_acceptance"),
     manifest.get("sha"), manifest.get("ref")) != ("static", "passed", False, sha, ref):
     raise SystemExit("sealed static runner manifest does not match this candidate")
+
+expected = {"sha": sha, "ref": ref,
+    "health_fingerprint_sha256": hashlib.sha256(read_nofollow(Path(health_path))).hexdigest(),
+    "runner_manifest_sha256": hashlib.sha256(runner_manifest).hexdigest()}
+if json.loads(read_fingerprint_authority(candidate)) != expected:
+    raise SystemExit("candidate fingerprint envelope does not bind this static run")
 print("sealed passed static authority verified")
 PY
 ```
