@@ -1,11 +1,19 @@
 import apiClient from './api-client';
 export type OverviewHistorySample = [number, number];
+export interface OverviewHistoryRollup {
+  state: 'available' | 'unavailable';
+  min: OverviewHistorySample[];
+  avg: OverviewHistorySample[];
+  max: OverviewHistorySample[];
+}
 export interface OverviewHistoryBundle {
   window_seconds: number;
   start_timestamp_seconds: number;
   end_timestamp_seconds: number;
   step_seconds: number;
   series: Record<string, OverviewHistorySample[]>;
+  /** Optional for previously cached responses; absence means aggregates unavailable. */
+  rolling_5m?: Record<string, OverviewHistoryRollup>;
 }
 
 export interface OverviewHistorySettings {
