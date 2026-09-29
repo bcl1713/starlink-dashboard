@@ -1,5 +1,18 @@
 import re
+import shlex
+import subprocess
+import sys
+import json
+import hashlib
+import os
+import shutil
 from pathlib import Path
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from acceptance.platform.runner import _parse
+from acceptance.platform.evidence import write_artifacts, seal_fingerprint
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DOC = PROJECT_ROOT / "docs/operations/acceptance-platform.md"
@@ -7,6 +20,209 @@ EXTERNAL_HOST_DOC = PROJECT_ROOT / "docs/operations/external-host-final-acceptan
 V2_DOC = PROJECT_ROOT / "docs/missions/v2-mission-retirement-acceptance.md"
 MISSION_INDEX = PROJECT_ROOT / "docs/missions/README.md"
 V2_CONTRACT = PROJECT_ROOT / "tools/acceptance/contracts/v2-mission-retirement.toml"
+
+def _bash_block(section: str) -> str:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    return text[text.index(section):].split("```bash", 1)[1].split("```", 1)[0]
+
+def _git(repo: Path, *args: str) -> str:
+    return subprocess.check_output(["git", "-C", str(repo), *args], text=True).strip()
+
+def test_checkout_creates_local_ref_required_by_final_wrapper(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    subprocess.run(["git", "init", "-q", str(source)], check=True)
+    _git(source, "config", "user.email", "fixture@example.org")
+    _git(source, "config", "user.name", "Fixture")
+    (source / "tools/acceptance/contracts").mkdir(parents=True)
+    (source / "tools/acceptance/contracts/v2-mission-retirement.toml").write_text("fixture")
+    _git(source, "add", ".")
+    _git(source, "commit", "-qm", "fixture")
+    _git(source, "branch", "feat/v2-mission-retirement")
+    checkout_root = tmp_path / "checkouts"
+    checkout_root.mkdir()
+    script = _bash_block("## 1. Obtain a fresh")
+    script = script.replace("https://github.com/bcl1713/starlink-dashboard.git", str(source))
+    result = subprocess.run(["bash", "-e", "-c", script], cwd=tmp_path, text=True,
+        capture_output=True, env={**os.environ, "BRANCH": "feat/v2-mission-retirement",
+            "REF": "refs/heads/feat/v2-mission-retirement", "CHECKOUT_ROOT": str(checkout_root),
+            "CONTRACT": "tools/acceptance/contracts/v2-mission-retirement.toml"})
+    assert result.returncode == 0, result.stderr
+    checkout = checkout_root / "v2-mission-retirement"
+    sha = _git(checkout, "rev-parse", "HEAD")
+    assert _git(checkout, "rev-parse", "refs/heads/feat/v2-mission-retirement") == sha
+    assert subprocess.run(["git", "-C", str(checkout), "symbolic-ref", "-q", "HEAD"],
+        capture_output=True).returncode != 0
+
+def test_final_example_reaches_wrapper_maintenance_only_with_local_ref(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    (repo / "tools").mkdir(parents=True)
+    shutil.copy2(PROJECT_ROOT / "tools/run-acceptance-platform.sh", repo / "tools")
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    _git(repo, "config", "user.email", "fixture@example.org")
+    _git(repo, "config", "user.name", "Fixture")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "fixture")
+    sha = _git(repo, "rev-parse", "HEAD")
+    fakebin = tmp_path / "bin"
+    fakebin.mkdir()
+    python = fakebin / "python3"
+    python.write_text('#!/bin/sh\nprintf "%s\\n" "$*" > "$MARKER"\nexit 43\n')
+    python.chmod(0o755)
+    marker = tmp_path / "maintenance-called"
+    args = _lane_example("## 8. Run exactly one final lane")
+    replacements = {"$SHA": sha, "$REF": "refs/heads/example", "$PROFILE": "profile",
+        "$CONTRACT": "contract", "$HEALTH_FINGERPRINT": "health", "$FINAL_EVIDENCE_ROOT": str(tmp_path),
+        "$RUNNER_CHECKOUT_ROOT": str(tmp_path), "$FINAL_ATTEMPT_ID": "final-test",
+        "$FINAL_TASK_ROOT": str(tmp_path / "task"), "$FINAL_LEDGER_ROOT": str(tmp_path)}
+    args = [replacements.get(arg, arg) for arg in args]
+    env = {**os.environ, "PATH": f"{fakebin}:{os.environ['PATH']}", "MARKER": str(marker)}
+    command = [str(repo / "tools/run-acceptance-platform.sh"), *args]
+    missing = subprocess.run(command, cwd=repo, env=env, capture_output=True, text=True)
+    assert missing.returncode == 2 and not marker.exists(), missing.stderr
+    _git(repo, "update-ref", "refs/heads/example", sha)
+    reached = subprocess.run(command, cwd=repo, env=env, capture_output=True, text=True)
+    assert reached.returncode == 43, reached.stderr
+    assert "retention" in marker.read_text()
+
+@pytest.mark.parametrize("tamper", [None, "sha", "ref", "health_fingerprint_sha256", "runner_manifest_sha256"])
+def test_static_readback_binds_candidate_envelope(tmp_path: Path, tamper: str | None) -> None:
+    sha = "a" * 40
+    candidate = tmp_path / "candidates" / sha
+    candidate.parent.mkdir()
+    runner = json.dumps({"lane": "static", "outcome": "passed", "final_acceptance": False,
+        "sha": sha, "ref": "refs/heads/example"}).encode()
+    write_artifacts(candidate, {"runner-manifest.json": runner})
+    health = tmp_path / "health.json"
+    health.write_bytes(b"health fingerprint")
+    envelope = {"sha": sha, "ref": "refs/heads/example",
+        "health_fingerprint_sha256": hashlib.sha256(health.read_bytes()).hexdigest(),
+        "runner_manifest_sha256": hashlib.sha256(runner).hexdigest()}
+    if tamper:
+        envelope[tamper] = "b" * 40
+    seal_fingerprint(candidate, json.dumps(envelope).encode())
+    block = _bash_block("## 7. Run the tracked static lane")
+    probe = block.split("<<'PY'\n", 1)[1].split("\nPY", 1)[0]
+    result = subprocess.run([sys.executable, "-c", probe, str(candidate), sha,
+        "refs/heads/example", str(health)], cwd=PROJECT_ROOT,
+        env={**os.environ, "PYTHONPATH": str(PROJECT_ROOT / "tools")}, capture_output=True, text=True)
+    if tamper:
+        assert result.returncode != 0, result.stdout
+        assert "candidate fingerprint envelope" in result.stderr
+    else:
+        assert result.returncode == 0, result.stderr
+
+def test_health_and_static_commands_stop_before_stale_readback() -> None:
+    for section, boundary in (("## 6. Certify health", "## 7. Run"),
+                              ("## 7. Run the tracked static lane", "## 8. Run")):
+        text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+        part = text[text.index(section):text.index(boundary)]
+        block = part.split("```bash", 1)[1].split("```", 1)[0]
+        # Exercise the exact lane command/control flow, replacing only its external runner.
+        before_readback = block.split("PYTHONPATH=", 1)[0]
+        before_readback = before_readback.replace("./tools/run-acceptance-platform.sh", "false")
+        before_readback += "\nprintf 'STALE_READBACK_REACHED\\n'\n"
+        result = subprocess.run(["bash", "-c", before_readback], capture_output=True, text=True,
+            env={**os.environ, "SHA": "a" * 40, "REF": "refs/heads/example",
+                "HOST_STATE": "/nonexistent", "PROFILE": "/nonexistent",
+                "CONTRACT": "/nonexistent", "HEALTH_EVIDENCE_ROOT": "/nonexistent",
+                "STATIC_EVIDENCE_ROOT": "/nonexistent"})
+        assert result.returncode != 0 or "STALE_READBACK_REACHED" not in result.stdout
+
+
+def _lane_example(section: str) -> list[str]:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    block = text[text.index(section) :].split("```bash", 1)[1].split("```", 1)[0]
+    lines = block.splitlines()
+    start = next(
+        i for i, line in enumerate(lines) if "./tools/run-acceptance-platform.sh \\" in line
+    )
+    command = []
+    for line in lines[start:]:
+        command.append(line)
+        if not line.rstrip().endswith("\\"):
+            break
+    tokens = shlex.split(
+        "\n".join(command).replace("\\\n", " ").split(" 2>&1 | tee", 1)[0].split(" || exit", 1)[0]
+    )
+    return tokens[tokens.index("./tools/run-acceptance-platform.sh") + 1 :]
+
+
+def test_external_host_lane_examples_parse_with_real_runner_cli() -> None:
+    sha = "a" * 40
+    ids = []
+    for section, lane in (
+        ("## 6. Certify health", "health"),
+        ("## 7. Run the tracked static lane", "static"),
+        ("## 8. Run exactly one final lane", "final"),
+    ):
+        args = _lane_example(section)
+        text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+        if lane != "final":
+            identity = f"${lane.upper()}_ATTEMPT_ID"
+            assert args[args.index("--acceptance-task") + 1] == identity
+            assert f'{lane.upper()}_ATTEMPT_ID="{lane}-$SHA-' in text
+        if lane == "final":
+            wrapper_only = {"--state-root", "--policy", "--checkout-root"}
+            args = [
+                item
+                for index, item in enumerate(args)
+                if item not in wrapper_only
+                and (index == 0 or args[index - 1] not in wrapper_only)
+            ]
+        substitutions = {
+            "$SHA": sha,
+            "$REF": "refs/heads/example",
+            "$PROFILE": "/srv/task/profiles/approved.toml",
+            "$CONTRACT": str(V2_CONTRACT),
+            "$HEALTH_EVIDENCE_ROOT": "/srv/task/evidence/health",
+            "$STATIC_EVIDENCE_ROOT": "/srv/task/evidence/static",
+            "$FINAL_EVIDENCE_ROOT": "/srv/task/evidence/final",
+            "$HEALTH_TASK_ROOT": "/srv/task/tasks/health",
+            "$STATIC_TASK_ROOT": "/srv/task/tasks/static",
+            "$FINAL_TASK_ROOT": "/srv/task/tasks/final",
+            "$FINAL_LEDGER_ROOT": "/srv/task/ledgers/final",
+            "$HEALTH_FINGERPRINT": "/srv/task/evidence/health/" + sha + "/fingerprint.json",
+            "$HEALTH_ATTEMPT_ID": "health-" + sha,
+            "$STATIC_ATTEMPT_ID": "static-" + sha,
+            "$FINAL_ATTEMPT_ID": "final-" + sha,
+        }
+        args = [substitutions.get(arg, arg) for arg in args]
+        parsed = _parse(args)
+        assert parsed.lane.value == lane
+        assert parsed.sha == sha
+        assert parsed.ref == "refs/heads/example"
+        assert parsed.contract_path == V2_CONTRACT
+        assert parsed.fingerprint == Path(substitutions["$HEALTH_FINGERPRINT"])
+        ids.append(parsed.task_id)
+    assert len(set(ids)) == len(ids)
+
+
+def test_external_host_preflights_task_owned_python_and_writable_roots() -> None:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    before_static = text[: text.index("## 5. Run static")]
+    for required in (
+        "uv venv",
+        "uv pip install",
+        "pytest",
+        "PyYAML",
+        "export PATH=",
+        "import pytest, yaml, acceptance.platform.runner",
+        "test -w",
+        "CHECKOUT_ROOT",
+    ):
+        assert required in before_static
+    assert "CHECKOUT_ROOT=$HOST_STATE/checkouts" not in text
+
+
+def test_external_host_verifies_static_candidate_authority_separately() -> None:
+    text = EXTERNAL_HOST_DOC.read_text(encoding="utf-8")
+    static = text[text.index("## 7. Run the tracked static lane") : text.index("## 8. Run exactly one final lane")]
+    assert "STATIC_CANDIDATE_ROOT=$STATIC_EVIDENCE_ROOT/candidates/$SHA" in static
+    assert "verify_manifest(candidate)" in static
+    assert 'candidate / "runner-manifest.json"' in static
+    for claim in ('"lane"', '"outcome"', '"final_acceptance"', '"sha"', '"ref"'):
+        assert claim in static
 
 
 def _relative_markdown_targets(path: Path) -> list[Path]:
