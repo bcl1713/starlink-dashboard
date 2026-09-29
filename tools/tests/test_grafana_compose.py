@@ -1,5 +1,9 @@
 import re
+import sys
 from pathlib import Path
+
+import pytest
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -15,10 +19,39 @@ EXPECTED_INSTALL = (
 
 
 def test_grafana_synchronously_installs_pinned_infinity_datasource() -> None:
-    compose = COMPOSE_PATH.read_text(encoding="utf-8")
+    compose = yaml.safe_load(COMPOSE_PATH.read_text(encoding="utf-8"))
+    environment = compose["services"]["grafana"]["environment"]
 
-    assert EXPECTED_INSTALL in compose
-    assert "GF_PLUGINS_PREINSTALL" not in compose
+    assert EXPECTED_INSTALL in environment
+    assert not any(entry.split("=", 1)[0] == "GF_PLUGINS_PREINSTALL" for entry in environment)
+
+
+@pytest.mark.parametrize(
+    "plugin_entry",
+    [
+        "      - GF_INSTALL_PLUGINS=grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1\n",
+        "      - GF_INSTALL_PLUGINS=grafana-clock-panel,yesoreyeram-infinity-datasource\n"
+        "        3.11.1\n",
+    ],
+    ids=["single-line", "wrapped"],
+)
+def test_grafana_plugin_contract_is_independent_of_yaml_line_wrapping(
+    plugin_entry: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    compose_path = tmp_path / "docker-compose.yml"
+    compose_path.write_text(
+        "services:\n"
+        "  other:\n"
+        "    environment:\n"
+        "      - GF_PLUGINS_PREINSTALL=unrelated\n"
+        "  grafana:\n"
+        "    environment:\n"
+        f"{plugin_entry}",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys.modules[__name__], "COMPOSE_PATH", compose_path)
+
+    test_grafana_synchronously_installs_pinned_infinity_datasource()
 
 
 def test_grafana_infinity_datasource_has_stable_proxy_uid() -> None:
