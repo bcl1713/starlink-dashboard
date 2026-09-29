@@ -282,7 +282,17 @@ artifact. GHCR inventory is report-only: never delete GHCR versions from this
 maintenance procedure or from the publish workflow. GHCR `updated_at` is a
 mutable ordering timestamp, not authoritative publish completion; until an
 authoritative field exists every SHA-only version remains retained and the
-inventory reports that authority gap as an anomaly.
+inventory reports that authority gap as an anomaly. The publish retention job
+queries the GitHub **user** packages API for each actual package name
+`starlink-dashboard/<image>` (URL-encoded as `starlink-dashboard%2F<image>`),
+reads all version pages, and makes no GHCR mutations. Its token is the workflow
+`GITHUB_TOKEN` with job-scoped `packages: read`; a successful local `gh api`
+request using an operator's credentials does not prove that token can access the
+package. The known `updated_at` authority-gap anomaly remains in each JSON
+inventory but, by itself, does not fail the inventory CLI or stop later images
+from being inventoried. Any other anomaly exits nonzero; malformed or
+incompletely paginated input exits with a JSON error. Investigate a failed
+inventory job rather than deleting GHCR versions or masking its exit status.
 
 **External-host final authority.** When Oracle lacks the required Linux host
 capacity, use the

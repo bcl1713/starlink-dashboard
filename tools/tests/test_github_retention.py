@@ -162,7 +162,7 @@ def test_cli_emits_report_only_json_inventory(tmp_path: Path) -> None:
         text=True,
     )
 
-    assert completed.returncode == 1
+    assert completed.returncode == 0
     assert json.loads(completed.stdout) == {
         "anomalies": ["GHCR updated_at is not authoritative publish completion time"],
         "non_sha_versions": ["latest"],
@@ -175,7 +175,9 @@ def test_cli_returns_nonzero_when_ghcr_inventory_contains_anomalies(
     tmp_path: Path,
 ) -> None:
     versions = package_versions_fixture()
-    versions["versions"][0].pop("updated_at")
+    records = versions["versions"]
+    assert isinstance(records, list)
+    records.append(records[0].copy())
     versions_path = tmp_path / "versions.json"
     versions_path.write_text(json.dumps(versions), encoding="utf-8")
 
@@ -194,5 +196,6 @@ def test_cli_returns_nonzero_when_ghcr_inventory_contains_anomalies(
 
     assert completed.returncode == 1
     assert json.loads(completed.stdout)["anomalies"] == [
-        "GHCR updated_at is not authoritative publish completion time"
+        "duplicate GHCR version id: 1",
+        "GHCR updated_at is not authoritative publish completion time",
     ]

@@ -123,7 +123,7 @@ jobs:
         run: |
           set -euo pipefail
           for package in starlink-location mission-planner prometheus grafana; do
-            gh api --paginate --slurp "orgs/${{ github.repository_owner }}/packages/container/$package/versions?per_page=100" |
+            gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/container/starlink-dashboard%2F$package/versions?per_page=100" |
               jq '{versions: flatten, pagination: {complete: true}}' > "retention/$package-versions.json"
             python tools/github_retention_cli.py ghcr-inventory \
               --versions "retention/$package-versions.json" | tee "retention/$package-ghcr-inventory.json"

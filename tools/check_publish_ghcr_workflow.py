@@ -371,6 +371,18 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
         or "gh api --method" in ghcr_text
     ):
         errors.append("GHCR inventory step must be report-only")
+    expected_ghcr_query = (
+        'gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/'
+        'container/starlink-dashboard%2F$package/versions?per_page=100"'
+    )
+    if (
+        expected_ghcr_query not in ghcr_text
+        or "for package in starlink-location mission-planner prometheus grafana; do"
+        not in ghcr_text
+        or "jq '{versions: flatten, pagination: {complete: true}}'" not in ghcr_text
+        or len([line for line in ghcr_step if "gh api " in line]) != 1
+    ):
+        errors.append("GHCR inventory must query complete user package versions")
 
     upload_step = named_step_lines(workflow_text, "retention", "Upload retention plan")
     upload_text = "\n".join(upload_step)

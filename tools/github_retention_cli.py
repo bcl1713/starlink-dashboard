@@ -55,6 +55,7 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    inventory_anomalies: tuple[str, ...] = ()
     try:
         arguments = _parser().parse_args(argv)
         if arguments.command == "select-artifacts":
@@ -77,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
             }
         else:
             inventory = inventory_ghcr_versions(_json_object(arguments.versions))
+            inventory_anomalies = inventory.anomalies
             output = {
                 "old_sha_versions": [
                     {"version_id": version.version_id, "tags": list(version.tags)}
@@ -93,7 +95,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": str(error)}, sort_keys=True))
         return 2
     print(json.dumps(output, sort_keys=True))
-    if arguments.command == "ghcr-inventory" and output["anomalies"]:
+    if any(
+        anomaly != "GHCR updated_at is not authoritative publish completion time"
+        for anomaly in inventory_anomalies
+    ):
         return 1
     return 0
 
