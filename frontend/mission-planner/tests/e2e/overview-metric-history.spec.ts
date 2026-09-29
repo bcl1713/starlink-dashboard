@@ -55,6 +55,7 @@ test.describe('Overview metric history', () => {
     test.setTimeout(120_000);
     const start = Math.floor(Date.now() / 1000);
     let requests = 0;
+    let completed = 0;
     const observed: [number, number][] = Array.from(
       { length: 25 },
       (_, index) => [start - 125 + index * 5, index === 19 ? 90 : 10]
@@ -82,12 +83,15 @@ test.describe('Overview metric history', () => {
     await page.route('**/api/active-x-link', (route) =>
       route.fulfill({ json: { satellite_id: null } })
     );
-    await page.route('**/api/overview-history', (route) => {
+    await page.route('**/api/overview-history', async (route) => {
       const poll = requests++;
+      // A request starts before its response can update the painted chart.
+      if (poll === 1)
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
       if (poll > 0 && poll <= 3)
         observed.push([start + (poll - 1) * 5, 10 + poll * 10]);
       const end = start + poll * 5;
-      return route.fulfill({
+      await route.fulfill({
         json: {
           window_seconds: 300,
           start_timestamp_seconds: end - 300,
@@ -104,89 +108,78 @@ test.describe('Overview metric history', () => {
           },
         },
       });
+      completed++;
     });
     await page.goto('/overview', { waitUntil: 'commit' });
     const panel = page.getByRole('region', { name: 'Network latency history' });
     const canvas = panel.locator('.uplot canvas').first();
-    await expect(canvas).toBeVisible();
+    await expect(canvas).toBeVisible({ timeout: 20_000 });
     for (let poll = 0; poll <= 3; poll++) {
-      await expect
-        .poll(() => requests, { timeout: 10_000 })
-        .toBeGreaterThan(poll);
       const end = start + poll * 5;
-      const expectedSpike = await canvas.evaluate(
-        (node, { end, spike }) => {
-          const el = node as HTMLCanvasElement;
-          const surface = el.closest('.overview-metric-history__surface')!;
-          const offset = new DOMMatrix(getComputedStyle(surface).transform).m41;
-          const image = el
-            .getContext('2d')!
-            .getImageData(0, 0, el.width, el.height);
-          const dpr = el.width / el.getBoundingClientRect().width;
-          // The cyan observed peak alone reaches the top fifth of this plot.
-          const painted: number[] = [];
-          for (let y = 1; y < el.height / 5; y++)
-            for (let x = 0; x < el.width; x++) {
-              const i = (y * el.width + x) * 4;
-              if (
-                image.data[i] < 170 &&
-                image.data[i + 1] > 175 &&
-                image.data[i + 2] > 185 &&
-                image.data[i + 3] > 0
-              )
-                painted.push(x / dpr + offset);
-            }
-          const expected =
-            ((spike - (end - 307.5)) / 315) * el.getBoundingClientRect().width +
-            offset;
-          return { painted, expected };
-        },
-        { end, spike: start - 30 }
-      );
-      expect(
-        expectedSpike.painted.length,
-        `poll ${poll}: observed peak is painted`
-      ).toBeGreaterThan(0);
-      const nearest = expectedSpike.painted.reduce((best, x) =>
-        Math.abs(x - expectedSpike.expected) <
-        Math.abs(best - expectedSpike.expected)
-          ? x
-          : best
-      );
-      expect(
-        Math.abs(nearest - expectedSpike.expected),
-        `poll ${poll}: fixed timestamp stays at its rebased canvas coordinate`
-      ).toBeLessThan(4);
-      if (poll > 0) {
-        const fresh = await canvas.evaluate(
-          (node, { end, time, value }) => {
-            const el = node as HTMLCanvasElement;
-            const pixels = el
-              .getContext('2d')!
-              .getImageData(0, 0, el.width, el.height);
-            const x = Math.round(((time - (end - 307.5)) / 315) * el.width);
-            const y = Math.round((1 - value / 99) * el.height);
-            for (let dy = -4; dy <= 4; dy++)
-              for (let dx = -4; dx <= 4; dx++) {
-                const i = ((y + dy) * el.width + x + dx) * 4;
-                if (
-                  pixels.data[i] < 170 &&
-                  pixels.data[i + 1] > 175 &&
-                  pixels.data[i + 2] > 185 &&
-                  pixels.data[i + 3] > 0
-                )
-                  return true;
+      // The response and uPlot's queued canvas commit are separate events.
+      // Keep both real-pixel oracles inside one bounded, per-bundle wait.
+      await expect
+        .poll(
+          async () => {
+            if (completed <= poll) return { spike: false, fresh: false };
+            return canvas.evaluate(
+              (node, { end, spike, time, value, freshRequired }) => {
+                const el = node as HTMLCanvasElement;
+                const image = el
+                  .getContext('2d')!
+                  .getImageData(0, 0, el.width, el.height);
+                const isCyan = (x: number, y: number) => {
+                  if (x < 0 || x >= el.width || y < 0 || y >= el.height)
+                    return false;
+                  const i = (y * el.width + x) * 4;
+                  return (
+                    image.data[i] < 170 &&
+                    image.data[i + 1] > 175 &&
+                    image.data[i + 2] > 185 &&
+                    image.data[i + 3] > 0
+                  );
+                };
+                const dpr = el.width / el.getBoundingClientRect().width;
+                const expected = ((spike - (end - 307.5)) / 315) * el.width;
+                let spikePainted = false;
+                // The cyan observed peak alone reaches the top fifth.
+                for (let y = 1; y < el.height / 5 && !spikePainted; y++)
+                  for (let x = 0; x < el.width; x++)
+                    if (isCyan(x, y) && Math.abs(x - expected) / dpr < 4) {
+                      spikePainted = true;
+                      break;
+                    }
+                if (!freshRequired) return { spike: spikePainted, fresh: true };
+                // upper = ceil(peak * 1.1) = 100 for this fixture.
+                const upper = Math.ceil(90 * 1.1);
+                const x = Math.round(((time - (end - 307.5)) / 315) * el.width);
+                const y = Math.round((1 - value / upper) * el.height);
+                let freshPainted = false;
+                for (let dy = -4; dy <= 4 && !freshPainted; dy++)
+                  for (let dx = -4; dx <= 4; dx++)
+                    if (isCyan(x + dx, y + dy)) {
+                      freshPainted = true;
+                      break;
+                    }
+                return { spike: spikePainted, fresh: freshPainted };
+              },
+              {
+                end,
+                spike: start - 30,
+                time: start + (poll - 1) * 5,
+                value: 10 + poll * 10,
+                freshRequired: poll > 0,
               }
-            return false;
+            );
           },
-          { end, time: start + (poll - 1) * 5, value: 10 + poll * 10 }
-        );
-        expect(
-          fresh,
-          `poll ${poll}: arriving observed value is painted at its timestamp`
-        ).toBe(true);
-      }
+          {
+            timeout: 30_000,
+            message: `poll ${poll}: fulfilled bundle has rebased spike and arriving observed pixel`,
+          }
+        )
+        .toEqual({ spike: true, fresh: true });
     }
+    expect(completed).toBe(4);
   });
   test('marks all five charts unavailable on the first failed fetch, then recovers', async ({
     page,
@@ -350,11 +343,20 @@ test.describe('Overview metric history', () => {
       surface.evaluate(
         (node) => new DOMMatrix(getComputedStyle(node).transform).m41
       );
-    const initialOffset = await left();
     const before = await axis.textContent();
+    // A poll rebases the transform to zero; compare only within one bundle.
     await expect
-      .poll(() => left(), { timeout: 8_000 })
-      .toBeLessThan(initialOffset);
+      .poll(
+        async () => {
+          const bundleRequests = requests;
+          const first = await left();
+          await page.waitForTimeout(500);
+          const second = await left();
+          return requests === bundleRequests && second < first - 0.005;
+        },
+        { timeout: 12_000 }
+      )
+      .toBe(true);
     await expect
       .poll(() => axis.textContent(), { timeout: 8_000 })
       .not.toBe(before);
