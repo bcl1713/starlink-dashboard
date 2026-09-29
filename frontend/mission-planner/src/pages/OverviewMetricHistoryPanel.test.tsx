@@ -157,6 +157,37 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.create.mock.calls[0][0].scales.x.range).toEqual([82.5, 127.5]);
     expect(plot.setScale).not.toHaveBeenCalled();
   });
+  it('advances fixed UTC ticks with the continuing CSS transition after both clocks rewind', () => {
+    vi.setSystemTime(125_000);
+    const history = bundle(120);
+    const view = render(panel(history, false, 125_000));
+    const right = () =>
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent;
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    const start = Number(
+      surface.style.transform.match(/translate3d\(([-\d.]+)px/)?.[1]
+    );
+    expect(start).toBeCloseTo(-400 * (5 / 30));
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('transform 2.5s linear');
+    vi.setSystemTime(121_000);
+    view.rerender(panel(history, false, 121_000));
+    act(() => vi.advanceTimersByTime(2_000));
+    // jsdom has no compositor. At 2/2.5 of the linear transition, its
+    // interpolated offset is -400 * (7/30); the fixed tick must name that edge.
+    const interpolatedOffset =
+      start +
+      ((Number(surface.style.transform.match(/translate3d\(([-\d.]+)px/)?.[1]) -
+        start) *
+        2) /
+        2.5;
+    expect(interpolatedOffset).toBeCloseTo(-400 * (7 / 30));
+    expect(right()).toBe('00:01:59 UTC');
+  });
   it('ignores an older same-window bundle then accepts a newer recovery', () => {
     const view = render(panel(bundle(120), false, 125_000));
     const right = () =>
@@ -224,6 +255,29 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(
       view.container.querySelector('.overview-metric-history__surface canvas')
     ).toBeNull();
+  });
+  it('accepts a valid bundle for a newly selected window', () => {
+    const view = render(panel(bundle(120), false, 125_000));
+    const next = { ...bundle(100), window_seconds: 60 };
+    view.rerender(
+      <OverviewMetricHistoryPanel
+        descriptor={descriptor}
+        history={next}
+        error={false}
+        selectedWindowSeconds={60}
+        nowMs={100_000}
+      />
+    );
+    expect(screen.queryByText('Waiting for history')).toBeNull();
+    expect(plot.setScale).toHaveBeenCalledWith('x', {
+      min: 32.5,
+      max: 107.5,
+    });
+    expect(
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent
+    ).toBe('00:01:32 UTC');
   });
   it('keeps numeric value and UTC time ticks outside the translated surface', () => {
     const view = render(panel());

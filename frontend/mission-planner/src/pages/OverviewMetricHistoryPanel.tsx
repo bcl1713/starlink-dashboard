@@ -65,35 +65,37 @@ export function OverviewMetricHistoryPanel({
   const [hidden, setHidden] = useState(
     () => typeof document !== 'undefined' && document.hidden
   );
-  const wallAnchor = useRef({
+  const clockAnchor = useRef({
     windowSeconds: selectedWindowSeconds,
     nowMs,
-    wallMs: Date.now(),
+    monotonicMs: performance.now(),
     effectiveMs: nowMs,
   });
-  const wallMs = Date.now();
-  // Both clocks may regress independently. Advance only within this window;
-  // a selected-window change is the sole reset of the display timeline.
-  if (wallAnchor.current.windowSeconds !== selectedWindowSeconds)
-    wallAnchor.current = {
+  const monotonicMs = performance.now();
+  // CSS transitions and performance.now() share the browser's monotonic time
+  // domain. A wall-clock or nowMs rewind cannot stall the ticks while the
+  // compositor continues; only a selected-window change resets the timeline.
+  if (clockAnchor.current.windowSeconds !== selectedWindowSeconds)
+    clockAnchor.current = {
       windowSeconds: selectedWindowSeconds,
       nowMs,
-      wallMs,
+      monotonicMs,
       effectiveMs: nowMs,
     };
   const effectiveMs = Math.max(
-    wallAnchor.current.effectiveMs,
-    wallAnchor.current.nowMs + Math.max(0, wallMs - wallAnchor.current.wallMs)
+    clockAnchor.current.effectiveMs,
+    clockAnchor.current.nowMs +
+      Math.max(0, monotonicMs - clockAnchor.current.monotonicMs)
   );
   if (nowMs > effectiveMs)
-    wallAnchor.current = {
+    clockAnchor.current = {
       windowSeconds: selectedWindowSeconds,
       nowMs,
-      wallMs,
+      monotonicMs,
       effectiveMs: nowMs,
     };
-  else wallAnchor.current.effectiveMs = effectiveMs;
-  const currentSeconds = wallAnchor.current.effectiveMs / 1000;
+  else clockAnchor.current.effectiveMs = effectiveMs;
+  const currentSeconds = clockAnchor.current.effectiveMs / 1000;
   const elapsed = validHistory
     ? currentSeconds - validHistory.end_timestamp_seconds
     : 0;
