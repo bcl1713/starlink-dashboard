@@ -17,6 +17,19 @@ from app.services.overview_history_prometheus import (
     query_overview_history_bundle,
     resolve_overview_history_prometheus_url,
 )
+from app.services.overview_history_rollups import ROLLUP_METRICS
+
+
+def matrix(*entries):
+    return {"status": "success", "data": {"resultType": "matrix", "result": list(entries)}}
+
+
+def raw_entry(metric, values):
+    return {"metric": {"__name__": metric}, "values": values}
+
+
+def rollup_entry(values):
+    return {"metric": {}, "values": values}
 
 
 def test_plans_one_second_samples_for_the_default_thirty_minute_window():
@@ -241,6 +254,8 @@ def test_rejects_a_successful_non_matrix_prometheus_response():
 async def test_queries_and_projects_one_bounded_overview_history_bundle():
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/v1/query_range"
+        if not request.url.params["query"].startswith("{__name__"):
+            return httpx.Response(200, json=matrix())
         return httpx.Response(
             200,
             json={
@@ -279,6 +294,10 @@ async def test_queries_and_projects_one_bounded_overview_history_bundle():
             "starlink_dish_longitude_degrees": [
                 [1782000000.0, -95.9345],
             ],
+        },
+        "rolling_5m": {
+            metric: {"state": "available", "min": [], "avg": [], "max": []}
+            for metric in ROLLUP_METRICS
         },
     }
 
@@ -346,6 +365,8 @@ async def test_reader_uses_the_selected_window_and_current_time_for_one_bundle()
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
+        if not request.url.params["query"].startswith("{__name__"):
+            return httpx.Response(200, json=matrix())
         return httpx.Response(
             200,
             json={
@@ -386,8 +407,12 @@ async def test_reader_uses_the_selected_window_and_current_time_for_one_bundle()
                 [1782000000.0, 41.2566],
             ],
         },
+        "rolling_5m": {
+            metric: {"state": "available", "min": [], "avg": [], "max": []}
+            for metric in ROLLUP_METRICS
+        },
     }
-    assert len(requests) == 1
+    assert len(requests) == 16
     assert dict(requests[0].url.params) == {
         "query": build_overview_history_promql(
             plan_overview_history_query(
@@ -399,3 +424,146 @@ async def test_reader_uses_the_selected_window_and_current_time_for_one_bundle()
         "end": "1782000000",
         "step": "1",
     }
+
+
+@pytest.mark.asyncio
+async def test_bundle_preserves_raw_trail_and_exposes_five_rolling_traces():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        if request.url.params["query"].startswith("{__name__"):
+            return httpx.Response(200, json=matrix(
+                raw_entry("starlink_dish_latitude_degrees", [[1782000000, "41.2566"]]),
+                raw_entry("starlink_dish_longitude_degrees", [[1782000000, "-95.9345"]]),
+            ))
+        return httpx.Response(200, json=matrix(rollup_entry([[1782000000, "24.0"]])))
+
+    async with httpx.AsyncClient(base_url="http://prometheus:9090",
+                                 transport=httpx.MockTransport(handler)) as client:
+        bundle = await query_overview_history_bundle(
+            client, end_timestamp_seconds=1782000000, window_seconds=1800
+        )
+    assert bundle["series"] == {
+        "starlink_dish_latitude_degrees": [[1782000000.0, 41.2566]],
+        "starlink_dish_longitude_degrees": [[1782000000.0, -95.9345]],
+    }
+    assert bundle["rolling_5m"]["starlink_network_latency_ms_current"]["min"] == [[1782000000.0, 24.0]]
+    assert bundle["step_seconds"] == plan_overview_history_query(
+        end_timestamp_seconds=1782000000, window_seconds=1800
+    ).step_seconds
+    assert len(requests) == 16
+
+
+@pytest.mark.asyncio
+async def test_custom_window_bounds_all_raw_and_aggregate_traces_in_one_plan():
+    plan = plan_overview_history_query(end_timestamp_seconds=1782000000, window_seconds=86400)
+    requests = []
+    raw_values = [[plan.start_timestamp_seconds + i * plan.step_seconds, "1"]
+                  for i in range(2000)]
+    raw_values += [[plan.end_timestamp_seconds, "9"], [plan.start_timestamp_seconds, "8"]]
+
+    def handler(request):
+        requests.append(request)
+        if request.url.params["query"].startswith("{__name__"):
+            return httpx.Response(200, json=matrix(*(
+                raw_entry(metric, raw_values) for metric in OVERVIEW_HISTORY_METRICS
+            ), raw_entry("starlink_dish_latitude_degrees", [[plan.end_timestamp_seconds, "777"]])))
+        return httpx.Response(200, json=matrix(rollup_entry(raw_values)))
+
+    async with httpx.AsyncClient(base_url="http://prometheus:9090",
+                                 transport=httpx.MockTransport(handler)) as client:
+        bundle = await query_overview_history_bundle(
+            client, end_timestamp_seconds=1782000000, window_seconds=86400
+        )
+    assert len(requests) == 16
+    assert all({key: request.url.params[key] for key in ("start", "end", "step")} == {
+        "start": str(plan.start_timestamp_seconds), "end": str(plan.end_timestamp_seconds),
+        "step": str(plan.step_seconds),
+    } for request in requests)
+    traces = list(bundle["series"].values()) + [
+        entry[stat] for entry in bundle["rolling_5m"].values()
+        for stat in ("min", "avg", "max")
+    ]
+    assert len(bundle["series"]) == 11
+    assert len(traces) == 26
+    assert all(len(trace) <= MAX_OVERVIEW_HISTORY_SAMPLES for trace in traces)
+    assert sum(map(len, traces)) <= 46_826
+    assert all(len({sample[0] for sample in trace}) == len(trace) for trace in traces)
+    assert all(plan.start_timestamp_seconds <= sample[0] <= plan.end_timestamp_seconds
+               for trace in traces for sample in trace)
+    assert bundle["series"]["starlink_dish_latitude_degrees"][0] == [float(plan.start_timestamp_seconds), 1.0]
+
+
+@pytest.mark.asyncio
+async def test_one_aggregate_error_preserves_raw_coordinates_and_isolates_its_metric():
+    def handler(request):
+        query = request.url.params["query"]
+        if query.startswith("{__name__"):
+            return httpx.Response(200, json=matrix(
+                raw_entry("starlink_dish_latitude_degrees", [[1782000000, "41.2566"]]),
+                raw_entry("starlink_dish_longitude_degrees", [[1782000000, "-95.9345"]]),
+            ))
+        if query == "min_over_time(starlink_network_latency_ms_current[5m])":
+            return httpx.Response(503)
+        return httpx.Response(200, json=matrix(rollup_entry([[1782000000, "24"]])))
+
+    async with httpx.AsyncClient(base_url="http://prometheus:9090",
+                                 transport=httpx.MockTransport(handler)) as client:
+        bundle = await query_overview_history_bundle(
+            client, end_timestamp_seconds=1782000000, window_seconds=1800
+        )
+    assert bundle["series"] == {
+        "starlink_dish_latitude_degrees": [[1782000000.0, 41.2566]],
+        "starlink_dish_longitude_degrees": [[1782000000.0, -95.9345]],
+    }
+    assert bundle["rolling_5m"]["starlink_network_latency_ms_current"] == {
+        "state": "unavailable", "min": [], "avg": [], "max": [],
+    }
+    assert all(bundle["rolling_5m"][metric]["state"] == "available"
+               for metric in ROLLUP_METRICS if metric != "starlink_network_latency_ms_current")
+
+
+@pytest.mark.asyncio
+async def test_raw_http_error_propagates_without_querying_aggregates():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(503)
+
+    async with httpx.AsyncClient(base_url="http://prometheus:9090",
+                                 transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            await query_overview_history_bundle(
+                client, end_timestamp_seconds=1782000000, window_seconds=1800
+            )
+    assert len(requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_reader_coalesces_identical_reads_through_aggregate_queries():
+    requests = []
+    aggregate_started = asyncio.Event()
+    release_aggregate = asyncio.Event()
+
+    async def handler(request):
+        requests.append(request)
+        if request.url.params["query"].startswith("{__name__"):
+            return httpx.Response(200, json=matrix())
+        aggregate_started.set()
+        await release_aggregate.wait()
+        return httpx.Response(200, json=matrix())
+
+    async with httpx.AsyncClient(base_url="http://prometheus:9090",
+                                 transport=httpx.MockTransport(handler)) as client:
+        reader = OverviewHistoryReader(client, get_window_seconds=lambda: 1800,
+                                       time_source=lambda: 1782000000.5)
+        first = asyncio.create_task(reader.read())
+        await aggregate_started.wait()
+        second = asyncio.create_task(reader.read())
+        await asyncio.sleep(0)
+        release_aggregate.set()
+        a, b = await asyncio.gather(first, second)
+    assert a is b
+    assert len(requests) == 16
