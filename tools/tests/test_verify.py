@@ -83,16 +83,43 @@ def test_static_prettier_uses_root_relative_frontend_source_glob():
 
 def test_all_stops_at_first_failed_child_and_preserves_status(monkeypatch):
     module = load_verify()
-    calls = []
+    base = module.os.environ["ACCEPTANCE_POLICY_BASE_SHA"]
+    git_calls = []
+    child_calls = []
 
-    def fake_run(command, cwd, check):
-        calls.append((command, cwd))
+    def fake_run(command, cwd, check, **kwargs):
+        if command[0] == "git":
+            git_calls.append((command, cwd, check, kwargs))
+            return types.SimpleNamespace(returncode=0, stdout="")
+        assert kwargs == {}
+        assert check is False
+        child_calls.append((command, cwd))
         return types.SimpleNamespace(returncode=17)
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
 
     assert module.main(["tools/verify", "all"]) == 17
-    assert calls == [module.tier_commands("static")[0]]
+    assert git_calls == [
+        (
+            ["git", "cat-file", "-e", f"{base}^{{commit}}"],
+            module.ROOT,
+            False,
+            {"capture_output": True},
+        ),
+        (
+            ["git", "merge-base", "--is-ancestor", base, "HEAD"],
+            module.ROOT,
+            False,
+            {"capture_output": True},
+        ),
+        (
+            ["git", "diff", "--unified=0", f"{base}..HEAD"],
+            module.ROOT,
+            True,
+            {"capture_output": True, "text": True},
+        ),
+    ]
+    assert child_calls == [module.tier_commands("static")[0]]
 
 
 def test_backend_tier_dispatches_from_nested_caller_directory():
@@ -103,16 +130,43 @@ def test_backend_tier_dispatches_from_nested_caller_directory():
 
 def test_all_dispatches_static_backend_and_frontend_in_order(monkeypatch):
     module = load_verify()
-    calls = []
+    base = module.os.environ["ACCEPTANCE_POLICY_BASE_SHA"]
+    git_calls = []
+    child_calls = []
 
-    def fake_run(command, cwd, check):
-        calls.append((command, cwd))
+    def fake_run(command, cwd, check, **kwargs):
+        if command[0] == "git":
+            git_calls.append((command, cwd, check, kwargs))
+            return types.SimpleNamespace(returncode=0, stdout="")
+        assert kwargs == {}
+        assert check is False
+        child_calls.append((command, cwd))
         return types.SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
 
     assert module.main(["tools/verify", "all"]) == 0
-    assert calls == [
+    assert git_calls == [
+        (
+            ["git", "cat-file", "-e", f"{base}^{{commit}}"],
+            module.ROOT,
+            False,
+            {"capture_output": True},
+        ),
+        (
+            ["git", "merge-base", "--is-ancestor", base, "HEAD"],
+            module.ROOT,
+            False,
+            {"capture_output": True},
+        ),
+        (
+            ["git", "diff", "--unified=0", f"{base}..HEAD"],
+            module.ROOT,
+            True,
+            {"capture_output": True, "text": True},
+        ),
+    ]
+    assert child_calls == [
         *module.tier_commands("static"),
         *module.tier_commands("backend"),
         *module.tier_commands("frontend"),
