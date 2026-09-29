@@ -49,6 +49,42 @@ function bundle(end = initial, windowSeconds = 1800) {
 
 test.describe('Overview metric history', () => {
   test.use({ viewport: { width: 1920, height: 1080 } });
+  test('marks all five charts unavailable on the first failed fetch, then recovers', async ({
+    page,
+  }) => {
+    let fail = true;
+    let windowSeconds = 1800;
+    await page.route('**/api/overview-history/settings', (route) => {
+      if (route.request().method() === 'PUT')
+        windowSeconds = (
+          route.request().postDataJSON() as { window_seconds: number }
+        ).window_seconds;
+      return route.fulfill({ json: { window_seconds: windowSeconds } });
+    });
+    await page.route('**/api/overview-history', (route) =>
+      fail
+        ? route.fulfill({ status: 503, json: { detail: 'unavailable' } })
+        : route.fulfill({
+            json: bundle(Math.floor(Date.now() / 1000), windowSeconds),
+          })
+    );
+    await page.goto('/overview', { waitUntil: 'commit' });
+    const panels = page
+      .getByLabel('Overview metric history')
+      .locator('[data-metric-panel]');
+    await expect(panels).toHaveCount(5);
+    await expect(panels.getByRole('status')).toHaveText(
+      Array(5).fill('History unavailable')
+    );
+    await expect(panels.locator('.uplot')).toHaveCount(0);
+    fail = false;
+    await page.getByLabel('Aircraft history window').selectOption('900');
+    await expect(panels.getByRole('status')).toHaveText(
+      Array(5).fill('History available'),
+      { timeout: 10_000 }
+    );
+    await expect(panels.locator('.uplot')).toHaveCount(5);
+  });
   test('fits five shared-query plots above POIs while preserving globe and legend', async ({
     page,
   }, testInfo) => {

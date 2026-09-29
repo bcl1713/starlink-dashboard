@@ -234,6 +234,16 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setSize).toHaveBeenCalled();
     expect(plot.create).toHaveBeenCalledTimes(1);
   });
+  it('marks an initial failed fetch unavailable without claiming last-known data', () => {
+    const view = render(panel(null, true));
+    expect(screen.getByRole('status').textContent).toBe('History unavailable');
+    expect(screen.getByRole('img').getAttribute('aria-label')).toContain(
+      'History unavailable'
+    );
+    expect(plot.create).not.toHaveBeenCalled();
+    view.rerender(panel(bundle(), false));
+    expect(screen.getByRole('status').textContent).toBe('History available');
+  });
   it('announces empty, unavailable aggregates and last-known fetch failure', () => {
     const view = render(panel(null));
     expect(screen.getByText(/waiting for history/i)).not.toBeNull();
@@ -248,6 +258,26 @@ describe('OverviewMetricHistoryPanel', () => {
     view.rerender(panel(bundle(120), false, 140_000));
     expect(screen.getByText(/waiting for fresh history/i)).not.toBeNull();
   });
+  it('marks old-only metric samples stale even when the query bundle is fresh', () => {
+    const old = bundle(120);
+    old.series[descriptor.metric] = [[95, 0]];
+    old.rolling_5m![descriptor.metric] = {
+      state: 'available',
+      min: [[105, 0]],
+      avg: [[105, 0]],
+      max: [[105, 0]],
+    };
+    const view = render(panel(old));
+    expect(screen.getByRole('status').textContent).toBe(
+      'Waiting for fresh history'
+    );
+    expect(plot.create.mock.calls[0][1][0]).toEqual([95, 100, 105]);
+    expect(plot.create.mock.calls[0][1][1]).toEqual([0, null, null]);
+    const fresh = bundle(125);
+    fresh.series[descriptor.metric] = [[125, 0]];
+    view.rerender(panel(fresh, false, 125_000));
+    expect(screen.getByRole('status').textContent).toBe('History available');
+  });
   it('stops at the real sample edge on missed polls and resumes only on fresh data', () => {
     const view = render(panel());
     act(() => vi.advanceTimersByTime(10_000));
@@ -257,6 +287,27 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(surface.style.transform).toContain('translate3d(-100px');
     expect(screen.getByText(/waiting for fresh history/i)).not.toBeNull();
     expect(plot.setData).not.toHaveBeenCalled();
+  });
+  it('keeps unavailable aggregate and empty states ahead of sample staleness', () => {
+    const missing = bundle();
+    missing.series[descriptor.metric] = [[90, 0]];
+    delete missing.rolling_5m;
+    const view = render(panel(missing));
+    expect(screen.getByRole('status').textContent).toBe(
+      'Five-minute aggregates unavailable'
+    );
+    const empty = bundle();
+    empty.series[descriptor.metric] = [];
+    empty.rolling_5m![descriptor.metric] = {
+      state: 'available',
+      min: [],
+      avg: [],
+      max: [],
+    };
+    view.rerender(panel(empty));
+    expect(screen.getByRole('status').textContent).toBe(
+      'Waiting for history samples'
+    );
   });
   it('invalidates an old chart when the selected window changes', () => {
     const view = render(panel());
@@ -274,6 +325,20 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(
       view.container.querySelector('.overview-metric-history__surface canvas')
     ).toBeNull();
+  });
+  it('does not present a previous window as last-known after a failed new-window fetch', () => {
+    const view = render(panel());
+    view.rerender(
+      <OverviewMetricHistoryPanel
+        descriptor={descriptor}
+        history={bundle()}
+        error={true}
+        selectedWindowSeconds={60}
+        nowMs={120_000}
+      />
+    );
+    expect(screen.getByRole('status').textContent).toBe('History unavailable');
+    expect(plot.destroy).toHaveBeenCalledTimes(1);
   });
   it('accepts a valid bundle for a newly selected window', () => {
     const view = render(panel(bundle(120), false, 125_000));

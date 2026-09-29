@@ -104,10 +104,16 @@ export function OverviewMetricHistoryPanel({
       frozen.current = { key: freezeKey, elapsed };
   } else frozen.current = null;
   const motionElapsed = frozen.current?.elapsed ?? elapsed;
+  // The bundle can be current while this metric's last real sample is old.
+  // Projected times end in a real observed/rollup sample, never a gap marker.
+  const sampleEnd = projection?.times.at(-1);
   const exhausted =
     !!validHistory &&
     (elapsed >= BUFFER_SECONDS ||
-      nowMs / 1000 - validHistory.end_timestamp_seconds >= BUFFER_SECONDS);
+      nowMs / 1000 - validHistory.end_timestamp_seconds >= BUFFER_SECONDS ||
+      (sampleEnd !== undefined &&
+        (currentSeconds - sampleEnd >= BUFFER_SECONDS ||
+          nowMs / 1000 - sampleEnd >= BUFFER_SECONDS)));
   const windowSeconds = selectedWindowSeconds > 0 ? selectedWindowSeconds : 1;
   const overscanWidth = Math.max(
     1,
@@ -242,7 +248,9 @@ export function OverviewMetricHistoryPanel({
   }, [validHistory, descriptor, width, hidden, error, selectedWindowSeconds]);
 
   const status = !validHistory
-    ? 'Waiting for history'
+    ? error
+      ? 'History unavailable'
+      : 'Waiting for history'
     : error
       ? 'Last-known history; refresh unavailable'
       : projection?.state === 'unavailable'
