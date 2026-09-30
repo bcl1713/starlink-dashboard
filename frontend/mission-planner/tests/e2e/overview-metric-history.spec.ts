@@ -1217,6 +1217,10 @@ test.describe('painted four-series motion fixture', () => {
           ) {
             end = start + ++refreshes * cadence;
             renderPanel(history(end));
+            // uPlot queues its raster commit in a microtask. Drain it before
+            // reading pixels: the old bitmap + new transform inside this same
+            // JS task is never a composited browser frame.
+            await new Promise<void>((resolve) => queueMicrotask(resolve));
           }
           const canvas = section.querySelector('canvas')!;
           const rect = canvas.getBoundingClientRect();
