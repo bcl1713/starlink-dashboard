@@ -343,23 +343,42 @@
   :root:fullscreen .overview-metric-history {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    padding: 0.25rem 0.625rem;
+    padding: 0.125rem 0.625rem;
+    column-gap: 0.25rem;
   }
 
   :root:fullscreen .overview-metric-history__header {
+    grid-area: 1 / 1;
     justify-content: flex-start;
+    line-height: 1.2;
   }
 
-  :root:fullscreen .overview-metric-history__status {
-    margin: 0;
+  :root:fullscreen .overview-metric-history__latest {
+    grid-area: 1 / 2;
+    line-height: 1.2;
     text-align: right;
   }
 
-  :root:fullscreen .overview-metric-history__age,
-  :root:fullscreen .overview-metric-history__status,
-  :root:fullscreen .overview-metric-history__chart,
+  :root:fullscreen .overview-metric-history__age {
+    grid-area: 2 / 1;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  :root:fullscreen .overview-metric-history__status {
+    grid-area: 2 / 2;
+    margin: 0;
+    line-height: 1.2;
+    text-align: right;
+  }
+
+  :root:fullscreen .overview-metric-history__chart {
+    grid-area: 3 / 1 / auto / -1;
+  }
+
   :root:fullscreen .overview-metric-history__time-axis {
-    grid-column: 1 / -1;
+    grid-area: 4 / 1 / auto / -1;
+    line-height: 1.2;
   }
 
   :root:fullscreen .overview-metric-history__value-axis,

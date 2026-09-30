@@ -243,7 +243,7 @@ test.describe('Globe overview', () => {
       ['Downlink throughput', '125.3 Mbps'],
       ['Uplink throughput', '25.1 Mbps'],
       ['Packet loss', '0.5 %'],
-      ['Obstruction', '15 %'],
+      ['Dish obstruction', '15 %'],
     ]) {
       const panel = page.getByLabel(`${label} history`, { exact: true });
       await expect(panel).toBeVisible();
