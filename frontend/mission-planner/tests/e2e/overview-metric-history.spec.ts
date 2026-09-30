@@ -1334,6 +1334,20 @@ test.describe('painted four-series motion fixture', () => {
       expect(new Set(result.samples.map(({ end }) => end)).size).toBe(3);
       for (const sample of result.samples)
         expect(sample.positions.every(Number.isFinite)).toBe(true);
+      for (const end of new Set(result.samples.map((sample) => sample.end))) {
+        const frames = result.samples.filter((sample) => sample.end === end);
+        const first = frames[0],
+          last = frames.at(-1)!;
+        expect(last.t - first.t).toBeGreaterThan(200);
+        for (let trace = 0; trace < 4; trace++)
+          expect(
+            Math.abs(
+              last.positions[trace] -
+                first.positions[trace] +
+                ((last.t - first.t) * 400) / 60000
+            )
+          ).toBeLessThanOrEqual(1);
+      }
       for (let i = 1; i < result.samples.length; i++) {
         const previous = result.samples[i - 1],
           current = result.samples[i];

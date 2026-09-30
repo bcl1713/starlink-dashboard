@@ -350,6 +350,16 @@ test.describe('Overview metric history', () => {
       }
     };
     const firstLayout = await layout();
+    // Preserve visual evidence even when the unchanged fit contract fails.
+    await page.screenshot({
+      path: testInfo.outputPath(
+        'overview-fullscreen-fit-diagnostic-1920x1080.png'
+      ),
+    });
+    await writeFile(
+      testInfo.outputPath('overview-fullscreen-fit-diagnostic.json'),
+      JSON.stringify(firstLayout, null, 2)
+    );
     assertLayout(firstLayout);
     const firstUtcTick = await graphs
       .first()
