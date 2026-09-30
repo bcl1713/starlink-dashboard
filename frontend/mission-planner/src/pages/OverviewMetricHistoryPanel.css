@@ -78,6 +78,11 @@
   display: flex;
   justify-content: space-between;
   gap: 0.25rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.overview-metric-history__time-axis span {
+  white-space: nowrap;
 }
 /* Override Overview's full-viewport canvas rule only for this plot surface. */
 .overview-page .overview-metric-history canvas {

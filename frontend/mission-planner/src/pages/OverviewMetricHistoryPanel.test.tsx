@@ -154,8 +154,11 @@ describe('OverviewMetricHistoryPanel', () => {
     view.rerender(panel(history, false, 121_000));
     expect(right()).toBe('00:01:57 UTC');
     expect(surface().style.transform).toBe(transform);
-    expect(plot.create.mock.calls[0][0].scales.x.range).toEqual([82.5, 127.5]);
-    expect(plot.setScale).not.toHaveBeenCalled();
+    expect(plot.setScale).toHaveBeenCalledTimes(2);
+    expect(plot.setScale).toHaveBeenCalledWith('x', {
+      min: 82.5,
+      max: 127.5,
+    });
   });
   it('advances fixed UTC ticks with the continuing CSS transition after both clocks rewind', () => {
     vi.setSystemTime(125_000);

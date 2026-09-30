@@ -364,6 +364,120 @@
   line-height: 2.5rem;
 }
 
+@media (min-width: 70.001rem) and (min-height: 67.5rem) {
+  :root:fullscreen .overview-bottom-overlays {
+    top: 8.75rem;
+    bottom: 1rem;
+    width: min(29rem, calc(100% - 2rem));
+  }
+
+  :root:fullscreen .overview-left-stack {
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  :root:fullscreen .overview-metric-history-panels {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+
+  :root:fullscreen .overview-metric-history {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.25rem 0.625rem;
+  }
+
+  :root:fullscreen .overview-metric-history__header {
+    justify-content: flex-start;
+  }
+
+  :root:fullscreen .overview-metric-history__status {
+    margin: 0;
+    text-align: right;
+  }
+
+  :root:fullscreen .overview-metric-history__legend,
+  :root:fullscreen .overview-metric-history__chart,
+  :root:fullscreen .overview-metric-history__time-axis {
+    grid-column: 1 / -1;
+  }
+
+  :root:fullscreen .overview-metric-history__value-axis,
+  :root:fullscreen .overview-metric-history__viewport {
+    height: 56px;
+  }
+
+  :root:fullscreen .upcoming-pois {
+    padding: 0.5rem 0.625rem;
+  }
+
+  :root:fullscreen .upcoming-pois__body {
+    margin-top: 0.375rem;
+  }
+
+  :root:fullscreen .upcoming-pois th:nth-child(3),
+  :root:fullscreen .upcoming-pois td:nth-child(3) {
+    width: 7rem;
+  }
+
+  :root:fullscreen .upcoming-pois th:last-child,
+  :root:fullscreen .upcoming-pois td:last-child {
+    width: 11rem;
+  }
+}
+
+/* Native fullscreen between the compact-fit and ordinary short-screen ranges
+   needs document scrolling; do not shrink the five-row POI table to fit. */
+@media (min-width: 70.001rem) and (min-height: 60.001rem) and (max-height: 67.499rem) {
+  :root:fullscreen .overview-page {
+    overflow-y: auto;
+  }
+
+  :root:fullscreen .overview-page canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  :root:fullscreen .overview-page .overview-metric-history canvas {
+    position: static;
+  }
+
+  :root:fullscreen .overview-metrics {
+    justify-self: end;
+  }
+
+  :root:fullscreen .overview-left-stack {
+    height: auto;
+  }
+
+  :root:fullscreen .overview-metric-history-panels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :root:fullscreen .globe-legend,
+  :root:fullscreen .overview-top-overlays,
+  :root:fullscreen .overview-bottom-overlays {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    margin: 1rem;
+  }
+
+  :root:fullscreen .globe-legend {
+    width: min(20rem, calc(100% - 2rem));
+    margin-left: auto;
+  }
+
+  :root:fullscreen .overview-top-overlays {
+    width: auto;
+  }
+
+  :root:fullscreen .overview-bottom-overlays {
+    width: min(45rem, calc(100% - 2rem));
+  }
+}
+
 @media (max-width: 70rem), (max-height: 60rem) {
   .overview-metrics {
     justify-self: start;

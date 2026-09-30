@@ -4,13 +4,16 @@ import 'uplot/dist/uPlot.min.css';
 import type { OverviewHistoryBundle } from '../services/overview-history';
 import { motionOffsetPixels } from './overview-metric-motion';
 import {
+  retainMetricHistory,
+  type RetainedMetricHistory,
+} from './overview-metric-retention';
+import {
   projectMetricHistory,
   type OverviewMetricGraphDescriptor,
 } from './overview-metric-history';
 import './OverviewMetricHistoryPanel.css';
 
 const BUFFER_SECONDS = 7.5;
-const HEIGHT = 80;
 const TRACES = [
   { label: 'Observed', stroke: '#67e8f9' },
   { label: 'Low (5m)', stroke: '#a78bfa' },
@@ -37,30 +40,44 @@ export function OverviewMetricHistoryPanel({
   const accepted = useRef<{
     windowSeconds: number;
     history: OverviewHistoryBundle | undefined;
-  }>({ windowSeconds: selectedWindowSeconds, history: undefined });
+    chart: RetainedMetricHistory | undefined;
+  }>({
+    windowSeconds: selectedWindowSeconds,
+    history: undefined,
+    chart: undefined,
+  });
   if (accepted.current.windowSeconds !== selectedWindowSeconds)
     accepted.current = {
       windowSeconds: selectedWindowSeconds,
       history: undefined,
+      chart: undefined,
     };
   const incomingHistory =
     history?.window_seconds === selectedWindowSeconds ? history : undefined;
   if (
     incomingHistory &&
+    incomingHistory !== accepted.current.history &&
     (!accepted.current.history ||
       incomingHistory.end_timestamp_seconds >=
         accepted.current.history.end_timestamp_seconds)
-  )
+  ) {
+    accepted.current.chart = retainMetricHistory(
+      accepted.current.chart,
+      incomingHistory,
+      descriptor
+    );
     accepted.current.history = incomingHistory;
+  }
   const validHistory = incomingHistory ? accepted.current.history : undefined;
   const projection = validHistory
-    ? projectMetricHistory(validHistory, descriptor, nowMs)
+    ? projectMetricHistory(accepted.current.chart!.bundle, descriptor, nowMs)
     : undefined;
   const viewport = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
   const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(80);
   const [tick, setTick] = useState(0);
   const [hidden, setHidden] = useState(
     () => typeof document !== 'undefined' && document.hidden
@@ -158,7 +175,10 @@ export function OverviewMetricHistoryPanel({
   useEffect(() => {
     const node = viewport.current;
     if (!node) return;
-    const measure = () => setWidth(Math.max(0, node.clientWidth));
+    const measure = () => {
+      setWidth(Math.max(0, node.clientWidth));
+      setHeight(Math.max(1, node.clientHeight));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
@@ -206,13 +226,15 @@ export function OverviewMetricHistoryPanel({
       plot.current = new uPlot(
         {
           width: overscanWidth,
-          height: HEIGHT,
+          height,
           padding: [0, 0, 0, 0],
           axes: [{ show: false }, { show: false }],
           legend: { show: false },
           cursor: { show: false },
           scales: {
-            x: { time: true, range: [domain.min, domain.max] },
+            // An array range is a permanent clamp in uPlot. Use a dynamic
+            // range so subsequent setScale calls can rebase every new bundle.
+            x: { time: true, range: (_plot, min, max) => [min, max] },
             y: { range: [0, upper] },
           },
           series: [
@@ -228,11 +250,11 @@ export function OverviewMetricHistoryPanel({
         host.current
       );
     } else {
-      plot.current.setSize({ width: overscanWidth, height: HEIGHT });
+      plot.current.setSize({ width: overscanWidth, height });
       plot.current.setData(data);
-      plot.current.setScale('x', domain);
-      plot.current.setScale('y', { min: 0, max: upper });
     }
+    plot.current.setScale('x', domain);
+    plot.current.setScale('y', { min: 0, max: upper });
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
     const remaining = Math.max(0, BUFFER_SECONDS - Math.max(0, motionElapsed));
@@ -245,7 +267,15 @@ export function OverviewMetricHistoryPanel({
     return () => window.clearTimeout(timer);
     // Deliberately exclude the status tick: CSS owns intermediate frames.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [validHistory, descriptor, width, hidden, error, selectedWindowSeconds]);
+  }, [
+    validHistory,
+    descriptor,
+    width,
+    height,
+    hidden,
+    error,
+    selectedWindowSeconds,
+  ]);
 
   const status = !validHistory
     ? error

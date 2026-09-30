@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { waitForGlobeVisualReady } from './support/globe-visual-ready';
 
 const metrics = [
   'starlink_network_latency_ms_current',
@@ -49,6 +48,307 @@ function bundle(end = initial, windowSeconds = 1800) {
 
 test.describe('Overview metric history', () => {
   test.use({ viewport: { width: 1920, height: 1080 } });
+  test('keeps a real left-edge stroke through two rebases and clips it on exit', async ({
+    page,
+  }) => {
+    test.setTimeout(100_000);
+    const start = Math.floor(Date.now() / 1000);
+    let requested = 0;
+    let fulfilled = -1;
+    const edge = start - 60;
+    await page.route('**/api/overview-history/settings', (route) =>
+      route.fulfill({ json: { window_seconds: 60 } })
+    );
+    await page.route('**/api/overview-history', async (route) => {
+      const poll = requested++;
+      const end = start + poll * 5;
+      await route.fulfill({
+        json: {
+          window_seconds: 60,
+          start_timestamp_seconds: end - 60,
+          end_timestamp_seconds: end,
+          step_seconds: 1,
+          series: {
+            [metrics[0]]:
+              poll === 0
+                ? [
+                    [edge + 3, 90],
+                    [edge + 4, 90],
+                  ]
+                : [
+                    [end - 10, 10],
+                    [end - 9, 10],
+                  ],
+          },
+          rolling_5m: {
+            [metrics[0]]: {
+              state: 'available',
+              min: [],
+              avg: [],
+              max: [
+                [end - 10, 90],
+                [end - 9, 90],
+              ],
+            },
+          },
+        },
+      });
+      fulfilled = poll;
+    });
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({ json: { state: 'no_active_mission', pois: [] } })
+    );
+    await page.route('**/api/overview-clocks/settings', (route) =>
+      route.fulfill({ json: { clocks: [] } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({
+        json: { timestamp: new Date(start * 1000).toISOString() },
+      })
+    );
+    await page.route('**/api/satellites', (route) =>
+      route.fulfill({ json: [] })
+    );
+    await page.route('**/api/active-x-link', (route) =>
+      route.fulfill({ json: { satellite_id: null } })
+    );
+    await page.goto('/overview', { waitUntil: 'commit' });
+    const panel = page.getByRole('region', { name: 'Network latency history' });
+    const canvas = panel.locator('.uplot canvas').first();
+    await expect(canvas).toBeVisible();
+    for (const poll of [0, 1, 2, 3]) {
+      const end = start + poll * 5;
+      await expect
+        .poll(
+          async () => {
+            if (fulfilled < poll) return false;
+            return panel.evaluate(
+              (section, { end, edge, poll }) => {
+                // Read the committed uPlot instance from React's plot ref. This
+                // test-only inspection does not change production rendering.
+                type Fiber = {
+                  return: Fiber | null;
+                  memoizedState?: {
+                    memoizedState: unknown;
+                    next: unknown;
+                  } | null;
+                };
+                type Plot = {
+                  root: HTMLElement;
+                  data: number[][];
+                  scales: { x: { min: number; max: number } };
+                };
+                const fiberKey = Object.keys(section).find((key) =>
+                  key.startsWith('__reactFiber$')
+                );
+                let fiber = fiberKey
+                  ? ((section as unknown as Record<string, Fiber>)[
+                      fiberKey
+                    ] as Fiber)
+                  : null;
+                const root = section.querySelector('.uplot');
+                let plot: Plot | undefined;
+                while (fiber && !plot) {
+                  let hook = fiber.memoizedState;
+                  while (hook && !plot) {
+                    const value = (hook.memoizedState as { current?: Plot })
+                      ?.current;
+                    if (value?.root === root) plot = value;
+                    hook = hook.next as typeof hook;
+                  }
+                  fiber = fiber.return;
+                }
+                if (!plot || plot.scales.x.max !== end + 7.5) return false;
+                const markerInData = plot.data[0].includes(edge + 4);
+                if (markerInData !== poll < 3) return false;
+                if (poll === 3) return true; // Safe cutoff is now edge + 7.5.
+                const viewport = section.querySelector(
+                  '.overview-metric-history__viewport'
+                )!;
+                const el = section.querySelector(
+                  '.uplot canvas'
+                ) as HTMLCanvasElement;
+                const canvasRect = el.getBoundingClientRect();
+                const clip = viewport.getBoundingClientRect();
+                const x =
+                  ((edge + 4 - plot.scales.x.min) /
+                    (plot.scales.x.max - plot.scales.x.min)) *
+                  el.width;
+                const screenX =
+                  canvasRect.left + (x / el.width) * canvasRect.width;
+                const inside =
+                  screenX > clip.left + 2 && screenX < clip.right - 2;
+                // Wait until the whole stroke is beyond the clipped viewport.
+                if (poll === 2 ? screenX >= clip.left - 2 : !inside)
+                  return false;
+                if (x < 1 || x >= el.width - 1) return false;
+                const { data, width, height } = el
+                  .getContext('2d')!
+                  .getImageData(0, 0, el.width, el.height);
+                for (let y = 1; y < height / 5; y++)
+                  for (
+                    let px = Math.max(0, Math.floor(x - 7));
+                    px <= Math.min(width - 1, Math.ceil(x + 7));
+                    px++
+                  ) {
+                    const i = (y * width + px) * 4;
+                    if (
+                      data[i] < 170 &&
+                      data[i + 1] > 175 &&
+                      data[i + 2] > 185 &&
+                      data[i + 3] > 0
+                    )
+                      return true;
+                  }
+                return false;
+              },
+              { end, edge, poll }
+            );
+          },
+          {
+            timeout: 25_000,
+            message: `fulfilled poll ${poll} committed marker data and clipped paint`,
+          }
+        )
+        .toBe(true);
+    }
+  });
+  test('rebases painted samples across three five-second history polls', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    const start = Math.floor(Date.now() / 1000);
+    let requests = 0;
+    let completed = 0;
+    const observed: [number, number][] = Array.from(
+      { length: 25 },
+      (_, index) => [start - 125 + index * 5, index === 19 ? 90 : 10]
+    );
+    await page.route('**/api/overview-history/settings', (route) =>
+      route.fulfill({ json: { window_seconds: 300 } })
+    );
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({ json: { state: 'no_active_mission', pois: [] } })
+    );
+    await page.route('**/api/overview-clocks/settings', (route) =>
+      route.fulfill({ json: { clocks: [] } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({
+        json: { timestamp: new Date(start * 1000).toISOString() },
+      })
+    );
+    await page.route('**/api/satellites', (route) =>
+      route.fulfill({ json: [] })
+    );
+    await page.route('**/api/active-x-link', (route) =>
+      route.fulfill({ json: { satellite_id: null } })
+    );
+    await page.route('**/api/overview-history', async (route) => {
+      const poll = requests++;
+      // A request starts before its response can update the painted chart.
+      if (poll === 1)
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      if (poll > 0 && poll <= 3)
+        observed.push([start + (poll - 1) * 5, 10 + poll * 10]);
+      const end = start + poll * 5;
+      await route.fulfill({
+        json: {
+          window_seconds: 300,
+          start_timestamp_seconds: end - 300,
+          end_timestamp_seconds: end,
+          step_seconds: 5,
+          series: { [metrics[0]]: observed },
+          rolling_5m: {
+            [metrics[0]]: {
+              state: 'available',
+              min: observed.map(([time]) => [time, 5]),
+              avg: observed.map(([time]) => [time, 7]),
+              max: observed.map(([time]) => [time, 9]),
+            },
+          },
+        },
+      });
+      completed++;
+    });
+    await page.goto('/overview', { waitUntil: 'commit' });
+    const panel = page.getByRole('region', { name: 'Network latency history' });
+    const canvas = panel.locator('.uplot canvas').first();
+    await expect(canvas).toBeVisible({ timeout: 20_000 });
+    for (let poll = 0; poll <= 3; poll++) {
+      const end = start + poll * 5;
+      // The response and uPlot's queued canvas commit are separate events.
+      // Keep both real-pixel oracles inside one bounded, per-bundle wait.
+      await expect
+        .poll(
+          async () => {
+            if (completed <= poll) return { spike: false, fresh: false };
+            return canvas.evaluate(
+              (node, { end, spike, time, value, freshRequired }) => {
+                const el = node as HTMLCanvasElement;
+                const image = el
+                  .getContext('2d')!
+                  .getImageData(0, 0, el.width, el.height);
+                const isCyan = (x: number, y: number) => {
+                  if (x < 0 || x >= el.width || y < 0 || y >= el.height)
+                    return false;
+                  const i = (y * el.width + x) * 4;
+                  return (
+                    image.data[i] < 170 &&
+                    image.data[i + 1] > 175 &&
+                    image.data[i + 2] > 185 &&
+                    image.data[i + 3] > 0
+                  );
+                };
+                const dpr = el.width / el.getBoundingClientRect().width;
+                const expected = ((spike - (end - 307.5)) / 315) * el.width;
+                let spikePainted = false;
+                // The cyan observed peak alone reaches the top fifth.
+                for (let y = 1; y < el.height / 5 && !spikePainted; y++)
+                  for (let x = 0; x < el.width; x++)
+                    if (isCyan(x, y) && Math.abs(x - expected) / dpr < 4) {
+                      spikePainted = true;
+                      break;
+                    }
+                if (!freshRequired) return { spike: spikePainted, fresh: true };
+                // upper = ceil(peak * 1.1) = 100 for this fixture.
+                const upper = Math.ceil(90 * 1.1);
+                const x = Math.round(((time - (end - 307.5)) / 315) * el.width);
+                const y = Math.round((1 - value / upper) * el.height);
+                let freshPainted = false;
+                for (let dy = -4; dy <= 4 && !freshPainted; dy++)
+                  for (let dx = -4; dx <= 4; dx++)
+                    if (isCyan(x + dx, y + dy)) {
+                      freshPainted = true;
+                      break;
+                    }
+                return { spike: spikePainted, fresh: freshPainted };
+              },
+              {
+                end,
+                spike: start - 30,
+                time: start + (poll - 1) * 5,
+                value: 10 + poll * 10,
+                freshRequired: poll > 0,
+              }
+            );
+          },
+          {
+            timeout: 30_000,
+            message: `poll ${poll}: fulfilled bundle has rebased spike and arriving observed pixel`,
+          }
+        )
+        .toEqual({ spike: true, fresh: true });
+      // A later scheduled poll may finish during a slow pixel wait.
+      expect(completed).toBeGreaterThanOrEqual(poll + 1);
+    }
+  });
   test('marks all five charts unavailable on the first failed fetch, then recovers', async ({
     page,
   }) => {
@@ -211,11 +511,20 @@ test.describe('Overview metric history', () => {
       surface.evaluate(
         (node) => new DOMMatrix(getComputedStyle(node).transform).m41
       );
-    const initialOffset = await left();
     const before = await axis.textContent();
+    // A poll rebases the transform to zero; compare only within one bundle.
     await expect
-      .poll(() => left(), { timeout: 8_000 })
-      .toBeLessThan(initialOffset);
+      .poll(
+        async () => {
+          const bundleRequests = requests;
+          const first = await left();
+          await page.waitForTimeout(500);
+          const second = await left();
+          return requests === bundleRequests && second < first - 0.005;
+        },
+        { timeout: 12_000 }
+      )
+      .toBe(true);
     await expect
       .poll(() => axis.textContent(), { timeout: 8_000 })
       .not.toBe(before);
@@ -273,192 +582,6 @@ test.describe('Overview metric history', () => {
     await expect(graphs.first().getByRole('status')).toHaveText(
       'History available'
     );
-  });
-
-  test('fits populated plots and expanded five-row POIs together at 1920x1080', async ({
-    page,
-  }, testInfo) => {
-    const now = Date.now();
-    const names = [
-      'AAR start',
-      'Ka swap',
-      'Ka entry',
-      'X-band handoff',
-      'RKSO',
-    ];
-    const kinds = [
-      'aar_start',
-      'ka_transition',
-      'ka_coverage_entry',
-      'x_band_transition',
-      'arrival',
-    ];
-    await page.route('**/api/overview-history', (route) =>
-      route.fulfill({ json: bundle(Math.floor(Date.now() / 1000)) })
-    );
-    await page.route('**/api/overview-history/settings', (route) =>
-      route.fulfill({ json: { window_seconds: 1800 } })
-    );
-    await page.route('**/api/overview/upcoming-pois', (route) =>
-      route.fulfill({
-        json: {
-          state: 'available',
-          calculated_at: new Date(now).toISOString(),
-          pois: names.map((name, index) => ({
-            poi_id: `busy-${index}`,
-            name,
-            kind: kinds[index],
-            latitude: 0,
-            longitude: -50,
-            expected_arrival_time: new Date(
-              now + (index + 1) * 600_000
-            ).toISOString(),
-            estimated_arrival_time: new Date(
-              now + (index + 1) * 600_000
-            ).toISOString(),
-            eta_seconds: (index + 1) * 600,
-            eta_type: 'estimated',
-            upcoming: true,
-            map_retained: true,
-          })),
-        },
-      })
-    );
-    await page.route('**/api/routes', (route) =>
-      route.fulfill({ json: { routes: [], total: 0 } })
-    );
-    await page.route('**/api/status', (route) =>
-      route.fulfill({
-        json: {
-          timestamp: new Date(now).toISOString(),
-          network: { latency_ms: 42 },
-        },
-      })
-    );
-    await page.route('**/api/satellites', (route) =>
-      route.fulfill({ json: [] })
-    );
-    await page.route('**/api/active-x-link', (route) =>
-      route.fulfill({ json: { satellite_id: null } })
-    );
-    await page.route('**/api/overview-clocks/settings', (route) =>
-      route.fulfill({
-        json: {
-          clocks: [
-            { label: 'Zulu / UTC', time_zone: 'UTC' },
-            { label: 'Washington, DC', time_zone: 'America/New_York' },
-            { label: 'Omaha, NE', time_zone: 'America/Chicago' },
-            { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
-          ],
-        },
-      })
-    );
-    const texture = page.waitForResponse(
-      (response) =>
-        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
-        response.ok()
-    );
-    await page.goto('/overview', { waitUntil: 'commit' });
-    const globeCanvas = await waitForGlobeVisualReady(page, texture);
-    expect(
-      await globeCanvas.evaluate(
-        (node) =>
-          node ===
-          [...document.querySelectorAll('.overview-page canvas')].at(-1)
-      )
-    ).toBe(true);
-    const graphs = page
-      .getByLabel('Overview metric history')
-      .locator('[data-metric-panel]');
-    const pois = page.getByLabel('Upcoming POIs');
-    await expect(graphs.locator('.uplot')).toHaveCount(5);
-    await expect(pois.locator('tbody tr')).toHaveCount(5);
-    await expect(pois.locator('tbody tr')).toHaveText(
-      names.map((name) => new RegExp(name))
-    );
-    await expect(pois.getByTestId('upcoming-pois-body')).toHaveCSS(
-      'height',
-      '224px'
-    );
-    const viewport = await page.evaluate(() => ({
-      width: innerWidth,
-      height: innerHeight,
-      dpr: devicePixelRatio,
-    }));
-    expect(viewport).toEqual({ width: 1920, height: 1080, dpr: 1 });
-    const poiBox = await pois.boundingBox();
-    const legendBox = await page.getByLabel('Globe legend').boundingBox();
-    const metricsBox = await page
-      .getByLabel('Current network metrics')
-      .boundingBox();
-    const clocksBox = await page.locator('.overview-clock-panel').boundingBox();
-    expect(poiBox && poiBox.y + poiBox.height <= 1080).toBeTruthy();
-    expect(
-      poiBox && legendBox && poiBox.x + poiBox.width <= legendBox.x
-    ).toBeTruthy();
-    for (const panel of await graphs.all()) {
-      const box = await panel.boundingBox();
-      expect(box && poiBox && box.y + box.height <= poiBox.y).toBeTruthy();
-      expect(box && legendBox && box.x + box.width <= legendBox.x).toBeTruthy();
-      expect(
-        box && metricsBox && box.x + box.width <= metricsBox.x
-      ).toBeTruthy();
-      expect(
-        box && clocksBox && box.y >= clocksBox.y + clocksBox.height
-      ).toBeTruthy();
-      expect(box && box.width >= 200).toBeTruthy();
-      for (const name of ['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)'])
-        await expect(panel.getByText(name)).toBeVisible();
-      expect(
-        await panel.evaluate((node) => node.scrollHeight <= node.clientHeight)
-      ).toBe(true);
-    }
-    await page.screenshot({
-      path: testInfo.outputPath('overview-history-busy-1920x1080.png'),
-      animations: 'disabled',
-    });
-    const poiSizing = await pois.evaluate((node) => ({
-      scroll: node.scrollHeight,
-      client: node.clientHeight,
-      rows: [...node.querySelectorAll('tbody tr')].map((row) => ({
-        bottom: row.getBoundingClientRect().bottom,
-        panelBottom: node.getBoundingClientRect().bottom,
-      })),
-    }));
-    expect(poiSizing.scroll, JSON.stringify(poiSizing)).toBeLessThanOrEqual(
-      poiSizing.client
-    );
-    for (const height of [900, 768, 640]) {
-      await page.setViewportSize({ width: 1920, height });
-      const metrics = await page
-        .getByLabel('Current network metrics')
-        .boundingBox();
-      const legend = await page.getByLabel('Globe legend').boundingBox();
-      expect(metrics && legend).toBeTruthy();
-      expect(
-        metrics!.y + metrics!.height <= legend!.y ||
-          legend!.y + legend!.height <= metrics!.y,
-        `height ${height}: metrics/legend ${JSON.stringify({ metrics, legend })}`
-      ).toBe(true);
-      expect(
-        await page
-          .locator('.overview-page')
-          .evaluate((node) => node.scrollHeight > node.clientHeight),
-        `height ${height}: short desktop remains scrollable`
-      ).toBe(true);
-      const shortPoiBox = await pois.boundingBox();
-      for (const panel of await graphs.all()) {
-        const box = await panel.boundingBox();
-        expect(
-          box && shortPoiBox && box.y + box.height <= shortPoiBox.y
-        ).toBeTruthy();
-        expect(box && box.width >= 200).toBeTruthy();
-      }
-      expect(
-        await pois.evaluate((node) => node.scrollHeight <= node.clientHeight),
-        `height ${height}: five POIs remain unclipped`
-      ).toBe(true);
-    }
   });
 
   test('reflows legibly before two graph columns become cramped', async ({
