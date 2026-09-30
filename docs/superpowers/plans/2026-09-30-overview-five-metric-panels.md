@@ -26,6 +26,15 @@ Playwright, existing FastAPI/Prometheus history response.
 baseline: `dev` `e8a004db9717d4405e6fab047e9b97932a54872e`. Recheck immutable
 `dev` at implementation start; reconcile intervening chart fixes before editing.
 
+**Visual intent:** Refer to the desktop and mobile sample images embedded in
+[parent issue #213](https://github.com/bcl1713/starlink-dashboard/issues/213)
+for chart-panel hierarchy and shared styling. They are illustrative, not
+application captures or pixel-exact acceptance criteria. In particular, their
+sixth signal-quality chart is explicitly excluded: this slice delivers five
+truthful graphs. Desktop composition belongs to #219 and mobile layout to #220;
+this slice verifies its panels in the existing Overview without claiming either
+later layout is complete.
+
 ## Global Constraints
 
 - Five only: latency, downlink, uplink, packet loss and obstruction. Do not show
