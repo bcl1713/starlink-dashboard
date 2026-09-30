@@ -889,7 +889,7 @@ test.describe('Overview provenance motion recording', () => {
     const start = Math.floor(Date.now() / 1000);
     let windowSeconds = 60;
     let phase: 'fresh' | 'partial' | 'recovered' | 'stale' = 'fresh';
-    let lastTimestamp = Date.now();
+    let lastTimestamp = Date.now() - 1000;
     let histories = 0;
     const requestTimes: number[] = [];
     await page.route('**/api/overview-history/settings', (route) => {
@@ -940,7 +940,9 @@ test.describe('Overview provenance motion recording', () => {
       });
     });
     await page.route('**/api/status', (route) => {
-      if (phase !== 'stale') lastTimestamp = Date.now();
+      // Collection predates this request, as in a real telemetry batch. A
+      // response timestamp newer than the UI's age tick correctly fails closed.
+      if (phase !== 'stale') lastTimestamp = Date.now() - 1000;
       return route.fulfill({
         json: {
           timestamp: new Date(lastTimestamp).toISOString(),
@@ -1057,6 +1059,11 @@ test.describe('Overview provenance motion recording', () => {
       .poll(() => histories, { timeout: 20_000 })
       .toBeGreaterThanOrEqual(3);
     expect(await labels()).toEqual(before);
+    await page.mouse.move(960, 500);
+    await page.mouse.wheel(0, -4000);
+    await page.waitForTimeout(600); // Let OrbitControls damping settle for capture.
+    await expect(context.getByRole('status')).toHaveText('Network fresh');
+    await expect(down).toHaveText('0 Mbps');
     await page.screenshot({
       path: testInfo.outputPath('overview-provenance-1920x1080.png'),
     });
@@ -1064,6 +1071,10 @@ test.describe('Overview provenance motion recording', () => {
     await page.mouse.down();
     await page.mouse.move(1260, 550, { steps: 12 });
     await page.mouse.up();
+    await page.waitForTimeout(600);
+    await expect(context.getByRole('status')).toHaveText('Network fresh');
+    await expect(down).toHaveText('0 Mbps');
+    expect(await labels()).toEqual(before);
     await page.screenshot({
       path: testInfo.outputPath('overview-provenance-rotated-1920x1080.png'),
     });
