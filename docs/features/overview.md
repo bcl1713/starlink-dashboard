@@ -75,10 +75,10 @@ enter native fullscreen; the app navigation and Fullscreen button disappear in
 that state. Exit with the browser's fullscreen shortcut (usually Escape) to
 restore the ordinary responsive layout and controls. Shorter or narrower
 screens use the scrollable responsive arrangement instead of forcing the
-1080p dashboard fit. Current telemetry remains on its separate status feed. See the
-[Overview History API](../api/endpoints/overview-history.md) for raw and rolling
-response shapes and error behavior. Moving window/cadence controls to a
-configuration page and per-panel visibility settings are future work, not
+1080p dashboard fit. Current telemetry remains on its separate status feed.
+See the [Overview History API](../api/endpoints/overview-history.md) for raw
+and rolling response shapes and error behavior. Moving window/cadence controls
+to a configuration page and per-panel visibility settings are future work, not
 current controls. Grafana remains a supported fallback and comparator.
 
 ### 6. [System Configuration & Simulation](./system.md)
