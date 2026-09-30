@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { buildSync } from 'esbuild';
 import { expect, test } from '@playwright/test';
 
+test.use({ video: { mode: 'on', size: { width: 1920, height: 1080 } } });
 const metrics = [
   'starlink_network_latency_ms_current',
   'starlink_network_throughput_down_mbps_current',
@@ -880,10 +881,7 @@ test.describe('Overview metric history', () => {
 });
 
 test.describe('Overview provenance motion recording', () => {
-  test.use({
-    viewport: { width: 1920, height: 1080 },
-    video: { mode: 'on', size: { width: 1920, height: 1080 } },
-  });
+  test.use({ viewport: { width: 1920, height: 1080 } });
   test('records zero, partial loss, recovery, gap, duration, resize and resume', async ({
     page,
   }, testInfo) => {
