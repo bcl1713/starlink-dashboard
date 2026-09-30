@@ -912,6 +912,7 @@ test.describe('Overview provenance motion recording', () => {
         start - 5,
         start,
       ];
+      if (end > start) times.push(end);
       return route.fulfill({
         json: {
           window_seconds: windowSeconds,
@@ -1169,20 +1170,23 @@ test.describe('painted four-series motion fixture', () => {
         const start = Math.floor(Date.now() / 1000);
         const marker = start - 20;
         const times = [marker - 10, marker, marker + 10, start];
-        const values = (low: number, peak: number) =>
-          times.map((time, index) => [time, index === 1 ? peak : low]);
+        const values = (low: number, peak: number, end: number) =>
+          [...times, ...(end > start ? [end] : [])].map((time, index) => [
+            time,
+            index === 1 ? peak : low,
+          ]);
         const history = (end: number) => ({
           window_seconds: 60,
           start_timestamp_seconds: end - 60,
           end_timestamp_seconds: end,
           step_seconds: 10,
-          series: { starlink_network_latency_ms_current: values(70, 80) },
+          series: { starlink_network_latency_ms_current: values(70, 80, end) },
           rolling_5m: {
             starlink_network_latency_ms_current: {
               state: 'available',
-              min: values(10, 20),
-              avg: values(30, 40),
-              max: values(50, 60),
+              min: values(10, 20, end),
+              avg: values(30, 40, end),
+              max: values(50, 60, end),
             },
           },
         });
