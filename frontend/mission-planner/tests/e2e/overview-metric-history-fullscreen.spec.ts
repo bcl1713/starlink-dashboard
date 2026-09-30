@@ -74,7 +74,16 @@ test.describe('Overview metric history', () => {
     let selectedWindowSeconds = 1800;
     let collapsePois = false;
     let fulfilledHistory = 0;
+    let historyFails = false;
+    let statusHangs = false;
     await page.route('**/api/overview-history', async (route) => {
+      if (historyFails) {
+        await route.fulfill({
+          status: 503,
+          json: { detail: 'Refresh unavailable' },
+        });
+        return;
+      }
       await route.fulfill({
         json: representativeBundle(
           Math.floor(Date.now() / 1000),
@@ -119,25 +128,27 @@ test.describe('Overview metric history', () => {
       route.fulfill({ json: { routes: [], total: 0 } })
     );
     await page.route('**/api/status', (route) =>
-      route.fulfill({
-        json: {
-          timestamp: new Date(now - 1000).toISOString(),
-          metric_availability: {
-            latency_ms: true,
-            throughput_down_mbps: true,
-            throughput_up_mbps: true,
-            packet_loss_percent: true,
-            obstruction_percent: true,
-          },
-          network: {
-            latency_ms: 42,
-            throughput_down_mbps: 125.3,
-            throughput_up_mbps: 25.1,
-            packet_loss_percent: 0.5,
-          },
-          obstruction: { obstruction_percent: 15 },
-        },
-      })
+      statusHangs
+        ? new Promise(() => {})
+        : route.fulfill({
+            json: {
+              timestamp: new Date(Date.now() - 1000).toISOString(),
+              metric_availability: {
+                latency_ms: true,
+                throughput_down_mbps: true,
+                throughput_up_mbps: true,
+                packet_loss_percent: true,
+                obstruction_percent: true,
+              },
+              network: {
+                latency_ms: 42,
+                throughput_down_mbps: 125.3,
+                throughput_up_mbps: 25.1,
+                packet_loss_percent: 0.5,
+              },
+              obstruction: { obstruction_percent: 15 },
+            },
+          })
     );
     await page.route('**/api/satellites', (route) =>
       route.fulfill({ json: [] })
@@ -413,6 +424,20 @@ test.describe('Overview metric history', () => {
       JSON.stringify(firstLayout, null, 2)
     );
     assertLayout(firstLayout);
+    for (const [index, value] of [
+      '42 ms',
+      '125.3 Mbps',
+      '25.1 Mbps',
+      '0.5 %',
+      '15 %',
+    ].entries()) {
+      await expect(
+        graphs.nth(index).locator('.overview-metric-history__latest')
+      ).toHaveText(value);
+      await expect(
+        graphs.nth(index).locator('.overview-metric-history__age')
+      ).toContainText('Observed');
+    }
     const firstUtcTick = await graphs
       .first()
       .locator('.overview-metric-history__time-axis span:first-child')
@@ -476,6 +501,36 @@ test.describe('Overview metric history', () => {
           .textContent()
       )
       .not.toBe(oldAxis);
+    assertLayout(await layout());
+    statusHangs = true;
+    historyFails = true;
+    await expect(graphs.getByRole('status')).toHaveCount(5, {
+      timeout: 12_000,
+    });
+    for (const panel of await graphs.all()) {
+      await expect(panel.getByRole('status')).toHaveText(
+        'Last-known history; refresh unavailable'
+      );
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toHaveText('Unavailable');
+      await expect(
+        panel.locator('.overview-metric-history__age')
+      ).toContainText('Last observed');
+    }
+    const staleLayout = await layout();
+    assertLayout(staleLayout);
+    await writeFile(
+      testInfo.outputPath('overview-native-fullscreen-stale.json'),
+      JSON.stringify(staleLayout, null, 2)
+    );
+    await page.screenshot({
+      path: testInfo.outputPath('overview-native-fullscreen-stale.png'),
+    });
+    historyFails = false;
+    await expect(graphs.getByRole('status')).toHaveCount(0, {
+      timeout: 12_000,
+    });
     assertLayout(await layout());
     collapsePois = true;
     await expect(pois.locator('tbody tr')).toHaveCount(0, { timeout: 12_000 });
