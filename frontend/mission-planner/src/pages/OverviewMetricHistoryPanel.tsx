@@ -119,19 +119,22 @@ export function OverviewMetricHistoryPanel({
     end: validHistory?.end_timestamp_seconds,
     startedMs: monotonicMs,
     initialElapsed: validHistory
-      ? currentSeconds - validHistory.end_timestamp_seconds
+      ? Math.min(
+          BUFFER_SECONDS,
+          currentSeconds - validHistory.end_timestamp_seconds
+        )
       : 0,
   });
-  if (
-    scroll.current.windowSeconds !== selectedWindowSeconds ||
-    !validHistory
-  ) {
+  if (scroll.current.windowSeconds !== selectedWindowSeconds || !validHistory) {
     scroll.current = {
       windowSeconds: selectedWindowSeconds,
       end: validHistory?.end_timestamp_seconds,
       startedMs: monotonicMs,
       initialElapsed: validHistory
-        ? currentSeconds - validHistory.end_timestamp_seconds
+        ? Math.min(
+            BUFFER_SECONDS,
+            currentSeconds - validHistory.end_timestamp_seconds
+          )
         : 0,
     };
   } else if (scroll.current.end !== validHistory.end_timestamp_seconds) {
@@ -170,8 +173,12 @@ export function OverviewMetricHistoryPanel({
     }
     frozen.current = null;
   }
-  const motionElapsed = frozen.current?.elapsed ?? scroll.current.initialElapsed +
-    Math.max(0, monotonicMs - scroll.current.startedMs) / 1000;
+  const motionElapsed = Math.min(
+    BUFFER_SECONDS,
+    frozen.current?.elapsed ??
+      scroll.current.initialElapsed +
+        Math.max(0, monotonicMs - scroll.current.startedMs) / 1000
+  );
   // The bundle can be current while this metric's last real sample is old.
   // Projected times end in a real observed/rollup sample, never a gap marker.
   const sampleEnd = projection?.times.at(-1);
@@ -216,9 +223,7 @@ export function OverviewMetricHistoryPanel({
     : 1;
   const upper = Math.ceil(maximum * 1.1);
   const visibleRight = domain
-    ? domain.max -
-      BUFFER_SECONDS * 2 +
-      Math.min(BUFFER_SECONDS, motionElapsed)
+    ? domain.max - BUFFER_SECONDS * 2 + Math.min(BUFFER_SECONDS, motionElapsed)
     : 0;
   const utcTime = (seconds: number) =>
     new Date(seconds * 1000).toISOString().slice(11, 19) + ' UTC';

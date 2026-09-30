@@ -136,6 +136,21 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.destroy).toHaveBeenCalledTimes(1);
     expect(observer.disconnect).toHaveBeenCalledTimes(1);
   });
+  it('caps an initially stale canvas at the same edge as its UTC ticks', () => {
+    vi.setSystemTime(140_000);
+    const view = render(panel(bundle(120), false, 140_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    expect(surface.style.transform).toContain('translate3d(-100px');
+    expect(
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent
+    ).toBe('00:02:00 UTC');
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('none');
+  });
   it('keeps UTC ticks aligned with the canvas when nowMs reverses', () => {
     vi.setSystemTime(125_000);
     const history = bundle(120);
