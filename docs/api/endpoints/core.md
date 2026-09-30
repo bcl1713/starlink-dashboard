@@ -136,10 +136,15 @@ or its timestamp looks fresh.
 - `200 OK` - Current status available
 - `500 Internal Server Error` - Cannot retrieve status
 
-**Compatibility limitation:** This projection is specific to `/api/status`.
-Existing Prometheus publication does not yet honor these flags and may publish
-numeric compatibility fallbacks. Pre-change history is
-not retrospectively verified. See the
+**Publication contract:** The nullable projection is specific to `/api/status`.
+The Prometheus updater honors each of the five availability flags independently:
+unavailable readings publish `NaN` to their current gauges and skip their
+corresponding histogram observations, where defined. Available finite readings,
+including measured zero, resume independently on recovery. Pre-change history
+is not retrospectively verified. Prometheus `query_range` timestamps are
+evaluation times, not acquisition times; see the
+[Overview scrape/lookback boundary](../../features/overview.md#5-overview-metric-history)
+for history limitations and the
 [status model source mapping](../models/health-status-models.md#metricavailability-and-live-source-mapping)
 for acquisition and validity details.
 

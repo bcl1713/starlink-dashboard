@@ -117,12 +117,15 @@ documented boolean validity veto on `status.fraction_obstructed`; a null
 `valid_s` does not suppress a finite status fraction. GPS readiness and SNR
 metadata do not govern these five readings.
 
-This nullable/provenance projection applies to `/api/status` only. The existing
-Prometheus updater and `/metrics` export do not yet honor the new
-flags; they can still publish internal compatibility zeros. Do not use those
-exports as verified current observations until the separate exporter work is
-complete. Older retained history cannot be retrospectively verified by this
-contract.
+The nullable projection applies to `/api/status` only. The Prometheus updater
+and `/metrics` export honor each of the five availability flags independently:
+unavailable readings publish `NaN` to their current gauges and skip their
+corresponding histogram observations, where defined. Available finite readings,
+including measured zero, resume independently on recovery. Older retained
+history cannot be retrospectively verified by this contract. Prometheus
+`query_range` timestamps are evaluation times, not acquisition times; see the
+[Overview scrape/lookback boundary](../../features/overview.md#5-overview-metric-history)
+for history limitations.
 
 ---
 
