@@ -221,8 +221,10 @@ use obsolete `series.band` documentation.
       enabled but have no visible stroke, average is subdued white dashed,
       observed is cyan with 2–2.5px stroke, no point markers/cursor/legend and
       x-range stays dynamic. Reuse the existing
-      `overview-metric-history.test.ts` fixture: its aligned arrays must become
-      `[[100,105,110,115],[5,null,6,8],[3,null,3,4],[4,null,4,6],[4,5,null,7]]`
+      `overview-metric-history.test.ts` fixture: revise existing aggregate
+      fixture expectations to match the provenance gap policy. Its aligned arrays
+      must become
+      `[[100,105,110,115],[5,null,null,8],[3,null,null,4],[4,null,null,6],[4,5,null,7]]`
       for timestamp/high/low/average/observed respectively. A long gap inserts a
       shared null timestamp and all four arrays have null there. Add a
       provenance-gap case: if raw observed is null at a step but a trailing
