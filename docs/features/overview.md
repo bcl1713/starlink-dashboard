@@ -62,12 +62,13 @@ and never extrapolates samples into the present.
 The aircraft trail and all five graphs share one history response every five
 seconds and the existing window selector in the globe legend (5, 15, 30, or 60
 minutes, plus a saved custom window). Each graph shows the full selected window,
-with a small right-edge freshness margin: real samples and the UTC axis move
-left at the selected window's time scale between polls. Each fresh response
-advances the plot domain without moving a retained timestamp on screen at the
-rebase; new real samples enter from the right, while old ones leave by clipping
-at the left. If a poll is late, motion pauses when its freshness margin is
-exhausted and resumes from the painted position rather than jumping to catch up.
+with a small right-edge freshness margin: under the expected five-second
+response cadence, real samples and the UTC axis move left at the selected
+window's time scale without a visible jump when fresh responses rebase the
+plot. New real samples enter from the right, while old ones leave by clipping
+at the left. If the tab is hidden, a fetch fails, or history arrives late or
+irregularly, motion may pause and a minor rebase glitch may be visible; recovery
+from an arbitrary outage is not guaranteed seamless.
 The plots retain only real chart samples from overlapping responses at the left
 edge until they leave the visible window; newer responses replace or remove
 samples in their covered range. The aircraft trail still uses only the shared
