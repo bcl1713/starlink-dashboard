@@ -9,6 +9,19 @@ const metrics = [
   'starlink_network_packet_loss_percent',
   'starlink_dish_obstruction_percent',
 ];
+// Default empty fixtures keep these diagnostic tests independent of a backend.
+// Later test-owned routes override them where populated data is required.
+test.beforeEach(async ({ page }) => {
+  for (const [endpoint, json] of [
+    ['routes', { routes: [], total: 0 }],
+    ['satellites', []],
+    ['active-x-link', { satellite_id: null }],
+    ['overview/upcoming-pois', { state: 'no_active_mission', pois: [] }],
+    ['overview-clocks/settings', { clocks: [] }],
+    ['status', { timestamp: new Date().toISOString() }],
+  ] as const)
+    await page.route(`**/api/${endpoint}`, (route) => route.fulfill({ json }));
+});
 const initial = Math.floor(Date.now() / 1000);
 function bundle(end = initial, windowSeconds = 1800) {
   return {
@@ -138,7 +151,7 @@ test.describe('Overview metric history', () => {
                 return {
                   status:
                     section?.querySelector('[role="status"]')?.textContent ??
-                    'panel not mounted',
+                    (section ? '' : 'panel not mounted'),
                   opacityVisible,
                 };
               });
@@ -152,9 +165,7 @@ test.describe('Overview metric history', () => {
           )
           .toEqual({
             firstResponse: true,
-            status: expect.stringMatching(
-              /^(History available|Waiting for fresh history)$/
-            ),
+            status: expect.stringMatching(/^(|Waiting for fresh history)$/),
             canvasVisible: true,
           });
         // Canvas bitmap dimensions include DPR; its CSS size must match uPlot's
@@ -605,10 +616,9 @@ test.describe('Overview metric history', () => {
     await expect(panels.locator('.uplot')).toHaveCount(0);
     fail = false;
     await page.getByLabel('Aircraft history window').selectOption('900');
-    await expect(panels.getByRole('status')).toHaveText(
-      Array(5).fill('History available'),
-      { timeout: 10_000 }
-    );
+    await expect(panels.getByRole('status')).toHaveCount(0, {
+      timeout: 10_000,
+    });
     await expect(panels.locator('.uplot')).toHaveCount(5);
   });
   test('fits five shared-query plots above POIs while preserving globe and legend', async ({
@@ -709,10 +719,13 @@ test.describe('Overview metric history', () => {
       ).toBeTruthy();
       expect(box && box.y >= 0 && box.y + box.height <= 1080).toBeTruthy();
       expect(box && legend && box.x + box.width <= legend.x).toBeTruthy();
-      await expect(panel.getByText('Observed')).toBeVisible();
-      await expect(panel.getByText('Low (5m)')).toBeVisible();
-      await expect(panel.getByText('Average (5m)')).toBeVisible();
-      await expect(panel.getByText('High (5m)')).toBeVisible();
+      for (const name of ['Observed', 'Average (5m)', 'Low–high envelope (5m)'])
+        await expect(
+          page.getByLabel('Graph traces').getByText(name, { exact: true })
+        ).toBeVisible();
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toBeVisible();
       expect(
         await panel.evaluate((node) => node.scrollHeight <= node.clientHeight)
       ).toBe(true);
@@ -777,9 +790,7 @@ test.describe('Overview metric history', () => {
           .textContent()
       )
       .not.toBe(beforeWindowAxis);
-    await expect(graphs.first().getByRole('status')).toHaveText(
-      'History available'
-    );
+    await expect(graphs.first().getByRole('status')).toHaveCount(0);
     const plottedBeforeFailure = await graphs
       .first()
       .locator('.uplot canvas')
@@ -805,9 +816,7 @@ test.describe('Overview metric history', () => {
     await expect
       .poll(() => requests, { timeout: 8_000 })
       .toBeGreaterThan(beforeRecovery);
-    await expect(graphs.first().getByRole('status')).toHaveText(
-      'History available'
-    );
+    await expect(graphs.first().getByRole('status')).toHaveCount(0);
   });
 
   test('reflows legibly before two graph columns become cramped', async ({
@@ -827,6 +836,20 @@ test.describe('Overview metric history', () => {
     await expect(panels).toHaveCount(5);
     for (const width of [800, 752, 705, 704]) {
       await page.setViewportSize({ width, height: 1080 });
+      await expect(page.getByLabel('Upcoming POIs')).toBeVisible();
+      await page.locator('.overview-page').evaluate(async (node) => {
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        );
+        await Promise.all(
+          node
+            .getAnimations({ subtree: true })
+            .filter((animation) =>
+              Number.isFinite(Number(animation.effect?.getTiming().iterations))
+            )
+            .map((animation) => animation.finished.catch(() => undefined))
+        );
+      });
       const pois = await page.getByLabel('Upcoming POIs').boundingBox();
       const boxes = await Promise.all(
         (await panels.all()).map((panel) => panel.boundingBox())
@@ -849,8 +872,245 @@ test.describe('Overview metric history', () => {
           .locator('.overview-page')
           .evaluate((node) => getComputedStyle(node).overflowY)
       ).toBe('auto');
-      await expect(panels.first().getByText('Observed')).toBeVisible();
+      await expect(
+        page.getByLabel('Graph traces').getByText('Observed', { exact: true })
+      ).toBeVisible();
     }
+  });
+});
+
+test.describe('Overview provenance motion recording', () => {
+  test.use({
+    viewport: { width: 1920, height: 1080 },
+    video: { mode: 'on', size: { width: 1920, height: 1080 } },
+  });
+  test('records zero, partial loss, recovery, gap, duration, resize and resume', async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(90_000);
+    const start = Math.floor(Date.now() / 1000);
+    let windowSeconds = 60;
+    let phase: 'fresh' | 'partial' | 'recovered' | 'stale' = 'fresh';
+    let lastTimestamp = Date.now();
+    let histories = 0;
+    const requestTimes: number[] = [];
+    await page.route('**/api/overview-history/settings', (route) => {
+      if (route.request().method() === 'PUT')
+        windowSeconds = route.request().postDataJSON().window_seconds;
+      return route.fulfill({ json: { window_seconds: windowSeconds } });
+    });
+    await page.route('**/api/overview-history', (route) => {
+      histories++;
+      requestTimes.push(Date.now());
+      const end = Math.floor(Date.now() / 1000);
+      const times = [
+        start - 40,
+        start - 35,
+        start - 30,
+        start - 25,
+        start - 20,
+        start - 15,
+        start - 10,
+        start - 5,
+        start,
+      ];
+      return route.fulfill({
+        json: {
+          window_seconds: windowSeconds,
+          start_timestamp_seconds: end - windowSeconds,
+          end_timestamp_seconds: end,
+          step_seconds: 5,
+          series: Object.fromEntries(
+            metrics.map((metric) => [
+              metric,
+              times.map((time) => [time, time === start - 20 ? null : 60]),
+            ])
+          ),
+          rolling_5m: Object.fromEntries(
+            metrics.map((metric) => [
+              metric,
+              {
+                state: 'available',
+                min: times.map((time) => [time, 20]),
+                avg: times.map((time) => [time, 40]),
+                max: times.map((time) => [time, 80]),
+              },
+            ])
+          ),
+        },
+      });
+    });
+    await page.route('**/api/status', (route) => {
+      if (phase !== 'stale') lastTimestamp = Date.now();
+      return route.fulfill({
+        json: {
+          timestamp: new Date(lastTimestamp).toISOString(),
+          metric_availability: {
+            latency_ms: true,
+            throughput_down_mbps: phase !== 'partial',
+            throughput_up_mbps: true,
+            packet_loss_percent: true,
+            obstruction_percent: true,
+          },
+          network: {
+            latency_ms: 7,
+            throughput_down_mbps: phase === 'partial' ? null : 0,
+            throughput_up_mbps: 2,
+            packet_loss_percent: 0.2,
+          },
+          obstruction: { obstruction_percent: 3 },
+          position: {
+            latitude: 0,
+            longitude: -50,
+            altitude: 10000,
+            heading: 90,
+          },
+        },
+      });
+    });
+    for (const [endpoint, json] of [
+      ['routes', { routes: [], total: 0 }],
+      ['satellites', []],
+      ['active-x-link', { satellite_id: null }],
+      ['overview/upcoming-pois', { state: 'no_active_mission', pois: [] }],
+      ['overview-clocks/settings', { clocks: [] }],
+    ] as const)
+      await page.route(`**/api/${endpoint}`, (route) =>
+        route.fulfill({ json })
+      );
+    await page.goto('/overview', { waitUntil: 'commit' });
+    const panels = page
+      .getByLabel('Overview metric history')
+      .locator('[data-metric-panel]');
+    const context = page.getByLabel('Network history context');
+    // Scope by the descriptor wrapper, not text shared with the lower axis.
+    const down = page.locator(
+      '[data-metric-panel="downlink"] .overview-metric-history__latest'
+    );
+    await expect(panels.locator('.uplot')).toHaveCount(5);
+    await expect(context.getByRole('status')).toHaveText('Network fresh');
+    await expect(down).toHaveText('0 Mbps');
+    const labels = () =>
+      panels
+        .locator('h3, .overview-metric-history__latest')
+        .evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const { x, y, width, height } = node.getBoundingClientRect();
+            return [x, y, width, height];
+          })
+        );
+    const before = await labels();
+    const gap = await panels.first().evaluate(
+      (section, { start }) => {
+        type Fiber = {
+          return: Fiber | null;
+          memoizedState?: { memoizedState: unknown; next: unknown } | null;
+        };
+        type Plot = {
+          root: HTMLElement;
+          scales: {
+            x: { min: number; max: number };
+            y: { min: number; max: number };
+          };
+        };
+        const key = Object.keys(section).find((key) =>
+          key.startsWith('__reactFiber$')
+        )!;
+        let fiber = (section as unknown as Record<string, Fiber>)[key];
+        let plot: Plot | undefined;
+        while (fiber && !plot) {
+          let hook = fiber.memoizedState;
+          while (hook && !plot) {
+            const value = (hook.memoizedState as { current?: Plot })?.current;
+            if (value?.root === section.querySelector('.uplot')) plot = value;
+            hook = hook.next as typeof hook;
+          }
+          fiber = fiber.return!;
+        }
+        if (!plot) throw new Error('committed plot absent');
+        const canvas = section.querySelector('canvas')!;
+        const ctx = canvas.getContext('2d')!;
+        return [start - 30, start - 20, start - 10].map((time) => {
+          const x = Math.round(
+            ((time - plot!.scales.x.min) /
+              (plot!.scales.x.max - plot!.scales.x.min)) *
+              canvas.width
+          );
+          const y = Math.round((1 - 30 / plot!.scales.y.max) * canvas.height);
+          return [...ctx.getImageData(x, y, 1, 1).data];
+        });
+      },
+      { start }
+    );
+    expect(gap[0][3]).toBeGreaterThan(0);
+    expect(gap[1][3]).toBe(0);
+    expect(gap[2][3]).toBeGreaterThan(0);
+    phase = 'partial';
+    await expect(context.getByRole('status')).toHaveText('Network partial');
+    await expect(down).toHaveText('Unavailable');
+    phase = 'recovered';
+    await expect(context.getByRole('status')).toHaveText('Network fresh');
+    await expect(down).toHaveText('0 Mbps');
+    await expect
+      .poll(() => histories, { timeout: 20_000 })
+      .toBeGreaterThanOrEqual(3);
+    expect(await labels()).toEqual(before);
+    await page.screenshot({
+      path: testInfo.outputPath('overview-provenance-1920x1080.png'),
+    });
+    await page.mouse.move(960, 500);
+    await page.mouse.down();
+    await page.mouse.move(1260, 550, { steps: 12 });
+    await page.mouse.up();
+    await page.screenshot({
+      path: testInfo.outputPath('overview-provenance-rotated-1920x1080.png'),
+    });
+    await page.setViewportSize({ width: 1600, height: 1080 });
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.getByLabel('Aircraft history window').selectOption('900');
+    await expect(
+      context.getByText('Display: 15 minutes', { exact: true })
+    ).toBeVisible();
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', {
+        configurable: true,
+        value: true,
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', {
+        configurable: true,
+        value: false,
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    phase = 'stale';
+    await expect(context.getByRole('status')).toHaveText('Network stale', {
+      timeout: 10_000,
+    });
+    await expect(down).toHaveText('Unavailable');
+    await expect(
+      page.locator(
+        '[data-metric-panel="downlink"] .overview-metric-history__age'
+      )
+    ).toContainText('Last observed 0 Mbps');
+    await writeFile(
+      testInfo.outputPath('provenance-motion.json'),
+      JSON.stringify(
+        {
+          fixture: true,
+          gap,
+          histories,
+          requestTimes,
+          visibility: 'synthetic document.hidden + visibilitychange',
+          recording: 'Playwright video, 1920x1080',
+        },
+        null,
+        2
+      )
+    );
   });
 });
 
@@ -881,6 +1141,7 @@ test.describe('painted four-series motion fixture', () => {
           loader: 'tsx',
         },
         bundle: true,
+        jsx: 'automatic',
         write: false,
         outfile: 'fixture.js',
         define: { 'process.env.NODE_ENV': '"production"' },

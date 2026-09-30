@@ -164,9 +164,7 @@ test.describe('Overview metric history', () => {
     const pois = page.getByLabel('Upcoming POIs');
     await expect(graphs.locator('.uplot')).toHaveCount(5);
     await expect.poll(() => fulfilledHistory).toBeGreaterThan(0);
-    await expect(graphs.getByRole('status')).toHaveText(
-      Array(5).fill('History available')
-    );
+    await expect(graphs.getByRole('status')).toHaveCount(0);
     const paintedRanges = async () =>
       graphs.locator('.uplot canvas').evaluateAll((canvases) =>
         canvases.map((node) => {
@@ -270,7 +268,7 @@ test.describe('Overview metric history', () => {
           poi,
           neighbors: [
             '.overview-clock-panel',
-            '[aria-label="Current network metrics"]',
+            '[aria-label="Network history context"]',
             '[aria-label="Globe legend"]',
           ].map((selector) =>
             document.querySelector(selector)!.getBoundingClientRect().toJSON()
@@ -397,7 +395,7 @@ test.describe('Overview metric history', () => {
       firstLayout.poi.width,
       firstLayout.poi.height,
     ]);
-    await expect(page.getByLabel('Current network metrics')).toBeVisible();
+    await expect(page.getByLabel('Network history context')).toBeVisible();
     await expect(page.getByLabel('Globe legend')).toBeVisible();
     await expect(page.locator('.overview-clock-panel')).toBeVisible();
     await expect(globeCanvas).toBeVisible();
@@ -460,7 +458,7 @@ test.describe('Overview metric history', () => {
     const poiBox = await pois.boundingBox();
     const legendBox = await page.getByLabel('Globe legend').boundingBox();
     const metricsBox = await page
-      .getByLabel('Current network metrics')
+      .getByLabel('Network history context')
       .boundingBox();
     const clocksBox = await page.locator('.overview-clock-panel').boundingBox();
     expect(poiBox && poiBox.y + poiBox.height <= 1080).toBeTruthy();
@@ -472,14 +470,24 @@ test.describe('Overview metric history', () => {
       expect(box && poiBox && box.y + box.height <= poiBox.y).toBeTruthy();
       expect(box && legendBox && box.x + box.width <= legendBox.x).toBeTruthy();
       expect(
-        box && metricsBox && box.x + box.width <= metricsBox.x
+        box &&
+          metricsBox &&
+          (box.x + box.width <= metricsBox.x ||
+            metricsBox.x + metricsBox.width <= box.x ||
+            box.y + box.height <= metricsBox.y ||
+            metricsBox.y + metricsBox.height <= box.y)
       ).toBeTruthy();
       expect(
         box && clocksBox && box.y >= clocksBox.y + clocksBox.height
       ).toBeTruthy();
       expect(box && box.width >= 200).toBeTruthy();
-      for (const name of ['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)'])
-        await expect(panel.getByText(name)).toBeVisible();
+      for (const name of ['Observed', 'Average (5m)', 'Low–high envelope (5m)'])
+        await expect(
+          page.getByLabel('Graph traces').getByText(name, { exact: true })
+        ).toBeVisible();
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toBeVisible();
       expect(
         await panel.evaluate((node) => node.scrollHeight <= node.clientHeight)
       ).toBe(true);
@@ -502,7 +510,7 @@ test.describe('Overview metric history', () => {
     for (const height of [900, 768, 640]) {
       await page.setViewportSize({ width: 1920, height });
       const metrics = await page
-        .getByLabel('Current network metrics')
+        .getByLabel('Network history context')
         .boundingBox();
       const legend = await page.getByLabel('Globe legend').boundingBox();
       expect(metrics && legend).toBeTruthy();
@@ -610,9 +618,8 @@ for (const height of [961, 1024]) {
         .getByLabel('Overview metric history')
         .locator('[data-metric-panel]');
       const pois = page.getByLabel('Upcoming POIs');
-      await expect(graphs.getByRole('status')).toHaveText(
-        Array(5).fill('History available')
-      );
+      await expect(graphs.locator('.uplot')).toHaveCount(5);
+      await expect(graphs.getByRole('status')).toHaveCount(0);
       await expect(pois.locator('tbody tr')).toHaveCount(5);
       await page.getByRole('button', { name: /fullscreen/i }).click();
       await expect
