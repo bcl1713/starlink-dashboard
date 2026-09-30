@@ -84,8 +84,14 @@
 .overview-metric-history__time-axis span {
   white-space: nowrap;
 }
-/* Override Overview's full-viewport canvas rule only for this plot surface. */
-.overview-page .overview-metric-history canvas {
-  width: auto;
-  height: auto;
+/* Keep uPlot's CSS dimensions separate from its DPR-scaled bitmap dimensions.
+   `auto` uses the bitmap size on scaled displays, so rebases move samples by a
+   different distance than the compositor scroll. Also contain the canvas when
+   Overview fixes its globe canvas to the viewport on short/mobile screens. */
+.overview-page .overview-metric-history .uplot canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  inset: auto;
+  z-index: auto;
 }
