@@ -10,8 +10,8 @@ must distinguish measured zero from an unavailable metric. The existing design
 requires prominent **latest valid observed** values, gaps rather than invented
 points, and one truthful network freshness indicator. Brian chose `/api/status`
 as the current-value source; Prometheus remains the history source. This
-document defines the missing source contract. It is a proposed written spec for
-Brian's review, **not** an implementation plan or dispatch.
+document defines the missing source contract. Brian approved this written
+amendment; implementation is separately gated by the revised #216 plan.
 
 Read-only baseline: `dev` `e8a004db9717d4405e6fab047e9b97932a54872e`. The live
 client in `app/live/client.py` currently substitutes `0.0` for absent latency,

@@ -9,12 +9,13 @@
 readouts, one network-history freshness/window header, a trailing-five-minute
 envelope, and continuous plot-only motion.
 
-**Architecture:** Keep the existing `/api/status` subscription for current
-network/obstruction values and its telemetry collection timestamp, and the
-single `/api/overview-history` query for Prometheus plots and aircraft trail. Do
-not use Prometheus range-query evaluation timestamps as observation age. Align
-the four existing history series into uPlot's five-column band input; keep the
-plot-only CSS rebase and stationary external text/axes. This is a
+**Architecture:** First carry explicit per-field observation availability from
+live/simulated acquisition to nullable `/api/status` values and unavailable
+Prometheus metrics. Reuse the existing status subscription for current values
+and collection age, and the single history query for plots and aircraft trail.
+Do not use Prometheus range-query evaluation timestamps as observation age.
+Align the four existing history series into uPlot's five-column band input; keep
+the plot-only CSS rebase and stationary external text/axes. This is a
 data/presentation slice, not #217 arrival, #218 legend, #219 desktop
 composition, or #220 mobile layout.
 
@@ -26,6 +27,8 @@ Playwright, existing FastAPI/Prometheus history response.
 [#216](https://github.com/bcl1713/starlink-dashboard/issues/216). Planning
 baseline: `dev` `e8a004db9717d4405e6fab047e9b97932a54872e`. Recheck immutable
 `dev` at implementation start; reconcile intervening chart fixes before editing.
+**Approved amendment:**
+`docs/superpowers/specs/2026-09-30-overview-metric-provenance-design.md`.
 
 **Visual intent:** Refer to the desktop and mobile sample images embedded in
 [parent issue #213](https://github.com/bcl1713/starlink-dashboard/issues/213)
@@ -45,9 +48,14 @@ later layout is complete.
   saved custom); trailing statistics are **five minutes**, not the display
   interval. The aircraft trail shares this query.
 - The prominent values and group network freshness come only from the shared
-  `/api/status` telemetry sample and its `timestamp`, not from request time or
-  Prometheus history evaluation timestamps. Keep the position-state wording
-  independent; one source timestamp does not make a stale position fresh.
+  `/api/status` telemetry sample **with per-metric source availability** and its
+  collection `timestamp`, not from request time or Prometheus history evaluation
+  timestamps. A measured zero is valid; a substituted zero is not. Keep
+  position-state wording independent.
+- Unavailable live values return `null` with explicit per-field availability in
+  status; their Prometheus gauges become `NaN` and histograms receive no
+  observation. Pre-amendment status responses lack trustworthy availability and
+  fail closed in the new readouts; old history cannot be verified retroactively.
 - The Overview history hook remains on its existing **five-second request
   cadence** for #216. The 1 Hz future request-cadence goal is not the Prometheus
   scrape rate (already 1 Hz) or the range-query step (one second for the default
@@ -66,8 +74,9 @@ later layout is complete.
 - Documentation impact **in scope**: update `docs/features/overview.md` to
   explain `/api/status` latest-value provenance versus Prometheus history, five
   panel meanings, envelope/average, freshness, gaps, separate display/rolling
-  windows and current five-second request cadence. No backend/API response
-  change is planned; if one is necessary, stop and seek revised scope.
+  windows and current five-second request cadence. Update `/api/status` API docs
+  for nullable metrics and availability; document legacy history limits. If the
+  source contract needs unrelated model/endpoint changes, stop for scope review.
 - TDD RED→GREEN per task; independent task review and final whole-branch review;
   exact pushed SHA for headed Chromium 1920×1080 screenshot plus short motion
   recording and CI evidence. Fixture browser proof must not be described as
@@ -76,24 +85,30 @@ later layout is complete.
 ## Review Focus
 
 1. **Clock skew/future samples:** a status timestamp later than the viewer clock
-   must not produce a fresh readout; test future/invalid timestamps in Task 1.
-2. **Partial metric loss:** one missing metric must not make all five appear
-   fresh; test group partial/unavailable and stale per-panel value in Task 1.
+   must not produce a fresh readout; test future/invalid timestamps in Task 3.
+2. **Missing live field versus measured zero:** test per-field source
+   availability and partial status/Prometheus publication in Tasks 1–3.
 3. **Out-of-order refresh:** an older status payload or same-window history
-   response must not rewind readouts or chart; test Task 3 and retention.
-4. **Band holes:** missing low/high at a timestamp or a long poll gap must not
-   paint across the hole; test Task 2 and headed Task 4.
+   response must not rewind readouts or chart; test Task 5 and retention.
+4. **Band holes:** missing source data or low/high at a timestamp must not paint
+   across the hole; test Tasks 2, 4 and headed Task 6.
 5. **Resize or tab resume at a rebase:** fixed labels and all traces/band edges
-   must remain aligned; test Task 3 and headed Task 4.
+   must remain aligned; test Tasks 5 and 6.
 
 ## File responsibilities
 
+- `app/models/telemetry.py`, `app/live/client.py`,
+  `app/simulation/coordinator.py`: typed per-field availability at acquisition.
+- `app/api/status.py`, `app/core/metrics/metric_updater.py`: nullable status
+  output and unavailable Prometheus gauge/histogram behavior; preserve other
+  consumers. See
+  [source-contract tasks](2026-09-30-overview-five-metric-panels-source-contract.md).
 - `src/pages/overview-metric-history.ts`: existing descriptor/projection; keep
   one aligned timestamp vector and explicit nulls.
 - `src/pages/overview-metric-readout.ts` (new): pure status sample projection,
   per-metric freshness and conservative group summary. No fetches or React.
-- `src/services/status.ts`: type the existing backend `obstruction` response
-  explicitly; do not add an endpoint or change its runtime contract.
+- `src/services/status.ts`: type the additive availability and nullable metric
+  fields returned by the backend and existing obstruction response.
 - `src/pages/overview-metric-scale.ts` (new): pure, labelled y-domain policy by
   metric; no rendering.
 - `src/pages/OverviewMetricHistoryPanel.tsx` and `.css`: stationary
@@ -108,19 +123,28 @@ later layout is complete.
   continue polling status for globe/link and history for aircraft/charts;
   preserve the window selector until #218.
 - `docs/features/overview.md`: operator-facing behavior and limitations.
-  Existing `docs/api/endpoints/overview-history.md` is unchanged unless the API
-  contract changes.
+  `docs/api/endpoints/core.md` and `docs/api/models/health-status-models.md`:
+  nullable status response and source-availability contract. The history API
+  shape is unchanged.
 
 Paths below are relative to `frontend/mission-planner/` unless prefixed `docs/`.
 
-### Task 1: Status-observed values and network freshness
+### Tasks 1–2: Acquisition and publication contract
+
+Complete the independently reviewed
+[source-contract tasks](2026-09-30-overview-five-metric-panels-source-contract.md)
+first. Their interfaces define `metric_availability` for the remaining tasks.
+
+### Task 3: Status-observed values and network freshness
 
 **Files:** Create `src/pages/overview-metric-readout.ts`,
 `src/pages/overview-metric-readout.test.ts`; modify `src/services/status.ts` to
-type backend `obstruction.obstruction_percent`. Keep the graph descriptor's
-existing metric keys for Prometheus; map status fields by its five `id` values.
+type the Task 1 `metric_availability` map, nullable network/obstruction fields,
+and the existing obstruction response. Keep graph metric keys for Prometheus;
+map status fields by the five descriptor `id` values.
 
-**Interfaces:** Consume `StatusResponse` and `OverviewMetricGraphDescriptor`;
+**Interfaces:** Consume `StatusResponse` with optional `metric_availability`
+(older cached responses fail closed) and `OverviewMetricGraphDescriptor`;
 produce `statusMetricReadout` and `networkStatusState` with signatures:
 
 ```ts
@@ -134,53 +158,37 @@ networkStatusState(readouts: (MetricReadout | null)[]): NetworkState;
 `state: 'fresh' | 'stale'`; `NetworkState` is
 `'fresh' | 'partial' | 'stale' | 'unavailable'`. Use the existing
 status-freshness threshold of **5,000 ms** (`ageMs >= 5000` is stale), reject
-future/invalid timestamps and non-finite values, and treat a failed
-`/api/status` request as stale even when React Query keeps last-good data. No
-history-step value influences network freshness.
+future/invalid timestamps and non-finite values, require the matching
+`metric_availability[field] === true`, and treat a failed `/api/status` request
+as stale even with last-good data. No history-step value influences freshness.
 
 - [ ] **Step 1: RED — write parameterized tests** in
       `overview-metric-readout.test.ts`. Use a status fixture with timestamp
-      `1970-01-01T00:01:45.000Z`, network values `latency_ms: 7`,
-      `throughput_down_mbps: 0`, `throughput_up_mbps: 2`,
+      `1970-01-01T00:01:45.000Z`, all availability flags true, network values
+      `latency_ms: 7`, `throughput_down_mbps: 0`, `throughput_up_mbps: 2`,
       `packet_loss_percent: 0.2`, and obstruction `{obstruction_percent: 3}`.
       Assert each descriptor maps to the correct value; at `nowMs=110_000` every
       readout is stale (5s boundary), while `nowMs=109_000` is fresh. Replace
-      one metric with `NaN` → null and group partial; remove all five →
-      unavailable; requestFailed true at 109s → all stale, never fresh. Future,
-      malformed and absent status timestamps yield null, not a fresh value.
+      one metric with `NaN` → null and group partial; mark a finite `0` field
+      unavailable → null, while a verified zero remains fresh; remove all five →
+      unavailable; omit the entire availability map (legacy response) → all
+      null; requestFailed true at 109s → all stale, never fresh. Future,
+      malformed and absent timestamps yield null, not a fresh value.
 - [ ] **Step 2: Run**
       `npm run test:unit -- src/pages/overview-metric-readout.test.ts` from
       `frontend/mission-planner`; expect failure because the module is absent.
 - [ ] **Step 3: GREEN — type the existing response** and project source fields
       without using history evaluation timestamps:
 
-```ts
-// Add to StatusResponse in src/services/status.ts:
-// obstruction?: { obstruction_percent?: number };
-const fields = {
-  latency: status?.network?.latency_ms,
-  downlink: status?.network?.throughput_down_mbps,
-  uplink: status?.network?.throughput_up_mbps,
-  "packet-loss": status?.network?.packet_loss_percent,
-  obstruction: status?.obstruction?.obstruction_percent,
-};
-const value = fields[descriptor.id as keyof typeof fields];
-const observedAtMs = Date.parse(status?.timestamp ?? "");
-const ageMs = nowMs - observedAtMs;
-if (
-  typeof value !== "number" ||
-  !Number.isFinite(value) ||
-  !Number.isFinite(observedAtMs) ||
-  ageMs < 0
-)
-  return null;
-return {
-  value,
-  observedAtMs,
-  ageMs,
-  state: requestFailed || ageMs >= 5_000 ? "stale" : "fresh",
-};
-```
+Map descriptor IDs `latency`, `downlink`, `uplink`, `packet-loss`, `obstruction`
+to the matching Task 1 availability keys and nullable status fields. Type
+`metric_availability` as an optional, partial record of those five keys in
+`StatusResponse`; require the matching flag to be exactly `true` and its field a
+finite number before projecting a current value. Missing map, unknown descriptor
+or non-finite value returns null, never a fallback zero. Parse
+`status.timestamp` as collection age, reject invalid/future timestamps, and mark
+a valid observation stale if `requestFailed` or age is at least 5,000 ms. Never
+derive freshness from a Prometheus history evaluation timestamp.
 
 Implement `networkStatusState` over all five projected readouts: all null →
 unavailable; all fresh → fresh; all non-null stale → stale; other mixes →
@@ -190,7 +198,7 @@ partial. Keep failure wording truthful when last-good data remains.
       `src/pages/overview-metric-history.test.ts`; expect both pass. Commit
       `feat(overview): derive current metric freshness from status`.
 
-### Task 2: One envelope, truthful scale and gaps
+### Task 4: One envelope, truthful scale and gaps
 
 **Files:** Create `src/pages/overview-metric-scale.ts`, `.test.ts`,
 `src/pages/overview-metric-plot-options.ts`, `.test.ts`; modify
@@ -216,12 +224,16 @@ use obsolete `series.band` documentation.
       `overview-metric-history.test.ts` fixture: its aligned arrays must become
       `[[100,105,110,115],[5,null,6,8],[3,null,3,4],[4,null,4,6],[4,5,null,7]]`
       for timestamp/high/low/average/observed respectively. A long gap inserts a
-      shared null timestamp and all four arrays have null there. In scale tests
-      assert obstruction `[0,100]` for small samples, packet loss with 0.2%
-      remains visibly distinguishable yet includes 0 and explicit upper axis
-      value, and other scales include min/max with finite nondegenerate bounds;
-      a previous domain must resist small oscillations but expand immediately
-      for a new peak.
+      shared null timestamp and all four arrays have null there. Add a
+      provenance-gap case: if raw observed is null at a step but a trailing
+      min/avg/max remains finite from older samples, leave all four rendered
+      traces null at that step; resume when raw observed returns. Do not
+      interpolate or treat a `query_range` evaluation time as acquisition time.
+      In scale tests assert obstruction `[0,100]` for small samples, packet loss
+      with 0.2% remains visibly distinguishable yet includes 0 and explicit
+      upper axis value, and other scales include min/max with finite
+      nondegenerate bounds; a previous domain must resist small oscillations but
+      expand immediately for a new peak.
 - [ ] **Step 2: Run**
       `npm run test:unit -- overview-metric-scale overview-metric-plot-options OverviewMetricHistoryPanel`.
       Expect missing modules or old ordering to fail.
@@ -260,9 +272,9 @@ cannot clip real spikes.
 - [ ] **Step 4: Run** focused tests plus `npm run build`; expect pass. Commit
       `feat(overview): draw one rolling envelope and readable scales`.
 
-### Tasks 3–4: Presentation and exact-head acceptance
+### Tasks 5–6: Presentation and exact-head acceptance
 
 Continue in
 [the companion tasks document](2026-09-30-overview-five-metric-panels-presentation.md).
-Both documents form one #216 plan and require Brian’s review before
-implementation.
+Both companion documents and this main document form one revised #216 plan and
+require Brian’s review before implementation.

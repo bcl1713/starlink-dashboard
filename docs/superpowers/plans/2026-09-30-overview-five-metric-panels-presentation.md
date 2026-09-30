@@ -6,7 +6,7 @@ global constraints, interfaces and review focus apply here.
 
 ## Presentation and acceptance
 
-### Task 3: Shared header, stationary latest values and removal of duplicate box
+### Task 5: Shared header, stationary latest values and removal of duplicate box
 
 **Files:** Modify `src/pages/OverviewMetricHistoryPanels.tsx`, `.test.tsx`,
 `src/pages/OverviewMetricHistoryPanel.tsx`, `.css`, `.test.tsx`,
@@ -28,15 +28,17 @@ distinctly; render a separate history-error message when applicable. Do not
 relocate the selector or change route/position stale state. `nowMs` from
 `useCurrentTime(1_000)` is only a clock for age text.
 
-- [ ] **Step 1: RED — component tests:** with the Task 1 status fixture, assert
+- [ ] **Step 1: RED — component tests:** with the Task 3 status fixture, assert
       prominent `7 ms` and `Observed 00:01:45 UTC` at 109s; at 130s assert
       prominent `Unavailable` plus `Last observed 7 ms · 25s old` in secondary
       copy. At 109s with a failed status refresh, assert the same last-known
       copy and no prominent `7 ms`; with only a history error, assert a separate
       `History refresh unavailable` message without relabelling a fresh status
-      sample as old. Absent/malformed status fields render `Unavailable`. Assert
-      five titles, one group freshness label, one display duration, one
-      rolling-window label, no `History available`, repeated `Graph traces`, or
+      sample as old. An unverified legacy status response, `null` field or false
+      availability flag renders `Unavailable`, even if the numeric fallback is
+      zero. A verified zero remains a current value. Assert five titles, one
+      group freshness label, one display duration, one rolling-window label, no
+      `History available`, repeated `Graph traces`, or
       `Current network metrics`/signal quality. In page contract assert
       `/api/status` still feeds aircraft/X-band while history still feeds all
       five panels and aircraft trail. Add independent out-of-order status and
@@ -74,12 +76,13 @@ If stale, show the last-known numeric value in secondary copy with explicit age,
 never a prominent current value. Remove duplicate current-network box from
 `OverviewPage` but leave `useStatus()` intact. Preserve fixed axes and chart
 size via CSS while adding readouts; desktop redesign is reserved for #219.
-Update Overview user guidance with `/api/status` current-value authority versus
-Prometheus history evaluation timestamps; distinguish status failure from
-history failure, describe five metrics, line/band meaning, persisted display
-window versus fixed trailing-five-minute window, and selector location pending
-issue #218. Document that history requests remain every five seconds in this
-slice; a future 1 Hz request default requires a separate load/performance gate.
+Update Overview user guidance with `/api/status` availability/current-value
+authority versus Prometheus history evaluation timestamps; distinguish status
+failure from history failure, measured zero from unavailable, and old history
+whose provenance predates this contract. Describe five metrics, line/band
+meaning, persisted display window versus fixed trailing-five-minute window, and
+selector location pending issue #218. Document that history requests remain
+every five seconds; a future 1 Hz request default belongs to #224.
 
 - [ ] **Step 4: Run** focused unit tests, entire `npm run test:unit`,
       `npm run lint`, `npx prettier --check src/pages`, `npm run build` from
@@ -88,7 +91,7 @@ slice; a future 1 Hz request default requires a separate load/performance gate.
       selectors to the new truthful copy. Commit
       `feat(overview): unify five readouts and network history context`.
 
-### Task 4: Motion/acceptance gate on the exact candidate head
+### Task 6: Motion/acceptance gate on the exact candidate head
 
 **Files:** Modify `src/pages/OverviewMetricHistoryPanel.test.tsx`,
 `src/pages/overview-metric-motion.test.ts`,
@@ -129,7 +132,9 @@ or desktop composition here.
       `npx prettier --check src/pages src/services/status.ts`, `npm run build`,
       then the following serial headed Chromium suite. From
       `backend/starlink-location`: run the backend contract command. From the
-      repository root run `markdownlint-cli2 docs/features/overview.md`.
+      repository root run `markdownlint-cli2` on `docs/features/overview.md`,
+      `docs/api/endpoints/core.md` and
+      `docs/api/models/health-status-models.md`.
 
   ```bash
   npx playwright test --project=chromium --headed --workers=1 \
@@ -137,6 +142,9 @@ or desktop composition here.
     tests/e2e/overview-metric-history-fullscreen.spec.ts \
     tests/e2e/overview-globe.spec.ts
   python -m pytest tests/integration/test_overview_history_api.py \
+    tests/integration/test_status.py \
+    tests/unit/test_starlink_client.py \
+    tests/unit/test_metrics.py \
     tests/unit/test_overview_history_prometheus.py \
     tests/unit/test_overview_history_rollups.py -q
   ```
@@ -151,11 +159,11 @@ or desktop composition here.
 
 ## Self-review and implementation handoff
 
-- Coverage is intentionally limited to #216's shared values/freshness, five
-  panels, envelope, gap/scale/motion, tests and documentation. #217–#220 and
-  #210/#211/#207 remain separately gated. The existing history endpoint already
-  supplies rolling values; this plan does not invent signal-quality or new
-  backend telemetry.
+- Coverage is intentionally limited to #216's per-metric observation
+  availability, status and Prometheus publication, five panels,
+  gap/scale/motion, tests and documentation. #217–#220 and #210/#211/#207 remain
+  separately gated. The existing history endpoint already supplies rolling
+  values; this plan does not invent signal-quality telemetry.
 - Before implementation, the worker verifies the actual `dev` SHA, installed
   uPlot `1.6.32` band behavior/types, current CSS/Playwright selectors,
   `/api/status` timestamp provenance and the Prometheus history evaluation-time

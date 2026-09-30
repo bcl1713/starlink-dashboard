@@ -22,10 +22,10 @@ any implementation slice, re-inspect the new `dev` head, reconcile changes here
 and in #213, and obtain approval of that slice's written plan. Issue #210
 remains the ten-foot readability review; the partially delivered #149 roadmap
 was closed as superseded; #211 is a separate performance investigation. Do not
-silently duplicate their distinct work. The proposed
+silently duplicate their distinct work. The approved
 [#216 metric-provenance amendment](2026-09-30-overview-metric-provenance-design.md)
-adds a source-availability contract to this design; it requires Brian's written
-spec review before the #216 plan is revised or implementation begins.
+adds a source-availability contract to this design; its implementation must
+follow the revised #216 plan and independent review.
 
 ## Current contracts and the five-metric decision
 
