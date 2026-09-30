@@ -485,6 +485,147 @@ class TestStarlinkClientTelemetry:
         assert telemetry.network.throughput_down_mbps == pytest.approx(0.0)
 
 
+# Literal source/normalized values catch wrong units and per-field coupling.
+METRIC_SOURCES = [
+    ("latency_ms", "pop_ping_latency_ms", 50, 50.0),
+    ("throughput_down_mbps", "downlink_throughput_bps", 100e6, 100.0),
+    ("throughput_up_mbps", "uplink_throughput_bps", 20e6, 20.0),
+    ("packet_loss_percent", "pop_ping_drop_rate", 0.01, 1.0),
+    ("obstruction_percent", "fraction_obstructed", 0.15, 15.0),
+]
+
+
+@pytest.fixture
+def observation_source():
+    """Mock only dish I/O, leaving telemetry extraction real."""
+    status = {
+        "uptime": 3600.0,
+        "pop_ping_latency_ms": 50,
+        "downlink_throughput_bps": 100e6,
+        "uplink_throughput_bps": 20e6,
+        "pop_ping_drop_rate": 0.01,
+        "fraction_obstructed": 0.15,
+    }
+    obstruction = {"valid_s": None}
+    with (
+        patch("app.live.client.starlink_grpc.ChannelContext"),
+        patch(
+            "app.live.client.starlink_grpc.status_data",
+            return_value=(status, obstruction, {}),
+        ),
+        patch(
+            "app.live.client.starlink_grpc.location_data",
+            return_value={
+                "latitude": 40.7128,
+                "longitude": -74.006,
+                "altitude": 100,
+            },
+        ),
+        patch(
+            "app.live.client.starlink_grpc.history_stats",
+            return_value=({}, {}, {}, {}, {}, {}, {}),
+        ),
+    ):
+        yield StarlinkClient(), status, obstruction
+
+
+def metric_value(telemetry, metric):
+    container = (
+        telemetry.obstruction if metric == "obstruction_percent" else telemetry.network
+    )
+    return getattr(container, metric)
+
+
+@pytest.mark.parametrize("metric,key,source,expected", METRIC_SOURCES)
+@pytest.mark.parametrize("zero", [0, 0.0])
+def test_measured_zero_is_available(
+    observation_source, metric, key, source, expected, zero
+):
+    client, status, _ = observation_source
+    status[key] = zero
+    telemetry = client.get_telemetry()
+    assert metric_value(telemetry, metric) == 0.0
+    assert getattr(telemetry.metric_availability, metric) is True
+
+
+@pytest.mark.parametrize("metric,key,source,expected", METRIC_SOURCES)
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "missing",
+        None,
+        "bad",
+        "12.5",
+        True,
+        False,
+        float("nan"),
+        float("inf"),
+        -float("inf"),
+    ],
+)
+def test_partial_loss_and_next_batch_recovery(
+    observation_source, metric, key, source, expected, invalid
+):
+    client, status, _ = observation_source
+    if invalid == "missing":
+        del status[key]
+    else:
+        status[key] = invalid
+    telemetry = client.get_telemetry()
+    assert metric_value(telemetry, metric) == 0.0
+    assert getattr(telemetry.metric_availability, metric) is False
+    for other, _, _, other_expected in METRIC_SOURCES:
+        if other != metric:
+            assert getattr(telemetry.metric_availability, other) is True
+            assert metric_value(telemetry, other) == pytest.approx(other_expected)
+    status[key] = source
+    recovered = client.get_telemetry()
+    assert getattr(recovered.metric_availability, metric) is True
+    assert metric_value(recovered, metric) == pytest.approx(expected)
+    assert getattr(telemetry.metric_availability, metric) is False
+
+
+@pytest.mark.parametrize("primary", ["missing", None, "bad", True, float("nan")])
+def test_obstruction_fallback_only_when_primary_absent(observation_source, primary):
+    client, status, obstruction = observation_source
+    obstruction["fraction_obstructed"] = 0.25
+    if primary == "missing":
+        del status["fraction_obstructed"]
+    else:
+        status["fraction_obstructed"] = primary
+    telemetry = client.get_telemetry()
+    assert telemetry.metric_availability.obstruction_percent is (primary == "missing")
+    assert telemetry.obstruction.obstruction_percent == (
+        25.0 if primary == "missing" else 0.0
+    )
+
+
+@pytest.mark.parametrize("valid_s", [None, 0, 100])
+def test_obstruction_detail_completeness_does_not_veto_status_fraction(
+    observation_source, valid_s
+):
+    client, _, obstruction = observation_source
+    obstruction["valid_s"] = valid_s
+    telemetry = client.get_telemetry()
+    assert telemetry.metric_availability.obstruction_percent is True
+    assert telemetry.obstruction.obstruction_percent == pytest.approx(15.0)
+
+
+@pytest.mark.parametrize(
+    "metric,key",
+    [
+        ("packet_loss_percent", "pop_ping_drop_rate"),
+        ("obstruction_percent", "fraction_obstructed"),
+    ],
+)
+def test_scaled_nonfinite_value_is_unavailable(observation_source, metric, key):
+    client, status, _ = observation_source
+    status[key] = 1e308
+    telemetry = client.get_telemetry()
+    assert getattr(telemetry.metric_availability, metric) is False
+    assert metric_value(telemetry, metric) == 0.0
+
+
 class TestStarlinkClientGPSConfig:
     """Test GPS configuration methods."""
 

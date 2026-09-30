@@ -70,6 +70,7 @@ from app.models.config import (
 )
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
@@ -347,6 +348,13 @@ def isolate_mission_storage(tmp_path: Path):
 def default_mock_telemetry():
     """Create default mock telemetry for tests."""
     return TelemetryData(
+        metric_availability=MetricAvailability(
+            latency_ms=True,
+            throughput_down_mbps=True,
+            throughput_up_mbps=True,
+            packet_loss_percent=True,
+            obstruction_percent=True,
+        ),
         timestamp=datetime.now(timezone.utc),
         position=PositionData(
             latitude=40.7128,

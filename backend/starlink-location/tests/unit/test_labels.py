@@ -12,6 +12,7 @@ from app.core.labels import (
 )
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
@@ -106,6 +107,13 @@ class TestApplyCommonLabels:
     def mock_telemetry(self):
         """Create a mock telemetry object."""
         return TelemetryData(
+            metric_availability=MetricAvailability(
+                latency_ms=True,
+                throughput_down_mbps=True,
+                throughput_up_mbps=True,
+                packet_loss_percent=True,
+                obstruction_percent=True,
+            ),
             timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=40.7128,

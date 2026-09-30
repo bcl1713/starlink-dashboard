@@ -1,11 +1,60 @@
 """Integration tests for JSON status endpoint."""
 
 import asyncio
+from datetime import datetime, timezone
+from unittest.mock import Mock
 
 import pytest
 
 from app.api import status as status_api
+from app.models.telemetry import TelemetryData
 from app.services.ground_entry_point import GroundEntryPoint
+from tests.conftest import default_mock_telemetry
+
+METRICS = [
+    "latency_ms",
+    "throughput_down_mbps",
+    "throughput_up_mbps",
+    "packet_loss_percent",
+    "obstruction_percent",
+]
+
+
+@pytest.mark.parametrize("unavailable", [None, *METRICS, "legacy"])
+def test_status_projects_availability_without_mutating_batch(
+    test_client, monkeypatch, unavailable
+):
+    payload = default_mock_telemetry().model_dump()
+    payload["timestamp"] = datetime(2020, 1, 2, tzinfo=timezone.utc)
+    payload["network"] = {
+        "latency_ms": 0.0,
+        "throughput_down_mbps": 100.0,
+        "throughput_up_mbps": 20.0,
+        "packet_loss_percent": 0.0,
+    }
+    payload["obstruction"] = {"obstruction_percent": 0.0}
+    payload.pop("metric_availability", None)
+    if unavailable != "legacy":
+        payload["metric_availability"] = {
+            metric: metric != unavailable for metric in METRICS
+        }
+    telemetry = TelemetryData(**payload)
+    before = telemetry.model_dump()
+    monkeypatch.setattr(
+        status_api, "_coordinator", Mock(get_current_telemetry=lambda: telemetry)
+    )
+    response = test_client.get("/api/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["timestamp"] == "2020-01-02T00:00:00+00:00"
+    assert data["position"] == payload["position"]
+    assert data["environmental"] == payload["environmental"]
+    for metric in METRICS:
+        available = unavailable != "legacy" and metric != unavailable
+        assert data["metric_availability"][metric] is available
+        group = "obstruction" if metric == "obstruction_percent" else "network"
+        assert data[group][metric] == (payload[group][metric] if available else None)
+    assert telemetry.model_dump() == before
 
 
 @pytest.mark.asyncio

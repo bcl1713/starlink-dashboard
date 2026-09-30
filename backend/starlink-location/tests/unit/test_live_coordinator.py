@@ -17,6 +17,7 @@ from app.models.config import (
 )
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
@@ -141,6 +142,13 @@ class TestLiveCoordinatorUpdate:
         # Create mock telemetry with movement
         initial_telemetry = default_mock_telemetry()
         second_telemetry = TelemetryData(
+            metric_availability=MetricAvailability(
+                latency_ms=True,
+                throughput_down_mbps=True,
+                throughput_up_mbps=True,
+                packet_loss_percent=True,
+                obstruction_percent=True,
+            ),
             timestamp=datetime.now(timezone.utc) + timedelta(seconds=5),
             position=PositionData(
                 latitude=40.7200,  # Moved north
