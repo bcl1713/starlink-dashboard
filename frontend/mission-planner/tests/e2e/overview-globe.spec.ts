@@ -175,7 +175,15 @@ test.describe('Globe overview', () => {
 
       await route.fulfill({
         json: {
-          timestamp: '2026-06-21T12:00:00.000Z',
+          timestamp: '2026-06-21T11:59:59.000Z',
+          metric_availability: {
+            latency_ms: true,
+            throughput_down_mbps: true,
+            throughput_up_mbps: true,
+            packet_loss_percent: true,
+            obstruction_percent: true,
+          },
+          obstruction: { obstruction_percent: 15 },
           position: {
             latitude: 12,
             longitude: 160,
@@ -226,18 +234,26 @@ test.describe('Globe overview', () => {
 
     await page.goto('/overview');
 
-    const metricsPanel = page.getByLabel('Current network metrics');
-
-    await expect(metricsPanel).toBeVisible();
+    const globeLegend = page.getByLabel('Globe legend');
     await expect(
-      metricsPanel.getByText('Live telemetry', { exact: true })
+      globeLegend.getByText('Live telemetry', { exact: true })
     ).toBeVisible();
-    await expect(metricsPanel).toContainText('Updated 2026-06-21 12:00:00 UTC');
-    await expect(metricsPanel).toContainText(/Latency\s*42\.5 ms/);
-    await expect(metricsPanel).toContainText(/Downlink\s*125\.3 Mbps/);
-    await expect(metricsPanel).toContainText(/Uplink\s*25\.1 Mbps/);
-    await expect(metricsPanel).toContainText(/Packet loss\s*0\.5%/);
-    await expect(metricsPanel).toContainText(/Signal quality\s*85%/);
+    for (const [label, value] of [
+      ['Network latency', '42.5 ms'],
+      ['Downlink throughput', '125.3 Mbps'],
+      ['Uplink throughput', '25.1 Mbps'],
+      ['Packet loss', '0.5 %'],
+      ['Obstruction', '15 %'],
+    ]) {
+      const panel = page.getByLabel(`${label} history`, { exact: true });
+      await expect(panel).toBeVisible();
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toHaveText(value);
+      await expect(panel.locator('.overview-metric-history__age')).toHaveText(
+        'Observed 11:59:59 UTC'
+      );
+    }
 
     await expect.poll(() => statusRequests.length).toBeGreaterThanOrEqual(1);
 
@@ -415,11 +431,11 @@ test.describe('Globe overview', () => {
   test('marks a previously fresh status sample as stale when refresh hangs', async ({
     page,
   }) => {
-    const observedAt = '2026-06-21T12:00:00.000Z';
+    const observedAt = '2026-06-21T11:59:59.000Z';
     let statusRequestCount = 0;
 
     await page.clock.install({
-      time: new Date(observedAt),
+      time: new Date('2026-06-21T12:00:00.000Z'),
     });
 
     await page.route('**/api/routes', async (route) => {
@@ -458,6 +474,20 @@ test.describe('Globe overview', () => {
         await route.fulfill({
           json: {
             timestamp: observedAt,
+            metric_availability: {
+              latency_ms: true,
+              throughput_down_mbps: true,
+              throughput_up_mbps: true,
+              packet_loss_percent: true,
+              obstruction_percent: true,
+            },
+            network: {
+              latency_ms: 42.5,
+              throughput_down_mbps: 125.3,
+              throughput_up_mbps: 25.1,
+              packet_loss_percent: 0.5,
+            },
+            obstruction: { obstruction_percent: 15 },
             position: {
               latitude: 0,
               longitude: 179,
@@ -473,17 +503,33 @@ test.describe('Globe overview', () => {
     });
 
     await page.goto('/overview');
-    const metricsPanel = page.getByLabel('Current network metrics');
-
+    const globeLegend = page.getByLabel('Globe legend');
+    const panels = page.locator('[data-metric-panel]');
+    await expect(panels).toHaveCount(5);
     await expect(
-      metricsPanel.getByText('Live telemetry', { exact: true })
+      globeLegend.getByText('Live telemetry', { exact: true })
     ).toBeVisible();
-
+    for (const panel of await panels.all()) {
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).not.toHaveText('Unavailable');
+      await expect(panel.locator('.overview-metric-history__age')).toHaveText(
+        'Observed 11:59:59 UTC'
+      );
+    }
     await page.clock.fastForward(5_000);
-
     await expect(
-      metricsPanel.getByText('Telemetry stale', { exact: true })
+      globeLegend.getByText('Telemetry stale', { exact: true })
     ).toBeVisible();
+    for (const panel of await panels.all()) {
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toHaveText('Unavailable');
+      await expect(
+        panel.locator('.overview-metric-history__age')
+      ).toContainText(/Last observed .* · 6s old/);
+    }
+    expect(statusRequestCount).toBe(2);
     await expect(page.getByLabel('Globe legend')).toBeVisible();
     await expect(
       page.getByText('GEP unavailable', { exact: true })
@@ -1251,10 +1297,16 @@ test.describe('Globe overview', () => {
     const panel = page.getByLabel('Upcoming POIs');
     await expect(panel).toBeVisible();
     await expect(panel.getByRole('row')).toHaveCount(6);
-    await expect(panel.getByRole('columnheader', { name: /urgency/i })).toHaveCount(0);
-    await expect(panel.getByRole('columnheader', { name: 'Type' })).toBeVisible();
+    await expect(
+      panel.getByRole('columnheader', { name: /urgency/i })
+    ).toHaveCount(0);
+    await expect(
+      panel.getByRole('columnheader', { name: 'Type' })
+    ).toBeVisible();
     await expect(panel).toHaveCSS('overflow-y', 'hidden');
-    await expect(panel.getByText('AAR complete', { exact: true })).toHaveCount(0);
+    await expect(panel.getByText('AAR complete', { exact: true })).toHaveCount(
+      0
+    );
     await expect(page.getByText('KADW', { exact: true })).toBeVisible();
     await expect(panel.getByText('RKSO', { exact: true })).toBeVisible();
     await expect(page.getByText('AAR complete', { exact: true })).toBeVisible();
@@ -1292,7 +1344,11 @@ test.describe('Globe overview', () => {
         })
       );
       for (let index = 0; index < clusteredLabels.length; index += 1) {
-        for (let other = index + 1; other < clusteredLabels.length; other += 1) {
+        for (
+          let other = index + 1;
+          other < clusteredLabels.length;
+          other += 1
+        ) {
           const first = clusteredLabels[index];
           const second = clusteredLabels[other];
           expect(
@@ -1313,10 +1369,13 @@ test.describe('Globe overview', () => {
       'background-color',
       'rgb(34, 197, 94)'
     );
-    await expect(page).toHaveScreenshot('overview-upcoming-pois-1920x1080.png', {
-      animations: 'disabled',
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page).toHaveScreenshot(
+      'overview-upcoming-pois-1920x1080.png',
+      {
+        animations: 'disabled',
+        maxDiffPixelRatio: 0.02,
+      }
+    );
   });
 
   test('retains a persisted custom aircraft history window', async ({

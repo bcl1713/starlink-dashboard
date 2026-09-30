@@ -121,8 +121,21 @@ test.describe('Overview metric history', () => {
     await page.route('**/api/status', (route) =>
       route.fulfill({
         json: {
-          timestamp: new Date(now).toISOString(),
-          network: { latency_ms: 42 },
+          timestamp: new Date(now - 1000).toISOString(),
+          metric_availability: {
+            latency_ms: true,
+            throughput_down_mbps: true,
+            throughput_up_mbps: true,
+            packet_loss_percent: true,
+            obstruction_percent: true,
+          },
+          network: {
+            latency_ms: 42,
+            throughput_down_mbps: 125.3,
+            throughput_up_mbps: 25.1,
+            packet_loss_percent: 0.5,
+          },
+          obstruction: { obstruction_percent: 15 },
         },
       })
     );
@@ -258,6 +271,21 @@ test.describe('Overview metric history', () => {
         const stack = document.querySelector('.overview-bottom-overlays')!;
         return {
           boxes,
+          contents: [...document.querySelectorAll('[data-metric-panel]')].map(
+            (panel) =>
+              [
+                ...panel.querySelectorAll(
+                  '.overview-metric-history__header, .overview-metric-history__latest, .overview-metric-history__age, .overview-metric-history__status, .overview-metric-history__chart, .overview-metric-history__time-axis'
+                ),
+              ].map((node) => ({
+                className: node.className,
+                text: node.textContent,
+                box: node.getBoundingClientRect().toJSON(),
+              }))
+          ),
+          plotHeights: [
+            ...document.querySelectorAll('.overview-metric-history__viewport'),
+          ].map((node) => node.getBoundingClientRect().height),
           panelScroll: [
             ...document.querySelectorAll('[data-metric-panel]'),
           ].map(
@@ -303,6 +331,30 @@ test.describe('Overview metric history', () => {
     const assertLayout = (state: Awaited<ReturnType<typeof layout>>) => {
       expect(state.boxes).toHaveLength(5);
       expect(state.panelScroll).toEqual(Array(5).fill(false));
+      expect(state.plotHeights).toEqual(Array(5).fill(56));
+      for (const [index, contents] of state.contents.entries()) {
+        const parent = state.boxes[index];
+        for (const { box } of contents) {
+          expect(box.width).toBeGreaterThan(0);
+          expect(box.height).toBeGreaterThan(0);
+          expect(box.left).toBeGreaterThanOrEqual(parent.left);
+          expect(box.right).toBeLessThanOrEqual(parent.right);
+          expect(box.top).toBeGreaterThanOrEqual(parent.top);
+          expect(box.bottom).toBeLessThanOrEqual(parent.bottom);
+        }
+        for (let first = 0; first < contents.length; first++)
+          for (let second = first + 1; second < contents.length; second++) {
+            const a = contents[first].box;
+            const b = contents[second].box;
+            expect(
+              a.right <= b.left ||
+                b.right <= a.left ||
+                a.bottom <= b.top ||
+                b.bottom <= a.top,
+              `metric content overlap: ${JSON.stringify(contents)}`
+            ).toBe(true);
+          }
+      }
       for (const box of [...state.boxes, state.poi])
         for (const neighbor of state.neighbors)
           expect(
