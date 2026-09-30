@@ -120,7 +120,7 @@ describe('OverviewMetricHistoryPanel', () => {
   });
   it('updates one plot on fresh data, rebases with aligned x range, and cleans up', () => {
     const view = render(panel());
-    vi.setSystemTime(125_000);
+    act(() => vi.advanceTimersByTime(5_000));
     view.rerender(panel(bundle(125), false, 125_000));
     expect(plot.create).toHaveBeenCalledTimes(1);
     expect(plot.setData).toHaveBeenCalledTimes(1);
@@ -135,6 +135,21 @@ describe('OverviewMetricHistoryPanel', () => {
     view.unmount();
     expect(plot.destroy).toHaveBeenCalledTimes(1);
     expect(observer.disconnect).toHaveBeenCalledTimes(1);
+  });
+  it('caps an initially stale canvas at the same edge as its UTC ticks', () => {
+    vi.setSystemTime(140_000);
+    const view = render(panel(bundle(120), false, 140_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    expect(surface.style.transform).toContain('translate3d(-100px');
+    expect(
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent
+    ).toBe('00:02:00 UTC');
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('none');
   });
   it('keeps UTC ticks aligned with the canvas when nowMs reverses', () => {
     vi.setSystemTime(125_000);
@@ -226,7 +241,8 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(surface().style.transform).toBe(transform);
     expect(plot.setData).not.toHaveBeenCalled();
     view.rerender(panel(bundle(130), false, 130_000));
-    expect(right()).toBe('00:02:02 UTC');
+    // A late recovery preserves the retained timestamp's screen position.
+    expect(right()).toBe('00:01:57 UTC');
     expect(plot.setData).toHaveBeenCalledTimes(1);
     expect(plot.setScale).toHaveBeenCalledWith('x', { min: 92.5, max: 137.5 });
   });

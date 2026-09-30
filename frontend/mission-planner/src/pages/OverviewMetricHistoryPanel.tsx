@@ -111,6 +111,53 @@ export function OverviewMetricHistoryPanel({
       Math.max(0, monotonicMs - clockAnchor.current.monotonicMs)
   );
   const currentSeconds = clockAnchor.current.effectiveMs / 1000;
+  // Carry the visible time edge, not the new bundle's elapsed clock, across
+  // rebases. When a poll arrives after overscan is exhausted the old surface
+  // has stopped; resetting from nowMs would teleport retained samples.
+  const scroll = useRef({
+    windowSeconds: selectedWindowSeconds,
+    end: validHistory?.end_timestamp_seconds,
+    startedMs: monotonicMs,
+    initialElapsed: validHistory
+      ? Math.min(
+          BUFFER_SECONDS,
+          currentSeconds - validHistory.end_timestamp_seconds
+        )
+      : 0,
+  });
+  if (scroll.current.windowSeconds !== selectedWindowSeconds || !validHistory) {
+    scroll.current = {
+      windowSeconds: selectedWindowSeconds,
+      end: validHistory?.end_timestamp_seconds,
+      startedMs: monotonicMs,
+      initialElapsed: validHistory
+        ? Math.min(
+            BUFFER_SECONDS,
+            currentSeconds - validHistory.end_timestamp_seconds
+          )
+        : 0,
+    };
+  } else if (scroll.current.end !== validHistory.end_timestamp_seconds) {
+    const previous = scroll.current;
+    scroll.current = {
+      windowSeconds: selectedWindowSeconds,
+      end: validHistory.end_timestamp_seconds,
+      startedMs: monotonicMs,
+      initialElapsed:
+        Math.min(
+          BUFFER_SECONDS,
+          previous.initialElapsed +
+            Math.max(0, monotonicMs - previous.startedMs) / 1000
+        ) +
+        (previous.end ?? validHistory.end_timestamp_seconds) -
+        validHistory.end_timestamp_seconds,
+    };
+  }
+  const scrollElapsed = Math.min(
+    BUFFER_SECONDS,
+    scroll.current.initialElapsed +
+      Math.max(0, monotonicMs - scroll.current.startedMs) / 1000
+  );
   const elapsed = validHistory
     ? currentSeconds - validHistory.end_timestamp_seconds
     : 0;
@@ -118,9 +165,20 @@ export function OverviewMetricHistoryPanel({
   const freezeKey = `${descriptor.metric}/${validHistory?.end_timestamp_seconds}/${selectedWindowSeconds}`;
   if (error || hidden) {
     if (frozen.current?.key !== freezeKey)
-      frozen.current = { key: freezeKey, elapsed };
-  } else frozen.current = null;
-  const motionElapsed = frozen.current?.elapsed ?? elapsed;
+      frozen.current = { key: freezeKey, elapsed: scrollElapsed };
+  } else if (frozen.current) {
+    if (frozen.current.key === freezeKey) {
+      scroll.current.initialElapsed = frozen.current.elapsed;
+      scroll.current.startedMs = monotonicMs;
+    }
+    frozen.current = null;
+  }
+  const motionElapsed = Math.min(
+    BUFFER_SECONDS,
+    frozen.current?.elapsed ??
+      scroll.current.initialElapsed +
+        Math.max(0, monotonicMs - scroll.current.startedMs) / 1000
+  );
   // The bundle can be current while this metric's last real sample is old.
   // Projected times end in a real observed/rollup sample, never a gap marker.
   const sampleEnd = projection?.times.at(-1);
@@ -165,9 +223,7 @@ export function OverviewMetricHistoryPanel({
     : 1;
   const upper = Math.ceil(maximum * 1.1);
   const visibleRight = domain
-    ? domain.max -
-      BUFFER_SECONDS * 2 +
-      Math.min(BUFFER_SECONDS, Math.max(0, motionElapsed))
+    ? domain.max - BUFFER_SECONDS * 2 + Math.min(BUFFER_SECONDS, motionElapsed)
     : 0;
   const utcTime = (seconds: number) =>
     new Date(seconds * 1000).toISOString().slice(11, 19) + ' UTC';
@@ -214,12 +270,7 @@ export function OverviewMetricHistoryPanel({
     // A fresh bundle changes the plot origin, but the old and new transforms
     // place the same timestamp at the same screen coordinate. Cancel the old
     // transition before rebasing; start a new linear compositor transition.
-    const offset = motionOffsetPixels({
-      elapsedSeconds: motionElapsed,
-      widthPixels: width,
-      windowSeconds,
-      bufferSeconds: BUFFER_SECONDS,
-    });
+    const offset = -(motionElapsed / windowSeconds) * width;
     node.style.transition = 'none';
     node.style.transform = `translate3d(${offset}px, 0, 0)`;
     if (!plot.current) {
@@ -257,7 +308,7 @@ export function OverviewMetricHistoryPanel({
     plot.current.setScale('y', { min: 0, max: upper });
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
-    const remaining = Math.max(0, BUFFER_SECONDS - Math.max(0, motionElapsed));
+    const remaining = Math.max(0, BUFFER_SECONDS - motionElapsed);
     const timer = window.setTimeout(() => {
       if (!hidden && !error && remaining > 0) {
         node.style.transition = `transform ${remaining}s linear`;
