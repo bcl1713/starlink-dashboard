@@ -300,11 +300,117 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(screen.getByText('1.4 %')).not.toBeNull();
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1.4 });
   });
-  it('resizes the existing plot without remounting', () => {
-    render(panel());
-    measuredWidth = 500;
+  // These probes catch an incorrect x-domain/transform rebase, viewport-based
+  // speed, or per-tick data upload. Canvas/compositor paint is covered in E2E.
+  it.each([1, 5])(
+    'preserves all four series positions at %ss bundle rebases',
+    (interval) => {
+      const history = (end: number) => {
+        const next = bundle(end);
+        next.series[descriptor.metric] = [
+          [110, 5],
+          [end, 7],
+        ];
+        next.rolling_5m![descriptor.metric] = {
+          state: 'available',
+          min: [[110, 3]],
+          avg: [[110, 4]],
+          max: [[110, 6]],
+        };
+        return next;
+      };
+      const view = render(panel(history(120)));
+      const surface = view.container.querySelector(
+        '.overview-metric-history__surface'
+      ) as HTMLElement;
+      for (const end of [120 + interval, 120 + 2 * interval]) {
+        act(() => vi.advanceTimersByTime(interval * 1000));
+        // The old CSS transition is linear; derive its position independently.
+        const before =
+          ((110 - (120 - 37.5)) / 45) * 600 - ((end - 120) / 30) * 400;
+        view.rerender(panel(history(end), false, end * 1000));
+        const domain = plot.setScale.mock.calls
+          .filter(([axis]) => axis === 'x')
+          .at(-1)![1];
+        const offset = Number(
+          surface.style.transform.match(/translate3d\(([-\d.]+)px/)?.[1]
+        );
+        const after =
+          ((110 - domain.min) / (domain.max - domain.min)) * 600 + offset;
+        const data = plot.setData.mock.calls.at(-1)![0];
+        const marker = data[0].indexOf(110);
+        expect(data.slice(1).map((column: number[]) => column[marker])).toEqual(
+          [6, 3, 4, 5]
+        );
+        for (const column of data.slice(1)) {
+          expect(column[marker]).not.toBeNull();
+          expect(Math.abs(after - before)).toBeLessThanOrEqual(1);
+        }
+      }
+      expect(plot.setData).toHaveBeenCalledTimes(2);
+      act(() => vi.advanceTimersByTime(8_000));
+      expect(plot.setData).toHaveBeenCalledTimes(2);
+    }
+  );
+  it('recalculates motion and uPlot size from a 400 to 300 CSS-pixel viewport', () => {
+    const view = render(panel());
+    act(() => vi.advanceTimersByTime(2_000));
+    measuredWidth = 300;
     act(() => resize([], {} as ResizeObserver));
-    expect(plot.setSize).toHaveBeenCalled();
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    expect(plot.setSize).toHaveBeenLastCalledWith({ width: 450, height: 1 });
+    expect(surface.style.transform).toBe('translate3d(-20px, 0, 0)');
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('transform 5.5s linear');
+    expect(surface.style.transform).toBe('translate3d(-75px, 0, 0)');
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(8_000));
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    expect(plot.create).toHaveBeenCalledTimes(1);
+  });
+  it('caps an eight-second delayed poll without extrapolating samples', () => {
+    const view = render(panel());
+    act(() => vi.advanceTimersByTime(8_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    expect(surface.style.transform).toBe('translate3d(-100px, 0, 0)');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Waiting for fresh history'
+    );
+    expect(plot.setData).not.toHaveBeenCalled();
+    view.rerender(panel(bundle(128), false, 128_000));
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    expect(plot.setData.mock.calls[0][0][0].at(-1)).toBe(128);
+    expect(surface.style.transform).toContain(
+      'translate3d(6.666666666666667px'
+    );
+  });
+  it('resumes from the frozen edge without replaying missed transitions', () => {
+    const history = bundle();
+    const view = render(panel(history));
+    act(() => vi.advanceTimersByTime(2_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      value: true,
+    });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    const frozen = surface.style.transform;
+    act(() => vi.advanceTimersByTime(120_000));
+    expect(surface.style.transform).toBe(frozen);
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      value: false,
+    });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(surface.style.transform).toBe(frozen);
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('transform 5.5s linear');
     expect(plot.create).toHaveBeenCalledTimes(1);
   });
   it('marks an initial failed fetch unavailable without claiming last-known data', () => {

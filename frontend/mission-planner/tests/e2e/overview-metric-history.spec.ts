@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs/promises';
+import { buildSync } from 'esbuild';
 import { expect, test } from '@playwright/test';
 
 const metrics = [
@@ -850,4 +852,224 @@ test.describe('Overview metric history', () => {
       await expect(panels.first().getByText('Observed')).toBeVisible();
     }
   });
+});
+
+// Real panel + real uPlot; only the producer is controlled. Raster positions,
+// not predicted timestamp coordinates, catch broken compositor rebases.
+test.describe('painted four-series motion fixture', () => {
+  test.use({ viewport: { width: 1920, height: 1080 } });
+  for (const cadence of [1, 5]) {
+    test(`keeps painted trace and envelope cusps aligned at ${cadence}s rebases`, async ({
+      page,
+    }, testInfo) => {
+      const built = buildSync({
+        stdin: {
+          contents: `import React from 'react';
+            import {createRoot} from 'react-dom/client';
+            import {flushSync} from 'react-dom';
+            import {OverviewMetricHistoryPanel} from './src/pages/OverviewMetricHistoryPanel';
+            import {OVERVIEW_METRIC_GRAPHS} from './src/pages/overview-metric-history';
+            const root = createRoot(document.getElementById('fixture'));
+            window.renderPanel = (history, windowSeconds = 60) => flushSync(() => root.render(
+              React.createElement(OverviewMetricHistoryPanel, {
+                descriptor: OVERVIEW_METRIC_GRAPHS[0], history, error: false,
+                selectedWindowSeconds: windowSeconds, nowMs: Date.now(),
+                readout: {value: 7, state: 'fresh', ageMs: 0, observedAtMs: Date.now()}
+              })));
+          `,
+          resolveDir: process.cwd(),
+          loader: 'tsx',
+        },
+        bundle: true,
+        write: false,
+        outfile: 'fixture.js',
+        define: { 'process.env.NODE_ENV': '"production"' },
+      });
+      await page.setContent('<div id="fixture" style="width:480px"></div>');
+      await page.addStyleTag({
+        content: built.outputFiles.find((file) => file.path.endsWith('.css'))!
+          .text,
+      });
+      await page.addStyleTag({
+        content:
+          '.overview-metric-history__viewport {width:400px;height:80px} .overview-metric-history {background:#111827;color:white}',
+      });
+      await page.addScriptTag({
+        content: built.outputFiles.find((file) => file.path.endsWith('.js'))!
+          .text,
+      });
+      const result = await page.evaluate(async (cadence) => {
+        const renderPanel = (
+          window as unknown as {
+            renderPanel: (history: unknown, window?: number) => void;
+          }
+        ).renderPanel;
+        const start = Math.floor(Date.now() / 1000);
+        const marker = start - 20;
+        const times = [marker - 10, marker, marker + 10, start];
+        const values = (low: number, peak: number) =>
+          times.map((time, index) => [time, index === 1 ? peak : low]);
+        const history = (end: number) => ({
+          window_seconds: 60,
+          start_timestamp_seconds: end - 60,
+          end_timestamp_seconds: end,
+          step_seconds: 10,
+          series: { starlink_network_latency_ms_current: values(70, 80) },
+          rolling_5m: {
+            starlink_network_latency_ms_current: {
+              state: 'available',
+              min: values(10, 20),
+              avg: values(30, 40),
+              max: values(50, 60),
+            },
+          },
+        });
+        renderPanel(history(start));
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const section = document.querySelector('section')!;
+        const labelBoxes = () =>
+          [
+            ...section.querySelectorAll(
+              'h3, .overview-metric-history__latest, .overview-metric-history__value-axis, .overview-metric-history__time-axis'
+            ),
+          ].map((node) => {
+            const { x, y, width, height } = node.getBoundingClientRect();
+            return [x, y, width, height];
+          });
+        const labels = labelBoxes();
+        const samples: { t: number; end: number; positions: number[] }[] = [];
+        const began = performance.now();
+        let end = start;
+        let refreshes = 0;
+        while (performance.now() - began < cadence * 2000 + 400) {
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => resolve())
+          );
+          if (
+            refreshes < 2 &&
+            performance.now() - began >= (refreshes + 1) * cadence * 1000
+          ) {
+            end = start + ++refreshes * cadence;
+            renderPanel(history(end));
+          }
+          const canvas = section.querySelector('canvas')!;
+          const rect = canvas.getBoundingClientRect();
+          const { data, width, height } = canvas
+            .getContext('2d')!
+            .getImageData(0, 0, canvas.width, canvas.height);
+          const extrema = [Infinity, Infinity, Infinity, Infinity];
+          const xs: number[][] = [[], [], [], []];
+          // Cyan observed, white dashed average, upper/lower alpha-band edges.
+          for (let x = 0; x < width; x++) {
+            let top = Infinity,
+              bottom = -Infinity;
+            for (let y = 0; y < height; y++) {
+              const i = (y * width + x) * 4;
+              const r = data[i],
+                g = data[i + 1],
+                b = data[i + 2],
+                a = data[i + 3];
+              const category =
+                a > 100 && r < 180 && g > 175 && b > 185
+                  ? 0
+                  : a > 100 && r > 200 && g > 200 && b > 200
+                    ? 1
+                    : -1;
+              if (category >= 0) {
+                if (y < extrema[category]) {
+                  extrema[category] = y;
+                  xs[category] = [];
+                }
+                if (y === extrema[category]) xs[category].push(x);
+              }
+              if (a >= 30 && a <= 50) {
+                top = Math.min(top, y);
+                bottom = Math.max(bottom, y);
+              }
+            }
+            for (const [category, y] of [
+              [2, top],
+              [3, bottom],
+            ]) {
+              if (!Number.isFinite(y)) continue;
+              if (y < extrema[category]) {
+                extrema[category] = y;
+                xs[category] = [];
+              }
+              if (y === extrema[category]) xs[category].push(x);
+            }
+          }
+          const positions = xs.map(
+            (points) =>
+              rect.left +
+              (points.reduce((a, b) => a + b, 0) / points.length / width) *
+                rect.width
+          );
+          samples.push({ t: performance.now(), end, positions });
+        }
+        const labelsAfter = labelBoxes();
+        const viewport = section.querySelector(
+          '.overview-metric-history__viewport'
+        ) as HTMLElement;
+        viewport.style.width = '300px';
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const resized = section
+          .querySelector('canvas')!
+          .getBoundingClientRect().width;
+        Object.defineProperty(document, 'hidden', {
+          configurable: true,
+          value: true,
+        });
+        document.dispatchEvent(new Event('visibilitychange'));
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        const surface = section.querySelector(
+          '.overview-metric-history__surface'
+        )!;
+        const frozen = getComputedStyle(surface).transform;
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const hidden = getComputedStyle(surface).transform;
+        Object.defineProperty(document, 'hidden', {
+          configurable: true,
+          value: false,
+        });
+        document.dispatchEvent(new Event('visibilitychange'));
+        const resumed = getComputedStyle(surface).transform;
+        return {
+          samples,
+          refreshes,
+          labels,
+          labelsAfter,
+          resized,
+          frozen,
+          hidden,
+          resumed,
+        };
+      }, cadence);
+      await writeFile(
+        testInfo.outputPath(`painted-${cadence}s.json`),
+        JSON.stringify(result, null, 2)
+      );
+      expect(result.refreshes).toBe(2);
+      expect(result.labelsAfter).toEqual(result.labels);
+      expect(result.resized).toBe(375);
+      expect(result.hidden).toBe(result.frozen);
+      expect(result.resumed).toBe(result.frozen);
+      expect(new Set(result.samples.map(({ end }) => end)).size).toBe(3);
+      for (const sample of result.samples)
+        expect(sample.positions.every(Number.isFinite)).toBe(true);
+      for (let i = 1; i < result.samples.length; i++) {
+        const previous = result.samples[i - 1],
+          current = result.samples[i];
+        const elapsed = (current.t - previous.t) / 1000;
+        for (let trace = 0; trace < 4; trace++) {
+          expect(
+            Math.abs(current.positions[trace] - previous.positions[trace])
+          ).toBeLessThanOrEqual(1 + (elapsed * 400) / 60);
+        }
+      }
+      await page.screenshot({
+        path: testInfo.outputPath(`painted-${cadence}s.png`),
+      });
+    });
+  }
 });

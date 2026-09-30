@@ -25,6 +25,26 @@ describe('motionOffsetPixels', () => {
     ])
       expect(motionOffsetPixels(input)).toBe(0);
   });
+  it.each([
+    [400, 1, -40 / 3],
+    [400, 5, -200 / 3],
+    [400, 8, -100],
+    [300, 1, -10],
+    [300, 5, -50],
+    [300, 8, -75],
+  ])(
+    'uses measured width %s at elapsed %ss without passing overscan',
+    (widthPixels, elapsedSeconds, expected) => {
+      expect(
+        motionOffsetPixels({
+          widthPixels,
+          elapsedSeconds,
+          windowSeconds: 30,
+          bufferSeconds: 7.5,
+        })
+      ).toBeCloseTo(expected);
+    }
+  );
   it('rebase preserves the same position for a fresh poll', () => {
     const oldEnd = 120;
     const newEnd = 125;
