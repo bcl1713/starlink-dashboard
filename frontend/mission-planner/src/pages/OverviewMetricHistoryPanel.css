@@ -23,6 +23,17 @@
   color: #cbd5e1;
   font-size: 0.7rem;
 }
+.overview-metric-history__latest {
+  display: block;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.overview-metric-history__age {
+  display: block;
+  margin: 0.125rem 0;
+  color: #cbd5e1;
+  font-size: 0.7rem;
+}
 .overview-metric-history__status {
   margin: 0.2rem 0;
   color: #cbd5e1;
@@ -47,6 +58,18 @@
   width: 0.6rem;
   height: 0.12rem;
   display: inline-block;
+}
+.overview-metric-history__key--observed {
+  background: #67e8f9;
+}
+.overview-metric-history__legend .overview-metric-history__key--average {
+  height: 0;
+  border-top: 1px dashed rgb(226 232 240 / 72%);
+}
+.overview-metric-history__legend .overview-metric-history__key--envelope {
+  height: 0.4rem;
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgb(148 163 184 / 35%);
 }
 .overview-metric-history__chart {
   display: flex;

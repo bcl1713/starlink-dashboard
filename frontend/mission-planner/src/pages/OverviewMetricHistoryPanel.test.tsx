@@ -92,10 +92,9 @@ afterEach(() => {
 });
 
 describe('OverviewMetricHistoryPanel', () => {
-  it('shows four named traces and fixed accessible title, unit and time axes', () => {
+  it('keeps the accessible title, unit and time axes outside the plot without a duplicate legend', () => {
     const { container } = render(panel());
-    for (const name of ['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)'])
-      expect(screen.getByText(name)).not.toBeNull();
+    expect(screen.queryByLabelText('Graph traces')).toBeNull();
     expect(screen.getByText('Network latency')).not.toBeNull();
     expect(screen.getByText('ms')).not.toBeNull();
     expect(screen.getByText('Time (UTC)')).not.toBeNull();
@@ -110,7 +109,7 @@ describe('OverviewMetricHistoryPanel', () => {
     )!;
     expect(surface.contains(screen.getByText('Network latency'))).toBe(false);
     expect(surface.contains(screen.getAllByText('ms')[0])).toBe(false);
-    expect(surface.contains(screen.getByText('Observed'))).toBe(false);
+    expect(surface.contains(screen.getByText('Unavailable'))).toBe(false);
     expect(surface.contains(screen.getByText('Time (UTC)'))).toBe(false);
   });
   it('does not append a fabricated point at current time', () => {
@@ -285,6 +284,22 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1 });
   });
 
+  it('renders a readable fractional loss label agreeing exactly with the canvas domain', () => {
+    const loss = OVERVIEW_METRIC_GRAPHS[3];
+    const history = bundle();
+    history.series[loss.metric] = [[120, 1.2]];
+    render(
+      <OverviewMetricHistoryPanel
+        descriptor={loss}
+        history={history}
+        error={false}
+        selectedWindowSeconds={30}
+        nowMs={120_000}
+      />
+    );
+    expect(screen.getByText('1.4 %')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1.4 });
+  });
   it('resizes the existing plot without remounting', () => {
     render(panel());
     measuredWidth = 500;
@@ -300,7 +315,7 @@ describe('OverviewMetricHistoryPanel', () => {
     );
     expect(plot.create).not.toHaveBeenCalled();
     view.rerender(panel(bundle(), false));
-    expect(screen.getByRole('status').textContent).toBe('History available');
+    expect(screen.queryByRole('status')).toBeNull();
   });
   it('announces empty, unavailable aggregates and last-known fetch failure', () => {
     const view = render(panel(null));
@@ -334,7 +349,7 @@ describe('OverviewMetricHistoryPanel', () => {
     const fresh = bundle(125);
     fresh.series[descriptor.metric] = [[125, 0]];
     view.rerender(panel(fresh, false, 125_000));
-    expect(screen.getByRole('status').textContent).toBe('History available');
+    expect(screen.queryByRole('status')).toBeNull();
   });
   it('stops at the real sample edge on missed polls and resumes only on fresh data', () => {
     const view = render(panel());

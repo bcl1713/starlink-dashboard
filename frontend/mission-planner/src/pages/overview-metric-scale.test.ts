@@ -17,6 +17,18 @@ const projection = (
   visibleRightSeconds: 0,
 });
 describe('metricScale', () => {
+  it.each([
+    [1.2, 1.4],
+    [3, 3.3],
+    [6, 6.6],
+  ])(
+    'normalizes fractional loss peak %s to readable domain %s',
+    (peak, upper) => {
+      expect(
+        metricScale(OVERVIEW_METRIC_GRAPHS[3], projection([peak]))
+      ).toEqual({ min: 0, max: upper });
+    }
+  );
   it('keeps obstruction on its full percentage domain', () => {
     expect(metricScale(OVERVIEW_METRIC_GRAPHS[4], projection([0.2]))).toEqual({
       min: 0,

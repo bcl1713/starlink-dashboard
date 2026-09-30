@@ -36,8 +36,14 @@ export function metricScale(
   );
   const padded = peak * 1.1;
   const rounded = Math.ceil(padded / step) * step;
+  // Normalize decimal increments in the domain itself so the fixed axis and
+  // canvas agree exactly, rather than hiding binary tails only in the label.
+  const normalized = step < 1 ? Number(rounded.toFixed(1)) : rounded;
   return {
     min: 0,
-    max: Math.max(1, Number.isFinite(rounded) ? rounded : Number.MAX_VALUE),
+    max: Math.max(
+      1,
+      Number.isFinite(normalized) ? normalized : Number.MAX_VALUE
+    ),
   };
 }

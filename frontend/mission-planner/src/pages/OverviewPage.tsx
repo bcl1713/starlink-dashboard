@@ -24,7 +24,6 @@ import {
 import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
-import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import {
   GEO_ANALYSIS_CAMERA_POSITION,
   GEO_ANALYSIS_MAX_DISTANCE,
@@ -379,22 +378,19 @@ export function OverviewPage() {
         activeConfiguredXBandSatelliteId
       )
     : null;
-  const activeLinkFlow = useMemo(
-    () => {
-      const network = status?.network;
-      return activeLinkFlowEmitters(
-        network
-          ? {
-              latency_ms: network.latency_ms ?? undefined,
-              throughput_down_mbps: network.throughput_down_mbps ?? undefined,
-              throughput_up_mbps: network.throughput_up_mbps ?? undefined,
-              packet_loss_percent: network.packet_loss_percent ?? undefined,
-            }
-          : undefined
-      );
-    },
-    [status?.network]
-  );
+  const activeLinkFlow = useMemo(() => {
+    const network = status?.network;
+    return activeLinkFlowEmitters(
+      network
+        ? {
+            latency_ms: network.latency_ms ?? undefined,
+            throughput_down_mbps: network.throughput_down_mbps ?? undefined,
+            throughput_up_mbps: network.throughput_up_mbps ?? undefined,
+            packet_loss_percent: network.packet_loss_percent ?? undefined,
+          }
+        : undefined
+    );
+  }, [status?.network]);
   const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
   const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
     ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
@@ -558,11 +554,12 @@ export function OverviewPage() {
           isError={isOverviewClockSettingsError}
           isLoading={isLoadingOverviewClockSettings}
         />
-        <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       </div>
       <div className="overview-bottom-overlays">
         <div className="overview-left-stack">
           <OverviewMetricHistoryPanels
+            status={status}
+            statusError={Boolean(statusError)}
             history={overviewHistory}
             error={isOverviewHistoryError}
             selectedWindowSeconds={overviewHistorySettings?.window_seconds}
