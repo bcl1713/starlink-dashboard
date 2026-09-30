@@ -48,6 +48,131 @@ function bundle(end = initial, windowSeconds = 1800) {
 
 test.describe('Overview metric history', () => {
   test.use({ viewport: { width: 1920, height: 1080 } });
+  test('keeps a real left-edge stroke through two rebases and clips it on exit', async ({
+    page,
+  }) => {
+    test.setTimeout(100_000);
+    const start = Math.floor(Date.now() / 1000);
+    let fulfilled = -1;
+    const edge = start - 300;
+    await page.route('**/api/overview-history/settings', (route) =>
+      route.fulfill({ json: { window_seconds: 300 } })
+    );
+    await page.route('**/api/overview-history', async (route) => {
+      const poll = ++fulfilled;
+      const end = start + poll * 5;
+      await route.fulfill({
+        json: {
+          window_seconds: 300,
+          start_timestamp_seconds: end - 300,
+          end_timestamp_seconds: end,
+          step_seconds: 1,
+          series: {
+            [metrics[0]]:
+              poll === 0
+                ? [
+                    [edge + 3, 90],
+                    [edge + 4, 90],
+                  ]
+                : [
+                    [end - 10, 10],
+                    [end - 9, 10],
+                  ],
+          },
+          rolling_5m: {
+            [metrics[0]]: {
+              state: 'available',
+              min: [],
+              avg: [],
+              max: [
+                [end - 10, 90],
+                [end - 9, 90],
+              ],
+            },
+          },
+        },
+      });
+    });
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({ json: { state: 'no_active_mission', pois: [] } })
+    );
+    await page.route('**/api/overview-clocks/settings', (route) =>
+      route.fulfill({ json: { clocks: [] } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({
+        json: { timestamp: new Date(start * 1000).toISOString() },
+      })
+    );
+    await page.route('**/api/satellites', (route) =>
+      route.fulfill({ json: [] })
+    );
+    await page.route('**/api/active-x-link', (route) =>
+      route.fulfill({ json: { satellite_id: null } })
+    );
+    await page.goto('/overview', { waitUntil: 'commit' });
+    const panel = page.getByRole('region', { name: 'Network latency history' });
+    const canvas = panel.locator('.uplot canvas').first();
+    const rightAxis = panel.locator(
+      '.overview-metric-history__time-axis span:last-child'
+    );
+    await expect(canvas).toBeVisible();
+    for (const poll of [0, 1, 2, 3]) {
+      const end = start + poll * 5;
+      await expect
+        .poll(() => fulfilled, { timeout: 25_000 })
+        .toBeGreaterThanOrEqual(poll);
+      await expect
+        .poll(async () => {
+          const label = await rightAxis.textContent();
+          if (!label) return false;
+          const seconds =
+            Date.parse(`1970-01-01T${label.replace(' UTC', '')}Z`) / 1000;
+          const left = (((end - 8) % 86400) + 86400) % 86400;
+          const right = ((end % 86400) + 86400) % 86400;
+          return left <= right
+            ? seconds >= left && seconds <= right
+            : seconds >= left || seconds <= right;
+        })
+        .toBe(true);
+      await expect
+        .poll(
+          () =>
+            canvas.evaluate(
+              (node, { end, edge }) => {
+                const el = node as HTMLCanvasElement;
+                const { data, width, height } = el
+                  .getContext('2d')!
+                  .getImageData(0, 0, el.width, el.height);
+                const expectedX = ((edge + 4 - (end - 307.5)) / 315) * width;
+                // Only the cyan stroke at the projected left-edge timestamp
+                // counts; the low observed stroke and high pink rollup do not.
+                for (let y = 1; y < height / 5; y++)
+                  for (let x = 0; x < width; x++) {
+                    if (Math.abs(x - expectedX) > 7) continue;
+                    const i = (y * width + x) * 4;
+                    if (
+                      data[i] < 170 &&
+                      data[i + 1] > 175 &&
+                      data[i + 2] > 185 &&
+                      data[i + 3] > 0
+                    )
+                      return true;
+                  }
+                return false;
+              },
+              { end, edge }
+            ),
+          {
+            message: `fulfilled poll ${poll} has expected left-edge canvas stroke`,
+          }
+        )
+        .toBe(poll < 3);
+    }
+  });
   test('rebases painted samples across three five-second history polls', async ({
     page,
   }) => {

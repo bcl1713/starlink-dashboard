@@ -4,6 +4,10 @@ import 'uplot/dist/uPlot.min.css';
 import type { OverviewHistoryBundle } from '../services/overview-history';
 import { motionOffsetPixels } from './overview-metric-motion';
 import {
+  retainMetricHistory,
+  type RetainedMetricHistory,
+} from './overview-metric-retention';
+import {
   projectMetricHistory,
   type OverviewMetricGraphDescriptor,
 } from './overview-metric-history';
@@ -36,24 +40,37 @@ export function OverviewMetricHistoryPanel({
   const accepted = useRef<{
     windowSeconds: number;
     history: OverviewHistoryBundle | undefined;
-  }>({ windowSeconds: selectedWindowSeconds, history: undefined });
+    chart: RetainedMetricHistory | undefined;
+  }>({
+    windowSeconds: selectedWindowSeconds,
+    history: undefined,
+    chart: undefined,
+  });
   if (accepted.current.windowSeconds !== selectedWindowSeconds)
     accepted.current = {
       windowSeconds: selectedWindowSeconds,
       history: undefined,
+      chart: undefined,
     };
   const incomingHistory =
     history?.window_seconds === selectedWindowSeconds ? history : undefined;
   if (
     incomingHistory &&
+    incomingHistory !== accepted.current.history &&
     (!accepted.current.history ||
       incomingHistory.end_timestamp_seconds >=
         accepted.current.history.end_timestamp_seconds)
-  )
+  ) {
+    accepted.current.chart = retainMetricHistory(
+      accepted.current.chart,
+      incomingHistory,
+      descriptor
+    );
     accepted.current.history = incomingHistory;
+  }
   const validHistory = incomingHistory ? accepted.current.history : undefined;
   const projection = validHistory
-    ? projectMetricHistory(validHistory, descriptor, nowMs)
+    ? projectMetricHistory(accepted.current.chart!.bundle, descriptor, nowMs)
     : undefined;
   const viewport = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
