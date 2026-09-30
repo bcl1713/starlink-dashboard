@@ -75,13 +75,16 @@ UTC tick labels remain on one line.
 At 1920×1080 native fullscreen, the five plots form a single vertical column
 directly above the equally narrow five-row POI panel. The combined stack is
 bottom-anchored with 1rem of viewport padding, matching the other overlays,
-without internal scrolling or clearance for the non-fullscreen button. The
-clocks, current metrics, globe and legend remain visible. Use the Overview
-Fullscreen button to enter native fullscreen; the app navigation and Fullscreen
-button disappear in that state. Exit with the browser's fullscreen shortcut
-(usually Escape) to restore the ordinary responsive layout and controls. Shorter
-or narrower screens use the scrollable responsive arrangement instead of forcing
-the 1080p dashboard fit. Current telemetry remains on its separate status feed.
+including when fewer POIs leave spare space, without internal scrolling or
+clearance for the non-fullscreen button. The clocks, current metrics, globe and
+legend remain visible. Use the Overview Fullscreen button to enter native
+fullscreen; the app navigation and Fullscreen button disappear in that state.
+Exit with the browser's fullscreen shortcut (usually Escape) to restore the
+ordinary responsive layout and controls. Native fullscreen below 1080px high
+uses a scrollable responsive arrangement for the populated stack; the existing
+non-fullscreen breakpoint remains unchanged. Current telemetry remains on its
+separate status feed.
+
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
 rolling response shapes and error behavior. Moving window/cadence controls to a
 configuration page and per-panel visibility settings are future work, not

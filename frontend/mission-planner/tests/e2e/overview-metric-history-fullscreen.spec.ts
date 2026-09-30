@@ -72,6 +72,7 @@ test.describe('Overview metric history', () => {
       'arrival',
     ];
     let selectedWindowSeconds = 1800;
+    let collapsePois = false;
     let fulfilledHistory = 0;
     await page.route('**/api/overview-history', async (route) => {
       await route.fulfill({
@@ -94,7 +95,7 @@ test.describe('Overview metric history', () => {
         json: {
           state: 'available',
           calculated_at: new Date(now).toISOString(),
-          pois: names.map((name, index) => ({
+          pois: (collapsePois ? [] : names).map((name, index) => ({
             poi_id: `busy-${index}`,
             name,
             kind: kinds[index],
@@ -416,6 +417,42 @@ test.describe('Overview metric history', () => {
       )
       .not.toBe(oldAxis);
     assertLayout(await layout());
+    collapsePois = true;
+    await expect(pois.locator('tbody tr')).toHaveCount(0, { timeout: 12_000 });
+    await pois.evaluate(async (node) => {
+      await Promise.all(
+        node
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished.catch(() => undefined))
+      );
+    });
+    const collapsed = await layout();
+    expect(collapsed.poi.height).toBeLessThan(firstLayout.poi.height - 100);
+    expect(collapsed.boxes[0].top).toBeGreaterThan(
+      firstLayout.boxes[0].top + 100
+    );
+    expect(Math.abs(1080 - collapsed.poi.bottom - 16)).toBeLessThanOrEqual(1);
+    expect(
+      collapsed.poi.top - collapsed.boxes[4].bottom
+    ).toBeGreaterThanOrEqual(0);
+    expect(collapsed.poi.top - collapsed.boxes[4].bottom).toBeLessThanOrEqual(
+      12
+    );
+    expect(collapsed.panelScroll).toEqual(Array(5).fill(false));
+    expect(collapsed.poiScroll).toBe(false);
+    await writeFile(
+      testInfo.outputPath('overview-native-fullscreen-collapsed.json'),
+      JSON.stringify({ layout: collapsed }, null, 2)
+    );
+    collapsePois = false;
+    await expect(pois.locator('tbody tr')).toHaveCount(5, { timeout: 12_000 });
+    await pois.evaluate(async (node) => {
+      await Promise.all(
+        node
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished.catch(() => undefined))
+      );
+    });
     await page.evaluate(() => document.exitFullscreen());
     await expect
       .poll(() => page.evaluate(() => document.fullscreenElement))
@@ -495,3 +532,160 @@ test.describe('Overview metric history', () => {
     }
   });
 });
+
+for (const height of [961, 1024]) {
+  test.describe(`Overview near-breakpoint native fullscreen ${height}`, () => {
+    test.use({
+      viewport: { width: 1920, height },
+      screen: { width: 1920, height },
+    });
+    test('keeps populated charts and POIs clear of clocks and unclipped', async ({
+      page,
+    }, testInfo) => {
+      const now = Date.now();
+      await page.route('**/api/overview-history', (route) =>
+        route.fulfill({
+          json: representativeBundle(Math.floor(Date.now() / 1000)),
+        })
+      );
+      await page.route('**/api/overview-history/settings', (route) =>
+        route.fulfill({ json: { window_seconds: 1800 } })
+      );
+      await page.route('**/api/overview/upcoming-pois', (route) =>
+        route.fulfill({
+          json: {
+            state: 'available',
+            calculated_at: new Date(now).toISOString(),
+            pois: Array.from({ length: 5 }, (_, index) => ({
+              poi_id: `near-${index}`,
+              name: `Waypoint ${index}`,
+              kind: 'arrival',
+              latitude: 0,
+              longitude: -50,
+              expected_arrival_time: new Date(
+                now + (index + 1) * 600_000
+              ).toISOString(),
+              estimated_arrival_time: new Date(
+                now + (index + 1) * 600_000
+              ).toISOString(),
+              eta_seconds: (index + 1) * 600,
+              eta_type: 'estimated',
+              upcoming: true,
+              map_retained: true,
+            })),
+          },
+        })
+      );
+      await page.route('**/api/routes', (route) =>
+        route.fulfill({ json: { routes: [], total: 0 } })
+      );
+      await page.route('**/api/status', (route) =>
+        route.fulfill({
+          json: {
+            timestamp: new Date(now).toISOString(),
+            network: { latency_ms: 42 },
+          },
+        })
+      );
+      await page.route('**/api/satellites', (route) =>
+        route.fulfill({ json: [] })
+      );
+      await page.route('**/api/active-x-link', (route) =>
+        route.fulfill({ json: { satellite_id: null } })
+      );
+      await page.route('**/api/overview-clocks/settings', (route) =>
+        route.fulfill({
+          json: {
+            clocks: [
+              { label: 'Zulu / UTC', time_zone: 'UTC' },
+              { label: 'Washington, DC', time_zone: 'America/New_York' },
+              { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+              { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+            ],
+          },
+        })
+      );
+      await page.goto('/overview', { waitUntil: 'commit' });
+      const graphs = page
+        .getByLabel('Overview metric history')
+        .locator('[data-metric-panel]');
+      const pois = page.getByLabel('Upcoming POIs');
+      await expect(graphs.getByRole('status')).toHaveText(
+        Array(5).fill('History available')
+      );
+      await expect(pois.locator('tbody tr')).toHaveCount(5);
+      await page.getByRole('button', { name: /fullscreen/i }).click();
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.fullscreenElement === document.documentElement
+          )
+        )
+        .toBe(true);
+      await pois.evaluate(async (node) => {
+        await Promise.all(
+          node
+            .getAnimations({ subtree: true })
+            .map((animation) => animation.finished.catch(() => undefined))
+        );
+      });
+      const geometry = await page.evaluate(() => {
+        const rect = (selector: string) =>
+          document.querySelector(selector)!.getBoundingClientRect().toJSON();
+        const panels = [...document.querySelectorAll('[data-metric-panel]')];
+        const poi = document.querySelector('[aria-label="Upcoming POIs"]')!;
+        const page = document.querySelector('.overview-page')!;
+        return {
+          viewport: {
+            width: innerWidth,
+            height: innerHeight,
+            visualHeight: visualViewport?.height,
+            screenHeight: screen.height,
+          },
+          boxes: panels.map((node) => node.getBoundingClientRect().toJSON()),
+          panelScroll: panels.map(
+            (node) => node.scrollHeight > node.clientHeight
+          ),
+          poi: poi.getBoundingClientRect().toJSON(),
+          poiScroll: poi.scrollHeight > poi.clientHeight,
+          rows: [...poi.querySelectorAll('tbody tr')].map((node) =>
+            node.getBoundingClientRect().toJSON()
+          ),
+          clocks: rect('.overview-clock-panel'),
+          pageScroll: page.scrollHeight > page.clientHeight,
+        };
+      });
+      await writeFile(
+        testInfo.outputPath(`near-${height}.json`),
+        JSON.stringify(geometry, null, 2)
+      );
+      await page.screenshot({
+        path: testInfo.outputPath(`near-${height}.png`),
+      });
+      expect(geometry.viewport).toEqual({
+        width: 1920,
+        height,
+        visualHeight: height,
+        screenHeight: height,
+      });
+      expect(geometry.boxes).toHaveLength(5);
+      expect(geometry.panelScroll).toEqual(Array(5).fill(false));
+      expect(geometry.poiScroll).toBe(false);
+      expect(geometry.rows).toHaveLength(5);
+      for (const row of geometry.rows)
+        expect(row.bottom).toBeLessThanOrEqual(geometry.poi.bottom);
+      for (const box of geometry.boxes)
+        expect(
+          box.bottom <= geometry.clocks.top ||
+            box.top >= geometry.clocks.bottom ||
+            box.right <= geometry.clocks.left ||
+            box.left >= geometry.clocks.right,
+          `chart/clock overlap: ${JSON.stringify(geometry)}`
+        ).toBe(true);
+      expect(
+        geometry.pageScroll,
+        `height ${height}: fallback must scroll`
+      ).toBe(true);
+    });
+  });
+}

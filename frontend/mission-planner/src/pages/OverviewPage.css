@@ -364,7 +364,7 @@
   line-height: 2.5rem;
 }
 
-@media (min-width: 70.001rem) and (min-height: 60.001rem) {
+@media (min-width: 70.001rem) and (min-height: 67.5rem) {
   :root:fullscreen .overview-bottom-overlays {
     top: 8.75rem;
     bottom: 1rem;
@@ -423,6 +423,58 @@
   :root:fullscreen .upcoming-pois th:last-child,
   :root:fullscreen .upcoming-pois td:last-child {
     width: 11rem;
+  }
+}
+
+/* Native fullscreen between the compact-fit and ordinary short-screen ranges
+   needs document scrolling; do not shrink the five-row POI table to fit. */
+@media (min-width: 70.001rem) and (min-height: 60.001rem) and (max-height: 67.499rem) {
+  :root:fullscreen .overview-page {
+    overflow-y: auto;
+  }
+
+  :root:fullscreen .overview-page canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  :root:fullscreen .overview-page .overview-metric-history canvas {
+    position: static;
+  }
+
+  :root:fullscreen .overview-metrics {
+    justify-self: end;
+  }
+
+  :root:fullscreen .overview-left-stack {
+    height: auto;
+  }
+
+  :root:fullscreen .overview-metric-history-panels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :root:fullscreen .globe-legend,
+  :root:fullscreen .overview-top-overlays,
+  :root:fullscreen .overview-bottom-overlays {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    margin: 1rem;
+  }
+
+  :root:fullscreen .globe-legend {
+    width: min(20rem, calc(100% - 2rem));
+    margin-left: auto;
+  }
+
+  :root:fullscreen .overview-top-overlays {
+    width: auto;
+  }
+
+  :root:fullscreen .overview-bottom-overlays {
+    width: min(45rem, calc(100% - 2rem));
   }
 }
 
