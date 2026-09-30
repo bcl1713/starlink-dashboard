@@ -111,27 +111,36 @@ test.describe('Overview metric history', () => {
     );
     await page.goto('/overview', { waitUntil: 'commit' });
     const panel = page.getByRole('region', { name: 'Network latency history' });
+    const canvas = panel.locator('.uplot canvas').first();
     // Cold Overview/WebGL bootstrap can outlast the default 5s assertion wait.
     // Require the first response and its chart state, not merely a mounted panel.
     // A slow boot may legitimately exhaust the freshness margin before sampling.
     // The polled value exposes fixture and UI state if readiness times out.
     await expect
       .poll(
-        async () => ({
-          firstResponse: responses > 0,
-          ...(await page.evaluate(() => {
+        async () => {
+          const { status, opacityVisible } = await page.evaluate(() => {
             const section = document.querySelector(
               'section[aria-label="Network latency history"]'
             );
             const canvas = section?.querySelector('.uplot canvas');
+            let opacityVisible = Boolean(canvas);
+            for (let node = canvas; node; node = node.parentElement)
+              if (Number(getComputedStyle(node).opacity) === 0)
+                opacityVisible = false;
             return {
               status:
                 section?.querySelector('[role="status"]')?.textContent ??
                 'panel not mounted',
-              canvasVisible: Boolean(canvas?.getClientRects().length),
+              opacityVisible,
             };
-          })),
-        }),
+          });
+          return {
+            firstResponse: responses > 0,
+            status,
+            canvasVisible: opacityVisible && (await canvas.isVisible()),
+          };
+        },
         { timeout: 35_000, message: 'first latency history chart is ready' }
       )
       .toEqual({
