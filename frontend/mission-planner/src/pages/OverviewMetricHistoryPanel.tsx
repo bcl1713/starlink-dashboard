@@ -11,6 +11,8 @@ import {
   projectMetricHistory,
   type OverviewMetricGraphDescriptor,
 } from './overview-metric-history';
+import { metricScale, type YRange } from './overview-metric-scale';
+import { metricPlotOptions } from './overview-metric-plot-options';
 import './OverviewMetricHistoryPanel.css';
 
 const BUFFER_SECONDS = 7.5;
@@ -204,24 +206,21 @@ export function OverviewMetricHistoryPanel({
   const data = projection
     ? ([
         projection.times,
-        projection.observed,
+        projection.max,
         projection.min,
         projection.avg,
-        projection.max,
+        projection.observed,
       ] as uPlot.AlignedData)
     : undefined;
-  const maximum = projection
-    ? [projection.observed, projection.min, projection.avg, projection.max]
-        .flat()
-        .reduce<number>(
-          (peak, value) =>
-            typeof value === 'number' && Number.isFinite(value)
-              ? Math.max(peak, value)
-              : peak,
-          1
-        )
-    : 1;
-  const upper = Math.ceil(maximum * 1.1);
+  const scale = useRef<{ key: string; range: YRange } | null>(null);
+  const scaleKey = `${descriptor.metric}/${selectedWindowSeconds}`;
+  const yRange = metricScale(
+    descriptor,
+    projection,
+    scale.current?.key === scaleKey ? scale.current.range : undefined
+  );
+  scale.current = { key: scaleKey, range: yRange };
+  const upper = yRange.max;
   const visibleRight = domain
     ? domain.max - BUFFER_SECONDS * 2 + Math.min(BUFFER_SECONDS, motionElapsed)
     : 0;
@@ -275,28 +274,7 @@ export function OverviewMetricHistoryPanel({
     node.style.transform = `translate3d(${offset}px, 0, 0)`;
     if (!plot.current) {
       plot.current = new uPlot(
-        {
-          width: overscanWidth,
-          height,
-          padding: [0, 0, 0, 0],
-          axes: [{ show: false }, { show: false }],
-          legend: { show: false },
-          cursor: { show: false },
-          scales: {
-            // An array range is a permanent clamp in uPlot. Use a dynamic
-            // range so subsequent setScale calls can rebase every new bundle.
-            x: { time: true, range: (_plot, min, max) => [min, max] },
-            y: { range: [0, upper] },
-          },
-          series: [
-            {},
-            ...TRACES.map((trace) => ({
-              ...trace,
-              width: 1.5,
-              spanGaps: false,
-            })),
-          ],
-        },
+        metricPlotOptions({ width: overscanWidth, height, yRange, descriptor }),
         data,
         host.current
       );
@@ -305,7 +283,7 @@ export function OverviewMetricHistoryPanel({
       plot.current.setData(data);
     }
     plot.current.setScale('x', domain);
-    plot.current.setScale('y', { min: 0, max: upper });
+    plot.current.setScale('y', yRange);
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
     const remaining = Math.max(0, BUFFER_SECONDS - motionElapsed);

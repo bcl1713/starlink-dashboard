@@ -104,7 +104,7 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(options.axes).toEqual([{ show: false }, { show: false }]);
     expect(
       options.series.slice(1).map((series: { label: string }) => series.label)
-    ).toEqual(['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)']);
+    ).toEqual(['High', 'Low', 'Average', 'Observed']);
     const surface = container.querySelector(
       '.overview-metric-history__surface'
     )!;
@@ -116,7 +116,7 @@ describe('OverviewMetricHistoryPanel', () => {
   it('does not append a fabricated point at current time', () => {
     render(panel());
     expect(plot.create.mock.calls[0][1][0]).toEqual([110, 115, 120]);
-    expect(plot.create.mock.calls[0][1][1]).toEqual([5, null, 7]);
+    expect(plot.create.mock.calls[0][1][4]).toEqual([5, null, 7]);
   });
   it('updates one plot on fresh data, rebases with aligned x range, and cleans up', () => {
     const view = render(panel());
@@ -246,6 +246,45 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setData).toHaveBeenCalledTimes(1);
     expect(plot.setScale).toHaveBeenCalledWith('x', { min: 92.5, max: 137.5 });
   });
+  it('expands both canvas and fixed axis for a delayed real spike without remounting', () => {
+    const view = render(panel());
+    const next = bundle(125);
+    next.series[descriptor.metric] = [[125, 23]];
+    view.rerender(panel(next, false, 130_000));
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
+    expect(screen.getByText('26 ms')).not.toBeNull();
+    expect(plot.create).toHaveBeenCalledTimes(1);
+    const lower = bundle(130);
+    lower.series[descriptor.metric] = [[130, 21]];
+    view.rerender(panel(lower, false, 130_000));
+    expect(screen.getByText('26 ms')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
+  });
+
+  it('labels the packet-loss upper axis explicitly at one percent for small samples', () => {
+    const loss = OVERVIEW_METRIC_GRAPHS[3];
+    const history = bundle();
+    history.series[loss.metric] = [[120, 0.2]];
+    history.rolling_5m![loss.metric] = {
+      state: 'available',
+      min: [[120, 0]],
+      avg: [[120, 0.1]],
+      max: [[120, 0.2]],
+    };
+    render(
+      <OverviewMetricHistoryPanel
+        descriptor={loss}
+        history={history}
+        error={false}
+        selectedWindowSeconds={30}
+        nowMs={120_000}
+      />
+    );
+    expect(screen.getByText('1 %')).not.toBeNull();
+    expect(screen.getByText('0 %')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1 });
+  });
+
   it('resizes the existing plot without remounting', () => {
     render(panel());
     measuredWidth = 500;
@@ -291,7 +330,7 @@ describe('OverviewMetricHistoryPanel', () => {
       'Waiting for fresh history'
     );
     expect(plot.create.mock.calls[0][1][0]).toEqual([95, 100, 105]);
-    expect(plot.create.mock.calls[0][1][1]).toEqual([0, null, null]);
+    expect(plot.create.mock.calls[0][1][4]).toEqual([0, null, null]);
     const fresh = bundle(125);
     fresh.series[descriptor.metric] = [[125, 0]];
     view.rerender(panel(fresh, false, 125_000));

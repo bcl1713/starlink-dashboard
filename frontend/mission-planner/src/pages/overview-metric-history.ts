@@ -114,6 +114,13 @@ export function projectMetricHistory(
       suppressed.has(time) ? null : (byTime.get(time) ?? null)
     );
   };
+  const observed = at(raw);
+  // Range-query times are evaluation coordinates, not acquisition timestamps.
+  // Old trailing statistics cannot supply a present missing raw observation.
+  const aggregate = (samples: OverviewHistorySample[]) =>
+    at(samples).map((value, index) =>
+      observed[index] === null ? null : value
+    );
   return {
     state: !aggregateAvailable
       ? 'unavailable'
@@ -121,10 +128,10 @@ export function projectMetricHistory(
         ? 'available'
         : 'empty',
     times,
-    observed: at(raw),
-    min: at(min),
-    avg: at(avg),
-    max: at(max),
+    observed,
+    min: aggregate(min),
+    avg: aggregate(avg),
+    max: aggregate(max),
     visibleRightSeconds: Math.max(
       bundle.start_timestamp_seconds,
       Math.min(bundle.end_timestamp_seconds, nowMs / 1000 - 7.5)
