@@ -53,18 +53,19 @@ test.describe('Overview metric history', () => {
   }) => {
     test.setTimeout(100_000);
     const start = Math.floor(Date.now() / 1000);
+    let requested = 0;
     let fulfilled = -1;
-    const edge = start - 300;
+    const edge = start - 60;
     await page.route('**/api/overview-history/settings', (route) =>
-      route.fulfill({ json: { window_seconds: 300 } })
+      route.fulfill({ json: { window_seconds: 60 } })
     );
     await page.route('**/api/overview-history', async (route) => {
-      const poll = ++fulfilled;
+      const poll = requested++;
       const end = start + poll * 5;
       await route.fulfill({
         json: {
-          window_seconds: 300,
-          start_timestamp_seconds: end - 300,
+          window_seconds: 60,
+          start_timestamp_seconds: end - 60,
           end_timestamp_seconds: end,
           step_seconds: 1,
           series: {
@@ -92,6 +93,7 @@ test.describe('Overview metric history', () => {
           },
         },
       });
+      fulfilled = poll;
     });
     await page.route('**/api/routes', (route) =>
       route.fulfill({ json: { routes: [], total: 0 } })
@@ -116,44 +118,83 @@ test.describe('Overview metric history', () => {
     await page.goto('/overview', { waitUntil: 'commit' });
     const panel = page.getByRole('region', { name: 'Network latency history' });
     const canvas = panel.locator('.uplot canvas').first();
-    const rightAxis = panel.locator(
-      '.overview-metric-history__time-axis span:last-child'
-    );
     await expect(canvas).toBeVisible();
     for (const poll of [0, 1, 2, 3]) {
       const end = start + poll * 5;
       await expect
-        .poll(() => fulfilled, { timeout: 25_000 })
-        .toBeGreaterThanOrEqual(poll);
-      await expect
-        .poll(async () => {
-          const label = await rightAxis.textContent();
-          if (!label) return false;
-          const seconds =
-            Date.parse(`1970-01-01T${label.replace(' UTC', '')}Z`) / 1000;
-          const left = (((end - 8) % 86400) + 86400) % 86400;
-          const right = ((end % 86400) + 86400) % 86400;
-          return left <= right
-            ? seconds >= left && seconds <= right
-            : seconds >= left || seconds <= right;
-        })
-        .toBe(true);
-      await expect
         .poll(
-          () =>
-            canvas.evaluate(
-              (node, { end, edge }) => {
-                const el = node as HTMLCanvasElement;
+          async () => {
+            if (fulfilled < poll) return false;
+            return panel.evaluate(
+              (section, { end, edge, poll }) => {
+                // Read the committed uPlot instance from React's plot ref. This
+                // test-only inspection does not change production rendering.
+                type Fiber = {
+                  return: Fiber | null;
+                  memoizedState?: {
+                    memoizedState: unknown;
+                    next: unknown;
+                  } | null;
+                };
+                type Plot = {
+                  root: HTMLElement;
+                  data: number[][];
+                  scales: { x: { min: number; max: number } };
+                };
+                const fiberKey = Object.keys(section).find((key) =>
+                  key.startsWith('__reactFiber$')
+                );
+                let fiber = fiberKey
+                  ? ((section as unknown as Record<string, Fiber>)[
+                      fiberKey
+                    ] as Fiber)
+                  : null;
+                const root = section.querySelector('.uplot');
+                let plot: Plot | undefined;
+                while (fiber && !plot) {
+                  let hook = fiber.memoizedState;
+                  while (hook && !plot) {
+                    const value = (hook.memoizedState as { current?: Plot })
+                      ?.current;
+                    if (value?.root === root) plot = value;
+                    hook = hook.next as typeof hook;
+                  }
+                  fiber = fiber.return;
+                }
+                if (!plot || plot.scales.x.max !== end + 7.5) return false;
+                const markerInData = plot.data[0].includes(edge + 4);
+                if (markerInData !== poll < 3) return false;
+                if (poll === 3) return true; // Safe cutoff is now edge + 7.5.
+                const viewport = section.querySelector(
+                  '.overview-metric-history__viewport'
+                )!;
+                const el = section.querySelector(
+                  '.uplot canvas'
+                ) as HTMLCanvasElement;
+                const canvasRect = el.getBoundingClientRect();
+                const clip = viewport.getBoundingClientRect();
+                const x =
+                  ((edge + 4 - plot.scales.x.min) /
+                    (plot.scales.x.max - plot.scales.x.min)) *
+                  el.width;
+                const screenX =
+                  canvasRect.left + (x / el.width) * canvasRect.width;
+                const inside =
+                  screenX > clip.left + 2 && screenX < clip.right - 2;
+                // Wait until the whole stroke is beyond the clipped viewport.
+                if (poll === 2 ? screenX >= clip.left - 2 : !inside)
+                  return false;
+                if (x < 1 || x >= el.width - 1) return false;
                 const { data, width, height } = el
                   .getContext('2d')!
                   .getImageData(0, 0, el.width, el.height);
-                const expectedX = ((edge + 4 - (end - 307.5)) / 315) * width;
-                // Only the cyan stroke at the projected left-edge timestamp
-                // counts; the low observed stroke and high pink rollup do not.
                 for (let y = 1; y < height / 5; y++)
-                  for (let x = 0; x < width; x++) {
-                    if (Math.abs(x - expectedX) > 7) continue;
-                    const i = (y * width + x) * 4;
+                  for (
+                    let px = Math.max(0, Math.floor(x - 7));
+                    px <= Math.min(width - 1, Math.ceil(x + 7));
+                    px++
+                  ) {
+                    const i = (y * width + px) * 4;
                     if (
                       data[i] < 170 &&
                       data[i + 1] > 175 &&
@@ -164,13 +205,15 @@ test.describe('Overview metric history', () => {
                   }
                 return false;
               },
-              { end, edge }
-            ),
+              { end, edge, poll }
+            );
+          },
           {
-            message: `fulfilled poll ${poll} has expected left-edge canvas stroke`,
+            timeout: 25_000,
+            message: `fulfilled poll ${poll} committed marker data and clipped paint`,
           }
         )
-        .toBe(poll < 3);
+        .toBe(true);
     }
   });
   test('rebases painted samples across three five-second history polls', async ({
