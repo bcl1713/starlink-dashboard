@@ -75,6 +75,12 @@ export function OverviewMetricHistoryPanel({
   const host = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
+  const paintedInput = useRef<{
+    history: OverviewHistoryBundle;
+    descriptor: OverviewMetricGraphDescriptor;
+    width: number;
+    height: number;
+  } | null>(null);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(80);
   const [tick, setTick] = useState(0);
@@ -275,10 +281,22 @@ export function OverviewMetricHistoryPanel({
         data,
         host.current
       );
-    } else {
+    } else if (
+      paintedInput.current?.history !== validHistory ||
+      paintedInput.current?.descriptor !== descriptor ||
+      paintedInput.current?.width !== width ||
+      paintedInput.current?.height !== height
+    ) {
+      // Visibility/error changes only rebase motion; unchanged data need no upload.
       plot.current.setSize({ width: overscanWidth, height });
       plot.current.setData(data);
     }
+    paintedInput.current = {
+      history: validHistory!,
+      descriptor,
+      width,
+      height,
+    };
     plot.current.setScale('x', domain);
     plot.current.setScale('y', yRange);
     // Flush the rebase before changing the transition endpoint.

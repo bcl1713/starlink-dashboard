@@ -106,14 +106,18 @@ at the selected window's time scale without a visible jump when fresh responses
 rebase the plot. New real samples enter from the right, while old ones leave by
 clipping at the left. If the tab is hidden, a fetch fails, or history arrives
 late or irregularly, motion may pause and a rebase glitch may be visible;
-recovery from an arbitrary outage is not guaranteed seamless. The plots retain
-only real chart samples from overlapping responses at the left edge until they
-leave the visible window; newer responses replace or remove samples in their
-covered range. The aircraft trail still uses only the shared selected-window
-response. An initial load may have an empty far-left margin until later polls
-supply those samples. At the default 30-minute scale, five seconds of motion is
-deliberately subtle; no future samples are invented. The UTC tick labels remain
-on one line.
+recovery from an arbitrary outage is not guaranteed seamless. Resuming a hidden
+tab restarts motion from its frozen edge rather than replaying every missed
+transition. With unchanged history, visibility or fetch-error changes rebase the
+moving surface without uploading the same uPlot data again; data uploads follow
+changed bundles or measured viewport resizes, not animation frames. The plots
+retain only real chart samples from overlapping responses at the left edge until
+they leave the visible window; newer responses replace or remove samples in
+their covered range. The aircraft trail still uses only the shared
+selected-window response. An initial load may have an empty far-left margin
+until later polls supply those samples. At the default 30-minute scale, five
+seconds of motion is deliberately subtle; no future samples are invented. The
+UTC tick labels remain on one line.
 
 At 1920×1080 native fullscreen, the five plots form a single vertical column
 directly above the equally narrow five-row POI panel. The combined stack is

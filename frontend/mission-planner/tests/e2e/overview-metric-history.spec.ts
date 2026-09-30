@@ -998,48 +998,51 @@ test.describe('Overview provenance motion recording', () => {
           })
         );
     const before = await labels();
-    const gap = await panels.first().evaluate(
-      (section, { start }) => {
-        type Fiber = {
-          return: Fiber | null;
-          memoizedState?: { memoizedState: unknown; next: unknown } | null;
-        };
-        type Plot = {
-          root: HTMLElement;
-          scales: {
-            x: { min: number; max: number };
-            y: { min: number; max: number };
+    const gap = await panels
+      .first()
+      .locator('section')
+      .evaluate(
+        (section, { start }) => {
+          type Fiber = {
+            return: Fiber | null;
+            memoizedState?: { memoizedState: unknown; next: unknown } | null;
           };
-        };
-        const key = Object.keys(section).find((key) =>
-          key.startsWith('__reactFiber$')
-        )!;
-        let fiber = (section as unknown as Record<string, Fiber>)[key];
-        let plot: Plot | undefined;
-        while (fiber && !plot) {
-          let hook = fiber.memoizedState;
-          while (hook && !plot) {
-            const value = (hook.memoizedState as { current?: Plot })?.current;
-            if (value?.root === section.querySelector('.uplot')) plot = value;
-            hook = hook.next as typeof hook;
+          type Plot = {
+            root: HTMLElement;
+            scales: {
+              x: { min: number; max: number };
+              y: { min: number; max: number };
+            };
+          };
+          const key = Object.keys(section).find((key) =>
+            key.startsWith('__reactFiber$')
+          )!;
+          let fiber = (section as unknown as Record<string, Fiber>)[key];
+          let plot: Plot | undefined;
+          while (fiber && !plot) {
+            let hook = fiber.memoizedState;
+            while (hook && !plot) {
+              const value = (hook.memoizedState as { current?: Plot })?.current;
+              if (value?.root === section.querySelector('.uplot')) plot = value;
+              hook = hook.next as typeof hook;
+            }
+            fiber = fiber.return!;
           }
-          fiber = fiber.return!;
-        }
-        if (!plot) throw new Error('committed plot absent');
-        const canvas = section.querySelector('canvas')!;
-        const ctx = canvas.getContext('2d')!;
-        return [start - 30, start - 20, start - 10].map((time) => {
-          const x = Math.round(
-            ((time - plot!.scales.x.min) /
-              (plot!.scales.x.max - plot!.scales.x.min)) *
-              canvas.width
-          );
-          const y = Math.round((1 - 30 / plot!.scales.y.max) * canvas.height);
-          return [...ctx.getImageData(x, y, 1, 1).data];
-        });
-      },
-      { start }
-    );
+          if (!plot) throw new Error('committed plot absent');
+          const canvas = section.querySelector('canvas')!;
+          const ctx = canvas.getContext('2d')!;
+          return [start - 30, start - 20, start - 10].map((time) => {
+            const x = Math.round(
+              ((time - plot!.scales.x.min) /
+                (plot!.scales.x.max - plot!.scales.x.min)) *
+                canvas.width
+            );
+            const y = Math.round((1 - 30 / plot!.scales.y.max) * canvas.height);
+            return [...ctx.getImageData(x, y, 1, 1).data];
+          });
+        },
+        { start }
+      );
     expect(gap[0][3]).toBeGreaterThan(0);
     expect(gap[1][3]).toBe(0);
     expect(gap[2][3]).toBeGreaterThan(0);
@@ -1151,7 +1154,7 @@ test.describe('painted four-series motion fixture', () => {
       });
       await page.addStyleTag({
         content:
-          '.overview-metric-history__viewport {width:400px;height:80px} .overview-metric-history {background:#111827;color:white}',
+          '.overview-metric-history__viewport {flex:0 0 auto;width:400px;height:80px} .overview-metric-history {background:#111827;color:white}',
       });
       await page.addScriptTag({
         content: built.outputFiles.find((file) => file.path.endsWith('.js'))!
@@ -1241,7 +1244,14 @@ test.describe('painted four-series motion fixture', () => {
                 }
                 if (y === extrema[category]) xs[category].push(x);
               }
-              if (a >= 30 && a <= 50) {
+              if (
+                a >= 30 &&
+                a <= 50 &&
+                r > 160 &&
+                r < 200 &&
+                g > 180 &&
+                b > 200
+              ) {
                 top = Math.min(top, y);
                 bottom = Math.max(bottom, y);
               }

@@ -412,6 +412,7 @@ describe('OverviewMetricHistoryPanel', () => {
     act(() => vi.advanceTimersByTime(0));
     expect(surface.style.transition).toBe('transform 5.5s linear');
     expect(plot.create).toHaveBeenCalledTimes(1);
+    expect(plot.setData).not.toHaveBeenCalled();
   });
   it('marks an initial failed fetch unavailable without claiming last-known data', () => {
     const view = render(panel(null, true));
