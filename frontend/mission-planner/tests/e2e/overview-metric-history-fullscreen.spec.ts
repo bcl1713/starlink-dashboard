@@ -334,9 +334,11 @@ test.describe('Overview metric history', () => {
       expect(
         state.poi.y - (state.boxes[4].y + state.boxes[4].height)
       ).toBeLessThanOrEqual(12);
-      expect(1080 - state.poi.y - state.poi.height).toBeGreaterThanOrEqual(0);
-      expect(1080 - state.poi.y - state.poi.height).toBeLessThanOrEqual(24);
-      expect(1080 - state.stackBottom).toBeLessThanOrEqual(24);
+      expect(
+        Math.abs(1080 - state.poi.bottom - 16),
+        `POI bottom must be 1rem from viewport: ${JSON.stringify(state)}`
+      ).toBeLessThanOrEqual(1);
+      expect(Math.abs(1080 - state.stackBottom - 16)).toBeLessThanOrEqual(1);
       expect(state.scroll).toBe(false);
       expect(state.poiScroll, JSON.stringify(state)).toBe(false);
       expect(state.rowBottoms).toHaveLength(5);

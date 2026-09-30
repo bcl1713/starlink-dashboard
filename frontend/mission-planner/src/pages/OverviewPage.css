@@ -372,7 +372,7 @@
   }
 
   :root:fullscreen .overview-left-stack {
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap: 0.5rem;
   }
 
