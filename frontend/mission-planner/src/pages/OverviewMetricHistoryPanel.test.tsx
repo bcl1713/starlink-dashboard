@@ -120,7 +120,7 @@ describe('OverviewMetricHistoryPanel', () => {
   });
   it('updates one plot on fresh data, rebases with aligned x range, and cleans up', () => {
     const view = render(panel());
-    vi.setSystemTime(125_000);
+    act(() => vi.advanceTimersByTime(5_000));
     view.rerender(panel(bundle(125), false, 125_000));
     expect(plot.create).toHaveBeenCalledTimes(1);
     expect(plot.setData).toHaveBeenCalledTimes(1);
@@ -226,7 +226,8 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(surface().style.transform).toBe(transform);
     expect(plot.setData).not.toHaveBeenCalled();
     view.rerender(panel(bundle(130), false, 130_000));
-    expect(right()).toBe('00:02:02 UTC');
+    // A late recovery preserves the retained timestamp's screen position.
+    expect(right()).toBe('00:01:57 UTC');
     expect(plot.setData).toHaveBeenCalledTimes(1);
     expect(plot.setScale).toHaveBeenCalledWith('x', { min: 92.5, max: 137.5 });
   });
