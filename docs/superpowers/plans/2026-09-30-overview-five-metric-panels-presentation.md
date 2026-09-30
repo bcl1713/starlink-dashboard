@@ -15,25 +15,33 @@ global constraints, interfaces and review focus apply here.
 only after confirming no other imports. Add focused docs to
 `docs/features/overview.md` in this task.
 
-**Interfaces:** The parent retains the accepted newest same-window bundle (not
-an older arriving response) and passes `latestObserved(...)` readout and the
-existing `error`, `selectedWindowSeconds`, `nowMs` to panels. Header derives
-`networkHistoryState(...)` and prints `Display: <selected minutes or seconds>`
-and `Rolling statistics: 5 minutes` distinctly. Do not relocate the selector or
-change route/position stale status. Keep `nowMs` from `useCurrentTime(1_000)`
-for age text, not as a fabricated data timestamp.
+**Interfaces:** Pass the existing `/api/status` result and
+`Boolean(statusError)` from `OverviewPage` into `OverviewMetricHistoryPanels`;
+derive `statusMetricReadout(...)` once per descriptor and
+`networkStatusState(...)` for one group header. Accept only a status payload
+whose collection timestamp is not older than the last accepted status; on a
+failed refresh, keep last-known readouts but pass `requestFailed=true` so none
+looks fresh. Chart history stays the accepted newest same-window bundle,
+independent of status; `error` refers only to history refresh. Print
+`Display: <selected minutes or seconds>` and `Rolling statistics: 5 minutes`
+distinctly; render a separate history-error message when applicable. Do not
+relocate the selector or change route/position stale state. `nowMs` from
+`useCurrentTime(1_000)` is only a clock for age text.
 
-- [ ] **Step 1: RED — component tests:** assert a value `7 ms` and
-      `Observed 00:01:45 UTC` for a 105s sample at 110s, then
-      `Last observed 7 ms · 25s old` at 130s rather than `7 ms` as a current
-      value; absent/malformed series renders `Unavailable`; request error
-      renders explicit last-known/refresh-failed wording. Assert five titles,
-      one group freshness label, one display duration, one rolling-window label,
-      no `History available`, repeated `Graph traces`, or
+- [ ] **Step 1: RED — component tests:** with the Task 1 status fixture, assert
+      prominent `7 ms` and `Observed 00:01:45 UTC` at 109s; at 130s assert
+      prominent `Unavailable` plus `Last observed 7 ms · 25s old` in secondary
+      copy. At 109s with a failed status refresh, assert the same last-known
+      copy and no prominent `7 ms`; with only a history error, assert a separate
+      `History refresh unavailable` message without relabelling a fresh status
+      sample as old. Absent/malformed status fields render `Unavailable`. Assert
+      five titles, one group freshness label, one display duration, one
+      rolling-window label, no `History available`, repeated `Graph traces`, or
       `Current network metrics`/signal quality. In page contract assert
       `/api/status` still feeds aircraft/X-band while history still feeds all
-      five panels and aircraft trail. Add a same-window older-response test
-      asserting readout and plot stay on the accepted newer history.
+      five panels and aircraft trail. Add independent out-of-order status and
+      history response tests: neither rewinds its own accepted data. Assert no
+      additional status/history subscriptions mount per panel.
 - [ ] **Step 2: Run** the following; expect new assertions to fail against old
       presentation:
 
@@ -54,7 +62,11 @@ for age text, not as a fabricated data timestamp.
   {readout?.state === 'fresh' ? `${readout.value} ${descriptor.unit}` : 'Unavailable'}
 </strong>
 <span className="overview-metric-history__age">
-  {readout ? `${readout.state === 'stale' ? 'Last observed' : 'Observed'} ${new Date(readout.timestampSeconds * 1000).toISOString().slice(11, 19)} UTC` : 'No observed sample'}
+  {readout?.state === 'stale'
+    ? `Last observed ${readout.value} ${descriptor.unit} · ${Math.floor(readout.ageMs / 1000)}s old`
+    : readout
+      ? `Observed ${new Date(readout.observedAtMs).toISOString().slice(11, 19)} UTC`
+      : 'No timestamped observation'}
 </span>
 ```
 
@@ -62,10 +74,12 @@ If stale, show the last-known numeric value in secondary copy with explicit age,
 never a prominent current value. Remove duplicate current-network box from
 `OverviewPage` but leave `useStatus()` intact. Preserve fixed axes and chart
 size via CSS while adding readouts; desktop redesign is reserved for #219.
-Update Overview user guidance with Prometheus observation authority and
-failure/missing behavior, five metrics, line/band meaning, persisted display
+Update Overview user guidance with `/api/status` current-value authority versus
+Prometheus history evaluation timestamps; distinguish status failure from
+history failure, describe five metrics, line/band meaning, persisted display
 window versus fixed trailing-five-minute window, and selector location pending
-issue #218.
+issue #218. Document that history requests remain every five seconds in this
+slice; a future 1 Hz request default requires a separate load/performance gate.
 
 - [ ] **Step 4: Run** focused unit tests, entire `npm run test:unit`,
       `npm run lint`, `npx prettier --check src/pages`, `npm run build` from
@@ -87,9 +101,10 @@ or desktop composition here.
 **Interfaces:** No new API; test the five aligned uPlot columns and unchanged
 `motionOffsetPixels`/retention behavior under repaint.
 
-- [ ] **Step 1: RED — motion tests:** with two distinct bundles at 5s intervals
-      assert each series' x for an unchanged timestamp stays within one CSS
-      pixel before/after the same-frame rebase; test a delayed 8s poll reaches
+- [ ] **Step 1: RED — motion tests:** with distinct bundles at both 1s and 5s
+      intervals (the latter remains the shipped request cadence) assert each
+      series' x for an unchanged timestamp stays within one CSS pixel
+      before/after the same-frame rebase; test a delayed 8s poll reaches
       overscan cap without extrapolating, a 400→300 CSS-px resize recalculates
       pixels/second from measured plot viewport and sets the new uPlot size,
       selected-window change resets retained history, hidden/resumed tab does
@@ -97,7 +112,9 @@ or desktop composition here.
       changed bundles/resize (not frame ticks). A real headed-browser check must
       inspect _painted_ positions, since jsdom cannot test compositor
       interpolation.
-- [ ] **Step 2: Run** focused tests to capture failing assertions first. Keep
+- [ ] **Step 2: Run**
+      `npm run test:unit -- overview-metric-motion OverviewMetricHistoryPanel`
+      from `frontend/mission-planner` to capture failing assertions first. Keep
       any existing established history-continuity fixtures and serial headed
       Playwright conventions; do not loosen an assertion just to make a run
       green.
@@ -107,15 +124,30 @@ or desktop composition here.
       rebase dynamic, axes/readouts outside it, and preserve data nulls. If this
       requires a new architecture or backend data contract, stop for an updated
       design/plan instead of improvising.
-- [ ] **Step 4: Verify** full frontend units, lint, formatting, build, relevant
-      backend history contract tests and serial headed Chromium Overview specs
-      at 1920×1080 against the **exact pushed SHA**. Capture screenshot plus a
-      short recording spanning at least two distinct history refreshes, gap,
-      resize/duration and resume; inspect trace/average/band continuity and
-      label stationarity over bright/dark geography. Report whether runtime uses
-      fixtures or live backend; collect CI job URLs and independent review
-      findings. Commit test/doc corrections with a Conventional Commit before
-      final push and repeat exact-head verification if the SHA changes.
+- [ ] **Step 4: Verify** on the exact pushed SHA with the commands below. From
+      `frontend/mission-planner`: `npm run test:unit`, `npm run lint`,
+      `npx prettier --check src/pages src/services/status.ts`, `npm run build`,
+      then the following serial headed Chromium suite. From
+      `backend/starlink-location`: run the backend contract command. From the
+      repository root run `markdownlint-cli2 docs/features/overview.md`.
+
+  ```bash
+  npx playwright test --project=chromium --headed --workers=1 \
+    tests/e2e/overview-metric-history.spec.ts \
+    tests/e2e/overview-metric-history-fullscreen.spec.ts \
+    tests/e2e/overview-globe.spec.ts
+  python -m pytest tests/integration/test_overview_history_api.py \
+    tests/unit/test_overview_history_prometheus.py \
+    tests/unit/test_overview_history_rollups.py -q
+  ```
+
+  Capture a 1920×1080 screenshot and short recording spanning at least two
+  distinct history refreshes, gap, resize/duration and resume; inspect
+  trace/average/band continuity and label stationarity over bright/dark
+  geography. Report whether runtime uses fixtures or live backend; collect CI
+  job URLs and independent review findings. Commit test/doc corrections with a
+  Conventional Commit before final push and repeat exact-head verification if
+  the SHA changes. These commands do not prove final sealed #207 acceptance.
 
 ## Self-review and implementation handoff
 
@@ -125,9 +157,9 @@ or desktop composition here.
   supplies rolling values; this plan does not invent signal-quality or new
   backend telemetry.
 - Before implementation, the worker verifies the actual `dev` SHA, installed
-  uPlot `1.6.32` band behavior/types, current CSS/Playwright selectors and
-  backend sample timestamp semantics. If any contradict the baseline, revise the
-  plan for Brian's review before coding.
+  uPlot `1.6.32` band behavior/types, current CSS/Playwright selectors,
+  `/api/status` timestamp provenance and the Prometheus history evaluation-time
+  semantics. If any contradict the baseline, revise the plan before coding.
 - Implementation **begins in a new session only after Brian reviews this plan**.
   Use an isolated feature worktree from then-current `dev`, subagent-driven
   TDD/task reviews and whole-branch review; maintain the plan-owned ledger

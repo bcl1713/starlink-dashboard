@@ -9,11 +9,12 @@
 readouts, one network-history freshness/window header, a trailing-five-minute
 envelope, and continuous plot-only motion.
 
-**Architecture:** Keep the single `/api/overview-history` query and existing
-bounded per-metric retention. Derive readouts and group freshness from the
-newest valid _observed Prometheus history samples_, never `/api/status`; align
-the four existing time series into uPlot's five-column band input; keep the
-current plot-only CSS rebase and stationary external text/axes. This is a
+**Architecture:** Keep the existing `/api/status` subscription for current
+network/obstruction values and its telemetry collection timestamp, and the
+single `/api/overview-history` query for Prometheus plots and aircraft trail. Do
+not use Prometheus range-query evaluation timestamps as observation age. Align
+the four existing history series into uPlot's five-column band input; keep the
+plot-only CSS rebase and stationary external text/axes. This is a
 data/presentation slice, not #217 arrival, #218 legend, #219 desktop
 composition, or #220 mobile layout.
 
@@ -43,22 +44,30 @@ later layout is complete.
 - History display duration is persisted and selectable (5/15/30/60 minutes plus
   saved custom); trailing statistics are **five minutes**, not the display
   interval. The aircraft trail shares this query.
-- `/api/status` position freshness is distinct from this slice's Prometheus
-  network-history freshness. Never present an old observed sample as current; a
-  query's response time is not an observation time.
+- The prominent values and group network freshness come only from the shared
+  `/api/status` telemetry sample and its `timestamp`, not from request time or
+  Prometheus history evaluation timestamps. Keep the position-state wording
+  independent; one source timestamp does not make a stale position fresh.
+- The Overview history hook remains on its existing **five-second request
+  cadence** for #216. The 1 Hz future request-cadence goal is not the Prometheus
+  scrape rate (already 1 Hz) or the range-query step (one second for the default
+  30-minute window). One-second requests would increase repeated 16-query
+  Prometheus bundles; track the eventual default in #224 and qualify it with
+  #211 performance evidence before changing it. Tests must support both 1s and
+  5s arriving bundles without assuming one poll interval.
 - Preserve existing bounded history query, five-second poll, per-timestamp
-  backend rollups, null gaps, original sample timestamps, plot-only compositor
+  backend rollups, null gaps, range-query time coordinates, plot-only compositor
   translation, same-frame rebase, and native-fullscreen behavior. No fabricated
   points, zero substitution, global bloom, second per-panel query or every-frame
   `setData()`.
 - Keep the existing Overview window selector accessible in the legend until #218
   relocates it. Keep Overview globe, route, GEP, POIs, X-band semantics and
-  `/api/status` for non-network consumers.
+  `/api/status` for non-network consumers as well.
 - Documentation impact **in scope**: update `docs/features/overview.md` to
-  explain latest-observed provenance, five panel meanings, envelope/average,
-  freshness, gaps and separate display/rolling windows. No backend/API change is
-  planned; if implementation discovers one is necessary, stop and seek revised
-  scope.
+  explain `/api/status` latest-value provenance versus Prometheus history, five
+  panel meanings, envelope/average, freshness, gaps, separate display/rolling
+  windows and current five-second request cadence. No backend/API response
+  change is planned; if one is necessary, stop and seek revised scope.
 - TDD RED→GREEN per task; independent task review and final whole-branch review;
   exact pushed SHA for headed Chromium 1920×1080 screenshot plus short motion
   recording and CI evidence. Fixture browser proof must not be described as
@@ -66,12 +75,12 @@ later layout is complete.
 
 ## Review Focus
 
-1. **Clock skew/future samples:** a timestamp later than the viewer clock must
-   not produce a fresh readout; test future/invalid samples in Task 1.
+1. **Clock skew/future samples:** a status timestamp later than the viewer clock
+   must not produce a fresh readout; test future/invalid timestamps in Task 1.
 2. **Partial metric loss:** one missing metric must not make all five appear
    fresh; test group partial/unavailable and stale per-panel value in Task 1.
-3. **Out-of-order refresh:** an older same-window response must not rewind a
-   value or chart; test Task 3 alongside existing retention tests.
+3. **Out-of-order refresh:** an older status payload or same-window history
+   response must not rewind readouts or chart; test Task 3 and retention.
 4. **Band holes:** missing low/high at a timestamp or a long poll gap must not
    paint across the hole; test Task 2 and headed Task 4.
 5. **Resize or tab resume at a rebase:** fixed labels and all traces/band edges
@@ -81,9 +90,10 @@ later layout is complete.
 
 - `src/pages/overview-metric-history.ts`: existing descriptor/projection; keep
   one aligned timestamp vector and explicit nulls.
-- `src/pages/overview-metric-readout.ts` (new): pure history-observation
-  selection, per-metric freshness and conservative group summary. No fetches or
-  React.
+- `src/pages/overview-metric-readout.ts` (new): pure status sample projection,
+  per-metric freshness and conservative group summary. No fetches or React.
+- `src/services/status.ts`: type the existing backend `obstruction` response
+  explicitly; do not add an endpoint or change its runtime contract.
 - `src/pages/overview-metric-scale.ts` (new): pure, labelled y-domain policy by
   metric; no rendering.
 - `src/pages/OverviewMetricHistoryPanel.tsx` and `.css`: stationary
@@ -91,9 +101,9 @@ later layout is complete.
   cohesive: extract an options builder to `overview-metric-plot-options.ts`
   (new) if the rendering file would expand further; do not introduce a
   pass-through component.
-- `src/pages/OverviewMetricHistoryPanels.tsx`: single group header and five
-  descriptors sharing the parent's response; panel-specific readout is derived
-  here and passed down.
+- `src/pages/OverviewMetricHistoryPanels.tsx`: single group header, five
+  descriptors sharing one history response, and status-derived readouts passed
+  to the individual panels. It does not start a new subscription.
 - `src/pages/OverviewPage.tsx`: remove only `OverviewMetricsPanel` presentation;
   continue polling status for globe/link and history for aircraft/charts;
   preserve the window selector until #218.
@@ -103,80 +113,82 @@ later layout is complete.
 
 Paths below are relative to `frontend/mission-planner/` unless prefixed `docs/`.
 
-### Task 1: Observed values and network freshness
+### Task 1: Status-observed values and network freshness
 
 **Files:** Create `src/pages/overview-metric-readout.ts`,
-`src/pages/overview-metric-readout.test.ts`; modify
-`src/pages/overview-metric-history.ts` only if descriptor typing needs
-tightening.
+`src/pages/overview-metric-readout.test.ts`; modify `src/services/status.ts` to
+type backend `obstruction.obstruction_percent`. Keep the graph descriptor's
+existing metric keys for Prometheus; map status fields by its five `id` values.
 
-**Interfaces:** Consume `OverviewHistoryBundle`,
-`OverviewMetricGraphDescriptor`, `OVERVIEW_METRIC_GRAPHS`; produce
-`latestObserved(bundle, descriptor, nowSeconds): MetricReadout | null` and
-`networkHistoryState(bundle, descriptors, nowSeconds, requestFailed): NetworkState`.
-Define `MetricReadout` as
-`{ value: number; timestampSeconds: number; state: 'fresh' | 'stale' }`;
-`NetworkState` is `'loading' | 'fresh' | 'partial' | 'stale' | 'unavailable'`.
-Keep display formatting separate. Define freshness as age <=
-`max(15, 3 * step_seconds)` seconds (at the existing five-second poll, a missing
-poll does not instantly flip to stale); reject invalid/nonpositive step by using
-15 seconds. Request failure is always stale/partial, never fresh, even if cached
-samples remain. Prefer conservative `partial` if at least one metric lacks a
-fresh observed sample while another has one.
+**Interfaces:** Consume `StatusResponse` and `OverviewMetricGraphDescriptor`;
+produce `statusMetricReadout` and `networkStatusState` with signatures:
+
+```ts
+statusMetricReadout(status: StatusResponse | undefined,
+  descriptor: OverviewMetricGraphDescriptor, nowMs: number,
+  requestFailed: boolean): MetricReadout | null;
+networkStatusState(readouts: (MetricReadout | null)[]): NetworkState;
+```
+
+`MetricReadout` contains finite `value`, `observedAtMs`, `ageMs`, and
+`state: 'fresh' | 'stale'`; `NetworkState` is
+`'fresh' | 'partial' | 'stale' | 'unavailable'`. Use the existing
+status-freshness threshold of **5,000 ms** (`ageMs >= 5000` is stale), reject
+future/invalid timestamps and non-finite values, and treat a failed
+`/api/status` request as stale even when React Query keeps last-good data. No
+history-step value influences network freshness.
 
 - [ ] **Step 1: RED — write parameterized tests** in
-      `overview-metric-readout.test.ts` for all five descriptor keys and a table
-      of `[samples, now, expected]`:
-      `[[[100, 0], [105, 7]], 110, {value:7,timestampSeconds:105,state:'fresh'}]`,
-      `[[[100, 7]], 130, {value:7,timestampSeconds:100,state:'stale'}]`,
-      `[[[100, NaN], [110, Infinity]], 110, null]`,
-      `[[[120, 9], [105, 7]], 110, {value:7,timestampSeconds:105,state:'fresh'}]`,
-      `[[[105, 0]], 110, {value:0,timestampSeconds:105,state:'fresh'}]`. Add
-      group tests with five populated series → fresh, one absent → partial, all
-      absent → unavailable, all old → stale, and requestFailed true → stale or
-      partial but never fresh.
+      `overview-metric-readout.test.ts`. Use a status fixture with timestamp
+      `1970-01-01T00:01:45.000Z`, network values `latency_ms: 7`,
+      `throughput_down_mbps: 0`, `throughput_up_mbps: 2`,
+      `packet_loss_percent: 0.2`, and obstruction `{obstruction_percent: 3}`.
+      Assert each descriptor maps to the correct value; at `nowMs=110_000` every
+      readout is stale (5s boundary), while `nowMs=109_000` is fresh. Replace
+      one metric with `NaN` → null and group partial; remove all five →
+      unavailable; requestFailed true at 109s → all stale, never fresh. Future,
+      malformed and absent status timestamps yield null, not a fresh value.
 - [ ] **Step 2: Run**
       `npm run test:unit -- src/pages/overview-metric-readout.test.ts` from
       `frontend/mission-planner`; expect failure because the module is absent.
-- [ ] **Step 3: GREEN — implement** with actual sample timestamps, not bundle
-      `end_timestamp_seconds` as a proxy:
+- [ ] **Step 3: GREEN — type the existing response** and project source fields
+      without using history evaluation timestamps:
 
 ```ts
-const maxAge = Math.max(
-  15,
-  3 *
-    (Number.isFinite(bundle.step_seconds) && bundle.step_seconds > 0
-      ? bundle.step_seconds
-      : 5),
-);
-const candidates = (bundle.series?.[descriptor.metric] ?? []).filter(
-  (entry): entry is [number, number] =>
-    Array.isArray(entry) &&
-    entry.length === 2 &&
-    Number.isFinite(entry[0]) &&
-    Number.isFinite(entry[1]) &&
-    entry[0] <= nowSeconds,
-);
-const newest = candidates.reduce<[number, number] | null>(
-  (best, sample) => (!best || sample[0] > best[0] ? sample : best),
-  null,
-);
-return newest
-  ? {
-      value: newest[1],
-      timestampSeconds: newest[0],
-      state: nowSeconds - newest[0] <= maxAge ? "fresh" : "stale",
-    }
-  : null;
+// Add to StatusResponse in src/services/status.ts:
+// obstruction?: { obstruction_percent?: number };
+const fields = {
+  latency: status?.network?.latency_ms,
+  downlink: status?.network?.throughput_down_mbps,
+  uplink: status?.network?.throughput_up_mbps,
+  "packet-loss": status?.network?.packet_loss_percent,
+  obstruction: status?.obstruction?.obstruction_percent,
+};
+const value = fields[descriptor.id as keyof typeof fields];
+const observedAtMs = Date.parse(status?.timestamp ?? "");
+const ageMs = nowMs - observedAtMs;
+if (
+  typeof value !== "number" ||
+  !Number.isFinite(value) ||
+  !Number.isFinite(observedAtMs) ||
+  ageMs < 0
+)
+  return null;
+return {
+  value,
+  observedAtMs,
+  ageMs,
+  state: requestFailed || ageMs >= 5_000 ? "stale" : "fresh",
+};
 ```
 
-Implement the group reducer using `latestObserved` on **every** descriptor,
-prioritizing request failure, then all-missing, partial, all-stale, all-fresh.
-Keep the failure wording truthful when last-good data remains.
+Implement `networkStatusState` over all five projected readouts: all null →
+unavailable; all fresh → fresh; all non-null stale → stale; other mixes →
+partial. Keep failure wording truthful when last-good data remains.
 
 - [ ] **Step 4: Run** the focused test and existing
       `src/pages/overview-metric-history.test.ts`; expect both pass. Commit
-      `feat(overview): derive observed metric freshness from history`.
+      `feat(overview): derive current metric freshness from status`.
 
 ### Task 2: One envelope, truthful scale and gaps
 
