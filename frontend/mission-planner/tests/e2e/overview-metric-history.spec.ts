@@ -51,7 +51,7 @@ test.describe('Overview metric history', () => {
   test('keeps one retained sample moving without a rebase jump after a delayed poll', async ({
     page,
   }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
     const start = Math.floor(Date.now() / 1000);
     const marker = start - 20;
     let responses = 0;
@@ -111,7 +111,36 @@ test.describe('Overview metric history', () => {
     );
     await page.goto('/overview', { waitUntil: 'commit' });
     const panel = page.getByRole('region', { name: 'Network latency history' });
-    await expect(panel.locator('.uplot canvas').first()).toBeVisible();
+    // Cold Overview/WebGL bootstrap can outlast the default 5s assertion wait.
+    // Require the first response and its chart state, not merely a mounted panel.
+    // A slow boot may legitimately exhaust the freshness margin before sampling.
+    // The polled value exposes fixture and UI state if readiness times out.
+    await expect
+      .poll(
+        async () => ({
+          firstResponse: responses > 0,
+          ...(await page.evaluate(() => {
+            const section = document.querySelector(
+              'section[aria-label="Network latency history"]'
+            );
+            const canvas = section?.querySelector('.uplot canvas');
+            return {
+              status:
+                section?.querySelector('[role="status"]')?.textContent ??
+                'panel not mounted',
+              canvasVisible: Boolean(canvas?.getClientRects().length),
+            };
+          })),
+        }),
+        { timeout: 35_000, message: 'first latency history chart is ready' }
+      )
+      .toEqual({
+        firstResponse: true,
+        status: expect.stringMatching(
+          /^(History available|Waiting for fresh history)$/
+        ),
+        canvasVisible: true,
+      });
     sampling = true;
     // Read a retained sample's actual viewport position on every animation frame.
     // uPlot's committed scale is needed because a response changes the canvas origin.

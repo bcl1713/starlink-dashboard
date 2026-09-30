@@ -67,7 +67,7 @@ response cadence, real samples and the UTC axis move left at the selected
 window's time scale without a visible jump when fresh responses rebase the
 plot. New real samples enter from the right, while old ones leave by clipping
 at the left. If the tab is hidden, a fetch fails, or history arrives late or
-irregularly, motion may pause and a minor rebase glitch may be visible; recovery
+irregularly, motion may pause and a rebase glitch may be visible; recovery
 from an arbitrary outage is not guaranteed seamless.
 The plots retain only real chart samples from overlapping responses at the left
 edge until they leave the visible window; newer responses replace or remove
