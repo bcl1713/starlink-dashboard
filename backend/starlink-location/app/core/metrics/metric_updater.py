@@ -94,13 +94,12 @@ def update_metrics_from_telemetry(
     if telemetry is None:
         return
 
-    from app.core.labels import get_mode_label, get_status_label
+    from app.core.labels import get_mode_label, get_telemetry_status_label
 
     # Compute labels if config provided
     mode_label = get_mode_label(config) if config else "unknown"
-    status_label = get_status_label(
-        telemetry.network.latency_ms, telemetry.network.packet_loss_percent
-    )
+    status_label = get_telemetry_status_label(telemetry)
+    availability = getattr(telemetry, "metric_availability", None)
 
     # Position metrics
     # Update custom collector's position data
@@ -115,30 +114,46 @@ def update_metrics_from_telemetry(
     starlink_dish_speed_knots.set(telemetry.position.speed)
     starlink_dish_heading_degrees.set(telemetry.position.heading)
 
-    # Network metrics - Current values (Gauges)
-    starlink_network_latency_ms_current.set(telemetry.network.latency_ms)
-    starlink_network_throughput_down_mbps_current.set(
-        telemetry.network.throughput_down_mbps
-    )
-    starlink_network_throughput_up_mbps_current.set(
-        telemetry.network.throughput_up_mbps
-    )
-    starlink_network_packet_loss_percent.set(telemetry.network.packet_loss_percent)
+    # Each observed metric publishes independently; numeric compatibility values
+    # without provenance must never become gauge or histogram observations.
+    for field, value, gauge, histogram in (
+        (
+            "latency_ms",
+            telemetry.network.latency_ms,
+            starlink_network_latency_ms_current,
+            starlink_network_latency_ms,
+        ),
+        (
+            "throughput_down_mbps",
+            telemetry.network.throughput_down_mbps,
+            starlink_network_throughput_down_mbps_current,
+            starlink_network_throughput_down_mbps,
+        ),
+        (
+            "throughput_up_mbps",
+            telemetry.network.throughput_up_mbps,
+            starlink_network_throughput_up_mbps_current,
+            starlink_network_throughput_up_mbps,
+        ),
+        (
+            "packet_loss_percent",
+            telemetry.network.packet_loss_percent,
+            starlink_network_packet_loss_percent,
+            None,
+        ),
+        (
+            "obstruction_percent",
+            telemetry.obstruction.obstruction_percent,
+            starlink_dish_obstruction_percent,
+            None,
+        ),
+    ):
+        observed = getattr(availability, field, False)
+        gauge.set(value if observed else math.nan)
+        if observed and histogram is not None:
+            histogram.labels(mode=mode_label, status=status_label).observe(value)
 
-    # Network metrics - Histograms (for percentile analysis)
-    # Record observations for histogram buckets with labels
-    starlink_network_latency_ms.labels(mode=mode_label, status=status_label).observe(
-        telemetry.network.latency_ms
-    )
-    starlink_network_throughput_down_mbps.labels(
-        mode=mode_label, status=status_label
-    ).observe(telemetry.network.throughput_down_mbps)
-    starlink_network_throughput_up_mbps.labels(
-        mode=mode_label, status=status_label
-    ).observe(telemetry.network.throughput_up_mbps)
-
-    # Obstruction and signal metrics
-    starlink_dish_obstruction_percent.set(telemetry.obstruction.obstruction_percent)
+    # Signal quality retains its independent source semantics.
     starlink_signal_quality_percent.set(telemetry.environmental.signal_quality_percent)
 
     # Status metrics
@@ -399,9 +414,10 @@ def clear_telemetry_metrics() -> None:
     """Clear all telemetry metrics by setting them to NaN.
 
     This is called when the Starlink dish is disconnected in live mode to prevent
-    publishing stale or zero values to Prometheus. Setting metrics to NaN causes
-    Prometheus to treat them as absent, effectively removing them from the time series
-    database until new valid data arrives.
+    publishing stale or zero values to Prometheus. NaN is exported as a
+    non-finite sample, not a Prometheus staleness marker or a deletion of history.
+    Overview history drops non-finite evaluation points after they are scraped;
+    finite samples can still be reused before that scrape or within lookback.
 
     Note: Service info, uptime, and counter metrics are intentionally NOT cleared
     because they represent the backend service state rather than dish telemetry.

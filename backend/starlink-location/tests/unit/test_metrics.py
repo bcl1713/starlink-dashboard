@@ -1,14 +1,199 @@
 """Tests for Prometheus metrics."""
 
 import math
+from types import SimpleNamespace
 
+import pytest
 from prometheus_client import generate_latest
+from prometheus_client.parser import text_string_to_metric_families
 
+from app.core.labels import apply_common_labels
 from app.core.metrics import (
     REGISTRY,
     set_service_info,
     update_metrics_from_telemetry,
 )
+from app.models.telemetry import MetricAvailability
+
+FIVE_METRICS = [
+    (
+        "latency_ms",
+        "starlink_network_latency_ms_current",
+        "starlink_network_latency_ms",
+    ),
+    (
+        "throughput_down_mbps",
+        "starlink_network_throughput_down_mbps_current",
+        "starlink_network_throughput_down_mbps",
+    ),
+    (
+        "throughput_up_mbps",
+        "starlink_network_throughput_up_mbps_current",
+        "starlink_network_throughput_up_mbps",
+    ),
+    ("packet_loss_percent", "starlink_network_packet_loss_percent", None),
+    ("obstruction_percent", "starlink_dish_obstruction_percent", None),
+]
+
+
+def exported_samples():
+    """Read actual exporter output, including histogram labels and counts."""
+    return [
+        sample
+        for family in text_string_to_metric_families(
+            generate_latest(REGISTRY).decode("utf-8")
+        )
+        for sample in family.samples
+    ]
+
+
+def histogram_count(samples, histogram):
+    return sum(
+        sample.value for sample in samples if sample.name == histogram + "_count"
+    )
+
+
+@pytest.mark.parametrize(("field", "gauge", "histogram"), FIVE_METRICS)
+@pytest.mark.parametrize("recovered_value", [0.0, 17.0])
+def test_partial_loss_clears_only_its_gauge_and_skips_histogram_then_recovers(
+    coordinator, field, gauge, histogram, recovered_value
+):
+    # Catches unconditional publication of compatibility zeros or blanket clearing.
+    telemetry = coordinator.get_current_telemetry().model_copy(deep=True)
+    for name, _, _ in FIVE_METRICS:
+        target = (
+            telemetry.obstruction
+            if name == "obstruction_percent"
+            else telemetry.network
+        )
+        setattr(target, name, 0.0)
+    update_metrics_from_telemetry(telemetry)
+    before = exported_samples()
+    telemetry.metric_availability = MetricAvailability(
+        **{name: name != field for name, _, _ in FIVE_METRICS}
+    )
+    update_metrics_from_telemetry(telemetry)
+    missing = exported_samples()
+    gauges = {s.name: s.value for s in missing if not s.labels}
+    assert math.isnan(gauges[gauge])
+    for name, other_gauge, other_histogram in FIVE_METRICS:
+        if name != field:
+            assert gauges[other_gauge] == 0.0
+        if other_histogram:
+            assert histogram_count(missing, other_histogram) == histogram_count(
+                before, other_histogram
+            ) + (name != field)
+    assert gauges["starlink_dish_latitude_degrees"] == telemetry.position.latitude
+    assert (
+        gauges["starlink_signal_quality_percent"]
+        == telemetry.environmental.signal_quality_percent
+    )
+    assert gauges["starlink_uptime_seconds"] == telemetry.environmental.uptime_seconds
+    expected_status = (
+        "unknown" if field in ("latency_ms", "packet_loss_percent") else "excellent"
+    )
+    assert (
+        apply_common_labels(telemetry, SimpleNamespace(mode="simulation"))["status"]
+        == expected_status
+    )
+    for name, _, other_histogram in FIVE_METRICS:
+        if other_histogram and name != field:
+            count = next(
+                s.value
+                for s in missing
+                if s.name == other_histogram + "_count"
+                and s.labels == {"mode": "unknown", "status": expected_status}
+            )
+            old_count = sum(
+                s.value
+                for s in before
+                if s.name == other_histogram + "_count"
+                and s.labels == {"mode": "unknown", "status": expected_status}
+            )
+            assert count == old_count + 1
+    target = (
+        telemetry.obstruction if field == "obstruction_percent" else telemetry.network
+    )
+    setattr(target, field, recovered_value)
+    setattr(telemetry.metric_availability, field, True)
+    update_metrics_from_telemetry(telemetry)
+    recovered = exported_samples()
+    assert next(s.value for s in recovered if s.name == gauge) == recovered_value
+    if histogram:
+        assert (
+            histogram_count(recovered, histogram)
+            == histogram_count(missing, histogram) + 1
+        )
+
+
+@pytest.mark.parametrize("missing_field", ["latency_ms", "packet_loss_percent"])
+def test_missing_health_input_labels_available_throughput_unknown(
+    coordinator, missing_field
+):
+    telemetry = coordinator.get_current_telemetry().model_copy(deep=True)
+    telemetry.network.latency_ms = 0.0
+    telemetry.network.packet_loss_percent = 0.0
+    setattr(telemetry.metric_availability, missing_field, False)
+    before = exported_samples()
+    update_metrics_from_telemetry(telemetry)
+    after = exported_samples()
+    assert (
+        apply_common_labels(telemetry, SimpleNamespace(mode="live"))["status"]
+        == "unknown"
+    )
+    for histogram in (
+        "starlink_network_throughput_down_mbps",
+        "starlink_network_throughput_up_mbps",
+    ):
+        labels = {"mode": "unknown", "status": "unknown"}
+        old = sum(
+            s.value
+            for s in before
+            if s.name == histogram + "_count" and s.labels == labels
+        )
+        new = sum(
+            s.value
+            for s in after
+            if s.name == histogram + "_count" and s.labels == labels
+        )
+        assert new == old + 1
+
+
+@pytest.mark.parametrize("legacy_kind", ["model_default", "no_sidecar"])
+def test_legacy_numeric_telemetry_fails_closed_in_exporter_and_health(
+    coordinator, legacy_kind
+):
+    telemetry = coordinator.get_current_telemetry().model_copy(deep=True)
+    if legacy_kind == "model_default":
+        payload = telemetry.model_dump()
+        payload.pop("metric_availability")
+        telemetry = type(telemetry).model_validate(payload)
+    else:
+        telemetry = SimpleNamespace(
+            **{
+                name: getattr(telemetry, name)
+                for name in (
+                    "timestamp",
+                    "position",
+                    "network",
+                    "obstruction",
+                    "environmental",
+                )
+            }
+        )
+    before = exported_samples()
+    update_metrics_from_telemetry(telemetry)
+    after = exported_samples()
+    for _, gauge, histogram in FIVE_METRICS:
+        assert math.isnan(next(s.value for s in after if s.name == gauge))
+        if histogram:
+            assert histogram_count(after, histogram) == histogram_count(
+                before, histogram
+            )
+    assert (
+        apply_common_labels(telemetry, SimpleNamespace(mode="live"))["status"]
+        == "unknown"
+    )
 
 
 class TestMetricsFormatting:

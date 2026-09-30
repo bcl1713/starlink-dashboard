@@ -59,6 +59,21 @@ aggregates leave the raw trail intact and are identified on the graph. A failed
 history refresh retains last-good data only with an explicit unavailable status
 and never extrapolates samples into the present.
 
+History missingness is bounded by Prometheus scraping: unavailable readings
+publish `NaN` to only their current gauges and do not add histogram observations.
+After a scrape exposes `NaN` or an absent raw evaluation point, the history
+adapter omits that point and the matching five-minute low/average/high points;
+trailing statistics alone cannot fill the gap. Finite observations, including
+measured zero, resume independently when the raw series recovers.
+`query_range` timestamps are evaluation times, not acquisition timestamps.
+Before a missing reading is scraped, or while a prior sample remains eligible
+within Prometheus lookback, a finite point can still represent an older scrape.
+The adapter cannot detect that reuse or promise an immediate collection-time
+gap. Current collection age must come from `/api/status`, not graph timestamps.
+Pre-change historical zeros are not retrospectively verified observations.
+No scrape interval, query budget, history window, or request cadence changes
+are required for this publication contract.
+
 The aircraft trail and all five graphs share one history response every five
 seconds and the existing window selector in the globe legend (5, 15, 30, or 60
 minutes, plus a saved custom window). Each graph shows the full selected window,

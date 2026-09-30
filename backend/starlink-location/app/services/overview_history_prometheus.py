@@ -252,6 +252,15 @@ async def query_overview_history_bundle(
     from app.services.overview_history_rollups import query_overview_history_rollups
 
     rollups = await query_overview_history_rollups(client, plan)
+    # Trailing statistics can remain finite after current telemetry disappears.
+    # Require a finite raw point at the same evaluation step, without claiming
+    # that query_range timestamps prove source-observation freshness.
+    for metric, entry in rollups.items():
+        observed_steps = {point[0] for point in raw.get(metric, [])}
+        for statistic in ("min", "avg", "max"):
+            entry[statistic] = [
+                point for point in entry[statistic] if point[0] in observed_steps
+            ]
     return {
         "window_seconds": window_seconds,
         "start_timestamp_seconds": plan.start_timestamp_seconds,
