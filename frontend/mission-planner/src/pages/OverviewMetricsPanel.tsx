@@ -7,7 +7,7 @@ interface OverviewMetricsPanelProps {
 
 interface MetricProps {
   label: string;
-  value?: number;
+  value?: number | null;
   unit: string;
 }
 

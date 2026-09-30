@@ -380,7 +380,19 @@ export function OverviewPage() {
       )
     : null;
   const activeLinkFlow = useMemo(
-    () => activeLinkFlowEmitters(status?.network),
+    () => {
+      const network = status?.network;
+      return activeLinkFlowEmitters(
+        network
+          ? {
+              latency_ms: network.latency_ms ?? undefined,
+              throughput_down_mbps: network.throughput_down_mbps ?? undefined,
+              throughput_up_mbps: network.throughput_up_mbps ?? undefined,
+              packet_loss_percent: network.packet_loss_percent ?? undefined,
+            }
+          : undefined
+      );
+    },
     [status?.network]
   );
   const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
