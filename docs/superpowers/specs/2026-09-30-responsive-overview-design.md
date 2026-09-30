@@ -20,8 +20,12 @@ live on `dev` while unrelated work continues. Its code observations refer to
 immutable `dev` SHA `72ebc23c76b0a1ffccad48f1954e6602c6b8aedd`; before selecting
 any implementation slice, re-inspect the new `dev` head, reconcile changes here
 and in #213, and obtain approval of that slice's written plan. Issue #210
-remains the ten-foot readability review; #149 is Overview parity; #211 is a
-separate performance investigation. Do not silently close or duplicate them.
+remains the ten-foot readability review; the partially delivered #149 roadmap
+was closed as superseded; #211 is a separate performance investigation. Do not
+silently duplicate their distinct work. The proposed
+[#216 metric-provenance amendment](2026-09-30-overview-metric-provenance-design.md)
+adds a source-availability contract to this design; it requires Brian's written
+spec review before the #216 plan is revised or implementation begins.
 
 ## Current contracts and the five-metric decision
 
