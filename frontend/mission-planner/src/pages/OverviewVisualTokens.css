@@ -1,0 +1,53 @@
+.overview-page {
+  --overview-glass: rgb(7 18 30 / 82%);
+  --overview-glass-fallback: rgb(7 18 30 / 96%);
+  --overview-border: 1px solid rgb(172 201 226 / 28%);
+  --overview-radius: 14px;
+  --overview-shadow: 0 4px 18px rgb(0 0 0 / 24%);
+  --overview-text: #f8fafc;
+  --overview-secondary: #bdcbd9;
+  --overview-blur: blur(16px);
+}
+
+.overview-page
+  :is(
+    .globe-legend,
+    .operational-clock,
+    .upcoming-pois,
+    .overview-fullscreen-control,
+    .overview-metric-history,
+    .overview-metric-history-panels__header
+  ) {
+  border: var(--overview-border);
+  border-radius: var(--overview-radius);
+  background: var(--overview-glass-fallback);
+  box-shadow: var(--overview-shadow);
+  color: var(--overview-text);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .overview-page
+    :is(
+      .globe-legend,
+      .operational-clock,
+      .upcoming-pois,
+      .overview-fullscreen-control,
+      .overview-metric-history,
+      .overview-metric-history-panels__header
+    ) {
+    background: var(--overview-glass);
+    backdrop-filter: var(--overview-blur);
+  }
+}
+
+.overview-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%);
+  white-space: nowrap !important;
+  border: 0 !important;
+}

@@ -14,6 +14,7 @@ import {
 import { metricScale, type YRange } from './overview-metric-scale';
 import { metricPlotOptions } from './overview-metric-plot-options';
 import type { MetricReadout } from './overview-metric-readout';
+import { formatMetricAxis, formatMetricValue } from './overview-metric-format';
 import './OverviewMetricHistoryPanel.css';
 
 const BUFFER_SECONDS = 7.5;
@@ -350,48 +351,56 @@ export function OverviewMetricHistoryPanel({
       aria-label={`${descriptor.label} history`}
     >
       <header className="overview-metric-history__header">
-        <h3>{descriptor.label}</h3>
-        <span className="overview-metric-history__unit">{descriptor.unit}</span>
+        <h3>{descriptor.displayLabel ?? descriptor.label}</h3>
       </header>
-      <strong className="overview-metric-history__latest">
+      <strong
+        className="overview-metric-history__latest"
+        title={readout ? `${readout.value} ${descriptor.unit}` : undefined}
+      >
         {readout?.state === 'fresh'
-          ? `${readout.value} ${descriptor.unit}`
+          ? formatMetricValue(readout.value, descriptor.unit)
           : 'Unavailable'}
       </strong>
-      <span className="overview-metric-history__age">
-        {readout?.state === 'stale'
-          ? `Last observed ${readout.value} ${descriptor.unit} · ${Math.floor(readout.ageMs / 1000)}s old`
-          : readout
-            ? `Observed ${new Date(readout.observedAtMs).toISOString().slice(11, 19)} UTC`
-            : 'No timestamped observation'}
-      </span>
-      {status && (
-        <p className="overview-metric-history__status" role="status">
-          {status}
-        </p>
-      )}
+      <div className="overview-metric-history__messages">
+        <span
+          className={`overview-metric-history__age${readout?.state === 'stale' ? '' : ' overview-visually-hidden'}`}
+        >
+          {readout?.state === 'stale'
+            ? `Last observed ${formatMetricValue(readout.value, descriptor.unit)} · ${Math.floor(readout.ageMs / 1000)}s old`
+            : readout
+              ? `Observed ${new Date(readout.observedAtMs).toISOString().slice(11, 19)} UTC; exact value ${readout.value} ${descriptor.unit}`
+              : 'No timestamped observation'}
+        </span>
+        {status && (
+          <p
+            className={`overview-metric-history__status${error ? ' overview-visually-hidden' : ''}`}
+            role="status"
+          >
+            {status}
+          </p>
+        )}
+      </div>
       <div className="overview-metric-history__chart">
         <div
           className="overview-metric-history__value-axis"
           aria-label={`${descriptor.unit} value axis`}
         >
-          <span>
-            {upper} {descriptor.unit}
-          </span>
-          <span>0 {descriptor.unit}</span>
+          <span>{formatMetricAxis(upper)}</span>
+          <span>{formatMetricAxis(upper / 2)}</span>
+          <span>0</span>
         </div>
         <div
           className="overview-metric-history__viewport"
           ref={viewport}
           role="img"
-          aria-label={`${descriptor.label} time history${status ? `; ${status}` : ''}`}
+          aria-label={`${descriptor.label} time history; ${descriptor.unit}; cyan observed, dashed five-minute average, shaded five-minute low–high range${status ? `; ${status}` : ''}`}
         >
           <div className="overview-metric-history__surface" ref={surface}>
             <div ref={host} />
           </div>
         </div>
       </div>
-      <div className="overview-metric-history__time-axis">
+      <div className="overview-metric-history__time-axis overview-visually-hidden">
         <span>{domain ? utcTime(visibleRight - windowSeconds) : ''}</span>
         <span>Time (UTC)</span>
         <span>{domain ? utcTime(visibleRight) : ''}</span>

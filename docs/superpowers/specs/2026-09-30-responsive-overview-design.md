@@ -285,3 +285,15 @@ this design.
 The main trade-off is retaining an honest five-panel display rather than
 mimicking the sixth chart in the image. Real signal quality requires its own
 trustworthy acquisition contract before it can appear as observed telemetry.
+
+## #216 presentation cleanup boundary
+
+Brian selected the screenshot-guided #216 cleanup after #228. The
+[cleanup plan](../plans/2026-10-01-overview-metric-cleanup.md) brings shared
+navy glass tokens and the desktop metric column forward from #219. It also moves
+the existing POI table intact to bottom-center to reserve room. The five cards
+use stacked uppercase titles and capped current values, one shared
+freshness/window context, sparse numeric y labels and accessible rather than
+visible per-card UTC bounds. #217 still owns arrival content; #218 owns
+satellite/legend semantics; #219 owns final composition/camera/clock tuning;
+Issue #220 owns mobile interaction.

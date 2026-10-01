@@ -50,6 +50,7 @@ export function OverviewMetricHistoryPanels({
     statusMetricReadout(readoutStatus, descriptor, nowMs, statusError)
   );
   const state = networkStatusState(readouts);
+  const observedAge = readouts.find((readout) => readout !== null)?.ageMs;
   const windowSeconds =
     selectedWindowSeconds ?? history?.window_seconds ?? 1800;
   const display =
@@ -65,13 +66,30 @@ export function OverviewMetricHistoryPanels({
         className="overview-metric-history-panels__header"
         aria-label="Network history context"
       >
-        <p role="status">Network {state}</p>
-        {statusError && <p>Status refresh unavailable</p>}
-        <p>Display: {display}</p>
-        <p>Rolling statistics: 5 minutes</p>
-        {error && <p>History refresh unavailable</p>}
+        <div className="overview-metric-history-panels__freshness">
+          <p role="status">Network {state}</p>
+          {observedAge !== undefined && (
+            <span>
+              {state === 'fresh' ? 'Updated' : 'Last observed'}{' '}
+              {Math.floor(observedAge / 1000)}s ago
+            </span>
+          )}
+        </div>
+        <div className="overview-metric-history-panels__windows">
+          <p>Display: {display}</p>
+          <p>
+            <span className="overview-visually-hidden">
+              Rolling statistics: 5 minutes
+            </span>
+            <span aria-hidden="true">Rolling: 5 min</span>
+          </p>
+        </div>
+        <p className="overview-metric-history-panels__error">
+          {statusError && <span>Status refresh unavailable</span>}
+          {error && <span>History refresh unavailable</span>}
+        </p>
         <ul
-          className="overview-metric-history__legend"
+          className="overview-metric-history__legend overview-visually-hidden"
           aria-label="Graph traces"
         >
           <li>

@@ -124,8 +124,8 @@ describe('OverviewMetricHistoryPanel', () => {
   it('keeps the accessible title, unit and time axes outside the plot without a duplicate legend', () => {
     const { container } = render(panel());
     expect(screen.queryByLabelText('Graph traces')).toBeNull();
-    expect(screen.getByText('Network latency')).not.toBeNull();
-    expect(screen.getByText('ms')).not.toBeNull();
+    expect(screen.getByText('Latency')).not.toBeNull();
+    expect(screen.getByLabelText('ms value axis')).not.toBeNull();
     expect(screen.getByText('Time (UTC)')).not.toBeNull();
     expect(plot.create).toHaveBeenCalledTimes(1);
     const options = plot.create.mock.calls[0][0];
@@ -136,8 +136,10 @@ describe('OverviewMetricHistoryPanel', () => {
     const surface = container.querySelector(
       '.overview-metric-history__surface'
     )!;
-    expect(surface.contains(screen.getByText('Network latency'))).toBe(false);
-    expect(surface.contains(screen.getAllByText('ms')[0])).toBe(false);
+    expect(surface.contains(screen.getByText('Latency'))).toBe(false);
+    expect(surface.contains(screen.getByLabelText('ms value axis'))).toBe(
+      false
+    );
     expect(surface.contains(screen.getByText('Unavailable'))).toBe(false);
     expect(surface.contains(screen.getByText('Time (UTC)'))).toBe(false);
   });
@@ -280,12 +282,12 @@ describe('OverviewMetricHistoryPanel', () => {
     next.series[descriptor.metric] = [[125, 23]];
     view.rerender(panel(next, false, 130_000));
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
-    expect(screen.getByText('26 ms')).not.toBeNull();
+    expect(screen.getByText('26')).not.toBeNull();
     expect(plot.create).toHaveBeenCalledTimes(1);
     const lower = bundle(130);
     lower.series[descriptor.metric] = [[130, 21]];
     view.rerender(panel(lower, false, 130_000));
-    expect(screen.getByText('26 ms')).not.toBeNull();
+    expect(screen.getByText('26')).not.toBeNull();
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
   });
 
@@ -308,8 +310,8 @@ describe('OverviewMetricHistoryPanel', () => {
         nowMs={120_000}
       />
     );
-    expect(screen.getByText('1 %')).not.toBeNull();
-    expect(screen.getByText('0 %')).not.toBeNull();
+    expect(screen.getByText('1')).not.toBeNull();
+    expect(screen.getByText('0')).not.toBeNull();
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1 });
   });
 
@@ -326,7 +328,7 @@ describe('OverviewMetricHistoryPanel', () => {
         nowMs={120_000}
       />
     );
-    expect(screen.getByText('1.4 %')).not.toBeNull();
+    expect(screen.getByText('1.4')).not.toBeNull();
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1.4 });
   });
   // These probes catch an incorrect x-domain/transform rebase, viewport-based
@@ -577,10 +579,10 @@ describe('OverviewMetricHistoryPanel', () => {
     const surface = view.container.querySelector(
       '.overview-metric-history__surface'
     )!;
-    expect(screen.getByText('0 ms')).not.toBeNull();
-    expect(screen.getByText('8 ms')).not.toBeNull();
+    expect(screen.getByText('0')).not.toBeNull();
+    expect(screen.getByText('8')).not.toBeNull();
     expect(screen.getAllByText(/UTC/).length).toBeGreaterThan(1);
-    expect(surface.contains(screen.getByText('8 ms'))).toBe(false);
+    expect(surface.contains(screen.getByText('8'))).toBe(false);
   });
   it('freezes the time axis with the canvas when a fetch fails', () => {
     const view = render(panel());

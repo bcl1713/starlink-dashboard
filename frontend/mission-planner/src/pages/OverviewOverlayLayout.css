@@ -1,0 +1,168 @@
+.overview-page {
+  container: overview / size;
+  overflow-y: auto;
+}
+.overview-page .overview-globe {
+  position: fixed !important;
+  inset: 0;
+  z-index: 0;
+}
+.overview-page
+  :is(
+    .globe-legend,
+    .overview-top-overlays,
+    .overview-bottom-overlays,
+    .overview-arrival-overlays,
+    .overview-fullscreen-control
+  ) {
+  position: relative;
+  inset: auto;
+  width: auto;
+  margin: 16px;
+  z-index: 1;
+}
+.overview-bottom-overlays,
+.overview-arrival-overlays {
+  pointer-events: none;
+}
+.overview-metric-history-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+.overview-metric-history-panels [data-metric-panel] {
+  min-width: 0;
+  min-height: 0;
+}
+.overview-metric-history-panels__header {
+  padding: 8px 12px;
+  color: var(--overview-secondary);
+  font-size: 13px;
+  line-height: 1.3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.overview-metric-history-panels__header p {
+  display: block;
+  margin: 0;
+}
+.overview-metric-history-panels__freshness {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.overview-metric-history-panels__freshness [role='status'] {
+  color: var(--overview-text);
+  font-weight: 600;
+}
+.overview-metric-history-panels__windows {
+  display: flex;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+}
+.overview-metric-history-panels__header .overview-metric-history-panels__error {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-height: 18px;
+  font-size: 14px;
+  line-height: 18px;
+}
+.overview-page .operational-clock {
+  line-height: 1.2;
+}
+@media (max-width: 560px) {
+  .operational-clock-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container overview (min-width: 1500px) and (min-height: 1140px) {
+  .overview-page .overview-globe {
+    position: absolute !important;
+  }
+  .overview-page .overview-top-overlays {
+    position: absolute;
+    inset: 20px 20px auto;
+    margin: 0;
+    width: auto;
+  }
+  .overview-page .overview-bottom-overlays {
+    position: absolute;
+    inset: 128px auto 76px 20px;
+    margin: 0;
+    width: 440px;
+  }
+  .overview-page .overview-metric-history-panels {
+    height: 100%;
+    grid-template-rows: auto repeat(5, minmax(0, 1fr));
+  }
+  .overview-page .overview-metric-history-panels__header {
+    font-size: 16px;
+  }
+  .overview-page .overview-arrival-overlays {
+    position: absolute;
+    inset: auto auto 20px 480px;
+    margin: 0;
+    width: min(720px, calc(100% - 860px));
+  }
+  .overview-page .globe-legend {
+    position: absolute;
+    inset: auto 20px 20px auto;
+    margin: 0;
+    width: 320px;
+  }
+  .overview-page .overview-fullscreen-control {
+    position: absolute;
+    inset: auto auto 20px 20px;
+    margin: 0;
+    width: auto;
+  }
+}
+
+@container overview (min-width: 1500px) and (min-height: 1080px) {
+  :root:fullscreen .overview-page .overview-globe {
+    position: absolute !important;
+  }
+  :root:fullscreen .overview-page .overview-top-overlays {
+    position: absolute;
+    inset: 20px 20px auto;
+    margin: 0;
+    width: auto;
+  }
+  :root:fullscreen .overview-page .overview-bottom-overlays {
+    position: absolute;
+    inset: 128px auto 20px 20px;
+    margin: 0;
+    width: 440px;
+  }
+  :root:fullscreen .overview-page .overview-metric-history-panels {
+    height: 100%;
+    grid-template-rows: auto repeat(5, minmax(0, 1fr));
+  }
+  :root:fullscreen .overview-page .overview-metric-history-panels__header {
+    font-size: 16px;
+  }
+  :root:fullscreen .overview-page .overview-arrival-overlays {
+    position: absolute;
+    inset: auto auto 20px 480px;
+    margin: 0;
+    width: min(720px, calc(100% - 860px));
+  }
+  :root:fullscreen .overview-page .globe-legend {
+    position: absolute;
+    inset: auto 20px 20px auto;
+    margin: 0;
+    width: 320px;
+  }
+  :root:fullscreen .overview-page .overview-fullscreen-control {
+    position: absolute;
+    inset: auto auto 20px 20px;
+    margin: 0;
+    width: auto;
+  }
+}

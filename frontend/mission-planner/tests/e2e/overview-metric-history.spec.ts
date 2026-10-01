@@ -736,6 +736,10 @@ test.describe('Overview metric history', () => {
       .locator('[data-metric-panel]');
     await expect(graphs).toHaveCount(5);
     await expect(graphs.locator('.uplot')).toHaveCount(5);
+    await page.getByRole('button', { name: /fullscreen/i }).click();
+    await expect
+      .poll(() => page.evaluate(() => !!document.fullscreenElement))
+      .toBe(true);
     const settledRequests = requests;
     expect(settledRequests).toBeGreaterThanOrEqual(1);
     const pois = await page.getByLabel('Upcoming POIs').boundingBox();
@@ -747,7 +751,7 @@ test.describe('Overview metric history', () => {
     });
     for (const panel of await graphs.all()) {
       const box = await panel.boundingBox();
-      expect(box && pois && box.y + box.height <= pois.y).toBeTruthy();
+      expect(box && pois && box.x + box.width <= pois.x).toBeTruthy();
       expect(
         box &&
           top &&
@@ -760,7 +764,7 @@ test.describe('Overview metric history', () => {
       for (const name of ['Observed', 'Average (5m)', 'Low–high envelope (5m)'])
         await expect(
           page.getByLabel('Graph traces').getByText(name, { exact: true })
-        ).toBeVisible();
+        ).toBeAttached();
       await expect(
         panel.locator('.overview-metric-history__latest')
       ).toBeVisible();
@@ -912,7 +916,7 @@ test.describe('Overview metric history', () => {
       ).toBe('auto');
       await expect(
         page.getByLabel('Graph traces').getByText('Observed', { exact: true })
-      ).toBeVisible();
+      ).toBeAttached();
     }
   });
 });
