@@ -74,7 +74,16 @@ test.describe('Overview metric history', () => {
     let selectedWindowSeconds = 1800;
     let collapsePois = false;
     let fulfilledHistory = 0;
+    let historyFails = false;
+    let statusHangs = false;
     await page.route('**/api/overview-history', async (route) => {
+      if (historyFails) {
+        await route.fulfill({
+          status: 503,
+          json: { detail: 'Refresh unavailable' },
+        });
+        return;
+      }
       await route.fulfill({
         json: representativeBundle(
           Math.floor(Date.now() / 1000),
@@ -119,12 +128,27 @@ test.describe('Overview metric history', () => {
       route.fulfill({ json: { routes: [], total: 0 } })
     );
     await page.route('**/api/status', (route) =>
-      route.fulfill({
-        json: {
-          timestamp: new Date(now).toISOString(),
-          network: { latency_ms: 42 },
-        },
-      })
+      statusHangs
+        ? new Promise(() => {})
+        : route.fulfill({
+            json: {
+              timestamp: new Date(Date.now() - 1000).toISOString(),
+              metric_availability: {
+                latency_ms: true,
+                throughput_down_mbps: true,
+                throughput_up_mbps: true,
+                packet_loss_percent: true,
+                obstruction_percent: true,
+              },
+              network: {
+                latency_ms: 42,
+                throughput_down_mbps: 125.3,
+                throughput_up_mbps: 25.1,
+                packet_loss_percent: 0.5,
+              },
+              obstruction: { obstruction_percent: 15 },
+            },
+          })
     );
     await page.route('**/api/satellites', (route) =>
       route.fulfill({ json: [] })
@@ -164,9 +188,7 @@ test.describe('Overview metric history', () => {
     const pois = page.getByLabel('Upcoming POIs');
     await expect(graphs.locator('.uplot')).toHaveCount(5);
     await expect.poll(() => fulfilledHistory).toBeGreaterThan(0);
-    await expect(graphs.getByRole('status')).toHaveText(
-      Array(5).fill('History available')
-    );
+    await expect(graphs.getByRole('status')).toHaveCount(0);
     const paintedRanges = async () =>
       graphs.locator('.uplot canvas').evaluateAll((canvases) =>
         canvases.map((node) => {
@@ -260,6 +282,21 @@ test.describe('Overview metric history', () => {
         const stack = document.querySelector('.overview-bottom-overlays')!;
         return {
           boxes,
+          contents: [...document.querySelectorAll('[data-metric-panel]')].map(
+            (panel) =>
+              [
+                ...panel.querySelectorAll(
+                  '.overview-metric-history__header, .overview-metric-history__latest, .overview-metric-history__age, .overview-metric-history__status, .overview-metric-history__chart, .overview-metric-history__time-axis'
+                ),
+              ].map((node) => ({
+                className: node.className,
+                text: node.textContent,
+                box: node.getBoundingClientRect().toJSON(),
+              }))
+          ),
+          plotHeights: [
+            ...document.querySelectorAll('.overview-metric-history__viewport'),
+          ].map((node) => node.getBoundingClientRect().height),
           panelScroll: [
             ...document.querySelectorAll('[data-metric-panel]'),
           ].map(
@@ -270,7 +307,7 @@ test.describe('Overview metric history', () => {
           poi,
           neighbors: [
             '.overview-clock-panel',
-            '[aria-label="Current network metrics"]',
+            '[aria-label="Network history context"]',
             '[aria-label="Globe legend"]',
           ].map((selector) =>
             document.querySelector(selector)!.getBoundingClientRect().toJSON()
@@ -305,6 +342,30 @@ test.describe('Overview metric history', () => {
     const assertLayout = (state: Awaited<ReturnType<typeof layout>>) => {
       expect(state.boxes).toHaveLength(5);
       expect(state.panelScroll).toEqual(Array(5).fill(false));
+      expect(state.plotHeights).toEqual(Array(5).fill(56));
+      for (const [index, contents] of state.contents.entries()) {
+        const parent = state.boxes[index];
+        for (const { box } of contents) {
+          expect(box.width).toBeGreaterThan(0);
+          expect(box.height).toBeGreaterThan(0);
+          expect(box.left).toBeGreaterThanOrEqual(parent.left);
+          expect(box.right).toBeLessThanOrEqual(parent.right);
+          expect(box.top).toBeGreaterThanOrEqual(parent.top);
+          expect(box.bottom).toBeLessThanOrEqual(parent.bottom);
+        }
+        for (let first = 0; first < contents.length; first++)
+          for (let second = first + 1; second < contents.length; second++) {
+            const a = contents[first].box;
+            const b = contents[second].box;
+            expect(
+              a.right <= b.left ||
+                b.right <= a.left ||
+                a.bottom <= b.top ||
+                b.bottom <= a.top,
+              `metric content overlap: ${JSON.stringify(contents)}`
+            ).toBe(true);
+          }
+      }
       for (const box of [...state.boxes, state.poi])
         for (const neighbor of state.neighbors)
           expect(
@@ -352,7 +413,31 @@ test.describe('Overview metric history', () => {
       }
     };
     const firstLayout = await layout();
+    // Preserve visual evidence even when the unchanged fit contract fails.
+    await page.screenshot({
+      path: testInfo.outputPath(
+        'overview-fullscreen-fit-diagnostic-1920x1080.png'
+      ),
+    });
+    await writeFile(
+      testInfo.outputPath('overview-fullscreen-fit-diagnostic.json'),
+      JSON.stringify(firstLayout, null, 2)
+    );
     assertLayout(firstLayout);
+    for (const [index, value] of [
+      '42 ms',
+      '125.3 Mbps',
+      '25.1 Mbps',
+      '0.5 %',
+      '15 %',
+    ].entries()) {
+      await expect(
+        graphs.nth(index).locator('.overview-metric-history__latest')
+      ).toHaveText(value);
+      await expect(
+        graphs.nth(index).locator('.overview-metric-history__age')
+      ).toContainText('Observed');
+    }
     const firstUtcTick = await graphs
       .first()
       .locator('.overview-metric-history__time-axis span:first-child')
@@ -397,7 +482,7 @@ test.describe('Overview metric history', () => {
       firstLayout.poi.width,
       firstLayout.poi.height,
     ]);
-    await expect(page.getByLabel('Current network metrics')).toBeVisible();
+    await expect(page.getByLabel('Network history context')).toBeVisible();
     await expect(page.getByLabel('Globe legend')).toBeVisible();
     await expect(page.locator('.overview-clock-panel')).toBeVisible();
     await expect(globeCanvas).toBeVisible();
@@ -416,6 +501,36 @@ test.describe('Overview metric history', () => {
           .textContent()
       )
       .not.toBe(oldAxis);
+    assertLayout(await layout());
+    statusHangs = true;
+    historyFails = true;
+    await expect(graphs.getByRole('status')).toHaveCount(5, {
+      timeout: 12_000,
+    });
+    for (const panel of await graphs.all()) {
+      await expect(panel.getByRole('status')).toHaveText(
+        'Last-known history; refresh unavailable'
+      );
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toHaveText('Unavailable');
+      await expect(
+        panel.locator('.overview-metric-history__age')
+      ).toContainText('Last observed');
+    }
+    const staleLayout = await layout();
+    assertLayout(staleLayout);
+    await writeFile(
+      testInfo.outputPath('overview-native-fullscreen-stale.json'),
+      JSON.stringify(staleLayout, null, 2)
+    );
+    await page.screenshot({
+      path: testInfo.outputPath('overview-native-fullscreen-stale.png'),
+    });
+    historyFails = false;
+    await expect(graphs.getByRole('status')).toHaveCount(0, {
+      timeout: 12_000,
+    });
     assertLayout(await layout());
     collapsePois = true;
     await expect(pois.locator('tbody tr')).toHaveCount(0, { timeout: 12_000 });
@@ -460,7 +575,7 @@ test.describe('Overview metric history', () => {
     const poiBox = await pois.boundingBox();
     const legendBox = await page.getByLabel('Globe legend').boundingBox();
     const metricsBox = await page
-      .getByLabel('Current network metrics')
+      .getByLabel('Network history context')
       .boundingBox();
     const clocksBox = await page.locator('.overview-clock-panel').boundingBox();
     expect(poiBox && poiBox.y + poiBox.height <= 1080).toBeTruthy();
@@ -472,14 +587,24 @@ test.describe('Overview metric history', () => {
       expect(box && poiBox && box.y + box.height <= poiBox.y).toBeTruthy();
       expect(box && legendBox && box.x + box.width <= legendBox.x).toBeTruthy();
       expect(
-        box && metricsBox && box.x + box.width <= metricsBox.x
+        box &&
+          metricsBox &&
+          (box.x + box.width <= metricsBox.x ||
+            metricsBox.x + metricsBox.width <= box.x ||
+            box.y + box.height <= metricsBox.y ||
+            metricsBox.y + metricsBox.height <= box.y)
       ).toBeTruthy();
       expect(
         box && clocksBox && box.y >= clocksBox.y + clocksBox.height
       ).toBeTruthy();
       expect(box && box.width >= 200).toBeTruthy();
-      for (const name of ['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)'])
-        await expect(panel.getByText(name)).toBeVisible();
+      for (const name of ['Observed', 'Average (5m)', 'Low–high envelope (5m)'])
+        await expect(
+          page.getByLabel('Graph traces').getByText(name, { exact: true })
+        ).toBeVisible();
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toBeVisible();
       expect(
         await panel.evaluate((node) => node.scrollHeight <= node.clientHeight)
       ).toBe(true);
@@ -502,7 +627,7 @@ test.describe('Overview metric history', () => {
     for (const height of [900, 768, 640]) {
       await page.setViewportSize({ width: 1920, height });
       const metrics = await page
-        .getByLabel('Current network metrics')
+        .getByLabel('Network history context')
         .boundingBox();
       const legend = await page.getByLabel('Globe legend').boundingBox();
       expect(metrics && legend).toBeTruthy();
@@ -610,9 +735,8 @@ for (const height of [961, 1024]) {
         .getByLabel('Overview metric history')
         .locator('[data-metric-panel]');
       const pois = page.getByLabel('Upcoming POIs');
-      await expect(graphs.getByRole('status')).toHaveText(
-        Array(5).fill('History available')
-      );
+      await expect(graphs.locator('.uplot')).toHaveCount(5);
+      await expect(graphs.getByRole('status')).toHaveCount(0);
       await expect(pois.locator('tbody tr')).toHaveCount(5);
       await page.getByRole('button', { name: /fullscreen/i }).click();
       await expect

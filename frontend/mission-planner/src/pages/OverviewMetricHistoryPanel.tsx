@@ -11,15 +11,12 @@ import {
   projectMetricHistory,
   type OverviewMetricGraphDescriptor,
 } from './overview-metric-history';
+import { metricScale, type YRange } from './overview-metric-scale';
+import { metricPlotOptions } from './overview-metric-plot-options';
+import type { MetricReadout } from './overview-metric-readout';
 import './OverviewMetricHistoryPanel.css';
 
 const BUFFER_SECONDS = 7.5;
-const TRACES = [
-  { label: 'Observed', stroke: '#67e8f9' },
-  { label: 'Low (5m)', stroke: '#a78bfa' },
-  { label: 'Average (5m)', stroke: '#fbbf24' },
-  { label: 'High (5m)', stroke: '#fb7185' },
-] as const;
 
 interface Props {
   descriptor: OverviewMetricGraphDescriptor;
@@ -27,6 +24,7 @@ interface Props {
   error: boolean;
   selectedWindowSeconds: number;
   nowMs: number;
+  readout?: MetricReadout | null;
 }
 
 /** A plot-only uPlot canvas: labels and axes never enter the moving surface. */
@@ -36,6 +34,7 @@ export function OverviewMetricHistoryPanel({
   error,
   selectedWindowSeconds,
   nowMs,
+  readout,
 }: Props) {
   const accepted = useRef<{
     windowSeconds: number;
@@ -68,7 +67,7 @@ export function OverviewMetricHistoryPanel({
     );
     accepted.current.history = incomingHistory;
   }
-  const validHistory = incomingHistory ? accepted.current.history : undefined;
+  const validHistory = accepted.current.history;
   const projection = validHistory
     ? projectMetricHistory(accepted.current.chart!.bundle, descriptor, nowMs)
     : undefined;
@@ -76,6 +75,12 @@ export function OverviewMetricHistoryPanel({
   const host = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
+  const paintedInput = useRef<{
+    history: OverviewHistoryBundle;
+    descriptor: OverviewMetricGraphDescriptor;
+    width: number;
+    height: number;
+  } | null>(null);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(80);
   const [tick, setTick] = useState(0);
@@ -204,24 +209,21 @@ export function OverviewMetricHistoryPanel({
   const data = projection
     ? ([
         projection.times,
-        projection.observed,
+        projection.max,
         projection.min,
         projection.avg,
-        projection.max,
+        projection.observed,
       ] as uPlot.AlignedData)
     : undefined;
-  const maximum = projection
-    ? [projection.observed, projection.min, projection.avg, projection.max]
-        .flat()
-        .reduce<number>(
-          (peak, value) =>
-            typeof value === 'number' && Number.isFinite(value)
-              ? Math.max(peak, value)
-              : peak,
-          1
-        )
-    : 1;
-  const upper = Math.ceil(maximum * 1.1);
+  const scale = useRef<{ key: string; range: YRange } | null>(null);
+  const scaleKey = `${descriptor.metric}/${selectedWindowSeconds}`;
+  const yRange = metricScale(
+    descriptor,
+    projection,
+    scale.current?.key === scaleKey ? scale.current.range : undefined
+  );
+  scale.current = { key: scaleKey, range: yRange };
+  const upper = yRange.max;
   const visibleRight = domain
     ? domain.max - BUFFER_SECONDS * 2 + Math.min(BUFFER_SECONDS, motionElapsed)
     : 0;
@@ -275,37 +277,28 @@ export function OverviewMetricHistoryPanel({
     node.style.transform = `translate3d(${offset}px, 0, 0)`;
     if (!plot.current) {
       plot.current = new uPlot(
-        {
-          width: overscanWidth,
-          height,
-          padding: [0, 0, 0, 0],
-          axes: [{ show: false }, { show: false }],
-          legend: { show: false },
-          cursor: { show: false },
-          scales: {
-            // An array range is a permanent clamp in uPlot. Use a dynamic
-            // range so subsequent setScale calls can rebase every new bundle.
-            x: { time: true, range: (_plot, min, max) => [min, max] },
-            y: { range: [0, upper] },
-          },
-          series: [
-            {},
-            ...TRACES.map((trace) => ({
-              ...trace,
-              width: 1.5,
-              spanGaps: false,
-            })),
-          ],
-        },
+        metricPlotOptions({ width: overscanWidth, height, yRange, descriptor }),
         data,
         host.current
       );
-    } else {
+    } else if (
+      paintedInput.current?.history !== validHistory ||
+      paintedInput.current?.descriptor !== descriptor ||
+      paintedInput.current?.width !== width ||
+      paintedInput.current?.height !== height
+    ) {
+      // Visibility/error changes only rebase motion; unchanged data need no upload.
       plot.current.setSize({ width: overscanWidth, height });
       plot.current.setData(data);
     }
+    paintedInput.current = {
+      history: validHistory!,
+      descriptor,
+      width,
+      height,
+    };
     plot.current.setScale('x', domain);
-    plot.current.setScale('y', { min: 0, max: upper });
+    plot.current.setScale('y', yRange);
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
     const remaining = Math.max(0, BUFFER_SECONDS - motionElapsed);
@@ -340,7 +333,7 @@ export function OverviewMetricHistoryPanel({
           ? 'Waiting for history samples'
           : exhausted
             ? 'Waiting for fresh history'
-            : 'History available';
+            : '';
   void tick;
   return (
     <section
@@ -351,20 +344,23 @@ export function OverviewMetricHistoryPanel({
         <h3>{descriptor.label}</h3>
         <span className="overview-metric-history__unit">{descriptor.unit}</span>
       </header>
-      <p className="overview-metric-history__status" role="status">
-        {status}
-      </p>
-      <ul className="overview-metric-history__legend" aria-label="Graph traces">
-        {TRACES.map((trace) => (
-          <li key={trace.label}>
-            <span
-              style={{ backgroundColor: trace.stroke }}
-              aria-hidden="true"
-            />
-            {trace.label}
-          </li>
-        ))}
-      </ul>
+      <strong className="overview-metric-history__latest">
+        {readout?.state === 'fresh'
+          ? `${readout.value} ${descriptor.unit}`
+          : 'Unavailable'}
+      </strong>
+      <span className="overview-metric-history__age">
+        {readout?.state === 'stale'
+          ? `Last observed ${readout.value} ${descriptor.unit} · ${Math.floor(readout.ageMs / 1000)}s old`
+          : readout
+            ? `Observed ${new Date(readout.observedAtMs).toISOString().slice(11, 19)} UTC`
+            : 'No timestamped observation'}
+      </span>
+      {status && (
+        <p className="overview-metric-history__status" role="status">
+          {status}
+        </p>
+      )}
       <div className="overview-metric-history__chart">
         <div
           className="overview-metric-history__value-axis"
@@ -379,7 +375,7 @@ export function OverviewMetricHistoryPanel({
           className="overview-metric-history__viewport"
           ref={viewport}
           role="img"
-          aria-label={`${descriptor.label} time history; ${status}`}
+          aria-label={`${descriptor.label} time history${status ? `; ${status}` : ''}`}
         >
           <div className="overview-metric-history__surface" ref={surface}>
             <div ref={host} />

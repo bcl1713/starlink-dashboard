@@ -50,6 +50,16 @@ class EnvironmentalData(BaseModel):
     )
 
 
+class MetricAvailability(BaseModel):
+    """Per-metric source observation provenance; absent provenance fails closed."""
+
+    latency_ms: bool = False
+    throughput_down_mbps: bool = False
+    throughput_up_mbps: bool = False
+    packet_loss_percent: bool = False
+    obstruction_percent: bool = False
+
+
 class TelemetryData(BaseModel):
     """Complete telemetry data from simulator."""
 
@@ -57,6 +67,10 @@ class TelemetryData(BaseModel):
     position: PositionData = Field(..., description="Position information")
     network: NetworkData = Field(..., description="Network metrics")
     obstruction: ObstructionData = Field(..., description="Obstruction information")
+    metric_availability: MetricAvailability = Field(
+        default_factory=MetricAvailability,
+        description="Whether each metric has a usable source observation",
+    )
     environmental: EnvironmentalData = Field(
         default_factory=EnvironmentalData,
         description="Environmental and status information",

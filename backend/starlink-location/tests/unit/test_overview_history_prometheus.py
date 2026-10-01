@@ -364,6 +364,99 @@ async def test_queries_and_projects_one_bounded_overview_history_bundle():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("missing_raw", ["NaN", None])
+@pytest.mark.parametrize("metric", ROLLUP_METRICS)
+async def test_rollups_cannot_fill_a_raw_gap_and_resume_on_valid_zero(
+    metric, missing_raw
+):
+    # Catches trailing statistics projected through a missing current observation.
+    requests = []
+    raw_values = [[1781999997, "20"], [1782000000, "0"]]
+    if missing_raw is not None:
+        raw_values.insert(1, [1781999998, missing_raw])
+
+    def handler(request):
+        requests.append(request)
+        if request.url.params["query"].startswith("{__name__"):
+            return httpx.Response(
+                200,
+                json=matrix(
+                    raw_entry(metric, raw_values),
+                    raw_entry("starlink_dish_latitude_degrees", [[1781999998, "41"]]),
+                ),
+            )
+        return httpx.Response(
+            200,
+            json=matrix(
+                rollup_entry(
+                    [
+                        [1781999997, "20"],
+                        [1781999998, "20"],
+                        [1781999999, "20"],
+                        [1782000000, "10"],
+                    ]
+                )
+            ),
+        )
+
+    async with httpx.AsyncClient(
+        base_url="http://prometheus:9090", transport=httpx.MockTransport(handler)
+    ) as client:
+        bundle = await query_overview_history_bundle(
+            client, end_timestamp_seconds=1782000000, window_seconds=300
+        )
+    assert bundle["series"][metric] == [[1781999997.0, 20.0], [1782000000.0, 0.0]]
+    assert bundle["series"]["starlink_dish_latitude_degrees"] == [[1781999998.0, 41.0]]
+    for statistic in ("min", "avg", "max"):
+        assert bundle["rolling_5m"][metric][statistic] == [
+            [1781999997.0, 20.0],
+            [1782000000.0, 10.0],
+        ]
+    assert len(requests) == 16
+
+
+@pytest.mark.asyncio
+async def test_rollup_without_any_raw_observation_is_not_published():
+    def handler(request):
+        payload = (
+            matrix()
+            if request.url.params["query"].startswith("{__name__")
+            else matrix(rollup_entry([[1782000000, "25"]]))
+        )
+        return httpx.Response(200, json=payload)
+
+    async with httpx.AsyncClient(
+        base_url="http://prometheus:9090", transport=httpx.MockTransport(handler)
+    ) as client:
+        bundle = await query_overview_history_bundle(
+            client, end_timestamp_seconds=1782000000, window_seconds=300
+        )
+    assert bundle["series"] == {}
+    assert all(
+        entry == {"state": "available", "min": [], "avg": [], "max": []}
+        for entry in bundle["rolling_5m"].values()
+    )
+
+
+def test_finite_query_evaluation_points_cannot_reveal_sample_reuse_within_lookback():
+    # The adapter receives evaluation times, not acquisition times. A prior scrape
+    # reused at the next evaluation is indistinguishable from a new observation.
+    metric = "starlink_network_latency_ms_current"
+    assert project_overview_history_matrix(
+        matrix(
+            raw_entry(
+                metric,
+                [
+                    [1781999998, "25"],
+                    [1781999999, "25"],
+                    [1782000000, "NaN"],
+                ],
+            )
+        )
+    ) == {metric: [[1781999998.0, 25.0], [1781999999.0, 25.0]]}
+
+
+@pytest.mark.asyncio
 async def test_shares_one_in_flight_bundle_query_for_identical_windows():
     calls = 0
     fetch_started = asyncio.Event()
@@ -503,6 +596,10 @@ async def test_bundle_preserves_raw_trail_and_exposes_five_rolling_traces():
                     raw_entry(
                         "starlink_dish_longitude_degrees", [[1782000000, "-95.9345"]]
                     ),
+                    *(
+                        raw_entry(metric, [[1782000000, "25"]])
+                        for metric in ROLLUP_METRICS
+                    ),
                 ),
             )
         stat = request.url.params["query"].split("_over_time(", 1)[0]
@@ -518,6 +615,7 @@ async def test_bundle_preserves_raw_trail_and_exposes_five_rolling_traces():
     assert bundle["series"] == {
         "starlink_dish_latitude_degrees": [[1782000000.0, 41.2566]],
         "starlink_dish_longitude_degrees": [[1782000000.0, -95.9345]],
+        **{metric: [[1782000000.0, 25.0]] for metric in ROLLUP_METRICS},
     }
     assert bundle["rolling_5m"]["starlink_network_latency_ms_current"]["min"] == [
         [1782000000.0, 24.0]

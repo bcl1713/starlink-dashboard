@@ -79,15 +79,118 @@ describe('overview metric history', () => {
       OVERVIEW_METRIC_GRAPHS[0],
       117_500
     );
+    expect([
+      result.times,
+      result.max,
+      result.min,
+      result.avg,
+      result.observed,
+    ]).toEqual([
+      [100, 105, 110, 115],
+      [5, null, null, 8],
+      [3, null, null, 4],
+      [4, null, null, 6],
+      [4, 5, null, 7],
+    ]);
     expect(result).toEqual({
       state: 'available',
       times: [100, 105, 110, 115],
       observed: [4, 5, null, 7],
-      min: [3, null, 3, 4],
-      avg: [4, null, 4, 6],
-      max: [5, null, 6, 8],
+      min: [3, null, null, 4],
+      avg: [4, null, null, 6],
+      max: [5, null, null, 8],
       visibleRightSeconds: 110,
     });
+  });
+
+  it('gaps trailing statistics when raw observation is unavailable and resumes on recovery', () => {
+    const response = bundle(metricCases[0][1]);
+    response.series[metricCases[0][1]] = [
+      [100, 4],
+      [105, NaN],
+      [110, 5],
+      [115, 7],
+    ];
+    response.rolling_5m![metricCases[0][1]] = {
+      state: 'available',
+      min: [
+        [100, 3],
+        [105, 3],
+        [110, 3],
+        [115, 4],
+      ],
+      avg: [
+        [100, 4],
+        [105, 4],
+        [110, 4],
+        [115, 6],
+      ],
+      max: [
+        [100, 5],
+        [105, 5],
+        [110, 6],
+        [115, 8],
+      ],
+    };
+    const result = projectMetricHistory(
+      response,
+      OVERVIEW_METRIC_GRAPHS[0],
+      117_500
+    );
+    expect([
+      result.times,
+      result.max,
+      result.min,
+      result.avg,
+      result.observed,
+    ]).toEqual([
+      [100, 105, 110, 115],
+      [5, null, 6, 8],
+      [3, null, 3, 4],
+      [4, null, 4, 6],
+      [4, null, 5, 7],
+    ]);
+  });
+
+  it('inserts a shared null marker in all four traces across a long gap', () => {
+    const response = bundle(metricCases[0][1]);
+    response.series[metricCases[0][1]] = [
+      [100, 4],
+      [115, 7],
+    ];
+    response.rolling_5m![metricCases[0][1]] = {
+      state: 'available',
+      min: [
+        [100, 3],
+        [115, 4],
+      ],
+      avg: [
+        [100, 4],
+        [115, 6],
+      ],
+      max: [
+        [100, 5],
+        [115, 8],
+      ],
+    };
+    const result = projectMetricHistory(
+      response,
+      OVERVIEW_METRIC_GRAPHS[0],
+      117_500
+    );
+    expect([
+      result.times,
+      result.max,
+      result.min,
+      result.avg,
+      result.observed,
+    ]).toEqual([
+      [100, 107.5, 115],
+      [5, null, 8],
+      [3, null, 4],
+      [4, null, 6],
+      [4, null, 7],
+    ]);
   });
 
   it('reports empty when the selected metric has no samples', () => {

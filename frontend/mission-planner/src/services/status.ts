@@ -9,11 +9,25 @@ export interface StatusResponse {
     speed?: number;
     heading?: number;
   };
+  /** Source availability for the shared telemetry sample; absent flags fail closed. */
+  metric_availability?: Partial<
+    Record<
+      | 'latency_ms'
+      | 'throughput_down_mbps'
+      | 'throughput_up_mbps'
+      | 'packet_loss_percent'
+      | 'obstruction_percent',
+      boolean
+    >
+  >;
   network?: {
-    latency_ms?: number;
-    throughput_down_mbps?: number;
-    throughput_up_mbps?: number;
-    packet_loss_percent?: number;
+    latency_ms?: number | null;
+    throughput_down_mbps?: number | null;
+    throughput_up_mbps?: number | null;
+    packet_loss_percent?: number | null;
+  };
+  obstruction?: {
+    obstruction_percent?: number | null;
   };
   environmental?: {
     signal_quality_percent?: number;

@@ -6,6 +6,7 @@ from app.models.poi import POI
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
@@ -45,6 +46,13 @@ def _telemetry(
     timestamp: datetime | None = None,
 ) -> TelemetryData:
     return TelemetryData(
+        metric_availability=MetricAvailability(
+            latency_ms=True,
+            throughput_down_mbps=True,
+            throughput_up_mbps=True,
+            packet_loss_percent=True,
+            obstruction_percent=True,
+        ),
         timestamp=timestamp or datetime(2026, 1, 1, tzinfo=timezone.utc),
         position=PositionData(
             latitude=latitude,

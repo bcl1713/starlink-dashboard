@@ -22,7 +22,8 @@ async def status():
     Get current telemetry status as JSON.
 
     Returns current position, network, and obstruction telemetry with human-readable
-    fields and ISO 8601 formatted timestamp.
+    fields and the original ISO 8601 acquisition timestamp. Each of the five
+    metric values is null unless its metric_availability flag is true.
 
     Example response:
     ```json
@@ -37,12 +38,19 @@ async def status():
         },
         "network": {
             "latency_ms": 45.2,
-            "throughput_down_mbps": 125.3,
+            "throughput_down_mbps": null,
             "throughput_up_mbps": 25.1,
             "packet_loss_percent": 0.5
         },
         "obstruction": {
             "obstruction_percent": 15.0
+        },
+        "metric_availability": {
+            "latency_ms": true,
+            "throughput_down_mbps": false,
+            "throughput_up_mbps": true,
+            "packet_loss_percent": true,
+            "obstruction_percent": true
         },
         "environmental": {
             "signal_quality_percent": 85.0,
@@ -58,6 +66,7 @@ async def status():
     try:
         telemetry = _coordinator.get_current_telemetry()
         ground_entry_point = get_cached_ground_entry_point()
+        availability = telemetry.metric_availability
 
         return {
             "timestamp": telemetry.timestamp.isoformat(),
@@ -69,14 +78,33 @@ async def status():
                 "heading": telemetry.position.heading,
             },
             "network": {
-                "latency_ms": telemetry.network.latency_ms,
-                "throughput_down_mbps": telemetry.network.throughput_down_mbps,
-                "throughput_up_mbps": telemetry.network.throughput_up_mbps,
-                "packet_loss_percent": telemetry.network.packet_loss_percent,
+                "latency_ms": (
+                    telemetry.network.latency_ms if availability.latency_ms else None
+                ),
+                "throughput_down_mbps": (
+                    telemetry.network.throughput_down_mbps
+                    if availability.throughput_down_mbps
+                    else None
+                ),
+                "throughput_up_mbps": (
+                    telemetry.network.throughput_up_mbps
+                    if availability.throughput_up_mbps
+                    else None
+                ),
+                "packet_loss_percent": (
+                    telemetry.network.packet_loss_percent
+                    if availability.packet_loss_percent
+                    else None
+                ),
             },
             "obstruction": {
-                "obstruction_percent": telemetry.obstruction.obstruction_percent
+                "obstruction_percent": (
+                    telemetry.obstruction.obstruction_percent
+                    if availability.obstruction_percent
+                    else None
+                )
             },
+            "metric_availability": availability.model_dump(),
             "environmental": {
                 "signal_quality_percent": telemetry.environmental.signal_quality_percent,
                 "uptime_seconds": telemetry.environmental.uptime_seconds,

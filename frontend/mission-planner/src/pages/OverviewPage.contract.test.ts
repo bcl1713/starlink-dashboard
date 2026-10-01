@@ -11,6 +11,19 @@ const styles = readFileSync(
 );
 
 describe('OverviewPage generated POI legend and overlay layout contracts', () => {
+  it('shares status with network panels while preserving aircraft, X-band and shared history consumers', () => {
+    expect(pageSource).toMatch(
+      /<OverviewMetricHistoryPanels[\s\S]*?status=\{status\}[\s\S]*?statusError=\{Boolean\(statusError\)\}/
+    );
+    expect(pageSource.match(/\buseStatus\(\)/g)).toHaveLength(1);
+    expect(pageSource.match(/\buseOverviewHistory\(\)/g)).toHaveLength(1);
+    expect(pageSource).toContain('projectAircraftPosition(status ?? {})');
+    expect(pageSource).toMatch(/projectConfiguredXBandActiveLink\(\s*status,/);
+    expect(pageSource).toMatch(
+      /projectAircraftHistory\(\s*overviewHistory\?\.series \?\? \{\},/
+    );
+    expect(pageSource).not.toContain('OverviewMetricsPanel');
+  });
   it('reserves a structural left stack for history graphs before Upcoming POIs', () => {
     expect(pageSource).toMatch(
       /<div className="overview-left-stack">[\s\S]*?<OverviewMetricHistoryPanels[\s\S]*?<UpcomingPoisPanel/

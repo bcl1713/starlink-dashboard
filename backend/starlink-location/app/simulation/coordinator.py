@@ -15,6 +15,7 @@ from app.core.metrics import (
 from app.models.config import SimulationConfig
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     TelemetryData,
 )
 from app.services.speed_tracker import SpeedTracker
@@ -89,14 +90,8 @@ class SimulationCoordinator:
         ):
             # Graceful degradation: return last known good state
             if self._last_valid_telemetry:
-                # Update timestamp but return old data
-                return TelemetryData(
-                    timestamp=datetime.now(timezone.utc),
-                    position=self._last_valid_telemetry.position,
-                    network=self._last_valid_telemetry.network,
-                    obstruction=self._last_valid_telemetry.obstruction,
-                    environmental=self._last_valid_telemetry.environmental,
-                )
+                # A failed collection is not a fresh observation.
+                return self._last_valid_telemetry
             else:
                 # Re-raise if no fallback available
                 raise
@@ -229,6 +224,13 @@ class SimulationCoordinator:
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,
+            metric_availability=MetricAvailability(
+                latency_ms=True,
+                throughput_down_mbps=True,
+                throughput_up_mbps=True,
+                packet_loss_percent=True,
+                obstruction_percent=True,
+            ),
             environmental=environmental_data,
         )
 

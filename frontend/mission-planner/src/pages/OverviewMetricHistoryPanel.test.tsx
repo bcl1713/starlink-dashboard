@@ -92,10 +92,9 @@ afterEach(() => {
 });
 
 describe('OverviewMetricHistoryPanel', () => {
-  it('shows four named traces and fixed accessible title, unit and time axes', () => {
+  it('keeps the accessible title, unit and time axes outside the plot without a duplicate legend', () => {
     const { container } = render(panel());
-    for (const name of ['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)'])
-      expect(screen.getByText(name)).not.toBeNull();
+    expect(screen.queryByLabelText('Graph traces')).toBeNull();
     expect(screen.getByText('Network latency')).not.toBeNull();
     expect(screen.getByText('ms')).not.toBeNull();
     expect(screen.getByText('Time (UTC)')).not.toBeNull();
@@ -104,19 +103,19 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(options.axes).toEqual([{ show: false }, { show: false }]);
     expect(
       options.series.slice(1).map((series: { label: string }) => series.label)
-    ).toEqual(['Observed', 'Low (5m)', 'Average (5m)', 'High (5m)']);
+    ).toEqual(['High', 'Low', 'Average', 'Observed']);
     const surface = container.querySelector(
       '.overview-metric-history__surface'
     )!;
     expect(surface.contains(screen.getByText('Network latency'))).toBe(false);
     expect(surface.contains(screen.getAllByText('ms')[0])).toBe(false);
-    expect(surface.contains(screen.getByText('Observed'))).toBe(false);
+    expect(surface.contains(screen.getByText('Unavailable'))).toBe(false);
     expect(surface.contains(screen.getByText('Time (UTC)'))).toBe(false);
   });
   it('does not append a fabricated point at current time', () => {
     render(panel());
     expect(plot.create.mock.calls[0][1][0]).toEqual([110, 115, 120]);
-    expect(plot.create.mock.calls[0][1][1]).toEqual([5, null, 7]);
+    expect(plot.create.mock.calls[0][1][4]).toEqual([5, null, 7]);
   });
   it('updates one plot on fresh data, rebases with aligned x range, and cleans up', () => {
     const view = render(panel());
@@ -246,12 +245,174 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setData).toHaveBeenCalledTimes(1);
     expect(plot.setScale).toHaveBeenCalledWith('x', { min: 92.5, max: 137.5 });
   });
-  it('resizes the existing plot without remounting', () => {
-    render(panel());
-    measuredWidth = 500;
-    act(() => resize([], {} as ResizeObserver));
-    expect(plot.setSize).toHaveBeenCalled();
+  it('expands both canvas and fixed axis for a delayed real spike without remounting', () => {
+    const view = render(panel());
+    const next = bundle(125);
+    next.series[descriptor.metric] = [[125, 23]];
+    view.rerender(panel(next, false, 130_000));
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
+    expect(screen.getByText('26 ms')).not.toBeNull();
     expect(plot.create).toHaveBeenCalledTimes(1);
+    const lower = bundle(130);
+    lower.series[descriptor.metric] = [[130, 21]];
+    view.rerender(panel(lower, false, 130_000));
+    expect(screen.getByText('26 ms')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
+  });
+
+  it('labels the packet-loss upper axis explicitly at one percent for small samples', () => {
+    const loss = OVERVIEW_METRIC_GRAPHS[3];
+    const history = bundle();
+    history.series[loss.metric] = [[120, 0.2]];
+    history.rolling_5m![loss.metric] = {
+      state: 'available',
+      min: [[120, 0]],
+      avg: [[120, 0.1]],
+      max: [[120, 0.2]],
+    };
+    render(
+      <OverviewMetricHistoryPanel
+        descriptor={loss}
+        history={history}
+        error={false}
+        selectedWindowSeconds={30}
+        nowMs={120_000}
+      />
+    );
+    expect(screen.getByText('1 %')).not.toBeNull();
+    expect(screen.getByText('0 %')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1 });
+  });
+
+  it('renders a readable fractional loss label agreeing exactly with the canvas domain', () => {
+    const loss = OVERVIEW_METRIC_GRAPHS[3];
+    const history = bundle();
+    history.series[loss.metric] = [[120, 1.2]];
+    render(
+      <OverviewMetricHistoryPanel
+        descriptor={loss}
+        history={history}
+        error={false}
+        selectedWindowSeconds={30}
+        nowMs={120_000}
+      />
+    );
+    expect(screen.getByText('1.4 %')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1.4 });
+  });
+  // These probes catch an incorrect x-domain/transform rebase, viewport-based
+  // speed, or per-tick data upload. Canvas/compositor paint is covered in E2E.
+  it.each([1, 5])(
+    'preserves all four series positions at %ss bundle rebases',
+    (interval) => {
+      const history = (end: number) => {
+        const next = bundle(end);
+        next.series[descriptor.metric] = [
+          [110, 5],
+          [end, 7],
+        ];
+        next.rolling_5m![descriptor.metric] = {
+          state: 'available',
+          min: [[110, 3]],
+          avg: [[110, 4]],
+          max: [[110, 6]],
+        };
+        return next;
+      };
+      const view = render(panel(history(120)));
+      const surface = view.container.querySelector(
+        '.overview-metric-history__surface'
+      ) as HTMLElement;
+      for (const end of [120 + interval, 120 + 2 * interval]) {
+        act(() => vi.advanceTimersByTime(interval * 1000));
+        // The old CSS transition is linear; derive its position independently.
+        const before =
+          ((110 - (120 - 37.5)) / 45) * 600 - ((end - 120) / 30) * 400;
+        view.rerender(panel(history(end), false, end * 1000));
+        const domain = plot.setScale.mock.calls
+          .filter(([axis]) => axis === 'x')
+          .at(-1)![1];
+        const offset = Number(
+          surface.style.transform.match(/translate3d\(([-\d.]+)px/)?.[1]
+        );
+        const after =
+          ((110 - domain.min) / (domain.max - domain.min)) * 600 + offset;
+        const data = plot.setData.mock.calls.at(-1)![0];
+        const marker = data[0].indexOf(110);
+        expect(data.slice(1).map((column: number[]) => column[marker])).toEqual(
+          [6, 3, 4, 5]
+        );
+        for (const column of data.slice(1)) {
+          expect(column[marker]).not.toBeNull();
+          expect(Math.abs(after - before)).toBeLessThanOrEqual(1);
+        }
+      }
+      expect(plot.setData).toHaveBeenCalledTimes(2);
+      act(() => vi.advanceTimersByTime(8_000));
+      expect(plot.setData).toHaveBeenCalledTimes(2);
+    }
+  );
+  it('recalculates motion and uPlot size from a 400 to 300 CSS-pixel viewport', () => {
+    const view = render(panel());
+    act(() => vi.advanceTimersByTime(2_000));
+    measuredWidth = 300;
+    act(() => resize([], {} as ResizeObserver));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    expect(plot.setSize).toHaveBeenLastCalledWith({ width: 450, height: 1 });
+    expect(surface.style.transform).toBe('translate3d(-20px, 0, 0)');
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('transform 5.5s linear');
+    expect(surface.style.transform).toBe('translate3d(-75px, 0, 0)');
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(8_000));
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    expect(plot.create).toHaveBeenCalledTimes(1);
+  });
+  it('caps an eight-second delayed poll without extrapolating samples', () => {
+    const view = render(panel());
+    act(() => vi.advanceTimersByTime(8_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    expect(surface.style.transform).toBe('translate3d(-100px, 0, 0)');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Waiting for fresh history'
+    );
+    expect(plot.setData).not.toHaveBeenCalled();
+    view.rerender(panel(bundle(128), false, 128_000));
+    expect(plot.setData).toHaveBeenCalledTimes(1);
+    expect(plot.setData.mock.calls[0][0][0].at(-1)).toBe(128);
+    expect(surface.style.transform).toContain(
+      'translate3d(6.666666666666667px'
+    );
+  });
+  it('resumes from the frozen edge without replaying missed transitions', () => {
+    const history = bundle();
+    const view = render(panel(history));
+    act(() => vi.advanceTimersByTime(2_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      value: true,
+    });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    const frozen = surface.style.transform;
+    act(() => vi.advanceTimersByTime(120_000));
+    expect(surface.style.transform).toBe(frozen);
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      value: false,
+    });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(surface.style.transform).toBe(frozen);
+    act(() => vi.advanceTimersByTime(0));
+    expect(surface.style.transition).toBe('transform 5.5s linear');
+    expect(plot.create).toHaveBeenCalledTimes(1);
+    expect(plot.setData).not.toHaveBeenCalled();
   });
   it('marks an initial failed fetch unavailable without claiming last-known data', () => {
     const view = render(panel(null, true));
@@ -261,7 +422,7 @@ describe('OverviewMetricHistoryPanel', () => {
     );
     expect(plot.create).not.toHaveBeenCalled();
     view.rerender(panel(bundle(), false));
-    expect(screen.getByRole('status').textContent).toBe('History available');
+    expect(screen.queryByRole('status')).toBeNull();
   });
   it('announces empty, unavailable aggregates and last-known fetch failure', () => {
     const view = render(panel(null));
@@ -291,11 +452,11 @@ describe('OverviewMetricHistoryPanel', () => {
       'Waiting for fresh history'
     );
     expect(plot.create.mock.calls[0][1][0]).toEqual([95, 100, 105]);
-    expect(plot.create.mock.calls[0][1][1]).toEqual([0, null, null]);
+    expect(plot.create.mock.calls[0][1][4]).toEqual([0, null, null]);
     const fresh = bundle(125);
     fresh.series[descriptor.metric] = [[125, 0]];
     view.rerender(panel(fresh, false, 125_000));
-    expect(screen.getByRole('status').textContent).toBe('History available');
+    expect(screen.queryByRole('status')).toBeNull();
   });
   it('stops at the real sample edge on missed polls and resumes only on fresh data', () => {
     const view = render(panel());
