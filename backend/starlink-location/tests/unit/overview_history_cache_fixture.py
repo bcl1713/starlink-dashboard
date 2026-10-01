@@ -26,6 +26,7 @@ class PrometheusFixture:
         self.fail_rollup = False
         self.started = asyncio.Event()
         self.release = None
+        self.rollup_release = None
         self.active = 0
         self.max_active = 0
 
@@ -39,6 +40,8 @@ class PrometheusFixture:
                 await self.release.wait()
             params = request.url.params
             raw = params["query"].startswith("{")
+            if not raw and self.rollup_release is not None:
+                await self.rollup_release.wait()
             if (raw and self.fail_raw) or (not raw and self.fail_rollup):
                 return httpx.Response(503)
             times = range(

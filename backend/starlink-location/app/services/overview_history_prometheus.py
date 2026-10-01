@@ -8,9 +8,7 @@ from math import isfinite
 
 import httpx
 
-from app.services.overview_history_cache import (
-    OverviewHistoryReader as OverviewHistoryReader,
-)
+from app.services.overview_history_cache import OverviewHistoryReader  # noqa: F401
 
 MAX_OVERVIEW_HISTORY_SAMPLES = 1801
 MAX_OVERVIEW_HISTORY_INTERVALS = MAX_OVERVIEW_HISTORY_SAMPLES - 1
@@ -215,6 +213,7 @@ async def query_overview_history_bundle(
     window_seconds: int,
     plan: OverviewHistoryQueryPlan | None = None,
     include_identity: bool = False,
+    rollup_deadline: float | None = None,
 ) -> dict:
     """Query and project one bounded overview telemetry-history bundle."""
     plan = plan or plan_overview_history_query(
@@ -226,7 +225,9 @@ async def query_overview_history_bundle(
     # Imported here because the rollup projector shares this module's query plan.
     from app.services.overview_history_rollups import query_overview_history_rollups
 
-    rollups = await query_overview_history_rollups(client, plan)
+    rollups = await query_overview_history_rollups(
+        client, plan, deadline=rollup_deadline
+    )
     # Trailing statistics can remain finite after current telemetry disappears.
     # Require a finite raw point at the same evaluation step, without claiming
     # that query_range timestamps prove source-observation freshness.

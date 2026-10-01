@@ -2,7 +2,9 @@
 
 import asyncio
 
-from tests.unit.overview_history_cache_fixture import source as source
+from tests.unit import overview_history_cache_fixture
+
+source = overview_history_cache_fixture.source
 
 
 async def test_one_simulated_hour_keeps_two_readers_and_retained_work_bounded(source):

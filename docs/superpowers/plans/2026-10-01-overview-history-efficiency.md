@@ -88,8 +88,10 @@ The
 [fixture measurement report](./2026-10-01-overview-history-efficiency-measurements.md)
 records clean code SHA `f42699e9c3e37f4bb9add51015ffd68bd6858bad`, cold/warm
 query work, latency and JSON processing for all selected windows. Local controls
-include 96 backend tests, 93 frontend tests, full frontend ESLint, changed-file
+include 97 backend tests, 93 frontend tests, full frontend ESLint, changed-file
 Black 26.5.1, filename and typing-policy checks. The simulated-hour state test
 is separate from the still-required wall-clock resource soak. Draft PR #228
-targets `dev`; the real-host budget, complete suites/CI and production recording
-remain acceptance blockers, so the shipped default remains five seconds.
+targets `dev`. Full backend and frontend suites/build passed CI on revision
+`8f93698089b2afda4771d360105743eb31f00d25`; final-revision CI remains required.
+The real-host budget and production recording remain acceptance blockers, so the
+shipped default remains five seconds.

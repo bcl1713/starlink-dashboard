@@ -81,7 +81,10 @@ def _project_rollup_matrix(
 
 
 async def query_overview_history_rollups(
-    client: httpx.AsyncClient, plan: OverviewHistoryQueryPlan
+    client: httpx.AsyncClient,
+    plan: OverviewHistoryQueryPlan,
+    *,
+    deadline: float | None = None,
 ) -> dict[str, dict]:
     """Query 15 traces with the shared window and at most three in flight."""
     semaphore = asyncio.Semaphore(3)
@@ -93,8 +96,8 @@ async def query_overview_history_rollups(
     async def fetch(
         metric: str, statistic: str
     ) -> tuple[str, str, list[list[float]] | None]:
-        async with semaphore:
-            try:
+        try:
+            async with asyncio.timeout_at(deadline), semaphore:
                 response = await client.get(
                     "/api/v1/query_range",
                     params={
@@ -106,8 +109,8 @@ async def query_overview_history_rollups(
                 )
                 response.raise_for_status()
                 payload = response.json()
-            except (httpx.HTTPError, ValueError):
-                return metric, statistic, None
+        except (httpx.HTTPError, ValueError, TimeoutError):
+            return metric, statistic, None
         return metric, statistic, _project_rollup_matrix(payload, metric, plan)
 
     traces = await asyncio.gather(

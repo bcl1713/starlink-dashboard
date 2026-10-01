@@ -138,6 +138,10 @@ class OverviewHistoryReader:
                 ),
             )
 
+        deadline = asyncio.get_running_loop().time() + REFRESH_TIMEOUT_SECONDS
+        # Leave time to publish successful raw history after aggregate I/O times out.
+        rollup_deadline = deadline - min(0.1, REFRESH_TIMEOUT_SECONDS / 4)
+
         async def fetch(selected_plan: OverviewHistoryQueryPlan) -> dict:
             return await query_overview_history_bundle(
                 self._client,
@@ -145,10 +149,11 @@ class OverviewHistoryReader:
                 window_seconds=window,
                 plan=selected_plan,
                 include_identity=True,
+                rollup_deadline=rollup_deadline,
             )
 
         try:
-            async with asyncio.timeout(REFRESH_TIMEOUT_SECONDS):
+            async with asyncio.timeout_at(deadline):
                 incoming = await fetch(query_plan)
                 identity = incoming["_identity"]
                 changed = any(

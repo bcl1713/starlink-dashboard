@@ -82,12 +82,14 @@ changing the Prometheus URL or metric allowlist requires restart.
 
 A failed raw refresh returns 503 and does not advance the last-good snapshot.
 Failures are shared; retry delays increase monotonically from one to five
-seconds. Each whole refresh has a five-second deadline. Aggregate-only errors
-return usable raw history with all three traces unavailable for the affected
-metric; successful recovery refills the historical aggregates before publishing
-them. Finite raw-step masking applies after merging, so old aggregates cannot
-fill current raw gaps. Query end, cache publication time and evaluation times
-are never substituted for source acquisition time.
+seconds. Each whole refresh has a five-second deadline. Aggregate requests share
+an earlier deadline so successful raw history can be published within the
+refresh budget. Aggregate errors or deadline exhaustion return usable raw
+history with all three traces unavailable for the affected metric; successful
+recovery refills the historical aggregates before publishing them. Finite
+raw-step masking applies after merging, so old aggregates cannot fill current
+raw gaps. Query end, cache publication time and evaluation times are never
+substituted for source acquisition time.
 
 Durable settings updates invalidate atomically after persistence, even for an
 unchanged duration. Previous-generation work cannot publish after invalidation.

@@ -11,7 +11,9 @@ from app.services.overview_history_prometheus import (
     query_overview_history_bundle,
 )
 from app.services.overview_history_rollups import ROLLUP_METRICS
-from tests.unit.overview_history_cache_fixture import source as source
+from tests.unit import overview_history_cache_fixture
+
+source = overview_history_cache_fixture.source
 
 
 @pytest.mark.parametrize("window", [1, 300, 900, 1800, 3600, 3601, 1907, 86400])
@@ -256,3 +258,26 @@ async def test_delayed_sample_and_later_nan_replace_the_authoritative_overlap(so
         assert ([9995, 0] in result["series"][metric]) is not invalid
         for statistic in ("min", "avg", "max"):
             assert ([9995, 0] in result["rolling_5m"][metric][statistic]) is not invalid
+
+
+async def test_aggregate_deadline_keeps_successful_raw_history_and_recovers(
+    source, monkeypatch
+):
+    import app.services.overview_history_cache as cache
+
+    fixture, _, reader = source
+    fixture.window = 300
+    monkeypatch.setattr(cache, "REFRESH_TIMEOUT_SECONDS", 0.5)
+    fixture.rollup_release = asyncio.Event()
+    result = await reader.read()
+    assert result["end_timestamp_seconds"] == fixture.now
+    assert result["series"]
+    assert all(
+        entry["state"] == "unavailable" for entry in result["rolling_5m"].values()
+    )
+    assert fixture.active == 0
+    assert reader._flight is None
+    fixture.rollup_release.set()
+    fixture.now += 1
+    result = await reader.read()
+    assert all(entry["state"] == "available" for entry in result["rolling_5m"].values())

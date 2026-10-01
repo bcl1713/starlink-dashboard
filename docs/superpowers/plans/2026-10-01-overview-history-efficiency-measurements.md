@@ -75,18 +75,18 @@ network-bandwidth target or production payload measurement.
   refresh after each read, stable asyncio task counts and zero duplicate
   second-reader queries. It includes 12 full loads: cold plus reconciliation.
   This is not the requested minimum 60-minute wall-clock resource soak.
-- 96 focused backend controls and 93 frontend history/provenance/projection
+- 97 focused backend controls and 93 frontend history/provenance/projection
   controls pass. Full frontend ESLint, changed-file Black 26.5.1, filename and
   changed-line typing-policy controls pass.
-- The chart timer/error processing-count regression is added but could not run
-  locally because jsdom is absent. The full frontend build lacks
-  three/drei/fiber; backend startup lacks reverse_geocoder. Existing threaded
-  TestClient controls did not complete here; async ASGITransport API controls
-  passed instead.
+- The full backend suite and frontend tests/build passed GitHub Actions on
+  revision `8f93698089b2afda4771d360105743eb31f00d25`, including the chart
+  timer/error processing-count regression. Final-revision CI is still required.
+  Locally, jsdom is absent. The full frontend build lacks three/drei/fiber;
+  backend startup lacks reverse_geocoder. Existing threaded TestClient controls
+  did not complete here; async ASGITransport API controls passed instead.
 - Chromium launch fails with `setsockopt: Operation not permitted`; Docker
   daemon access is also denied by this sandbox. Production Docker/Nginx controls
-  and a 1920x1080 recording remain pending. Ruff/canonical static checks and
-  dependency-complete full suites require CI or a capable workspace.
+  and a 1920x1080 recording remain pending. Canonical static checks run in CI.
 
 ## Acceptance and reproduction
 
