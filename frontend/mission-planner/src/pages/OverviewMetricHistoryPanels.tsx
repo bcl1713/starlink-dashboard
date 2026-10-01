@@ -7,6 +7,7 @@ import {
   statusMetricReadout,
 } from './overview-metric-readout';
 import { OverviewMetricHistoryPanel } from './OverviewMetricHistoryPanel';
+import { statusObservationAgeMs } from './status-freshness';
 
 interface Props {
   history: OverviewHistoryBundle | undefined;
@@ -28,7 +29,10 @@ export function OverviewMetricHistoryPanels({
 }: Props) {
   const [acceptedStatus, setAcceptedStatus] = useState<StatusResponse>();
   const timestamp = status ? Date.parse(status.timestamp) : NaN;
-  const validTimestamp = Number.isFinite(timestamp) && timestamp <= nowMs;
+  const validTimestamp =
+    status &&
+    typeof status.timestamp === 'string' &&
+    statusObservationAgeMs(status.timestamp, nowMs) !== null;
   if (
     status &&
     status !== acceptedStatus &&
@@ -39,7 +43,7 @@ export function OverviewMetricHistoryPanels({
     // effect would briefly paint the previous sample on an accepted refresh.
     setAcceptedStatus(status);
   }
-  // Reject malformed/future responses without certifying a prior sample as current.
+  // Reject malformed/excessively future responses without certifying prior data.
   // Failed requests retain the accepted sample, explicitly projected as stale.
   const readoutStatus = status && !validTimestamp ? status : acceptedStatus;
   const readouts = OVERVIEW_METRIC_GRAPHS.map((descriptor) =>

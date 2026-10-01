@@ -62,19 +62,21 @@ never extrapolates samples into the present.
 
 The five stationary prominent readouts come from the existing shared
 `/api/status` feed, not Prometheus. Only finite values with explicit per-metric
-source availability and a valid, nonfuture collection `timestamp` can be
-current. A verified measured zero displays as zero; null, false availability, or
-legacy responses without availability display **Unavailable**, even if a
-compatibility fallback is zero. A sample is fresh for less than five seconds.
-Older samples or a failed status refresh show **Unavailable** prominently and
-retain verified last-known values only in secondary **Last observed** copy with
-an explicit age. **Status refresh unavailable** is independent of history
-failure: fresh status readouts remain current when history alone fails. One
-network freshness label summarizes fresh, partial, stale, or unavailable
-observations; aircraft/position freshness remains independent. Out-of-order
-status responses cannot rewind accepted collection time, and older history
-responses cannot rewind their accepted same-window bundle. Signal quality is not
-included among these five current observations.
+source availability and a valid collection `timestamp` can be current. Up to
+five seconds of future clock skew is allowed; displayed age is clamped to zero
+within that allowance, while the acquisition timestamp is preserved for ordering
+and freshness. Larger future offsets remain unavailable. A verified measured
+zero displays as zero; null, false availability, or legacy responses without
+availability display **Unavailable**, even if a compatibility fallback is zero.
+A sample is fresh for less than ten seconds. Older samples or a failed status
+refresh show **Unavailable** prominently and retain verified last-known values
+only in secondary **Last observed** copy with an explicit age. **Status refresh
+unavailable** is independent of history failure: fresh status readouts remain
+current when history alone fails. One network freshness label summarizes fresh,
+partial, stale, or unavailable observations; aircraft/position freshness remains
+independent. Out-of-order status responses cannot rewind accepted collection
+time, and older history responses cannot rewind their accepted same-window
+bundle. Signal quality is not included among these five current observations.
 
 History missingness is bounded by Prometheus scraping: unavailable readings
 publish `NaN` to only their current gauges and do not add histogram
@@ -91,10 +93,11 @@ graph timestamps. Pre-change historical zeros are not retrospectively verified
 observations. No scrape interval, query budget, history window, or request
 cadence changes are required for this publication contract.
 
-The aircraft trail and all five graphs share one history response every five
-seconds and the existing window selector in the globe legend (5, 15, 30, or 60
-minutes, plus a saved custom window). This persisted **Display** duration is
-separate from **Rolling statistics: 5 minutes**, which always uses the fixed
+The aircraft trail and all five graphs share one history response at the
+configured polling cadence (five seconds by default, with one second opt-in) and
+the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
+a saved custom window). This persisted **Display** duration is separate from
+**Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. The selector remains in the globe legend
 pending [#218](https://github.com/bcl1713/starlink-dashboard/issues/218).
 History requests default to five seconds while
