@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import type { OverviewHistoryBundle } from '../services/overview-history';
@@ -8,7 +8,7 @@ import {
   type RetainedMetricHistory,
 } from './overview-metric-retention';
 import {
-  projectMetricHistory,
+  projectMetricTraces,
   type OverviewMetricGraphDescriptor,
 } from './overview-metric-history';
 import { metricScale, type YRange } from './overview-metric-scale';
@@ -68,9 +68,14 @@ export function OverviewMetricHistoryPanel({
     accepted.current.history = incomingHistory;
   }
   const validHistory = accepted.current.history;
-  const projection = validHistory
-    ? projectMetricHistory(accepted.current.chart!.bundle, descriptor, nowMs)
-    : undefined;
+  const retainedBundle = accepted.current.chart?.bundle;
+  const projection = useMemo(
+    () =>
+      retainedBundle
+        ? projectMetricTraces(retainedBundle, descriptor)
+        : undefined,
+    [retainedBundle, descriptor]
+  );
   const viewport = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
@@ -217,10 +222,14 @@ export function OverviewMetricHistoryPanel({
     : undefined;
   const scale = useRef<{ key: string; range: YRange } | null>(null);
   const scaleKey = `${descriptor.metric}/${selectedWindowSeconds}`;
-  const yRange = metricScale(
-    descriptor,
-    projection,
-    scale.current?.key === scaleKey ? scale.current.range : undefined
+  const yRange = useMemo(
+    () =>
+      metricScale(
+        descriptor,
+        projection,
+        scale.current?.key === scaleKey ? scale.current.range : undefined
+      ),
+    [descriptor, projection, scaleKey]
   );
   scale.current = { key: scaleKey, range: yRange };
   const upper = yRange.max;

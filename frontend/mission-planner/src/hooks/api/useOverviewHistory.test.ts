@@ -9,7 +9,7 @@ vi.mock('@/services/overview-history', () => ({
 }));
 import { useQuery } from '@tanstack/react-query';
 import { overviewHistoryApi } from '@/services/overview-history';
-import { useOverviewHistory } from './useOverviewHistory';
+import { historyPollInterval, useOverviewHistory } from './useOverviewHistory';
 describe('useOverviewHistory', () => {
   it('polls one shared history bundle independently of live status', () => {
     vi.mocked(useQuery).mockReturnValue({} as never);
@@ -17,9 +17,23 @@ describe('useOverviewHistory', () => {
     expect(useQuery).toHaveBeenCalledWith({
       queryKey: ['overview-history'],
       queryFn: overviewHistoryApi.get,
-      refetchInterval: 5_000,
-      refetchIntervalInBackground: true,
+      refetchInterval: expect.any(Function),
+      refetchIntervalInBackground: false,
+      refetchOnWindowFocus: 'always',
       retry: false,
     });
+    const options = vi.mocked(useQuery).mock.calls.at(-1)![0];
+    const interval = options.refetchInterval;
+    expect(typeof interval).toBe('function');
+    if (typeof interval === 'function') {
+      expect(interval({ state: { status: 'success' } } as never)).toBe(5_000);
+      expect(interval({ state: { status: 'error' } } as never)).toBe(5_000);
+    }
+  });
+
+  it('accepts the gated 1s setting and defaults invalid settings to 5s', () => {
+    expect(historyPollInterval('1')).toBe(1_000);
+    for (const value of [undefined, '5', '0', 'invalid', 1])
+      expect(historyPollInterval(value)).toBe(5_000);
   });
 });

@@ -97,27 +97,35 @@ minutes, plus a saved custom window). This persisted **Display** duration is
 separate from **Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. The selector remains in the globe legend
 pending [#218](https://github.com/bcl1713/starlink-dashboard/issues/218).
-History requests remain every five seconds; a future 1 Hz request default
-belongs to [#224](https://github.com/bcl1713/starlink-dashboard/issues/224), not
-the existing 1 Hz Prometheus scrape rate or range-query step. Each graph shows
-the full selected window, with a small right-edge freshness margin: under the
-expected five-second response cadence, real samples and the UTC axis move left
-at the selected window's time scale without a visible jump when fresh responses
-rebase the plot. New real samples enter from the right, while old ones leave by
-clipping at the left. If the tab is hidden, a fetch fails, or history arrives
-late or irregularly, motion may pause and a rebase glitch may be visible;
-recovery from an arbitrary outage is not guaranteed seamless. Resuming a hidden
-tab restarts motion from its frozen edge rather than replaying every missed
-transition. With unchanged history, visibility or fetch-error changes rebase the
-moving surface without uploading the same uPlot data again; data uploads follow
-changed bundles or measured viewport resizes, not animation frames. The plots
-retain only real chart samples from overlapping responses at the left edge until
-they leave the visible window; newer responses replace or remove samples in
-their covered range. The aircraft trail still uses only the shared
-selected-window response. An initial load may have an empty far-left margin
-until later polls supply those samples. At the default 30-minute scale, five
-seconds of motion is deliberately subtle; no future samples are invented. The
-UTC tick labels remain on one line.
+History requests default to five seconds while
+[#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s measured
+performance gate is pending. A reviewed frontend build can select one second
+using `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1`; rebuild with `5` to roll back.
+Hidden tabs pause interval polling and refetch on focus. Failures use
+five-second polling. Cadence is separate from the one-second Prometheus scrape
+rate and the selected window's range-query resolution (two seconds for a
+60-minute window). The backend reuses completed snapshots and reconciles an
+overlapping tail, with bounded full loads for initialization, recovery and
+historical corrections. Each graph shows the full selected window, with a small
+right-edge freshness margin: under the expected five-second response cadence,
+real samples and the UTC axis move left at the selected window's time scale
+without a visible jump when fresh responses rebase the plot. New real samples
+enter from the right, while old ones leave by clipping at the left. If the tab
+is hidden, a fetch fails, or history arrives late or irregularly, motion may
+pause and a rebase glitch may be visible; recovery from an arbitrary outage is
+not guaranteed seamless. Resuming a hidden tab restarts motion from its frozen
+edge rather than replaying every missed transition. With unchanged history,
+visibility or fetch-error changes rebase the moving surface without uploading
+the same uPlot data again. Projection and scale scans run only when accepted
+history or its metric/window changes; clock labels and stale indicators still
+update. Data uploads follow changed bundles or measured viewport resizes, not
+animation frames. The plots retain only real chart samples from overlapping
+responses at the left edge until they leave the visible window; newer responses
+replace or remove samples in their covered range. The aircraft trail still uses
+only the shared selected-window response. An initial load may have an empty
+far-left margin until later polls supply those samples. At the default 30-minute
+scale, five seconds of motion is deliberately subtle; no future samples are
+invented. The UTC tick labels remain on one line.
 
 At 1920×1080 native fullscreen, the five plots form a single vertical column
 directly above the equally narrow five-row POI panel. The combined stack is

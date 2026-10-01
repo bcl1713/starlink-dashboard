@@ -115,7 +115,8 @@ def initialize_overview_history_runtime() -> None:
         get_window_seconds=_overview_history_settings_store.get_window_seconds,
         time_source=time.time,
     )
-    overview_history.set_overview_history_reader(reader.read)
+    app.state.overview_history_reader = reader
+    overview_history.set_overview_history_reader(reader.read, reader.invalidate)
 
 
 def initialize_overview_clock_settings_runtime() -> None:
@@ -173,7 +174,9 @@ async def startup_event():
                             "country": entry_point.country,
                         },
                     )
-            except Exception as e:  # noqa: BLE001 - optional DNS/metrics discovery must not block startup
+            except (
+                Exception
+            ) as e:  # noqa: BLE001 - optional DNS/metrics discovery must not block startup
                 logger.warning_json(
                     "Failed to publish ground entry point metrics",
                     extra_fields={"error": str(e)},
@@ -275,7 +278,9 @@ async def startup_event():
                         flight_state.update_route_context(
                             active_route, auto_reset=False, reason="startup"
                         )
-                except Exception as sync_exc:  # noqa: BLE001 - route sync must not block startup
+                except (
+                    Exception
+                ) as sync_exc:  # noqa: BLE001 - route sync must not block startup
                     logger.debug_json(
                         "Failed to sync flight state with active route during startup",
                         extra_fields={"error": str(sync_exc)},
@@ -318,7 +323,9 @@ async def startup_event():
                     "CommKa KMZ file not found",
                     extra_fields={"expected_path": str(commka_kmz)},
                 )
-        except Exception as e:  # noqa: BLE001 - optional KMZ import must not block startup
+        except (
+            Exception
+        ) as e:  # noqa: BLE001 - optional KMZ import must not block startup
             logger.warning_json(
                 "Failed to initialize CommKa coverage",
                 extra_fields={"error": str(e)},
@@ -370,6 +377,9 @@ async def shutdown_event():
         overview_clock_settings.set_overview_clock_settings_store(None)
         if hasattr(app.state, "overview_clock_settings_store"):
             del app.state.overview_clock_settings_store
+        if hasattr(app.state, "overview_history_reader"):
+            await app.state.overview_history_reader.aclose()
+            del app.state.overview_history_reader
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None
@@ -394,7 +404,9 @@ async def shutdown_event():
         shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
-    except Exception as e:  # noqa: BLE001 - log and suppress cleanup errors; later steps may be skipped
+    except (
+        Exception
+    ) as e:  # noqa: BLE001 - log and suppress cleanup errors; later steps may be skipped
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
@@ -458,7 +470,9 @@ async def _background_update_loop(poi_manager=None):
                             starlink_metrics_last_update_timestamp_seconds.set(
                                 time.time()
                             )
-                        except Exception as metric_error:  # noqa: BLE001 - telemetry metrics must not stop updates
+                        except (
+                            Exception
+                        ) as metric_error:  # noqa: BLE001 - telemetry metrics must not stop updates
                             starlink_metrics_generation_errors_total.inc()
                             logger.warning_json(
                                 "Error updating metrics",
@@ -500,7 +514,9 @@ async def _background_update_loop(poi_manager=None):
                 # Sleep for configured update interval
                 await asyncio.sleep(_simulation_config.update_interval_seconds)
 
-            except Exception as e:  # noqa: BLE001 - log update errors and retry after backoff
+            except (
+                Exception
+            ) as e:  # noqa: BLE001 - log update errors and retry after backoff
                 error_count += 1
                 logger.warning_json(
                     "Error in background update",

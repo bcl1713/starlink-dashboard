@@ -4,7 +4,7 @@ import asyncio
 import os
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from math import ceil, isfinite
+from math import isfinite
 
 import httpx
 
@@ -80,44 +80,6 @@ class OverviewHistoryBundleSingleFlight:
             del self._flights[key]
 
 
-class OverviewHistoryReader:
-    """Read one shared bounded overview-history bundle from Prometheus."""
-
-    def __init__(
-        self,
-        client: httpx.AsyncClient,
-        *,
-        get_window_seconds: Callable[[], int],
-        time_source: Callable[[], float],
-    ) -> None:
-        self._client = client
-        self._get_window_seconds = get_window_seconds
-        self._time_source = time_source
-        self._single_flight = OverviewHistoryBundleSingleFlight(
-            self._query_bundle,
-        )
-
-    async def read(self) -> dict:
-        """Read the selected history window ending at the current whole second."""
-        return await self._single_flight.get(
-            end_timestamp_seconds=int(self._time_source()),
-            window_seconds=self._get_window_seconds(),
-        )
-
-    async def _query_bundle(
-        self,
-        *,
-        end_timestamp_seconds: int,
-        window_seconds: int,
-    ) -> dict:
-        """Query one planned bundle through the lifecycle-managed client."""
-        return await query_overview_history_bundle(
-            self._client,
-            end_timestamp_seconds=end_timestamp_seconds,
-            window_seconds=window_seconds,
-        )
-
-
 @dataclass(frozen=True)
 class OverviewHistoryQueryPlan:
     """A bounded Prometheus range-query window for overview telemetry."""
@@ -136,10 +98,17 @@ def plan_overview_history_query(
     """Plan a query with no more than 1,801 requested samples per series."""
     if window_seconds <= 0:
         raise ValueError("History window must be positive")
+    step = max(
+        1,
+        (window_seconds + MAX_OVERVIEW_HISTORY_INTERVALS - 1)
+        // MAX_OVERVIEW_HISTORY_INTERVALS,
+    )
+    end = end_timestamp_seconds // step * step
+    start = end - window_seconds
     return OverviewHistoryQueryPlan(
-        start_timestamp_seconds=end_timestamp_seconds - window_seconds,
-        end_timestamp_seconds=end_timestamp_seconds,
-        step_seconds=max(1, ceil(window_seconds / MAX_OVERVIEW_HISTORY_INTERVALS)),
+        start_timestamp_seconds=((start + step - 1) // step) * step,
+        end_timestamp_seconds=end,
+        step_seconds=step,
         metric_names=OVERVIEW_HISTORY_METRICS,
     )
 
@@ -240,9 +209,11 @@ async def query_overview_history_bundle(
     *,
     end_timestamp_seconds: int,
     window_seconds: int,
+    plan: OverviewHistoryQueryPlan | None = None,
+    include_identity: bool = False,
 ) -> dict:
     """Query and project one bounded overview telemetry-history bundle."""
-    plan = plan_overview_history_query(
+    plan = plan or plan_overview_history_query(
         end_timestamp_seconds=end_timestamp_seconds,
         window_seconds=window_seconds,
     )
@@ -261,11 +232,21 @@ async def query_overview_history_bundle(
             entry[statistic] = [
                 point for point in entry[statistic] if point[0] in observed_steps
             ]
-    return {
+    bundle = {
         "window_seconds": window_seconds,
-        "start_timestamp_seconds": plan.start_timestamp_seconds,
+        "start_timestamp_seconds": plan.end_timestamp_seconds - window_seconds,
         "end_timestamp_seconds": plan.end_timestamp_seconds,
         "step_seconds": plan.step_seconds,
         "series": raw,
         "rolling_5m": rollups,
     }
+
+    if include_identity:
+        from app.services.overview_history_identity import raw_source_identity
+
+        bundle["_identity"] = raw_source_identity(payload, plan)
+    return bundle
+
+
+# Compatibility import; the cache imports query helpers lazily to avoid a cycle.
+from app.services.overview_history_cache import OverviewHistoryReader  # noqa: E402,F401
