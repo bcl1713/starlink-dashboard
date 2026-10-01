@@ -50,12 +50,16 @@ def get_telemetry_status_label(telemetry) -> str:
     """Classify only verified health inputs; legacy telemetry fails closed."""
     availability = getattr(telemetry, "metric_availability", None)
     return get_status_label(
-        telemetry.network.latency_ms
-        if getattr(availability, "latency_ms", False)
-        else None,
-        telemetry.network.packet_loss_percent
-        if getattr(availability, "packet_loss_percent", False)
-        else None,
+        (
+            telemetry.network.latency_ms
+            if getattr(availability, "latency_ms", False)
+            else None
+        ),
+        (
+            telemetry.network.packet_loss_percent
+            if getattr(availability, "packet_loss_percent", False)
+            else None
+        ),
     )
 
 

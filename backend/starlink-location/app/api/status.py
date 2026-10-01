@@ -78,23 +78,31 @@ async def status():
                 "heading": telemetry.position.heading,
             },
             "network": {
-                "latency_ms": telemetry.network.latency_ms
-                if availability.latency_ms
-                else None,
-                "throughput_down_mbps": telemetry.network.throughput_down_mbps
-                if availability.throughput_down_mbps
-                else None,
-                "throughput_up_mbps": telemetry.network.throughput_up_mbps
-                if availability.throughput_up_mbps
-                else None,
-                "packet_loss_percent": telemetry.network.packet_loss_percent
-                if availability.packet_loss_percent
-                else None,
+                "latency_ms": (
+                    telemetry.network.latency_ms if availability.latency_ms else None
+                ),
+                "throughput_down_mbps": (
+                    telemetry.network.throughput_down_mbps
+                    if availability.throughput_down_mbps
+                    else None
+                ),
+                "throughput_up_mbps": (
+                    telemetry.network.throughput_up_mbps
+                    if availability.throughput_up_mbps
+                    else None
+                ),
+                "packet_loss_percent": (
+                    telemetry.network.packet_loss_percent
+                    if availability.packet_loss_percent
+                    else None
+                ),
             },
             "obstruction": {
-                "obstruction_percent": telemetry.obstruction.obstruction_percent
-                if availability.obstruction_percent
-                else None
+                "obstruction_percent": (
+                    telemetry.obstruction.obstruction_percent
+                    if availability.obstruction_percent
+                    else None
+                )
             },
             "metric_availability": availability.model_dump(),
             "environmental": {
