@@ -114,10 +114,10 @@ Continue to use the backend's per-timestamp trailing five-minute Prometheus
 rollups, not statistics recomputed from only the visible chart or future
 samples. Preserve nulls and break markers: an outage is a gap, never zero, a
 bridged line or a fabricated extension. Keep stable truthful y ranges: 0–100%
-for obstruction; choose a labelled, readable packet-loss range that shows small
-changes without excessive autoscale churn; other metrics may use bounded, damped
-scales as justified by real observations. No continuous future point may be
-appended to fill overscan.
+for obstruction and packet loss, per subsequent user steering. Latency and
+throughput adapt to observed and aggregate highs, with hysteresis to avoid scale
+churn after peaks leave. No continuous future point may be appended to fill
+overscan.
 
 Only the plot-data surface moves; title, current value, units, axes, card border
 and background remain fixed. Observed, average and both envelope boundaries

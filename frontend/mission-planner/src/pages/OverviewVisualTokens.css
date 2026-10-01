@@ -1,12 +1,12 @@
 .overview-page {
-  --overview-glass: rgb(7 18 30 / 82%);
-  --overview-glass-fallback: rgb(7 18 30 / 96%);
+  --overview-glass: rgb(7 18 30 / 50%);
+  --overview-glass-fallback: rgb(7 18 30 / 90%);
   --overview-border: 1px solid rgb(172 201 226 / 28%);
   --overview-radius: 14px;
   --overview-shadow: 0 4px 18px rgb(0 0 0 / 24%);
   --overview-text: #f8fafc;
   --overview-secondary: #bdcbd9;
-  --overview-blur: blur(16px);
+  --overview-blur: blur(10px);
 }
 
 .overview-page

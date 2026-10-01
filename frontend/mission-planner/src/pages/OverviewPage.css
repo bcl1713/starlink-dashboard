@@ -24,7 +24,6 @@
   padding: 0.875rem 1rem;
   background: rgb(3 3 7 / 82%);
   color: #f8fafc;
-  backdrop-filter: blur(8px);
 }
 
 .globe-legend__title {
@@ -137,7 +136,6 @@
   background: rgb(3 3 7 / 82%);
   color: #f8fafc;
   text-align: center;
-  backdrop-filter: blur(8px);
 }
 .operational-clock__label {
   margin: 0;
@@ -179,7 +177,6 @@
   cursor: pointer;
   font: inherit;
   font-weight: 600;
-  backdrop-filter: blur(8px);
 }
 .overview-fullscreen-control:hover {
   background: rgb(15 23 42 / 90%);
@@ -196,7 +193,6 @@
   padding: 0.875rem 1rem;
   background: rgb(3 3 7 / 82%);
   color: #f8fafc;
-  backdrop-filter: blur(8px);
 }
 
 .upcoming-pois__title {

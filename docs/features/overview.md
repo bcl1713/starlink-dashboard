@@ -141,27 +141,35 @@ values remain in the source data and accessible provenance. Fresh per-card
 observation timestamps and UTC plot bounds are available to assistive
 technology; they no longer occupy repeated visual rows. Last-known values and
 their age remain visible when stale. Y-axis labels retain meaningful scale
-precision.
+precision. Packet loss and obstruction always use a 0–100% y-domain. Latency and
+throughput include observed and aggregate highs with rounded headroom; their
+axes expand for new peaks and shrink when the peak drops below half the prior
+upper bound, avoiding small oscillations in chart scale.
 
 At 1920×1080 native fullscreen, five navy glass cards form a 440px column with
 uppercase titles, large values and stationary sparse scale labels. The existing
 five-row POI table occupies a separate bottom-center region, while the existing
 legend stays at the lower right. Clocks and the other surfaces share the same
-glass tint, fine border, rounded corners and blur, with an opaque fallback when
-backdrop blur is unsupported. Shared refresh-error space and per-card exception
-space preserve fit when data becomes stale. Empty POIs do not move the charts.
-The POI content and diagnostic legend are transitional until #217 and #218.
+glass tint at 50% opacity, fine border, rounded corners and 10px blur. A 90%
+navy fallback protects text when backdrop blur is unsupported. Shared
+refresh-error space and per-card exception space preserve fit when data becomes
+stale. Empty POIs do not move the charts. The POI content and diagnostic legend
+are transitional until #217 and #218.
 
 Layout uses actual Overview container size: a desktop column requires at least
-1500px width and 1080px height in fullscreen, or 1140px height in ordinary view
-where the fullscreen control needs reserved space. Smaller containers use normal
-document scrolling so all five cards and the intact POI queue remain reachable.
-At an ordinary 1920×1080 browser viewport, navigation reduces the available
-content height, so this readable scrolling fallback is intentional. Enter native
-fullscreen to obtain the complete ten-foot column without page scrolling; the
-navigation and fullscreen button disappear. Exit with the browser's fullscreen
-shortcut (usually Escape). Container size changes resize the same chart/globe
-trees. The mobile globe-stage and gesture redesign remains separate #220 work.
+93.75rem width and 67.5rem height in fullscreen, or 71.25rem height in ordinary
+view where the fullscreen control needs reserved space. These correspond to
+1500px × 1080px and 1500px × 1140px with a 16px root font. The rail starts at
+8rem beneath the clocks; larger default text raises the fit thresholds so it
+uses readable flow before the clock row can collide with the metric context.
+Smaller containers use normal document scrolling so all five cards and the
+intact POI queue remain reachable. At an ordinary 1920×1080 browser viewport,
+navigation reduces the available content height, so this readable scrolling
+fallback is intentional. Enter native fullscreen to obtain the complete ten-foot
+column without page scrolling; the navigation and fullscreen button disappear.
+Exit with the browser's fullscreen shortcut (usually Escape). Container size
+changes resize the same chart/globe trees. The mobile globe-stage and gesture
+redesign remains separate #220 work.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
 rolling response shapes and error behavior. Moving window/cadence controls to a

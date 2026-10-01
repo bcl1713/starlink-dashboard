@@ -291,7 +291,7 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
   });
 
-  it('labels the packet-loss upper axis explicitly at one percent for small samples', () => {
+  it('keeps packet-loss labels and the plot domain at 0–100 for small samples', () => {
     const loss = OVERVIEW_METRIC_GRAPHS[3];
     const history = bundle();
     history.series[loss.metric] = [[120, 0.2]];
@@ -310,12 +310,13 @@ describe('OverviewMetricHistoryPanel', () => {
         nowMs={120_000}
       />
     );
-    expect(screen.getByText('1')).not.toBeNull();
+    expect(screen.getByText('100')).not.toBeNull();
+    expect(screen.getByText('50')).not.toBeNull();
     expect(screen.getByText('0')).not.toBeNull();
-    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1 });
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 100 });
   });
 
-  it('renders a readable fractional loss label agreeing exactly with the canvas domain', () => {
+  it('keeps fractional loss samples on the same fixed percentage domain', () => {
     const loss = OVERVIEW_METRIC_GRAPHS[3];
     const history = bundle();
     history.series[loss.metric] = [[120, 1.2]];
@@ -328,8 +329,8 @@ describe('OverviewMetricHistoryPanel', () => {
         nowMs={120_000}
       />
     );
-    expect(screen.getByText('1.4')).not.toBeNull();
-    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 1.4 });
+    expect(screen.getByText('100')).not.toBeNull();
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 100 });
   });
   // These probes catch an incorrect x-domain/transform rebase, viewport-based
   // speed, or per-tick data upload. Canvas/compositor paint is covered in E2E.

@@ -239,11 +239,11 @@ test.describe('Globe overview', () => {
       globeLegend.getByText('Live telemetry', { exact: true })
     ).toBeVisible();
     for (const [label, value] of [
-      ['Network latency', '42.5 ms'],
+      ['Network latency', '43 ms'],
       ['Downlink throughput', '125.3 Mbps'],
       ['Uplink throughput', '25.1 Mbps'],
-      ['Packet loss', '0.5 %'],
-      ['Dish obstruction', '15 %'],
+      ['Packet loss', '0.5%'],
+      ['Dish obstruction', '15%'],
     ]) {
       const panel = page.getByLabel(`${label} history`, { exact: true });
       await expect(panel).toBeVisible();
@@ -251,7 +251,7 @@ test.describe('Globe overview', () => {
         panel.locator('.overview-metric-history__latest')
       ).toHaveText(value);
       await expect(panel.locator('.overview-metric-history__age')).toHaveText(
-        'Observed 11:59:59 UTC'
+        /^Observed 11:59:59 UTC; exact value /
       );
     }
 
@@ -434,9 +434,7 @@ test.describe('Globe overview', () => {
     const observedAt = '2026-06-21T11:59:59.000Z';
     let statusRequestCount = 0;
 
-    await page.clock.install({
-      time: new Date('2026-06-21T12:00:00.000Z'),
-    });
+    await page.clock.setFixedTime(new Date('2026-06-21T12:00:00.000Z'));
 
     await page.route('**/api/routes', async (route) => {
       await route.fulfill({
@@ -514,10 +512,19 @@ test.describe('Globe overview', () => {
         panel.locator('.overview-metric-history__latest')
       ).not.toHaveText('Unavailable');
       await expect(panel.locator('.overview-metric-history__age')).toHaveText(
-        'Observed 11:59:59 UTC'
+        /^Observed 11:59:59 UTC; exact value /
       );
     }
-    await page.clock.fastForward(5_000);
+    // Both globe and metric freshness use the ten-second acquisition boundary.
+    await page.clock.setFixedTime(new Date('2026-06-21T12:00:06.000Z'));
+    await expect(
+      globeLegend.getByText('Live telemetry', { exact: true })
+    ).toBeVisible();
+    for (const panel of await panels.all())
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).not.toHaveText('Unavailable');
+    await page.clock.setFixedTime(new Date('2026-06-21T12:00:10.000Z'));
     await expect(
       globeLegend.getByText('Telemetry stale', { exact: true })
     ).toBeVisible();
@@ -527,9 +534,9 @@ test.describe('Globe overview', () => {
       ).toHaveText('Unavailable');
       await expect(
         panel.locator('.overview-metric-history__age')
-      ).toContainText(/Last observed .* · 6s old/);
+      ).toContainText(/Last observed .* · 11s old/);
     }
-    expect(statusRequestCount).toBe(2);
+    await expect.poll(() => statusRequestCount).toBe(2);
     await expect(page.getByLabel('Globe legend')).toBeVisible();
     await expect(
       page.getByText('GEP unavailable', { exact: true })
@@ -1277,6 +1284,14 @@ test.describe('Globe overview', () => {
 
     await page.goto('/overview');
     await waitForGlobeVisualReady(page, earthTexture);
+    await page.getByRole('button', { name: /fullscreen/i }).click();
+    await expect
+      .poll(
+        async () =>
+          (await page.locator('[data-metric-panel]').first().boundingBox())
+            ?.width
+      )
+      .toBe(440);
 
     expect(
       await page.evaluate(() => ({

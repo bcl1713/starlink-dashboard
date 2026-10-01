@@ -182,6 +182,41 @@ test('keeps five readable glass cards separate from POIs through missing-data st
   await page.screenshot({
     path: testInfo.outputPath('216-fresh-1920x1080.png'),
   });
+  // Disable only the optional blur branch, reproducing unsupported-blur CSS.
+  const blurRules = await page.evaluate(() =>
+    [...document.styleSheets].flatMap((sheet, sheetIndex) =>
+      [...sheet.cssRules].flatMap((rule, index) => {
+        if (
+          !(rule instanceof CSSSupportsRule) ||
+          !rule.cssText.includes('--overview-glass')
+        )
+          return [];
+        const cssText = rule.cssText;
+        sheet.deleteRule(index);
+        return [{ sheetIndex, index, cssText }];
+      })
+    )
+  );
+  expect(blurRules).toHaveLength(1);
+  await expect(cards.first().locator('.overview-metric-history')).toHaveCSS(
+    'background-color',
+    'rgba(7, 18, 30, 0.9)'
+  );
+  await expect(cards.first().locator('.overview-metric-history')).toHaveCSS(
+    'backdrop-filter',
+    'none'
+  );
+  assertGeometry(await geometry());
+  await page.screenshot({
+    path: testInfo.outputPath('216-without-backdrop-blur-1920x1080.png'),
+  });
+  await page.evaluate(
+    (rules) =>
+      rules.forEach(({ sheetIndex, index, cssText }) =>
+        document.styleSheets[sheetIndex].insertRule(cssText, index)
+      ),
+    blurRules
+  );
   stale = true;
   failedHistory = true;
   await expect(cards.locator('.overview-metric-history__latest')).toHaveText(
@@ -220,5 +255,51 @@ test('keeps five readable glass cards separate from POIs through missing-data st
     await expect(
       page.getByRole('button', { name: 'Enter fullscreen overview' })
     ).toHaveCount(1);
+  }
+  // Root/default text enlargement must select readable flow before clocks can
+  // collide with the fixed desktop rail, in ordinary and native fullscreen.
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '24px';
+  });
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 1920, height: 1440 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const fullscreen of [false, true]) {
+      if (fullscreen)
+        await page
+          .getByRole('button', { name: 'Enter fullscreen overview' })
+          .click();
+      await page
+        .locator('.overview-page')
+        .evaluate((node) => node.scrollTo(0, 0));
+      await expect
+        .poll(async () => {
+          const state = await geometry();
+          return state.cards[0].top >= state.clocks.bottom && !state.overflow;
+        })
+        .toBe(true);
+      const context = page.getByLabel('Network history context');
+      const clock = await page.locator('.overview-clock-panel').boundingBox();
+      expect((await context.boundingBox())!.y).toBeGreaterThanOrEqual(
+        clock!.y + clock!.height
+      );
+      await expect
+        .poll(() =>
+          page
+            .locator('.overview-page')
+            .evaluate((node) => node.scrollHeight > node.clientHeight)
+        )
+        .toBe(true);
+      await cards.last().scrollIntoViewIfNeeded();
+      await expect(cards.last()).toBeInViewport();
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `216-root24-${viewport.width}x${viewport.height}-${fullscreen ? 'fullscreen' : 'ordinary'}.png`
+        ),
+      });
+      if (fullscreen) await page.evaluate(() => document.exitFullscreen());
+    }
   }
 });

@@ -56,21 +56,21 @@ content and internal typography until their own slices. Use the same tokens for
 future arrival and satellite cards; avoid a wrapper component or a new global
 design system.
 
-| Choice        | Starting target, tuned in the actual browser                  |
-| ------------- | ------------------------------------------------------------- |
-| Glass         | Charcoal/navy, about 80–84% opacity; transparent plots        |
-| Backdrop      | 16px blur; blur geography behind panels, never text or traces |
-| Fallback      | About 94% opaque navy when backdrop filtering is unsupported  |
-| Border        | 1px cool blue-gray border, about 20–30% opacity               |
-| Shape         | 14px corners, restrained dark shadow, no bright outer glow    |
-| Spacing       | 20px desktop outer margin; 8–10px card gaps; 10–12px padding  |
-| Main text     | Near-white; tabular numerals; restrained medium/bold weight   |
-| Secondary     | Muted cool gray with readable contrast on bright/dark terrain |
-| Metric title  | Start at 26px; uppercase with restrained tracking             |
-| Current value | Start at 36–40px; unit smaller but plainly readable           |
-| Context/axes  | Start at 16–18px; no dense explanatory paragraphs             |
-| Observed      | Existing cyan, 2.25px stroke, no point markers                |
-| Average/band  | Existing dashed subdued white and translucent gray envelope   |
+| Choice        | Starting target, tuned in the actual browser                              |
+| ------------- | ------------------------------------------------------------------------- |
+| Glass         | Charcoal/navy, 50% opacity, per subsequent user review; transparent plots |
+| Backdrop      | 10px blur; blur geography behind panels, never text or traces             |
+| Fallback      | 90% opaque navy when backdrop filtering is unsupported                    |
+| Border        | 1px cool blue-gray border, about 20–30% opacity                           |
+| Shape         | 14px corners, restrained dark shadow, no bright outer glow                |
+| Spacing       | 20px desktop outer margin; 8–10px card gaps; 10–12px padding              |
+| Main text     | Near-white; tabular numerals; restrained medium/bold weight               |
+| Secondary     | Muted cool gray with readable contrast on bright/dark terrain             |
+| Metric title  | Start at 26px; uppercase with restrained tracking                         |
+| Current value | Start at 36–40px; unit smaller but plainly readable                       |
+| Context/axes  | Start at 16–18px; no dense explanatory paragraphs                         |
+| Observed      | Existing cyan, 2.25px stroke, no point markers                            |
+| Average/band  | Existing dashed subdued white and translucent gray envelope               |
 
 Treat the sizes as a hierarchy and browser-tuning budget, not acceptance by CSS
 declaration alone. Keep meaningful visual differences for unavailable states;
@@ -104,8 +104,10 @@ the strong globe geography and day/night contrast visible around panels.
 - Use sparse zero/midpoint/upper y labels with subtle stationary horizontal
   reference lines, as in the image. Drop the midpoint only when unreadable. Axis
   formatting must describe the actual domain; do not round an axis to a
-  misleading different bound or use `<...` there. Keep obstruction 0–100% and
-  the existing stable packet-loss range; no new scale policy.
+  misleading different bound or use `<...` there. Subsequent user steering fixes
+  obstruction and packet loss at 0–100%. Latency and throughput adapt to
+  observed and aggregate highs, with hysteresis when shrinking after a departed
+  peak.
 - Remove visible per-card time labels and repeated `Time (UTC)` footers,
   matching the reference. Keep full UTC bounds in accessible chart descriptions,
   derived from the existing visible plot edge, not a new wall-clock
@@ -215,8 +217,9 @@ appearance. Record each task's result and relevant limitations in the PR.
       `OverviewMetricHistoryPanel.css` to consume it. Add subtle horizontal
       reference lines in a stationary CSS layer behind the translated plot,
       aligned with its measured height and y-domain. Do not put moving vertical
-      gridlines into the data surface. Leave uPlot options and scale/data
-      semantics intact.
+      gridlines into the data surface. Preserve uPlot lifecycle and source data;
+      apply the user-directed percentage domains and adaptive latency/throughput
+      scales.
 - [x] Modify `OverviewPage.tsx` to separate metric and POI placement. Update
       `OverviewPage.contract.test.ts` for the new structural seam while
       retaining shared subscriptions and existing globe/route/POI semantics.

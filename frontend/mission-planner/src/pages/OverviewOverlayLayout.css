@@ -81,7 +81,7 @@
   }
 }
 
-@container overview (min-width: 1500px) and (min-height: 1140px) {
+@container overview (min-width: 93.75rem) and (min-height: 71.25rem) {
   .overview-page .overview-globe {
     position: absolute !important;
   }
@@ -93,7 +93,7 @@
   }
   .overview-page .overview-bottom-overlays {
     position: absolute;
-    inset: 128px auto 76px 20px;
+    inset: 8rem auto 76px 20px;
     margin: 0;
     width: 440px;
   }
@@ -124,7 +124,7 @@
   }
 }
 
-@container overview (min-width: 1500px) and (min-height: 1080px) {
+@container overview (min-width: 93.75rem) and (min-height: 67.5rem) {
   :root:fullscreen .overview-page .overview-globe {
     position: absolute !important;
   }
@@ -136,7 +136,7 @@
   }
   :root:fullscreen .overview-page .overview-bottom-overlays {
     position: absolute;
-    inset: 128px auto 20px 20px;
+    inset: 8rem auto 20px 20px;
     margin: 0;
     width: 440px;
   }

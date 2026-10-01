@@ -166,6 +166,11 @@ test.describe('Overview metric history', () => {
           route.fulfill({ json: { satellite_id: null } })
         );
         await page.goto('/overview', { waitUntil: 'commit' });
+        // Exercise the ten-foot metric column, not the wide scrolling fallback.
+        await page.getByRole('button', { name: /fullscreen/i }).click();
+        await expect
+          .poll(() => page.evaluate(() => !!document.fullscreenElement))
+          .toBe(true);
         const panel = page.getByRole('region', {
           name: 'Network latency history',
         });
@@ -659,7 +664,7 @@ test.describe('Overview metric history', () => {
     });
     await expect(panels.locator('.uplot')).toHaveCount(5);
   });
-  test('fits five shared-query plots above POIs while preserving globe and legend', async ({
+  test('fits five shared-query plots beside POIs while preserving globe and legend', async ({
     page,
   }, testInfo) => {
     let requests = 0;
@@ -740,6 +745,9 @@ test.describe('Overview metric history', () => {
     await expect
       .poll(() => page.evaluate(() => !!document.fullscreenElement))
       .toBe(true);
+    await expect
+      .poll(async () => (await graphs.first().boundingBox())?.width)
+      .toBe(440);
     const settledRequests = requests;
     expect(settledRequests).toBeGreaterThanOrEqual(1);
     const pois = await page.getByLabel('Upcoming POIs').boundingBox();

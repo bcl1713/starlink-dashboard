@@ -17,34 +17,16 @@ const projection = (
   visibleRightSeconds: 0,
 });
 describe('metricScale', () => {
-  it.each([
-    [1.2, 1.4],
-    [3, 3.3],
-    [6, 6.6],
-  ])(
-    'normalizes fractional loss peak %s to readable domain %s',
-    (peak, upper) => {
-      expect(
-        metricScale(OVERVIEW_METRIC_GRAPHS[3], projection([peak]))
-      ).toEqual({ min: 0, max: upper });
+  it.each(OVERVIEW_METRIC_GRAPHS.slice(3))(
+    'fixes $id at 0–100 regardless of samples or prior range',
+    (descriptor) => {
+      for (const values of [[], [0], [0.2], [100], [120], [null, NaN]])
+        expect(
+          metricScale(descriptor, projection(values), { min: 0, max: 1 })
+        ).toEqual({ min: 0, max: 100 });
+      expect(metricScale(descriptor, undefined)).toEqual({ min: 0, max: 100 });
     }
   );
-  it('keeps obstruction on its full percentage domain', () => {
-    expect(metricScale(OVERVIEW_METRIC_GRAPHS[4], projection([0.2]))).toEqual({
-      min: 0,
-      max: 100,
-    });
-  });
-  it('makes 0.2 percent loss distinguishable with a labelled one percent upper bound', () => {
-    expect(metricScale(OVERVIEW_METRIC_GRAPHS[3], projection([0.2]))).toEqual({
-      min: 0,
-      max: 1,
-    });
-    expect(metricScale(OVERVIEW_METRIC_GRAPHS[3], projection([2]))).toEqual({
-      min: 0,
-      max: 2.2,
-    });
-  });
   it.each(OVERVIEW_METRIC_GRAPHS.slice(0, 3))(
     'includes aggregate highs with rounded headroom for $id',
     (descriptor) => {
@@ -66,6 +48,17 @@ describe('metricScale', () => {
       metricScale(descriptor, projection([23]), { min: 0, max: 22 })
     ).toEqual({ min: 0, max: 26 });
   });
+  it.each(OVERVIEW_METRIC_GRAPHS.slice(0, 3))(
+    'shrinks $id after a large peak leaves without jitter near the bound',
+    (descriptor) => {
+      expect(
+        metricScale(descriptor, projection([50]), { min: 0, max: 220 })
+      ).toEqual({ min: 0, max: 56 });
+      expect(
+        metricScale(descriptor, projection([40]), { min: 0, max: 56 })
+      ).toEqual({ min: 0, max: 56 });
+    }
+  );
   it.each(
     [[], [0], [null, NaN, Infinity], [Number.MAX_VALUE]].map((values) => [
       values,
