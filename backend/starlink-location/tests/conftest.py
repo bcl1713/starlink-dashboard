@@ -357,6 +357,7 @@ def default_mock_telemetry():
         ),
         timestamp=datetime.now(timezone.utc),
         position=PositionData(
+            observed_at=datetime.now(timezone.utc),
             latitude=40.7128,
             longitude=-74.0060,
             altitude=328.0,

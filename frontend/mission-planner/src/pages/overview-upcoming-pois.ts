@@ -59,17 +59,13 @@ export function urgencyColor(
   return interpolateHexColor(lower.color, upper.color, progress);
 }
 
-export function overviewPoiView(
-  records: OverviewUpcomingPoi[],
-  now: Date
-): { markers: OverviewUpcomingPoi[]; topFive: OverviewUpcomingPoi[] } {
-  void now;
-
+export function overviewPoiView(records: OverviewUpcomingPoi[]): {
+  markers: OverviewUpcomingPoi[];
+} {
   return {
     markers: records.filter(
       ({ latitude, longitude, map_retained }) =>
         map_retained && Number.isFinite(latitude) && Number.isFinite(longitude)
     ),
-    topFive: records.filter(({ upcoming }) => upcoming).slice(0, 5),
   };
 }

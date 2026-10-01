@@ -5,7 +5,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_serializer
 
+from app.models.flight_status import FlightPhase
 from app.models.poi import MissionPoiKind
+from app.models.telemetry import PositionState
 
 OverviewUpcomingPoisState = Literal[
     "available",
@@ -50,6 +52,11 @@ class OverviewUpcomingPoisResponse(BaseModel):
 
     state: OverviewUpcomingPoisState
     calculated_at: datetime
+    flight_phase: FlightPhase | None = None
+    scheduled_departure_time: datetime | None = None
+    current_route_progress: float | None = None
+    position_observed_at: datetime | None = None
+    position_state: PositionState = "unavailable"
     pois: list[OverviewUpcomingPoi] = Field(default_factory=list)
 
     @property

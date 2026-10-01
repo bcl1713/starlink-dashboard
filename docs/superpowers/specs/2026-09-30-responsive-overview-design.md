@@ -165,30 +165,30 @@ current globe. Keep their own visible/accessible labels or an on-demand detail
 path, including when mobile collision handling suppresses visual labels; do not
 misrepresent them as one of the five line/symbol samples or silently hide them.
 
-The arrival panel shows one next upcoming POI and the destination landing
-estimate. With an intermediate event, show `NEXT POI` (name, UTC ETA,
-nonnegative countdown) and `LANDING · destination` (UTC ETA, nonnegative
-countdown) in two parts of one compact panel. When the next POI is the
-destination, combine to one `LANDING · destination — countdown · ETA ...Z`
-section. Identify the destination by `kind: arrival` and stable ID, not display
-text. Reuse the route-aware ETA endpoint and its `calculated_at`, `upcoming`,
-`flight_phase` and availability semantics; a current frontend type may need
-alignment with fields already returned by the backend. Derive both countdowns on
-one UTC/time basis and do not silently substitute scheduled
-`expected_arrival_time` for an unavailable estimate. Handle absent/passed
-destination, no remaining POIs, unavailable ETA, stale position, predeparture
-anticipated ETA and post-arrival state explicitly; no negative countdown or
-invented landing time. A landable destination not returned by the current
-endpoint is a contract finding for the relevant slice, not permission to guess
-from a marker label. At the observed baseline, `/api/overview/upcoming-pois`
-reads cached coordinator position and speed but does **not** validate the
-telemetry sample timestamp; `calculated_at` is request time, not evidence that
-the position is fresh. The arrival slice must establish age/provenance for the
-position used in its ETA, preferably in that endpoint's explicit response
-contract. If a reliable same-sample timestamp cannot be obtained, suppress or
-label the estimate as unavailable rather than trusting a separate fresh request
-or updating a stale countdown. This may require a narrowly scoped backend
-contract change.
+The #217 panel uses one UTC clock and the route-aware endpoint. Before flight,
+Brian approved only **SCHEDULED DEPARTURE · name** with the effective mission
+schedule and hours/minutes countdown, then red `12 MIN AGO` or `<1 MIN AGO` when
+late, without a minus sign. Include mission departure adjustments; GPS freshness
+is not required for this scheduled timing.
+
+In flight, show `NEXT POI` and `LANDING · destination`, with name, UTC ETA and
+nonnegative hours/minutes countdown. Select the earliest upcoming route event,
+even if untimed. Find the unique destination in the full response by
+`kind: arrival` and stable ID; combine the sections when it is next. Use
+`<1 MIN` near arrival and `0 MIN` after an elapsed ETA. Only `post_arrival`
+establishes landed. Preserve anticipated labels when route-based timing is
+shown. Missing/passed events, destination, estimates and context stay explicit;
+never substitute scheduled landing times or invent speed.
+
+The endpoint exposes flight phase, effective departure schedule, position
+collection time and freshness. Collection time belongs to the exact verified
+coordinates, not network/request time or receiver GPS fix time. Cached samples
+retain age; invalid/default GPS coordinates remain unverified. Fresh means less
+than ten seconds old with up to five seconds of future skew; recheck age between
+polls. Stale/invalid position and failed/expired arrival refresh suppress
+timing, retaining known names and explicit reasons. Stale valid coordinates may
+identify a last-known next event; invalid coordinates cannot establish progress.
+Keep map markers and accessible names independently of panel selection.
 
 ## Mobile layout, camera and interaction
 
@@ -294,6 +294,6 @@ navy glass tokens and the desktop metric column forward from #219. It also moves
 the existing POI table intact to bottom-center to reserve room. The five cards
 use stacked uppercase titles and capped current values, one shared
 freshness/window context, sparse numeric y labels and accessible rather than
-visible per-card UTC bounds. #217 still owns arrival content; #218 owns
+visible per-card UTC bounds. #217 delivers departure/arrival content; #218 owns
 satellite/legend semantics; #219 owns final composition/camera/clock tuning;
 Issue #220 owns mobile interaction.

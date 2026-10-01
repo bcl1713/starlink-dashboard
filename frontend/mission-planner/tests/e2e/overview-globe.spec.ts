@@ -956,17 +956,23 @@ test.describe('Globe overview', () => {
     await expect(historyWindow).toHaveValue('900');
     await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(2);
   });
-  test('renders retained stars and the five-row upcoming POI quick reference at 1920x1080', async ({
+  test('renders retained stars and the next-POI/landing panel at 1920x1080', async ({
     page,
-  }) => {
+  }, testInfo) => {
     test.setTimeout(60_000);
     const now = '2026-09-22T12:00:00.000Z';
     const activeMissionPois = {
       state: 'available' as const,
       calculated_at: now,
+      flight_phase: 'in_flight',
+      scheduled_departure_time: null,
+      position_state: 'fresh',
+      position_observed_at: now,
       pois: [
         {
           poi_id: 'departure-kadw',
+          projected_route_progress: 0,
+          flight_phase: 'in_flight',
           name: 'KADW',
           kind: 'departure' as const,
           latitude: 0,
@@ -980,6 +986,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'aar-passed',
+          projected_route_progress: 5,
+          flight_phase: 'in_flight',
           name: 'AAR complete',
           kind: 'aar_end' as const,
           latitude: 0,
@@ -993,6 +1001,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'arrival-rkso',
+          projected_route_progress: 100,
+          flight_phase: 'in_flight',
           name: 'RKSO',
           kind: 'arrival' as const,
           latitude: 0,
@@ -1006,6 +1016,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'x-band',
+          projected_route_progress: 45,
+          flight_phase: 'in_flight',
           name: 'X-band handoff',
           kind: 'x_band_transition' as const,
           latitude: 0,
@@ -1019,6 +1031,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'ka-entry',
+          projected_route_progress: 35,
+          flight_phase: 'in_flight',
           name: 'Ka entry',
           kind: 'ka_coverage_entry' as const,
           latitude: 0,
@@ -1032,6 +1046,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'ka-swap',
+          projected_route_progress: 20,
+          flight_phase: 'in_flight',
           name: 'Ka swap',
           kind: 'ka_transition' as const,
           latitude: 0,
@@ -1045,6 +1061,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'aar-start',
+          projected_route_progress: 10,
+          flight_phase: 'in_flight',
           name: 'AAR start',
           kind: 'aar_start' as const,
           latitude: 0,
@@ -1058,6 +1076,8 @@ test.describe('Globe overview', () => {
         },
         {
           poi_id: 'ka-exit',
+          projected_route_progress: 60,
+          flight_phase: 'in_flight',
           name: 'Ka exit',
           kind: 'ka_coverage_exit' as const,
           latitude: 0,
@@ -1139,31 +1159,20 @@ test.describe('Globe overview', () => {
       devicePixelRatio: 1,
     });
 
-    const panel = page.getByLabel('Upcoming POIs');
+    const panel = page.getByLabel('Departure and arrival');
     await expect(panel).toBeVisible();
-    await expect(panel.getByRole('row')).toHaveCount(6);
+    await expect(panel.locator('.overview-arrival__section')).toHaveCount(2);
     await expect(
-      panel.getByRole('columnheader', { name: /urgency/i })
-    ).toHaveCount(0);
-    await expect(
-      panel.getByRole('columnheader', { name: 'Type' })
+      panel.getByRole('heading', { name: 'NEXT POI · AAR start' })
     ).toBeVisible();
-    await expect(panel).toHaveCSS('overflow-y', 'hidden');
-    await expect(panel.getByText('AAR complete', { exact: true })).toHaveCount(
-      0
-    );
-    await expect(page.getByText('KADW', { exact: true })).toBeVisible();
-    await expect(panel.getByText('RKSO', { exact: true })).toBeVisible();
-    await expect(page.getByText('AAR complete', { exact: true })).toBeVisible();
-    await expect(panel).not.toContainText('estimated');
-    await expect(panel.getByRole('row')).toHaveText([
-      /POI.*Type.*ETA/,
-      /AAR start.*AAR start.*2026-09-22 12:10 UTC/,
-      /Ka swap.*Ka transition.*2026-09-22 12:20 UTC/,
-      /Ka entry.*Ka coverage entry.*2026-09-22 12:35 UTC/,
-      /X-band handoff.*X-band transition.*2026-09-22 12:45 UTC/,
-      /RKSO.*Arrival.*2026-09-22 14:00 UTC · anticipated/,
-    ]);
+    await expect(
+      panel.getByRole('heading', { name: 'LANDING · RKSO' })
+    ).toBeVisible();
+    await expect(panel).toContainText('10 MIN');
+    await expect(panel).toContainText('2 HR');
+    await expect(panel).toContainText('14:00Z');
+    await expect(panel).toContainText('anticipated');
+    await expect(page.getByLabel('Map POIs')).toContainText('AAR complete');
     const clusteredPoiIds = [
       'departure-kadw',
       'aar-passed',
@@ -1177,7 +1186,7 @@ test.describe('Globe overview', () => {
     const fallback = page.locator('[data-poi-label-fallback="true"]');
     if (await fallback.count()) {
       await expect(fallback).toBeVisible();
-      await expect(fallback).toContainText(/POIs — see Upcoming POIs/);
+      await expect(fallback).toContainText(/POIs/);
     } else {
       const clusteredLabels = await Promise.all(
         clusteredPoiIds.map(async (poiId) => {
@@ -1205,15 +1214,9 @@ test.describe('Globe overview', () => {
         }
       }
     }
-    await expect(panel.locator('.upcoming-pois__swatch')).toHaveCount(5);
-    await expect(panel.locator('.upcoming-pois__swatch').nth(0)).toHaveCSS(
-      'background-color',
-      'rgb(241, 115, 53)'
-    );
-    await expect(panel.locator('.upcoming-pois__swatch').nth(4)).toHaveCSS(
-      'background-color',
-      'rgb(34, 197, 94)'
-    );
+    await page.screenshot({
+      path: testInfo.outputPath('retained-map-pois-and-arrival.png'),
+    });
     await expect(page).toHaveScreenshot(
       'overview-upcoming-pois-1920x1080.png',
       {

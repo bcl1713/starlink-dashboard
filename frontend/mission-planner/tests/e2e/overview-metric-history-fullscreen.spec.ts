@@ -53,7 +53,7 @@ function representativeBundle(end: number, windowSeconds = 1800) {
 
 test.describe('Overview metric history', () => {
   test.use({ viewport: { width: 1920, height: 1080 } });
-  test('fits populated plots and expanded five-row POIs together at 1920x1080', async ({
+  test('fits populated plots and the compact arrival panel together at 1920x1080', async ({
     page,
   }, testInfo) => {
     const now = Date.now();
@@ -102,10 +102,16 @@ test.describe('Overview metric history', () => {
     await page.route('**/api/overview/upcoming-pois', (route) =>
       route.fulfill({
         json: {
-          state: 'available',
+          state: collapsePois ? 'no_generated_pois' : 'available',
           calculated_at: new Date(now).toISOString(),
+          flight_phase: 'in_flight',
+          scheduled_departure_time: null,
+          position_state: 'fresh',
+          position_observed_at: new Date(now).toISOString(),
           pois: (collapsePois ? [] : names).map((name, index) => ({
             poi_id: `busy-${index}`,
+            projected_route_progress: 10 + index * 20,
+            flight_phase: 'in_flight',
             name,
             kind: kinds[index],
             latitude: 0,
@@ -185,7 +191,7 @@ test.describe('Overview metric history', () => {
     const graphs = page
       .getByLabel('Overview metric history')
       .locator('[data-metric-panel]');
-    const pois = page.getByLabel('Upcoming POIs');
+    const pois = page.getByLabel('Departure and arrival');
     await expect(graphs.locator('.uplot')).toHaveCount(5);
     await expect.poll(() => fulfilledHistory).toBeGreaterThan(0);
     await expect(graphs.getByRole('status')).toHaveCount(0);
@@ -217,14 +223,9 @@ test.describe('Overview metric history', () => {
     await expect
       .poll(paintedRanges, { timeout: 10_000 })
       .toEqual(Array.from({ length: 5 }, () => [true, true, true]));
-    await expect(pois.locator('tbody tr')).toHaveCount(5);
-    await expect(pois.locator('tbody tr')).toHaveText(
-      names.map((name) => new RegExp(name))
-    );
-    await expect(pois.getByTestId('upcoming-pois-body')).toHaveCSS(
-      'height',
-      '224px'
-    );
+    await expect(pois.locator('.overview-arrival__section')).toHaveCount(2);
+    await expect(pois).toContainText(names[0]);
+    await expect(pois).toContainText(names.at(-1)!);
     await page.getByRole('button', { name: /fullscreen/i }).click();
     await expect
       .poll(() =>
@@ -267,7 +268,7 @@ test.describe('Overview metric history', () => {
           (node) => node.getBoundingClientRect().toJSON()
         );
         const poi = document
-          .querySelector('[aria-label="Upcoming POIs"]')!
+          .querySelector('[aria-label="Departure and arrival"]')!
           .getBoundingClientRect()
           .toJSON();
         const ticks = [
@@ -320,17 +321,19 @@ test.describe('Overview metric history', () => {
           stackBottom: stack.getBoundingClientRect().bottom,
           rowBottoms: [
             ...document.querySelectorAll(
-              '[aria-label="Upcoming POIs"] tbody tr'
+              '[aria-label="Departure and arrival"] .overview-arrival__section'
             ),
           ].map((row) => row.getBoundingClientRect().bottom),
           poiScroll:
-            document.querySelector('[aria-label="Upcoming POIs"]')!
+            document.querySelector('[aria-label="Departure and arrival"]')!
               .scrollHeight >
-            document.querySelector('[aria-label="Upcoming POIs"]')!
+            document.querySelector('[aria-label="Departure and arrival"]')!
               .clientHeight,
           poiSizes: (() => {
-            const p = document.querySelector('[aria-label="Upcoming POIs"]')!;
-            const b = p.querySelector('.upcoming-pois__body')!;
+            const p = document.querySelector(
+              '[aria-label="Departure and arrival"]'
+            )!;
+            const b = p.querySelector('.overview-arrival__sections') ?? p;
             return {
               scroll: p.scrollHeight,
               client: p.clientHeight,
@@ -401,7 +404,7 @@ test.describe('Overview metric history', () => {
       expect(Math.abs(1080 - state.stackBottom - 20)).toBeLessThanOrEqual(1);
       expect(state.scroll).toBe(false);
       expect(state.poiScroll, JSON.stringify(state)).toBe(false);
-      expect(state.rowBottoms).toHaveLength(5);
+      expect(state.rowBottoms).toHaveLength(2);
       for (const bottom of state.rowBottoms)
         expect(bottom).toBeLessThanOrEqual(state.poi.bottom);
     };
@@ -533,7 +536,9 @@ test.describe('Overview metric history', () => {
     // collapse from that intended header change when comparing card positions.
     const recoveredLayout = await layout();
     collapsePois = true;
-    await expect(pois.locator('tbody tr')).toHaveCount(0, { timeout: 12_000 });
+    await expect(pois.locator('.overview-arrival__section')).toHaveCount(0, {
+      timeout: 12_000,
+    });
     await pois.evaluate(async (node) => {
       await Promise.all(
         node
@@ -542,7 +547,7 @@ test.describe('Overview metric history', () => {
       );
     });
     const collapsed = await layout();
-    expect(collapsed.poi.height).toBeLessThan(firstLayout.poi.height - 100);
+    expect(collapsed.poi.height).toBeLessThan(firstLayout.poi.height - 40);
     expect(
       Math.abs(collapsed.boxes[0].top - recoveredLayout.boxes[0].top)
     ).toBeLessThanOrEqual(1);
@@ -555,7 +560,9 @@ test.describe('Overview metric history', () => {
       JSON.stringify({ layout: collapsed }, null, 2)
     );
     collapsePois = false;
-    await expect(pois.locator('tbody tr')).toHaveCount(5, { timeout: 12_000 });
+    await expect(pois.locator('.overview-arrival__section')).toHaveCount(2, {
+      timeout: 12_000,
+    });
     await pois.evaluate(async (node) => {
       await Promise.all(
         node
@@ -590,10 +597,12 @@ test.describe('Overview metric history', () => {
     const poiSizing = await pois.evaluate((node) => ({
       scroll: node.scrollHeight,
       client: node.clientHeight,
-      rows: [...node.querySelectorAll('tbody tr')].map((row) => ({
-        bottom: row.getBoundingClientRect().bottom,
-        panelBottom: node.getBoundingClientRect().bottom,
-      })),
+      rows: [...node.querySelectorAll('.overview-arrival__section')].map(
+        (row) => ({
+          bottom: row.getBoundingClientRect().bottom,
+          panelBottom: node.getBoundingClientRect().bottom,
+        })
+      ),
     }));
     expect(poiSizing.scroll, JSON.stringify(poiSizing)).toBeLessThanOrEqual(
       poiSizing.client
@@ -655,10 +664,16 @@ for (const height of [961, 1024]) {
           json: {
             state: 'available',
             calculated_at: new Date(now).toISOString(),
+            flight_phase: 'in_flight',
+            scheduled_departure_time: null,
+            position_state: 'fresh',
+            position_observed_at: new Date(now).toISOString(),
             pois: Array.from({ length: 5 }, (_, index) => ({
               poi_id: `near-${index}`,
+              projected_route_progress: 10 + index * 20,
+              flight_phase: 'in_flight',
               name: `Waypoint ${index}`,
-              kind: 'arrival',
+              kind: index === 4 ? 'arrival' : 'x_band_transition',
               latitude: 0,
               longitude: -50,
               expected_arrival_time: new Date(
@@ -708,10 +723,10 @@ for (const height of [961, 1024]) {
       const graphs = page
         .getByLabel('Overview metric history')
         .locator('[data-metric-panel]');
-      const pois = page.getByLabel('Upcoming POIs');
+      const pois = page.getByLabel('Departure and arrival');
       await expect(graphs.locator('.uplot')).toHaveCount(5);
       await expect(graphs.getByRole('status')).toHaveCount(0);
-      await expect(pois.locator('tbody tr')).toHaveCount(5);
+      await expect(pois.locator('.overview-arrival__section')).toHaveCount(2);
       await page.getByRole('button', { name: /fullscreen/i }).click();
       await expect
         .poll(() =>
@@ -731,7 +746,9 @@ for (const height of [961, 1024]) {
         const rect = (selector: string) =>
           document.querySelector(selector)!.getBoundingClientRect().toJSON();
         const panels = [...document.querySelectorAll('[data-metric-panel]')];
-        const poi = document.querySelector('[aria-label="Upcoming POIs"]')!;
+        const poi = document.querySelector(
+          '[aria-label="Departure and arrival"]'
+        )!;
         const page = document.querySelector('.overview-page')!;
         return {
           viewport: {
@@ -746,8 +763,8 @@ for (const height of [961, 1024]) {
           ),
           poi: poi.getBoundingClientRect().toJSON(),
           poiScroll: poi.scrollHeight > poi.clientHeight,
-          rows: [...poi.querySelectorAll('tbody tr')].map((node) =>
-            node.getBoundingClientRect().toJSON()
+          rows: [...poi.querySelectorAll('.overview-arrival__section')].map(
+            (node) => node.getBoundingClientRect().toJSON()
           ),
           clocks: rect('.overview-clock-panel'),
           pageScroll: page.scrollHeight > page.clientHeight,
@@ -769,7 +786,7 @@ for (const height of [961, 1024]) {
       expect(geometry.boxes).toHaveLength(5);
       expect(geometry.panelScroll).toEqual(Array(5).fill(false));
       expect(geometry.poiScroll).toBe(false);
-      expect(geometry.rows).toHaveLength(5);
+      expect(geometry.rows).toHaveLength(2);
       for (const row of geometry.rows)
         expect(row.bottom).toBeLessThanOrEqual(geometry.poi.bottom);
       for (const box of geometry.boxes)

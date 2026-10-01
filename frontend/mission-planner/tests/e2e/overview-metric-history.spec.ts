@@ -750,7 +750,7 @@ test.describe('Overview metric history', () => {
       .toBe(440);
     const settledRequests = requests;
     expect(settledRequests).toBeGreaterThanOrEqual(1);
-    const pois = await page.getByLabel('Upcoming POIs').boundingBox();
+    const pois = await page.getByLabel('Departure and arrival').boundingBox();
     const top = await page.locator('.overview-clock-panel').boundingBox();
     const legend = await page.getByLabel('Globe legend').boundingBox();
     await page.screenshot({
@@ -917,7 +917,7 @@ test.describe('Overview metric history', () => {
     await expect(panels).toHaveCount(5);
     for (const width of [800, 752, 705, 704]) {
       await page.setViewportSize({ width, height: 1080 });
-      await expect(page.getByLabel('Upcoming POIs')).toBeVisible();
+      await expect(page.getByLabel('Departure and arrival')).toBeVisible();
       await page.locator('.overview-page').evaluate(async (node) => {
         await new Promise<void>((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -931,7 +931,7 @@ test.describe('Overview metric history', () => {
             .map((animation) => animation.finished.catch(() => undefined))
         );
       });
-      const pois = await page.getByLabel('Upcoming POIs').boundingBox();
+      const pois = await page.getByLabel('Departure and arrival').boundingBox();
       const boxes = await Promise.all(
         (await panels.all()).map((panel) => panel.boundingBox())
       );

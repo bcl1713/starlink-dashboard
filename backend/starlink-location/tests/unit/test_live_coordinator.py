@@ -151,6 +151,7 @@ class TestLiveCoordinatorUpdate:
             ),
             timestamp=datetime.now(timezone.utc) + timedelta(seconds=5),
             position=PositionData(
+                observed_at=datetime.now(timezone.utc),
                 latitude=40.7200,  # Moved north
                 longitude=-74.0060,
                 altitude=100.0,
@@ -494,3 +495,30 @@ class TestLiveCoordinatorInterface:
 
         live_telemetry = live_coordinator.update()
         assert live_telemetry is None or isinstance(live_telemetry, TelemetryData)
+
+
+@patch("app.live.coordinator.StarlinkClient")
+def test_invalid_position_never_updates_movement_trackers(mock_client_class):
+    mock_client = mock_client_class.return_value
+    telemetry = default_mock_telemetry()
+    telemetry.position.observed_at = None
+    mock_client.get_telemetry.return_value = telemetry
+    coordinator = LiveCoordinator(SimulationConfig())
+    coordinator.speed_tracker = MagicMock()
+    coordinator.heading_tracker = MagicMock()
+    assert coordinator.update().position.observed_at is None
+    coordinator.speed_tracker.update.assert_not_called()
+    coordinator.heading_tracker.update.assert_not_called()
+    coordinator.speed_tracker.reset.assert_called_once()
+
+
+@patch("app.live.coordinator.StarlinkClient")
+def test_failed_collection_keeps_position_timestamp(mock_client_class):
+    mock_client = mock_client_class.return_value
+    telemetry = default_mock_telemetry()
+    mock_client.get_telemetry.return_value = telemetry
+    coordinator = LiveCoordinator(SimulationConfig())
+    observed = coordinator.get_current_telemetry().position.observed_at
+    mock_client.get_telemetry.side_effect = starlink_grpc.GrpcError("Disconnected")
+    assert coordinator.update() is None
+    assert coordinator.get_current_telemetry().position.observed_at == observed

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from math import isfinite
 from typing import TYPE_CHECKING
 
+from app.models.flight_status import FlightPhase
 from app.models.overview_upcoming_pois import (
     OverviewUpcomingPoi,
     OverviewUpcomingPoisResponse,
@@ -85,6 +86,8 @@ def project_overview_upcoming_pois(
             continue
 
         eta_seconds = eta_results.get(poi.id)
+        if eta_seconds is not None and not isfinite(eta_seconds):
+            eta_seconds = None
         estimated_arrival_time = (
             calculated_at + timedelta(seconds=eta_seconds)
             if eta_seconds is not None
@@ -165,5 +168,7 @@ def project_overview_upcoming_pois(
     return OverviewUpcomingPoisResponse(
         state=state,
         calculated_at=calculated_at,
+        flight_phase=FlightPhase(flight_phase),
+        current_route_progress=current_progress,
         pois=projected,
     )

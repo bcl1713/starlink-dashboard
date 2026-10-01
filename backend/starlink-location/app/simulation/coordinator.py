@@ -167,6 +167,7 @@ class SimulationCoordinator:
         """
         # Update position
         position_data = self.position_sim.update()
+        position_data.observed_at = datetime.now(timezone.utc)
 
         # Determine if we should use route timing data or GPS-based speed
         # Use route timing speed if:
@@ -193,7 +194,7 @@ class SimulationCoordinator:
             speed = self.speed_tracker.update(
                 latitude=position_data.latitude,
                 longitude=position_data.longitude,
-                timestamp=time.time(),
+                timestamp=position_data.observed_at.timestamp(),
             )
             # Update position with calculated speed
             position_data.speed = speed

@@ -12,6 +12,8 @@ function poi(
     poi_id,
     name: poi_id,
     kind: 'x_band_transition',
+    projected_route_progress: 10,
+    flight_phase: 'in_flight',
     latitude: 41.2,
     longitude: -95.9,
     expected_arrival_time: '2026-09-22T11:00:00.000Z',
@@ -61,14 +63,13 @@ describe('overviewPoiView', () => {
       upcoming: false,
     });
 
-    const view = overviewPoiView([untimedXTransition], now);
+    const view = overviewPoiView([untimedXTransition]);
 
     expect(urgencyColor(null, now)).toBe('#64748b');
     expect(view.markers).toEqual([untimedXTransition]);
-    expect(view.topFive).toEqual([]);
   });
 
-  it('uses only map-retained finite-coordinate markers and five table-upcoming rows in server order', () => {
+  it('retains all finite-coordinate map records independently of panel selection', () => {
     const mixedRecords = [
       poi('passed-x', { upcoming: false }),
       poi('not-retained', { map_retained: false, upcoming: false }),
@@ -85,7 +86,7 @@ describe('overviewPoiView', () => {
       poi('sixth-upcoming'),
     ];
 
-    const view = overviewPoiView(mixedRecords, now);
+    const view = overviewPoiView(mixedRecords);
 
     expect(view.markers.map(({ poi_id }) => poi_id)).toEqual(
       [
@@ -99,12 +100,5 @@ describe('overviewPoiView', () => {
         'sixth-upcoming',
       ].filter((poiId) => poiId !== 'invalid-latitude')
     );
-    expect(view.topFive.map(({ poi_id }) => poi_id)).toEqual([
-      'first-upcoming',
-      'untimed-upcoming',
-      'third-upcoming',
-      'fourth-upcoming',
-      'fifth-upcoming',
-    ]);
   });
 });

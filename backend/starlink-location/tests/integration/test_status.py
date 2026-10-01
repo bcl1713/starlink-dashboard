@@ -47,7 +47,10 @@ def test_status_projects_availability_without_mutating_batch(
     assert response.status_code == 200
     data = response.json()
     assert data["timestamp"] == "2020-01-02T00:00:00+00:00"
-    assert data["position"] == payload["position"]
+    assert data["position"] == {
+        key: value for key, value in payload["position"].items() if key != "observed_at"
+    }
+    assert "observed_at" not in data["position"]
     assert data["environmental"] == payload["environmental"]
     for metric in METRICS:
         available = unavailable != "legacy" and metric != unavailable

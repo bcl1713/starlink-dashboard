@@ -1,6 +1,7 @@
 """API endpoint for truthful Overview upcoming mission POIs."""
 
 from datetime import datetime, timezone
+from math import isfinite
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
@@ -8,6 +9,7 @@ from fastapi import APIRouter, Depends, Request
 from app.core.eta_service import get_eta_calculator
 from app.mission.active_context import resolve_active_mission_leg_context
 from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.models.flight_status import FlightPhase
 from app.models.overview_upcoming_pois import OverviewUpcomingPoisResponse
 from app.services.flight_state import get_flight_state_manager
 from app.services.overview_upcoming_pois import (
@@ -15,6 +17,7 @@ from app.services.overview_upcoming_pois import (
     project_overview_upcoming_pois,
 )
 from app.services.poi_manager import POIManager
+from app.services.position_freshness import position_observation
 from app.services.route_eta_calculator import RouteETACalculator
 from app.services.route_manager import RouteManager
 
@@ -55,6 +58,7 @@ async def get_overview_upcoming_pois(
     active_route_id = resolution.context.route_id
     active_route = resolution.context.route
 
+    flight_phase = get_flight_state_manager().get_status().phase.value
     generated_pois = [
         poi
         for poi in poi_manager.list_pois(mission_id=mission_id)
@@ -64,10 +68,14 @@ async def get_overview_upcoming_pois(
     ]
     if not generated_pois:
         return OverviewUpcomingPoisResponse(
-            state="no_generated_pois", calculated_at=calculated_at, pois=[]
+            state="no_generated_pois",
+            calculated_at=calculated_at,
+            flight_phase=FlightPhase(flight_phase),
+            pois=[],
         )
 
-    flight_phase = get_flight_state_manager().get_status().phase.value
+    observed_at: datetime | None = None
+    position_state = "unavailable"
     latitude = longitude = speed_knots = None
     coordinator = getattr(request.app.state, "coordinator", None)
     if coordinator is not None:
@@ -76,36 +84,58 @@ async def get_overview_upcoming_pois(
             latitude = telemetry.position.latitude
             longitude = telemetry.position.longitude
             speed_knots = telemetry.position.speed
-        except (AttributeError, TypeError, ValueError):
+            observed_at, position_state = position_observation(
+                latitude,
+                longitude,
+                getattr(telemetry.position, "observed_at", None),
+                calculated_at,
+            )
+        except (AttributeError, TypeError, ValueError, RuntimeError):
             pass
 
-    # In-flight estimates must derive from live telemetry and active-route geometry.
-    # A missing telemetry sample means timing is honestly unavailable, not guessed.
-    if flight_phase == "in_flight" and (
-        latitude is None or longitude is None or speed_knots is None
-    ):
-        return OverviewUpcomingPoisResponse(
-            state="unavailable", calculated_at=calculated_at, pois=[]
+    # Suppress timing while retaining generated records and last-known map context.
+    usable_speed = (
+        isinstance(speed_knots, (int, float))
+        and not isinstance(speed_knots, bool)
+        and isfinite(speed_knots)
+        and speed_knots >= 0
+    )
+    timing_unavailable = flight_phase == "in_flight" and (
+        position_state != "fresh" or not usable_speed
+    )
+    eta_results = (
+        {}
+        if timing_unavailable
+        else calculate_route_aware_eta_results(
+            pois=generated_pois,
+            calculator=get_eta_calculator(),
+            active_route=active_route,
+            flight_phase=flight_phase,
+            latitude=latitude,
+            longitude=longitude,
+            speed_knots=speed_knots,
         )
-
-    eta_results = calculate_route_aware_eta_results(
-        pois=generated_pois,
-        calculator=get_eta_calculator(),
-        active_route=active_route,
-        flight_phase=flight_phase,
-        latitude=latitude,
-        longitude=longitude,
-        speed_knots=speed_knots,
     )
     current_progress = (
         _route_progress(active_route, latitude, longitude)
-        if latitude is not None and longitude is not None
+        if position_state != "unavailable"
+        and latitude is not None
+        and longitude is not None
         else None
     )
-    return project_overview_upcoming_pois(
+    response = project_overview_upcoming_pois(
         pois=generated_pois,
         eta_results=eta_results,
         flight_phase=flight_phase,
         current_progress=current_progress,
         calculated_at=calculated_at,
     )
+    departures = [poi for poi in generated_pois if poi.kind == "departure"]
+    response.scheduled_departure_time = (
+        departures[0].expected_arrival_time if len(departures) == 1 else None
+    )
+    response.position_observed_at = observed_at
+    response.position_state = position_state
+    if timing_unavailable:
+        response.state = "unavailable"
+    return response

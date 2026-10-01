@@ -774,3 +774,32 @@ class TestStarlinkClientContextManager:
 
         assert client.is_connected() is False
         mock_context.close.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ("latitude", "longitude", "valid"),
+    [
+        (0, 0, True),
+        (None, 10, False),
+        (10, None, False),
+        (91, 0, False),
+        (0, 181, False),
+        (float("nan"), 0, False),
+        (True, 0, False),
+    ],
+)
+def test_position_provenance_is_separate_from_network_collection(
+    observation_source, latitude, longitude, valid
+):
+    client, _, _ = observation_source
+    with patch(
+        "app.live.client.starlink_grpc.location_data",
+        return_value={"latitude": latitude, "longitude": longitude, "altitude": 100},
+    ):
+        telemetry = client.get_telemetry()
+    assert (telemetry.position.observed_at is not None) is valid
+    assert telemetry.metric_availability.latency_ms is True
+    if valid:
+        assert telemetry.position.observed_at <= telemetry.timestamp
+        assert telemetry.position.latitude == 0
+        assert telemetry.position.longitude == 0

@@ -14,6 +14,8 @@ export interface OverviewUpcomingPoi {
   poi_id: string;
   name: string;
   kind: OverviewPoiKind;
+  projected_route_progress: number | null;
+  flight_phase: OverviewFlightPhase;
   latitude: number;
   longitude: number;
   expected_arrival_time: string | null;
@@ -23,6 +25,11 @@ export interface OverviewUpcomingPoi {
   upcoming: boolean;
   map_retained: boolean;
 }
+
+export type OverviewFlightPhase =
+  | 'pre_departure'
+  | 'in_flight'
+  | 'post_arrival';
 
 export interface OverviewUpcomingPoisResponse {
   state:
@@ -34,6 +41,11 @@ export interface OverviewUpcomingPoisResponse {
     | 'no_upcoming_pois'
     | 'unavailable';
   calculated_at: string;
+  flight_phase: OverviewFlightPhase | null;
+  scheduled_departure_time: string | null;
+  current_route_progress: number | null;
+  position_observed_at: string | null;
+  position_state: 'fresh' | 'stale' | 'unavailable';
   pois: OverviewUpcomingPoi[];
 }
 

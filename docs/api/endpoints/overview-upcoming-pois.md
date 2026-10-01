@@ -5,7 +5,7 @@
 ## GET `/api/overview/upcoming-pois`
 
 Return the active mission's generated operational POIs for the native Overview
-map and quick-reference table. This is a read-only active-route projection;
+map and departure/arrival panel. This is a read-only active-route projection;
 manually managed and unrelated generic POIs are excluded.
 
 ### Response
@@ -14,6 +14,11 @@ manually managed and unrelated generic POIs are excluded.
 {
   "state": "available",
   "calculated_at": "2026-09-22T12:00:00+00:00",
+  "flight_phase": "in_flight",
+  "scheduled_departure_time": "2026-09-22T10:00:00Z",
+  "position_observed_at": "2026-09-22T11:59:59Z",
+  "position_state": "fresh",
+  "current_route_progress": 10,
   "pois": [
     {
       "poi_id": "arrival-rkso",
@@ -46,11 +51,13 @@ manually managed and unrelated generic POIs are excluded.
 - `no_generated_pois` — the active Mission V2 leg and route have no generated
   POIs;
 - `no_upcoming_pois` — generated records exist but none is upcoming; or
-- `unavailable` — required in-flight telemetry is unavailable.
+- `unavailable` — required in-flight position provenance or speed is
+  unavailable, or position is stale. Generated records remain available for map
+  context.
 
 Each POI has a stable `poi_id`, imported/generated `name`, `kind`, coordinates,
 route progress when calculable, timing fields, `flight_phase`, and independent
-`upcoming` (table eligibility) and `map_retained` (map visibility) flags.
+`upcoming` (route eligibility) and `map_retained` (map visibility) flags.
 Generated kinds are `departure`, `arrival`, `aar_start`, `aar_end`,
 `x_band_transition`, `ka_coverage_exit`, `ka_coverage_entry`, and
 `ka_transition`.
@@ -75,14 +82,53 @@ cannot be calculated, timing is null and the UI displays `ETA unavailable`
 rather than inventing an ETA. Ordinary estimates display as UTC time alone;
 anticipated times retain an explicit `anticipated` label.
 
-### Table and map lifecycle
+### Position and flight provenance
 
-The Overview table includes only `upcoming` POIs, preserves the endpoint's
-ordered result, and displays at most five rows. Timed records are ordered by
-live estimate; untimed records follow in route order.
+`flight_phase` is `pre_departure`, `in_flight`, `post_arrival`, or null when
+active context cannot be resolved. `scheduled_departure_time` comes from the
+unique generated departure POI's explicit effective mission schedule, including
+configured departure adjustments; it is null when absent or ambiguous. It is
+used only for the scheduled-departure display, never as an in-flight ETA.
 
-The map uses `map_retained`, not the table filter. Departure and arrival remain
-for the active mission. Other generated operational markers remain while
+`position_observed_at` is the UTC collection time of the exact verified
+coordinates used for route progress/ETA, or null when unverified. It is not
+`calculated_at`, network collection time, or a receiver-provided GPS fix time.
+Live missing/invalid coordinate defaults receive no timestamp; zero coordinates
+are valid observations. Simulation timestamps generated positions. Cached
+observations retain their original timestamp.
+
+`position_state` is `fresh` for age below ten seconds, `stale` at ten seconds or
+older, and `unavailable` for missing/invalid coordinates or provenance. Up to
+five seconds of future skew is allowed without altering the observation time;
+larger offsets and timestamps without timezone provenance are unavailable.
+In-flight stale/unavailable position suppresses `eta_seconds` and
+`estimated_arrival_time`. Stale valid coordinates may retain last-known route
+eligibility; invalid position cannot establish progress. The frontend rechecks
+age between polls and suppresses timing on failed/expired refreshes.
+Predeparture schedule timing does not depend on position freshness.
+
+`current_route_progress` is the route progress derived from that same position,
+or null when unknown. A destination is labeled passed only when progress
+establishes it; an unknown eligibility state is not evidence of passage.
+
+### Panel and map lifecycle
+
+The response preserves its existing ETA-first ordering, with untimed entries in
+route order afterward. The panel independently selects the earliest `upcoming`
+non-departure record by route progress and stable ID, including untimed events.
+Landing is the unique `kind: arrival` record in the full response, regardless of
+its position in the array. Names do not establish identity. Missing/ambiguous or
+passed destination stays explicit; only `post_arrival` establishes landed.
+
+Before departure, show one scheduled-departure section, counting down and then
+up with red **AGO** text when late. In flight, show next POI plus landing, or
+one combined landing section when the destination is next. In-flight countdowns
+never become negative. UTC labels include the date across day boundaries, and
+full timestamps remain accessible. `expected_arrival_time` never substitutes for
+a missing in-flight estimate.
+
+The map uses `map_retained`, not the panel selection. Departure and arrival
+remain for the active mission. Other generated operational markers remain while
 upcoming and for up to 60 minutes after their current arrival estimate; untimed
 markers remain while active route/mission context exists because no truthful
 expiry can be calculated.

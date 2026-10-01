@@ -24,8 +24,9 @@ NOW = datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture(autouse=True)
-def reset_overview_api_overrides(client):
+def reset_overview_api_overrides(client, monkeypatch):
     """Prevent endpoint dependency overrides from leaking into later API tests."""
+    monkeypatch.setattr("app.api.overview_upcoming_pois._utc_now", lambda: NOW)
     yield
     client.app.dependency_overrides.clear()
     if hasattr(client.app.state, "coordinator"):
@@ -255,7 +256,9 @@ def test_api_uses_active_route_telemetry_without_endpoint_defaults(client, monke
     generated_poi = scheduled_poi()
     coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=-73.0, speed=200)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=200
+            )
         )
     )
     client.app.state.coordinator = coordinator
@@ -307,7 +310,9 @@ def test_api_estimates_interior_projected_mission_event_from_route_progress(
     )
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=-73.0, speed=300)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=300
+            )
         )
     )
     arrange_active_v2_context(client, active_route=active_route)
@@ -361,7 +366,9 @@ def test_api_projected_event_uses_segment_speeds(client, monkeypatch):
     )
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=-73.0, speed=300)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=300
+            )
         )
     )
     arrange_active_v2_context(client, active_route=active_route)
@@ -406,7 +413,9 @@ def test_api_leaves_out_of_range_telemetry_projected_event_eta_unavailable(
     )
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=181.0, speed=300)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=181.0, speed=300
+            )
         )
     )
     arrange_active_v2_context(client, active_route=active_route)
@@ -458,7 +467,9 @@ def test_api_leaves_unsafe_projected_event_eta_unavailable(
     )
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=-73.0, speed=300)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=300
+            )
         )
     )
     arrange_active_v2_context(client, active_route=active_route)
@@ -498,7 +509,9 @@ def test_api_leaves_projected_event_behind_aircraft_without_eta(client, monkeypa
     )
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=-71.0, speed=300)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=-71.0, speed=300
+            )
         )
     )
     arrange_active_v2_context(client, active_route=active_route)
@@ -683,7 +696,9 @@ def test_api_returns_unavailable_without_in_flight_telemetry(client, monkeypatch
 
     assert response.status_code == 200, response.text
     assert response.json()["state"] == "unavailable"
-    assert response.json()["pois"] == []
+    assert len(response.json()["pois"]) == 1
+    assert response.json()["pois"][0]["map_retained"] is True
+    assert response.json()["pois"][0]["eta_seconds"] is None
 
 
 def test_api_in_flight_eta_uses_fixed_telemetry_not_schedule_and_changes_for_detour_route(
@@ -696,7 +711,9 @@ def test_api_in_flight_eta_uses_fixed_telemetry_not_schedule_and_changes_for_det
     poi = scheduled_poi()
     coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
-            position=SimpleNamespace(latitude=40.0, longitude=-73.0, speed=200)
+            position=SimpleNamespace(
+                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=200
+            )
         )
     )
     client.app.state.coordinator = coordinator
@@ -727,3 +744,113 @@ def test_api_in_flight_eta_uses_fixed_telemetry_not_schedule_and_changes_for_det
     assert scheduled_eta == pytest.approx(direct_eta)
     assert detour_eta == pytest.approx(12188.2341)
     assert detour_eta > direct_eta + 10_000
+
+
+@pytest.mark.parametrize(
+    ("age_seconds", "position_state", "state"),
+    [
+        (0, "fresh", "available"),
+        (9.999, "fresh", "available"),
+        (10, "stale", "unavailable"),
+        (60, "stale", "unavailable"),
+        (None, "unavailable", "unavailable"),
+        (-5.001, "unavailable", "unavailable"),
+    ],
+)
+def test_api_exposes_exact_position_provenance_and_keeps_map_context(
+    client, monkeypatch, age_seconds, position_state, state
+):
+    import app.api.overview_upcoming_pois as api
+
+    arrange_active_v2_context(client)
+    event = scheduled_poi().model_copy(update={"projected_route_progress": 100})
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [event]
+    )
+    monkeypatch.setattr(
+        api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+    observed = None if age_seconds is None else NOW - timedelta(seconds=age_seconds)
+    client.app.state.coordinator = SimpleNamespace(
+        get_current_telemetry=lambda: SimpleNamespace(
+            timestamp=NOW,
+            position=SimpleNamespace(
+                observed_at=observed, latitude=40.0, longitude=-73.0, speed=300
+            ),
+        )
+    )
+    payload = client.get("/api/overview/upcoming-pois").json()
+    assert payload["state"] == state
+    assert payload["position_state"] == position_state
+    assert payload["flight_phase"] == "in_flight"
+    assert payload["calculated_at"] == NOW.isoformat()
+    assert payload["position_observed_at"] == (
+        observed.isoformat().replace("+00:00", "Z")
+        if position_state != "unavailable"
+        else None
+    )
+    assert payload["pois"][0]["map_retained"] is True
+    if position_state != "fresh":
+        assert payload["pois"][0]["estimated_arrival_time"] is None
+        assert payload["pois"][0]["eta_seconds"] is None
+
+
+def test_api_uses_generated_adjusted_departure_schedule(client, monkeypatch):
+    import app.api.overview_upcoming_pois as api
+
+    arrange_active_v2_context(client)
+    adjusted = NOW + timedelta(hours=3)
+    departure = scheduled_poi().model_copy(
+        update={
+            "kind": "departure",
+            "expected_arrival_time": adjusted,
+            "projected_route_progress": 0,
+        }
+    )
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [departure]
+    )
+    monkeypatch.setattr(
+        api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(
+                phase=SimpleNamespace(value="pre_departure")
+            )
+        ),
+    )
+    payload = client.get("/api/overview/upcoming-pois").json()
+    assert payload["scheduled_departure_time"] == adjusted.isoformat().replace(
+        "+00:00", "Z"
+    )
+    assert payload["flight_phase"] == "pre_departure"
+    assert payload["position_state"] == "unavailable"
+
+
+def test_api_handles_empty_coordinator_cache_without_server_error(client, monkeypatch):
+    import app.api.overview_upcoming_pois as api
+
+    arrange_active_v2_context(client)
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [scheduled_poi()]
+    )
+    monkeypatch.setattr(
+        api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+
+    def missing():
+        raise RuntimeError("No telemetry available")
+
+    client.app.state.coordinator = SimpleNamespace(get_current_telemetry=missing)
+    response = client.get("/api/overview/upcoming-pois")
+    assert response.status_code == 200
+    assert response.json()["state"] == "unavailable"
+    assert response.json()["pois"][0]["map_retained"] is True

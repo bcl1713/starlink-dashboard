@@ -13,7 +13,7 @@
   :is(
     .globe-legend,
     .operational-clock,
-    .upcoming-pois,
+    .overview-arrival,
     .overview-fullscreen-control,
     .overview-metric-history,
     .overview-metric-history-panels__header
@@ -30,7 +30,7 @@
     :is(
       .globe-legend,
       .operational-clock,
-      .upcoming-pois,
+      .overview-arrival,
       .overview-fullscreen-control,
       .overview-metric-history,
       .overview-metric-history-panels__header
