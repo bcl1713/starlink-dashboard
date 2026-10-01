@@ -8,13 +8,14 @@ export interface YRange {
   max: number;
 }
 
-/** Zero-based, rounded headroom; hold an accepted domain until a peak exceeds it. */
+/** Zero-based, rounded headroom; hysteresis avoids jitter as peaks enter or leave. */
 export function metricScale(
   descriptor: OverviewMetricGraphDescriptor,
   projected: ProjectedMetricTraces | undefined,
   previous?: YRange
 ): YRange {
-  if (descriptor.id === 'obstruction') return { min: 0, max: 100 };
+  if (descriptor.id === 'obstruction' || descriptor.id === 'packet-loss')
+    return { min: 0, max: 100 };
   let peak = 0;
   for (const trace of projected
     ? [projected.observed, projected.min, projected.avg, projected.max]
@@ -27,23 +28,15 @@ export function metricScale(
     previous &&
     previous.min === 0 &&
     Number.isFinite(previous.max) &&
-    previous.max >= Math.max(1, peak)
+    previous.max >= Math.max(1, peak) &&
+    peak / previous.max >= 0.5
   )
     return previous;
-  const step = Math.max(
-    descriptor.id === 'packet-loss' ? 0.1 : 1,
-    10 ** (Math.floor(Math.log10(peak || 1)) - 1)
-  );
+  const step = Math.max(1, 10 ** (Math.floor(Math.log10(peak || 1)) - 1));
   const padded = peak * 1.1;
   const rounded = Math.ceil(padded / step) * step;
-  // Normalize decimal increments in the domain itself so the fixed axis and
-  // canvas agree exactly, rather than hiding binary tails only in the label.
-  const normalized = step < 1 ? Number(rounded.toFixed(1)) : rounded;
   return {
     min: 0,
-    max: Math.max(
-      1,
-      Number.isFinite(normalized) ? normalized : Number.MAX_VALUE
-    ),
+    max: Math.max(1, Number.isFinite(rounded) ? rounded : Number.MAX_VALUE),
   };
 }

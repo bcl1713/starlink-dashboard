@@ -10,6 +10,7 @@ import { Canvas } from '@react-three/fiber';
 import { Html, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
+import './OverviewOverlayLayout.css';
 import { type GlobeCoordinate } from './globe-route';
 import { activeRouteId } from './active-globe-route';
 import { projectRouteArc } from './globe-route-projection';
@@ -556,23 +557,26 @@ export function OverviewPage() {
         />
       </div>
       <div className="overview-bottom-overlays">
-        <div className="overview-left-stack">
-          <OverviewMetricHistoryPanels
-            status={status}
-            statusError={Boolean(statusError)}
-            history={overviewHistory}
-            error={isOverviewHistoryError}
-            selectedWindowSeconds={overviewHistorySettings?.window_seconds}
-            nowMs={currentTime}
-          />
-          <UpcomingPoisPanel
-            state={upcomingPoiState}
-            pois={upcomingPoiView.topFive}
-            currentTime={new Date(currentTime)}
-          />
-        </div>
+        <OverviewMetricHistoryPanels
+          status={status}
+          statusError={Boolean(statusError)}
+          history={overviewHistory}
+          error={isOverviewHistoryError}
+          selectedWindowSeconds={overviewHistorySettings?.window_seconds}
+          nowMs={currentTime}
+        />
       </div>
-      <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
+      <div className="overview-arrival-overlays">
+        <UpcomingPoisPanel
+          state={upcomingPoiState}
+          pois={upcomingPoiView.topFive}
+          currentTime={new Date(currentTime)}
+        />
+      </div>
+      <Canvas
+        className="overview-globe"
+        camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
+      >
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />
         <directionalLight position={sunPosition} intensity={5} />

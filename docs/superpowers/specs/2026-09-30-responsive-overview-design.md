@@ -86,15 +86,15 @@ keyboard focus, and text in addition to color for operational state. Tune
 against bright terrain, dark ocean, real viewport geometry and ten-foot viewing;
 these values are starting points rather than pixel-exact acceptance conditions.
 
-A separate, shared network-history header communicates one network freshness
-state, the selected display duration, and the **five-minute rolling-statistics
-window** as two distinctly named quantities. Remove “History available,”
-repeated per-panel trace keys and the separate Current network metrics box.
-Preserve the existing persisted history selection and configurable duration;
-removing a selector from the operational legend requires an accessible place to
-change it in existing configuration/controls, not silent deletion of the
-setting. Keep position-stale and route-unavailable states truthful outside the
-network group.
+The shared header shows `NETWORK - UPDATED 1s AGO` at left and `LAST 5 MIN` at
+right for a five-minute selection; `LAST` reflects the actual display duration.
+Per Brian's PR #229 follow-up, the **five-minute rolling-statistics window**
+stays distinct in accessible descriptions and operator guidance, without a
+visible rolling label. Keep partial, stale, unavailable and refresh errors
+explicit. Remove “History available,” repeated trace keys and the separate
+Current network metrics box. Preserve persisted history selection; moving its
+selector requires an accessible replacement control. Keep position-stale and
+route-unavailable states truthful outside the network group.
 
 ## Chart contract and motion
 
@@ -114,10 +114,10 @@ Continue to use the backend's per-timestamp trailing five-minute Prometheus
 rollups, not statistics recomputed from only the visible chart or future
 samples. Preserve nulls and break markers: an outage is a gap, never zero, a
 bridged line or a fabricated extension. Keep stable truthful y ranges: 0–100%
-for obstruction; choose a labelled, readable packet-loss range that shows small
-changes without excessive autoscale churn; other metrics may use bounded, damped
-scales as justified by real observations. No continuous future point may be
-appended to fill overscan.
+for obstruction and packet loss, per subsequent user steering. Latency and
+throughput adapt to observed and aggregate highs, with hysteresis to avoid scale
+churn after peaks leave. No continuous future point may be appended to fill
+overscan.
 
 Only the plot-data surface moves; title, current value, units, axes, card border
 and background remain fixed. Observed, average and both envelope boundaries
@@ -285,3 +285,15 @@ this design.
 The main trade-off is retaining an honest five-panel display rather than
 mimicking the sixth chart in the image. Real signal quality requires its own
 trustworthy acquisition contract before it can appear as observed telemetry.
+
+## #216 presentation cleanup boundary
+
+Brian selected the screenshot-guided #216 cleanup after #228. The
+[cleanup plan](../plans/2026-10-01-overview-metric-cleanup.md) brings shared
+navy glass tokens and the desktop metric column forward from #219. It also moves
+the existing POI table intact to bottom-center to reserve room. The five cards
+use stacked uppercase titles and capped current values, one shared
+freshness/window context, sparse numeric y labels and accessible rather than
+visible per-card UTC bounds. #217 still owns arrival content; #218 owns
+satellite/legend semantics; #219 owns final composition/camera/clock tuning;
+Issue #220 owns mobile interaction.

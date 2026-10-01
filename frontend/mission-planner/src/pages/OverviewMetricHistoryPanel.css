@@ -1,95 +1,72 @@
 .overview-metric-history {
   min-width: 0;
-  padding: 0.5rem 0.625rem;
-  border: 1px solid rgb(148 163 184 / 35%);
-  border-radius: 0.5rem;
-  color: #f8fafc;
-  background: rgb(3 3 7 / 86%);
-}
-.overview-metric-history__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+  padding: 8px 12px;
+  color: var(--overview-text, #f8fafc);
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto minmax(28px, auto) minmax(48px, 1fr);
+  height: 100%;
+  box-sizing: border-box;
 }
 .overview-metric-history__header h3 {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 16px;
+  line-height: 1;
   font-weight: 650;
-}
-.overview-metric-history__unit,
-.overview-metric-history__value-axis,
-.overview-metric-history__time-axis {
-  color: #cbd5e1;
-  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
 }
 .overview-metric-history__latest {
   display: block;
-  font-size: 1rem;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.overview-metric-history__messages {
+  min-height: 28px;
+  color: var(--overview-secondary, #bdcbd9);
+  font-size: 13px;
+  line-height: 14px;
 }
 .overview-metric-history__age {
   display: block;
-  margin: 0.125rem 0;
-  color: #cbd5e1;
-  font-size: 0.7rem;
 }
 .overview-metric-history__status {
-  margin: 0.2rem 0;
-  color: #cbd5e1;
-  font-size: 0.7rem;
-}
-.overview-metric-history__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.625rem;
-  padding: 0;
-  margin: 0.2rem 0;
-  list-style: none;
-  font-size: 0.68rem;
-}
-.overview-metric-history__legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
-}
-.overview-metric-history__legend li span {
-  width: 0.6rem;
-  height: 0.12rem;
-  display: inline-block;
-}
-.overview-metric-history__key--observed {
-  background: #67e8f9;
-}
-.overview-metric-history__legend .overview-metric-history__key--average {
-  height: 0;
-  border-top: 1px dashed rgb(226 232 240 / 72%);
-}
-.overview-metric-history__legend .overview-metric-history__key--envelope {
-  height: 0.4rem;
-  background: rgba(148, 163, 184, 0.14);
-  border: 1px solid rgb(148 163 184 / 35%);
+  margin: 0;
 }
 .overview-metric-history__chart {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 48px;
 }
 .overview-metric-history__value-axis {
-  height: 80px;
+  min-width: 28px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  white-space: nowrap;
+  color: var(--overview-secondary, #bdcbd9);
+  font-size: 12px;
+  line-height: 1;
   text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .overview-metric-history__viewport {
   position: relative;
   flex: 1;
   min-width: 0;
-  height: 80px;
+  min-height: 48px;
   overflow: hidden;
+  background-image: linear-gradient(
+    to bottom,
+    rgb(180 195 215 / 10%) 1px,
+    transparent 1px
+  );
+  background-size: 100% 50%;
+  border-bottom: 1px solid rgb(180 195 215 / 10%);
 }
 .overview-metric-history__surface {
   position: absolute;
@@ -97,24 +74,23 @@
   left: 0;
   will-change: transform;
 }
-.overview-metric-history__time-axis {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.25rem;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.overview-metric-history__time-axis span {
-  white-space: nowrap;
-}
-/* Keep uPlot's CSS dimensions separate from its DPR-scaled bitmap dimensions.
-   `auto` uses the bitmap size on scaled displays, so rebases move samples by a
-   different distance than the compositor scroll. Also contain the canvas when
-   Overview fixes its globe canvas to the viewport on short/mobile screens. */
+/* uPlot's CSS dimensions must not use its DPR-scaled bitmap dimensions. */
 .overview-page .overview-metric-history .uplot canvas {
   width: 100%;
   height: 100%;
   position: relative;
   inset: auto;
   z-index: auto;
+}
+
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1080px) and (min-height: 67.5rem) {
+  .overview-metric-history__header h3 {
+    font-size: 26px;
+  }
+  .overview-metric-history__latest {
+    font-size: 36px;
+  }
+  .overview-metric-history__value-axis {
+    font-size: 16px;
+  }
 }

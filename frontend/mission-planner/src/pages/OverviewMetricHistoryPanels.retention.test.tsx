@@ -51,12 +51,16 @@ describe('OverviewMetricHistoryPanels skew-aware retention', () => {
     const view = render(group(status(113, 7)));
     const panel = screen.getByLabelText('Network latency history');
     expect(panel.querySelector('strong')?.textContent).toBe('7 ms');
-    expect(within(panel).getByText('Observed 00:01:53 UTC')).toBeTruthy();
+    expect(
+      within(panel).getByText(/^Observed 00:01:53 UTC; exact value/)
+    ).toBeTruthy();
 
     const older = status(112, 99);
     view.rerender(group(older));
     expect(panel.querySelector('strong')?.textContent).toBe('7 ms');
-    expect(within(panel).getByText('Observed 00:01:53 UTC')).toBeTruthy();
+    expect(
+      within(panel).getByText(/^Observed 00:01:53 UTC; exact value/)
+    ).toBeTruthy();
 
     // Acquisition time remains authoritative at the ten-second stale boundary.
     view.rerender(group(older, 123_000));
@@ -73,7 +77,9 @@ describe('OverviewMetricHistoryPanels skew-aware retention', () => {
 
     view.rerender(group(status(113, 7)));
     expect(panel.querySelector('strong')?.textContent).toBe('7 ms');
-    expect(within(panel).getByText('Observed 00:01:53 UTC')).toBeTruthy();
+    expect(
+      within(panel).getByText(/^Observed 00:01:53 UTC; exact value/)
+    ).toBeTruthy();
 
     view.rerender(group(undefined, 109_000, true));
     expect(panel.querySelector('strong')?.textContent).toBe('Unavailable');

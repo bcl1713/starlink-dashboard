@@ -66,7 +66,7 @@ describe('overview metric history', () => {
       const descriptor = OVERVIEW_METRIC_GRAPHS.find(
         (graph) => graph.id === id
       );
-      expect(descriptor).toEqual({ id, metric, label, unit });
+      expect(descriptor).toMatchObject({ id, metric, label, unit });
       expect(
         projectMetricHistory(bundle(metric), descriptor!, 117_500).observed
       ).toEqual([4, 5, null, 7]);

@@ -166,6 +166,11 @@ test.describe('Overview metric history', () => {
           route.fulfill({ json: { satellite_id: null } })
         );
         await page.goto('/overview', { waitUntil: 'commit' });
+        // Exercise the ten-foot metric column, not the wide scrolling fallback.
+        await page.getByRole('button', { name: /fullscreen/i }).click();
+        await expect
+          .poll(() => page.evaluate(() => !!document.fullscreenElement))
+          .toBe(true);
         const panel = page.getByRole('region', {
           name: 'Network latency history',
         });
@@ -659,7 +664,7 @@ test.describe('Overview metric history', () => {
     });
     await expect(panels.locator('.uplot')).toHaveCount(5);
   });
-  test('fits five shared-query plots above POIs while preserving globe and legend', async ({
+  test('fits five shared-query plots beside POIs while preserving globe and legend', async ({
     page,
   }, testInfo) => {
     let requests = 0;
@@ -736,6 +741,13 @@ test.describe('Overview metric history', () => {
       .locator('[data-metric-panel]');
     await expect(graphs).toHaveCount(5);
     await expect(graphs.locator('.uplot')).toHaveCount(5);
+    await page.getByRole('button', { name: /fullscreen/i }).click();
+    await expect
+      .poll(() => page.evaluate(() => !!document.fullscreenElement))
+      .toBe(true);
+    await expect
+      .poll(async () => (await graphs.first().boundingBox())?.width)
+      .toBe(440);
     const settledRequests = requests;
     expect(settledRequests).toBeGreaterThanOrEqual(1);
     const pois = await page.getByLabel('Upcoming POIs').boundingBox();
@@ -747,7 +759,7 @@ test.describe('Overview metric history', () => {
     });
     for (const panel of await graphs.all()) {
       const box = await panel.boundingBox();
-      expect(box && pois && box.y + box.height <= pois.y).toBeTruthy();
+      expect(box && pois && box.x + box.width <= pois.x).toBeTruthy();
       expect(
         box &&
           top &&
@@ -760,7 +772,7 @@ test.describe('Overview metric history', () => {
       for (const name of ['Observed', 'Average (5m)', 'Low–high envelope (5m)'])
         await expect(
           page.getByLabel('Graph traces').getByText(name, { exact: true })
-        ).toBeVisible();
+        ).toBeAttached();
       await expect(
         panel.locator('.overview-metric-history__latest')
       ).toBeVisible();
@@ -829,11 +841,33 @@ test.describe('Overview metric history', () => {
       )
       .not.toBe(beforeWindowAxis);
     await expect(graphs.first().getByRole('status')).toHaveCount(0);
-    const plottedBeforeFailure = await graphs
-      .first()
-      .locator('.uplot canvas')
-      .first()
-      .evaluate((node) => (node as HTMLCanvasElement).toDataURL());
+    const plottedData = () =>
+      graphs
+        .first()
+        .locator('section')
+        .evaluate((section) => {
+          type Plot = { root: HTMLElement; data: (number | null)[][] };
+          type Hook = { memoizedState: { current?: Plot }; next: Hook | null };
+          type Fiber = { return: Fiber | null; memoizedState?: Hook | null };
+          const key = Object.keys(section).find((name) =>
+            name.startsWith('__reactFiber$')
+          )!;
+          let fiber: Fiber | null = (
+            section as unknown as Record<string, Fiber>
+          )[key];
+          while (fiber) {
+            let hook = fiber.memoizedState;
+            while (hook) {
+              const plot = hook.memoizedState?.current;
+              if (plot?.root === section.querySelector('.uplot'))
+                return plot.data;
+              hook = hook.next;
+            }
+            fiber = fiber.return;
+          }
+          throw new Error('committed plot absent');
+        });
+    const plottedBeforeFailure = await plottedData();
     fail = true;
     const beforeFailure = requests;
     await expect
@@ -842,13 +876,22 @@ test.describe('Overview metric history', () => {
     await expect(graphs.first().getByRole('status')).toContainText(
       'Last-known history; refresh unavailable'
     );
+    // The exception row resizes the plots. Compare retained trace data rather
+    // than bitmaps whose dimensions intentionally change with the header.
+    expect(await plottedData()).toEqual(plottedBeforeFailure);
     expect(
       await graphs
         .first()
         .locator('.uplot canvas')
         .first()
-        .evaluate((node) => (node as HTMLCanvasElement).toDataURL())
-    ).toBe(plottedBeforeFailure);
+        .evaluate((node) => {
+          const plot = node as HTMLCanvasElement;
+          return plot
+            .getContext('2d')!
+            .getImageData(0, 0, plot.width, plot.height)
+            .data.some((value, index) => index % 4 === 3 && value > 0);
+        })
+    ).toBe(true);
     fail = false;
     const beforeRecovery = requests;
     await expect
@@ -912,7 +955,7 @@ test.describe('Overview metric history', () => {
       ).toBe('auto');
       await expect(
         page.getByLabel('Graph traces').getByText('Observed', { exact: true })
-      ).toBeVisible();
+      ).toBeAttached();
     }
   });
 });
@@ -1174,7 +1217,7 @@ test.describe('Overview provenance motion recording', () => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.getByLabel('Aircraft history window').selectOption('900');
     await expect(
-      context.getByText('Display: 15 minutes', { exact: true })
+      context.getByText('LAST 15 MIN', { exact: true })
     ).toBeVisible();
     await page.evaluate(() => {
       Object.defineProperty(document, 'hidden', {

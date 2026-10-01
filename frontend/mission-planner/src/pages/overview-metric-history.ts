@@ -7,6 +7,7 @@ export interface OverviewMetricGraphDescriptor {
   id: string;
   metric: string;
   label: string;
+  displayLabel?: string;
   unit: string;
 }
 
@@ -16,18 +17,21 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
       id: 'latency',
       metric: 'starlink_network_latency_ms_current',
       label: 'Network latency',
+      displayLabel: 'Latency',
       unit: 'ms',
     },
     {
       id: 'downlink',
       metric: 'starlink_network_throughput_down_mbps_current',
       label: 'Downlink throughput',
+      displayLabel: 'Downlink',
       unit: 'Mbps',
     },
     {
       id: 'uplink',
       metric: 'starlink_network_throughput_up_mbps_current',
       label: 'Uplink throughput',
+      displayLabel: 'Uplink',
       unit: 'Mbps',
     },
     {
@@ -40,6 +44,7 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
       id: 'obstruction',
       metric: 'starlink_dish_obstruction_percent',
       label: 'Dish obstruction',
+      displayLabel: 'Obstruction',
       unit: '%',
     },
   ];

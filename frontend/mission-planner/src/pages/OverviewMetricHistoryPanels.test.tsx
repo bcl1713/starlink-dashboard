@@ -109,12 +109,63 @@ afterEach(() => {
 });
 
 describe('OverviewMetricHistoryPanels', () => {
+  it('shares acquisition age and keeps normal provenance out of the visual layout', () => {
+    const history = bundle(108);
+    const view = render(group(statusFixture(), 109_000, false, false, history));
+    expect(screen.getByText('Updated 4s ago')).toBeTruthy();
+    expect(
+      latency(view.container)
+        .querySelector('.overview-metric-history__age')
+        ?.classList.contains('overview-visually-hidden')
+    ).toBe(true);
+    expect(
+      screen
+        .getByLabelText('Graph traces')
+        .classList.contains('overview-visually-hidden')
+    ).toBe(true);
+    view.rerender(
+      group(
+        { ...statusFixture(), timestamp: 'invalid' },
+        109_000,
+        false,
+        false,
+        history
+      )
+    );
+    expect(screen.queryByText(/(?:Updated|Last observed) \d+s ago/)).toBeNull();
+    expect(
+      within(screen.getByLabelText('Network history context')).getByRole(
+        'status'
+      ).textContent
+    ).toBe('Network unavailable');
+  });
+
+  it('formats both the current and retained stale value without touching plot values', () => {
+    const history = bundle();
+    const status = {
+      ...statusFixture(),
+      network: { ...statusFixture().network, latency_ms: 7.49 },
+    };
+    const view = render(group(status, 109_000, false, false, history));
+    expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+      '7 ms'
+    );
+    view.rerender(group(status, 130_000, false, false, history));
+    expect(
+      within(latency(view.container)).getByText('Last observed 7 ms · 25s old')
+    ).toBeTruthy();
+    expect(plot.setData).not.toHaveBeenCalled();
+    expect(status.network.latency_ms).toBe(7.49);
+  });
+
   // Catch using history values/evaluation times as current-value authority.
   it('shows five stationary status readouts with one truthful shared context', () => {
     const { container } = render(group());
     const panel = latency(container);
     expect(panel.querySelector('strong')?.textContent).toBe('7 ms');
-    expect(within(panel).getByText('Observed 00:01:45 UTC')).toBeTruthy();
+    expect(
+      within(panel).getByText(/^Observed 00:01:45 UTC; exact value/)
+    ).toBeTruthy();
     expect(
       screen
         .getByLabelText('Downlink throughput history')
@@ -122,29 +173,30 @@ describe('OverviewMetricHistoryPanels', () => {
     ).toBe('0 Mbps');
     expect(
       screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
-    ).toEqual([
-      'Network latency',
-      'Downlink throughput',
-      'Uplink throughput',
-      'Packet loss',
-      'Dish obstruction',
-    ]);
+    ).toEqual(['Latency', 'Downlink', 'Uplink', 'Packet loss', 'Obstruction']);
     expect(
       Array.from(
         container.querySelectorAll('.overview-metric-history__latest'),
         (node) => node.textContent
       )
-    ).toEqual(['7 ms', '0 Mbps', '2 Mbps', '0.2 %', '3 %']);
+    ).toEqual(['7 ms', '0 Mbps', '2 Mbps', '0.2%', '3%']);
     expect(subscriptions.status).not.toHaveBeenCalled();
     expect(subscriptions.history).not.toHaveBeenCalled();
     const header = screen.getByLabelText('Network history context');
     expect(within(header).getByRole('status').textContent).toBe(
       'Network fresh'
     );
-    expect(within(header).getByText('Display: 30 seconds')).toBeTruthy();
+    expect(within(header).getByText('LAST 30 SEC')).toBeTruthy();
+    expect(within(header).getByText('fresh').className).toBe(
+      'overview-visually-hidden'
+    );
     expect(
-      within(header).getByText('Rolling statistics: 5 minutes')
-    ).toBeTruthy();
+      header.querySelector('.overview-metric-history-panels__error')
+    ).toBeNull();
+    expect(
+      within(header).getByText('Rolling statistics: 5 minutes').className
+    ).toBe('overview-visually-hidden');
+    expect(within(header).queryByText('Rolling: 5 min')).toBeNull();
     expect(screen.getAllByLabelText('Graph traces')).toHaveLength(1);
     for (const text of ['Observed', 'Average (5m)', 'Low–high envelope (5m)'])
       expect(within(header).getByText(text)).toBeTruthy();
@@ -153,6 +205,46 @@ describe('OverviewMetricHistoryPanels', () => {
     expect(screen.queryByText(/signal quality/i)).toBeNull();
     const surface = panel.querySelector('.overview-metric-history__surface')!;
     expect(surface.contains(panel.querySelector('strong'))).toBe(false);
+  });
+  it.each([
+    [300, 'LAST 5 MIN'],
+    [900, 'LAST 15 MIN'],
+    [1800, 'LAST 30 MIN'],
+    [3600, 'LAST 60 MIN'],
+    [1, 'LAST 1 SEC'],
+    [75, 'LAST 75 SEC'],
+  ])(
+    'shows selected duration %s without changing the rolling window',
+    (seconds, label) => {
+      render(group(statusFixture(), 109_000, false, false, null, seconds));
+      const header = screen.getByLabelText('Network history context');
+      expect(within(header).getByText(label)).toBeTruthy();
+      expect(
+        within(header).getByText('Rolling statistics: 5 minutes')
+      ).toBeTruthy();
+    }
+  );
+  it('shows refresh exceptions only until their independent recovery', () => {
+    const status = statusFixture();
+    const history = bundle();
+    const view = render(group(status, 109_000, true, true, history));
+    const header = screen.getByLabelText('Network history context');
+    expect(within(header).getByText('Status refresh unavailable')).toBeTruthy();
+    expect(
+      within(header).getByText('History refresh unavailable')
+    ).toBeTruthy();
+    expect(within(header).getByText('Last observed 4s ago')).toBeTruthy();
+    view.rerender(group(status, 109_000, false, true, history));
+    expect(within(header).queryByText('Status refresh unavailable')).toBeNull();
+    expect(within(header).getByText('Updated 4s ago')).toBeTruthy();
+    expect(
+      within(header).getByText('History refresh unavailable')
+    ).toBeTruthy();
+    view.rerender(group(status, 109_000, false, false, history));
+    expect(
+      header.querySelector('.overview-metric-history-panels__error')
+    ).toBeNull();
+    expect(plot.setData).not.toHaveBeenCalled();
   });
   it('ages status independently of history without updating plot data', () => {
     const history = bundle();
@@ -224,7 +316,9 @@ describe('OverviewMetricHistoryPanels', () => {
       '7 ms'
     );
     expect(
-      within(latency(view.container)).getByText('Observed 00:01:45 UTC')
+      within(latency(view.container)).getByText(
+        /^Observed 00:01:45 UTC; exact value/
+      )
     ).toBeTruthy();
   });
   it.each(['legacy', 'null', 'false', 'future', 'invalid'] as const)(
@@ -302,6 +396,6 @@ describe('OverviewMetricHistoryPanels', () => {
     expect(screen.getAllByRole('img')[0].getAttribute('aria-label')).toContain(
       'History unavailable'
     );
-    expect(screen.getByText('Display: 1 minute')).toBeTruthy();
+    expect(screen.getByText('LAST 1 MIN')).toBeTruthy();
   });
 });
