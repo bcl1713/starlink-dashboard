@@ -56,10 +56,16 @@ carry evaluation times, not guaranteed source-observation times.
    network-age indicator. A fresh, verified zero displays as zero. If one field
    is unavailable, only that panel lacks a current value and the group reports
    partial availability; all unavailable yields unavailable. A stale sample,
-   failed status refresh, absent provenance or future/invalid timestamp cannot
-   display a prominent current value; last-known may appear separately with
-   clear age and failure wording. A history failure is reported separately from
-   status freshness. Keep position freshness independent.
+   failed status refresh, absent provenance or invalid timestamp cannot display
+   a prominent current value; last-known may appear separately with clear age
+   and failure wording. A history failure is reported separately from status
+   freshness. Keep position freshness independent. Freshness allows up to five
+   seconds of future clock skew, including an observation arriving after the
+   UI's latest one-second clock tick. Display age is clamped to zero in that
+   allowance; the original acquisition timestamp is preserved. Larger future
+   offsets remain unavailable. Samples become stale at ten seconds of collection
+   age, allowing polling and collection jitter. A failed request still marks
+   last-good observations stale immediately.
 5. **Cadence and scope:** #216 keeps its current five-second shared history
    request default and one-second status request; chart motion must tolerate
    one- and five-second history arrivals. A future **one-second history request

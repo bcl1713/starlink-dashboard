@@ -62,19 +62,21 @@ never extrapolates samples into the present.
 
 The five stationary prominent readouts come from the existing shared
 `/api/status` feed, not Prometheus. Only finite values with explicit per-metric
-source availability and a valid, nonfuture collection `timestamp` can be
-current. A verified measured zero displays as zero; null, false availability, or
-legacy responses without availability display **Unavailable**, even if a
-compatibility fallback is zero. A sample is fresh for less than five seconds.
-Older samples or a failed status refresh show **Unavailable** prominently and
-retain verified last-known values only in secondary **Last observed** copy with
-an explicit age. **Status refresh unavailable** is independent of history
-failure: fresh status readouts remain current when history alone fails. One
-network freshness label summarizes fresh, partial, stale, or unavailable
-observations; aircraft/position freshness remains independent. Out-of-order
-status responses cannot rewind accepted collection time, and older history
-responses cannot rewind their accepted same-window bundle. Signal quality is not
-included among these five current observations.
+source availability and a valid collection `timestamp` can be current. Up to
+five seconds of future clock skew is allowed; displayed age is clamped to zero
+within that allowance, while the acquisition timestamp is preserved for ordering
+and freshness. Larger future offsets remain unavailable. A verified measured
+zero displays as zero; null, false availability, or legacy responses without
+availability display **Unavailable**, even if a compatibility fallback is zero.
+A sample is fresh for less than ten seconds. Older samples or a failed status
+refresh show **Unavailable** prominently and retain verified last-known values
+only in secondary **Last observed** copy with an explicit age. **Status refresh
+unavailable** is independent of history failure: fresh status readouts remain
+current when history alone fails. One network freshness label summarizes fresh,
+partial, stale, or unavailable observations; aircraft/position freshness remains
+independent. Out-of-order status responses cannot rewind accepted collection
+time, and older history responses cannot rewind their accepted same-window
+bundle. Signal quality is not included among these five current observations.
 
 History missingness is bounded by Prometheus scraping: unavailable readings
 publish `NaN` to only their current gauges and do not add histogram
@@ -91,33 +93,42 @@ graph timestamps. Pre-change historical zeros are not retrospectively verified
 observations. No scrape interval, query budget, history window, or request
 cadence changes are required for this publication contract.
 
-The aircraft trail and all five graphs share one history response every five
-seconds and the existing window selector in the globe legend (5, 15, 30, or 60
-minutes, plus a saved custom window). This persisted **Display** duration is
-separate from **Rolling statistics: 5 minutes**, which always uses the fixed
+The aircraft trail and all five graphs share one history response at the
+configured polling cadence (five seconds by default, with one second opt-in) and
+the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
+a saved custom window). This persisted **Display** duration is separate from
+**Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. The selector remains in the globe legend
 pending [#218](https://github.com/bcl1713/starlink-dashboard/issues/218).
-History requests remain every five seconds; a future 1 Hz request default
-belongs to [#224](https://github.com/bcl1713/starlink-dashboard/issues/224), not
-the existing 1 Hz Prometheus scrape rate or range-query step. Each graph shows
-the full selected window, with a small right-edge freshness margin: under the
-expected five-second response cadence, real samples and the UTC axis move left
-at the selected window's time scale without a visible jump when fresh responses
-rebase the plot. New real samples enter from the right, while old ones leave by
-clipping at the left. If the tab is hidden, a fetch fails, or history arrives
-late or irregularly, motion may pause and a rebase glitch may be visible;
-recovery from an arbitrary outage is not guaranteed seamless. Resuming a hidden
-tab restarts motion from its frozen edge rather than replaying every missed
-transition. With unchanged history, visibility or fetch-error changes rebase the
-moving surface without uploading the same uPlot data again; data uploads follow
-changed bundles or measured viewport resizes, not animation frames. The plots
-retain only real chart samples from overlapping responses at the left edge until
-they leave the visible window; newer responses replace or remove samples in
-their covered range. The aircraft trail still uses only the shared
-selected-window response. An initial load may have an empty far-left margin
-until later polls supply those samples. At the default 30-minute scale, five
-seconds of motion is deliberately subtle; no future samples are invented. The
-UTC tick labels remain on one line.
+History requests default to five seconds while
+[#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s measured
+performance gate is pending. A reviewed frontend build can select one second
+using `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1`; rebuild with `5` to roll back.
+Hidden tabs pause interval polling and refetch on focus. Failures use
+five-second polling. Cadence is separate from the one-second Prometheus scrape
+rate and the selected window's range-query resolution (two seconds for a
+60-minute window). The backend reuses completed snapshots and reconciles an
+overlapping tail, with bounded full loads for initialization, recovery and
+historical corrections. Each graph shows the full selected window, with a small
+right-edge freshness margin: under the expected five-second response cadence,
+real samples and the UTC axis move left at the selected window's time scale
+without a visible jump when fresh responses rebase the plot. New real samples
+enter from the right, while old ones leave by clipping at the left. If the tab
+is hidden, a fetch fails, or history arrives late or irregularly, motion may
+pause and a rebase glitch may be visible; recovery from an arbitrary outage is
+not guaranteed seamless. Resuming a hidden tab restarts motion from its frozen
+edge rather than replaying every missed transition. With unchanged history,
+visibility or fetch-error changes rebase the moving surface without uploading
+the same uPlot data again. Projection and scale scans run only when accepted
+history or its metric/window changes; clock labels and stale indicators still
+update. Data uploads follow changed bundles or measured viewport resizes, not
+animation frames. The plots retain only real chart samples from overlapping
+responses at the left edge until they leave the visible window; newer responses
+replace or remove samples in their covered range. The aircraft trail still uses
+only the shared selected-window response. An initial load may have an empty
+far-left margin until later polls supply those samples. At the default 30-minute
+scale, five seconds of motion is deliberately subtle; no future samples are
+invented. The UTC tick labels remain on one line.
 
 At 1920×1080 native fullscreen, the five plots form a single vertical column
 directly above the equally narrow five-row POI panel. The combined stack is

@@ -21,15 +21,18 @@ class OverviewHistorySettingsUpdate(BaseModel):
 
 
 _overview_history_reader: Callable[[], Awaitable[dict]] | None = None
+_overview_history_invalidator: Callable[[], None] | None = None
 _overview_history_settings_store: OverviewHistorySettingsStore | None = None
 
 
 def set_overview_history_reader(
     reader: Callable[[], Awaitable[dict]] | None,
+    invalidate: Callable[[], None] | None = None,
 ) -> None:
     """Set the initialized overview-history runtime reader."""
-    global _overview_history_reader
+    global _overview_history_reader, _overview_history_invalidator
     _overview_history_reader = reader
+    _overview_history_invalidator = invalidate
 
 
 def set_overview_history_settings_store(
@@ -83,6 +86,8 @@ async def update_overview_history_settings(
     _overview_history_settings_store.set_window_seconds(
         settings.window_seconds,
     )
+    if _overview_history_invalidator is not None:
+        _overview_history_invalidator()
     return {
         "window_seconds": settings.window_seconds,
     }

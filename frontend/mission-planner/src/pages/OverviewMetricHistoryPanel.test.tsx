@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OverviewHistoryBundle } from '../services/overview-history';
 import { OVERVIEW_METRIC_GRAPHS } from './overview-metric-history';
 import { OverviewMetricHistoryPanel } from './OverviewMetricHistoryPanel';
+import * as projectionModule from './overview-metric-history';
+import * as scaleModule from './overview-metric-scale';
 
 const plot = vi.hoisted(() => ({
   create: vi.fn(),
@@ -92,6 +94,33 @@ afterEach(() => {
 });
 
 describe('OverviewMetricHistoryPanel', () => {
+  it('processes each accepted bundle once while clock and error state stay responsive', () => {
+    const project = vi.spyOn(projectionModule, 'projectMetricTraces');
+    const scale = vi.spyOn(scaleModule, 'metricScale');
+    try {
+      const history = bundle();
+      const view = render(panel(history));
+      const projections = project.mock.calls.length;
+      const scales = scale.mock.calls.length;
+      const uploads = plot.setData.mock.calls.length;
+      view.rerender(panel(history, false, 121_000));
+      act(() => vi.advanceTimersByTime(1_000));
+      view.rerender(panel(history, true, 122_000));
+      expect(project).toHaveBeenCalledTimes(projections);
+      expect(scale).toHaveBeenCalledTimes(scales);
+      expect(plot.setData).toHaveBeenCalledTimes(uploads);
+      expect(screen.getByRole('status').textContent).toContain(
+        'refresh unavailable'
+      );
+      view.rerender(panel(bundle(123), false, 123_000));
+      expect(project).toHaveBeenCalledTimes(projections + 1);
+      expect(scale).toHaveBeenCalledTimes(scales + 1);
+      expect(plot.setData).toHaveBeenCalledTimes(uploads + 1);
+    } finally {
+      project.mockRestore();
+      scale.mockRestore();
+    }
+  });
   it('keeps the accessible title, unit and time axes outside the plot without a duplicate legend', () => {
     const { container } = render(panel());
     expect(screen.queryByLabelText('Graph traces')).toBeNull();

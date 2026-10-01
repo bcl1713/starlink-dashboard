@@ -44,13 +44,16 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
     },
   ];
 
-export interface ProjectedMetricHistory {
+export interface ProjectedMetricTraces {
   state: 'available' | 'empty' | 'unavailable';
   times: number[];
   observed: (number | null)[];
   min: (number | null)[];
   avg: (number | null)[];
   max: (number | null)[];
+}
+
+export interface ProjectedMetricHistory extends ProjectedMetricTraces {
   visibleRightSeconds: number;
 }
 
@@ -68,11 +71,10 @@ function validSamples(
 }
 
 /** Align four independent Prometheus traces without interpolating missing values. */
-export function projectMetricHistory(
+export function projectMetricTraces(
   bundle: OverviewHistoryBundle,
-  descriptor: OverviewMetricGraphDescriptor,
-  nowMs: number
-): ProjectedMetricHistory {
+  descriptor: OverviewMetricGraphDescriptor
+): ProjectedMetricTraces {
   const rollup = bundle.rolling_5m?.[descriptor.metric];
   const raw = validSamples(bundle.series?.[descriptor.metric]);
   const aggregateAvailable = rollup?.state === 'available';
@@ -132,6 +134,17 @@ export function projectMetricHistory(
     min: aggregate(min),
     avg: aggregate(avg),
     max: aggregate(max),
+  };
+}
+
+/** Compatibility projection for consumers that also need a wall-clock edge. */
+export function projectMetricHistory(
+  bundle: OverviewHistoryBundle,
+  descriptor: OverviewMetricGraphDescriptor,
+  nowMs: number
+): ProjectedMetricHistory {
+  return {
+    ...projectMetricTraces(bundle, descriptor),
     visibleRightSeconds: Math.max(
       bundle.start_timestamp_seconds,
       Math.min(bundle.end_timestamp_seconds, nowMs / 1000 - 7.5)

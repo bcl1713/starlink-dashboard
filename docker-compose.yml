@@ -87,6 +87,7 @@ services:
       dockerfile: Dockerfile
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
+        VITE_OVERVIEW_HISTORY_POLL_SECONDS: ${VITE_OVERVIEW_HISTORY_POLL_SECONDS:-5}
     container_name: mission-planner
     ports:
       - "5173:80"

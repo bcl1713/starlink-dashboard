@@ -1,6 +1,6 @@
 import type {
   OverviewMetricGraphDescriptor,
-  ProjectedMetricHistory,
+  ProjectedMetricTraces,
 } from './overview-metric-history';
 
 export interface YRange {
@@ -11,7 +11,7 @@ export interface YRange {
 /** Zero-based, rounded headroom; hold an accepted domain until a peak exceeds it. */
 export function metricScale(
   descriptor: OverviewMetricGraphDescriptor,
-  projected: ProjectedMetricHistory | undefined,
+  projected: ProjectedMetricTraces | undefined,
   previous?: YRange
 ): YRange {
   if (descriptor.id === 'obstruction') return { min: 0, max: 100 };
