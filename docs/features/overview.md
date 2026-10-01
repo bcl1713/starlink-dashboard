@@ -51,8 +51,12 @@ supported fallback and parity comparator.
 Five independent graphs form a left-side column on a sufficiently large native
 Overview: network latency (ms), downlink throughput (Mbps), uplink throughput
 (Mbps), packet loss (%), and dish obstruction (%). The single **Network history
-context** header shows observation freshness/age and separately named display
-and rolling-statistics windows. The cyan observed line, subdued dashed
+context** header is a slim strip: **NETWORK - UPDATED 1s AGO** on the left and
+**LAST 5 MIN** on the right when five minutes is selected. **LAST** always means
+the selected display duration; a custom duration not divisible by a minute uses
+seconds. Partial, stale, unavailable and refresh-error states remain explicit.
+Rolling-window details stay in accessible descriptions and this guidance. The
+cyan observed line, subdued dashed
 five-minute average and translucent trailing-five-minute low–high envelope share
 one plot. Their meanings remain in accessible chart descriptions rather than an
 always-visible trace legend. Prometheus calculates these statistics from the
@@ -99,7 +103,7 @@ cadence changes are required for this publication contract.
 The aircraft trail and all five graphs share one history response at the
 configured polling cadence (five seconds by default, with one second opt-in) and
 the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
-a saved custom window). This persisted **Display** duration is separate from
+a saved custom window). This persisted **LAST** display duration is separate from
 **Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. The selector remains in the globe legend
 pending [#218](https://github.com/bcl1713/starlink-dashboard/issues/218).

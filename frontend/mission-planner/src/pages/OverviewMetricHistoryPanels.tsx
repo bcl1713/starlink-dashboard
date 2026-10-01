@@ -55,8 +55,8 @@ export function OverviewMetricHistoryPanels({
     selectedWindowSeconds ?? history?.window_seconds ?? 1800;
   const display =
     windowSeconds % 60 === 0
-      ? `${windowSeconds / 60} ${windowSeconds === 60 ? 'minute' : 'minutes'}`
-      : `${windowSeconds} ${windowSeconds === 1 ? 'second' : 'seconds'}`;
+      ? `${windowSeconds / 60} MIN`
+      : `${windowSeconds} SEC`;
   return (
     <section
       className="overview-metric-history-panels"
@@ -67,27 +67,37 @@ export function OverviewMetricHistoryPanels({
         aria-label="Network history context"
       >
         <div className="overview-metric-history-panels__freshness">
-          <p role="status">Network {state}</p>
+          <p role="status">
+            Network
+            <span
+              className={
+                state === 'fresh' ? 'overview-visually-hidden' : undefined
+              }
+            >
+              {' '}
+              {state}
+            </span>
+          </p>
           {observedAge !== undefined && (
-            <span>
+            <span className="overview-metric-history-panels__age">
+              <span aria-hidden="true">- </span>
               {state === 'fresh' ? 'Updated' : 'Last observed'}{' '}
               {Math.floor(observedAge / 1000)}s ago
             </span>
           )}
         </div>
         <div className="overview-metric-history-panels__windows">
-          <p>Display: {display}</p>
-          <p>
-            <span className="overview-visually-hidden">
-              Rolling statistics: 5 minutes
-            </span>
-            <span aria-hidden="true">Rolling: 5 min</span>
+          <p>LAST {display}</p>
+          <p className="overview-visually-hidden">
+            Rolling statistics: 5 minutes
           </p>
         </div>
-        <p className="overview-metric-history-panels__error">
-          {statusError && <span>Status refresh unavailable</span>}
-          {error && <span>History refresh unavailable</span>}
-        </p>
+        {(statusError || error) && (
+          <p className="overview-metric-history-panels__error">
+            {statusError && <span>Status refresh unavailable</span>}
+            {error && <span>History refresh unavailable</span>}
+          </p>
+        )}
         <ul
           className="overview-metric-history__legend overview-visually-hidden"
           aria-label="Graph traces"

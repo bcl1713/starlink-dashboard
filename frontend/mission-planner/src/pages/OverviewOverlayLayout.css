@@ -40,9 +40,11 @@
   color: var(--overview-secondary);
   font-size: 13px;
   line-height: 1.3;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 4px 12px;
 }
 .overview-metric-history-panels__header p {
@@ -59,18 +61,18 @@
   font-weight: 600;
 }
 .overview-metric-history-panels__windows {
-  display: flex;
-  gap: 4px 12px;
-  flex-wrap: wrap;
+  text-align: right;
+  white-space: nowrap;
 }
 .overview-metric-history-panels__header .overview-metric-history-panels__error {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-  min-height: 18px;
   font-size: 14px;
   line-height: 18px;
+  text-transform: none;
+  font-weight: 400;
 }
 .overview-page .operational-clock {
   line-height: 1.2;
@@ -93,7 +95,7 @@
   }
   .overview-page .overview-bottom-overlays {
     position: absolute;
-    inset: 8rem auto 76px 20px;
+    inset: max(128px, 8rem) auto 76px 20px;
     margin: 0;
     width: 440px;
   }
@@ -136,7 +138,7 @@
   }
   :root:fullscreen .overview-page .overview-bottom-overlays {
     position: absolute;
-    inset: 8rem auto 20px 20px;
+    inset: max(128px, 8rem) auto 20px 20px;
     margin: 0;
     width: 440px;
   }

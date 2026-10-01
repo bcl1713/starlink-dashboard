@@ -86,15 +86,15 @@ keyboard focus, and text in addition to color for operational state. Tune
 against bright terrain, dark ocean, real viewport geometry and ten-foot viewing;
 these values are starting points rather than pixel-exact acceptance conditions.
 
-A separate, shared network-history header communicates one network freshness
-state, the selected display duration, and the **five-minute rolling-statistics
-window** as two distinctly named quantities. Remove “History available,”
-repeated per-panel trace keys and the separate Current network metrics box.
-Preserve the existing persisted history selection and configurable duration;
-removing a selector from the operational legend requires an accessible place to
-change it in existing configuration/controls, not silent deletion of the
-setting. Keep position-stale and route-unavailable states truthful outside the
-network group.
+The shared header shows `NETWORK - UPDATED 1s AGO` at left and `LAST 5 MIN` at
+right for a five-minute selection; `LAST` reflects the actual display duration.
+Per Brian's PR #229 follow-up, the **five-minute rolling-statistics window**
+stays distinct in accessible descriptions and operator guidance, without a
+visible rolling label. Keep partial, stale, unavailable and refresh errors
+explicit. Remove “History available,” repeated trace keys and the separate
+Current network metrics box. Preserve persisted history selection; moving its
+selector requires an accessible replacement control. Keep position-stale and
+route-unavailable states truthful outside the network group.
 
 ## Chart contract and motion
 

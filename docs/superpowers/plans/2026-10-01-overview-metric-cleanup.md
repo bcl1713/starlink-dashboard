@@ -113,14 +113,16 @@ the strong globe geography and day/night contrast visible around panels.
   derived from the existing visible plot edge, not a new wall-clock
   approximation. The selected display duration stays visible once for the group.
   Do not introduce a shared clock/lifecycle refactor.
-- Make the group context a slim strip: network freshness and observation age on
-  the left; display duration and `Rolling: 5 minutes` on the right or a compact
-  second line. For example, `NETWORK · UPDATED 1s AGO`,
-  `Display: 30 min · Rolling: 5 min`. Derive age from accepted verified status,
+- Make the group context a slim strip: `NETWORK - UPDATED 1s AGO` on the left
+  and `LAST 5 MIN` on the right for a five-minute selection. `LAST` reflects the
+  selected display duration, using `MIN` for whole minutes and `SEC` otherwise.
+  Keep the fixed five-minute rolling window in accessible descriptions and
+  user guidance; Brian selected this compact presentation in the PR #229
+  follow-up. Derive age from accepted verified status,
   never request completion or history evaluation time. Use explicit stale,
   partial and unavailable wording; show no update age without an observation.
-  The image's ambiguous `LAST 5 MIN` must not replace the two distinct windows.
-  Consolidate global status/history failure messages here.
+  Consolidate global status/history failure messages here, adding an exception
+  row only while an error is present. Wrap on narrow screens without clipping.
 - Remove the always-visible trace key and fresh per-panel `Observed ... UTC`
   line. Keep provenance and trace meanings in accessible descriptions and user
   guidance; no hover-only requirement for operational information.
@@ -177,7 +179,15 @@ width/height and motion rate together. Titles, values, axes and surfaces never
 enter the translated data layer. No per-frame data upload, extra query,
 fabricated future extension or claim of seamless arbitrary-outage recovery.
 
-## Implementation tasks
+## Implementation tasks and PR #229 follow-up
+
+- Retain pixel/rem fit floors; use `max(128px, 8rem)` for the fixed rail's top
+  inset in ordinary/fullscreen views. Assert context-versus-clock clearance.
+- Await fullscreen state, container geometry and the expected fixed/flow layout
+  after entry and exit. Cover 8/12/16/24px root text, short/narrow boundaries,
+  1920×1080 and a tall ordinary viewport that activates the fixed rail.
+- Capture compact-header/exception evidence; production, hardware motion and
+  ten-foot acceptance stay separate.
 
 Paths below are relative to `frontend/mission-planner/`, except `docs/`. Use
 focused RED/GREEN checks for changed behavior and rendered checks for

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 test.use({ viewport: { width: 1920, height: 1080 }, video: 'on' });
 const metrics = [
@@ -9,9 +9,57 @@ const metrics = [
   'starlink_dish_obstruction_percent',
 ];
 
+// Fullscreen events precede React's shell update and container-query layout.
+// Wait for the requested viewport, shell height, and distinguishing rail mode.
+async function waitForLayout(
+  page: Page,
+  viewport: { width: number; height: number },
+  fullscreen: boolean,
+  fixed: boolean
+) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const overview = document.querySelector('.overview-page')!;
+        const rail = document.querySelector('.overview-bottom-overlays')!;
+        const navigation = document.querySelector(
+          'nav[aria-label="Primary navigation"]'
+        );
+        const container = overview.getBoundingClientRect();
+        const navigationHeight =
+          navigation?.getBoundingClientRect().height ?? 0;
+        return {
+          fullscreen: document.fullscreenElement === document.documentElement,
+          navigation: !!navigation,
+          width: innerWidth,
+          height: innerHeight,
+          containerWidth: Math.round(container.width),
+          containerFillsShell:
+            Math.abs(container.height + navigationHeight - innerHeight) <= 1,
+          position: getComputedStyle(rail).position,
+          railWidth:
+            getComputedStyle(rail).position === 'absolute'
+              ? Math.round(rail.getBoundingClientRect().width)
+              : null,
+        };
+      })
+    )
+    .toEqual({
+      fullscreen,
+      navigation: !fullscreen,
+      width: viewport.width,
+      height: viewport.height,
+      containerWidth: viewport.width,
+      containerFillsShell: true,
+      position: fixed ? 'absolute' : 'relative',
+      railWidth: fixed ? 440 : null,
+    });
+}
+
 test('keeps five readable glass cards separate from POIs through missing-data states', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(180_000); // State coverage plus ordinary/fullscreen font-size matrix.
   let stale = false;
   let failedHistory = false;
   let emptyPois = false;
@@ -118,9 +166,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
   });
   await page.goto('/overview');
   await page.getByRole('button', { name: 'Enter fullscreen overview' }).click();
-  await expect
-    .poll(() => page.evaluate(() => !!document.fullscreenElement))
-    .toBe(true);
+  await waitForLayout(page, { width: 1920, height: 1080 }, true, true);
   const cards = page.locator('[data-metric-panel]');
   await expect(cards.locator('.uplot')).toHaveCount(5);
   await expect(cards.locator('.overview-metric-history__latest')).toHaveText([
@@ -154,6 +200,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
         poi: box('[aria-label="Upcoming POIs"]'),
         clocks: box('.overview-clock-panel'),
         legend: box('.globe-legend'),
+        context: box('[aria-label="Network history context"]'),
       };
     });
   const assertGeometry = (state: Awaited<ReturnType<typeof geometry>>) => {
@@ -161,6 +208,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
     expect(state.pageOverflow).toBe(false);
     expect(state.fonts).toEqual(Array(5).fill(36));
     expect(state.plots.every((height) => height >= 48)).toBe(true);
+    expect(state.context.top).toBeGreaterThan(state.clocks.bottom);
     for (const card of state.cards) {
       expect(card.x).toBe(20);
       expect(card.width).toBe(440);
@@ -173,6 +221,18 @@ test('keeps five readable glass cards separate from POIs through missing-data st
     expect(state.poi.bottom).toBeLessThanOrEqual(1060);
   };
   assertGeometry(await geometry());
+  const context = page.getByLabel('Network history context');
+  await expect(context.getByText('LAST 5 MIN', { exact: true })).toBeVisible();
+  await expect(context.getByText('fresh', { exact: true })).toHaveClass(
+    /overview-visually-hidden/
+  );
+  await expect(context.getByText('Rolling statistics: 5 minutes')).toHaveClass(
+    /overview-visually-hidden/
+  );
+  expect((await context.boundingBox())!.height).toBeLessThanOrEqual(42);
+  await expect(
+    context.locator('.overview-metric-history-panels__error')
+  ).toHaveCount(0);
   await expect(
     page.locator('.overview-metric-history__age').first()
   ).toHaveClass(/overview-visually-hidden/);
@@ -239,6 +299,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
   ).toHaveCount(0, { timeout: 12_000 });
   assertGeometry(await geometry());
   await page.evaluate(() => document.exitFullscreen());
+  await waitForLayout(page, { width: 1920, height: 1080 }, false, false);
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 844, height: 390 },
@@ -256,56 +317,70 @@ test('keeps five readable glass cards separate from POIs through missing-data st
       page.getByRole('button', { name: 'Enter fullscreen overview' })
     ).toHaveCount(1);
   }
-  // Smaller root text cannot lower the pixel floor needed by fixed-size cards.
-  await page.evaluate(() => {
-    document.documentElement.style.fontSize = '12px';
-  });
-  for (const viewport of [
-    { width: 1920, height: 900 },
-    { width: 1200, height: 1080 },
-    { width: 1920, height: 1080 },
-  ]) {
-    await page.setViewportSize(viewport);
-    for (const fullscreen of [false, true]) {
-      if (fullscreen)
+  // Reduced text must preserve clock clearance and pixel-sized card fit floors.
+  for (const rootSize of [8, 12, 16]) {
+    await page.evaluate((size) => {
+      document.documentElement.style.fontSize = `${size}px`;
+    }, rootSize);
+    for (const viewport of [
+      { width: 1920, height: 900 },
+      { width: 1200, height: 1080 },
+      { width: 1920, height: 1080 },
+      { width: 1920, height: 1280 },
+    ]) {
+      await page.setViewportSize(viewport);
+      for (const fullscreen of [false, true]) {
+        if (fullscreen)
+          await page
+            .getByRole('button', { name: 'Enter fullscreen overview' })
+            .click();
+        const fixed =
+          viewport.width === 1920 &&
+          (viewport.height === 1280 ||
+            (fullscreen && viewport.height === 1080));
+        await waitForLayout(page, viewport, fullscreen, fixed);
         await page
-          .getByRole('button', { name: 'Enter fullscreen overview' })
-          .click();
-      await page
-        .locator('.overview-page')
-        .evaluate((node) => node.scrollTo(0, 0));
-      await expect
-        .poll(async () => {
-          const state = await geometry();
-          return !state.overflow && state.cards[0].top >= state.clocks.bottom;
-        })
-        .toBe(true);
-      const state = await geometry();
-      const fixed =
-        fullscreen && viewport.width === 1920 && viewport.height === 1080;
-      expect(state.pageOverflow).toBe(!fixed);
-      expect(state.plots.every((height) => height >= 48)).toBe(true);
-      expect(
-        await cards.evaluateAll((nodes) =>
-          nodes.every((node) => {
-            const plot = node
-              .querySelector('.overview-metric-history__viewport')!
-              .getBoundingClientRect();
-            const card = node.getBoundingClientRect();
-            return plot.top >= card.top && plot.bottom <= card.bottom;
+          .locator('.overview-page')
+          .evaluate((node) => node.scrollTo(0, 0));
+        await expect
+          .poll(async () => {
+            const state = await geometry();
+            return !state.overflow && state.context.top > state.clocks.bottom;
           })
-        )
-      ).toBe(true);
-      await page.screenshot({
-        path: testInfo.outputPath(
-          `216-root12-${viewport.width}x${viewport.height}-${fullscreen ? 'fullscreen' : 'ordinary'}.png`
-        ),
-      });
-      await cards.last().scrollIntoViewIfNeeded();
-      await expect(cards.last()).toBeInViewport();
-      await page.getByLabel('Upcoming POIs').scrollIntoViewIfNeeded();
-      await expect(page.getByLabel('Upcoming POIs')).toBeInViewport();
-      if (fullscreen) await page.evaluate(() => document.exitFullscreen());
+          .toBe(true);
+        const state = await geometry();
+        expect(state.pageOverflow).toBe(!fixed);
+        expect(state.plots.every((height) => height >= 48)).toBe(true);
+        expect(
+          await cards.evaluateAll((nodes) =>
+            nodes.every((node) => {
+              const plot = node
+                .querySelector('.overview-metric-history__viewport')!
+                .getBoundingClientRect();
+              const card = node.getBoundingClientRect();
+              return plot.top >= card.top && plot.bottom <= card.bottom;
+            })
+          )
+        ).toBe(true);
+        await page.screenshot({
+          path: testInfo.outputPath(
+            `216-root${rootSize}-${viewport.width}x${viewport.height}-${fullscreen ? 'fullscreen' : 'ordinary'}.png`
+          ),
+        });
+        await cards.last().scrollIntoViewIfNeeded();
+        await expect(cards.last()).toBeInViewport();
+        await page.getByLabel('Upcoming POIs').scrollIntoViewIfNeeded();
+        await expect(page.getByLabel('Upcoming POIs')).toBeInViewport();
+        if (fullscreen) {
+          await page.evaluate(() => document.exitFullscreen());
+          await waitForLayout(
+            page,
+            viewport,
+            false,
+            viewport.width === 1920 && viewport.height === 1280
+          );
+        }
+      }
     }
   }
   // Root/default text enlargement must select readable flow before clocks can
@@ -323,13 +398,14 @@ test('keeps five readable glass cards separate from POIs through missing-data st
         await page
           .getByRole('button', { name: 'Enter fullscreen overview' })
           .click();
+      await waitForLayout(page, viewport, fullscreen, false);
       await page
         .locator('.overview-page')
         .evaluate((node) => node.scrollTo(0, 0));
       await expect
         .poll(async () => {
           const state = await geometry();
-          return state.cards[0].top >= state.clocks.bottom && !state.overflow;
+          return state.context.top > state.clocks.bottom && !state.overflow;
         })
         .toBe(true);
       const context = page.getByLabel('Network history context');
@@ -351,7 +427,10 @@ test('keeps five readable glass cards separate from POIs through missing-data st
       });
       await cards.last().scrollIntoViewIfNeeded();
       await expect(cards.last()).toBeInViewport();
-      if (fullscreen) await page.evaluate(() => document.exitFullscreen());
+      if (fullscreen) {
+        await page.evaluate(() => document.exitFullscreen());
+        await waitForLayout(page, viewport, false, false);
+      }
     }
   }
 });

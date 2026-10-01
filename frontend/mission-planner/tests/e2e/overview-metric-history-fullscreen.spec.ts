@@ -525,7 +525,13 @@ test.describe('Overview metric history', () => {
     await expect(graphs.getByRole('status')).toHaveCount(0, {
       timeout: 12_000,
     });
+    await expect(
+      page.getByText('History refresh unavailable', { exact: true })
+    ).toHaveCount(0);
     assertLayout(await layout());
+    // The compact header contracts when its exception clears. Isolate POI
+    // collapse from that intended header change when comparing card positions.
+    const recoveredLayout = await layout();
     collapsePois = true;
     await expect(pois.locator('tbody tr')).toHaveCount(0, { timeout: 12_000 });
     await pois.evaluate(async (node) => {
@@ -538,7 +544,7 @@ test.describe('Overview metric history', () => {
     const collapsed = await layout();
     expect(collapsed.poi.height).toBeLessThan(firstLayout.poi.height - 100);
     expect(
-      Math.abs(collapsed.boxes[0].top - firstLayout.boxes[0].top)
+      Math.abs(collapsed.boxes[0].top - recoveredLayout.boxes[0].top)
     ).toBeLessThanOrEqual(1);
     expect(Math.abs(1080 - collapsed.poi.bottom - 20)).toBeLessThanOrEqual(1);
     expect(collapsed.boxes[4].right).toBeLessThanOrEqual(collapsed.poi.left);
