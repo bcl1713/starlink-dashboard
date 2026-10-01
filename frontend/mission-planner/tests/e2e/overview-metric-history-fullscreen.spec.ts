@@ -103,11 +103,11 @@ test.describe('Overview metric history', () => {
       route.fulfill({
         json: {
           state: collapsePois ? 'no_generated_pois' : 'available',
-          calculated_at: new Date(now).toISOString(),
+          calculated_at: new Date().toISOString(),
           flight_phase: 'in_flight',
           scheduled_departure_time: null,
           position_state: 'fresh',
-          position_observed_at: new Date(now).toISOString(),
+          position_observed_at: new Date().toISOString(),
           pois: (collapsePois ? [] : names).map((name, index) => ({
             poi_id: `busy-${index}`,
             projected_route_progress: 10 + index * 20,
