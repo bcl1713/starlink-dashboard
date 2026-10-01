@@ -10,7 +10,8 @@ PR #229. Implementation branch: `feat/217-arrival-states`.
 ## Approved behavior
 
 Replace the five-row table with one compact panel using the existing
-bottom-center placement and shared glass styling. Center the panel on the screen,
+bottom-center placement and shared glass styling. Center the panel on the
+screen,
 fit its content, center section text and divide paired sections vertically.
 Sections stack with a horizontal divider when the available panel width is
 narrow. Before flight, show only
@@ -36,15 +37,18 @@ accessible. Long names wrap; narrow layouts stack the sections.
   live/simulated coordinates; preserve cache age. Invalid/default GPS positions
   remain unverified and do not enter movement trackers. Zero is a valid
   coordinate. Require fresh, verified positions and measured speed for automatic
-  flight detection; telemetry gaps break departure and arrival persistence without
+  flight detection; telemetry gaps break departure and arrival persistence
+  without
   changing confirmed phase. Distinguish measured stationary speed from the
   numeric compatibility zero during startup or recovery.
 - Extend the existing endpoint with flight phase, effective scheduled departure,
   position collection timestamp and freshness state. Retain generated records
-  for map context when in-flight estimates are unavailable. Suppress timing until
-  speed has sufficient verified observations after startup or GPS/RPC recovery. Include
-  same-sample
-  route progress to distinguish passed destination from unknown eligibility.
+  for map context when in-flight estimates are unavailable. Suppress timing
+  until
+  speed has sufficient verified observations after startup or GPS/RPC recovery.
+  Include
+  same-sample route progress to distinguish passed destination from unknown
+  eligibility.
 - Derive panel state outside the view using the existing shared clock. Suppress
   timing on stale/invalid position or failed/expired arrival refresh. Missing
   mission, route, schedule, destination and estimates remain explicit.
