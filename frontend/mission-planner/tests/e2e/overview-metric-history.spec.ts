@@ -1160,6 +1160,26 @@ test.describe('Overview provenance motion recording', () => {
     await page.screenshot({
       path: testInfo.outputPath('overview-provenance-rotated-1920x1080.png'),
     });
+    // Continue real orbit input to inspect the illuminated hemisphere as well
+    // as the ocean view; no pixel/DOM geography is manufactured.
+    const orbitLayouts = [];
+    for (let view = 1; view <= 6; view++) {
+      await page.mouse.move(960, 500);
+      await page.mouse.down();
+      await page.mouse.move(1110, 500, { steps: 12 });
+      await page.mouse.up();
+      await page.waitForTimeout(600);
+      const layout = await cameraLayout();
+      expect(layout).toEqual(cameraBefore);
+      orbitLayouts.push(layout);
+      await page.screenshot({
+        path: testInfo.outputPath(`overview-orbit-${view}-1920x1080.png`),
+      });
+    }
+    await writeFile(
+      testInfo.outputPath('orbit-layouts.json'),
+      JSON.stringify(orbitLayouts, null, 2)
+    );
     await page.setViewportSize({ width: 1600, height: 1080 });
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.getByLabel('Aircraft history window').selectOption('900');
