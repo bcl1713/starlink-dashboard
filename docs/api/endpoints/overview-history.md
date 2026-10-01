@@ -71,14 +71,18 @@ Returned snapshots are never modified by a later refresh. Retention is capped at
 Full loads also occur after settings invalidation, a backwards wall-clock jump,
 a gap longer than 30 seconds, usable source/label changes, aggregate recovery,
 and every five minutes of demand. Repeated persistent ambiguity does not cause
-an endless full-load loop. A metric rejected for ambiguity stays withheld until
-a source transition or full reconciliation proves its window unambiguous. The
-ten-second overlap is a provisional supported ingestion-lateness bound, chosen
-against the bundled one-second scrape interval and timeout; it requires
-representative-host validation. Arbitrary older corrections are reconciled by
-the next demand-driven full load, rather than being promised immediately. There
-is no background history polling without viewers. Restart clears the cache;
-changing the Prometheus URL or metric allowlist requires restart.
+an endless full-load loop. When a clean tail cannot resolve ambiguity in the
+full window, that unsuccessful aggregate recovery is remembered until the tail
+becomes unavailable, its source changes, or scheduled reconciliation runs.
+Transport and malformed-response failures keep their normal recovery retries. A
+metric rejected for ambiguity stays withheld until a source transition or full
+reconciliation proves its window unambiguous. The ten-second overlap is a
+provisional supported ingestion-lateness bound, chosen against the bundled
+one-second scrape interval and timeout; it requires representative-host
+validation. Arbitrary older corrections are reconciled by the next demand-driven
+full load, rather than being promised immediately. There is no background
+history polling without viewers. Restart clears the cache; changing the
+Prometheus URL or metric allowlist requires restart.
 
 A failed raw refresh returns 503 and does not advance the last-good snapshot.
 Failures are shared; retry delays increase monotonically from one to five

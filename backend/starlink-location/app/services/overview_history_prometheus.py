@@ -225,8 +225,9 @@ async def query_overview_history_bundle(
     # Imported here because the rollup projector shares this module's query plan.
     from app.services.overview_history_rollups import query_overview_history_rollups
 
+    rollup_ambiguity: set[str] = set()
     rollups = await query_overview_history_rollups(
-        client, plan, deadline=rollup_deadline
+        client, plan, deadline=rollup_deadline, ambiguity=rollup_ambiguity
     )
     # Trailing statistics can remain finite after current telemetry disappears.
     # Require a finite raw point at the same evaluation step, without claiming
@@ -250,4 +251,5 @@ async def query_overview_history_bundle(
         from app.services.overview_history_identity import raw_source_identity
 
         bundle["_identity"] = raw_source_identity(payload, plan)
+        bundle["_rollup_ambiguity"] = rollup_ambiguity
     return bundle

@@ -1,5 +1,6 @@
 import type { StatusResponse } from '../services/status';
 import type { OverviewMetricGraphDescriptor } from './overview-metric-history';
+import { isStatusStale, statusObservationAgeMs } from './status-freshness';
 
 export interface MetricReadout {
   value: number;
@@ -19,8 +20,8 @@ export function statusMetricReadout(
 ): MetricReadout | null {
   if (!status || typeof status.timestamp !== 'string') return null;
   const observedAtMs = Date.parse(status.timestamp);
-  const ageMs = nowMs - observedAtMs;
-  if (!Number.isFinite(observedAtMs) || !Number.isFinite(ageMs) || ageMs < 0) {
+  const ageMs = statusObservationAgeMs(status.timestamp, nowMs);
+  if (ageMs === null) {
     return null;
   }
 
@@ -61,7 +62,10 @@ export function statusMetricReadout(
     value,
     observedAtMs,
     ageMs,
-    state: requestFailed || ageMs >= 5_000 ? 'stale' : 'fresh',
+    state:
+      requestFailed || isStatusStale(status.timestamp, nowMs)
+        ? 'stale'
+        : 'fresh',
   };
 }
 

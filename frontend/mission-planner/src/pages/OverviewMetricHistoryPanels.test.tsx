@@ -172,6 +172,40 @@ describe('OverviewMetricHistoryPanels', () => {
     ).toBe('Network stale');
     expect(plot.setData).not.toHaveBeenCalled();
   });
+  it('keeps readouts stable as each status arrives between clock ticks', () => {
+    const status = statusFixture();
+    const history = bundle();
+    const view = render(group(status, 105_000, false, false, history));
+    for (let second = 105; second < 115; second += 1) {
+      const timestamp = new Date(second * 1000 + 750).toISOString();
+      for (const now of [second * 1000, (second + 1) * 1000]) {
+        view.rerender(
+          group({ ...status, timestamp }, now, false, false, history)
+        );
+        expect(
+          latency(view.container).querySelector('strong')?.textContent
+        ).toBe('7 ms');
+        expect(
+          within(screen.getByLabelText('Network history context')).getByRole(
+            'status'
+          ).textContent
+        ).toBe('Network fresh');
+      }
+    }
+    view.rerender(
+      group(
+        { ...status, timestamp: '1970-01-01T00:01:54.750Z' },
+        124_750,
+        false,
+        false,
+        history
+      )
+    );
+    expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+      'Unavailable'
+    );
+    expect(plot.setData).not.toHaveBeenCalled();
+  });
   it('retains status on failed refresh but never presents it as current', () => {
     const view = render(group());
     view.rerender(group(null, 109_000, true));

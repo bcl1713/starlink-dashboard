@@ -42,6 +42,7 @@ class OverviewHistoryReader:
         self._last_full = 0
         self._last_clock: int | None = None
         self._identity: dict = {}
+        self._unreconciled_rollups: set[str] = set()
         self._failure: str | None = None
         self._retry_at = 0.0
         self._failures = 0
@@ -52,6 +53,7 @@ class OverviewHistoryReader:
         self._generation += 1
         self._snapshot = self._public = None
         self._identity = {}
+        self._unreconciled_rollups = set()
         self._failure = None
         self._retry_at = 0
         self._failures = 0
@@ -156,18 +158,40 @@ class OverviewHistoryReader:
             async with asyncio.timeout_at(deadline):
                 incoming = await fetch(query_plan)
                 identity = incoming["_identity"]
+                unreconciled = self._unreconciled_rollups.copy()
                 changed = any(
                     metric in self._identity and value != self._identity[metric]
                     for metric, value in identity.items()
                 )
+                if not full:
+                    # A failed tail arms recovery again, including real I/O failures.
+                    unreconciled.intersection_update(
+                        metric
+                        for metric, entry in incoming["rolling_5m"].items()
+                        if entry["state"] == "available"
+                    )
                 recovered = previous is not None and any(
                     old["state"] == "unavailable"
                     and incoming["rolling_5m"][metric]["state"] == "available"
+                    and metric not in unreconciled
                     for metric, old in previous["rolling_5m"].items()
                 )
                 if not full and (changed or recovered):
+                    tail_rollups = incoming["rolling_5m"]
                     incoming = await fetch(plan)
+                    # A clean tail cannot resolve retired sources in the full window.
+                    # Remember the unsuccessful reconciliation until a tail failure,
+                    # source transition, or scheduled full load warrants another try.
+                    unreconciled = {
+                        metric
+                        for metric, entry in tail_rollups.items()
+                        if entry["state"] == "available"
+                        and incoming["rolling_5m"][metric]["state"] == "unavailable"
+                        and metric in incoming["_rollup_ambiguity"]
+                    }
                     full = True
+                if full:
+                    unreconciled.intersection_update(incoming["_rollup_ambiguity"])
                 snapshot = incoming
                 if not full:
                     assert previous is not None
@@ -182,6 +206,7 @@ class OverviewHistoryReader:
                     if not key.startswith("_")
                 }
                 self._identity.update(identity)
+                self._unreconciled_rollups = unreconciled
                 if full:
                     self._last_full = end
                 self._failure = None

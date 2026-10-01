@@ -22,8 +22,10 @@ class PrometheusFixture:
         self.corrections = {}
         self.label = "first"
         self.ambiguous = False
+        self.retired_until = None
         self.fail_raw = False
         self.fail_rollup = False
+        self.fail_full_rollup = False
         self.started = asyncio.Event()
         self.release = None
         self.rollup_release = None
@@ -42,7 +44,16 @@ class PrometheusFixture:
             raw = params["query"].startswith("{")
             if not raw and self.rollup_release is not None:
                 await self.rollup_release.wait()
-            if (raw and self.fail_raw) or (not raw and self.fail_rollup):
+            full_rollup_failure = (
+                not raw
+                and self.fail_full_rollup
+                and int(params["end"]) - int(params["start"]) > 30
+            )
+            if (
+                (raw and self.fail_raw)
+                or (not raw and self.fail_rollup)
+                or full_rollup_failure
+            ):
                 return httpx.Response(503)
             times = range(
                 int(params["start"]), int(params["end"]) + 1, int(params["step"])
@@ -74,6 +85,15 @@ class PrometheusFixture:
                 result.append(entry)
                 if raw and self.ambiguous and metric == ROLLUP_METRICS[0]:
                     result.append({**entry, "metric": {**labels, "instance": "second"}})
+                if self.retired_until is not None and metric == ROLLUP_METRICS[0]:
+                    retired = [pair for pair in values if pair[0] <= self.retired_until]
+                    if retired:
+                        result.append(
+                            {
+                                "metric": {**labels, "instance": "retired"},
+                                "values": retired,
+                            }
+                        )
             return httpx.Response(
                 200,
                 json={

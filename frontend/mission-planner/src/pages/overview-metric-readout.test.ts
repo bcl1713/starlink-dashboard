@@ -57,11 +57,11 @@ describe('status metric readout', () => {
       state: 'fresh',
     });
     expect(
-      statusMetricReadout(statusFixture(), descriptor, 110_000, false)
+      statusMetricReadout(statusFixture(), descriptor, 115_000, false)
     ).toEqual({
       value,
       observedAtMs: 105_000,
-      ageMs: 5_000,
+      ageMs: 10_000,
       state: 'stale',
     });
   });
@@ -113,7 +113,7 @@ describe('status metric readout', () => {
     expect(project(status)).toEqual([null, null, null, null, null]);
   });
 
-  it.each(['1970-01-01T00:01:50.000Z', 'not-a-timestamp', '', undefined, null])(
+  it.each(['1970-01-01T00:01:54.001Z', 'not-a-timestamp', '', undefined, null])(
     'rejects future, malformed or absent timestamp %s',
     (timestamp) => {
       const status = statusFixture();
@@ -121,6 +121,19 @@ describe('status metric readout', () => {
       expect(project(status)).toEqual([null, null, null, null, null]);
     }
   );
+
+  it('keeps valid observations fresh across polling jitter and bounded skew', () => {
+    for (const nowMs of [100_000, 104_001, 105_000, 110_000, 114_999]) {
+      const readouts = project(statusFixture(), nowMs);
+      expect(networkStatusState(readouts)).toBe('fresh');
+      expect(readouts[0]?.observedAtMs).toBe(105_000);
+      expect(readouts[0]?.ageMs).toBe(Math.max(0, nowMs - 105_000));
+    }
+    expect(networkStatusState(project(statusFixture(), 115_000))).toBe('stale');
+    expect(networkStatusState(project(statusFixture(), 99_999))).toBe(
+      'unavailable'
+    );
+  });
 
   it.each([NaN, Infinity, -Infinity])(
     'rejects an invalid observation clock %s',
@@ -185,7 +198,7 @@ describe('network status state', () => {
   });
 
   it('reports stale when every metric reaches the collection-age boundary', () => {
-    expect(networkStatusState(project(statusFixture(), 110_000))).toBe('stale');
+    expect(networkStatusState(project(statusFixture(), 115_000))).toBe('stale');
   });
 
   it('reports partial for mixed fresh and stale observations', () => {
@@ -195,7 +208,7 @@ describe('network status state', () => {
   });
 
   it('reports partial for stale observations mixed with unavailable metrics', () => {
-    const readouts = project(statusFixture(), 110_000);
+    const readouts = project(statusFixture(), 115_000);
     readouts[0] = null;
     expect(networkStatusState(readouts)).toBe('partial');
   });
