@@ -83,7 +83,7 @@
   z-index: auto;
 }
 
-@container overview (min-width: 93.75rem) and (min-height: 67.5rem) {
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1080px) and (min-height: 67.5rem) {
   .overview-metric-history__header h3 {
     font-size: 26px;
   }

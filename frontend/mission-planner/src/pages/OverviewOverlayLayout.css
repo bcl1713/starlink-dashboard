@@ -81,7 +81,7 @@
   }
 }
 
-@container overview (min-width: 93.75rem) and (min-height: 71.25rem) {
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1140px) and (min-height: 71.25rem) {
   .overview-page .overview-globe {
     position: absolute !important;
   }
@@ -124,7 +124,7 @@
   }
 }
 
-@container overview (min-width: 93.75rem) and (min-height: 67.5rem) {
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1080px) and (min-height: 67.5rem) {
   :root:fullscreen .overview-page .overview-globe {
     position: absolute !important;
   }

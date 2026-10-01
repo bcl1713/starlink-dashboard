@@ -504,9 +504,10 @@ test.describe('Overview metric history', () => {
       await expect(panel.getByRole('status')).toHaveText(
         'Last-known history; refresh unavailable'
       );
+      // History failure can precede expiry of the ten-second status sample.
       await expect(
         panel.locator('.overview-metric-history__latest')
-      ).toHaveText('Unavailable');
+      ).toHaveText('Unavailable', { timeout: 15_000 });
       await expect(
         panel.locator('.overview-metric-history__age')
       ).toContainText('Last observed');

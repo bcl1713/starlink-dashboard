@@ -256,6 +256,58 @@ test('keeps five readable glass cards separate from POIs through missing-data st
       page.getByRole('button', { name: 'Enter fullscreen overview' })
     ).toHaveCount(1);
   }
+  // Smaller root text cannot lower the pixel floor needed by fixed-size cards.
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '12px';
+  });
+  for (const viewport of [
+    { width: 1920, height: 900 },
+    { width: 1200, height: 1080 },
+    { width: 1920, height: 1080 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const fullscreen of [false, true]) {
+      if (fullscreen)
+        await page
+          .getByRole('button', { name: 'Enter fullscreen overview' })
+          .click();
+      await page
+        .locator('.overview-page')
+        .evaluate((node) => node.scrollTo(0, 0));
+      await expect
+        .poll(async () => {
+          const state = await geometry();
+          return !state.overflow && state.cards[0].top >= state.clocks.bottom;
+        })
+        .toBe(true);
+      const state = await geometry();
+      const fixed =
+        fullscreen && viewport.width === 1920 && viewport.height === 1080;
+      expect(state.pageOverflow).toBe(!fixed);
+      expect(state.plots.every((height) => height >= 48)).toBe(true);
+      expect(
+        await cards.evaluateAll((nodes) =>
+          nodes.every((node) => {
+            const plot = node
+              .querySelector('.overview-metric-history__viewport')!
+              .getBoundingClientRect();
+            const card = node.getBoundingClientRect();
+            return plot.top >= card.top && plot.bottom <= card.bottom;
+          })
+        )
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `216-root12-${viewport.width}x${viewport.height}-${fullscreen ? 'fullscreen' : 'ordinary'}.png`
+        ),
+      });
+      await cards.last().scrollIntoViewIfNeeded();
+      await expect(cards.last()).toBeInViewport();
+      await page.getByLabel('Upcoming POIs').scrollIntoViewIfNeeded();
+      await expect(page.getByLabel('Upcoming POIs')).toBeInViewport();
+      if (fullscreen) await page.evaluate(() => document.exitFullscreen());
+    }
+  }
   // Root/default text enlargement must select readable flow before clocks can
   // collide with the fixed desktop rail, in ordinary and native fullscreen.
   await page.evaluate(() => {
@@ -292,13 +344,13 @@ test('keeps five readable glass cards separate from POIs through missing-data st
             .evaluate((node) => node.scrollHeight > node.clientHeight)
         )
         .toBe(true);
-      await cards.last().scrollIntoViewIfNeeded();
-      await expect(cards.last()).toBeInViewport();
       await page.screenshot({
         path: testInfo.outputPath(
           `216-root24-${viewport.width}x${viewport.height}-${fullscreen ? 'fullscreen' : 'ordinary'}.png`
         ),
       });
+      await cards.last().scrollIntoViewIfNeeded();
+      await expect(cards.last()).toBeInViewport();
       if (fullscreen) await page.evaluate(() => document.exitFullscreen());
     }
   }
