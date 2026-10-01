@@ -107,6 +107,13 @@ eligibility; invalid position cannot establish progress. The frontend rechecks
 age between polls and suppresses timing on failed/expired refreshes.
 Predeparture schedule timing does not depend on position freshness.
 
+In-flight timing also requires an independently fresh, verified speed observation.
+The live GPS tracker needs two verified samples with at least 0.1 seconds of
+elapsed coverage. Startup, GPS loss and RPC failures reset that coverage; the
+first recovered position retains map context but cannot enable timing using a
+placeholder zero. Genuine measured stationary zero remains usable. Speed
+provenance is internal telemetry metadata; it does not change `/api/status`.
+
 `current_route_progress` is the route progress derived from that same position,
 or null when unknown. A destination is labeled passed only when progress
 establishes it; an unknown eligibility state is not evidence of passage.

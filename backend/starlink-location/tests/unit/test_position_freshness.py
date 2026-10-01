@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.services.position_freshness import position_observation
+from app.services.position_freshness import position_observation, speed_is_fresh
 
 NOW = datetime(2026, 10, 1, 12, tzinfo=timezone.utc)
 
@@ -43,3 +43,22 @@ def test_unverified_position_fails_closed(latitude, longitude, observed):
         None,
         "unavailable",
     )
+
+
+@pytest.mark.parametrize(
+    ("speed", "observed", "expected"),
+    [
+        (0, NOW, True),
+        (200, NOW, True),
+        (0, None, False),
+        (200, None, False),
+        (200, NOW - timedelta(seconds=10), False),
+        (200, NOW + timedelta(seconds=5.001), False),
+        (200, NOW.replace(tzinfo=None), False),
+        (True, NOW, False),
+        (-1, NOW, False),
+        (float("nan"), NOW, False),
+    ],
+)
+def test_speed_requires_its_own_fresh_observation(speed, observed, expected):
+    assert speed_is_fresh(speed, observed, NOW) is expected

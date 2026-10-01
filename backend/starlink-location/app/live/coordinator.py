@@ -2,6 +2,7 @@
 
 import logging
 import time
+from datetime import datetime, timezone
 
 import starlink_grpc
 from grpc import RpcError
@@ -10,6 +11,7 @@ from app.live.client import StarlinkClient
 from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
 from app.services.heading_tracker import HeadingTracker
+from app.services.position_freshness import position_observation
 from app.services.speed_tracker import SpeedTracker
 
 logger = logging.getLogger(__name__)
@@ -104,6 +106,8 @@ class LiveCoordinator:
             self._connection_status = False
 
             # Return None when disconnected to prevent publishing stale/invalid data
+            self.heading_tracker.reset()
+            self.speed_tracker.reset()
             # This ensures Prometheus doesn't get polluted with zeros or old values
             return None
 
@@ -125,7 +129,14 @@ class LiveCoordinator:
         telemetry = self.client.get_telemetry()
 
         # Missing/default GPS coordinates must not contaminate movement history.
-        if telemetry.position.observed_at is None:
+        _, position_state = position_observation(
+            telemetry.position.latitude,
+            telemetry.position.longitude,
+            telemetry.position.observed_at,
+            datetime.now(timezone.utc),
+        )
+        telemetry.position.speed_observed_at = None
+        if position_state != "fresh":
             self.heading_tracker.reset()
             self.speed_tracker.reset()
             return telemetry
@@ -148,6 +159,8 @@ class LiveCoordinator:
         # Update position with calculated heading and speed
         telemetry.position.heading = heading
         telemetry.position.speed = speed
+        if self.speed_tracker.has_observation():
+            telemetry.position.speed_observed_at = telemetry.position.observed_at
 
         logger.debug(
             f"Telemetry collected: "

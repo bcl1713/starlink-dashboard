@@ -52,6 +52,13 @@ observation. Missing/invalid GPS coordinates have no verified observation;
 genuine zero coordinates remain valid. The timestamp describes collection of
 returned coordinates, not a receiver-provided GPS fix timestamp.
 
+In-flight estimates also require a fresh speed observation. Live GPS needs at
+least two verified position samples covering 0.1 seconds before speed is known;
+the initial compatibility zero cannot enable an ETA. A measured stationary zero
+is valid. Missing, stale or failed GPS resets tracking. Automatic flight detection
+also requires verified position and speed, and missing observations break arrival
+dwell and departure persistence without changing the confirmed flight phase.
+
 Stale/invalid position suppresses ETA and countdown, with an explicit reason.
 Known names and map records remain; stale valid coordinates may identify the
 last-known next event, while invalid coordinates cannot establish route

@@ -48,7 +48,9 @@ def test_status_projects_availability_without_mutating_batch(
     data = response.json()
     assert data["timestamp"] == "2020-01-02T00:00:00+00:00"
     assert data["position"] == {
-        key: value for key, value in payload["position"].items() if key != "observed_at"
+        key: value
+        for key, value in payload["position"].items()
+        if key not in {"observed_at", "speed_observed_at"}
     }
     assert "observed_at" not in data["position"]
     assert data["environmental"] == payload["environmental"]

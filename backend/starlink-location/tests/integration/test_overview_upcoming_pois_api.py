@@ -257,7 +257,11 @@ def test_api_uses_active_route_telemetry_without_endpoint_defaults(client, monke
     coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=200
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=-73.0,
+                speed=200,
             )
         )
     )
@@ -311,7 +315,11 @@ def test_api_estimates_interior_projected_mission_event_from_route_progress(
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=300
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=-73.0,
+                speed=300,
             )
         )
     )
@@ -367,7 +375,11 @@ def test_api_projected_event_uses_segment_speeds(client, monkeypatch):
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=300
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=-73.0,
+                speed=300,
             )
         )
     )
@@ -414,7 +426,11 @@ def test_api_leaves_out_of_range_telemetry_projected_event_eta_unavailable(
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=181.0, speed=300
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=181.0,
+                speed=300,
             )
         )
     )
@@ -468,7 +484,11 @@ def test_api_leaves_unsafe_projected_event_eta_unavailable(
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=300
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=-73.0,
+                speed=300,
             )
         )
     )
@@ -510,7 +530,11 @@ def test_api_leaves_projected_event_behind_aircraft_without_eta(client, monkeypa
     client.app.state.coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=-71.0, speed=300
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=-71.0,
+                speed=300,
             )
         )
     )
@@ -712,7 +736,11 @@ def test_api_in_flight_eta_uses_fixed_telemetry_not_schedule_and_changes_for_det
     coordinator = SimpleNamespace(
         get_current_telemetry=lambda: SimpleNamespace(
             position=SimpleNamespace(
-                observed_at=NOW, latitude=40.0, longitude=-73.0, speed=200
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=40.0,
+                longitude=-73.0,
+                speed=200,
             )
         )
     )
@@ -779,7 +807,11 @@ def test_api_exposes_exact_position_provenance_and_keeps_map_context(
         get_current_telemetry=lambda: SimpleNamespace(
             timestamp=NOW,
             position=SimpleNamespace(
-                observed_at=observed, latitude=40.0, longitude=-73.0, speed=300
+                observed_at=observed,
+                speed_observed_at=observed,
+                latitude=40.0,
+                longitude=-73.0,
+                speed=300,
             ),
         )
     )

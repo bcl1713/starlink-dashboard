@@ -20,15 +20,30 @@ def position_observation(
     latitude: object, longitude: object, observed_at: object, now: datetime
 ) -> tuple[datetime | None, PositionState]:
     """Classify same-sample collection age; unknown provenance fails closed."""
-    if (
-        not valid_coordinate(latitude, 90)
-        or not valid_coordinate(longitude, 180)
-        or not isinstance(observed_at, datetime)
-        or observed_at.utcoffset() is None
-    ):
+    if not valid_coordinate(latitude, 90) or not valid_coordinate(longitude, 180):
+        return None, "unavailable"
+    return observation_time(observed_at, now)
+
+
+def observation_time(
+    observed_at: object, now: datetime
+) -> tuple[datetime | None, PositionState]:
+    """Classify a verified observation timestamp without renewing its age."""
+    if not isinstance(observed_at, datetime) or observed_at.utcoffset() is None:
         return None, "unavailable"
     observed_at = observed_at.astimezone(timezone.utc)
     age = (now - observed_at).total_seconds()
     if age < -5:
         return None, "unavailable"
     return observed_at, "stale" if age >= 10 else "fresh"
+
+
+def speed_is_fresh(speed: object, observed_at: object, now: datetime) -> bool:
+    """Require a verified speed observation, allowing measured stationary zero."""
+    return (
+        isinstance(speed, (int, float))
+        and not isinstance(speed, bool)
+        and isfinite(speed)
+        and speed >= 0
+        and observation_time(observed_at, now)[1] == "fresh"
+    )

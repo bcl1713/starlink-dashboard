@@ -26,8 +26,8 @@
   pointer-events: none;
 }
 .overview-page .overview-arrival-overlays {
-  width: max-content;
-  max-width: calc(100% - 32px);
+  container: arrival / inline-size;
+  width: calc(100% - 32px);
   margin: 16px auto;
 }
 .overview-metric-history-panels {
@@ -115,7 +115,7 @@
     position: absolute;
     inset: auto auto 20px 50%;
     margin: 0;
-    max-width: calc(100% - 960px);
+    width: calc(100% - 960px);
     transform: translateX(-50%);
   }
   .overview-page .globe-legend {
@@ -159,7 +159,7 @@
     position: absolute;
     inset: auto auto 20px 50%;
     margin: 0;
-    max-width: calc(100% - 960px);
+    width: calc(100% - 960px);
     transform: translateX(-50%);
   }
   :root:fullscreen .overview-page .globe-legend {

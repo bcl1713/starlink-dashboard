@@ -12,7 +12,8 @@ PR #229. Implementation branch: `feat/217-arrival-states`.
 Replace the five-row table with one compact panel using the existing
 bottom-center placement and shared glass styling. Center the panel on the screen,
 fit its content, center section text and divide paired sections vertically.
-Narrow layouts stack sections with a horizontal divider. Before flight, show only
+Sections stack with a horizontal divider when the available panel width is
+narrow. Before flight, show only
 **SCHEDULED DEPARTURE · name**, its effective mission schedule in UTC and an
 hours/minutes countdown. After the scheduled time, show red elapsed text such as
 **12 MIN AGO** or **<1 MIN AGO**, without a minus sign. Departure scheduling
@@ -34,10 +35,15 @@ accessible. Long names wrap; narrow layouts stack the sections.
 - Add nullable collection provenance to internal position telemetry. Stamp valid
   live/simulated coordinates; preserve cache age. Invalid/default GPS positions
   remain unverified and do not enter movement trackers. Zero is a valid
-  coordinate.
+  coordinate. Require fresh, verified positions and measured speed for automatic
+  flight detection; telemetry gaps break departure and arrival persistence without
+  changing confirmed phase. Distinguish measured stationary speed from the
+  numeric compatibility zero during startup or recovery.
 - Extend the existing endpoint with flight phase, effective scheduled departure,
   position collection timestamp and freshness state. Retain generated records
-  for map context when in-flight estimates are unavailable. Include same-sample
+  for map context when in-flight estimates are unavailable. Suppress timing until
+  speed has sufficient verified observations after startup or GPS/RPC recovery. Include
+  same-sample
   route progress to distinguish passed destination from unknown eligibility.
 - Derive panel state outside the view using the existing shared clock. Suppress
   timing on stale/invalid position or failed/expired arrival refresh. Missing
@@ -52,6 +58,7 @@ accessible. Long names wrap; narrow layouts stack the sections.
 
 Focused source/contract tests cover coordinate validity, genuine zero,
 collection/cache timestamps, freshness boundaries, missing coordinator data,
+actual coordinator speed recovery and metrics-to-phase detection continuity,
 adjusted schedules and retained map records. Derivation/component tests cover
 route ordering, identity, untimed events, destinations outside the old top five,
 phase transitions, early/late departure, unavailable estimates and UTC rollover.
@@ -59,7 +66,9 @@ phase transitions, early/late departure, unavailable estimates and UTC rollover.
 Run canonical backend, frontend and static gates against the pinned baseline.
 Capture exact-candidate desktop ordinary/fullscreen and narrow browser evidence
 for intermediate, destination-only, early/late departure, stale/missing and
-landed states. Retain metric-motion and geometry regressions; review the updated
+landed states. Cover paired long countdown containment in 1500–1536px Overview
+containers and across the panel stacking breakpoint. Retain metric-motion
+and geometry regressions; review the updated
 POI screenshot baseline. Run an isolated production-stack smoke test where
 Docker access is available. Record source mode, renderer, SHA and limitations;
 software rendering does not prove operator ten-foot readability.

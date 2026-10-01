@@ -1,4 +1,7 @@
 .overview-arrival {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
   min-width: 0;
   padding: 14px 16px;
   font-variant-numeric: tabular-nums;
@@ -6,6 +9,7 @@
 }
 .overview-arrival__sections {
   display: flex;
+  flex-wrap: wrap;
   gap: 24px;
 }
 .overview-arrival__section {
@@ -47,7 +51,7 @@
 .overview-arrival__message:first-child {
   margin-top: 0;
 }
-@container overview (max-width: 560px) {
+@container arrival (max-width: 700px) or (max-width: 43.75rem) {
   .overview-arrival__sections {
     flex-direction: column;
     gap: 16px;

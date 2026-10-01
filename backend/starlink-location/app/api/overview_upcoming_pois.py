@@ -1,7 +1,6 @@
 """API endpoint for truthful Overview upcoming mission POIs."""
 
 from datetime import datetime, timezone
-from math import isfinite
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
@@ -17,7 +16,7 @@ from app.services.overview_upcoming_pois import (
     project_overview_upcoming_pois,
 )
 from app.services.poi_manager import POIManager
-from app.services.position_freshness import position_observation
+from app.services.position_freshness import position_observation, speed_is_fresh
 from app.services.route_eta_calculator import RouteETACalculator
 from app.services.route_manager import RouteManager
 
@@ -77,6 +76,7 @@ async def get_overview_upcoming_pois(
     observed_at: datetime | None = None
     position_state = "unavailable"
     latitude = longitude = speed_knots = None
+    speed_observed_at = None
     coordinator = getattr(request.app.state, "coordinator", None)
     if coordinator is not None:
         try:
@@ -84,6 +84,7 @@ async def get_overview_upcoming_pois(
             latitude = telemetry.position.latitude
             longitude = telemetry.position.longitude
             speed_knots = telemetry.position.speed
+            speed_observed_at = getattr(telemetry.position, "speed_observed_at", None)
             observed_at, position_state = position_observation(
                 latitude,
                 longitude,
@@ -94,12 +95,7 @@ async def get_overview_upcoming_pois(
             pass
 
     # Suppress timing while retaining generated records and last-known map context.
-    usable_speed = (
-        isinstance(speed_knots, (int, float))
-        and not isinstance(speed_knots, bool)
-        and isfinite(speed_knots)
-        and speed_knots >= 0
-    )
+    usable_speed = speed_is_fresh(speed_knots, speed_observed_at, calculated_at)
     timing_unavailable = flight_phase == "in_flight" and (
         position_state != "fresh" or not usable_speed
     )

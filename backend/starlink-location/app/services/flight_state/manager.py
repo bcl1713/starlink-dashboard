@@ -227,6 +227,15 @@ class FlightStateManager:
             self._last_speed_sample_time = now
             return False
 
+    def reset_detection(self) -> None:
+        """Break automatic detection continuity without changing confirmed phase."""
+        with self._lock:
+            self._above_threshold_start_time = None
+            self._last_speed_sample_time = None
+            self._status.speed_persistence_seconds = 0.0
+            self._arrival_start_time = None
+            self._arrival_distance_at_start = None
+
     def check_arrival(
         self,
         distance_to_destination_m: float,

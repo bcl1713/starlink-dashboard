@@ -10,6 +10,8 @@ import math
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
+from app.services.position_freshness import position_observation, speed_is_fresh
+
 if TYPE_CHECKING:
     from app.core.config import ConfigManager
     from app.models.route import ParsedRoute
@@ -92,6 +94,9 @@ def update_metrics_from_telemetry(
     # Defensive check: do not publish metrics if telemetry is None
     # This prevents pollution of Prometheus with zero/invalid values
     if telemetry is None:
+        from app.services.flight_state import get_flight_state_manager
+
+        get_flight_state_manager().reset_detection()
         return
 
     from app.core.labels import get_mode_label, get_telemetry_status_label
@@ -166,10 +171,23 @@ def update_metrics_from_telemetry(
         from app.services.flight_state import get_flight_state_manager
 
         flight_state = get_flight_state_manager()
+        now = datetime.now(timezone.utc)
+        _, position_state = position_observation(
+            telemetry.position.latitude,
+            telemetry.position.longitude,
+            telemetry.position.observed_at,
+            now,
+        )
+        detection_ready = position_state == "fresh" and speed_is_fresh(
+            telemetry.position.speed, telemetry.position.speed_observed_at, now
+        )
+        if not detection_ready:
+            flight_state.reset_detection()
 
         # Automatic departure detection (speed-based)
         try:
-            flight_state.check_departure(telemetry.position.speed)
+            if detection_ready:
+                flight_state.check_departure(telemetry.position.speed)
         except (
             RuntimeError,
             ValueError,
@@ -186,7 +204,7 @@ def update_metrics_from_telemetry(
             logger.warning(f"Departure detection error: {departure_error}")
 
         # Automatic arrival detection when an active route is available
-        if active_route:
+        if active_route and detection_ready:
             try:
                 from app.services.route_eta_calculator import RouteETACalculator
 

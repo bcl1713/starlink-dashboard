@@ -168,6 +168,7 @@ class SimulationCoordinator:
         # Update position
         position_data = self.position_sim.update()
         position_data.observed_at = datetime.now(timezone.utc)
+        position_data.speed_observed_at = None
 
         # Determine if we should use route timing data or GPS-based speed
         # Use route timing speed if:
@@ -188,6 +189,7 @@ class SimulationCoordinator:
             # Position simulator already set speed from route timing data
             # Keep it as-is, don't override with GPS calculation
             speed = position_data.speed
+            position_data.speed_observed_at = position_data.observed_at
         else:
             # No route timing data - use GPS-based speed calculation
             # This is for live mode or untimed routes
@@ -198,6 +200,8 @@ class SimulationCoordinator:
             )
             # Update position with calculated speed
             position_data.speed = speed
+            if self.speed_tracker.has_observation():
+                position_data.speed_observed_at = position_data.observed_at
 
         # Update network
         network_data = self.network_sim.update()
