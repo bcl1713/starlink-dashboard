@@ -31,8 +31,9 @@ function assertAdjacentPaintedFrames(samples: PaintedFrame[]) {
     const expectedTravel = ((current.t - previous.t) * 400) / 60000;
     for (let trace = 0; trace < 4; trace++) {
       expect(
-        Math.abs(current.positions[trace] - previous.positions[trace]) -
-          expectedTravel
+        Math.abs(
+          current.positions[trace] - previous.positions[trace] + expectedTravel
+        )
       ).toBeLessThanOrEqual(1);
     }
   }
@@ -1095,11 +1096,37 @@ test.describe('Overview provenance motion recording', () => {
       .poll(() => histories, { timeout: 20_000 })
       .toBeGreaterThanOrEqual(3);
     expect(await labels()).toEqual(before);
+    const cameraLayout = () =>
+      page
+        .locator(
+          '[data-metric-panel] h3, [data-metric-panel] .overview-metric-history__latest, [data-metric-panel] .overview-metric-history__viewport, [data-metric-panel] .overview-metric-history__value-axis, [data-metric-panel] .overview-metric-history__time-axis, main canvas:not(.uplot canvas)'
+        )
+        .evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const { x, y, width, height } = node.getBoundingClientRect();
+            return {
+              tag: node.tagName,
+              className: node.className,
+              x,
+              y,
+              width,
+              height,
+            };
+          })
+        );
+    const cameraBefore = await cameraLayout();
     await page.mouse.move(960, 500);
-    await page.mouse.wheel(0, -4000);
+    // OrbitControls dolly is event-based: one huge delta is not repeated zoom.
+    // Use only the shipped mouse handler, never camera or layout substitution.
+    for (let tick = 0; tick < 60; tick++) {
+      await page.mouse.wheel(0, -120);
+      await page.waitForTimeout(20);
+    }
     await page.waitForTimeout(600); // Let OrbitControls damping settle for capture.
     await expect(context.getByRole('status')).toHaveText('Network fresh');
     await expect(down).toHaveText('0 Mbps');
+    const cameraZoomed = await cameraLayout();
+    expect(cameraZoomed).toEqual(cameraBefore);
     await page.screenshot({
       path: testInfo.outputPath('overview-provenance-1920x1080.png'),
     });
@@ -1111,6 +1138,25 @@ test.describe('Overview provenance motion recording', () => {
     await expect(context.getByRole('status')).toHaveText('Network fresh');
     await expect(down).toHaveText('0 Mbps');
     expect(await labels()).toEqual(before);
+    const cameraRotated = await cameraLayout();
+    expect(cameraRotated).toEqual(cameraBefore);
+    await writeFile(
+      testInfo.outputPath('camera-layout.json'),
+      JSON.stringify(
+        {
+          cameraBefore,
+          cameraZoomed,
+          cameraRotated,
+          wheelEvents: 60,
+          minDistance: 3,
+          earthRadius: 2,
+          fov: 45,
+          enablePan: false,
+        },
+        null,
+        2
+      )
+    );
     await page.screenshot({
       path: testInfo.outputPath('overview-provenance-rotated-1920x1080.png'),
     });
