@@ -25,6 +25,11 @@
 .overview-arrival-overlays {
   pointer-events: none;
 }
+.overview-page .overview-arrival-overlays {
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 16px auto;
+}
 .overview-metric-history-panels {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -108,9 +113,10 @@
   }
   .overview-page .overview-arrival-overlays {
     position: absolute;
-    inset: auto auto 20px 480px;
+    inset: auto auto 20px 50%;
     margin: 0;
-    width: min(720px, calc(100% - 860px));
+    max-width: calc(100% - 960px);
+    transform: translateX(-50%);
   }
   .overview-page .globe-legend {
     position: absolute;
@@ -151,9 +157,10 @@
   }
   :root:fullscreen .overview-page .overview-arrival-overlays {
     position: absolute;
-    inset: auto auto 20px 480px;
+    inset: auto auto 20px 50%;
     margin: 0;
-    width: min(720px, calc(100% - 860px));
+    max-width: calc(100% - 960px);
+    transform: translateX(-50%);
   }
   :root:fullscreen .overview-page .globe-legend {
     position: absolute;

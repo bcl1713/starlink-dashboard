@@ -136,6 +136,29 @@ test('shows departure, arrival, stale, missing and landed states without losing 
     .poll(() => page.evaluate(() => !!document.fullscreenElement))
     .toBe(true);
   await expect(panel).toBeInViewport();
+  const pairedBox = await panel.boundingBox();
+  expect(Math.abs(pairedBox!.x + pairedBox!.width / 2 - 960)).toBeLessThan(1);
+  expect(Math.abs(pairedBox!.y + pairedBox!.height - 1060)).toBeLessThan(1);
+  await expect(panel.locator('section').last()).toHaveCSS(
+    'border-left-width',
+    '1px'
+  );
+  for (const text of await panel.locator('h2, p').all())
+    await expect(text).toHaveCSS('text-align', 'center');
+  expect(
+    await panel.locator('section').evaluateAll((sections) =>
+      sections.every((section) => {
+        const countdown = section.querySelector(
+          '.overview-arrival__countdown'
+        )!;
+        return (
+          section.scrollWidth <= section.clientWidth &&
+          countdown.getBoundingClientRect().height <=
+            parseFloat(getComputedStyle(countdown).lineHeight) + 1
+        );
+      })
+    )
+  ).toBe(true);
   await page.screenshot({
     path: testInfo.outputPath('arrival-intermediate-fullscreen.png'),
   });
@@ -176,6 +199,10 @@ test('shows departure, arrival, stale, missing and landed states without losing 
   await expect(
     panel.getByRole('heading', { name: 'LANDING · RKSO' })
   ).toBeVisible();
+  const singleBox = await panel.boundingBox();
+  expect(singleBox!.width).toBeLessThan(pairedBox!.width);
+  expect(Math.abs(singleBox!.x + singleBox!.width / 2 - 960)).toBeLessThan(1);
+  await expect(panel.locator('section')).toHaveCSS('border-left-width', '0px');
   await page.screenshot({
     path: testInfo.outputPath('arrival-destination-only.png'),
   });
@@ -231,6 +258,9 @@ test('shows departure, arrival, stale, missing and landed states without losing 
   await expect(panel.locator('.overview-arrival__countdown')).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('arrival-landed.png') });
   await page.evaluate(() => document.exitFullscreen());
+  phase = 'in_flight';
+  destinationOnly = false;
+  await refresh();
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 844, height: 390 },

@@ -382,8 +382,9 @@ test.describe('Overview metric history', () => {
               neighbor.bottom <= box.top,
             `overlay collision: ${JSON.stringify({ box, neighbor })}`
           ).toBe(true);
-      expect(state.poi.width).toBeGreaterThanOrEqual(640);
-      expect(state.poi.width).toBeLessThanOrEqual(800);
+      expect(state.poi.width).toBeGreaterThan(0);
+      expect(state.poi.width).toBeLessThanOrEqual(960);
+      expect(Math.abs(state.poi.x + state.poi.width / 2 - 960)).toBeLessThan(1);
       for (let i = 0; i < 5; i++) {
         const box = state.boxes[i];
         expect(box.right).toBeLessThanOrEqual(state.poi.left);

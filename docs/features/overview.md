@@ -28,7 +28,9 @@ visualization.
 ### 4. Overview Departure and Arrival
 
 The native Overview globe retains generated operational POI markers for the
-active mission. One compact bottom-center panel shows flight timing:
+active mission. The bottom-center panel fits its content, centers each section's
+text and separates next POI from landing with a vertical divider. Narrow screens
+stack the sections with a horizontal divider. It shows flight timing:
 
 - Before departure: **SCHEDULED DEPARTURE** with the imported departure name,
   effective mission schedule in UTC, and remaining hours/minutes. Configured

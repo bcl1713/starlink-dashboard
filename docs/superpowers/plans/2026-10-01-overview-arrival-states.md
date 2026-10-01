@@ -10,7 +10,9 @@ PR #229. Implementation branch: `feat/217-arrival-states`.
 ## Approved behavior
 
 Replace the five-row table with one compact panel using the existing
-bottom-center placement and shared glass styling. Before flight, show only
+bottom-center placement and shared glass styling. Center the panel on the screen,
+fit its content, center section text and divide paired sections vertically.
+Narrow layouts stack sections with a horizontal divider. Before flight, show only
 **SCHEDULED DEPARTURE · name**, its effective mission schedule in UTC and an
 hours/minutes countdown. After the scheduled time, show red elapsed text such as
 **12 MIN AGO** or **<1 MIN AGO**, without a minus sign. Departure scheduling
