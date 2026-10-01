@@ -1118,7 +1118,8 @@ test.describe('Overview provenance motion recording', () => {
     await page.mouse.move(960, 500);
     // OrbitControls dolly is event-based: one huge delta is not repeated zoom.
     // Use only the shipped mouse handler, never camera or layout substitution.
-    for (let tick = 0; tick < 60; tick++) {
+    // 39 events suffice for 22 * 0.95^39 <= the shipped minDistance 3.
+    for (let tick = 0; tick < 40; tick++) {
       await page.mouse.wheel(0, -120);
       await page.waitForTimeout(20);
     }
@@ -1127,58 +1128,47 @@ test.describe('Overview provenance motion recording', () => {
     await expect(down).toHaveText('0 Mbps');
     const cameraZoomed = await cameraLayout();
     expect(cameraZoomed).toEqual(cameraBefore);
+    await page.mouse.move(960, 500);
+    await page.mouse.down();
+    await page.mouse.move(1710, 550, { steps: 24 });
+    await page.mouse.up();
+    await page.waitForTimeout(600);
+    const cameraTerrain = await cameraLayout();
+    expect(cameraTerrain).toEqual(cameraBefore);
     await page.screenshot({
-      path: testInfo.outputPath('overview-provenance-1920x1080.png'),
+      path: testInfo.outputPath('overview-bright-terrain-1920x1080.png'),
     });
     await page.mouse.move(960, 500);
     await page.mouse.down();
-    await page.mouse.move(1260, 550, { steps: 12 });
+    await page.mouse.move(510, 500, { steps: 16 });
     await page.mouse.up();
     await page.waitForTimeout(600);
     await expect(context.getByRole('status')).toHaveText('Network fresh');
     await expect(down).toHaveText('0 Mbps');
     expect(await labels()).toEqual(before);
-    const cameraRotated = await cameraLayout();
-    expect(cameraRotated).toEqual(cameraBefore);
+    const cameraOcean = await cameraLayout();
+    expect(cameraOcean).toEqual(cameraBefore);
+    await page.screenshot({
+      path: testInfo.outputPath('overview-dark-ocean-1920x1080.png'),
+    });
     await writeFile(
       testInfo.outputPath('camera-layout.json'),
       JSON.stringify(
         {
           cameraBefore,
           cameraZoomed,
-          cameraRotated,
-          wheelEvents: 60,
+          cameraTerrain,
+          cameraOcean,
+          wheelEvents: 40,
           minDistance: 3,
           earthRadius: 2,
           fov: 45,
           enablePan: false,
+          input: '40 wheel events; drag +750,+50 then -450,0 CSS pixels',
         },
         null,
         2
       )
-    );
-    await page.screenshot({
-      path: testInfo.outputPath('overview-provenance-rotated-1920x1080.png'),
-    });
-    // Continue real orbit input to inspect the illuminated hemisphere as well
-    // as the ocean view; no pixel/DOM geography is manufactured.
-    const orbitLayouts = [];
-    for (let view = 1; view <= 6; view++) {
-      await page.mouse.move(960, 500);
-      await page.mouse.down();
-      await page.mouse.move(1110, 500, { steps: 12 });
-      await page.mouse.up();
-      await page.waitForTimeout(600);
-      const layout = await cameraLayout();
-      expect(layout).toEqual(cameraBefore);
-      orbitLayouts.push(layout);
-      await page.screenshot({
-        path: testInfo.outputPath(`overview-orbit-${view}-1920x1080.png`),
-      });
-    }
-    await writeFile(
-      testInfo.outputPath('orbit-layouts.json'),
-      JSON.stringify(orbitLayouts, null, 2)
     );
     await page.setViewportSize({ width: 1600, height: 1080 });
     await page.setViewportSize({ width: 1920, height: 1080 });
