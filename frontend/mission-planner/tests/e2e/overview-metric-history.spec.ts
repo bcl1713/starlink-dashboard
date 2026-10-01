@@ -23,6 +23,42 @@ test.beforeEach(async ({ page }) => {
   ] as const)
     await page.route(`**/api/${endpoint}`, (route) => route.fulfill({ json }));
 });
+type PaintedFrame = { t: number; end: number; positions: number[] };
+function assertAdjacentPaintedFrames(samples: PaintedFrame[]) {
+  for (let i = 1; i < samples.length; i++) {
+    const previous = samples[i - 1],
+      current = samples[i];
+    const expectedTravel = ((current.t - previous.t) * 400) / 60000;
+    for (let trace = 0; trace < 4; trace++) {
+      expect(
+        Math.abs(current.positions[trace] - previous.positions[trace]) -
+          expectedTravel
+      ).toBeLessThanOrEqual(1);
+    }
+  }
+}
+
+test('adjacent painted oracle rejects a forward jump in each series across rebases', () => {
+  const elapsedMs = 1000 / 60;
+  const travel = (elapsedMs * 400) / 60000;
+  const previous = { t: 0, end: 100, positions: [10, 20, 30, 40] };
+  for (const end of [100, 105]) {
+    const normal = {
+      t: elapsedMs,
+      end,
+      positions: previous.positions.map((x) => x - travel),
+    };
+    expect(() => assertAdjacentPaintedFrames([previous, normal])).not.toThrow();
+    for (let trace = 0; trace < 4; trace++) {
+      const positions = [...normal.positions];
+      positions[trace] = previous.positions[trace] + 1.05;
+      expect(() =>
+        assertAdjacentPaintedFrames([previous, { ...normal, positions }])
+      ).toThrow();
+    }
+  }
+});
+
 const initial = Math.floor(Date.now() / 1000);
 function bundle(end = initial, windowSeconds = 1800) {
   return {
@@ -1359,16 +1395,7 @@ test.describe('painted four-series motion fixture', () => {
             )
           ).toBeLessThanOrEqual(1);
       }
-      for (let i = 1; i < result.samples.length; i++) {
-        const previous = result.samples[i - 1],
-          current = result.samples[i];
-        const elapsed = (current.t - previous.t) / 1000;
-        for (let trace = 0; trace < 4; trace++) {
-          expect(
-            Math.abs(current.positions[trace] - previous.positions[trace])
-          ).toBeLessThanOrEqual(1 + (elapsed * 400) / 60);
-        }
-      }
+      assertAdjacentPaintedFrames(result.samples);
       await page.screenshot({
         path: testInfo.outputPath(`painted-${cadence}s.png`),
       });
