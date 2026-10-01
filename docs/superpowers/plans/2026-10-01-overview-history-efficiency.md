@@ -60,15 +60,17 @@ implementation and draft PR can be reviewed while that gate is pending.
 
 ## Implementation and verification
 
-- [ ] Add cache/grid/concurrency/settings/shutdown behavior and deterministic
+- [x] Add cache/grid/concurrency/settings/shutdown behavior and deterministic
       incremental/full-reference comparisons for 5/15/30/60-minute and custom
       windows, overlap deletion, delayed samples, identity changes and failures.
-- [ ] Memoize chart work; prove clock ticks, visibility and errors do not repeat
-      projection, scale scans or uploads; preserve existing motion tests.
-- [ ] Add a bounded benchmark reporting queried spans/evaluation points,
+- [x] Memoize chart work and add a processing-count regression; retain existing
+      visibility, motion and scale contracts. Pure frontend controls pass.
+- [ ] Run the component processing-count regression and rendered
+      motion/lifecycle controls with the complete jsdom/browser dependencies.
+- [x] Add a bounded benchmark reporting queried spans/evaluation points,
       cold/warm latency and JSON costs, with one/two sequential viewers and
       bounded cache state. Separate simulated-time tests from a 60-minute soak.
-- [ ] Update API and Overview guidance with sampling, cache semantics,
+- [x] Update API and Overview guidance with sampling, cache semantics,
       polling/resolution distinction, hidden tabs, failure behavior and
       rollback.
 - [ ] Run focused backend/frontend checks, full relevant suites, lint/build,
@@ -79,3 +81,15 @@ implementation and draft PR can be reviewed while that gate is pending.
 - [ ] Record exact-SHA 1920x1080 browser motion and lifecycle evidence. Enable
       the 1s default only after the measured budget passes. Keep #211/#213 open;
       do not claim a cause for long-run degradation from cache improvements.
+
+## Recorded controls
+
+The
+[fixture measurement report](./2026-10-01-overview-history-efficiency-measurements.md)
+records clean code SHA `f42699e9c3e37f4bb9add51015ffd68bd6858bad`, cold/warm
+query work, latency and JSON processing for all selected windows. Local controls
+include 96 backend tests, 93 frontend tests, full frontend ESLint, changed-file
+Black 26.5.1, filename and typing-policy checks. The simulated-hour state test
+is separate from the still-required wall-clock resource soak. Draft PR #228
+targets `dev`; the real-host budget, complete suites/CI and production recording
+remain acceptance blockers, so the shipped default remains five seconds.

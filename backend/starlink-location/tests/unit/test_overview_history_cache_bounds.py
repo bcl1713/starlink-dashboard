@@ -2,7 +2,7 @@
 
 import asyncio
 
-from tests.unit.overview_history_cache_fixture import source  # noqa: F401
+from tests.unit.overview_history_cache_fixture import source as source
 
 
 async def test_one_simulated_hour_keeps_two_readers_and_retained_work_bounded(source):

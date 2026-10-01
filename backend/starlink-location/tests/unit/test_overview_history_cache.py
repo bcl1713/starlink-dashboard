@@ -11,9 +11,7 @@ from app.services.overview_history_prometheus import (
     query_overview_history_bundle,
 )
 from app.services.overview_history_rollups import ROLLUP_METRICS
-
-
-from tests.unit.overview_history_cache_fixture import source  # noqa: F401
+from tests.unit.overview_history_cache_fixture import source as source
 
 
 @pytest.mark.parametrize("window", [1, 300, 900, 1800, 3600, 3601, 1907, 86400])
@@ -237,3 +235,24 @@ async def test_persistent_ambiguity_does_not_repeat_full_window_loads(source):
             - int(fixture.requests[before]["start"])
             == 11
         )
+
+
+async def test_delayed_sample_and_later_nan_replace_the_authoritative_overlap(source):
+    fixture, client, reader = source
+    metric = ROLLUP_METRICS[0]
+    fixture.deleted.add(9995)
+    first = await reader.read()
+    assert all(point[0] != 9995 for point in first["series"][metric])
+    fixture.deleted.remove(9995)
+    fixture.corrections[9995] = 0  # Late valid zero must appear, not be filtered out.
+    for invalid in [False, True, False]:
+        fixture.now += 1
+        fixture.invalid = {9995} if invalid else set()
+        result = await reader.read()
+        reference = await query_overview_history_bundle(
+            client, end_timestamp_seconds=fixture.now, window_seconds=fixture.window
+        )
+        assert result == reference
+        assert ([9995, 0] in result["series"][metric]) is not invalid
+        for statistic in ("min", "avg", "max"):
+            assert ([9995, 0] in result["rolling_5m"][metric][statistic]) is not invalid

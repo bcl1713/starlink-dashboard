@@ -8,6 +8,10 @@ from math import isfinite
 
 import httpx
 
+from app.services.overview_history_cache import (
+    OverviewHistoryReader as OverviewHistoryReader,
+)
+
 MAX_OVERVIEW_HISTORY_SAMPLES = 1801
 MAX_OVERVIEW_HISTORY_INTERVALS = MAX_OVERVIEW_HISTORY_SAMPLES - 1
 OVERVIEW_HISTORY_METRICS = (
@@ -246,7 +250,3 @@ async def query_overview_history_bundle(
 
         bundle["_identity"] = raw_source_identity(payload, plan)
     return bundle
-
-
-# Compatibility import; the cache imports query helpers lazily to avoid a cycle.
-from app.services.overview_history_cache import OverviewHistoryReader  # noqa: E402,F401

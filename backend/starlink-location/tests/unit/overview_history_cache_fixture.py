@@ -18,6 +18,7 @@ class PrometheusFixture:
         self.window = 1800
         self.requests = []
         self.deleted = set()
+        self.invalid = set()
         self.corrections = {}
         self.label = "first"
         self.ambiguous = False
@@ -51,7 +52,14 @@ class PrometheusFixture:
             result = []
             for metric in metrics:
                 values = [
-                    [t, str(self.corrections.get(t, t % 73))]
+                    [
+                        t,
+                        (
+                            "NaN"
+                            if raw and t in self.invalid
+                            else str(self.corrections.get(t, t % 73))
+                        ),
+                    ]
                     for t in times
                     if t not in self.deleted and t % 17 != 0
                 ]
