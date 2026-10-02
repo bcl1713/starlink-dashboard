@@ -12,6 +12,8 @@
 .overview-page
   :is(
     .globe-legend,
+    .overview-planned-satellite,
+    .overview-map-status,
     .operational-clock,
     .overview-arrival,
     .overview-fullscreen-control,
@@ -29,6 +31,8 @@
   .overview-page
     :is(
       .globe-legend,
+      .overview-planned-satellite,
+      .overview-map-status,
       .operational-clock,
       .overview-arrival,
       .overview-fullscreen-control,

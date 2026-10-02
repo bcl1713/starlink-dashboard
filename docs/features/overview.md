@@ -139,11 +139,11 @@ configured polling cadence (five seconds by default, with one second opt-in) and
 the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
 a saved custom window). This persisted **LAST** display duration is separate
 from **Rolling statistics: 5 minutes**, which always uses the fixed
-trailing-five-minute source window. History requests default to five seconds while
-[#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s measured
-performance gate is pending. A reviewed frontend build can select one second
-using `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1`; rebuild with `5` to roll back.
-Hidden tabs pause interval polling and refetch on focus. Failures use
+trailing-five-minute source window. History requests default to five seconds
+while [#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s
+measured performance gate is pending. A reviewed frontend build can select one
+second using `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1`; rebuild with `5` to roll
+back. Hidden tabs pause interval polling and refetch on focus. Failures use
 five-second polling. Cadence is separate from the one-second Prometheus scrape
 rate and the selected window's range-query resolution (two seconds for a
 60-minute window). The backend reuses completed snapshots and reconciles an
@@ -189,8 +189,8 @@ existing legend stays at the lower right. Clocks and the other surfaces share
 the same glass tint at 50% opacity, fine border, rounded corners and 10px blur.
 A 90% navy fallback protects text when backdrop blur is unsupported. Shared
 refresh-error space and per-card exception space preserve fit when data becomes
-stale. Empty POIs do not move the charts. The compact legend identifies rendered map layers; detailed map diagnostics
-remain available in Configuration.
+stale. Empty POIs do not move the charts. The compact legend identifies rendered
+map layers; detailed map diagnostics remain available in Configuration.
 
 Layout uses actual Overview container size: a desktop column requires at least
 93.75rem width and 67.5rem height in fullscreen, or 71.25rem height in ordinary
@@ -209,8 +209,34 @@ fullscreen button disappear. Exit with the browser's fullscreen shortcut
 mobile globe-stage and gesture redesign remains separate #220 work.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
-rolling response shapes and error behavior. History-window selection and map diagnostics are available in Configuration.
-Cadence controls and per-panel visibility settings remain future work. Grafana remains a supported fallback and comparator.
+rolling response shapes and error behavior. History-window selection and map
+diagnostics are available in Configuration. Cadence controls and per-panel
+visibility settings remain future work. Grafana remains a supported fallback and
+comparator.
+
+### Planned satellite and map layers
+
+The text-only **X-BAND / selected ID / PLANNED SATELLITE** card shows the
+selected configuration from the active mission context, not a measured satellite
+connection. No selection shows **NO SATELLITE SELECTED**; loading and failed
+selection refreshes remain explicit. A selected ID can remain visible while its
+configured map geometry is unavailable.
+
+The legend contains only rendered layers: **Aircraft**, **Planned route**,
+**Track history**, **Ground entry point** and **Planned satellite link**. The
+planned-link sample is thicker than the track sample and retains the supported
+blue/red normal/warning styling. Short route, status/history and satellite
+exceptions appear separately in **Map status**; warning text names the existing
+configured azimuth rule without asserting connectivity. Cached scene geometry
+can remain visible after a refresh fails; its layer sample remains present
+alongside the failure state. Status-feed age is independent of the position
+provenance used for arrival estimates.
+
+Aircraft/GEP and configured satellites can remain visible without a route.
+Generated POIs and satellite markers retain their labels and separate accessible
+name lists even when globe occlusion or POI collision handling hides a label.
+Settings, counts and GEO look-angle analysis are in **Configuration**, rather
+than additional legend rows.
 
 ### 6. [System Configuration & Simulation](./system.md)
 

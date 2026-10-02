@@ -25,9 +25,9 @@ All system configuration via `.env` file.
 
 ### Overview settings and diagnostics
 
-The **Configuration** page contains **Overview history window** (5, 15, 30 or
-60 minutes, preserving a saved custom duration). The saved window applies to
-the aircraft trail and all five network graphs. It does not change the fixed
+The **Configuration** page contains **Overview history window** (5, 15, 30 or 60
+minutes, preserving a saved custom duration). The saved window applies to the
+aircraft trail and all five network graphs. It does not change the fixed
 five-minute rolling-statistics window or polling cadence. Read and save failures
 are reported separately; an unsuccessful save can be retried.
 

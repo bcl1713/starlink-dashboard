@@ -25,7 +25,6 @@ describe('OverviewPage generated POI legend and overlay layout contracts', () =>
     expect(pageSource).not.toContain('<span>Destination</span>');
     expect(pageSource).not.toContain('globe-legend__marker--origin');
     expect(pageSource).not.toContain('globe-legend__marker--destination');
-    expect(pageSource).toContain('<span>Generated POIs</span>');
-    expect(pageSource).toContain('Colour indicates estimated arrival urgency');
+    expect(pageSource).toContain('aria-label="Map POIs"');
   });
 });
