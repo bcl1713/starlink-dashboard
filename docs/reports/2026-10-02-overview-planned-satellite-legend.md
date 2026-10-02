@@ -31,7 +31,10 @@ to #219; the mobile globe-stage interaction belongs to #220.
 
 Base: `7ea084979fa237e4e1403bd26e9556ced36de1fd` (`dev`, #230).
 Branch: `feat/218-planned-satellite-legend`.
-Implementation candidate: `0b422529cc79dca18d077fc0e637717ef4327e55`.
+Implementation candidate: `34b00fc55db88a2d3faf9e33633726628c08750b`.
+Earlier captured candidate: `0b422529cc79dca18d077fc0e637717ef4327e55`.
+The documentation-inclusive handoff SHA is recorded by the final CDP manifest;
+its application sources match the implementation candidate.
 Worktree: `/tmp/starlink-218`; the existing arrival branch was preserved.
 
 [Approved implementation plan](../superpowers/plans/2026-10-02-overview-planned-satellite-legend.md)
@@ -41,11 +44,11 @@ reference; it is not a screenshot of the implemented candidate.
 
 ## Verification
 
-- Canonical frontend gate: 353 tests in 68 files passed; production build passed.
+- Canonical frontend gate: 356 tests in 68 files passed; production build passed.
 - Canonical static gate: formatting, lint, documentation naming/links and
   acceptance-policy checks passed with the exact selected base SHA.
 - Final focused Chromium run: 13/13 passed after the fixture/readiness fixes.
-  Across the serial runs, all 43 applicable non-motion-oracle cases passed.
+  Across the serial runs, all 44 applicable non-motion-oracle cases passed.
   A broad rerun recorded 40 passed, four failed and one skipped: the two
   screenshot/fullscreen fixture defects and skipped custom-window case passed
   in the final run; the two chart-motion failures also occur on the baseline.
@@ -55,6 +58,9 @@ reference; it is not a screenshot of the implemented candidate.
   reproduced the same jump (6/9 repeated baseline checks passed, 3 failed).
   Motion limits were not relaxed; broad rendered
   acceptance remains pending a suitable renderer or a separate chart fix.
+- After review: all 10 planning browser cases pass, including malformed
+  selection consistency across Overview and Configuration. Three new malformed
+  diagnostic tests failed before the fix and pass afterward.
 - Navigation hit-target checks failed before paint containment and passed on
   desktop and 390px phone layout after it.
 - The POI baseline is refreshed only after settled route/status responses and
@@ -102,6 +108,30 @@ completed successfully; all three phone viewports had no horizontal overflow.
   SwiftShader motion failures separately. Risk: a hardware-visible chart defect
   remains; broad rendered acceptance is explicitly pending.
 
+## Independent review
+
+One fresh-context read-only review checked the whole branch, approved scope,
+rendered evidence and execution decisions. The review found no critical code
+defect. The follow-up pass corrected contradictory malformed-selection
+information in Configuration and the stale operator-document location. The
+reviewer used still images and reported test evidence; it did not independently
+replay the video or rerun the browser suite.
+
+Deferred minor: the fixed **UNAVAILABLE** placeholder wraps mid-word at desktop.
+It remains readable; fixed-state sizing can improve quick scanning without
+changing arbitrary-ID wrapping. No unconditional merge-ready verdict is claimed
+while the baseline-reproduced motion acceptance gap remains open.
+
+The scope decisions also retain #219's final camera/ordinary composition
+(framing risk), #220's dedicated mobile stage and gestures (touch-experience
+risk), separate investigation of baseline chart motion (hardware-impact risk),
+physical phone/ten-foot assessment (readability and interaction risk), and the
+baseline simulator's invalid longitude/absent GEP behavior (real map geometry
+can remain unavailable). Independent continuous-video verification is weaker
+because the reviewer assessed stills. The simple prose correction was verified
+manually and with markdown checks rather than adding a low-impact prose test;
+stale documentation could recur.
+
 ## Limits and publication
 
 Chromium uses SwiftShader software rendering in this environment. Physical
@@ -113,7 +143,8 @@ settings persistence are separate. The real simulation emitted an out-of-range
 longitude and no GEP during capture. Existing projection guards correctly omit
 those markers; the selected-link fixtures explicitly supply valid coordinates.
 
-Exact-candidate evidence is complete. Independent review precedes handoff.
+Exact-candidate evidence and independent implementation review are recorded.
+Final evidence is refreshed after the reviewed fix; the motion gap remains open.
 The candidate is local. A green broad motion suite is not claimed.
 Push/PR creation requires an integration choice; merge,
 deployment and issue closure are outside the approved implementation scope.
