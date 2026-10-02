@@ -15,6 +15,7 @@ vi.mock('@react-three/fiber', () => ({
 }));
 vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }));
 import { OverviewMapController } from './OverviewMapController';
+import { globePosition } from './globe-coordinates';
 afterEach(cleanup);
 function setup() {
   const camera = new PerspectiveCamera(45, 390 / 380);
@@ -57,6 +58,50 @@ it('cancels an automatic move immediately when manual intent takes over', () => 
   scene.frame?.({}, 0.05);
   const manual = camera.position.clone();
   view.rerender(<OverviewMapController {...props} intent="manual" />);
+  for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
+  expect(camera.position.distanceTo(manual)).toBeLessThan(0.00001);
+});
+it('eases into a recovered route once, then ignores aircraft updates and equivalent route samples', () => {
+  const { camera, props } = setup();
+  const view = render(<OverviewMapController {...props} />);
+  for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
+  const fallback = camera.position.clone();
+  const route = [
+    [-25, 80],
+    [-20, 100],
+  ].map(([lat, lon]) => globePosition(lat, lon, 2));
+  view.rerender(<OverviewMapController {...props} route={route} />);
+  expect(camera.position.distanceTo(fallback)).toBeLessThan(0.00001);
+  scene.frame?.({}, 0.05);
+  const intermediate = camera.position.clone();
+  for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
+  const recovered = camera.position.clone();
+  expect(recovered.distanceTo(fallback)).toBeGreaterThan(1);
+  expect(intermediate.distanceTo(fallback)).toBeGreaterThan(0);
+  expect(intermediate.distanceTo(fallback)).toBeLessThan(
+    recovered.distanceTo(fallback) * 0.1
+  );
+  view.rerender(
+    <OverviewMapController
+      {...props}
+      aircraft={{ latitude: 60, longitude: -10 }}
+      route={route.map((point) => [...point])}
+    />
+  );
+  for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
+  expect(camera.position.distanceTo(recovered)).toBeLessThan(0.00001);
+});
+it('keeps a manual pose when route data recovers', () => {
+  const { camera, props } = setup();
+  const view = render(<OverviewMapController {...props} intent="manual" />);
+  const manual = camera.position.clone();
+  view.rerender(
+    <OverviewMapController
+      {...props}
+      intent="manual"
+      route={[globePosition(-25, 80, 2), globePosition(-20, 100, 2)]}
+    />
+  );
   for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
   expect(camera.position.distanceTo(manual)).toBeLessThan(0.00001);
 });

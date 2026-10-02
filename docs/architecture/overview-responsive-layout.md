@@ -14,6 +14,8 @@ is exposed through `data-layout` for CSS and browser verification.
 
 - Desktop requires at least `max(1500px, 93.75rem)` width and
   `max(1012px, 63.25rem)` height. Its five-card rail remains 440px wide.
+  Measured panel overflow, overlap, or insufficient clear map height selects
+  stacked page flow, latched until viewport/root changes.
 - Landscape requires at least 800px usable width, a readable 210–240px rail,
   560px map width, 220px stage height and 120px height clear of arrival content.
   Readability minima scale upward with enlarged root text. Very tall viewports
@@ -39,7 +41,8 @@ responsive input allows browser scrolling. Landscape wheel events on stage/gaps
 forward to the rail only when it can scroll; rail events stay native, and
 Ctrl/Meta wheel is untouched. Explore enables gestures only within the globe.
 Exit, Escape, blur and mode changes release gesture state and preserve the pose.
-Desktop retains deliberate orbit/zoom without an Explore control.
+Desktop retains deliberate orbit/zoom without an Explore control. Reset and
+configured-follow status remain available beneath the fullscreen control.
 
 Initial automatic framing prefers valid projected route points. Its orientation
 uses sphere directions, avoiding dateline averaging errors; perspective bounds
@@ -49,6 +52,8 @@ framing uses valid map aircraft or the existing orientation. The 45-degree FOV,
 3–28 orbit limits and scene geometry remain unchanged. Global routes can have
 far-side occlusion; fitting does not flatten them.
 
+If initial route loading fails, the first recovered usable route gets one eased
+fit while intent remains automatic. Manual intent prevents that recovery fit.
 Default position updates leave the camera still. Reset performs an explicit fit.
 Continuous following is opt-in through Configuration, using a browser-local
 preference with default false and storage-failure feedback. Following uses only

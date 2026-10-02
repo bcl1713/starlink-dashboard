@@ -208,7 +208,7 @@ export async function desktopGeometry(page: Page) {
     const pageBox = box('.overview-page');
     const panels = [
       ...document.querySelectorAll<HTMLElement>(
-        '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control'
+        '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control, .overview-map-controls'
       ),
     ];
     const clock = box('.overview-clock-panel');

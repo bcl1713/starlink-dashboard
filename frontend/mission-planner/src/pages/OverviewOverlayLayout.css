@@ -497,6 +497,12 @@
   letter-spacing: normal;
 }
 .overview-page[data-layout='desktop'] .overview-map-controls {
+  grid-row: 3;
+  align-self: start;
+}
+.overview-page[data-layout='desktop']
+  .overview-map-controls
+  button[aria-pressed] {
   display: none;
 }
 .overview-page[data-layout='desktop']

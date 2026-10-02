@@ -53,6 +53,7 @@ export function OverviewMapController({
     safeRect: OverviewSafeRect;
     intent: OverviewCameraIntent;
     resetRevision: number;
+    routeFramed: boolean;
   } | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
@@ -134,6 +135,7 @@ export function OverviewMapController({
       previous.intent !== intent ||
       previous.resetRevision !== resetRevision ||
       previous.mode !== mode ||
+      (!previous.routeFramed && route.length > 0) ||
       Math.abs(previous.width - size.width) >= 48 ||
       Math.abs(previous.height - size.height) >= 48 ||
       Math.abs(previous.safeRect.width - safeRect.width) >= 48 ||
@@ -206,6 +208,7 @@ export function OverviewMapController({
       safeRect,
       intent,
       resetRevision,
+      routeFramed: route.length > 0,
     };
   }, [
     camera,

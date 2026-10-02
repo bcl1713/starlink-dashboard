@@ -149,9 +149,9 @@ test('backdrop fallback preserves contrast and geometry', async ({
   page,
 }, testInfo) => {
   test.setTimeout(120_000); // Two scene loads and four full-size software captures.
-  // Natural solar calculation at midnight UTC illuminates the Asia-facing pose.
+  // 18:00 UTC puts the subsolar longitude near -90, lighting the Americas route.
   const solarTime = new Date();
-  solarTime.setUTCHours(0, 0, 0, 0);
+  solarTime.setUTCHours(18, 0, 0, 0);
   fixture.now = solarTime.getTime();
   await page.clock.setFixedTime(solarTime);
   const texture = page.waitForResponse(

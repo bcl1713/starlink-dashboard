@@ -375,6 +375,50 @@ test('desktop keeps deliberate globe input and its accepted composition', async 
   );
 });
 
+test('desktop Reset resumes configured following and exposes source pause reasons', async ({
+  page,
+}) => {
+  const source = await compositionFixture(page);
+  await page.addInitScript(() =>
+    localStorage.setItem('overview.follow-aircraft', 'true')
+  );
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/overview');
+  await expect(page.locator('.overview-page')).toHaveAttribute(
+    'data-layout',
+    'desktop'
+  );
+  const reset = page.getByRole('button', { name: 'Reset map view' });
+  const status = page.locator('#overview-follow-status');
+  await expect(reset).toBeVisible();
+  await expect(status).toBeVisible();
+  await expect(status).toHaveText('Following aircraft');
+  await settledOverviewCamera(page);
+  const box = await page.locator('.overview-globe canvas').boundingBox();
+  await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.5);
+  await page.mouse.wheel(0, 140);
+  await settledOverviewCamera(page);
+  await expect(status).not.toBeVisible();
+  await reset.click();
+  await expect(status).toHaveText('Following aircraft');
+  await settledOverviewCamera(page);
+  for (const failure of ['stale', 'errors', 'missing']) {
+    source.stale = failure === 'stale';
+    source.errors = failure === 'errors';
+    if (failure === 'missing') source.position = null;
+    await expect(status).toContainText(
+      failure === 'stale'
+        ? 'stale'
+        : failure === 'errors'
+          ? 'refresh unavailable'
+          : 'position unavailable',
+      { timeout: 20000 }
+    );
+    await expect(status).toBeInViewport();
+    await expect(reset).toBeInViewport();
+  }
+});
+
 test('automatic reset moves through eased intermediate camera poses', async ({
   page,
 }) => {

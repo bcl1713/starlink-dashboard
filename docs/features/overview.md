@@ -223,6 +223,9 @@ aircraft trail and all five plots, independently of five-minute rollups.
 On opening, the camera fits the route's projected extents into the clear map
 area between panels; without a route it uses a valid aircraft position. The
 route can be off-center on the screen because the metric rail occupies the left.
+If route data recovers after opening, it gets one eased fit while the camera
+remains automatic; manual exploration keeps your chosen view. Desktop provides
+Reset and follow status beneath its fullscreen control.
 Aircraft movement leaves the default camera still. **Reset map view** performs
 another fit. In Configuration, **Follow aircraft on Overview** opts into
 continuous following and is saved in this browser; it defaults off. Manual

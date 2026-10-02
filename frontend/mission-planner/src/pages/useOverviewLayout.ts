@@ -69,8 +69,52 @@ export function useOverviewLayout(
         rootFontSize,
         clockHeight,
         overlayHeight,
+        overflow: flowLatch.current.required,
       });
       const current = page.dataset.layout;
+      if (candidate === 'desktop' && current === 'desktop' && contentReady) {
+        const pageBounds = page.getBoundingClientRect();
+        const panels = [
+          ...page.querySelectorAll<HTMLElement>(
+            '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control, .overview-map-controls'
+          ),
+        ].filter((node) => node.getBoundingClientRect().height > 0);
+        const bounds = panels.map((node) => node.getBoundingClientRect());
+        const doesNotFit = panels.some((node, index) => {
+          const box = bounds[index];
+          return (
+            node.scrollHeight > node.clientHeight + 1 ||
+            node.scrollWidth > node.clientWidth + 1 ||
+            box.left < pageBounds.left - 1 ||
+            box.right > pageBounds.right + 1 ||
+            box.top < pageBounds.top - 1 ||
+            box.bottom > pageBounds.bottom + 1
+          );
+        });
+        const overlaps = bounds.some((a, index) =>
+          bounds
+            .slice(index + 1)
+            .some(
+              (b) =>
+                a.left < b.right - 1 &&
+                a.right > b.left + 1 &&
+                a.top < b.bottom - 1 &&
+                a.bottom > b.top + 1
+            )
+        );
+        const clearHeight =
+          (arrival?.getBoundingClientRect().top ?? pageBounds.bottom) -
+          (clock?.getBoundingClientRect().bottom ?? pageBounds.top) -
+          40;
+        if (
+          doesNotFit ||
+          overlaps ||
+          clearHeight < 120 * Math.max(1, rootFontSize / 16)
+        ) {
+          blocked = true;
+          flowLatch.current.required = true;
+        }
+      }
       const expanded = Boolean(
         page.querySelector('.globe-legend button[aria-expanded="true"]')
       );
@@ -146,7 +190,7 @@ export function useOverviewLayout(
       stage,
       clockNode(page),
       ...page.querySelectorAll<HTMLElement>(
-        '.overview-arrival, .overview-planned-satellite, .globe-legend, .overview-map-controls'
+        '.overview-arrival, .overview-planned-satellite, .globe-legend, .overview-map-controls, .overview-metric-history, .overview-metric-history-panels__header'
       ),
     ].forEach((node) => {
       if (node) observer.observe(node);

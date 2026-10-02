@@ -258,6 +258,71 @@ for (const variant of [
       );
   });
 }
+test('desktop boundary width escapes overflowing arrival content without replacing charts', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1500, height: 1080 });
+  const fixture = await compositionFixture(page);
+  await page.goto('/overview');
+  await expect(page.locator('.overview-page')).toHaveAttribute(
+    'data-layout',
+    'desktop'
+  );
+  await expect(page.locator('.uplot')).toHaveCount(5);
+  const canvas = await page.locator('.overview-globe canvas').elementHandle();
+  const plots = await page.locator('.uplot').elementHandles();
+  fixture.nextName = 'N'.repeat(255);
+  fixture.destination = 'D'.repeat(255);
+  await expect(page.getByLabel('Departure and arrival')).toContainText(
+    fixture.nextName,
+    { timeout: 35000 }
+  );
+  await expect(page.locator('.overview-page')).toHaveAttribute(
+    'data-layout',
+    'stacked'
+  );
+  await expect(page.locator('.overview-map-stage')).toHaveAttribute(
+    'data-flow',
+    'true'
+  );
+  for (const selector of [
+    '.overview-arrival',
+    '.overview-planned-satellite',
+    '.globe-legend',
+    '.overview-map-controls',
+    '[data-metric-panel]',
+  ]) {
+    for (const panel of await page.locator(selector).all()) {
+      await panel.scrollIntoViewIfNeeded();
+      await expect(panel).toBeInViewport();
+      expect(
+        await panel.evaluate(
+          (el) =>
+            el.scrollHeight <= el.clientHeight + 1 &&
+            el.scrollWidth <= el.clientWidth + 1
+        )
+      ).toBe(true);
+    }
+  }
+  await page.waitForTimeout(500);
+  await expect(page.locator('.overview-page')).toHaveAttribute(
+    'data-layout',
+    'stacked'
+  );
+  expect(
+    await canvas!.evaluate(
+      (node) => node === document.querySelector('.overview-globe canvas')
+    )
+  ).toBe(true);
+  for (let i = 0; i < 5; i++)
+    expect(
+      await plots[i].evaluate(
+        (node, index) => node === document.querySelectorAll('.uplot')[index],
+        i
+      )
+    ).toBe(true);
+});
+
 test('landscape rotation, enlarged text and legend use a stable reachable tree', async ({
   page,
 }) => {

@@ -124,6 +124,9 @@ Brian clarified camera behavior during implementation on 2026-10-02. Initial
 framing prefers the route's projected extents within the clear panel-safe area,
 including the left desktop rail; it need not place the route at screen center.
 Without a route, center on valid aircraft, otherwise retain globe orientation.
+The first usable route recovered after an initial fallback may receive one eased
+automatic fit. Manual intent prevents this recovery movement. Desktop retains
+Reset and the configured-follow status while hiding only the Explore toggle.
 Position updates leave this view still by default. `Reset map view` performs a
 one-time fit. Continuous following is off by default and selected explicitly in
 Configuration, with a browser-local saved preference. Manual input pauses it;

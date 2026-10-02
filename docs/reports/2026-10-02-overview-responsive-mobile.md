@@ -53,16 +53,25 @@ services.
 
 ## Verification and evidence
 
-Canonical frontend verification passes 385 tests in 73 files and the production
+Canonical frontend verification passes 387 tests in 73 files and the production
 TypeScript/Vite build. Static verification runs the complete repository tier,
 including typing-policy tests, using the repository's development requirements
 for the Python test environment. No gate is skipped.
 
-All 25 new responsive/input cases and 60 existing Overview/Configuration cases
+All 27 new responsive/input cases and 60 existing Overview/Configuration cases
 are covered across serial headed runs and focused corrected-case rechecks. The
 broad regression initially passed 29/44; its failed/skipped cases are covered by
 subsequent runs. Operational coverage passed 14/19, followed by 3/5 and 2/2
 corrected-case rechecks. No motion/provenance tolerance changed.
+
+The independent whole-branch review identified three important defects, each
+reproduced before its fix: hidden desktop Reset/follow status, overflowing
+desktop arrival content at the minimum width, and route recovery retaining an
+initial fallback camera frame. All three fixes pass their focused regressions;
+the complete responsive/input suite passes 27/27. Manual pose and default
+position-update behavior remain covered. Desktop geometry now also measures the
+Reset/status group. Its visual baseline was inspected and passes without
+snapshot updates.
 
 New responsive/input cases exercise wheel and touch, landscape gap forwarding,
 browser zoom modifiers, Explore/Exit, interrupted pointer capture, easing,
@@ -93,9 +102,10 @@ and `video-6-inspection/` beneath the capture directory.
 
 Real API smoke responses are 200, the Prometheus target is UP, and Configuration
 saved 900 seconds through the real API; the value survives navigation, reload
-and a backend restart. A fresh simulation has no route/selection/catalog and
-emits an invalid longitude with no GEP; real captures truthfully show position
-unavailable. Route/aircraft/GEP/POI and history captures use explicitly
+and a backend restart. A fresh simulation has no route/selection/catalog or
+GEP. Position availability in the captures comes from the live status sample;
+the initial recorded response has a valid longitude near 180 degrees.
+Route/aircraft/GEP/POI and history captures use explicitly
 controlled API fixtures over the same production assets. All three cleanup
 inventories are empty after successful and failed smoke paths.
 
@@ -108,6 +118,12 @@ remain explicitly pending Brian's assessment of the pushed branch. Forced opaque
 fallback verifies shipped styling rather than a blur-incapable browser. Global
 routes can remain partly behind the globe; fitting preserves spherical geometry
 rather than flattening far-side points.
+
+Two minor review findings remain deferred: landscape eligibility assumes 24px
+total horizontal padding, so larger safe-area insets can reduce the map below
+its intended 560px width; desktop POI reservations omit the clock/metric sibling
+bounds, so long visual labels can appear behind those panels. Complete accessible
+POI names remain available.
 
 Operator instructions are in [Overview](../features/overview.md); actual
 thresholds, scroll ownership, content escape and camera policy are documented in
