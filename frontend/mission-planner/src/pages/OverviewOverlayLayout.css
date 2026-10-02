@@ -9,7 +9,8 @@
 }
 .overview-page
   :is(
-    .globe-legend,
+    .overview-map-overlays,
+    .overview-satellite-overlays,
     .overview-top-overlays,
     .overview-bottom-overlays,
     .overview-arrival-overlays,
@@ -118,7 +119,13 @@
     width: calc(100% - 960px);
     transform: translateX(-50%);
   }
-  .overview-page .globe-legend {
+  .overview-page .overview-satellite-overlays {
+    position: absolute;
+    inset: max(128px, 8rem) 20px auto auto;
+    margin: 0;
+    width: 320px;
+  }
+  .overview-page .overview-map-overlays {
     position: absolute;
     inset: auto 20px 20px auto;
     margin: 0;
@@ -162,7 +169,13 @@
     width: calc(100% - 960px);
     transform: translateX(-50%);
   }
-  :root:fullscreen .overview-page .globe-legend {
+  :root:fullscreen .overview-page .overview-satellite-overlays {
+    position: absolute;
+    inset: max(128px, 8rem) 20px auto auto;
+    margin: 0;
+    width: 320px;
+  }
+  :root:fullscreen .overview-page .overview-map-overlays {
     position: absolute;
     inset: auto 20px 20px auto;
     margin: 0;

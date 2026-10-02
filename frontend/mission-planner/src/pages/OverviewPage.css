@@ -14,11 +14,6 @@
 }
 
 .globe-legend {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 1;
-  width: min(20rem, calc(100% - 2rem));
   border: 1px solid rgb(148 163 184 / 35%);
   border-radius: 0.75rem;
   padding: 0.875rem 1rem;
@@ -45,21 +40,27 @@
 
 .globe-legend__items li {
   display: grid;
-  grid-template-columns: 1rem 1fr auto;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.globe-legend__items strong {
-  color: #f8fafc;
-  font-weight: 600;
+  font-size: 1rem;
 }
 
 .globe-legend__marker {
   width: 0.625rem;
   height: 0.625rem;
-  border-radius: 999px;
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 93%,
+    50% 71%,
+    21% 93%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
 }
 
 .globe-legend__marker--aircraft {
@@ -69,7 +70,7 @@
 
 .globe-legend__route {
   display: block;
-  width: 1rem;
+  width: 1.5rem;
   height: 0.125rem;
   border-radius: 999px;
   background: #ffb000;
@@ -79,20 +80,21 @@
   background: #22d3ee;
 }
 
-.globe-legend__window {
-  min-width: 7rem;
-  border: 1px solid rgb(148 163 184 / 45%);
-  border-radius: 0.375rem;
-  padding: 0.25rem 0.375rem;
-  background: rgb(15 23 42 / 90%);
-  color: #f8fafc;
-  font: inherit;
+.globe-legend__route--planned-link {
+  height: 0.25rem;
 }
-
-.globe-legend__message {
+.overview-map-overlays {
+  display: grid;
+  gap: 8px;
+}
+.overview-map-status {
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.overview-map-status p {
   margin: 0;
-  color: #cbd5e1;
-  line-height: 1.5;
 }
 .globe-legend__marker--ground-entry {
   background: #c084fc;

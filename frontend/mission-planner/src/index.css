@@ -180,6 +180,7 @@
 }
 
 .app-route-content {
+  contain: paint;
   min-height: 0;
   flex: 1;
   overflow-y: auto;

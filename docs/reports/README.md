@@ -30,6 +30,8 @@ Reports are organized in two subdirectories:
 
 Completed feature implementation reports:
 
+- [2026-10-02: Overview planned satellite and rendered layers](./2026-10-02-overview-planned-satellite-legend.md)
+
 - **[2025-12-03: 001 Codebase Cleanup](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md)**
   - Systematic refactoring of Python backend, TypeScript frontend, and markdown
     docs

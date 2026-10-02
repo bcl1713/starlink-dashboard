@@ -37,16 +37,13 @@ import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projectio
 import { useActiveXLink } from '@/hooks/api/useActiveXLink';
 import { satcomLineStyle } from './satcom-link-style';
 import {
-  calculateConfiguredXBandLookAngles,
   projectActiveConfiguredXBandSatelliteId,
   projectAircraftScenePosition,
   projectConfiguredXBandActiveLink,
 } from './x-band-active-link-projection';
 import { useOverviewHistory } from '@/hooks/api/useOverviewHistory';
 import { projectAircraftHistory } from './overview-history-projection';
-import { overviewHistoryState } from './overview-history-state';
 import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
-import { useUpdateOverviewHistorySettings } from '@/hooks/api/useUpdateOverviewHistorySettings';
 import { AnimatedFlowLine } from './AnimatedFlowLine';
 import {
   activeLinkFlowEmitters,
@@ -65,7 +62,10 @@ import {
 import { OverviewArrivalPanel } from './OverviewArrivalPanel';
 import { deriveArrivalPanel } from './overview-arrival';
 import { OverviewMetricHistoryPanels } from './OverviewMetricHistoryPanels';
-const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
+import { derivePlannedSatelliteState } from './overview-planned-satellite';
+import { OverviewPlannedSatelliteCard } from './OverviewPlannedSatelliteCard';
+import { OverviewMapLegend } from './OverviewMapLegend';
+import { OverviewMapStatus } from './OverviewMapStatus';
 
 const AIRCRAFT_HISTORY_LINE = {
   outer: {
@@ -337,20 +337,7 @@ export function OverviewPage() {
     isLoading: isLoadingOverviewHistory,
     isError: isOverviewHistoryError,
   } = useOverviewHistory();
-  const {
-    data: overviewHistorySettings,
-    isError: isOverviewHistorySettingsError,
-  } = useOverviewHistorySettings();
-  const {
-    mutate: updateOverviewHistorySettings,
-    isPending: isUpdatingOverviewHistorySettings,
-  } = useUpdateOverviewHistorySettings();
-  const overviewHistoryWindowValue = overviewHistorySettings
-    ? String(overviewHistorySettings.window_seconds)
-    : '';
-  const hasCustomOverviewHistoryWindow =
-    overviewHistorySettings !== undefined &&
-    !HISTORY_WINDOW_OPTIONS.includes(overviewHistorySettings.window_seconds);
+  const { data: overviewHistorySettings } = useOverviewHistorySettings();
   const aircraftHistoryPoints = useMemo(
     () =>
       projectAircraftHistory(
@@ -359,11 +346,6 @@ export function OverviewPage() {
       ),
     [overviewHistory?.series]
   );
-  const aircraftHistoryStatus = overviewHistoryState({
-    isLoading: isLoadingOverviewHistory,
-    isError: isOverviewHistoryError,
-    pointCount: aircraftHistoryPoints.length,
-  });
   const {
     data: satellites,
     isLoading: isLoadingSatellites,
@@ -398,167 +380,75 @@ export function OverviewPage() {
     );
   }, [status?.network]);
   const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
-  const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
-    ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
-    : null;
-  const activeConfiguredXBandGeometryState = activeConfiguredXBandLookAngles
-    ? `Configured GEO estimate: azimuth ${activeConfiguredXBandLookAngles.azimuthDegrees.toFixed(1)}°, elevation ${activeConfiguredXBandLookAngles.elevationDegrees.toFixed(1)}°`
-    : activeConfiguredXBandSatelliteId
-      ? 'Configured GEO geometry unavailable'
-      : 'No active configured X-band link';
-  const activeConfiguredXBandLinkState = activeXLinkError
-    ? 'Active X-band link unavailable'
-    : isLoadingActiveXLink
-      ? 'Loading active X-band link...'
-      : activeConfiguredXBandSatelliteId
-        ? `Selected configured satellite ${activeConfiguredXBandSatelliteId}`
-        : 'No active configured X-band link';
-
   const configuredXBandSatellites =
     projectConfiguredXBandSatellite3d(satellites);
-
-  const configuredXBandSatelliteState = satellitesError
-    ? 'Satellite configuration unavailable'
-    : isLoadingSatellites
-      ? 'Loading satellite configuration...'
-      : configuredXBandSatellites.length === 0
-        ? 'No valid configured satellites'
-        : configuredXBandSatellites.length === 1
-          ? '1 configured satellite'
-          : configuredXBandSatellites.length + ' configured satellites';
+  const plannedSatelliteState = derivePlannedSatelliteState(
+    activeXLink,
+    isLoadingActiveXLink,
+    Boolean(activeXLinkError)
+  );
 
   const aircraftPosition = projectAircraftPosition(status ?? {});
   const aircraftScenePosition = projectAircraftScenePosition(status);
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
-  const telemetryState = statusError
-    ? 'Telemetry error'
-    : isLoadingStatus
-      ? 'Loading telemetry…'
-      : !status
-        ? 'Telemetry unavailable'
-        : isStatusStale(status.timestamp, currentTime)
-          ? 'Telemetry stale'
-          : !aircraftPosition
-            ? 'Position unavailable'
-            : 'Live telemetry';
+  const mapMessages = [
+    routeStatus,
+    statusError
+      ? 'Status refresh unavailable'
+      : isLoadingStatus
+        ? 'Loading status…'
+        : !status
+          ? 'Status unavailable'
+          : isStatusStale(status.timestamp, currentTime)
+            ? 'Status stale · last known'
+            : null,
+    !aircraftPosition && !isLoadingStatus ? 'Position unavailable' : null,
+    !groundEntryPoint && !isLoadingStatus ? 'GEP unavailable' : null,
+    isOverviewHistoryError
+      ? 'Track history unavailable'
+      : isLoadingOverviewHistory
+        ? 'Loading track history…'
+        : null,
+    satellitesError
+      ? 'Satellite configuration unavailable'
+      : isLoadingSatellites
+        ? 'Loading satellite configuration…'
+        : null,
+    activeXLinkError ? 'Satellite selection unavailable' : null,
+    activeConfiguredXBandSatelliteId && !activeConfiguredXBandLink
+      ? 'Planned link unavailable'
+      : null,
+    activeXLink?.state === 'warning'
+      ? activeXLinkError
+        ? 'Last-known planned link warning'
+        : 'Planned link warning'
+      : null,
+  ].filter((message): message is string => message !== null);
 
   return (
     <main className="overview-page">
       <OverviewFullscreenControl />
-      <aside
-        className="globe-legend"
-        aria-label="Globe legend"
-        role={routesError || routeError ? 'alert' : undefined}
-      >
-        <p className="globe-legend__title">Globe</p>
-        <ul className="globe-legend__items">
-          {routeStatus ? (
-            <li>
-              <span aria-hidden="true" />
-              <span>Route</span>
-              <strong>{routeStatus}</strong>
-            </li>
-          ) : (
-            <>
-              <li>
-                <span aria-hidden="true" />
-                <span>Generated POIs</span>
-                <strong>Colour indicates estimated arrival urgency</strong>
-              </li>
-              <li>
-                <span className="globe-legend__route" aria-hidden="true" />
-                <span>Path</span>
-                <strong>{activeRoute?.name}</strong>
-              </li>
-            </>
-          )}
-          <li>
-            <span
-              className="globe-legend__marker globe-legend__marker--aircraft"
-              aria-hidden="true"
-            />
-            <span>Aircraft position</span>
-            <strong>{telemetryState}</strong>
-          </li>
-          <li>
-            <span
-              className="globe-legend__route globe-legend__route--history"
-              aria-hidden="true"
-            />
-            <span>Aircraft history</span>
-            <strong>{aircraftHistoryStatus}</strong>
-          </li>
-          <li>
-            <span aria-hidden="true" />
-            <label htmlFor="aircraft-history-window">
-              Aircraft history window
-            </label>
-            <select
-              id="aircraft-history-window"
-              aria-label="Aircraft history window"
-              className="globe-legend__window"
-              value={overviewHistoryWindowValue}
-              disabled={
-                !overviewHistorySettings || isUpdatingOverviewHistorySettings
-              }
-              onChange={(event) => {
-                const windowSeconds = Number(event.target.value);
-                if (Number.isInteger(windowSeconds) && windowSeconds > 0) {
-                  updateOverviewHistorySettings(windowSeconds);
-                }
-              }}
-            >
-              {!overviewHistorySettings && (
-                <option value="" disabled>
-                  {isOverviewHistorySettingsError ? 'Unavailable' : 'Loading…'}
-                </option>
-              )}
-              {hasCustomOverviewHistoryWindow && (
-                <option value={overviewHistoryWindowValue}>
-                  {overviewHistoryWindowValue} seconds
-                </option>
-              )}
-              {HISTORY_WINDOW_OPTIONS.map((windowSeconds) => (
-                <option key={windowSeconds} value={windowSeconds}>
-                  {windowSeconds / 60} minutes
-                </option>
-              ))}
-            </select>
-          </li>
-          <li>
-            <span
-              className="globe-legend__marker globe-legend__marker--ground-entry"
-              aria-hidden="true"
-            />
-            <span>Ground entry point</span>
-            <strong>
-              {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
-            </strong>
-          </li>
-          <li>
-            <span aria-hidden="true" />
-            <span>Configured X-band satellites</span>
-            <strong>{configuredXBandSatelliteState}</strong>
-          </li>
-          <li>
-            <span aria-hidden="true" />
-            <span>Active configured X-band link</span>
-            <strong>{activeConfiguredXBandLinkState}</strong>
-          </li>
-          <li>
-            <span aria-hidden="true" />
-            <span>Configured GEO analysis</span>
-            <strong>{activeConfiguredXBandGeometryState}</strong>
-          </li>
-        </ul>
-      </aside>
       <div className="overview-top-overlays">
         <OverviewClockPanel
           clocks={overviewClockSettings?.clocks}
           currentTime={currentTime}
           isError={isOverviewClockSettingsError}
           isLoading={isLoadingOverviewClockSettings}
+        />
+      </div>
+      <div className="overview-satellite-overlays">
+        <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
+      </div>
+      <div className="overview-map-overlays">
+        <OverviewMapStatus messages={mapMessages} />
+        <OverviewMapLegend
+          aircraft={Boolean(aircraftPosition)}
+          route={hasRenderableRoute}
+          history={aircraftHistoryPoints.length >= 2}
+          groundEntryPoint={Boolean(groundEntryPoint)}
+          plannedLink={Boolean(activeConfiguredXBandLink)}
+          linkState={activeXLink?.state ?? null}
         />
       </div>
       <div className="overview-bottom-overlays">
@@ -579,6 +469,14 @@ export function OverviewPage() {
           ))}
         </ul>
       </div>
+      <ul
+        className="overview-visually-hidden"
+        aria-label="Configured map satellites"
+      >
+        {configuredXBandSatellites.map((satellite) => (
+          <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
+        ))}
+      </ul>
       <Canvas
         className="overview-globe"
         camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}

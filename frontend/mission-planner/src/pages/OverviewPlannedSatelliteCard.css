@@ -1,0 +1,20 @@
+.overview-planned-satellite {
+  min-width: 0;
+  padding: 14px 18px;
+  text-align: center;
+}
+.overview-planned-satellite__label {
+  margin: 0;
+  color: var(--overview-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.overview-planned-satellite__id {
+  display: block;
+  margin: 6px 0;
+  color: var(--overview-text);
+  font-size: clamp(1.5rem, 2.1vw, 2.75rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}

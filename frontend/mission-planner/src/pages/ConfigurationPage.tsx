@@ -1,3 +1,5 @@
+import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
+import { OverviewMapDiagnostics } from './OverviewMapDiagnostics';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { GPSControlCard } from '../components/gps/GPSControlCard';
 import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClockSettings';
@@ -19,6 +21,8 @@ export function ConfigurationPage() {
 
       <div className="max-w-xl">
         <GPSControlCard />
+        <OverviewHistorySettingsCard />
+        <OverviewMapDiagnostics />
         {isLoading ? (
           <p role="status">Loading operational clocks...</p>
         ) : isError || !data ? (

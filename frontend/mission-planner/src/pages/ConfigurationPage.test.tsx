@@ -1,6 +1,19 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/hooks/api/useOverviewHistorySettings', () => ({
+  useOverviewHistorySettings: () => ({ data: { window_seconds: 300 } }),
+}));
+vi.mock('@/hooks/api/useUpdateOverviewHistorySettings', () => ({
+  useUpdateOverviewHistorySettings: () => ({ mutate: vi.fn() }),
+}));
+vi.mock('@/hooks/api/useStatus', () => ({ useStatus: () => ({}) }));
+vi.mock('@/hooks/api/useOverviewHistory', () => ({
+  useOverviewHistory: () => ({}),
+}));
+vi.mock('@/hooks/api/useSatellites', () => ({ useSatellites: () => ({}) }));
+vi.mock('@/hooks/api/useActiveXLink', () => ({ useActiveXLink: () => ({}) }));
 vi.mock('@/hooks/api/useOverviewClockSettings', () => ({
   useOverviewClockSettings: vi.fn(),
 }));
@@ -36,6 +49,22 @@ function mockLoadedClockSettings() {
 }
 
 describe('ConfigurationPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  it('keeps Overview settings reachable when clock settings fail', () => {
+    vi.mocked(useOverviewClockSettings).mockReturnValue({
+      isError: true,
+    } as never);
+    vi.mocked(useUpdateOverviewClockSettings).mockReturnValue({
+      mutate: vi.fn(),
+    } as never);
+    render(<ConfigurationPage />);
+    expect(screen.getByLabelText('Overview history window')).not.toBeNull();
+    expect(
+      screen.getByRole('region', { name: 'Overview map diagnostics' })
+    ).not.toBeNull();
+  });
   it('renders the clock editor fields', () => {
     mockLoadedClockSettings();
     vi.mocked(useUpdateOverviewClockSettings).mockReturnValue({
