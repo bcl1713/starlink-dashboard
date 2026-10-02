@@ -11,9 +11,11 @@ const metrics = [
 /** Real scene/panels with controlled API responses, including retained errors. */
 export async function compositionFixture(page: Page) {
   const state = {
+    now: null as number | null,
     errors: false,
     stale: false,
     staleAgeSeconds: 600,
+    route: true,
     satellite: 'X-6' as string | null,
     nextName: 'Atlantic handoff',
     destination: 'RKSO',
@@ -22,11 +24,11 @@ export async function compositionFixture(page: Page) {
   };
   await page.route('**/api/**', async (route) => {
     const endpoint = new URL(route.request().url()).pathname;
-    const now = Date.now();
+    const now = state.now ?? Date.now();
     const observed = new Date(
       now - (state.stale ? state.staleAgeSeconds * 1000 : 0)
     ).toISOString();
-    if (state.errors && !endpoint.endsWith('/settings'))
+    if (state.errors && endpoint !== '/api/overview-history/settings')
       return route.fulfill({ status: 503, json: { detail: 'Fixture outage' } });
     if (endpoint === '/api/overview-clocks/settings')
       return route.fulfill({
@@ -76,7 +78,10 @@ export async function compositionFixture(page: Page) {
       });
     if (endpoint === '/api/routes')
       return route.fulfill({
-        json: { routes: [{ id: 'route', is_active: true }], total: 1 },
+        json: {
+          routes: state.route ? [{ id: 'route', is_active: true }] : [],
+          total: state.route ? 1 : 0,
+        },
       });
     if (endpoint === '/api/routes/route')
       return route.fulfill({
@@ -91,6 +96,14 @@ export async function compositionFixture(page: Page) {
         },
       });
     if (endpoint === '/api/overview/upcoming-pois') {
+      if (!state.route)
+        return route.fulfill({
+          json: {
+            state: 'route_unavailable',
+            calculated_at: new Date(now).toISOString(),
+            pois: [],
+          },
+        });
       const phase =
         state.arrival === 'departure' ? 'pre_departure' : 'in_flight';
       return route.fulfill({
@@ -190,7 +203,7 @@ export async function desktopGeometry(page: Page) {
     const pageBox = box('.overview-page');
     const panels = [
       ...document.querySelectorAll<HTMLElement>(
-        '.operational-clock, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control'
+        '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control'
       ),
     ];
     const clock = box('.overview-clock-panel');

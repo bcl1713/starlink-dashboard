@@ -15,7 +15,7 @@ export function OverviewClockPanel({
   if (isError) {
     return (
       <aside
-        className="overview-clock-panel"
+        className="overview-clock-panel overview-clock-panel--message"
         aria-label="Operational clocks"
         role="alert"
       >
@@ -25,7 +25,10 @@ export function OverviewClockPanel({
   }
   if (isLoading) {
     return (
-      <aside className="overview-clock-panel" aria-label="Operational clocks">
+      <aside
+        className="overview-clock-panel overview-clock-panel--message"
+        aria-label="Operational clocks"
+      >
         <p>Loading operational clocks...</p>
       </aside>
     );
@@ -33,7 +36,7 @@ export function OverviewClockPanel({
   if (!clocks) {
     return (
       <aside
-        className="overview-clock-panel"
+        className="overview-clock-panel overview-clock-panel--message"
         aria-label="Operational clocks"
         role="alert"
       >

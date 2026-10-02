@@ -17,7 +17,7 @@ export function OverviewPlannedSatelliteCard({
           : 'UNAVAILABLE';
   return (
     <section
-      className="overview-planned-satellite"
+      className={`overview-planned-satellite overview-planned-satellite--${state.kind}${state.kind === 'selected' && state.satelliteId.length > 24 ? ' overview-planned-satellite--long-id' : ''}`}
       aria-label="Planned satellite"
     >
       <p className="overview-planned-satellite__label">X-BAND</p>

@@ -21,9 +21,9 @@ container queries, Vitest/Testing Library and Playwright Chromium.
 and [issue #219](https://github.com/bcl1713/starlink-dashboard/issues/219). This
 is the desktop composition slice; #220 owns mobile stage/interaction.
 
-**Status:** Brian approved native implementation on 2026-10-02. Native
-execution is recommended because the two implementation tasks share the same
-layout and browser contracts, followed by one acceptance task.
+**Status:** Brian approved native implementation on 2026-10-02. Native execution
+is recommended because the two implementation tasks share the same layout and
+browser contracts, followed by one acceptance task.
 
 ## Global Constraints
 
@@ -221,33 +221,33 @@ repository-root `docs/features/overview.md`.
 guards and arrival state. Produce state-specific styling only; data contracts,
 clock zones, network/position freshness and arrival derivation remain unchanged.
 
-- [ ] Add failing `exceptions retain desktop fit` and
+- [x] Add failing `exceptions retain desktop fit` and
       `long content remains readable` cases: all query errors together, stale
       network/position, no route, no selected satellite, `UNAVAILABLE`, a
       128-character satellite ID and two 120-character POI/destination names
       with multi-day countdown/date text. Assert complete accessible copy,
       wrapping, no internal/page overflow and no overlapping panel bounds.
       Include destination-only and late departure.
-- [ ] Run the new tests before styling. Expected red: fixed unavailable text or
+- [x] Run the new tests before styling. Expected red: fixed unavailable text or
       expanded right-region content violates the target hierarchy/fit assertion.
-- [ ] Implement state styling and right-region typography above. Keep map
+- [x] Implement state styling and right-region typography above. Keep map
       exceptions separate from legend and planning claims. Tune spacing against
       measured bounds; retain visible stale/error text and the central clear
       area.
-- [ ] Add/run `backdrop fallback preserves contrast and geometry`: disable only
+- [x] Add/run `backdrop fallback preserves contrast and geometry`: disable only
       the existing optional CSSSupportsRule as in metric-cleanup coverage;
       assert computed 90% navy background and `backdrop-filter: none`. Capture
       bright terrain/dark ocean with and without blur; inspect actual images.
       Verify panel children/plots have no text-blurring `filter` and remain
       legible.
-- [ ] Update desktop operation/fullscreen guidance: ordinary 1920×1080 now fits;
+- [x] Update desktop operation/fullscreen guidance: ordinary 1920×1080 now fits;
       entry control moved beneath planning card; Escape restores navigation.
       Document text/short-viewport flow and Configuration's persisted history
       path. Remove the superseded ordinary-view fallback claim and obsolete
       thresholds.
-- [ ] Run focused card/layer/arrival/clock/fullscreen unit tests and the new
+- [x] Run focused card/layer/arrival/clock/fullscreen unit tests and the new
       browser cases; expected green without changing semantic derivation tests.
-- [ ] Commit as `feat(overview): finish desktop panel readability`.
+- [x] Commit as `feat(overview): finish desktop panel readability`.
 
 ## Task 3: Verify exact-head rendering and preserve operational context
 
