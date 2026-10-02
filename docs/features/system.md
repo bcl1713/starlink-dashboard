@@ -23,6 +23,22 @@ All system configuration via `.env` file.
 **See:**
 [Environment Variables](../setup/configuration/environment-variables.md)
 
+### Overview settings and diagnostics
+
+The **Configuration** page contains **Overview history window** (5, 15, 30 or
+60 minutes, preserving a saved custom duration). The saved window applies to
+the aircraft trail and all five network graphs. It does not change the fixed
+five-minute rolling-statistics window or polling cadence. Read and save failures
+are reported separately; an unsuccessful save can be retried.
+
+**Overview map diagnostics** retains satellite counts, selected planned ID,
+status/history availability, ground entry point and configured GEO look angles.
+Satellite placement and link geometry are planning analysis, not measured
+connectivity. The supported planned-link warning derives from the existing
+configured forbidden relative-azimuth rule; it does not establish a connection
+or introduce a new alarm. Retained coordinates and geometry can be last known.
+Satellite catalog editing remains in Satellite Manager.
+
 ### Configuration API
 
 Runtime configuration management via REST API.

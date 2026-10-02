@@ -139,9 +139,7 @@ configured polling cadence (five seconds by default, with one second opt-in) and
 the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
 a saved custom window). This persisted **LAST** display duration is separate
 from **Rolling statistics: 5 minutes**, which always uses the fixed
-trailing-five-minute source window. The selector remains in the globe legend
-pending [#218](https://github.com/bcl1713/starlink-dashboard/issues/218).
-History requests default to five seconds while
+trailing-five-minute source window. History requests default to five seconds while
 [#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s measured
 performance gate is pending. A reviewed frontend build can select one second
 using `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1`; rebuild with `5` to roll back.
@@ -191,8 +189,8 @@ existing legend stays at the lower right. Clocks and the other surfaces share
 the same glass tint at 50% opacity, fine border, rounded corners and 10px blur.
 A 90% navy fallback protects text when backdrop blur is unsupported. Shared
 refresh-error space and per-card exception space preserve fit when data becomes
-stale. Empty POIs do not move the charts. The diagnostic legend remains
-transitional until #218.
+stale. Empty POIs do not move the charts. The compact legend identifies rendered map layers; detailed map diagnostics
+remain available in Configuration.
 
 Layout uses actual Overview container size: a desktop column requires at least
 93.75rem width and 67.5rem height in fullscreen, or 71.25rem height in ordinary
@@ -211,9 +209,8 @@ fullscreen button disappear. Exit with the browser's fullscreen shortcut
 mobile globe-stage and gesture redesign remains separate #220 work.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
-rolling response shapes and error behavior. Moving window/cadence controls to a
-configuration page and per-panel visibility settings are future work, not
-current controls. Grafana remains a supported fallback and comparator.
+rolling response shapes and error behavior. History-window selection and map diagnostics are available in Configuration.
+Cadence controls and per-panel visibility settings remain future work. Grafana remains a supported fallback and comparator.
 
 ### 6. [System Configuration & Simulation](./system.md)
 
