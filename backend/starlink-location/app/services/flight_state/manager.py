@@ -164,7 +164,9 @@ class FlightStateManager:
 
         return status_copy
 
-    def check_departure(self, current_speed_knots: float) -> bool:
+    def check_departure(
+        self, current_speed_knots: float, *, observed_at: datetime | None = None
+    ) -> bool:
         """
         Check for departure based on speed threshold with persistence.
 
@@ -175,6 +177,8 @@ class FlightStateManager:
 
         Args:
             current_speed_knots: Current aircraft speed in knots
+            observed_at: Accepted observation time for persistence and departure;
+                defaults to check time for callers without telemetry timestamps
 
         Returns:
             True if departure was triggered, False otherwise
@@ -182,6 +186,7 @@ class FlightStateManager:
         with self._lock:
             now = datetime.now(timezone.utc)
             self._status.last_departure_check_time = now
+            sample_time = observed_at if observed_at is not None else now
 
             # Only check if in pre-departure phase
             if self._status.phase != FlightPhase.PRE_DEPARTURE:
@@ -189,12 +194,12 @@ class FlightStateManager:
 
             # Track speed samples for persistence
             if self._last_speed_sample_time is None:
-                self._last_speed_sample_time = now
+                self._last_speed_sample_time = sample_time
 
             # Initialize persistence tracking if above threshold
             if current_speed_knots > self.DEPARTURE_SPEED_THRESHOLD_KNOTS:
                 if self._above_threshold_start_time is None:
-                    self._above_threshold_start_time = now
+                    self._above_threshold_start_time = sample_time
                     logger.debug(
                         f"Speed {current_speed_knots:.1f}kn exceeds departure threshold "
                         f"({self.DEPARTURE_SPEED_THRESHOLD_KNOTS}kn), starting persistence check"
@@ -203,14 +208,14 @@ class FlightStateManager:
                 # Check if speed has been above threshold long enough
                 if self._above_threshold_start_time is not None:
                     persistence_seconds = (
-                        now - self._above_threshold_start_time
+                        sample_time - self._above_threshold_start_time
                     ).total_seconds()
                     self._status.speed_persistence_seconds = persistence_seconds
 
                     if persistence_seconds >= self.DEPARTURE_SPEED_PERSISTENCE_SECONDS:
                         # Trigger departure
                         if self._status.departure_time is None:
-                            self._status.departure_time = now
+                            self._status.departure_time = sample_time
                         self._transition_to_phase(FlightPhase.IN_FLIGHT)
                         logger.info(
                             f"Departure detected: speed {current_speed_knots:.1f}kn "
@@ -227,7 +232,7 @@ class FlightStateManager:
                     self._above_threshold_start_time = None
                     self._status.speed_persistence_seconds = 0.0
 
-            self._last_speed_sample_time = now
+            self._last_speed_sample_time = sample_time
             return False
 
     def observe_detection(self, observed_at: datetime) -> bool:
@@ -264,6 +269,8 @@ class FlightStateManager:
         self,
         distance_to_destination_m: float,
         current_speed_knots: float,
+        *,
+        observed_at: datetime | None = None,
     ) -> bool:
         """
         Check for arrival based on distance and dwell time.
@@ -276,6 +283,8 @@ class FlightStateManager:
         Args:
             distance_to_destination_m: Distance to final destination in meters
             current_speed_knots: Current aircraft speed in knots (for context)
+            observed_at: Accepted observation time for dwell and arrival;
+                defaults to check time for callers without telemetry timestamps
 
         Returns:
             True if arrival was triggered, False otherwise
@@ -283,6 +292,7 @@ class FlightStateManager:
         with self._lock:
             now = datetime.now(timezone.utc)
             self._status.last_arrival_check_time = now
+            sample_time = observed_at if observed_at is not None else now
 
             # Only check if in flight phase
             if self._status.phase != FlightPhase.IN_FLIGHT:
@@ -292,7 +302,7 @@ class FlightStateManager:
             if distance_to_destination_m <= self.ARRIVAL_DISTANCE_THRESHOLD_M:
                 # Start or continue tracking arrival time
                 if self._arrival_start_time is None:
-                    self._arrival_start_time = now
+                    self._arrival_start_time = sample_time
                     self._arrival_distance_at_start = distance_to_destination_m
                     logger.debug(
                         f"Aircraft within arrival zone ({distance_to_destination_m:.0f}m), "
@@ -301,12 +311,14 @@ class FlightStateManager:
 
                 # Check if aircraft has been in arrival zone long enough
                 if self._arrival_start_time is not None:
-                    dwell_seconds = (now - self._arrival_start_time).total_seconds()
+                    dwell_seconds = (
+                        sample_time - self._arrival_start_time
+                    ).total_seconds()
 
                     if dwell_seconds >= self.ARRIVAL_DWELL_TIME_SECONDS:
                         # Trigger arrival
                         if self._status.arrival_time is None:
-                            self._status.arrival_time = now
+                            self._status.arrival_time = sample_time
                         self._transition_to_phase(FlightPhase.POST_ARRIVAL)
                         logger.info(
                             f"Arrival detected: {dwell_seconds:.1f}s in arrival zone "

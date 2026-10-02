@@ -189,7 +189,9 @@ def update_metrics_from_telemetry(
         # Automatic departure detection (speed-based)
         try:
             if detection_ready:
-                flight_state.check_departure(telemetry.position.speed)
+                flight_state.check_departure(
+                    telemetry.position.speed, observed_at=observed_at
+                )
         except (
             RuntimeError,
             ValueError,
@@ -218,7 +220,9 @@ def update_metrics_from_telemetry(
                 distance_remaining = progress_info.get("distance_remaining_meters")
                 if distance_remaining is not None:
                     flight_state.check_arrival(
-                        distance_remaining, telemetry.position.speed
+                        distance_remaining,
+                        telemetry.position.speed,
+                        observed_at=observed_at,
                     )
             except (
                 RuntimeError,
