@@ -37,6 +37,8 @@ Camera/input/preference implementation:
 `57f1f44b2a94dcd4e4b4caf23f1b959c21649166`. Brian requested publication of the
 branch as-is for testing; this implementation was pushed. No merge, deployment
 or issue closure is included.
+The verified final review fixes are in
+`0b3cd44692922b3c2365d019fe986dc8094742b4`, also pushed for testing.
 
 The production image uses an immutable archive of the pushed candidate, the
 repository's Dockerfile/Nginx configuration, and candidate SHA build input. Its
@@ -72,6 +74,10 @@ the complete responsive/input suite passes 27/27. Manual pose and default
 position-update behavior remain covered. Desktop geometry now also measures the
 Reset/status group. Its visual baseline was inspected and passes without
 snapshot updates.
+All 11 existing desktop composition/readability cases are covered by 10/11 and
+a corrected 1/1 recheck. The backdrop contrast fixture uses 18:00 UTC to put its
+Americas route in daylight; its pixel threshold and deadline are unchanged.
+Separate production captures retain midnight lighting.
 
 New responsive/input cases exercise wheel and touch, landscape gap forwarding,
 browser zoom modifiers, Explore/Exit, interrupted pointer capture, easing,
@@ -84,7 +90,7 @@ explicit globe selection, map-before-metrics order, shell scroll ownership,
 
 Local session evidence is in `/tmp/issue220-evidence/`. Immutable before
 captures are in `baseline/manifest.json`; the final production captures and
-recordings are indexed by `production-reviewed/manifest.json`, with per-capture
+recordings are indexed by `production-final/manifest.json`, with per-capture
 viewport, root size, DPR, scale, layout, CSS/buffer bounds, camera pose and API
 provenance. `production-smoke.json` records real responses and Prometheus
 health; `production-persisted-after-restart.json` records saved history after
@@ -93,8 +99,12 @@ restart. `docker-containers-after.txt`, `docker-volumes-after.txt` and
 artifacts remain alongside these files; this repository report does not claim
 those local artifacts are remotely published.
 
-The manifest indexes 23 settled-pose stills and seven recordings from pushed
-candidate `80c18e868181ce53d931d667a351d633d62d5509`. Later documentation-only
+The final manifest is `production-final/manifest.json`, indexing 23 settled-pose
+stills and seven recordings from pushed candidate
+`0b3cd44692922b3c2365d019fe986dc8094742b4`. Its production image identity is
+`sha256:ec3f1f40ea9285072e4a1cdf66e9abdf8294ea521d113bca1c924bfc83d6ae7b`.
+Earlier captures at `80c18e86` remain in `production-reviewed/`.
+Later documentation-only
 validation commits retain this evidence only when all runtime input trees are
 verified identical. Desktop, mobile rotation/scroll and enlarged-text recordings
 have inspected contact sheets in `video-1-inspection/`, `video-2-inspection/`

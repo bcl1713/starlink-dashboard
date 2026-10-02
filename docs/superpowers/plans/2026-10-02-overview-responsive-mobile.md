@@ -229,7 +229,7 @@ source/runtime identity.
       following, expandable legend, reduced motion and separate network/position
       freshness. Document the actual resolver thresholds, content escape and
       shell scroll owner; remove the superseded fixed-background mobile claim.
-- [ ] Write report/index with exact evidence links and results/limitations.
+- [x] Write report/index with exact evidence links and results/limitations.
       Obtain independent whole-branch review using the approved execution
       method. Any publication for review requires the selected integration
       authorization; no merge or deployment is implied. Refresh exact-final-SHA
