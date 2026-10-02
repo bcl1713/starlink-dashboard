@@ -164,7 +164,8 @@ the Canvas or changing telemetry derivation.
       capture cleanup also works when the viewport changes during a gesture.
       Scope landscape wheel forwarding to stage/gaps in scroll mode; preserve
       native rail behavior and browser zoom. Implement automatic frame fitting
-      and explicit fresh-map Follow with unavailable reason; retain manual pose.
+      and Configuration opt-in following with unavailable reason; retain manual
+      pose.
 - [ ] Add/run reduced-motion tests for initial/change preference: no continuous
       plot transform transition or optional scene motion; new data/gaps/time
       bounds still update, renderer/uPlot identities persist. Apply preference
@@ -223,10 +224,10 @@ source/runtime identity.
       CSS/drawing-buffer dimensions, API/fixture provenance and immutable source
       identity in manifest.
 - [ ] Update operator guidance for mobile navigation/history settings, portrait
-      page versus landscape rail scroll, Explore/Exit/Follow, expandable legend,
-      reduced motion and separate network/position freshness. Document the
-      actual resolver thresholds, content escape and shell scroll owner; remove
-      the superseded fixed-background mobile claim.
+      page versus landscape rail scroll, Explore/Exit/Reset and configured
+      following, expandable legend, reduced motion and separate network/position
+      freshness. Document the actual resolver thresholds, content escape and
+      shell scroll owner; remove the superseded fixed-background mobile claim.
 - [ ] Write report/index with exact evidence links and results/limitations.
       Obtain independent whole-branch review using the approved execution
       method. Any publication for review requires the selected integration
@@ -243,9 +244,9 @@ camera, rotation, motion and all five Review Focus cases to Tasks 1–2;
 exact-head production/browser/operator evidence and documentation to Task 3.
 Source freshness remains independent from camera convenience. Layout observes
 the bounded shell, never its own growing content; manual camera survives resize;
-Follow is explicit because no existing control exists to reuse.
+Following defaults off in Configuration; reset fits the route once, as Brian
+clarified during implementation. All automatic moves ease; manual input cancels.
 
-Before Task 1, Brian reviews this written plan and chooses native or delegated
-execution. This follows #220's explicit requirement to approve its Superpowers
-plan and the writing-plans skill's execution handoff. Preparing this draft does
-not approve implementation, publication, merge or deployment.
+Brian approved implementation on 2026-10-02 and delegated execution-method
+choice; native execution with one final independent review was selected.
+Publication, merge and deployment remain separate integration actions.

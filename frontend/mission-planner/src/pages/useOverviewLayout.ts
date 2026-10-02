@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
   resolveOverviewLayout,
   type OverviewLayoutMode,
@@ -15,8 +15,10 @@ interface Layout {
 export function useOverviewLayout(
   pageRef: RefObject<HTMLElement | null>,
   stageRef: RefObject<HTMLDivElement | null>,
-  contentKey: string
+  contentKey: string,
+  contentReady: boolean
 ): Layout {
+  const flowLatch = useRef({ geometry: '', required: false, ready: false });
   const [layout, setLayout] = useState<Layout>({
     mode: 'desktop',
     flow: false,
@@ -40,6 +42,14 @@ export function useOverviewLayout(
       const rootFontSize =
         parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const input = `${width}/${height}/${rootFontSize}/${contentKey}`;
+      const geometry = `${width}/${height}/${rootFontSize}`;
+      if (
+        geometry !== flowLatch.current.geometry ||
+        (contentReady && !flowLatch.current.ready)
+      ) {
+        flowLatch.current = { geometry, required: false, ready: contentReady };
+      }
+      flowLatch.current.ready = contentReady;
       if (input !== previousInput) {
         blocked = false;
         previousInput = input;
@@ -72,17 +82,27 @@ export function useOverviewLayout(
               120 * Math.max(1, rootFontSize / 16)))
       )
         blocked = true;
-      const mode = blocked ? 'stacked' : candidate;
       const rightHeight =
         page
           .querySelector<HTMLElement>('.overview-right-overlays')
           ?.getBoundingClientRect().height ?? 0;
-      const flow =
+      if (
+        candidate === 'landscape' &&
+        current === candidate &&
+        rightHeight + overlayHeight + 24 > stage.clientHeight
+      )
+        blocked = true;
+      const mode = blocked ? 'stacked' : candidate;
+      if (
+        contentReady &&
         mode === 'stacked' &&
         (overlayHeight > 160 ||
           rightHeight > 180 ||
           expanded ||
-          rootFontSize > 20);
+          rootFontSize > 20)
+      )
+        flowLatch.current.required = true;
+      const flow = mode === 'stacked' && flowLatch.current.required;
       const stageWidth = stage.clientWidth;
       const stageHeight = flow ? 360 : stage.clientHeight;
       const rightWidth =
@@ -90,12 +110,23 @@ export function useOverviewLayout(
           ? 360
           : (page.querySelector<HTMLElement>('.overview-satellite-overlays')
               ?.offsetWidth ?? 144) + 24;
-      const safeRect = {
-        x: 12,
-        y: 12,
-        width: Math.max(1, stageWidth - rightWidth - 12),
-        height: Math.max(1, stageHeight - (flow ? 24 : overlayHeight + 24)),
-      };
+      const safeRect =
+        mode === 'desktop'
+          ? {
+              x: 480,
+              y: 136,
+              width: Math.max(1, stageWidth - 840),
+              height: Math.max(1, stageHeight - overlayHeight - 156),
+            }
+          : {
+              x: 12,
+              y: 12,
+              width: Math.max(1, stageWidth - (flow ? 24 : rightWidth + 12)),
+              height: Math.max(
+                1,
+                stageHeight - (flow ? 24 : overlayHeight + 24)
+              ),
+            };
       setLayout((previous) => {
         if (
           previous.mode === mode &&
@@ -115,7 +146,7 @@ export function useOverviewLayout(
       stage,
       clockNode(page),
       ...page.querySelectorAll<HTMLElement>(
-        '.overview-arrival, .overview-planned-satellite, .globe-legend'
+        '.overview-arrival, .overview-planned-satellite, .globe-legend, .overview-map-controls'
       ),
     ].forEach((node) => {
       if (node) observer.observe(node);
@@ -138,7 +169,7 @@ export function useOverviewLayout(
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', schedule);
     };
-  }, [pageRef, stageRef, contentKey]);
+  }, [pageRef, stageRef, contentKey, contentReady]);
   return layout;
 }
 function clockNode(page: HTMLElement) {

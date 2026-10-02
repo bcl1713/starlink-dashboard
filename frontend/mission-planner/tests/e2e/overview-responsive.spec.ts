@@ -20,7 +20,28 @@ for (const [width, height, columns] of [
       (r) => r.url().endsWith('/earth-day-hi.jpg') && r.ok()
     );
     await page.goto('/overview');
-    await waitForGlobeVisualReady(page, texture);
+    await expect(page.locator('.overview-page')).toHaveAttribute(
+      'data-layout',
+      'stacked'
+    );
+    // The responsive frame intentionally places Earth beside the planning card.
+    // Check the center of that measured clear area, rather than the canvas center.
+    const point = await page.evaluate(() => {
+      const globe = document
+        .querySelector('.overview-globe')!
+        .getBoundingClientRect();
+      const planning = document
+        .querySelector('.overview-satellite-overlays')!
+        .getBoundingClientRect();
+      const arrival = document
+        .querySelector('.overview-arrival')!
+        .getBoundingClientRect();
+      return {
+        x: (12 + (globe.width - planning.width - 36) / 2) / globe.width,
+        y: (12 + (globe.height - arrival.height - 24) / 2) / globe.height,
+      };
+    });
+    await waitForGlobeVisualReady(page, texture, point);
     await info.attach('geometry', {
       body: JSON.stringify(
         await page.evaluate(() => ({

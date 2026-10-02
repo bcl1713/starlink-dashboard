@@ -1,6 +1,7 @@
 import { Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import * as THREE from 'three';
 import {
   GlobeRouteRibbon,
@@ -94,6 +95,7 @@ export function AnimatedFlowLine({
   random,
   showLine = true,
 }: AnimatedFlowLineProps) {
+  const reducedMotion = usePrefersReducedMotion();
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
   const pool = useMemo(() => new FlowParticlePool({ random }), [random]);
   const path = useMemo(() => prepareFlowPath(points), [points]);
@@ -115,7 +117,7 @@ export function AnimatedFlowLine({
   }, [resources]);
 
   useFrame((state, delta) => {
-    if (path.points.length < 2 || path.totalLength <= 0) {
+    if (reducedMotion || path.points.length < 2 || path.totalLength <= 0) {
       writeFlowParticles(resources, path, []);
       return;
     }

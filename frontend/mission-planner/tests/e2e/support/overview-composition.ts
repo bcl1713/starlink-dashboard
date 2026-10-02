@@ -12,6 +12,11 @@ const metrics = [
 export async function compositionFixture(page: Page) {
   const state = {
     now: null as number | null,
+    position: { latitude: 35, longitude: -100, altitude: 35000 } as {
+      latitude: number;
+      longitude: number;
+      altitude: number;
+    } | null,
     errors: false,
     stale: false,
     staleAgeSeconds: 600,
@@ -50,7 +55,7 @@ export async function compositionFixture(page: Page) {
       return route.fulfill({
         json: {
           timestamp: observed,
-          position: { latitude: 35, longitude: -100, altitude: 35000 },
+          position: state.position,
           ground_entry_point: { latitude: 36, longitude: -102 },
           metric_availability: {
             latency_ms: true,

@@ -112,7 +112,7 @@
   }
 }
 .overview-page:not([data-layout='desktop']) .overview-planned-satellite {
-  padding: 6px 8px;
+  padding: 6px 4px;
 }
 .overview-page:not([data-layout='desktop']) .overview-planned-satellite__label {
   font-size: 0.75rem;
@@ -443,4 +443,71 @@
 .overview-page:not([data-layout='desktop'])
   .overview-metric-history__value-axis {
   font-size: max(12px, 0.75rem);
+}
+.overview-map-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+}
+.overview-map-controls button {
+  min-width: 44px;
+  min-height: 44px;
+  flex: 1 1 0;
+  padding: 4px;
+  border: var(--overview-border);
+  border-radius: 8px;
+  background: var(--overview-glass-fallback);
+  color: var(--overview-text);
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.overview-map-controls button:focus-visible {
+  outline: 2px solid #72b7ff;
+  outline-offset: 2px;
+}
+.overview-map-controls button[aria-pressed='true'] {
+  border-color: #72b7ff;
+}
+.overview-map-controls button:disabled {
+  cursor: default;
+  color: var(--overview-secondary);
+}
+.overview-map-controls p {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: var(--overview-text);
+  background: var(--overview-glass-fallback);
+  border-radius: 8px;
+}
+.overview-page:not([data-layout='desktop']) .overview-right-overlays {
+  grid-template-columns: minmax(0, 1fr) 160px;
+}
+.overview-page:not([data-layout='desktop']) .overview-map-controls {
+  grid-column: 2;
+  grid-row: 2;
+}
+.overview-page:not([data-layout='desktop']) .overview-planned-satellite__label {
+  line-height: 1.2;
+  letter-spacing: normal;
+}
+.overview-page[data-layout='desktop'] .overview-map-controls {
+  display: none;
+}
+.overview-page[data-layout='desktop']
+  :is(.overview-satellite-overlays, .overview-map-overlays) {
+  pointer-events: auto;
+}
+.overview-page[data-map-exploring='false']:not([data-layout='desktop'])
+  :is(.overview-globe, .overview-globe canvas) {
+  touch-action: auto !important;
+}
+.overview-page[data-map-exploring='true']
+  :is(.overview-globe, .overview-globe canvas) {
+  touch-action: none !important;
 }

@@ -1,3 +1,4 @@
+import { OverviewCameraSettingsCard } from './OverviewCameraSettingsCard';
 import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
 import { OverviewMapDiagnostics } from './OverviewMapDiagnostics';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
@@ -22,6 +23,7 @@ export function ConfigurationPage() {
       <div className="max-w-xl">
         <GPSControlCard />
         <OverviewHistorySettingsCard />
+        <OverviewCameraSettingsCard />
         <OverviewMapDiagnostics />
         {isLoading ? (
           <p role="status">Loading operational clocks...</p>

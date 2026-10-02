@@ -1,5 +1,6 @@
 import {
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -7,7 +8,7 @@ import {
   type RefObject,
 } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Html, OrbitControls, Stars } from '@react-three/drei';
+import { Html, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
@@ -27,7 +28,6 @@ import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import {
   GEO_ANALYSIS_CAMERA_POSITION,
-  GEO_ANALYSIS_MAX_DISTANCE,
   ROUTE_OVERLAY_RADIUS,
 } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
@@ -67,6 +67,12 @@ import { OverviewPlannedSatelliteCard } from './OverviewPlannedSatelliteCard';
 import { OverviewMapLegend } from './OverviewMapLegend';
 import { OverviewMapStatus } from './OverviewMapStatus';
 import { useOverviewLayout } from './useOverviewLayout';
+import { OverviewMapControls } from './OverviewMapControls';
+import { OverviewMapController } from './OverviewMapController';
+import { useOverviewFollowPreference } from '@/hooks/useOverviewFollowPreference';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import type { OverviewCameraIntent } from './overview-camera-frame';
+import type { OverviewLayoutMode } from './overview-responsive-layout';
 
 const AIRCRAFT_HISTORY_LINE = {
   outer: {
@@ -197,8 +203,30 @@ function Atmosphere() {
 }
 
 export function OverviewPage() {
+  const followPreference = useOverviewFollowPreference();
+  const [resetRevision, setResetRevision] = useState(0);
   const pageRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const [cameraIntent, setCameraIntent] = useState<OverviewCameraIntent>(
+    followPreference ? 'follow' : 'automatic'
+  );
+  const [previousFollowPreference, setPreviousFollowPreference] =
+    useState(followPreference);
+  if (previousFollowPreference !== followPreference) {
+    setPreviousFollowPreference(followPreference);
+    setCameraIntent(followPreference ? 'follow' : 'manual');
+  }
+  const [exploration, setExploration] = useState<{
+    mode: OverviewLayoutMode;
+    active: boolean;
+  }>({ mode: 'desktop', active: false });
+  const [poseRevision, setPoseRevision] = useState(0);
+  const reducedMotion = usePrefersReducedMotion();
+  const onManual = useCallback(() => setCameraIntent('manual'), []);
+  const onCameraSettled = useCallback(
+    () => setPoseRevision((value) => value + 1),
+    []
+  );
   const [solarTime, setSolarTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -261,8 +289,11 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
-  const { data: upcomingPoisResponse, isError: arrivalRefreshFailed } =
-    useOverviewUpcomingPois();
+  const {
+    data: upcomingPoisResponse,
+    isError: arrivalRefreshFailed,
+    isLoading: isLoadingUpcomingPois,
+  } = useOverviewUpcomingPois();
   const arrivalState = deriveArrivalPanel(
     upcomingPoisResponse,
     currentTime,
@@ -382,11 +413,77 @@ export function OverviewPage() {
   ].filter((message): message is string => message !== null);
 
   const contentKey = JSON.stringify([
-    arrivalState,
+    arrivalState.sections.map((section) => [
+      section.label,
+      section.name,
+      Boolean(section.timing),
+      section.unavailable,
+    ]),
+    arrivalState.message,
+    arrivalState.exception,
     plannedSatelliteState,
     mapMessages,
   ]);
-  const layout = useOverviewLayout(pageRef, stageRef, contentKey);
+  const contentReady =
+    !isLoading &&
+    !isLoadingStatus &&
+    !isLoadingOverviewClockSettings &&
+    !isLoadingOverviewHistory &&
+    !isLoadingSatellites &&
+    !isLoadingActiveXLink &&
+    !isLoadingUpcomingPois;
+  const layout = useOverviewLayout(pageRef, stageRef, contentKey, contentReady);
+  const exploring = exploration.mode === layout.mode && exploration.active;
+  if (exploration.mode !== layout.mode) {
+    setExploration({ mode: layout.mode, active: false });
+  }
+  const onExploreChange = useCallback(
+    (active: boolean) => {
+      setExploration({ mode: layout.mode, active });
+      if (active) setCameraIntent('manual');
+    },
+    [layout.mode]
+  );
+  const onReset = useCallback(() => {
+    setCameraIntent(followPreference ? 'follow' : 'automatic');
+    setResetRevision((value) => value + 1);
+    setExploration({ mode: layout.mode, active: false });
+  }, [layout.mode, followPreference]);
+  const followUnavailable = statusError
+    ? 'Status refresh unavailable'
+    : !aircraftPosition || !status
+      ? 'Aircraft position unavailable'
+      : isStatusStale(status.timestamp, currentTime)
+        ? 'Aircraft position stale'
+        : null;
+  useEffect(() => {
+    const page = pageRef.current;
+    const rail = pageRef.current?.querySelector<HTMLElement>(
+      '.overview-metrics-overlays'
+    );
+    if (!page || !rail || layout.mode !== 'landscape' || exploring) return;
+    const wheel = (event: WheelEvent) => {
+      if (event.target instanceof Node && rail.contains(event.target)) return;
+      if (event.ctrlKey || event.metaKey || !event.deltaY) return;
+      const delta =
+        event.deltaY *
+        (event.deltaMode === 1
+          ? 16
+          : event.deltaMode === 2
+            ? rail.clientHeight
+            : 1);
+      const next = Math.max(
+        0,
+        Math.min(rail.scrollHeight - rail.clientHeight, rail.scrollTop + delta)
+      );
+      if (next !== rail.scrollTop) {
+        event.preventDefault();
+        rail.scrollTop = next;
+      }
+    };
+    page.addEventListener('wheel', wheel, { passive: false });
+    return () => page.removeEventListener('wheel', wheel);
+  }, [layout.mode, exploring]);
   useEffect(() => {
     let attempts = 0;
     let frame = 0;
@@ -421,11 +518,13 @@ export function OverviewPage() {
         return;
       }
 
-      const stageBounds = stageRef.current?.getBoundingClientRect();
+      const stageBounds = stageRef.current
+        ?.querySelector('.overview-globe')
+        ?.getBoundingClientRect();
       if (!stageBounds) return;
       const reserved = [
         ...(stageRef.current?.querySelectorAll<HTMLElement>(
-          '.overview-planned-satellite, .overview-arrival, .globe-legend, .overview-fullscreen-control, .overview-map-status'
+          '.overview-planned-satellite, .overview-arrival, .globe-legend, .overview-fullscreen-control, .overview-map-status, .overview-map-controls'
         ) ?? []),
       ].map((node) => {
         const bounds = node.getBoundingClientRect();
@@ -457,9 +556,19 @@ export function OverviewPage() {
     frame = window.requestAnimationFrame(measure);
 
     return () => window.cancelAnimationFrame(frame);
-  }, [upcomingPoiLabelLayout, upcomingPoiView.markers, layout.revision]);
+  }, [
+    upcomingPoiLabelLayout,
+    upcomingPoiView.markers,
+    layout.revision,
+    poseRevision,
+  ]);
   return (
-    <main ref={pageRef} className="overview-page" data-layout={layout.mode}>
+    <main
+      ref={pageRef}
+      className="overview-page"
+      data-layout={layout.mode}
+      data-map-exploring={exploring}
+    >
       <div className="overview-top-overlays">
         <OverviewClockPanel
           clocks={overviewClockSettings?.clocks}
@@ -477,6 +586,13 @@ export function OverviewPage() {
           <div className="overview-satellite-overlays">
             <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
           </div>
+          <OverviewMapControls
+            exploring={exploring}
+            intent={cameraIntent}
+            followUnavailable={followUnavailable}
+            onExploreChange={onExploreChange}
+            onReset={onReset}
+          />
           <OverviewFullscreenControl />
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
@@ -521,7 +637,7 @@ export function OverviewPage() {
             factor={3}
             saturation={0}
             fade
-            speed={1.1}
+            speed={reducedMotion ? 0 : 1.1}
           />
           <Stars
             radius={50}
@@ -530,7 +646,7 @@ export function OverviewPage() {
             factor={3}
             saturation={0}
             fade
-            speed={0.75}
+            speed={reducedMotion ? 0 : 0.75}
           />
           <Stars
             radius={50}
@@ -539,7 +655,7 @@ export function OverviewPage() {
             factor={3}
             saturation={0}
             fade
-            speed={0.1}
+            speed={reducedMotion ? 0 : 0.1}
           />
           <Suspense fallback={null}>
             <group ref={globeOccluder}>
@@ -618,12 +734,19 @@ export function OverviewPage() {
               />
             )}
           </Suspense>
-          <OrbitControls
-            enablePan={false}
-            enableDamping
-            dampingFactor={0.05}
-            minDistance={3}
-            maxDistance={GEO_ANALYSIS_MAX_DISTANCE}
+          <OverviewMapController
+            mode={layout.mode}
+            safeRect={layout.safeRect}
+            exploring={exploring}
+            intent={cameraIntent}
+            aircraft={aircraftPosition}
+            followAvailable={!followUnavailable}
+            route={routePoints}
+            initialReady={contentReady}
+            resetRevision={resetRevision}
+            reducedMotion={reducedMotion}
+            onManual={onManual}
+            onCameraSettled={onCameraSettled}
           />
         </Canvas>
       </div>

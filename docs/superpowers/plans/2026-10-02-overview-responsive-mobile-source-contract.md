@@ -120,24 +120,25 @@ and Escape dismissal with focus restoration. Disable controls and release
 capture on mode exit, blur and layout changes. Keep the manual pose when
 exiting; rotation exits gesture capture without resetting that pose.
 
-Add `Follow aircraft` as an explicit camera action, never an implicit result of
-exiting Explore. It centers/follows fresh, valid coordinates from the existing
-map status snapshot; map follow does not assert verified arrival/GPS timing.
-Missing/stale/failed status freezes the last pose with a visible unavailable
-reason. Keep those checks tied to the same snapshot/collection time, never
-borrow an arrival timestamp to refresh different coordinates. Beginning manual
-exploration cancels follow. Default desktop remains its accepted initial/manual
-behavior; these actions are available without requiring Explore for existing
-non-scrolling desktop mouse orbit.
+Brian clarified camera behavior during implementation on 2026-10-02. Initial
+framing prefers the route's projected extents within the clear panel-safe area,
+including the left desktop rail; it need not place the route at screen center.
+Without a route, center on valid aircraft, otherwise retain globe orientation.
+Position updates leave this view still by default. `Reset map view` performs a
+one-time fit. Continuous following is off by default and selected explicitly in
+Configuration, with a browser-local saved preference. Manual input pauses it;
+reset resumes it when enabled. Fresh-map status governs following independently
+from arrival/GPS provenance. Missing/stale/failed status freezes the pose with a
+visible reason. Do not borrow another source's timestamp.
 
-A responsive initial/frame-fit action fits the globe to the measured safe
-rectangle using its existing radius/FOV and permitted distance bounds; orient
-toward valid map aircraft when available, otherwise retain globe orientation. Do
-this once on meaningful layout/safe-area change while camera intent is
-automatic. Manual intent preserves position, quaternion, target and zoom through
-rotation/fullscreen/browser-chrome changes; only update projection aspect.
-Follow intent retains its selected mode. Do not change scene coordinates or
-force an entire global route/satellite constellation onto one hemisphere.
+All automatic framing/reset/follow movements use an eased transition, canceled
+immediately by manual input. A meaningful stage/overlay change can reframe an
+automatic view; manual intent retains position, quaternion, target and zoom
+through rotation/fullscreen/chrome changes. Projection aspect still updates. The
+clarification supersedes preserving the historical `[0,0,22]` initial view; FOV,
+orbit limits, scene coordinates, route geometry and desktop panel layout remain.
+A globe-spanning route may have far-side occlusion; no route flattening or
+substituted geometry is introduced.
 
 Reduced motion removes continuous CSS plot translation and optional decorative
 scene flow/star motion, using truthful discrete time/data updates. Camera
