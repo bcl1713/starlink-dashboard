@@ -11,8 +11,15 @@ import {
   projectMetricTraces,
   type OverviewMetricGraphDescriptor,
 } from './overview-metric-history';
-import { metricScale, type YRange } from './overview-metric-scale';
-import { metricPlotOptions } from './overview-metric-plot-options';
+import {
+  isLogarithmicMetric,
+  metricScale,
+  type YRange,
+} from './overview-metric-scale';
+import {
+  metricPlotData,
+  metricPlotOptions,
+} from './overview-metric-plot-options';
 import type { MetricReadout } from './overview-metric-readout';
 import { formatMetricAxis, formatMetricValue } from './overview-metric-format';
 import './OverviewMetricHistoryPanel.css';
@@ -214,15 +221,10 @@ export function OverviewMetricHistoryPanel({
         max: validHistory.end_timestamp_seconds + BUFFER_SECONDS,
       }
     : undefined;
-  const data = projection
-    ? ([
-        projection.times,
-        projection.max,
-        projection.min,
-        projection.avg,
-        projection.observed,
-      ] as uPlot.AlignedData)
-    : undefined;
+  const data = useMemo(
+    () => (projection ? metricPlotData(descriptor, projection) : undefined),
+    [descriptor, projection]
+  );
   const scale = useRef<{ key: string; range: YRange } | null>(null);
   const scaleKey = `${descriptor.metric}/${selectedWindowSeconds}`;
   const yRange = useMemo(
@@ -236,6 +238,10 @@ export function OverviewMetricHistoryPanel({
   );
   scale.current = { key: scaleKey, range: yRange };
   const upper = yRange.max;
+  const logarithmic = isLogarithmicMetric(descriptor);
+  const middle = logarithmic
+    ? Math.sqrt(yRange.min * upper)
+    : (yRange.min + upper) / 2;
   const visibleRight = domain
     ? domain.max - BUFFER_SECONDS * 2 + Math.min(BUFFER_SECONDS, motionElapsed)
     : 0;
@@ -389,14 +395,14 @@ export function OverviewMetricHistoryPanel({
           aria-label={`${descriptor.unit} value axis`}
         >
           <span>{formatMetricAxis(upper)}</span>
-          <span>{formatMetricAxis(upper / 2)}</span>
-          <span>0</span>
+          <span>{formatMetricAxis(middle)}</span>
+          <span>{logarithmic ? `≤${formatMetricAxis(yRange.min)}` : '0'}</span>
         </div>
         <div
           className="overview-metric-history__viewport"
           ref={viewport}
           role="img"
-          aria-label={`${descriptor.label} time history; ${descriptor.unit}; cyan observed, dashed five-minute average, shaded five-minute low–high range${status ? `; ${status}` : ''}`}
+          aria-label={`${descriptor.label} time history; ${descriptor.unit}${logarithmic ? `; logarithmic scale; values at or below ${formatMetricAxis(yRange.min)}% shown at baseline` : ''}; cyan observed, dashed five-minute average, shaded five-minute low–high range${status ? `; ${status}` : ''}`}
         >
           <div className="overview-metric-history__surface" ref={surface}>
             <div ref={host} />
