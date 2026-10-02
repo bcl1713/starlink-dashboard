@@ -46,7 +46,7 @@ export async function overviewCamera(page: Page) {
                 quaternion: { toArray: () => number[] };
                 zoom: number;
               };
-              controls?: { target: { toArray: () => number[] } };
+              controls?: { getTarget: () => { toArray: () => number[] } };
             };
           };
         }>;
@@ -63,7 +63,7 @@ export async function overviewCamera(page: Page) {
       position: state.camera.position.toArray(),
       quaternion: state.camera.quaternion.toArray(),
       zoom: state.camera.zoom,
-      target: state.controls?.target.toArray() ?? [0, 0, 0],
+      target: state.controls?.getTarget().toArray() ?? [0, 0, 0],
     };
   });
 }

@@ -15,7 +15,8 @@ const queries = vi.hoisted(() => ({
 vi.mock('@react-three/fiber', () => ({ Canvas: () => null }));
 vi.mock('@react-three/drei', () => ({
   Html: () => null,
-  OrbitControls: () => null,
+  CameraControls: () => null,
+  CameraControlsImpl: class {},
   Stars: () => null,
 }));
 vi.mock('./OverviewMetricHistoryPanels', () => ({

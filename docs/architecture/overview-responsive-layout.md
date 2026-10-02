@@ -36,7 +36,7 @@ evidence.
 
 ## Camera and input
 
-A controller within the existing Canvas owns one OrbitControls instance. Default
+A controller within the existing Canvas owns one Drei CameraControls instance. Default
 responsive input allows browser scrolling. Landscape wheel events on stage/gaps
 forward to the rail only when it can scroll; rail events stay native, and
 Ctrl/Meta wheel is untouched. Explore enables gestures only within the globe.
@@ -64,14 +64,15 @@ Desktop fullscreen keeps the globe centered on the screen and rotates the route
 into the opening to the right of the metrics, below the upper cards and above
 the legend. Other views retain their panel-aware projection offsets.
 
-Automatic moves accelerate from rest, cruise within speed limits and brake to
-rest, with no prescribed duration. Rotation is capped at 10 degrees/second with
-2 degrees/second squared acceleration. Zoom interpolates logarithmic altitude
-above the globe (0.5 units/second, 0.15 units/second squared); projection offsets
-use viewport fractions (0.12/second, 0.04/second squared). The slowest channel
-sets shared progress. Visible frames use their full elapsed delta, so frame rate
-does not change movement speed. Hidden tabs pause motion; the first delta after
-a visibility change is discarded to prevent replaying time spent hidden.
+Automatic route framing and following use camera-controls damping with a
+0.4-second smooth time and a 3 scene-units/second dolly speed cap. Rotation uses
+the nearest azimuth, including across the dateline; the dolly speed cap does not
+cap angular speed. One control owns both user gestures and transitions.
+Equivalent status polls leave the current move running, and changing a follow
+target retains damping velocity. Measured layout sets projection offsets while
+route-fit math determines direction and distance. Hidden tabs pause updates;
+the first delta after a visibility change is discarded to prevent replaying
+time spent hidden.
 Manual input cancels the transition immediately; manual intent preserves
 position/quaternion/target/zoom through resizing. Projection aspect updates with
 the renderer. Reduced motion finishes transitions discretely and removes

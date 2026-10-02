@@ -1,14 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { PerspectiveCamera, Quaternion, Vector3 } from 'three';
+import { useCallback, useEffect, useRef } from 'react';
+import { useThree } from '@react-three/fiber';
+import { CameraControls, CameraControlsImpl } from '@react-three/drei';
+import { PerspectiveCamera, Vector3 } from 'three';
+import { OverviewCameraControls } from './overview-camera-controls';
 import { globePosition } from './globe-coordinates';
 import { useDocumentFullscreen } from '@/hooks/useDocumentFullscreen';
-import {
-  advanceCameraMotion,
-  cameraMotionLimits,
-} from './overview-camera-motion';
 import {
   overviewCameraFrame,
   overviewInitialDirection,
@@ -49,10 +45,10 @@ export function OverviewMapController({
 }: Props) {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
-  const gl = useThree((state) => state.gl);
+  const canvas = useThree((state) => state.gl.domElement);
   const fullscreen = useDocumentFullscreen();
   const centerGlobe = fullscreen && mode === 'desktop';
-  const controls = useRef<OrbitControlsImpl>(null);
+  const controls = useRef<OverviewCameraControls>(null);
   const fitted = useRef<{
     mode: OverviewLayoutMode;
     width: number;
@@ -62,79 +58,25 @@ export function OverviewMapController({
     resetRevision: number;
     routeFramed: boolean;
     centerGlobe: boolean;
+    latitude?: number;
+    longitude?: number;
+    followAvailable: boolean;
+    reducedMotion: boolean;
   } | null>(null);
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
-  );
-  const transition = useRef<{
-    progress: number;
-    speed: number;
-    maxSpeed: number;
-    acceleration: number;
-    fromQuaternion: Quaternion;
-    toQuaternion: Quaternion;
-    fromDistance: number;
-    toDistance: number;
-    fromOffsetX: number;
-    fromOffsetY: number;
-    toOffsetX: number;
-    toOffsetY: number;
-  } | null>(null);
-  const discardResumedDelta = useRef(false);
+  const manualFromInput = useRef(false);
+  const freezePose = useCallback(() => {
+    const control = controls.current;
+    if (!control) return;
+    // stop() alone snaps to the destination. First make the current pose the target.
+    void control.setLookAt(...camera.position.toArray(), 0, 0, 0, false);
+    control.stop();
+    control.update(0);
+  }, [camera]);
   useEffect(() => {
-    const pause = () => {
-      discardResumedDelta.current = true;
-    };
+    const pause = () => controls.current?.discardNextDelta();
     document.addEventListener('visibilitychange', pause);
     return () => document.removeEventListener('visibilitychange', pause);
   }, []);
-  useFrame((_, delta) => {
-    if (document.hidden) return;
-    if (discardResumedDelta.current) {
-      discardResumedDelta.current = false;
-      return;
-    }
-    const tween = transition.current;
-    if (!tween || !(camera instanceof PerspectiveCamera)) return;
-    const next = reducedMotion
-      ? { progress: 1, speed: 0 }
-      : advanceCameraMotion(
-          tween.progress,
-          tween.speed,
-          delta,
-          tween.maxSpeed,
-          tween.acceleration
-        );
-    tween.progress = next.progress;
-    tween.speed = next.speed;
-    const t = tween.progress;
-    camera.quaternion.slerpQuaternions(
-      tween.fromQuaternion,
-      tween.toQuaternion,
-      t
-    );
-    const distance =
-      2 +
-      Math.exp(
-        Math.log(tween.fromDistance - 2) +
-          (Math.log(tween.toDistance - 2) - Math.log(tween.fromDistance - 2)) *
-            t
-      );
-    camera.position.set(0, 0, distance).applyQuaternion(camera.quaternion);
-    camera.setViewOffset(
-      size.width,
-      size.height,
-      tween.fromOffsetX + (tween.toOffsetX - tween.fromOffsetX) * t,
-      tween.fromOffsetY + (tween.toOffsetY - tween.fromOffsetY) * t,
-      size.width,
-      size.height
-    );
-    if (t === 1) {
-      transition.current = null;
-      controls.current?.update();
-      onCameraSettled();
-    }
-  });
   const enabled = mode === 'desktop' || exploring;
   const latitude = aircraft?.latitude,
     longitude = aircraft?.longitude;
@@ -161,7 +103,9 @@ export function OverviewMapController({
         );
     };
     if (intent === 'manual' || (intent === 'follow' && !followAvailable)) {
-      transition.current = null;
+      if (!manualFromInput.current) freezePose();
+      manualFromInput.current = false;
+      fitted.current = null;
       scaleProjection();
       return;
     }
@@ -169,6 +113,7 @@ export function OverviewMapController({
     const meaningful =
       !previous ||
       previous.intent !== intent ||
+      previous.reducedMotion !== reducedMotion ||
       previous.resetRevision !== resetRevision ||
       previous.mode !== mode ||
       previous.centerGlobe !== centerGlobe ||
@@ -177,7 +122,14 @@ export function OverviewMapController({
       Math.abs(previous.height - size.height) >= 48 ||
       Math.abs(previous.safeRect.width - safeRect.width) >= 48 ||
       Math.abs(previous.safeRect.height - safeRect.height) >= 48;
-    if (intent === 'automatic' && !meaningful) {
+    if (
+      !meaningful &&
+      (intent === 'automatic' ||
+        (previous?.latitude === latitude &&
+          previous?.longitude === longitude &&
+          previous?.followAvailable === followAvailable &&
+          previous?.reducedMotion === reducedMotion))
+    ) {
       scaleProjection();
       return;
     }
@@ -204,56 +156,39 @@ export function OverviewMapController({
       direction,
       centerGlobe,
     });
-    const target = camera.clone();
-    target.position.copy(
-      (frame.direction ?? direction).clone().multiplyScalar(frame.distance)
+    const position = (frame.direction ?? direction)
+      .clone()
+      .multiplyScalar(frame.distance);
+    camera.setViewOffset(
+      size.width,
+      size.height,
+      frame.offsetX,
+      frame.offsetY,
+      size.width,
+      size.height
     );
-    target.lookAt(0, 0, 0);
-    controls.current?.target.set(0, 0, 0);
-    if (reducedMotion) {
-      transition.current = null;
-      camera.position.copy(target.position);
-      camera.quaternion.copy(target.quaternion);
-      camera.setViewOffset(
-        size.width,
-        size.height,
-        frame.offsetX,
-        frame.offsetY,
-        size.width,
-        size.height
+    const control = controls.current;
+    if (control) {
+      // Normalize then choose the nearest azimuth, including across the dateline.
+      control.normalizeRotations();
+      const theta = Math.atan2(position.x, position.z);
+      const nearestTheta =
+        control.azimuthAngle +
+        Math.atan2(
+          Math.sin(theta - control.azimuthAngle),
+          Math.cos(theta - control.azimuthAngle)
+        );
+      void control.rotateTo(
+        nearestTheta,
+        Math.acos(position.y / frame.distance),
+        !reducedMotion
       );
-      controls.current?.update();
-    } else {
-      const view = camera.view;
-      const fromOffsetX = view?.enabled
-        ? (view.offsetX / view.fullWidth) * size.width
-        : 0;
-      const fromOffsetY = view?.enabled
-        ? (view.offsetY / view.fullHeight) * size.height
-        : 0;
-      const limits = cameraMotionLimits(
-        camera.quaternion.angleTo(target.quaternion),
-        Math.abs(
-          Math.log((frame.distance - 2) / (camera.position.length() - 2))
-        ),
-        Math.hypot(
-          (frame.offsetX - fromOffsetX) / size.width,
-          (frame.offsetY - fromOffsetY) / size.height
-        )
-      );
-      transition.current = {
-        progress: 0,
-        speed: 0,
-        ...limits,
-        fromQuaternion: camera.quaternion.clone(),
-        toQuaternion: target.quaternion.clone(),
-        fromDistance: camera.position.length(),
-        toDistance: frame.distance,
-        fromOffsetX,
-        fromOffsetY,
-        toOffsetX: frame.offsetX,
-        toOffsetY: frame.offsetY,
-      };
+      void control.dollyTo(frame.distance, !reducedMotion);
+      if (reducedMotion) {
+        control.stop();
+        control.update(0);
+        onCameraSettled();
+      }
     }
     fitted.current = {
       mode,
@@ -264,6 +199,10 @@ export function OverviewMapController({
       resetRevision,
       routeFramed: route.length > 0,
       centerGlobe,
+      latitude,
+      longitude,
+      followAvailable,
+      reducedMotion,
     };
   }, [
     camera,
@@ -280,64 +219,73 @@ export function OverviewMapController({
     reducedMotion,
     initialReady,
     resetRevision,
+    onCameraSettled,
+    freezePose,
+    enabled,
   ]);
   useEffect(() => {
-    const canvas = gl.domElement;
-    const orbit = controls.current;
-    const pointers = new Map<number, string>();
-    const down = (event: PointerEvent) => {
-      if (enabled) pointers.set(event.pointerId, event.pointerType);
+    const wheel = (event: WheelEvent) => {
+      if (!enabled) return;
+      if (event.ctrlKey || event.metaKey) {
+        // Keep native browser zoom available before CameraControls consumes the wheel.
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (event.deltaY && intent !== 'manual') freezePose();
     };
-    const up = (event: PointerEvent) => pointers.delete(event.pointerId);
-    canvas.addEventListener('pointerdown', down, true);
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
+    // Rebase before CameraControls adds its wheel delta to the pending dolly target.
+    canvas.addEventListener('wheel', wheel, { capture: true, passive: true });
+    return () => canvas.removeEventListener('wheel', wheel, true);
+  }, [canvas, enabled, intent, freezePose]);
+  useEffect(() => {
+    const control = controls.current;
     return () => {
-      for (const [pointerId, pointerType] of pointers) {
-        canvas.ownerDocument.dispatchEvent(
-          new PointerEvent('pointerup', {
-            pointerId,
-            pointerType,
-            bubbles: true,
-          })
-        );
-        if (canvas.hasPointerCapture(pointerId))
-          canvas.releasePointerCapture(pointerId);
-      }
-      pointers.clear();
-      canvas.removeEventListener('pointerdown', down, true);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      if (orbit) {
-        const position = camera.position.clone(),
-          quaternion = camera.quaternion.clone();
-        orbit.enableDamping = false;
-        orbit.update();
-        camera.position.copy(position);
-        camera.quaternion.copy(quaternion);
-        orbit.enableDamping = !reducedMotion;
-      }
+      // camera-controls owns pointer listeners and cancels active drags.
+      control?.cancel();
     };
-  }, [enabled, gl, camera, size.width, size.height, reducedMotion]);
-  useEffect(() => () => clearTimeout(settleTimer.current), []);
+  }, [enabled, size.width, size.height]);
+  const { ACTION } = CameraControlsImpl;
   return (
-    <OrbitControls
+    <CameraControls
       ref={controls}
+      impl={OverviewCameraControls}
       makeDefault
       enabled={enabled}
-      enablePan={false}
-      enableDamping={!reducedMotion}
-      dampingFactor={0.05}
+      smoothTime={reducedMotion ? 0 : 0.4}
+      draggingSmoothTime={reducedMotion ? 0 : 0.1}
+      maxSpeed={reducedMotion ? Infinity : 3}
       minDistance={3}
       maxDistance={28}
-      onStart={() => {
-        transition.current = null;
+      mouseButtons={{
+        left: ACTION.ROTATE,
+        middle: ACTION.DOLLY,
+        right: ACTION.ROTATE,
+        wheel: ACTION.DOLLY,
+      }}
+      touches={{
+        one: ACTION.TOUCH_ROTATE,
+        two: ACTION.TOUCH_DOLLY_ROTATE,
+        three: ACTION.TOUCH_ROTATE,
+      }}
+      onControlStart={() => {
+        freezePose();
+        manualFromInput.current = intent !== 'manual';
         onManual();
       }}
-      onChange={() => {
-        clearTimeout(settleTimer.current);
-        settleTimer.current = setTimeout(onCameraSettled, 200);
+      onControl={() => {
+        if (intent !== 'manual') {
+          const control = controls.current;
+          if (control)
+            void control.rotateTo(
+              control.azimuthAngle,
+              control.polarAngle,
+              false
+            );
+        }
+        if (intent !== 'manual') manualFromInput.current = true;
+        onManual();
       }}
+      onSleep={onCameraSettled}
     />
   );
 }

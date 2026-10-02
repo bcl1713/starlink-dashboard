@@ -13,7 +13,53 @@ vi.mock('@react-three/fiber', () => ({
     scene.frame = frame;
   },
 }));
-vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }));
+vi.mock('@react-three/drei', async () => {
+  const [{ default: Impl }, THREE, React] = await Promise.all([
+    import('camera-controls'),
+    import('three'),
+    import('react'),
+  ]);
+  Impl.install({ THREE });
+  return {
+    CameraControlsImpl: Impl,
+    CameraControls: React.forwardRef((props: Record<string, unknown>, ref) => {
+      const control = React.useMemo(() => {
+        const Constructor = props.impl as typeof Impl;
+        return new Constructor(scene.state.camera as PerspectiveCamera);
+      }, [props.impl]);
+      React.useImperativeHandle(ref, () => control);
+      Object.assign(control, {
+        smoothTime: props.smoothTime,
+        draggingSmoothTime: props.draggingSmoothTime,
+        maxSpeed: props.maxSpeed,
+        minDistance: props.minDistance,
+        maxDistance: props.maxDistance,
+        enabled: props.enabled,
+      });
+      React.useEffect(() => {
+        scene.frame = (_, delta) => {
+          control.update(delta);
+        };
+        const canvas = (scene.state.gl as { domElement: HTMLCanvasElement })
+          .domElement;
+        control.connect(canvas);
+        const events = {
+          sleep: props.onSleep as () => void,
+          controlstart: props.onControlStart as () => void,
+          control: props.onControl as () => void,
+        };
+        const names = ['sleep', 'controlstart', 'control'] as const;
+        for (const name of names) control.addEventListener(name, events[name]);
+        return () => {
+          for (const name of names)
+            control.removeEventListener(name, events[name]);
+          control.disconnect();
+        };
+      }, [control, props.onSleep, props.onControlStart, props.onControl]);
+      return null;
+    }),
+  };
+});
 import { OverviewMapController } from './OverviewMapController';
 import { globePosition } from './globe-coordinates';
 afterEach(() => {
@@ -117,58 +163,24 @@ it('keeps a manual pose when route data recovers', () => {
   for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
   expect(camera.position.distanceTo(manual)).toBeLessThan(0.00001);
 });
-it.each([30, 60, 144])(
-  'limits automatic rotation and zoom speed and acceleration at %i fps',
+it.each([5, 30, 60, 144])(
+  'moves continuously within the dolly speed cap and settles at %i fps',
   (fps) => {
     const { camera, props } = setup();
     render(<OverviewMapController {...props} />);
-    const dt = 1 / fps;
-    let rotation = camera.quaternion.clone();
-    let zoom = Math.log(camera.position.length() - 2);
-    let angularSpeed = 0,
-      zoomSpeed = 0;
-    for (let i = 0; i < fps * 30; i++) {
-      scene.frame?.({}, dt);
-      const nextAngularSpeed = rotation.angleTo(camera.quaternion) / dt;
-      const nextZoom = Math.log(camera.position.length() - 2);
-      const nextZoomSpeed = Math.abs(nextZoom - zoom) / dt;
-      expect(nextAngularSpeed).toBeLessThanOrEqual(
-        (10 * Math.PI) / 180 + 0.00001
+    let distance = camera.position.length();
+    for (let i = 0; i < fps * 12; i++) {
+      scene.frame?.({}, 1 / fps);
+      const nextDistance = camera.position.length();
+      expect(Math.abs(nextDistance - distance) * fps).toBeLessThanOrEqual(
+        3.001
       );
-      expect(nextZoomSpeed).toBeLessThanOrEqual(0.5 + 0.00001);
-      expect(
-        Math.abs(nextAngularSpeed - angularSpeed) / dt
-      ).toBeLessThanOrEqual((2 * Math.PI) / 180 + 0.001);
-      expect(Math.abs(nextZoomSpeed - zoomSpeed) / dt).toBeLessThanOrEqual(
-        0.15 + 0.00001
-      );
-      rotation = camera.quaternion.clone();
-      zoom = nextZoom;
-      angularSpeed = nextAngularSpeed;
-      zoomSpeed = nextZoomSpeed;
+      distance = nextDistance;
     }
     expect(props.onCameraSettled).toHaveBeenCalledTimes(1);
-    expect(angularSpeed).toBe(0);
-    expect(zoomSpeed).toBe(0);
-  }
-);
-
-it.each([5, 10, 15, 30, 60, 144])(
-  'reaches the same pose after four seconds at %i fps',
-  (fps) => {
-    const reference = setup();
-    const referenceView = render(
-      <OverviewMapController {...reference.props} />
-    );
-    for (let i = 0; i < 240; i++) scene.frame?.({}, 1 / 60);
-    const position = reference.camera.position.clone();
-    const rotation = reference.camera.quaternion.clone();
-    referenceView.unmount();
-    const actual = setup();
-    render(<OverviewMapController {...actual.props} />);
-    for (let i = 0; i < fps * 4; i++) scene.frame?.({}, 1 / fps);
-    expect(actual.camera.position.distanceTo(position)).toBeLessThan(0.00001);
-    expect(actual.camera.quaternion.angleTo(rotation)).toBeLessThan(0.00001);
+    const settled = camera.position.clone();
+    for (let i = 0; i < fps; i++) scene.frame?.({}, 1 / fps);
+    expect(camera.position.distanceTo(settled)).toBeLessThan(0.00001);
   }
 );
 
@@ -188,4 +200,98 @@ it('pauses while hidden and discards the first resumed delta without replaying h
   scene.frame?.({}, 0.1);
   expect(camera.position.distanceTo(position)).toBeGreaterThan(0);
   hidden.mockRestore();
+});
+
+it('completes first-load route framing within twelve seconds', () => {
+  const { camera, props } = setup();
+  render(
+    <OverviewMapController
+      {...props}
+      route={[globePosition(35, -100, 2), globePosition(45, -80, 2)]}
+    />
+  );
+  for (let i = 0; i < 720; i++) scene.frame?.({}, 1 / 60);
+  expect(props.onCameraSettled).toHaveBeenCalled();
+  const settled = camera.position.clone();
+  for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
+  expect(camera.position.distanceTo(settled)).toBeLessThan(0.001);
+});
+
+it('preserves follow motion through repeated equivalent position polls', () => {
+  const reference = setup();
+  const referenceView = render(
+    <OverviewMapController {...reference.props} intent="follow" />
+  );
+  for (let i = 0; i < 240; i++) scene.frame?.({}, 1 / 60);
+  const position = reference.camera.position.clone();
+  referenceView.unmount();
+  const actual = setup();
+  const view = render(
+    <OverviewMapController {...actual.props} intent="follow" />
+  );
+  for (let i = 0; i < 240; i++) {
+    if (i % 60 === 0)
+      view.rerender(
+        <OverviewMapController
+          {...actual.props}
+          intent="follow"
+          route={[]}
+          safeRect={{ ...actual.props.safeRect }}
+          aircraft={{ ...actual.props.aircraft! }}
+        />
+      );
+    scene.frame?.({}, 1 / 60);
+  }
+  expect(actual.camera.position.distanceTo(position)).toBeLessThan(0.00001);
+});
+
+it('resumes an interrupted follow transition when freshness recovers at the same coordinate', () => {
+  const { camera, props } = setup();
+  const view = render(<OverviewMapController {...props} intent="follow" />);
+  scene.frame?.({}, 0.5);
+  view.rerender(
+    <OverviewMapController {...props} intent="follow" followAvailable={false} />
+  );
+  const paused = camera.position.clone();
+  for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
+  expect(camera.position.distanceTo(paused)).toBeLessThan(0.00001);
+  view.rerender(<OverviewMapController {...props} intent="follow" />);
+  for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
+  expect(camera.position.distanceTo(paused)).toBeGreaterThan(0.1);
+});
+
+it('wheel exploration cancels automatic dolly before applying the wheel movement', () => {
+  const { camera, props } = setup();
+  render(
+    <OverviewMapController
+      {...props}
+      mode="desktop"
+      route={[globePosition(35, -100, 2), globePosition(45, -80, 2)]}
+    />
+  );
+  for (let i = 0; i < 30; i++) scene.frame?.({}, 1 / 60);
+  const before = camera.position.length();
+  const canvas = (scene.state.gl as { domElement: HTMLCanvasElement })
+    .domElement;
+  canvas.dispatchEvent(
+    new WheelEvent('wheel', { deltaY: 140, bubbles: true, cancelable: true })
+  );
+  for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
+  expect(camera.position.length()).toBeGreaterThan(before + 0.1);
+});
+
+it('reduced-motion wheel zoom changes distance on the next frame', () => {
+  const { camera, props } = setup();
+  render(<OverviewMapController {...props} mode="desktop" reducedMotion />);
+  const before = camera.position.length();
+  const canvas = (scene.state.gl as { domElement: HTMLCanvasElement })
+    .domElement;
+  canvas.dispatchEvent(
+    new WheelEvent('wheel', { deltaY: 140, bubbles: true, cancelable: true })
+  );
+  scene.frame?.({}, 1 / 60);
+  expect(camera.position.length()).toBeGreaterThan(before + 0.5);
+  const stopped = camera.position.clone();
+  for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
+  expect(camera.position.distanceTo(stopped)).toBeLessThan(0.001);
 });

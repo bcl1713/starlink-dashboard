@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
+import type { RootStore } from '@react-three/fiber';
 import { compositionFixture } from './support/overview-composition';
 import {
   observeOverviewCamera,
+  overviewCamera,
   settledOverviewCamera,
   expectSameCamera,
 } from './support/overview-camera';
@@ -488,4 +490,77 @@ test('automatic reset moves through eased intermediate camera poses', async ({
   expect(
     Math.max(...samples.slice(1).map((p, i) => distance(p, samples[i])))
   ).toBeLessThan(travel * 0.75);
+});
+
+test('first-load route framing advances continuously and settles without telemetry restarts', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/overview');
+  await overviewCamera(page);
+  const samples = await page.evaluate(
+    () =>
+      new Promise<Array<{ time: number; distance: number; delta: number }>>(
+        (resolve) => {
+          const roots = (
+            window as unknown as {
+              __overviewEvidenceRoots: Array<{ containerInfo?: RootStore }>;
+            }
+          ).__overviewEvidenceRoots;
+          const store = roots.find(
+            (root) =>
+              root.containerInfo?.getState &&
+              document.contains(root.containerInfo.getState().gl.domElement)
+          )!.containerInfo!;
+          const values: Array<{
+            time: number;
+            distance: number;
+            delta: number;
+          }> = [];
+          const start = performance.now();
+          // Observe after the controls update, using the same delta they receive.
+          // Priority zero leaves automatic scene rendering enabled.
+          const unsubscribe = store.getState().internal.subscribe(
+            {
+              current: (state, delta) => {
+                const time = performance.now();
+                values.push({
+                  time,
+                  delta,
+                  distance: state.camera.position.length(),
+                });
+                if (time - start >= 12000) {
+                  unsubscribe();
+                  resolve(values);
+                }
+              },
+            },
+            0,
+            store
+          );
+        }
+      )
+  );
+  await testInfo.attach('first-load-camera-motion', {
+    body: JSON.stringify(samples),
+    contentType: 'application/json',
+  });
+  expect(samples.length).toBeGreaterThan(10);
+  const moving = samples.slice(1).map((sample, index) => ({
+    delta: Math.abs(sample.distance - samples[index].distance),
+    elapsed: sample.delta,
+  }));
+  const start = moving.findIndex((sample) => sample.delta > 0.0001);
+  const end = moving.findLastIndex((sample) => sample.delta > 0.0001);
+  expect(start).toBeGreaterThanOrEqual(0);
+  expect(end - start).toBeGreaterThan(3);
+  for (const frame of moving.slice(start, end + 1)) {
+    expect(frame.delta).toBeGreaterThan(0);
+    expect(frame.delta / frame.elapsed).toBeLessThan(3.1);
+  }
+  const settled = await settledOverviewCamera(page);
+  await page.waitForResponse(
+    (response) => response.url().endsWith('/api/status') && response.ok()
+  );
+  expectSameCamera(settled, await settledOverviewCamera(page));
 });
