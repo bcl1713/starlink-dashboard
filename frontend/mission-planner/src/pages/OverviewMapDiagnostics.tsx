@@ -17,6 +17,7 @@ import {
   calculateConfiguredXBandLookAngles,
 } from './x-band-active-link-projection';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
+import { derivePlannedSatelliteState } from './overview-planned-satellite';
 
 /** Detailed map configuration/analysis stays available outside Overview. */
 export function OverviewMapDiagnostics() {
@@ -47,13 +48,19 @@ export function OverviewMapDiagnostics() {
     : catalog.isLoading
       ? 'Loading satellite configuration…'
       : `${satellites.length} configured satellite${satellites.length === 1 ? '' : 's'}`;
-  const selectionText = selection.error
-    ? 'Satellite selection unavailable'
-    : selection.isLoading
-      ? 'Loading satellite selection…'
-      : selectedId
-        ? `Selected planned satellite ${selectedId}`
-        : 'No satellite selected';
+  const selectionState = derivePlannedSatelliteState(
+    selection.data,
+    selection.isLoading,
+    Boolean(selection.error)
+  );
+  const selectionText =
+    selectionState.kind === 'selected'
+      ? `Selected planned satellite ${selectionState.satelliteId}`
+      : selectionState.kind === 'none'
+        ? 'No satellite selected'
+        : selectionState.kind === 'loading'
+          ? 'Loading satellite selection…'
+          : 'Satellite selection unavailable';
   const geometryText = angles
     ? `Configured GEO estimate: azimuth ${angles.azimuthDegrees.toFixed(1)}°, elevation ${angles.elevationDegrees.toFixed(1)}°`
     : selectedId

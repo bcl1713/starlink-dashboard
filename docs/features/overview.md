@@ -136,8 +136,9 @@ cadence changes are required for this publication contract.
 
 The aircraft trail and all five graphs share one history response at the
 configured polling cadence (five seconds by default, with one second opt-in) and
-the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
-a saved custom window). This persisted **LAST** display duration is separate
+the **Overview history window** editor in **Configuration** (5, 15, 30, or 60
+minutes, plus a saved custom window). This persisted **LAST** display duration
+is separate
 from **Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. History requests default to five seconds
 while [#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s

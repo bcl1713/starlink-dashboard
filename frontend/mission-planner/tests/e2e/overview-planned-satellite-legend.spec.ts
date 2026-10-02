@@ -308,3 +308,20 @@ test('retains the selected ID through invalid catalog geometry and recovers the 
     'X-6'
   );
 });
+
+test('reports malformed selection consistently in Overview and Configuration', async ({
+  page,
+}) => {
+  const fixture = await planningFixture(page);
+  fixture.select({ satellite_id: '' });
+  await page.goto('/overview');
+  await expect(
+    page.getByRole('region', { name: 'Planned satellite' })
+  ).toContainText('UNAVAILABLE');
+  await page.getByRole('link', { name: 'Configuration', exact: true }).click();
+  const diagnostics = page.getByRole('region', {
+    name: 'Overview map diagnostics',
+  });
+  await expect(diagnostics).toContainText('Satellite selection unavailable');
+  await expect(diagnostics).not.toContainText('No satellite selected');
+});

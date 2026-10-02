@@ -103,6 +103,21 @@ describe('relocated map diagnostics', () => {
     expect(screen.getByText('Satellite selection unavailable')).not.toBeNull();
     expect(screen.getByText('Last-known planned link warning')).not.toBeNull();
   });
+  it.each([{}, { satellite_id: '' }, { satellite_id: 12 }])(
+    'reports malformed selection %j as unavailable rather than empty',
+    (data) => {
+      vi.mocked(useActiveXLink).mockReturnValue({
+        data,
+        isLoading: false,
+        error: null,
+      } as never);
+      render(<OverviewMapDiagnostics />);
+      expect(
+        screen.getByText('Satellite selection unavailable')
+      ).not.toBeNull();
+      expect(screen.queryByText('No satellite selected')).toBeNull();
+    }
+  );
   it('retains loading diagnostics', () => {
     vi.mocked(useOverviewHistory).mockReturnValue({
       isLoading: true,
