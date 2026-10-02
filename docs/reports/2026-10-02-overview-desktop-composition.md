@@ -247,6 +247,12 @@ follow-ups do not block the accepted #219 visual target.
 
 A fresh pre-PR run of `./tools/verify frontend` passes all 356 tests in 68 files
 and the production build. The published implementation matches the reviewed
-`d50d4138` source; subsequent commits contain documentation only. CI and the
-final review remain the integration gates. No deployment or release to `main` is
-authorized by this handoff.
+`d50d4138` source; subsequent commits contain documentation only. The final
+published capture SHA is `1a3c3c879674896873827f207ee9a88ceaf0d9b8`, recorded in
+`/tmp/issue219-evidence/final/manifest.json`. That final directory contains the
+production/fixture captures, camera continuity record and recording; the
+manifest records the exact video filename and its completed twelve-frame sampled
+replay inspection. This supersedes the earlier implementation-SHA capture paths
+for publication linkage, without asserting continuous motion acceptance. CI and
+the final review remain the integration gates. No deployment or release to
+`main` is authorized by this handoff.
