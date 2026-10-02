@@ -18,13 +18,16 @@ const projection = (
 });
 describe('metricScale', () => {
   it.each(OVERVIEW_METRIC_GRAPHS.slice(3))(
-    'fixes $id at 0–100 regardless of samples or prior range',
+    'fixes $id at a positive logarithmic domain regardless of samples or prior range',
     (descriptor) => {
       for (const values of [[], [0], [0.2], [100], [120], [null, NaN]])
         expect(
           metricScale(descriptor, projection(values), { min: 0, max: 1 })
-        ).toEqual({ min: 0, max: 100 });
-      expect(metricScale(descriptor, undefined)).toEqual({ min: 0, max: 100 });
+        ).toEqual({ min: 1, max: 100 });
+      expect(metricScale(descriptor, undefined)).toEqual({
+        min: 1,
+        max: 100,
+      });
     }
   );
   it.each(OVERVIEW_METRIC_GRAPHS.slice(0, 3))(

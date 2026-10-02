@@ -291,30 +291,38 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 26 });
   });
 
-  it('keeps packet-loss labels and the plot domain at 0–100 for small samples', () => {
-    const loss = OVERVIEW_METRIC_GRAPHS[3];
-    const history = bundle();
-    history.series[loss.metric] = [[120, 0.2]];
-    history.rolling_5m![loss.metric] = {
-      state: 'available',
-      min: [[120, 0]],
-      avg: [[120, 0.1]],
-      max: [[120, 0.2]],
-    };
-    render(
-      <OverviewMetricHistoryPanel
-        descriptor={loss}
-        history={history}
-        error={false}
-        selectedWindowSeconds={30}
-        nowMs={120_000}
-      />
-    );
-    expect(screen.getByText('100')).not.toBeNull();
-    expect(screen.getByText('50')).not.toBeNull();
-    expect(screen.getByText('0')).not.toBeNull();
-    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 100 });
-  });
+  it.each(OVERVIEW_METRIC_GRAPHS.slice(3))(
+    'labels $id with logarithmic bounds for small samples',
+    (loss) => {
+      const history = bundle();
+      history.series[loss.metric] = [[120, 0.2]];
+      history.rolling_5m![loss.metric] = {
+        state: 'available',
+        min: [[120, 0]],
+        avg: [[120, 0.1]],
+        max: [[120, 0.2]],
+      };
+      render(
+        <OverviewMetricHistoryPanel
+          descriptor={loss}
+          history={history}
+          error={false}
+          selectedWindowSeconds={30}
+          nowMs={120_000}
+        />
+      );
+      expect(screen.getByText('100')).not.toBeNull();
+      expect(screen.getByText('10')).not.toBeNull();
+      expect(screen.getByText('≤1')).not.toBeNull();
+      expect(screen.getByRole('img').getAttribute('aria-label')).toContain(
+        'logarithmic scale'
+      );
+      expect(plot.setScale).toHaveBeenLastCalledWith('y', {
+        min: 1,
+        max: 100,
+      });
+    }
+  );
 
   it('keeps fractional loss samples on the same fixed percentage domain', () => {
     const loss = OVERVIEW_METRIC_GRAPHS[3];
@@ -330,7 +338,10 @@ describe('OverviewMetricHistoryPanel', () => {
       />
     );
     expect(screen.getByText('100')).not.toBeNull();
-    expect(plot.setScale).toHaveBeenLastCalledWith('y', { min: 0, max: 100 });
+    expect(plot.setScale).toHaveBeenLastCalledWith('y', {
+      min: 1,
+      max: 100,
+    });
   });
   // These probes catch an incorrect x-domain/transform rebase, viewport-based
   // speed, or per-tick data upload. Canvas/compositor paint is covered in E2E.
