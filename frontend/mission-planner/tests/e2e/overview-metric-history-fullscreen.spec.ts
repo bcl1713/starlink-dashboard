@@ -280,7 +280,7 @@ test.describe('Overview metric history', () => {
             lineHeight: parseFloat(getComputedStyle(span).lineHeight),
           })),
         }));
-        const stack = document.querySelector('.overview-bottom-overlays')!;
+        const stack = document.querySelector('.overview-metrics-overlays')!;
         return {
           boxes,
           contents: [...document.querySelectorAll('[data-metric-panel]')].map(
@@ -385,8 +385,10 @@ test.describe('Overview metric history', () => {
             `overlay collision: ${JSON.stringify({ box, neighbor })}`
           ).toBe(true);
       expect(state.poi.width).toBeGreaterThan(0);
-      expect(state.poi.width).toBeLessThanOrEqual(960);
-      expect(Math.abs(state.poi.x + state.poi.width / 2 - 960)).toBeLessThan(1);
+      expect(state.poi.width).toBeLessThanOrEqual(1080);
+      expect(Math.abs(state.poi.x + state.poi.width / 2 - 1020)).toBeLessThan(
+        1
+      );
       for (let i = 0; i < 5; i++) {
         const box = state.boxes[i];
         expect(box.right).toBeLessThanOrEqual(state.poi.left);
@@ -592,15 +594,14 @@ test.describe('Overview metric history', () => {
     await expect
       .poll(() => page.evaluate(() => document.fullscreenElement))
       .toBeNull();
-    // Ordinary 1080p has less content height because navigation is restored.
-    // Its safe document-flow fallback keeps every card and POI reachable.
+    // The desktop frame reserves navigation space and still fits ordinary 1080p.
     await expect
       .poll(() =>
         page
           .locator('.overview-page')
           .evaluate((node) => node.scrollHeight > node.clientHeight)
       )
-      .toBe(true);
+      .toBe(false);
     await graphs.last().scrollIntoViewIfNeeded();
     await expect(graphs.last()).toBeInViewport();
     await pois.scrollIntoViewIfNeeded();

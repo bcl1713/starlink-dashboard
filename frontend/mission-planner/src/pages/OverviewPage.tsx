@@ -428,7 +428,6 @@ export function OverviewPage() {
 
   return (
     <main className="overview-page">
-      <OverviewFullscreenControl />
       <div className="overview-top-overlays">
         <OverviewClockPanel
           clocks={overviewClockSettings?.clocks}
@@ -437,21 +436,24 @@ export function OverviewPage() {
           isLoading={isLoadingOverviewClockSettings}
         />
       </div>
-      <div className="overview-satellite-overlays">
-        <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
+      <div className="overview-right-overlays">
+        <div className="overview-satellite-overlays">
+          <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
+        </div>
+        <OverviewFullscreenControl />
+        <div className="overview-map-overlays">
+          <OverviewMapStatus messages={mapMessages} />
+          <OverviewMapLegend
+            aircraft={Boolean(aircraftPosition)}
+            route={hasRenderableRoute}
+            history={aircraftHistoryPoints.length >= 2}
+            groundEntryPoint={Boolean(groundEntryPoint)}
+            plannedLink={Boolean(activeConfiguredXBandLink)}
+            linkState={activeXLink?.state ?? null}
+          />
+        </div>
       </div>
-      <div className="overview-map-overlays">
-        <OverviewMapStatus messages={mapMessages} />
-        <OverviewMapLegend
-          aircraft={Boolean(aircraftPosition)}
-          route={hasRenderableRoute}
-          history={aircraftHistoryPoints.length >= 2}
-          groundEntryPoint={Boolean(groundEntryPoint)}
-          plannedLink={Boolean(activeConfiguredXBandLink)}
-          linkState={activeXLink?.state ?? null}
-        />
-      </div>
-      <div className="overview-bottom-overlays">
+      <div className="overview-metrics-overlays">
         <OverviewMetricHistoryPanels
           status={status}
           statusError={Boolean(statusError)}

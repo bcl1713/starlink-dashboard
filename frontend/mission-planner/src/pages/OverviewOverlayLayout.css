@@ -12,7 +12,7 @@
     .overview-map-overlays,
     .overview-satellite-overlays,
     .overview-top-overlays,
-    .overview-bottom-overlays,
+    .overview-metrics-overlays,
     .overview-arrival-overlays,
     .overview-fullscreen-control
   ) {
@@ -22,7 +22,7 @@
   margin: 16px;
   z-index: 1;
 }
-.overview-bottom-overlays,
+.overview-metrics-overlays,
 .overview-arrival-overlays {
   pointer-events: none;
 }
@@ -89,7 +89,7 @@
   }
 }
 
-@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1140px) and (min-height: 71.25rem) {
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1012px) and (min-height: 63.25rem) {
   .overview-page .overview-globe {
     position: absolute !important;
   }
@@ -99,9 +99,19 @@
     margin: 0;
     width: auto;
   }
-  .overview-page .overview-bottom-overlays {
+  .overview-page .operational-clock {
+    padding: 8px 16px;
+  }
+  .overview-page .operational-clock__label {
+    font-size: 16px;
+  }
+  .overview-page .operational-clock__time {
+    font-size: 52px;
+    margin-top: 4px;
+  }
+  .overview-page .overview-metrics-overlays {
     position: absolute;
-    inset: max(128px, 8rem) auto 76px 20px;
+    inset: 136px auto 20px 20px;
     margin: 0;
     width: 440px;
   }
@@ -111,80 +121,50 @@
   }
   .overview-page .overview-metric-history-panels__header {
     font-size: 16px;
+    padding-block: 6px;
+  }
+  .overview-page .overview-metric-history-panels__age {
+    font-size: 14px;
   }
   .overview-page .overview-arrival-overlays {
     position: absolute;
-    inset: auto auto 20px 50%;
+    inset: auto 360px 20px 480px;
     margin: 0;
-    width: calc(100% - 960px);
-    transform: translateX(-50%);
+    width: auto;
+  }
+  .overview-page .overview-right-overlays {
+    position: absolute;
+    inset: 136px 20px 20px auto;
+    width: 320px;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto auto minmax(12px, 1fr) auto;
+    gap: 12px;
+    pointer-events: none;
+  }
+  .overview-page
+    .overview-right-overlays
+    :is(
+      .overview-satellite-overlays,
+      .overview-map-overlays,
+      .overview-fullscreen-control
+    ) {
+    position: relative;
+    inset: auto;
+    margin: 0;
+    width: auto;
+    min-width: 0;
   }
   .overview-page .overview-satellite-overlays {
-    position: absolute;
-    inset: max(128px, 8rem) 20px auto auto;
-    margin: 0;
-    width: 320px;
-  }
-  .overview-page .overview-map-overlays {
-    position: absolute;
-    inset: auto 20px 20px auto;
-    margin: 0;
-    width: 320px;
+    grid-row: 1;
   }
   .overview-page .overview-fullscreen-control {
-    position: absolute;
-    inset: auto auto 20px 20px;
-    margin: 0;
-    width: auto;
+    grid-row: 2;
+    justify-self: start;
+    align-self: start;
+    pointer-events: auto;
   }
-}
-
-@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1080px) and (min-height: 67.5rem) {
-  :root:fullscreen .overview-page .overview-globe {
-    position: absolute !important;
-  }
-  :root:fullscreen .overview-page .overview-top-overlays {
-    position: absolute;
-    inset: 20px 20px auto;
-    margin: 0;
-    width: auto;
-  }
-  :root:fullscreen .overview-page .overview-bottom-overlays {
-    position: absolute;
-    inset: max(128px, 8rem) auto 20px 20px;
-    margin: 0;
-    width: 440px;
-  }
-  :root:fullscreen .overview-page .overview-metric-history-panels {
-    height: 100%;
-    grid-template-rows: auto repeat(5, minmax(0, 1fr));
-  }
-  :root:fullscreen .overview-page .overview-metric-history-panels__header {
-    font-size: 16px;
-  }
-  :root:fullscreen .overview-page .overview-arrival-overlays {
-    position: absolute;
-    inset: auto auto 20px 50%;
-    margin: 0;
-    width: calc(100% - 960px);
-    transform: translateX(-50%);
-  }
-  :root:fullscreen .overview-page .overview-satellite-overlays {
-    position: absolute;
-    inset: max(128px, 8rem) 20px auto auto;
-    margin: 0;
-    width: 320px;
-  }
-  :root:fullscreen .overview-page .overview-map-overlays {
-    position: absolute;
-    inset: auto 20px 20px auto;
-    margin: 0;
-    width: 320px;
-  }
-  :root:fullscreen .overview-page .overview-fullscreen-control {
-    position: absolute;
-    inset: auto auto 20px 20px;
-    margin: 0;
-    width: auto;
+  .overview-page .overview-map-overlays {
+    grid-row: 4;
   }
 }

@@ -87,6 +87,13 @@ describe('Overview layer and exception integration', () => {
     expect(
       screen.getByRole('region', { name: 'Planned satellite' }).textContent
     ).toContain('X-6');
+    expect(screen.getAllByLabelText('Globe legend')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Departure and arrival')).toHaveLength(1);
+    expect(
+      screen.getAllByRole('button', { name: 'Enter fullscreen overview' })
+    ).toHaveLength(1);
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByRole('table')).toBeNull();
   });
   it('preserves the selected ID when its geometry is unavailable', () => {
     queries.satellites = { data: [] };

@@ -66,7 +66,7 @@
     padding: 16px 0 0;
   }
 }
-@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1080px) and (min-height: 67.5rem) {
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1012px) and (min-height: 63.25rem) {
   .overview-arrival h2 {
     font-size: max(26px, 1.625rem);
   }
