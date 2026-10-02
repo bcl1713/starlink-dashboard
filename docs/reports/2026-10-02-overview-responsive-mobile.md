@@ -142,3 +142,31 @@ thresholds, scroll ownership, content escape and camera policy are documented in
 and
 [source contract](../superpowers/plans/2026-10-02-overview-responsive-mobile-source-contract.md)
 record the implementation boundary and user steering.
+
+## Camera and fullscreen feedback follow-up
+
+Brian's fullscreen screenshot called for a centered globe with the route filling
+usable space on the right. Desktop native fullscreen now measures the opening
+beside the metrics, below the upper cards and above the bottom overlays, then
+rotates and fits the route inside it while keeping projection offsets zero.
+Other views retain their previous framing. The fullscreen control now uses a
+20px Lucide Expand SVG with centered button alignment.
+
+Automatic camera motion now uses maximum speed and acceleration, accelerating
+from rest and braking to rest without a fixed or minimum duration. Rotation is
+limited to 10 degrees/second and 2 degrees/second squared; logarithmic zoom and
+viewport offsets have their own limits. Controller tests verify both rotation
+and zoom limits through complete moves at 30, 60 and 144 fps, including stopping.
+A small-move test verifies there is no minimum runtime.
+
+Follow-up verification uses the built Vite preview, separate from the earlier
+Docker production evidence above: 393 unit tests pass, lint and production
+build pass, and five focused headed Chromium tests pass for fullscreen route
+geometry, Explore/manual preservation, reduced motion, desktop input and reset
+intermediate poses. A four-layout browser check also verifies the fullscreen
+SVG, centered icon-only buttons, 44px targets and native fullscreen entry/exit.
+Evidence is under `/tmp/issue220-evidence/`: `camera-feedback-units.log`,
+`camera-feedback-build.log`, `camera-feedback-lint.log`,
+`camera-feedback-browser.log`, `fullscreen-icon-geometry.json` and
+`fullscreen-route-feedback.png`. No Docker containers were started for this
+follow-up; the actor's Docker daemon reports no running containers.

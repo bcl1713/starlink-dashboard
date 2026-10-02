@@ -4,6 +4,11 @@ import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { PerspectiveCamera, Quaternion, Vector3 } from 'three';
 import { globePosition } from './globe-coordinates';
+import { useDocumentFullscreen } from '@/hooks/useDocumentFullscreen';
+import {
+  advanceCameraMotion,
+  cameraMotionLimits,
+} from './overview-camera-motion';
 import {
   overviewCameraFrame,
   overviewInitialDirection,
@@ -45,6 +50,8 @@ export function OverviewMapController({
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
   const gl = useThree((state) => state.gl);
+  const fullscreen = useDocumentFullscreen();
+  const centerGlobe = fullscreen && mode === 'desktop';
   const controls = useRef<OrbitControlsImpl>(null);
   const fitted = useRef<{
     mode: OverviewLayoutMode;
@@ -54,12 +61,16 @@ export function OverviewMapController({
     intent: OverviewCameraIntent;
     resetRevision: number;
     routeFramed: boolean;
+    centerGlobe: boolean;
   } | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
   const transition = useRef<{
-    elapsed: number;
+    progress: number;
+    speed: number;
+    maxSpeed: number;
+    acceleration: number;
     fromQuaternion: Quaternion;
     toQuaternion: Quaternion;
     fromDistance: number;
@@ -72,24 +83,36 @@ export function OverviewMapController({
   useFrame((_, delta) => {
     const tween = transition.current;
     if (!tween || !(camera instanceof PerspectiveCamera)) return;
-    tween.elapsed = reducedMotion
-      ? 1
-      : Math.min(1, tween.elapsed + Math.min(delta, 0.05) / 0.7);
-    const t = tween.elapsed;
-    const eased = t * t * (3 - 2 * t);
+    const next = reducedMotion
+      ? { progress: 1, speed: 0 }
+      : advanceCameraMotion(
+          tween.progress,
+          tween.speed,
+          Math.min(delta, 0.05),
+          tween.maxSpeed,
+          tween.acceleration
+        );
+    tween.progress = next.progress;
+    tween.speed = next.speed;
+    const t = tween.progress;
     camera.quaternion.slerpQuaternions(
       tween.fromQuaternion,
       tween.toQuaternion,
-      eased
+      t
     );
     const distance =
-      tween.fromDistance + (tween.toDistance - tween.fromDistance) * eased;
+      2 +
+      Math.exp(
+        Math.log(tween.fromDistance - 2) +
+          (Math.log(tween.toDistance - 2) - Math.log(tween.fromDistance - 2)) *
+            t
+      );
     camera.position.set(0, 0, distance).applyQuaternion(camera.quaternion);
     camera.setViewOffset(
       size.width,
       size.height,
-      tween.fromOffsetX + (tween.toOffsetX - tween.fromOffsetX) * eased,
-      tween.fromOffsetY + (tween.toOffsetY - tween.fromOffsetY) * eased,
+      tween.fromOffsetX + (tween.toOffsetX - tween.fromOffsetX) * t,
+      tween.fromOffsetY + (tween.toOffsetY - tween.fromOffsetY) * t,
       size.width,
       size.height
     );
@@ -135,6 +158,7 @@ export function OverviewMapController({
       previous.intent !== intent ||
       previous.resetRevision !== resetRevision ||
       previous.mode !== mode ||
+      previous.centerGlobe !== centerGlobe ||
       (!previous.routeFramed && route.length > 0) ||
       Math.abs(previous.width - size.width) >= 48 ||
       Math.abs(previous.height - size.height) >= 48 ||
@@ -165,9 +189,12 @@ export function OverviewMapController({
       safeRect,
       route: intent === 'automatic' ? route : undefined,
       direction,
+      centerGlobe,
     });
     const target = camera.clone();
-    target.position.copy(direction.multiplyScalar(frame.distance));
+    target.position.copy(
+      (frame.direction ?? direction).clone().multiplyScalar(frame.distance)
+    );
     target.lookAt(0, 0, 0);
     controls.current?.target.set(0, 0, 0);
     if (reducedMotion) {
@@ -185,18 +212,32 @@ export function OverviewMapController({
       controls.current?.update();
     } else {
       const view = camera.view;
+      const fromOffsetX = view?.enabled
+        ? (view.offsetX / view.fullWidth) * size.width
+        : 0;
+      const fromOffsetY = view?.enabled
+        ? (view.offsetY / view.fullHeight) * size.height
+        : 0;
+      const limits = cameraMotionLimits(
+        camera.quaternion.angleTo(target.quaternion),
+        Math.abs(
+          Math.log((frame.distance - 2) / (camera.position.length() - 2))
+        ),
+        Math.hypot(
+          (frame.offsetX - fromOffsetX) / size.width,
+          (frame.offsetY - fromOffsetY) / size.height
+        )
+      );
       transition.current = {
-        elapsed: 0,
+        progress: 0,
+        speed: 0,
+        ...limits,
         fromQuaternion: camera.quaternion.clone(),
         toQuaternion: target.quaternion.clone(),
         fromDistance: camera.position.length(),
         toDistance: frame.distance,
-        fromOffsetX: view?.enabled
-          ? (view.offsetX / view.fullWidth) * size.width
-          : 0,
-        fromOffsetY: view?.enabled
-          ? (view.offsetY / view.fullHeight) * size.height
-          : 0,
+        fromOffsetX,
+        fromOffsetY,
         toOffsetX: frame.offsetX,
         toOffsetY: frame.offsetY,
       };
@@ -209,6 +250,7 @@ export function OverviewMapController({
       intent,
       resetRevision,
       routeFramed: route.length > 0,
+      centerGlobe,
     };
   }, [
     camera,
@@ -216,6 +258,7 @@ export function OverviewMapController({
     size.height,
     safeRect,
     mode,
+    centerGlobe,
     intent,
     followAvailable,
     latitude,

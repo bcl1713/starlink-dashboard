@@ -1,4 +1,4 @@
-import { Maximize } from 'lucide-react';
+import { Expand } from 'lucide-react';
 import { useDocumentFullscreen } from '@/hooks/useDocumentFullscreen';
 export function OverviewFullscreenControl() {
   const isFullscreen = useDocumentFullscreen();
@@ -21,7 +21,7 @@ export function OverviewFullscreenControl() {
       aria-label="Enter fullscreen overview"
       onClick={enterFullscreen}
     >
-      <Maximize aria-hidden="true" size={18} />
+      <Expand aria-hidden="true" size={20} />
       <span>Fullscreen</span>
     </button>
   );

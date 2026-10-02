@@ -83,7 +83,7 @@ export async function settledOverviewCamera(page: Page) {
         previous = current;
         return stable;
       },
-      { timeout: 15_000, intervals: [100] }
+      { timeout: 60_000, intervals: [100] }
     )
     .toBeGreaterThanOrEqual(3);
   return previous;

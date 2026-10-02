@@ -60,9 +60,16 @@ preference with default false and storage-failure feedback. Following uses only
 the same map status coordinates and timestamp; stale/error/missing sources pause
 it. Arrival/GPS provenance remains independently derived.
 
-Automatic moves interpolate orientation, distance and projection offset with
-smoothstep easing over 700ms. Bounded frame deltas avoid a hidden-tab replay
-jump. Manual input cancels the transition immediately; manual intent preserves
+Desktop fullscreen keeps the globe centered on the screen and rotates the route
+into the opening to the right of the metrics, below the upper cards and above
+the legend. Other views retain their panel-aware projection offsets.
+
+Automatic moves accelerate from rest, cruise within speed limits and brake to
+rest, with no prescribed duration. Rotation is capped at 10 degrees/second with
+2 degrees/second squared acceleration. Zoom interpolates logarithmic altitude
+above the globe (0.5 units/second, 0.15 units/second squared); projection offsets
+use viewport fractions (0.12/second, 0.04/second squared). The slowest channel
+sets shared progress. Bounded frame deltas avoid a hidden-tab replay jump. Manual input cancels the transition immediately; manual intent preserves
 position/quaternion/target/zoom through resizing. Projection aspect updates with
 the renderer. Reduced motion finishes transitions discretely and removes
 optional scene animation and plot transform transitions. uPlot data uploads

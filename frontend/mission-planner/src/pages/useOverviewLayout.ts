@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useDocumentFullscreen } from '@/hooks/useDocumentFullscreen';
 import {
   resolveOverviewLayout,
   type OverviewLayoutMode,
@@ -18,6 +19,7 @@ export function useOverviewLayout(
   contentKey: string,
   contentReady: boolean
 ): Layout {
+  const fullscreen = useDocumentFullscreen();
   const flowLatch = useRef({ geometry: '', required: false, ready: false });
   const [layout, setLayout] = useState<Layout>({
     mode: 'desktop',
@@ -154,7 +156,7 @@ export function useOverviewLayout(
           ? 360
           : (page.querySelector<HTMLElement>('.overview-satellite-overlays')
               ?.offsetWidth ?? 144) + 24;
-      const safeRect =
+      let safeRect =
         mode === 'desktop'
           ? {
               x: 480,
@@ -171,6 +173,44 @@ export function useOverviewLayout(
                 stageHeight - (flow ? 24 : overlayHeight + 24)
               ),
             };
+      if (mode === 'desktop' && fullscreen) {
+        const stageBounds = stage.getBoundingClientRect();
+        const metrics = page
+          .querySelector('.overview-metrics-overlays')
+          ?.getBoundingClientRect();
+        const upper = [
+          ...page.querySelectorAll(
+            '.overview-satellite-overlays, .overview-map-controls'
+          ),
+        ]
+          .map((node) => node.getBoundingClientRect())
+          .filter((box) => box.height > 0);
+        const lower = page
+          .querySelector('.overview-map-overlays')
+          ?.getBoundingClientRect();
+        const x =
+          (metrics?.right ?? stageBounds.left + 460) - stageBounds.left + 20;
+        const y =
+          Math.max(
+            clock?.getBoundingClientRect().bottom ?? stageBounds.top + 116,
+            ...upper.map((box) => box.bottom)
+          ) -
+          stageBounds.top +
+          20;
+        const bottom =
+          Math.min(
+            arrival?.getBoundingClientRect().top ?? stageBounds.bottom - 20,
+            lower?.top ?? stageBounds.bottom - 20
+          ) -
+          stageBounds.top -
+          20;
+        safeRect = {
+          x,
+          y,
+          width: Math.max(1, stageWidth - x - 20),
+          height: Math.max(1, bottom - y),
+        };
+      }
       setLayout((previous) => {
         if (
           previous.mode === mode &&
@@ -213,7 +253,7 @@ export function useOverviewLayout(
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', schedule);
     };
-  }, [pageRef, stageRef, contentKey, contentReady]);
+  }, [pageRef, stageRef, contentKey, contentReady, fullscreen]);
   return layout;
 }
 function clockNode(page: HTMLElement) {

@@ -178,6 +178,7 @@
   z-index: 2;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   min-height: 2.75rem;
   border: 1px solid rgb(148 163 184 / 35%);

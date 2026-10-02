@@ -7,6 +7,51 @@ import {
   overviewInitialDirection,
 } from './overview-camera-frame';
 describe('safe-area camera projection', () => {
+  it('keeps Earth centered while fitting a transcontinental fullscreen route across the right-hand opening', () => {
+    const route = projectRouteArc(
+      [
+        { latitude: 32.87, longitude: -117.14 },
+        { latitude: 38.81, longitude: -76.87 },
+      ],
+      2.015,
+      32
+    );
+    const safeRect = { x: 520, y: 380, width: 1380, height: 640 };
+    const frame = overviewCameraFrame({
+      width: 1920,
+      height: 1280,
+      fov: 45,
+      route,
+      safeRect,
+      direction: overviewInitialDirection(route, null, new Vector3(0, 0, 1)),
+      centerGlobe: true,
+    });
+    expect(frame.offsetX).toBe(0);
+    expect(frame.offsetY).toBe(0);
+    const camera = new PerspectiveCamera(45, 1920 / 1280);
+    camera.position.copy(
+      frame.direction!.clone().multiplyScalar(frame.distance)
+    );
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    const center = new Vector3().project(camera);
+    expect(center.x).toBeCloseTo(0, 8);
+    expect(center.y).toBeCloseTo(0, 8);
+    const xs: number[] = [];
+    for (const point of route) {
+      const projected = new Vector3(...point).project(camera);
+      const x = (projected.x + 1) * 960,
+        y = (1 - projected.y) * 640;
+      xs.push(x);
+      expect(x).toBeGreaterThan(safeRect.x);
+      expect(x).toBeLessThan(safeRect.x + safeRect.width);
+      expect(y).toBeGreaterThan(safeRect.y);
+      expect(y).toBeLessThan(safeRect.y + safeRect.height);
+      expect(new Vector3(...point).dot(camera.position)).toBeGreaterThan(4);
+    }
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(1200);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(1210, -1);
+  });
   it('projects the globe center into the supplied rectangle without changing geometry', () => {
     const frame = overviewCameraFrame({
       width: 390,

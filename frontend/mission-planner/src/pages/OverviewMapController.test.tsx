@@ -64,7 +64,16 @@ it('cancels an automatic move immediately when manual intent takes over', () => 
 it('eases into a recovered route once, then ignores aircraft updates and equivalent route samples', () => {
   const { camera, props } = setup();
   const view = render(<OverviewMapController {...props} />);
-  for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
+  const settle = (count: number) => {
+    for (
+      let i = 0;
+      i < 2000 && vi.mocked(props.onCameraSettled).mock.calls.length < count;
+      i++
+    )
+      scene.frame?.({}, 0.05);
+    expect(props.onCameraSettled).toHaveBeenCalledTimes(count);
+  };
+  settle(1);
   const fallback = camera.position.clone();
   const route = [
     [-25, 80],
@@ -74,7 +83,7 @@ it('eases into a recovered route once, then ignores aircraft updates and equival
   expect(camera.position.distanceTo(fallback)).toBeLessThan(0.00001);
   scene.frame?.({}, 0.05);
   const intermediate = camera.position.clone();
-  for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
+  settle(2);
   const recovered = camera.position.clone();
   expect(recovered.distanceTo(fallback)).toBeGreaterThan(1);
   expect(intermediate.distanceTo(fallback)).toBeGreaterThan(0);
@@ -105,3 +114,38 @@ it('keeps a manual pose when route data recovers', () => {
   for (let i = 0; i < 20; i++) scene.frame?.({}, 0.05);
   expect(camera.position.distanceTo(manual)).toBeLessThan(0.00001);
 });
+it.each([30, 60, 144])(
+  'limits automatic rotation and zoom speed and acceleration at %i fps',
+  (fps) => {
+    const { camera, props } = setup();
+    render(<OverviewMapController {...props} />);
+    const dt = 1 / fps;
+    let rotation = camera.quaternion.clone();
+    let zoom = Math.log(camera.position.length() - 2);
+    let angularSpeed = 0,
+      zoomSpeed = 0;
+    for (let i = 0; i < fps * 30; i++) {
+      scene.frame?.({}, dt);
+      const nextAngularSpeed = rotation.angleTo(camera.quaternion) / dt;
+      const nextZoom = Math.log(camera.position.length() - 2);
+      const nextZoomSpeed = Math.abs(nextZoom - zoom) / dt;
+      expect(nextAngularSpeed).toBeLessThanOrEqual(
+        (10 * Math.PI) / 180 + 0.00001
+      );
+      expect(nextZoomSpeed).toBeLessThanOrEqual(0.5 + 0.00001);
+      expect(
+        Math.abs(nextAngularSpeed - angularSpeed) / dt
+      ).toBeLessThanOrEqual((2 * Math.PI) / 180 + 0.001);
+      expect(Math.abs(nextZoomSpeed - zoomSpeed) / dt).toBeLessThanOrEqual(
+        0.15 + 0.00001
+      );
+      rotation = camera.quaternion.clone();
+      zoom = nextZoom;
+      angularSpeed = nextAngularSpeed;
+      zoomSpeed = nextZoomSpeed;
+    }
+    expect(props.onCameraSettled).toHaveBeenCalledTimes(1);
+    expect(angularSpeed).toBe(0);
+    expect(zoomSpeed).toBe(0);
+  }
+);

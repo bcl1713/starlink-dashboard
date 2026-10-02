@@ -326,7 +326,9 @@ test('Configuration opt-in follows fresh positions while default framing remains
   expect(following.position).not.toEqual(initial.position);
   source.position = { latitude: 45, longitude: 120, altitude: 35000 };
   await expect
-    .poll(async () => (await settledOverviewCamera(page)).position)
+    .poll(async () => (await settledOverviewCamera(page)).position, {
+      timeout: 90_000,
+    })
     .not.toEqual(following.position);
   for (const failure of ['stale', 'errors', 'missing']) {
     if (failure === 'stale') source.stale = true;
@@ -447,31 +449,29 @@ test('automatic reset moves through eased intermediate camera poses', async ({
       (root) => root.containerInfo?.getState
     )?.containerInfo;
     if (!state?.getState) throw new Error('Renderer store unavailable');
-    const evidence = window as unknown as { __cameraResetSamples: number[][] };
+    const evidence = window as unknown as {
+      __cameraResetSamples: number[][];
+      __cameraResetSampling: boolean;
+    };
     evidence.__cameraResetSamples = [
       state.getState!().camera.position.toArray(),
     ];
-    let remaining = 30;
+    evidence.__cameraResetSampling = true;
     const sample = () => {
       evidence.__cameraResetSamples.push(
         state.getState!().camera.position.toArray()
       );
-      if (--remaining) requestAnimationFrame(sample);
+      if (evidence.__cameraResetSampling) requestAnimationFrame(sample);
     };
     requestAnimationFrame(sample);
   });
   await page.getByRole('button', { name: 'Reset map view' }).click();
-  await expect
-    .poll(
-      () =>
-        page.evaluate(
-          () =>
-            (window as unknown as { __cameraResetSamples: number[][] })
-              .__cameraResetSamples.length
-        ),
-      { timeout: 15000 }
-    )
-    .toBe(31);
+  await settledOverviewCamera(page);
+  await page.evaluate(() => {
+    (
+      window as unknown as { __cameraResetSampling: boolean }
+    ).__cameraResetSampling = false;
+  });
   const samples = await page.evaluate(
     () =>
       (window as unknown as { __cameraResetSamples: number[][] })
