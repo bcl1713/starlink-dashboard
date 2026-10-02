@@ -256,3 +256,11 @@ replay inspection. This supersedes the earlier implementation-SHA capture paths
 for publication linkage, without asserting continuous motion acceptance. CI and
 the final review remain the integration gates. No deployment or release to
 `main` is authorized by this handoff.
+
+During PR integration, CI reproduced the earlier HTTP 503 for the pinned GitHub
+HTML specification URL. The GitHub contents API and raw download both confirm
+the same immutable specification blob `1b23ef14286282c4deb9e276e6ba98fc1bfea8b3`
+at the original `8c963f55e1a7a4d96314351d058130720742efc6` commit. The #216
+cleanup plan link now uses that exact raw download URL, which returns HTTP 200.
+This corrects the link delivery path while preserving the design authority and
+all quality-gate checks; the earlier failed attempts remain historical evidence.
