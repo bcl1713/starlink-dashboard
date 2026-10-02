@@ -754,6 +754,9 @@ for (const height of [961, 1024]) {
           )
         )
         .toBe(true);
+      await expect(
+        page.getByRole('navigation', { name: 'Primary navigation' })
+      ).toHaveCount(0);
       await pois.evaluate(async (node) => {
         await Promise.all(
           node
@@ -818,8 +821,14 @@ for (const height of [961, 1024]) {
         ).toBe(true);
       expect(
         geometry.pageScroll,
-        `height ${height}: fallback must scroll`
-      ).toBe(true);
+        `height ${height}: composition fit boundary`
+      ).toBe(height < 1012);
+      if (height >= 1012) {
+        for (const box of geometry.boxes) {
+          expect(box.width).toBe(440);
+          expect(box.bottom).toBeLessThanOrEqual(height - 20);
+        }
+      }
     });
   });
 }

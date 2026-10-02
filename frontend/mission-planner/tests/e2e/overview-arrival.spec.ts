@@ -137,7 +137,7 @@ test('shows departure, arrival, stale, missing and landed states without losing 
     .toBe(true);
   await expect(panel).toBeInViewport();
   const pairedBox = await panel.boundingBox();
-  expect(Math.abs(pairedBox!.x + pairedBox!.width / 2 - 960)).toBeLessThan(1);
+  expect(Math.abs(pairedBox!.x + pairedBox!.width / 2 - 1020)).toBeLessThan(1);
   expect(Math.abs(pairedBox!.y + pairedBox!.height - 1060)).toBeLessThan(1);
   await expect(panel.locator('section').last()).toHaveCSS(
     'border-left-width',
@@ -201,7 +201,7 @@ test('shows departure, arrival, stale, missing and landed states without losing 
   ).toBeVisible();
   const singleBox = await panel.boundingBox();
   expect(singleBox!.width).toBeLessThan(pairedBox!.width);
-  expect(Math.abs(singleBox!.x + singleBox!.width / 2 - 960)).toBeLessThan(1);
+  expect(Math.abs(singleBox!.x + singleBox!.width / 2 - 1020)).toBeLessThan(1);
   await expect(panel.locator('section')).toHaveCSS('border-left-width', '0px');
   await page.screenshot({
     path: testInfo.outputPath('arrival-destination-only.png'),

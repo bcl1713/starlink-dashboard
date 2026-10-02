@@ -165,10 +165,20 @@ test('backdrop fallback preserves contrast and geometry', async ({
     .toBe(true);
   await expectDesktopFit(page);
   await page.mouse.move(1020, 520);
-  for (let i = 0; i < 38; i++) await page.mouse.wheel(0, -120);
+  // Exercise the shipped wheel listener without 38 software compositor waits.
+  await page.locator('.overview-globe canvas').evaluate((canvas) => {
+    for (let i = 0; i < 38; i++)
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', {
+          deltaY: -120,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+  });
   await page.waitForTimeout(600); // Settle the shipped OrbitControls damping.
   await page.mouse.down();
-  await page.mouse.move(1640, 550, { steps: 20 });
+  await page.mouse.move(1640, 550);
   await page.mouse.up();
   await page.waitForTimeout(600);
   await page.screenshot({ path: testInfo.outputPath('terrain-with-blur.png') });
@@ -209,7 +219,7 @@ test('backdrop fallback preserves contrast and geometry', async ({
   });
   await page.mouse.move(1020, 520);
   await page.mouse.down();
-  await page.mouse.move(490, 520, { steps: 20 });
+  await page.mouse.move(490, 520);
   await page.mouse.up();
   await page.waitForTimeout(600);
   await page.screenshot({

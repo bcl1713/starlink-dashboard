@@ -204,10 +204,11 @@ least 1500px and 93.75rem width, and 1012px and 63.25rem height. The metric and
 right columns start 136px beneath the clocks. At a 1920×1080 ordinary viewport,
 the navigation leaves sufficient content height for the same desktop frame.
 Smaller or shorter containers and enlarged root text use normal document
-scrolling so all five cards and arrival content remain reachable. Configuration
-contains the persisted **Overview history window** editor; its duration applies
-to both the aircraft trail and all five plots. The mobile globe-stage and
-gesture redesign remains separate #220 work.
+scrolling so all five cards and arrival content remain reachable. Clocks use
+font-relative one/two-column flow before enlarged digits can overflow.
+Configuration contains the persisted **Overview history window** editor; its
+duration applies to both the aircraft trail and all five plots. The mobile
+globe-stage and gesture redesign remains separate #220 work.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
 rolling response shapes and error behavior. History-window selection and map

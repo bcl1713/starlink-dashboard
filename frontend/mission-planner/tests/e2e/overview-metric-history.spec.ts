@@ -753,6 +753,9 @@ test.describe('Overview metric history', () => {
     await expect
       .poll(() => page.evaluate(() => !!document.fullscreenElement))
       .toBe(true);
+    await expect(
+      page.getByRole('navigation', { name: 'Primary navigation' })
+    ).toHaveCount(0);
     await expect
       .poll(async () => (await graphs.first().boundingBox())?.width)
       .toBe(440);
@@ -1259,6 +1262,8 @@ test.describe('Overview provenance motion recording', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     phase = 'stale';
+    // Cross the 10s source-age threshold explicitly, without racing a final poll.
+    await page.clock.setFixedTime(new Date(lastTimestamp + 12_000));
     await expect(context.getByRole('status')).toHaveText('Network stale', {
       timeout: 10_000,
     });
