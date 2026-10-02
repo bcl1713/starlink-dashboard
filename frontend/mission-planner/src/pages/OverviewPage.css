@@ -197,10 +197,8 @@
   outline-offset: 2px;
 }
 
-@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1012px) and (min-height: 63.25rem) {
-  .globe-legend__items li,
-  .overview-map-status {
-    font-size: 18px;
-    line-height: 24px;
-  }
+.overview-page[data-layout='desktop'] .globe-legend__items li,
+.overview-page[data-layout='desktop'] .overview-map-status {
+  font-size: 18px;
+  line-height: 24px;
 }

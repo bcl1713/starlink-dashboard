@@ -155,9 +155,10 @@ test('text and viewport changes preserve one reachable tree', async ({
         const fixed = rootSize <= 16 && viewport.height === 1080;
         if (fixed) await expectDesktopFit(page, viewport.width === 1920);
         else {
-          await expect
-            .poll(async () => (await desktopGeometry(page)).scroll)
-            .toBe(true);
+          await expect(page.locator('.overview-page')).toHaveAttribute(
+            'data-layout',
+            'stacked'
+          );
           expect((await desktopGeometry(page)).fits).toBe(true);
           await page
             .locator('[data-metric-panel]')

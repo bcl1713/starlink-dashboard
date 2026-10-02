@@ -72,7 +72,8 @@ function candidateOffsets(stepX: number, stepY: number): PoiLabelOffset[] {
  */
 export function layoutOverviewPoiLabels(
   labels: ProjectedPoiLabel[],
-  viewport: Viewport
+  viewport: Viewport,
+  reservedBounds: readonly Bounds[] = []
 ): PoiLabelLayout {
   const ordered = [...labels].sort((left, right) =>
     left.id.localeCompare(right.id)
@@ -94,7 +95,9 @@ export function layoutOverviewPoiLabels(
       };
       return (
         fitsViewport(candidate, viewport) &&
-        !placed.some((other) => overlaps(candidate, other))
+        ![...placed, ...reservedBounds].some((other) =>
+          overlaps(candidate, other)
+        )
       );
     });
 

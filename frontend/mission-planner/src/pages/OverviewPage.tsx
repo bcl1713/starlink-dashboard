@@ -66,6 +66,7 @@ import { derivePlannedSatelliteState } from './overview-planned-satellite';
 import { OverviewPlannedSatelliteCard } from './OverviewPlannedSatelliteCard';
 import { OverviewMapLegend } from './OverviewMapLegend';
 import { OverviewMapStatus } from './OverviewMapStatus';
+import { useOverviewLayout } from './useOverviewLayout';
 
 const AIRCRAFT_HISTORY_LINE = {
   outer: {
@@ -196,6 +197,8 @@ function Atmosphere() {
 }
 
 export function OverviewPage() {
+  const pageRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [solarTime, setSolarTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -274,54 +277,6 @@ export function OverviewPage() {
       offsets: {},
       fallback: null,
     });
-  useEffect(() => {
-    let attempts = 0;
-    let frame = 0;
-    const measure = () => {
-      const labels = upcomingPoiView.markers.flatMap((poi) => {
-        const element = document.querySelector<HTMLElement>(
-          `[data-poi-label="${poi.poi_id}"]`
-        );
-        if (!element) return [];
-
-        const bounds = element.getBoundingClientRect();
-        if (bounds.width === 0 || bounds.height === 0) return [];
-        const [offsetX, offsetY] = (element.dataset.poiLabelOffset ?? '0,0')
-          .split(',')
-          .map(Number);
-        return [
-          {
-            id: poi.poi_id,
-            bounds: {
-              x: bounds.x - offsetX,
-              y: bounds.y - offsetY,
-              width: bounds.width,
-              height: bounds.height,
-            },
-          },
-        ];
-      });
-
-      if (labels.length < upcomingPoiView.markers.length && attempts < 20) {
-        attempts += 1;
-        frame = window.requestAnimationFrame(measure);
-        return;
-      }
-
-      const nextLayout = layoutOverviewPoiLabels(labels, {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-      setUpcomingPoiLabelLayout((currentLayout) =>
-        JSON.stringify(currentLayout) === JSON.stringify(nextLayout)
-          ? currentLayout
-          : nextLayout
-      );
-    };
-    frame = window.requestAnimationFrame(measure);
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [upcomingPoiLabelLayout, upcomingPoiView.markers]);
   const {
     data: overviewClockSettings,
     isError: isOverviewClockSettingsError,
@@ -426,8 +381,85 @@ export function OverviewPage() {
       : null,
   ].filter((message): message is string => message !== null);
 
+  const contentKey = JSON.stringify([
+    arrivalState,
+    plannedSatelliteState,
+    mapMessages,
+  ]);
+  const layout = useOverviewLayout(pageRef, stageRef, contentKey);
+  useEffect(() => {
+    let attempts = 0;
+    let frame = 0;
+    const measure = () => {
+      const labels = upcomingPoiView.markers.flatMap((poi) => {
+        const element = document.querySelector<HTMLElement>(
+          `[data-poi-label="${poi.poi_id}"]`
+        );
+        if (!element) return [];
+
+        const bounds = element.getBoundingClientRect();
+        if (bounds.width === 0 || bounds.height === 0) return [];
+        const [offsetX, offsetY] = (element.dataset.poiLabelOffset ?? '0,0')
+          .split(',')
+          .map(Number);
+        return [
+          {
+            id: poi.poi_id,
+            bounds: {
+              x: bounds.x - offsetX,
+              y: bounds.y - offsetY,
+              width: bounds.width,
+              height: bounds.height,
+            },
+          },
+        ];
+      });
+
+      if (labels.length < upcomingPoiView.markers.length && attempts < 20) {
+        attempts += 1;
+        frame = window.requestAnimationFrame(measure);
+        return;
+      }
+
+      const stageBounds = stageRef.current?.getBoundingClientRect();
+      if (!stageBounds) return;
+      const reserved = [
+        ...(stageRef.current?.querySelectorAll<HTMLElement>(
+          '.overview-planned-satellite, .overview-arrival, .globe-legend, .overview-fullscreen-control, .overview-map-status'
+        ) ?? []),
+      ].map((node) => {
+        const bounds = node.getBoundingClientRect();
+        return {
+          x: bounds.x - stageBounds.x,
+          y: bounds.y - stageBounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        };
+      });
+      const nextLayout = layoutOverviewPoiLabels(
+        labels.map((label) => ({
+          ...label,
+          bounds: {
+            ...label.bounds,
+            x: label.bounds.x - stageBounds.x,
+            y: label.bounds.y - stageBounds.y,
+          },
+        })),
+        { width: stageBounds.width, height: stageBounds.height },
+        reserved
+      );
+      setUpcomingPoiLabelLayout((currentLayout) =>
+        JSON.stringify(currentLayout) === JSON.stringify(nextLayout)
+          ? currentLayout
+          : nextLayout
+      );
+    };
+    frame = window.requestAnimationFrame(measure);
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [upcomingPoiLabelLayout, upcomingPoiView.markers, layout.revision]);
   return (
-    <main className="overview-page">
+    <main ref={pageRef} className="overview-page" data-layout={layout.mode}>
       <div className="overview-top-overlays">
         <OverviewClockPanel
           clocks={overviewClockSettings?.clocks}
@@ -436,22 +468,164 @@ export function OverviewPage() {
           isLoading={isLoadingOverviewClockSettings}
         />
       </div>
-      <div className="overview-right-overlays">
-        <div className="overview-satellite-overlays">
-          <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
+      <div
+        ref={stageRef}
+        className="overview-map-stage"
+        data-flow={layout.flow}
+      >
+        <div className="overview-right-overlays">
+          <div className="overview-satellite-overlays">
+            <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
+          </div>
+          <OverviewFullscreenControl />
+          <div className="overview-map-overlays">
+            <OverviewMapStatus messages={mapMessages} />
+            <OverviewMapLegend
+              collapsible={layout.mode !== 'desktop'}
+              aircraft={Boolean(aircraftPosition)}
+              route={hasRenderableRoute}
+              history={aircraftHistoryPoints.length >= 2}
+              groundEntryPoint={Boolean(groundEntryPoint)}
+              plannedLink={Boolean(activeConfiguredXBandLink)}
+              linkState={activeXLink?.state ?? null}
+            />
+          </div>
         </div>
-        <OverviewFullscreenControl />
-        <div className="overview-map-overlays">
-          <OverviewMapStatus messages={mapMessages} />
-          <OverviewMapLegend
-            aircraft={Boolean(aircraftPosition)}
-            route={hasRenderableRoute}
-            history={aircraftHistoryPoints.length >= 2}
-            groundEntryPoint={Boolean(groundEntryPoint)}
-            plannedLink={Boolean(activeConfiguredXBandLink)}
-            linkState={activeXLink?.state ?? null}
+        <div className="overview-arrival-overlays">
+          <OverviewArrivalPanel state={arrivalState} />
+          <ul className="overview-visually-hidden" aria-label="Map POIs">
+            {upcomingPoiView.markers.map((poi) => (
+              <li key={poi.poi_id}>{poi.name}</li>
+            ))}
+          </ul>
+        </div>
+        <ul
+          className="overview-visually-hidden"
+          aria-label="Configured map satellites"
+        >
+          {configuredXBandSatellites.map((satellite) => (
+            <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
+          ))}
+        </ul>
+        <Canvas
+          className="overview-globe"
+          camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
+        >
+          <color attach="background" args={['#030307']} />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={sunPosition} intensity={5} />
+          <Stars
+            radius={50}
+            depth={0}
+            count={1500}
+            factor={3}
+            saturation={0}
+            fade
+            speed={1.1}
           />
-        </div>
+          <Stars
+            radius={50}
+            depth={0}
+            count={1500}
+            factor={3}
+            saturation={0}
+            fade
+            speed={0.75}
+          />
+          <Stars
+            radius={50}
+            depth={0}
+            count={1500}
+            factor={3}
+            saturation={0}
+            fade
+            speed={0.1}
+          />
+          <Suspense fallback={null}>
+            <group ref={globeOccluder}>
+              <CityLitGlobe sunPosition={sunPosition} />
+            </group>
+            <Atmosphere />
+            {hasRenderableRoute && (
+              <AnimatedFlowLine
+                points={routePoints}
+                forward={routeFlow.forward}
+                reverse={routeFlow.reverse}
+                depthWrite={false}
+              />
+            )}
+            {upcomingPoiView.markers.map((poi) => (
+              <OverviewPoiMarker
+                key={poi.poi_id}
+                poi={poi}
+                color={urgencyColor(
+                  poi.estimated_arrival_time,
+                  new Date(currentTime)
+                )}
+                globeOccluder={globeOccluder}
+                labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
+                hideLabel={Boolean(
+                  upcomingPoiLabelLayout.fallback &&
+                    poi.poi_id !== upcomingPoiLabelLayout.fallback.anchorId
+                )}
+                fallbackLabel={
+                  upcomingPoiLabelLayout.fallback?.anchorId === poi.poi_id
+                    ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs`
+                    : undefined
+                }
+              />
+            ))}
+            {groundEntryPoint && (
+              <GroundEntryPointMarker
+                coordinate={groundEntryPoint}
+                globeOccluder={globeOccluder}
+              />
+            )}
+            {activeConfiguredXBandLink && (
+              <>
+                <AnimatedFlowLine
+                  points={activeConfiguredXBandLink.points}
+                  forward={activeLinkFlow.forward}
+                  reverse={activeLinkFlow.reverse}
+                  outer={activeXBandLineStyle.outer}
+                  glow={activeXBandLineStyle.glow}
+                  core={activeXBandLineStyle.core}
+                  depthWrite={false}
+                />
+              </>
+            )}
+            {configuredXBandSatellites.map((satellite) => (
+              <ConfiguredXBandSatelliteMarker
+                key={`${satellite.satelliteId}-${satellite.longitude}`}
+                satelliteId={satellite.satelliteId}
+                position={satellite.position}
+                globeOccluder={globeOccluder}
+              />
+            ))}
+            {aircraftHistoryPoints.length >= 2 && (
+              <AnimatedFlowLine
+                points={aircraftHistoryPoints}
+                depthWrite={false}
+                outer={AIRCRAFT_HISTORY_LINE.outer}
+                glow={AIRCRAFT_HISTORY_LINE.glow}
+                core={AIRCRAFT_HISTORY_LINE.core}
+              />
+            )}
+            {aircraftPosition && (
+              <AircraftMarker
+                coordinate={aircraftPosition}
+                position={aircraftScenePosition?.position ?? null}
+              />
+            )}
+          </Suspense>
+          <OrbitControls
+            enablePan={false}
+            enableDamping
+            dampingFactor={0.05}
+            minDistance={3}
+            maxDistance={GEO_ANALYSIS_MAX_DISTANCE}
+          />
+        </Canvas>
       </div>
       <div className="overview-metrics-overlays">
         <OverviewMetricHistoryPanels
@@ -463,141 +637,6 @@ export function OverviewPage() {
           nowMs={currentTime}
         />
       </div>
-      <div className="overview-arrival-overlays">
-        <OverviewArrivalPanel state={arrivalState} />
-        <ul className="overview-visually-hidden" aria-label="Map POIs">
-          {upcomingPoiView.markers.map((poi) => (
-            <li key={poi.poi_id}>{poi.name}</li>
-          ))}
-        </ul>
-      </div>
-      <ul
-        className="overview-visually-hidden"
-        aria-label="Configured map satellites"
-      >
-        {configuredXBandSatellites.map((satellite) => (
-          <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
-        ))}
-      </ul>
-      <Canvas
-        className="overview-globe"
-        camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
-      >
-        <color attach="background" args={['#030307']} />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={sunPosition} intensity={5} />
-        <Stars
-          radius={50}
-          depth={0}
-          count={1500}
-          factor={3}
-          saturation={0}
-          fade
-          speed={1.1}
-        />
-        <Stars
-          radius={50}
-          depth={0}
-          count={1500}
-          factor={3}
-          saturation={0}
-          fade
-          speed={0.75}
-        />
-        <Stars
-          radius={50}
-          depth={0}
-          count={1500}
-          factor={3}
-          saturation={0}
-          fade
-          speed={0.1}
-        />
-        <Suspense fallback={null}>
-          <group ref={globeOccluder}>
-            <CityLitGlobe sunPosition={sunPosition} />
-          </group>
-          <Atmosphere />
-          {hasRenderableRoute && (
-            <AnimatedFlowLine
-              points={routePoints}
-              forward={routeFlow.forward}
-              reverse={routeFlow.reverse}
-              depthWrite={false}
-            />
-          )}
-          {upcomingPoiView.markers.map((poi) => (
-            <OverviewPoiMarker
-              key={poi.poi_id}
-              poi={poi}
-              color={urgencyColor(
-                poi.estimated_arrival_time,
-                new Date(currentTime)
-              )}
-              globeOccluder={globeOccluder}
-              labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
-              hideLabel={Boolean(
-                upcomingPoiLabelLayout.fallback &&
-                  poi.poi_id !== upcomingPoiLabelLayout.fallback.anchorId
-              )}
-              fallbackLabel={
-                upcomingPoiLabelLayout.fallback?.anchorId === poi.poi_id
-                  ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs`
-                  : undefined
-              }
-            />
-          ))}
-          {groundEntryPoint && (
-            <GroundEntryPointMarker
-              coordinate={groundEntryPoint}
-              globeOccluder={globeOccluder}
-            />
-          )}
-          {activeConfiguredXBandLink && (
-            <>
-              <AnimatedFlowLine
-                points={activeConfiguredXBandLink.points}
-                forward={activeLinkFlow.forward}
-                reverse={activeLinkFlow.reverse}
-                outer={activeXBandLineStyle.outer}
-                glow={activeXBandLineStyle.glow}
-                core={activeXBandLineStyle.core}
-                depthWrite={false}
-              />
-            </>
-          )}
-          {configuredXBandSatellites.map((satellite) => (
-            <ConfiguredXBandSatelliteMarker
-              key={`${satellite.satelliteId}-${satellite.longitude}`}
-              satelliteId={satellite.satelliteId}
-              position={satellite.position}
-              globeOccluder={globeOccluder}
-            />
-          ))}
-          {aircraftHistoryPoints.length >= 2 && (
-            <AnimatedFlowLine
-              points={aircraftHistoryPoints}
-              depthWrite={false}
-              outer={AIRCRAFT_HISTORY_LINE.outer}
-              glow={AIRCRAFT_HISTORY_LINE.glow}
-              core={AIRCRAFT_HISTORY_LINE.core}
-            />
-          )}
-          {aircraftPosition && (
-            <AircraftMarker
-              coordinate={aircraftPosition}
-              position={aircraftScenePosition?.position ?? null}
-            />
-          )}
-        </Suspense>
-        <OrbitControls
-          enablePan={false}
-          enableDamping
-          dampingFactor={0.05}
-          minDistance={3}
-          maxDistance={GEO_ANALYSIS_MAX_DISTANCE}
-        />
-      </Canvas>
     </main>
   );
 }

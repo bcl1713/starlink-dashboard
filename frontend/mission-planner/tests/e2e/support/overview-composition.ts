@@ -237,8 +237,10 @@ export async function desktopGeometry(page: Page) {
           )
       ).length,
       scroll:
+        get('.app-route-content').scrollHeight >
+          get('.app-route-content').clientHeight + 1 ||
         get('.overview-page').scrollHeight >
-        get('.overview-page').clientHeight + 1,
+          get('.overview-page').clientHeight + 1,
       documentScroll: document.documentElement.scrollHeight > innerHeight + 1,
       horizontalOverflow:
         document.documentElement.scrollWidth > innerWidth ||
@@ -255,6 +257,10 @@ export async function desktopGeometry(page: Page) {
 }
 
 export async function expectDesktopFit(page: Page, broad = true) {
+  await expect(page.locator('.overview-page')).toHaveAttribute(
+    'data-layout',
+    'desktop'
+  );
   await expect
     .poll(async () => {
       const g = await desktopGeometry(page);

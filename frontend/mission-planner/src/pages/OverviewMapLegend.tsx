@@ -1,6 +1,8 @@
+import { useId, useRef, useState } from 'react';
 import { satcomLineStyle } from './satcom-link-style';
 
 interface OverviewMapLegendProps {
+  collapsible?: boolean;
   aircraft: boolean;
   route: boolean;
   history: boolean;
@@ -11,6 +13,7 @@ interface OverviewMapLegendProps {
 
 /** Layer samples use the scene's draw guards, including retained geometry. */
 export function OverviewMapLegend({
+  collapsible = false,
   aircraft,
   route,
   history,
@@ -18,6 +21,9 @@ export function OverviewMapLegend({
   plannedLink,
   linkState,
 }: OverviewMapLegendProps) {
+  const [expanded, setExpanded] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const listId = useId();
   const entries = [
     {
       visible: aircraft,
@@ -42,9 +48,36 @@ export function OverviewMapLegend({
     },
   ];
   return (
-    <aside className="globe-legend" aria-label="Globe legend">
-      <p className="globe-legend__title">Legend</p>
-      <ul className="globe-legend__items">
+    <aside
+      className="globe-legend"
+      aria-label="Globe legend"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && collapsible && expanded) {
+          event.stopPropagation();
+          setExpanded(false);
+          toggle.current?.focus();
+        }
+      }}
+    >
+      {collapsible ? (
+        <button
+          ref={toggle}
+          type="button"
+          className="globe-legend__toggle"
+          aria-expanded={expanded}
+          aria-controls={listId}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          Legend
+        </button>
+      ) : (
+        <p className="globe-legend__title">Legend</p>
+      )}
+      <ul
+        id={listId}
+        className="globe-legend__items"
+        hidden={collapsible && !expanded}
+      >
         {entries
           .filter((entry) => entry.visible)
           .map((entry) => (

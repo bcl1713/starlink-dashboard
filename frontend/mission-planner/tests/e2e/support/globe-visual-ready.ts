@@ -9,7 +9,7 @@ export async function waitForGlobeVisualReady(
   page: Page,
   textureResponse: Promise<Response>
 ): Promise<Locator> {
-  const canvas = page.locator('.overview-page canvas').last();
+  const canvas = page.locator('.overview-globe canvas');
 
   await expect(textureResponse).resolves.toBeTruthy();
   await expect(canvas).toBeVisible();

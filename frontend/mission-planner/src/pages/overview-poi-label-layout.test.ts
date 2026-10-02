@@ -83,3 +83,24 @@ describe('layoutOverviewPoiLabels', () => {
     });
   });
 });
+
+it('places a stage-local label outside reserved overlay rectangles', () => {
+  const source = {
+    id: 'next',
+    bounds: { x: 120, y: 130, width: 70, height: 20 },
+  };
+  const blocked = { x: 110, y: 120, width: 120, height: 44 };
+  const result = layoutOverviewPoiLabels(
+    [source],
+    { width: 390, height: 360 },
+    [blocked]
+  );
+  expect(result.fallback).toBeNull();
+  const offset = result.offsets.next;
+  expect(
+    overlaps(
+      { ...source.bounds, x: 120 + offset[0], y: 130 + offset[1] },
+      blocked
+    )
+  ).toBe(false);
+});
