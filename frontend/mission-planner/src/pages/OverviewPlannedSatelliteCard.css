@@ -18,3 +18,14 @@
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
+
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1012px) and (min-height: 63.25rem) {
+  .overview-planned-satellite:not(.overview-planned-satellite--selected)
+    .overview-planned-satellite__id {
+    font-size: 24px;
+  }
+  .overview-planned-satellite--long-id .overview-planned-satellite__id {
+    font-size: 20px;
+    line-height: 24px;
+  }
+}

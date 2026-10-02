@@ -21,7 +21,7 @@ async function waitForLayout(
     .poll(() =>
       page.evaluate(() => {
         const overview = document.querySelector('.overview-page')!;
-        const rail = document.querySelector('.overview-bottom-overlays')!;
+        const rail = document.querySelector('.overview-metrics-overlays')!;
         const navigation = document.querySelector(
           'nav[aria-label="Primary navigation"]'
         );
@@ -310,7 +310,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
   ).toHaveCount(0, { timeout: 12_000 });
   assertGeometry(await geometry());
   await page.evaluate(() => document.exitFullscreen());
-  await waitForLayout(page, { width: 1920, height: 1080 }, false, false);
+  await waitForLayout(page, { width: 1920, height: 1080 }, false, true);
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 844, height: 390 },
@@ -345,20 +345,26 @@ test('keeps five readable glass cards separate from POIs through missing-data st
           await page
             .getByRole('button', { name: 'Enter fullscreen overview' })
             .click();
-        const fixed =
-          viewport.width === 1920 &&
-          (viewport.height === 1280 ||
-            (fullscreen && viewport.height === 1080));
+        const fixed = viewport.width === 1920 && viewport.height >= 1080;
         await waitForLayout(page, viewport, fullscreen, fixed);
         await page
           .locator('.overview-page')
           .evaluate((node) => node.scrollTo(0, 0));
         await expect
-          .poll(async () => {
-            const state = await geometry();
-            return !state.overflow && state.context.top > state.clocks.bottom;
-          })
-          .toBe(true);
+          .poll(
+            async () => {
+              const state = await geometry();
+              return {
+                overflow: state.overflow,
+                clockClear: state.context.top > state.clocks.bottom,
+                plots: state.plots.every((h) => h >= 48),
+              };
+            },
+            {
+              message: `root ${rootSize}, ${viewport.width}x${viewport.height}, fullscreen ${fullscreen}`,
+            }
+          )
+          .toEqual({ overflow: false, clockClear: true, plots: true });
         const state = await geometry();
         expect(state.pageOverflow).toBe(!fixed);
         expect(state.plots.every((height) => height >= 48)).toBe(true);
@@ -388,7 +394,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
             page,
             viewport,
             false,
-            viewport.width === 1920 && viewport.height === 1280
+            viewport.width === 1920 && viewport.height >= 1080
           );
         }
       }

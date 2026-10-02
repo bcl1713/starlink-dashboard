@@ -125,6 +125,15 @@
 .overview-clock-panel {
   width: 100%;
 }
+.overview-clock-panel--message {
+  padding: 12px 16px;
+  font-size: 18px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.overview-clock-panel--message p {
+  margin: 0;
+}
 .operational-clock-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -186,4 +195,12 @@
 .overview-fullscreen-control:focus-visible {
   outline: 2px solid #72b7ff;
   outline-offset: 2px;
+}
+
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1012px) and (min-height: 63.25rem) {
+  .globe-legend__items li,
+  .overview-map-status {
+    font-size: 18px;
+    line-height: 24px;
+  }
 }

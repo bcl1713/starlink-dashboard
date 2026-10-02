@@ -138,8 +138,7 @@ The aircraft trail and all five graphs share one history response at the
 configured polling cadence (five seconds by default, with one second opt-in) and
 the **Overview history window** editor in **Configuration** (5, 15, 30, or 60
 minutes, plus a saved custom window). This persisted **LAST** display duration
-is separate
-from **Rolling statistics: 5 minutes**, which always uses the fixed
+is separate from **Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. History requests default to five seconds
 while [#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s
 measured performance gate is pending. A reviewed frontend build can select one
@@ -183,31 +182,33 @@ throughput include observed and aggregate highs with rounded headroom; their
 axes expand for new peaks and shrink when the peak drops below half the prior
 upper bound, avoiding small oscillations in chart scale.
 
-At 1920×1080 native fullscreen, five navy glass cards form a 440px column with
-uppercase titles, large values and stationary sparse scale labels. The compact
-departure/arrival panel occupies a separate bottom-center region, while the
-existing legend stays at the lower right. Clocks and the other surfaces share
-the same glass tint at 50% opacity, fine border, rounded corners and 10px blur.
-A 90% navy fallback protects text when backdrop blur is unsupported. Shared
-refresh-error space and per-card exception space preserve fit when data becomes
-stale. Empty POIs do not move the charts. The compact legend identifies rendered
-map layers; detailed map diagnostics remain available in Configuration.
+At 1920×1080, ordinary and native fullscreen views fit without page scrolling.
+Four clocks span the top, five metric cards form a 440px left column, planned
+satellite information occupies the upper right, and the legend and map status
+sit at the lower right. Departure/arrival stays below the central globe area.
+The fullscreen entry control sits beneath the planning card. The same mounted
+chart and globe trees resize on fullscreen entry/exit; Escape restores the
+navigation.
 
-Layout uses actual Overview container size: a desktop column requires at least
-93.75rem width and 67.5rem height in fullscreen, or 71.25rem height in ordinary
-view where the fullscreen control needs reserved space. Pixel floors also
-require 1500px × 1080px in fullscreen and 1500px × 1140px in ordinary view, so
-smaller root text cannot activate the rail before the fixed-size cards fit. The
-rail starts at 8rem beneath the clocks; larger default text raises the fit
-thresholds so it uses readable flow before the clock row can collide with the
-metric context. Smaller containers use normal document scrolling so all five
-cards and the intact POI queue remain reachable. At an ordinary 1920×1080
-browser viewport, navigation reduces the available content height, so this
-readable scrolling fallback is intentional. Enter native fullscreen to obtain
-the complete ten-foot column without page scrolling; the navigation and
-fullscreen button disappear. Exit with the browser's fullscreen shortcut
-(usually Escape). Container size changes resize the same chart/globe trees. The
-mobile globe-stage and gesture redesign remains separate #220 work.
+Clocks and other surfaces share 80% navy glass, a fine border, rounded corners
+and 10px backdrop blur. The stronger tint protects secondary text over bright
+terrain; a 90% navy fallback protects text when blur is unsupported. Blur
+applies to the backdrop, leaving text and plots sharp. Shared refresh-error
+space and per-card exception space preserve fit when data becomes stale. Long
+satellite identifiers wrap in smaller type while retaining their complete
+accessible text. Empty POIs do not move the charts. The legend identifies
+rendered map layers; detailed map diagnostics remain available in Configuration.
+
+Layout uses actual Overview container size: the desktop composition requires at
+least 1500px and 93.75rem width, and 1012px and 63.25rem height. The metric and
+right columns start 136px beneath the clocks. At a 1920×1080 ordinary viewport,
+the navigation leaves sufficient content height for the same desktop frame.
+Smaller or shorter containers and enlarged root text use normal document
+scrolling so all five cards and arrival content remain reachable. Clocks use
+font-relative one/two-column flow before enlarged digits can overflow.
+Configuration contains the persisted **Overview history window** editor; its
+duration applies to both the aircraft trail and all five plots. The mobile
+globe-stage and gesture redesign remains separate #220 work.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
 rolling response shapes and error behavior. History-window selection and map

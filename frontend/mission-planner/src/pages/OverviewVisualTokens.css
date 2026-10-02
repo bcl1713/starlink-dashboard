@@ -1,5 +1,5 @@
 .overview-page {
-  --overview-glass: rgb(7 18 30 / 50%);
+  --overview-glass: rgb(7 18 30 / 80%);
   --overview-glass-fallback: rgb(7 18 30 / 90%);
   --overview-border: 1px solid rgb(172 201 226 / 28%);
   --overview-radius: 14px;
@@ -15,6 +15,7 @@
     .overview-planned-satellite,
     .overview-map-status,
     .operational-clock,
+    .overview-clock-panel--message,
     .overview-arrival,
     .overview-fullscreen-control,
     .overview-metric-history,
@@ -34,6 +35,7 @@
       .overview-planned-satellite,
       .overview-map-status,
       .operational-clock,
+      .overview-clock-panel--message,
       .overview-arrival,
       .overview-fullscreen-control,
       .overview-metric-history,

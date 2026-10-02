@@ -14,7 +14,7 @@ PR #228. The GitHub branch ref and relevant files were inspected at this SHA.
 The local checkout is older; do not implement from its current `HEAD`.
 
 **Design authority:** The approved
-[responsive Overview design](https://github.com/bcl1713/starlink-dashboard/blob/8c963f55e1a7a4d96314351d058130720742efc6/docs/superpowers/specs/2026-09-30-responsive-overview-design.md)
+[responsive Overview design](https://raw.githubusercontent.com/bcl1713/starlink-dashboard/8c963f55e1a7a4d96314351d058130720742efc6/docs/superpowers/specs/2026-09-30-responsive-overview-design.md)
 and its metric-provenance amendment. This is a follow-up to the delivered #216
 data/chart work, not a repeat of its original source-contract plan.
 

@@ -85,7 +85,7 @@ test('contains long paired countdowns around the desktop panel breakpoint', asyn
       }
       await expect(panel.locator('.overview-arrival__sections')).toHaveCSS(
         'flex-direction',
-        width <= 1660 ? 'column' : 'row'
+        width <= 1540 ? 'column' : 'row'
       );
       await expect
         .poll(() =>
@@ -122,10 +122,10 @@ test('contains long paired countdowns around the desktop panel breakpoint', asyn
         };
       });
       expect(geometry.pageHeight).toBe(1200);
-      expect(geometry.availableWidth).toBe(width - 960);
+      expect(geometry.availableWidth).toBe(width - 840);
       expect(geometry.overflow).toBe(false);
       expect(geometry.contained).toBe(true);
-      expect(Math.abs(geometry.center - width / 2)).toBeLessThan(1);
+      expect(Math.abs(geometry.center - (width / 2 + 60))).toBeLessThan(1);
       expect(Math.abs(geometry.bottom - geometry.pageBottom + 20)).toBeLessThan(
         1
       );
@@ -229,7 +229,13 @@ test('contains long late departures with enlarged text on narrow screens', async
         const range = document.createRange();
         range.selectNodeContents(countdown);
         return {
-          centered: Math.abs(box.x + box.width / 2 - innerWidth / 2) < 1,
+          centered:
+            Math.abs(
+              box.x +
+                box.width / 2 -
+                (overview.getBoundingClientRect().left +
+                  overview.clientWidth / 2)
+            ) < 1,
           panelOverflow: node.scrollWidth > node.clientWidth,
           pageOverflow: overview.scrollWidth > overview.clientWidth,
           textContained: [...range.getClientRects()].every(
