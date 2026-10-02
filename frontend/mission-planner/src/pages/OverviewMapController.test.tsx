@@ -16,7 +16,10 @@ vi.mock('@react-three/fiber', () => ({
 vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }));
 import { OverviewMapController } from './OverviewMapController';
 import { globePosition } from './globe-coordinates';
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 function setup() {
   const camera = new PerspectiveCamera(45, 390 / 380);
   camera.position.set(0, 0, 22);
@@ -149,3 +152,40 @@ it.each([30, 60, 144])(
     expect(zoomSpeed).toBe(0);
   }
 );
+
+it.each([5, 10, 15, 30, 60, 144])(
+  'reaches the same pose after four seconds at %i fps',
+  (fps) => {
+    const reference = setup();
+    const referenceView = render(
+      <OverviewMapController {...reference.props} />
+    );
+    for (let i = 0; i < 240; i++) scene.frame?.({}, 1 / 60);
+    const position = reference.camera.position.clone();
+    const rotation = reference.camera.quaternion.clone();
+    referenceView.unmount();
+    const actual = setup();
+    render(<OverviewMapController {...actual.props} />);
+    for (let i = 0; i < fps * 4; i++) scene.frame?.({}, 1 / fps);
+    expect(actual.camera.position.distanceTo(position)).toBeLessThan(0.00001);
+    expect(actual.camera.quaternion.angleTo(rotation)).toBeLessThan(0.00001);
+  }
+);
+
+it('pauses while hidden and discards the first resumed delta without replaying hidden time', () => {
+  const { camera, props } = setup();
+  render(<OverviewMapController {...props} />);
+  scene.frame?.({}, 0.1);
+  const position = camera.position.clone();
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+  document.dispatchEvent(new Event('visibilitychange'));
+  scene.frame?.({}, 60);
+  expect(camera.position.distanceTo(position)).toBe(0);
+  hidden.mockReturnValue(false);
+  document.dispatchEvent(new Event('visibilitychange'));
+  scene.frame?.({}, 60);
+  expect(camera.position.distanceTo(position)).toBe(0);
+  scene.frame?.({}, 0.1);
+  expect(camera.position.distanceTo(position)).toBeGreaterThan(0);
+  hidden.mockRestore();
+});

@@ -80,7 +80,20 @@ export function OverviewMapController({
     toOffsetX: number;
     toOffsetY: number;
   } | null>(null);
+  const discardResumedDelta = useRef(false);
+  useEffect(() => {
+    const pause = () => {
+      discardResumedDelta.current = true;
+    };
+    document.addEventListener('visibilitychange', pause);
+    return () => document.removeEventListener('visibilitychange', pause);
+  }, []);
   useFrame((_, delta) => {
+    if (document.hidden) return;
+    if (discardResumedDelta.current) {
+      discardResumedDelta.current = false;
+      return;
+    }
     const tween = transition.current;
     if (!tween || !(camera instanceof PerspectiveCamera)) return;
     const next = reducedMotion
@@ -88,7 +101,7 @@ export function OverviewMapController({
       : advanceCameraMotion(
           tween.progress,
           tween.speed,
-          Math.min(delta, 0.05),
+          delta,
           tween.maxSpeed,
           tween.acceleration
         );

@@ -69,7 +69,10 @@ rest, with no prescribed duration. Rotation is capped at 10 degrees/second with
 2 degrees/second squared acceleration. Zoom interpolates logarithmic altitude
 above the globe (0.5 units/second, 0.15 units/second squared); projection offsets
 use viewport fractions (0.12/second, 0.04/second squared). The slowest channel
-sets shared progress. Bounded frame deltas avoid a hidden-tab replay jump. Manual input cancels the transition immediately; manual intent preserves
+sets shared progress. Visible frames use their full elapsed delta, so frame rate
+does not change movement speed. Hidden tabs pause motion; the first delta after
+a visibility change is discarded to prevent replaying time spent hidden.
+Manual input cancels the transition immediately; manual intent preserves
 position/quaternion/target/zoom through resizing. Projection aspect updates with
 the renderer. Reduced motion finishes transitions discretely and removes
 optional scene animation and plot transform transitions. uPlot data uploads

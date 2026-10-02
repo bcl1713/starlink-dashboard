@@ -170,3 +170,15 @@ Evidence is under `/tmp/issue220-evidence/`: `camera-feedback-units.log`,
 `camera-feedback-browser.log`, `fullscreen-icon-geometry.json` and
 `fullscreen-route-feedback.png`. No Docker containers were started for this
 follow-up; the actor's Docker daemon reports no running containers.
+
+
+A subsequent dt check exposed the inherited 50ms frame-delta cap, which slowed
+motion below 20 fps. Visible frames now use their complete elapsed delta.
+Hidden tabs pause motion and discard the first resumed delta. Regression tests
+compare identical four-second poses at 5, 10, 15, 30, 60 and 144 fps and verify
+hidden/resumed behavior. The cap and hidden-frame cases failed before the fix.
+Final dt verification: all 400 unit tests, build and lint pass; two headed
+Chromium checks pass for reset interpolation and manual preservation. Logs are
+`camera-dt-units.log`, `camera-dt-build.log`, `camera-dt-lint.log` and
+`camera-dt-browser.log` in the same evidence directory. The preview stopped
+afterward; this correction did not start Docker containers.
