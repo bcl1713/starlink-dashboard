@@ -103,7 +103,7 @@ Reuse `projectActiveConfiguredXBandSatelliteId`; explicit null is no selection,
 while malformed/missing loaded responses fail closed. Error precedes cached ID;
 a valid ID does not depend on GPS/network freshness or catalog geometry.
 
-- [ ] Write projection tests with assertions equivalent to:
+- [x] Write projection tests with assertions equivalent to:
 
   ```ts
   expect(derivePlannedSatelliteState({ satellite_id: 'X-6' }, false, false))
@@ -117,13 +117,13 @@ a valid ID does not depend on GPS/network freshness or catalog geometry.
   Also cover loading, blank/non-string IDs and missing responses. Component
   tests assert the exact three text rows for every state, accessible region
   `Planned satellite`, no image/SVG/live status/age, and wrapping of long IDs.
-- [ ] Run `npm run test:unit -- src/pages/overview-planned-satellite.test.ts
+- [x] Run `npm run test:unit -- src/pages/overview-planned-satellite.test.ts
   src/pages/OverviewPlannedSatelliteCard.test.tsx` from the frontend; verify
   failure because the modules do not exist.
-- [ ] Implement the projection and view with non-interactive text and shared
+- [x] Implement the projection and view with non-interactive text and shared
   glass styling. Use `overflow-wrap: anywhere` for IDs. No timer or query hook
   belongs in this component.
-- [ ] Rerun the focused tests; require all cases to pass. Commit only this task's
+- [x] Rerun the focused tests; require all cases to pass. Commit only this task's
   files with `feat(overview): add planned satellite card`.
 
 ## Task 2: Relocate history controls and map diagnostics
@@ -141,25 +141,25 @@ in Configuration, separate from clock-loading/error branches. The editor uses
 diagnostics use existing status, history, satellite and active-link queries,
 `useCurrentTime`, and the unchanged projection/look-angle helpers.
 
-- [ ] Write editor tests asserting labelled `Overview history window`, options
+- [x] Write editor tests asserting labelled `Overview history window`, options
   300/900/1800/3600 seconds, preservation of a saved 1200-second custom value,
   disabled loading/pending state, and distinct read/save failures. Assert a
   900-second edit calls the existing mutation once. Diagnostics tests assert
   valid configured counts, selected ID, current/last-known status, track-history
   loading/failure, GEP unavailable, configured GEO azimuth/elevation and explicit
   missing geometry. Assert planning terminology and supported warning text.
-- [ ] Run the two new component tests and Configuration tests; verify missing
+- [x] Run the two new component tests and Configuration tests; verify missing
   modules/new sections fail before implementation.
-- [ ] Implement the two cards and mount them independently in Configuration.
+- [x] Implement the two cards and mount them independently in Configuration.
   Preserve the current mutation's invalidation of both history/settings query
   keys. Do not introduce a history cadence editor, satellite selector, new
   endpoint or second application query client. Preserve needed diagnostics
   without importing the entire Overview scene.
-- [ ] Document Configuration as the new duration/diagnostics location. Explain
+- [x] Document Configuration as the new duration/diagnostics location. Explain
   shared trail/graph duration, fixed five-minute rolling statistics, planning
   geometry and the existing warning rule. Remove transitional claims that the
   selector remains in the globe legend; retain unchanged polling guidance.
-- [ ] Rerun focused tests including the existing update-history-settings hook
+- [x] Rerun focused tests including the existing update-history-settings hook
   tests; require success and commit with
   `feat(configuration): retain overview settings and map diagnostics`.
 
@@ -179,12 +179,12 @@ Modify `OverviewPage.tsx`, `OverviewPage.contract.test.ts`, `OverviewPage.css`,
 concise exception text in an independently labelled `Map status` region and
 renders nothing when empty. Use polite status updates, not repeated alerts.
 
-- [ ] Write legend tests asserting exactly the five approved labels and order
+- [x] Write legend tests asserting exactly the five approved labels and order
   when enabled, and omission of each disabled layer. Assert no form control,
   count or diagnostic text, samples hidden from accessibility APIs, and a
   planned-link sample distinct from track by width/treatment as well as color.
   Test normal/warning sample styling and status text separately.
-- [ ] Write a page test with Canvas mocked as a scene boundary: no route plus
+- [x] Write a page test with Canvas mocked as a scene boundary: no route plus
   valid aircraft/GEP retains both markers and entries; fewer than two history
   points omits history; selected ID without catalog geometry omits link only;
   loading/error combinations show honest exceptions. Cached geometry plus
@@ -192,26 +192,26 @@ renders nothing when empty. Use polite status updates, not repeated alerts.
   and configured satellite identities remain accessible even with hidden Html
   labels. Update the obsolete source assertion requiring generated-POI prose;
   retain single-query and geometry contracts.
-- [ ] Run the new tests and existing page contract tests; verify the changed
+- [x] Run the new tests and existing page contract tests; verify the changed
   behavior fails before integration.
-- [ ] Integrate Task 1 and the new legend using exactly the scene predicates:
+- [x] Integrate Task 1 and the new legend using exactly the scene predicates:
   `Boolean(aircraftPosition)`, `hasRenderableRoute`,
   `aircraftHistoryPoints.length >= 2`, `Boolean(groundEntryPoint)` and
   `Boolean(activeConfiguredXBandLink)`. Remove the selector/mutation and verbose
   diagnostic computations from Overview; keep its history-settings query for
   the metric group's selected duration. Preserve all scene geometry guards.
-- [ ] Move route exceptions and short status/history/link failures into Map
+- [x] Move route exceptions and short status/history/link failures into Map
   status, including selected-but-unprojectable link and supported warning text.
   Keep the existing accessible Map POIs list and add a separate accessible list
   of configured satellite IDs, independent of globe occlusion. Do not use
   network freshness to assert GPS validity; leave arrival provenance untouched.
-- [ ] Add the card below the upper-right clock area and keep legend/status at
+- [x] Add the card below the upper-right clock area and keep legend/status at
   lower right within existing desktop container conditions. Extend current
   scrolling fallback and shared glass/fallback selectors for the card/status;
   remove obsolete three-column legend/selector styles. Keep content readable
   at 360px and enlarged text; final camera/layout and expandable mobile legend
   remain later slices. Document the conditional legend and unavailable states.
-- [ ] Rerun focused tests plus satellite projection, satcom style, flow consumer,
+- [x] Rerun focused tests plus satellite projection, satcom style, flow consumer,
   POI marker and arrival regressions. Commit with
   `feat(overview): show rendered layers and preserve map exceptions`.
 
@@ -226,34 +226,34 @@ Record results in
 `docs/reports/2026-10-02-overview-planned-satellite-legend.md` and link them from
 `docs/reports/README.md`.
 
-- [ ] Add browser cases for selected/null/error satellite state; missing or
+- [x] Add browser cases for selected/null/error satellite state; missing or
   invalid catalog; normal/warning link; all/partial/no layers; route failure
   without losing aircraft/GEP; POI collision labels and long IDs. Require real
   globe readiness using the existing `waitForGlobeVisualReady` helper.
-- [ ] Update old legend expectations to the approved layer labels, short Map
+- [x] Update old legend expectations to the approved layer labels, short Map
   status or Configuration diagnostics. Duration-save browser tests navigate
   through Configuration, save, return, and verify trail/graph window updates.
   For tests asserting motion/rebase on the same chart instance, retain that
   requirement using the existing mounted-panel test harness with controlled
   window/history props; navigation/remounting cannot prove a seamless rebase.
   Update obsolete control selectors throughout the existing suites.
-- [ ] Verify missing data, text enlargement and overlay containment at
+- [x] Verify missing data, text enlargement and overlay containment at
   1920×1080 ordinary/native fullscreen, 390×844, 844×390 and 360px portrait.
   Extend overlap assertions to the card and Map status. Preserve current
   fallback scrolling; do not claim #220 mobile-stage acceptance.
-- [ ] Run `./tools/verify frontend` and `./tools/verify static` from the root,
+- [x] Run `./tools/verify frontend` and `./tools/verify static` from the root,
   setting `ACCEPTANCE_POLICY_BASE_SHA` to the exact reachable selected base for
   the static gate. Require passing Vitest, production build and applicable
   static checks. Run the changed/new Chromium suites serially, plus existing
   arrival and POI-responsive regressions. Inspect snapshot changes manually.
-- [ ] Commit the tested candidate, record its full SHA and obtain exact-SHA CDP
+- [x] Commit the tested candidate, record its full SHA and obtain exact-SHA CDP
   screenshots and a short recording over bright terrain/dark ocean, including
   blur fallback, missing selection, warning and route failure. Verify an
   isolated production Docker/Nginx/backend/Prometheus path as required by the
   development workflow; fixture tests alone are insufficient. Read the cloud
   Docker guidance before starting containers. This baseline has no sealed
   Overview acceptance lane, so an unrelated lane cannot certify this slice.
-- [ ] Report SHA, viewport, source mode, browser/renderer, fixture versus
+- [x] Report SHA, viewport, source mode, browser/renderer, fixture versus
   production coverage, checks and limitations. Obtain independent review before
   a PR is ready. Pushing a candidate/creating a PR requires authorization in
   the execution session; merge, deployment and issue closure are outside this
@@ -266,4 +266,4 @@ Tasks cover #218's card/unavailable state, conditional layers, existing warning
 semantics, no-route context, marker accessibility, relocated controls/diagnostics,
 documentation and exact-candidate rendered evidence. All five review-focus
 conditions have owning tests above. No chart, arrival, backend or mobile-stage
-redesign is proposed. Approval of this written plan is the next required gate.
+redesign is proposed. Brian approved this plan before implementation on 2026-10-02.
