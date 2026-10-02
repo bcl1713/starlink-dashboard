@@ -141,49 +141,49 @@ scene consumers, interaction browser suite and relevant component tests.
 snapshot; produces scoped gesture handling and camera intent without replacing
 the Canvas or changing telemetry derivation.
 
-- [ ] Add failing `scroll over panels gaps and globe preserves pose`,
+- [x] Add failing `scroll over panels gaps and globe preserves pose`,
       `Explore scopes map gestures and exits accessibly` and
       `rotation preserves manual camera and plot identity` cases. Observe
       renderer pose without mutating it. Drive real mouse wheel/drag and CDP
       touch events, including portrait document scroll and landscape rail scroll
       to all five cards; assert scroll movement and unchanged camera in default
       responsive mode.
-- [ ] Exercise 2000×1333 ordinary/fullscreen at root 16/24px and representative
+- [x] Exercise 2000×1333 ordinary/fullscreen at root 16/24px and representative
       shorter chrome-reduced heights. Desktop-fit view retains deliberate globe
       input; scrolling fallback sends panel/gap/globe wheel to page scroll.
       Check Ctrl/Meta wheel is not swallowed. Record actual layout/scroll
       bounds.
-- [ ] Add controls/controller tests for manual/automatic/follow transitions,
+- [x] Add controls/controller tests for manual/automatic/follow transitions,
       failed/stale/missing position, mid-pointer Escape/blur/rotation and focus
       return. Camera-fit math tests cover aspect, safe-area bounds, distance
       clamps, absent aircraft and unchanged manual intent on minor height
       changes.
-- [ ] Run failing cases before controller edits. Expected red: default input
+- [x] Run failing cases before controller edits. Expected red: default input
       changes the camera, no Explore exit path and no responsive framing policy.
-- [ ] Implement controls/intent and one gated OrbitControls. Ensure pointer
+- [x] Implement controls/intent and one gated OrbitControls. Ensure pointer
       capture cleanup also works when the viewport changes during a gesture.
       Scope landscape wheel forwarding to stage/gaps in scroll mode; preserve
       native rail behavior and browser zoom. Implement automatic frame fitting
       and Configuration opt-in following with unavailable reason; retain manual
       pose.
-- [ ] Add/run reduced-motion tests for initial/change preference: no continuous
+- [x] Add/run reduced-motion tests for initial/change preference: no continuous
       plot transform transition or optional scene motion; new data/gaps/time
       bounds still update, renderer/uPlot identities persist. Apply preference
       via one cleanup-safe hook; leave normal-preference motion contract
       unchanged.
-- [ ] Verify real uPlot/Three.js sizes at DPR1/2/1.5 after repeated rotation.
+- [x] Verify real uPlot/Three.js sizes at DPR1/2/1.5 after repeated rotation.
       Plot viewport width determines `width/windowSeconds` motion rate and
       overscan; canvas CSS bounds and drawing buffer match the selected DPR.
       Assert stationary headings/axes and retained timestamps across
       rebase/resize without stretch.
-- [ ] Exercise saved/custom duration, missing samples/recovery, delayed polls,
+- [x] Exercise saved/custom duration, missing samples/recovery, delayed polls,
       visibility resume and interrupted rotation. Keep five-minute rollup
       meaning; no new per-panel requests, animation-frame uploads or queued
       replay.
-- [ ] Run interaction, metric-history/fullscreen, desktop/globe and focused
+- [x] Run interaction, metric-history/fullscreen, desktop/globe and focused
       camera/control/retention suites. Update hit-target assertions only for the
       intentional scroll policy; do not weaken motion/provenance oracles.
-- [ ] Commit as
+- [x] Commit as
       `feat(overview): scope map exploration and preserve camera intent`.
 
 ## Task 3: Verify exact-head behavior and document operation

@@ -25,7 +25,7 @@ async function waitForLayout(
         const navigation = document.querySelector(
           'nav[aria-label="Primary navigation"]'
         );
-        const container = overview.getBoundingClientRect();
+        const container = overview.parentElement!.getBoundingClientRect();
         const navigationHeight =
           navigation?.getBoundingClientRect().height ?? 0;
         return {
@@ -59,7 +59,7 @@ async function waitForLayout(
 test('keeps five readable glass cards separate from POIs through missing-data states', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(180_000); // State coverage plus ordinary/fullscreen font-size matrix.
+  test.setTimeout(240_000); // Full font-size matrix captures on software WebGL.
   let stale = false;
   let failedHistory = false;
   let emptyPois = false;
@@ -201,8 +201,8 @@ test('keeps five readable glass cards separate from POIs through missing-data st
             node.scrollWidth > node.clientWidth
         ),
         pageOverflow:
-          document.querySelector('.overview-page')!.scrollHeight >
-          document.querySelector('.overview-page')!.clientHeight,
+          document.querySelector('.app-route-content')!.scrollHeight >
+          document.querySelector('.app-route-content')!.clientHeight,
         poi: box('[aria-label="Departure and arrival"]'),
         clocks: box('.overview-clock-panel'),
         legend: box('.overview-map-overlays'),
@@ -348,7 +348,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
         const fixed = viewport.width === 1920 && viewport.height >= 1080;
         await waitForLayout(page, viewport, fullscreen, fixed);
         await page
-          .locator('.overview-page')
+          .locator('.app-route-content')
           .evaluate((node) => node.scrollTo(0, 0));
         await expect
           .poll(
@@ -366,7 +366,11 @@ test('keeps five readable glass cards separate from POIs through missing-data st
           )
           .toEqual({ overflow: false, clockClear: true, plots: true });
         const state = await geometry();
-        expect(state.pageOverflow).toBe(!fixed);
+        await expect(page.locator('.overview-page')).toHaveAttribute(
+          'data-layout',
+          fixed ? 'desktop' : 'stacked'
+        );
+        if (fixed) expect(state.pageOverflow).toBe(false);
         expect(state.plots.every((height) => height >= 48)).toBe(true);
         expect(
           await cards.evaluateAll((nodes) =>
@@ -417,7 +421,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
           .click();
       await waitForLayout(page, viewport, fullscreen, false);
       await page
-        .locator('.overview-page')
+        .locator('.app-route-content')
         .evaluate((node) => node.scrollTo(0, 0));
       await expect
         .poll(async () => {
@@ -430,20 +434,23 @@ test('keeps five readable glass cards separate from POIs through missing-data st
       expect((await context.boundingBox())!.y).toBeGreaterThanOrEqual(
         clock!.y + clock!.height
       );
-      await expect
-        .poll(() =>
-          page
-            .locator('.overview-page')
-            .evaluate((node) => node.scrollHeight > node.clientHeight)
-        )
-        .toBe(true);
+      await expect(page.locator('.overview-page')).toHaveAttribute(
+        'data-layout',
+        'stacked'
+      );
+      await expect(page.locator('.app-route-content')).toHaveCSS(
+        'overflow-y',
+        'auto'
+      );
       await page.screenshot({
         path: testInfo.outputPath(
           `216-root24-${viewport.width}x${viewport.height}-${fullscreen ? 'fullscreen' : 'ordinary'}.png`
         ),
       });
-      await cards.last().scrollIntoViewIfNeeded();
-      await expect(cards.last()).toBeInViewport();
+      for (const card of await cards.all()) {
+        await card.scrollIntoViewIfNeeded();
+        await expect(card).toBeInViewport();
+      }
       if (fullscreen) {
         await page.evaluate(() => document.exitFullscreen());
         await waitForLayout(page, viewport, false, false);

@@ -183,9 +183,7 @@ test.describe('Overview metric history', () => {
     const globeCanvas = await waitForGlobeVisualReady(page, texture);
     expect(
       await globeCanvas.evaluate(
-        (node) =>
-          node ===
-          [...document.querySelectorAll('.overview-page canvas')].at(-1)
+        (node) => node === document.querySelector('.overview-globe canvas')
       )
     ).toBe(true);
     const graphs = page
@@ -628,6 +626,30 @@ test.describe('Overview metric history', () => {
     );
     for (const height of [900, 768, 640]) {
       await page.setViewportSize({ width: 1920, height });
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const overview = document.querySelector('.overview-page')!;
+            const arrival = document
+              .querySelector('[aria-label="Departure and arrival"]')!
+              .getBoundingClientRect();
+            const boxes = [
+              ...document.querySelectorAll('[data-metric-panel]'),
+            ].map((node) => node.getBoundingClientRect());
+            return {
+              responsive: overview.getAttribute('data-layout') !== 'desktop',
+              readable: boxes.every((box) => box.width >= 170),
+              separate: boxes.every(
+                (box) =>
+                  box.bottom <= arrival.top ||
+                  box.top >= arrival.bottom ||
+                  box.right <= arrival.left ||
+                  box.left >= arrival.right
+              ),
+            };
+          })
+        )
+        .toEqual({ responsive: true, readable: true, separate: true });
       const metrics = await page
         .getByLabel('Network history context')
         .boundingBox();
@@ -638,19 +660,30 @@ test.describe('Overview metric history', () => {
           legend!.y + legend!.height <= metrics!.y,
         `height ${height}: metrics/legend ${JSON.stringify({ metrics, legend })}`
       ).toBe(true);
-      expect(
-        await page
-          .locator('.overview-page')
-          .evaluate((node) => node.scrollHeight > node.clientHeight),
-        `height ${height}: short desktop remains scrollable`
-      ).toBe(true);
+      await expect(page.locator('.app-route-content')).toHaveCSS(
+        'overflow-y',
+        'auto'
+      );
       const shortPoiBox = await pois.boundingBox();
-      for (const panel of await graphs.all()) {
-        const box = await panel.boundingBox();
+      const shortGraphs = await graphs.all();
+      const shortBoxes = await Promise.all(
+        shortGraphs.map((panel) => panel.boundingBox())
+      );
+      for (const box of shortBoxes) {
         expect(
-          box && shortPoiBox && box.y + box.height <= shortPoiBox.y
+          box &&
+            shortPoiBox &&
+            (box.y + box.height <= shortPoiBox.y ||
+              box.y >= shortPoiBox.y + shortPoiBox.height ||
+              box.x + box.width <= shortPoiBox.x ||
+              box.x >= shortPoiBox.x + shortPoiBox.width),
+          `height ${height}: ${JSON.stringify({ box, shortPoiBox })}`
         ).toBeTruthy();
-        expect(box && box.width >= 200).toBeTruthy();
+        expect(box && box.width >= 170).toBeTruthy();
+      }
+      for (const panel of shortGraphs) {
+        await panel.scrollIntoViewIfNeeded();
+        await expect(panel).toBeInViewport();
       }
       expect(
         await pois.evaluate((node) => node.scrollHeight <= node.clientHeight),
@@ -757,6 +790,10 @@ for (const height of [961, 1024]) {
       await expect(
         page.getByRole('navigation', { name: 'Primary navigation' })
       ).toHaveCount(0);
+      await expect(page.locator('.overview-page')).toHaveAttribute(
+        'data-layout',
+        height >= 1012 ? 'desktop' : 'stacked'
+      );
       await pois.evaluate(async (node) => {
         await Promise.all(
           node
@@ -789,7 +826,9 @@ for (const height of [961, 1024]) {
             (node) => node.getBoundingClientRect().toJSON()
           ),
           clocks: rect('.overview-clock-panel'),
-          pageScroll: page.scrollHeight > page.clientHeight,
+          layout: page.getAttribute('data-layout'),
+          pageScroll:
+            page.parentElement!.scrollHeight > page.parentElement!.clientHeight,
         };
       });
       await writeFile(
@@ -819,10 +858,12 @@ for (const height of [961, 1024]) {
             box.left >= geometry.clocks.right,
           `chart/clock overlap: ${JSON.stringify(geometry)}`
         ).toBe(true);
-      expect(
-        geometry.pageScroll,
-        `height ${height}: composition fit boundary`
-      ).toBe(height < 1012);
+      expect(geometry.layout).toBe(height >= 1012 ? 'desktop' : 'stacked');
+      if (height >= 1012) expect(geometry.pageScroll).toBe(false);
+      for (const card of await graphs.all()) {
+        await card.scrollIntoViewIfNeeded();
+        await expect(card).toBeInViewport();
+      }
       if (height >= 1012) {
         for (const box of geometry.boxes) {
           expect(box.width).toBe(440);

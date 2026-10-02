@@ -738,7 +738,7 @@ test.describe('Overview metric history', () => {
     );
     await page.goto('/overview', { waitUntil: 'commit' });
     await expect(texture).resolves.toBeTruthy();
-    const canvas = page.locator('.overview-page canvas').last();
+    const canvas = page.locator('.overview-globe canvas');
     await expect(canvas).toBeVisible();
     await page.evaluate(
       () =>
@@ -954,24 +954,34 @@ test.describe('Overview metric history', () => {
       const boxes = await Promise.all(
         (await panels.all()).map((panel) => panel.boundingBox())
       );
-      expect(boxes.every((box) => box && box.width >= 300)).toBe(true);
+      expect(boxes.every((box) => box && box.width >= 170)).toBe(true);
       expect(
-        boxes.every((box) => box && pois && box.y + box.height <= pois.y)
+        boxes.every((box) => box && pois && box.y >= pois.y + pois.height)
       ).toBe(true);
-      expect(
-        boxes.every(
-          (box, index) =>
-            index === 0 ||
-            (box &&
-              boxes[index - 1] &&
-              box.y >= boxes[index - 1]!.y + boxes[index - 1]!.height)
-        )
-      ).toBe(true);
-      expect(
-        await page
-          .locator('.overview-page')
-          .evaluate((node) => getComputedStyle(node).overflowY)
-      ).toBe('auto');
+      for (const [i, box] of boxes.entries()) {
+        expect(box).not.toBeNull();
+        for (const other of boxes.slice(i + 1)) {
+          expect(other).not.toBeNull();
+          expect(
+            box!.x + box!.width <= other!.x + 1 ||
+              other!.x + other!.width <= box!.x + 1 ||
+              box!.y + box!.height <= other!.y + 1 ||
+              other!.y + other!.height <= box!.y + 1
+          ).toBe(true);
+        }
+      }
+      await expect(page.locator('.overview-page')).toHaveAttribute(
+        'data-layout',
+        'stacked'
+      );
+      await expect(page.locator('.app-route-content')).toHaveCSS(
+        'overflow-y',
+        'auto'
+      );
+      for (const panel of await panels.all()) {
+        await panel.scrollIntoViewIfNeeded();
+        await expect(panel).toBeInViewport();
+      }
       await expect(
         page.getByLabel('Graph traces').getByText('Observed', { exact: true })
       ).toBeAttached();
