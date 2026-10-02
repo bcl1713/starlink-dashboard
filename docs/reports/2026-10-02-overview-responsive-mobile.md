@@ -171,7 +171,6 @@ Evidence is under `/tmp/issue220-evidence/`: `camera-feedback-units.log`,
 `fullscreen-route-feedback.png`. No Docker containers were started for this
 follow-up; the actor's Docker daemon reports no running containers.
 
-
 A subsequent dt check exposed the inherited 50ms frame-delta cap, which slowed
 motion below 20 fps. Visible frames now use their complete elapsed delta.
 Hidden tabs pause motion and discard the first resumed delta. Regression tests
