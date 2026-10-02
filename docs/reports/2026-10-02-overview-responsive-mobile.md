@@ -182,3 +182,39 @@ Chromium checks pass for reset interpolation and manual preservation. Logs are
 `camera-dt-units.log`, `camera-dt-build.log`, `camera-dt-lint.log` and
 `camera-dt-browser.log` in the same evidence directory. The preview stopped
 afterward; this correction did not start Docker containers.
+
+## Unified CameraControls and closer following
+
+The CameraControls migration was checkpointed and pushed as `5602e027` at
+Brian's request before changing follow framing. The subsequent animation audit
+found that following still fitted the whole globe, CameraControls rotation had
+no speed cap, and measured projection offsets changed immediately.
+
+Initial route/aircraft framing, follow activation and changing positions, Reset,
+route recovery and fullscreen/layout changes now use the same critically damped
+control with full visible-frame delta. Its damping parameter is 1.2 seconds,
+with no prescribed animation duration. Dolly is capped at 1.5 scene units/second
+and angular damping at 10 degrees/second. Projection offsets use the same
+damping equation with a 0.08 viewport-fractions/second cap per axis. Equivalent
+polls retain both camera and projection motion. Manual input freezes the
+current pose, while reduced motion applies the destination discretely. Hidden
+tabs retain the existing pause/resume handling.
+
+Following now targets a distance of 4.5 scene units around the radius-two globe,
+with the aircraft in the panel-safe opening. Default initial route framing and
+fullscreen route extent calculations are retained. The particle-flow animation
+already advances with delta, and history charts use monotonic elapsed time;
+marker and ribbon frame callbacks only adjust projected sizing.
+
+Five new regression cases failed before these changes. All 403 unit tests,
+production build and lint now pass, along with four headed Chromium checks for
+fullscreen route fitting, default/opt-in follow behavior and close zoom, follow
+pause/Reset and eased Reset poses. Logs are `follow-unified-red.log`,
+`follow-unified-units.log`, `follow-unified-build.log`,
+`follow-unified-lint.log` and `follow-unified-browser.log` under the existing
+`/tmp/issue220-evidence/` directory. These checks used a local built preview;
+no Docker containers were started.
+Two additional headed Chromium checks pass for manual camera preservation
+through viewport rotation and reduced-motion chart behavior; their log is
+`follow-unified-manual-browser.log`. The previews have stopped and the actor's
+Docker daemon reports no running containers.

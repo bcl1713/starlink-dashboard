@@ -168,3 +168,43 @@ it('keeps a broad visible-hemisphere route in front of the globe surface', () =>
   for (const point of route)
     expect(new Vector3(...point).dot(position)).toBeGreaterThan(4);
 });
+
+it.each([
+  [390, 380, { x: 12, y: 12, width: 170, height: 245 }],
+  [1920, 1080, { x: 480, y: 136, width: 1080, height: 650 }],
+] as const)(
+  'frames following tightly with the aircraft inside the opening at %i × %i',
+  (width, height, safeRect) => {
+    const direction = new Vector3(...globePosition(35, -100, 1));
+    const frame = overviewCameraFrame({
+      width,
+      height,
+      fov: 45,
+      safeRect,
+      direction,
+      followAircraft: true,
+    });
+    expect(frame.distance).toBeCloseTo(4.5);
+    const camera = new PerspectiveCamera(45, width / height);
+    camera.position.copy(direction.clone().multiplyScalar(frame.distance));
+    camera.lookAt(0, 0, 0);
+    camera.setViewOffset(
+      width,
+      height,
+      frame.offsetX,
+      frame.offsetY,
+      width,
+      height
+    );
+    camera.updateMatrixWorld();
+    const aircraft = new Vector3(...globePosition(35, -100, 2.04)).project(
+      camera
+    );
+    const x = ((aircraft.x + 1) * width) / 2,
+      y = ((1 - aircraft.y) * height) / 2;
+    expect(x).toBeGreaterThan(safeRect.x);
+    expect(x).toBeLessThan(safeRect.x + safeRect.width);
+    expect(y).toBeGreaterThan(safeRect.y);
+    expect(y).toBeLessThan(safeRect.y + safeRect.height);
+  }
+);

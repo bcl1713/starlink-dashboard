@@ -10,6 +10,7 @@ interface FrameInput {
   route?: readonly [number, number, number][];
   direction?: Vector3;
   centerGlobe?: boolean;
+  followAircraft?: boolean;
 }
 interface CameraFrame {
   distance: number;
@@ -26,6 +27,7 @@ export function overviewCameraFrame({
   route,
   direction,
   centerGlobe = false,
+  followAircraft = false,
 }: FrameInput): CameraFrame {
   if (centerGlobe && direction && route && route.length > 1)
     return centeredRouteFrame({
@@ -43,7 +45,7 @@ export function overviewCameraFrame({
     Math.min(safeRect.height / fullHeight, safeRect.width / fullHeight)
   );
   const halfAngle = Math.atan(Math.tan((fov * Math.PI) / 360) * fraction);
-  let distance = 2.2 / Math.sin(halfAngle);
+  let distance = followAircraft ? 4.5 : 2.2 / Math.sin(halfAngle);
   if (
     direction &&
     route &&

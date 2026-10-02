@@ -307,6 +307,7 @@ test('interrupted pointers release capture on Escape blur and rotation and allow
 test('Configuration opt-in follows fresh positions while default framing remains static', async ({
   page,
 }) => {
+  test.setTimeout(180_000);
   const source = await compositionFixture(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/overview');
@@ -326,6 +327,7 @@ test('Configuration opt-in follows fresh positions while default framing remains
   );
   const following = await settledOverviewCamera(page);
   expect(following.position).not.toEqual(initial.position);
+  expect(Math.hypot(...following.position)).toBeCloseTo(4.5, 2);
   source.position = { latitude: 45, longitude: 120, altitude: 35000 };
   await expect
     .poll(async () => (await settledOverviewCamera(page)).position, {
@@ -382,6 +384,7 @@ test('desktop keeps deliberate globe input and its accepted composition', async 
 test('desktop Reset resumes configured following and exposes source pause reasons', async ({
   page,
 }) => {
+  test.setTimeout(180_000);
   const source = await compositionFixture(page);
   await page.addInitScript(() =>
     localStorage.setItem('overview.follow-aircraft', 'true')
@@ -426,6 +429,7 @@ test('desktop Reset resumes configured following and exposes source pause reason
 test('automatic reset moves through eased intermediate camera poses', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/overview');
   await settledOverviewCamera(page);

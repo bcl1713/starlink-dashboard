@@ -65,12 +65,20 @@ into the opening to the right of the metrics, below the upper cards and above
 the legend. Other views retain their panel-aware projection offsets.
 
 Automatic route framing and following use camera-controls damping with a
-0.4-second smooth time and a 3 scene-units/second dolly speed cap. Rotation uses
-the nearest azimuth, including across the dateline; the dolly speed cap does not
-cap angular speed. One control owns both user gestures and transitions.
+1.2-second smoothing parameter and a 1.5 scene-units/second dolly speed cap.
+This parameter controls damping, not animation duration. The control bounds the
+angular damping error vector to cap rotation at 10 degrees/second. Rotation uses
+the nearest azimuth, including across the dateline. One control owns both user
+gestures and transitions.
 Equivalent status polls leave the current move running, and changing a follow
-target retains damping velocity. Measured layout sets projection offsets while
-route-fit math determines direction and distance. Hidden tabs pause updates;
+target retains damping velocity. Measured projection offsets use the same
+critically damped equation, capped at 0.08 viewport fractions/second per axis;
+layout and fullscreen changes ease instead of jumping. Equivalent polls and
+resizing preserve in-progress projection motion. Route-fit math determines
+direction and distance. Following uses a closer distance of 4.5 scene units
+around the radius-two globe, keeping the aircraft in the panel-safe opening;
+it does not fit the entire globe. Fullscreen follows with Earth centered.
+Hidden tabs pause updates;
 the first delta after a visibility change is discarded to prevent replaying
 time spent hidden.
 Manual input cancels the transition immediately; manual intent preserves

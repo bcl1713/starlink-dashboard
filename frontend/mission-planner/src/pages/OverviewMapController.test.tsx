@@ -169,11 +169,11 @@ it.each([5, 30, 60, 144])(
     const { camera, props } = setup();
     render(<OverviewMapController {...props} />);
     let distance = camera.position.length();
-    for (let i = 0; i < fps * 12; i++) {
+    for (let i = 0; i < fps * 60; i++) {
       scene.frame?.({}, 1 / fps);
       const nextDistance = camera.position.length();
       expect(Math.abs(nextDistance - distance) * fps).toBeLessThanOrEqual(
-        3.001
+        1.5001
       );
       distance = nextDistance;
     }
@@ -202,7 +202,7 @@ it('pauses while hidden and discards the first resumed delta without replaying h
   hidden.mockRestore();
 });
 
-it('completes first-load route framing within twelve seconds', () => {
+it('settles first-load route framing without further drift', () => {
   const { camera, props } = setup();
   render(
     <OverviewMapController
@@ -210,7 +210,7 @@ it('completes first-load route framing within twelve seconds', () => {
       route={[globePosition(35, -100, 2), globePosition(45, -80, 2)]}
     />
   );
-  for (let i = 0; i < 720; i++) scene.frame?.({}, 1 / 60);
+  for (let i = 0; i < 3600; i++) scene.frame?.({}, 1 / 60);
   expect(props.onCameraSettled).toHaveBeenCalled();
   const settled = camera.position.clone();
   for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
@@ -224,6 +224,7 @@ it('preserves follow motion through repeated equivalent position polls', () => {
   );
   for (let i = 0; i < 240; i++) scene.frame?.({}, 1 / 60);
   const position = reference.camera.position.clone();
+  const offset = reference.camera.view!.offsetX;
   referenceView.unmount();
   const actual = setup();
   const view = render(
@@ -243,6 +244,7 @@ it('preserves follow motion through repeated equivalent position polls', () => {
     scene.frame?.({}, 1 / 60);
   }
   expect(actual.camera.position.distanceTo(position)).toBeLessThan(0.00001);
+  expect(actual.camera.view!.offsetX).toBeCloseTo(offset, 6);
 });
 
 it('resumes an interrupted follow transition when freshness recovers at the same coordinate', () => {
@@ -294,4 +296,54 @@ it('reduced-motion wheel zoom changes distance on the next frame', () => {
   const stopped = camera.position.clone();
   for (let i = 0; i < 60; i++) scene.frame?.({}, 1 / 60);
   expect(camera.position.distanceTo(stopped)).toBeLessThan(0.001);
+});
+
+it.each(['automatic', 'follow'] as const)(
+  'limits rotation and dolly during initial %s framing and Reset',
+  (intent) => {
+    const { camera, props } = setup();
+    const view = render(<OverviewMapController {...props} intent={intent} />);
+    for (const resetRevision of [0, 1]) {
+      if (resetRevision)
+        view.rerender(
+          <OverviewMapController
+            {...props}
+            intent={intent}
+            aircraft={{ latitude: -25, longitude: 80 }}
+            resetRevision={resetRevision}
+          />
+        );
+      const rotation = camera.quaternion.clone();
+      let distance = camera.position.length();
+      for (let i = 0; i < 3600; i++) {
+        scene.frame?.({}, 1 / 60);
+        expect(rotation.angleTo(camera.quaternion) * 60).toBeLessThanOrEqual(
+          (10 * Math.PI) / 180 + 0.0001
+        );
+        expect(
+          Math.abs(camera.position.length() - distance) * 60
+        ).toBeLessThanOrEqual(1.5001);
+        rotation.copy(camera.quaternion);
+        distance = camera.position.length();
+      }
+    }
+    if (intent === 'follow')
+      expect(camera.position.length()).toBeCloseTo(4.5, 3);
+  }
+);
+
+it('eases projection changes instead of jumping when the layout changes', () => {
+  const { camera, props } = setup();
+  const view = render(<OverviewMapController {...props} reducedMotion />);
+  const before = camera.view!.offsetX;
+  view.rerender(
+    <OverviewMapController
+      {...props}
+      safeRect={{ x: 12, y: 12, width: 280, height: 245 }}
+    />
+  );
+  expect(camera.view!.offsetX).toBe(before);
+  scene.frame?.({}, 0.1);
+  expect(camera.view!.offsetX).toBeLessThan(before);
+  expect(camera.view!.offsetX).toBeGreaterThan(39);
 });

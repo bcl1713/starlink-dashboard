@@ -69,6 +69,7 @@ export function OverviewMapController({
     if (!control) return;
     // stop() alone snaps to the destination. First make the current pose the target.
     void control.setLookAt(...camera.position.toArray(), 0, 0, 0, false);
+    control.freezeProjection();
     control.stop();
     control.update(0);
   }, [camera]);
@@ -91,6 +92,7 @@ export function OverviewMapController({
       return;
     const previous = fitted.current;
     const scaleProjection = () => {
+      if (controls.current?.resizeProjection(size.width, size.height)) return;
       const view = camera.view;
       if (view?.enabled)
         camera.setViewOffset(
@@ -155,19 +157,19 @@ export function OverviewMapController({
       route: intent === 'automatic' ? route : undefined,
       direction,
       centerGlobe,
+      followAircraft: intent === 'follow',
     });
     const position = (frame.direction ?? direction)
       .clone()
       .multiplyScalar(frame.distance);
-    camera.setViewOffset(
+    const control = controls.current;
+    control?.setProjectionOffset(
       size.width,
       size.height,
       frame.offsetX,
       frame.offsetY,
-      size.width,
-      size.height
+      !reducedMotion
     );
-    const control = controls.current;
     if (control) {
       // Normalize then choose the nearest azimuth, including across the dateline.
       control.normalizeRotations();
@@ -251,9 +253,9 @@ export function OverviewMapController({
       impl={OverviewCameraControls}
       makeDefault
       enabled={enabled}
-      smoothTime={reducedMotion ? 0 : 0.4}
+      smoothTime={reducedMotion ? 0 : 1.2}
       draggingSmoothTime={reducedMotion ? 0 : 0.1}
-      maxSpeed={reducedMotion ? Infinity : 3}
+      maxSpeed={reducedMotion ? Infinity : 1.5}
       minDistance={3}
       maxDistance={28}
       mouseButtons={{
