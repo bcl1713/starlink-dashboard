@@ -203,12 +203,43 @@ Layout uses actual Overview container size: the desktop composition requires at
 least 1500px and 93.75rem width, and 1012px and 63.25rem height. The metric and
 right columns start 136px beneath the clocks. At a 1920×1080 ordinary viewport,
 the navigation leaves sufficient content height for the same desktop frame.
-Smaller or shorter containers and enlarged root text use normal document
-scrolling so all five cards and arrival content remain reachable. Clocks use
-font-relative one/two-column flow before enlarged digits can overflow.
-Configuration contains the persisted **Overview history window** editor; its
-duration applies to both the aircraft trail and all five plots. The mobile
-globe-stage and gesture redesign remains separate #220 work.
+Portrait uses a bounded globe stage followed by page-flow metric cards, without
+a second metrics scroller. At roughly 844×390 CSS px, landscape keeps the globe
+visible beside a 210–240px rail containing all five charts. Enlarged text, long
+exceptions, an expanded legend or insufficient height fall back to readable
+stacked flow. Layout uses the measured shell, root font and overlay sizes; DPR
+or a device name does not select it. Font-relative clock/card columns honor text
+enlargement. Normal scroll input over panels, gaps and the globe scrolls the
+page or landscape rail. Ctrl/Meta wheel retains browser zoom.
+
+**Explore map** enables deliberate orbit/zoom on the globe. **Exit map
+exploration** or Escape returns to scrolling and restores focus. Blur and
+rotation release an interrupted gesture. The legend expands with its labeled
+button and closes with Escape; controls have at least 44px touch targets. Mobile
+navigation's **Toggle navigation** opens Configuration, which contains the
+persisted **Overview history window** editor. Its duration applies to the shared
+aircraft trail and all five plots, independently of five-minute rollups.
+
+On opening, the camera fits the route's projected extents into the clear map
+area between panels; without a route it uses a valid aircraft position. The
+route can be off-center on the screen because the metric rail occupies the left.
+Aircraft movement leaves the default camera still. **Reset map view** performs
+another fit. In Configuration, **Follow aircraft on Overview** opts into
+continuous following and is saved in this browser; it defaults off. Manual
+exploration pauses it, and reset resumes it. Stale, missing or failed map status
+pauses following with an explicit reason. This does not renew GPS/arrival
+timing.
+
+Automatic camera moves ease into their new pose; manual input cancels them.
+Manual pose and mounted canvas/plots survive rotation and fullscreen. Reduced
+motion removes camera easing, optional star/flow animation and continuous chart
+translation while truthful source updates, gaps and time bounds still update.
+The globe's geometry and natural lighting are retained; a route spanning its far
+side can remain occluded by Earth.
+
+See
+[responsive layout architecture](../architecture/overview-responsive-layout.md)
+for measured thresholds, scroll ownership and framing limits.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
 rolling response shapes and error behavior. History-window selection and map

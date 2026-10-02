@@ -1,0 +1,79 @@
+# Responsive Overview Layout
+
+Overview renders one clock group, one Three.js Canvas, one
+arrival/planning/legend group and five uPlot instances. Layout changes move the
+same DOM tree. Shared queries and source derivation remain unchanged; no mobile
+copies or extra polling are introduced.
+
+## Available space and scrolling
+
+`useOverviewLayout` observes the bounded `.app-route-content` shell, not the
+Overview's growing scroll content. ResizeObserver tracks the stage and overlay
+sizes; root font changes and legend disclosure also schedule measurement. Mode
+is exposed through `data-layout` for CSS and browser verification.
+
+- Desktop requires at least `max(1500px, 93.75rem)` width and
+  `max(1012px, 63.25rem)` height. Its five-card rail remains 440px wide.
+- Landscape requires at least 800px usable width, a readable 210–240px rail,
+  560px map width, 220px stage height and 120px height clear of arrival content.
+  Readability minima scale upward with enlarged root text. Very tall viewports
+  use stacked or desktop composition rather than the landscape strip.
+- Other sizes use stacked flow. The shell owns vertical page scrolling; metric
+  cards have no nested scroller. In landscape, only the metrics rail scrolls.
+- When overlays cannot fit, panels move below a 360px renderer. Expanded legend,
+  root font over 20px or measured oversized content triggers this escape. Within
+  a settled viewport, the flow decision stays stable until a resize/root change;
+  loading-induced decisions reset when initial queries settle.
+
+Semantic content keys exclude changing observation timestamps/countdowns.
+Observed size changes still update the reserved rectangle. This avoids feedback
+between reflowed panel height and the decision to reflow it. Safe-area insets
+and `dvh` are used with a `vh` fallback. Actual CSS dimensions select layout;
+system scaling, browser zoom and DPR are recorded separately in acceptance
+evidence.
+
+## Camera and input
+
+A controller within the existing Canvas owns one OrbitControls instance. Default
+responsive input allows browser scrolling. Landscape wheel events on stage/gaps
+forward to the rail only when it can scroll; rail events stay native, and
+Ctrl/Meta wheel is untouched. Explore enables gestures only within the globe.
+Exit, Escape, blur and mode changes release gesture state and preserve the pose.
+Desktop retains deliberate orbit/zoom without an Explore control.
+
+Initial automatic framing prefers valid projected route points. Its orientation
+uses sphere directions, avoiding dateline averaging errors; perspective bounds
+fit the route inside the measured area clear of panels. The distance also keeps
+visible-hemisphere route points ahead of Earth's surface. Without a route,
+framing uses valid map aircraft or the existing orientation. The 45-degree FOV,
+3–28 orbit limits and scene geometry remain unchanged. Global routes can have
+far-side occlusion; fitting does not flatten them.
+
+Default position updates leave the camera still. Reset performs an explicit fit.
+Continuous following is opt-in through Configuration, using a browser-local
+preference with default false and storage-failure feedback. Following uses only
+the same map status coordinates and timestamp; stale/error/missing sources pause
+it. Arrival/GPS provenance remains independently derived.
+
+Automatic moves interpolate orientation, distance and projection offset with
+smoothstep easing over 700ms. Bounded frame deltas avoid a hidden-tab replay
+jump. Manual input cancels the transition immediately; manual intent preserves
+position/quaternion/target/zoom through resizing. Projection aspect updates with
+the renderer. Reduced motion finishes transitions discretely and removes
+optional scene animation and plot transform transitions. uPlot data uploads
+remain tied to accepted data and measured size changes.
+
+POI packing uses renderer-local bounds and reserved overlay rectangles. It
+remeasures after meaningful layout or settled camera changes and retains
+complete accessible name lists when visual labels cannot fit.
+
+## Verification
+
+See the
+[implementation plan](../superpowers/plans/2026-10-02-overview-responsive-mobile.md)
+and
+[source contract](../superpowers/plans/2026-10-02-overview-responsive-mobile-source-contract.md).
+Browser tests drive wheel, touch and interrupted pointers; read-only renderer
+observation checks pose, while DOM handles verify retained renderer/plot
+identity. Software emulation cannot establish physical system scaling or device
+gestures.
