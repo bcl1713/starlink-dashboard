@@ -1,6 +1,6 @@
 # Overview desktop composition — #219
 
-Date: 2026-10-02 Status: ARCHIVED execution record; rendered acceptance pending
+Date: 2026-10-02 Status: desktop visual acceptance recorded; PR checks pending
 
 ## Change and delivery boundary
 
@@ -224,3 +224,29 @@ executor dispositions and risks are:
 
 No deferred source minors were reported. Branch publication is authorized for
 checkout; it does not imply a merge-ready acceptance result.
+
+## Operator acceptance and responsive follow-up
+
+On 2026-10-02 Brian confirmed that the visuals pass in the specified 1920×1080
+environment and authorized a PR to `dev`, with merge when ready. This records
+visual acceptance at that target; it does not establish a separately measured
+ten-foot reading distance or remove the renderer and external-link limitations
+above. Earlier pending-assessment/publication-only statements are the historical
+execution record before this decision.
+
+Brian's personal display is 3000×2000 at 150% scaling, giving approximately
+2000×1333 CSS px before browser chrome. In that environment, panels use the full
+width and scrolling is cumbersome: some panel regions scroll while others pass
+wheel events to the globe. Brian selected
+[issue #220](https://github.com/bcl1713/starlink-dashboard/issues/220) for this
+responsive fallback and input work alongside mobile portrait and landscape. Its
+acceptance boundary now explicitly includes actual container measurements,
+consistent mouse-wheel/trackpad scrolling over panels, gaps and the globe,
+reachable content and preservation of deliberate globe interaction. These
+follow-ups do not block the accepted #219 visual target.
+
+A fresh pre-PR run of `./tools/verify frontend` passes all 356 tests in 68 files
+and the production build. The published implementation matches the reviewed
+`d50d4138` source; subsequent commits contain documentation only. CI and the
+final review remain the integration gates. No deployment or release to `main` is
+authorized by this handoff.
