@@ -55,9 +55,12 @@ returned coordinates, not a receiver-provided GPS fix timestamp.
 In-flight estimates also require a fresh speed observation. Live GPS needs at
 least two verified position samples covering 0.1 seconds before speed is known;
 the initial compatibility zero cannot enable an ETA. A measured stationary zero
-is valid. Missing, stale or failed GPS resets tracking. Automatic flight detection
-also requires verified position and speed, and missing observations break arrival
-dwell and departure persistence without changing the confirmed flight phase.
+is valid. Missing, stale or failed GPS resets tracking. Automatic flight
+detection also requires verified position and speed. An interval of ten seconds
+or more between verified observations, including a silent collection pause,
+restarts arrival dwell and departure persistence without changing the confirmed
+phase. Reused collection timestamps do not advance detection; backward
+timestamps break continuity.
 
 Stale/invalid position suppresses ETA and countdown, with an explicit reason.
 Known names and map records remain; stale valid coordinates may identify the
@@ -68,7 +71,9 @@ landing times never replace missing estimates, and speed is never invented. UTC
 times use **HH:MMZ**, including the date when on another UTC day. Full UTC
 provenance remains accessible. Longer countdowns use **1 HR 39 MIN**; positive
 intervals under one minute use **<1 MIN**. Arrival stops at **0 MIN**; only
-scheduled departure counts past its target.
+scheduled departure counts past its target. In constrained panels, long
+countdowns wrap at word boundaries while preserving enlarged text, centered
+alignment and the AGO suffix.
 
 See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md) for
 timing provenance and independent map retention. A route-only active route is

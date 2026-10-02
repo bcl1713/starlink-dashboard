@@ -56,6 +56,10 @@
     flex-direction: column;
     gap: 16px;
   }
+  .overview-arrival__countdown {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   .overview-arrival__section + .overview-arrival__section {
     border-left: 0;
     border-top: var(--overview-border);

@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Optional
 from typing_extensions import Self
 
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
+from app.services.position_freshness import OBSERVATION_FRESHNESS_SECONDS
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from app.models.route import ParsedRoute
@@ -87,6 +88,8 @@ class FlightStateManager:
         self._status.scheduled_arrival_time = None
         self._status.time_until_departure_seconds = None
         self._status.time_since_departure_seconds = None
+
+        self._last_detection_observed_at: datetime | None = None
 
         # Speed persistence tracking
         self._speed_persistence_seconds = 0.0
@@ -227,14 +230,35 @@ class FlightStateManager:
             self._last_speed_sample_time = now
             return False
 
+    def observe_detection(self, observed_at: datetime) -> bool:
+        """Accept new observations, restarting persistence after a silent gap."""
+        with self._lock:
+            previous = self._last_detection_observed_at
+            if previous is not None:
+                interval = (observed_at - previous).total_seconds()
+                if interval < 0:
+                    self._reset_detection()
+                    return False
+                if interval == 0:
+                    return False
+                if interval >= OBSERVATION_FRESHNESS_SECONDS:
+                    self._reset_detection()
+            self._last_detection_observed_at = observed_at
+            return True
+
     def reset_detection(self) -> None:
         """Break automatic detection continuity without changing confirmed phase."""
         with self._lock:
-            self._above_threshold_start_time = None
-            self._last_speed_sample_time = None
-            self._status.speed_persistence_seconds = 0.0
-            self._arrival_start_time = None
-            self._arrival_distance_at_start = None
+            self._reset_detection()
+
+    def _reset_detection(self) -> None:
+        """Clear detection tracking while the caller holds the manager lock."""
+        self._last_detection_observed_at = None
+        self._above_threshold_start_time = None
+        self._last_speed_sample_time = None
+        self._status.speed_persistence_seconds = 0.0
+        self._arrival_start_time = None
+        self._arrival_distance_at_start = None
 
     def check_arrival(
         self,
@@ -335,6 +359,7 @@ class FlightStateManager:
                 self._status.arrival_time = datetime.now(timezone.utc)
             elif new_phase == FlightPhase.PRE_DEPARTURE:
                 # Manual reset clears arrival tracking
+                self._last_detection_observed_at = None
                 self._status.departure_time = None
                 self._status.arrival_time = None
                 self._status.speed_persistence_seconds = 0.0
@@ -448,6 +473,7 @@ class FlightStateManager:
             self._status.scheduled_arrival_time = scheduled_arrival
 
             if auto_reset and previous_route_id != new_route_id:
+                self._last_detection_observed_at = None
                 reset_needed = True
                 self._status.departure_time = None
                 self._status.arrival_time = None

@@ -172,7 +172,7 @@ def update_metrics_from_telemetry(
 
         flight_state = get_flight_state_manager()
         now = datetime.now(timezone.utc)
-        _, position_state = position_observation(
+        observed_at, position_state = position_observation(
             telemetry.position.latitude,
             telemetry.position.longitude,
             telemetry.position.observed_at,
@@ -183,6 +183,8 @@ def update_metrics_from_telemetry(
         )
         if not detection_ready:
             flight_state.reset_detection()
+        else:
+            detection_ready = flight_state.observe_detection(observed_at)
 
         # Automatic departure detection (speed-based)
         try:

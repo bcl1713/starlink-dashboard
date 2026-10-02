@@ -5,6 +5,8 @@ from math import isfinite
 
 from app.models.telemetry import PositionState
 
+OBSERVATION_FRESHNESS_SECONDS = 10.0
+
 
 def valid_coordinate(value: object, limit: float) -> bool:
     """Accept finite numeric coordinates, including genuine zero."""
@@ -35,7 +37,7 @@ def observation_time(
     age = (now - observed_at).total_seconds()
     if age < -5:
         return None, "unavailable"
-    return observed_at, "stale" if age >= 10 else "fresh"
+    return observed_at, "stale" if age >= OBSERVATION_FRESHNESS_SECONDS else "fresh"
 
 
 def speed_is_fresh(speed: object, observed_at: object, now: datetime) -> bool:
