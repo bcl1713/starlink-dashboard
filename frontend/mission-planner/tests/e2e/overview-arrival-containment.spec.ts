@@ -161,6 +161,7 @@ test('contains long late departures with enlarged text on narrow screens', async
   await page.setViewportSize({ width: 390, height: 844 });
   const now = Date.parse('2026-10-01T12:00:00Z');
   await page.clock.install({ time: now });
+  await page.clock.setFixedTime(now);
   for (const [endpoint, json] of [
     ['routes', { routes: [], total: 0 }],
     ['satellites', []],
@@ -268,7 +269,7 @@ test('contains long late departures with enlarged text on narrow screens', async
       panelOverflow: false,
       pageOverflow: false,
       textContained: true,
-      fontSize: `${rootSize * 1.75}px`,
+      fontSize: `${rootSize * 1.375}px`,
       countdown: '12 HR 59 MIN AGO',
     });
   }

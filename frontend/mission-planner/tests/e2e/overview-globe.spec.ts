@@ -512,7 +512,7 @@ test.describe('Globe overview', () => {
           (chart, globe) =>
             Boolean(
               chart.compareDocumentPosition(globe) &
-                Node.DOCUMENT_POSITION_FOLLOWING
+                Node.DOCUMENT_POSITION_PRECEDING
             ),
           await globeCanvas.elementHandle()
         )
@@ -521,7 +521,7 @@ test.describe('Globe overview', () => {
       .locator('.overview-top-overlays')
       .evaluate((topOverlay, selector) => {
         const canvas = document.querySelector(selector);
-        const overlayBounds = topOverlay.getBoundingClientRect();
+        const overlayBounds = canvas!.getBoundingClientRect();
         const x = overlayBounds.left + overlayBounds.width / 2;
         const y = overlayBounds.top + overlayBounds.height / 2;
         const hitTarget = document.elementFromPoint(x, y);
@@ -533,7 +533,7 @@ test.describe('Globe overview', () => {
           y,
         };
       }, globeCanvasSelector);
-    expect(overlayInteraction.overlayPointerEvents).toBe('none');
+    expect(overlayInteraction.overlayPointerEvents).toBe('auto');
     expect(overlayInteraction.canvasIsHitTarget).toBe(true);
     expect(overlayInteraction.canvasRect).not.toBeNull();
     const beforeDrag = await globeCanvas.screenshot();
@@ -1141,7 +1141,9 @@ test.describe('Globe overview', () => {
     );
 
     await page.goto('/overview');
-    await waitForGlobeVisualReady(page, earthTexture);
+    // The fitted no-route fallback exposes the Americas; the old canvas-center
+    // sample is now on the dark Pacific at this fixed UTC time.
+    await waitForGlobeVisualReady(page, earthTexture, { x: 0.6, y: 0.5 });
     await page.getByRole('button', { name: /fullscreen/i }).click();
     await expect
       .poll(

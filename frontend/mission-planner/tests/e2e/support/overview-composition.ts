@@ -12,6 +12,11 @@ const metrics = [
 export async function compositionFixture(page: Page) {
   const state = {
     now: null as number | null,
+    position: { latitude: 35, longitude: -100, altitude: 35000 } as {
+      latitude: number;
+      longitude: number;
+      altitude: number;
+    } | null,
     errors: false,
     stale: false,
     staleAgeSeconds: 600,
@@ -50,7 +55,7 @@ export async function compositionFixture(page: Page) {
       return route.fulfill({
         json: {
           timestamp: observed,
-          position: { latitude: 35, longitude: -100, altitude: 35000 },
+          position: state.position,
           ground_entry_point: { latitude: 36, longitude: -102 },
           metric_availability: {
             latency_ms: true,
@@ -203,7 +208,7 @@ export async function desktopGeometry(page: Page) {
     const pageBox = box('.overview-page');
     const panels = [
       ...document.querySelectorAll<HTMLElement>(
-        '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control'
+        '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control, .overview-map-controls'
       ),
     ];
     const clock = box('.overview-clock-panel');
@@ -237,8 +242,10 @@ export async function desktopGeometry(page: Page) {
           )
       ).length,
       scroll:
+        get('.app-route-content').scrollHeight >
+          get('.app-route-content').clientHeight + 1 ||
         get('.overview-page').scrollHeight >
-        get('.overview-page').clientHeight + 1,
+          get('.overview-page').clientHeight + 1,
       documentScroll: document.documentElement.scrollHeight > innerHeight + 1,
       horizontalOverflow:
         document.documentElement.scrollWidth > innerWidth ||
@@ -255,6 +262,10 @@ export async function desktopGeometry(page: Page) {
 }
 
 export async function expectDesktopFit(page: Page, broad = true) {
+  await expect(page.locator('.overview-page')).toHaveAttribute(
+    'data-layout',
+    'desktop'
+  );
   await expect
     .poll(async () => {
       const g = await desktopGeometry(page);

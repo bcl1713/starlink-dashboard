@@ -159,3 +159,30 @@ describe('ConfigurationPage', () => {
     expect(screen.getByText('Loading operational clocks...')).not.toBeNull();
   });
 });
+
+describe('Overview camera preference', () => {
+  it('defaults following off and retains explicit opt-in across Configuration mounts', () => {
+    localStorage.clear();
+    mockLoadedClockSettings();
+    vi.mocked(useUpdateOverviewClockSettings).mockReturnValue({
+      mutate: vi.fn(),
+    } as never);
+    const first = render(<ConfigurationPage />);
+    const follow = screen.getByRole('checkbox', {
+      name: 'Follow aircraft on Overview',
+    }) as HTMLInputElement;
+    expect(follow.checked).toBe(false);
+    fireEvent.click(follow);
+    expect(follow.checked).toBe(true);
+    first.unmount();
+    render(<ConfigurationPage />);
+    expect(
+      (
+        screen.getByRole('checkbox', {
+          name: 'Follow aircraft on Overview',
+        }) as HTMLInputElement
+      ).checked
+    ).toBe(true);
+    localStorage.clear();
+  });
+});

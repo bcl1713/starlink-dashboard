@@ -19,7 +19,9 @@ async function planningFixture(page: Page) {
     'America/Chicago',
     'America/Los_Angeles',
   ].map((time_zone, i) => ({ label: `Clock ${i + 1}`, time_zone }));
-  const now = '2026-10-02T00:00:00Z';
+  // These cases verify API/layer behavior. Keep their painted readiness sample
+  // on lit terrain; natural midnight lighting has separate capture coverage.
+  const now = '2026-10-02T12:00:00Z';
   await page.clock.install({ time: new Date(now) });
   await page.route('**/api/**', async (route) => {
     const endpoint = new URL(route.request().url()).pathname;
@@ -298,6 +300,10 @@ test('retains the selected ID through invalid catalog geometry and recovers the 
   ).toHaveCount(0);
   fixture.catalog([{ satellite_id: 'X-6', transport: 'X', longitude: -50 }]);
   await page.reload();
+  await page
+    .getByLabel('Globe legend')
+    .getByRole('button', { name: 'Legend', exact: true })
+    .click();
   await expect(
     page.getByLabel('Globe legend').getByText('Planned satellite link')
   ).toBeVisible();

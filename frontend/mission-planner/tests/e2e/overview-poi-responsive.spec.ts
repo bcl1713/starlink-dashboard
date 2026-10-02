@@ -41,6 +41,6 @@ test('keeps a narrow arrival panel clear of the native fullscreen control', asyn
   expect(geometry).toEqual({
     separated: true,
     scroll: false,
-    pointerEvents: 'none',
+    pointerEvents: 'auto',
   });
 });

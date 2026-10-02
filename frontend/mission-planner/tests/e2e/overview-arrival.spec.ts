@@ -269,11 +269,17 @@ test('shows departure, arrival, stale, missing and landed states without losing 
     await page.setViewportSize(viewport);
     await panel.scrollIntoViewIfNeeded();
     await expect(panel).toBeInViewport();
-    expect(
-      await page
-        .locator('.overview-page')
-        .evaluate((n) => n.scrollWidth > n.clientWidth)
-    ).toBe(false);
+    await expect
+      .poll(() =>
+        page
+          .locator('.overview-page')
+          .evaluate(
+            (n) =>
+              n.getAttribute('data-layout') !== 'desktop' &&
+              n.scrollWidth <= n.clientWidth
+          )
+      )
+      .toBe(true);
     await page.screenshot({
       path: testInfo.outputPath(
         `arrival-${viewport.width}x${viewport.height}.png`

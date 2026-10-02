@@ -16,6 +16,7 @@ import { metricPlotOptions } from './overview-metric-plot-options';
 import type { MetricReadout } from './overview-metric-readout';
 import { formatMetricAxis, formatMetricValue } from './overview-metric-format';
 import './OverviewMetricHistoryPanel.css';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 const BUFFER_SECONDS = 7.5;
 
@@ -37,6 +38,7 @@ export function OverviewMetricHistoryPanel({
   nowMs,
   readout,
 }: Props) {
+  const reducedMotion = usePrefersReducedMotion();
   const accepted = useRef<{
     windowSeconds: number;
     history: OverviewHistoryBundle | undefined;
@@ -313,7 +315,7 @@ export function OverviewMetricHistoryPanel({
     node.getBoundingClientRect();
     const remaining = Math.max(0, BUFFER_SECONDS - motionElapsed);
     const timer = window.setTimeout(() => {
-      if (!hidden && !error && remaining > 0) {
+      if (!hidden && !error && !reducedMotion && remaining > 0) {
         node.style.transition = `transform ${remaining}s linear`;
         node.style.transform = `translate3d(${motionOffsetPixels({ elapsedSeconds: BUFFER_SECONDS, widthPixels: width, windowSeconds, bufferSeconds: BUFFER_SECONDS })}px, 0, 0)`;
       }
@@ -329,6 +331,7 @@ export function OverviewMetricHistoryPanel({
     hidden,
     error,
     selectedWindowSeconds,
+    reducedMotion,
   ]);
 
   const status = !validHistory

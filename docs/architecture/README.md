@@ -69,3 +69,9 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 [Go to Full Architecture Documentation →](./design-document.md)
 
 [Back to main docs](../index.md)
+
+## Responsive native Overview
+
+See
+[responsive layout, camera and scroll ownership](./overview-responsive-layout.md)
+for the single-tree mobile/scaled-desktop implementation.

@@ -7,9 +7,10 @@ import {
 
 export async function waitForGlobeVisualReady(
   page: Page,
-  textureResponse: Promise<Response>
+  textureResponse: Promise<Response>,
+  samplePoint = { x: 0.5, y: 0.5 }
 ): Promise<Locator> {
-  const canvas = page.locator('.overview-page canvas').last();
+  const canvas = page.locator('.overview-globe canvas');
 
   await expect(textureResponse).resolves.toBeTruthy();
   await expect(canvas).toBeVisible();
@@ -37,9 +38,21 @@ export async function waitForGlobeVisualReady(
   await expect
     .poll(
       async () => {
-        const png = await canvas.screenshot();
+        const current = await canvas.boundingBox();
+        if (!current) return false;
+        // Capture only the inspected pixel. Full-size screenshots here stall
+        // software WebGL while serializing bytes that this check discards.
+        const png = await page.screenshot({
+          clip: {
+            x: current.x + current.width * samplePoint.x,
+            y: current.y + current.height * samplePoint.y,
+            width: 1,
+            height: 1,
+          },
+          scale: 'css',
+        });
         return page.evaluate(
-          async (bytes) => {
+          async ({ bytes, point }) => {
             const bitmap = await createImageBitmap(
               new Blob([new Uint8Array(bytes)], { type: 'image/png' })
             );
@@ -48,8 +61,8 @@ export async function waitForGlobeVisualReady(
             const context = sample.getContext('2d')!;
             context.drawImage(
               bitmap,
-              Math.floor(bitmap.width / 2),
-              Math.floor(bitmap.height / 2),
+              Math.floor(bitmap.width * point.x),
+              Math.floor(bitmap.height * point.y),
               1,
               1,
               0,
@@ -61,7 +74,7 @@ export async function waitForGlobeVisualReady(
             const pixel = context.getImageData(0, 0, 1, 1).data;
             return pixel[0] > 10 || pixel[1] > 10 || pixel[2] > 10;
           },
-          [...png]
+          { bytes: [...png], point: samplePoint }
         );
       },
       { timeout: 10_000 }

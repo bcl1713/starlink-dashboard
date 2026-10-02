@@ -83,17 +83,18 @@
   z-index: auto;
 }
 
-@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1012px) and (min-height: 63.25rem) {
-  .overview-metric-history {
-    padding-block: 4px;
-  }
-  .overview-metric-history__header h3 {
-    font-size: 26px;
-  }
-  .overview-metric-history__latest {
-    font-size: 36px;
-  }
-  .overview-metric-history__value-axis {
-    font-size: 16px;
-  }
+.overview-page[data-layout='desktop'] .overview-metric-history {
+  padding-block: 4px;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history__header h3 {
+  font-size: 26px;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history__latest {
+  font-size: 36px;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history__value-axis {
+  font-size: 16px;
 }
