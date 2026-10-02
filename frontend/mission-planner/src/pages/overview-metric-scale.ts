@@ -8,14 +8,23 @@ export interface YRange {
   max: number;
 }
 
-/** Zero-based, rounded headroom; hysteresis avoids jitter as peaks enter or leave. */
+// Percentages below 1 share the baseline on logarithmic plots.
+export const PERCENT_LOG_FLOOR = 1;
+
+export function isLogarithmicMetric(
+  descriptor: OverviewMetricGraphDescriptor
+): boolean {
+  return descriptor.id === 'obstruction' || descriptor.id === 'packet-loss';
+}
+
+/** Fixed logarithmic percentages; linear metrics use rounded headroom and hysteresis. */
 export function metricScale(
   descriptor: OverviewMetricGraphDescriptor,
   projected: ProjectedMetricTraces | undefined,
   previous?: YRange
 ): YRange {
-  if (descriptor.id === 'obstruction' || descriptor.id === 'packet-loss')
-    return { min: 0, max: 100 };
+  if (isLogarithmicMetric(descriptor))
+    return { min: PERCENT_LOG_FLOOR, max: 100 };
   let peak = 0;
   for (const trace of projected
     ? [projected.observed, projected.min, projected.avg, projected.max]
