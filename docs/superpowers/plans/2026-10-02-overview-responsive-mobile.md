@@ -67,8 +67,9 @@ worktree creation or product changes.
 ## Baseline and supporting contract
 
 Selected `dev`: `fa1bba47844f329fb0d3ae4a7c1c4471526c52f2` (PR #237, #219),
-fetched 2026-10-02. The original checkout remains `feat/217-arrival-states`; no
-implementation branch was created. Recheck `dev` after approval.
+fetched 2026-10-02. The original checkout remains `feat/217-arrival-states`;
+approved implementation uses the isolated `feat/220-responsive-overview` branch
+at `/tmp/starlink-220`.
 
 Read the
 [source and layout contract](2026-10-02-overview-responsive-mobile-source-contract.md)
@@ -193,37 +194,37 @@ report/index. **Interfaces:** consumes final implementation SHA, geometry logs
 and existing acceptance tooling; produces reviewable evidence with
 source/runtime identity.
 
-- [ ] Run `./tools/verify frontend`,
+- [x] Run `./tools/verify frontend`,
       `ACCEPTANCE_POLICY_BASE_SHA=<selected-base> ./tools/verify static` and
       `git diff --check`. Expected: canonical unit/build/static checks pass;
       diagnose failures without skipping gates or relaxing existing assertions.
-- [ ] Run serial headed responsive, interaction, desktop composition, globe,
+- [x] Run serial headed responsive, interaction, desktop composition, globe,
       clock, arrival, planning, metric-cleanup, metric-history/fullscreen and
       POI-responsive coverage. The #219 report records SwiftShader
       painted-rebase and intermittent DPR2 failures: if encountered, reproduce
       unchanged selected base separately. Fix regressions; record baseline-only
       limits honestly.
-- [ ] Prepare isolated production Nginx/backend/Prometheus smoke using existing
+- [x] Prepare isolated production Nginx/backend/Prometheus smoke using existing
       acceptance conventions. Read cloud Docker proxy/CA guidance first;
       preserve `DOCKER_HOST`/context and discover the actor-owned runtime
       socket. Use task-specific project/volumes/loopback ports. Verify real
       history persistence, mobile navigation, freshness and unavailable paths;
       identify intercepted route/aircraft/POI fixtures separately from actual
       production responses.
-- [ ] After authorized publication, capture the exact pushed candidate SHA at
+- [x] After authorized publication, capture the exact pushed candidate SHA at
       390×844, 844×390, 360×800 and ordinary/fullscreen 1920×1080. Capture the
       scaled-desktop reproduction with actual viewport/container/root/DPR/zoom
       measurements. Approximate 2000×1333/DPR1.5 emulation does not prove
       Brian's 3000×2000 physical display at 150% system scaling; request his
       actual-device check after publishing a concrete candidate.
-- [ ] Record rotation, page/rail scroll through all five charts, Explore
+- [x] Record rotation, page/rail scroll through all five charts, Explore
       enter/exit, manual pose retention, Follow availability/failure and
       fullscreen round trip. Include bright terrain/dark ocean, opaque blur
       fallback, long content, stale/unavailable state, sample gap/recovery and
       tab resume. Inspect stills and recording; record browser/version/renderer,
       CSS/drawing-buffer dimensions, API/fixture provenance and immutable source
       identity in manifest.
-- [ ] Update operator guidance for mobile navigation/history settings, portrait
+- [x] Update operator guidance for mobile navigation/history settings, portrait
       page versus landscape rail scroll, Explore/Exit/Reset and configured
       following, expandable legend, reduced motion and separate network/position
       freshness. Document the actual resolver thresholds, content escape and
@@ -234,7 +235,7 @@ source/runtime identity.
       authorization; no merge or deployment is implied. Refresh exact-final-SHA
       evidence if sources change, and keep physical-device validation explicitly
       pending until supplied.
-- [ ] Commit documentation as
+- [x] Commit documentation as
       `docs(overview): explain responsive map operation`.
 
 ## Plan self-review and handoff
@@ -248,5 +249,6 @@ Following defaults off in Configuration; reset fits the route once, as Brian
 clarified during implementation. All automatic moves ease; manual input cancels.
 
 Brian approved implementation on 2026-10-02 and delegated execution-method
-choice; native execution with one final independent review was selected.
-Publication, merge and deployment remain separate integration actions.
+choice; native execution with one final independent review was selected. Brian
+also authorized pushing the branch as-is for testing; the candidate is
+published. Merge and deployment remain separate integration actions.

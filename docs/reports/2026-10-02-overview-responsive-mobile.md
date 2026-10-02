@@ -84,6 +84,21 @@ restart. `docker-containers-after.txt`, `docker-volumes-after.txt` and
 artifacts remain alongside these files; this repository report does not claim
 those local artifacts are remotely published.
 
+The manifest indexes 23 settled-pose stills and seven recordings from pushed
+candidate `80c18e868181ce53d931d667a351d633d62d5509`. Later documentation-only
+validation commits retain this evidence only when all runtime input trees are
+verified identical. Desktop, mobile rotation/scroll and enlarged-text recordings
+have inspected contact sheets in `video-1-inspection/`, `video-2-inspection/`
+and `video-6-inspection/` beneath the capture directory.
+
+Real API smoke responses are 200, the Prometheus target is UP, and Configuration
+saved 900 seconds through the real API; the value survives navigation, reload
+and a backend restart. A fresh simulation has no route/selection/catalog and
+emits an invalid longitude with no GEP; real captures truthfully show position
+unavailable. Route/aircraft/GEP/POI and history captures use explicitly
+controlled API fixtures over the same production assets. All three cleanup
+inventories are empty after successful and failed smoke paths.
+
 ## Limits and operator guidance
 
 Chromium uses ANGLE SwiftShader in this environment. Software captures and DPR
