@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { buildSync } from 'esbuild';
+import { mountMetricPanelFixture } from './support/metric-panel-fixture';
 import { expect, test } from '@playwright/test';
 
 test.use({ video: { mode: 'on', size: { width: 1920, height: 1080 } } });
@@ -658,7 +658,15 @@ test.describe('Overview metric history', () => {
     );
     await expect(panels.locator('.uplot')).toHaveCount(0);
     fail = false;
-    await page.getByLabel('Aircraft history window').selectOption('900');
+    await page.evaluate(async () => {
+      if (document.fullscreenElement) await document.exitFullscreen();
+    });
+    await page
+      .getByRole('link', { name: 'Configuration', exact: true })
+      .click();
+    await page.getByLabel('Overview history window').selectOption('900');
+    await expect(page.getByLabel('Overview history window')).toHaveValue('900');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
     await expect(panels.getByRole('status')).toHaveCount(0, {
       timeout: 10_000,
     });
@@ -830,7 +838,15 @@ test.describe('Overview metric history', () => {
       .first()
       .locator('.overview-metric-history__time-axis span:first-child')
       .textContent();
-    await page.getByLabel('Aircraft history window').selectOption('900');
+    await page.evaluate(async () => {
+      if (document.fullscreenElement) await document.exitFullscreen();
+    });
+    await page
+      .getByRole('link', { name: 'Configuration', exact: true })
+      .click();
+    await page.getByLabel('Overview history window').selectOption('900');
+    await expect(page.getByLabel('Overview history window')).toHaveValue('900');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
     await expect.poll(() => requests).toBeGreaterThan(beforeWindow);
     await expect
       .poll(() =>
@@ -1215,7 +1231,15 @@ test.describe('Overview provenance motion recording', () => {
     );
     await page.setViewportSize({ width: 1600, height: 1080 });
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.getByLabel('Aircraft history window').selectOption('900');
+    await page.evaluate(async () => {
+      if (document.fullscreenElement) await document.exitFullscreen();
+    });
+    await page
+      .getByRole('link', { name: 'Configuration', exact: true })
+      .click();
+    await page.getByLabel('Overview history window').selectOption('900');
+    await expect(page.getByLabel('Overview history window')).toHaveValue('900');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
     await expect(
       context.getByText('LAST 15 MIN', { exact: true })
     ).toBeVisible();
@@ -1270,43 +1294,7 @@ test.describe('painted four-series motion fixture', () => {
     test(`keeps painted trace and envelope cusps aligned at ${cadence}s rebases`, async ({
       page,
     }, testInfo) => {
-      const built = buildSync({
-        stdin: {
-          contents: `import React from 'react';
-            import {createRoot} from 'react-dom/client';
-            import {flushSync} from 'react-dom';
-            import {OverviewMetricHistoryPanel} from './src/pages/OverviewMetricHistoryPanel';
-            import {OVERVIEW_METRIC_GRAPHS} from './src/pages/overview-metric-history';
-            const root = createRoot(document.getElementById('fixture'));
-            window.renderPanel = (history, windowSeconds = 60) => flushSync(() => root.render(
-              React.createElement(OverviewMetricHistoryPanel, {
-                descriptor: OVERVIEW_METRIC_GRAPHS[0], history, error: false,
-                selectedWindowSeconds: windowSeconds, nowMs: Date.now(),
-                readout: {value: 7, state: 'fresh', ageMs: 0, observedAtMs: Date.now()}
-              })));
-          `,
-          resolveDir: process.cwd(),
-          loader: 'tsx',
-        },
-        bundle: true,
-        jsx: 'automatic',
-        write: false,
-        outfile: 'fixture.js',
-        define: { 'process.env.NODE_ENV': '"production"' },
-      });
-      await page.setContent('<div id="fixture" style="width:480px"></div>');
-      await page.addStyleTag({
-        content: built.outputFiles.find((file) => file.path.endsWith('.css'))!
-          .text,
-      });
-      await page.addStyleTag({
-        content:
-          '.overview-metric-history__viewport {flex:0 0 auto;width:400px;height:80px} .overview-metric-history {background:#111827;color:white}',
-      });
-      await page.addScriptTag({
-        content: built.outputFiles.find((file) => file.path.endsWith('.js'))!
-          .text,
-      });
+      await mountMetricPanelFixture(page);
       const result = await page.evaluate(async (cadence) => {
         const renderPanel = (
           window as unknown as {
@@ -1500,4 +1488,59 @@ test.describe('painted four-series motion fixture', () => {
       });
     });
   }
+});
+
+test('changes duration on a mounted production panel without remounting its plot', async ({
+  page,
+}) => {
+  await mountMetricPanelFixture(page);
+  const renderWindow = async (seconds: number) => {
+    await page.evaluate((windowSeconds) => {
+      const end = Math.floor(Date.now() / 1000);
+      const history = {
+        window_seconds: windowSeconds,
+        start_timestamp_seconds: end - windowSeconds,
+        end_timestamp_seconds: end,
+        step_seconds: 5,
+        series: {
+          starlink_network_latency_ms_current: [
+            [end - 20, 5],
+            [end, 7],
+          ],
+        },
+      };
+      (
+        window as unknown as {
+          renderPanel: (history: unknown, seconds: number) => void;
+        }
+      ).renderPanel(history, windowSeconds);
+    }, seconds);
+  };
+  await renderWindow(60);
+  const plot = await page.locator('.uplot').elementHandle();
+  const canvas = page.locator('.uplot canvas');
+  await expect
+    .poll(() => canvas.evaluate((node) => node.getBoundingClientRect().width))
+    .toBe(500);
+  await renderWindow(120);
+  expect(await plot!.evaluate((node) => node.isConnected)).toBe(true);
+  await expect
+    .poll(() => canvas.evaluate((node) => node.getBoundingClientRect().width))
+    .toBe(450);
+  const surface = page.locator('.overview-metric-history__surface');
+  await expect
+    .poll(async () => {
+      const first = await surface.evaluate((node) => ({
+        at: performance.now(),
+        x: new DOMMatrix(getComputedStyle(node).transform).m41,
+      }));
+      await page.waitForTimeout(300);
+      const second = await surface.evaluate((node) => ({
+        at: performance.now(),
+        x: new DOMMatrix(getComputedStyle(node).transform).m41,
+      }));
+      const elapsed = (second.at - first.at) / 1000;
+      return Math.abs(second.x - first.x + elapsed * (400 / 120));
+    })
+    .toBeLessThan(0.5);
 });

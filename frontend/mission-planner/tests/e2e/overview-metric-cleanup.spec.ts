@@ -205,7 +205,8 @@ test('keeps five readable glass cards separate from POIs through missing-data st
           document.querySelector('.overview-page')!.clientHeight,
         poi: box('[aria-label="Departure and arrival"]'),
         clocks: box('.overview-clock-panel'),
-        legend: box('.globe-legend'),
+        legend: box('.overview-map-overlays'),
+        satellite: box('[aria-label="Planned satellite"]'),
         context: box('[aria-label="Network history context"]'),
       };
     });
@@ -222,8 +223,10 @@ test('keeps five readable glass cards separate from POIs through missing-data st
       expect(card.top).toBeGreaterThan(state.clocks.bottom);
       expect(card.right).toBeLessThan(state.poi.left);
       expect(card.right).toBeLessThan(state.legend.left);
+      expect(card.right).toBeLessThan(state.satellite.left);
     }
     expect(state.poi.right).toBeLessThan(state.legend.left);
+    expect(state.satellite.bottom).toBeLessThan(state.legend.top);
     expect(state.poi.bottom).toBeLessThanOrEqual(1060);
   };
   assertGeometry(await geometry());

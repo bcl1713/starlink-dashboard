@@ -174,7 +174,9 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
 
     await expect(
-      page.getByText('Selected configured satellite X-Warning', { exact: true })
+      page
+        .getByRole('region', { name: 'Planned satellite' })
+        .getByText('X-Warning', { exact: true })
     ).toBeVisible();
   });
 
@@ -335,7 +337,7 @@ test.describe('Globe overview', () => {
     const panels = page.locator('[data-metric-panel]');
     await expect(panels).toHaveCount(5);
     await expect(
-      globeLegend.getByText('Live telemetry', { exact: true })
+      globeLegend.getByText('Aircraft', { exact: true })
     ).toBeVisible();
     for (const panel of await panels.all()) {
       await expect(
@@ -348,7 +350,7 @@ test.describe('Globe overview', () => {
     // Both globe and metric freshness use the ten-second acquisition boundary.
     await page.clock.setFixedTime(new Date('2026-06-21T12:00:06.000Z'));
     await expect(
-      globeLegend.getByText('Live telemetry', { exact: true })
+      globeLegend.getByText('Aircraft', { exact: true })
     ).toBeVisible();
     for (const panel of await panels.all())
       await expect(
@@ -356,7 +358,9 @@ test.describe('Globe overview', () => {
       ).not.toHaveText('Unavailable');
     await page.clock.setFixedTime(new Date('2026-06-21T12:00:10.000Z'));
     await expect(
-      globeLegend.getByText('Telemetry stale', { exact: true })
+      page
+        .getByLabel('Map status')
+        .getByText('Status stale · last known', { exact: true })
     ).toBeVisible();
     for (const panel of await panels.all()) {
       await expect(
@@ -475,21 +479,19 @@ test.describe('Globe overview', () => {
     );
     expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
     await expect(
-      globeLegend.getByText('Configured X-band satellites', { exact: true })
-    ).toBeVisible();
+      page
+        .getByRole('list', { name: 'Configured map satellites' })
+        .locator('li')
+    ).toHaveCount(2);
     await expect(
-      globeLegend.getByText('2 configured satellites', { exact: true })
+      page.getByRole('region', { name: 'Planned satellite' })
+    ).toContainText('NO SATELLITE SELECTED');
+    await expect(
+      page.locator('.globe-marker-label').filter({ hasText: /^X-Atlantic$/ })
     ).toBeVisible();
-    const activeConfiguredLinkRow = globeLegend.locator('li').filter({
-      hasText:
-        /^Active configured X-band link\s*No active configured X-band link$/,
-    });
-    await expect(activeConfiguredLinkRow.getByRole('strong')).toHaveText(
-      'No active configured X-band link'
-    );
-    await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
     const satelliteLabelWhiteSpace = await page
-      .getByText('X-Atlantic', { exact: true })
+      .locator('.globe-marker-label')
+      .filter({ hasText: /^X-Atlantic$/ })
       .evaluate((label) => getComputedStyle(label).whiteSpace);
     expect(satelliteLabelWhiteSpace).toBe('nowrap');
     const chartCanvases = page.locator('.overview-metric-history canvas');
@@ -549,13 +551,13 @@ test.describe('Globe overview', () => {
       .poll(async () => (await globeCanvas.screenshot()).equals(beforeDrag))
       .toBe(false);
     await expect(
-      globeLegend.getByText('Aircraft position', { exact: true })
+      globeLegend.getByText('Aircraft', { exact: true })
     ).toBeVisible();
     await expect(
-      globeLegend.getByText('Live telemetry', { exact: true })
+      globeLegend.getByText('Aircraft', { exact: true })
     ).toBeVisible();
     await expect(
-      globeLegend.getByText('Current/last-known', { exact: true })
+      globeLegend.getByText('Ground entry point', { exact: true })
     ).toBeVisible();
     await expect(page.getByText('GEP', { exact: true })).toBeVisible();
   });
@@ -609,9 +611,11 @@ test.describe('Globe overview', () => {
     const globeLegend = page.getByLabel('Globe legend');
 
     await expect(
-      globeLegend.getByText('Satellite configuration unavailable', {
-        exact: true,
-      })
+      page
+        .getByLabel('Map status')
+        .getByText('Satellite configuration unavailable', {
+          exact: true,
+        })
     ).toBeVisible();
 
     await expect(
@@ -721,15 +725,11 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
     await expect(earthTexture).resolves.toBeTruthy();
 
-    const globeLegend = page.getByLabel('Globe legend');
-
-    const satelliteLegendEntry = globeLegend.locator('li').filter({
-      hasText: 'Configured X-band satellites',
-    });
-
-    await expect(satelliteLegendEntry).toHaveText(
-      'Configured X-band satellitesNo valid configured satellites'
-    );
+    await expect(
+      page
+        .getByRole('list', { name: 'Configured map satellites' })
+        .locator('li')
+    ).toHaveCount(0);
     await expect(
       page.locator('.globe-marker-label', { hasText: /\S/ })
     ).toHaveCount(0);
@@ -779,21 +779,17 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
     const globeLegend = page.getByLabel('Globe legend');
     await expect(
-      globeLegend.getByText('Selected configured satellite X-Atlantic', {
-        exact: true,
-      })
-    ).toBeVisible();
+      page.getByRole('region', { name: 'Planned satellite' })
+    ).toContainText('X-Atlantic');
+    await expect(page.getByLabel('Map status')).toContainText(
+      'Planned link unavailable'
+    );
+    await expect(globeLegend.getByText('Planned satellite link')).toHaveCount(
+      0
+    );
     await expect(
-      globeLegend.getByText('Configured GEO geometry unavailable', {
-        exact: true,
-      })
-    ).toBeVisible();
-    await expect(
-      globeLegend.getByText('No valid configured satellites', {
-        exact: true,
-      })
-    ).toBeVisible();
-    await expect(page.getByText('X-Atlantic', { exact: true })).toHaveCount(0);
+      page.locator('.globe-marker-label').filter({ hasText: /^X-Atlantic$/ })
+    ).toHaveCount(0);
   });
   test('requests and reports a shared aircraft-history trail', async ({
     page,
@@ -843,11 +839,9 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
     const globeLegend = page.getByLabel('Globe legend');
     await expect(
-      globeLegend.getByText('Aircraft history', { exact: true })
+      globeLegend.getByText('Track history', { exact: true })
     ).toBeVisible();
-    await expect(
-      globeLegend.getByText('2 trail points', { exact: true })
-    ).toBeVisible();
+    await expect(globeLegend.getByRole('combobox')).toHaveCount(0);
     await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(1);
     expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
   });
@@ -886,13 +880,15 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
     const globeLegend = page.getByLabel('Globe legend');
     await expect(
-      globeLegend.getByText('Aircraft history', { exact: true })
+      globeLegend.getByText('Track history', { exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page
+        .getByLabel('Map status')
+        .getByText('Track history unavailable', { exact: true })
     ).toBeVisible();
     await expect(
-      globeLegend.getByText('Aircraft history unavailable', { exact: true })
-    ).toBeVisible();
-    await expect(
-      globeLegend.getByText('Live telemetry', { exact: true })
+      globeLegend.getByText('Aircraft', { exact: true })
     ).toBeVisible();
   });
   test('updates the aircraft history window and refetches shared history', async ({
@@ -949,11 +945,16 @@ test.describe('Globe overview', () => {
       });
     });
     await page.goto('/overview');
-    const historyWindow = page.getByLabel('Aircraft history window');
+    await page.goto('/configuration');
+    const historyWindow = page.getByLabel('Overview history window');
     await expect(historyWindow).toHaveValue('1800');
     await historyWindow.selectOption('900');
     await expect.poll(() => settingsUpdates).toEqual([900]);
     await expect(historyWindow).toHaveValue('900');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
+    await expect(page.getByLabel('Network history context')).toContainText(
+      'LAST 15 MIN'
+    );
     await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(2);
   });
   test('renders retained stars and the next-POI/landing panel at 1920x1080', async ({
@@ -1126,6 +1127,13 @@ test.describe('Globe overview', () => {
       })
     );
 
+    // Keep the visual baseline in a settled no-route/no-position state.
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({ json: { timestamp: now } })
+    );
     const earthTexture = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
@@ -1214,6 +1222,10 @@ test.describe('Globe overview', () => {
         }
       }
     }
+    await expect(page.getByLabel('Map status')).toContainText(
+      'Position unavailable'
+    );
+    await expect(page.getByLabel('Map status')).not.toContainText('Loading');
     await page.screenshot({
       path: testInfo.outputPath('retained-map-pois-and-arrival.png'),
     });
@@ -1257,7 +1269,8 @@ test.describe('Globe overview', () => {
       });
     });
     await page.goto('/overview');
-    await expect(page.getByLabel('Aircraft history window')).toHaveValue(
+    await page.goto('/configuration');
+    await expect(page.getByLabel('Overview history window')).toHaveValue(
       '1200'
     );
   });

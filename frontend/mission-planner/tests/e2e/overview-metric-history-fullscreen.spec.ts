@@ -314,6 +314,8 @@ test.describe('Overview metric history', () => {
             '.overview-clock-panel',
             '[aria-label="Network history context"]',
             '[aria-label="Globe legend"]',
+            '[aria-label="Planned satellite"]',
+            '.overview-map-overlays',
           ].map((selector) =>
             document.querySelector(selector)!.getBoundingClientRect().toJSON()
           ),
@@ -488,7 +490,22 @@ test.describe('Overview metric history', () => {
       .first()
       .locator('.overview-metric-history__time-axis span:first-child')
       .textContent();
-    await page.getByLabel('Aircraft history window').selectOption('900');
+    await page.evaluate(() => document.exitFullscreen());
+    await page
+      .getByRole('link', { name: 'Configuration', exact: true })
+      .click();
+    await page.getByLabel('Overview history window').selectOption('900');
+    await expect(page.getByLabel('Overview history window')).toHaveValue('900');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Enter fullscreen overview' })
+      .click();
+    await expect
+      .poll(() => page.evaluate(() => Boolean(document.fullscreenElement)))
+      .toBe(true);
+    await expect
+      .poll(async () => (await graphs.first().boundingBox())?.width)
+      .toBe(440);
     await expect.poll(() => selectedWindowSeconds).toBe(900);
     await expect
       .poll(() =>
