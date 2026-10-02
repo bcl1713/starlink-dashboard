@@ -25,26 +25,61 @@ Pre-flight predictive planning tools, real-time timeline preview, satellite
 geometry analysis, multi-format briefing exports, and mission timeline
 visualization.
 
-### 4. Overview Upcoming POIs
+### 4. Overview Departure and Arrival
 
-The native Overview globe projects generated operational POIs for the active
-mission. Imported departure and arrival waypoint names are used as their labels;
-the compact **Upcoming POIs** panel is an unscrollable Top 5 queue, while the
-map retains operational context independently. In flight, ETA is a route-aware
-estimate from current telemetry position and speed against active-route
-geometry, including stored interior projections for generated mission events.
-Unsafe or unavailable projection/telemetry leaves ETA unavailable rather than
-falling back to direct distance. Ordinary estimates display as UTC; anticipated
-times retain an explicit label. Scheduled `expected_arrival_time` is provenance
-only; `estimated_arrival_time` drives the live urgency colour and ordering and
-is not telemetry. See the
-[Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md) for all
-final states, timing provenance, and retention details. A route-only active
-route is not an active Mission V2 leg: Overview may therefore report
-`no_active_mission` while a route remains active.
+The native Overview globe retains generated operational POI markers for the
+active mission. The bottom-center panel fits its content, centers each section's
+text and separates next POI from landing with a vertical divider. Narrow screens
+stack the sections with a horizontal divider. It shows flight timing:
 
-This feature does not modify, retire, or replace Grafana; Grafana remains the
-supported fallback and parity comparator.
+- Before departure: **SCHEDULED DEPARTURE** with the imported departure name,
+  effective mission schedule in UTC, and remaining hours/minutes. Configured
+  departure adjustments are included. Once late, elapsed time increases in red
+  with **AGO**, such as **12 MIN AGO** or **<1 MIN AGO**. This is scheduled
+  timing, independent of GPS; anticipated landing is not shown before flight.
+- In flight: **NEXT POI** and **LANDING · destination**, each with route-aware
+  UTC ETA and a nonnegative countdown. The nearest eligible event ahead on the
+  route stays visible even if its estimate is missing. When the destination is
+  next, show only the combined landing section. Destination identity comes from
+  `kind: arrival` and stable ID, never its display name.
+- After arrival: **LANDED · destination**, without an ETA or countdown. The
+  backend flight phase establishes landing; an expired ETA does not.
+
+Arrival estimates use the exact position observation's collection timestamp.
+Fresh means less than ten seconds old, allowing up to five seconds of future
+clock skew. Network collection and request timestamps cannot renew an old GPS
+observation. Missing/invalid GPS coordinates have no verified observation;
+genuine zero coordinates remain valid. The timestamp describes collection of
+returned coordinates, not a receiver-provided GPS fix timestamp.
+
+In-flight estimates also require a fresh speed observation. Live GPS needs at
+least two verified position samples covering 0.1 seconds before speed is known;
+the initial compatibility zero cannot enable an ETA. A measured stationary zero
+is valid. Missing, stale or failed GPS resets tracking. Automatic flight
+detection also requires verified position and speed. An interval of ten seconds
+or more between verified observations, including a silent collection pause,
+restarts arrival dwell and departure persistence without changing the confirmed
+phase. Reused collection timestamps do not advance detection; backward
+timestamps break continuity.
+
+Stale/invalid position suppresses ETA and countdown, with an explicit reason.
+Known names and map records remain; stale valid coordinates may identify the
+last-known next event, while invalid coordinates cannot establish route
+progress. Failed or expired arrival refreshes also suppress timing. Missing
+mission, route, schedule, destination and estimates remain explicit. Scheduled
+landing times never replace missing estimates, and speed is never invented. UTC
+times use **HH:MMZ**, including the date when on another UTC day. Full UTC
+provenance remains accessible. Longer countdowns use **1 HR 39 MIN**; positive
+intervals under one minute use **<1 MIN**. Arrival stops at **0 MIN**; only
+scheduled departure counts past its target. In constrained panels, long
+countdowns wrap at word boundaries while preserving enlarged text, centered
+alignment and the AGO suffix.
+
+See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md) for
+timing provenance and independent map retention. A route-only active route is
+not an active Mission V2 leg and may report `no_active_mission`. Map POI names
+remain accessible even when overlapping globe labels are visually suppressed.
+Grafana remains the supported fallback and parity comparator.
 
 ### 5. Overview Metric History
 
@@ -56,16 +91,15 @@ context** header is a slim strip: **NETWORK - UPDATED 1s AGO** on the left and
 the selected display duration; a custom duration not divisible by a minute uses
 seconds. Partial, stale, unavailable and refresh-error states remain explicit.
 Rolling-window details stay in accessible descriptions and this guidance. The
-cyan observed line, subdued dashed
-five-minute average and translucent trailing-five-minute low–high envelope share
-one plot. Their meanings remain in accessible chart descriptions rather than an
-always-visible trace legend. Prometheus calculates these statistics from the
-underlying source, not from the downsampled display window. Gaps remain gaps;
-missing samples are never interpolated or presented as zero. Missing envelope
-boundaries break the band without hiding valid observed samples. A failed
-history refresh retains the newest accepted same-window history, reports
-**History refresh unavailable** separately, and never extrapolates samples into
-the present.
+cyan observed line, subdued dashed five-minute average and translucent
+trailing-five-minute low–high envelope share one plot. Their meanings remain in
+accessible chart descriptions rather than an always-visible trace legend.
+Prometheus calculates these statistics from the underlying source, not from the
+downsampled display window. Gaps remain gaps; missing samples are never
+interpolated or presented as zero. Missing envelope boundaries break the band
+without hiding valid observed samples. A failed history refresh retains the
+newest accepted same-window history, reports **History refresh unavailable**
+separately, and never extrapolates samples into the present.
 
 The five stationary prominent readouts come from the existing shared
 `/api/status` feed, not Prometheus. Only finite values with explicit per-metric
@@ -103,8 +137,8 @@ cadence changes are required for this publication contract.
 The aircraft trail and all five graphs share one history response at the
 configured polling cadence (five seconds by default, with one second opt-in) and
 the existing window selector in the globe legend (5, 15, 30, or 60 minutes, plus
-a saved custom window). This persisted **LAST** display duration is separate from
-**Rolling statistics: 5 minutes**, which always uses the fixed
+a saved custom window). This persisted **LAST** display duration is separate
+from **Rolling statistics: 5 minutes**, which always uses the fixed
 trailing-five-minute source window. The selector remains in the globe legend
 pending [#218](https://github.com/bcl1713/starlink-dashboard/issues/218).
 History requests default to five seconds while
@@ -151,14 +185,14 @@ axes expand for new peaks and shrink when the peak drops below half the prior
 upper bound, avoiding small oscillations in chart scale.
 
 At 1920×1080 native fullscreen, five navy glass cards form a 440px column with
-uppercase titles, large values and stationary sparse scale labels. The existing
-five-row POI table occupies a separate bottom-center region, while the existing
-legend stays at the lower right. Clocks and the other surfaces share the same
-glass tint at 50% opacity, fine border, rounded corners and 10px blur. A 90%
-navy fallback protects text when backdrop blur is unsupported. Shared
+uppercase titles, large values and stationary sparse scale labels. The compact
+departure/arrival panel occupies a separate bottom-center region, while the
+existing legend stays at the lower right. Clocks and the other surfaces share
+the same glass tint at 50% opacity, fine border, rounded corners and 10px blur.
+A 90% navy fallback protects text when backdrop blur is unsupported. Shared
 refresh-error space and per-card exception space preserve fit when data becomes
-stale. Empty POIs do not move the charts. The POI content and diagnostic legend
-are transitional until #217 and #218.
+stale. Empty POIs do not move the charts. The diagnostic legend remains
+transitional until #218.
 
 Layout uses actual Overview container size: a desktop column requires at least
 93.75rem width and 67.5rem height in fullscreen, or 71.25rem height in ordinary

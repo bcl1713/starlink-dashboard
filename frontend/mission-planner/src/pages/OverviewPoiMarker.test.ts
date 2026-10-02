@@ -34,6 +34,8 @@ afterEach(() => {
 });
 
 const departurePoi: OverviewUpcomingPoi = {
+  projected_route_progress: 0,
+  flight_phase: 'pre_departure',
   poi_id: 'departure-kadw',
   name: 'KADW',
   kind: 'departure',

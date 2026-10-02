@@ -20,6 +20,7 @@ from app.models.telemetry import (
     PositionData,
     TelemetryData,
 )
+from app.services.position_freshness import valid_coordinate
 
 logger = logging.getLogger(__name__)
 
@@ -347,6 +348,7 @@ class StarlinkClient:
             # Get all required data
             status, obstruction, _alerts = self.get_status_data()
             location = self.get_location_data()
+            position_collected_at = datetime.now(timezone.utc)
             _general, _drop, _run, _latency, _loaded, _usage, _power = (
                 self.get_history_stats(parse_samples=10)
             )
@@ -356,16 +358,18 @@ class StarlinkClient:
             lon = location.get("longitude")
             alt = location.get("altitude", 0.0)
 
-            # Handle missing GPS data
-            if lat is None or lon is None:
-                self.logger.warning("GPS location data not available from dish")
-                lat = lat or 0.0
-                lon = lon or 0.0
+            position_valid = valid_coordinate(lat, 90) and valid_coordinate(lon, 180)
+            if not position_valid:
+                self.logger.warning(
+                    "GPS location data unavailable or invalid from dish"
+                )
+                lat = lon = 0.0
 
             # Convert altitude from meters to feet (1 meter = 3.28084 feet)
             alt_feet = float(alt) * 3.28084 if alt else 0.0
 
             position = PositionData(
+                observed_at=position_collected_at if position_valid else None,
                 latitude=float(lat),
                 longitude=float(lon),
                 altitude=alt_feet,

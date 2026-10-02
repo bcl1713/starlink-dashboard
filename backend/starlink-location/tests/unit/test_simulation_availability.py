@@ -15,6 +15,7 @@ def test_generated_simulation_metrics_are_available(operation):
         coordinator.reset()
     elif operation == "update_config":
         coordinator.update_config(SimulationConfig())
+    assert coordinator.get_current_telemetry().position.observed_at is not None
     assert coordinator.get_current_telemetry().metric_availability.model_dump() == {
         "latency_ms": True,
         "throughput_down_mbps": True,

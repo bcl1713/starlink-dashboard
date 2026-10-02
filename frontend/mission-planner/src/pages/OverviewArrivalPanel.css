@@ -1,0 +1,81 @@
+.overview-arrival {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  min-width: 0;
+  padding: 14px 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.overview-arrival__sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.overview-arrival__section {
+  flex: 0 1 auto;
+  min-width: min-content;
+  max-width: 28rem;
+}
+.overview-arrival__section + .overview-arrival__section {
+  border-left: var(--overview-border);
+  padding-left: 24px;
+}
+.overview-arrival h2 {
+  margin: 0 0 8px;
+  color: var(--overview-text);
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.overview-arrival__countdown {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.overview-arrival__countdown--late {
+  color: #ff8585;
+}
+.overview-arrival__utc,
+.overview-arrival__message,
+.overview-arrival__exception {
+  margin: 6px 0 0;
+  color: var(--overview-secondary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.overview-arrival__message:first-child {
+  margin-top: 0;
+}
+@container arrival (max-width: 700px) or (max-width: 43.75rem) {
+  .overview-arrival__sections {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .overview-arrival__countdown {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .overview-arrival__section + .overview-arrival__section {
+    border-left: 0;
+    border-top: var(--overview-border);
+    padding: 16px 0 0;
+  }
+}
+@container overview (min-width: 1500px) and (min-width: 93.75rem) and (min-height: 1080px) and (min-height: 67.5rem) {
+  .overview-arrival h2 {
+    font-size: max(26px, 1.625rem);
+  }
+  .overview-arrival__countdown {
+    font-size: max(36px, 2.25rem);
+  }
+  .overview-arrival__utc,
+  .overview-arrival__message,
+  .overview-arrival__exception {
+    font-size: 1.125rem;
+  }
+}

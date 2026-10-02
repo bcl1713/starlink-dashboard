@@ -110,10 +110,16 @@ test('keeps five readable glass cards separate from POIs through missing-data st
       json: {
         state: emptyPois ? 'no_active_mission' : 'available',
         calculated_at: new Date().toISOString(),
+        flight_phase: 'in_flight',
+        scheduled_departure_time: null,
+        position_state: 'fresh',
+        position_observed_at: new Date().toISOString(),
         pois: emptyPois
           ? []
           : Array.from({ length: 5 }, (_, i) => ({
               poi_id: `poi-${i}`,
+              projected_route_progress: 10 + i * 20,
+              flight_phase: 'in_flight',
               name: `Waypoint ${i}`,
               kind: 'x_band_transition',
               latitude: 35 + i,
@@ -197,7 +203,7 @@ test('keeps five readable glass cards separate from POIs through missing-data st
         pageOverflow:
           document.querySelector('.overview-page')!.scrollHeight >
           document.querySelector('.overview-page')!.clientHeight,
-        poi: box('[aria-label="Upcoming POIs"]'),
+        poi: box('[aria-label="Departure and arrival"]'),
         clocks: box('.overview-clock-panel'),
         legend: box('.globe-legend'),
         context: box('[aria-label="Network history context"]'),
@@ -295,7 +301,9 @@ test('keeps five readable glass cards separate from POIs through missing-data st
   });
   emptyPois = true;
   await expect(
-    page.getByLabel('Upcoming POIs').locator('tbody tr')
+    page
+      .getByLabel('Departure and arrival')
+      .locator('.overview-arrival__section')
   ).toHaveCount(0, { timeout: 12_000 });
   assertGeometry(await geometry());
   await page.evaluate(() => document.exitFullscreen());
@@ -369,8 +377,8 @@ test('keeps five readable glass cards separate from POIs through missing-data st
         });
         await cards.last().scrollIntoViewIfNeeded();
         await expect(cards.last()).toBeInViewport();
-        await page.getByLabel('Upcoming POIs').scrollIntoViewIfNeeded();
-        await expect(page.getByLabel('Upcoming POIs')).toBeInViewport();
+        await page.getByLabel('Departure and arrival').scrollIntoViewIfNeeded();
+        await expect(page.getByLabel('Departure and arrival')).toBeInViewport();
         if (fullscreen) {
           await page.evaluate(() => document.exitFullscreen());
           await waitForLayout(

@@ -1,13 +1,24 @@
 """Pydantic telemetry data models for Starlink simulator."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_serializer
+
+PositionState = Literal["fresh", "stale", "unavailable"]
 
 
 class PositionData(BaseModel):
     """Position telemetry data."""
 
+    observed_at: datetime | None = Field(
+        default=None,
+        description="Collection time of verified coordinates; not receiver GPS fix time.",
+    )
+    speed_observed_at: datetime | None = Field(
+        default=None,
+        description="Collection time of measured speed; absent during GPS warmup.",
+    )
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
     longitude: float = Field(
         ..., description="Longitude in decimal degrees (-180 to 180)"

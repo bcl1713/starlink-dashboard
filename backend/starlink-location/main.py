@@ -441,6 +441,11 @@ async def _background_update_loop(poi_manager=None):
                     telemetry = _coordinator.update()
                     update_count += 1
 
+                    if telemetry is None:
+                        from app.core.metrics import update_metrics_from_telemetry
+
+                        update_metrics_from_telemetry(None)
+
                     # Only update metrics if telemetry is available
                     # In live mode, telemetry will be None when disconnected
                     if telemetry is not None:

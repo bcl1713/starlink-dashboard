@@ -96,10 +96,11 @@ class SpeedTracker:
                 f"window: {len(self._position_history)} samples)"
             )
         else:
-            # Not enough movement - return last speed
+            # A verified interval with sub-threshold movement is stationary.
+            self._last_speed = 0.0
             logger.debug(
                 f"Distance {distance_meters:.1f}m < threshold {self.min_distance_meters}m, "
-                f"returning last speed {self._last_speed:.2f}kn"
+                "speed is stationary zero"
             )
 
         return self._last_speed
@@ -149,6 +150,13 @@ class SpeedTracker:
     def get_last_speed(self) -> float:
         """Get the last calculated speed in knots."""
         return self._last_speed
+
+    def has_observation(self) -> bool:
+        """Distinguish measured stationary zero from a warmup compatibility zero."""
+        return (
+            len(self._position_history) >= 2
+            and self._position_history[-1][2] - self._position_history[0][2] >= 0.1
+        )
 
     def get_stats(self) -> dict:
         """

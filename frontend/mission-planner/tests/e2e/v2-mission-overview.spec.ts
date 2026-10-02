@@ -39,9 +39,15 @@ test.describe('V2 mission activation to Overview', () => {
     const generatedOverviewPois = {
       state: 'available' as const,
       calculated_at: '2026-09-22T12:00:00.000Z',
+      flight_phase: 'in_flight',
+      scheduled_departure_time: null,
+      position_state: 'fresh',
+      position_observed_at: '2026-09-22T12:00:00.000Z',
       pois: [
         {
           poi_id: 'departure-kadw',
+          projected_route_progress: 0,
+          flight_phase: 'in_flight',
           name: 'KADW departure',
           kind: 'departure' as const,
           latitude: 20,
@@ -55,6 +61,8 @@ test.describe('V2 mission activation to Overview', () => {
         },
         {
           poi_id: 'arrival-rkso',
+          projected_route_progress: 100,
+          flight_phase: 'in_flight',
           name: 'RKSO arrival',
           kind: 'arrival' as const,
           latitude: 25,
@@ -68,6 +76,8 @@ test.describe('V2 mission activation to Overview', () => {
         },
         {
           poi_id: 'x-band-transition',
+          projected_route_progress: 20,
+          flight_phase: 'in_flight',
           name: 'X-band handoff',
           kind: 'x_band_transition' as const,
           latitude: 30,
@@ -81,6 +91,8 @@ test.describe('V2 mission activation to Overview', () => {
         },
         {
           poi_id: 'ka-entry',
+          projected_route_progress: 35,
+          flight_phase: 'in_flight',
           name: 'Ka entry',
           kind: 'ka_coverage_entry' as const,
           latitude: 35,
@@ -94,6 +106,8 @@ test.describe('V2 mission activation to Overview', () => {
         },
         {
           poi_id: 'ka-transition',
+          projected_route_progress: 40,
+          flight_phase: 'in_flight',
           name: 'Ka transition',
           kind: 'ka_transition' as const,
           latitude: 40,
@@ -107,6 +121,8 @@ test.describe('V2 mission activation to Overview', () => {
         },
         {
           poi_id: 'aar-start',
+          projected_route_progress: 10,
+          flight_phase: 'in_flight',
           name: 'AAR start',
           kind: 'aar_start' as const,
           latitude: 45,
@@ -127,14 +143,17 @@ test.describe('V2 mission activation to Overview', () => {
       }
     });
 
-    await page.route(routePattern('/api/v2/missions/v2-parent'), async (route) => {
-      await route.fulfill({
-        json: {
-          ...mission,
-          legs: mission.legs.map((leg) => ({ ...leg, is_active: activated })),
-        },
-      });
-    });
+    await page.route(
+      routePattern('/api/v2/missions/v2-parent'),
+      async (route) => {
+        await route.fulfill({
+          json: {
+            ...mission,
+            legs: mission.legs.map((leg) => ({ ...leg, is_active: activated })),
+          },
+        });
+      }
+    );
     await page.route(
       routePattern('/api/v2/missions/v2-parent/legs/v2-leg/activate'),
       async (route) => {
@@ -144,18 +163,25 @@ test.describe('V2 mission activation to Overview', () => {
         await route.fulfill({ status: 200, json: { leg_id: 'v2-leg' } });
       }
     );
-    await page.route(routePattern('/api/overview/upcoming-pois'), async (route) => {
-      await route.fulfill({
-        json:
-          overviewState === 'available' && activated
-            ? generatedOverviewPois
-            : {
-                state: overviewState,
-                calculated_at: '2026-09-22T12:00:00.000Z',
-                pois: [],
-              },
-      });
-    });
+    await page.route(
+      routePattern('/api/overview/upcoming-pois'),
+      async (route) => {
+        await route.fulfill({
+          json:
+            overviewState === 'available' && activated
+              ? generatedOverviewPois
+              : {
+                  state: overviewState,
+                  calculated_at: '2026-09-22T12:00:00.000Z',
+                  flight_phase: 'in_flight',
+                  scheduled_departure_time: null,
+                  position_state: 'fresh',
+                  position_observed_at: '2026-09-22T12:00:00.000Z',
+                  pois: [],
+                },
+        });
+      }
+    );
     await page.route(routePattern('/api/routes'), (route) =>
       route.fulfill({
         json: {
@@ -224,7 +250,7 @@ test.describe('V2 mission activation to Overview', () => {
     );
 
     await page.goto('/overview');
-    await expect(page.getByLabel('Upcoming POIs')).toContainText(
+    await expect(page.getByLabel('Departure and arrival')).toContainText(
       'No active mission leg.'
     );
 
@@ -234,18 +260,21 @@ test.describe('V2 mission activation to Overview', () => {
 
     await page.goto('/overview');
     await waitForGlobeVisualReady(page, earthTexture);
-    const panel = page.getByLabel('Upcoming POIs');
+    const panel = page.getByLabel('Departure and arrival');
     await expect(panel).toBeVisible();
-    await expect(panel.getByRole('row')).toHaveCount(6);
-    await expect(panel).toHaveCSS('overflow-y', 'hidden');
-    await expect(panel.getByText('RKSO arrival', { exact: true })).toBeVisible();
-    await expect(page.locator('[data-poi-label="departure-kadw"]')).toBeVisible();
+    await expect(panel.locator('.overview-arrival__section')).toHaveCount(2);
+    await expect(
+      panel.getByRole('heading', { name: 'LANDING · RKSO arrival' })
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-poi-label="departure-kadw"]')
+    ).toBeVisible();
     await expect(page.locator('[data-poi-label="arrival-rkso"]')).toBeVisible();
     expect(legacyRequest).toBe(false);
 
     overviewState = 'route_unavailable';
     await page.reload();
-    await expect(page.getByLabel('Upcoming POIs')).toContainText(
+    await expect(page.getByLabel('Departure and arrival')).toContainText(
       'Active mission leg is not bound to the active route.'
     );
     expect(legacyRequest).toBe(false);

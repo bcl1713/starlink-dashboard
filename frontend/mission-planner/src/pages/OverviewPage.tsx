@@ -62,7 +62,8 @@ import {
   layoutOverviewPoiLabels,
   type PoiLabelLayout,
 } from './overview-poi-label-layout';
-import { UpcomingPoisPanel } from './UpcomingPoisPanel';
+import { OverviewArrivalPanel } from './OverviewArrivalPanel';
+import { deriveArrivalPanel } from './overview-arrival';
 import { OverviewMetricHistoryPanels } from './OverviewMetricHistoryPanels';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
@@ -257,12 +258,16 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
-  const { data: upcomingPoisResponse } = useOverviewUpcomingPois();
-  const upcomingPoiState = upcomingPoisResponse?.state ?? 'unavailable';
+  const { data: upcomingPoisResponse, isError: arrivalRefreshFailed } =
+    useOverviewUpcomingPois();
+  const arrivalState = deriveArrivalPanel(
+    upcomingPoisResponse,
+    currentTime,
+    arrivalRefreshFailed
+  );
   const upcomingPoiView = useMemo(
-    () =>
-      overviewPoiView(upcomingPoisResponse?.pois ?? [], new Date(currentTime)),
-    [currentTime, upcomingPoisResponse?.pois]
+    () => overviewPoiView(upcomingPoisResponse?.pois ?? []),
+    [upcomingPoisResponse?.pois]
   );
   const [upcomingPoiLabelLayout, setUpcomingPoiLabelLayout] =
     useState<PoiLabelLayout>({
@@ -567,11 +572,12 @@ export function OverviewPage() {
         />
       </div>
       <div className="overview-arrival-overlays">
-        <UpcomingPoisPanel
-          state={upcomingPoiState}
-          pois={upcomingPoiView.topFive}
-          currentTime={new Date(currentTime)}
-        />
+        <OverviewArrivalPanel state={arrivalState} />
+        <ul className="overview-visually-hidden" aria-label="Map POIs">
+          {upcomingPoiView.markers.map((poi) => (
+            <li key={poi.poi_id}>{poi.name}</li>
+          ))}
+        </ul>
       </div>
       <Canvas
         className="overview-globe"
@@ -636,7 +642,7 @@ export function OverviewPage() {
               )}
               fallbackLabel={
                 upcomingPoiLabelLayout.fallback?.anchorId === poi.poi_id
-                  ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs — see Upcoming POIs`
+                  ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs`
                   : undefined
               }
             />
