@@ -222,8 +222,10 @@ in the PR description without modifying the candidate after final acceptance.
   Require successful static, backend, frontend tests and production build.
 - [x] Commit tests/docs with
   `test(overview): verify traffic arc and link lifecycle`.
-- [ ] On the resulting committed candidate run exact-SHA CDP acceptance through
-  production Nginx/backend using the existing acceptance workflow. Follow
+- [x] Complete traffic acceptance of the committed candidate using exact-SHA
+  production checks and the owner's sign-off recorded below. The originally
+  planned platform workflow has a V2-only journey; the owner accepted the
+  traffic-specific evidence and local testing instead. Follow
   [cloud Docker discovery](../../development/cloud-docker.md) and the
   [acceptance platform workflow](../../operations/acceptance-platform.md),
   preserve actor
@@ -244,35 +246,20 @@ in the PR description without modifying the candidate after final acceptance.
 
 ### Task 7 execution record
 
-Task 7 adds deterministic intercepted browser scenarios and real Three resource
-observations, plus shared-settings/deployment documentation. All four switch
-pairs, navigation/reload, delayed/failed reads and failed saves, independent
-telemetry gaps, warnings, expiration, PoP/selection failures and responsive/
-fullscreen/reduced-motion behavior are covered. Opposite-direction motion is
-observed across painted frames. Twenty same-scene cycles plateau at 16 geometries
-off and 22 on; ten retired renderers release all geometries. Hidden recovery uses
-an injected visibility event; native tab/OS suspension remains a verification gap.
+Initial Task 7 development covered all switch pairs, persistence, telemetry gaps,
+warnings, responsive/fullscreen/reduced-motion behavior and painted opposing
+motion. Twenty cycles plateaued at 16 geometries off and 22 on; ten retired
+renderers released all geometries. Initial hidden recovery used an injected event.
 
-Development real API checks use isolated production Nginx/backend/Prometheus:
-all four pairs survive task-backend restarts, concurrent disjoint edits persist,
-and original measured history/collection continues. Evidence identifies these
-checks separately from intercepted telemetry. Containers/networks are cleaned;
-task-owned persistence volumes are retained.
+Isolated production API checks confirmed all pairs survived backend restarts,
+concurrent edits persisted, and measured history/collection continued. Initial
+projects were cleaned up; task-owned persistence volumes were retained.
 
-Canonical base is `a7e960639ab15359c3e562d0599c0b062c31426d`. Backend: 1,350 passed,
-20 skipped. Frontend: 610 passed and production build passed. Changed docs lint,
-ESLint, link checks and independent typing-policy tests pass. Canonical `all`
-remains blocked by existing table alignment errors in the preserved ADS-B design;
-no successful canonical-all claim is made.
-
-Commit/push is followed by exact-SHA checks without editing the candidate again.
-Final checkbox remains open: the existing platform journey certifies V2, with a
-180-second adapter limit. It cannot confer full traffic acceptance authority.
-Supplemental production rendering/persistence observations and platform outcomes
-are retained under `/srv/starlink-acceptance/evidence/traffic-task7-*`, qualified
-by candidate SHA, with checksums. The unknown deployment laptop and native hidden
-page behavior remain explicit hardware/verification gaps. Stop after Task 7;
-do not merge or start ADS-B/orbital work.
+The V2-only platform journey cannot certify traffic. Qualified supplemental
+evidence remains under `/srv/starlink-acceptance/evidence/traffic-task7-*` with
+checksums. The final checkbox was initially open; subsequent production checks
+and owner sign-off below close traffic acceptance. Stop after Task 7 without
+implicitly merging or starting ADS-B/orbital work.
 
 ### PR preparation review
 
@@ -292,6 +279,21 @@ Canonical `all` passed against full PR base
 `f0a176b4d7dece11af4e3bd17db10f69b1bb5389`: 1,350 backend tests (20 skipped),
 611 frontend tests, static checks and production build. Sixty focused tooling tests
 also passed. Evidence for the committed candidate is retained separately. The
-existing platform's V2 journey cannot certify the traffic contract; its final
-checkbox remains open. Native tab/OS suspension and deployment-laptop performance
-remain verification gaps. PR preparation does not merge or start deferred work.
+existing platform's V2 journey cannot certify the traffic contract. Those initial
+acceptance gaps are resolved by the subsequent checks and owner sign-off below.
+PR preparation does not merge or start deferred work.
+
+### Traffic acceptance sign-off
+
+On 2026-10-03 the owner passed traffic acceptance and visual inspection, confirmed
+good performance, and waived OS sleep/resume testing. Accepted product:
+`c4dd06ced77afee966ced0d3b3c62c433d89e80c`. This closes Task 7 through owner
+sign-off, without claiming traffic certification by the V2 workflow or OS tests.
+
+The accepted fix preserves particles across position polls. Verification: 613
+unit tests, build/lint, three CI gates, 24 browser scenarios, persistence/history,
+bounded resources, native tab recovery and 17-second renderer freeze/recovery.
+Both buffers stayed stable across 12 live polls. Later tests/docs leave product
+sources unchanged. Evidence and startup configuration remain at
+`/srv/starlink-acceptance/evidence/traffic-lan-test/c4dd06ced77afee966ced0d3b3c62c433d89e80c`.
+LAN server: `http://10.10.50.30:5173/overview`.
