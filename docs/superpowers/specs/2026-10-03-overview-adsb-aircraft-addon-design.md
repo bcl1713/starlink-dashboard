@@ -56,10 +56,10 @@ inclusion. There is no initial `All aircraft` or `Exclude military` mode.
 Selection is installation-wide and independent of map zoom, camera position,
 the current route, and the own aircraft's location.
 
-| Mode | Background traffic | Explicitly included aircraft |
-| --- | --- | --- |
+| Mode                | Background traffic                                                | Explicitly included aircraft                   |
+| ------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
 | Military + included | Provider-classified military aircraft passing the callsign filter | Globally tracked military or civilian aircraft |
-| Included only | None | Globally tracked military or civilian aircraft |
+| Included only       | None                                                              | Globally tracked military or civilian aircraft |
 
 For an enabled layer, apply the following rules in order:
 
@@ -93,13 +93,13 @@ that contact until the exclusion is removed.
 Add an ADS-B section to `ConfigurationPage.tsx` using existing form and save
 feedback conventions. Proposed persisted fields are:
 
-| Field | Default | Purpose |
-| --- | --- | --- |
-| `enabled` | `false` | Show the optional layer |
-| `mode` | `military_and_included` | Either discovery mode or `included_only` |
-| `include_hexes` | Empty list | Explicit global tracking and labels |
-| `exclude_hexes` | Empty list | Unconditional suppression |
-| `callsign_substrings` | Empty list | Narrow background military contacts |
+| Field                 | Default                 | Purpose                                  |
+| --------------------- | ----------------------- | ---------------------------------------- |
+| `enabled`             | `false`                 | Show the optional layer                  |
+| `mode`                | `military_and_included` | Either discovery mode or `included_only` |
+| `include_hexes`       | Empty list              | Explicit global tracking and labels      |
+| `exclude_hexes`       | Empty list              | Unconditional suppression                |
+| `callsign_substrings` | Empty list              | Narrow background military contacts      |
 
 Use a dedicated backend-owned settings store following the existing atomic
 persisted-settings pattern in `app/services/overview_link_settings.py`. These
@@ -176,11 +176,11 @@ telemetry, route timing, communications metrics, or operational warning rules.
 
 The defaults agreed during the interview are:
 
-| Position age | Presentation |
-| --- | --- |
-| Less than 30 seconds | Current contact |
+| Position age                                  | Presentation                                  |
+| --------------------------------------------- | --------------------------------------------- |
+| Less than 30 seconds                          | Current contact                               |
 | At least 30 seconds but less than 120 seconds | Last observed position with a stale indicator |
-| At least 120 seconds | Removed from the active layer and table |
+| At least 120 seconds                          | Removed from the active layer and table       |
 
 Age refers to the position observation, not the latest browser poll or HTTP
 success. The [readsb format reference](https://github.com/wiedehopf/readsb/blob/dev/README-json.md)

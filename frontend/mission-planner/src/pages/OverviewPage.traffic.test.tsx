@@ -256,6 +256,22 @@ beforeEach(() => {
 });
 
 describe('Overview traffic scene integration', () => {
+  it('clears traffic on the first failed status attempt while retries retain cached data', () => {
+    const view = render(<OverviewPage />);
+    expect(traffic()?.canAnimate?.()).toBe(true);
+    expect(xBand()?.canAnimate?.()).toBe(true);
+    queries.status = { data: status(), error: null, failureCount: 1 };
+    view.rerender(<OverviewPage />);
+    expect(traffic()).toBeUndefined();
+    expect(xBand()?.forward?.enabled).toBe(false);
+    expect(xBand()?.reverse?.enabled).toBe(false);
+    expect(xBand()?.canAnimate?.()).toBe(false);
+    expect(scene.metrics?.status).toEqual(status());
+    queries.status = { data: status(), error: null, failureCount: 0 };
+    view.rerender(<OverviewPage />);
+    expect(traffic()?.canAnimate?.()).toBe(true);
+    expectPreset();
+  });
   it('retains X-band endpoints through clock and equivalent query updates', () => {
     const view = render(<OverviewPage />);
     const initialPoints = xBand()?.points;

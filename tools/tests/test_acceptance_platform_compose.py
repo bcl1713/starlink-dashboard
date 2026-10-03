@@ -514,6 +514,24 @@ def test_resolve_rejects_caller_controlled_build_arguments(tmp_path: Path) -> No
         resolve_topology(topology, CONTRACT, _executor(config=config))
 
 
+def test_resolve_preserves_repository_history_poll_build_argument(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    config = _resolved_config(topology)
+    config["services"]["mission-planner"]["build"] = {
+        "context": ".",
+        "args": {"VITE_OVERVIEW_HISTORY_POLL_SECONDS": "5"},
+    }
+
+    resolve_topology(topology, CONTRACT, _executor(config=config))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
+    assert rendered["services"]["mission-planner"]["build"]["args"] == {
+        "ACCEPTANCE_CANDIDATE_SHA": SHA,
+        "VITE_OVERVIEW_HISTORY_POLL_SECONDS": "5",
+    }
+
+
 def test_resolve_rebinds_local_candidate_arg_to_final_candidate(tmp_path: Path) -> None:
     topology = _topology(tmp_path, candidate_sha=SHA)
     config = _resolved_config(topology)

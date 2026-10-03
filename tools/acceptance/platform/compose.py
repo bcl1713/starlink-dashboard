@@ -35,6 +35,7 @@ _REDACT_COMPOSE_CREDENTIAL = re.compile(
 _REDACT_COMPOSE_AUTHORIZATION = re.compile(r"(?im)(authorization\s*[:=])\s*[^\r\n]*")
 _COMPOSE_OUTPUT_TRUNCATED = b"\n[platform retained Compose output truncated]\n"
 _CANDIDATE_BUILD_FIELDS = frozenset({"context", "dockerfile", "target", "platform"})
+_REPOSITORY_BUILD_ARGS = frozenset({"VITE_OVERVIEW_HISTORY_POLL_SECONDS"})
 _TRANSFER_BYTES = re.compile(
     r"transferring [^:]+:\s*(?P<amount>\d+(?:\.\d+)?)\s*(?P<unit>B|kB|KB|MB|GB|TB)\b",
     re.IGNORECASE,
@@ -764,11 +765,16 @@ def _bind_candidate_build(service: dict[str, object], candidate_sha: str) -> Non
         raise ValueError("contract service has no resolved build mapping")
     _validate_root_candidate_build(build)
     service["build"] = {
-        field: build[field]
-        for field in _CANDIDATE_BUILD_FIELDS
-        if field in build
+        field: build[field] for field in _CANDIDATE_BUILD_FIELDS if field in build
     } | {
-        "args": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha},
+        "args": {
+            **{
+                key: value
+                for key, value in (build.get("args") or {}).items()
+                if key in _REPOSITORY_BUILD_ARGS
+            },
+            "ACCEPTANCE_CANDIDATE_SHA": candidate_sha,
+        },
         "labels": service.get("labels", {}),
     }
 
@@ -886,13 +892,15 @@ def _validate_contract_checksum(contract: ProductContract, key: BuildLedgerKey) 
 def _validate_candidate_build(
     value: object, candidate_sha: str, labels: AcceptanceOwnershipLabels
 ) -> None:
-    if not isinstance(value, dict) or value.get("args") != {
-        "ACCEPTANCE_CANDIDATE_SHA": candidate_sha
-    }:
+    if (
+        not isinstance(value, dict)
+        or not isinstance(value.get("args"), dict)
+        or value["args"].get("ACCEPTANCE_CANDIDATE_SHA") != candidate_sha
+        or not set(value["args"])
+        <= _REPOSITORY_BUILD_ARGS | {"ACCEPTANCE_CANDIDATE_SHA"}
+    ):
         raise ValueError("resolved topology has invalid candidate build binding")
-    _validate_root_candidate_build(
-        {key: item for key, item in value.items() if key not in {"args", "labels"}}
-    )
+    _validate_root_candidate_build(value)
     _validate_ownership_labels(value.get("labels"), labels)
 
 
@@ -909,8 +917,8 @@ def _validate_root_candidate_build(build: Mapping[str, object]) -> None:
     args = build.get("args")
     if args not in (None, {}) and not (
         isinstance(args, dict)
-        and set(args) == {"ACCEPTANCE_CANDIDATE_SHA"}
-        and isinstance(args["ACCEPTANCE_CANDIDATE_SHA"], str)
+        and set(args) <= _REPOSITORY_BUILD_ARGS | {"ACCEPTANCE_CANDIDATE_SHA"}
+        and all(isinstance(value, str) for value in args.values())
     ):
         raise ValueError("resolved service build arguments are not permitted")
     context = build.get("context")

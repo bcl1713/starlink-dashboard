@@ -321,7 +321,11 @@ export function OverviewPage() {
     data: status,
     isLoading: isLoadingStatus,
     error: statusError,
+    failureCount: statusFailureCount,
   } = useStatus();
+  // Refetch retries keep cached data and leave error null until exhausted.
+  // Link activity stops on the first failed attempt and resumes on success.
+  const statusRequestFailed = Boolean(statusError) || statusFailureCount > 0;
   const { data: overviewLinkSettings } = useOverviewLinkSettings();
   const {
     data: overviewHistory,
@@ -405,7 +409,7 @@ export function OverviewPage() {
       aircraftScenePosition &&
       groundEntryPoint &&
       status &&
-      !statusError &&
+      !statusRequestFailed &&
       !isStatusStale(status.timestamp, currentTime)
   );
   const popLatitude = groundEntryPoint?.latitude;
@@ -441,7 +445,7 @@ export function OverviewPage() {
     settings: overviewLinkSettings,
     status,
     nowMs: currentTime,
-    statusRequestFailed: Boolean(statusError),
+    statusRequestFailed,
     hasTrafficGeometry: trafficPoints.length >= 2,
     hasXBandGeometry: Boolean(activeConfiguredXBandLink),
     selectionState: activeXLink?.state ?? null,

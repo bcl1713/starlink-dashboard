@@ -254,7 +254,9 @@ for (const viewport of [
     await openGlobe(page);
     await links(page, true, true);
     await expect
-      .poll(async () => (await particleSizes(page)).some((size) => size < 5))
+      .poll(async () => (await particleSizes(page)).some((size) => size < 5), {
+        timeout: 15000,
+      })
       .toBe(true);
     if (viewport.width === 1920)
       await page
@@ -271,10 +273,52 @@ for (const viewport of [
     });
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await expect
-      .poll(async () => (await particleSizes(page)).some((size) => size < 5))
+      .poll(async () => (await particleSizes(page)).some((size) => size < 5), {
+        timeout: 15000,
+      })
       .toBe(true);
   });
 }
+
+test('stops activity on the first failed status attempt and recovers during retries', async ({
+  page,
+}) => {
+  await installOverviewSceneProbe(page);
+  const fixture = await trafficPathFixture(page);
+  await openGlobe(page);
+  await expect
+    .poll(async () => (await particleSizes(page)).some((size) => size < 5), {
+      timeout: 15000,
+    })
+    .toBe(true);
+  const firstFailure = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/status' &&
+      response.status() === 503
+  );
+  fixture.statusError = true;
+  await firstFailure;
+  // The first retry is delayed by a second; this must clear before retries finish.
+  await expect(
+    page.getByLabel('Globe legend').getByText('Traffic path', { exact: true })
+  ).toHaveCount(0, { timeout: 750 });
+  await expect
+    .poll(
+      async () =>
+        (await sceneSnapshot(page))!.particles.filter((branch) =>
+          branch.sizes.some((size) => size < 10)
+        ),
+      { timeout: 750 }
+    )
+    .toHaveLength(0);
+  fixture.statusError = false;
+  await links(page, true, true);
+  await expect
+    .poll(async () => (await particleSizes(page)).some((size) => size < 5), {
+      timeout: 15000,
+    })
+    .toBe(true);
+});
 
 test('bounds resources through 20 toggle cycles and 10 mounts', async ({
   page,

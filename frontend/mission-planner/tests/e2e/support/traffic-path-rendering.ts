@@ -32,7 +32,8 @@ async function updateLinks(
       async () =>
         (await sceneSnapshot(page))!.particles.filter((branch) =>
           branch.sizes.some((size) => size < 10)
-        ).length
+        ).length,
+      { timeout: 15000 }
     )
     .toBe(Number(traffic) + Number(xBand));
 }
@@ -65,7 +66,8 @@ export async function exerciseTrafficResources(
         async () =>
           (await sceneSnapshot(page))!.particles.filter((branch) =>
             branch.sizes.some((size) => size < 10)
-          ).length
+          ).length,
+        { timeout: 15000 }
       )
       .toBe(2);
     mounts.push((await sceneSnapshot(page))!.geometries);
@@ -104,21 +106,22 @@ export async function exerciseTrafficResources(
       configurable: true,
       value: true,
     });
-    window.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('visibilitychange'));
   });
   await expect
     .poll(async () => (await sceneSnapshot(page))!.particles)
     .toHaveLength(0);
   await page.evaluate(() => {
     Reflect.deleteProperty(document, 'hidden');
-    window.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('visibilitychange'));
   });
   await expect
     .poll(
       async () =>
         (await sceneSnapshot(page))!.particles.filter((branch) =>
           branch.sizes.some((size) => size < 10)
-        ).length
+        ).length,
+      { timeout: 15000 }
     )
     .toBe(2);
   const resourcePath = info.outputPath('resource-plateau.json');

@@ -213,7 +213,7 @@ in the PR description without modifying the candidate after final acceptance.
   This development test does not substitute for exact-SHA final acceptance.
 - [x] Document shared settings path/defaults, independent switches, measured arc
   versus illustrative X-band and unchanged collection/status behavior.
-- [ ] Canonical verification: from root run
+- [x] Canonical verification: from root run
 
   ```sh
   ACCEPTANCE_POLICY_BASE_SHA=<execution-base-40-hex-SHA> ./tools/verify all
@@ -273,3 +273,25 @@ are retained under `/srv/starlink-acceptance/evidence/traffic-task7-*`, qualifie
 by candidate SHA, with checksums. The unknown deployment laptop and native hidden
 page behavior remain explicit hardware/verification gaps. Stop after Task 7;
 do not merge or start ADS-B/orbital work.
+
+### PR preparation review
+
+The first failed status attempt now stops link activity while React Query retains
+cached data during retries; successful recovery resumes it. Unit and real-query
+browser regressions cover that transition. Hidden-page events target the document
+listener. Traffic browser fixtures use native clocks and fresh acquisition times;
+bounded activity waits account for software rendering without changing emitters.
+
+The preserved ADS-B tables now pass Markdown lint. The acceptance boundary retains
+the repository's history polling build argument alongside the exact candidate SHA,
+while rejecting unknown arguments and cache controls. Its stale local Compose test
+now checks both SHA bindings without rejecting valid repository configuration.
+Independent review found no remaining important findings in these corrections.
+
+Canonical `all` passed against full PR base
+`f0a176b4d7dece11af4e3bd17db10f69b1bb5389`: 1,350 backend tests (20 skipped),
+611 frontend tests, static checks and production build. Sixty focused tooling tests
+also passed. Evidence for the committed candidate is retained separately. The
+existing platform's V2 journey cannot certify the traffic contract; its final
+checkbox remains open. Native tab/OS suspension and deployment-laptop performance
+remain verification gaps. PR preparation does not merge or start deferred work.

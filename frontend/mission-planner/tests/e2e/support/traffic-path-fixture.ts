@@ -12,6 +12,7 @@ export async function trafficPathFixture(page: Page) {
     getStarted: false,
     saveError: false,
     selectionError: false,
+    statusError: false,
     delayGet: false,
     releaseGet: () => {},
     selection: 'normal',
@@ -39,8 +40,8 @@ export async function trafficPathFixture(page: Page) {
       },
     } as Omit<StatusResponse, 'timestamp'>,
   };
-  // Fixed daylight/acquisition time, with real advancing timers.
-  await page.clock.setFixedTime(new Date('2026-10-03T12:00:00Z'));
+  // Native Date, performance and animation frames keep rendering measurements
+  // meaningful. Every successful poll has a fresh acquisition timestamp.
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/overview-links/settings') {
@@ -65,15 +66,20 @@ export async function trafficPathFixture(page: Page) {
         json: state.getError ? { detail: 'read unavailable' } : state.settings,
       });
     }
-    if (path === '/api/status')
+    if (path === '/api/status') {
+      if (state.statusError)
+        return route.fulfill({
+          status: 503,
+          json: { detail: 'status unavailable' },
+        });
+      const now = Date.now();
       return route.fulfill({
         json: {
           ...state.status,
-          timestamp: state.expired
-            ? '2026-10-03T11:59:49Z'
-            : '2026-10-03T12:00:00Z',
+          timestamp: new Date(now - (state.expired ? 11000 : 0)).toISOString(),
         },
       });
+    }
     if (path === '/api/satellites')
       return route.fulfill({
         json: [{ satellite_id: 'X-6', transport: 'X', longitude: -50 }],

@@ -30,9 +30,10 @@ def test_local_compose_renders_both_builds_with_exact_full_sha(tmp_path: Path) -
     ).strip()
     config = _compose_config(tmp_path, sha)
     assert len(sha) == 40
-    assert {name: config["services"][name]["build"]["args"] for name in SERVICES} == {
-        name: {"ACCEPTANCE_CANDIDATE_SHA": sha} for name in SERVICES
-    }
+    assert all(
+        config["services"][name]["build"]["args"]["ACCEPTANCE_CANDIDATE_SHA"] == sha
+        for name in SERVICES
+    )
 
 
 def test_local_compose_respects_explicit_sha_override(tmp_path: Path) -> None:
