@@ -199,7 +199,7 @@ pop: GlobeCoordinate | null): FlowPoint[]`. Start at `aircraft.position`; end at
 the existing GEP surface overlay. Return `[]` for missing/invalid inputs,
 nonfinite projections or aircraft projected below the scene Earth surface.
 
-- [ ] Write tests for exact endpoints/valid altitude, dateline and polar routes,
+- [x] Write tests for exact endpoints/valid altitude, dateline and polar routes,
   long routes, antipodal/near-antipodal pairs, coincident ground coordinates and
   repeated identical inputs. Assert finite coordinates, deterministic orientation,
   at most 129 points, interior lift bounded by 0.6 scene units above interpolated
@@ -214,9 +214,9 @@ nonfinite projections or aircraft projected below the scene Earth surface.
   expect(arc[0]).toEqual(aircraft.position);
   ```
 
-- [ ] Run `npm run test:unit -- src/pages/overview-traffic-arc.test.ts`;
+- [x] Run `npm run test:unit -- src/pages/overview-traffic-arc.test.ts`;
   expect failure because the module does not exist.
-- [ ] Implement 128 segments along unit-sphere interpolation with radial envelope
+- [x] Implement 128 segments along unit-sphere interpolation with radial envelope
   `lerp(startRadius, endRadius, t) + height * sin(Math.PI * t)`, where
   `height = clamp(0.6 * sin(angle / 2), 0.04, 0.6)`. For dot < -0.9995, split
   via a deterministic midpoint perpendicular to the start using its least-aligned
@@ -225,10 +225,10 @@ nonfinite projections or aircraft projected below the scene Earth surface.
   points. Coincident coordinates yield a shallow radial arch, not an unbounded
   loop. Validate segment clearance before returning; an unsafe result fails
   closed. Use this single geometry for both line and particle traversal.
-- [ ] Rerun the tests and existing coordinate/radius/projection tests; require
+- [x] Rerun the tests and existing coordinate/radius/projection tests; require
   analytic chord clearance for all valid adversarial fixtures, not omission of
   valid long or antipodal routes as a way to pass safety assertions.
-- [ ] Commit with `feat(overview): add globe-safe traffic arc geometry`.
+- [x] Commit with `feat(overview): add globe-safe traffic arc geometry`.
 
 ## Continue with Tasks 4–7
 
@@ -265,7 +265,15 @@ consumers, queued saves, errors and another viewer's changes. Verification:
 check and production build passed. Existing dialog/Three.js test warnings and
 large-bundle build warning remain. No scene integration was added in this task.
 
-The user requested task 2 only, followed by commit/push and a task 3 handoff.
-Tasks 3–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
+Task 3 is implemented: a 128-segment aircraft–PoP arc with exact projected
+endpoints, bounded sinusoidal lift, deterministic perpendicular antipodal
+midpoint and analytic clearance validation for every chord. Invalid or
+below-surface inputs fail closed. Existing projections remain unchanged.
+Verification: 48 new arc tests, 78 focused geometry/projection tests and all
+495 frontend unit tests passed; ESLint, full source Prettier, filename checks
+and production build passed. Existing test/build warnings remain.
+
+The user requested task 3 only, followed by commit/push and a task 4 handoff.
+Tasks 4–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
 branch one task per session, using Superpowers. OpenSpec was removed at the
 user's request in a separate commit.
