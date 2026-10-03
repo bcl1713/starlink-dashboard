@@ -5,7 +5,7 @@ Issue [209](https://github.com/bcl1713/starlink-dashboard/issues/209), audited
 audit: 28 affected packages in the full tree and five in the production
 dependency tree now both report zero. No advisories are deliberately deferred.
 The full browser suite retains three failures reproduced on the unchanged
-baseline; this report does not claim a green browser gate.
+baseline; this report does not claim a green full browser suite.
 
 ## Audited snapshot
 
@@ -95,11 +95,15 @@ The full Chromium inventory ran serially against the production preview with the
 existing assertions and no retries: **118 passed, three failed and one did not
 run**, in 21.7 minutes. The three failures are:
 
-- `overview-globe.spec.ts:960`: the retained-stars and next-POI/landing
+- [Issue 245](https://github.com/bcl1713/starlink-dashboard/issues/245),
+  `overview-globe.spec.ts:960`: the retained-stars and next-POI/landing
   screenshot differs from its stored reference by about 4% of pixels.
-- `overview-metric-history-fullscreen.spec.ts:56`: the compact metrics/legend
-  geometry assertion fails at a 640px viewport height.
-- `overview-metric-history.spec.ts:107`, display scale 2: the retained sample
+- [Issue 246](https://github.com/bcl1713/starlink-dashboard/issues/246),
+  `overview-metric-history-fullscreen.spec.ts:56`: the compact metrics/legend
+  geometry assertion fails at a 640px viewport height. The reported boxes are
+  horizontally separated; a visible overlap is not established by this failure.
+- [Issue 234](https://github.com/bcl1713/starlink-dashboard/issues/234),
+  `overview-metric-history.spec.ts:107`, display scale 2: the retained sample
   jumps left beyond the existing motion tolerance after a delayed poll.
 
 An independent temporary checkout of the exact baseline source and original
@@ -174,9 +178,14 @@ separate maintenance, consistent with the warning inventory in issue 226.
 The production build retains its existing large-chunk warning. This dependency
 change makes no bundle-splitting or toolchain policy changes. Windows, other CPU
 architectures, Firefox and Safari are not verified in this Linux Chromium run.
-No production rollout or merge is part of this verification. The full browser
-gate remains failing despite the reproduced baseline failures; this dependency
-delivery does not waive that gate.
+No production rollout is part of this verification. The full browser suite
+remains failing despite the reproduced baseline failures. On 2026-10-03, the
+user requested filing those failures separately and proceeding through PR checks
+and merge for this dependency update. The repository's PR workflow runs Static
+Quality Gate, Backend Test Gate, and Frontend Test and Build Gate; it does not
+run the full browser suite. The full-suite result remains disclosed, with no
+snapshot, assertion, or motion-tolerance changes. Exact-head PR checks and
+production acceptance must be verified before merging to `dev`.
 
 ## Reproduction
 
