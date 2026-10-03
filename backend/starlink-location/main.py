@@ -459,11 +459,11 @@ async def _background_update_loop(poi_manager=None):
 
                         scrape_start = time.time()
                         try:
-                            # Extract active route for route-aware ETA calculations
+                            # Both live and simulation metrics use the application's
+                            # current route, independent of coordinator capabilities.
                             active_route = None
-                            route_manager = getattr(_coordinator, "route_manager", None)
-                            if route_manager is not None:
-                                active_route = route_manager.get_active_route()
+                            if _route_manager is not None:
+                                active_route = _route_manager.get_active_route()
 
                             update_metrics_from_telemetry(
                                 telemetry, _simulation_config, active_route, poi_manager
