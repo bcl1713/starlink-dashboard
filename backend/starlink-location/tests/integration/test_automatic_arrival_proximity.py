@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
+
 from app.core.metrics import update_metrics_from_telemetry
 from app.live.client import StarlinkClient
 from app.live.coordinator import LiveCoordinator
