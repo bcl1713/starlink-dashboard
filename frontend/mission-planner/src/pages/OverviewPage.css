@@ -80,7 +80,8 @@
   background: #22d3ee;
 }
 
-.globe-legend__route--planned-link {
+.globe-legend__route--planned-link,
+.globe-legend__route--traffic-path {
   height: 0.25rem;
 }
 .overview-map-overlays {

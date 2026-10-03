@@ -294,7 +294,7 @@ for particles, short lines and ribbons on each StrictMode setup. Verification:
 and all 587 frontend unit tests passed; ESLint, full source Prettier and
 production build passed. Existing test/build warnings remain.
 
-The user requested Task 5 only, followed by commit/push and a Task 6 handoff.
-Tasks 6–7 remain pending. Continue `feat/starshield-flow-line-arc` one task per
-session using Superpowers, preserving approved and concurrent ADS-B documents.
+Task 6 is implemented; see [execution status](2026-10-03-starshield-flow-line-arc-tasks-4-7.md#task-6-execution-status).
+Task 7 remains pending. Continue `feat/starshield-flow-line-arc` Task 7 only, then stop.
+Use Superpowers, preserving a12a61b5, abb650ab and concurrent ADS-B documents.
 OpenSpec remains removed at the user's request.

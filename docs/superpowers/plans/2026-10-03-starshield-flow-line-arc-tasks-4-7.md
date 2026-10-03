@@ -140,21 +140,21 @@ and `OverviewPage.traffic.test.tsx` for scene integration assertions.
 `#c084fc`, distinct from route amber and X-band blue/red; keep upload/download
 colors from Task 4. Keep style dimensions within existing link/ribbon budgets.
 
-- [ ] Write integration tests capturing actual `AnimatedFlowLine` props, not only
+- [x] Write integration tests capturing actual `AnimatedFlowLine` props, not only
   mocked-away Canvas DOM. Assert measured values reach only PoP arc, X-band gets
   only preset values, and all toggle combinations match rendered links/legend.
   Assert warning clears X-band activity while Starshield style/activity remains
   unchanged; disabled X-band warning still appears in existing status/card rules.
   Markers, labels, history, route, metrics and camera props remain present.
   Test initial settings loading, refresh errors, stale position and missing PoP.
-- [ ] Run the focused tests from the frontend:
+- [x] Run the focused tests from the frontend:
 
   ```sh
   npm run test:unit -- src/pages/OverviewPage.traffic.test.tsx src/pages/OverviewPage.layers.test.tsx src/pages/OverviewPage.contract.test.ts src/pages/OverviewMapLegend.test.tsx
   ```
 
   expect new layer/legend contracts to fail.
-- [ ] Subscribe once to confirmed settings; memoize the arc using scalar endpoint
+- [x] Subscribe once to confirmed settings; memoize the arc using scalar endpoint
   coordinates/altitude rather than entire polled status objects. Skip arc
   construction while Starshield is disabled/unconfirmed or its position is stale;
   both-off performs no link-specific rendering work. Apply Task 4 guards, mount
@@ -165,9 +165,27 @@ colors from Task 4. Keep style dimensions within existing link/ribbon budgets.
   a frame. Use the same visibility guards
   for legend entries. Add `Traffic path` sample with shared style token. Keep
   warning computations, cached marker geometry and camera intent unchanged.
-- [ ] Rerun focused tests and Configuration tests; update existing fixtures with
+- [x] Rerun focused tests and Configuration tests; update existing fixtures with
   explicit confirmed settings rather than enabling by default in production.
-- [ ] Commit with `feat(overview): render independently controlled traffic links`.
+- [x] Commit with `feat(overview): render independently controlled traffic links`.
+
+### Task 6 execution status
+
+Task 6 is implemented: confirmed settings independently guard link geometry and
+legend entries. Measured activity reaches only the aircraft–PoP arc; X-band uses
+only the local preset and clears on warning/selection failure. Both callbacks
+recheck wall-clock age without frame allocations. Scalar endpoint memoization
+retains both links across equivalent polls and clock ticks. Shared violet styling
+leaves markers, warning/status/card, route/history, metrics and camera unchanged.
+
+TDD: new scene/legend/guard contracts failed before implementation; review found
+X-band path identity churn, reproduced with a failing clock-tick regression and
+fixed with scalar memoization. Verification: 83 integration/Configuration tests,
+78 lifecycle/route/history compatibility tests and all 610 frontend unit tests
+passed; ESLint, full source Prettier, production build and diff checks passed.
+Fresh review has no remaining findings. Existing test/build warnings remain.
+Task 7 browser, persistence, performance and exact-candidate acceptance is pending.
+The user requested Task 6 only, commit/push, a Task 7 handoff, then stop.
 
 ## Task 7: Browser, persistence and rendering acceptance
 
