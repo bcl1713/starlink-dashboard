@@ -208,22 +208,24 @@ def update_metrics_from_telemetry(
             logger.warning(f"Departure detection error: {departure_error}")
 
         # Automatic arrival detection when an active route is available
-        if active_route and detection_ready:
+        if active_route and active_route.points and detection_ready:
             try:
-                from app.services.route_eta_calculator import RouteETACalculator
+                from app.services.kml.geometry import haversine_distance
 
-                route_calculator = RouteETACalculator(active_route)
-                progress_info = route_calculator.get_route_progress(
+                # Projected route remainder can be zero far beyond or beside
+                # the final endpoint. Arrival requires actual proximity to it.
+                destination = active_route.points[-1]
+                distance_to_destination = haversine_distance(
                     telemetry.position.latitude,
                     telemetry.position.longitude,
+                    destination.latitude,
+                    destination.longitude,
                 )
-                distance_remaining = progress_info.get("distance_remaining_meters")
-                if distance_remaining is not None:
-                    flight_state.check_arrival(
-                        distance_remaining,
-                        telemetry.position.speed,
-                        observed_at=observed_at,
-                    )
+                flight_state.check_arrival(
+                    distance_to_destination,
+                    telemetry.position.speed,
+                    observed_at=observed_at,
+                )
             except (
                 RuntimeError,
                 ValueError,
