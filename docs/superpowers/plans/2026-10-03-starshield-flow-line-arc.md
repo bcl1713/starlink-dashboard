@@ -284,7 +284,17 @@ passed; ESLint, full source Prettier and production build passed. Existing
 test/build warnings remain. Overview's helper import/call was mechanically
 renamed to keep compilation working; scene integration remains Task 6.
 
-The user requested task 4 only, followed by commit/push and a task 5 handoff.
-Tasks 5–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
-branch one task per session, using Superpowers. OpenSpec was removed at the
-user's request in a separate commit.
+Task 5 is implemented: stopped directions clear particles/counts/remainders,
+endpoint changes start fresh, and visibility/reduced-motion/operational pauses
+clear draw ranges and release particle resources. Wall-clock eligibility is
+checked before frames and hidden return; resumed delta is discarded and active
+delta capped at 0.1 seconds. Layout effects allocate fresh GPU resources
+for particles, short lines and ribbons on each StrictMode setup. Verification:
+39 focused lifecycle/renderer tests, 78 ribbon/route/history compatibility tests
+and all 587 frontend unit tests passed; ESLint, full source Prettier and
+production build passed. Existing test/build warnings remain.
+
+The user requested Task 5 only, followed by commit/push and a Task 6 handoff.
+Tasks 6–7 remain pending. Continue `feat/starshield-flow-line-arc` one task per
+session using Superpowers, preserving approved and concurrent ADS-B documents.
+OpenSpec remains removed at the user's request.

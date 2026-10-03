@@ -93,7 +93,7 @@ direction when its new emitter is disabled. Add optional
 consumers. It rechecks operational eligibility using wall-clock time before
 every frame and on return from hidden state, including before the next UI tick.
 
-- [ ] Write tests that fill pools, disable a direction, then assert an empty
+- [x] Write tests that fill pools, disable a direction, then assert an empty
   matching snapshot and zero draw range immediately; re-enable starts fresh.
   Cover warnings, invalid path, hidden page, reduced motion, changing endpoints,
   repeated toggles/mounts and unmount disposal. Assert no catch-up emission after
@@ -107,14 +107,14 @@ every frame and on return from hidden state, including before the next UI tick.
   expect(pool.snapshot().filter(p => p.direction === 'forward')).toHaveLength(0);
   ```
 
-- [ ] Run the focused tests from the frontend:
+- [x] Run the focused tests from the frontend:
 
   ```sh
   npm run test:unit -- src/pages/AnimatedFlowLine.test.tsx src/pages/overview-animated-flow-line-rendering.test.ts
   ```
 
   expect missing clear/lifecycle behavior to fail.
-- [ ] Implement clearing on disable, endpoint replacement and eligibility loss;
+- [x] Implement clearing on disable, endpoint replacement and eligibility loss;
   zero the draw range in the transition effect, not only the next frame. Listen
   to `visibilitychange`, clear/pause on hide, discard the first resumed frame's
   elapsed delta and clamp active delta to 0.1 seconds. Reduced motion also clears
@@ -123,9 +123,9 @@ every frame and on return from hidden state, including before the next UI tick.
   line resources on parent disable/unmount. Keep hooks unconditional by extracting
   an internal particle child if needed. Remove listeners in cleanup. Memoize the
   prepared path and reuse typed arrays; do not allocate per frame.
-- [ ] Rerun focused tests and ribbon tests; require exact resource disposal and
+- [x] Rerun focused tests and ribbon tests; require exact resource disposal and
   listener cleanup across repeated transitions, with no particle resurrection.
-- [ ] Commit with `fix(overview): clear flow particles across eligibility changes`.
+- [x] Commit with `fix(overview): clear flow particles across eligibility changes`.
 
 ## Task 6: Integrate links, draw guards and conditional legend
 

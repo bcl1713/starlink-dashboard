@@ -30,6 +30,71 @@ const forward = {
 } as const;
 
 describe('AnimatedFlowLine rendering contract', () => {
+  it('drops existing particles when a direction stops', () => {
+    const reverse = { ...forward, color: '#54f0ff' };
+    const pool = new FlowParticlePool({ forward, reverse });
+    const resources = createAnimatedFlowResources(4);
+    pool.update(0.75, 100);
+    const recycled = [...pool.snapshot()];
+    pool.configure({ ...forward, enabled: false }, reverse);
+    expect(
+      pool.snapshot().filter((p) => p.direction === 'forward')
+    ).toHaveLength(0);
+    expect(pool.snapshot()).toHaveLength(1);
+    pool.configure(
+      { ...forward, enabled: false },
+      { ...reverse, enabled: false }
+    );
+    writeFlowParticles(resources, path, pool.snapshot());
+    expect(resources.geometry.drawRange.count).toBe(0);
+    pool.configure(forward, { ...reverse, enabled: false });
+    pool.update(0.25, 100);
+    expect(pool.snapshot()).toHaveLength(0);
+    pool.update(0.25, 100);
+    expect(pool.snapshot()).toHaveLength(1);
+    expect(recycled).toContain(pool.snapshot()[0]);
+    expect(pool.snapshot()[0].progress).toBe(0);
+    disposeAnimatedFlowResources(resources);
+  });
+
+  it('clears counts and fractional emission without disabling emitters', () => {
+    const pool = new FlowParticlePool({ forward, reverse: forward });
+    pool.update(0.75, 100);
+    pool.clear('forward');
+    expect(pool.snapshot().map((p) => p.direction)).toEqual(['reverse']);
+    pool.update(0.25, 100);
+    expect(
+      pool.snapshot().filter((p) => p.direction === 'forward')
+    ).toHaveLength(0);
+    pool.clear();
+    pool.clear();
+    expect(pool.snapshot()).toHaveLength(0);
+    pool.update(0.25, 100);
+    expect(pool.snapshot()).toHaveLength(0);
+    pool.update(0.25, 100);
+    expect(pool.snapshot().map((p) => p.direction)).toEqual([
+      'forward',
+      'reverse',
+    ]);
+  });
+
+  it('keeps both direction caps after repeated clearing and reconfiguration', () => {
+    const emitter = { ...forward, rate: 1000, maxParticles: 100 };
+    const pool = new FlowParticlePool({ forward: emitter, reverse: emitter });
+    for (let cycle = 0; cycle < 20; cycle += 1) {
+      pool.update(1, 10000);
+      expect(
+        pool.snapshot().filter((p) => p.direction === 'forward')
+      ).toHaveLength(100);
+      expect(
+        pool.snapshot().filter((p) => p.direction === 'reverse')
+      ).toHaveLength(100);
+      pool.configure({ ...emitter, enabled: false }, emitter);
+      pool.configure(emitter, { ...emitter, enabled: false });
+      pool.configure(emitter, emitter);
+    }
+  });
+
   it('prepares and interpolates arbitrary multi-segment paths', () => {
     expect(path.totalLength).toBe(4);
     expect(Array.from(path.cumulativeLengths)).toEqual([0, 2, 4]);
