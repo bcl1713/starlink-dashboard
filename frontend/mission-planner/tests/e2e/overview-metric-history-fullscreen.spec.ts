@@ -627,60 +627,61 @@ test.describe('Overview metric history', () => {
     for (const height of [900, 768, 640]) {
       await page.setViewportSize({ width: 1920, height });
       await expect
-        .poll(() =>
-          page.evaluate(() => {
-            const overview = document.querySelector('.overview-page')!;
-            const arrival = document
-              .querySelector('[aria-label="Departure and arrival"]')!
-              .getBoundingClientRect();
-            const boxes = [
-              ...document.querySelectorAll('[data-metric-panel]'),
-            ].map((node) => node.getBoundingClientRect());
-            return {
-              responsive: overview.getAttribute('data-layout') !== 'desktop',
-              readable: boxes.every((box) => box.width >= 170),
-              separate: boxes.every(
-                (box) =>
-                  box.bottom <= arrival.top ||
-                  box.top >= arrival.bottom ||
-                  box.right <= arrival.left ||
-                  box.left >= arrival.right
-              ),
-            };
-          })
+        .poll(
+          () =>
+            page.evaluate(() => {
+              const overview = document.querySelector('.overview-page')!;
+              const arrival = document
+                .querySelector('[aria-label="Departure and arrival"]')!
+                .getBoundingClientRect();
+              const boxes = [
+                ...document.querySelectorAll('[data-metric-panel]'),
+              ].map((node) => node.getBoundingClientRect());
+              const metrics = document
+                .querySelector('[aria-label="Network history context"]')!
+                .getBoundingClientRect();
+              const legend = document
+                .querySelector('[aria-label="Globe legend"]')!
+                .getBoundingClientRect();
+              // Read all boxes in one frame so responsive reflow cannot mix
+              // positions from different layouts. Separation on either axis
+              // permits the short landscape rail beside the globe legend.
+              return {
+                count: boxes.length,
+                visible: [arrival, metrics, legend, ...boxes].every(
+                  (box) => box.width > 0 && box.height > 0
+                ),
+                responsive: overview.getAttribute('data-layout') !== 'desktop',
+                readable: boxes.every((box) => box.width >= 170),
+                separate: boxes.every(
+                  (box) =>
+                    box.bottom <= arrival.top ||
+                    box.top >= arrival.bottom ||
+                    box.right <= arrival.left ||
+                    box.left >= arrival.right
+                ),
+                metricsLegendSeparate:
+                  metrics.bottom <= legend.top ||
+                  legend.bottom <= metrics.top ||
+                  metrics.right <= legend.left ||
+                  legend.right <= metrics.left,
+              };
+            }),
+          { message: `height ${height}: responsive overlay geometry` }
         )
-        .toEqual({ responsive: true, readable: true, separate: true });
-      const metrics = await page
-        .getByLabel('Network history context')
-        .boundingBox();
-      const legend = await page.getByLabel('Globe legend').boundingBox();
-      expect(metrics && legend).toBeTruthy();
-      expect(
-        metrics!.y + metrics!.height <= legend!.y ||
-          legend!.y + legend!.height <= metrics!.y,
-        `height ${height}: metrics/legend ${JSON.stringify({ metrics, legend })}`
-      ).toBe(true);
+        .toEqual({
+          count: 5,
+          visible: true,
+          responsive: true,
+          readable: true,
+          separate: true,
+          metricsLegendSeparate: true,
+        });
       await expect(page.locator('.app-route-content')).toHaveCSS(
         'overflow-y',
         'auto'
       );
-      const shortPoiBox = await pois.boundingBox();
       const shortGraphs = await graphs.all();
-      const shortBoxes = await Promise.all(
-        shortGraphs.map((panel) => panel.boundingBox())
-      );
-      for (const box of shortBoxes) {
-        expect(
-          box &&
-            shortPoiBox &&
-            (box.y + box.height <= shortPoiBox.y ||
-              box.y >= shortPoiBox.y + shortPoiBox.height ||
-              box.x + box.width <= shortPoiBox.x ||
-              box.x >= shortPoiBox.x + shortPoiBox.width),
-          `height ${height}: ${JSON.stringify({ box, shortPoiBox })}`
-        ).toBeTruthy();
-        expect(box && box.width >= 170).toBeTruthy();
-      }
       for (const panel of shortGraphs) {
         await panel.scrollIntoViewIfNeeded();
         await expect(panel).toBeInViewport();
