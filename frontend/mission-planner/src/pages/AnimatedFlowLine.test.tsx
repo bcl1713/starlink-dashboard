@@ -315,6 +315,57 @@ describe('AnimatedFlowLine lifecycle', () => {
     expect(latest().geometry.getAttribute('position').getX(0)).toBe(20);
   });
 
+  it('preserves in-flight progress as the same link endpoint moves', () => {
+    const view = render(line({ particleKey: 'pop-a' }));
+    frame();
+    frame();
+    frame();
+    const resources = latest();
+    expect(resources.geometry.drawRange.count).toBe(12);
+    expect(resources.geometry.getAttribute('position').getX(0)).toBeCloseTo(
+      0.2
+    );
+
+    view.rerender(
+      line({
+        points: [
+          [1, 0, 0],
+          [21, 0, 0],
+        ],
+        particleKey: 'pop-a',
+        forward: { ...forward, rate: 10 },
+      })
+    );
+    expect(latest()).toBe(resources);
+    expect(observed.disposed.has(resources.geometry)).toBe(false);
+    expect(resources.geometry.drawRange.count).toBe(12);
+    expect(resources.geometry.getAttribute('position').getX(0)).toBeCloseTo(
+      1.4
+    );
+    expect(resources.geometry.getAttribute('position').getX(2)).toBeCloseTo(
+      20.6
+    );
+    frame();
+    expect(resources.geometry.drawRange.count).toBe(15);
+    expect(resources.geometry.getAttribute('position').getX(0)).toBeCloseTo(
+      1.5
+    );
+    expect(resources.geometry.getAttribute('position').getX(2)).toBeCloseTo(
+      20.5
+    );
+  });
+
+  it('starts fresh when the moving link destination changes', () => {
+    const view = render(line({ particleKey: 'pop-a' }));
+    frame();
+    const old = latest();
+    view.rerender(line({ particleKey: 'pop-b' }));
+    expectDisposed(old);
+    expect(latest().geometry.drawRange.count).toBe(0);
+    frame();
+    expect(latest().geometry.getAttribute('position').getX(0)).toBe(0);
+  });
+
   it('disposes hidden particles, writes no paused buffers, and discards resumed delta', () => {
     render(line());
     frame();

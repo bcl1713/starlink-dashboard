@@ -804,6 +804,7 @@ export function OverviewPage() {
                 glow={TRAFFIC_PATH_STYLE.glow}
                 core={TRAFFIC_PATH_STYLE.core}
                 canAnimate={canAnimateStarshield}
+                particleKey={`pop:${popLatitude}:${popLongitude}`}
                 depthWrite={false}
               />
             )}
@@ -816,6 +817,7 @@ export function OverviewPage() {
                 glow={activeXBandLineStyle.glow}
                 core={activeXBandLineStyle.core}
                 canAnimate={canAnimateXBand}
+                particleKey={`x-band:${activeConfiguredXBandSatelliteId}:${activeSatelliteLongitude}`}
                 depthWrite={false}
               />
             )}

@@ -52,6 +52,57 @@ async function particleSizes(page: Page) {
   );
 }
 
+test('keeps both particle streams alive across moving-aircraft status polls', async ({
+  page,
+}) => {
+  await installOverviewSceneProbe(page);
+  const fixture = await trafficPathFixture(page);
+  await openGlobe(page);
+  await expect
+    .poll(
+      async () =>
+        (await sceneSnapshot(page))!.particles.filter((branch) =>
+          branch.sizes.some((size) => size < 10)
+        ).length
+    )
+    .toBe(2);
+  const initial = (await sceneSnapshot(page))!.particles.filter((branch) =>
+    branch.sizes.some((size) => size < 10)
+  );
+
+  for (let tick = 0; tick < 3; tick += 1) {
+    const response = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/status'
+    );
+    fixture.status.position!.latitude! += 0.01;
+    fixture.status.position!.longitude! += 0.01;
+    await response;
+    // Observe through the following poll so the first response has rendered.
+    await page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/status'
+    );
+    await expect
+      .poll(
+        async () => {
+          const current = (await sceneSnapshot(page))!.particles;
+          return initial.every((previous) => {
+            const branch = current.find(
+              (branch) => branch.geometry === previous.geometry
+            );
+            return (
+              branch &&
+              branch.count > 0 &&
+              JSON.stringify(branch.positions) !==
+                JSON.stringify(previous.positions)
+            );
+          });
+        },
+        { timeout: 15000 }
+      )
+      .toBe(true);
+  }
+});
+
 for (const [traffic, xBand] of [
   [false, false],
   [true, false],

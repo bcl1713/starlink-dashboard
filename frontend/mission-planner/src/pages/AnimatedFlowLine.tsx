@@ -49,6 +49,8 @@ export interface AnimatedFlowLineProps {
   random?: () => number;
   showLine?: boolean;
   canAnimate?: () => boolean;
+  /** Keep in-flight progress on a moving path; change this for a new link. */
+  particleKey?: string;
 }
 
 const DEFAULT_OUTER: FlowLineLayer = {
@@ -158,10 +160,11 @@ function FlowParticles({
   depthTest,
   depthWrite,
   canAnimate,
+  particleKey,
   discardDeltaRef,
 }: Pick<
   AnimatedFlowLineProps,
-  'forward' | 'reverse' | 'random' | 'canAnimate'
+  'forward' | 'reverse' | 'random' | 'canAnimate' | 'particleKey'
 > & {
   path: PreparedFlowPath;
   depthTest: boolean;
@@ -172,6 +175,7 @@ function FlowParticles({
   const group = useMemo(() => new THREE.Group(), []);
   const branch = useRef<ParticleBranch | null>(null);
   const eligibility = useRef(canAnimate);
+  const resetKey = particleKey ?? path;
 
   const release = useCallback(() => {
     const active = branch.current;
@@ -206,7 +210,7 @@ function FlowParticles({
   useLayoutEffect(() => {
     if (!eligibility.current || eligibility.current()) allocate();
     return release;
-  }, [allocate, path, release]);
+  }, [allocate, release, resetKey]);
 
   useLayoutEffect(() => {
     const active = branch.current;
@@ -220,7 +224,7 @@ function FlowParticles({
     } else {
       writeFlowParticles(active.resources, path, active.pool.snapshot());
     }
-  }, [allocate, forward, path, reverse]);
+  }, [allocate, forward, path, resetKey, reverse]);
 
   useFrame((state, delta) => {
     if (document.hidden || (canAnimate && !canAnimate())) {
@@ -266,6 +270,7 @@ export function AnimatedFlowLine({
   random,
   showLine = true,
   canAnimate,
+  particleKey,
 }: AnimatedFlowLineProps) {
   const reducedMotion = usePrefersReducedMotion();
   const discardDeltaRef = useRef(pageHidden());
@@ -337,6 +342,7 @@ export function AnimatedFlowLine({
           depthTest={depthTest}
           depthWrite={depthWrite}
           canAnimate={canAnimate}
+          particleKey={particleKey}
           discardDeltaRef={discardDeltaRef}
         />
       )}
