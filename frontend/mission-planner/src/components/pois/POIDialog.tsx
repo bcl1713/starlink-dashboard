@@ -136,13 +136,17 @@ export function POIDialog({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Form */}
             <div>
-              <POIForm
-                poi={poi}
-                onSubmit={handleSubmit}
-                isLoading={isLoading}
-                error={error}
-                selectedCoords={currentCoords || undefined}
-              />
+              {isLoadingPOI ? (
+                <p role="status">Loading POI...</p>
+              ) : (
+                <POIForm
+                  poi={poi}
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
+                  error={error}
+                  selectedCoords={currentCoords || undefined}
+                />
+              )}
             </div>
 
             {/* Map for positioning */}
