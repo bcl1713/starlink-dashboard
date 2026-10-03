@@ -62,6 +62,13 @@ restarts arrival dwell and departure persistence without changing the confirmed
 phase. Reused collection timestamps do not advance detection; backward
 timestamps break continuity.
 
+Automatic arrival requires continuous verified observations within 100 meters
+of the active route's final waypoint for 60 seconds while in flight. Distance is
+the direct great-circle distance to that waypoint; a position beyond or beside
+the route endpoint cannot establish arrival through projected route progress.
+Leaving the radius restarts dwell. This is a proximity confirmation, with no
+additional altitude or low-speed landing requirement.
+
 Stale/invalid position suppresses ETA and countdown, with an explicit reason.
 Known names and map records remain; stale valid coordinates may identify the
 last-known next event, while invalid coordinates cannot establish route
