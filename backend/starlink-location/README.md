@@ -19,6 +19,16 @@ metrics, and obstruction detection.
   environment variables
 - **Graceful Degradation**: Returns last known good values on errors
 - **Background Updates**: Continuous telemetry generation at 10 Hz
+- **Live Route Metrics**: Background telemetry uses the application's active
+  mission route in both live and simulation modes, including route-aware ETA
+  and automatic arrival evaluation. Activation, replacement and deactivation
+  take effect on the next telemetry update.
+
+Automatic arrival requires an active route and continuous fresh GPS and verified
+speed observations near its destination for the configured detection dwell.
+Without an active route, arrival cannot be detected automatically; operators can
+use the manual flight-phase controls. Missing or stale GPS/speed observations
+restart detection without changing an already confirmed phase.
 
 ---
 
