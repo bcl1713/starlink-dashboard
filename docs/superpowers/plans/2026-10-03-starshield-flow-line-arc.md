@@ -111,7 +111,7 @@ and `update(changes: dict[str, bool]) -> OverviewLinkSettings`.
 registers it. GET and PUT `/api/overview-links/settings` return the full pair;
 PUT accepts either or both fields and atomically merges only supplied fields.
 
-- [ ] Write store tests for absent file → true/true, missing individual fields
+- [x] Write store tests for absent file → true/true, missing individual fields
   → defaults without overwriting false, all four combinations, recreation of the
   store and concurrent disjoint updates → both false. API tests assert strict
   booleans, unknown/empty/null/string/numeric updates → 422, and no initialized
@@ -125,25 +125,25 @@ PUT accepts either or both fields and atomically merges only supplied fields.
   assert store.get().x_band_link_enabled is False
   ```
 
-- [ ] From `backend/starlink-location`, run
+- [x] From `backend/starlink-location`, run
 
   ```sh
   uv run --with-requirements requirements-dev.txt pytest tests/unit/test_overview_link_settings.py tests/unit/test_main_overview_link_settings.py tests/integration/test_overview_link_settings_api.py -q
   ```
 
   expect missing-module/API failures before implementation.
-- [ ] Implement strict validation, FileLock-protected read/merge/write and
+- [x] Implement strict validation, FileLock-protected read/merge/write and
   temporary-file/`os.replace` persistence; ensure the parent directory exists
   before acquiring the file lock. Pydantic uses optional `StrictBool`
   fields, rejects extra keys and explicit null, and extracts only supplied
   fields. Persist at `data/settings/overview-links.json`. Initialize/register
   during startup and clear store/API references on shutdown like clock settings.
   Translate store read/write failures to 503, not a fabricated default pair.
-- [ ] Rerun the focused tests; require passing restart, lock/merge, failure and
+- [x] Rerun the focused tests; require passing restart, lock/merge, failure and
   startup/shutdown assertions. Confirm both Compose deployments persist the
   settings directory through their existing data mounts and the app user can
   write it.
-- [ ] Commit this task with `feat: persist overview data link visibility`.
+- [x] Commit this task with `feat: persist overview data link visibility`.
 
 ## Task 2: Confirmed settings query and Configuration controls
 
@@ -243,3 +243,19 @@ interfaces, and their focused tests provide useful gates without per-task agent
 context overhead. The user should review this plan and select native or delegated
 execution before product implementation begins. No product code, dependency
 installation, runtime project or feature branch is created by planning.
+
+## Execution status — 2026-10-03
+
+Task 1 is implemented: durable independent backend settings, strict partial
+GET/PUT contract, locked atomic merge and application startup/shutdown wiring.
+Verification: 56 focused tests passed; full backend suite 1,350 passed and
+20 skipped; canonical Ruff and Black passed. Existing settings data mounts
+cover both deployments. An isolated cached-backend container running as
+appuser saved both switches disabled and a fresh container retained them.
+This checks the current store and existing entrypoint, not a full candidate
+image deployment; final exact-candidate acceptance remains Task 7.
+
+The user requested task 1 only, followed by commit/push and a task 2 handoff.
+Tasks 2–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
+branch one task per session, using Superpowers. OpenSpec was removed at the
+user's request in a separate commit.
