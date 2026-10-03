@@ -2,7 +2,6 @@
   "gitignore": ".gitignore",
   "ignores": [
     "specs/**",
-    "openspec/**",
     ".agent/**",
     ".gemini/**",
     ".claude/**",
