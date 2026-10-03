@@ -333,9 +333,11 @@ test('retains the selected ID through invalid catalog geometry and recovers the 
   await expect(
     page.getByLabel('Globe legend').getByText('Planned satellite link')
   ).toBeVisible();
-  await expect(page.getByLabel('Map status')).not.toContainText(
-    'Planned link unavailable'
-  );
+  await expect(
+    page
+      .getByLabel('Map status')
+      .filter({ hasText: 'Planned link unavailable' })
+  ).toHaveCount(0);
   await expect(page.getByLabel('Configured map satellites')).toContainText(
     'X-6'
   );

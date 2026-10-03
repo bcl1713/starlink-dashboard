@@ -23,7 +23,7 @@ async function openGlobe(page: Page) {
     texture,
     page.viewportSize()!.width < 1000 &&
       page.viewportSize()!.width > page.viewportSize()!.height
-      ? { x: 0.4, y: 0.65 }
+      ? { x: 0.35, y: 0.4 }
       : { x: 0.5, y: 0.5 }
   );
   await expect.poll(() => sceneSnapshot(page)).not.toBeNull();
