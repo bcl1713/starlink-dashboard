@@ -655,9 +655,13 @@ test.describe('Overview metric history', () => {
         .boundingBox();
       const legend = await page.getByLabel('Globe legend').boundingBox();
       expect(metrics && legend).toBeTruthy();
+      // Short landscape layouts place the metric rail beside the globe legend.
+      // Separation on either axis keeps both readable without requiring stacking.
       expect(
         metrics!.y + metrics!.height <= legend!.y ||
-          legend!.y + legend!.height <= metrics!.y,
+          legend!.y + legend!.height <= metrics!.y ||
+          metrics!.x + metrics!.width <= legend!.x ||
+          legend!.x + legend!.width <= metrics!.x,
         `height ${height}: metrics/legend ${JSON.stringify({ metrics, legend })}`
       ).toBe(true);
       await expect(page.locator('.app-route-content')).toHaveCSS(
