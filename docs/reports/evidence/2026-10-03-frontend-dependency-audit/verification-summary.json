@@ -1,0 +1,97 @@
+{
+  "candidate_sha": "a1a3d05ff75bd9a20e74e2bf918902180ac559a2",
+  "baseline_sha": "b9b7617d245b9c07763ad320dfe4b3fab2a07f97",
+  "node": "22.12.0",
+  "npm": "10.9.0",
+  "browser": "Chromium 153.0.8010.12",
+  "unit": {
+    "before": {
+      "files": 80,
+      "passed": 613,
+      "failed": 0
+    },
+    "after": {
+      "files": 80,
+      "passed": 613,
+      "failed": 0
+    }
+  },
+  "lint": {
+    "before_exit_code": 0,
+    "after_exit_code": 0
+  },
+  "clean_install": {
+    "command": "npm ci",
+    "exit_code": 0,
+    "inherited_engine_warnings": 5
+  },
+  "production_frontend_build": {
+    "dockerfile_unchanged": true,
+    "no_cache": true,
+    "exit_code": 0
+  },
+  "full_browser_run": {
+    "command": "npx playwright test --project=chromium --reporter=line",
+    "workers": 1,
+    "retries": 0,
+    "passed": 118,
+    "failed": 3,
+    "did_not_run": 1,
+    "minutes": 21.7,
+    "exit_code": 1,
+    "failures": [
+      {
+        "file": "tests/e2e/overview-globe.spec.ts",
+        "line": 960,
+        "check": "retained stars and next-POI/landing screenshot",
+        "baseline_reproduced": true
+      },
+      {
+        "file": "tests/e2e/overview-metric-history-fullscreen.spec.ts",
+        "line": 56,
+        "check": "metrics/legend geometry at 640px height",
+        "baseline_reproduced": true
+      },
+      {
+        "file": "tests/e2e/overview-metric-history.spec.ts",
+        "line": 107,
+        "check": "retained sample motion after delayed poll at display scale 2",
+        "baseline_reproduced": true
+      }
+    ]
+  },
+  "baseline_browser_control": {
+    "original_source_and_lockfile": true,
+    "command": "PLAYWRIGHT_PORT=18212 npx playwright test tests/e2e/overview-globe.spec.ts tests/e2e/overview-metric-history-fullscreen.spec.ts tests/e2e/overview-metric-history.spec.ts --grep 'renders retained stars|fits populated plots and the compact arrival|display scale 2.*retained sample' --project=chromium --reporter=line",
+    "passed": 0,
+    "failed": 3,
+    "exit_code": 1
+  },
+  "skipped_case_followup": {
+    "check": "retains a persisted custom aircraft history window",
+    "passed": 1,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "production_browser_probe": {
+    "first_result": "failed",
+    "reason": "Blanket HTTP-error assertion rejected the explicitly expected simulation GPS 503 response after all five workflows completed.",
+    "corrected_result": "passed",
+    "workflow_count": 5,
+    "response_count": 38,
+    "page_error_count": 0
+  },
+  "merge_browser_gate": "not green; inherited failures retained",
+  "production_cleanup": {
+    "task_containers_remaining": 0,
+    "task_volumes_remaining": 0
+  },
+  "canonical_frontend_gate": {
+    "command": "./tools/verify frontend",
+    "exit_code": 0,
+    "unit_passed": 613,
+    "unit_failed": 0,
+    "production_build_exit_code": 0
+  },
+  "final_lint_exit_code": 0
+}

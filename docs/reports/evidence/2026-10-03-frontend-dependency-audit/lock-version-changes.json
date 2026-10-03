@@ -1,0 +1,1056 @@
+{
+  "base_sha": "b9b7617d245b9c07763ad320dfe4b3fab2a07f97",
+  "candidate_sha": "a1a3d05ff75bd9a20e74e2bf918902180ac559a2",
+  "changes": [
+    {
+      "path": "node_modules/@babel/code-frame",
+      "before": "7.27.1",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/compat-data",
+      "before": "7.28.5",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/core",
+      "before": "7.28.5",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/generator",
+      "before": "7.28.5",
+      "after": "7.29.8",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-compilation-targets",
+      "before": "7.27.2",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-globals",
+      "before": "7.28.0",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-module-imports",
+      "before": "7.27.1",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-module-transforms",
+      "before": "7.28.3",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-string-parser",
+      "before": "7.27.1",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-validator-identifier",
+      "before": "7.28.5",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helper-validator-option",
+      "before": "7.27.1",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/helpers",
+      "before": "7.28.4",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/parser",
+      "before": "7.28.5",
+      "after": "7.29.9",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/template",
+      "before": "7.27.2",
+      "after": "7.29.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/traverse",
+      "before": "7.28.5",
+      "after": "7.29.8",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@babel/types",
+      "before": "7.28.5",
+      "after": "7.29.8",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@esbuild/aix-ppc64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/android-arm",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/android-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/android-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/darwin-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/darwin-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/freebsd-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/freebsd-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-arm",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-ia32",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-loong64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-mips64el",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-ppc64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-riscv64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-s390x",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/linux-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/netbsd-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/netbsd-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/openbsd-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/openbsd-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/openharmony-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/sunos-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/win32-arm64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/win32-ia32",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@eslint-community/eslint-utils",
+      "before": "4.9.0",
+      "after": "4.10.1",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@humanfs/core",
+      "before": "0.19.1",
+      "after": "0.19.2",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@humanfs/node",
+      "before": "0.16.7",
+      "after": "0.16.8",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@humanfs/types",
+      "before": null,
+      "after": "0.15.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@napi-rs/lzma-linux-x64-gnu",
+      "before": null,
+      "after": "1.5.1",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@nodelib/fs.scandir",
+      "before": "2.1.5",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@nodelib/fs.stat",
+      "before": "2.0.5",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@nodelib/fs.walk",
+      "before": "1.2.8",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@rollup/rollup-android-arm-eabi",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-android-arm64",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-darwin-arm64",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-darwin-x64",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-freebsd-arm64",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-freebsd-x64",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-arm-gnueabihf",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-arm-musleabihf",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-arm64-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-arm64-musl",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-loong64-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-loong64-musl",
+      "before": null,
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-ppc64-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-ppc64-musl",
+      "before": null,
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-riscv64-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-riscv64-musl",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-s390x-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-x64-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-linux-x64-musl",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-openbsd-x64",
+      "before": null,
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-openharmony-arm64",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-win32-arm64-msvc",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-win32-ia32-msvc",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-win32-x64-gnu",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@rollup/rollup-win32-x64-msvc",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@standard-schema/spec",
+      "before": "1.0.0",
+      "after": "1.1.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core",
+      "before": null,
+      "after": "1.6.0",
+      "development_only": false,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime",
+      "before": null,
+      "after": "1.6.0",
+      "development_only": false,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads",
+      "before": null,
+      "after": "1.1.0",
+      "development_only": false,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime",
+      "before": null,
+      "after": "1.0.7",
+      "development_only": false,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util",
+      "before": null,
+      "after": "0.10.1",
+      "development_only": false,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/tslib",
+      "before": null,
+      "after": "2.8.1",
+      "development_only": false,
+      "optional": true
+    },
+    {
+      "path": "node_modules/@types/estree",
+      "before": "1.0.8",
+      "after": "1.0.9",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/eslint-plugin",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/parser",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/project-service",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/scope-manager",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/tsconfig-utils",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/type-utils",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/types",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/typescript-estree",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+      "before": "2.0.2",
+      "after": "2.1.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch",
+      "before": "9.0.5",
+      "after": "9.0.9",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/semver",
+      "before": "7.7.3",
+      "after": "7.8.5",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/utils",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@typescript-eslint/visitor-keys",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/expect",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/mocker",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/pretty-format",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/runner",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/snapshot",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/spy",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/@vitest/utils",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/agent-base",
+      "before": null,
+      "after": "6.0.2",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/ajv",
+      "before": "6.12.6",
+      "after": "6.15.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/axios",
+      "before": "1.13.2",
+      "after": "1.20.0",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/brace-expansion",
+      "before": "1.1.12",
+      "after": "1.1.21",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/braces",
+      "before": "3.0.3",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/chai",
+      "before": "6.2.1",
+      "after": "6.3.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/cookie",
+      "before": "1.0.2",
+      "after": "1.1.1",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/es-module-lexer",
+      "before": "1.7.0",
+      "after": "2.3.2",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/es-object-atoms",
+      "before": "1.1.1",
+      "after": "1.1.2",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/esbuild",
+      "before": "0.25.12",
+      "after": "0.28.2",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/expect-type",
+      "before": "1.2.2",
+      "after": "1.4.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/fast-glob",
+      "before": "3.3.3",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/fast-glob/node_modules/glob-parent",
+      "before": "5.1.2",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/fastq",
+      "before": "1.19.1",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/fill-range",
+      "before": "7.1.1",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/flatted",
+      "before": "3.3.3",
+      "after": "3.4.4",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/follow-redirects",
+      "before": "1.15.11",
+      "after": "1.16.1",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/form-data",
+      "before": "4.0.5",
+      "after": "4.0.6",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/hasown",
+      "before": "2.0.2",
+      "after": "2.0.4",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/https-proxy-agent",
+      "before": null,
+      "after": "5.0.1",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/is-number",
+      "before": "7.0.0",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/js-yaml",
+      "before": "4.1.1",
+      "after": "4.3.2",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/merge2",
+      "before": "1.4.1",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/micromatch",
+      "before": "4.0.8",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/minimatch",
+      "before": "3.1.2",
+      "after": "3.1.5",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/nanoid",
+      "before": "3.3.11",
+      "after": "3.3.19",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/obug",
+      "before": null,
+      "after": "2.2.1",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/picomatch",
+      "before": "2.3.1",
+      "after": "4.0.7",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/postcss",
+      "before": "8.5.6",
+      "after": "8.5.28",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/proxy-from-env",
+      "before": "1.1.0",
+      "after": "2.1.0",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/queue-microtask",
+      "before": "1.2.3",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/react-router",
+      "before": "7.9.6",
+      "after": "7.18.4",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/react-router-dom",
+      "before": "7.9.6",
+      "after": "7.18.4",
+      "development_only": false,
+      "optional": false
+    },
+    {
+      "path": "node_modules/reusify",
+      "before": "1.1.0",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/rollup",
+      "before": "4.53.3",
+      "after": "4.64.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/run-parallel",
+      "before": "1.2.0",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/std-env",
+      "before": "3.10.0",
+      "after": "4.3.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/tinyexec",
+      "before": "0.3.2",
+      "after": "1.3.1",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/tinyglobby/node_modules/picomatch",
+      "before": "4.0.3",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/tinyrainbow",
+      "before": "3.0.3",
+      "after": "3.2.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/to-regex-range",
+      "before": "5.0.1",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/ts-api-utils",
+      "before": "2.1.0",
+      "after": "2.5.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/typescript-eslint",
+      "before": "8.47.0",
+      "after": "8.48.0",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/vite",
+      "before": "7.2.4",
+      "after": "7.3.6",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/vite/node_modules/picomatch",
+      "before": "4.0.3",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/vitest",
+      "before": "4.0.13",
+      "after": "4.1.11",
+      "development_only": true,
+      "optional": false
+    },
+    {
+      "path": "node_modules/vitest/node_modules/picomatch",
+      "before": "4.0.3",
+      "after": null,
+      "development_only": true,
+      "optional": false
+    }
+  ]
+}
