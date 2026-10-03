@@ -43,7 +43,7 @@ undefined`, `nowMs: number`, `statusRequestFailed: boolean`,
 It returns `starshieldVisible: boolean`, `xBandVisible: boolean`,
 `starshieldFlow: FlowEmitters` and `xBandFlow: FlowEmitters`.
 
-- [ ] Write tests for the four settings pairs, unconfirmed settings, missing PoP,
+- [x] Write tests for the four settings pairs, unconfirmed settings, missing PoP,
   invalid aircraft, status age 9,999/10,000 ms, failed requests with cached data
   and existing clock-skew rules. An unavailable/false metric flag or nonfinite,
   negative/zero throughput disables only that direction. Missing/invalid latency
@@ -59,14 +59,14 @@ It returns `starshieldVisible: boolean`, `xBandVisible: boolean`,
   expect(preset.forward.failure).toBeUndefined();
   ```
 
-- [ ] Run the focused tests from the frontend:
+- [x] Run the focused tests from the frontend:
 
   ```sh
   npm run test:unit -- src/pages/overview-flow-consumers.test.ts src/pages/overview-link-state.test.ts
   ```
 
   expect new signatures/eligibility assertions to fail.
-- [ ] Implement position age using the original timestamp and request error,
+- [x] Implement position age using the original timestamp and request error,
   separately from network flags. Starshield line needs enabled setting, fresh
   valid position and valid arc; network gaps suppress particles only. Preserve
   X-band retained geometry rules, but emit only with fresh geometry and current
@@ -76,10 +76,10 @@ It returns `starshieldVisible: boolean`, `xBandVisible: boolean`,
   retains the existing modulation. Loss must be available/finite/in [0,100].
   X-band alone uses the 4/4/500 preset, no loss, and brightness floor 1.35 so
   its illustrative activity remains visible. Leave route emitters unchanged.
-- [ ] Rerun focused tests plus `status-freshness.test.ts` and
+- [x] Rerun focused tests plus `status-freshness.test.ts` and
   `overview-metric-readout.test.ts`; require independent activity and no writes
   to status, metric history or operational state.
-- [ ] Commit with `fix(overview): separate measured traffic from x-band activity`.
+- [x] Commit with `fix(overview): separate measured traffic from x-band activity`.
 
 ## Task 5: Immediate particle clearing and lifecycle control
 

@@ -46,7 +46,7 @@ import { projectAircraftHistory } from './overview-history-projection';
 import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
 import { AnimatedFlowLine } from './AnimatedFlowLine';
 import {
-  activeLinkFlowEmitters,
+  measuredTrafficFlowEmitters,
   routeFlowEmitters,
 } from './overview-flow-consumers';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
@@ -354,7 +354,7 @@ export function OverviewPage() {
     : null;
   const activeLinkFlow = useMemo(() => {
     const network = status?.network;
-    return activeLinkFlowEmitters(
+    return measuredTrafficFlowEmitters(
       network
         ? {
             latency_ms: network.latency_ms ?? undefined,

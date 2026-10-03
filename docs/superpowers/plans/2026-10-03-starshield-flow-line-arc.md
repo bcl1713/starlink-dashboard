@@ -273,7 +273,18 @@ Verification: 48 new arc tests, 78 focused geometry/projection tests and all
 495 frontend unit tests passed; ESLint, full source Prettier, filename checks
 and production build passed. Existing test/build warnings remain.
 
-The user requested task 3 only, followed by commit/push and a task 4 handoff.
-Tasks 4–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
+Task 4 is implemented: independent visibility/activity policies use original
+status acquisition age, request errors, valid aircraft projection and explicit
+metric availability. Missing latency/loss omits modulation; measured directions
+retain logarithmic activity, fixed speed and particle caps. X-band uses only the
+steady 4/4 Mbps, 500 ms preset with a 1.35 brightness floor and no loss. Cached
+X-band line geometry is retained while ineligible activity stops. Verification:
+115 focused flow/state/freshness/readout tests and all 562 frontend unit tests
+passed; ESLint, full source Prettier and production build passed. Existing
+test/build warnings remain. Overview's helper import/call was mechanically
+renamed to keep compilation working; scene integration remains Task 6.
+
+The user requested task 4 only, followed by commit/push and a task 5 handoff.
+Tasks 5–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
 branch one task per session, using Superpowers. OpenSpec was removed at the
 user's request in a separate commit.
