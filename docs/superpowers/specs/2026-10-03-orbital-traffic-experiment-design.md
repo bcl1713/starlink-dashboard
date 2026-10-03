@@ -2,7 +2,8 @@
 
 ## Status, separation, and authority
 
-Draft for review. This is the second, deferred effort, separate from the
+Approved as a deferred design by the user on 2026-10-03. This is the second
+effort, separate from the
 [traffic arc and link controls](2026-10-03-overview-traffic-paths-design.md).
 The first effort ships independently. Orbital work must not delay it or other
 key features, and must not add dependencies or placeholder controls to it.

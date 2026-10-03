@@ -2,14 +2,14 @@
 
 ## Status and authority
 
-Draft for user review, based on `dev` commit
+Approved by the user on 2026-10-03, based on `dev` commit
 `bcf15704bd71b9abb7857b23ce9dfc2a06e58ad5`. This document specifies proposed
 behavior, not a shipped feature or an executable implementation plan.
 
-The authorized work remains documentation on a docs branch. Merge the specs to
-`dev` only after user approval. That approval permits the documentation merge
-only; do not move on to implementation planning or build the feature without a
-subsequent explicit request.
+The user authorized merging the approved specs from the docs branch to `dev`.
+That approval permits the documentation merge only; do not move on to
+implementation planning or build the feature without a subsequent explicit
+request.
 
 This is the first, independently deliverable effort. Its eventual feature branch
 starts from the then-current `dev`. The separate
