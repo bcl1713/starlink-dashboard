@@ -295,6 +295,5 @@ and all 587 frontend unit tests passed; ESLint, full source Prettier and
 production build passed. Existing test/build warnings remain.
 
 Task 6 is implemented; see [execution status](2026-10-03-starshield-flow-line-arc-tasks-4-7.md#task-6-execution-status).
-Task 7 remains pending. Continue `feat/starshield-flow-line-arc` Task 7 only, then stop.
-Use Superpowers, preserving a12a61b5, abb650ab and concurrent ADS-B documents.
-OpenSpec remains removed at the user's request.
+Task 7 execution and gaps are recorded in the split plan. Stop after Task 7.
+Use Superpowers; preserve a12a61b5, abb650ab and concurrent ADS-B documents.

@@ -196,13 +196,13 @@ and `docs/deployment/portainer-ghcr.md`. Keep exact-candidate final evidence
 in the existing durable acceptance evidence store; summarize development checks
 in the PR description without modifying the candidate after final acceptance.
 
-- [ ] Add browser scenarios for all four toggle combinations, reload, immediate
+- [x] Add browser scenarios for all four toggle combinations, reload, immediate
   navigation/shared-query updates, initial/delayed/failed GET and failed save,
   warning → normal, one missing direction, missing latency/loss, expired status,
   missing PoP and selection failure. Use WebGL painted readiness and screenshots
   at 1920×1080 plus existing mobile/fullscreen layouts. Separate deterministic
   intercepted telemetry cases from real API persistence checks in evidence.
-- [ ] Run the browser scenarios from the frontend:
+- [x] Run the browser scenarios from the frontend:
 
   ```sh
   npx playwright test tests/e2e/overview-traffic-paths.spec.ts tests/e2e/overview-planned-satellite-legend.spec.ts --project=chromium
@@ -211,11 +211,16 @@ in the PR description without modifying the candidate after final acceptance.
   Use an available configured browser; require passing
   assertions and inspect captures for readable opposite-direction activity.
   This development test does not substitute for exact-SHA final acceptance.
-- [ ] Document shared settings path/defaults, independent switches, measured arc
-  versus illustrative X-band and unchanged collection/status behavior. From root
-  run `ACCEPTANCE_POLICY_BASE_SHA=<execution-base-40-hex-SHA> ./tools/verify all`;
-  require successful static, backend, frontend tests and production build.
-- [ ] Commit tests/docs with
+- [x] Document shared settings path/defaults, independent switches, measured arc
+  versus illustrative X-band and unchanged collection/status behavior.
+- [ ] Canonical verification: from root run
+
+  ```sh
+  ACCEPTANCE_POLICY_BASE_SHA=<execution-base-40-hex-SHA> ./tools/verify all
+  ```
+
+  Require successful static, backend, frontend tests and production build.
+- [x] Commit tests/docs with
   `test(overview): verify traffic arc and link lifecycle`.
 - [ ] On the resulting committed candidate run exact-SHA CDP acceptance through production
   Nginx/backend using the existing acceptance workflow. Follow
@@ -236,3 +241,35 @@ in the PR description without modifying the candidate after final acceptance.
   Final acceptance identifies this exact candidate; any subsequent product
   change requires fresh applicable checks. Report outcomes and remaining
   hardware validation without merging or starting orbital work implicitly.
+
+### Task 7 execution record
+
+Task 7 adds deterministic intercepted browser scenarios and real Three resource
+observations, plus shared-settings/deployment documentation. All four switch
+pairs, navigation/reload, delayed/failed reads and failed saves, independent
+telemetry gaps, warnings, expiration, PoP/selection failures and responsive/
+fullscreen/reduced-motion behavior are covered. Opposite-direction motion is
+observed across painted frames. Twenty same-scene cycles plateau at 16 geometries
+off and 22 on; ten retired renderers release all geometries. Hidden recovery uses
+an injected visibility event; native tab/OS suspension remains a verification gap.
+
+Development real API checks use isolated production Nginx/backend/Prometheus:
+all four pairs survive task-backend restarts, concurrent disjoint edits persist,
+and original measured history/collection continues. Evidence identifies these
+checks separately from intercepted telemetry. Containers/networks are cleaned;
+task-owned persistence volumes are retained.
+
+Canonical base is `a7e960639ab15359c3e562d0599c0b062c31426d`. Backend: 1,350 passed,
+20 skipped. Frontend: 610 passed and production build passed. Changed docs lint,
+ESLint, link checks and independent typing-policy tests pass. Canonical `all`
+remains blocked by existing table alignment errors in the preserved ADS-B design;
+no successful canonical-all claim is made.
+
+Commit/push is followed by exact-SHA checks without editing the candidate again.
+Final checkbox remains open: the existing platform journey certifies V2 and has a
+180-second adapter limit, so it cannot confer full traffic acceptance authority.
+Supplemental production rendering/persistence observations and platform outcomes
+are retained under `/srv/starlink-acceptance/evidence/traffic-task7-*`, qualified
+by candidate SHA, with checksums. The unknown deployment laptop and native hidden
+page behavior remain explicit hardware/verification gaps. Stop after Task 7;
+do not merge or start ADS-B/orbital work.

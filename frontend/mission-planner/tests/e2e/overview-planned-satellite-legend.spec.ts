@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { waitForGlobeVisualReady } from './support/globe-visual-ready';
 
-test.use({ video: 'on' });
+test.use({ video: 'on', viewport: { width: 1920, height: 1080 } });
 async function planningFixture(page: Page) {
   let selection: { satellite_id: string | null; state?: string } = {
     satellite_id: 'X-6',
@@ -22,9 +22,13 @@ async function planningFixture(page: Page) {
   // These cases verify API/layer behavior. Keep their painted readiness sample
   // on lit terrain; natural midnight lighting has separate capture coverage.
   const now = '2026-10-02T12:00:00Z';
-  await page.clock.install({ time: new Date(now) });
+  await page.clock.setFixedTime(new Date(now));
   await page.route('**/api/**', async (route) => {
     const endpoint = new URL(route.request().url()).pathname;
+    if (endpoint === '/api/overview-links/settings')
+      return route.fulfill({
+        json: { starshield_link_enabled: true, x_band_link_enabled: true },
+      });
     if (endpoint === '/api/active-x-link')
       return route.fulfill({
         status: selectionError ? 503 : 200,
@@ -54,7 +58,7 @@ async function planningFixture(page: Page) {
     if (endpoint === '/api/status')
       return route.fulfill({
         json: {
-          timestamp: new Date().toISOString(),
+          timestamp: now,
           position: { latitude: 0, longitude: -50, altitude: 35000 },
           ground_entry_point: { latitude: 2, longitude: -48 },
         },
@@ -112,7 +116,14 @@ test('keeps selection planning-only and conditional layers honest through errors
     (response) => response.url().endsWith('/earth-day-hi.jpg') && response.ok()
   );
   await page.goto('/overview');
-  await waitForGlobeVisualReady(page, texture);
+  await waitForGlobeVisualReady(
+    page,
+    texture,
+    page.viewportSize()!.width < 1000 &&
+      page.viewportSize()!.width > page.viewportSize()!.height
+      ? { x: 0.4, y: 0.65 }
+      : { x: 0.5, y: 0.5 }
+  );
   const legend = page.getByLabel('Globe legend');
   const card = page.getByRole('region', { name: 'Planned satellite' });
   await expect(legend.locator('li')).toHaveText([
@@ -120,6 +131,7 @@ test('keeps selection planning-only and conditional layers honest through errors
     'Planned route',
     'Track history',
     'Ground entry point',
+    'Traffic path',
     'Planned satellite link',
   ]);
   await expect(card).toHaveText('X-BANDX-6PLANNED SATELLITE');
@@ -185,7 +197,14 @@ for (const viewport of [
         response.url().endsWith('/earth-day-hi.jpg') && response.ok()
     );
     await page.goto('/overview');
-    await waitForGlobeVisualReady(page, texture);
+    await waitForGlobeVisualReady(
+      page,
+      texture,
+      page.viewportSize()!.width < 1000 &&
+        page.viewportSize()!.width > page.viewportSize()!.height
+        ? { x: 0.4, y: 0.65 }
+        : { x: 0.5, y: 0.5 }
+    );
     const card = page.getByRole('region', { name: 'Planned satellite' });
     await expect(card).toContainText('NO SATELLITE SELECTED');
     await expect(
@@ -288,7 +307,14 @@ test('retains the selected ID through invalid catalog geometry and recovers the 
     (response) => response.url().endsWith('/earth-day-hi.jpg') && response.ok()
   );
   await page.goto('/overview');
-  await waitForGlobeVisualReady(page, texture);
+  await waitForGlobeVisualReady(
+    page,
+    texture,
+    page.viewportSize()!.width < 1000 &&
+      page.viewportSize()!.width > page.viewportSize()!.height
+      ? { x: 0.4, y: 0.65 }
+      : { x: 0.5, y: 0.5 }
+  );
   await expect(
     page.getByRole('region', { name: 'Planned satellite' })
   ).toHaveText('X-BANDX-6PLANNED SATELLITE');
@@ -300,10 +326,10 @@ test('retains the selected ID through invalid catalog geometry and recovers the 
   ).toHaveCount(0);
   fixture.catalog([{ satellite_id: 'X-6', transport: 'X', longitude: -50 }]);
   await page.reload();
-  await page
+  const expandLegend = page
     .getByLabel('Globe legend')
-    .getByRole('button', { name: 'Legend', exact: true })
-    .click();
+    .getByRole('button', { name: 'Legend', exact: true });
+  if (await expandLegend.count()) await expandLegend.click();
   await expect(
     page.getByLabel('Globe legend').getByText('Planned satellite link')
   ).toBeVisible();

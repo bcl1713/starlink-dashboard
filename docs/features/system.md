@@ -39,6 +39,27 @@ configured forbidden relative-azimuth rule; it does not establish a connection
 or introduce a new alarm. Retained coordinates and geometry can be last known.
 Satellite catalog editing remains in Satellite Manager.
 
+### Shared data link visibility
+
+**Overview data links** contains independent **Starshield data link** and
+**X-band data link** switches. Both default to `true`. They use
+`GET /api/overview-links/settings` and partial
+`PUT /api/overview-links/settings` updates with strict boolean fields
+`starshield_link_enabled` and `x_band_link_enabled`. A save returns the full pair;
+changing one field preserves the other, including concurrent disjoint edits.
+
+Settings persist atomically at `data/settings/overview-links.json`, survive
+backend restarts and synchronize viewers through the shared query (five-second
+visible polling and focus refresh). They are installation settings, not browser
+storage. Before a confirmed read, both switches are disabled and both links are
+hidden. Read/save failures retain the last confirmed pair and show error feedback;
+saves do not optimistically change visibility.
+
+Starshield visualizes measured aircraft–PoP traffic. X-band activity is a local
+illustration; neither switch changes telemetry collection, metric history,
+configured selection, warning rules or operational status. See
+[Overview data links](overview.md#independent-data-links) for rendering behavior.
+
 ### Configuration API
 
 Runtime configuration management via REST API.
