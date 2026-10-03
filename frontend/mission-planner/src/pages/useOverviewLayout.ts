@@ -44,7 +44,9 @@ export function useOverviewLayout(
       const rootFontSize =
         parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const input = `${width}/${height}/${rootFontSize}/${contentKey}`;
-      const geometry = `${width}/${height}/${rootFontSize}`;
+      // Scrollbars change client dimensions as the flow fallback expands.
+      // Reset the latch only when the bounded frame itself changes size.
+      const geometry = `${host.offsetWidth}/${host.offsetHeight}/${rootFontSize}`;
       if (
         geometry !== flowLatch.current.geometry ||
         (contentReady && !flowLatch.current.ready)
