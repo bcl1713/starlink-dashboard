@@ -222,8 +222,8 @@ in the PR description without modifying the candidate after final acceptance.
   Require successful static, backend, frontend tests and production build.
 - [x] Commit tests/docs with
   `test(overview): verify traffic arc and link lifecycle`.
-- [ ] On the resulting committed candidate run exact-SHA CDP acceptance through production
-  Nginx/backend using the existing acceptance workflow. Follow
+- [ ] On the resulting committed candidate run exact-SHA CDP acceptance through
+  production Nginx/backend using the existing acceptance workflow. Follow
   [cloud Docker discovery](../../development/cloud-docker.md) and the
   [acceptance platform workflow](../../operations/acceptance-platform.md),
   preserve actor
@@ -266,8 +266,8 @@ remains blocked by existing table alignment errors in the preserved ADS-B design
 no successful canonical-all claim is made.
 
 Commit/push is followed by exact-SHA checks without editing the candidate again.
-Final checkbox remains open: the existing platform journey certifies V2 and has a
-180-second adapter limit, so it cannot confer full traffic acceptance authority.
+Final checkbox remains open: the existing platform journey certifies V2, with a
+180-second adapter limit. It cannot confer full traffic acceptance authority.
 Supplemental production rendering/persistence observations and platform outcomes
 are retained under `/srv/starlink-acceptance/evidence/traffic-task7-*`, qualified
 by candidate SHA, with checksums. The unknown deployment laptop and native hidden

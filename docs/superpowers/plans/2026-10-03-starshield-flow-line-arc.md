@@ -82,7 +82,7 @@ persistence, initialization and shutdown patterns to follow.
 3. Safe arc vertices can still produce chords inside Earth; test every segment's
    minimum radius, not just vertex radii, in Task 3.
 4. A healthy status response with unavailable network metrics still permits
-   X-band activity; failed requests and age exactly 10,000 ms do not. Test Task 4.
+   X-band activity; failure or age exactly 10,000 ms stops it. Test Task 4.
 5. Old particles/emission remainders must not reappear after warning, loss of one
    direction, hidden-page return or reduced-motion changes; test Task 5.
 
