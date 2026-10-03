@@ -266,7 +266,8 @@ selection refreshes remain explicit. A selected ID can remain visible while its
 configured map geometry is unavailable.
 
 The legend contains only rendered layers: **Aircraft**, **Planned route**,
-**Track history**, **Ground entry point** and **Planned satellite link**. The
+**Track history**, **Ground entry point**, **Traffic path** and
+**Planned satellite link**. The
 planned-link sample is thicker than the track sample and retains the supported
 blue/red normal/warning styling. Short route, status/history and satellite
 exceptions appear separately in **Map status**; warning text names the existing
@@ -281,16 +282,18 @@ name lists even when globe occlusion or POI collision handling hides a label.
 Settings, counts and GEO look-angle analysis are in **Configuration**, rather
 than additional legend rows.
 
-### 6. [System Configuration & Simulation](./system.md)
+### Independent data links
 
-Environment configuration, REST API documentation, and simulation mode
-capabilities (realistic telemetry, route following).
-
----
+Configuration's shared **Starshield data link** and **X-band data link** switches
+default on. Violet **Traffic path** uses fresh measured aircraft–PoP traffic:
+amber upload, cyan download. X-band's local 4/4 Mbps, 500 ms activity is illustrative;
+warning stops particles and retains its enabled red line. Hiding links preserves
+collection, metrics, warnings, route/history, markers and camera. Hidden pages
+clear/pause particles; reduced motion keeps lines. See
+[shared settings](system.md#shared-data-link-visibility) for persistence/errors.
+The deployment laptop still requires hardware validation.
 
 ## Related Documentation
 
-- [Main README](../../README.md) - Quick start and overview
-- [Setup Guide](../setup/README.md) - Installation instructions
-- [API Reference](../api/README.md) - Complete API docs
-- [Troubleshooting](../troubleshooting/README.md) - Common issues
+See [setup](../setup/README.md), [API reference](../api/README.md),
+[troubleshooting](../troubleshooting/README.md) and [README](../../README.md).

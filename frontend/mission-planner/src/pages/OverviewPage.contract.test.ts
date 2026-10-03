@@ -7,14 +7,14 @@ const pageSource = readFileSync(
 );
 
 describe('OverviewPage generated POI legend and overlay layout contracts', () => {
-  it('shares status with network panels while preserving aircraft, X-band and shared history consumers', () => {
+  it('shares status and confirmed settings while preserving aircraft, X-band and shared history consumers', () => {
     expect(pageSource).toMatch(
       /<OverviewMetricHistoryPanels[\s\S]*?status=\{status\}[\s\S]*?statusError=\{Boolean\(statusError\)\}/
     );
     expect(pageSource.match(/\buseStatus\(\)/g)).toHaveLength(1);
     expect(pageSource.match(/\buseOverviewHistory\(\)/g)).toHaveLength(1);
+    expect(pageSource.match(/\buseOverviewLinkSettings\(\)/g)).toHaveLength(1);
     expect(pageSource).toContain('projectAircraftPosition(status ?? {})');
-    expect(pageSource).toMatch(/projectConfiguredXBandActiveLink\(\s*status,/);
     expect(pageSource).toMatch(
       /projectAircraftHistory\(\s*overviewHistory\?\.series \?\? \{\},/
     );

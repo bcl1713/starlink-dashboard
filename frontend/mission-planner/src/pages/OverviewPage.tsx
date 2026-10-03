@@ -33,7 +33,10 @@ import {
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
-import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
+import {
+  projectConfiguredXBandSatellite3d,
+  projectConfiguredXBandSatellites,
+} from './x-band-satellites-projection';
 import { useActiveXLink } from '@/hooks/api/useActiveXLink';
 import { satcomLineStyle } from './satcom-link-style';
 import {
@@ -45,10 +48,11 @@ import { useOverviewHistory } from '@/hooks/api/useOverviewHistory';
 import { projectAircraftHistory } from './overview-history-projection';
 import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
 import { AnimatedFlowLine } from './AnimatedFlowLine';
-import {
-  activeLinkFlowEmitters,
-  routeFlowEmitters,
-} from './overview-flow-consumers';
+import { routeFlowEmitters } from './overview-flow-consumers';
+import { useOverviewLinkSettings } from '@/hooks/api/useOverviewLinkSettings';
+import { deriveOverviewLinkState } from './overview-link-state';
+import { projectTrafficArc } from './overview-traffic-arc';
+import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { OverviewClockPanel } from './OverviewClockPanel';
 import { OverviewFullscreenControl } from './OverviewFullscreenControl';
@@ -317,7 +321,12 @@ export function OverviewPage() {
     data: status,
     isLoading: isLoadingStatus,
     error: statusError,
+    failureCount: statusFailureCount,
   } = useStatus();
+  // Refetch retries keep cached data and leave error null until exhausted.
+  // Link activity stops on the first failed attempt and resumes on success.
+  const statusRequestFailed = Boolean(statusError) || statusFailureCount > 0;
+  const { data: overviewLinkSettings } = useOverviewLinkSettings();
   const {
     data: overviewHistory,
     isLoading: isLoadingOverviewHistory,
@@ -343,40 +352,128 @@ export function OverviewPage() {
     isLoading: isLoadingActiveXLink,
     error: activeXLinkError,
   } = useActiveXLink();
-  const activeConfiguredXBandSatelliteId =
-    projectActiveConfiguredXBandSatelliteId(activeXLink);
-  const activeConfiguredXBandLink = activeConfiguredXBandSatelliteId
-    ? projectConfiguredXBandActiveLink(
-        status,
-        satellites,
-        activeConfiguredXBandSatelliteId
-      )
-    : null;
-  const activeLinkFlow = useMemo(() => {
-    const network = status?.network;
-    return activeLinkFlowEmitters(
-      network
-        ? {
-            latency_ms: network.latency_ms ?? undefined,
-            throughput_down_mbps: network.throughput_down_mbps ?? undefined,
-            throughput_up_mbps: network.throughput_up_mbps ?? undefined,
-            packet_loss_percent: network.packet_loss_percent ?? undefined,
-          }
-        : undefined
-    );
-  }, [status?.network]);
-  const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
+  const aircraftPosition = projectAircraftPosition(status ?? {});
+  const aircraftScenePosition = projectAircraftScenePosition(status);
+  const groundEntryPoint = projectGroundEntryPoint(status ?? {});
+  const aircraftLatitude = aircraftScenePosition?.latitude;
+  const aircraftLongitude = aircraftScenePosition?.longitude;
+  const aircraftAltitudeFeet = aircraftScenePosition?.altitudeFeet;
   const configuredXBandSatellites =
     projectConfiguredXBandSatellite3d(satellites);
+  const activeConfiguredXBandSatelliteId =
+    projectActiveConfiguredXBandSatelliteId(activeXLink);
+  const activeSatelliteLongitude = projectConfiguredXBandSatellites(
+    satellites
+  ).find(
+    (satellite) => satellite.satelliteId === activeConfiguredXBandSatelliteId
+  )?.longitude;
+  const activeConfiguredXBandLink = useMemo(() => {
+    if (
+      !activeConfiguredXBandSatelliteId ||
+      activeSatelliteLongitude === undefined
+    )
+      return null;
+    return projectConfiguredXBandActiveLink(
+      {
+        position: {
+          latitude: aircraftLatitude,
+          longitude: aircraftLongitude,
+          altitude: aircraftAltitudeFeet,
+        },
+      },
+      [
+        {
+          satellite_id: activeConfiguredXBandSatelliteId,
+          transport: 'X',
+          longitude: activeSatelliteLongitude,
+        },
+      ],
+      activeConfiguredXBandSatelliteId
+    );
+  }, [
+    activeConfiguredXBandSatelliteId,
+    activeSatelliteLongitude,
+    aircraftLatitude,
+    aircraftLongitude,
+    aircraftAltitudeFeet,
+  ]);
+  const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
   const plannedSatelliteState = derivePlannedSatelliteState(
     activeXLink,
     isLoadingActiveXLink,
     Boolean(activeXLinkError)
   );
 
-  const aircraftPosition = projectAircraftPosition(status ?? {});
-  const aircraftScenePosition = projectAircraftScenePosition(status);
-  const groundEntryPoint = projectGroundEntryPoint(status ?? {});
+  const trafficGeometryEligible = Boolean(
+    overviewLinkSettings?.starshield_link_enabled &&
+      aircraftScenePosition &&
+      groundEntryPoint &&
+      status &&
+      !statusRequestFailed &&
+      !isStatusStale(status.timestamp, currentTime)
+  );
+  const popLatitude = groundEntryPoint?.latitude;
+  const popLongitude = groundEntryPoint?.longitude;
+  const trafficPoints = useMemo(() => {
+    if (
+      !trafficGeometryEligible ||
+      popLatitude === undefined ||
+      popLongitude === undefined
+    )
+      return [];
+    // Reconstruct from scalar endpoints so new polled status objects and metric
+    // changes retain the same prepared arc and renderer resources.
+    return projectTrafficArc(
+      projectAircraftScenePosition({
+        position: {
+          latitude: aircraftLatitude,
+          longitude: aircraftLongitude,
+          altitude: aircraftAltitudeFeet,
+        },
+      }),
+      { latitude: popLatitude, longitude: popLongitude }
+    );
+  }, [
+    trafficGeometryEligible,
+    aircraftLatitude,
+    aircraftLongitude,
+    aircraftAltitudeFeet,
+    popLatitude,
+    popLongitude,
+  ]);
+  const linkState = deriveOverviewLinkState({
+    settings: overviewLinkSettings,
+    status,
+    nowMs: currentTime,
+    statusRequestFailed,
+    hasTrafficGeometry: trafficPoints.length >= 2,
+    hasXBandGeometry: Boolean(activeConfiguredXBandLink),
+    selectionState: activeXLink?.state ?? null,
+    selectionRequestFailed: Boolean(activeXLinkError || satellitesError),
+  });
+  const starshieldCanAnimate =
+    linkState.starshieldVisible &&
+    (linkState.starshieldFlow.forward.enabled ||
+      linkState.starshieldFlow.reverse.enabled);
+  const xBandCanAnimate =
+    linkState.xBandVisible &&
+    (linkState.xBandFlow.forward.enabled ||
+      linkState.xBandFlow.reverse.enabled);
+  const statusTimestamp = status?.timestamp;
+  const canAnimateStarshield = useCallback(
+    () =>
+      starshieldCanAnimate &&
+      typeof statusTimestamp === 'string' &&
+      !isStatusStale(statusTimestamp, Date.now()),
+    [starshieldCanAnimate, statusTimestamp]
+  );
+  const canAnimateXBand = useCallback(
+    () =>
+      xBandCanAnimate &&
+      typeof statusTimestamp === 'string' &&
+      !isStatusStale(statusTimestamp, Date.now()),
+    [xBandCanAnimate, statusTimestamp]
+  );
 
   const mapMessages = [
     routeStatus,
@@ -602,7 +699,8 @@ export function OverviewPage() {
               route={hasRenderableRoute}
               history={aircraftHistoryPoints.length >= 2}
               groundEntryPoint={Boolean(groundEntryPoint)}
-              plannedLink={Boolean(activeConfiguredXBandLink)}
+              trafficPath={linkState.starshieldVisible}
+              plannedLink={linkState.xBandVisible}
               linkState={activeXLink?.state ?? null}
             />
           </div>
@@ -697,18 +795,31 @@ export function OverviewPage() {
                 globeOccluder={globeOccluder}
               />
             )}
-            {activeConfiguredXBandLink && (
-              <>
-                <AnimatedFlowLine
-                  points={activeConfiguredXBandLink.points}
-                  forward={activeLinkFlow.forward}
-                  reverse={activeLinkFlow.reverse}
-                  outer={activeXBandLineStyle.outer}
-                  glow={activeXBandLineStyle.glow}
-                  core={activeXBandLineStyle.core}
-                  depthWrite={false}
-                />
-              </>
+            {linkState.starshieldVisible && (
+              <AnimatedFlowLine
+                points={trafficPoints}
+                forward={linkState.starshieldFlow.forward}
+                reverse={linkState.starshieldFlow.reverse}
+                outer={TRAFFIC_PATH_STYLE.outer}
+                glow={TRAFFIC_PATH_STYLE.glow}
+                core={TRAFFIC_PATH_STYLE.core}
+                canAnimate={canAnimateStarshield}
+                particleKey={`pop:${popLatitude}:${popLongitude}`}
+                depthWrite={false}
+              />
+            )}
+            {linkState.xBandVisible && activeConfiguredXBandLink && (
+              <AnimatedFlowLine
+                points={activeConfiguredXBandLink.points}
+                forward={linkState.xBandFlow.forward}
+                reverse={linkState.xBandFlow.reverse}
+                outer={activeXBandLineStyle.outer}
+                glow={activeXBandLineStyle.glow}
+                core={activeXBandLineStyle.core}
+                canAnimate={canAnimateXBand}
+                particleKey={`x-band:${activeConfiguredXBandSatelliteId}:${activeSatelliteLongitude}`}
+                depthWrite={false}
+              />
             )}
             {configuredXBandSatellites.map((satellite) => (
               <ConfiguredXBandSatelliteMarker

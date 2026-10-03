@@ -9,6 +9,7 @@ const queries = vi.hoisted(() => ({
   routes: {} as Record<string, unknown>,
   route: {} as Record<string, unknown>,
   pois: {} as Record<string, unknown>,
+  links: {} as Record<string, unknown>,
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
 // independently controlled API states. Scene rendering has browser coverage.
@@ -39,6 +40,9 @@ vi.mock('@/hooks/api/useSatellites', () => ({
 vi.mock('@/hooks/api/useActiveXLink', () => ({
   useActiveXLink: () => queries.selection,
 }));
+vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
+  useOverviewLinkSettings: () => queries.links,
+}));
 vi.mock('@/hooks/api/useOverviewClockSettings', () => ({
   useOverviewClockSettings: () => ({ data: { clocks: [] } }),
 }));
@@ -54,6 +58,9 @@ vi.mock('@/hooks/api/useOverviewUpcomingPois', () => ({
 import { OverviewPage } from './OverviewPage';
 afterEach(cleanup);
 beforeEach(() => {
+  queries.links = {
+    data: { starshield_link_enabled: true, x_band_link_enabled: true },
+  };
   queries.status = {
     data: {
       timestamp: '2026-10-02T00:00:00Z',
@@ -78,7 +85,12 @@ describe('Overview layer and exception integration', () => {
       within(legend)
         .getAllByRole('listitem')
         .map((row) => row.textContent)
-    ).toEqual(['Aircraft', 'Ground entry point', 'Planned satellite link']);
+    ).toEqual([
+      'Aircraft',
+      'Ground entry point',
+      'Traffic path',
+      'Planned satellite link',
+    ]);
     expect(screen.getByLabelText('Map status').textContent).toContain(
       'No active route.'
     );
@@ -174,7 +186,7 @@ describe('Overview layer and exception integration', () => {
     render(<OverviewPage />);
     expect(
       within(screen.getByLabelText('Globe legend')).getAllByRole('listitem')
-    ).toHaveLength(5);
+    ).toHaveLength(6);
   });
   it('keeps every retained POI name accessible without scene labels', () => {
     queries.pois = {

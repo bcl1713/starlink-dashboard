@@ -25,6 +25,7 @@ from app.api import (
     metrics,
     overview_clock_settings,
     overview_history,
+    overview_link_settings,
     overview_upcoming_pois,
     pois,
     routes,
@@ -59,6 +60,7 @@ from app.services.overview_history_settings import (
     OverviewHistorySettingsStore,
     resolve_overview_history_window_default,
 )
+from app.services.overview_link_settings import OverviewLinkSettingsStore
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
@@ -83,10 +85,12 @@ _simulation_config = None
 _route_manager: RouteManager | None = None
 OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
 OVERVIEW_CLOCK_SETTINGS_PATH = Path("data/settings/overview-clocks.json")
+OVERVIEW_LINK_SETTINGS_PATH = Path("data/settings/overview-links.json")
 OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
 _overview_history_client: httpx.AsyncClient | None = None
 _overview_history_settings_store: OverviewHistorySettingsStore | None = None
 _overview_clock_settings_store: OverviewClockSettingsStore | None = None
+_overview_link_settings_store: OverviewLinkSettingsStore | None = None
 
 
 def should_automatically_refresh_ground_entry_point(
@@ -131,6 +135,18 @@ def initialize_overview_clock_settings_runtime() -> None:
     app.state.overview_clock_settings_store = _overview_clock_settings_store
 
 
+def initialize_overview_link_settings_runtime() -> None:
+    """Initialize persistent visibility settings for Overview data links."""
+    global _overview_link_settings_store
+    _overview_link_settings_store = OverviewLinkSettingsStore(
+        OVERVIEW_LINK_SETTINGS_PATH,
+    )
+    overview_link_settings.set_overview_link_settings_store(
+        _overview_link_settings_store,
+    )
+    app.state.overview_link_settings_store = _overview_link_settings_store
+
+
 async def startup_event():
     """Initialize application on startup."""
     global _coordinator, _background_task, _simulation_config, _route_manager
@@ -153,6 +169,7 @@ async def startup_event():
 
         initialize_overview_history_runtime()
         initialize_overview_clock_settings_runtime()
+        initialize_overview_link_settings_runtime()
 
         reconciliation = reconcile_active_legs_on_startup()
         logger.info_json(
@@ -369,12 +386,17 @@ async def shutdown_event():
     """Cleanup on shutdown."""
     global _background_task, _overview_history_client
     global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
+    global _overview_link_settings_store
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
         overview_history.set_overview_history_reader(None)
         overview_history.set_overview_history_settings_store(None)
         overview_clock_settings.set_overview_clock_settings_store(None)
+        overview_link_settings.set_overview_link_settings_store(None)
+        _overview_link_settings_store = None
+        if hasattr(app.state, "overview_link_settings_store"):
+            del app.state.overview_link_settings_store
         if hasattr(app.state, "overview_clock_settings_store"):
             del app.state.overview_clock_settings_store
         if hasattr(app.state, "overview_history_reader"):
@@ -625,6 +647,7 @@ app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(overview_clock_settings.router, tags=["Overview Clocks"])
+app.include_router(overview_link_settings.router, tags=["Overview Links"])
 app.include_router(overview_history.router, tags=["Overview History"])
 app.include_router(overview_upcoming_pois.router, tags=["Overview POIs"])
 app.include_router(config.router, tags=["Configuration"])

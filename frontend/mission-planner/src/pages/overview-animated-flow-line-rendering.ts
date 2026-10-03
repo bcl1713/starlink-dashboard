@@ -1,4 +1,10 @@
 import * as THREE from 'three';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+import {
+  LineMaterial,
+  type LineMaterialParameters,
+} from 'three/addons/lines/LineMaterial.js';
 
 export type FlowPoint = readonly [number, number, number];
 export type FlowDirection = 'forward' | 'reverse';
@@ -62,6 +68,29 @@ export interface AnimatedFlowResources {
   geometry: THREE.BufferGeometry;
   material: THREE.ShaderMaterial;
   points: THREE.Points;
+}
+
+export interface FlowLineResources {
+  geometry: LineGeometry;
+  material: LineMaterial;
+  line: Line2;
+}
+
+export function createFlowLineResources(
+  points: readonly FlowPoint[],
+  parameters: LineMaterialParameters
+): FlowLineResources {
+  const geometry = new LineGeometry();
+  geometry.setPositions(points.flat());
+  const material = new LineMaterial(parameters);
+  const line = new Line2(geometry, material);
+  line.computeLineDistances();
+  return { geometry, material, line };
+}
+
+export function disposeFlowLineResources(resources: FlowLineResources): void {
+  resources.geometry.dispose();
+  resources.material.dispose();
 }
 
 const EMPTY_EMITTER: FlowEmitterConfig = {
@@ -180,6 +209,25 @@ export class FlowParticlePool {
   configure(forward: FlowEmitterConfig, reverse = this.reverse): void {
     this.forward = forward;
     this.reverse = reverse;
+    if (!forward.enabled) this.clear('forward');
+    if (!reverse.enabled) this.clear('reverse');
+  }
+
+  clear(direction?: FlowDirection): void {
+    for (let index = this.particles.length - 1; index >= 0; index -= 1) {
+      const particle = this.particles[index];
+      if (direction !== undefined && particle.direction !== direction) continue;
+      this.recycled.push(particle);
+      this.particles.splice(index, 1);
+    }
+    if (direction === undefined || direction === 'forward') {
+      this.forwardParticleCount = 0;
+      this.forwardRemainder = 0;
+    }
+    if (direction === undefined || direction === 'reverse') {
+      this.reverseParticleCount = 0;
+      this.reverseRemainder = 0;
+    }
   }
 
   snapshot(): readonly FlowParticle[] {

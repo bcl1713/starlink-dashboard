@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { createGlobeRouteRibbonGeometry } from './globe-route-ribbon-geometry';
 import type { FlowPoint } from './overview-animated-flow-line-rendering';
@@ -130,35 +130,44 @@ export function GlobeRouteRibbon({
   core = DEFAULT_CORE,
   depthTest = true,
 }: GlobeRouteRibbonProps) {
-  const geometry = useMemo(
-    () => createGlobeRouteRibbonGeometry(points),
-    [points]
-  );
-  const outerMaterial = useMemo(
-    () => createRibbonMaterial(outer, depthTest),
-    [depthTest, outer]
-  );
-  const glowMaterial = useMemo(
-    () => createRibbonMaterial(glow, depthTest),
-    [depthTest, glow]
-  );
-  const coreMaterial = useMemo(
-    () => createRibbonMaterial(core, depthTest),
-    [core, depthTest]
-  );
+  const group = useMemo(() => new THREE.Group(), []);
+  const resources = useRef<{
+    outerMaterial: THREE.ShaderMaterial;
+    glowMaterial: THREE.ShaderMaterial;
+    coreMaterial: THREE.ShaderMaterial;
+  } | null>(null);
   const distanceScratch = useMemo(() => new THREE.Vector3(), []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (points.length < 2) return;
+    const geometry = createGlobeRouteRibbonGeometry(points);
+    const outerMaterial = createRibbonMaterial(outer, depthTest);
+    const glowMaterial = createRibbonMaterial(glow, depthTest);
+    const coreMaterial = createRibbonMaterial(core, depthTest);
+    resources.current = { outerMaterial, glowMaterial, coreMaterial };
+    const meshes = [outerMaterial, glowMaterial, coreMaterial].map(
+      (material, index) => {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.renderOrder = index + 1;
+        return mesh;
+      }
+    );
+    group.add(...meshes);
+
     return () => {
+      resources.current = null;
+      group.remove(...meshes);
       geometry.dispose();
       outerMaterial.dispose();
       glowMaterial.dispose();
       coreMaterial.dispose();
     };
-  }, [coreMaterial, geometry, glowMaterial, outerMaterial]);
+  }, [core, depthTest, glow, group, outer, points]);
 
   useFrame((state) => {
-    if (points.length < 2) return;
+    const active = resources.current;
+    if (!active) return;
+    const { outerMaterial, glowMaterial, coreMaterial } = active;
     const distance = nearestPointDistance(
       state.camera,
       points,
@@ -189,11 +198,5 @@ export function GlobeRouteRibbon({
 
   if (points.length < 2) return null;
 
-  return (
-    <group>
-      <mesh geometry={geometry} material={outerMaterial} renderOrder={1} />
-      <mesh geometry={geometry} material={glowMaterial} renderOrder={2} />
-      <mesh geometry={geometry} material={coreMaterial} renderOrder={3} />
-    </group>
-  );
+  return <primitive object={group} dispose={null} />;
 }

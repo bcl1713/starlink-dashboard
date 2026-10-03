@@ -75,6 +75,24 @@ selection takes precedence and is stored under
 `STARLINK_APP_DATA_PATH/settings/overview-history.json`. This display/query
 window is independent of Prometheus database retention (`PROMETHEUS_RETENTION`).
 
+## Overview Data Link Persistence
+
+The independent Configuration switches **Starshield data link** and
+**X-band data link** default to enabled. The backend persists their shared pair
+under `STARLINK_APP_DATA_PATH/settings/overview-links.json`; the existing
+application-data mount supplies persistence, with no additional volume or
+bootstrap environment variable. Preserve this category during updates/rollback
+and ensure the service user can write its settings directory.
+
+Same-origin `GET /api/overview-links/settings` returns both boolean fields;
+partial `PUT` merges only supplied fields. In an isolated non-live acceptance
+project, save all four combinations, restart only that project's backend, and
+confirm each pair survives through the frontend's Nginx API path. Keep its ports
+and persisted data separate from existing installations. A visibility save must
+not change measured status/history or configured warning behavior. Starshield
+particles use measured traffic; X-band's 4/4 Mbps, 500 ms rendering preset is
+illustrative and never persisted as observed telemetry.
+
 ## Select an Immutable Release and Rollback Target
 
 Before an authorized non-live update:

@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { satcomLineStyle } from './satcom-link-style';
+import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 
 interface OverviewMapLegendProps {
   collapsible?: boolean;
@@ -7,6 +8,7 @@ interface OverviewMapLegendProps {
   route: boolean;
   history: boolean;
   groundEntryPoint: boolean;
+  trafficPath: boolean;
   plannedLink: boolean;
   linkState: 'normal' | 'warning' | null;
 }
@@ -18,6 +20,7 @@ export function OverviewMapLegend({
   route,
   history,
   groundEntryPoint,
+  trafficPath,
   plannedLink,
   linkState,
 }: OverviewMapLegendProps) {
@@ -40,6 +43,11 @@ export function OverviewMapLegend({
       visible: groundEntryPoint,
       label: 'Ground entry point',
       sample: 'globe-legend__marker globe-legend__marker--ground-entry',
+    },
+    {
+      visible: trafficPath,
+      label: 'Traffic path',
+      sample: 'globe-legend__route globe-legend__route--traffic-path',
     },
     {
       visible: plannedLink,
@@ -88,7 +96,9 @@ export function OverviewMapLegend({
                 style={
                   entry.label === 'Planned satellite link'
                     ? { background: satcomLineStyle(linkState).core.color }
-                    : undefined
+                    : entry.label === 'Traffic path'
+                      ? { background: TRAFFIC_PATH_STYLE.core.color }
+                      : undefined
                 }
               />
               <span>{entry.label}</span>
