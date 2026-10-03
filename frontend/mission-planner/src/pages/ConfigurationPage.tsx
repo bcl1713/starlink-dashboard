@@ -1,6 +1,7 @@
 import { OverviewCameraSettingsCard } from './OverviewCameraSettingsCard';
 import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
 import { OverviewMapDiagnostics } from './OverviewMapDiagnostics';
+import { OverviewLinkSettingsCard } from './OverviewLinkSettingsCard';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { GPSControlCard } from '../components/gps/GPSControlCard';
 import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClockSettings';
@@ -23,6 +24,7 @@ export function ConfigurationPage() {
       <div className="max-w-xl">
         <GPSControlCard />
         <OverviewHistorySettingsCard />
+        <OverviewLinkSettingsCard />
         <OverviewCameraSettingsCard />
         <OverviewMapDiagnostics />
         {isLoading ? (

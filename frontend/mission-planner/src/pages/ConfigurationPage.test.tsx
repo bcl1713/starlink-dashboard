@@ -20,6 +20,14 @@ vi.mock('@/hooks/api/useOverviewClockSettings', () => ({
 vi.mock('@/hooks/api/useUpdateOverviewClockSettings', () => ({
   useUpdateOverviewClockSettings: vi.fn(),
 }));
+vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
+  useOverviewLinkSettings: () => ({
+    data: { starshield_link_enabled: false, x_band_link_enabled: true },
+  }),
+}));
+vi.mock('@/hooks/api/useUpdateOverviewLinkSettings', () => ({
+  useUpdateOverviewLinkSettings: () => ({ mutate: vi.fn() }),
+}));
 vi.mock('../components/gps/GPSControlCard', () => ({
   GPSControlCard: () => null,
 }));
@@ -61,6 +69,12 @@ describe('ConfigurationPage', () => {
     } as never);
     render(<ConfigurationPage />);
     expect(screen.getByLabelText('Overview history window')).not.toBeNull();
+    expect(
+      screen.getByRole('switch', { name: 'Starshield data link' })
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('switch', { name: 'X-band data link' })
+    ).not.toBeNull();
     expect(
       screen.getByRole('region', { name: 'Overview map diagnostics' })
     ).not.toBeNull();

@@ -161,30 +161,30 @@ use Task 1's route. `useOverviewLinkSettings()` shares query key
 `['overview-link-settings']`; `useUpdateOverviewLinkSettings()` accepts updates.
 No-prop `OverviewLinkSettingsCard()` mounts independently of clock errors.
 
-- [ ] Write service/hook tests for valid pairs and rejected malformed responses;
+- [x] Write service/hook tests for valid pairs and rejected malformed responses;
   initial loading/error keeps `data` undefined, refresh errors retain confirmed
   data, and failed saves do not change the cache. Test a stale GET racing a
   successful save, another mounted consumer, late completion after unmount and
   refetch observing another viewer's change. Component tests assert exact labels
   and descriptions, accessible checked states, loading/pending disabled controls,
   visible saving/saved/error feedback and one-field payloads preserving the peer.
-- [ ] Run the focused tests from the frontend:
+- [x] Run the focused tests from the frontend:
 
   ```sh
   npm run test:unit -- src/services/overview-link-settings.test.ts src/hooks/api/useOverviewLinkSettings.test.ts src/hooks/api/useUpdateOverviewLinkSettings.test.ts src/pages/OverviewLinkSettingsCard.test.tsx src/pages/ConfigurationPage.test.tsx
   ```
 
   Expect missing modules/new-card assertions to fail.
-- [ ] Implement response validation and confirmed-only query state: no placeholder
+- [x] Implement response validation and confirmed-only query state: no placeholder
   true/true or optimistic updates; use `retry: false` like existing settings.
   Poll every 5,000 ms while visible and refetch
   on focus to synchronize viewers. Cancel in-flight settings reads before saving;
   on success synchronously cache the returned full pair and invalidate the query.
   Serialize mutations using scope ID `overview-link-settings`; disable both
   controls during a pending save. Cache updates create no scene resources.
-- [ ] Rerun the focused tests; require immediate shared-cache update, no late
+- [x] Rerun the focused tests; require immediate shared-cache update, no late
   pre-save GET rollback, preserved saved false and clear recovery after errors.
-- [ ] Commit with `feat(configuration): add independent data link switches`.
+- [x] Commit with `feat(configuration): add independent data link switches`.
 
 ## Task 3: Bounded globe-safe aircraft–PoP arc
 
@@ -255,7 +255,17 @@ appuser saved both switches disabled and a fresh container retained them.
 This checks the current store and existing entrypoint, not a full candidate
 image deployment; final exact-candidate acceptance remains Task 7.
 
-The user requested task 1 only, followed by commit/push and a task 2 handoff.
-Tasks 2–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
+Task 2 is implemented: validated confirmed-only settings query, serialized
+partial saves, cancellation before PUT and before publishing its full response,
+and independent accessible Configuration switches with save feedback. Reads
+poll every five seconds while visible and refresh on focus. Deferred-response
+tests cover stale GET completion after saves/unmount, reads during PUT, shared
+consumers, queued saves, errors and another viewer's changes. Verification:
+43 focused tests and 447 frontend unit tests passed; ESLint, full source Prettier
+check and production build passed. Existing dialog/Three.js test warnings and
+large-bundle build warning remain. No scene integration was added in this task.
+
+The user requested task 2 only, followed by commit/push and a task 3 handoff.
+Tasks 3–7 remain pending. Continue the existing `feat/starshield-flow-line-arc`
 branch one task per session, using Superpowers. OpenSpec was removed at the
 user's request in a separate commit.
