@@ -9,6 +9,7 @@ const backendProxyTarget =
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  worker: { format: 'es' },
   server: {
     proxy: {
       '/api': backendProxyTarget,

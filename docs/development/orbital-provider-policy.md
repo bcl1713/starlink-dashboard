@@ -30,5 +30,22 @@ objects are capped at 16,384 using numeric ID order. A download cannot replace
 the last good catalog with an empty or corrupt response. Public orbital elements
 provide context; they do not establish serving spacecraft or internal routing.
 
-Propagator version, license and independent coordinate fixture verification will
-be recorded during Task 3.
+## Propagator and reference fixture
+
+Pinned `satellite.js` 7.1.0 (MIT), reviewed 2026-10-04 using its
+[maintainer repository](https://github.com/shashwatak/satellite-js), npm metadata,
+and package source. Its ESM export exposes `json2satrec`, SGP4 `propagate`,
+`gstime` and `eciToEcf`; string catalog IDs are retained. Unused descriptive
+metadata is empty for the TypeScript OMM interface; no mean elements are invented.
+Vite module-worker packaging is verified by the Task 3 build.
+
+Coordinate tests use [Vallado's verification case](https://celestrak.org/publications/AIAA/2006-6753/)
+5, mirrored in the reference implementation's
+[verification elements](https://raw.githubusercontent.com/brandon-rhodes/python-sgp4/master/sgp4/SGP4-VER.TLE)
+and [published vectors](https://raw.githubusercontent.com/brandon-rhodes/python-sgp4/master/sgp4/tcppver.out).
+At epoch 2000-06-27 18:50:19.733568 UTC the published TEME position is
+`[7022.46529266, -1400.08296755, 0.03995155]` km. An independent rotation using
+the Vallado GMST polynomial gives angle `3.4691723423794016` radians and ECEF
+`[-6198.557667319622, 3585.1267686862966, 0.03995155]` km. The test allows
+2 metres for millisecond Date precision. OMM numeric fields transcribe the
+historical verification elements; application propagation uses OMM exclusively.
