@@ -65,6 +65,7 @@ export class OrbitalLifecycle {
   private closed = false;
   private failed = false;
   private generation = 0;
+  private visibilityRefresh: number | null = null;
   private session: Session | null = null;
   private worker: WorkerOwner | null = null;
   private catalog: CatalogEnvelope | null = null;
@@ -129,6 +130,7 @@ export class OrbitalLifecycle {
       this.status('worker-failed');
       return;
     }
+    if (this.visibilityRefresh !== null) return;
     if (this.session) this.worker?.setEndpoints(endpoints);
     else void this.activate();
   }
@@ -145,15 +147,19 @@ export class OrbitalLifecycle {
     }
     if (!this.enabled() || this.closed) return;
     const generation = this.generation;
+    this.visibilityRefresh = generation;
     void this.refresh()
       .then((settings) => {
         if (this.closed || !this.visible || this.generation !== generation)
           return;
+        this.visibilityRefresh = null;
         this.update(settings, this.endpoints);
       })
       .catch(() => {
-        if (!this.closed && this.visible && this.generation === generation)
+        if (!this.closed && this.visible && this.generation === generation) {
+          this.visibilityRefresh = null;
           this.update(this.settings, this.endpoints);
+        }
       });
   }
   private release(id: string) {
@@ -336,6 +342,7 @@ export class OrbitalLifecycle {
     this.installedGeneration = '';
   }
   private stop() {
+    this.visibilityRefresh = null;
     if (
       !this.session &&
       !this.worker &&

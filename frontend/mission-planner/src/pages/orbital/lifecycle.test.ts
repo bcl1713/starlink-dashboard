@@ -245,3 +245,24 @@ it('initial lease failure recovers on renewal without requiring a worker retry t
   f.lifecycle.dispose();
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it('status polling cannot acquire demand while visibility-return settings are pending', async () => {
+  const f = setup();
+  f.lifecycle.setVisible(false);
+  f.lifecycle.update(enabled, endpoints);
+  let finish!: (settings: typeof enabled) => void;
+  f.refresh.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+  );
+  f.lifecycle.setVisible(true);
+  f.lifecycle.update(enabled, { aircraft: [7000, 0, 0], pop: null });
+  await flush();
+  expect(f.api.acquire).not.toHaveBeenCalled();
+  finish({ ...enabled, orbital_traffic_enabled: false });
+  await flush();
+  expect(f.api.acquire).not.toHaveBeenCalled();
+  f.lifecycle.dispose();
+});
