@@ -2,6 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+
 from app.services.overview_adsb_settings import AdsbSettingsStore
 
 

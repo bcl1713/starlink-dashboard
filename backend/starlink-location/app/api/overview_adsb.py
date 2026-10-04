@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException
 
-from app.models.overview_adsb import AdsbSettings, AdsbSettingsUpdate
+from app.models.overview_adsb import AdsbSettings, AdsbSettingsUpdate, AdsbTrafficBundle
 from app.services.overview_adsb_settings import AdsbSettingsStore
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ def _get_store() -> AdsbSettingsStore:
 
 
 @router.get("/api/overview-adsb/settings", response_model=AdsbSettings)
-def get_settings() -> AdsbSettings:
+async def get_settings() -> AdsbSettings:
     try:
         return _get_store().get()
     except (OSError, ValueError, TypeError) as error:
@@ -40,7 +40,7 @@ def get_settings() -> AdsbSettings:
 
 
 @router.put("/api/overview-adsb/settings", response_model=AdsbSettings)
-def update_settings(changes: AdsbSettingsUpdate) -> AdsbSettings:
+async def update_settings(changes: AdsbSettingsUpdate) -> AdsbSettings:
     try:
         settings = _get_store().update(changes.model_dump(exclude_unset=True))
     except (OSError, ValueError, TypeError) as error:
@@ -48,3 +48,13 @@ def update_settings(changes: AdsbSettingsUpdate) -> AdsbSettings:
     if _service is not None:
         _service.settings_changed()
     return settings
+
+
+@router.get("/api/overview-adsb/traffic", response_model=AdsbTrafficBundle)
+async def get_traffic() -> AdsbTrafficBundle:
+    if _service is None:
+        raise HTTPException(503, "ADS-B acquisition is not initialized")
+    try:
+        return _service.read()
+    except (OSError, ValueError, TypeError) as error:
+        raise HTTPException(503, "ADS-B settings could not be read") from error

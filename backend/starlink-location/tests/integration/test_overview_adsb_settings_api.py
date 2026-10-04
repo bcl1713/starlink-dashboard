@@ -1,8 +1,9 @@
 import pytest
-from app.api import overview_adsb
-from app.services.overview_adsb_settings import AdsbSettingsStore
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+from app.api import overview_adsb
+from app.services.overview_adsb_settings import AdsbSettingsStore
 
 URL = "/api/overview-adsb/settings"
 

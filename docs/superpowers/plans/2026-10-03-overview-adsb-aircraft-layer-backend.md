@@ -167,7 +167,7 @@ by the scheduler and deterministic tests; `read` never calls the provider.
 scheduler. Task 1's initializer creates this service plus one httpx client;
 startup awaits `start`, shutdown awaits `aclose` before closing the client.
 
-- [ ] **Step 1: Write failing deterministic service/API tests.** Fake provider
+- [x] **Step 1: Write failing deterministic service/API tests.** Fake provider
   calls use controllable asyncio events; clocks are injected, no real sleeps.
   `test_viewers_share_one_cycle` issues concurrent refreshes/traffic reads and
   asserts one upstream cycle, identical revision/contact identity, max one cycle
@@ -203,9 +203,9 @@ startup awaits `start`, shutdown awaits `aclose` before closing the client.
   assert "00AB12" not in {contact.hex for contact in bundle.contacts}
   ```
 
-- [ ] **Step 2: Verify failure.** Run the new service/API tests with `-q`;
+- [x] **Step 2: Verify failure.** Run the new service/API tests with `-q`;
   expect missing service or missing traffic route.
-- [ ] **Step 3: Implement acquisition scheduling and cache ownership.** Use one
+- [x] **Step 3: Implement acquisition scheduling and cache ownership.** Use one
   serialized task/lock, a generation per confirmed settings revision, and a
   wake event. Read settings at most one second apart to notice another store
   writer; PUT wakes immediately. Filter reads against current confirmed settings.
@@ -219,15 +219,15 @@ startup awaits `start`, shutdown awaits `aclose` before closing the client.
   Removed/excluded hex keys have no scheduled queries; drop irrelevant source
   status. Store only newest valid positions; retain previous ones to original
   expiry when no valid replacement arrives. Prune expired cache in reads/cycles.
-- [ ] **Step 4: Implement traffic route and application cleanup.** Complete
+- [x] **Step 4: Implement traffic route and application cleanup.** Complete
   Task 3's interfaces. Use `https://api.adsb.lol` for the owned client and return
   generation-consistent revision/bundle snapshots. Sanitize source error text;
   never expose raw upstream bodies. If settings cannot be read, stop acquisition
   and return 503 until recovered. Neither ADS-B failure nor settings failure
   writes telemetry, warning rules, history, or mission services.
-- [ ] **Step 5: Verify success.** Run all `test_overview_adsb*.py` unit/integration
+- [x] **Step 5: Verify success.** Run all `test_overview_adsb*.py` unit/integration
   files and `test_adsb_lol.py`; require PASS. Also run existing history, clock,
   link-settings API tests and startup/health integration tests for lifecycle
   regressions. Inspect cancellation and source-call assertions, not just HTTP 200.
-- [ ] **Step 6: Commit only Task 3 files.**
+- [x] **Step 6: Commit only Task 3 files.**
   `git commit -m "feat(adsb): share acquisition cache and revisioned traffic API"`.

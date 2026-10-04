@@ -65,6 +65,8 @@ from app.services.overview_history_settings import (
 )
 from app.services.overview_link_settings import OverviewLinkSettingsStore
 from app.services.overview_adsb_settings import AdsbSettingsStore
+from app.services.adsb_lol import AdsbLolProvider
+from app.services.overview_adsb_traffic import AdsbTrafficService
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
@@ -167,7 +169,13 @@ def initialize_overview_link_settings_runtime() -> None:
 def initialize_overview_adsb_runtime() -> None:
     store = AdsbSettingsStore(OVERVIEW_ADSB_SETTINGS_PATH)
     app.state.overview_adsb_settings_store = store
-    overview_adsb.set_overview_adsb_runtime(store, None)
+    client = httpx.AsyncClient(base_url="https://api.adsb.lol", timeout=10)
+    service = AdsbTrafficService(
+        store, AdsbLolProvider(client), time.time, time.monotonic
+    )
+    app.state.overview_adsb_client = client
+    app.state.overview_adsb_service = service
+    overview_adsb.set_overview_adsb_runtime(store, service)
 
 
 async def startup_event():
@@ -195,6 +203,7 @@ async def startup_event():
         initialize_overview_link_settings_runtime()
         initialize_orbital_catalog_runtime()
         initialize_overview_adsb_runtime()
+        await app.state.overview_adsb_service.start()
 
         reconciliation = reconcile_active_legs_on_startup()
         logger.info_json(
@@ -415,6 +424,12 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "overview_adsb_service"):
+            await app.state.overview_adsb_service.aclose()
+            del app.state.overview_adsb_service
+        if hasattr(app.state, "overview_adsb_client"):
+            await app.state.overview_adsb_client.aclose()
+            del app.state.overview_adsb_client
         overview_adsb.set_overview_adsb_runtime(None, None)
         if hasattr(app.state, "overview_adsb_settings_store"):
             del app.state.overview_adsb_settings_store

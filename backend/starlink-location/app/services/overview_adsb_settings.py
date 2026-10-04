@@ -5,8 +5,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from app.models.overview_adsb import AdsbSettings, AdsbSettingsUpdate
 from filelock import FileLock
+
+from app.models.overview_adsb import AdsbSettings, AdsbSettingsUpdate
 
 
 class AdsbSettingsStore:
