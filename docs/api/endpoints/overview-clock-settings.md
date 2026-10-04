@@ -1,6 +1,7 @@
 # Overview Clock Settings API
 
-[Back to API endpoints](./README.md) | [Configuration endpoints](./configuration.md)
+[Back to API endpoints](./README.md) |
+[Configuration endpoints](./configuration.md)
 
 ## Persisted Four-Clock Configuration
 
@@ -22,10 +23,10 @@ Retrieve the complete persistent clock collection.
 ```json
 {
   "clocks": [
-    {"label": "Zulu / UTC", "time_zone": "UTC"},
-    {"label": "Washington, DC", "time_zone": "America/New_York"},
-    {"label": "Omaha, NE", "time_zone": "America/Chicago"},
-    {"label": "Tokyo, JP", "time_zone": "Asia/Tokyo"}
+    { "label": "Zulu / UTC", "time_zone": "UTC" },
+    { "label": "Washington, DC", "time_zone": "America/New_York" },
+    { "label": "Omaha, NE", "time_zone": "America/Chicago" },
+    { "label": "Tokyo, JP", "time_zone": "Asia/Tokyo" }
   ]
 }
 ```
@@ -37,19 +38,19 @@ Retrieve the complete persistent clock collection.
 
 ## PUT `/api/overview-clocks/settings`
 
-Replace the complete persistent collection. The request must contain exactly four
-clock mappings. Each `label` must be non-blank, and every `time_zone` must be a
-valid IANA timezone.
+Replace the complete persistent collection. The request must contain exactly
+four clock mappings. Each `label` must be non-blank, and every `time_zone` must
+be a valid IANA timezone.
 
 **Request Body:**
 
 ```json
 {
   "clocks": [
-    {"label": "Zulu / UTC", "time_zone": "UTC"},
-    {"label": "Washington, DC", "time_zone": "America/New_York"},
-    {"label": "Omaha, NE", "time_zone": "America/Chicago"},
-    {"label": "Tokyo, JP", "time_zone": "Asia/Tokyo"}
+    { "label": "Zulu / UTC", "time_zone": "UTC" },
+    { "label": "Washington, DC", "time_zone": "America/New_York" },
+    { "label": "Omaha, NE", "time_zone": "America/Chicago" },
+    { "label": "Tokyo, JP", "time_zone": "Asia/Tokyo" }
   ]
 }
 ```
@@ -72,3 +73,13 @@ back to Omaha (`America/Chicago`) or Tokyo (`Asia/Tokyo`).
 Deactivating Mission V2 legs also preserves clocks 1 and 2 and restores only
 clocks 3 and 4 to the Omaha and Tokyo defaults. The unchanged first two clocks
 remain persistent operator settings across these lifecycle events.
+
+## Cross-window use
+
+Overview reads confirmed clock settings every five seconds in the background,
+plus response/render time; no focus change or reload is required. Failed PUTs
+never publish draft labels/timezones, and read errors retain the last confirmed
+cache under the existing unavailable UI. Fully suspended windows catch up when
+resumed. Configuration's unsaved form remains a local draft. See
+[display controls and settings](../../features/system.md#overview-windows-and-display-controls)
+for browser-local camera preferences, selected displays and fullscreen fallback.

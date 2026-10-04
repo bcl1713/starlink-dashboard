@@ -60,6 +60,38 @@ for (const fullscreen of [false, true]) {
       if (req.method() === 'GET' && page.includes('/overview'))
         reads[pathname] = (reads[pathname] ?? 0) + 1;
     });
+    // Reset through the real API because both cases use one isolated backend.
+    const existing = await request.get('/api/v2/missions');
+    expect(existing.status()).toBe(200);
+    for (const mission of await existing.json()) {
+      if (mission.legs.some((leg: { is_active: boolean }) => leg.is_active)) {
+        const reset = await request.post(
+          `/api/v2/missions/${mission.id}/legs/deactivate`
+        );
+        expect(reset.status()).toBe(200);
+      }
+    }
+    for (const [endpoint, data] of [
+      [
+        '/api/overview-links/settings',
+        { starshield_link_enabled: true, x_band_link_enabled: true },
+      ],
+      ['/api/overview-history/settings', { window_seconds: 300 }],
+      [
+        '/api/overview-clocks/settings',
+        {
+          clocks: [
+            { label: 'Zulu / UTC', time_zone: 'UTC' },
+            { label: 'Washington, DC', time_zone: 'America/New_York' },
+            { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+            { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+          ],
+        },
+      ],
+    ] as const) {
+      const reset = await request.put(endpoint, { data });
+      expect(reset.status(), await reset.text()).toBe(200);
+    }
     // No page/context route handlers: every application response is real.
     const seed = await seedOverviewWindowMission(request);
     observations.seed = seed;
@@ -178,7 +210,10 @@ for (const fullscreen of [false, true]) {
             r.url().endsWith('/api/overview-links/settings') &&
             r.request().method() === 'PUT'
         );
-        await editing.getByRole('switch', { name: label }).uncheck();
+        await expect(
+          editing.getByRole('switch', { name: label })
+        ).toBeChecked();
+        await editing.getByRole('switch', { name: label }).click();
         const at = await confirmed(await saved);
         await visible(field, at, (remaining) =>
           expect(overview.getByLabel('Globe legend')).not.toContainText(

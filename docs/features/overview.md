@@ -2,8 +2,9 @@
 
 **Related:** [Main README](../../README.md) | [Setup Guide](../setup/README.md)
 
-This document provides a comprehensive overview of all features available in the
-Starlink Dashboard system.
+This document catalogs dashboard features. For saved-state refresh and remote
+controls, see
+[Overview windows](system.md#overview-windows-and-display-controls).
 
 ---
 
@@ -62,8 +63,8 @@ restarts arrival dwell and departure persistence without changing the confirmed
 phase. Reused collection timestamps do not advance detection; backward
 timestamps break continuity.
 
-Automatic arrival requires continuous verified observations within 100 meters
-of the active route's final waypoint for 60 seconds while in flight. Distance is
+Automatic arrival requires continuous verified observations within 100 meters of
+the active route's final waypoint for 60 seconds while in flight. Distance is
 the direct great-circle distance to that waypoint; a position beyond or beside
 the route endpoint cannot establish arrival through projected route progress.
 Leaving the radius restarts dwell. This is a proximity confirmation, with no
@@ -232,13 +233,12 @@ area between panels; without a route it uses a valid aircraft position. The
 route can be off-center on the screen because the metric rail occupies the left.
 If route data recovers after opening, it gets one eased fit while the camera
 remains automatic; manual exploration keeps your chosen view. Desktop provides
-Reset and follow status beneath its fullscreen control.
-Aircraft movement leaves the default camera still. **Reset map view** performs
-another fit. In Configuration, **Follow aircraft on Overview** opts into
-continuous following and is saved in this browser; it defaults off. Manual
-exploration pauses it, and reset resumes it. Stale, missing or failed map status
-pauses following with an explicit reason. This does not renew GPS/arrival
-timing.
+Reset and follow status beneath its fullscreen control. Aircraft movement leaves
+the default camera still. **Reset map view** performs another fit. In
+Configuration, **Follow aircraft on Overview** opts into continuous following
+and is saved in this browser; it defaults off. Manual exploration pauses it, and
+reset resumes it. Stale, missing or failed map status pauses following with an
+explicit reason. This does not renew GPS/arrival timing.
 
 Automatic camera moves ease into their new pose; manual input cancels them.
 Manual pose and mounted canvas/plots survive rotation and fullscreen. Reduced
@@ -266,15 +266,14 @@ selection refreshes remain explicit. A selected ID can remain visible while its
 configured map geometry is unavailable.
 
 The legend contains only rendered layers: **Aircraft**, **Planned route**,
-**Track history**, **Ground entry point**, **Traffic path** and
-**Planned satellite link**. The
-planned-link sample is thicker than the track sample and retains the supported
-blue/red normal/warning styling. Short route, status/history and satellite
-exceptions appear separately in **Map status**; warning text names the existing
-configured azimuth rule without asserting connectivity. Cached scene geometry
-can remain visible after a refresh fails; its layer sample remains present
-alongside the failure state. Status-feed age is independent of the position
-provenance used for arrival estimates.
+**Track history**, **Ground entry point**, **Traffic path** and **Planned
+satellite link**. The planned-link sample is thicker than the track sample and
+retains the supported blue/red normal/warning styling. Short route,
+status/history and satellite exceptions appear separately in **Map status**;
+warning text names the existing configured azimuth rule without asserting
+connectivity. Cached scene geometry can remain visible after a refresh fails;
+its layer sample remains present alongside the failure state. Status-feed age is
+independent of the position provenance used for arrival estimates.
 
 Aircraft/GEP and configured satellites can remain visible without a route.
 Generated POIs and satellite markers retain their labels and separate accessible
@@ -284,12 +283,12 @@ than additional legend rows.
 
 ### Independent data links
 
-Configuration's shared **Starshield data link** and **X-band data link** switches
-default on. Violet **Traffic path** uses fresh measured aircraft–PoP traffic:
-amber upload, cyan download. X-band's local 4/4 Mbps, 500 ms activity is illustrative;
-warning stops particles and retains its enabled red line. Hiding links preserves
-collection, metrics, warnings, route/history, markers and camera. Hidden pages
-clear/pause particles; reduced motion keeps lines. See
+Configuration's shared **Starshield data link** and **X-band data link**
+switches default on. Violet **Traffic path** uses fresh measured aircraft–PoP
+traffic: amber upload, cyan download. X-band's local 4/4 Mbps, 500 ms activity
+is illustrative; warning stops particles and retains its enabled red line.
+Hiding links preserves collection, metrics, warnings, route/history, markers and
+camera. Hidden pages clear/pause particles; reduced motion keeps lines. See
 [shared settings](system.md#shared-data-link-visibility) for persistence/errors.
 The deployment laptop still requires hardware validation.
 

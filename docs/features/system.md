@@ -45,20 +45,22 @@ Satellite catalog editing remains in Satellite Manager.
 **X-band data link** switches. Both default to `true`. They use
 `GET /api/overview-links/settings` and partial
 `PUT /api/overview-links/settings` updates with strict boolean fields
-`starshield_link_enabled` and `x_band_link_enabled`. A save returns the full pair;
-changing one field preserves the other, including concurrent disjoint edits.
+`starshield_link_enabled` and `x_band_link_enabled`. A save returns the full
+pair; changing one field preserves the other, including concurrent disjoint
+edits.
 
 Settings persist atomically at `data/settings/overview-links.json`, survive
-backend restarts and synchronize viewers through the shared query (five-second
-visible polling and focus refresh). They are installation settings, not browser
-storage. Before a confirmed read, both switches are disabled and both links are
-hidden. Read/save failures retain the last confirmed pair and show error feedback;
-saves do not optimistically change visibility.
+backend restarts and synchronize mounted Overview windows through five-second
+background reads and focus/network recovery refresh. They are installation
+settings, not browser storage. Before a confirmed read, both switches are
+disabled and both links are hidden. Read/save failures retain the last confirmed
+pair and show error feedback; saves do not optimistically change visibility.
 
 Starshield visualizes measured aircraft–PoP traffic. X-band activity is a local
 illustration; neither switch changes telemetry collection, metric history,
 configured selection, warning rules or operational status. See
-[Overview data links](overview.md#independent-data-links) for rendering behavior.
+[Overview data links](overview.md#independent-data-links) for rendering
+behavior.
 
 ### Configuration API
 
@@ -160,3 +162,42 @@ Simulator automatically follows uploaded KML routes.
 - Upload KML via `/api/routes/upload`
 - Activate route via `/api/routes/{id}/activate`
 - Simulation starts following immediately
+
+## Overview windows and display controls
+
+Leave Overview open on the display and edit Configuration or Missions in another
+window. Successful saves refresh clocks, history settings, links, satellites and
+active routes every five seconds, plus API response and rendering time. Overview
+does not need focus or reload. Mission activation, switching, deactivation and
+active-leg edits also refresh generated POIs and departure/arrival timing.
+Failed saves never confirm an unsaved draft. Reads retain confirmed data under
+the existing error/unavailable UI. Fully suspended browser or OS windows catch
+up on resumption; they cannot promise a wall-clock refresh bound.
+
+**Follow aircraft on Overview** is saved in this browser and shared with its
+same-origin windows. Manual map exploration pauses following; **Reset map view**
+or the remote **Recenter view** restores the configured behavior. Saved settings
+preserve the mounted globe and ongoing history. Changing the history window
+intentionally changes its displayed range; old bundles are not relabeled as the
+new window. REST settings can reach other browsers on the same installation.
+
+In Configuration, **Overview displays** lists labels that match each open
+Overview. One display is selected automatically. With multiple displays, choose
+the target explicitly. If it closes or stops reporting, controls become
+unavailable and require a new selection; they never choose a replacement
+silently. **Open Overview** opens a separate window from your click. If no new
+display connects, allow popups and check the Overview window.
+
+Display commands require the same origin and browser storage partition. They do
+not control another browser, device or profile. **Recenter view** confirms that
+the selected display accepted its existing reset action; camera animation may
+still be settling. Commands expire after three seconds, and unavailable targets
+or rejected actions show feedback. Saved-state refresh continues independently.
+
+**Fullscreen** requests native fullscreen in the selected Overview while keeping
+Configuration available. Its **Fullscreen active** / **Windowed** state reflects
+actual browser state. Browser policy can reject remote entry; follow the message
+**Click Fullscreen in the Overview window to finish.** Click the local Overview
+control, then use Escape or its exit control to leave. No permission changes or
+special browser flags are required. A timeout cannot cancel a native request
+already issued; actual fullscreen changes remain authoritative.

@@ -48,6 +48,7 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
       starshield_link_enabled: true,
       x_band_link_enabled: true,
     } as OverviewLinkSettings,
+    positionAvailable: true,
     activeLeg: null as 'leg-a' | 'leg-b' | null,
   };
   const marker = Math.floor(Date.now() / 1000) - 20;
@@ -202,7 +203,9 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     } else if (endpoint === '/api/status') {
       json = {
         timestamp: observed,
-        position: { latitude: 35, longitude: -100, altitude: 35000 },
+        position: state.positionAvailable
+          ? { latitude: 35, longitude: -100, altitude: 35000 }
+          : null,
         ground_entry_point: { latitude: 36, longitude: -102 },
         metric_availability: {
           latency_ms: true,

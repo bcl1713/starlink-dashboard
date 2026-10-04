@@ -73,4 +73,4 @@ cd frontend/mission-planner
 node --version > "$OVERVIEW_ACCEPTANCE_OUTPUT_DIR/browser-runtime.txt"
 npm --version >> "$OVERVIEW_ACCEPTANCE_OUTPUT_DIR/browser-runtime.txt"
 npx playwright --version >> "$OVERVIEW_ACCEPTANCE_OUTPUT_DIR/browser-runtime.txt"
-npx playwright test --config playwright.window-acceptance.config.ts
+OVERVIEW_ACCEPTANCE_OUTPUT_DIR="$OVERVIEW_ACCEPTANCE_OUTPUT_DIR/browser" npx playwright test --config playwright.window-acceptance.config.ts
