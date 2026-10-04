@@ -287,10 +287,39 @@ export function OverviewMetricHistoryPanel({
     }
     if (!host.current || !surface.current || !width) return;
     const node = surface.current;
-    // A fresh bundle changes the plot origin, but the old and new transforms
-    // place the same timestamp at the same screen coordinate. Cancel the old
-    // transition before rebasing; start a new linear compositor transition.
-    const offset = -(motionElapsed / windowSeconds) * width;
+    let offset = -(motionElapsed / windowSeconds) * width;
+    const previous = paintedInput.current;
+    if (
+      plot.current &&
+      previous?.history.window_seconds === selectedWindowSeconds &&
+      previous.descriptor.metric === descriptor.metric &&
+      !reducedMotion &&
+      typeof DOMMatrixReadOnly === 'function'
+    ) {
+      // The compositor may have started later than the render's clock. Carry
+      // its actual visible time edge across the new raster origin, including
+      // the rounded overscan width, rather than inventing elapsed movement.
+      const transform = getComputedStyle(node).transform;
+      const oldOffset =
+        transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
+      const oldDomain = plot.current.scales.x;
+      if (oldDomain.min !== undefined && oldDomain.max !== undefined) {
+        const visibleEdge =
+          oldDomain.min +
+          ((previous.width - oldOffset) / plot.current.width) *
+            (oldDomain.max - oldDomain.min);
+        offset =
+          width -
+          ((visibleEdge - domain.min) / (domain.max - domain.min)) *
+            overscanWidth;
+      }
+    }
+    const committedElapsed = -(offset / width) * windowSeconds;
+    scroll.current.initialElapsed = committedElapsed;
+    scroll.current.startedMs = performance.now();
+    if (frozen.current) frozen.current.elapsed = committedElapsed;
+    // Cancel the old transition and flush the compensated origin before
+    // starting the next linear transition in this same commit.
     node.style.transition = 'none';
     node.style.transform = `translate3d(${offset}px, 0, 0)`;
     if (!plot.current) {
@@ -319,14 +348,11 @@ export function OverviewMetricHistoryPanel({
     plot.current.setScale('y', yRange);
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
-    const remaining = Math.max(0, BUFFER_SECONDS - motionElapsed);
-    const timer = window.setTimeout(() => {
-      if (!hidden && !error && !reducedMotion && remaining > 0) {
-        node.style.transition = `transform ${remaining}s linear`;
-        node.style.transform = `translate3d(${motionOffsetPixels({ elapsedSeconds: BUFFER_SECONDS, widthPixels: width, windowSeconds, bufferSeconds: BUFFER_SECONDS })}px, 0, 0)`;
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    const remaining = Math.max(0, BUFFER_SECONDS - committedElapsed);
+    if (!hidden && !error && !reducedMotion && remaining > 0) {
+      node.style.transition = `transform ${remaining}s linear`;
+      node.style.transform = `translate3d(${motionOffsetPixels({ elapsedSeconds: BUFFER_SECONDS, widthPixels: width, windowSeconds, bufferSeconds: BUFFER_SECONDS })}px, 0, 0)`;
+    }
     // Deliberately exclude the status tick: CSS owns intermediate frames.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
