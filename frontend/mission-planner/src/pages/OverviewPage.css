@@ -237,3 +237,10 @@
   font-size: 18px;
   line-height: 24px;
 }
+
+.globe-legend__marker--orbital {
+  background: #a6b8d1;
+  width: 4px;
+  height: 4px;
+  opacity: 0.65;
+}

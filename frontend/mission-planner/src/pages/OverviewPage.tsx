@@ -51,7 +51,6 @@ import { AnimatedFlowLine } from './AnimatedFlowLine';
 import { routeFlowEmitters } from './overview-flow-consumers';
 import { useOverviewLinkSettings } from '@/hooks/api/useOverviewLinkSettings';
 import { deriveOverviewLinkState } from './overview-link-state';
-import { projectTrafficArc } from './overview-traffic-arc';
 import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { OverviewClockPanel } from './OverviewClockPanel';
@@ -68,6 +67,10 @@ import { deriveArrivalPanel } from './overview-arrival';
 import { OverviewMetricHistoryPanels } from './OverviewMetricHistoryPanels';
 import { derivePlannedSatelliteState } from './overview-planned-satellite';
 import { OverviewPlannedSatelliteCard } from './OverviewPlannedSatelliteCard';
+import { useOrbitalTraffic } from '@/hooks/useOrbitalTraffic';
+import { OrbitalSprites } from './orbital/OrbitalSprites';
+import { chooseTrafficPath } from './orbital/traffic-path';
+import { sceneToEcefKm } from './orbital/coordinates';
 import { OverviewMapLegend } from './OverviewMapLegend';
 import { OverviewMapStatus } from './OverviewMapStatus';
 import { useOverviewLayout } from './useOverviewLayout';
@@ -415,16 +418,58 @@ export function OverviewPage() {
   );
   const popLatitude = groundEntryPoint?.latitude;
   const popLongitude = groundEntryPoint?.longitude;
-  const trafficPoints = useMemo(() => {
+  const orbitalEndpoints = useMemo(
+    () => ({
+      aircraft:
+        aircraftLatitude === undefined ||
+        aircraftLongitude === undefined ||
+        aircraftAltitudeFeet === undefined
+          ? null
+          : sceneToEcefKm(
+              projectAircraftScenePosition({
+                position: {
+                  latitude: aircraftLatitude,
+                  longitude: aircraftLongitude,
+                  altitude: aircraftAltitudeFeet,
+                },
+              })!.position
+            ),
+      pop:
+        popLatitude === undefined || popLongitude === undefined
+          ? null
+          : sceneToEcefKm(globePosition(popLatitude, popLongitude, 2)),
+    }),
+    [
+      aircraftLatitude,
+      aircraftLongitude,
+      aircraftAltitudeFeet,
+      popLatitude,
+      popLongitude,
+    ]
+  );
+  const orbital = useOrbitalTraffic({
+    settings: overviewLinkSettings,
+    endpoints: orbitalEndpoints,
+  });
+  const { current: orbitalSnapshot, route: orbitalRoute } = orbital;
+  const showSprites = Boolean(
+    overviewLinkSettings?.orbital_traffic_enabled &&
+      overviewLinkSettings.starshield_link_enabled &&
+      orbital.spritesReady &&
+      orbital.current?.valid.some(Boolean)
+  );
+  const chosenTraffic = useMemo(() => {
     if (
       !trafficGeometryEligible ||
       popLatitude === undefined ||
       popLongitude === undefined
     )
-      return [];
+      return { points: [], particleKey: `pop:${popLatitude}:${popLongitude}` };
     // Reconstruct from scalar endpoints so new polled status objects and metric
     // changes retain the same prepared arc and renderer resources.
-    return projectTrafficArc(
+    return chooseTrafficPath(
+      showSprites ? orbitalRoute : null,
+      showSprites ? orbitalSnapshot : null,
       projectAircraftScenePosition({
         position: {
           latitude: aircraftLatitude,
@@ -436,12 +481,16 @@ export function OverviewPage() {
     );
   }, [
     trafficGeometryEligible,
+    showSprites,
+    orbitalRoute,
+    orbitalSnapshot,
     aircraftLatitude,
     aircraftLongitude,
     aircraftAltitudeFeet,
     popLatitude,
     popLongitude,
   ]);
+  const trafficPoints = chosenTraffic.points;
   const linkState = deriveOverviewLinkState({
     settings: overviewLinkSettings,
     status,
@@ -713,6 +762,7 @@ export function OverviewPage() {
               route={hasRenderableRoute}
               history={aircraftHistoryPoints.length >= 2}
               groundEntryPoint={Boolean(groundEntryPoint)}
+              satellites={showSprites}
               trafficPath={linkState.starshieldVisible}
               plannedLink={linkState.xBandVisible}
               linkState={activeXLink?.state ?? null}
@@ -809,6 +859,14 @@ export function OverviewPage() {
                 globeOccluder={globeOccluder}
               />
             )}
+            {showSprites && orbital.current && (
+              <OrbitalSprites
+                current={orbital.current}
+                previous={orbital.previous}
+                generation={orbital.current.generation}
+                reducedMotion={reducedMotion}
+              />
+            )}
             {linkState.starshieldVisible && (
               <AnimatedFlowLine
                 points={trafficPoints}
@@ -818,7 +876,7 @@ export function OverviewPage() {
                 glow={TRAFFIC_PATH_STYLE.glow}
                 core={TRAFFIC_PATH_STYLE.core}
                 canAnimate={canAnimateStarshield}
-                particleKey={`pop:${popLatitude}:${popLongitude}`}
+                particleKey={chosenTraffic.particleKey}
                 depthWrite={false}
               />
             )}

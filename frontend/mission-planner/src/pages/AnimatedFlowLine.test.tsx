@@ -663,3 +663,49 @@ describe('AnimatedFlowLine lifecycle', () => {
     expect(positions.getX(0)).toBeLessThanOrEqual(2);
   });
 });
+
+it('orbital multi-hop geometry retains normalized progress and clears on inferred handover', async () => {
+  const key = 'orbital:["a",["1","2"],[6378,0,0]]';
+  const view = await render(
+    line({
+      points: [
+        [0, 0, 0],
+        [5, 0, 0],
+        [10, 0, 0],
+      ],
+      particleKey: key,
+    })
+  );
+  await frame();
+  await frame();
+  await frame();
+  const old = latest();
+  const count = old.geometry.drawRange.count;
+  await view.rerender(
+    line({
+      points: [
+        [1, 0, 0],
+        [11, 0, 0],
+        [21, 0, 0],
+      ],
+      particleKey: key,
+    })
+  );
+  expect(latest()).toBe(old);
+  expect(old.geometry.drawRange.count).toBe(count);
+  expect(old.geometry.getAttribute('position').getX(0)).toBeCloseTo(1.4);
+  await view.rerender(
+    line({
+      points: [
+        [1, 0, 0],
+        [11, 0, 0],
+        [21, 0, 0],
+      ],
+      particleKey: 'orbital:["b",["1","3"],[6378,0,0]]',
+    })
+  );
+  expectDisposed(old);
+  expect(latest().geometry.drawRange.count).toBe(0);
+  await frame();
+  expect(latest().geometry.drawRange.count).toBe(4);
+});

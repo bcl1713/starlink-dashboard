@@ -4,6 +4,7 @@ import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 
 interface OverviewMapLegendProps {
   collapsible?: boolean;
+  satellites?: boolean;
   aircraft: boolean;
   route: boolean;
   history: boolean;
@@ -16,6 +17,7 @@ interface OverviewMapLegendProps {
 /** Layer samples use the scene's draw guards, including retained geometry. */
 export function OverviewMapLegend({
   collapsible = false,
+  satellites = false,
   aircraft,
   route,
   history,
@@ -28,6 +30,11 @@ export function OverviewMapLegend({
   const toggle = useRef<HTMLButtonElement>(null);
   const listId = useId();
   const entries = [
+    {
+      visible: satellites,
+      label: 'Satellites',
+      sample: 'globe-legend__marker globe-legend__marker--orbital',
+    },
     {
       visible: aircraft,
       label: 'Aircraft',
