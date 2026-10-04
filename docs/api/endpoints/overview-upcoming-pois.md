@@ -73,7 +73,10 @@ flight, `eta_type: "estimated"` is calculated from the current telemetry
 position and speed against active-route geometry. Generated mission events use
 their stored route-segment projection, including its interior projected point;
 current speed is blended only on the current route portion and planned segment
-speeds apply afterward. There is no direct-coordinate ETA fallback when
+speeds apply afterward. The remaining current portion starts at the aircraft's
+projected position within its segment, so an interior-event ETA decreases as
+the aircraft approaches instead of restarting from the nearest waypoint.
+There is no direct-coordinate ETA fallback when
 projection, route geometry, travel direction, or telemetry is unsafe or
 unavailable. `estimated_arrival_time` is `calculated_at + eta_seconds`; it
 drives the live urgency cue and table ordering when present. It is a route-aware
@@ -114,8 +117,9 @@ first recovered position retains map context but cannot enable timing using a
 placeholder zero. Genuine measured stationary zero remains usable. Speed
 provenance is internal telemetry metadata; it does not change `/api/status`.
 
-`current_route_progress` is the route progress derived from that same position,
-or null when unknown. A destination is labeled passed only when progress
+`current_route_progress` is the continuous route progress derived from that
+same position projected onto the route, or null when unknown. It does not snap
+to the nearest waypoint. A destination is labeled passed only when progress
 establishes it; an unknown eligibility state is not evidence of passage.
 
 ### Panel and map lifecycle

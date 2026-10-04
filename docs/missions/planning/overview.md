@@ -48,6 +48,14 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 - **X transitions:** Manual coordination points where X-Band satellite handoff
   occurs
 
+In simulation and the active X-band link display, the current satellite changes
+when the aircraft reaches or passes the transition's projected position along
+the route. The 200 km geographic zone provides advance notice and a pending
+satellite; leaving that zone is not required to commit the change. If the first
+observation is already past a transition, the display catches up to its target.
+A committed change does not revert when position jitter crosses back over the
+transition.
+
 ---
 
 ## Step-by-Step Workflow
