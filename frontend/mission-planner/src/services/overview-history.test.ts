@@ -25,7 +25,9 @@ describe('overviewHistoryApi', () => {
       data: bundle,
     } as never);
     await expect(overviewHistoryApi.get()).resolves.toEqual(bundle);
-    expect(apiClient.get).toHaveBeenCalledWith('/api/overview-history');
+    expect(apiClient.get).toHaveBeenCalledWith('/api/overview-history', {
+      signal: undefined,
+    });
   });
   it('gets the persisted overview history window', async () => {
     const settings = {
@@ -36,7 +38,8 @@ describe('overviewHistoryApi', () => {
     } as never);
     await expect(overviewHistorySettingsApi.get()).resolves.toEqual(settings);
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/api/overview-history/settings'
+      '/api/overview-history/settings',
+      { signal: undefined }
     );
   });
   it('persists a selected overview history window', async () => {

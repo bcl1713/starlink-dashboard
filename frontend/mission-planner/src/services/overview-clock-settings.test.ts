@@ -33,7 +33,10 @@ describe('overviewClockSettingsApi', () => {
       data: settings,
     } as never);
     await expect(overviewClockSettingsApi.get()).resolves.toEqual(settings);
-    expect(apiClient.get).toHaveBeenCalledWith('/api/overview-clocks/settings');
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/overview-clocks/settings',
+      { signal: undefined }
+    );
   });
   it('replaces the complete editable operational-clock collection', async () => {
     const settings = {

@@ -21,18 +21,20 @@ export interface OverviewHistorySettings {
 }
 
 export const overviewHistoryApi = {
-  async get(): Promise<OverviewHistoryBundle> {
+  async get(signal?: AbortSignal): Promise<OverviewHistoryBundle> {
     const response = await apiClient.get<OverviewHistoryBundle>(
-      '/api/overview-history'
+      '/api/overview-history',
+      { signal }
     );
     return response.data;
   },
 };
 
 export const overviewHistorySettingsApi = {
-  async get(): Promise<OverviewHistorySettings> {
+  async get(signal?: AbortSignal): Promise<OverviewHistorySettings> {
     const response = await apiClient.get<OverviewHistorySettings>(
-      '/api/overview-history/settings'
+      '/api/overview-history/settings',
+      { signal }
     );
     return response.data;
   },

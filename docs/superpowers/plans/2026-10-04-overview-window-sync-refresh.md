@@ -51,7 +51,7 @@ Review Focus, baseline, and execution requirements.
   returning mutable confirmed settings/mission state, read counts, failure/hold
   controls, and a recorded ordered request log shared by both pages.
 
-- [ ] **Step 1: Write failing hook and two-page browser regressions.** Use real
+- [x] **Step 1: Write failing hook and two-page browser regressions.** Use real
       QueryClient observers/fake timers to assert
       clock/history/routes/satellites read again at 5000ms with focusManager
       false; default Configuration clock observers do not acquire periodic
@@ -91,21 +91,21 @@ Review Focus, baseline, and execution requirements.
   generated POIs change together. Keep canvas identity and a manually moved
   camera stable.
 
-- [ ] **Step 2: Observe failures before implementation.** Run
+- [x] **Step 2: Observe failures before implementation.** Run
       `npm run test:unit -- src/hooks/api/useOverviewRefresh.test.tsx` and
       `npx playwright test tests/e2e/overview-window-refresh.spec.ts --workers=1`
       from the frontend. Failures must identify missing background reads and
       stale visible state, not fixture/setup failures.
-- [ ] **Step 3: Implement observer options and signal transport.** Preserve
+- [x] **Step 3: Implement observer options and signal transport.** Preserve
       existing query keys, enabled flags, retries, default call sites, and
       arrival/status/active-link polling. Use structural sharing; avoid adding
       changing keys to Canvas/chart components or imperative cache clearing.
-- [ ] **Step 4: Verify hooks and the two-page fixture suite pass.** Include two
+- [x] **Step 4: Verify hooks and the two-page fixture suite pass.** Include two
       Configuration pages: one has an unsaved clock draft while the other saves;
       polling on Overview must not reset that draft. Reuse camera observation
       helpers and assert retained chart samples through unchanged-window saves.
       Run `npm run test:unit -- src/hooks/api` and `npm run build` as well.
-- [ ] **Step 5: Commit the scoped refresh deliverable.** Stage only this task's
+- [x] **Step 5: Commit the scoped refresh deliverable.** Stage only this task's
       listed files; commit `fix(overview): refresh saved state across windows`.
 
 ## Task 2: Preserve confirmed state through save/read races and recovery

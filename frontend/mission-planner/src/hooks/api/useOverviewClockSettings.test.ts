@@ -8,7 +8,6 @@ vi.mock('@/services/overview-clock-settings', () => ({
   },
 }));
 import { useQuery } from '@tanstack/react-query';
-import { overviewClockSettingsApi } from '@/services/overview-clock-settings';
 import { useOverviewClockSettings } from './useOverviewClockSettings';
 describe('useOverviewClockSettings', () => {
   it('reads persistent clock settings without polling', () => {
@@ -16,7 +15,7 @@ describe('useOverviewClockSettings', () => {
     useOverviewClockSettings();
     expect(useQuery).toHaveBeenCalledWith({
       queryKey: ['overview-clock-settings'],
-      queryFn: overviewClockSettingsApi.get,
+      queryFn: expect.any(Function),
       retry: false,
     });
   });

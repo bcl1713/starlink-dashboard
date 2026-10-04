@@ -21,8 +21,9 @@ Vitest/jsdom, Playwright Chromium, production Nginx/FastAPI, Docker Compose.
 **Spec:** [Approved design](../specs/2026-10-04-overview-window-sync-design.md).
 
 **Status:** Approved by the user on 2026-10-04. Execution method: one new
-session per task, followed by separate fresh-review and PR/merge sessions.
-Product implementation has not started.
+session per task, followed by separate fresh-review and PR/merge sessions. Task
+1 is delivered; Tasks 2–5, independent review, and integration remain pending.
+See the tracked progress record.
 
 ## Global Constraints
 
@@ -90,12 +91,12 @@ unchanged frontend passed 82 unit files / 619 tests and the production build;
 see the
 [investigation](../../reports/2026-10-04-overview-window-sync-investigation.md).
 
-- [ ] Before implementation, refresh `origin/dev` and reconcile any new changes.
+- [x] Before implementation, refresh `origin/dev` and reconcile any new changes.
       Preserve original checkout and all other worktrees.
-- [ ] Run `npm ci` in this worktree's frontend using the tracked lockfile.
+- [x] Run `npm ci` in this worktree's frontend using the tracked lockfile.
       Record Node/npm versions; do not change dependency versions for this
       issue.
-- [ ] Run `./tools/verify frontend` here and record the baseline. If it differs
+- [x] Run `./tools/verify frontend` here and record the baseline. If it differs
       from the recorded frontend tree, explain failures before product changes.
 
 ## Self-review and handoff
