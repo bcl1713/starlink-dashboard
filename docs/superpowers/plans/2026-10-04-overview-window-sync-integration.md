@@ -113,3 +113,11 @@ snapshot unavailable. No readiness claim beyond observed commands. Commits use
 command-scoped Codex identity; no persistent Git configuration. Normal push
 only;
 no force push, protection bypass, deployment, main promotion or shared cleanup.
+
+## Subsequent independent review
+
+[Fresh follow-up review](2026-10-04-overview-window-sync-follow-up-review.md)
+independently closes R1/R2 at 77afa602 with no Critical/Important finding.
+R3 Minor history-polling guidance remains open for the next integration stage;
+Task 5 step 7 remains unchecked. Preserve the author verification and handoff
+above as historical evidence. Final candidate/protected PR gates still apply.

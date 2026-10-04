@@ -171,5 +171,6 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
 Task 5 steps 1–6 are complete: see the
 [session record](2026-10-04-overview-window-sync-acceptance-progress.md) for
 production results and resolved regression gates. Step 7's independent review
-is complete; [R1/R2 corrections](2026-10-04-overview-window-sync-integration.md)
-require fresh follow-up review before gap closure.
+and [fresh follow-up](2026-10-04-overview-window-sync-follow-up-review.md)
+are complete. R1/R2 are independently closed; new R3 Minor documentation
+requires integration correction before step 7 gap closure.

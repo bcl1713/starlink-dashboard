@@ -22,9 +22,10 @@ This is separate from the implementation author's self-check.
 
 **Original review complete; not ready to merge.** R1 was Important and open
 at this review. [Integration corrections](2026-10-04-overview-window-sync-integration.md)
-now address R1/R2; fresh follow-up review is pending.
-R2 is Minor. No Critical finding. Step 7's gap-closure checkbox remains open;
-integration must fix R1 and obtain fresh follow-up review before merge.
+now address R1/R2; [fresh follow-up review](2026-10-04-overview-window-sync-follow-up-review.md)
+independently closed both at 77afa602. R3 Minor documentation remains open.
+No Critical/Important finding remains; step 7 stays unchecked pending R3 closure.
+The findings below preserve the original review and reproduction.
 This session changes review records and bounded evidence only, with no product
 fix, PR creation, merge, deployment or cleanup of shared resources.
 
