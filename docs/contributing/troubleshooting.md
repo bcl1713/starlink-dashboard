@@ -18,17 +18,22 @@ cat .git/hooks/pre-commit
 
 ## Linting Failures Don't Match CI
 
+Use the supported runtime and tool prerequisites from the
+[Quality Gates guide](quality-gates.md#prerequisites). Run from the repository
+root:
+
 ```bash
 # Install the committed backend formatter/linter versions used by CI
 pip install --requirement backend/starlink-location/requirements-dev.txt
 cd frontend/mission-planner
-npm update prettier eslint
-npm install -g markdownlint-cli2@latest
+npm ci
 ```
 
 The backend Black and Ruff versions are pinned in
 `backend/starlink-location/requirements-dev.txt`. Reinstall from that manifest
-instead of upgrading those tools independently.
+instead of upgrading those tools independently. Frontend tooling versions come
+from `frontend/mission-planner/package-lock.json`; use `npm ci` to restore them
+instead of `npm update`.
 
 ---
 
@@ -43,7 +48,7 @@ conflicting suggestions, reinstall both from the committed dev-tool manifest.
 
 ```bash
 cd frontend/mission-planner
-npm install
+npm ci
 ```
 
 ---

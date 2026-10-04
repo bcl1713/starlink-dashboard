@@ -111,22 +111,28 @@ pushes. Checks are defined in `.github/workflows/lint.yml`.
 
 ### Format All Code
 
+Run from the repository root after installing the
+[Quality Gates prerequisites](quality-gates.md#prerequisites).
+
 ```bash
 # Python
 black backend/starlink-location/app
 ruff check --fix backend/starlink-location/app
 
 # JavaScript/TypeScript
-cd frontend/mission-planner
-npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
+npm --prefix frontend/mission-planner exec -- prettier --write "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 
 # Markdown
-npx prettier --write "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --write "docs/**/*.md"
 ```
 
 ---
 
 ### Check Linting Without Formatting
+
+For the complete local/CI checks, use `./tools/verify static` from the
+repository root as documented in [Quality Gates](quality-gates.md). The
+following focused commands also run from the repository root:
 
 ```bash
 # Python
@@ -134,12 +140,11 @@ black --check backend/starlink-location/app
 ruff check backend/starlink-location/app
 
 # JavaScript/TypeScript
-cd frontend/mission-planner
-npx prettier --check "src/**/*.{ts,tsx,js,jsx}"
-npx eslint src
+npm --prefix frontend/mission-planner exec -- prettier --check "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
+npm --prefix frontend/mission-planner run lint
 
 # Markdown
-npx prettier --check "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --check "docs/**/*.md"
 markdownlint-cli2 "docs/**/*.md"
 ```
 
