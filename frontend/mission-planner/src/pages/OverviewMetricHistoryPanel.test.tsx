@@ -30,6 +30,15 @@ let resize: ResizeObserverCallback;
 let measuredWidth = 400;
 const observer = { observe: vi.fn(), disconnect: vi.fn() };
 const descriptor = OVERVIEW_METRIC_GRAPHS[0];
+let flushedTransforms = new WeakMap<HTMLElement, string>();
+function committedTransform(surface: HTMLElement) {
+  return flushedTransforms.get(surface)!;
+}
+function transitionSeconds(surface: HTMLElement) {
+  return Number(
+    surface.style.transition.match(/transform ([\d.]+)s linear/)?.[1]
+  );
+}
 function bundle(end = 120): OverviewHistoryBundle {
   return {
     window_seconds: 30,
@@ -71,6 +80,16 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(120_000);
   vi.clearAllMocks();
+  flushedTransforms = new WeakMap();
+  const rect = HTMLElement.prototype.getBoundingClientRect;
+  // jsdom has no compositor. Observe the flushed rebase origin separately
+  // from the inline transition endpoint, which is now set in the same commit.
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+    function (this: HTMLElement) {
+      flushedTransforms.set(this, this.style.transform);
+      return rect.call(this);
+    }
+  );
   measuredWidth = 400;
   Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
     configurable: true,
@@ -90,6 +109,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -156,11 +176,11 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.setData).toHaveBeenCalledTimes(1);
     expect(plot.setScale).toHaveBeenCalledWith('x', { min: 87.5, max: 132.5 });
     expect(
-      (
+      committedTransform(
         view.container.querySelector(
           '.overview-metric-history__surface'
         ) as HTMLElement
-      ).style.transform
+      )
     ).toContain('translate3d(0px');
     view.unmount();
     expect(plot.destroy).toHaveBeenCalledTimes(1);
@@ -217,11 +237,11 @@ describe('OverviewMetricHistoryPanel', () => {
       '.overview-metric-history__surface'
     ) as HTMLElement;
     const start = Number(
-      surface.style.transform.match(/translate3d\(([-\d.]+)px/)?.[1]
+      committedTransform(surface).match(/translate3d\(([-\d.]+)px/)?.[1]
     );
     expect(start).toBeCloseTo(-400 * (5 / 30));
     act(() => vi.advanceTimersByTime(0));
-    expect(surface.style.transition).toBe('transform 2.5s linear');
+    expect(transitionSeconds(surface)).toBeCloseTo(2.5);
     vi.setSystemTime(121_000);
     view.rerender(panel(history, false, 121_000));
     act(() => vi.advanceTimersByTime(2_000));
@@ -248,12 +268,12 @@ describe('OverviewMetricHistoryPanel', () => {
         '.overview-metric-history__time-axis span:last-child'
       )?.textContent;
     act(() => vi.advanceTimersByTime(0));
-    expect(surface.style.transition).toBe('transform 2.5s linear');
+    expect(transitionSeconds(surface)).toBeCloseTo(2.5);
     act(() => vi.advanceTimersByTime(500));
     view.rerender(panel(history, false, 140_000));
     // The compositor has moved half a second, not the 15 seconds of a wall-clock jump.
     expect(right()).toBe('00:01:58 UTC');
-    expect(surface.style.transition).toBe('transform 2.5s linear');
+    expect(transitionSeconds(surface)).toBeCloseTo(2.5);
   });
   it('ignores an older same-window bundle then accepts a newer recovery', () => {
     const view = render(panel(bundle(120), false, 125_000));
@@ -376,7 +396,7 @@ describe('OverviewMetricHistoryPanel', () => {
           .filter(([axis]) => axis === 'x')
           .at(-1)![1];
         const offset = Number(
-          surface.style.transform.match(/translate3d\(([-\d.]+)px/)?.[1]
+          committedTransform(surface).match(/translate3d\(([-\d.]+)px/)?.[1]
         );
         const after =
           ((110 - domain.min) / (domain.max - domain.min)) * 600 + offset;
@@ -404,7 +424,7 @@ describe('OverviewMetricHistoryPanel', () => {
       '.overview-metric-history__surface'
     ) as HTMLElement;
     expect(plot.setSize).toHaveBeenLastCalledWith({ width: 450, height: 1 });
-    expect(surface.style.transform).toBe('translate3d(-20px, 0, 0)');
+    expect(committedTransform(surface)).toBe('translate3d(-20px, 0, 0)');
     act(() => vi.advanceTimersByTime(0));
     expect(surface.style.transition).toBe('transform 5.5s linear');
     expect(surface.style.transform).toBe('translate3d(-75px, 0, 0)');
@@ -427,7 +447,7 @@ describe('OverviewMetricHistoryPanel', () => {
     view.rerender(panel(bundle(128), false, 128_000));
     expect(plot.setData).toHaveBeenCalledTimes(1);
     expect(plot.setData.mock.calls[0][0][0].at(-1)).toBe(128);
-    expect(surface.style.transform).toContain(
+    expect(committedTransform(surface)).toContain(
       'translate3d(6.666666666666667px'
     );
   });
@@ -451,7 +471,7 @@ describe('OverviewMetricHistoryPanel', () => {
       value: false,
     });
     act(() => document.dispatchEvent(new Event('visibilitychange')));
-    expect(surface.style.transform).toBe(frozen);
+    expect(committedTransform(surface)).toBe(frozen);
     act(() => vi.advanceTimersByTime(0));
     expect(surface.style.transition).toBe('transform 5.5s linear');
     expect(plot.create).toHaveBeenCalledTimes(1);

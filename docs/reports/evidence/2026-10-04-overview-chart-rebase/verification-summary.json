@@ -1,0 +1,74 @@
+{
+  "issue": 234,
+  "base_sha": "c8a69d25ba1e58140424d87c644d8aacb62c9d54",
+  "scope": "Confirmed cloud-renderer retained-sample rebase defect; local roughly 2 Hz jitter remains unverified.",
+  "cause": "A deferred CSS transition begins after the internal monotonic scroll clock. The next rebase carries predicted elapsed motion instead of the rendered transform, producing a discontinuity.",
+  "history": "The deferred timer dates to #208 and clock-based edge carry to #221; the relevant logic is unchanged across #227, #228, and #229. This does not establish the introduction point of the separately reported local jitter.",
+  "controlled_baseline": {
+    "delay_ms": [
+      0,
+      150,
+      350
+    ],
+    "motion_residual_px": [
+      -0.10544636050858495,
+      -1.1075228679180116,
+      -2.440051838954287
+    ]
+  },
+  "regression": {
+    "scales": [
+      1,
+      1.5,
+      2
+    ],
+    "delay_ms": 350,
+    "unchanged_production_failures": 3,
+    "original_residual_px": [
+      2.4415533653894683,
+      2.3757340188821,
+      2.428668070634143
+    ],
+    "bound_px": 1,
+    "fixed_passes": 3
+  },
+  "validation": {
+    "frontend_unit": {
+      "files": 82,
+      "passed": 619
+    },
+    "production_build": "passed",
+    "canonical_static": "passed through repository uv requirements environment; system Python lacks pytest",
+    "focused_motion_browser": {
+      "passed": 8
+    },
+    "full_history_fullscreen_browser": {
+      "passed": 18,
+      "failed": 1,
+      "failure": "fits populated plots and the compact arrival panel together at 1920x1080: support/globe-visual-ready.ts:82 center-pixel readiness timeout",
+      "unchanged_dev_comparison": "Same globe-readiness failure reproduced on exact base snapshot; no chart assertion reached."
+    },
+    "independent_review": "No important issues found; reviewer did not rerun tests."
+  },
+  "preserved_contracts": [
+    "Existing browser motion tolerances",
+    "Continuous viewport-based scroll speed",
+    "Real observed samples and rolling envelope",
+    "Selected window reset",
+    "Resize, pause/resume and reduced-motion behavior",
+    "Memoized processing and no unchanged data uploads"
+  ],
+  "limitations": [
+    "Local renderer and roughly 2 Hz operator observation have not been reproduced or certified resolved.",
+    "Controlled fixture checks are distinct from production-path/CDP acceptance."
+  ],
+  "logs": {
+    "red": "/tmp/issue-234-regression-red.log",
+    "focused_green": "/tmp/issue-234-regression-green.log",
+    "browser_full": "/tmp/issue-234-browser-full.log",
+    "fullscreen_baseline": "/tmp/issue-234-fullscreen-baseline.log",
+    "frontend": "/tmp/issue-234-frontend.log",
+    "static": "/tmp/issue-234-static.log",
+    "production_manifest": "/tmp/issue-234-evidence/production/manifest.json"
+  }
+}
