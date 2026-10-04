@@ -1,6 +1,23 @@
 import { expect, it } from 'vitest';
-import { propagateCatalog } from './propagation';
+import { CatalogPropagator, propagateCatalog } from './propagation';
 import { referenceOmm } from './test-fixtures';
+
+it('admits a future epoch on the same compiled catalog without changing IDs', () => {
+  const now = Date.parse(referenceOmm.EPOCH);
+  const catalog = new CatalogPropagator([
+    { ...referenceOmm, NORAD_CAT_ID: '1' },
+    {
+      ...referenceOmm,
+      NORAD_CAT_ID: '2',
+      EPOCH: new Date(now + 600001).toISOString(),
+    },
+  ]);
+  const before = catalog.update(now);
+  expect([...before.valid]).toEqual([1, 0]);
+  const after = catalog.update(now + 1);
+  expect(after.ids).toEqual(['1', '2']);
+  expect([...after.valid]).toEqual([1, 1]);
+});
 
 // Vallado AIAA 2006-6753 case 5. Published TEME at epoch:
 // [7022.46529266, -1400.08296755, 0.03995155] km.

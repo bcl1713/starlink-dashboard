@@ -271,3 +271,38 @@ async def test_provider_state_write_failure_never_reaches_network(
         assert calls == []
     finally:
         await service.aclose()
+
+
+@pytest.mark.asyncio
+async def test_catalog_retains_future_members_for_worker_eligibility_without_reinstall(
+    tmp_path,
+):
+    now = NOW
+    objects = [
+        {**OBJECT, "NORAD_CAT_ID": "1", "EPOCH": NOW.isoformat()},
+        {
+            **OBJECT,
+            "NORAD_CAT_ID": "2",
+            "EPOCH": (NOW + timedelta(minutes=10, seconds=1)).isoformat(),
+        },
+    ]
+    calls = 0
+
+    def fetch(request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json=objects)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(fetch)) as client:
+        service = OrbitalCatalogService(tmp_path, client=client, clock=lambda: now)
+        await service.acquire("future-eligibility")
+        before = await service.get_catalog("future-eligibility")
+        assert before["eligible_count"] == 1
+        assert [obj["NORAD_CAT_ID"] for obj in before["objects"]] == ["1", "2"]
+        now += timedelta(seconds=1)
+        after = await service.get_catalog("future-eligibility")
+        assert after["generation"] == before["generation"]
+        assert after["objects"] == before["objects"]
+        assert after["eligible_count"] == 2
+        assert calls == 1
+        await service.aclose()

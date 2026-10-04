@@ -1,4 +1,5 @@
 import { orbitalCatalogApi } from '@/services/orbital-catalog';
+import { createClientId } from '@/lib/clientId';
 import type { OverviewLinkSettings } from '@/services/overview-link-settings';
 import { OrbitalWorkerClient } from './worker-client';
 import type {
@@ -168,7 +169,7 @@ export class OrbitalLifecycle {
   private async activate() {
     const session: Session = {
       generation: ++this.generation,
-      id: `orbital-${crypto.randomUUID()}`,
+      id: `orbital-${createClientId()}`,
       abort: new AbortController(),
       expiry: 0,
       renewing: false,

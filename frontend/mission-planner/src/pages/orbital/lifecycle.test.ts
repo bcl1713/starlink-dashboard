@@ -266,3 +266,21 @@ it('status polling cannot acquire demand while visibility-return settings are pe
   expect(f.api.acquire).not.toHaveBeenCalled();
   f.lifecycle.dispose();
 });
+
+it('starts on HTTP LAN contexts without crypto.randomUUID', async () => {
+  const original = globalThis.crypto;
+  vi.stubGlobal('crypto', {
+    getRandomValues: original.getRandomValues.bind(original),
+  });
+  const f = setup();
+  try {
+    f.lifecycle.update(enabled, endpoints);
+    await flush();
+    expect(f.api.acquire).toHaveBeenCalledTimes(1);
+    expect(f.api.acquire.mock.calls[0][0]).toMatch(/^orbital-[a-zA-Z0-9_-]+$/);
+    expect(f.factory).toHaveBeenCalledTimes(1);
+  } finally {
+    f.lifecycle.dispose();
+    vi.unstubAllGlobals();
+  }
+});

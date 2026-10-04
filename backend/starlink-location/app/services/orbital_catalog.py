@@ -140,7 +140,10 @@ class OrbitalCatalogService:
         return {
             **catalog,
             **state,
-            "objects": eligible,
+            # Generation describes the complete accepted catalog. Keep its
+            # membership stable while the worker checks epoch eligibility on
+            # every update, including future records that become eligible.
+            "objects": objects,
             "eligible_count": len(eligible),
             "accepted_count": len(objects),
             "active_viewers": self.viewers.count(self.clock()),

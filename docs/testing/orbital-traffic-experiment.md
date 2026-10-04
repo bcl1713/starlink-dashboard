@@ -50,6 +50,10 @@ node tools/acceptance/journeys/orbital-traffic.mjs \
   --prove-failure true --toggles 50 --performance true
 ```
 
+Run functional stress with `--performance false`. For paired timing in a fresh
+browser session use `--phase performance --performance true`; this avoids
+contamination by prior stress runs. Every completed toggle is saved immediately.
+
 Run from the repository root, or pass `--repository-root`. Settings use the
 actual backend and Configuration controls. Status, route/history, configured
 X-band, leases, and catalog responses are explicitly browser-intercepted

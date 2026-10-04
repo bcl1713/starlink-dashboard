@@ -47,7 +47,8 @@ IDs, browser session identity, provider smoke, restart persistence, off/on
 `/tmp/starlink-261-{static4,backend,frontend}.log`.
 
 The independent whole-branch review is being requested with the unfinished
-performance and laptop gates explicitly identified. Actual deployment-laptop images/performance, actual background-tab
+performance and laptop gates explicitly identified. Actual deployment-laptop
+images/performance, actual background-tab
 validation there, complete GPU/driver memory measurement and definitive
 long-task attribution are unrun or unavailable. No CI absence is counted as
 passing evidence. Promotion, auto-merge and issue closure remain unauthorized.

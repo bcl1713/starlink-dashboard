@@ -20,6 +20,11 @@ export function OrbitalTrafficDiagnostics() {
   const runtime = client.getQueryData<OrbitalTrafficState['status']>([
     'orbital-runtime-status',
   ]);
+  const fallbackReason = runtime
+    ? runtime.kind === 'ready' || runtime.reason === null
+      ? 'None in last Overview observation'
+      : (runtime.reason ?? runtime.kind)
+    : (data?.fallback_reason ?? 'No Overview observation');
   return (
     <section
       className="my-6 rounded-lg border p-4"
@@ -46,12 +51,7 @@ export function OrbitalTrafficDiagnostics() {
           <p>Catalog acquired: {data.acquired_at ?? 'Never'}</p>
           <p>Last provider attempt: {data.last_attempt_at ?? 'Never'}</p>
           <p>Retry after: {data.retry_after_at ?? 'No additional delay'}</p>
-          <p>
-            Arc fallback reason:{' '}
-            {runtime?.reason ??
-              data.fallback_reason ??
-              'No usable inferred route'}
-          </p>
+          <p>Arc fallback reason: {fallbackReason}</p>
           {data.provider_error && <p>{data.provider_error}</p>}
           {data.suspended && (
             <button

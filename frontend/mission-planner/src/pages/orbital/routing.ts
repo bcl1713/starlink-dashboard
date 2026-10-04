@@ -243,12 +243,32 @@ export function selectRoute(
   state.egress = egress.selected;
   state.egressChallenger = egress.challenger;
   if (!state.access || !state.egress) return fallback('disconnected');
+  const current =
+    state.route &&
+    state.route.ids[0] === state.access &&
+    state.route.ids.at(-1) === state.egress &&
+    routeIsValid(state.route, snapshot, endpoints)
+      ? {
+          ...state.route,
+          lengthKm: routeLength(state.route, snapshot, endpoints),
+        }
+      : null;
   const found = shortestPath(
     snapshot,
     new OrbitalSpatialIndex(snapshot),
     snapshot.ids.indexOf(state.access),
     snapshot.ids.indexOf(state.egress)
   );
+  if (!found.route && current) {
+    state.route = current;
+    state.routeChallenger = null;
+    return {
+      route: current,
+      state,
+      fallbackReason: null,
+      expansions: found.expansions,
+    };
+  }
   if (!found.route)
     return fallback(
       found.exhausted ? 'search-budget' : 'disconnected',
@@ -261,16 +281,6 @@ export function selectRoute(
     identity: JSON.stringify([state.catalogGeneration, ids, endpoints.pop]),
   };
   candidate.lengthKm = routeLength(candidate, snapshot, endpoints);
-  const current =
-    state.route &&
-    state.route.ids[0] === state.access &&
-    state.route.ids.at(-1) === state.egress &&
-    routeIsValid(state.route, snapshot, endpoints)
-      ? {
-          ...state.route,
-          lengthKm: routeLength(state.route, snapshot, endpoints),
-        }
-      : null;
   const selected = advanceHysteresis(
     current?.identity ?? null,
     candidate.identity,

@@ -145,3 +145,25 @@ it('depth-constrained search refuses a ninth node and exhausted budgets', () => 
   expect(exhausted.expansions).toBe(2048);
   expect(exhausted.exhausted).toBe(true);
 });
+
+it('retains a physically valid route when the moving nearest-eight graph has no replacement', () => {
+  const points = [
+    circle(0),
+    circle(30),
+    ...Array.from({ length: 8 }, (_, i) => circle(180 + i)),
+  ];
+  const s = snapshot(points);
+  const endpoints = {
+    aircraft: circle(0, 6378.137),
+    pop: circle(30, 6378.137),
+  };
+  const first = selectRoute(s, endpoints, emptyRoutingState('same'));
+  expect(first.route?.ids).toEqual(['1', '2']);
+  for (let i = 0; i < 8; i++)
+    s.positionsKm.set(circle(0.01 + i * 0.001), (i + 2) * 3);
+  expect(routeIsValid(first.route!, s, endpoints)).toBe(true);
+  const next = selectRoute(s, endpoints, first.state);
+  expect(next.route?.identity).toBe(first.route!.identity);
+  expect(next.fallbackReason).toBeNull();
+  expect(next.expansions).toBeLessThanOrEqual(2048);
+});

@@ -52,3 +52,32 @@ it('configuration_only_diagnostics explains provenance and operator resume creat
   expect(orbitalCatalogApi.acquire).not.toHaveBeenCalled();
   client.clear();
 });
+
+it('does not invent an arc fallback for the last successful inferred route', async () => {
+  vi.mocked(orbitalCatalogApi.status).mockResolvedValue({
+    status: 'ready',
+    eligible_count: 1,
+    suspended: false,
+    fallback_reason: null,
+  } as never);
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  client.setQueryData(['orbital-runtime-status'], {
+    kind: 'ready',
+    diagnostics: null,
+    reason: null,
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <OrbitalTrafficDiagnostics />
+    </QueryClientProvider>
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByText(/Arc fallback reason: None in last Overview observation/)
+    ).toBeInTheDocument()
+  );
+  expect(screen.queryByText(/No usable inferred route/)).toBeNull();
+  client.clear();
+});

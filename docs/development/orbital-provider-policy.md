@@ -26,7 +26,10 @@ https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=JSON
 ```
 
 The application limit is 16 MiB streamed bytes and a 20-second timeout. Accepted
-objects are capped at 16,384 using numeric ID order. A download cannot replace
+objects are capped at 16,384 using numeric ID order. The catalog envelope retains
+the complete accepted membership for its generation; eligible_count reports the
+current epoch window, independently enforced on each worker update. A download
+cannot replace
 the last good catalog with an empty or corrupt response. Public orbital elements
 provide context; they do not establish serving spacecraft or internal routing.
 
