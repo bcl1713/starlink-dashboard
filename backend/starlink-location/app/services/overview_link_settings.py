@@ -20,7 +20,7 @@ _SETTING_FIELDS = frozenset(OverviewLinkSettings.__dataclass_fields__)
 
 
 def _validate_fields(payload: object) -> dict[str, bool]:
-    """Reject malformed settings instead of coercing saved visibility values."""
+    """Strictly validate update fields and recognized saved visibility values."""
     if not isinstance(payload, dict):
         raise TypeError("Overview link settings must be an object")
     if payload.keys() - _SETTING_FIELDS:
@@ -30,8 +30,16 @@ def _validate_fields(payload: object) -> dict[str, bool]:
     return payload
 
 
+def _settings_from_payload(payload: dict[str, object]) -> OverviewLinkSettings:
+    """Validate this version's fields, defaulting only those that are absent."""
+    known_fields = {
+        key: value for key, value in payload.items() if key in _SETTING_FIELDS
+    }
+    return OverviewLinkSettings(**_validate_fields(known_fields))
+
+
 class OverviewLinkSettingsStore:
-    """Read and atomically merge installation settings under a shared file lock."""
+    """Atomically merge installation settings, retaining other versions' fields."""
 
     def __init__(self, path: Path) -> None:
         self._path = path
@@ -45,12 +53,18 @@ class OverviewLinkSettingsStore:
 
     def _read(self) -> OverviewLinkSettings:
         """Read settings while the caller holds the file lock."""
+        return _settings_from_payload(self._read_payload())
+
+    def _read_payload(self) -> dict[str, object]:
+        """Read the complete saved object without discarding unfamiliar fields."""
         try:
             with self._path.open(encoding="utf-8") as handle:
                 payload = json.load(handle)
         except FileNotFoundError:
-            return OverviewLinkSettings()
-        return OverviewLinkSettings(**_validate_fields(payload))
+            return {}
+        if not isinstance(payload, dict):
+            raise TypeError("Overview link settings must be an object")
+        return payload
 
     def update(self, changes: dict[str, bool]) -> OverviewLinkSettings:
         """Merge only supplied fields without losing another viewer's edits."""
@@ -59,9 +73,10 @@ class OverviewLinkSettingsStore:
             raise ValueError("At least one overview link setting is required")
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
-            payload = asdict(self._read())
+            payload = self._read_payload()
+            payload.update(asdict(_settings_from_payload(payload)))
             payload.update(changes)
-            settings = OverviewLinkSettings(**payload)
+            settings = _settings_from_payload(payload)
             temporary_path: Path | None = None
             try:
                 with tempfile.NamedTemporaryFile(

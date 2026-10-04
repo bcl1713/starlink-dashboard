@@ -1,8 +1,12 @@
 # Orbital traffic experiment acceptance
 
-Issue #261 remains isolated on `experiment/261-orbital-traffic`. Orbital mode
-is off by default. Promotion, merging into `dev`/`main`, and closing the issue
-require a separate user decision after deployment-laptop validation.
+Issue #261 supplies the existing optional orbital implementation. The user
+requested restoring this option together with saved-settings compatibility on
+2026-10-04; `fix/orbital-settings-schema` contains both changes for review.
+Orbital mode remains off by default. Merging into `dev`/`main` and closing the
+issue remain separate from implementation and require review of the final
+candidate. Verify deployment-laptop GPU and actual background-tab behavior
+before treating the earlier local performance measurements as laptop evidence.
 
 ## Local preparation
 

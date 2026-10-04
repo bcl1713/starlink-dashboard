@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -160,3 +162,31 @@ def test_orbital_update_is_strict(client, value):
     before = client.get(URL).json()
     assert client.put(URL, json={"orbital_traffic_enabled": value}).status_code == 422
     assert client.get(URL).json() == before
+
+
+def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
+    path = tmp_path / "overview-links.json"
+    saved = {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": True,
+        "future_preference": {"display": "constellation"},
+    }
+    path.write_text(json.dumps(saved))
+    response = client.get(URL)
+    assert response.status_code == 200
+    assert response.json() == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": True,
+    }
+    response = client.put(URL, json={"x_band_link_enabled": False})
+    assert response.status_code == 200
+    assert response.json() == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": False,
+        "orbital_traffic_enabled": True,
+    }
+    assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
+    assert client.put(URL, json={"future_preference": False}).status_code == 422
+    assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
