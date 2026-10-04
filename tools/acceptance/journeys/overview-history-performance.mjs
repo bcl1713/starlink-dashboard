@@ -414,8 +414,10 @@ async function run(options) {
         height: 1080,
       });
       await sleep(1000);
-      const background = await context.newPage();
-      await background.goto("about:blank");
+      await session.send("Browser.setWindowBounds", {
+        windowId: target.windowId,
+        bounds: { windowState: "minimized" },
+      });
       await expect.poll(() => page.evaluate(() => document.hidden)).toBe(true);
       const hiddenBefore = await page.evaluate(
         () => window.__overviewHistoryProbe.snapshot().historyParseCount,
@@ -427,8 +429,11 @@ async function run(options) {
       if (hiddenAfter <= hiddenBefore)
         throw new Error("background history polling stopped");
       event({ kind: "background_polling", hiddenBefore, hiddenAfter });
+      await session.send("Browser.setWindowBounds", {
+        windowId: target.windowId,
+        bounds: { windowState: "normal" },
+      });
       await page.bringToFront();
-      await background.close();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
       await page.goto(`${options.origin}/configuration`);
       await page.goto(`${options.origin}/overview`);

@@ -191,3 +191,9 @@ def test_refuses_nonempty_evidence_instead_of_mixing_phases(checkout, tmp_path):
     assert result.returncode != 0
     assert "nonempty evidence" in result.stderr
     assert (output / "samples.jsonl").read_text() == "existing"
+
+
+def test_trace_export_does_not_require_rootless_bind_remounts():
+    source = RUNNER.read_text()
+    assert 'docker exec "$backend" cat /data/overview-history-queries.jsonl' in source
+    assert 'docker exec "$backend" cat /data/overview-history-reads.jsonl' in source
