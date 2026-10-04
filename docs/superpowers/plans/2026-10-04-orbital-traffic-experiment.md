@@ -89,9 +89,9 @@ file paths below are relative to the repository root; frontend task paths use
   the future. Expire each object independently.
 - Persist last good catalog, acquisition time, object epochs, stable generation
   and upstream attempt time. Coalesce downloads; at most one upstream attempt
-  per `two hours`, failures included. Honor longer retry delays. Every non-200 HTTP response
-  suspends until explicit operator intervention (reviewed provider policy). No demand means no periodic
-  upstream work.
+  per `two hours`, failures included. Honor longer retry delays. Every non-200
+  HTTP response suspends until explicit operator intervention (reviewed
+  provider policy). No demand means no periodic upstream work.
 - Propagate once per second at a common UTC instant; route selection at most
   every five seconds. Never propagate every satellite per animation frame.
 - Access/egress: greatest elevation above a `ten-degree minimum`; a shared

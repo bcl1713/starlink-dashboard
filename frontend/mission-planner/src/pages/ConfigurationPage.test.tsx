@@ -20,14 +20,12 @@ function render(element: ReactNode) {
 }
 vi.mock('@/services/orbital-catalog', () => ({
   orbitalCatalogApi: {
-    status: vi
-      .fn()
-      .mockResolvedValue({
-        status: 'loading',
-        eligible_count: 0,
-        rejected_count: 0,
-        truncated_count: 0,
-      }),
+    status: vi.fn().mockResolvedValue({
+      status: 'loading',
+      eligible_count: 0,
+      rejected_count: 0,
+      truncated_count: 0,
+    }),
     resume: vi.fn(),
   },
 }));

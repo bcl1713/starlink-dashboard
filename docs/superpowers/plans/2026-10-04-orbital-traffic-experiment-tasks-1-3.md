@@ -121,10 +121,10 @@ update the cache, but cannot reschedule.
       acquisition time.
 - [ ] Write `test_attempt_clock_survives_restart_and_failure`: 20 simultaneous
       viewers make one attempt; failure still blocks until 7,200 seconds; longer
-      Retry-After wins; Every non-200 HTTP response persists suspension; resume cannot bypass
-      cooldown. Restart after timeout, cancellation or state-file corruption
-      cannot storm provider. Persist last good data despite failed refresh or
-      partial disk write.
+      Retry-After wins; every non-200 HTTP response persists suspension; resume
+      cannot bypass cooldown. Restart after timeout, cancellation or state-file
+      corruption cannot storm provider. Persist last good data despite failed
+      refresh or partial disk write.
 - [ ] Write `test_viewer_demand_and_diagnostics`: no viewer means zero upstream
       calls/timers; status GET creates none; expired/released leases stop
       periodic work; renewed/acquired leases share cache. Epochs exactly 72
