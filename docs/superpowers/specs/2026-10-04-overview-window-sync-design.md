@@ -2,8 +2,9 @@
 
 **Issue:** [257](https://github.com/bcl1713/starlink-dashboard/issues/257)
 
-**Status:** Approved by the user on 2026-10-04; product implementation has not
-started. Implementation-plan review and execution-method selection are pending.
+**Status:** Design and implementation plan approved by the user on 2026-10-04.
+Execution uses one new session per task, then fresh review and PR/merge
+sessions. Product implementation has not started.
 
 **Base:** `dev` at `c8a69d25ba1e58140424d87c644d8aacb62c9d54`, including merged
 [PR 258](https://github.com/bcl1713/starlink-dashboard/pull/258).
@@ -195,6 +196,7 @@ GitHub confirmed PR 258 merged, `git rebase origin/dev` moved it onto
 checkout is independent. Refresh/rebase against `dev` again before delivery if
 it advances.
 
-The user approved this written design on 2026-10-04. Complete the implementation
-plan review and execution-method gate next. Design approval does not claim
-feature acceptance or authorize a merge or deployment.
+The user approved this written design and its implementation plan on 2026-10-04
+and subsequently authorized the session chain through PR and merge into `dev`.
+Acceptance and independent review remain required before merging. Deployment and
+promotion to `main` remain outside this work.

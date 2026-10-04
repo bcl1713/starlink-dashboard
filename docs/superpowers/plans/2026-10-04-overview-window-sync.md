@@ -3,7 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans`
 > for native execution, or `superpowers:subagent-driven-development` if the user
 > selects delegation. Execute the checkbox steps in the linked task plans in
-> order.
+> order. The approved session-by-session handoff protocol below takes priority
+> over skill defaults that continue through every task in one session.
 
 **Goal:** Automatically apply saved Configuration/Missions changes to existing
 Overview windows and expose acknowledged display controls on Configuration.
@@ -19,7 +20,9 @@ Vitest/jsdom, Playwright Chromium, production Nginx/FastAPI, Docker Compose.
 
 **Spec:** [Approved design](../specs/2026-10-04-overview-window-sync-design.md).
 
-**Status:** Prepared for user review. Implementation/execution method pending.
+**Status:** Approved by the user on 2026-10-04. Execution method: one new
+session per task, followed by separate fresh-review and PR/merge sessions.
+Product implementation has not started.
 
 ## Global Constraints
 
@@ -41,7 +44,9 @@ Vitest/jsdom, Playwright Chromium, production Nginx/FastAPI, Docker Compose.
   impossible wall-clock bound.
 - Keep Docker's inherited DOCKER_HOST/context and proxy/CA trust. Acceptance
   uses isolated names, volumes, and loopback ports; no shared installation data.
-- No merge, issue closure, deployment, or changes to unrelated open issues.
+- The user authorizes a feature-branch PR and merge into `dev` after applicable
+  acceptance, independent review, and exact-head required checks pass. No `main`
+  promotion, deployment, or changes to unrelated open issues are authorized.
 
 ## Review Focus
 
@@ -105,7 +110,10 @@ never newly issued, but timing out cannot abort a native fullscreen request the
 browser already accepted. Late replies cannot claim success; actual target
 fullscreen events remain authoritative. Review this distinction with the plan.
 
-Review this plan and choose native or subagent-driven execution before starting
-product implementation. Native execution is recommended because these five tasks
-share query/UI interfaces and can be implemented sequentially in this existing
-session; retain independent whole-branch review before readiness.
+The user approved this plan and selected one new session per task. Follow the
+[session handoff protocol](2026-10-04-overview-window-sync-handoff.md) and the
+[tracked progress record](2026-10-04-overview-window-sync-progress.md). Sessions
+1–4 stop after their assigned task and prepare the next message. Session 5
+completes acceptance preparation and hands off to fresh independent review. An
+integration session resolves findings, creates/completes the PR, verifies the
+final candidate, and merges into `dev` under the user's existing authorization.

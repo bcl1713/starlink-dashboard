@@ -157,12 +157,13 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
 - [ ] **Step 6: Verify cleanup and commit.** Stop only the `starlink-257`
       project and remove only its named volumes; check no task
       containers/listeners remain. Format and lint changed docs; commit
-      `test(overview): verify cross-window     production workflow`. If this
-      commit changes frontend/backend acceptance inputs, rebuild and rerun the
+      `test(overview): verify cross-window production workflow`. If this commit
+      changes frontend/backend acceptance inputs, rebuild and rerun the
       production journey at the final candidate SHA.
 - [ ] **Step 7: Obtain independent whole-branch review and close gaps.** Review
       against the approved spec/plan, query lifecycle, message
       expiration/targeting, fullscreen truthfulness, tests, and user guidance.
       Fix material findings and rerun affected verification. Report exact
-      acceptance limitations. Create a draft PR against dev when ready; do not
-      merge or close the issue automatically.
+      acceptance limitations. Follow the approved session handoff protocol for
+      fresh review, integration fixes, PR creation, and verified merge into
+      `dev`.
