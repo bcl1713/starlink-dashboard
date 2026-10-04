@@ -32,7 +32,7 @@ session per task, and continuation through PR and merge into `dev`.
 | Task 2             | Complete   | Confirmed state, save/read races, recovery                                               |
 | Task 3             | Complete   | Display message protocol and sessions                                                    |
 | Task 4             | Complete   | Configuration controls and fullscreen feedback                                           |
-| Task 5             | Incomplete | [Task 5 evidence and open gates](2026-10-04-overview-window-sync-acceptance-progress.md) |
+| Task 5             | Complete   | [Task 5 steps 1–6 evidence](2026-10-04-overview-window-sync-acceptance-progress.md)      |
 | Independent review | Pending    | Fresh review of the whole branch                                                         |
 | PR and merge       | Pending    | Findings, final candidate checks, PR to dev, merge                                       |
 

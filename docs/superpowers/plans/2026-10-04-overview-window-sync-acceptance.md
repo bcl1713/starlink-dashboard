@@ -126,7 +126,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
       local click success, and local Escape state propagation. Save desktop and
       fullscreen screenshots and response-to-visible durations; assert each
       healthy controlled propagation is <=8000ms.
-- [ ] **Step 4: Run relevant existing browser regressions and quality gates.**
+- [x] **Step 4: Run relevant existing browser regressions and quality gates.**
       From frontend run the command below. At repository root run
       `./tools/verify frontend`, `./tools/verify backend`,
       `./tools/verify static`. Preserve existing tolerances. Report
@@ -168,6 +168,6 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
       fresh review, integration fixes, PR creation, and verified merge into
       `dev`.
 
-Task 5 execution remains incomplete: see the
+Task 5 steps 1–6 are complete: see the
 [session record](2026-10-04-overview-window-sync-acceptance-progress.md) for
-production results and required regression failures. Step 7 has not begun.
+production results and resolved regression gates. Step 7 has not begun.

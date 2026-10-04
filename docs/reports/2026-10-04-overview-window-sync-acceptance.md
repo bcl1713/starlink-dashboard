@@ -1,9 +1,9 @@
 # Overview window synchronization acceptance
 
-Date: 2026-10-04. Issue: #257. **Task 5 remains incomplete** because the
-required existing browser regression lane has unresolved failures. Independent
-whole-branch review, required exact-head CI, feature PR and merge remain
-pending. Tasks 1–4 and their recorded contracts/rulings remain delivered.
+Date: 2026-10-04. Issue: #257. **Task 5 steps 1–6 are complete.** The
+continuation below resolves the required browser regression gate. Independent
+whole-branch review, required exact-head CI, feature PR and merge remain pending.
+Tasks 1–4 and their recorded contracts/rulings remain delivered.
 
 ## Candidate and evidence
 
@@ -110,7 +110,7 @@ fullscreen permission flags are added. The optional headed Xvfb/XTest run sends
 OS Escape rather than treating Playwright synthetic Escape as browser native
 exit. The device/browser and physical display limitations remain.
 
-## Quality gates and unresolved regressions
+## Earlier quality gates and regression diagnosis
 
 - `./tools/verify frontend`: **90 files / 788 tests passed**, production build
   passed after the clock fix; existing large-chunk advisory retained.
@@ -155,8 +155,8 @@ container now pass empty-area pointers through; fullscreen buttons and
 map/satellite cards remain interactive. Original regression
 coordinates/expectations are retained. Both tests now pass (**two passed,
 1.3m**), `pointer-fixed.log`. The initial wrapper-only fix failed both tests;
-preserved traces identified the outer container too. Four baseline-dependent
-layout/scroll cases remain unresolved until the fresh full lane succeeds. All
+preserved traces identified the outer container too. At that stage, four baseline-dependent
+layout/scroll cases remained unresolved until the fresh full lane succeeded. All
 four display-control cases then passed headed in isolated Xvfb, including actual
 OS Escape and native state propagation: **4 passed (2.3m)**,
 `native-os-final.log`. No fullscreen permission flags were used.
@@ -202,9 +202,54 @@ The runner stops only its owned `starlink-257` project and named volumes, checks
 project labels and binds both task ports after cleanup. Task source archives are
 removed; full evidence and shared resources remain.
 
-Resume **Task 5 steps 1–6**, resolving the required regression gate and
-rerunning affected exact-head checks. Do not repeat Tasks 1–4 or approval gates.
-Do not advance to independent review until the completion contract is met. The
-next stage remains separate whole-branch review, followed by authorized
-protected PR/merge into `dev`; no force push, deploy, main promotion or shared
-deletion.
+The continuation below completes **Task5 steps1–6**. Next is separate fresh
+whole-branch review, followed by authorized protected PR/merge into `dev`; no
+force push, deploy, main promotion or shared deletion.
+
+## Task 5 continuation: resolved compact layout and final evidence
+
+Continuation started at `b9df60295fa602d0eb3c2d4660e965f83bc7f33b`, whose final
+required lane was 51 passed/two scroll failures; all rotation/pointer/reset cases
+had passed. This supersedes the historical six-failure lane above without losing
+its evidence. Remote dev remains `b2ea3341f78137c1409a618c8d8da5814a14dac2`.
+
+Both original scroll cases reproduced. The upper controls occupied 170.17px and
+arrival 80.69px in a bounded 844×325 shell, forcing stacked layout. The page then
+scrolled 140px while the metrics rail stayed 0. Landscape-only CSS places map
+controls beside legend, identity/fullscreen on one row, and satellite across both
+rows. Original fit/flow guards, readable sizes, gesture logic, tests and
+thresholds remain unchanged. Cost if this ruling is wrong: compact long-content,
+follow and native behavior need further review.
+
+Original regressions RED: two failed → GREEN: two passed (58.5s). Separate browser
+bounds verification passed (one test, 18.7s): controls/arrival contained, text fit,
+no overlapping panels. Its screenshot was visually inspected:
+
+![Compact landscape controls](evidence/2026-10-04-overview-window-sync/compact.png)
+
+Required unchanged eight-file lane: **53 passed (12.0m)**. Canonical frontend:
+**90 files/788 tests plus production build passed**; backend: **1422 passed/20 skipped**,
+two existing Cartopy warnings, 118.97s; static passed. Sequential runner safety:
+**four passed (0.23s)**. Existing chunk advisory and preview proxy diagnostics
+are preserved, with no retry/tolerance/dependency changes.
+
+Real production input: `bf675690f2e0fbecbcc394a1140372ccf8609c24`, exact tracked
+archive/rebuilt images. **Two passed (1.8m)**; ordinary/native fullscreen=false/true,
+all 18 mutations 200 through Nginx, largest propagation 5531ms. Navigation 2→2,
+Canvas/uPlot identity, camera intent, retained history and four restored clocks
+pass. [Bounded continuation evidence](evidence/2026-10-04-overview-window-sync/continuation.json)
+preserves the real timings/read counts and mutation summaries. Prior controlled
+controls/GPS/link/race evidence and all documented limitations remain unchanged.
+
+Full continuation artifacts are environment-local:
+
+```text
+.superpowers/sdd/2026-10-04-overview-window-sync-acceptance/evidence/task5-resume/
+```
+
+The final report/checklist commit changes docs/evidence only. Fresh results at
+its frozen SHA are saved outside Git as `final-summary.json`, `review-handoff.txt`
+and `final-manifest.json`, with canonical/browser/production logs. Cleanup
+checks only task project/volumes and ports; unrelated resources are preserved.
+Step 7 independent review and PR/merge remain pending; this author's validation
+is not the separate fresh whole-branch review.

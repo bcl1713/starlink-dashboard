@@ -1,7 +1,8 @@
 # Issue 257 Task 5 session record
 
-Task 5 steps 1–6 are **incomplete**: the required browser regression gate has
-layout/scroll failures. Review/PR/merge remain pending. Preserve Tasks 1–4,
+Task 5 steps 1–6 are **complete** after the continuation recorded below. The
+required browser regression gate is resolved. Review/PR/merge remain pending.
+Preserve Tasks 1–4,
 [central progress](2026-10-04-overview-window-sync-progress.md),
 [prior session entries](2026-10-04-overview-window-sync-sessions.md),
 [approved plan](2026-10-04-overview-window-sync.md), and
@@ -162,9 +163,9 @@ contracts, rulings and all previous evidence remain preserved.
 
 Only product change: landscape placement in `OverviewOverlayLayout.css`.
 Original width844 and landscape-gap tests reproduced **two failures**. Browser
-measurements showed the bounded shell at844×325, controls170.17px tall and
-arrival80.69px tall. The layout correctly rejected the oversized upper band;
-stacked layout scrolled the page140px while the metrics rail stayed at0.
+measurements showed the bounded shell at844×325, controls 170.17px tall and
+arrival 80.69px tall. The layout correctly rejected the oversized upper band;
+stacked layout scrolled the page 140px while the metrics rail stayed at0.
 
 Ruling: place map controls beside the legend, display identity/fullscreen in one
 row, and the satellite across both rows in landscape only. Preserve control
@@ -173,7 +174,7 @@ expectations. Cost if wrong: compact long-content/follow/native behavior needs
 further regression verification. No REST/query/channel/fullscreen logic changes.
 
 RED **two failed** → GREEN **two passed (58.5s)**. A separate real-browser
-measurement check passed (**one test,18.7s**): all controls and arrival panels
+measurement check passed (**one test, 18.7s**): all controls and arrival panels
 were contained, text fit, and panels did not overlap. Its screenshot was visually
 inspected; diagnostic source is preserved locally and removed from the product
 tree. Setup-only sandbox/wrong-working-directory errors are separate evidence.
@@ -193,8 +194,44 @@ Continuation evidence is environment-local under:
 Logs: `scroll-red.log`, `diagnostic.log`, `scroll-green.log`,
 `compact-verified.log`, `regressions-precommit.log`,
 `frontend-precommit.log`, `backend-precommit.log`, `static-precommit.log`.
-Prior Task5 evidence, including unchanged-base failures, remains untouched.
+Prior Task 5 evidence, including unchanged-base failures, remains untouched.
 
-The regression gate is resolved on these inputs. Task5 remains incomplete until
+The regression gate is resolved on these inputs. Task 5 remains incomplete until
 the committed candidate's real production journey, final checks and cleanup are
-verified and recorded. Step7/independent review has not begun.
+verified and recorded. Step 7/independent review has not begun.
+
+### Continuation completion and next stage
+
+Layout-fix commit: `bf675690f2e0fbecbcc394a1140372ccf8609c24`.
+Real production rebuilt from its exact tracked archive: **two passed (1.8m)**,
+ordinary/native fullscreen=false/true. All18 observed mutations returned200
+through Nginx; largest propagation 5531ms, within 8000ms. Camera, Canvas/uPlot,
+retained history, four restored clocks and navigation 2→2 remain verified.
+Cleanup found no task containers/volumes/listeners18257/15257. Sequential runner
+safety tests then passed **four tests (0.23s)**. Logs: `production-fix.log`,
+`runner-precommit.log`; complete provenance/browser/API artifacts:
+`production-bf675690f2e0fbecbcc394a1140372ccf8609c24/` in continuation evidence.
+
+Steps 1–6 preparation is complete; step 7 remains pending. The completion/report
+commit changes documentation/evidence only. Freeze that final candidate and save
+fresh canonical/browser/production results, SHA256 manifest, cleanup and exact
+remote verification outside the tracked tree. Final SHA and outcomes are in
+`review-handoff.txt` and `final-summary.json` under continuation evidence, avoiding
+self-referential tracked SHAs. If a final check fails, Task 5 cannot advance.
+
+Carry every earlier ruling/limitation: physical provider/GPS/suspension not
+accepted; valid task simulation only; real X-band visual limitation distinguished
+from controlled enabled-to-disabled projection; native activation/OS Escape
+truthfulness, unchanged command deadlines and local-click fallback. Runtime and
+actor Docker endpoint/context/proxy/CA are unchanged. Original checkout and
+shared resources preserved; no deployment/main promotion or review dispatch.
+
+Next: separate fresh **independent whole-branch review**, acceptance Task 5
+step 7.
+Review current dev diff against spec/main plan Review Focus and all rulings,
+query lifecycle, targeting/expiry, native truth, tests and guidance. Report
+severity/file/line/operator effect/reproduction/correction in tracked progress;
+hand off to integration with exact SHA. Preserve required acceptance, fresh
+follow-up review for material fixes, branch protection and exact-head CI under
+the inherited PR/merge authorization. Do not create/merge the feature PR in this
+acceptance-preparation session.

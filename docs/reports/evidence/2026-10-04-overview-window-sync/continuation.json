@@ -1,0 +1,224 @@
+{
+  "starting_sha": "b9df60295fa602d0eb3c2d4660e965f83bc7f33b",
+  "production_input_sha": "bf675690f2e0fbecbcc394a1140372ccf8609c24",
+  "required_regressions": {
+    "passed": 53,
+    "failed": 0,
+    "duration": "12.0m",
+    "assertions_unchanged": true
+  },
+  "cases": [
+    {
+      "sha": "bf675690f2e0fbecbcc394a1140372ccf8609c24",
+      "fixtures": false,
+      "origin": "http://127.0.0.1:15257",
+      "timings": {
+        "clock": 3105,
+        "starshield_link_enabled": 3959,
+        "x_band_link_enabled": 31,
+        "history-window": 5531,
+        "browser-follow": 61,
+        "activate-0": 4278,
+        "activate-1": 4129,
+        "active-leg-timing": 4320,
+        "deactivation": 4152
+      },
+      "reads": {
+        "/api/routes": 11,
+        "/api/overview-clocks/settings": 11,
+        "/api/status": 50,
+        "/api/overview/upcoming-pois": 11,
+        "/api/overview-links/settings": 11,
+        "/api/overview-history/settings": 11,
+        "/api/satellites": 11,
+        "/api/active-x-link": 49,
+        "/api/routes/": 11,
+        "/api/overview-history": 11,
+        "/api/routes/first_1": 2,
+        "/api/routes/second_1": 3
+      },
+      "fullscreen": true,
+      "navigation": {
+        "baseline": 2,
+        "final": 2
+      },
+      "restoredClockLabels": [
+        "Zulu / UTC",
+        "Washington, DC",
+        "Omaha, NE",
+        "Tokyo, JP"
+      ],
+      "mutations": [
+        {
+          "endpoint": "/api/overview-clocks/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127720363,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127724667,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127728730,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/overview-history/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127728785,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/first-0bfb6bb3-3fe2-48d7-9938-9952e2aef42b/activate",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127735324,
+          "page": "http://127.0.0.1:15257/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/second-44f8435b-a483-40d5-8525-ada934637042/activate",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127740393,
+          "page": "http://127.0.0.1:15257/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/second-44f8435b-a483-40d5-8525-ada934637042",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127745222,
+          "page": "http://127.0.0.1:15257/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/second-44f8435b-a483-40d5-8525-ada934637042"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/second-44f8435b-a483-40d5-8525-ada934637042/timeline/preview",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127745763,
+          "page": "http://127.0.0.1:15257/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/second-44f8435b-a483-40d5-8525-ada934637042"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f/legs/deactivate",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127749933,
+          "page": "http://127.0.0.1:15257/missions/window-f172c729-0a12-4e51-91e2-207f4cd0c91f"
+        }
+      ]
+    },
+    {
+      "sha": "bf675690f2e0fbecbcc394a1140372ccf8609c24",
+      "fixtures": false,
+      "origin": "http://127.0.0.1:15257",
+      "timings": {
+        "clock": 4079,
+        "starshield_link_enabled": 4459,
+        "x_band_link_enabled": 27,
+        "history-window": 5111,
+        "browser-follow": 88,
+        "activate-0": 4012,
+        "activate-1": 4080,
+        "active-leg-timing": 4100,
+        "deactivation": 5097
+      },
+      "reads": {
+        "/api/routes": 12,
+        "/api/overview-clocks/settings": 12,
+        "/api/status": 55,
+        "/api/overview-history/settings": 12,
+        "/api/overview-links/settings": 12,
+        "/api/overview/upcoming-pois": 12,
+        "/api/satellites": 12,
+        "/api/routes/": 12,
+        "/api/active-x-link": 55,
+        "/api/overview-history": 12,
+        "/api/routes/first": 1,
+        "/api/routes/second": 2
+      },
+      "fullscreen": false,
+      "navigation": {
+        "baseline": 2,
+        "final": 2
+      },
+      "restoredClockLabels": [
+        "Zulu / UTC",
+        "Washington, DC",
+        "Omaha, NE",
+        "Tokyo, JP"
+      ],
+      "mutations": [
+        {
+          "endpoint": "/api/overview-clocks/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127667126,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127672114,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127676721,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/overview-history/settings",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127676772,
+          "page": "http://127.0.0.1:15257/configuration"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/first-6bf10dde-71fa-4b03-b022-a91563d355d5/activate",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127683058,
+          "page": "http://127.0.0.1:15257/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/second-e75868eb-482e-4f10-8761-c662ca78b0af/activate",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127687601,
+          "page": "http://127.0.0.1:15257/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/second-e75868eb-482e-4f10-8761-c662ca78b0af",
+          "method": "PUT",
+          "status": 200,
+          "at": 1791127692472,
+          "page": "http://127.0.0.1:15257/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/second-e75868eb-482e-4f10-8761-c662ca78b0af"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/second-e75868eb-482e-4f10-8761-c662ca78b0af/timeline/preview",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127693027,
+          "page": "http://127.0.0.1:15257/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/second-e75868eb-482e-4f10-8761-c662ca78b0af"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7/legs/deactivate",
+          "method": "POST",
+          "status": 200,
+          "at": 1791127696880,
+          "page": "http://127.0.0.1:15257/missions/window-58d38004-344b-4355-b878-6f3e0e0896e7"
+        }
+      ]
+    }
+  ]
+}

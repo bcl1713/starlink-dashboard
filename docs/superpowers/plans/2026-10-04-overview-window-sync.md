@@ -21,9 +21,9 @@ Vitest/jsdom, Playwright Chromium, production Nginx/FastAPI, Docker Compose.
 **Spec:** [Approved design](../specs/2026-10-04-overview-window-sync-design.md).
 
 **Status:** Approved by the user on 2026-10-04. Execution method: one new
-session per task, followed by separate fresh-review and PR/merge sessions. Task
-1–4 are delivered; Task 5 is incomplete (required browser regression failures);
-independent review and integration remain pending. See the tracked progress
+session per task, followed by separate fresh-review and PR/merge sessions. Tasks
+1–4 and Task 5 steps 1–6 are delivered; independent review and integration
+remain pending. See the tracked progress
 record.
 
 ## Global Constraints
