@@ -31,7 +31,7 @@ nowMs: number): AdsbContactView[]`. `AdsbContactView` extends the contact with
 sources: AdsbSourceStatus[], settingsError: boolean, trafficError: boolean }`.
 Both pages use this hook; it owns one enabled-only 1s freshness timer per mount.
 
-- [ ] **Step 1: Write failing service, hook and state tests.** API tests assert
+- [x] **Step 1: Write failing service, hook and state tests.** API tests assert
   exact URLs, abort propagation, full confirmed PUT response, and rejection of
   malformed revisions/types/positions/timestamps. Do not coerce provider data.
   `test_settings_poll_every_five_seconds_and_on_focus` asserts visible polling
@@ -66,9 +66,9 @@ Both pages use this hook; it owns one enabled-only 1s freshness timer per mount.
   expect(projectAdsbContacts([contact], settings, 1791028920000)).toEqual([]);
   ```
 
-- [ ] **Step 2: Verify failure.** Run the new service, hook and state test files
+- [x] **Step 2: Verify failure.** Run the new service, hook and state test files
   with `npm run test:unit -- <files>`; expect missing modules/exports.
-- [ ] **Step 3: Implement API validation and revision-safe query hooks.** Reuse
+- [x] **Step 3: Implement API validation and revision-safe query hooks.** Reuse
   the existing axios api-client and confirmed-settings patterns. Poll settings
   and enabled traffic at 5000ms, refresh both on window focus and visible
   `visibilitychange`; neither polls in background. Do not apply
@@ -80,7 +80,7 @@ Both pages use this hook; it owns one enabled-only 1s freshness timer per mount.
   when a delayed GET completes; never let structural sharing accept an older one.
   Invalidate traffic after confirmed save; no browser-local invalidation can
   replace the other window's independent settings polling.
-- [ ] **Step 4: Implement projection and layer hook.** Match Task 4 signatures.
+- [x] **Step 4: Implement projection and layer hook.** Match Task 4 signatures.
   Keep the last accepted contact snapshot through traffic errors/revision gaps
   and reapply the complete current filter precedence locally on every settings
   confirmation. Only accept a newly arriving bundle when its revision matches
@@ -94,9 +94,9 @@ Both pages use this hook; it owns one enabled-only 1s freshness timer per mount.
   Recompute synchronously on foreground and contact receipt before projection.
   Derive inclusion and identity fallbacks from confirmed state; never write these
   queries into mission, telemetry, history or camera stores.
-- [ ] **Step 5: Verify success.** Rerun all Task 4 files plus existing link-settings
+- [x] **Step 5: Verify success.** Rerun all Task 4 files plus existing link-settings
   service/query/mutation tests; expect PASS. Inspect race and cleanup assertions.
-- [ ] **Step 6: Commit Task 4 files.**
+- [x] **Step 6: Commit Task 4 files.**
   `git commit -m "feat(adsb): synchronize confirmed settings and contact freshness"`.
 
 ## Task 5: Configuration editing and active contact table
