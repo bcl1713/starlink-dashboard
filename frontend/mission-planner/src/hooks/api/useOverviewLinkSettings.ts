@@ -1,7 +1,8 @@
+import { overviewRefreshOptions } from './overview-refresh-options';
 import { useQuery } from '@tanstack/react-query';
 import { overviewLinkSettingsApi } from '@/services/overview-link-settings';
 
-export function useOverviewLinkSettings() {
+export function useOverviewLinkSettings(live = false) {
   return useQuery({
     queryKey: ['overview-link-settings'],
     queryFn: ({ signal }) => overviewLinkSettingsApi.get(signal),
@@ -9,5 +10,6 @@ export function useOverviewLinkSettings() {
     refetchInterval: 5000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
+    ...overviewRefreshOptions(live),
   });
 }

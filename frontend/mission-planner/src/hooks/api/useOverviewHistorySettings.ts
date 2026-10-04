@@ -1,9 +1,11 @@
+import { overviewRefreshOptions } from './overview-refresh-options';
 import { useQuery } from '@tanstack/react-query';
 import { overviewHistorySettingsApi } from '@/services/overview-history';
-export function useOverviewHistorySettings() {
+export function useOverviewHistorySettings(live = false) {
   return useQuery({
     queryKey: ['overview-history-settings'],
-    queryFn: overviewHistorySettingsApi.get,
+    queryFn: ({ signal }) => overviewHistorySettingsApi.get(signal),
     retry: false,
+    ...overviewRefreshOptions(live),
   });
 }

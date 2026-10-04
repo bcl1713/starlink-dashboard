@@ -37,7 +37,7 @@
   display: grid;
   gap: 8px;
   z-index: 1;
-  pointer-events: auto;
+  pointer-events: none;
 }
 .overview-page
   :is(
@@ -505,8 +505,7 @@
   button[aria-pressed] {
   display: none;
 }
-.overview-page[data-layout='desktop']
-  :is(.overview-satellite-overlays, .overview-map-overlays) {
+.overview-page :is(.overview-satellite-overlays, .overview-map-overlays) {
   pointer-events: auto;
 }
 .overview-page[data-map-exploring='false']:not([data-layout='desktop'])
@@ -516,4 +515,23 @@
 .overview-page[data-map-exploring='true']
   :is(.overview-globe, .overview-globe canvas) {
   touch-action: none !important;
+}
+
+/* Share the compact map's upper band instead of stacking below the satellite. */
+.overview-page[data-layout='landscape'] .overview-satellite-overlays {
+  grid-row: 1 / span 2;
+}
+.overview-page[data-layout='landscape'] .overview-map-controls {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  width: 160px;
+}
+.overview-page[data-layout='landscape'] .overview-map-overlays {
+  max-width: calc(100% - 168px);
+}
+.overview-page[data-layout='landscape'] .overview-display-controls {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
 }

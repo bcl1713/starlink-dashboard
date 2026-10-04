@@ -7,9 +7,10 @@ export interface OverviewClockSettings {
   clocks: OverviewClockSetting[];
 }
 export const overviewClockSettingsApi = {
-  async get(): Promise<OverviewClockSettings> {
+  async get(signal?: AbortSignal): Promise<OverviewClockSettings> {
     const response = await apiClient.get<OverviewClockSettings>(
-      '/api/overview-clocks/settings'
+      '/api/overview-clocks/settings',
+      { signal }
     );
     return response.data;
   },

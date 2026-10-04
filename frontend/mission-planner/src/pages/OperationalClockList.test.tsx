@@ -6,6 +6,39 @@ afterEach(() => {
   cleanup();
 });
 describe('OperationalClockList', () => {
+  it('replaces duplicate mission clock labels without retaining a stale fifth clock', () => {
+    const fixed = [
+      { label: 'Zulu / UTC', time_zone: 'UTC' },
+      { label: 'Washington, DC', time_zone: 'America/New_York' },
+    ];
+    const { rerender } = render(
+      <OperationalClockList
+        clocks={[
+          ...fixed,
+          { label: 'Erick, OK', time_zone: 'America/Chicago' },
+          { label: 'Erick, OK', time_zone: 'America/Chicago' },
+        ]}
+        currentTime={Date.UTC(2026, 0, 2)}
+      />
+    );
+    rerender(
+      <OperationalClockList
+        clocks={[
+          ...fixed,
+          { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+          { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+        ]}
+        currentTime={Date.UTC(2026, 0, 2, 1)}
+      />
+    );
+    expect(
+      screen.getAllByRole('region', { name: /operational clock$/i })
+    ).toHaveLength(4);
+    expect(screen.queryAllByText('Erick, OK')).toHaveLength(0);
+    expect(screen.getByText('Omaha, NE')).not.toBeNull();
+    expect(screen.getByText('Tokyo, JP')).not.toBeNull();
+  });
+
   it('renders every configured operational clock', () => {
     render(
       <OperationalClockList

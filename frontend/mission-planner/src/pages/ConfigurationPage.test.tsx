@@ -70,6 +70,9 @@ describe('ConfigurationPage', () => {
     render(<ConfigurationPage />);
     expect(screen.getByLabelText('Overview history window')).not.toBeNull();
     expect(
+      screen.getByRole('button', { name: 'Open Overview' })
+    ).not.toBeNull();
+    expect(
       screen.getByRole('switch', { name: 'Starshield data link' })
     ).not.toBeNull();
     expect(
@@ -169,7 +172,9 @@ describe('ConfigurationPage', () => {
 
     render(<ConfigurationPage />);
 
-    expect(screen.getByRole('status')).not.toBeNull();
+    expect(screen.getAllByRole('status')).toContain(
+      screen.getByText('Loading operational clocks...')
+    );
     expect(screen.getByText('Loading operational clocks...')).not.toBeNull();
   });
 });

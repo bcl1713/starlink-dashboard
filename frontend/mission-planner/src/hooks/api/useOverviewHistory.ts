@@ -13,10 +13,10 @@ const POLL_INTERVAL = historyPollInterval(
 export function useOverviewHistory() {
   return useQuery({
     queryKey: ['overview-history'],
-    queryFn: overviewHistoryApi.get,
+    queryFn: ({ signal }) => overviewHistoryApi.get(signal),
     refetchInterval: (query) =>
       query.state.status === 'error' ? 5_000 : POLL_INTERVAL,
-    refetchIntervalInBackground: false,
+    refetchIntervalInBackground: true,
     refetchOnWindowFocus: 'always',
     retry: false,
   });

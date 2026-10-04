@@ -115,4 +115,31 @@ describe('useOverviewLinkSettings', () => {
     expect(apiClient.get).toHaveBeenCalledTimes(3);
     expect(result.current.data).toEqual(changed);
   });
+  it('live Overview keeps reading link settings while unfocused', async () => {
+    vi.useFakeTimers();
+    focusManager.setFocused(false);
+    vi.mocked(apiClient.get).mockResolvedValue({ data: confirmed });
+    const { result, unmount } = renderHook(
+      () => useOverviewLinkSettings(true),
+      { wrapper }
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    const changed = {
+      starshield_link_enabled: true,
+      x_band_link_enabled: false,
+    };
+    vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5001);
+    });
+    expect(result.current.data).toEqual(changed);
+    expect(apiClient.get).toHaveBeenCalledTimes(2);
+    unmount();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15000);
+    });
+    expect(apiClient.get).toHaveBeenCalledTimes(2);
+  });
 });

@@ -8,7 +8,6 @@ vi.mock('@/services/overview-history', () => ({
   },
 }));
 import { useQuery } from '@tanstack/react-query';
-import { overviewHistoryApi } from '@/services/overview-history';
 import { historyPollInterval, useOverviewHistory } from './useOverviewHistory';
 describe('useOverviewHistory', () => {
   it('polls one shared history bundle independently of live status', () => {
@@ -16,9 +15,9 @@ describe('useOverviewHistory', () => {
     useOverviewHistory();
     expect(useQuery).toHaveBeenCalledWith({
       queryKey: ['overview-history'],
-      queryFn: overviewHistoryApi.get,
+      queryFn: expect.any(Function),
       refetchInterval: expect.any(Function),
-      refetchIntervalInBackground: false,
+      refetchIntervalInBackground: true,
       refetchOnWindowFocus: 'always',
       retry: false,
     });

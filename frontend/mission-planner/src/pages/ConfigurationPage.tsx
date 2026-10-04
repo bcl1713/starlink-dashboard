@@ -1,4 +1,5 @@
 import { OverviewCameraSettingsCard } from './OverviewCameraSettingsCard';
+import { OverviewDisplaySettingsCard } from './OverviewDisplaySettingsCard';
 import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
 import { OverviewMapDiagnostics } from './OverviewMapDiagnostics';
 import { OverviewLinkSettingsCard } from './OverviewLinkSettingsCard';
@@ -26,6 +27,7 @@ export function ConfigurationPage() {
         <OverviewHistorySettingsCard />
         <OverviewLinkSettingsCard />
         <OverviewCameraSettingsCard />
+        <OverviewDisplaySettingsCard />
         <OverviewMapDiagnostics />
         {isLoading ? (
           <p role="status">Loading operational clocks...</p>

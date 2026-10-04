@@ -54,14 +54,17 @@ interface RouteListResponse {
 }
 
 export const routesApi = {
-  async list(): Promise<Route[]> {
-    const response = await apiClient.get<RouteListResponse>('/api/routes');
+  async list(signal?: AbortSignal): Promise<Route[]> {
+    const response = await apiClient.get<RouteListResponse>('/api/routes', {
+      signal,
+    });
     return response.data.routes || [];
   },
 
-  async get(routeId: string): Promise<RouteDetail> {
+  async get(routeId: string, signal?: AbortSignal): Promise<RouteDetail> {
     const response = await apiClient.get<RouteDetailResponse>(
-      `/api/routes/${routeId}`
+      `/api/routes/${routeId}`,
+      { signal }
     );
     return response.data as RouteDetail;
   },

@@ -10,9 +10,9 @@ export function OperationalClockList({
 }: OperationalClockListProps) {
   return (
     <section className="operational-clock-list" aria-label="Operational clocks">
-      {clocks.map((clock) => (
+      {clocks.map((clock, slot) => (
         <OperationalClock
-          key={`${clock.label}-${clock.time_zone}`}
+          key={slot}
           label={clock.label}
           timeZone={clock.time_zone}
           currentTime={currentTime}

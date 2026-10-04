@@ -1,0 +1,287 @@
+{
+  "task5Status": "incomplete-required-browser-regressions",
+  "devSha": "b2ea3341f78137c1409a618c8d8da5814a14dac2",
+  "productionResult": "2 passed (1.9m)",
+  "production": [
+    {
+      "sha": "1d191692e8979bbc2d87da53ca470e7a91ed387b",
+      "fixtures": false,
+      "origin": "http://127.0.0.1:15257",
+      "timingsMs": {
+        "clock": 4044,
+        "starshield_link_enabled": 3973,
+        "x_band_link_enabled": 32,
+        "history-window": 5312,
+        "browser-follow": 73,
+        "activate-0": 4105,
+        "activate-1": 4025,
+        "active-leg-timing": 4159,
+        "deactivation": 5160
+      },
+      "fullscreen": true,
+      "navigations": {
+        "baseline": 2,
+        "final": 2
+      },
+      "reads": {
+        "/api/routes": 11,
+        "/api/overview/upcoming-pois": 11,
+        "/api/status": 50,
+        "/api/overview-clocks/settings": 11,
+        "/api/overview-history/settings": 11,
+        "/api/overview-links/settings": 11,
+        "/api/satellites": 11,
+        "/api/active-x-link": 50,
+        "/api/routes/": 11,
+        "/api/overview-history": 11,
+        "/api/routes/first_1": 1,
+        "/api/routes/second_1": 2
+      },
+      "clock": {
+        "at": "2026-10-04T14:12:27.246Z",
+        "text": "04:12:27"
+      },
+      "restoredClockLabels": [
+        "Zulu / UTC",
+        "Washington, DC",
+        "Omaha, NE",
+        "Tokyo, JP"
+      ],
+      "retainedSample": 1791123142,
+      "cameraBefore": {
+        "position": [
+          -13.824187380863322, -0.11810418375842471, -3.730673092099018
+        ],
+        "quaternion": [
+          0.002507613213383765, -0.7938902634362925, 0.003274038812401459,
+          0.6080470723281883
+        ],
+        "zoom": 1,
+        "target": [0, 0, 0]
+      },
+      "cameraAfter": {
+        "position": [
+          -13.8080066349352, -0.10095537074066974, -3.6795185037784846
+        ],
+        "quaternion": [
+          0.0021522821191172254, -0.792930010760193, 0.0028009225639887944,
+          0.6093024869063891
+        ],
+        "zoom": 1,
+        "target": [0, 0, 0]
+      },
+      "seed": {
+        "missionId": "window-8f353453-0f2c-4612-bc5f-4dbf8067a7e7",
+        "firstLegId": "first-1d56cd53-2233-46e1-9be3-c3c353156714",
+        "secondLegId": "second-a321c3c4-31e5-4470-98de-df55243d9c59",
+        "firstRouteId": "first_1",
+        "secondRouteId": "second_1"
+      },
+      "mutations": [
+        {
+          "endpoint": "/api/overview-clocks/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/overview-history/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-8f353453-0f2c-4612-bc5f-4dbf8067a7e7/legs/first-1d56cd53-2233-46e1-9be3-c3c353156714/activate",
+          "status": 200,
+          "method": "POST"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-8f353453-0f2c-4612-bc5f-4dbf8067a7e7/legs/second-a321c3c4-31e5-4470-98de-df55243d9c59/activate",
+          "status": 200,
+          "method": "POST"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-8f353453-0f2c-4612-bc5f-4dbf8067a7e7/legs/second-a321c3c4-31e5-4470-98de-df55243d9c59",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-8f353453-0f2c-4612-bc5f-4dbf8067a7e7/legs/second-a321c3c4-31e5-4470-98de-df55243d9c59/timeline/preview",
+          "status": 200,
+          "method": "POST"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-8f353453-0f2c-4612-bc5f-4dbf8067a7e7/legs/deactivate",
+          "status": 200,
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "sha": "1d191692e8979bbc2d87da53ca470e7a91ed387b",
+      "fixtures": false,
+      "origin": "http://127.0.0.1:15257",
+      "timingsMs": {
+        "clock": 3094,
+        "starshield_link_enabled": 4072,
+        "x_band_link_enabled": 29,
+        "history-window": 5128,
+        "browser-follow": 153,
+        "activate-0": 4037,
+        "activate-1": 4009,
+        "active-leg-timing": 3965,
+        "deactivation": 5049
+      },
+      "fullscreen": false,
+      "navigations": {
+        "baseline": 2,
+        "final": 2
+      },
+      "reads": {
+        "/api/routes": 12,
+        "/api/overview-clocks/settings": 12,
+        "/api/status": 54,
+        "/api/overview-history/settings": 12,
+        "/api/overview-links/settings": 12,
+        "/api/satellites": 12,
+        "/api/overview/upcoming-pois": 12,
+        "/api/routes/": 12,
+        "/api/active-x-link": 54,
+        "/api/overview-history": 12,
+        "/api/routes/first": 1,
+        "/api/routes/second": 3
+      },
+      "clock": {
+        "at": "2026-10-04T14:11:35.059Z",
+        "text": "04:11:35"
+      },
+      "restoredClockLabels": [
+        "Zulu / UTC",
+        "Washington, DC",
+        "Omaha, NE",
+        "Tokyo, JP"
+      ],
+      "retainedSample": 1791123090,
+      "cameraBefore": {
+        "position": [
+          -6.946921396057465, 0.5494085494671638, -1.1219021381626324
+        ],
+        "quaternion": [
+          -0.025250151811537513, -0.7608126497760772, -0.029655113942065027,
+          0.6478017567059243
+        ],
+        "zoom": 1,
+        "target": [0, 0, 0]
+      },
+      "cameraAfter": {
+        "position": [
+          -6.918614371324448, 0.5555817974128106, -1.092395476071404
+        ],
+        "quaternion": [
+          -0.025703753886721446, -0.7596546833221938, -0.03008060138348732,
+          0.6491218965365412
+        ],
+        "zoom": 1,
+        "target": [0, 0, 0]
+      },
+      "seed": {
+        "missionId": "window-2d6e59f8-da3d-4aeb-b699-b7c6d9fee142",
+        "firstLegId": "first-a47d590b-7905-4753-aec3-5319f6a2137c",
+        "secondLegId": "second-f95303d3-f092-4929-9239-7e0e07cf56be",
+        "firstRouteId": "first",
+        "secondRouteId": "second"
+      },
+      "mutations": [
+        {
+          "endpoint": "/api/overview-clocks/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/overview-links/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/overview-history/settings",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-2d6e59f8-da3d-4aeb-b699-b7c6d9fee142/legs/first-a47d590b-7905-4753-aec3-5319f6a2137c/activate",
+          "status": 200,
+          "method": "POST"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-2d6e59f8-da3d-4aeb-b699-b7c6d9fee142/legs/second-f95303d3-f092-4929-9239-7e0e07cf56be/activate",
+          "status": 200,
+          "method": "POST"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-2d6e59f8-da3d-4aeb-b699-b7c6d9fee142/legs/second-f95303d3-f092-4929-9239-7e0e07cf56be",
+          "status": 200,
+          "method": "PUT"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-2d6e59f8-da3d-4aeb-b699-b7c6d9fee142/legs/second-f95303d3-f092-4929-9239-7e0e07cf56be/timeline/preview",
+          "status": 200,
+          "method": "POST"
+        },
+        {
+          "endpoint": "/api/v2/missions/window-2d6e59f8-da3d-4aeb-b699-b7c6d9fee142/legs/deactivate",
+          "status": 200,
+          "method": "POST"
+        }
+      ]
+    }
+  ],
+  "cleanup": "No task containers/volumes or listeners remain on 18257/15257.",
+  "browserRegressionResult": {
+    "passed": 47,
+    "failed": 6,
+    "unchangedBaseScrollFailures": 2,
+    "unchangedBaseRotationPointerFailures": 4,
+    "unchangedBaseResetPassed": 1
+  },
+  "pointerFixResult": "2 passed (1.3m), unchanged assertions",
+  "controlledPaths": [
+    {
+      "artifact": "overview-window-paths-cont-6b9c0-nverge-in-ordinary-Overview-chromium",
+      "fixtures": true,
+      "timingsMs": {
+        "starshield_link_enabled": 4560,
+        "x_band_link_enabled": 5357,
+        "gpsLoss": 218,
+        "gpsRecovery": 1342
+      }
+    },
+    {
+      "artifact": "overview-window-paths-cont-84a62--native-fullscreen-Overview-chromium",
+      "fixtures": true,
+      "timingsMs": {
+        "starshield_link_enabled": 2315,
+        "x_band_link_enabled": 4827,
+        "gpsLoss": 852,
+        "gpsRecovery": 831
+      }
+    }
+  ],
+  "nativeControlsResult": {
+    "headed": true,
+    "osEscape": true,
+    "result": "4 passed (2.3m)"
+  }
+}

@@ -74,6 +74,7 @@ import { useOverviewLayout } from './useOverviewLayout';
 import { OverviewMapControls } from './OverviewMapControls';
 import { OverviewMapController } from './OverviewMapController';
 import { useOverviewFollowPreference } from '@/hooks/useOverviewFollowPreference';
+import { useOverviewDisplayHost } from '@/hooks/useOverviewDisplayHost';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { OverviewCameraIntent } from './overview-camera-frame';
 import type { OverviewLayoutMode } from './overview-responsive-layout';
@@ -263,7 +264,7 @@ export function OverviewPage() {
     data: routes = [],
     isLoading: isLoadingRoutes,
     error: routesError,
-  } = useRoutes();
+  } = useRoutes(true);
 
   const routeId = activeRouteId(routes);
 
@@ -271,7 +272,7 @@ export function OverviewPage() {
     data: activeRoute,
     isLoading: isLoadingRoute,
     error: routeError,
-  } = useRoute(routeId ?? '');
+  } = useRoute(routeId ?? '', true);
 
   const routePoints = useMemo(
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
@@ -316,7 +317,7 @@ export function OverviewPage() {
     data: overviewClockSettings,
     isError: isOverviewClockSettingsError,
     isLoading: isLoadingOverviewClockSettings,
-  } = useOverviewClockSettings();
+  } = useOverviewClockSettings(true);
   const {
     data: status,
     isLoading: isLoadingStatus,
@@ -326,13 +327,13 @@ export function OverviewPage() {
   // Refetch retries keep cached data and leave error null until exhausted.
   // Link activity stops on the first failed attempt and resumes on success.
   const statusRequestFailed = Boolean(statusError) || statusFailureCount > 0;
-  const { data: overviewLinkSettings } = useOverviewLinkSettings();
+  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const {
     data: overviewHistory,
     isLoading: isLoadingOverviewHistory,
     isError: isOverviewHistoryError,
   } = useOverviewHistory();
-  const { data: overviewHistorySettings } = useOverviewHistorySettings();
+  const { data: overviewHistorySettings } = useOverviewHistorySettings(true);
   const aircraftHistoryPoints = useMemo(
     () =>
       projectAircraftHistory(
@@ -345,7 +346,7 @@ export function OverviewPage() {
     data: satellites,
     isLoading: isLoadingSatellites,
     error: satellitesError,
-  } = useSatellites();
+  } = useSatellites(true);
 
   const {
     data: activeXLink,
@@ -546,6 +547,7 @@ export function OverviewPage() {
     setResetRevision((value) => value + 1);
     setExploration({ mode: layout.mode, active: false });
   }, [layout.mode, followPreference]);
+  const displayHost = useOverviewDisplayHost(onReset);
   const followUnavailable = statusError
     ? 'Status refresh unavailable'
     : !aircraftPosition || !status
@@ -690,7 +692,19 @@ export function OverviewPage() {
             onExploreChange={onExploreChange}
             onReset={onReset}
           />
-          <OverviewFullscreenControl />
+          <div className="overview-display-controls">
+            {displayHost.label && (
+              <span
+                className="overview-display-label"
+                aria-label="Overview display identity"
+              >
+                {displayHost.label}
+              </span>
+            )}
+            <OverviewFullscreenControl
+              feedback={displayHost.fullscreenFeedback}
+            />
+          </div>
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
             <OverviewMapLegend

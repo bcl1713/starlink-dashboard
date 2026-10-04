@@ -85,3 +85,77 @@ it('retains the flow fallback when its scrollbar changes content width, then res
   expect(result.current.flow).toBe(false);
   unmount();
 });
+
+it('remeasures growing display feedback and moves oversized controls into flow without a frame resize', () => {
+  document.body.innerHTML =
+    '<div><main data-layout="landscape"><div class="overview-map-stage"><div class="overview-right-overlays"><div class="overview-display-controls"></div></div><div class="overview-arrival"></div></div></main></div>';
+  const host = document.body.firstElementChild as HTMLElement;
+  const page = host.firstElementChild as HTMLElement;
+  const stage = page.firstElementChild as HTMLDivElement;
+  const right = page.querySelector<HTMLElement>('.overview-right-overlays')!;
+  const display = page.querySelector<HTMLElement>(
+    '.overview-display-controls'
+  )!;
+  const arrival = page.querySelector<HTMLElement>('.overview-arrival')!;
+  Object.defineProperties(host, {
+    clientWidth: { value: 844 },
+    clientHeight: { value: 325 },
+    offsetWidth: { value: 844 },
+    offsetHeight: { value: 325 },
+  });
+  Object.defineProperties(stage, {
+    clientWidth: { value: 568 },
+    clientHeight: { value: 220 },
+  });
+  let rightHeight = 100;
+  vi.spyOn(right, 'getBoundingClientRect').mockImplementation(
+    () => new DOMRect(0, 0, 544, rightHeight)
+  );
+  vi.spyOn(arrival, 'getBoundingClientRect').mockImplementation(
+    () => new DOMRect(0, 0, 544, 70)
+  );
+  const observed = new Set<Element>();
+  let resize = () => {};
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
+      observe(node: Element) {
+        observed.add(node);
+      }
+      disconnect() {
+        observed.clear();
+      }
+    }
+  );
+  let frame: FrameRequestCallback | undefined;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frame = callback;
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {
+    frame = undefined;
+  });
+  const pageRef = { current: page },
+    stageRef = { current: stage };
+  const { result, unmount } = renderHook(() =>
+    useOverviewLayout(pageRef, stageRef, 'loaded', true)
+  );
+  expect(result.current.mode).toBe('landscape');
+  expect(result.current.flow).toBe(false);
+  // Local feedback can grow without changing Overview's content key. Deliver
+  // the size notification only if the real hook subscribed to this container.
+  rightHeight = 200;
+  act(() => {
+    if (observed.has(display)) resize();
+    const callback = frame;
+    frame = undefined;
+    callback?.(0);
+  });
+  expect(result.current.mode).toBe('stacked');
+  expect(result.current.flow).toBe(true);
+  unmount();
+  expect(observed.size).toBe(0);
+});
