@@ -2,7 +2,8 @@
 
 **Issue:** [257](https://github.com/bcl1713/starlink-dashboard/issues/257)
 
-**Status:** Draft for user review; product implementation has not started.
+**Status:** Approved by the user on 2026-10-04; product implementation has not
+started. Implementation-plan review and execution-method selection are pending.
 
 **Base:** `dev` at `c8a69d25ba1e58140424d87c644d8aacb62c9d54`, including merged
 [PR 258](https://github.com/bcl1713/starlink-dashboard/pull/258).
@@ -16,10 +17,9 @@ views must retain their camera intent and ongoing telemetry/history.
 Configuration also needs controls for recentering that display and requesting
 fullscreen.
 
-The issue supplies this intent. Proposed choices below are subject to review:
-five-second saved-state polling, explicit selection when multiple Overview
-windows exist, and an honest local-click fallback when remote fullscreen is
-rejected.
+The issue supplies this intent. The approved choices are: five-second
+saved-state polling, explicit selection when multiple Overview windows exist,
+and an honest local-click fallback when remote fullscreen is rejected.
 
 ## Investigation
 
@@ -195,6 +195,6 @@ GitHub confirmed PR 258 merged, `git rebase origin/dev` moved it onto
 checkout is independent. Refresh/rebase against `dev` again before delivery if
 it advances.
 
-After user approval of this written design, produce the implementation plan and
-complete its review/execution-method gate. This draft does not claim feature
-acceptance or authorize a merge or deployment.
+The user approved this written design on 2026-10-04. Complete the implementation
+plan review and execution-method gate next. Design approval does not claim
+feature acceptance or authorize a merge or deployment.
