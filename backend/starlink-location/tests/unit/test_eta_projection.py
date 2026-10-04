@@ -1,4 +1,4 @@
-"""Unit tests for anticipated route-aware ETA projection."""
+"""Unit tests for anticipated and estimated route-aware ETA projection."""
 
 from datetime import datetime, timezone
 
@@ -160,6 +160,140 @@ def test_anticipated_eta_returns_none_for_matched_waypoint_before_departure(
     assert (
         calculator._calculate_route_aware_eta_anticipated(
             40.0, -73.0, timed_poi, route_with_timing
+        )
+        is None
+    )
+
+
+@pytest.fixture
+def estimated_route():
+    return ParsedRoute(
+        metadata=RouteMetadata(
+            name="Estimated route", file_path="estimated-route.kml", point_count=3
+        ),
+        points=[
+            RoutePoint(
+                latitude=0,
+                longitude=longitude,
+                sequence=index,
+                expected_segment_speed_knots=300,
+            )
+            for index, longitude in enumerate([0, 1, 2])
+        ],
+        waypoints=[RouteWaypoint(name="Endpoint", latitude=0, longitude=1, order=1)],
+        timing_profile=RouteTimingProfile(has_timing_data=True),
+    )
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        None,
+        "departure",
+        "arrival",
+        "aar_start",
+        "aar_end",
+        "x_band_transition",
+        "ka_coverage_exit",
+        "ka_coverage_entry",
+        "ka_transition",
+    ],
+)
+@pytest.mark.parametrize("name", ["Endpoint", "Renamed endpoint"])
+@pytest.mark.parametrize("speed, expected_eta", [(300, 180.121372), (0, 360.242743)])
+def test_estimated_eta_uses_identical_math_for_every_poi_kind(
+    calculator, estimated_route, kind, name, speed, expected_eta
+):
+    """A waypoint name or display kind must not change remaining route travel."""
+    poi = POI(
+        id="destination",
+        name=name,
+        latitude=0,
+        longitude=1,
+        kind=kind,
+        projected_latitude=0,
+        projected_longitude=1,
+        projected_waypoint_index=0,
+        projected_route_progress=50,
+    )
+
+    eta = calculator._calculate_route_aware_eta_estimated(
+        0, 0.75, poi, estimated_route, speed
+    )
+
+    assert eta == pytest.approx(expected_eta, abs=0.00001)
+
+
+@pytest.mark.parametrize("legacy_progress", [None, 50])
+def test_named_waypoint_without_stored_projection_uses_remaining_segment(
+    calculator, estimated_route, legacy_progress
+):
+    poi = POI(
+        id="legacy",
+        name="Endpoint",
+        latitude=0,
+        longitude=1,
+        projected_route_progress=legacy_progress,
+    )
+
+    eta = calculator._calculate_route_aware_eta_estimated(
+        0, 0.75, poi, estimated_route, 300
+    )
+
+    assert eta == pytest.approx(180.121372, abs=0.00001)
+
+
+def test_named_waypoint_inside_segment_does_not_walk_past_destination(
+    calculator, estimated_route
+):
+    estimated_route.waypoints[0].longitude = 1.5
+    poi = POI(id="interior", name="Endpoint", latitude=0, longitude=1.5)
+
+    eta = calculator._calculate_route_aware_eta_estimated(
+        0, 0.25, poi, estimated_route, 300
+    )
+
+    assert eta == pytest.approx(900.606858, abs=0.00001)
+
+
+def test_matching_waypoint_does_not_override_stored_destination_projection(
+    calculator, estimated_route
+):
+    poi = POI(
+        id="renamed",
+        name="Endpoint",
+        latitude=0.1,
+        longitude=0.9,
+        projected_latitude=0,
+        projected_longitude=0.9,
+        projected_waypoint_index=0,
+        projected_route_progress=45,
+    )
+
+    eta = calculator._calculate_route_aware_eta_estimated(
+        0, 0.6, poi, estimated_route, 300
+    )
+
+    assert eta == pytest.approx(216.145646, abs=0.00001)
+
+
+def test_matching_waypoint_does_not_bypass_invalid_stored_projection(
+    calculator, estimated_route
+):
+    poi = POI(
+        id="invalid",
+        name="Endpoint",
+        latitude=0,
+        longitude=1,
+        projected_latitude=None,
+        projected_longitude=1,
+        projected_waypoint_index=0,
+        projected_route_progress=50,
+    )
+
+    assert (
+        calculator._calculate_route_aware_eta_estimated(
+            0, 0.25, poi, estimated_route, 300
         )
         is None
     )

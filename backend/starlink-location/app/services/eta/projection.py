@@ -147,11 +147,11 @@ class ETAProjection:
         - Current segment: Blend current speed with expected segment speed
           Formula: blended_speed = (current_speed + expected_speed) / 2
         - Future segments: Use expected segment speeds from route timing data
-        - Off-route POIs: Project to route, then apply same logic
+        - All POI types: Use their destination projection with the same logic
 
         Handles two cases:
-        1. POI is on the active route (matches a waypoint by name)
-        2. POI is off-route but has projection data
+        1. POI has stored destination projection data
+        2. Legacy POI matches a named waypoint, projected by the same engine
 
         Args:
             current_lat: Current latitude
@@ -170,34 +170,31 @@ class ETAProjection:
         ):
             return None
 
-        # Try to find matching waypoint on route by name (on-route POI case)
-        matching_waypoint = None
-        for waypoint in active_route.waypoints:
-            if waypoint.name.upper() == poi.name.upper():
-                matching_waypoint = waypoint
-                break
-
-        # If POI is on the route, use direct route-aware calculation
-        if matching_waypoint:
-            return self._calculate_on_route_eta_estimated(
-                current_lat,
-                current_lon,
-                matching_waypoint,
-                active_route,
-                current_speed_knots,
+        # A stored destination projection is authoritative, even when its name
+        # matches a waypoint. Reject incomplete geometry rather than changing
+        # destinations. Progress alone also appears on legacy named POIs.
+        if any(
+            value is not None
+            for value in (
+                poi.projected_latitude,
+                poi.projected_longitude,
+                poi.projected_waypoint_index,
             )
-
-        # If POI is not on route but has projection data, use projection-based calculation
-        if (
-            poi.projected_latitude is not None
-            and poi.projected_longitude is not None
-            and poi.projected_route_progress is not None
         ):
-            return self._calculate_off_route_eta_with_projection_estimated(
+            return self._calculate_projected_eta_estimated(
                 current_lat, current_lon, poi, active_route, current_speed_knots
             )
 
-        # If neither on-route nor has projection, return None to fall back to distance/speed
+        for waypoint in active_route.waypoints:
+            if waypoint.name and waypoint.name.upper() == poi.name.upper():
+                return self._calculate_on_route_eta_estimated(
+                    current_lat,
+                    current_lon,
+                    waypoint,
+                    active_route,
+                    current_speed_knots,
+                )
+
         return None
 
     def _calculate_route_aware_eta_anticipated(
@@ -296,104 +293,35 @@ class ETAProjection:
         active_route: "ParsedRoute",
         current_speed_knots: float | None = None,
     ) -> float | None:
-        """
-        Calculate ETA for a waypoint with speed blending (estimated/in-flight mode).
-
-        Uses intelligent speed calculation:
-        - Current segment: Blend current speed with expected segment speed
-          Formula: blended_speed = (current_speed + expected_speed) / 2
-        - Future segments: Use expected segment speeds from route timing data
-
-        Args:
-            current_lat: Current latitude
-            current_lon: Current longitude
-            destination_waypoint: Destination waypoint on the route
-            active_route: ParsedRoute with timing data
-            current_speed_knots: Current speed for blending (uses smoothed speed if not provided)
-
-        Returns:
-            ETA in seconds if calculation succeeds, None otherwise
-        """
+        """Normalize a legacy named waypoint into the shared destination contract."""
         try:
-            speed = (
-                current_speed_knots
-                if current_speed_knots is not None
-                else self.calculator._smoothed_speed
+            latitude = destination_waypoint.latitude
+            longitude = destination_waypoint.longitude
+            if (
+                not isfinite(latitude)
+                or not isfinite(longitude)
+                or not -90 <= latitude <= 90
+                or not -180 <= longitude <= 180
+            ):
+                return None
+            projection = RouteETACalculator(active_route).project_poi_to_route(
+                latitude, longitude
             )
-
-            # Find nearest route point to current position
-            nearest_point_index = 0
-            nearest_distance = float("inf")
-
-            for idx, point in enumerate(active_route.points):
-                dist = self.calculator.calculate_distance(
-                    current_lat, current_lon, point.latitude, point.longitude
-                )
-                if dist < nearest_distance:
-                    nearest_distance = dist
-                    nearest_point_index = idx
-
-            # Calculate remaining distance and time segment by segment
-            total_eta_seconds = 0.0
-
-            # Walk through segments from nearest point to destination
-            for idx in range(nearest_point_index, len(active_route.points) - 1):
-                current_point = active_route.points[idx]
-                next_point = active_route.points[idx + 1]
-
-                # Check if we've reached the destination waypoint
-                if (
-                    current_point.latitude == destination_waypoint.latitude
-                    and current_point.longitude == destination_waypoint.longitude
-                ):
-                    break
-
-                # Calculate segment distance
-                segment_distance = self.calculator.calculate_distance(
-                    current_point.latitude,
-                    current_point.longitude,
-                    next_point.latitude,
-                    next_point.longitude,
-                )
-
-                # Determine speed for this segment with blending for current segment
-                if idx == nearest_point_index:
-                    # Current segment: blend current speed with expected speed
-                    expected_speed = current_point.expected_segment_speed_knots or speed
-                    blended_speed = (speed + expected_speed) / 2.0
-                    segment_speed_knots = blended_speed
-                else:
-                    # Future segments: use expected speed if available
-                    segment_speed_knots = (
-                        current_point.expected_segment_speed_knots or speed
-                    )
-
-                # Calculate time for this segment (avoid division by zero)
-                if segment_speed_knots > 0.5:
-                    distance_nm = segment_distance / 1852.0
-                    segment_time = (distance_nm / segment_speed_knots) * 3600.0
-                    total_eta_seconds += segment_time
-
-            # Return total ETA or None if calculation failed
-            if total_eta_seconds > 0:
-                return total_eta_seconds
-
-            return None
-
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            logger.debug(f"On-route estimated ETA calculation failed: {e}")
+            destination = POI(
+                id="route-waypoint",
+                name=destination_waypoint.name,
+                latitude=latitude,
+                longitude=longitude,
+                projected_latitude=projection["projected_lat"],
+                projected_longitude=projection["projected_lon"],
+                projected_waypoint_index=projection["projected_waypoint_index"],
+                projected_route_progress=projection["projected_route_progress"],
+            )
+            return self._calculate_projected_eta_estimated(
+                current_lat, current_lon, destination, active_route, current_speed_knots
+            )
+        except (ValueError, TypeError, AttributeError, LookupError) as exc:
+            logger.debug("Named waypoint ETA projection failed: %s", exc)
             return None
 
     def _calculate_off_route_eta_with_projection_estimated(
@@ -404,31 +332,24 @@ class ETAProjection:
         active_route: "ParsedRoute",
         current_speed_knots: float | None = None,
     ) -> float | None:
-        """
-        Calculate ETA for off-route POI with speed blending (estimated/in-flight mode).
+        """Compatibility entry point for callers with a projected destination."""
+        return self._calculate_projected_eta_estimated(
+            current_lat, current_lon, poi, active_route, current_speed_knots
+        )
 
-        Uses the same segment-walking logic as on-route POIs, but walks only
-        from current position to the POI's projection point on the route.
+    def _calculate_projected_eta_estimated(
+        self,
+        current_lat: float,
+        current_lon: float,
+        poi: POI,
+        active_route: "ParsedRoute",
+        current_speed_knots: float | None = None,
+    ) -> float | None:
+        """Walk remaining route segments for every POI kind and waypoint name.
 
-        Implements speed blending:
-        - Current segment: Blend current speed with expected segment speed
-        - Future segments: Use expected segment speeds
-
-        Strategy:
-        1. Project current position onto the active route segment
-        2. Use the POI's stored destination projection
-        3. Walk segments from current position to the projection point
-        4. Use blended speed for current segment, expected speeds for subsequent segments
-
-        Args:
-            current_lat: Current latitude
-            current_lon: Current longitude
-            poi: POI with projection data (projected_latitude, projected_longitude)
-            active_route: ParsedRoute with timing data
-            current_speed_knots: Current speed for blending (uses smoothed speed if not provided)
-
-        Returns:
-            ETA in seconds if calculation succeeds, None otherwise
+        Project the current position continuously and stop at the destination's
+        projection. Blend measured speed with the end point's planned speed for
+        the first remaining segment; use planned speeds for future segments.
         """
         try:
             speed = (
@@ -462,7 +383,7 @@ class ETAProjection:
                 or not -90 <= projection_latitude <= 90
                 or not -180 <= projection_longitude <= 180
                 or not 0 <= projection_progress <= 100
-                or speed <= 0.5
+                or speed < 0
                 or not 0 <= projection_segment_index < len(active_route.points) - 1
             ):
                 return None
@@ -535,6 +456,6 @@ class ETAProjection:
             EOFError,
         ) as e:
             logger.debug(
-                f"Off-route estimated ETA calculation with projection failed for {poi.name}: {e}"
+                f"Projected estimated ETA calculation failed for {poi.name}: {e}"
             )
             return None

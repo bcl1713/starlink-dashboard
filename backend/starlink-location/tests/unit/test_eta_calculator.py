@@ -414,13 +414,9 @@ class TestETACalculator:
         assert eta_seconds > 0
         assert metrics["wp2"]["eta_type"] == ETAMode.ESTIMATED.value
 
-        # Expected time is based on blended speed between current and segment speed
-        segment_distance = eta_calculator.calculate_distance(0.0, 0.0, 0.0, 1.0)
-        expected_speed = (
-            current_speed + route_with_timing.points[0].expected_segment_speed_knots
-        ) / 2.0
-        expected_eta = (segment_distance / 1852.0) / expected_speed * 3600.0
-        assert eta_seconds == pytest.approx(expected_eta, rel=0.05)
+        # One equatorial degree at (150 + 200) / 2 = 175 knots.
+        # Segment timing speed belongs to its end point, not its start.
+        assert eta_seconds == pytest.approx(1235.117976, abs=0.00001)
 
     def test_route_aware_eta_anticipated_uses_waypoint_times(
         self, eta_calculator, route_with_timing

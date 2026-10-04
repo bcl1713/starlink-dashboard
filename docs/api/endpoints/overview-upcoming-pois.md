@@ -70,11 +70,16 @@ ordering, expiry, or the displayed ETA.
 
 Before departure, `eta_type: "anticipated"` may be schedule/route derived. In
 flight, `eta_type: "estimated"` is calculated from the current telemetry
-position and speed against active-route geometry. Generated mission events use
-their stored route-segment projection, including its interior projected point;
-current speed is blended only on the current route portion and planned segment
-speeds apply afterward. The remaining current portion starts at the aircraft's
-projected position within its segment, so an interior-event ETA decreases as
+position and speed against active-route geometry. Every POI kind, including
+landing, uses the same calculation. Each stored route-segment projection
+determines the destination, including interior points; waypoint names cannot
+override them. Legacy named waypoints without stored projection geometry are
+projected into that same calculation. A progress value alone on a legacy record
+does not replace destination geometry. POI kind affects display and lifecycle,
+not ETA mathematics. Current speed is blended only on the current route portion
+and planned segment speeds apply afterward. The remaining current portion
+starts at the aircraft's
+projected position within its segment, so every destination ETA decreases as
 the aircraft approaches instead of restarting from the nearest waypoint.
 There is no direct-coordinate ETA fallback when
 projection, route geometry, travel direction, or telemetry is unsafe or
