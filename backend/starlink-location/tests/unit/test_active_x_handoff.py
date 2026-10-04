@@ -244,3 +244,56 @@ def test_active_x_link_does_not_flap_after_commit_on_reentry_jitter(
     assert result["satellite_id"] == "X-2"
     assert result["pending_satellite_id"] is None
     assert result["handoff"]["phase"] == "committed"
+
+
+@pytest.mark.parametrize("longitude", [10.0, 10.1])
+def test_active_x_link_commits_at_transition_without_exiting_preparation_zone(
+    tmp_path, monkeypatch, longitude
+):
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    _build_link_at(0.0, 9.0)
+
+    result = _build_link_at(0.0, longitude)
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+    assert result["handoff"]["in_handoff_zone"] is True
+    assert [link["satellite_id"] for link in result["links"]] == ["X-2"]
+
+
+@pytest.mark.parametrize("longitude", [10.1, 12.0])
+def test_active_x_link_catches_up_when_first_observation_is_after_transition(
+    tmp_path, monkeypatch, longitude
+):
+    """Restarting or skipping polls must not leave the starting satellite active."""
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+
+    result = _build_link_at(0.0, longitude)
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+
+
+def test_active_x_link_does_not_revert_when_jitter_crosses_back_before_transition(
+    tmp_path, monkeypatch
+):
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    _build_link_at(0.0, 9.0)
+    _build_link_at(0.0, 10.1)
+
+    result = _build_link_at(0.0, 9.99)
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"

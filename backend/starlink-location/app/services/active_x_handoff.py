@@ -22,7 +22,6 @@ HANDOFF_ZONE_RADIUS_METERS = 200_000.0
 class XHandoffTracker:
     """In-process guard state for live X-band handoff transitions."""
 
-    armed_transition_ids: set[str] = field(default_factory=set)
     committed_transition_ids: set[str] = field(default_factory=set)
 
 
@@ -69,7 +68,7 @@ def resolve_active_x_context(
     route: ParsedRoute | None,
     telemetry: TelemetryData,
 ) -> ActiveXContext:
-    """Resolve live active and pending X satellites from actual position."""
+    """Prepare inside the geographic zone and commit at projected route passage."""
 
     current_satellite = leg.transports.initial_x_satellite_id
     if not current_satellite:
@@ -105,18 +104,17 @@ def resolve_active_x_context(
 
         in_zone = bool(handoff["in_handoff_zone"])
         has_passed = current_progress >= transition_progress
+        if has_passed:
+            tracker.committed_transition_ids.add(transition.id)
+            current_satellite = transition.target_satellite_id
+            latest_handoff = {**handoff, "phase": "committed"}
+            continue
         if in_zone:
-            tracker.armed_transition_ids.add(transition.id)
             return ActiveXContext(
                 current_satellite,
                 transition.target_satellite_id,
                 {**handoff, "phase": "in_handoff_zone"},
             )
-        if has_passed and transition.id in tracker.armed_transition_ids:
-            tracker.committed_transition_ids.add(transition.id)
-            current_satellite = transition.target_satellite_id
-            latest_handoff = {**handoff, "phase": "committed"}
-            continue
         return ActiveXContext(current_satellite, None, {**handoff, "phase": "outside"})
 
     return ActiveXContext(current_satellite, None, latest_handoff)
