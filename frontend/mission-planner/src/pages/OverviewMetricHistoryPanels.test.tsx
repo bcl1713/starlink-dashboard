@@ -357,6 +357,124 @@ describe('OverviewMetricHistoryPanels', () => {
         .querySelector('strong')?.textContent
     ).toBe('0 Mbps');
   });
+  it.each([
+    ['excessively future', '1970-01-01T00:02:00.000Z'],
+    ['malformed', 'invalid'],
+  ])(
+    'recovers after %s timestamps without advancing accepted status',
+    (_, timestamp) => {
+      const status = statusFixture();
+      const view = render(group(status));
+      expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+        '7 ms'
+      );
+
+      view.rerender(
+        group(
+          {
+            ...status,
+            timestamp,
+            network: { ...status.network, latency_ms: 99 },
+          },
+          109_000,
+          false,
+          false,
+          bundle(110)
+        )
+      );
+      expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+        'Unavailable'
+      );
+      expect(
+        within(latency(view.container)).getByText('No timestamped observation')
+      ).toBeTruthy();
+      expect(
+        within(screen.getByLabelText('Network history context')).getByRole(
+          'status'
+        ).textContent
+      ).toBe('Network unavailable');
+      expect(plot.setData.mock.calls[0][0][0]).toEqual([110]);
+
+      // A failed poll must retain the valid sample, not the rejected one.
+      view.rerender(group(null, 109_000, true, false, bundle(110)));
+      expect(
+        within(latency(view.container)).getByText('Last observed 7 ms · 4s old')
+      ).toBeTruthy();
+
+      const recovered = {
+        ...status,
+        timestamp: '1970-01-01T00:01:48.000Z',
+        network: { ...status.network, latency_ms: 8 },
+      };
+      plot.setData.mockClear();
+      view.rerender(group(recovered, 109_000, false, false, bundle(105)));
+      expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+        '8 ms'
+      );
+      expect(
+        within(screen.getByLabelText('Network history context')).getByRole(
+          'status'
+        ).textContent
+      ).toBe('Network fresh');
+      expect(screen.getByText('Updated 1s ago')).toBeTruthy();
+      expect(screen.queryByText('Status refresh unavailable')).toBeNull();
+      expect(plot.setData).not.toHaveBeenCalled();
+
+      view.rerender(
+        group(
+          {
+            ...status,
+            timestamp: '1970-01-01T00:01:46.000Z',
+            network: { ...status.network, latency_ms: 99 },
+          },
+          109_000,
+          false,
+          false,
+          bundle(115)
+        )
+      );
+      expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+        '8 ms'
+      );
+      expect(plot.setData.mock.calls[0][0][0]).toEqual([115]);
+    }
+  );
+  it.each([
+    ['1970-01-01T00:01:54.000Z', '8 ms', 'Network fresh'],
+    ['1970-01-01T00:01:54.001Z', 'Unavailable', 'Network unavailable'],
+  ])(
+    'validates the five-second clock-skew boundary at %s',
+    (timestamp, value, state) => {
+      const status = statusFixture();
+      const history = bundle();
+      const view = render(group(status, 109_000, false, false, history));
+      view.rerender(
+        group(
+          {
+            ...status,
+            timestamp,
+            network: { ...status.network, latency_ms: 8 },
+          },
+          109_000,
+          false,
+          false,
+          history
+        )
+      );
+      expect(latency(view.container).querySelector('strong')?.textContent).toBe(
+        value
+      );
+      expect(
+        within(screen.getByLabelText('Network history context')).getByRole(
+          'status'
+        ).textContent
+      ).toBe(state);
+      expect(screen.queryByText('Updated 0s ago') !== null).toBe(
+        state === 'Network fresh'
+      );
+      expect(plot.setData).not.toHaveBeenCalled();
+    }
+  );
   it('rejects older status and history independently and accepts their recoveries', () => {
     const history = bundle();
     const status = statusFixture();
