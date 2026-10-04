@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useCreateMission } from '../../hooks/api/useMissions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -19,6 +25,7 @@ export function CreateMissionDialog({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const createMission = useCreateMission();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,9 +59,27 @@ export function CreateMissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent
+        onOpenAutoFocus={() => {
+          // This dialog is opened by MissionList, outside Radix DialogTrigger.
+          returnFocus.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (returnFocus.current?.isConnected) {
+            event.preventDefault();
+            returnFocus.current.focus({ preventScroll: true });
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Create New Mission</DialogTitle>
+          <DialogDescription>
+            Name your mission and optionally add a description. You can add legs
+            after creating it.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

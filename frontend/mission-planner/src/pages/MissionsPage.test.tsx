@@ -7,6 +7,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 
 vi.mock('../components/missions/MissionList', () => ({
@@ -54,6 +55,47 @@ function openCreateDialog() {
 }
 
 describe('MissionsPage create mission navigation', () => {
+  it.each(['Escape', 'Cancel'])(
+    'returns keyboard focus to the opening control after %s',
+    async (action) => {
+      vi.mocked(useCreateMission).mockReturnValue({
+        isPending: false,
+        mutateAsync: vi.fn(),
+      } as never);
+
+      renderMissionsPage();
+      const opener = screen.getByRole('button', {
+        name: 'Open create mission',
+      });
+      opener.focus();
+      openCreateDialog();
+      expect(screen.getByLabelText('Mission Name')).toHaveFocus();
+
+      if (action === 'Escape') {
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      }
+
+      await waitFor(() => expect(opener).toHaveFocus());
+      expect(screen.queryByRole('dialog')).toBeNull();
+    }
+  );
+
+  it('describes the create dialog for assistive technology', () => {
+    vi.mocked(useCreateMission).mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    } as never);
+
+    renderMissionsPage();
+    openCreateDialog();
+
+    expect(screen.getByRole('dialog')).toHaveAccessibleDescription(
+      'Name your mission and optionally add a description. You can add legs after creating it.'
+    );
+  });
+
   it('navigates to the created mission detail after a successful create', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({ id: 'created-mission' });
     vi.mocked(useCreateMission).mockReturnValue({

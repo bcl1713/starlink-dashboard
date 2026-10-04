@@ -106,7 +106,7 @@ test.describe('Overview metric history', () => {
       test.use({ deviceScaleFactor });
       test('keeps one retained sample moving without a rebase jump after a delayed poll', async ({
         page,
-      }) => {
+      }, testInfo) => {
         test.setTimeout(120_000);
         const start = Math.floor(Date.now() / 1000);
         const marker = start - 20;
@@ -234,14 +234,22 @@ test.describe('Overview metric history', () => {
           const key = Object.keys(section).find((item) =>
             item.startsWith('__reactFiber$')
           )!;
-          const samples: { t: number; x: number; end: number }[] = [];
+          const samples: {
+            t: number;
+            x: number;
+            end: number;
+            transform: string;
+            animationTime: number | null;
+            frameTime: number;
+            width: number;
+          }[] = [];
           let bundlesSeen = 0;
           let lastEnd: number | undefined;
           let thirdStarted = Infinity;
           const startTime = performance.now();
           while (performance.now() - startTime < 30_000) {
-            await new Promise<void>((resolve) =>
-              requestAnimationFrame(() => resolve())
+            const frameTime = await new Promise<number>((resolve) =>
+              requestAnimationFrame(resolve)
             );
             let fiber: Fiber | null = (
               section as unknown as Record<string, Fiber>
@@ -271,6 +279,16 @@ test.describe('Overview metric history', () => {
             }
             samples.push({
               t: performance.now(),
+              frameTime,
+              transform: getComputedStyle(
+                section.querySelector('.overview-metric-history__surface')!
+              ).transform,
+              animationTime: Number(
+                section
+                  .querySelector('.overview-metric-history__surface')!
+                  .getAnimations()[0]?.currentTime ?? 0
+              ),
+              width: rect.width,
               x:
                 rect.left +
                 ((marker - plot.scales.x.min) /
@@ -290,6 +308,10 @@ test.describe('Overview metric history', () => {
           .locator('.overview-metric-history__viewport')
           .evaluate((node) => node.clientWidth);
         const speed = width / 60 / 1000;
+        await writeFile(
+          testInfo.outputPath('motion-diagnostics.json'),
+          JSON.stringify({ width, speed, positions }, null, 2)
+        );
         const freshBundle = positions.filter(
           ({ end }) => end === committedEnds[1]
         );

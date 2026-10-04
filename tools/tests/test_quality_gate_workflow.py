@@ -115,7 +115,7 @@ def test_static_job_installs_its_runner_prerequisites():
         in static
     )
     assert "actions/setup-node@v4" in static
-    assert 'node-version: "22.12.0"' in static
+    assert 'node-version: "22.22.2"' in static
     assert "npm ci --legacy-peer-deps" in static
     assert "npm install --global markdownlint-cli2" in static
     assert "taiki-e/install-action@v2" in static
@@ -227,5 +227,5 @@ def test_backend_and_frontend_jobs_install_their_runner_prerequisites():
     assert "astral-sh/setup-uv@v6" in backend
     assert "requirements-dev.txt" in backend
     assert "actions/setup-node@v4" in frontend
-    assert 'node-version: "22.12.0"' in frontend
+    assert 'node-version: "22.22.2"' in frontend
     assert "npm ci --legacy-peer-deps" in frontend
