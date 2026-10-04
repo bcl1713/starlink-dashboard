@@ -135,6 +135,7 @@ describe('useOverviewLinkSettings', () => {
     const changed = {
       starshield_link_enabled: true,
       x_band_link_enabled: false,
+      orbital_traffic_enabled: false,
     };
     vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
     await act(async () => {
