@@ -30,7 +30,7 @@ session per task, and continuation through PR and merge into `dev`.
 | ------------------ | -------- | ------------------------------------------------------ |
 | Task 1             | Complete | Scoped background refresh and regressions              |
 | Task 2             | Complete | Confirmed state, save/read races, recovery             |
-| Task 3             | Pending  | Display message protocol and sessions                  |
+| Task 3             | Complete | Display message protocol and sessions                  |
 | Task 4             | Pending  | Configuration controls and fullscreen feedback         |
 | Task 5             | Pending  | Integrated acceptance, regression gates, documentation |
 | Independent review | Pending  | Fresh review of the whole branch                       |
@@ -293,3 +293,7 @@ scratch ledgers without deleting it or losing references to required evidence.
   independent review, PR/merge under inherited authorization and required
   acceptance/exact-head checks; no force-push, protection bypass, deploy, main
   promotion or shared deletion.
+
+### Task 3 — validated presence and targeted sessions (complete)
+
+Details and next-stage contract: [Task 3 session record](2026-10-04-overview-window-sync-sessions.md).

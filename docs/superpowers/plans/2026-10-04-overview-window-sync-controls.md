@@ -87,7 +87,7 @@ channel name `starlink-overview-display-v1`, a UUID session ID, and matching
 human-visible label consisting of `Overview`, a space, and the ID's final six
 characters.
 
-- [ ] **Step 1: Write failing parser and in-memory two-session tests.** Mock
+- [x] **Step 1: Write failing parser and in-memory two-session tests.** Mock
       BroadcastChannel with separate instances and ordered delivery. Test names
       and fixed assertions include:
 
@@ -112,10 +112,10 @@ characters.
   request, result from a different peer, malformed/oversized/unknown messages,
   expired capability, constructor/postMessage failure, and idempotent cleanup.
 
-- [ ] **Step 2: Run the new service tests and observe missing-module failures.**
+- [x] **Step 2: Run the new service tests and observe missing-module failures.**
       Run
       `npm run test:unit -- src/services/overview-display-protocol.test.ts src/services/overview-display-session.test.ts`.
-- [ ] **Step 3: Implement parser and session state machine.** Keep one session
+- [x] **Step 3: Implement parser and session state machine.** Keep one session
       scheduler at 1000ms for expiry and five-second heartbeat emission. Emit
       discovery immediately for controllers and presence immediately for hosts.
       Use receive time for peer expiry; use command expiry for execution. A host
@@ -127,10 +127,10 @@ characters.
       intervals/listeners/pending state. Missing BroadcastChannel or transport
       failure sets available false rather than breaking Overview or throwing
       into the app.
-- [ ] **Step 4: Verify parser and lifecycle tests pass.** Add discovery with
+- [x] **Step 4: Verify parser and lifecycle tests pass.** Add discovery with
       multiple controllers and no duplicate broadcasts; assert cleanup returns
       fake-channel listeners and timer counts to baseline.
-- [ ] **Step 5: Commit the protocol deliverable.** Commit
+- [x] **Step 5: Commit the protocol deliverable.** Commit
       `feat(overview): add targeted display command sessions`.
 
 ## Task 4: Deliver Configuration controls and honest fullscreen feedback
