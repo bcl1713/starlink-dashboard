@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -59,6 +59,7 @@ def _telemetry(
         ),
         timestamp=timestamp or datetime(2026, 1, 1, tzinfo=timezone.utc),
         position=PositionData(
+            observed_at=datetime.now(timezone.utc),
             latitude=latitude,
             longitude=longitude,
             altitude=35000.0,
@@ -243,4 +244,132 @@ def test_active_x_link_does_not_flap_after_commit_on_reentry_jitter(
 
     assert result["satellite_id"] == "X-2"
     assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+
+
+@pytest.mark.parametrize("longitude", [10.0, 10.1])
+def test_active_x_link_commits_at_transition_without_exiting_preparation_zone(
+    tmp_path, monkeypatch, longitude
+):
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    _build_link_at(0.0, 9.0)
+
+    result = _build_link_at(0.0, longitude)
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+    assert result["handoff"]["in_handoff_zone"] is True
+    assert [link["satellite_id"] for link in result["links"]] == ["X-2"]
+
+
+@pytest.mark.parametrize("longitude", [10.1, 12.0])
+def test_active_x_link_catches_up_when_first_observation_is_after_transition(
+    tmp_path, monkeypatch, longitude
+):
+    """Restarting or skipping polls must not leave the starting satellite active."""
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+
+    result = _build_link_at(0.0, longitude)
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+
+
+def test_active_x_link_does_not_revert_when_jitter_crosses_back_before_transition(
+    tmp_path, monkeypatch
+):
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    _build_link_at(0.0, 9.0)
+    _build_link_at(0.0, 10.1)
+
+    result = _build_link_at(0.0, 9.99)
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+
+
+@pytest.mark.parametrize("provenance", ["missing", "stale", "future", "naive"])
+def test_active_x_link_does_not_catch_up_from_unusable_position(
+    tmp_path, monkeypatch, provenance
+):
+    """Unavailable GPS defaults or old fixes cannot commit a sticky handoff."""
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    reversed_route = _route().model_copy(
+        update={"points": list(reversed(_route().points))}
+    )
+    telemetry = _telemetry(0.0, 0.0, 270.0)
+    observed_at = datetime.now(timezone.utc)
+    telemetry.position.observed_at = {
+        "missing": None,
+        "stale": observed_at - timedelta(seconds=30),
+        "future": observed_at + timedelta(seconds=30),
+        "naive": observed_at.replace(tzinfo=None),
+    }[provenance]
+
+    result = build_active_x_link(
+        StaticCoordinator(telemetry),
+        StaticRouteManager(reversed_route),
+        StaticPOIManager([_satellite("X-1", 0.0), _satellite("X-2", 30.0)]),
+    )
+
+    assert result["satellite_id"] == "X-1"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["route_progress_percent"] is None
+
+
+def test_active_x_link_preserves_committed_satellite_during_gps_loss(
+    tmp_path, monkeypatch
+):
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    _build_link_at(0.0, 10.1)
+    telemetry = _telemetry(0.0, 0.0, 90.0)
+    telemetry.position.observed_at = None
+
+    result = build_active_x_link(
+        StaticCoordinator(telemetry),
+        StaticRouteManager(_route()),
+        StaticPOIManager([_satellite("X-1", 0.0), _satellite("X-2", 30.0)]),
+    )
+
+    assert result["satellite_id"] == "X-2"
+    assert result["pending_satellite_id"] is None
+    assert result["handoff"]["phase"] == "committed"
+    assert result["handoff"]["route_progress_percent"] is None
+
+
+def test_active_x_link_accepts_verified_zero_coordinates(tmp_path, monkeypatch):
+    """Real zero coordinates with provenance are not unavailable GPS defaults."""
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    _save_active_mission(tmp_path)
+    reversed_route = _route().model_copy(
+        update={"points": list(reversed(_route().points))}
+    )
+
+    result = build_active_x_link(
+        StaticCoordinator(_telemetry(0.0, 0.0, 270.0)),
+        StaticRouteManager(reversed_route),
+        StaticPOIManager([_satellite("X-1", 0.0), _satellite("X-2", 30.0)]),
+    )
+
+    assert result["satellite_id"] == "X-2"
     assert result["handoff"]["phase"] == "committed"

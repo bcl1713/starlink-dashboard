@@ -532,7 +532,8 @@ class RouteETACalculator:
         Returns:
             Dictionary with progress information
         """
-        nearest_point_idx, _ = self.find_nearest_point(current_lat, current_lon)
+        projection = self.project_poi_to_route(current_lat, current_lon)
+        current_segment_index = projection["projected_waypoint_index"]
 
         # Find nearest waypoint
         nearest_waypoint_idx = 0
@@ -555,12 +556,9 @@ class RouteETACalculator:
 
         # Calculate progress
         total_distance = self.route.get_total_distance()
-        distance_completed = self._calculate_distance_along_route(0, nearest_point_idx)
+        progress_percent = projection["projected_route_progress"]
+        distance_completed = total_distance * progress_percent / 100.0
         distance_remaining = total_distance - distance_completed
-
-        progress_percent = (
-            (distance_completed / total_distance * 100) if total_distance > 0 else 0.0
-        )
 
         # Get timing information
         expected_total_duration = None
@@ -571,8 +569,37 @@ class RouteETACalculator:
         # Calculate remaining duration using segment-aware method if available
         if not expected_duration_remaining and self.route.timing_profile:
             expected_duration_remaining = (
-                self._calculate_remaining_duration_from_segments(nearest_point_idx)
+                self._calculate_remaining_duration_from_segments(current_segment_index)
             )
+            if (
+                expected_duration_remaining is not None
+                and current_segment_index < len(self.route.points) - 1
+            ):
+                start = self.route.points[current_segment_index]
+                end = self.route.points[current_segment_index + 1]
+                segment_distance = self._haversine_distance(
+                    start.latitude, start.longitude, end.latitude, end.longitude
+                )
+                distance_into_segment = self._haversine_distance(
+                    start.latitude,
+                    start.longitude,
+                    projection["projected_lat"],
+                    projection["projected_lon"],
+                )
+                fraction = (
+                    min(1.0, distance_into_segment / segment_distance)
+                    if segment_distance > 0
+                    else 0.0
+                )
+                duration_after_segment = (
+                    self._calculate_remaining_duration_from_segments(
+                        current_segment_index + 1
+                    )
+                    or 0.0
+                )
+                expected_duration_remaining -= fraction * (
+                    expected_duration_remaining - duration_after_segment
+                )
 
         # Calculate average speed if we have total duration
         average_speed = self.DEFAULT_SPEED_KNOTS

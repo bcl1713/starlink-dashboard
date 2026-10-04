@@ -406,6 +406,130 @@ def test_api_projected_event_uses_segment_speeds(client, monkeypatch):
     assert response.json()["pois"][0]["eta_seconds"] == pytest.approx(first + final)
 
 
+@pytest.mark.parametrize(
+    ("longitude", "expected_eta", "upcoming"),
+    [
+        (0.0, 648.436938, True),
+        (0.25, 468.315566, True),
+        (0.6, 216.145646, True),
+        (0.8, 72.048549, True),
+        (0.899, 0.720485, True),
+        (0.95, None, False),
+    ],
+)
+def test_api_counts_down_to_interior_transition_without_waypoint_snapping(
+    client, monkeypatch, longitude, expected_eta, upcoming
+):
+    """The transition must stay upcoming past the segment midpoint."""
+    import app.api.overview_upcoming_pois as api
+
+    active_route = route([(0.0, 0.0), (0.0, 1.0)])
+    event = scheduled_poi().model_copy(
+        update={
+            "name": "Interior swap",
+            "latitude": 0.1,
+            "longitude": 0.9,
+            "projected_latitude": 0.0,
+            "projected_longitude": 0.9,
+            "projected_waypoint_index": 0,
+            "projected_route_progress": 90.0,
+        }
+    )
+    client.app.state.coordinator = SimpleNamespace(
+        get_current_telemetry=lambda: SimpleNamespace(
+            position=SimpleNamespace(
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=0.0,
+                longitude=longitude,
+                speed=300,
+            )
+        )
+    )
+    arrange_active_v2_context(client, active_route=active_route)
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [event]
+    )
+    monkeypatch.setattr(api, "get_eta_calculator", ETACalculator)
+    monkeypatch.setattr(
+        api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+
+    response = client.get("/api/overview/upcoming-pois")
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["current_route_progress"] == pytest.approx(longitude * 100)
+    poi = payload["pois"][0]
+    assert poi["upcoming"] is upcoming
+    if expected_eta is None:
+        assert poi["eta_seconds"] is None
+    else:
+        assert poi["eta_seconds"] == pytest.approx(expected_eta, abs=0.00001)
+
+
+def test_projected_eta_is_unavailable_after_passing_event_on_same_segment():
+    """Being nearer the segment origin does not make a passed event upcoming."""
+    active_route = route([(0.0, 0.0), (0.0, 1.0)])
+    event = scheduled_poi().model_copy(
+        update={
+            "name": "Early swap",
+            "projected_latitude": 0.0,
+            "projected_longitude": 0.2,
+            "projected_waypoint_index": 0,
+            "projected_route_progress": 20.0,
+        }
+    )
+
+    result = calculate_route_aware_eta_results(
+        pois=[event],
+        calculator=ETACalculator(),
+        active_route=active_route,
+        flight_phase="in_flight",
+        latitude=0.0,
+        longitude=0.3,
+        speed_knots=300,
+    )
+
+    assert result[event.id] is None
+
+
+@pytest.mark.parametrize(
+    ("longitude", "expected_eta"),
+    [(0.75, 351.236674), (1.0, 324.218469), (1.000001, 324.218109)],
+)
+def test_projected_eta_blends_speed_on_first_remaining_portion(longitude, expected_eta):
+    """A zero-length incoming remainder must not consume outgoing speed blending."""
+    active_route = route([(0.0, 0.0), (0.0, 1.0), (0.0, 2.0)])
+    active_route.points[1].expected_segment_speed_knots = 500
+    active_route.points[2].expected_segment_speed_knots = 900
+    event = scheduled_poi().model_copy(
+        update={
+            "name": "Interior swap",
+            "projected_latitude": 0.0,
+            "projected_longitude": 1.9,
+            "projected_waypoint_index": 1,
+            "projected_route_progress": 95.0,
+        }
+    )
+
+    result = calculate_route_aware_eta_results(
+        pois=[event],
+        calculator=ETACalculator(),
+        active_route=active_route,
+        flight_phase="in_flight",
+        latitude=0.0,
+        longitude=longitude,
+        speed_knots=300,
+    )
+
+    assert result[event.id] == pytest.approx(expected_eta, abs=0.00001)
+
+
 def test_api_leaves_out_of_range_telemetry_projected_event_eta_unavailable(
     client, monkeypatch
 ):
