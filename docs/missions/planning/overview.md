@@ -54,7 +54,8 @@ the route. The 200 km geographic zone provides advance notice and a pending
 satellite; leaving that zone is not required to commit the change. If the first
 observation is already past a transition, the display catches up to its target.
 A committed change does not revert when position jitter crosses back over the
-transition.
+transition. Only fresh, verified position observations can update the handoff;
+missing or stale GPS preserves the last committed satellite.
 
 ---
 

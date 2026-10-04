@@ -498,6 +498,40 @@ def test_projected_eta_is_unavailable_after_passing_event_on_same_segment():
     assert result[event.id] is None
 
 
+@pytest.mark.parametrize(
+    ("longitude", "expected_eta"),
+    [(0.75, 351.236674), (1.0, 324.218469), (1.000001, 324.218109)],
+)
+def test_projected_eta_blends_speed_on_first_remaining_portion(
+    longitude, expected_eta
+):
+    """A zero-length incoming remainder must not consume outgoing speed blending."""
+    active_route = route([(0.0, 0.0), (0.0, 1.0), (0.0, 2.0)])
+    active_route.points[1].expected_segment_speed_knots = 500
+    active_route.points[2].expected_segment_speed_knots = 900
+    event = scheduled_poi().model_copy(
+        update={
+            "name": "Interior swap",
+            "projected_latitude": 0.0,
+            "projected_longitude": 1.9,
+            "projected_waypoint_index": 1,
+            "projected_route_progress": 95.0,
+        }
+    )
+
+    result = calculate_route_aware_eta_results(
+        pois=[event],
+        calculator=ETACalculator(),
+        active_route=active_route,
+        flight_phase="in_flight",
+        latitude=0.0,
+        longitude=longitude,
+        speed_knots=300,
+    )
+
+    assert result[event.id] == pytest.approx(expected_eta, abs=0.00001)
+
+
 def test_api_leaves_out_of_range_telemetry_projected_event_eta_unavailable(
     client, monkeypatch
 ):

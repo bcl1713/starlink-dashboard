@@ -5,12 +5,14 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from app.mission.models import MissionLeg, XTransition
 from app.models.route import ParsedRoute
 from app.models.telemetry import TelemetryData
+from app.services.position_freshness import position_observation
 from app.services.route_eta_calculator import RouteETACalculator
 
 logger = logging.getLogger(__name__)
@@ -76,6 +78,28 @@ def resolve_active_x_context(
     if route is None or not leg.transports.x_transitions:
         return ActiveXContext(current_satellite, None, empty_handoff_context())
 
+    tracker = _tracker_for(leg, route)
+    transitions = _project_transitions(route, leg.transports.x_transitions)
+    _, position_state = position_observation(
+        telemetry.position.latitude,
+        telemetry.position.longitude,
+        telemetry.position.observed_at,
+        datetime.now(timezone.utc),
+    )
+    if position_state != "fresh":
+        handoff = empty_handoff_context()
+        for transition_progress, transition in transitions:
+            if transition.id in tracker.committed_transition_ids:
+                current_satellite = transition.target_satellite_id
+                handoff = {
+                    **handoff,
+                    "phase": "committed",
+                    "transition_id": transition.id,
+                    "transition_satellite_id": transition.target_satellite_id,
+                    "transition_progress_percent": round(transition_progress, 6),
+                }
+        return ActiveXContext(current_satellite, None, handoff)
+
     current_progress = _project_progress(
         route,
         telemetry.position.latitude,
@@ -84,9 +108,7 @@ def resolve_active_x_context(
     if current_progress is None:
         return ActiveXContext(current_satellite, None, empty_handoff_context())
 
-    tracker = _tracker_for(leg, route)
     latest_handoff = empty_handoff_context(route_progress=current_progress)
-    transitions = _project_transitions(route, leg.transports.x_transitions)
 
     for transition_progress, transition in transitions:
         if not transition.target_satellite_id:

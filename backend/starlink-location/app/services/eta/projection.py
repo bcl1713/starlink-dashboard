@@ -478,6 +478,7 @@ class ETAProjection:
                 return None
 
             total_eta_seconds = 0.0
+            first_remaining_segment = True
             for idx in range(current_segment_index, projection_segment_index + 1):
                 current_point = active_route.points[idx]
                 segment_timing_point = active_route.points[idx + 1]
@@ -501,12 +502,14 @@ class ETAProjection:
                     segment_end_latitude,
                     segment_end_longitude,
                 )
+                if segment_distance <= 0.000001:
+                    continue
                 expected_speed = (
                     segment_timing_point.expected_segment_speed_knots or speed
                 )
                 segment_speed_knots = (
                     (speed + expected_speed) / 2.0
-                    if idx == current_segment_index
+                    if first_remaining_segment
                     else expected_speed
                 )
                 if not isfinite(segment_speed_knots) or segment_speed_knots <= 0.5:
@@ -514,6 +517,7 @@ class ETAProjection:
                 total_eta_seconds += (
                     segment_distance / 1852.0 / segment_speed_knots * 3600.0
                 )
+                first_remaining_segment = False
 
             return total_eta_seconds if total_eta_seconds > 0 else None
 
