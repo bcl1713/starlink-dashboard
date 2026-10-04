@@ -23,6 +23,7 @@ from app.api import (
     gps,
     health,
     metrics,
+    orbital_catalog,
     overview_clock_settings,
     overview_history,
     overview_link_settings,
@@ -51,6 +52,7 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
+from app.services.orbital_catalog import OrbitalCatalogService
 from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.services.overview_history_prometheus import (
     OverviewHistoryReader,
@@ -91,6 +93,18 @@ _overview_history_client: httpx.AsyncClient | None = None
 _overview_history_settings_store: OverviewHistorySettingsStore | None = None
 _overview_clock_settings_store: OverviewClockSettingsStore | None = None
 _overview_link_settings_store: OverviewLinkSettingsStore | None = None
+ORBITAL_CATALOG_PATH = Path("data/orbital")
+
+
+def initialize_orbital_catalog_runtime() -> None:
+    app.state.orbital_catalog = OrbitalCatalogService(ORBITAL_CATALOG_PATH)
+
+
+async def shutdown_orbital_catalog_runtime() -> None:
+    service = getattr(app.state, "orbital_catalog", None)
+    if service is not None:
+        await service.aclose()
+        del app.state.orbital_catalog
 
 
 def should_automatically_refresh_ground_entry_point(
@@ -170,6 +184,7 @@ async def startup_event():
         initialize_overview_history_runtime()
         initialize_overview_clock_settings_runtime()
         initialize_overview_link_settings_runtime()
+        initialize_orbital_catalog_runtime()
 
         reconciliation = reconcile_active_legs_on_startup()
         logger.info_json(
@@ -390,6 +405,7 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        await shutdown_orbital_catalog_runtime()
         overview_history.set_overview_history_reader(None)
         overview_history.set_overview_history_settings_store(None)
         overview_clock_settings.set_overview_clock_settings_store(None)
@@ -648,6 +664,7 @@ app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(overview_clock_settings.router, tags=["Overview Clocks"])
 app.include_router(overview_link_settings.router, tags=["Overview Links"])
+app.include_router(orbital_catalog.router, tags=["Orbital Experiment"])
 app.include_router(overview_history.router, tags=["Overview History"])
 app.include_router(overview_upcoming_pois.router, tags=["Overview POIs"])
 app.include_router(config.router, tags=["Configuration"])

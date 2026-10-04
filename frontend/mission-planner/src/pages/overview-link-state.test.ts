@@ -7,7 +7,11 @@ import {
 
 function fixture(): OverviewLinkStateInput {
   return {
-    settings: { starshield_link_enabled: true, x_band_link_enabled: true },
+    settings: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
+    },
     status: {
       timestamp: '2026-10-03T12:00:00.000Z',
       position: { latitude: 30, longitude: -100, altitude: 35_000 },
@@ -62,6 +66,7 @@ describe('independent Overview link state', () => {
       input.settings = {
         starshield_link_enabled: starshield,
         x_band_link_enabled: xBand,
+        orbital_traffic_enabled: false,
       };
       const state = assertActivity(input, starshield, xBand);
       expect(state.starshieldVisible).toBe(starshield);

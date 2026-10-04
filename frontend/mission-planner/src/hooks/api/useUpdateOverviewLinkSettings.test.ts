@@ -11,8 +11,16 @@ vi.mock('@/services/api-client', () => ({
   default: { get: vi.fn(), put: vi.fn() },
 }));
 const key = ['overview-link-settings'];
-const original = { starshield_link_enabled: true, x_band_link_enabled: true };
-const saved = { starshield_link_enabled: false, x_band_link_enabled: true };
+const original = {
+  starshield_link_enabled: true,
+  x_band_link_enabled: true,
+  orbital_traffic_enabled: true,
+};
+const saved = {
+  starshield_link_enabled: false,
+  x_band_link_enabled: true,
+  orbital_traffic_enabled: false,
+};
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
@@ -37,7 +45,7 @@ afterEach(() => {
 
 describe('useUpdateOverviewLinkSettings', () => {
   it.each([false, true])(
-    'cancels a stale GET and publishes the saved pair even with unmount=%s',
+    'late_get_cannot_restore_orbital_after_save with unmount=%s',
     async (unmountBeforeSave) => {
       const stale = deferred<{ data: typeof original }>();
       const put = deferred<{ data: typeof saved }>();
@@ -58,7 +66,7 @@ describe('useUpdateOverviewLinkSettings', () => {
       await waitFor(() => expect(apiClient.get).toHaveBeenCalledTimes(1));
       const signal = vi.mocked(apiClient.get).mock.calls[0][1]?.signal;
       act(() =>
-        editor.result.current.update.mutate({ starshield_link_enabled: false })
+        editor.result.current.update.mutate({ orbital_traffic_enabled: false })
       );
       await waitFor(() => expect(apiClient.put).toHaveBeenCalledTimes(1));
       expect(signal?.aborted).toBe(true);
@@ -135,6 +143,7 @@ describe('useUpdateOverviewLinkSettings', () => {
       const bothOff = {
         starshield_link_enabled: false,
         x_band_link_enabled: false,
+        orbital_traffic_enabled: false,
       };
       vi.mocked(apiClient.put).mockResolvedValueOnce({ data: bothOff });
       await act(async () => {
@@ -152,13 +161,21 @@ describe('useUpdateOverviewLinkSettings', () => {
     vi.mocked(apiClient.put)
       .mockReturnValueOnce(firstPut.promise)
       .mockResolvedValueOnce({
-        data: { starshield_link_enabled: false, x_band_link_enabled: false },
+        data: {
+          starshield_link_enabled: false,
+          x_band_link_enabled: false,
+          orbital_traffic_enabled: false,
+        },
       });
     vi.mocked(apiClient.get)
       .mockResolvedValueOnce({ data: original })
       .mockReturnValueOnce(firstRefetch.promise)
       .mockResolvedValue({
-        data: { starshield_link_enabled: false, x_band_link_enabled: false },
+        data: {
+          starshield_link_enabled: false,
+          x_band_link_enabled: false,
+          orbital_traffic_enabled: false,
+        },
       });
     const viewer = renderHook(useOverviewLinkSettings, { wrapper });
     await waitFor(() => expect(viewer.result.current.isFetching).toBe(false));
@@ -166,7 +183,10 @@ describe('useUpdateOverviewLinkSettings', () => {
     const second = renderHook(useUpdateOverviewLinkSettings, { wrapper });
     act(() => {
       first.result.current.mutate({ starshield_link_enabled: false });
-      second.result.current.mutate({ x_band_link_enabled: false });
+      second.result.current.mutate({
+        x_band_link_enabled: false,
+        orbital_traffic_enabled: false,
+      });
     });
     await waitFor(() => expect(second.result.current.isPaused).toBe(true));
     expect(apiClient.put).toHaveBeenCalledTimes(1);
@@ -181,7 +201,7 @@ describe('useUpdateOverviewLinkSettings', () => {
     expect(apiClient.put).toHaveBeenNthCalledWith(
       2,
       '/api/overview-links/settings',
-      { x_band_link_enabled: false }
+      { x_band_link_enabled: false, orbital_traffic_enabled: false }
     );
     await act(async () => {
       firstRefetch.resolve({ data: saved });
@@ -189,6 +209,7 @@ describe('useUpdateOverviewLinkSettings', () => {
     expect(viewer.result.current.data).toEqual({
       starshield_link_enabled: false,
       x_band_link_enabled: false,
+      orbital_traffic_enabled: false,
     });
   });
 });

@@ -3,6 +3,7 @@ import apiClient from './api-client';
 export interface OverviewLinkSettings {
   starshield_link_enabled: boolean;
   x_band_link_enabled: boolean;
+  orbital_traffic_enabled: boolean;
 }
 
 export type OverviewLinkSettingsUpdate = Partial<OverviewLinkSettings>;
@@ -13,6 +14,8 @@ function confirmedSettings(data: unknown): OverviewLinkSettings {
     typeof data !== 'object' ||
     !('starshield_link_enabled' in data) ||
     !('x_band_link_enabled' in data) ||
+    !('orbital_traffic_enabled' in data) ||
+    typeof data.orbital_traffic_enabled !== 'boolean' ||
     typeof data.starshield_link_enabled !== 'boolean' ||
     typeof data.x_band_link_enabled !== 'boolean'
   ) {
@@ -21,6 +24,7 @@ function confirmedSettings(data: unknown): OverviewLinkSettings {
   return {
     starshield_link_enabled: data.starshield_link_enabled,
     x_band_link_enabled: data.x_band_link_enabled,
+    orbital_traffic_enabled: data.orbital_traffic_enabled,
   };
 }
 

@@ -6,10 +6,26 @@ vi.mock('./api-client', () => ({ default: { get: vi.fn(), put: vi.fn() } }));
 beforeEach(() => vi.resetAllMocks());
 
 const pairs = [
-  { starshield_link_enabled: true, x_band_link_enabled: true },
-  { starshield_link_enabled: false, x_band_link_enabled: true },
-  { starshield_link_enabled: true, x_band_link_enabled: false },
-  { starshield_link_enabled: false, x_band_link_enabled: false },
+  {
+    starshield_link_enabled: true,
+    x_band_link_enabled: true,
+    orbital_traffic_enabled: false,
+  },
+  {
+    starshield_link_enabled: false,
+    x_band_link_enabled: true,
+    orbital_traffic_enabled: false,
+  },
+  {
+    starshield_link_enabled: true,
+    x_band_link_enabled: false,
+    orbital_traffic_enabled: false,
+  },
+  {
+    starshield_link_enabled: false,
+    x_band_link_enabled: false,
+    orbital_traffic_enabled: false,
+  },
 ];
 
 describe('overviewLinkSettingsApi', () => {
@@ -38,7 +54,7 @@ describe('overviewLinkSettingsApi', () => {
 
   it.each([
     [{ starshield_link_enabled: false }, pairs[1]],
-    [{ x_band_link_enabled: false }, pairs[2]],
+    [{ x_band_link_enabled: false, orbital_traffic_enabled: false }, pairs[2]],
     [pairs[3], pairs[3]],
   ])(
     'sends only supplied fields and receives the full pair',
@@ -61,7 +77,11 @@ describe('overviewLinkSettingsApi', () => {
     {},
     { starshield_link_enabled: false },
     { starshield_link_enabled: false, x_band_link_enabled: null },
-    { starshield_link_enabled: 'false', x_band_link_enabled: true },
+    {
+      starshield_link_enabled: 'false',
+      x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
+    },
     { starshield_link_enabled: true, x_band_link_enabled: 1 },
   ])('rejects malformed GET and PUT responses %j', async (data) => {
     vi.mocked(apiClient.get).mockResolvedValue({ data });
@@ -70,7 +90,26 @@ describe('overviewLinkSettingsApi', () => {
       'Invalid overview link settings'
     );
     await expect(
-      overviewLinkSettingsApi.update({ x_band_link_enabled: false })
+      overviewLinkSettingsApi.update({
+        x_band_link_enabled: false,
+        orbital_traffic_enabled: false,
+      })
     ).rejects.toThrow('Invalid overview link settings');
   });
 });
+
+it.each([undefined, null, 'true', 1])(
+  'orbital_is_off_until_confirmed: rejects %j',
+  async (value) => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        orbital_traffic_enabled: value,
+      },
+    });
+    await expect(overviewLinkSettingsApi.get()).rejects.toThrow(
+      'Invalid overview link settings'
+    );
+  }
+);

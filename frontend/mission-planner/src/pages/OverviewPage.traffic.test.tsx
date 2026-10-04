@@ -3,12 +3,37 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
+import type { OrbitalTrafficState } from './orbital/lifecycle';
+import { spriteSnapshot } from './orbital/sprite-test-fixtures';
+import { selectRoute, emptyRoutingState } from './orbital/routing';
+import { sceneToEcefKm } from './orbital/coordinates';
+import { globePosition } from './globe-coordinates';
+import { projectAircraftScenePosition } from './x-band-active-link-projection';
 import type { StatusResponse } from '@/services/status';
 import type { AnimatedFlowLineProps } from './AnimatedFlowLine';
 import type { OverviewMapController } from './OverviewMapController';
 import type { StarMarker } from './OverviewStarMarker';
 import type { OverviewMetricHistoryPanels } from './OverviewMetricHistoryPanels';
 
+const orbital = vi.hoisted(() => ({
+  state: {
+    previous: null,
+    current: null,
+    route: null,
+    spritesReady: false,
+    status: { kind: 'off', diagnostics: null },
+  } as OrbitalTrafficState,
+  draws: 0,
+}));
+vi.mock('@/hooks/useOrbitalTraffic', () => ({
+  useOrbitalTraffic: () => orbital.state,
+}));
+vi.mock('./orbital/OrbitalSprites', () => ({
+  OrbitalSprites: () => {
+    orbital.draws++;
+    return null;
+  },
+}));
 const queries = vi.hoisted(() => ({
   status: {} as Record<string, unknown>,
   links: {} as Record<string, unknown>,
@@ -236,6 +261,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 beforeEach(() => {
+  orbital.state = {
+    previous: null,
+    current: null,
+    route: null,
+    spritesReady: false,
+    status: { kind: 'off', diagnostics: null },
+  };
+  orbital.draws = 0;
   vi.mocked(projectTrafficArc).mockClear();
   scene.now = Date.parse('2026-10-03T00:00:00Z');
   vi.spyOn(Date, 'now').mockImplementation(() => scene.now);
@@ -556,4 +589,62 @@ describe('Overview traffic scene integration', () => {
       expect(traffic()?.canAnimate?.()).toBe(true);
     }
   );
+});
+
+it('exactly_one_measured_flow_owner uses the inferred route and retains disconnected dots plus fallback', () => {
+  const telemetry = status();
+  telemetry.ground_entry_point = { latitude: 0, longitude: 0 };
+  queries.status = { data: telemetry };
+  queries.links = {
+    data: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      orbital_traffic_enabled: true,
+    },
+  };
+  const s = spriteSnapshot();
+  const endpoints = {
+    aircraft: sceneToEcefKm(projectAircraftScenePosition(telemetry)!.position),
+    pop: sceneToEcefKm(globePosition(0, 0, 2)),
+  };
+  const route = selectRoute(s, endpoints, emptyRoutingState('a')).route!;
+  orbital.state = {
+    previous: null,
+    current: s,
+    route,
+    spritesReady: true,
+    status: { kind: 'ready', diagnostics: null },
+  };
+  const view = render(<OverviewPage />);
+  expect(traffic()?.points).toHaveLength(3);
+  expect(
+    [...scene.flows.values()].filter((p) => p.core?.color === '#c084fc')
+  ).toHaveLength(1);
+  expect(traffic()?.forward?.maxParticles).toBe(100);
+  expect(traffic()?.reverse?.maxParticles).toBe(100);
+  expect(screen.getByText('Satellites')).toBeInTheDocument();
+  expectPreset();
+  const key = traffic()?.particleKey;
+  queries.status = {
+    data: {
+      ...telemetry,
+      position: { ...telemetry.position, altitude: 36000 },
+    },
+  };
+  view.rerender(<OverviewPage />);
+  expect(traffic()?.particleKey).toBe(key);
+  orbital.state = { ...orbital.state, route: null };
+  view.rerender(<OverviewPage />);
+  expect(traffic()?.points.length).toBeGreaterThan(3);
+  expect(screen.getByText('Satellites')).toBeInTheDocument();
+  expect(traffic()?.particleKey).not.toBe(key);
+  orbital.state = {
+    ...orbital.state,
+    current: null,
+    spritesReady: false,
+    status: { kind: 'worker-failed', diagnostics: null },
+  };
+  view.rerender(<OverviewPage />);
+  expect(screen.queryByText('Satellites')).toBeNull();
+  expect(traffic()?.points.length).toBeGreaterThan(3);
 });

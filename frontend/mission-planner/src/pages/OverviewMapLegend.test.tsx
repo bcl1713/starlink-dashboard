@@ -89,3 +89,10 @@ it('uses the scene violet sample independently of an X-band warning', () => {
     screen.getByText('Planned satellite link').previousElementSibling
   ).toHaveStyle({ background: '#ef4444' });
 });
+
+it('includes Satellites only when eligible sprites actually draw', () => {
+  const view = render(<OverviewMapLegend {...all} satellites={false} />);
+  expect(screen.queryByText('Satellites')).toBeNull();
+  view.rerender(<OverviewMapLegend {...all} satellites />);
+  expect(screen.getByText('Satellites')).toBeInTheDocument();
+});

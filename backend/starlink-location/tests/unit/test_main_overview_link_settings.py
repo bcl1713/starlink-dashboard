@@ -27,11 +27,16 @@ def test_initializes_and_registers_link_settings_runtime(monkeypatch, tmp_path):
 def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_path):
     path = tmp_path / "settings/overview-links.json"
     monkeypatch.setattr(main, "OVERVIEW_LINK_SETTINGS_PATH", path)
-    saved = {"starshield_link_enabled": False, "x_band_link_enabled": False}
+    saved = {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": False,
+        "orbital_traffic_enabled": False,
+    }
     with TestClient(main.app) as client:
         assert client.get(URL).json() == {
             "starshield_link_enabled": True,
             "x_band_link_enabled": True,
+            "orbital_traffic_enabled": False,
         }
         assert (
             main.app.state.overview_link_settings_store

@@ -3,6 +3,7 @@ import { OverviewDisplaySettingsCard } from './OverviewDisplaySettingsCard';
 import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
 import { OverviewMapDiagnostics } from './OverviewMapDiagnostics';
 import { OverviewLinkSettingsCard } from './OverviewLinkSettingsCard';
+import { OrbitalTrafficDiagnostics } from './OrbitalTrafficDiagnostics';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { GPSControlCard } from '../components/gps/GPSControlCard';
 import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClockSettings';
@@ -26,6 +27,7 @@ export function ConfigurationPage() {
         <GPSControlCard />
         <OverviewHistorySettingsCard />
         <OverviewLinkSettingsCard />
+        <OrbitalTrafficDiagnostics />
         <OverviewCameraSettingsCard />
         <OverviewDisplaySettingsCard />
         <OverviewMapDiagnostics />

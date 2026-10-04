@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -25,6 +27,7 @@ def test_get_returns_default_full_pair(client):
     assert response.json() == {
         "starshield_link_enabled": True,
         "x_band_link_enabled": True,
+        "orbital_traffic_enabled": False,
     }
 
 
@@ -34,6 +37,7 @@ def test_put_returns_and_persists_all_pairs(client, starshield, x_band):
     payload = {
         "starshield_link_enabled": starshield,
         "x_band_link_enabled": x_band,
+        "orbital_traffic_enabled": False,
     }
     response = client.put(URL, json=payload)
     assert response.status_code == 200
@@ -46,12 +50,14 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
     assert first.json() == {
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
+        "orbital_traffic_enabled": False,
     }
     second = client.put(URL, json={"x_band_link_enabled": False})
     assert second.status_code == 200
     assert second.json() == {
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
+        "orbital_traffic_enabled": False,
     }
 
 
@@ -76,7 +82,11 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
     ],
 )
 def test_invalid_updates_return_422_and_preserve_last_confirmed_pair(client, payload):
-    saved = {"starshield_link_enabled": False, "x_band_link_enabled": False}
+    saved = {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": False,
+        "orbital_traffic_enabled": False,
+    }
     assert client.put(URL, json=saved).status_code == 200
     response = client.put(URL, json=payload)
     assert response.status_code == 422
@@ -111,7 +121,11 @@ def test_invalid_disk_settings_return_503_without_replacement(
 
 
 def test_failed_write_returns_503_and_keeps_last_confirmed_pair(client, monkeypatch):
-    saved = {"starshield_link_enabled": False, "x_band_link_enabled": True}
+    saved = {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": False,
+    }
     assert client.put(URL, json=saved).status_code == 200
 
     def fail_replace(*args):
@@ -127,3 +141,52 @@ def test_failed_read_returns_503(client, tmp_path):
     (tmp_path / "overview-links.json").mkdir()
     assert client.get(URL).status_code == 503
     assert client.put(URL, json={"x_band_link_enabled": False}).status_code == 503
+
+
+def test_orbital_partial_updates_and_interleaved_viewers(client):
+    assert client.put(URL, json={"starshield_link_enabled": False}).status_code == 200
+    assert client.put(URL, json={"orbital_traffic_enabled": True}).json() == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": True,
+    }
+    assert client.put(URL, json={"x_band_link_enabled": False}).json() == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": False,
+        "orbital_traffic_enabled": True,
+    }
+
+
+@pytest.mark.parametrize("value", [None, "true", 1])
+def test_orbital_update_is_strict(client, value):
+    before = client.get(URL).json()
+    assert client.put(URL, json={"orbital_traffic_enabled": value}).status_code == 422
+    assert client.get(URL).json() == before
+
+
+def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
+    path = tmp_path / "overview-links.json"
+    saved = {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": True,
+        "future_preference": {"display": "constellation"},
+    }
+    path.write_text(json.dumps(saved))
+    response = client.get(URL)
+    assert response.status_code == 200
+    assert response.json() == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": True,
+    }
+    response = client.put(URL, json={"x_band_link_enabled": False})
+    assert response.status_code == 200
+    assert response.json() == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": False,
+        "orbital_traffic_enabled": True,
+    }
+    assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
+    assert client.put(URL, json={"future_preference": False}).status_code == 422
+    assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}

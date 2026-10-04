@@ -1,5 +1,22 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  render as renderTesting,
+  screen,
+  within,
+} from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+function render(node: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return renderTesting(node, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
+}
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const queries = vi.hoisted(() => ({
   status: {} as Record<string, unknown>,

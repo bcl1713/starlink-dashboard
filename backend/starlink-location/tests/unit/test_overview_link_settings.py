@@ -1,12 +1,13 @@
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, dataclass
 from threading import Barrier, Event
 
 import pytest
 from filelock import FileLock
 
+from app.services import overview_link_settings
 from app.services.overview_link_settings import (
     OverviewLinkSettings,
     OverviewLinkSettingsStore,
@@ -51,7 +52,7 @@ def test_all_pairs_survive_store_recreation(tmp_path, starshield, x_band):
     assert OverviewLinkSettingsStore(path).update(payload) == OverviewLinkSettings(
         starshield, x_band
     )
-    assert json.loads(path.read_text()) == payload
+    assert json.loads(path.read_text()) == {**payload, "orbital_traffic_enabled": False}
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         starshield, x_band
     )
@@ -123,7 +124,7 @@ def test_reads_and_updates_respect_another_store_file_lock(tmp_path, operation):
         '{"starshield_link_enabled": 0}',
         '{"x_band_link_enabled": "false"}',
         '{"x_band_link_enabled": []}',
-        '{"unexpected": true}',
+        '{"unexpected": true, "orbital_traffic_enabled": "true"}',
     ],
 )
 def test_invalid_disk_settings_raise_without_replacing_contents(tmp_path, contents):
@@ -174,3 +175,97 @@ def test_failed_atomic_replace_preserves_last_good_pair_and_cleans_temp(
     assert path.read_bytes() == original
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(False, True)
     assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_orbital_default_and_partial_merge(tmp_path):
+    path = tmp_path / "overview-links.json"
+    path.write_text(
+        json.dumps({"starshield_link_enabled": False, "x_band_link_enabled": False})
+    )
+    store = OverviewLinkSettingsStore(path)
+    assert store.get().orbital_traffic_enabled is False
+    assert store.update({"orbital_traffic_enabled": True}) == OverviewLinkSettings(
+        False, False, True
+    )
+    assert store.update({"x_band_link_enabled": True}) == OverviewLinkSettings(
+        False, True, True
+    )
+
+
+@pytest.mark.parametrize("value", [None, "true", 1])
+def test_orbital_invalid_updates_preserve_confirmation(tmp_path, value):
+    store = OverviewLinkSettingsStore(tmp_path / "links.json")
+    saved = store.update({"orbital_traffic_enabled": True})
+    with pytest.raises((ValueError, TypeError)):
+        store.update({"orbital_traffic_enabled": value})
+    assert store.get() == saved
+
+
+def test_interleaved_orbital_and_link_edits(tmp_path):
+    path = tmp_path / "links.json"
+    a, b = OverviewLinkSettingsStore(path), OverviewLinkSettingsStore(path)
+    a.update({"orbital_traffic_enabled": True})
+    b.update({"starshield_link_enabled": False})
+    a.update({"x_band_link_enabled": False})
+    assert b.get() == OverviewLinkSettings(False, False, True)
+
+
+@pytest.mark.parametrize("future_value", [True, None, 2, "future", {"ids": [1, 2]}])
+def test_future_fields_survive_reads_partial_saves_and_restart(tmp_path, future_value):
+    path = tmp_path / "overview-links.json"
+    payload = {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": True,
+        "future_preference": future_value,
+    }
+    path.write_text(json.dumps(payload))
+    store = OverviewLinkSettingsStore(path)
+    assert store.get() == OverviewLinkSettings(False, True, True)
+    assert json.loads(path.read_text()) == payload
+    assert store.update({"x_band_link_enabled": False}) == OverviewLinkSettings(
+        False, False, True
+    )
+    assert json.loads(path.read_text()) == {**payload, "x_band_link_enabled": False}
+    assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
+        False, False, True
+    )
+
+
+def test_rollback_and_reupgrade_preserve_enabled_orbital_preference(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "overview-links.json"
+    OverviewLinkSettingsStore(path).update(
+        {"starshield_link_enabled": False, "orbital_traffic_enabled": True}
+    )
+
+    @dataclass(frozen=True)
+    class LegacyLinkSettings:
+        starshield_link_enabled: bool = True
+        x_band_link_enabled: bool = True
+
+    # An older binary understands only the original two-field schema.
+    with monkeypatch.context() as legacy:
+        legacy.setattr(
+            overview_link_settings, "OverviewLinkSettings", LegacyLinkSettings
+        )
+        legacy.setattr(
+            overview_link_settings,
+            "_SETTING_FIELDS",
+            frozenset({"starshield_link_enabled", "x_band_link_enabled"}),
+        )
+        store = OverviewLinkSettingsStore(path)
+        assert store.get() == LegacyLinkSettings(False, True)
+        assert store.update({"x_band_link_enabled": False}) == LegacyLinkSettings(
+            False, False
+        )
+
+    assert json.loads(path.read_text()) == {
+        "starshield_link_enabled": False,
+        "x_band_link_enabled": False,
+        "orbital_traffic_enabled": True,
+    }
+    assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
+        False, False, True
+    )

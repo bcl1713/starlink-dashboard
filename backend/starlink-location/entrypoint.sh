@@ -8,6 +8,7 @@ for dir in \
   /app/data/satellites \
   /app/data/sat_coverage \
   /app/data/settings \
+  /app/data/orbital \
   /data/routes \
   /data/sim_routes \
   /data
