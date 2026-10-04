@@ -76,6 +76,9 @@ test.describe('Mission Workflow', () => {
     // 3. Open Create Dialog
     await page.getByRole('button', { name: 'Create New Mission' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveAccessibleDescription(
+      'Name your mission and optionally add a description. You can add legs after creating it.'
+    );
     await expect(
       page.getByRole('heading', { name: 'Create New Mission' })
     ).toBeVisible();

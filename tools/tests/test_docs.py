@@ -139,7 +139,7 @@ def test_quality_gate_guide_contains_the_complete_canonical_contract():
     for prerequisite in (
         "Python 3.13",
         "uv",
-        "Node 22.12.0",
+        "Node 22.22.2",
         "npm ci",
         "frontend/mission-planner",
         "markdownlint-cli2",

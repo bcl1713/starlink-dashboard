@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { act, cleanup, render } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { act, create } from '@react-three/test-renderer';
+import { reconciler, type RootStore } from '@react-three/fiber';
+import { isValidElement, StrictMode, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import type {
@@ -11,33 +12,12 @@ import type {
   FlowPoint,
 } from './overview-animated-flow-line-rendering';
 
-interface FrameState {
-  gl: { getPixelRatio: () => number };
-  size: { width: number; height: number };
-  camera: THREE.PerspectiveCamera;
-}
-
 const observed = vi.hoisted(() => ({
-  frames: new Set<(state: FrameState, delta: number) => void>(),
   resources: [] as AnimatedFlowResources[],
   ribbons: [] as THREE.BufferGeometry[],
   lines: [] as FlowLineResources[],
   disposed: new Map<unknown, number>(),
 }));
-
-vi.mock('@react-three/fiber', async () => {
-  const React = await import('react');
-  return {
-    useFrame: (frame: (state: FrameState, delta: number) => void) => {
-      React.useLayoutEffect(() => {
-        observed.frames.add(frame);
-        return () => {
-          observed.frames.delete(frame);
-        };
-      }, [frame]);
-    },
-  };
-});
 
 vi.mock('./overview-animated-flow-line-rendering', async (importOriginal) => {
   const actual =
@@ -120,28 +100,64 @@ const forward: FlowEmitterConfig = {
   maxParticles: 100,
 };
 const reverse: FlowEmitterConfig = { ...forward, color: '#54f0ff' };
-const frameState: FrameState = {
-  gl: { getPixelRatio: () => 2 },
-  size: { width: 1920, height: 1080 },
-  camera: new THREE.PerspectiveCamera(50, 16 / 9),
-};
 const mediaListeners = new Set<() => void>();
 let reduced = false;
 let hidden = false;
 
-function frame(delta = 0.1) {
-  act(() => {
-    for (const callback of observed.frames) callback(frameState, delta);
+type Renderer = Awaited<ReturnType<typeof create>>;
+const views = new Set<Renderer>();
+const roots = new Set<RootStore>();
+
+async function render(element: ReactNode) {
+  // Fiber wraps children in its Provider and creates a non-strict root. React
+  // 19 does not replay effects for a nested StrictMode in that root. Preserve
+  // the lifecycle probe by setting the reconciler's real root strictness flag.
+  const createContainer = reconciler.createContainer;
+  const strictRoot =
+    isValidElement(element) && element.type === StrictMode
+      ? vi
+          .spyOn(reconciler, 'createContainer')
+          .mockImplementation((...args) => {
+            args[3] = true;
+            return createContainer(...args);
+          })
+      : undefined;
+  let view: Renderer;
+  try {
+    view = await create(element, {
+      width: 1920,
+      height: 1080,
+      dpr: 2,
+      camera: { fov: 50 },
+    });
+  } finally {
+    strictRoot?.mockRestore();
+  }
+  views.add(view);
+  roots.add(view.scene.fiber.root);
+  return {
+    scene: view.scene,
+    rerender: view.update,
+    unmount: async () => {
+      await view.unmount();
+      views.delete(view);
+    },
+  };
+}
+
+async function frame(delta = 0.1) {
+  await act(async () => {
+    for (const view of views) await view.advanceFrames(1, delta);
   });
 }
-function visibility(value: boolean) {
-  act(() => {
+async function visibility(value: boolean) {
+  await act(async () => {
     hidden = value;
     document.dispatchEvent(new Event('visibilitychange'));
   });
 }
-function motion(value: boolean) {
-  act(() => {
+async function motion(value: boolean) {
+  await act(async () => {
     reduced = value;
     for (const listener of mediaListeners) listener();
   });
@@ -173,6 +189,7 @@ function line(props: Partial<AnimatedFlowLineProps> = {}) {
 }
 
 beforeEach(() => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   reduced = false;
   hidden = false;
   Object.defineProperty(document, 'hidden', {
@@ -194,9 +211,12 @@ beforeEach(() => {
   }));
 });
 
-afterEach(() => {
-  cleanup();
-  expect(observed.frames.size).toBe(0);
+afterEach(async () => {
+  for (const view of views) await view.unmount();
+  views.clear();
+  for (const root of roots)
+    expect(root.getState().internal.subscribers).toHaveLength(0);
+  roots.clear();
   expect(mediaListeners.size).toBe(0);
   for (const resources of observed.resources) expectDisposed(resources);
   observed.resources.length = 0;
@@ -214,10 +234,18 @@ afterEach(() => {
 });
 
 describe('AnimatedFlowLine lifecycle', () => {
-  it('emits only reverse particles for existing reverse-only consumers', () => {
-    render(line({ forward: undefined }));
+  it('emits only reverse particles for existing reverse-only consumers', async () => {
+    const view = await render(line({ forward: undefined }));
+    const group = view.scene.instance.children[0];
+    expect(group).toBeInstanceOf(THREE.Group);
+    expect(group.children.map((branch) => branch.children[0].type)).toEqual([
+      'Line2',
+      'Line2',
+      'Line2',
+      'Points',
+    ]);
     expect(liveLines()).toHaveLength(3);
-    frame();
+    await frame();
     const resources = latest();
     expect(resources.geometry.drawRange.count).toBe(2);
     const colors = resources.geometry.getAttribute('color');
@@ -226,15 +254,15 @@ describe('AnimatedFlowLine lifecycle', () => {
     expect(resources.geometry.getAttribute('position').getX(0)).toBe(10);
   });
 
-  it('drops existing particles when a direction stops before another frame', () => {
-    const view = render(line());
-    frame();
+  it('drops existing particles when a direction stops before another frame', async () => {
+    const view = await render(line());
+    await frame();
     const resources = latest();
     expect(resources.geometry.drawRange.count).toBe(4);
-    view.rerender(line({ forward: { ...forward, enabled: false } }));
+    await view.rerender(line({ forward: { ...forward, enabled: false } }));
     expect(resources.geometry.drawRange.count).toBe(2);
     expect(resources.geometry.getAttribute('position').getX(0)).toBe(10);
-    view.rerender(
+    await view.rerender(
       line({
         forward: { ...forward, enabled: false },
         reverse: { ...reverse, enabled: false },
@@ -242,27 +270,27 @@ describe('AnimatedFlowLine lifecycle', () => {
     );
     expectDisposed(resources);
     expect(liveLines()).toHaveLength(3);
-    view.rerender(line());
+    await view.rerender(line());
     expect(latest()).not.toBe(resources);
     expect(latest().geometry.drawRange.count).toBe(0);
-    frame();
+    await frame();
     expect(latest().geometry.drawRange.count).toBe(4);
   });
 
-  it('clears warning particles immediately and resumes without old progress or remainder', () => {
+  it('clears warning particles immediately and resumes without old progress or remainder', async () => {
     const emitter = { ...forward, rate: 15 };
-    const view = render(line({ forward: emitter, reverse: undefined }));
-    frame();
-    frame();
+    const view = await render(line({ forward: emitter, reverse: undefined }));
+    await frame();
+    await frame();
     const previous = latest();
-    view.rerender(
+    await view.rerender(
       line({ forward: { ...emitter, enabled: false }, reverse: undefined })
     );
     expectDisposed(previous);
-    view.rerender(line({ forward: emitter, reverse: undefined }));
-    frame(0.05);
+    await view.rerender(line({ forward: emitter, reverse: undefined }));
+    await frame(0.05);
     expect(latest().geometry.drawRange.count).toBe(0);
-    frame(0.05);
+    await frame(0.05);
     expect(latest().geometry.drawRange.count).toBe(1);
     expect(latest().geometry.getAttribute('position').getX(0)).toBe(0);
   });
@@ -282,51 +310,54 @@ describe('AnimatedFlowLine lifecycle', () => {
         [NaN, 0, 0],
       ],
     },
-  ])('releases particles for invalid path $points', ({ points: invalid }) => {
-    const view = render(line());
-    frame();
-    const resources = latest();
-    view.rerender(line({ points: invalid }));
-    expectDisposed(resources);
-    const versions = Object.values(resources.geometry.attributes).map(
-      (a) => (a as THREE.BufferAttribute).version
-    );
-    frame();
-    expect(
-      Object.values(resources.geometry.attributes).map(
+  ])(
+    'releases particles for invalid path $points',
+    async ({ points: invalid }) => {
+      const view = await render(line());
+      await frame();
+      const resources = latest();
+      await view.rerender(line({ points: invalid }));
+      expectDisposed(resources);
+      const versions = Object.values(resources.geometry.attributes).map(
         (a) => (a as THREE.BufferAttribute).version
-      )
-    ).toEqual(versions);
-    expect(observed.resources).toHaveLength(1);
-  });
+      );
+      await frame();
+      expect(
+        Object.values(resources.geometry.attributes).map(
+          (a) => (a as THREE.BufferAttribute).version
+        )
+      ).toEqual(versions);
+      expect(observed.resources).toHaveLength(1);
+    }
+  );
 
-  it('clears particles before drawing changed endpoints', () => {
-    const view = render(line());
-    frame();
+  it('clears particles before drawing changed endpoints', async () => {
+    const view = await render(line());
+    await frame();
     const old = latest();
     const replacement: FlowPoint[] = [
       [20, 0, 0],
       [30, 0, 0],
     ];
-    view.rerender(line({ points: replacement }));
+    await view.rerender(line({ points: replacement }));
     expect(old.geometry.drawRange.count).toBe(0);
     expect(latest().geometry.drawRange.count).toBe(0);
-    frame();
+    await frame();
     expect(latest().geometry.getAttribute('position').getX(0)).toBe(20);
   });
 
-  it('preserves in-flight progress as the same link endpoint moves', () => {
-    const view = render(line({ particleKey: 'pop-a' }));
-    frame();
-    frame();
-    frame();
+  it('preserves in-flight progress as the same link endpoint moves', async () => {
+    const view = await render(line({ particleKey: 'pop-a' }));
+    await frame();
+    await frame();
+    await frame();
     const resources = latest();
     expect(resources.geometry.drawRange.count).toBe(12);
     expect(resources.geometry.getAttribute('position').getX(0)).toBeCloseTo(
       0.2
     );
 
-    view.rerender(
+    await view.rerender(
       line({
         points: [
           [1, 0, 0],
@@ -345,7 +376,7 @@ describe('AnimatedFlowLine lifecycle', () => {
     expect(resources.geometry.getAttribute('position').getX(2)).toBeCloseTo(
       20.6
     );
-    frame();
+    await frame();
     expect(resources.geometry.drawRange.count).toBe(15);
     expect(resources.geometry.getAttribute('position').getX(0)).toBeCloseTo(
       1.5
@@ -355,22 +386,22 @@ describe('AnimatedFlowLine lifecycle', () => {
     );
   });
 
-  it('starts fresh when the moving link destination changes', () => {
-    const view = render(line({ particleKey: 'pop-a' }));
-    frame();
+  it('starts fresh when the moving link destination changes', async () => {
+    const view = await render(line({ particleKey: 'pop-a' }));
+    await frame();
     const old = latest();
-    view.rerender(line({ particleKey: 'pop-b' }));
+    await view.rerender(line({ particleKey: 'pop-b' }));
     expectDisposed(old);
     expect(latest().geometry.drawRange.count).toBe(0);
-    frame();
+    await frame();
     expect(latest().geometry.getAttribute('position').getX(0)).toBe(0);
   });
 
-  it('disposes hidden particles, writes no paused buffers, and discards resumed delta', () => {
-    render(line());
-    frame();
+  it('disposes hidden particles, writes no paused buffers, and discards resumed delta', async () => {
+    await render(line());
+    await frame();
     const old = latest();
-    visibility(true);
+    await visibility(true);
     expectDisposed(old);
     expect(liveLines()).toHaveLength(3);
     const position = old.geometry.getAttribute(
@@ -378,44 +409,44 @@ describe('AnimatedFlowLine lifecycle', () => {
     ) as THREE.BufferAttribute;
     const version = position.version;
     const values = Array.from(position.array);
-    frame(60);
+    await frame(60);
     expect(position.version).toBe(version);
     expect(Array.from(position.array)).toEqual(values);
     expect(observed.resources).toHaveLength(1);
-    visibility(false);
+    await visibility(false);
     expect(latest()).not.toBe(old);
-    frame(60);
+    await frame(60);
     expect(latest().geometry.drawRange.count).toBe(0);
-    frame();
+    await frame();
     expect(latest().geometry.drawRange.count).toBe(4);
   });
 
-  it('keeps line geometry while reduced motion releases particle resources', () => {
-    render(line());
-    frame();
+  it('keeps line geometry while reduced motion releases particle resources', async () => {
+    await render(line());
+    await frame();
     const old = latest();
-    motion(true);
+    await motion(true);
     expectDisposed(old);
     expect(liveLines()).toHaveLength(3);
     const version = (
       old.geometry.getAttribute('position') as THREE.BufferAttribute
     ).version;
-    frame(60);
+    await frame(60);
     expect(
       (old.geometry.getAttribute('position') as THREE.BufferAttribute).version
     ).toBe(version);
-    motion(false);
-    frame();
+    await motion(false);
+    await frame();
     expect(latest().geometry.drawRange.count).toBe(4);
     expect(latest().geometry.getAttribute('position').getX(0)).toBe(0);
   });
 
   it.each(['hidden', 'reduced', 'disabled', 'ineligible'])(
     'allocates no particles initially %s',
-    (reason) => {
+    async (reason) => {
       hidden = reason === 'hidden';
       reduced = reason === 'reduced';
-      render(
+      await render(
         line({
           forward:
             reason === 'disabled' ? { ...forward, enabled: false } : forward,
@@ -423,56 +454,56 @@ describe('AnimatedFlowLine lifecycle', () => {
           canAnimate: () => reason !== 'ineligible',
         })
       );
-      frame();
+      await frame();
       expect(observed.resources).toHaveLength(0);
     }
   );
 
-  it('rechecks wall-clock eligibility on every frame before the next UI tick', () => {
+  it('rechecks wall-clock eligibility on every frame before the next UI tick', async () => {
     let now = 9000;
     vi.spyOn(Date, 'now').mockImplementation(() => now);
-    render(line({ canAnimate: () => Date.now() < 10000 }));
-    frame();
+    await render(line({ canAnimate: () => Date.now() < 10000 }));
+    await frame();
     const old = latest();
     expect(old.geometry.drawRange.count).toBe(4);
     now = 10000;
-    frame();
+    await frame();
     expectDisposed(old);
     expect(liveLines()).toHaveLength(3);
     const version = (
       old.geometry.getAttribute('position') as THREE.BufferAttribute
     ).version;
-    frame();
+    await frame();
     expect(
       (old.geometry.getAttribute('position') as THREE.BufferAttribute).version
     ).toBe(version);
     now = 9000;
-    frame(60);
+    await frame(60);
     expect(latest()).not.toBe(old);
     expect(latest().geometry.drawRange.count).toBe(0);
-    frame();
+    await frame();
     expect(latest().geometry.drawRange.count).toBe(4);
   });
 
-  it('checks eligibility on hidden return before allocating or waiting for a frame', () => {
+  it('checks eligibility on hidden return before allocating or waiting for a frame', async () => {
     let eligible = true;
-    render(line({ canAnimate: () => eligible }));
-    frame();
-    visibility(true);
+    await render(line({ canAnimate: () => eligible }));
+    await frame();
+    await visibility(true);
     eligible = false;
-    visibility(false);
+    await visibility(false);
     expect(observed.resources).toHaveLength(1);
-    frame(60);
+    await frame(60);
     expect(observed.resources).toHaveLength(1);
   });
 
-  it('clamps active delta and reuses typed buffers and prepared geometry', () => {
-    render(line({ forward, reverse: undefined }));
-    frame(60);
+  it('clamps active delta and reuses typed buffers and prepared geometry', async () => {
+    await render(line({ forward, reverse: undefined }));
+    await frame(60);
     const resources = latest();
     expect(resources.geometry.drawRange.count).toBe(2);
     const array = resources.geometry.getAttribute('position').array;
-    frame(60);
+    await frame(60);
     expect(resources.geometry.drawRange.count).toBe(4);
     expect(resources.geometry.getAttribute('position').getX(0)).toBeCloseTo(
       0.1
@@ -481,24 +512,24 @@ describe('AnimatedFlowLine lifecycle', () => {
     expect(observed.resources).toHaveLength(1);
   });
 
-  it('releases every allocation exactly once across StrictMode and repeated toggles/mounts', () => {
+  it('releases every allocation exactly once across StrictMode and repeated toggles/mounts', async () => {
     const add = vi.spyOn(document, 'addEventListener');
     const remove = vi.spyOn(document, 'removeEventListener');
     for (let mount = 0; mount < 3; mount += 1) {
-      const view = render(<StrictMode>{line()}</StrictMode>);
-      frame();
+      const view = await render(<StrictMode>{line()}</StrictMode>);
+      await frame();
       expect(latest().geometry.drawRange.count).toBe(4);
       expect(observed.disposed.has(latest().geometry)).toBe(false);
       for (let toggle = 0; toggle < 3; toggle += 1) {
-        visibility(true);
-        visibility(false);
-        frame(60);
+        await visibility(true);
+        await visibility(false);
+        await frame(60);
         expect(latest().geometry.drawRange.count).toBe(0);
-        frame();
+        await frame();
         expect(latest().geometry.drawRange.count).toBe(4);
         expect(observed.disposed.has(latest().geometry)).toBe(false);
       }
-      view.unmount();
+      await view.unmount();
     }
     const subscriptions = add.mock.calls.filter(
       ([event]) => event === 'visibilitychange'
@@ -512,14 +543,16 @@ describe('AnimatedFlowLine lifecycle', () => {
     );
   });
 
-  it('preserves normal blending for a custom core that omits the optional override', () => {
-    render(line({ core: { color: '#123456', linewidth: 2, opacity: 0.8 } }));
+  it('preserves normal blending for a custom core that omits the optional override', async () => {
+    await render(
+      line({ core: { color: '#123456', linewidth: 2, opacity: 0.8 } })
+    );
     expect(liveLines()[2].material.blending).toBe(THREE.NormalBlending);
     expect(liveLines()[0].material.blending).toBe(THREE.AdditiveBlending);
   });
 
-  it('owns live short-line resources across StrictMode and releases every setup exactly once', () => {
-    const view = render(<StrictMode>{line()}</StrictMode>);
+  it('owns live short-line resources across StrictMode and releases every setup exactly once', async () => {
+    const view = await render(<StrictMode>{line()}</StrictMode>);
     expect(observed.lines).toHaveLength(6);
     for (const resources of observed.lines.slice(3)) {
       expect(observed.disposed.has(resources.geometry)).toBe(false);
@@ -527,7 +560,7 @@ describe('AnimatedFlowLine lifecycle', () => {
       expect(resources.line.type).toBe('Line2');
       expect(resources.geometry.getAttribute('instanceEnd').getX(0)).toBe(10);
     }
-    frame();
+    await frame();
     const live = liveLines();
     expect(
       live.map(({ material }) => [
@@ -550,28 +583,28 @@ describe('AnimatedFlowLine lifecycle', () => {
       expect(material.polygonOffsetFactor).toBe(-1);
       expect(material.polygonOffsetUnits).toBe(-2);
     }
-    view.unmount();
+    await view.unmount();
     for (const resources of observed.lines) {
       expect(observed.disposed.get(resources.geometry)).toBe(1);
       expect(observed.disposed.get(resources.material)).toBe(1);
     }
   });
 
-  it('retains the real ribbon through pauses and releases it on endpoint replacement/unmount', () => {
+  it('retains the real ribbon through pauses and releases it on endpoint replacement/unmount', async () => {
     const route: FlowPoint[] = [
       [2, 0, 0],
       [2, 2, 0],
       [0, 2, 0],
     ];
-    const view = render(line({ points: route }));
+    const view = await render(line({ points: route }));
     const geometry = observed.ribbons.at(-1)!;
-    frame();
-    visibility(true);
-    motion(true);
-    visibility(false);
+    await frame();
+    await visibility(true);
+    await motion(true);
+    await visibility(false);
     expect(observed.ribbons).toHaveLength(1);
     expect(observed.disposed.has(geometry)).toBe(false);
-    view.rerender(
+    await view.rerender(
       line({
         points: [
           [0, 2, 0],
@@ -582,13 +615,13 @@ describe('AnimatedFlowLine lifecycle', () => {
     );
     expect(observed.disposed.get(geometry)).toBe(1);
     expect(observed.disposed.has(observed.ribbons.at(-1))).toBe(false);
-    view.unmount();
+    await view.unmount();
   });
 
-  it('creates fresh ribbon resources during StrictMode setup and disposes each exactly once', () => {
+  it('creates fresh ribbon resources during StrictMode setup and disposes each exactly once', async () => {
     const materials: unknown[] = [];
     const disposed = vi.spyOn(THREE.Material.prototype, 'dispose');
-    const view = render(
+    const view = await render(
       <StrictMode>
         {line({
           points: [
@@ -600,10 +633,10 @@ describe('AnimatedFlowLine lifecycle', () => {
       </StrictMode>
     );
     expect(observed.disposed.has(observed.ribbons.at(-1))).toBe(false);
-    frame();
+    await frame();
     materials.push(...disposed.mock.instances);
     expect(new Set(materials).size).toBe(4);
-    view.unmount();
+    await view.unmount();
     const counts = new Map<unknown, number>();
     for (const material of disposed.mock.instances)
       counts.set(material, (counts.get(material) ?? 0) + 1);
@@ -612,15 +645,17 @@ describe('AnimatedFlowLine lifecycle', () => {
     expect([...counts.values()]).toEqual(Array(8).fill(1));
   });
 
-  it('retains route traversal with showLine false and default eligibility', () => {
+  it('retains route traversal with showLine false and default eligibility', async () => {
     const route: FlowPoint[] = [
       [2, 0, 0],
       [2, 2, 0],
       [0, 2, 0],
     ];
-    render(line({ points: route, ...routeFlowEmitters(), showLine: false }));
+    await render(
+      line({ points: route, ...routeFlowEmitters(), showLine: false })
+    );
     expect(liveLines()).toHaveLength(0);
-    for (let index = 0; index < 20; index += 1) frame();
+    for (let index = 0; index < 20; index += 1) await frame();
     const resources = latest();
     expect(resources.geometry.drawRange.count).toBeGreaterThan(0);
     const positions = resources.geometry.getAttribute('position');

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useCreateMission } from '../../hooks/api/useMissions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -55,6 +61,10 @@ export function CreateMissionDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Mission</DialogTitle>
+          <DialogDescription>
+            Name your mission and optionally add a description. You can add legs
+            after creating it.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

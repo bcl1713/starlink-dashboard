@@ -49,6 +49,45 @@ npm run test:unit -- --coverage
 Use `./tools/verify frontend` from the repository root for the canonical
 frontend gate; it runs the unit suite and production build.
 
+### Three.js component tests
+
+Use `@react-three/test-renderer` for components that return Fiber elements such
+as `group` and `primitive`. React DOM treats these as unknown HTML elements and
+cannot verify their attachment to a Three.js scene. The Vitest-only ESM aliases
+keep the native renderer and application on the same Three.js instance.
+
+The `AnimatedFlowLine` lifecycle tests advance the real Fiber frame subscribers
+and retain their particle, pause, buffer reuse, and exact-once disposal checks.
+For the StrictMode probes, the test helper enables the real reconciler's strict
+root flag: React 19 otherwise treats the StrictMode inside Fiber's Provider as
+nested and does not replay its effects. Do not reduce the allocation/disposal
+expectations to accommodate that harness difference.
+
+### Investigating warnings
+
+Capture warnings directly when auditing a passing suite:
+
+```bash
+npm run test:unit -- --disableConsoleIntercept
+NODE_OPTIONS=--trace-warnings npm run build
+```
+
+Keep warnings visible; do not add blanket console filters or disable Node
+deprecations. The native renderer currently exposes Fiber 9.7.0's use of
+deprecated `THREE.Clock` with Three.js 0.185.1. Its clock migration belongs in
+the upstream dependency path; these tests drive frames explicitly.
+
+The locked `@tailwindcss/node` 4.1.17 calls `module.register()` for its ESM
+cache loader. Node 26 emits DEP0205 for that call; the supported Node 22
+baseline does not. Vite 7.3.6 already prefers `registerHooks()` where available.
+Recheck Tailwind's loader when changing the supported Node major instead of
+patching Node's module API or suppressing the warning.
+
+The production build still reports a large JavaScript chunk. A chunk size
+advisory alone does not establish a runtime performance failure. Measure cold
+load, route navigation, and the Overview workload before choosing lazy loading
+or manual chunk boundaries; keep the advisory threshold intact.
+
 ---
 
 ## Pull Request Guidelines
