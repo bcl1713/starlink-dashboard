@@ -33,6 +33,7 @@ services:
       - ./data/satellites:/app/data/satellites
       - ./data/sat_coverage:/app/data/sat_coverage
       - ./data/settings:/app/data/settings
+      - ./data/orbital:/app/data/orbital
       - route_data:/data/routes
       - sim_route_data:/data/sim_routes
       - poi_data:/data
