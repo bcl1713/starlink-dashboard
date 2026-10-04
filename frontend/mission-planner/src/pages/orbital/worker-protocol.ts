@@ -1,5 +1,11 @@
 import { CatalogPropagator } from './propagation';
 import {
+  emptyRoutingState,
+  selectRoute,
+  routeIsValid,
+  type RoutingState,
+} from './routing';
+import {
   MAX_OBJECTS,
   type CatalogEnvelope,
   type OrbitalEndpoints,
@@ -31,6 +37,8 @@ export class OrbitalWorkerRuntime {
   private propagator: CatalogPropagator | undefined;
   private generation = 0;
   private disposed = false;
+  private routing: RoutingState = emptyRoutingState();
+  private lastSelection = -Infinity;
   private send: (message: WorkerOutput, transfer: ArrayBuffer[]) => void;
   private clock: () => number;
   endpoints: OrbitalEndpoints = { aircraft: null, pop: null };
@@ -49,6 +57,8 @@ export class OrbitalWorkerRuntime {
     if (message.type === 'start') {
       this.generation = message.generation;
       this.catalog = message.catalog;
+      this.routing = emptyRoutingState(message.catalog.generation);
+      this.lastSelection = -Infinity;
       this.propagator = new CatalogPropagator(message.catalog.objects);
       if (!this.banks.length)
         this.banks = Array.from({ length: 3 }, () => ({
@@ -97,6 +107,21 @@ export class OrbitalWorkerRuntime {
         route: null,
         updateMs: performance.now() - started,
       };
+      if (result.utcMs - this.lastSelection >= 5000) {
+        const selection = selectRoute(result, this.endpoints, this.routing);
+        this.routing = selection.state;
+        snapshot.route = selection.route;
+        snapshot.fallbackReason = selection.fallbackReason;
+        this.lastSelection = result.utcMs;
+      } else {
+        snapshot.route =
+          this.routing.route &&
+          routeIsValid(this.routing.route, result, this.endpoints)
+            ? this.routing.route
+            : null;
+        snapshot.fallbackReason = snapshot.route ? null : 'disconnected';
+      }
+      snapshot.updateMs = performance.now() - started;
       bank.available = false;
       this.send(
         { type: 'snapshot', generation: this.generation, snapshot },

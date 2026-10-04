@@ -3,6 +3,7 @@ import { OrbitalWorkerClient } from './worker-client';
 import { OrbitalWorkerRuntime } from './worker-protocol';
 import type { CatalogEnvelope, OrbitalSnapshot } from './types';
 import { referenceOmm } from './test-fixtures';
+import * as routing from './routing';
 
 const catalog: CatalogEnvelope = {
   objects: [referenceOmm],
@@ -17,6 +18,56 @@ const catalog: CatalogEnvelope = {
   status: 'ready',
 };
 afterEach(() => vi.useRealTimers());
+
+it('selects at most every five seconds while checking current PoP validity on each snapshot', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(referenceOmm.EPOCH));
+  const selection = vi.spyOn(routing, 'selectRoute');
+  const snapshots: OrbitalSnapshot[] = [];
+  const runtime = new OrbitalWorkerRuntime((message, transfer) => {
+    const cloned = structuredClone(message, { transfer });
+    if (cloned.type === 'snapshot') {
+      snapshots.push(cloned.snapshot);
+      if (snapshots.length > 2) {
+        const old = snapshots.shift()!;
+        runtime.receive(
+          structuredClone(
+            { type: 'recycle', generation: 1, snapshot: old },
+            { transfer: [old.positionsKm.buffer, old.valid.buffer] }
+          )
+        );
+      }
+    }
+  });
+  try {
+    runtime.receive({ type: 'start', generation: 1, catalog });
+    const p = snapshots[0].positionsKm;
+    const scale = 6378.137 / Math.hypot(...p);
+    const ground = [p[0] * scale, p[1] * scale, p[2] * scale] as const;
+    runtime.receive({
+      type: 'endpoints',
+      generation: 1,
+      endpoints: { aircraft: ground, pop: ground },
+    });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(snapshots.at(-1)?.route?.ids).toEqual(['5']);
+    expect(selection).toHaveBeenCalledTimes(2);
+    runtime.receive({
+      type: 'endpoints',
+      generation: 1,
+      endpoints: {
+        aircraft: ground,
+        pop: [ground[0], ground[1] + 1, ground[2]],
+      },
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(snapshots.at(-1)?.route).toBeNull();
+    expect(selection).toHaveBeenCalledTimes(2);
+  } finally {
+    runtime.dispose();
+    selection.mockRestore();
+  }
+});
 
 it('one_second_snapshots_and_backpressure drops ticks after three banks and resumes current UTC', async () => {
   vi.useFakeTimers();
