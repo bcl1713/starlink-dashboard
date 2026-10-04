@@ -179,7 +179,7 @@
   align-items: start;
   gap: 0.5rem;
   min-width: 0;
-  pointer-events: auto;
+  pointer-events: none;
 }
 .overview-page[data-layout='desktop'] .overview-display-controls {
   grid-row: 2;
@@ -203,6 +203,7 @@
   margin-top: 0.5rem;
 }
 .overview-fullscreen-control {
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;

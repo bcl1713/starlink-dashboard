@@ -37,7 +37,7 @@
   display: grid;
   gap: 8px;
   z-index: 1;
-  pointer-events: auto;
+  pointer-events: none;
 }
 .overview-page
   :is(
@@ -505,8 +505,7 @@
   button[aria-pressed] {
   display: none;
 }
-.overview-page[data-layout='desktop']
-  :is(.overview-satellite-overlays, .overview-map-overlays) {
+.overview-page :is(.overview-satellite-overlays, .overview-map-overlays) {
   pointer-events: auto;
 }
 .overview-page[data-map-exploring='false']:not([data-layout='desktop'])

@@ -34,25 +34,26 @@ for (const fullscreen of [false, true]) {
     await editing.goto('/configuration');
     await editing.bringToFront();
     try {
-      await expect(overview.getByLabel('Globe legend')).toContainText(
-        'Traffic path'
-      );
-      const save = editing.waitForResponse(
-        (r) =>
-          r.url().endsWith('/api/overview-links/settings') &&
-          r.request().method() === 'PUT'
-      );
-      await editing
-        .getByRole('switch', { name: 'Starshield data link' })
-        .click();
-      expect((await save).status()).toBe(200);
-      const linkAt = Date.now();
-      await expect(overview.getByLabel('Globe legend')).not.toContainText(
-        'Traffic path',
-        { timeout: 8000 }
-      );
-      timings.linkSave = Date.now() - linkAt;
-      expect(fixture.state.links.starshield_link_enabled).toBe(false);
+      for (const [label, field, legend] of [
+        ['Starshield data link', 'starshield_link_enabled', 'Traffic path'],
+        ['X-band data link', 'x_band_link_enabled', 'Planned satellite link'],
+      ] as const) {
+        await expect(overview.getByLabel('Globe legend')).toContainText(legend);
+        const save = editing.waitForResponse(
+          (r) =>
+            r.url().endsWith('/api/overview-links/settings') &&
+            r.request().method() === 'PUT'
+        );
+        await editing.getByRole('switch', { name: label }).click();
+        expect((await save).status()).toBe(200);
+        const linkAt = Date.now();
+        await expect(overview.getByLabel('Globe legend')).not.toContainText(
+          legend,
+          { timeout: 8000 }
+        );
+        timings[field] = Date.now() - linkAt;
+        expect(fixture.state.links[field]).toBe(false);
+      }
       await editing.getByLabel('Follow aircraft on Overview').check();
       await expect(
         overview.getByText('Following aircraft', { exact: true })

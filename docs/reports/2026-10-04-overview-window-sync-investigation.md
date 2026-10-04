@@ -4,8 +4,10 @@
 
 **Issue:** [257](https://github.com/bcl1713/starlink-dashboard/issues/257)
 
-**Status:** Initial diagnosis complete; feature implementation and production
-acceptance are pending.
+**Status:** Initial diagnosis complete; Tasks 1–4 are delivered and the real
+production workflow has passed Task 5 journeys. Integrated acceptance remains
+incomplete because required browser regressions fail. See the
+[acceptance report](2026-10-04-overview-window-sync-acceptance.md).
 
 ## Isolation and base
 

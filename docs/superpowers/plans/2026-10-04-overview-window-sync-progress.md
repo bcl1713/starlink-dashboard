@@ -26,15 +26,15 @@ session per task, and continuation through PR and merge into `dev`.
 
 ## Task status
 
-| Stage              | State    | Session scope                                          |
-| ------------------ | -------- | ------------------------------------------------------ |
-| Task 1             | Complete | Scoped background refresh and regressions              |
-| Task 2             | Complete | Confirmed state, save/read races, recovery             |
-| Task 3             | Complete | Display message protocol and sessions                  |
-| Task 4             | Complete | Configuration controls and fullscreen feedback         |
-| Task 5             | Pending  | Integrated acceptance, regression gates, documentation |
-| Independent review | Pending  | Fresh review of the whole branch                       |
-| PR and merge       | Pending  | Findings, final candidate checks, PR to dev, merge     |
+| Stage              | State      | Session scope                                                                            |
+| ------------------ | ---------- | ---------------------------------------------------------------------------------------- |
+| Task 1             | Complete   | Scoped background refresh and regressions                                                |
+| Task 2             | Complete   | Confirmed state, save/read races, recovery                                               |
+| Task 3             | Complete   | Display message protocol and sessions                                                    |
+| Task 4             | Complete   | Configuration controls and fullscreen feedback                                           |
+| Task 5             | Incomplete | [Task 5 evidence and open gates](2026-10-04-overview-window-sync-acceptance-progress.md) |
+| Independent review | Pending    | Fresh review of the whole branch                                                         |
+| PR and merge       | Pending    | Findings, final candidate checks, PR to dev, merge                                       |
 
 ## Session entries
 

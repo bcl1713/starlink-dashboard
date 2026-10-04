@@ -72,7 +72,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
   distinguish it from traffic links using its flow configuration. Follow
   existing probe patterns without adding visible product instrumentation.
 
-- [ ] **Step 1: Establish the production journey and isolation checks.** Use the
+- [x] **Step 1: Establish the production journey and isolation checks.** Use the
       seed helper and real mission storage/API contracts for two legs. Intercept
       no application settings/mission responses in this journey. Verify requests
       pass through Nginx with actual successful statuses. Exercise:
@@ -99,7 +99,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
   Preserve existing projection constants. Also test actual clock time text,
   generated arrival state, and route identity.
 
-- [ ] **Step 2: Validate and run the isolated production environment.** Read the
+- [x] **Step 2: Validate and run the isolated production environment.** Read the
       cloud Docker/proxy references before build. Preserve configured Docker
       endpoint; run `docker info` normally. Commit the acceptance harness first
       so its clean-worktree check binds a concrete candidate. Run the validation
@@ -114,7 +114,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
     -f tools/acceptance/overview-window-sync/compose.yml config --quiet
   ```
 
-- [ ] **Step 3: Verify every saved-state path and continuity.** Keep editing
+- [x] **Step 3: Verify every saved-state path and continuity.** Keep editing
       page foreground, without target bringToFront/reload during timed
       observations. Cover clock label/timezone, history-window changes, link
       toggles, GPS state, camera-follow preference, mission
@@ -145,7 +145,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
     tests/e2e/configuration-clocks.spec.ts --workers=1
   ```
 
-- [ ] **Step 5: Update operator guidance and the acceptance report.** Document
+- [x] **Step 5: Update operator guidance and the acceptance report.** Document
       five-second propagation plus response/render time, suspension catch-up,
       browser-local camera preferences, display selection/loss, same-browser
       command scope, real fullscreen state, and the required local click when
@@ -154,7 +154,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
       evidence. Record gaps, exact runtime versions, SHA, fixtures vs real
       requests, screenshots, timings, checks, Docker endpoint/context, and
       task-specific cleanup.
-- [ ] **Step 6: Verify cleanup and commit.** Stop only the `starlink-257`
+- [x] **Step 6: Verify cleanup and commit.** Stop only the `starlink-257`
       project and remove only its named volumes; check no task
       containers/listeners remain. Format and lint changed docs; commit
       `test(overview): verify cross-window production workflow`. If this commit
@@ -167,3 +167,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
       acceptance limitations. Follow the approved session handoff protocol for
       fresh review, integration fixes, PR creation, and verified merge into
       `dev`.
+
+Task 5 execution remains incomplete: see the
+[session record](2026-10-04-overview-window-sync-acceptance-progress.md) for
+production results and required regression failures. Step 7 has not begun.
