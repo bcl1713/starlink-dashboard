@@ -1010,3 +1010,68 @@ def test_api_handles_empty_coordinator_cache_without_server_error(client, monkey
     assert response.status_code == 200
     assert response.json()["state"] == "unavailable"
     assert response.json()["pois"][0]["map_retained"] is True
+
+
+@pytest.mark.parametrize(
+    ("longitude", "expected_eta"),
+    [
+        (0, 720.485486),
+        (0.25, 540.364115),
+        (0.6, 288.194195),
+        (0.9, 72.048549),
+        (0.999, 0.720485),
+    ],
+)
+def test_api_landing_countdown_remains_available_through_final_segment(
+    client, monkeypatch, longitude, expected_eta
+):
+    import app.api.overview_upcoming_pois as overview_api
+
+    active_route = route([(0, 0), (0, 1)])
+    landing = scheduled_poi().model_copy(
+        update={
+            "id": "landing",
+            "kind": "arrival",
+            "latitude": 0,
+            "longitude": 1,
+            "projected_latitude": 0,
+            "projected_longitude": 1,
+            "projected_waypoint_index": 0,
+            "projected_route_progress": 100,
+        }
+    )
+    arrange_active_v2_context(client, active_route=active_route)
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [landing]
+    )
+    client.app.state.coordinator = SimpleNamespace(
+        get_current_telemetry=lambda: SimpleNamespace(
+            position=SimpleNamespace(
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=0,
+                longitude=longitude,
+                speed=300,
+            )
+        )
+    )
+    monkeypatch.setattr(
+        overview_api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+
+    response = client.get("/api/overview/upcoming-pois")
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    record = payload["pois"][0]
+    assert record["kind"] == "arrival"
+    assert record["upcoming"] is True
+    assert record["eta_seconds"] == pytest.approx(expected_eta, abs=0.00001)
+    arrival_time = datetime.fromisoformat(record["estimated_arrival_time"])
+    assert (arrival_time - NOW).total_seconds() == pytest.approx(
+        expected_eta, abs=0.00001
+    )

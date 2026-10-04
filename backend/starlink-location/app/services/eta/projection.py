@@ -383,7 +383,7 @@ class ETAProjection:
                 or not -90 <= projection_latitude <= 90
                 or not -180 <= projection_longitude <= 180
                 or not 0 <= projection_progress <= 100
-                or speed <= 0.5
+                or speed < 0
                 or not 0 <= projection_segment_index < len(active_route.points) - 1
             ):
                 return None

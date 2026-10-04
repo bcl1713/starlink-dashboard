@@ -200,8 +200,9 @@ def estimated_route():
     ],
 )
 @pytest.mark.parametrize("name", ["Endpoint", "Renamed endpoint"])
+@pytest.mark.parametrize("speed, expected_eta", [(300, 180.121372), (0, 360.242743)])
 def test_estimated_eta_uses_identical_math_for_every_poi_kind(
-    calculator, estimated_route, kind, name
+    calculator, estimated_route, kind, name, speed, expected_eta
 ):
     """A waypoint name or display kind must not change remaining route travel."""
     poi = POI(
@@ -217,10 +218,10 @@ def test_estimated_eta_uses_identical_math_for_every_poi_kind(
     )
 
     eta = calculator._calculate_route_aware_eta_estimated(
-        0, 0.75, poi, estimated_route, 300
+        0, 0.75, poi, estimated_route, speed
     )
 
-    assert eta == pytest.approx(180.121372, abs=0.00001)
+    assert eta == pytest.approx(expected_eta, abs=0.00001)
 
 
 @pytest.mark.parametrize("legacy_progress", [None, 50])
