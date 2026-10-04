@@ -43,12 +43,15 @@ fi
 if [[ $check == 1 ]]; then exit 0; fi
 export ACCEPTANCE_CANDIDATE_SHA OVERVIEW_PROFILE_SOURCE OVERVIEW_PROFILE_MODE OVERVIEW_PROFILE_CADENCE OVERVIEW_PROFILE_SEED
 ACCEPTANCE_CANDIDATE_SHA=$(git rev-parse HEAD)
-OVERVIEW_PROFILE_SOURCE=$(mktemp -d /tmp/starlink-224-source.XXXXXX)
 OVERVIEW_PROFILE_MODE=$phase
 OVERVIEW_PROFILE_CADENCE=$cadence
 output=${OVERVIEW_PROFILE_OUTPUT:-"$root/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/$ACCEPTANCE_CANDIDATE_SHA/$phase-$cadence-$viewers"}
+if [[ -d "$output" && -n $(find "$output" -mindepth 1 -maxdepth 1 -print -quit) ]]; then
+  echo "Refusing nonempty evidence directory: $output" >&2; exit 2
+fi
 mkdir -p "$output"
 output=$(cd "$output" && pwd -P)
+OVERVIEW_PROFILE_SOURCE=$(mktemp -d /tmp/starlink-224-source.XXXXXX)
 OVERVIEW_PROFILE_SEED="$OVERVIEW_PROFILE_SOURCE/history.openmetrics"
 compose=(docker compose -p starlink-224-history -f "$root/tools/acceptance/overview-history/compose.yml")
 started=0
@@ -72,6 +75,18 @@ for port in (18224,15224,19224):
 print('Owned project containers/volumes/listeners absent.')
 PY
   fi
+  python3 - "$output" "$result" <<'PYUPDATE'
+import json
+import sys
+from pathlib import Path
+root = Path(sys.argv[1])
+path = root / 'browser/metadata.json'
+if path.exists():
+    data = json.loads(path.read_text())
+    browser = root / 'browser/browser-cleanup.json'
+    data['cleanup'] = 'passed' if sys.argv[2] == '0' and browser.exists() and json.loads(browser.read_text()).get('status') == 'passed' else 'failed'
+    path.write_text(json.dumps(data, indent=2))
+PYUPDATE
   rm -rf -- "$OVERVIEW_PROFILE_SOURCE"
   exit "$result"
 }

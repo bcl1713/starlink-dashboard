@@ -122,6 +122,8 @@ def test_termination_retains_evidence_and_cleans_owned_project(checkout, tmp_pat
 import os, sys, time
 from pathlib import Path
 args = sys.argv[1:]
+if args[0] in ('ps', 'volume'):
+    sys.exit(0)
 output = Path(os.environ['OVERVIEW_PROFILE_OUTPUT'])
 output.mkdir(exist_ok=True)
 with (output / 'docker-calls.txt').open('a') as log:
@@ -169,3 +171,23 @@ if '--output' in sys.argv:
         if process.poll() is None:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait()
+
+
+def test_refuses_nonempty_evidence_instead_of_mixing_phases(checkout, tmp_path):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    docker = fake / "docker"
+    docker.write_text("#!/bin/sh\nexit 0\n")
+    docker.chmod(0o755)
+    output = tmp_path / "evidence"
+    output.mkdir()
+    (output / "samples.jsonl").write_text("existing")
+    env = {
+        **os.environ,
+        "PATH": f"{fake}:{os.environ['PATH']}",
+        "OVERVIEW_PROFILE_OUTPUT": str(output),
+    }
+    result = invoke(checkout, env, "--smoke")
+    assert result.returncode != 0
+    assert "nonempty evidence" in result.stderr
+    assert (output / "samples.jsonl").read_text() == "existing"
