@@ -1,6 +1,36 @@
 /** @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render as renderTesting,
+  screen,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+const queryClients: QueryClient[] = [];
+function render(element: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  queryClients.push(client);
+  return renderTesting(
+    <QueryClientProvider client={client}>{element}</QueryClientProvider>
+  );
+}
+vi.mock('@/services/orbital-catalog', () => ({
+  orbitalCatalogApi: {
+    status: vi
+      .fn()
+      .mockResolvedValue({
+        status: 'loading',
+        eligible_count: 0,
+        rejected_count: 0,
+        truncated_count: 0,
+      }),
+    resume: vi.fn(),
+  },
+}));
 
 vi.mock('@/hooks/api/useOverviewHistorySettings', () => ({
   useOverviewHistorySettings: () => ({ data: { window_seconds: 300 } }),
@@ -22,7 +52,11 @@ vi.mock('@/hooks/api/useUpdateOverviewClockSettings', () => ({
 }));
 vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
   useOverviewLinkSettings: () => ({
-    data: { starshield_link_enabled: false, x_band_link_enabled: true },
+    data: {
+      starshield_link_enabled: false,
+      x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
+    },
   }),
 }));
 vi.mock('@/hooks/api/useUpdateOverviewLinkSettings', () => ({
@@ -36,6 +70,7 @@ import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClo
 import { ConfigurationPage } from './ConfigurationPage';
 afterEach(() => {
   cleanup();
+  queryClients.splice(0).forEach((client) => client.clear());
 });
 
 const clocks = [
@@ -71,6 +106,12 @@ describe('ConfigurationPage', () => {
     expect(screen.getByLabelText('Overview history window')).not.toBeNull();
     expect(
       screen.getByRole('button', { name: 'Open Overview' })
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('region', { name: 'Orbital traffic diagnostics' })
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('switch', { name: 'Orbital traffic view' })
     ).not.toBeNull();
     expect(
       screen.getByRole('switch', { name: 'Starshield data link' })
