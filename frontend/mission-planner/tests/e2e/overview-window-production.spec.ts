@@ -17,6 +17,8 @@ import {
   historyWindowState,
 } from './support/overview-window-fixture';
 
+test.use({ viewport: { width: 1920, height: 1080 } });
+
 async function explore(page: Page) {
   const automatic = await settledOverviewCamera(page);
   const toggle = page.getByRole('button', { name: 'Explore map', exact: true });
@@ -191,6 +193,10 @@ for (const fullscreen of [false, true]) {
         }).format(new Date(time.at))
       );
       observations.clock = time;
+      await expect(overview.locator('.operational-clock')).toHaveCount(4);
+      await overview.screenshot({
+        path: info.outputPath(fullscreen ? 'fullscreen.png' : 'desktop.png'),
+      });
       const clocks = await request.get('/api/overview-clocks/settings');
       expect(clocks.status()).toBe(200);
       expect((await clocks.json()).clocks[2]).toEqual({
@@ -389,6 +395,22 @@ for (const fullscreen of [false, true]) {
           timeout: Math.max(1, 8000 - (Date.now() - at)),
         });
       });
+      const restoredClocks = await request.get('/api/overview-clocks/settings');
+      expect(restoredClocks.status()).toBe(200);
+      const restored = await restoredClocks.json();
+      await expect
+        .poll(
+          async () =>
+            overview.locator('.operational-clock__label').allTextContents(),
+          { timeout: 8000 }
+        )
+        .toEqual(
+          restored.clocks.map((clock: { label: string }) => clock.label)
+        );
+      await expect(overview.locator('.operational-clock')).toHaveCount(4);
+      observations.restoredClockLabels = restored.clocks.map(
+        (clock: { label: string }) => clock.label
+      );
       expectSameCamera(missionManual, await settledOverviewCamera(overview));
       expect(
         await canvas!.evaluate(
@@ -417,7 +439,7 @@ for (const fullscreen of [false, true]) {
       ])
         expect(reads[endpoint], endpoint).toBeGreaterThan(1);
       await overview.screenshot({
-        path: info.outputPath(fullscreen ? 'fullscreen.png' : 'desktop.png'),
+        path: info.outputPath('completed-workflow.png'),
       });
     } finally {
       const path = info.outputPath('real-window-evidence.json');
