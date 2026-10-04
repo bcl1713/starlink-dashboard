@@ -55,6 +55,33 @@ function openCreateDialog() {
 }
 
 describe('MissionsPage create mission navigation', () => {
+  it.each(['Escape', 'Cancel'])(
+    'returns keyboard focus to the opening control after %s',
+    async (action) => {
+      vi.mocked(useCreateMission).mockReturnValue({
+        isPending: false,
+        mutateAsync: vi.fn(),
+      } as never);
+
+      renderMissionsPage();
+      const opener = screen.getByRole('button', {
+        name: 'Open create mission',
+      });
+      opener.focus();
+      openCreateDialog();
+      expect(screen.getByLabelText('Mission Name')).toHaveFocus();
+
+      if (action === 'Escape') {
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      }
+
+      await waitFor(() => expect(opener).toHaveFocus());
+      expect(screen.queryByRole('dialog')).toBeNull();
+    }
+  );
+
   it('describes the create dialog for assistive technology', () => {
     vi.mocked(useCreateMission).mockReturnValue({
       isPending: false,

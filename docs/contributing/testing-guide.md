@@ -77,6 +77,12 @@ deprecations. The native renderer currently exposes Fiber 9.7.0's use of
 deprecated `THREE.Clock` with Three.js 0.185.1. Its clock migration belongs in
 the upstream dependency path; these tests drive frames explicitly.
 
+The unchanged `OverviewPage.traffic.test.tsx` Canvas mock still renders scene
+children inside a `div`. A full warning capture therefore also reports scene tag
+casing/recognition and shader-property attribute warnings from that file. The
+`AnimatedFlowLine` migration resolves its own DOM warnings; it does not make the
+entire frontend suite warning-free.
+
 The locked `@tailwindcss/node` 4.1.17 calls `module.register()` for its ESM
 cache loader. Node 26 emits DEP0205 for that call; the supported Node 22
 baseline does not. Vite 7.3.6 already prefers `registerHooks()` where available.

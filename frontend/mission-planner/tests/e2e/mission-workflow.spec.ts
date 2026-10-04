@@ -82,6 +82,13 @@ test.describe('Mission Workflow', () => {
     await expect(
       page.getByRole('heading', { name: 'Create New Mission' })
     ).toBeVisible();
+    await expect(page.getByLabel('Mission Name')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Create New Mission' })
+    ).toBeFocused();
+    await page.getByRole('button', { name: 'Create New Mission' }).click();
 
     // 4. Fill Form
     await page.getByLabel('Mission Name').fill('New Mission');
