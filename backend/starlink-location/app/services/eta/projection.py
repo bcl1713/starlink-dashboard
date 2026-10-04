@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Optional
 from app.models.flight_status import ETAMode, FlightPhase
 from app.models.poi import POI
 from app.services.eta.calculator import ETACalculator
+from app.services.route_eta.calculator import RouteETACalculator
 
 if TYPE_CHECKING:
     from app.models.route import ParsedRoute, RouteWaypoint
@@ -414,8 +415,8 @@ class ETAProjection:
         - Future segments: Use expected segment speeds
 
         Strategy:
-        1. Find nearest route point to current position
-        2. Find which route segment contains the projection point
+        1. Project current position onto the active route segment
+        2. Use the POI's stored destination projection
         3. Walk segments from current position to the projection point
         4. Use blended speed for current segment, expected speeds for subsequent segments
 
@@ -466,20 +467,18 @@ class ETAProjection:
             ):
                 return None
 
-            nearest_point_index = min(
-                range(len(active_route.points)),
-                key=lambda idx: self.calculator.calculate_distance(
-                    current_lat,
-                    current_lon,
-                    active_route.points[idx].latitude,
-                    active_route.points[idx].longitude,
-                ),
+            current_projection = RouteETACalculator(active_route).project_poi_to_route(
+                current_lat, current_lon
             )
-            if nearest_point_index > projection_segment_index:
+            current_segment_index = current_projection["projected_waypoint_index"]
+            if (
+                current_projection["projected_route_progress"] >= projection_progress
+                or current_segment_index > projection_segment_index
+            ):
                 return None
 
             total_eta_seconds = 0.0
-            for idx in range(nearest_point_index, projection_segment_index + 1):
+            for idx in range(current_segment_index, projection_segment_index + 1):
                 current_point = active_route.points[idx]
                 segment_timing_point = active_route.points[idx + 1]
                 if idx == projection_segment_index:
@@ -489,8 +488,16 @@ class ETAProjection:
                     segment_end_latitude = segment_timing_point.latitude
                     segment_end_longitude = segment_timing_point.longitude
                 segment_distance = self.calculator.calculate_distance(
-                    current_point.latitude,
-                    current_point.longitude,
+                    (
+                        current_projection["projected_lat"]
+                        if idx == current_segment_index
+                        else current_point.latitude
+                    ),
+                    (
+                        current_projection["projected_lon"]
+                        if idx == current_segment_index
+                        else current_point.longitude
+                    ),
                     segment_end_latitude,
                     segment_end_longitude,
                 )
@@ -499,7 +506,7 @@ class ETAProjection:
                 )
                 segment_speed_knots = (
                     (speed + expected_speed) / 2.0
-                    if idx == nearest_point_index
+                    if idx == current_segment_index
                     else expected_speed
                 )
                 if not isfinite(segment_speed_knots) or segment_speed_knots <= 0.5:

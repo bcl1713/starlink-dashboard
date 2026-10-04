@@ -115,6 +115,35 @@ def test_get_route_progress_with_timing_profile():
     assert progress["expected_duration_remaining_seconds"] is not None
 
 
+@pytest.mark.parametrize(
+    ("latitude", "percent", "remaining_seconds"),
+    [(40.1, 10.0, 1620.0), (40.4, 40.0, 1080.0), (40.6, 60.0, 720.0)],
+)
+def test_route_progress_tracks_position_between_waypoints(
+    latitude, percent, remaining_seconds
+):
+    """Nearest-waypoint snapping must not mark an interior event as passed."""
+    progress = RouteETACalculator(_build_sample_route()).get_route_progress(
+        latitude, -75.0
+    )
+
+    assert progress["progress_percent"] == pytest.approx(percent)
+    assert progress["distance_completed_meters"] == pytest.approx(
+        111_194.926645 * percent / 100
+    )
+    assert progress["expected_duration_remaining_seconds"] == pytest.approx(
+        remaining_seconds
+    )
+
+
+def test_route_progress_at_arrival_has_no_remaining_distance_or_duration():
+    progress = RouteETACalculator(_build_sample_route()).get_route_progress(41.0, -75.0)
+
+    assert progress["progress_percent"] == pytest.approx(100)
+    assert progress["distance_remaining_meters"] == pytest.approx(0)
+    assert progress["expected_duration_remaining_seconds"] == pytest.approx(0)
+
+
 def test_calculate_eta_to_waypoint_respects_speed():
     """ETA to waypoint should use provided segment speed and include expected arrival."""
     route = _build_sample_route()
