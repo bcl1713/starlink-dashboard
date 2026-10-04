@@ -33,7 +33,7 @@ session per task, and continuation through PR and merge into `dev`.
 | Task 3             | Complete | Display message protocol and sessions                                               |
 | Task 4             | Complete | Configuration controls and fullscreen feedback                                      |
 | Task 5             | Complete | [Task 5 steps 1–6 evidence](2026-10-04-overview-window-sync-acceptance-progress.md) |
-| Independent review | Complete | [R1/R2 closed; R3 Minor open](2026-10-04-overview-window-sync-follow-up-review.md)  |
+| Independent review | Complete | [Review gaps closed](2026-10-04-overview-window-sync-integration.md)                |
 | PR and merge       | Pending  | Findings, final candidate checks, PR to dev, merge                                  |
 
 ## Session entries

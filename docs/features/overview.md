@@ -2,8 +2,7 @@
 
 **Related:** [Main README](../../README.md) | [Setup Guide](../setup/README.md)
 
-This document catalogs dashboard features. For saved-state refresh and remote
-controls, see
+This document catalogs features. For saved-state refresh and controls, see
 [Overview windows](system.md#overview-windows-and-display-controls).
 
 ---
@@ -151,10 +150,12 @@ trailing-five-minute source window. History requests default to five seconds
 while [#224](https://github.com/bcl1713/starlink-dashboard/issues/224)'s
 measured performance gate is pending. A reviewed frontend build can select one
 second using `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1`; rebuild with `5` to roll
-back. Hidden tabs pause interval polling and refetch on focus. Failures use
-five-second polling. Cadence is separate from the one-second Prometheus scrape
-rate and the selected window's range-query resolution (two seconds for a
-60-minute window). The backend reuses completed snapshots and reconciles an
+back. Mounted Overview history keeps polling in background tabs and refetches
+on focus; hidden tabs pause chart motion. Browser scheduling can delay requests;
+suspended browsers/devices catch up on resumption without a wall-clock bound.
+Failures use five-second polling. Cadence is separate from the one-second
+Prometheus scrape rate and range-query resolution (two seconds for a 60-minute
+window). The backend reuses completed snapshots and reconciles an
 overlapping tail, with bounded full loads for initialization, recovery and
 historical corrections. Each graph shows the full selected window, with a small
 right-edge freshness margin: under the expected five-second response cadence,

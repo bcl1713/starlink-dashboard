@@ -121,3 +121,31 @@ independently closes R1/R2 at 77afa602 with no Critical/Important finding.
 R3 Minor history-polling guidance remains open for the next integration stage;
 Task 5 step 7 remains unchecked. Preserve the author verification and handoff
 above as historical evidence. Final candidate/protected PR gates still apply.
+
+## R3 documentation integration and review gap closure
+
+Started at `687bd08d6eeef08035fed281e185be5e650b6c1d`, clean worktree and matching
+remote feature branch; dev remains `b2ea3341f78137c1409a618c8d8da5814a14dac2`.
+Read all three complete review/integration handoffs and their tracked authority.
+Preserve every historical finding, ruling, artifact and worktree.
+
+R3 Minor is corrected in `docs/features/overview.md`: history polls at its
+configured cadence while mounted, including background tabs; chart motion
+pauses separately when hidden. Browser scheduling can delay requests, and fully
+suspended browsers/devices catch up on resumption without a wall-clock guarantee.
+Failure polling remains five seconds. No product, polling or test code changed.
+
+Verification: compared prose with `useOverviewHistory` background/focus/error
+options and the approved suspension contract. Fresh `npm --prefix
+frontend/mission-planner run test:unit -- src/hooks/api/useOverviewRefresh.test.tsx`
+passed **one file/31 tests**, including the unfocused five-second history case.
+Log: `evidence/r3-integration/r3-unit.log` beneath the acceptance workspace.
+R1/R2 independent closure remains authoritative; R3 is now closed and Task 5
+step 7 is checked. The original review records remain historical evidence.
+
+Freeze this documentation/progress candidate before fresh canonical, browser,
+native and real-production acceptance. Save final SHA, logs, manifests, cleanup
+and PR/CI/merge outcomes outside Git under `evidence/r3-integration/` so evidence
+does not change HEAD. Final acceptance and exact-head PR gates remain pending;
+no merge readiness is inferred from prior source results. Material product
+changes require another independent follow-up review.

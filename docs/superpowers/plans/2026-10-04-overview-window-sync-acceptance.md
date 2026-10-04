@@ -160,7 +160,7 @@ Review Focus, baseline, and execution requirements. Tasks 1–4 are prerequisite
       `test(overview): verify cross-window production workflow`. If this commit
       changes frontend/backend acceptance inputs, rebuild and rerun the
       production journey at the final candidate SHA.
-- [ ] **Step 7: Obtain independent whole-branch review and close gaps.** Review
+- [x] **Step 7: Obtain independent whole-branch review and close gaps.** Review
       against the approved spec/plan, query lifecycle, message
       expiration/targeting, fullscreen truthfulness, tests, and user guidance.
       Fix material findings and rerun affected verification. Report exact
@@ -172,5 +172,6 @@ Task 5 steps 1–6 are complete: see the
 [session record](2026-10-04-overview-window-sync-acceptance-progress.md) for
 production results and resolved regression gates. Step 7's independent review
 and [fresh follow-up](2026-10-04-overview-window-sync-follow-up-review.md)
-are complete. R1/R2 are independently closed; new R3 Minor documentation
-requires integration correction before step 7 gap closure.
+are complete. R1/R2 are independently closed; R3 Minor documentation is corrected
+and verified in the [integration record](2026-10-04-overview-window-sync-integration.md).
+Final candidate acceptance and protected PR/merge gates remain pending.
