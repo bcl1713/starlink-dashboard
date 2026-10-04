@@ -532,5 +532,6 @@
 }
 .overview-page[data-layout='landscape'] .overview-display-controls {
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
 }

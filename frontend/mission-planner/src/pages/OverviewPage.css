@@ -190,6 +190,7 @@
 }
 .overview-fullscreen-controls {
   max-width: 100%;
+  min-width: 0;
 }
 .overview-fullscreen-feedback,
 .overview-display-label {
@@ -201,6 +202,11 @@
 }
 .overview-fullscreen-feedback {
   margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.overview-display-label {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .overview-fullscreen-control {
   pointer-events: auto;

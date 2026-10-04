@@ -4,10 +4,15 @@
 
 **Issue:** [257](https://github.com/bcl1713/starlink-dashboard/issues/257)
 
-**Status:** Initial diagnosis complete; Tasks 1–4 are delivered and the real
-production workflow has passed Task 5 journeys. Integrated acceptance remains
-incomplete because required browser regressions fail. See the
-[acceptance report](2026-10-04-overview-window-sync-acceptance.md).
+**Status:** Initial diagnosis complete; Tasks 1–4 and Task 5 steps 1–6 are
+delivered. The final required browser regression lane passed all 53 tests, and
+the real production journeys passed. Review findings, fresh follow-up independent
+review, and protected PR/merge integration remain the current delivery gates.
+See the [acceptance report](2026-10-04-overview-window-sync-acceptance.md) and
+[review record](../superpowers/plans/2026-10-04-overview-window-sync-review.md).
+
+The diagnosis and baseline observations below describe the original investigation
+before implementation; they are preserved as historical evidence.
 
 ## Isolation and base
 
@@ -84,4 +89,6 @@ Local diagnostic artifacts:
 - `/tmp/starlink-257-browser-audit.json`: browser result and request counts.
 
 The diagnostic browser was closed and the loopback preview stopped afterward. No
-product code was changed. The accompanying design is a draft for user review.
+product code was changed. At that point the accompanying design was a draft for
+user review; the user subsequently approved the design and implementation plan
+on 2026-10-04.

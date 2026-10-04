@@ -20,7 +20,9 @@ targeting/expiry, actual native state, UI, acceptance tooling, tests and guidanc
 The coordinator audited evidence and performed a targeted compact browser probe.
 This is separate from the implementation author's self-check.
 
-**Review complete; not ready to merge.** R1 is Important and remains open.
+**Original review complete; not ready to merge.** R1 was Important and open
+at this review. [Integration corrections](2026-10-04-overview-window-sync-integration.md)
+now address R1/R2; fresh follow-up review is pending.
 R2 is Minor. No Critical finding. Step 7's gap-closure checkbox remains open;
 integration must fix R1 and obtain fresh follow-up review before merge.
 This session changes review records and bounded evidence only, with no product

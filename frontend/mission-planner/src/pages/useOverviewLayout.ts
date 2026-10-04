@@ -80,7 +80,7 @@ export function useOverviewLayout(
         const pageBounds = page.getBoundingClientRect();
         const panels = [
           ...page.querySelectorAll<HTMLElement>(
-            '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-fullscreen-control, .overview-map-controls'
+            '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-display-controls, .overview-map-controls'
           ),
         ].filter((node) => node.getBoundingClientRect().height > 0);
         const bounds = panels.map((node) => node.getBoundingClientRect());
@@ -232,7 +232,7 @@ export function useOverviewLayout(
       stage,
       clockNode(page),
       ...page.querySelectorAll<HTMLElement>(
-        '.overview-arrival, .overview-planned-satellite, .globe-legend, .overview-map-controls, .overview-metric-history, .overview-metric-history-panels__header'
+        '.overview-arrival, .overview-planned-satellite, .globe-legend, .overview-map-controls, .overview-display-controls, .overview-right-overlays, .overview-metric-history, .overview-metric-history-panels__header'
       ),
     ].forEach((node) => {
       if (node) observer.observe(node);
