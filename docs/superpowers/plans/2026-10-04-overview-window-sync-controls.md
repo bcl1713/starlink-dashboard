@@ -169,7 +169,7 @@ characters.
   consume activation. Provide accessible feedback for unsupported/rejected
   entry.
 
-- [ ] **Step 1: Add failing hook/helper/card tests and a two-page control
+- [x] **Step 1: Add failing hook/helper/card tests and a two-page control
       suite.** Pin these expectations:
 
   ```ts
@@ -192,7 +192,7 @@ characters.
   from Configuration, assert target camera resets without navigation, and retain
   native fullscreen.
 
-- [ ] **Step 2: Observe failures before UI integration.** Run the new hook,
+- [x] **Step 2: Observe failures before UI integration.** Run the new hook,
       helper, card, and browser suites:
 
   ```sh
@@ -204,7 +204,7 @@ characters.
   npx playwright test tests/e2e/overview-window-controls.spec.ts --workers=1
   ```
 
-- [ ] **Step 3: Implement host/controller hooks and card.**
+- [x] **Step 3: Implement host/controller hooks and card.**
       Subscribe/unsubscribe within effects. Select the only peer automatically
       only when no prior selected target was lost; peer loss leaves explicit
       selection required. Put the card adjacent to Overview camera settings.
@@ -214,14 +214,14 @@ characters.
       failure. After three seconds without a new peer, offer popup-blocking
       guidance. Feedback uses role status or alert; controls have keyboard
       access and visible focus.
-- [ ] **Step 4: Implement shared fullscreen helper and Overview integration.**
+- [x] **Step 4: Implement shared fullscreen helper and Overview integration.**
       Configuration sends Fullscreen to the host; host checks expiry then calls
       the helper and publishes actual state. Provide exact actionable fallback:
       `Click Fullscreen in the Overview window to finish.` Recenter invokes the
       existing onReset. No camera remount, focus forcing, navigation, or control
       of Configuration's fullscreen. Already-fullscreen target displays its
       active state; local Escape publishes its exited state.
-- [ ] **Step 5: Verify ordinary/fullscreen controls and lifecycle.** Run
+- [x] **Step 5: Verify ordinary/fullscreen controls and lifecycle.** Run
       affected unit suites, Configuration/fullscreen tests, and the controls
       browser suite. Assert controller stays foreground during the remote
       request; test real browser rejection and successful local-click fallback
@@ -230,5 +230,5 @@ characters.
       success feedback, while actual fullscreenchange events remain
       authoritative. Browser fullscreen requests have no abort API; do not
       falsely claim timeout cancelled one.
-- [ ] **Step 6: Commit the working control deliverable.** Commit
+- [x] **Step 6: Commit the working control deliverable.** Commit
       `feat(configuration): control selected Overview displays`.

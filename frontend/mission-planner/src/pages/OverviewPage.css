@@ -172,11 +172,37 @@
   letter-spacing: 0.03em;
   text-align: center;
 }
+.overview-display-controls {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.5rem;
+  min-width: 0;
+  pointer-events: auto;
+}
+.overview-page[data-layout='desktop'] .overview-display-controls {
+  grid-row: 2;
+}
+.overview-page:not([data-layout='desktop']) .overview-display-controls {
+  grid-column: 1;
+  grid-row: 2;
+}
+.overview-fullscreen-controls {
+  max-width: 100%;
+}
+.overview-fullscreen-feedback,
+.overview-display-label {
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgb(3 3 7 / 90%);
+  color: #f8fafc;
+  font-size: 0.875rem;
+}
+.overview-fullscreen-feedback {
+  margin-top: 0.5rem;
+}
 .overview-fullscreen-control {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
