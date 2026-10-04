@@ -51,7 +51,7 @@ def test_all_pairs_survive_store_recreation(tmp_path, starshield, x_band):
     assert OverviewLinkSettingsStore(path).update(payload) == OverviewLinkSettings(
         starshield, x_band
     )
-    assert json.loads(path.read_text()) == payload
+    assert json.loads(path.read_text()) == {**payload, "orbital_traffic_enabled": False}
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         starshield, x_band
     )
@@ -174,3 +174,36 @@ def test_failed_atomic_replace_preserves_last_good_pair_and_cleans_temp(
     assert path.read_bytes() == original
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(False, True)
     assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_orbital_default_and_partial_merge(tmp_path):
+    path = tmp_path / "overview-links.json"
+    path.write_text(
+        json.dumps({"starshield_link_enabled": False, "x_band_link_enabled": False})
+    )
+    store = OverviewLinkSettingsStore(path)
+    assert store.get().orbital_traffic_enabled is False
+    assert store.update({"orbital_traffic_enabled": True}) == OverviewLinkSettings(
+        False, False, True
+    )
+    assert store.update({"x_band_link_enabled": True}) == OverviewLinkSettings(
+        False, True, True
+    )
+
+
+@pytest.mark.parametrize("value", [None, "true", 1])
+def test_orbital_invalid_updates_preserve_confirmation(tmp_path, value):
+    store = OverviewLinkSettingsStore(tmp_path / "links.json")
+    saved = store.update({"orbital_traffic_enabled": True})
+    with pytest.raises((ValueError, TypeError)):
+        store.update({"orbital_traffic_enabled": value})
+    assert store.get() == saved
+
+
+def test_interleaved_orbital_and_link_edits(tmp_path):
+    path = tmp_path / "links.json"
+    a, b = OverviewLinkSettingsStore(path), OverviewLinkSettingsStore(path)
+    a.update({"orbital_traffic_enabled": True})
+    b.update({"starshield_link_enabled": False})
+    a.update({"x_band_link_enabled": False})
+    assert b.get() == OverviewLinkSettings(False, False, True)

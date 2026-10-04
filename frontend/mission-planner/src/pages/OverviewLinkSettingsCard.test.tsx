@@ -17,10 +17,15 @@ vi.mock('@/services/api-client', () => ({
   default: { get: vi.fn(), put: vi.fn() },
 }));
 let client: QueryClient;
-const pair = { starshield_link_enabled: false, x_band_link_enabled: true };
+const pair = {
+  starshield_link_enabled: false,
+  x_band_link_enabled: true,
+  orbital_traffic_enabled: false,
+};
 const switches = () => [
   screen.getByRole('switch', { name: 'Starshield data link' }),
   screen.getByRole('switch', { name: 'X-band data link' }),
+  screen.getByRole('switch', { name: 'Orbital traffic view' }),
 ];
 function renderCard() {
   return render(
@@ -53,6 +58,7 @@ describe('OverviewLinkSettingsCard', () => {
         data: {
           starshield_link_enabled: starshield,
           x_band_link_enabled: xBand,
+          orbital_traffic_enabled: false,
         },
       });
       renderCard();
@@ -98,12 +104,20 @@ describe('OverviewLinkSettingsCard', () => {
     [
       'Starshield data link',
       { starshield_link_enabled: true },
-      { starshield_link_enabled: true, x_band_link_enabled: true },
+      {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        orbital_traffic_enabled: false,
+      },
     ],
     [
       'X-band data link',
       { x_band_link_enabled: false },
-      { starshield_link_enabled: false, x_band_link_enabled: false },
+      {
+        starshield_link_enabled: false,
+        x_band_link_enabled: false,
+        orbital_traffic_enabled: false,
+      },
     ],
   ])(
     'saves only %s and keeps both switches confirmed/disabled until PUT finishes',
@@ -168,6 +182,7 @@ describe('OverviewLinkSettingsCard', () => {
     const saved = {
       starshield_link_enabled: false,
       x_band_link_enabled: false,
+      orbital_traffic_enabled: false,
     };
     vi.mocked(apiClient.put).mockResolvedValueOnce({ data: saved });
     vi.mocked(apiClient.get).mockResolvedValue({ data: saved });
@@ -198,4 +213,22 @@ describe('OverviewLinkSettingsCard', () => {
     expect(switches()[1]).toBeChecked();
     switches().forEach((control) => expect(control).toBeEnabled());
   });
+});
+
+it('saves orbital alone without changing either link', async () => {
+  vi.mocked(apiClient.get).mockResolvedValue({ data: pair });
+  vi.mocked(apiClient.put).mockResolvedValue({
+    data: { ...pair, orbital_traffic_enabled: true },
+  });
+  renderCard();
+  await waitFor(() => expect(switches()[2]).toBeEnabled());
+  expect(switches()[2]).not.toBeChecked();
+  fireEvent.click(switches()[2]);
+  await waitFor(() =>
+    expect(apiClient.put).toHaveBeenCalledWith('/api/overview-links/settings', {
+      orbital_traffic_enabled: true,
+    })
+  );
+  expect(switches()[0]).not.toBeChecked();
+  expect(switches()[1]).toBeChecked();
 });

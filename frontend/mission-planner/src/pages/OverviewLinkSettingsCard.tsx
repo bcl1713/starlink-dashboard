@@ -18,6 +18,12 @@ export function OverviewLinkSettingsCard() {
       description: 'Show aircraft-to-PoP traffic.',
     },
     {
+      field: 'orbital_traffic_enabled',
+      label: 'Orbital traffic view',
+      description:
+        'Show the experimental constellation and inferred traffic path.',
+    },
+    {
       field: 'x_band_link_enabled',
       label: 'X-band data link',
       description: 'Show the configured satellite link and its activity.',

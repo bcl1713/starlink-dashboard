@@ -13,7 +13,11 @@ import { useOverviewLinkSettings } from './useOverviewLinkSettings';
 vi.mock('@/services/api-client', () => ({
   default: { get: vi.fn(), put: vi.fn() },
 }));
-const confirmed = { starshield_link_enabled: false, x_band_link_enabled: true };
+const confirmed = {
+  starshield_link_enabled: false,
+  x_band_link_enabled: true,
+  orbital_traffic_enabled: false,
+};
 let client: QueryClient;
 let wrapper: (props: PropsWithChildren) => ReturnType<typeof createElement>;
 beforeEach(() => {
@@ -77,6 +81,7 @@ describe('useOverviewLinkSettings', () => {
     const changed = {
       starshield_link_enabled: false,
       x_band_link_enabled: false,
+      orbital_traffic_enabled: false,
     };
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: changed });
     await act(async () => {
@@ -106,6 +111,7 @@ describe('useOverviewLinkSettings', () => {
     const changed = {
       starshield_link_enabled: true,
       x_band_link_enabled: false,
+      orbital_traffic_enabled: false,
     };
     vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
     await act(async () => {

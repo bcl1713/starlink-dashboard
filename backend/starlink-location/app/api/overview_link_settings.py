@@ -16,6 +16,7 @@ class OverviewLinkSettingsUpdate(BaseModel):
 
     starshield_link_enabled: StrictBool | None = None
     x_band_link_enabled: StrictBool | None = None
+    orbital_traffic_enabled: StrictBool | None = None
 
     @model_validator(mode="after")
     def validate_supplied_fields(self) -> Self:
@@ -48,7 +49,7 @@ def _get_store() -> OverviewLinkSettingsStore:
 
 @router.get("/api/overview-links/settings")
 def get_overview_link_settings():
-    """Return the full confirmed visibility pair."""
+    """Return the full confirmed visibility settings."""
     store = _get_store()
     try:
         return asdict(store.get())
@@ -61,7 +62,7 @@ def get_overview_link_settings():
 
 @router.put("/api/overview-links/settings")
 def update_overview_link_settings(settings: OverviewLinkSettingsUpdate):
-    """Persist supplied switches and return the complete confirmed pair."""
+    """Persist supplied switches and return the complete confirmed settings."""
     store = _get_store()
     try:
         return asdict(store.update(settings.model_dump(exclude_unset=True)))
