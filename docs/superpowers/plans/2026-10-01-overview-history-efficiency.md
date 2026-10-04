@@ -95,3 +95,14 @@ targets `dev`. Full backend and frontend suites/build passed CI on revision
 `8f93698089b2afda4771d360105743eb31f00d25`; final-revision CI remains required.
 The real-host budget and production recording remain acceptance blockers, so the
 shipped default remains five seconds.
+
+## Approved follow up
+
+Brian approved the
+[October 4 design addendum](../specs/2026-10-04-overview-history-efficiency-follow-up-design.md)
+to continue this work after PR 228's qualified merge. It preserves this design
+and the operator acceptance rather than reopening completed implementation. The
+[follow-up plan](2026-10-04-overview-history-efficiency-follow-up.md) addresses
+unresolved CPU/heap findings and qualification of the one-second default with
+current background-polling behavior. Its execution review remains pending; the
+earlier recorded controls above remain historical evidence.
