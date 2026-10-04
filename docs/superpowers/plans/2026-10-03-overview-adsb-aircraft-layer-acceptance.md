@@ -14,6 +14,11 @@ this plan does not run these future product checks or authorize rollout.
 `tools/acceptance/adsb/backend_fixture.py`,
 `docs/api/endpoints/overview-adsb.md`, and
 `docs/reports/2026-10-03-overview-adsb-aircraft-layer.md`.
+Modify the existing browser support fixtures
+`frontend/mission-planner/tests/e2e/support/overview-window-fixture.ts` and
+`frontend/mission-planner/tests/e2e/support/traffic-path-fixture.ts` for
+default-off ADS-B settings/traffic responses; retain all existing settings
+fields, including `orbital_traffic_enabled`.
 Modify `docs/features/overview.md`, `docs/features/system.md`,
 `docs/api/endpoints/README.md`, and `docs/reports/README.md`.
 
@@ -95,6 +100,9 @@ configuration. Backend acceptance uses httpx controlled provider fixtures.
   --project=chromium --workers=1`, then existing globe, map interaction,
   fullscreen route, arrival, POI-responsive and metric-history suites. Expect
   PASS; manually inspect screenshots instead of blindly updating snapshots.
+  Include `overview-window-refresh.spec.ts`, `overview-window-paths.spec.ts`,
+  `overview-window-controls.spec.ts` and `overview-traffic-paths.spec.ts` in
+  existing-browser regressions against the reconciled `dev` base.
 - [ ] **Step 6: Verify an isolated exact-SHA production path.** Follow
   `docs/development/workflow.md` and `docs/development/cloud-docker.md`; read
   the runtime skill's Docker proxy/CA reference before builds. Preserve

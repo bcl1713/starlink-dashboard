@@ -71,7 +71,10 @@ Both pages use this hook; it owns one enabled-only 1s freshness timer per mount.
 - [ ] **Step 3: Implement API validation and revision-safe query hooks.** Reuse
   the existing axios api-client and confirmed-settings patterns. Poll settings
   and enabled traffic at 5000ms, refresh both on window focus and visible
-  `visibilitychange`; neither polls in background. Serialize saves with mutation
+  `visibilitychange`; neither polls in background. Do not apply
+  `overviewRefreshOptions(true)`: current Overview queries use that override to
+  poll in background, unlike the ADS-B contract. Preserve those existing query
+  policies. Serialize ADS-B saves with mutation
   scope `overview-adsb-settings`, cancel GETs before/after PUT, and publish only
   complete confirmed settings. Keep the highest confirmed settings revision
   when a delayed GET completes; never let structural sharing accept an older one.
@@ -129,8 +132,9 @@ Both child views are presentation-only; the parent owns saved-state feedback.
   Pending saves disable edits; loading/GET error/PUT error/success have distinct
   accessible feedback and failed saves retain confirmed values. Source errors
   and per-source last-success times are displayed without a global map warning.
-  Assert provider attribution/license links and the three existing Configuration
-  sections remain available when ADS-B settings fail.
+  Assert provider attribution/license links and every existing Configuration
+  card remains available when ADS-B settings fail, including orbital diagnostics,
+  link settings, display controls and operational clocks.
   After a confirmed exclusion of the fixture row `00AB12`, assert:
 
   ```ts
@@ -175,8 +179,9 @@ shape `{x,y,width,height}`; reuse the POI projected-label type only.
 `OverviewAdsbLayer({ contacts, globeOccluder, onSelect, onVisibleHexesChange })`
 takes readonly views, `RefObject<THREE.Group>`, `(hex: string) => void`, and
 `(hexes: readonly string[]) => void` respectively.
-`OverviewAdsbDetails({ contact, onClose, returnFocusRef })` takes
+`OverviewAdsbDetails({ contact, onClose, returnFocusRef, portalContainer })` takes
 `AdsbContactView | null`, `() => void`, and `RefObject<HTMLElement | null>`.
+Its `portalContainer: HTMLElement | null` is supplied from Overview's map stage.
 Add `adsb?: boolean` default false to `OverviewMapLegend`.
 
 - [ ] **Step 1: Write failing rendering/interaction tests.** Assert legal globe
@@ -189,6 +194,7 @@ Add `adsb?: boolean` default false to `OverviewMapLegend`.
   alone, and keeps included labels. Label-layout tests include long text,
   coincident points and reserved overlays: return every hex offset, never a count.
   Details tests assert all contract fields, `ft` plus altitude source, knots,
+  an explicit map-stage portal container (including native fullscreen),
   `Track` rather than heading, position age and Current/Stale, explicit
   `Unavailable`, Close, Escape, dialog focus and focus restoration; no editing.
   Page tests assert click selects a contact but never camera/follow state; drag
@@ -222,11 +228,16 @@ Add `adsb?: boolean` default false to `OverviewMapLegend`.
   Share POI packing ideas but never its aggregate/hide
   fallback: choose the least-overlapping offset if a collision-free one is
   impossible, keeping every included identity present. Avoid existing overlays.
+  Reserve visible POI label bounds too; do not modify their aggregation policy.
 - [ ] **Step 4: Implement details and Overview integration.** Match Task 6 props.
-  Use existing Radix Dialog for focus/Escape, rendered within the map stage so
-  native fullscreen retains it. Restore focus to the previously focused map
-  control or the stage if the marker has no DOM focus target. Store selected hex,
-  derive live selected contact, and clear when absent. Track pointer-down/up
+  Use Radix Dialog for focus/Escape with an explicit
+  `<DialogPortal container={portalContainer}>` and Radix Content inside it so
+  native fullscreen retains it. The shared `components/ui/dialog.tsx`
+  `DialogContent` always portals to the body; use the primitives directly for
+  this view without changing existing dialogs. Restore focus to the previously
+  focused map control or the stage if the marker has no DOM focus target. Make
+  the stage programmatically focusable for that fallback. Store selected hex,
+  derive the live selected contact and clear when absent. Track pointer-down/up
   displacement before invoking onSelect; no camera callbacks or own follow target
   mutation. Provide an accessible contact list of detail-opening buttons for
   keyboard access without permanent background map labels; button names are
@@ -235,6 +246,9 @@ Add `adsb?: boolean` default false to `OverviewMapLegend`.
   predicate in Overview; provider/list-editing logic stays in its modules.
 - [ ] **Step 5: Verify success.** Run Task 6 tests plus existing page, camera,
   fullscreen, globe coordinate, POI marker/label and flow-consumer unit tests;
-  expect PASS. Rendered geometry/occlusion/performance proof remains Task 7.
+  also run `useOrbitalTraffic.test.ts`, `OrbitalTrafficDiagnostics.test.tsx`,
+  `orbital/OrbitalSprites.test.tsx` and `orbital/lifecycle.test.ts` against the
+  current orbital/link integration. Expect PASS. Rendered
+  geometry/occlusion/performance proof remains Task 7.
 - [ ] **Step 6: Commit Task 6 files.**
   `git commit -m "feat(overview): render ADS-B contacts labels and aircraft details"`.

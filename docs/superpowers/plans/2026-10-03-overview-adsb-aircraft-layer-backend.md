@@ -10,7 +10,8 @@ with `uv run --with-requirements requirements.txt pytest`.
 **Files:** Create `app/models/overview_adsb.py`,
 `app/services/overview_adsb_settings.py`, `app/api/overview_adsb.py`,
 `tests/unit/test_overview_adsb_settings.py`, and
-`tests/integration/test_overview_adsb_settings_api.py`.
+`tests/integration/test_overview_adsb_settings_api.py`, and
+`tests/unit/test_main_overview_adsb.py`.
 Modify `main.py` at imports, persistent path constants,
 `startup_event`, `shutdown_event`, and router registration.
 
@@ -25,7 +26,7 @@ Settings operations
 work with a store alone. `initialize_overview_adsb_runtime() -> None` initially
 registers the store; Task 3 extends it to acquisition.
 
-- [ ] **Step 1: Write failing store and API tests.**
+- [x] **Step 1: Write failing store and API tests.**
   `test_default_settings_are_off_with_revision_zero` asserts all six fields from
   the main contract. `test_partial_updates_preserve_lists_and_increment_revision`
   saves includes `[' 00ab12 ', '00AB12']`, then only mode; expect
@@ -40,6 +41,9 @@ registers the store; Task 3 extends it to acquisition.
   unknown keys, supplied revision, and empty update: API 422, disk unchanged.
   Corrupt JSON and failed `os.replace` return 503 and preserve bytes, settings,
   and revision; temporary files are removed. Uninitialized store returns 503.
+  Main-runtime tests assert registration, lifespan persistence and shutdown
+  unregistration, following `test_main_overview_link_settings.py`; extend them
+  in Task 3 for service/client cleanup alongside the existing orbital runtime.
   Pin the normalization/merge contract with these store assertions:
 
   ```python
@@ -51,20 +55,22 @@ registers the store; Task 3 extends it to acquisition.
   assert changed.revision == 2
   ```
 
-- [ ] **Step 2: Verify failure.** Run the two new test files with `-q`;
+- [x] **Step 2: Verify failure.** Run the two new test files with `-q`;
   expect missing-model/store/router imports or missing endpoints.
-- [ ] **Step 3: Implement models and atomic settings operations.** Match Task 1
+- [x] **Step 3: Implement models and atomic settings operations.** Match Task 1
   signatures and the main contract. Validate before writing; create list defaults
   with factories. Reject corrupt existing state rather than overwriting it with
   defaults. The locked revision and settings share one atomic JSON record.
   Use existing `overview_link_settings.py` and its API as patterns. Mount settings
   GET/PUT, return complete confirmed state, and notify an installed service after
   successful persistence using Task 3's `settings_changed()`.
-- [ ] **Step 4: Register the settings runtime and verify.** Use
+- [x] **Step 4: Register the settings runtime and verify.** Use
   `data/settings/overview-adsb.json`; unregister on shutdown. Run the new tests
   plus existing unit/integration `test_overview_link_settings*.py`; expect PASS.
+  Also run `tests/unit/test_main_overview_adsb.py` and
+  `tests/unit/test_main_overview_link_settings.py` for lifecycle registration.
   Inspect the existing Compose data mount; no new volume should be needed.
-- [ ] **Step 5: Commit only Task 1 files.**
+- [x] **Step 5: Commit only Task 1 files.**
   `git commit -m "feat(adsb): persist revisioned shared aircraft settings"`.
 
 ## Task 2: Provider normalization, filter precedence and freshness
@@ -147,7 +153,8 @@ now_ms: float) -> list[AdsbContact]` are pure selection exports.
 `tests/unit/test_overview_adsb_traffic.py`, and
 `tests/integration/test_overview_adsb_traffic_api.py`.
 Modify `app/api/overview_adsb.py` runtime/traffic endpoint and `main.py`
-ADS-B initialization, startup and shutdown.
+ADS-B initialization, startup and shutdown; extend
+`tests/unit/test_main_overview_adsb.py` for owned service/client lifecycle.
 
 **Interfaces:** `AdsbTrafficService(store: AdsbSettingsStore,
 provider: AdsbLolProvider, time_source: Callable[[], float],
