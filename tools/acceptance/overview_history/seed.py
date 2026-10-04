@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 from pathlib import Path
 
@@ -53,10 +54,46 @@ def write_seed(output: Path, end_seconds: int, duration_seconds: int = 4200) -> 
         stream.write("# EOF\n")
 
 
+def validate_history(bundle: dict, window_seconds: int) -> None:
+    """Reject missing/ambiguous history before comparing populated workloads."""
+    step = bundle.get("step_seconds", 0)
+    if (
+        bundle.get("window_seconds") != window_seconds
+        or not isinstance(step, int)
+        or step < 1
+    ):
+        raise ValueError("Seeded history window/resolution mismatch")
+    expected = window_seconds // step + 1
+    raw = bundle.get("series", {})
+    for metric in METRICS:
+        values = raw.get(metric, [])
+        if len(values) != expected or any(
+            not math.isfinite(float(value)) for point in values for value in point
+        ):
+            raise ValueError(
+                f"Seeded history must be populated with one finite dense source: {metric}"
+            )
+    for metric in METRICS[5:10]:
+        entry = bundle.get("rolling_5m", {}).get(metric, {})
+        if entry.get("state") != "available" or any(
+            len(entry.get(s, [])) != expected for s in ("min", "avg", "max")
+        ):
+            raise ValueError(
+                f"Seeded aggregate history must be populated and masked: {metric}"
+            )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--end", type=int, required=True)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--end", type=int)
     parser.add_argument("--duration", type=int, default=4200)
+    parser.add_argument("--validate-history", type=Path)
+    parser.add_argument("--window", type=int, default=1800)
     args = parser.parse_args()
-    write_seed(args.output, args.end, args.duration)
+    if args.validate_history:
+        validate_history(json.loads(args.validate_history.read_text()), args.window)
+    elif args.output is not None and args.end is not None:
+        write_seed(args.output, args.end, args.duration)
+    else:
+        parser.error("--output and --end, or --validate-history required")

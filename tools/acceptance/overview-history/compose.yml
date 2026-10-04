@@ -51,6 +51,7 @@ services:
       - metrics:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=3h
     ports:
       - "127.0.0.1:19224:9090"

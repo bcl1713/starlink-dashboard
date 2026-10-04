@@ -3,12 +3,13 @@
 set -euo pipefail
 root=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 cd "$root"
-phase=incremental cadence=5 smoke=0 check=0
+phase=incremental cadence=5 smoke=0 check=0 replay=0
 duration=600 warmup=300 viewers=1 window=1800
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) check=1; shift ;;
     --smoke) smoke=1; shift ;;
+    --replay) replay=1; shift ;;
     --phase) phase=$2; shift 2 ;;
     --cadence) cadence=$2; shift 2 ;;
     --duration) duration=$2; shift 2 ;;
@@ -99,8 +100,22 @@ curl --fail --silent http://127.0.0.1:15224/overview > /dev/null
 curl --fail --silent http://127.0.0.1:15224/api/status > "$output/status.json"
 curl --fail --silent -X PUT -H 'Content-Type: application/json' -d "{\"window_seconds\":$window}" http://127.0.0.1:15224/api/overview-history/settings > "$output/settings.json"
 curl --fail --silent http://127.0.0.1:15224/api/overview-history > "$output/cold-history.json"
+"$profile_python" "$OVERVIEW_PROFILE_SOURCE/tools/acceptance/overview_history/seed.py" --validate-history "$output/cold-history.json" --window "$window"
 curl --fail --silent http://127.0.0.1:15224/api/_acceptance/history-profile > "$output/cold-counters.json"
 printf '%s\n' "$seed_end" > "$output/seed-end.txt"
+if [[ $replay == 1 ]]; then
+  mkdir -p "$output/replay"
+  for replay_window in 300 900 1800 3600 3601; do
+    for configuration in full-5 incremental-5 incremental-1; do
+      mode=${configuration%-*}
+      interval=${configuration##*-}
+      "$profile_python" "$root/tools/profile_overview_history.py" \
+        --prometheus-url http://127.0.0.1:19224 --end "$((seed_end - 150))" \
+        --window "$replay_window" --cadence "$interval" --mode "$mode" \
+        --samples 30 --output "$output/replay/$replay_window-$configuration.json"
+    done
+  done
+fi
 if [[ $smoke == 1 ]]; then exit 0; fi
 "$profile_python" "$root/tools/acceptance/overview_history/run_browser.py" \
   --origin http://127.0.0.1:15224 --artifacts "$output/browser" \

@@ -108,6 +108,11 @@ def test_script_separates_browser_and_build_evidence():
     assert "git archive" in source
 
 
+def test_prometheus_loads_the_imported_tsdb_path():
+    source = (RUNNER.parent / "compose.yml").read_text()
+    assert "--storage.tsdb.path=/prometheus" in source
+
+
 def test_termination_retains_evidence_and_cleans_owned_project(checkout, tmp_path):
     fake = tmp_path / "bin"
     fake.mkdir()

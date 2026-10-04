@@ -5,7 +5,7 @@ import json
 
 import httpx
 import pytest
-from acceptance.overview_history.seed import write_seed
+from acceptance.overview_history.seed import validate_history, write_seed
 from acceptance.overview_history.trace import QueryTrace
 from profile_overview_history import OverviewHistoryReader, measure
 
@@ -230,3 +230,30 @@ def test_upstream_http_failures_are_counted():
         assert trace.active == 0
 
     asyncio.run(exercise())
+
+
+def test_empty_or_ambiguous_seeded_history_is_rejected():
+    with pytest.raises(ValueError, match="populated"):
+        validate_history(
+            {"window_seconds": 300, "step_seconds": 1, "series": {}, "rolling_5m": {}},
+            300,
+        )
+
+
+def test_seeded_history_requires_dense_raw_and_masked_rollups():
+    bundle = {
+        "window_seconds": 300,
+        "step_seconds": 1,
+        "series": {name: [[t, 0] for t in range(301)] for name in METRICS},
+        "rolling_5m": {
+            name: {
+                "state": "available",
+                **{s: [[t, 0] for t in range(301)] for s in ("min", "avg", "max")},
+            }
+            for name in METRICS[5:10]
+        },
+    }
+    validate_history(bundle, 300)
+    bundle["rolling_5m"][METRICS[5]]["avg"] = []
+    with pytest.raises(ValueError, match="aggregate"):
+        validate_history(bundle, 300)
