@@ -8,6 +8,10 @@ services:
     environment:
       STARLINK_MODE: simulation
       SIMULATION_MODE: "true"
+      STARLINK_ROUTE_LATITUDE_START: "35.0"
+      STARLINK_ROUTE_LONGITUDE_START: "-100.0"
+      STARLINK_GROUND_ENTRY_LATITUDE: "36.0"
+      STARLINK_GROUND_ENTRY_LONGITUDE: "-102.0"
       PROMETHEUS_URL: http://prometheus:9090
     ports:
       - "127.0.0.1:18257:8000"

@@ -201,6 +201,18 @@ for (const fullscreen of [false, true]) {
         'Unsubmitted production draft'
       );
       expectSameCamera(manual, await settledOverviewCamera(overview));
+      for (let i = 0; i < plots.length; i++) {
+        expect(
+          await plots[i].evaluate(
+            (node, index) =>
+              node === document.querySelectorAll('.uplot')[index],
+            i
+          )
+        ).toBe(true);
+      }
+      await expect(overview.getByLabel('Globe legend')).toContainText(
+        'Traffic path'
+      );
       for (const [label, field] of [
         ['Starshield data link', 'starshield_link_enabled'],
         ['X-band data link', 'x_band_link_enabled'],
@@ -333,11 +345,18 @@ for (const fullscreen of [false, true]) {
       await editing.getByRole('button', { name: 'Apply', exact: true }).click();
       const editAt = await confirmed(await edited);
       await visible('active-leg-timing', editAt, (remaining) =>
-        expect(
-          overview.getByLabel('Departure and arrival').locator('time')
-        ).toHaveAttribute('datetime', adjusted.toISOString(), {
-          timeout: remaining,
-        })
+        expect
+          .poll(
+            async () => {
+              const value = await overview
+                .getByLabel('Departure and arrival')
+                .locator('time')
+                .getAttribute('datetime');
+              return value ? new Date(value).toISOString() : null;
+            },
+            { timeout: remaining }
+          )
+          .toBe(adjusted.toISOString())
       );
       const changedPois = await request.get('/api/overview/upcoming-pois');
       const changed = await changedPois.json();
