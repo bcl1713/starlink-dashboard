@@ -1,6 +1,9 @@
 /** Diagnostic counters only: never retain history, DOM nodes or uptime arrays. */
 export function installOverviewHistoryProbe() {
   const state = {
+    lastWindow: 0,
+    lastEnd: 0,
+    lastStep: 0,
     historyParseCount: 0,
     historyParseMs: 0,
     historyParseMaxMs: 0,
@@ -24,6 +27,9 @@ export function installOverviewHistoryProbe() {
       Number.isFinite(value.window_seconds)
     ) {
       const elapsed = performance.now() - began;
+      state.lastWindow = value.window_seconds;
+      state.lastEnd = value.end_timestamp_seconds;
+      state.lastStep = value.step_seconds;
       state.historyParseCount++;
       state.historyParseMs += elapsed;
       state.historyParseMaxMs = Math.max(state.historyParseMaxMs, elapsed);

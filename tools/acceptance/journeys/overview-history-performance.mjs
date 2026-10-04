@@ -365,18 +365,31 @@ async function run(options) {
         );
         if (!response.ok())
           throw new Error(`window update ${response.status()}`);
-        await expect
-          .poll(async () =>
-            pages[0].evaluate(() =>
-              document.body.textContent.includes("refresh unavailable"),
-            ),
-          )
-          .toBe(false);
-        await sleep(options.configured_interval_seconds * 1000 + 500);
+        for (const page of pages) {
+          await expect
+            .poll(
+              () =>
+                page.evaluate(
+                  () => window.__overviewHistoryProbe.snapshot().lastWindow,
+                ),
+              { timeout: 20000 },
+            )
+            .toBe(window);
+          await expect
+            .poll(
+              () =>
+                page.evaluate(() =>
+                  document.body.textContent.includes("refresh unavailable"),
+                ),
+              { timeout: 20000 },
+            )
+            .toBe(false);
+        }
         event({ kind: "window_control", window_seconds: window });
       }
       const page = pages.at(-1),
         session = sessions.at(-1);
+      await page.bringToFront();
       await page
         .getByRole("button", { name: "Enter fullscreen overview" })
         .click();
@@ -403,13 +416,49 @@ async function run(options) {
       await sleep(1000);
       const background = await context.newPage();
       await background.goto("about:blank");
-      await sleep(1500);
+      await expect.poll(() => page.evaluate(() => document.hidden)).toBe(true);
+      const hiddenBefore = await page.evaluate(
+        () => window.__overviewHistoryProbe.snapshot().historyParseCount,
+      );
+      await sleep((options.configured_interval_seconds + 2) * 1000);
+      const hiddenAfter = await page.evaluate(
+        () => window.__overviewHistoryProbe.snapshot().historyParseCount,
+      );
+      if (hiddenAfter <= hiddenBefore)
+        throw new Error("background history polling stopped");
+      event({ kind: "background_polling", hiddenBefore, hiddenAfter });
       await page.bringToFront();
       await background.close();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
       await page.goto(`${options.origin}/configuration`);
       await page.goto(`${options.origin}/overview`);
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
+      await expect
+        .poll(
+          () =>
+            page.evaluate(
+              () => window.__overviewHistoryProbe.snapshot().lastWindow,
+            ),
+          { timeout: 20000 },
+        )
+        .toBe(options.window_seconds);
+      const axes = page.locator(".overview-metric-history__value-axis").first();
+      const surface = page.locator(".overview-metric-history__surface").first();
+      const firstAxis = await axes.boundingBox();
+      const before = await surface.evaluate(
+        (node) => getComputedStyle(node).transform,
+      );
+      await sleep(250);
+      const after = await surface.evaluate(
+        (node) => getComputedStyle(node).transform,
+      );
+      const lastAxis = await axes.boundingBox();
+      if (JSON.stringify(firstAxis) !== JSON.stringify(lastAxis))
+        throw new Error("stationary axis moved");
+      if (before === after)
+        throw new Error("visible history surface did not move");
+      event({ kind: "motion_control", before, after, axis: firstAxis });
+      metadata.behavior.motion = "passed";
       metadata.behavior.lifecycle = "passed";
       event({ kind: "lifecycle_controls", status: "passed" });
     }
@@ -469,6 +518,11 @@ async function run(options) {
     console.log(JSON.stringify({ stage: "complete", ...metadata.phase }));
     if (errors.length)
       throw new Error(`${errors.length} captured browser errors`);
+  } catch (error) {
+    metadata.phase = { status: "failed", final_acceptance: false };
+    metadata.errors = [...errors, error.message];
+    save();
+    throw error;
   } finally {
     measuring = false;
     await context.close();

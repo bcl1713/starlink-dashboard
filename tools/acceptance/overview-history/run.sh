@@ -57,17 +57,18 @@ compose=(docker compose -p starlink-224-history -f "$root/tools/acceptance/overv
 started=0
 cleanup() {
   result=$?
+  cleanup_result=0
   trap - EXIT
   if [[ $started == 1 ]]; then
     "${compose[@]}" logs --no-color > "$output/containers.log" 2>&1 || true
     backend=$("${compose[@]}" ps -q starlink-location)
     if [[ -n "$backend" ]]; then
-      docker cp "$backend:/data/overview-history-queries.jsonl" "$output/backend-queries.jsonl" 2>/dev/null || true
-      docker cp "$backend:/data/overview-history-reads.jsonl" "$output/backend-reads.jsonl" 2>/dev/null || true
+      docker cp "$backend:/data/overview-history-queries.jsonl" "$output/backend-queries.jsonl" 2>> "$output/cleanup.log" || result=1
+      docker cp "$backend:/data/overview-history-reads.jsonl" "$output/backend-reads.jsonl" 2>> "$output/cleanup.log" || result=1
     fi
-    "${compose[@]}" down --volumes > "$output/cleanup.log" 2>&1 || result=1
-    if [[ -n $(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history) || -n $(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history) ]]; then result=1; fi
-    python3 - <<'PY' >> "$output/cleanup.log" 2>&1 || result=1
+    "${compose[@]}" down --volumes > "$output/cleanup.log" 2>&1 || { result=1; cleanup_result=1; }
+    if [[ -n $(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history) || -n $(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history) ]]; then result=1; cleanup_result=1; fi
+    python3 - <<'PY' >> "$output/cleanup.log" 2>&1 || { result=1; cleanup_result=1; }
 import socket
 for port in (18224,15224,19224):
     with socket.socket() as listener:
@@ -75,7 +76,7 @@ for port in (18224,15224,19224):
 print('Owned project containers/volumes/listeners absent.')
 PY
   fi
-  python3 - "$output" "$result" <<'PYUPDATE'
+  python3 - "$output" "$cleanup_result" <<'PYUPDATE'
 import json
 import sys
 from pathlib import Path
