@@ -94,7 +94,7 @@ Literal['current', 'stale', 'expired']` and
 `select_contacts(contacts: Iterable[AdsbContact], settings: AdsbSettings,
 now_ms: float) -> list[AdsbContact]` are pure selection exports.
 
-- [ ] **Step 1: Write failing adapter/selection tests.** For response `now =
+- [x] **Step 1: Write failing adapter/selection tests.** For response `now =
   1791028800000`, `seen_pos = 2.5`, assert position time `1791028797500`.
   Use the same envelope twice at later acquisition times and assert unchanged
   observation time. `lastPosition` with `seen_pos = 40` uses its own age when
@@ -132,9 +132,9 @@ now_ms: float) -> list[AdsbContact]` are pure selection exports.
   assert position_state(contact, 1791028920000) == "expired"
   ```
 
-- [ ] **Step 2: Verify failure.** Run both new unit files with `-q`;
+- [x] **Step 2: Verify failure.** Run both new unit files with `-q`;
   expect missing adapter/selection exports.
-- [ ] **Step 3: Implement the adapter and selectors.** Use the verified schema
+- [x] **Step 3: Implement the adapter and selectors.** Use the verified schema
   linked from the main plan; only `/v2/mil` and `/v2/hex/{hex_code}` requests.
   Convert `now - seen_pos * 1000` once; validate against acquisition time and
   reject future observations. Omit bad records; fail bad envelopes. Validate
@@ -142,9 +142,9 @@ now_ms: float) -> list[AdsbContact]` are pure selection exports.
   Construct explicit units rather than passing untyped provider fields onward.
   Apply exclusions, inclusion, mode, military classification, then callsign OR;
   include position validity/expiry and normalized-hex deduplication throughout.
-- [ ] **Step 4: Verify success.** Run Task 2 files and Task 1 unit tests;
+- [x] **Step 4: Verify success.** Run Task 2 files and Task 1 unit tests;
   require PASS, including every boundary and malformed-data parameter.
-- [ ] **Step 5: Commit only Task 2 files.**
+- [x] **Step 5: Commit only Task 2 files.**
   `git commit -m "feat(adsb): normalize provider positions and global selection"`.
 
 ## Task 3: Shared acquisition service, cache and traffic API
