@@ -1,7 +1,9 @@
 # Mission clock lookup fork warning investigation
 
-**Date:** 2026-10-04  
-**Status:** COMPLETE  
+**Date:** 2026-10-04
+
+**Status:** COMPLETE
+
 **Issue:** [225](https://github.com/bcl1713/starlink-dashboard/issues/225)
 
 Mission activation's offline city lookup caused the multithreaded fork warnings
