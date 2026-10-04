@@ -79,7 +79,9 @@ class OfflineClockGeography:
         latitude: float,
         longitude: float,
     ) -> Mapping[str, str] | None:
-        locality = reverse_geocoder.search((latitude, longitude))[0]
+        # Each endpoint is a single lookup in a live, threaded application.
+        # The default mode forks workers and can inherit locked thread state.
+        locality = reverse_geocoder.search((latitude, longitude), mode=1)[0]
         raw_city = locality["name"]
         raw_country_code = locality["cc"]
         raw_admin1 = locality["admin1"]
