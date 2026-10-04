@@ -18,15 +18,20 @@ only after confirming no other imports. Add focused docs to
 **Interfaces:** Pass the existing `/api/status` result and
 `Boolean(statusError)` from `OverviewPage` into `OverviewMetricHistoryPanels`;
 derive `statusMetricReadout(...)` once per descriptor and
-`networkStatusState(...)` for one group header. Accept only a status payload
-whose collection timestamp is not older than the last accepted status; on a
-failed refresh, keep last-known readouts but pass `requestFailed=true` so none
-looks fresh. Chart history stays the accepted newest same-window bundle,
-independent of status; `error` refers only to history refresh. Print
-`Display: <selected minutes or seconds>` and `Rolling statistics: 5 minutes`
-distinctly; render a separate history-error message when applicable. Do not
-relocate the selector or change route/position stale state. `nowMs` from
-`useCurrentTime(1_000)` is only a clock for age text.
+`networkStatusState(...)` for one group header. Validate collection timestamps
+with `statusObservationAgeMs(status.timestamp, nowMs)` before advancing accepted
+status: allow up to 5,000 ms of future skew, clamp displayed negative age to
+zero, and reject malformed timestamps or greater skew without changing the last
+accepted timestamp. Then accept only a payload not older than the last accepted
+status. An invalid response renders unavailable rather than certifying retained
+data as current; on a failed refresh, keep last-known readouts but pass
+`requestFailed=true` so none looks fresh. Chart history stays the accepted
+newest same-window bundle, independent of status; `error` refers only to history
+refresh. Print `Display: <selected minutes or seconds>` and
+`Rolling statistics: 5 minutes` distinctly; render a separate history-error
+message when applicable. Do not relocate the selector or change route/position
+stale state. `nowMs` from `useCurrentTime(1_000)` is the viewer clock for
+timestamp validation, freshness classification and displayed age.
 
 - [ ] **Step 1: RED — component tests:** with the Task 3 status fixture, assert
       prominent `7 ms` and `Observed 00:01:45 UTC` at 109s; at 130s assert
@@ -42,8 +47,13 @@ relocate the selector or change route/position stale state. `nowMs` from
       `Current network metrics`/signal quality. In page contract assert
       `/api/status` still feeds aircraft/X-band while history still feeds all
       five panels and aircraft trail. Add independent out-of-order status and
-      history response tests: neither rewinds its own accepted data. Assert no
-      additional status/history subscriptions mount per panel.
+      history response tests: neither rewinds its own accepted data. Cover valid
+      → excessively future → valid and valid → malformed → valid sequences;
+      rejected timestamps must not prevent recovery or replace the retained
+      sample on a failed poll. Allow exactly 5,000 ms of future skew and reject
+      5,001 ms. New history must remain accepted during status rejection, while
+      older history cannot rewind on valid status recovery. Assert no additional
+      status/history subscriptions mount per panel.
 - [ ] **Step 2: Run** the following; expect new assertions to fail against old
       presentation:
 

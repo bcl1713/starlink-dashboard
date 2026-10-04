@@ -84,8 +84,9 @@ later layout is complete.
 
 ## Review Focus
 
-1. **Clock skew/future samples:** a status timestamp later than the viewer clock
-   must not produce a fresh readout; test future/invalid timestamps in Task 3.
+1. **Clock skew/future samples:** allow up to five seconds ahead of the viewer
+   clock and clamp displayed age to zero. Reject malformed timestamps and skew
+   above five seconds before advancing accepted status; test recovery in Task 5.
 2. **Missing live field versus measured zero:** test per-field source
    availability and partial status/Prometheus publication in Tasks 1–3.
 3. **Out-of-order refresh:** an older status payload or same-window history
@@ -157,8 +158,9 @@ networkStatusState(readouts: (MetricReadout | null)[]): NetworkState;
 `MetricReadout` contains finite `value`, `observedAtMs`, `ageMs`, and
 `state: 'fresh' | 'stale'`; `NetworkState` is
 `'fresh' | 'partial' | 'stale' | 'unavailable'`. Use the existing
-status-freshness threshold of **5,000 ms** (`ageMs >= 5000` is stale), reject
-future/invalid timestamps and non-finite values, require the matching
+status-freshness threshold of **10,000 ms** (`ageMs >= 10000` is stale), reject
+invalid timestamps, future skew above **5,000 ms**, and non-finite values; clamp
+accepted negative age to zero, require the matching
 `metric_availability[field] === true`, and treat a failed `/api/status` request
 as stale even with last-good data. No history-step value influences freshness.
 
@@ -167,13 +169,14 @@ as stale even with last-good data. No history-step value influences freshness.
       `1970-01-01T00:01:45.000Z`, all availability flags true, network values
       `latency_ms: 7`, `throughput_down_mbps: 0`, `throughput_up_mbps: 2`,
       `packet_loss_percent: 0.2`, and obstruction `{obstruction_percent: 3}`.
-      Assert each descriptor maps to the correct value; at `nowMs=110_000` every
-      readout is stale (5s boundary), while `nowMs=109_000` is fresh. Replace
+      Assert each descriptor maps to the correct value; at `nowMs=115_000` every
+      readout is stale (10s boundary), while `nowMs=114_999` is fresh. Replace
       one metric with `NaN` → null and group partial; mark a finite `0` field
       unavailable → null, while a verified zero remains fresh; remove all five →
       unavailable; omit the entire availability map (legacy response) → all
-      null; requestFailed true at 109s → all stale, never fresh. Future,
-      malformed and absent timestamps yield null, not a fresh value.
+      null; requestFailed true at 109s → all stale, never fresh. Skew of exactly
+      5,000 ms yields a fresh value with zero age; 5,001 ms ahead, malformed and
+      absent timestamps yield null, not a fresh value.
 - [ ] **Step 2: Run**
       `npm run test:unit -- src/pages/overview-metric-readout.test.ts` from
       `frontend/mission-planner`; expect failure because the module is absent.
@@ -186,9 +189,10 @@ to the matching Task 1 availability keys and nullable status fields. Type
 `StatusResponse`; require the matching flag to be exactly `true` and its field a
 finite number before projecting a current value. Missing map, unknown descriptor
 or non-finite value returns null, never a fallback zero. Parse
-`status.timestamp` as collection age, reject invalid/future timestamps, and mark
-a valid observation stale if `requestFailed` or age is at least 5,000 ms. Never
-derive freshness from a Prometheus history evaluation timestamp.
+`status.timestamp` as collection age, reject invalid timestamps or future skew
+above 5,000 ms, and mark a valid observation stale if `requestFailed` or age is
+at least 10,000 ms. Never derive freshness from a Prometheus history evaluation
+timestamp.
 
 Implement `networkStatusState` over all five projected readouts: all null →
 unavailable; all fresh → fresh; all non-null stale → stale; other mixes →
@@ -222,8 +226,8 @@ use obsolete `series.band` documentation.
       observed is cyan with 2–2.5px stroke, no point markers/cursor/legend and
       x-range stays dynamic. Reuse the existing
       `overview-metric-history.test.ts` fixture: revise existing aggregate
-      fixture expectations to match the provenance gap policy. Its aligned arrays
-      must become
+      fixture expectations to match the provenance gap policy. Its aligned
+      arrays must become
       `[[100,105,110,115],[5,null,null,8],[3,null,null,4],[4,null,null,6],[4,5,null,7]]`
       for timestamp/high/low/average/observed respectively. A long gap inserts a
       shared null timestamp and all four arrays have null there. Add a
