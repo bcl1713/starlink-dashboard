@@ -479,8 +479,18 @@ test.describe('Leg detail responsive layout', () => {
     await expect.poll(() => previewKaOutages[0]?.duration_seconds).toBe(5400);
     await expect(page.getByText('1.50', { exact: true })).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Save Changes' }).click();
+    // Capturing the PUT payload does not mean the response's alert has closed.
+    const saveConfirmation = page
+      .waitForEvent('dialog')
+      .then(async (dialog) => {
+        expect(dialog.type()).toBe('alert');
+        expect(dialog.message()).toBe('Changes saved successfully!');
+        await dialog.accept();
+      });
+    await Promise.all([
+      saveConfirmation,
+      page.getByRole('button', { name: 'Save Changes' }).click(),
+    ]);
     await expect.poll(() => savedKaOutages[0]?.duration_seconds).toBe(5400);
 
     await page.reload();
