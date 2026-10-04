@@ -1,0 +1,376 @@
+{
+  "reviewed_sha": "2cf4da323956ebfd061974d7f07eca9dd275329a",
+  "base_sha": "b2ea3341f78137c1409a618c8d8da5814a14dac2",
+  "fixtures": true,
+  "viewport": {
+    "width": 844,
+    "height": 390
+  },
+  "probe_result": "geometry assertion failed after actual local native entry/exit passed",
+  "bounds": {
+    "paused": {
+      "layout": "landscape",
+      "flow": "false",
+      "bounds": [
+        {
+          "selector": ".overview-map-stage",
+          "rect": {
+            "x": 12,
+            "y": 143.78125,
+            "width": 578.40625,
+            "height": 234.21875,
+            "top": 143.78125,
+            "right": 590.40625,
+            "bottom": 378,
+            "left": 12
+          },
+          "text": "X-BAND\n\nX-6\n\nPLANNED SATELLITE\n\nExplore map\nReset map view\n\nFollow paused \u00b7 Aircraft position unavailable\n\nOverview c16acf\n\nNo active route.\n\nPosition unavailable\n\nPlanned link unavailable\n\nLegend\n\nNo active mission leg.\n\nX-6\nGEP\nX-6",
+          "client": [578, 234],
+          "scroll": [578, 234]
+        },
+        {
+          "selector": ".overview-satellite-overlays",
+          "rect": {
+            "x": 418.40625,
+            "y": 155.78125,
+            "width": 160,
+            "height": 73.171875,
+            "top": 155.78125,
+            "right": 578.40625,
+            "bottom": 228.953125,
+            "left": 418.40625
+          },
+          "text": "X-BAND\n\nX-6\n\nPLANNED SATELLITE",
+          "client": [160, 73],
+          "scroll": [160, 73]
+        },
+        {
+          "selector": ".overview-map-controls",
+          "rect": {
+            "x": 250.40625,
+            "y": 155.78125,
+            "width": 160,
+            "height": 96,
+            "top": 155.78125,
+            "right": 410.40625,
+            "bottom": 251.78125,
+            "left": 250.40625
+          },
+          "text": "Explore map\nReset map view\n\nFollow paused \u00b7 Aircraft position unavailable",
+          "client": [160, 96],
+          "scroll": [160, 96]
+        },
+        {
+          "selector": ".overview-display-label",
+          "rect": {
+            "x": 24,
+            "y": 285.671875,
+            "width": 141.09375,
+            "height": 37,
+            "top": 285.671875,
+            "right": 165.09375,
+            "bottom": 322.671875,
+            "left": 24
+          },
+          "text": "Overview c16acf",
+          "client": [141, 37],
+          "scroll": [141, 37]
+        },
+        {
+          "selector": ".overview-fullscreen-controls",
+          "rect": {
+            "x": 173.09375,
+            "y": 282.171875,
+            "width": 44,
+            "height": 44,
+            "top": 282.171875,
+            "right": 217.09375,
+            "bottom": 326.171875,
+            "left": 173.09375
+          },
+          "text": "",
+          "client": [44, 44],
+          "scroll": [44, 44]
+        },
+        {
+          "selector": ".globe-legend",
+          "rect": {
+            "x": 24,
+            "y": 228.171875,
+            "width": 164.375,
+            "height": 46,
+            "top": 228.171875,
+            "right": 188.375,
+            "bottom": 274.171875,
+            "left": 24
+          },
+          "text": "Legend",
+          "client": [162, 44],
+          "scroll": [162, 44]
+        },
+        {
+          "selector": ".overview-arrival",
+          "rect": {
+            "x": 24,
+            "y": 333.203125,
+            "width": 554.40625,
+            "height": 32.796875,
+            "top": 333.203125,
+            "right": 578.40625,
+            "bottom": 366,
+            "left": 24
+          },
+          "text": "No active mission leg.",
+          "client": [552, 31],
+          "scroll": [552, 31]
+        }
+      ]
+    },
+    "rejected": {
+      "layout": "landscape",
+      "flow": "false",
+      "bounds": [
+        {
+          "selector": ".overview-map-stage",
+          "rect": {
+            "x": 12,
+            "y": 143.78125,
+            "width": 578.40625,
+            "height": 234.21875,
+            "top": 143.78125,
+            "right": 590.40625,
+            "bottom": 378,
+            "left": 12
+          },
+          "text": "X-BAND\n\nX-6\n\nPLANNED SATELLITE\n\nExplore map\nReset map view\n\nFollow paused \u00b7 Aircraft position unavailable\n\nOverview c16acf\n\nClick Fullscreen in the Overview window to finish.\n\nNo active route.\n\nPosition unavailable\n\nPlanned link unavailable\n\nLegend\n\nNo active mission leg.\n\nX-6\nGEP\nX-6",
+          "client": [578, 234],
+          "scroll": [578, 248]
+        },
+        {
+          "selector": ".overview-satellite-overlays",
+          "rect": {
+            "x": 418.40625,
+            "y": 155.78125,
+            "width": 160,
+            "height": 73.171875,
+            "top": 155.78125,
+            "right": 578.40625,
+            "bottom": 228.953125,
+            "left": 418.40625
+          },
+          "text": "X-BAND\n\nX-6\n\nPLANNED SATELLITE",
+          "client": [160, 73],
+          "scroll": [160, 73]
+        },
+        {
+          "selector": ".overview-map-controls",
+          "rect": {
+            "x": 250.40625,
+            "y": 155.78125,
+            "width": 160,
+            "height": 96,
+            "top": 155.78125,
+            "right": 410.40625,
+            "bottom": 251.78125,
+            "left": 250.40625
+          },
+          "text": "Explore map\nReset map view\n\nFollow paused \u00b7 Aircraft position unavailable",
+          "client": [160, 96],
+          "scroll": [160, 96]
+        },
+        {
+          "selector": ".overview-display-label",
+          "rect": {
+            "x": 24,
+            "y": 308.171875,
+            "width": 109.1875,
+            "height": 58,
+            "top": 308.171875,
+            "right": 133.1875,
+            "bottom": 366.171875,
+            "left": 24
+          },
+          "text": "Overview c16acf",
+          "client": [109, 58],
+          "scroll": [109, 58]
+        },
+        {
+          "selector": ".overview-fullscreen-controls",
+          "rect": {
+            "x": 141.1875,
+            "y": 282.171875,
+            "width": 269.21875,
+            "height": 110,
+            "top": 282.171875,
+            "right": 410.40625,
+            "bottom": 392.171875,
+            "left": 141.1875
+          },
+          "text": "Click Fullscreen in the Overview window to finish.",
+          "client": [269, 110],
+          "scroll": [269, 110]
+        },
+        {
+          "selector": ".overview-fullscreen-feedback",
+          "rect": {
+            "x": 141.1875,
+            "y": 334.171875,
+            "width": 269.21875,
+            "height": 58,
+            "top": 334.171875,
+            "right": 410.40625,
+            "bottom": 392.171875,
+            "left": 141.1875
+          },
+          "text": "Click Fullscreen in the Overview window to finish.",
+          "client": [269, 58],
+          "scroll": [269, 58]
+        },
+        {
+          "selector": ".globe-legend",
+          "rect": {
+            "x": 24,
+            "y": 228.171875,
+            "width": 164.375,
+            "height": 46,
+            "top": 228.171875,
+            "right": 188.375,
+            "bottom": 274.171875,
+            "left": 24
+          },
+          "text": "Legend",
+          "client": [162, 44],
+          "scroll": [162, 44]
+        },
+        {
+          "selector": ".overview-arrival",
+          "rect": {
+            "x": 24,
+            "y": 333.203125,
+            "width": 554.40625,
+            "height": 32.796875,
+            "top": 333.203125,
+            "right": 578.40625,
+            "bottom": 366,
+            "left": 24
+          },
+          "text": "No active mission leg.",
+          "client": [552, 31],
+          "scroll": [552, 31]
+        }
+      ]
+    }
+  },
+  "native_bounds": {
+    "layout": "landscape",
+    "flow": "false",
+    "bounds": [
+      {
+        "selector": ".overview-map-stage",
+        "rect": {
+          "x": 12,
+          "y": 78.78125,
+          "width": 578.40625,
+          "height": 299.21875,
+          "top": 78.78125,
+          "right": 590.40625,
+          "bottom": 378,
+          "left": 12
+        },
+        "text": "X-BAND\n\nX-6\n\nPLANNED SATELLITE\n\nExplore map\nReset map view\n\nFollow paused \u00b7 Aircraft position unavailable\n\nOverview c16acf\n\nNo active route.\n\nPosition unavailable\n\nPlanned link unavailable\n\nLegend\n\nNo active mission leg.\n\nX-6\nGEP\nX-6",
+        "client": [578, 299],
+        "scroll": [578, 299]
+      },
+      {
+        "selector": ".overview-satellite-overlays",
+        "rect": {
+          "x": 418.40625,
+          "y": 90.78125,
+          "width": 160,
+          "height": 73.171875,
+          "top": 90.78125,
+          "right": 578.40625,
+          "bottom": 163.953125,
+          "left": 418.40625
+        },
+        "text": "X-BAND\n\nX-6\n\nPLANNED SATELLITE",
+        "client": [160, 73],
+        "scroll": [160, 73]
+      },
+      {
+        "selector": ".overview-map-controls",
+        "rect": {
+          "x": 250.40625,
+          "y": 90.78125,
+          "width": 160,
+          "height": 96,
+          "top": 90.78125,
+          "right": 410.40625,
+          "bottom": 186.78125,
+          "left": 250.40625
+        },
+        "text": "Explore map\nReset map view\n\nFollow paused \u00b7 Aircraft position unavailable",
+        "client": [160, 96],
+        "scroll": [160, 96]
+      },
+      {
+        "selector": ".overview-display-label",
+        "rect": {
+          "x": 24,
+          "y": 217.171875,
+          "width": 141.09375,
+          "height": 37,
+          "top": 217.171875,
+          "right": 165.09375,
+          "bottom": 254.171875,
+          "left": 24
+        },
+        "text": "Overview c16acf",
+        "client": [141, 37],
+        "scroll": [141, 37]
+      },
+      {
+        "selector": ".globe-legend",
+        "rect": {
+          "x": 24,
+          "y": 163.171875,
+          "width": 164.375,
+          "height": 46,
+          "top": 163.171875,
+          "right": 188.375,
+          "bottom": 209.171875,
+          "left": 24
+        },
+        "text": "Legend",
+        "client": [162, 44],
+        "scroll": [162, 44]
+      },
+      {
+        "selector": ".overview-arrival",
+        "rect": {
+          "x": 24,
+          "y": 333.203125,
+          "width": 554.40625,
+          "height": 32.796875,
+          "top": 333.203125,
+          "right": 578.40625,
+          "bottom": 366,
+          "left": 24
+        },
+        "text": "No active mission leg.",
+        "client": [552, 31],
+        "scroll": [552, 31]
+      }
+    ]
+  },
+  "acceptance_manifest_verified": {
+    "artifacts": 100,
+    "mismatches": 0
+  },
+  "finding": "R1 Important: compact rejected-fullscreen fallback/identity overlap arrival and fallback extends below map stage",
+  "runtime": {
+    "node": "22.22.2",
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12"
+  }
+}
