@@ -18,17 +18,17 @@ with `orbital_traffic_enabled: bool = False` (TypeScript `boolean`). GET/PUT
 `/api/overview-links/settings` returns all three confirmed fields. Reuse query
 key `['overview-link-settings']` and its serialized mutation scope.
 
-- [ ] Write `test_orbital_default_and_partial_merge`: an old file with both
+- [x] Write `test_orbital_default_and_partial_merge`: an old file with both
       switches false reads orbital false; updating only orbital true leaves both
       false; then updating only X-band true leaves orbital true. Reject null,
       strings, unknown fields and empty updates; test interleaved viewer edits.
-- [ ] Write frontend tests `orbital_is_off_until_confirmed` and
+- [x] Write frontend tests `orbital_is_off_until_confirmed` and
       `late_get_cannot_restore_orbital_after_save`: malformed/missing orbital
       field is not a confirmed response; failed GET/PUT retains cached
       confirmation; canceled pre-save GET cannot overwrite a successful save.
       The switch label is exactly `Orbital traffic view`, disabled while
       unconfirmed or saving.
-- [ ] Run backend tests with
+- [x] Run backend tests with
 
   ```bash
   pytest tests/unit/test_overview_link_settings.py \
@@ -47,10 +47,10 @@ key `['overview-link-settings']` and its serialized mutation scope.
   from the frontend. Confirm the newly added assertions fail before
   implementation.
 
-- [ ] Add the field to the existing store, strict update schema, response
+- [x] Add the field to the existing store, strict update schema, response
       validation and Configuration controls. Continue atomic partial merge; do
       not migrate saved false values using truthiness or use optimistic toggles.
-- [ ] Rerun the same commands; require all tests passing and the original link
+- [x] Rerun the same commands; require all tests passing and the original link
       settings/API behavior intact. Commit
       `feat: persist experimental orbital view`.
 
@@ -103,7 +103,7 @@ only while leases exist; after the last lease, cancel the periodic refresh
 timer. A bounded in-flight download may finish after demand disappears and
 update the cache, but cannot reschedule.
 
-- [ ] Read CelesTrak format documentation and usage policy linked in the spec.
+- [x] Read CelesTrak format documentation and usage policy linked in the spec.
       Record access date and relevant limits in
       `docs/development/orbital-provider-policy.md`; do not repeatedly download
       the live GP feed or add its URL as a clickable documentation link. If
@@ -111,7 +111,7 @@ update the cache, but cannot reschedule.
       allowed delay and update the plan before execution continues. Use a
       20-second timeout and a 16 MiB streamed response limit; reject oversized
       bodies without cache loss.
-- [ ] Write `test_catalog_validation_and_stable_subset`: validate OMM epoch,
+- [x] Write `test_catalog_validation_and_stable_subset`: validate OMM epoch,
       numeric ID, finite fields, positive mean motion, eccentricity in `[0,1)`,
       inclination in `[0,180]`, supported SGP4 elements and perigee above Earth.
       Reject duplicate IDs as ambiguous, invalid objects individually, empty/bad
@@ -119,19 +119,19 @@ update the cache, but cannot reschedule.
       numeric-ID subset; shuffled identical elements retain generation.
       Generation hashes canonical accepted elements, independently of
       acquisition time.
-- [ ] Write `test_attempt_clock_survives_restart_and_failure`: 20 simultaneous
+- [x] Write `test_attempt_clock_survives_restart_and_failure`: 20 simultaneous
       viewers make one attempt; failure still blocks until 7,200 seconds; longer
       Retry-After wins; every non-200 HTTP response persists suspension; resume
       cannot bypass cooldown. Restart after timeout, cancellation or state-file
       corruption cannot storm provider. Persist last good data despite failed
       refresh or partial disk write.
-- [ ] Write `test_viewer_demand_and_diagnostics`: no viewer means zero upstream
+- [x] Write `test_viewer_demand_and_diagnostics`: no viewer means zero upstream
       calls/timers; status GET creates none; expired/released leases stop
       periodic work; renewed/acquired leases share cache. Epochs exactly 72
       hours old and ten minutes future are eligible; one millisecond outside is
       ineligible, even after fresh acquisition. Worker filtering will
       independently enforce expiry.
-- [ ] Run
+- [x] Run
 
   ```bash
   pytest tests/unit/test_orbital_catalog*.py \
@@ -142,12 +142,12 @@ update the cache, but cannot reschedule.
 
   confirm new tests fail.
 
-- [ ] Implement the model validator, atomic store, bounded httpx client,
+- [x] Implement the model validator, atomic store, bounded httpx client,
       coordinator and routes, registering app-owned state at startup and closing
       clients/timers at shutdown. HTTP diagnostics include eligible/rejected
       counts, generation, attempt/retry times, suspension, truncation and
       fallback reason.
-- [ ] Rerun tests to green with fake provider and fake time. Verify
+- [x] Rerun tests to green with fake provider and fake time. Verify
       registration, shutdown and cross-process lock behavior. Commit
       `feat: cache orbital catalog with demand and provider backoff`.
 
@@ -181,25 +181,25 @@ plan. `OrbitalWorkerClient` exposes `start(catalog)`, `setEndpoints(endpoints)`,
 carry mount generation; old generations must be ignored before allocation.
 Snapshot buffers are transferred, never detached while being displayed.
 
-- [ ] Verify a maintained satellite.js release supports OMM JSON via
+- [x] Verify a maintained satellite.js release supports OMM JSON via
       `json2satrec`, SGP4 propagation and GMST/Earth-fixed conversion in Vite
       module workers. Pin the verified release through npm and lockfile; record
       version/license in the provider note. Do not silently substitute TLE or an
       unverified propagator.
-- [ ] Write `omm_reference_coordinates`: independently sourced fixed OMM/UTC
+- [x] Write `omm_reference_coordinates`: independently sourced fixed OMM/UTC
       vector matches Earth-fixed coordinates to the reference tolerance recorded
       with the fixture; `[6378.137,0,0]` maps to `[2,0,0]`, `[0,6378.137,0]` to
       `[0,0,-2]`, `[0,0,6378.137]` to `[0,2,0]`. Preserve actual altitude, never
       a uniform shell. Reject failed/nonfinite/below-surface propagation and
       expired epochs individually; test poles, antimeridian and string IDs
       beyond 99,999.
-- [ ] Write `one_second_snapshots_and_backpressure`: one propagation per second,
+- [x] Write `one_second_snapshots_and_backpressure`: one propagation per second,
       no frame-triggered propagation; two retained snapshots and one in flight
       at most. A slow consumer drops superseded ticks, never queues missed work.
       Reordered catalogs keep ID mapping stable; generation change resets
       buffers. Late data/error after `dispose()` cannot emit callbacks or
       allocate resources.
-- [ ] Run
+- [x] Run
 
   ```bash
   npm run test:unit -- src/pages/orbital/coordinates.test.ts \
@@ -210,10 +210,10 @@ Snapshot buffers are transferred, never detached while being displayed.
 
   verify red assertions first.
 
-- [ ] Implement one worker-owned one-second clock, finite filtering and
+- [x] Implement one worker-owned one-second clock, finite filtering and
       transferable reusable buffers. Keep the UTC clock injectable for tests.
       Await buffer recycling before scheduling another update; refresh from
       current UTC after suspension, never integrate elapsed hidden-page
       intervals.
-- [ ] Rerun to green and run `npm run build` to verify worker bundling. Commit
+- [x] Rerun to green and run `npm run build` to verify worker bundling. Commit
       `feat: propagate orbital snapshots in a bounded worker`.
