@@ -60,14 +60,18 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     startedAt: number;
     respondedAt?: number;
     status?: number;
+    aborted?: boolean;
+    held?: boolean;
     body?: unknown;
     response?: unknown;
   }> = [];
+  const interruptions: string[] = [];
   const failures: Array<{ endpoint: string; method: string }> = [];
   const holds: Array<{
     endpoint: string;
     method: string;
     wait: Promise<void>;
+    pageContains?: string;
   }> = [];
   const mission = () => ({
     id: 'window-mission',
@@ -99,6 +103,13 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     requestLog.push(entry);
     if (method === 'GET')
       readCounts[endpoint] = (readCounts[endpoint] ?? 0) + 1;
+    const interrupted = method === 'GET' ? interruptions.indexOf(endpoint) : -1;
+    if (interrupted >= 0) {
+      interruptions.splice(interrupted, 1);
+      entry.aborted = true;
+      entry.respondedAt = Date.now();
+      return route.abort('failed');
+    }
     const failure = failures.findIndex(
       (control) => control.endpoint === endpoint && control.method === method
     );
@@ -252,9 +263,15 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     }
     json = structuredClone(json);
     const held = holds.findIndex(
-      (control) => control.endpoint === endpoint && control.method === method
+      (control) =>
+        control.endpoint === endpoint &&
+        control.method === method &&
+        (!control.pageContains || entry.page.includes(control.pageContains))
     );
-    if (held >= 0) await holds.splice(held, 1)[0].wait;
+    if (held >= 0) {
+      entry.held = true;
+      await holds.splice(held, 1)[0].wait;
+    }
     entry.status = 200;
     entry.response = json;
     entry.respondedAt = Date.now();
@@ -265,15 +282,18 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     marker,
     readCounts,
     requestLog,
+    interruptNext(endpoint: string) {
+      interruptions.push(endpoint);
+    },
     failNext(endpoint: string, method = 'GET') {
       failures.push({ endpoint, method });
     },
-    holdNext(endpoint: string, method = 'GET') {
+    holdNext(endpoint: string, method = 'GET', pageContains?: string) {
       let release!: () => void;
       const wait = new Promise<void>((resolve) => {
         release = resolve;
       });
-      holds.push({ endpoint, method, wait });
+      holds.push({ endpoint, method, wait, pageContains });
       return release;
     },
   };
@@ -341,4 +361,34 @@ export async function retainedHistoryTimes(page: Page) {
     }
     return [];
   });
+}
+
+/** Observe the panel's selected window and the raw bundle during a held read. */
+export async function historyWindowState(page: Page) {
+  return page
+    .getByRole('region', { name: 'Network latency history' })
+    .evaluate((section) => {
+      type Fiber = {
+        return: Fiber | null;
+        memoizedProps?: {
+          selectedWindowSeconds?: number;
+          history?: { window_seconds: number };
+        };
+      };
+      const key = Object.keys(section).find((item) =>
+        item.startsWith('__reactFiber$')
+      )!;
+      let fiber: Fiber | null = (section as unknown as Record<string, Fiber>)[
+        key
+      ];
+      while (fiber) {
+        if (fiber.memoizedProps?.selectedWindowSeconds !== undefined)
+          return {
+            selected: fiber.memoizedProps.selectedWindowSeconds,
+            bundle: fiber.memoizedProps.history?.window_seconds ?? null,
+          };
+        fiber = fiber.return;
+      }
+      throw new Error('History panel props unavailable');
+    });
 }

@@ -132,7 +132,7 @@ Review Focus, baseline, and execution requirements.
 - A failed PUT never writes submitted values to confirmed cache. Existing link
   mutation cancellation/serialization remains intact.
 
-- [ ] **Step 1: Add behavioral failing race tests.** Use deferred transport
+- [x] **Step 1: Add behavioral failing race tests.** Use deferred transport
       responses, not mocks of option shapes. Pin these outcomes:
 
   ```ts
@@ -151,7 +151,7 @@ Review Focus, baseline, and execution requirements.
   successful background read catching up without focus. A delayed old route-ID
   detail must not reactivate that route after the list selects another ID.
 
-- [ ] **Step 2: Run affected mutation/hook tests and observe the race
+- [x] **Step 2: Run affected mutation/hook tests and observe the race
       failures.** Run:
 
   ```sh
@@ -161,16 +161,16 @@ Review Focus, baseline, and execution requirements.
     src/hooks/api/useOverviewRefresh.test.tsx
   ```
 
-- [ ] **Step 3: Implement scoped cancellation and confirmed-response writes.**
+- [x] **Step 3: Implement scoped cancellation and confirmed-response writes.**
       Follow the existing link mutation pattern. Preserve the chart's existing
       `history.window_seconds === selectedWindowSeconds` check and retention
       behavior; adjust only where the new behavioral regression fails.
-- [ ] **Step 4: Verify races, outages, fullscreen continuity, and defaults.**
+- [x] **Step 4: Verify races, outages, fullscreen continuity, and defaults.**
       Run affected unit tests, link mutation tests, and the refresh browser
       suite. Browser cases include failed PUT, an interrupted GET followed by
       recovery, ordinary/fullscreen views, retained history, and changed
       timezone time text. Cross-window REST convergence is eventual; do not
       invent a global revision or claim endpoint-atomic switching. Run
       `./tools/verify frontend` at root.
-- [ ] **Step 5: Commit the confirmed-state deliverable.** Commit
+- [x] **Step 5: Commit the confirmed-state deliverable.** Commit
       `fix(overview): preserve confirmed settings through refresh races`.

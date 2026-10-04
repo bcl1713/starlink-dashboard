@@ -250,6 +250,105 @@ describe('Overview saved-state refresh', () => {
     }
   );
 
+  it.each(
+    cases.filter(({ name }) => name.includes('settings') || name === 'clocks')
+  )(
+    'retains confirmed $name during a failed refresh and catches up on the next background read',
+    async ({ use, endpoint }) => {
+      const { result } = renderHook(use, { wrapper });
+      await tick(1);
+      const confirmed = result.current.data;
+      revision = 2;
+      vi.mocked(apiClient.get).mockRejectedValueOnce(
+        new Error('temporary outage')
+      );
+      await tick(5001);
+      expect(
+        client.getQueryState(
+          endpoint.includes('clocks')
+            ? ['overview-clock-settings']
+            : endpoint.includes('history')
+              ? ['overview-history-settings']
+              : ['overview-link-settings']
+        )?.status
+      ).toBe('error');
+      expect(result.current.data).toEqual(confirmed);
+      await tick(5001);
+      expect(result.current.data).toEqual(payload(endpoint));
+      expect(result.current.data).not.toEqual(confirmed);
+      expect(focusManager.isFocused()).toBe(false);
+    }
+  );
+
+  it('cannot reactivate the old route when its delayed detail arrives after a list switch', async () => {
+    let releaseOld!: (value: { data: unknown }) => void;
+    const oldRead = new Promise<{ data: unknown }>((resolve) => {
+      releaseOld = resolve;
+    });
+    const routeA = {
+      id: 'route-a',
+      name: 'Old active route',
+      points: [{ latitude: 35, longitude: -100 }],
+    };
+    const routeB = {
+      id: 'route-b',
+      name: 'New active route',
+      points: [{ latitude: 42, longitude: -70 }],
+    };
+    let activeId = 'route-a';
+    let oldSignal: AbortSignal | undefined;
+    vi.mocked(apiClient.get).mockImplementation(async (endpoint, options) => {
+      if (endpoint === '/api/routes')
+        return {
+          data: {
+            routes: [
+              {
+                id: 'route-a',
+                name: routeA.name,
+                point_count: 1,
+                is_active: activeId === 'route-a',
+              },
+              {
+                id: 'route-b',
+                name: routeB.name,
+                point_count: 1,
+                is_active: activeId === 'route-b',
+              },
+            ],
+            total: 2,
+          },
+        };
+      if (endpoint === '/api/routes/route-a') {
+        oldSignal = options?.signal as AbortSignal;
+        return oldRead;
+      }
+      if (endpoint === '/api/routes/route-b') return { data: routeB };
+      throw new Error(`Unexpected route read ${endpoint}`);
+    });
+    const { result } = renderHook(
+      () => {
+        const list = useRoutes(true);
+        const active = list.data?.find((route) => route.is_active)?.id ?? '';
+        return { active, detail: useRoute(active, true) };
+      },
+      { wrapper }
+    );
+    await tick(5);
+    expect(result.current.active).toBe('route-a');
+    expect(oldSignal?.aborted).toBe(false);
+    activeId = 'route-b';
+    await tick(5005);
+    expect(result.current.active).toBe('route-b');
+    expect(result.current.detail.data).toEqual(routeB);
+    expect(oldSignal?.aborted).toBe(true);
+    await act(async () => {
+      releaseOld({ data: routeA });
+    });
+    await tick(1);
+    expect(result.current.active).toBe('route-b');
+    expect(result.current.detail.data).toEqual(routeB);
+  });
+
   it('StrictMode retains one live observer and no timer after cleanup', async () => {
     const strictWrapper = ({ children }: PropsWithChildren) =>
       createElement(
