@@ -121,7 +121,7 @@ update the cache, but cannot reschedule.
       acquisition time.
 - [ ] Write `test_attempt_clock_survives_restart_and_failure`: 20 simultaneous
       viewers make one attempt; failure still blocks until 7,200 seconds; longer
-      Retry-After wins; 403/404 persists suspension; resume cannot bypass
+      Retry-After wins; Every non-200 HTTP response persists suspension; resume cannot bypass
       cooldown. Restart after timeout, cancellation or state-file corruption
       cannot storm provider. Persist last good data despite failed refresh or
       partial disk write.
