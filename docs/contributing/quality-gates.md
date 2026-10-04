@@ -7,8 +7,11 @@ continuous integration. Run the commands from the repository root.
 
 - Use the project-supported Python 3.13 and `uv`; the Python tiers load
   `backend/starlink-location/requirements-dev.txt` through `uv run`.
-- Use Node 22.12.0. Install locked frontend dependencies with `npm ci` from
-  `frontend/mission-planner` before running frontend or static checks.
+- Use Node 22.22.2 or a newer Node 22 patch. CI uses 22.22.2, and the frontend
+  package declares that Node 22 range. Older patches do not satisfy the locked
+  jsdom dependency requirements. Install locked frontend dependencies with
+  `npm ci` from `frontend/mission-planner` before running frontend or static
+  checks.
 - Install the static executables `markdownlint-cli2` and `Lychee`, which are
   required for Markdown formatting and documentation-link validation.
 
