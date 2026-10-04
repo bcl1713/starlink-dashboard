@@ -114,7 +114,7 @@ Replay identical historical endpoints through real httpx, with two sequential
 readers. Save cold/warm timings, query bounds/count/points, diagnostic cProfile
 and JSON encoding time separately.
 
-- [ ] Write runner tests patterned on `test_overview_window_runner.py`: reject
+- [x] Write runner tests patterned on `test_overview_window_runner.py`: reject
       dirty inputs, occupied ports and existing project resources; preserve
       build metadata when browser output resets; retain logs and clean owned
       resources on interruption/failure. Profiler controls cover unchanged 2s/3s
@@ -122,23 +122,23 @@ and JSON encoding time separately.
       second same-interval incremental read. Seed tests assert 4201 observations
       per metric, sorted timestamps, finite zeros/spikes and reproducible
       relative values.
-- [ ] Run new tests and record failures before implementation.
-- [ ] Implement seed/CLI/probe/runner. Project `starlink-224-history`, loopback
+- [x] Run new tests and record failures before implementation.
+- [x] Implement seed/CLI/probe/runner. Project `starlink-224-history`, loopback
       ports 18224/15224/19224, task-only named volumes, clean tracked SHA
       archive, separate frontend poll-1/poll-5 images and evidence outside
       source. `run.sh --check` is nonmutating preflight. Refuse existing project
       resources.
-- [ ] Build production images without Dockerfile changes. Mount archived
+- [x] Build production images without Dockerfile changes. Mount archived
       acceptance probe code only for instrumented controls; override only the
       test entrypoint/history URL as needed. Preserve Nginx and scrape/rule
       config. Use documented 3h test retention so preload plus soak cannot
       expire history. Check seed labels do not create a second usable metric
       source.
-- [ ] Run tests, validate seed with promtool and smoke populated cold history
+- [x] Run tests, validate seed with promtool and smoke populated cold history
       through Nginx for all selected windows. Label full/fixed-grid as an
       uncached computation control, not the historical moving-grid/browser
       build.
-- [ ] Replay 300/900/1800/3600/3601-second windows at identical endpoints for
+- [x] Replay 300/900/1800/3600/3601-second windows at identical endpoints for
       all three modes. Exercise two sequential/concurrent readers, scheduled
       full reconciliation and failure/recovery. Keep cProfile diagnostics
       separate from uninstrumented acceptance distributions. Commit after
