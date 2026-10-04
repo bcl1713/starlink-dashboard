@@ -516,3 +516,21 @@
   :is(.overview-globe, .overview-globe canvas) {
   touch-action: none !important;
 }
+
+/* Share the compact map's upper band instead of stacking below the satellite. */
+.overview-page[data-layout='landscape'] .overview-satellite-overlays {
+  grid-row: 1 / span 2;
+}
+.overview-page[data-layout='landscape'] .overview-map-controls {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  width: 160px;
+}
+.overview-page[data-layout='landscape'] .overview-map-overlays {
+  max-width: calc(100% - 168px);
+}
+.overview-page[data-layout='landscape'] .overview-display-controls {
+  flex-direction: row;
+  align-items: center;
+}

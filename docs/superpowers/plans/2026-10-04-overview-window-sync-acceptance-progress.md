@@ -152,3 +152,49 @@ handoff independent review only after completion, otherwise hand off Task 5.
 Inherited PR/review-fix/merge authorization remains subject to separate fresh
 review, acceptance, branch protection and exact-head CI; no deploy, main
 promotion, force-push, protection bypass or shared-resource deletion.
+
+## Task 5 continuation — landscape regression fix
+
+Started at required `b9df60295fa602d0eb3c2d4660e965f83bc7f33b`; clean
+worktree and matching remote feature SHA verified. Remote `dev` remains
+`b2ea3341f78137c1409a618c8d8da5814a14dac2`. Original checkout, worktrees,
+contracts, rulings and all previous evidence remain preserved.
+
+Only product change: landscape placement in `OverviewOverlayLayout.css`.
+Original width844 and landscape-gap tests reproduced **two failures**. Browser
+measurements showed the bounded shell at844×325, controls170.17px tall and
+arrival80.69px tall. The layout correctly rejected the oversized upper band;
+stacked layout scrolled the page140px while the metrics rail stayed at0.
+
+Ruling: place map controls beside the legend, display identity/fullscreen in one
+row, and the satellite across both rows in landscape only. Preserve control
+sizes, font sizes, fit/flow guards, pointer passthrough and all original test
+expectations. Cost if wrong: compact long-content/follow/native behavior needs
+further regression verification. No REST/query/channel/fullscreen logic changes.
+
+RED **two failed** → GREEN **two passed (58.5s)**. A separate real-browser
+measurement check passed (**one test,18.7s**): all controls and arrival panels
+were contained, text fit, and panels did not overlap. Its screenshot was visually
+inspected; diagnostic source is preserved locally and removed from the product
+tree. Setup-only sandbox/wrong-working-directory errors are separate evidence.
+
+Before this fix commit, canonical frontend **90 files/788 tests and production
+build passed**; backend **1422 passed/20 skipped**, two existing Cartopy warnings
+(118.97s); static passed in tracked uv dev requirements. Required unchanged
+**eight-file browser lane:53 passed (12.0m)**. CSS Prettier/whitespace checks
+passed. Existing chunk advisory and fixture preview proxy diagnostics remain.
+
+Continuation evidence is environment-local under:
+
+```text
+.superpowers/sdd/2026-10-04-overview-window-sync-acceptance/evidence/task5-resume/
+```
+
+Logs: `scroll-red.log`, `diagnostic.log`, `scroll-green.log`,
+`compact-verified.log`, `regressions-precommit.log`,
+`frontend-precommit.log`, `backend-precommit.log`, `static-precommit.log`.
+Prior Task5 evidence, including unchanged-base failures, remains untouched.
+
+The regression gate is resolved on these inputs. Task5 remains incomplete until
+the committed candidate's real production journey, final checks and cleanup are
+verified and recorded. Step7/independent review has not begun.
