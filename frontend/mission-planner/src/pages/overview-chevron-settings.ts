@@ -4,14 +4,15 @@ export interface ChevronSettings {
   trafficSizePixels: number;
   coreWhiteness: number;
   coreWidthPixels: number;
-  glowWidthPixels: number;
+  /** Glow width is each aircraft's CSS-pixel size divided by this value. */
+  glowWidthDivisor: number;
   glowStrength: number;
 }
 export const DEFAULT_CHEVRON_SETTINGS: Readonly<ChevronSettings> = {
-  ownSizePixels: 12,
+  ownSizePixels: 15,
   trafficSizePixels: 10,
-  coreWhiteness: 0.85,
-  coreWidthPixels: 0.7,
-  glowWidthPixels: 1.3,
-  glowStrength: 0.45,
+  coreWhiteness: 0.45,
+  coreWidthPixels: 0.4,
+  glowWidthDivisor: 3,
+  glowStrength: 0.6,
 };

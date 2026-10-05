@@ -46,12 +46,12 @@ const controls: {
     unit: 'px',
   },
   {
-    key: 'glowWidthPixels',
-    label: 'Glow width',
-    min: 0.2,
-    max: 5,
+    key: 'glowWidthDivisor',
+    label: 'Glow width divisor',
+    min: 1,
+    max: 20,
     step: 0.1,
-    unit: 'px',
+    unit: '',
   },
   {
     key: 'glowStrength',
@@ -105,6 +105,17 @@ export function OverviewMarkerDebug({
               onChange({ ...settings, [key]: Number(event.target.value) });
             }}
           />
+          {key === 'glowWidthDivisor' && (
+            <small>
+              Aircraft size ÷ divisor: ours{' '}
+              {(settings.ownSizePixels / settings.glowWidthDivisor).toFixed(2)}{' '}
+              px, others{' '}
+              {(settings.trafficSizePixels / settings.glowWidthDivisor).toFixed(
+                2
+              )}{' '}
+              px.
+            </small>
+          )}
         </label>
       ))}
       <div className="overview-marker-debug-actions">

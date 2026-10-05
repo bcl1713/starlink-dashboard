@@ -382,7 +382,8 @@ export function updateStarMarkerChevronStyle(
     0.001,
     settings.coreWidthPixels * normalizedPixel
   );
-  const width = Math.max(0.001, settings.glowWidthPixels * normalizedPixel);
+  const glowWidthPixels = sizePixels / Math.max(1, settings.glowWidthDivisor);
+  const width = Math.max(0.001, glowWidthPixels * normalizedPixel);
   resources.haloMaterial.uniforms.uGlowWidth.value = width;
   resources.haloMaterial.uniforms.uExtent.value = 1 + 3 * width;
   resources.haloMaterial.uniforms.uStrength.value =

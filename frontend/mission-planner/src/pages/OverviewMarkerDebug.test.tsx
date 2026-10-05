@@ -19,15 +19,15 @@ it('lets the user tune, copy and reset the actual marker settings', async () => 
   fireEvent.change(screen.getByLabelText('Our aircraft size'), {
     target: { value: '9' },
   });
-  fireEvent.change(screen.getByLabelText('Glow width'), {
-    target: { value: '2.4' },
+  fireEvent.change(screen.getByLabelText('Glow width divisor'), {
+    target: { value: '4' },
   });
   const values = screen.getByLabelText(
     'Marker settings to share'
   ) as HTMLTextAreaElement;
   expect(JSON.parse(values.value)).toMatchObject({
     ownSizePixels: 9,
-    glowWidthPixels: 2.4,
+    glowWidthDivisor: 4,
   });
   fireEvent.click(screen.getByRole('button', { name: 'Copy settings' }));
   expect(writeText).toHaveBeenCalledWith(values.value);

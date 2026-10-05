@@ -260,7 +260,7 @@ test('shared chevrons stay compact at globe and flight zoom with white-blue own 
     const heights = await measure();
     expect(heights.filter((h) => h.own)).toHaveLength(1);
     expect(heights.filter((h) => !h.own)).toHaveLength(3);
-    for (const h of heights) expect(h.pixels).toBeCloseTo(h.own ? 12 : 10, 2);
+    for (const h of heights) expect(h.pixels).toBeCloseTo(h.own ? 15 : 10, 2);
   };
   await check();
   await page.screenshot({ path: info.outputPath('chevrons-flight-view.png') });
@@ -395,7 +395,8 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
       for (let y = 0; y < side; y++)
         for (let x = 0; x < side; x++) {
           const distance = Math.hypot(x - radius, y - radius) / ratio;
-          if (distance < (blue ? 8 : 7) || distance > 11) continue;
+          if (distance < (blue ? 11 : 7) || distance > (blue ? 17 : 13))
+            continue;
           const i = (y * side + x) * 4,
             r = pixels[i],
             b = pixels[i + 2];
@@ -631,32 +632,28 @@ test('opt-in marker controls change both live renderers, reset and remain scroll
     });
   await change('Our aircraft size', '9');
   await change('Other aircraft size', '8');
-  await change('Glow width', '2.4');
+  await change('Glow width divisor', '4');
   await change('Glow strength', '0.7');
-  await expect
-    .poll(rendered)
-    .toEqual({
-      own: [9, 533, 0.7],
-      traffic: [8, 600, 0.455],
-      sharedMatrix: true,
-    });
+  await expect.poll(rendered).toEqual({
+    own: [9, 500, 0.7],
+    traffic: [8, 500, 0.455],
+    sharedMatrix: true,
+  });
   expect(
     JSON.parse(await page.getByLabel('Marker settings to share').inputValue())
   ).toMatchObject({
     ownSizePixels: 9,
     trafficSizePixels: 8,
-    glowWidthPixels: 2.4,
+    glowWidthDivisor: 4,
     glowStrength: 0.7,
   });
   await page.screenshot({ path: info.outputPath('live-marker-controls.png') });
   await page.getByRole('button', { name: 'Reset defaults' }).click();
-  await expect
-    .poll(rendered)
-    .toEqual({
-      own: [12, 217, 0.45],
-      traffic: [10, 260, 0.2925],
-      sharedMatrix: true,
-    });
+  await expect.poll(rendered).toEqual({
+    own: [15, 667, 0.6],
+    traffic: [10, 667, 0.39],
+    sharedMatrix: true,
+  });
   await page.setViewportSize({ width: 844, height: 390 });
   const panel = page.locator('.overview-marker-debug');
   await expect

@@ -34,13 +34,13 @@ it('keeps a chevron at the same pixel height when the camera zooms and disposes 
     await view.advanceFrames(1, 0.1);
   });
   expect(meshes).toHaveLength(2);
-  expect(projectedHeight()).toBeCloseTo(12, 4);
+  expect(projectedHeight()).toBeCloseTo(15, 4);
   camera.position.z = 3;
   camera.updateMatrixWorld();
   await act(async () => {
     await view.advanceFrames(1, 0.1);
   });
-  expect(projectedHeight()).toBeCloseTo(12, 4);
+  expect(projectedHeight()).toBeCloseTo(15, 4);
   const disposeGeometry = vi.spyOn(marker.geometry, 'dispose');
   const disposeMaterial = vi.spyOn(
     marker.material as THREE.Material,
@@ -124,3 +124,49 @@ it.each([
     await view.unmount();
   }
 );
+
+it('scales glow width with aircraft size when tuning the chevron', async () => {
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0, 10);
+  camera.lookAt(0, 0, 0);
+  const props = {
+    position: [0, 0, 2] as [number, number, number],
+    color: '#72b7ff',
+    size: 0.15,
+    shape: 'chevron' as const,
+  };
+  const view = await create(<StarMarker {...props} chevronSizePixels={15} />, {
+    camera,
+    width: 1000,
+    height: 1000,
+  });
+  const marker = view.scene.findAllByType('Mesh')[0].instance as THREE.Mesh;
+  const halo = marker.children[0] as THREE.Mesh;
+  const glowWidth = () => {
+    marker.updateMatrixWorld();
+    const a = new THREE.Vector3(0, 1, 0)
+      .applyMatrix4(marker.matrixWorld)
+      .project(camera);
+    const b = new THREE.Vector3(0, -1, 0)
+      .applyMatrix4(marker.matrixWorld)
+      .project(camera);
+    const height = Math.abs(a.y - b.y) * 500;
+    return (
+      ((halo.material as THREE.ShaderMaterial).uniforms.uGlowWidth.value *
+        height) /
+      2
+    );
+  };
+  await act(async () => {
+    await view.advanceFrames(1, 0.1);
+  });
+  expect(glowWidth()).toBeCloseTo(5, 5);
+  const geometry = halo.geometry;
+  await view.update(<StarMarker {...props} chevronSizePixels={9} />);
+  await act(async () => {
+    await view.advanceFrames(1, 0.1);
+  });
+  expect(glowWidth()).toBeCloseTo(3, 5);
+  expect(halo.geometry).toBe(geometry);
+  await view.unmount();
+});

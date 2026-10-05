@@ -28,8 +28,10 @@ chevron's edges, with overlapping halos capped instead of adding brightness.
 
 For live visual experiments, open `/overview?markerDebug=1`. The collapsible
 **Aircraft marker tuning** panel controls own and other aircraft sizes, core
-brightness, colored edge width, glow width and glow strength. **Copy settings**
-exports the numbers for review; the text box also supports manual copying on
-browsers without clipboard access. **Reset defaults** restores the code's
-values. These experimental settings last until the Overview page reloads and
-are not shared with other viewers.
+brightness, colored edge width, glow width divisor and glow strength. Glow width
+is each aircraft's size divided by the divisor (default **3**): **5 px** for own
+aircraft and about **3.33 px** for traffic. **Copy settings** exports the
+numbers for review; the text box also supports manual copying on browsers
+without clipboard access. **Reset defaults** restores the code's values. These
+experimental settings last until the Overview page reloads and are not shared
+with other viewers.
