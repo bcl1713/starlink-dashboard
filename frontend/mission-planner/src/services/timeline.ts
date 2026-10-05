@@ -23,6 +23,14 @@ export interface RouteSample {
   coverage?: string[];
 }
 
+export interface KaCoverageEvent {
+  timestamp: string;
+  event_type: string;
+  reason: string;
+  coverage: string[];
+  satellite_id?: string | null;
+}
+
 export interface Timeline {
   mission_leg_id: string;
   created_at: string;
@@ -30,6 +38,7 @@ export interface Timeline {
   advisories?: unknown[];
   statistics?: Record<string, unknown>;
   samples?: RouteSample[] | null;
+  coverage_events?: KaCoverageEvent[];
   route_basis?: 'planned' | 'derived_estimate';
   derived_route_estimate?: DerivedRouteEstimate | null;
 }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { Timeline } from '../../services/timeline';
 import { TimelineTable } from './TimelineTable';
+import { CoverageSequence } from './CoverageSequence';
+import { formatDuration } from './formatting';
 
 interface TimelinePreviewSectionProps {
   timeline: Timeline | null;
@@ -76,6 +78,7 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
             </div>
           )}
 
+          {!isCalculating && <CoverageSequence timeline={timeline} />}
           <TimelineTable timeline={timeline} isLoading={isCalculating} />
 
           {timeline?.statistics && (
@@ -123,7 +126,7 @@ function TimelineMetric({
         className="text-lg font-semibold text-foreground"
         style={tone ? { color: `var(--status-${tone})` } : undefined}
       >
-        {typeof value === 'number' ? `${Math.round(value / 60)}m` : '0m'}
+        {typeof value === 'number' ? formatDuration(value) : '0m'}
       </div>
     </div>
   );

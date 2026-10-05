@@ -91,3 +91,19 @@ single failed attempt keeps bounded diagnostic evidence without retrying.
 ```bash
 npx playwright test
 ```
+
+### Dateline timeline regression
+
+The dateline planning test calculates its timeline from an entirely fabricated
+KML route and fake coverage boundaries using the backend Python dependencies.
+It intercepts HTTP delivery to the browser; it does not use operational coverage
+polygons. Install the backend development requirements in a virtual environment,
+then select that interpreter when running the test from this directory:
+
+```bash
+STARLINK_TEST_PYTHON=/path/to/backend-venv/bin/python \
+  npx playwright test tests/e2e/dateline-timeline.spec.ts --project=chromium
+```
+
+The interpreter defaults to `python3`. Listing tests with `--list` does not
+require backend dependencies.

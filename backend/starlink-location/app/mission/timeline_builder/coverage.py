@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.mission.timeline_builder.calculator import RouteTemporalProjector
 
+from app.mission.models import KaCoverageEvent
 from app.mission.timeline_builder.utils import pick_satellite
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class CoverageAnalysisResult:
 
     gaps: list[KaCoverageGap]
     swaps: list[KaCoverageSwap]
+    coverage_events: list[KaCoverageEvent] = field(default_factory=list)
 
 
 def analyze_ka_coverage(
@@ -70,6 +72,15 @@ def analyze_ka_coverage(
 
     gap_state: KaCoverageGap | None = None
     overlap_state: dict | None = None
+    coverage_events = [
+        KaCoverageEvent(
+            timestamp=samples[0].timestamp,
+            event_type="starting",
+            reason="Starting Ka coverage: "
+            + (", ".join(sorted(samples[0].coverage)) or "unavailable"),
+            coverage=sorted(samples[0].coverage),
+        )
+    ]
 
     if not samples[0].coverage:
         gap_state = KaCoverageGap(
@@ -88,31 +99,47 @@ def analyze_ka_coverage(
         if prev_set == curr_set:
             continue
 
+        boundary = _interpolate_sample(projector, prev_sample, curr_sample)
+        for event_type, satellites in (
+            ("entry", curr_set - prev_set),
+            ("exit", prev_set - curr_set),
+        ):
+            for satellite in sorted(satellites):
+                coverage_events.append(
+                    KaCoverageEvent(
+                        timestamp=boundary.timestamp,
+                        event_type=event_type,
+                        satellite_id=satellite,
+                        coverage=sorted(curr_set),
+                        reason=f"{satellite} footprint {event_type}",
+                    )
+                )
+        if not curr_set or not prev_set:
+            event_type = "restored" if curr_set else "lost"
+            coverage_events.append(
+                KaCoverageEvent(
+                    timestamp=boundary.timestamp,
+                    event_type=event_type,
+                    coverage=sorted(curr_set),
+                    reason=f"Ka coverage {event_type}",
+                )
+            )
+
         # Gap start
         if not curr_set and prev_set and gap_state is None:
-            boundary = _interpolate_sample(projector, prev_sample, curr_sample)
             gap_state = KaCoverageGap(
                 start=boundary,
                 end=None,
                 lost_satellite=pick_satellite(prev_set),
                 regained_satellite=None,
             )
+            overlap_state = None
             continue
 
         # Gap end
         if gap_state and curr_set:
-            boundary = _interpolate_sample(projector, prev_sample, curr_sample)
             gap_state.end = boundary
             gap_state.regained_satellite = pick_satellite(curr_set)
-            is_same_satellite = (
-                gap_state.lost_satellite
-                and gap_state.lost_satellite == gap_state.regained_satellite
-            )
-            if is_same_satellite and _looks_like_idl_gap(
-                gap_state.start, gap_state.end
-            ):
-                gap_state = None
-                continue
             gaps.append(gap_state)
             gap_state = None
 
@@ -122,7 +149,7 @@ def analyze_ka_coverage(
                 overlap_state = {
                     "from": pick_satellite(prev_set),
                     "to": pick_satellite(curr_set - prev_set),
-                    "start": _interpolate_sample(projector, prev_sample, curr_sample),
+                    "start": boundary,
                 }
                 continue
             elif overlap_state:
@@ -130,7 +157,7 @@ def analyze_ka_coverage(
                 continue
 
         if overlap_state and len(curr_set) == 1 and curr_set == {overlap_state["to"]}:
-            end_boundary = _interpolate_sample(projector, prev_sample, curr_sample)
+            end_boundary = boundary
             start_boundary = overlap_state.get("start", prev_sample)
             midpoint_distance = (
                 start_boundary.distance_meters + end_boundary.distance_meters
@@ -143,12 +170,26 @@ def analyze_ka_coverage(
                     to_satellite=overlap_state["to"],
                 )
             )
+            coverage_events.append(
+                KaCoverageEvent(
+                    timestamp=midpoint.timestamp,
+                    event_type="handoff",
+                    coverage=sorted({overlap_state["from"], overlap_state["to"]}),
+                    reason=f"Recommended handoff {overlap_state['from']} → {overlap_state['to']}",
+                )
+            )
+            overlap_state = None
+        elif overlap_state and len(curr_set) < 2:
             overlap_state = None
 
     if gap_state:
         gaps.append(gap_state)
 
-    return CoverageAnalysisResult(gaps=gaps, swaps=swaps)
+    return CoverageAnalysisResult(
+        gaps=gaps,
+        swaps=swaps,
+        coverage_events=sorted(coverage_events, key=lambda event: event.timestamp),
+    )
 
 
 def _interpolate_sample(
@@ -161,13 +202,3 @@ def _interpolate_sample(
     sample = projector.sample_at_distance(mid)
     sample.coverage = set()
     return sample
-
-
-def _looks_like_idl_gap(
-    start_sample: RouteSample | None, end_sample: RouteSample | None
-) -> bool:
-    """Check if gap appears to be due to International Date Line crossing."""
-    if not start_sample or not end_sample:
-        return False
-    lon_diff = abs(start_sample.longitude - end_sample.longitude)
-    return lon_diff > 300.0

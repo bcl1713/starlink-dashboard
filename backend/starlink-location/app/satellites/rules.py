@@ -70,7 +70,7 @@ class ConstraintConfig:
     takeoff_buffer_minutes: int = 15  # Pre-departure blackout
     landing_buffer_minutes: int = 15  # Post-arrival blackout
 
-    elevation_min_degrees: float = 0.0  # Minimum elevation for visibility
+    elevation_min_degrees: float = 10.0  # Operational X-band planning minimum
 
 
 class RuleEngine:

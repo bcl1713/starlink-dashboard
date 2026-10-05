@@ -2,9 +2,16 @@
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from app.mission.call_availability import normalize_call_availability_timeline
+from app.mission.derived_route import build_derived_route_estimate
 from app.mission.models import (
     AARWindow,
+    ManualAARTrack,
+    ManualAARTrackPoint,
+    ManualRouteSplice,
+    Mission,
     MissionLeg,
     MissionLegTimeline,
     TimelineSegment,
@@ -14,12 +21,123 @@ from app.mission.models import (
     TransportState,
 )
 from app.mission.state import TransportInterval
+from app.mission.storage import load_mission_v2, save_mission_v2
 from app.mission.timeline import build_timeline_segments
 from app.mission.timeline_builder.aar import parse_elapsed_offset, resolve_aar_windows
 from app.mission.timeline_builder.stats import annotate_aar_markers
+from app.mission.timeline_service import build_mission_timeline
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.satellites.rules import EventType, MissionEvent
+from app.services.route_manager import RouteManager
 
 BASE = datetime(2025, 10, 27, 12, 0, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize("include_samples", [False, True], ids=["saved", "preview"])
+@pytest.mark.parametrize("mode", ["normal", "aar", "derived"])
+def test_low_x_elevation_is_displayed_in_preview_and_recomputed_timeline(
+    monkeypatch, tmp_path, isolate_mission_storage, include_samples, mode
+):
+    """All planning paths display the 10° constraint using invented real geometry."""
+    start = datetime(2035, 3, 1, tzinfo=timezone.utc)
+    end = start + timedelta(hours=1)
+    route = ParsedRoute(
+        metadata=RouteMetadata(
+            name="Invented low-elevation route", file_path="invented.kml", point_count=2
+        ),
+        points=[
+            RoutePoint(
+                latitude=latitude,
+                longitude=0.0,
+                altitude=0.0,
+                sequence=sequence,
+                expected_arrival_time=timestamp,
+            )
+            for sequence, latitude, timestamp in [(0, 0.0, start), (1, 1.0, end)]
+        ],
+        timing_profile=RouteTimingProfile(
+            departure_time=start, arrival_time=end, has_timing_data=True
+        ),
+    )
+    route_manager = RouteManager(routes_dir=tmp_path / "routes")
+    route_manager.add_route("invented-route", route)
+    catalog = SatelliteCatalog()
+    catalog.add_satellite(Satellite("X-invented", "X", longitude=72.0))
+    monkeypatch.setattr("app.satellites.catalog._catalog", catalog)
+    # This X-only fixture excludes file-based Ka coverage.
+    monkeypatch.setattr(
+        "app.mission.timeline_service._get_default_coverage_sampler", lambda: None
+    )
+    transports = TransportConfig(initial_x_satellite_id="X-invented")
+    if mode == "aar":
+        transports.aar_windows = [
+            AARWindow(
+                id="invented-aar",
+                start_waypoint_name="IN",
+                end_waypoint_name="OUT",
+                override_start_time=start + timedelta(minutes=20),
+                override_end_time=start + timedelta(minutes=40),
+            )
+        ]
+    elif mode == "derived":
+        track = ManualAARTrack(
+            id="invented-track",
+            name="Invented deviation",
+            points=[
+                ManualAARTrackPoint(latitude=0.3, longitude=0.01),
+                ManualAARTrackPoint(latitude=0.7, longitude=0.01),
+            ],
+        )
+        transports.manual_aar_tracks = [track]
+        transports.manual_route_splice = ManualRouteSplice(
+            enabled_track_id=track.id, speed_knots=100.0
+        )
+        assert (
+            build_derived_route_estimate(
+                route, track, transports.manual_route_splice
+            ).available
+            is True
+        )
+    leg = MissionLeg(
+        id="invented-leg",
+        name="Invented leg",
+        route_id="invented-route",
+        transports=transports,
+    )
+
+    timeline, _ = build_mission_timeline(
+        leg, route_manager, include_samples=include_samples
+    )
+    save_mission_v2(Mission(id="invented-mission", name="Invented mission", legs=[leg]))
+    reloaded = load_mission_v2("invented-mission")
+    assert reloaded is not None
+    recomputed, _ = build_mission_timeline(reloaded.legs[0], route_manager)
+    for result in [timeline, recomputed]:
+        constrained = [
+            segment
+            for segment in result.segments
+            if any("elevation" in reason for reason in segment.reasons)
+        ]
+        assert constrained
+        assert all(
+            segment.x_state == TransportState.DEGRADED for segment in constrained
+        )
+        reasons = [reason for segment in constrained for reason in segment.reasons]
+        assert any("elevation 9.4° < min 10.0°" in reason for reason in reasons)
+        assert any("X line-of-sight blocked" in reason for reason in reasons)
+        assert all("X-Ku Conflict" not in reason for reason in reasons)
+        assert all("X-AAR Conflict" not in reason for reason in reasons)
+        interior = [
+            segment for segment in constrained if segment.status != TimelineStatus.SOF
+        ]
+        assert interior
+        assert all(segment.ka_state == TransportState.AVAILABLE for segment in interior)
+        assert all(segment.ku_state == TransportState.AVAILABLE for segment in interior)
+    assert [segment.model_dump() for segment in timeline.segments] == [
+        segment.model_dump() for segment in recomputed.segments
+    ]
+    assert bool(timeline.samples) is include_samples
 
 
 def _interval(transport, start_offset, end_offset, state, reasons=None):
