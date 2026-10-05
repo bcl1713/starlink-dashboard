@@ -87,30 +87,53 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   });
   if (await explore.isVisible()) await explore.click();
   const pixels = [];
-  for (const [lat, lon, channel] of [
-    [0.05, 45, 0],
-    [66.5133, 45, 0],
-    [-45, 45, 1],
-    [45, -45, 2],
-    [0.05, 179, 0],
+  for (const [lat, lon, channels] of [
+    [0.05, 45, [0]],
+    [-0.05, 45, [1]],
+    [60, 45, [0]],
+    [66.4, 45, [0]],
+    [66.7, 45, [0, 2]],
+    [45, -0.05, [2]],
+    [45, 0.05, [0]],
+    [0.05, 179, [0, 1]],
   ] as const) {
     for (const night of [false, true]) {
       const sample = await weatherPixel(overview, lat, lon, night);
       expect(sample.withWeather).not.toEqual(sample.withoutWeather);
       const other = sample.withWeather.filter(
-        (_, index) => index < 3 && index !== channel
+        (_, index) => index < 3 && !channels.some((c) => c === index)
       );
-      expect(sample.withWeather[channel]).toBeGreaterThan(Math.max(...other));
-      pixels.push({ lat, lon, channel, night, ...sample });
+      for (const channel of channels)
+        expect(sample.withWeather[channel]).toBeGreaterThan(
+          Math.max(...other) + 10
+        );
+      pixels.push({ lat, lon, channels, night, ...sample });
     }
   }
-  // West of the antimeridian has an opaque no-coverage mask, rather than a
-  // false dry reading; both poles also hatch without precipitation.
-  pixels.push({
-    lat: 0,
-    lon: -179,
-    ...(await weatherPixel(overview, 0, -179)),
-  });
+  // Both antimeridian sides and poles must distinguish absence of coverage
+  // from precipitation. Night pixels remove terrain lighting from the test.
+  for (const [lat, lon] of [
+    [0, -179],
+    [88, 45],
+    [-88, 45],
+  ]) {
+    const sample = await weatherPixel(overview, lat, lon, true);
+    let hatchPixels = 0;
+    for (let offset = 0; offset < sample.patchWithWeather.length; offset += 4) {
+      const delta = [0, 1, 2].map(
+        (c) =>
+          sample.patchWithWeather[offset + c] -
+          sample.patchWithoutWeather[offset + c]
+      );
+      if (Math.max(...delta) > 8) {
+        hatchPixels++;
+        expect(Math.max(...delta) - Math.min(...delta)).toBeLessThan(12);
+      }
+    }
+    expect(hatchPixels).toBeGreaterThan(0);
+    expect(hatchPixels).toBeLessThan(144);
+    pixels.push({ lat, lon, hatchPixels, ...sample });
+  }
   await overview.screenshot({ path: info.outputPath('weather-globe.png') });
   await overview
     .getByRole('button', { name: 'Enter fullscreen overview' })

@@ -147,3 +147,19 @@ async def test_disable_during_generation_pruning_does_not_start_exchange(
     assert (await service.read_frame()).state == "off"
     assert streams.dials == []
     await service.aclose()
+
+
+@pytest.mark.parametrize("bad_frame", [NOW // 1000 - 3600, NOW // 1000 + 10000])
+async def test_ineligible_metadata_recovers_after_failure_cooldown(tmp_path, bad_frame):
+    now = [NOW]
+    streams = WeatherStreams(http_response(metadata(bad_frame)))
+    service, store = service_for(tmp_path, streams, now)
+    store.update({"enabled": True})
+    assert (await service.read_frame()).state == "unavailable"
+    streams.wire = http_response(metadata(NOW // 1000))
+    now[0] += 31000
+    recovered = await service.read_frame()
+    assert recovered.state == "ready"
+    assert recovered.frame_time_ms == NOW
+    assert len(streams.dials) == 2
+    await service.aclose()

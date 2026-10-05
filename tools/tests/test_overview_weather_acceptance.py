@@ -53,3 +53,13 @@ def test_provider_png_independent_landmark_colors():
     assert raw[1:5] == bytes([255, 40, 40, 220])  # independently chosen northeast red
     coverage = module.tile_png(0, 0, coverage=True)
     assert coverage != png
+
+
+def test_provider_distinguishes_mercator_latitude_rows_and_longitude_edges():
+    path = ROOT / "tools/acceptance/overview-weather/provider_fixture.py"
+    spec = importlib.util.spec_from_file_location("weather_landmarks", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.tile_png(2, 0) != module.tile_png(2, 1)
+    assert module.tile_png(2, 1) != module.tile_png(3, 1)
+    assert module.tile_png(1, 1) != module.tile_png(2, 1)

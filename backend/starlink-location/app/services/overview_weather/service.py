@@ -138,6 +138,10 @@ class WeatherService:
             coverage_tile_template=f"/api/overview-weather/coverage/{day}/{{z}}/{{x}}/{{y}}.png",
         )
 
+    def _validate_metadata(self, body: bytes) -> None:
+        if not any(self._eligible(frame) for frame in observed_frames(body)):
+            raise ValueError("No eligible observed weather frame")
+
     async def read_frame(self) -> WeatherManifest:
         settings = await self._settings()
         if not settings.enabled:
@@ -153,7 +157,7 @@ class WeatherService:
                 131072,
                 "application/json",
                 300,
-                observed_frames,
+                self._validate_metadata,
             )
             if not self._enabled or revision != self._revision:
                 raise WeatherUnavailable()

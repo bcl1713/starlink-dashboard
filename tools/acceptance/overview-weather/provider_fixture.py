@@ -25,21 +25,15 @@ def event(kind, **values):
 
 
 def tile_png(x, y, *, coverage=False):
-    # Independent provider XYZ colors: north-east red, south-east green,
-    # north-west blue, south-west yellow; westernmost tile is uncovered.
-    color = (
-        [0, 0, 0, 255 if x == 0 else 0]
-        if coverage
-        else (
-            [255, 40, 40, 220]
-            if x >= 2 and y < 2
-            else (
-                [40, 255, 40, 220]
-                if x >= 2
-                else [40, 40, 255, 220] if y < 2 else [255, 255, 40, 220]
-            )
-        )
-    )
+    # Independently specified XYZ rows distinguish Mercator from latitude-linear
+    # sampling, and columns distinguish the prime-meridian/antimeridian edges.
+    colors = [
+        [(80, 80, 80), (255, 160, 40), (255, 40, 255), (160, 40, 255)],
+        [(80, 80, 80), (40, 40, 255), (255, 40, 40), (255, 255, 40)],
+        [(80, 80, 80), (255, 255, 40), (40, 255, 40), (40, 255, 255)],
+        [(80, 80, 80), (160, 40, 255), (40, 255, 255), (40, 40, 255)],
+    ]
+    color = [0, 0, 0, 255 if x == 0 else 0] if coverage else [*colors[y][x], 220]
 
     def chunk(kind, data):
         return (

@@ -84,12 +84,12 @@ export async function installWeatherProbe(page: Page) {
       const read = () => {
         s.gl.render(s.scene, s.camera);
         const gl = s.gl.getContext();
-        const pixels = new Uint8Array(4);
+        const pixels = new Uint8Array(12 * 12 * 4);
         gl.readPixels(
-          Math.floor(gl.drawingBufferWidth / 2),
-          Math.floor(gl.drawingBufferHeight / 2),
-          1,
-          1,
+          Math.floor(gl.drawingBufferWidth / 2) - 6,
+          Math.floor(gl.drawingBufferHeight / 2) - 6,
+          12,
+          12,
           gl.RGBA,
           gl.UNSIGNED_BYTE,
           pixels
@@ -104,11 +104,36 @@ export async function installWeatherProbe(page: Page) {
         light.intensity = intensity;
       });
       s.gl.render(s.scene, s.camera);
-      return { latitude, longitude, night, withWeather, withoutWeather };
+      return {
+        latitude,
+        longitude,
+        night,
+        patchWithWeather: withWeather,
+        patchWithoutWeather: withoutWeather,
+        withWeather: withWeather.slice((6 * 12 + 6) * 4, (6 * 12 + 7) * 4),
+        withoutWeather: withoutWeather.slice(
+          (6 * 12 + 6) * 4,
+          (6 * 12 + 7) * 4
+        ),
+      };
     };
   });
 }
 export async function weatherSnapshot(page: Page) {
+  await page.waitForFunction(
+    () =>
+      (
+        window as unknown as {
+          __overviewEvidenceRoots?: Array<{
+            containerInfo?: { getState?: () => RootState };
+          }>;
+        }
+      ).__overviewEvidenceRoots?.some(
+        (root) => root.containerInfo?.getState?.().gl.domElement.isConnected
+      ),
+    null,
+    { timeout: 15000 }
+  );
   return page.evaluate(() =>
     (
       window as unknown as {
@@ -141,7 +166,12 @@ export async function weatherPixel(
             lat: number,
             lon: number,
             night: boolean
-          ) => { withWeather: number[]; withoutWeather: number[] };
+          ) => {
+            withWeather: number[];
+            withoutWeather: number[];
+            patchWithWeather: number[];
+            patchWithoutWeather: number[];
+          };
         }
       ).__weatherPixel(lat as number, lon as number, dark as boolean),
     [latitude, longitude, night]
