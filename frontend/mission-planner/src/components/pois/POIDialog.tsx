@@ -151,7 +151,7 @@ export function POIDialog({
 
             {/* Map for positioning */}
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Click on the map to set the POI position
               </p>
               <div className="h-80 overflow-hidden rounded-lg border">

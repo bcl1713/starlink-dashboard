@@ -69,7 +69,7 @@ export function ExportDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Export will include all legs, routes, POIs, and pre-generated
             documents.
           </p>
