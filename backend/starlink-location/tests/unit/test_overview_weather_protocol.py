@@ -1,9 +1,9 @@
 import asyncio
 
 import pytest
+
 from app.services.overview_weather.clock import WeatherClock
 from app.services.overview_weather.protocol import WeatherUnavailable, exchange_http
-
 from tests.fixtures.weather_streams import WeatherWriter, http_response
 
 

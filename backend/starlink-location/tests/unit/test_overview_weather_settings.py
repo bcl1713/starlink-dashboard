@@ -4,9 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 import pytest
+from pydantic import ValidationError
+
 from app.models.overview_weather import WeatherSettings
 from app.services.overview_weather.settings import WeatherSettingsStore
-from pydantic import ValidationError
 
 
 def test_defaults_and_idempotent_save(tmp_path):

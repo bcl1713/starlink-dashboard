@@ -2,10 +2,10 @@ import asyncio
 import ssl
 
 import pytest
+
 from app.services.overview_weather.clock import WeatherClock
 from app.services.overview_weather.protocol import WeatherUnavailable
 from app.services.overview_weather.transport import PinnedWeatherTransport
-
 from tests.fixtures.weather_streams import WeatherStreams, http_response
 
 URL = "https://api.rainviewer.com/public/weather-maps.json"

@@ -33,7 +33,7 @@ from app.api import (
     routes,
     status,
     ui,
-    weather,
+    overview_weather,
 )
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
@@ -67,6 +67,12 @@ from app.services.overview_link_settings import OverviewLinkSettingsStore
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.overview_adsb_traffic import AdsbTrafficService
+from app.services.overview_weather.acquisitions import WeatherAcquisitionPool
+from app.services.overview_weather.admission import WeatherAdmission
+from app.services.overview_weather.clock import WeatherClock
+from app.services.overview_weather.service import WeatherService
+from app.services.overview_weather.settings import WeatherSettingsStore
+from app.services.overview_weather.transport import PinnedWeatherTransport
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
@@ -92,6 +98,7 @@ _route_manager: RouteManager | None = None
 OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
 OVERVIEW_CLOCK_SETTINGS_PATH = Path("data/settings/overview-clocks.json")
 OVERVIEW_ADSB_SETTINGS_PATH = Path("data/settings/overview-adsb.json")
+OVERVIEW_WEATHER_SETTINGS_PATH = Path("data/settings/overview-weather.json")
 OVERVIEW_LINK_SETTINGS_PATH = Path("data/settings/overview-links.json")
 OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
 _overview_history_client: httpx.AsyncClient | None = None
@@ -187,6 +194,18 @@ def initialize_overview_adsb_runtime() -> None:
     overview_adsb.set_overview_adsb_runtime(store, service)
 
 
+def initialize_overview_weather_runtime() -> None:
+    """Optional weather construction never connects to the provider."""
+    try:
+        store = WeatherSettingsStore(OVERVIEW_WEATHER_SETTINGS_PATH)
+        app.state.overview_weather_settings_store = store
+        clock = WeatherClock()
+        pool = WeatherAcquisitionPool(PinnedWeatherTransport(clock), WeatherAdmission(clock), clock)
+        app.state.overview_weather_service = WeatherService(store, pool, clock)
+    except Exception:  # noqa: BLE001 - optional weather must not block core startup
+        logger.warning_json("Overview weather initialization unavailable", exc_info=True)
+
+
 async def startup_event():
     """Initialize application on startup."""
     global _coordinator, _background_task, _simulation_config, _route_manager
@@ -212,6 +231,7 @@ async def startup_event():
         initialize_overview_link_settings_runtime()
         initialize_orbital_catalog_runtime()
         initialize_overview_adsb_runtime()
+        initialize_overview_weather_runtime()
         await app.state.overview_adsb_service.start()
 
         reconciliation = reconcile_active_legs_on_startup()
@@ -433,6 +453,11 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "overview_weather_service"):
+            await app.state.overview_weather_service.aclose()
+            del app.state.overview_weather_service
+        if hasattr(app.state, "overview_weather_settings_store"):
+            del app.state.overview_weather_settings_store
         if hasattr(app.state, "overview_adsb_service"):
             await app.state.overview_adsb_service.aclose()
             del app.state.overview_adsb_service
@@ -714,7 +739,7 @@ app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
-app.include_router(weather.router, tags=["Weather"])
+app.include_router(overview_weather.router, tags=["Overview Weather"])
 app.include_router(ui.router, tags=["UI"])
 
 
