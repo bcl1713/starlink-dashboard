@@ -67,6 +67,16 @@ for (const viewport of [
     await trigger.press('Enter');
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
+    expect(
+      await dialog.getByRole('heading').evaluate((heading) => {
+        const bounds = heading.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          bounds.x + bounds.width / 2,
+          bounds.y + bounds.height / 2
+        );
+        return heading.contains(hit);
+      })
+    ).toBe(true);
     await expect(dialog).toContainText('Track');
     await expect(dialog).toContainText('30000 ft (barometric)');
     await expect(dialog.getByRole('button', { name: 'Include' })).toHaveCount(

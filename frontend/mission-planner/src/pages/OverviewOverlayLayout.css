@@ -24,6 +24,9 @@
   max-width: 1200px;
   margin: 0 auto 12px;
 }
+.overview-map-stage[data-adsb-details-open='true'] {
+  z-index: 40;
+}
 .overview-page .overview-globe {
   position: absolute !important;
   inset: 0;

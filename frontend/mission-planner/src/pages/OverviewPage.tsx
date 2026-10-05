@@ -760,6 +760,7 @@ export function OverviewPage() {
         tabIndex={-1}
         className="overview-map-stage"
         data-flow={layout.flow}
+        data-adsb-details-open={selectedAdsbContact !== null}
       >
         <div className="overview-right-overlays">
           <div className="overview-satellite-overlays">
