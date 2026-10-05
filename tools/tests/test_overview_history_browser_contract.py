@@ -154,3 +154,45 @@ console.log(JSON.stringify([
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout) == [True, True, False, False, False]
+
+
+def test_navigation_logs_are_scoped_to_simulation_gps_and_cancellation():
+    script = f"""import {{expectedNavigationError}} from {json.dumps(JOURNEY.as_uri())};
+const origin='http://127.0.0.1:15224';
+console.log(JSON.stringify([
+ expectedNavigationError('Failed resource 503',origin+'/api/v2/gps/config',true,origin),
+ expectedNavigationError('API Error: {{status: 503, message: GPS configuration not available in simulation mode}}',origin+'/assets/index.js',true,origin),
+ expectedNavigationError('API Error: {{status: undefined, data: undefined, message: canceled}}',origin+'/assets/index.js',true,origin),
+ expectedNavigationError('API Error: {{status: undefined, data: undefined, message: canceled}}',origin+'/assets/index.js',false,origin),
+ expectedNavigationError('Other resource 503',origin+'/api/status',true,origin)
+]));"""
+    result = subprocess.run(
+        [NODE, "--input-type=module", "-e", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == [True, True, True, False, False]
+
+
+def test_sampling_records_a_final_gc_sample_after_deadline_despite_timer_jitter():
+    script = f"""import {{measureResources}} from {json.dumps(JOURNEY.as_uri())};
+let now=0;
+const captured=[];
+const last=await measureResources({{monotonic_seconds:0}},10,async gc=>{{const row={{monotonic_seconds:now,gc}}; captured.push(row); now+=0.001; return row;}},{{timerClock:()=>now,wait:async ms=>{{now+=ms>0?ms/1000-0.00045:0.001;}}}});
+console.log(JSON.stringify({{last,captured}}));"""
+    result = subprocess.run(
+        [NODE, "--input-type=module", "-e", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    assert data["last"]["monotonic_seconds"] >= 10
+    assert data["last"]["gc"] is True
+    assert any(
+        row["monotonic_seconds"] < 10 and row["monotonic_seconds"] > 9.999
+        for row in data["captured"]
+    )

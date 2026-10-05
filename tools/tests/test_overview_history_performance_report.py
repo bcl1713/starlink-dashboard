@@ -242,3 +242,25 @@ def test_missing_browser_phase_outcome_is_incomplete():
     candidate = report()
     candidate["metadata"].pop("phase", None)
     assert evaluate_budgets(baseline(), candidate)["status"] == "incomplete"
+
+
+@pytest.mark.parametrize(
+    "problem",
+    ["failed_phase", "http_error", "short_duration", "sampling_gap", "wrong_cadence"],
+)
+def test_cpu_budget_requires_a_healthy_comparable_full_range_baseline(problem):
+    base = baseline()
+    if problem == "failed_phase":
+        base["metadata"]["phase"]["status"] = "failed"
+    elif problem == "http_error":
+        base["request_errors"] = 1
+    elif problem == "short_duration":
+        base["measured_duration_seconds"] = 599
+    elif problem == "sampling_gap":
+        base["max_resource_gap_seconds"] = 11
+    else:
+        base["metadata"]["cadence_seconds"] = 1
+    assert (
+        evaluate_budgets(base, report())["budgets"]["cpu_increase"]["status"]
+        == "incomplete"
+    )

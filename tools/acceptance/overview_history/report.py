@@ -205,6 +205,22 @@ def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
         field in meta and field in base_meta and meta[field] == base_meta[field]
         for field in COMPARABLE_FIELDS
     )
+    baseline_ok = (
+        base_meta.get("phase", {}).get("status") == "measured"
+        and base_meta.get("errors") == []
+        and base_meta.get("mode") == "full"
+        and base_meta.get("cadence_seconds") == 5
+        and base_meta.get("warmup_seconds", 0) >= 300
+        and baseline.get("measured_duration_seconds", 0) >= 600
+        and baseline.get("request_count", 0) > 0
+        and baseline.get("request_errors") == 0
+        and baseline.get("resource_count", 0) >= 2
+        and baseline.get("max_resource_gap_seconds") is not None
+        and baseline["max_resource_gap_seconds"] <= 10
+        and base_meta.get("images")
+        and bool(re.fullmatch(r"[0-9a-f]{40}", str(base_meta.get("sha", ""))))
+    )
+    comparable = comparable and baseline_ok
     candidate_cpu, baseline_cpu = candidate.get(
         "combined_cpu_percent_one_core"
     ), baseline.get("combined_cpu_percent_one_core")
@@ -217,7 +233,7 @@ def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
         increase,
         "percentage points of one core",
         increase <= 10 if increase is not None else None,
-        "Comparable baseline required; combined CPU increase must be <=10",
+        "Healthy full-range 5s baseline (>=600s after >=300s warm-up) required; combined CPU increase must be <=10",
     )
     for name, key in (
         ("backend_rss_growth", "backend_rss_growth_bytes"),

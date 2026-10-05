@@ -100,6 +100,23 @@ export function expectedOutageError(message, url, active, origin) {
   );
 }
 
+export function expectedNavigationError(message, url, active, origin) {
+  if (!active || new URL(url || origin).origin !== new URL(origin).origin)
+    return false;
+  if (
+    message.includes("503") &&
+    (new URL(url || origin).pathname === "/api/v2/gps/config" ||
+      (message.startsWith("API Error:") &&
+        message.includes("GPS configuration not available in simulation mode")))
+  )
+    return true;
+  return (
+    message.startsWith("API Error:") &&
+    message.includes("status: undefined") &&
+    message.includes("message: canceled")
+  );
+}
+
 export function encodeMovie(encoder, frames, output, elapsed) {
   const input = Buffer.concat(
     Array.from({ length: 20 }, (_, frame) =>
@@ -132,6 +149,29 @@ export function encodeMovie(encoder, frames, output, elapsed) {
     ],
     { input, maxBuffer: 1024 ** 2 },
   );
+}
+
+export async function measureResources(
+  first,
+  duration,
+  capture,
+  { timerClock = clock, wait = sleep, progress = () => {} } = {},
+) {
+  const stop = first.monotonic_seconds + duration;
+  let last = first,
+    lastGc = first.monotonic_seconds,
+    nextProgress = first.monotonic_seconds + 60;
+  while (last.monotonic_seconds < stop) {
+    await wait(Math.min(5, Math.max(0, stop - timerClock())) * 1000);
+    const gc = timerClock() >= stop || timerClock() - lastGc >= 300;
+    last = await capture(gc);
+    if (gc) lastGc = last.monotonic_seconds;
+    if (last.monotonic_seconds >= nextProgress) {
+      progress(last);
+      nextProgress += 60;
+    }
+  }
+  return last;
 }
 
 const clock = () => Number(process.hrtime.bigint()) / 1e9;
@@ -212,7 +252,8 @@ async function run(options) {
     requests = new WeakMap();
   const errors = [];
   let measuring = false,
-    faultControl = false;
+    faultControl = false,
+    lifecycleNavigation = false;
   const subscriptions = [];
   const metadata = {
     sha: readFileSync(resolve(parent, "candidate-sha.txt"), "utf8").trim(),
@@ -382,12 +423,19 @@ async function run(options) {
       });
       page.on("console", (message) => {
         if (message.type() === "error") {
-          const expected = expectedOutageError(
-            message.text(),
-            message.location().url,
-            faultControl,
-            options.origin,
-          );
+          const expected =
+            expectedOutageError(
+              message.text(),
+              message.location().url,
+              faultControl,
+              options.origin,
+            ) ||
+            expectedNavigationError(
+              message.text(),
+              message.location().url,
+              lifecycleNavigation,
+              options.origin,
+            );
           if (!expected) errors.push(message.text());
           event({
             kind: "console_error",
@@ -528,12 +576,16 @@ async function run(options) {
       await rootSession.detach();
       await page.bringToFront();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
+      lifecycleNavigation = true;
       await page
         .getByRole("link", { name: "Configuration", exact: true })
         .click();
       await expect(page.locator("#overview-history-window")).toBeVisible();
+      await sleep(1000);
       await page.getByRole("link", { name: "Overview", exact: true }).click();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
+      await sleep(1000);
+      lifecycleNavigation = false;
       await expect
         .poll(
           () =>
@@ -664,6 +716,8 @@ async function run(options) {
       event({ kind: "lifecycle_controls", status: "passed" });
       save();
     }
+    if (errors.length)
+      throw new Error(`${errors.length} unexpected setup/control errors`);
     console.log(
       JSON.stringify({ stage: "warmup", seconds: options.warmup_seconds }),
     );
@@ -683,29 +737,23 @@ async function run(options) {
     await pages.at(-1).screenshot({ path: resolve(output, "warmup.png") });
     const first = await capture(true);
     measuring = true;
-    const stop = first.monotonic_seconds + options.requested_measured_seconds;
-    let last = first,
-      lastGc = first.monotonic_seconds,
-      nextProgress = first.monotonic_seconds + 60;
-    while (clock() < stop) {
-      await sleep(Math.min(5, Math.max(0, stop - clock())) * 1000);
-      const final = clock() >= stop;
-      const gc = final || clock() - lastGc >= 300;
-      last = await capture(gc);
-      if (gc) lastGc = last.monotonic_seconds;
-      if (last.monotonic_seconds >= nextProgress) {
-        console.log(
-          JSON.stringify({
-            stage: "measuring",
-            elapsed: last.monotonic_seconds - first.monotonic_seconds,
-            heap_mib: last.heap_bytes / 1024 ** 2,
-            backend_rss_mib: last.backend_rss_bytes / 1024 ** 2,
-            errors: errors.length,
-          }),
-        );
-        nextProgress += 60;
-      }
-    }
+    const last = await measureResources(
+      first,
+      options.requested_measured_seconds,
+      capture,
+      {
+        progress: (row) =>
+          console.log(
+            JSON.stringify({
+              stage: "measuring",
+              elapsed: row.monotonic_seconds - first.monotonic_seconds,
+              heap_mib: row.heap_bytes / 1024 ** 2,
+              backend_rss_mib: row.backend_rss_bytes / 1024 ** 2,
+              errors: errors.length,
+            }),
+          ),
+      },
+    );
     measuring = false;
     for (
       let drain = 0;
