@@ -59,13 +59,23 @@ export function urgencyColor(
   return interpolateHexColor(lower.color, upper.color, progress);
 }
 
-export function overviewPoiView(records: OverviewUpcomingPoi[]): {
+export function overviewPoiView(
+  records: OverviewUpcomingPoi[],
+  missionNowMs?: number
+): {
   markers: OverviewUpcomingPoi[];
 } {
   return {
     markers: records.filter(
-      ({ latitude, longitude, map_retained }) =>
-        map_retained && Number.isFinite(latitude) && Number.isFinite(longitude)
+      ({ latitude, longitude, map_retained, estimated_arrival_time, kind }) =>
+        map_retained &&
+        Number.isFinite(latitude) &&
+        Number.isFinite(longitude) &&
+        (missionNowMs === undefined ||
+          !estimated_arrival_time ||
+          kind === 'arrival' ||
+          kind === 'departure' ||
+          missionNowMs - Date.parse(estimated_arrival_time) <= 60 * 60_000)
     ),
   };
 }

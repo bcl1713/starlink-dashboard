@@ -89,6 +89,12 @@ import { useOverviewDisplayHost } from '@/hooks/useOverviewDisplayHost';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { OverviewCameraIntent } from './overview-camera-frame';
 import type { OverviewLayoutMode } from './overview-responsive-layout';
+import {
+  useSimulationRun,
+  useSimulationRunRoute,
+} from '@/hooks/api/useSimulationRun';
+import { useSimulationClock } from '@/hooks/useSimulationClock';
+import { SimulationRunPanel } from './SimulationRunPanel';
 
 const AIRCRAFT_HISTORY_LINE = {
   outer: {
@@ -330,12 +336,24 @@ export function OverviewPage() {
   } = useRoutes(true);
 
   const routeId = activeRouteId(routes);
+  const { data: simulationRun, isError: simulationRefreshFailed } =
+    useSimulationRun();
+  const pacedRunning = simulationRun?.state === 'running';
+  const { data: replayGeometry } = useSimulationRunRoute(simulationRun);
 
   const {
-    data: activeRoute,
+    data: ordinaryRoute,
     isLoading: isLoadingRoute,
     error: routeError,
   } = useRoute(routeId ?? '', true);
+  const activeRoute =
+    replayGeometry &&
+    simulationRun &&
+    replayGeometry.runtime_id === simulationRun.runtime_id &&
+    replayGeometry.run_id === simulationRun.run?.run_id &&
+    ['running', 'completed'].includes(simulationRun.state)
+      ? replayGeometry.route
+      : ordinaryRoute;
 
   const routePoints = useMemo(
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
@@ -357,19 +375,34 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
+  const simulationClock = useSimulationClock(
+    simulationRun,
+    currentTime,
+    simulationRefreshFailed
+  );
+  const missionNow = simulationClock.missionNowMs;
   const {
     data: upcomingPoisResponse,
     isError: arrivalRefreshFailed,
     isLoading: isLoadingUpcomingPois,
-  } = useOverviewUpcomingPois();
+  } = useOverviewUpcomingPois(pacedRunning);
   const arrivalState = deriveArrivalPanel(
     upcomingPoisResponse,
     currentTime,
-    arrivalRefreshFailed
+    arrivalRefreshFailed,
+    simulationRun?.state === 'completed' &&
+      upcomingPoisResponse?.mission_time &&
+      upcomingPoisResponse.mission_time.run_id === simulationRun.run?.run_id
+      ? Date.parse(upcomingPoisResponse.mission_time.simulation_time)
+      : missionNow
   );
   const upcomingPoiView = useMemo(
-    () => overviewPoiView(upcomingPoisResponse?.pois ?? []),
-    [upcomingPoisResponse?.pois]
+    () =>
+      overviewPoiView(
+        upcomingPoisResponse?.pois ?? [],
+        pacedRunning ? missionNow : undefined
+      ),
+    [upcomingPoisResponse?.pois, pacedRunning, missionNow]
   );
   const [upcomingPoiLabelLayout, setUpcomingPoiLabelLayout] =
     useState<PoiLabelLayout>({
@@ -789,7 +822,8 @@ export function OverviewPage() {
       <div className="overview-top-overlays">
         <OverviewClockPanel
           clocks={overviewClockSettings?.clocks}
-          currentTime={currentTime}
+          currentTime={missionNow}
+          simulated={pacedRunning}
           isError={isOverviewClockSettingsError}
           isLoading={isLoadingOverviewClockSettings}
         />
@@ -939,7 +973,7 @@ export function OverviewPage() {
                 poi={poi}
                 color={urgencyColor(
                   poi.estimated_arrival_time,
-                  new Date(currentTime)
+                  new Date(missionNow)
                 )}
                 globeOccluder={globeOccluder}
                 labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
@@ -1046,14 +1080,21 @@ export function OverviewPage() {
         </Canvas>
       </div>
       <div className="overview-metrics-overlays">
-        <OverviewMetricHistoryPanels
-          status={status}
-          statusError={Boolean(statusError)}
-          history={overviewHistory}
-          error={isOverviewHistoryError}
-          selectedWindowSeconds={overviewHistorySettings?.window_seconds}
-          nowMs={currentTime}
+        <SimulationRunPanel
+          status={simulationRun}
+          stale={simulationClock.stale}
+          compact
         />
+        {!pacedRunning && (
+          <OverviewMetricHistoryPanels
+            status={status}
+            statusError={Boolean(statusError)}
+            history={overviewHistory}
+            error={isOverviewHistoryError}
+            selectedWindowSeconds={overviewHistorySettings?.window_seconds}
+            nowMs={currentTime}
+          />
+        )}
       </div>
     </main>
   );

@@ -77,7 +77,8 @@ function routeProgress(poi: OverviewUpcomingPoi): number | null {
 export function deriveArrivalPanel(
   response: OverviewUpcomingPoisResponse | undefined,
   now: number,
-  refreshFailed = false
+  refreshFailed = false,
+  missionNowMs = now
 ): ArrivalPanelState {
   const empty: ArrivalPanelState = {
     sections: [],
@@ -114,7 +115,7 @@ export function deriveArrivalPanel(
           name: departures.length === 1 ? departures[0].name : null,
           timing: refreshUnavailable
             ? null
-            : timing(response.scheduled_departure_time, now, true),
+            : timing(response.scheduled_departure_time, missionNowMs, true),
           unavailable: 'Departure schedule unavailable',
         },
       ],
@@ -192,7 +193,7 @@ export function deriveArrivalPanel(
       allowTiming && poi?.upcoming && poi.eta_type
         ? timing(
             poi.estimated_arrival_time,
-            now,
+            missionNowMs,
             false,
             poi.eta_type === 'anticipated'
           )

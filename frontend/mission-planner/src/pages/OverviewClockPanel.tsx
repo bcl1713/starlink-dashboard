@@ -5,12 +5,14 @@ interface OverviewClockPanelProps {
   currentTime: number;
   isError: boolean;
   isLoading: boolean;
+  simulated?: boolean;
 }
 export function OverviewClockPanel({
   clocks,
   currentTime,
   isError,
   isLoading,
+  simulated = false,
 }: OverviewClockPanelProps) {
   if (isError) {
     return (
@@ -46,6 +48,9 @@ export function OverviewClockPanel({
   }
   return (
     <aside className="overview-clock-panel" aria-label="Operational clocks">
+      {simulated && (
+        <p className="overview-clock-simulation-label">SIMULATED TIME</p>
+      )}
       <OperationalClockList clocks={clocks} currentTime={currentTime} />
     </aside>
   );
