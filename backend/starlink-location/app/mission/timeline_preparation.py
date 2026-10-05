@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from app.mission.call_availability import normalize_call_availability_timeline
@@ -61,6 +62,7 @@ class TimelineArtifacts:
     timeline: MissionLegTimeline
     summary: TimelineSummary
     generated_pois: tuple[POICreate, ...]
+    x_assignments: tuple[tuple[datetime, str, str | None], ...] = ()
 
 
 def prepare_mission_timeline(
@@ -263,7 +265,13 @@ def prepare_mission_timeline(
     )
 
     return TimelineArtifacts(
-        route, projector, tuple(events), timeline, summary, generated_pois
+        route,
+        projector,
+        tuple(events),
+        timeline,
+        summary,
+        generated_pois,
+        tuple(transition_schedule),
     )
 
 

@@ -97,6 +97,7 @@ def prepare_mission_run(
         "end": projector.end_time.isoformat(),
         "pacing": pacing.model_dump(mode="json"),
         "initial_x": leg.transports.initial_x_satellite_id,
+        "x_assignments": artifacts.x_assignments,
         "events": [vars(event) for event in artifacts.events],
     }
     token = hashlib.sha256(
