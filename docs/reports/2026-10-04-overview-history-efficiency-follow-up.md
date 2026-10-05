@@ -278,3 +278,14 @@ N=1 and N=2, using the same pinned native profile. The incremental-5s comparison
 uses one viewer and 600 measured seconds. Full commands/environment appear in
 the retained executor scripts. No production stack was deployed and issues
 211/213 remain open.
+
+## Default promotion
+
+After both sustained runs qualified, the unset frontend setting, Dockerfile,
+Compose build argument and example environment now select one second. Explicit
+`5`, invalid values and API errors retain five-second polling. The query key,
+background/focus policy, cancellation and scheduling implementation are
+unchanged. This selects the same one-second scheduler already exercised by the
+qualified explicit-`1` builds. Fresh canonical checks and a rebuilt exact-SHA
+native control run verify the default path; the sustained evidence above retains
+its actual earlier SHAs and is not relabeled as an exact-head soak.

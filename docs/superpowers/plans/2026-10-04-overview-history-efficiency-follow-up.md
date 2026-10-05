@@ -237,14 +237,14 @@ viewport/renderer, cold/warm quantiles, CPU/RSS/heap, cadence and cleanup.
 task 4 report. Update other cadence documentation only if repository search
 identifies a statement invalidated by the default change.
 
-- [ ] Proceed only after applicable performance/behavior gates pass; explicitly
+- [x] Proceed only after applicable performance/behavior gates pass; explicitly
       record any operator-approved alternative evidence, without inherited
       waivers.
-- [ ] Add failing cadence tests: undefined selects 1000 ms, explicit `5` selects
+- [x] Add failing cadence tests: undefined selects 1000 ms, explicit `5` selects
       5000 ms, explicit `1` selects 1000 ms, invalid values safely select 5000
       ms, errors select 5000 ms. Preserve shared query/focus/background
       behavior.
-- [ ] Update helper and all build defaults consistently. Preserve explicit
+- [x] Update helper and all build defaults consistently. Preserve explicit
       `VITE_OVERVIEW_HISTORY_POLL_SECONDS=5` rollback; keep cadence distinct
       from acquisition freshness and long-window resolution. Run
       hook/build/config tests.

@@ -16,7 +16,7 @@ RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
 COPY . .
 
 # Build for production
-ARG VITE_OVERVIEW_HISTORY_POLL_SECONDS=5
+ARG VITE_OVERVIEW_HISTORY_POLL_SECONDS=1
 RUN npm run build
 
 # Production stage

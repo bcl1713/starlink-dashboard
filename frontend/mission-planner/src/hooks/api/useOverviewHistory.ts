@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { overviewHistoryApi } from '@/services/overview-history';
 
-// Release gate: enable 1s after representative-host acceptance; 5s is rollback.
+// Qualified 1s default; explicit 5 or invalid settings preserve safe rollback.
 export function historyPollInterval(value: unknown): number {
-  return value === '1' ? 1_000 : 5_000;
+  return value === undefined || value === '1' ? 1_000 : 5_000;
 }
 
 const POLL_INTERVAL = historyPollInterval(

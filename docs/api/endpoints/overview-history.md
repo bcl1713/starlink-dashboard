@@ -6,10 +6,9 @@
 
 Returns one bounded Prometheus history bundle for the saved Overview window. The
 same response supplies the aircraft trail and all five metric graphs; the
-browser makes one shared request per polling interval. The released default
-remains five seconds pending the #224 performance acceptance gate; a reviewed
-frontend build can select one second. The current metrics card is independently
-sourced from `/api/status`.
+browser makes one shared request per polling interval. The qualified default is
+one second, with an explicit five-second rollback. The current metrics card is
+independently sourced from `/api/status`.
 
 ```json
 {
@@ -106,19 +105,20 @@ multiple workers.
 
 The shared browser subscription keeps interval polling enabled in hidden tabs
 and refetches on focus. Hidden charts pause compositor motion while history
-ingestion continues. Errors use a five-second polling interval without additional
-automatic retries. Fresh-history processing is memoized separately from clock
-labels and compositor motion; timer ticks do not reproject or upload traces.
+ingestion continues. Errors use a five-second polling interval without
+additional automatic retries. Fresh-history processing is memoized separately
+from clock labels and compositor motion; timer ticks do not reproject or upload
+traces.
 
-`VITE_OVERVIEW_HISTORY_POLL_SECONDS=1` selects one-second polling at frontend
-build time. The default and invalid values resolve to five seconds. Compose
-passes this build argument from `.env`; rebuild `mission-planner` after changing
-it. For local builds, run `VITE_OVERVIEW_HISTORY_POLL_SECONDS=1 npm run build`.
-Rebuild with `5` to roll back. This does not change scrape cadence, history
-resolution or statistics. Do not promote the default until the
-representative-host budgets in the
-[implementation plan](../../superpowers/plans/2026-10-01-overview-history-efficiency.md)
-pass. Fixture measurements are not a real Prometheus/browser resource soak.
+An unset `VITE_OVERVIEW_HISTORY_POLL_SECONDS` selects one-second polling at
+frontend build time; explicit `1` does the same. Explicit `5` and invalid values
+(including an empty string) select five seconds. Compose passes this build
+argument from `.env`; rebuild `mission-planner` after changing it. For local
+rollback, run `VITE_OVERVIEW_HISTORY_POLL_SECONDS=5 npm run build`. This does
+not change scrape cadence, history resolution or statistics. The
+[qualified performance report](../../reports/2026-10-04-overview-history-efficiency-follow-up.md)
+records real Prometheus/native browser comparisons and one/two-viewer hour-long
+soaks, including synthetic-data and software-renderer limits.
 
 ## GET and PUT `/api/overview-history/settings`
 

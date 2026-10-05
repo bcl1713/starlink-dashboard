@@ -25,14 +25,15 @@ describe('useOverviewHistory', () => {
     const interval = options.refetchInterval;
     expect(typeof interval).toBe('function');
     if (typeof interval === 'function') {
-      expect(interval({ state: { status: 'success' } } as never)).toBe(5_000);
+      expect(interval({ state: { status: 'success' } } as never)).toBe(1_000);
       expect(interval({ state: { status: 'error' } } as never)).toBe(5_000);
     }
   });
 
-  it('accepts the gated 1s setting and defaults invalid settings to 5s', () => {
+  it('defaults to 1s while preserving explicit rollback and invalid fallback', () => {
+    expect(historyPollInterval(undefined)).toBe(1_000);
     expect(historyPollInterval('1')).toBe(1_000);
-    for (const value of [undefined, '5', '0', 'invalid', 1])
+    for (const value of ['5', '0', 'invalid', '', null, 1])
       expect(historyPollInterval(value)).toBe(5_000);
   });
 });
