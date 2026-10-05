@@ -171,24 +171,24 @@ summaries, process CPU/RSS and behavior observations.
 plot canvas activity; CDP profiles and existing unit controls distinguish
 projection/upload work from clock ticks.
 
-- [ ] Write argument/evidence tests for 1920x1080 DPR1, bounded probe storage,
+- [x] Write argument/evidence tests for 1920x1080 DPR1, bounded probe storage,
       separate GC samples, two actual pages for two viewers, and no pass before
       requested duration. Timer delay, request starts and response intervals
       must remain separate fields. Do not intercept the healthy production
       history API.
-- [ ] Run tests, record failures and implement journey/probe. Record GC markers
+- [x] Run tests, record failures and implement journey/probe. Record GC markers
       at warm-up/end and every 5 minutes as diagnostic interruptions; avoid
       presenting those periods as undisturbed frame-continuity evidence.
-- [ ] Run existing processing/motion/retention and history hook controls.
+- [x] Run existing processing/motion/retention and history hook controls.
       Clock-only updates must not reproject/upload. Preserve error backoff,
       background polling, focus refresh and query cancellation assertions.
-- [ ] Run bounded real-path journeys for both cadences, one/two viewers and all
+- [x] Run bounded real-path journeys for both cadences, one/two viewers and all
       windows/transitions. Exercise hidden/resume, remount, resize and native
       fullscreen; inspect fixed axes/readouts, gaps, last-good data, trail and
       duplicate subscriptions. Record source/clock/restart deterministic
       controls alongside rendered coverage limits. Controlled error runs are
       separate.
-- [ ] Capture arrival/rebase screenshots/video where supported. Record renderer
+- [x] Capture arrival/rebase screenshots/video where supported. Record renderer
       and unsupported native/recording coverage as explicit gaps. Commit after
       tests and bounded browser controls pass.
 
