@@ -31,4 +31,5 @@ it('selects real production journeys with bounded timeout and no Vite server', a
     mode: 'on',
     size: { width: 1920, height: 1080 },
   });
+  expect(config.use?.launchOptions?.args).toContain('--window-size=1920,1080');
 });

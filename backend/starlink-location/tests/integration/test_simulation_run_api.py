@@ -75,6 +75,24 @@ def test_preview_and_repeated_get_have_no_writes(api, tmp_path):
     assert service.runtime.status().revision == 0
 
 
+def test_live_activation_rejects_without_simulation_coordinator(api):
+    client, service, _clocks = api
+    service.runtime.set_service_mode("live")
+    service.coordinator = None
+    response = client.post(
+        "/api/v2/missions/mission-1/legs/leg-1/activate",
+        json={
+            "simulation": {
+                "pacing": {"mode": "multiplier", "multiplier": 10},
+                "plan_token": "a" * 64,
+            }
+        },
+    )
+    assert response.status_code == 409
+    assert service.runtime.status().run is None
+    assert not load_mission_v2("mission-1").legs[0].is_active
+
+
 def test_start_and_effective_geometry(api):
     client, service, clocks = api
     response = start(client)

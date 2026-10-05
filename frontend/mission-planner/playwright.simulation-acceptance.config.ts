@@ -32,6 +32,7 @@ export default defineConfig({
     'test-results/simulation-production',
   use: {
     baseURL,
+    launchOptions: { args: ['--window-size=1920,1080'] },
     trace: 'retain-on-failure',
     video: { mode: 'on', size: { width: 1920, height: 1080 } },
     viewport: { width: 1920, height: 1080 },

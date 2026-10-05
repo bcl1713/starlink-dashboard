@@ -27,9 +27,9 @@ Tasks 1–5 must pass and be committed/reviewed before final product acceptance.
   archived candidate, production Dockerfiles/Nginx/Prometheus and cleanup
   ownership.
 - `tools/acceptance/simulation-speed/backend_fixture.py`: live-case launcher
-  that replaces only `StarlinkClient.connect`/`test_connection` with
-  disconnected results before loading the real app; no network dialing, fake
-  pacing, or new API.
+  that disconnects hardware connection/telemetry and public-IP/geolocation
+  discovery before loading the real app; no network dialing, fake pacing, or new
+  API.
 - `tools/tests/test_simulation_speed_acceptance_runner.py`: source/ownership
   guards.
 - `docs/api/endpoints/simulation-run.md`: new endpoints and errors.

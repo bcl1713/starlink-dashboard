@@ -47,9 +47,9 @@ def activate_leg_transaction(
         leg = next((leg for leg in mission.legs if leg.id == leg_id), None)
         if leg is None:
             raise HTTPException(404, "Leg not found")
+        tick = run_service.prepare_start(mission_id, leg, simulation)
         if run_service.coordinator is None or run_service.publish is None:
             raise HTTPException(503, "Replay collection is not initialized")
-        tick = run_service.prepare_start(mission_id, leg, simulation)
         missions = {
             metadata.id: load_mission_v2(metadata.id)
             for metadata in list_mission_metadata_v2()
