@@ -1,5 +1,7 @@
 """HTTP preview, transaction, strict validation and restart contracts."""
 
+from pathlib import Path
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -13,6 +15,7 @@ from app.mission.dependencies import (
 from app.mission.models import Mission
 from app.mission.routes_v2 import router as mission_router
 from app.mission.storage import load_mission_v2, save_mission_v2
+from app.services.kml_parser import parse_kml_file
 from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
@@ -114,6 +117,30 @@ def test_start_and_effective_geometry(api):
     service.collect(service.coordinator, service.publish)
     assert client.get("/api/simulation/run").json()["state"] == "completed"
     assert load_mission_v2("mission-1").legs[0].is_active
+
+
+def test_imported_route_with_alternates_previews_starts_and_completes(api):
+    client, service, clocks = api
+    asset = Path(__file__).resolve().parents[4] / "routes/Leg 6 Rev 6.kml"
+    route = parse_kml_file(asset)
+    before = route.model_dump()
+    service.route_manager._routes["replay"] = route
+    response = preview(client)
+    assert response.status_code == 200, response.text
+    assert response.json()["flight_duration_seconds"] == 50572
+    assert response.json()["planned_departure"] == "2025-01-01T01:00:00Z"
+    assert response.json()["planned_arrival"] == "2025-01-01T15:02:52Z"
+    assert route.model_dump() == before
+    response = start(client)
+    assert response.status_code == 200, response.text
+    assert response.json()["simulation_run"]["state"] == "running"
+    clocks.advance(120)
+    service.collect(service.coordinator, service.publish)
+    result = client.get("/api/simulation/run").json()
+    assert result["state"] == "completed"
+    assert result["run"]["simulation_time"] == "2025-01-01T15:02:52Z"
+    assert result["run"]["phase"] == "post_arrival"
+    assert result["run"]["progress_percent"] == 100
 
 
 def test_live_mode_rejects_pacing_before_mutation(api):

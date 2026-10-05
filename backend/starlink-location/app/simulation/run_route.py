@@ -45,7 +45,12 @@ def normalize_timed_route(source: ParsedRoute) -> ParsedRoute:
     route.timing_profile.total_expected_duration_seconds = (end - start).total_seconds()
     route.timing_profile.has_timing_data = True
     route.timing_profile.segment_count_with_timing = len(route.points) - 1
-    for point in [*route.points, *route.waypoints]:
+    # Alternate-airport placemarks describe fallback flights, not timing
+    # anchors for the main route. Preserve them without extending its window.
+    main_flight_points = route.points + [
+        waypoint for waypoint in route.waypoints if waypoint.role != "alternate"
+    ]
+    for point in main_flight_points:
         if (
             point.expected_arrival_time
             and not start <= point.expected_arrival_time <= end
