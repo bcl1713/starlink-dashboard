@@ -5,6 +5,7 @@ import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 interface OverviewMapLegendProps {
   collapsible?: boolean;
   satellites?: boolean;
+  adsb?: boolean;
   aircraft: boolean;
   route: boolean;
   history: boolean;
@@ -18,6 +19,7 @@ interface OverviewMapLegendProps {
 export function OverviewMapLegend({
   collapsible = false,
   satellites = false,
+  adsb = false,
   aircraft,
   route,
   history,
@@ -30,6 +32,11 @@ export function OverviewMapLegend({
   const toggle = useRef<HTMLButtonElement>(null);
   const listId = useId();
   const entries = [
+    {
+      visible: adsb,
+      label: 'ADS-B aircraft',
+      sample: 'globe-legend__marker globe-legend__marker--adsb',
+    },
     {
       visible: satellites,
       label: 'Satellites',

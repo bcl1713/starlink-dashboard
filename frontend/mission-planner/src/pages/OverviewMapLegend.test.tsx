@@ -96,3 +96,19 @@ it('includes Satellites only when eligible sprites actually draw', () => {
   view.rerender(<OverviewMapLegend {...all} satellites />);
   expect(screen.getByText('Satellites')).toBeInTheDocument();
 });
+
+it('adds ADS-B only when its layer has active contacts', () => {
+  const props = {
+    aircraft: false,
+    route: false,
+    history: false,
+    groundEntryPoint: false,
+    trafficPath: false,
+    plannedLink: false,
+    linkState: null,
+  };
+  const view = render(<OverviewMapLegend {...props} adsb />);
+  expect(screen.getByText('ADS-B aircraft')).not.toBeNull();
+  view.rerender(<OverviewMapLegend {...props} adsb={false} />);
+  expect(screen.queryByText('ADS-B aircraft')).toBeNull();
+});

@@ -184,7 +184,7 @@ takes readonly views, `RefObject<THREE.Group>`, `(hex: string) => void`, and
 Its `portalContainer: HTMLElement | null` is supplied from Overview's map stage.
 Add `adsb?: boolean` default false to `OverviewMapLegend`.
 
-- [ ] **Step 1: Write failing rendering/interaction tests.** Assert legal globe
+- [x] **Step 1: Write failing rendering/interaction tests.** Assert legal globe
   projection/clearance, tangent orientation from track 0/90/180/270, neutral missing
   track, one instance per hex, and unchanged buffers between dataset updates.
   No altitude measurement is invented by surface placement. Both depth testing
@@ -212,9 +212,9 @@ Add `adsb?: boolean` default false to `OverviewMapLegend`.
   expect(screen.queryByRole('button', { name: 'Exclude' })).toBeNull();
   ```
 
-- [ ] **Step 2: Verify failure.** Run new rendering/layout/details tests and the
+- [x] **Step 2: Verify failure.** Run new rendering/layout/details tests and the
   changed page/legend tests; expect missing exports/behavior.
-- [ ] **Step 3: Implement batched aircraft rendering and label layout.** Use one
+- [x] **Step 3: Implement batched aircraft rendering and label layout.** Use one
   instanced aircraft-glyph mesh per visual treatment; subdued size/color relative
   to own aircraft. Project with `globePosition` and `ROUTE_OVERLAY_RADIUS`, using
   observed track in the local tangent basis. No interpolation or extrapolation.
@@ -229,7 +229,7 @@ Add `adsb?: boolean` default false to `OverviewMapLegend`.
   fallback: choose the least-overlapping offset if a collision-free one is
   impossible, keeping every included identity present. Avoid existing overlays.
   Reserve visible POI label bounds too; do not modify their aggregation policy.
-- [ ] **Step 4: Implement details and Overview integration.** Match Task 6 props.
+- [x] **Step 4: Implement details and Overview integration.** Match Task 6 props.
   Use Radix Dialog for focus/Escape with an explicit
   `<DialogPortal container={portalContainer}>` and Radix Content inside it so
   native fullscreen retains it. The shared `components/ui/dialog.tsx`
@@ -244,11 +244,11 @@ Add `adsb?: boolean` default false to `OverviewMapLegend`.
   `Details for <hex>`. Match visible marker
   eligibility. Integrate only the hook, scene component, details and legend
   predicate in Overview; provider/list-editing logic stays in its modules.
-- [ ] **Step 5: Verify success.** Run Task 6 tests plus existing page, camera,
+- [x] **Step 5: Verify success.** Run Task 6 tests plus existing page, camera,
   fullscreen, globe coordinate, POI marker/label and flow-consumer unit tests;
   also run `useOrbitalTraffic.test.ts`, `OrbitalTrafficDiagnostics.test.tsx`,
   `orbital/OrbitalSprites.test.tsx` and `orbital/lifecycle.test.ts` against the
   current orbital/link integration. Expect PASS. Rendered
   geometry/occlusion/performance proof remains Task 7.
-- [ ] **Step 6: Commit Task 6 files.**
+- [x] **Step 6: Commit Task 6 files.**
   `git commit -m "feat(overview): render ADS-B contacts labels and aircraft details"`.

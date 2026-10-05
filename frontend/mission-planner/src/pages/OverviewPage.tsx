@@ -12,6 +12,9 @@ import { Html, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
+import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
+import { OverviewAdsbLayer } from './adsb/OverviewAdsbLayer';
+import { OverviewAdsbDetails } from './adsb/OverviewAdsbDetails';
 import { type GlobeCoordinate } from './globe-route';
 import { activeRouteId } from './active-globe-route';
 import { projectRouteArc } from './globe-route-projection';
@@ -215,6 +218,33 @@ export function OverviewPage() {
   const [resetRevision, setResetRevision] = useState(0);
   const pageRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const [stageNode, setStageNode] = useState<HTMLDivElement | null>(null);
+  const captureStage = useCallback((node: HTMLDivElement | null) => {
+    stageRef.current = node;
+    setStageNode(node);
+  }, []);
+  const adsb = useOverviewAdsbLayer();
+  const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
+  const [visibleAdsbHexes, setVisibleAdsbHexes] = useState<readonly string[]>(
+    []
+  );
+  const adsbReturnFocus = useRef<HTMLElement | null>(null);
+  const selectedAdsbContact =
+    adsb.contacts.find((c) => c.hex === selectedAdsbHex) ?? null;
+  if (selectedAdsbHex && !selectedAdsbContact) setSelectedAdsbHex(null);
+  const selectAdsb = useCallback((hex: string) => {
+    adsbReturnFocus.current =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : stageRef.current;
+    setSelectedAdsbHex(hex);
+  }, []);
+  const updateVisibleAdsb = useCallback((hexes: readonly string[]) => {
+    setVisibleAdsbHexes((old) =>
+      old.join('|') === hexes.join('|') ? old : hexes
+    );
+  }, []);
   const [cameraIntent, setCameraIntent] = useState<OverviewCameraIntent>(
     followPreference ? 'follow' : 'automatic'
   );
@@ -726,7 +756,8 @@ export function OverviewPage() {
         />
       </div>
       <div
-        ref={stageRef}
+        ref={captureStage}
+        tabIndex={-1}
         className="overview-map-stage"
         data-flow={layout.flow}
       >
@@ -763,6 +794,7 @@ export function OverviewPage() {
               history={aircraftHistoryPoints.length >= 2}
               groundEntryPoint={Boolean(groundEntryPoint)}
               satellites={showSprites}
+              adsb={adsb.contacts.length > 0}
               trafficPath={linkState.starshieldVisible}
               plannedLink={linkState.xBandVisible}
               linkState={activeXLink?.state ?? null}
@@ -785,6 +817,31 @@ export function OverviewPage() {
             <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
           ))}
         </ul>
+        <ul
+          className="adsb-keyboard-contacts"
+          aria-label="Visible ADS-B aircraft"
+        >
+          {adsb.contacts
+            .filter((c) => visibleAdsbHexes.includes(c.hex))
+            .map((c) => (
+              <li key={c.hex}>
+                <button
+                  type="button"
+                  aria-label={`Details for ${c.hex}`}
+                  onClick={() => selectAdsb(c.hex)}
+                >
+                  {c.label} · {c.hex}
+                  {c.freshness === 'stale' ? ' · ◷ Stale' : ''}
+                </button>
+              </li>
+            ))}
+        </ul>
+        <OverviewAdsbDetails
+          contact={selectedAdsbContact}
+          onClose={() => setSelectedAdsbHex(null)}
+          returnFocusRef={adsbReturnFocus}
+          portalContainer={stageNode}
+        />
         <Canvas
           className="overview-globe"
           camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
@@ -917,6 +974,14 @@ export function OverviewPage() {
               />
             )}
           </Suspense>
+          {adsb.contacts.length > 0 && (
+            <OverviewAdsbLayer
+              contacts={adsb.contacts}
+              globeOccluder={globeOccluder}
+              onSelect={selectAdsb}
+              onVisibleHexesChange={updateVisibleAdsb}
+            />
+          )}
           <OverviewMapController
             mode={layout.mode}
             safeRect={layout.safeRect}

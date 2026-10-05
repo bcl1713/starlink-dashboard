@@ -244,3 +244,5 @@
   height: 4px;
   opacity: 0.65;
 }
+
+.globe-legend__marker--adsb { background:#78aabb; width:8px; height:8px; clip-path:polygon(50% 0,60% 40%,100% 60%,100% 70%,60% 60%,60% 90%,75% 100%,50% 90%,25% 100%,40% 90%,40% 60%,0 70%,0 60%,40% 40%); }
