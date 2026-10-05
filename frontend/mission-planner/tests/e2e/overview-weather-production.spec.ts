@@ -64,7 +64,8 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   await expect(toggle).not.toBeChecked();
   expect((await events()).length).toBe(0);
   const enabledAt = Date.now();
-  await toggle.check();
+  await toggle.click();
+  await expect(toggle).toBeChecked();
   await expect(toggle).toBeEnabled();
   await expect(
     overview.getByText('Current precipitation', { exact: true })
@@ -194,7 +195,8 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   expect(finalStatus.timestamp).not.toBe(initialStatus.timestamp);
   // Re-enable with a failing provider verifies graceful degradation via the
   // same Configuration control while preserving the original canvas.
-  await toggle.uncheck();
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
   await expect(overview.getByLabel('Weather status')).toHaveCount(0, {
     timeout: 15_000,
   });
@@ -202,13 +204,15 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
     .poll(async () => (await weatherSnapshot(overview)).textures)
     .toBe(initial.textures);
   await control({ fail: true });
-  await toggle.check();
+  await toggle.click();
+  await expect(toggle).toBeChecked();
   await expect(
     overview.getByText('Weather unavailable', { exact: true })
   ).toBeVisible({ timeout: 20_000 });
   expect((await weatherSnapshot(overview)).canvas).toBe(initial.canvas);
   expect((await request.get('/health')).status()).toBe(200);
-  await toggle.uncheck();
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
   await expect(overview.getByLabel('Weather status')).toHaveCount(0, {
     timeout: 15_000,
   });
