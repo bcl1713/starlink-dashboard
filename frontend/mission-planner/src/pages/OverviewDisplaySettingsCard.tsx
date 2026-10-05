@@ -12,26 +12,13 @@ function commandMessage(
   peer: DisplayPeer | undefined
 ): string | null {
   if (!feedback || feedback.targetId !== peer?.id) return null;
-  if (
-    feedback.action === 'fullscreen' &&
-    peer.fullscreen &&
-    (feedback.status === 'interaction-required' ||
-      feedback.status === 'unsupported')
-  )
-    return 'Fullscreen active.';
   switch (feedback.status) {
     case 'pending':
       return 'Waiting for the Overview display to acknowledge…';
     case 'accepted':
-      return feedback.action === 'recenter'
-        ? 'Recenter accepted. The view is returning to its current automatic camera behavior.'
-        : peer.fullscreen
-          ? 'Fullscreen active.'
-          : 'Windowed.';
-    case 'interaction-required':
-      return 'Click Fullscreen in the Overview window to finish.';
+      return 'Recenter accepted. The view is returning to its current automatic camera behavior.';
     case 'unsupported':
-      return 'Fullscreen is unavailable in this browser. Click Fullscreen in the Overview window to finish.';
+      return 'Recenter is unavailable on this display.';
     case 'timeout':
       return 'Request timed out. The display did not acknowledge within three seconds; check its actual state before retrying.';
     case 'expired':
@@ -98,12 +85,14 @@ export function OverviewDisplaySettingsCard(): React.JSX.Element {
         : popup?.status === 'opened'
           ? 'Overview display connected.'
           : null));
-  const canSend = (action: 'recenter' | 'fullscreen') =>
+  const canSend = (action: 'recenter') =>
     available && selected?.actions.includes(action) && !pending;
   return (
-    <Card className="mb-6" role="region" aria-label="Overview displays">
+    <Card className="min-w-0" role="region" aria-label="Overview displays">
       <CardHeader>
-        <CardTitle>Overview displays</CardTitle>
+        <CardTitle>
+          <h2>Overview displays</h2>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
@@ -140,9 +129,6 @@ export function OverviewDisplaySettingsCard(): React.JSX.Element {
             ))}
           </select>
         </label>
-        {selected && (
-          <p>{selected.fullscreen ? 'Fullscreen active' : 'Windowed'}</p>
-        )}
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
@@ -152,15 +138,6 @@ export function OverviewDisplaySettingsCard(): React.JSX.Element {
             }}
           >
             Recenter view
-          </Button>
-          <Button
-            type="button"
-            disabled={!canSend('fullscreen')}
-            onClick={() => {
-              if (selected) send(selected.id, 'fullscreen');
-            }}
-          >
-            Fullscreen
           </Button>
           <Button
             type="button"

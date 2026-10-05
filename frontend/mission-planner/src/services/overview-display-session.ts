@@ -163,7 +163,7 @@ export function createOverviewDisplaySession(
       } catch {
         status = 'failed';
       }
-      // Native fullscreen cannot be aborted, but no late success is reported.
+      // No late callback completion may be reported as success.
       if (Date.now() >= message.expiresAtMs) status = 'expired';
     }
     if (closed || !available) return;
@@ -173,7 +173,6 @@ export function createOverviewDisplaySession(
       requestId: message.requestId,
       action: message.action,
       status,
-      fullscreen: options.readPeer().fullscreen,
     };
     send(entry.result);
   }
@@ -192,7 +191,6 @@ export function createOverviewDisplaySession(
     pendingDeadline = null;
     const peer = peers.get(message.sender);
     if (peer && message.seq > (peerSeq.get(message.sender) ?? 0)) {
-      peer.peer = { ...peer.peer, fullscreen: message.fullscreen };
       peerSeq.set(message.sender, message.seq);
     }
     emit();
@@ -219,7 +217,6 @@ export function createOverviewDisplaySession(
           peer: {
             id: message.sender,
             label: message.label,
-            fullscreen: message.fullscreen,
             actions: message.actions,
           },
           seenAt: Date.now(),

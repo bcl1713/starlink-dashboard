@@ -186,6 +186,7 @@ test('original observation age survives failures, repeated replies and foregroun
   await expect(label).toBeVisible();
   await expect(label).not.toContainText('Stale');
   await page.goto('/configuration');
+  await page.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
   await expect(page.getByLabel('Included ICAO hexes')).toHaveValue('00AB12');
 });
 

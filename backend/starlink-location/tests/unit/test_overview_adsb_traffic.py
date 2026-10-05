@@ -359,3 +359,71 @@ async def test_independent_store_writer_is_applied_on_read(runtime):
     AdsbSettingsStore(store._path).update({"exclude_hexes": ["00AB12"]})
     assert service.read().contacts == []
     assert service.read().settings_revision == 2
+
+
+async def test_catalog_independent_selection_and_shared_acquisition(runtime):
+    store, provider, service, clock = runtime
+    store.update(
+        {
+            "enabled": True,
+            "mode": "included_only",
+            "include_hexes": ["000002"],
+            "exclude_hexes": ["000002", "00AB12"],
+            "callsign_substrings": ["MATCH"],
+        }
+    )
+    provider.military = [contact(clock, callsign="OTHER")]
+    provider.hexes["000002"] = [
+        contact(clock, "000002").model_copy(update={"military": False})
+    ]
+    assert service.read_catalog().contacts == []
+    await asyncio.gather(*(service.refresh_once() for _ in range(5)))
+    assert provider.calls == ["military", "hex:000002"]
+    assert service.read().contacts == []
+    assert [c.hex for c in service.read_catalog().contacts] == ["000002", "00AB12"]
+    store.update({"callsign_substrings": [], "exclude_hexes": []})
+    service.settings_changed()
+    assert [c.hex for c in service.read().contacts] == ["000002"]
+    assert len(service.read_catalog().contacts) == 2
+
+
+async def test_catalog_demand_expires_without_extending_contact_lifetime(runtime):
+    store, provider, service, clock = runtime
+    store.update({"enabled": True, "mode": "included_only"})
+    provider.military = [contact(clock)]
+    service.read_catalog()
+    await service.refresh_once()
+    clock.advance(15)
+    await service.refresh_once()
+    clock.advance(15)
+    await service.refresh_once()
+    assert provider.calls == ["military", "military"]
+    clock.advance(90)
+    assert service.read_catalog().contacts == []
+    await service.refresh_once()
+    assert provider.calls == ["military", "military", "military"]
+    assert service.read_catalog().contacts == []
+
+
+async def test_disabled_catalog_never_acquires(runtime):
+    store, provider, service, _ = runtime
+    assert service.read_catalog().contacts == []
+    await service.refresh_once()
+    assert provider.calls == []
+    store.update({"enabled": True, "mode": "included_only"})
+    await service.refresh_once()
+    assert provider.calls == []
+
+
+async def test_catalog_lease_round_trip_keeps_rate_limit(runtime):
+    store, provider, service, clock = runtime
+    store.update({"enabled": True, "mode": "included_only"})
+    provider.errors["military"] = AdsbProviderError("Provider HTTP 429", 600)
+    service.read_catalog()
+    await service.refresh_once()
+    clock.advance(31)
+    await service.refresh_once()
+    assert service.read().sources == []
+    assert service.read_catalog().sources[0].retry_at_ms == (clock() + 569) * 1000
+    await service.refresh_once()
+    assert provider.calls == ["military"]

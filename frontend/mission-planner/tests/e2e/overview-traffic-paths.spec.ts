@@ -115,6 +115,7 @@ for (const [traffic, xBand] of [
     await installOverviewSceneProbe(page);
     const fixture = await trafficPathFixture(page);
     await page.goto('/configuration');
+    await page.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
     for (const [label, enabled] of [
       ['Starshield data link', traffic],
       ['X-band data link', xBand],
@@ -180,6 +181,7 @@ for (const [traffic, xBand] of [
     await page
       .getByRole('link', { name: 'Configuration', exact: true })
       .click();
+    await page.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
     for (const [name, checked] of [
       ['Starshield data link', traffic],
       ['X-band data link', xBand],
@@ -211,6 +213,7 @@ test('keeps last confirmed switches on failed save and refresh error', async ({
 }) => {
   const fixture = await trafficPathFixture(page);
   await page.goto('/configuration');
+  await page.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
   const control = page.getByRole('switch', { name: 'Starshield data link' });
   await expect(control).toBeChecked();
   fixture.saveError = true;

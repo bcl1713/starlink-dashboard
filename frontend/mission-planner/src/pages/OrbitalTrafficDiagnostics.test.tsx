@@ -40,7 +40,7 @@ it('configuration_only_diagnostics explains provenance and operator resume creat
   expect(screen.getByText(/inferred routing/i)).toBeInTheDocument();
   expect(screen.getByText(/abstract PoP/i)).toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.getByText(/Eligible objects: 8/)).toBeInTheDocument()
+    expect(screen.getByText(/Eligible: 8/)).toBeInTheDocument()
   );
   expect(screen.getByText(/Truncated: 1/)).toBeInTheDocument();
   fireEvent.click(
@@ -75,7 +75,7 @@ it('does not invent an arc fallback for the last successful inferred route', asy
   );
   await waitFor(() =>
     expect(
-      screen.getByText(/Arc fallback reason: None in last Overview observation/)
+      screen.getByText(/None in last Overview observation/)
     ).toBeInTheDocument()
   );
   expect(screen.queryByText(/No usable inferred route/)).toBeNull();

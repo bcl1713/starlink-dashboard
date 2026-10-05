@@ -36,13 +36,12 @@ afterEach(() => {
 function display(
   onCommand: (action: DisplayAction) => Promise<DisplayResult> = async () =>
     'accepted',
-  actions: DisplayAction[] = ['recenter', 'fullscreen'],
-  readFullscreen = () => false
+  actions: DisplayAction[] = ['recenter']
 ) {
   const session = createOverviewDisplaySession({
     role: 'display',
     onSnapshot: () => {},
-    readPeer: () => ({ fullscreen: readFullscreen(), actions }),
+    readPeer: () => ({ actions }),
     onCommand,
   });
   hosts.push(session);
@@ -189,48 +188,18 @@ it('pending commands time out with honest feedback and restore controls', async 
   expect(screen.getByRole('status')).toHaveTextContent(/timed out/i);
   expect(screen.getByRole('button', { name: 'Recenter view' })).toBeEnabled();
 });
-it.each(['interaction-required', 'unsupported'] as const)(
-  'fullscreen %s offers the exact local-click fallback',
-  async (result) => {
-    display(async () => result);
-    render(<OverviewDisplaySettingsCard />);
-    await act(Channel.flush);
-    fireEvent.click(screen.getByRole('button', { name: 'Fullscreen' }));
-    await act(Channel.flush);
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Click Fullscreen in the Overview window to finish.'
-    );
-  }
-);
-it('unsupported actions are disabled rather than dispatched', async () => {
-  display(async () => 'accepted', ['recenter']);
+it('keeps recenter available with no remote fullscreen control', async () => {
+  display();
   render(<OverviewDisplaySettingsCard />);
   await act(Channel.flush);
-  expect(screen.getByRole('button', { name: 'Fullscreen' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Recenter view' })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: 'Fullscreen' })).toBeNull();
 });
-it('actual local fullscreen entry replaces obsolete remote-click guidance', async () => {
-  let fullscreen = false;
-  const host = display(
-    async () => 'interaction-required',
-    ['recenter', 'fullscreen'],
-    () => fullscreen
-  );
+it('does not send recenter to a display without that capability', async () => {
+  display(async () => 'accepted', []);
   render(<OverviewDisplaySettingsCard />);
   await act(Channel.flush);
-  fireEvent.click(screen.getByRole('button', { name: 'Fullscreen' }));
-  await act(Channel.flush);
-  expect(screen.getByRole('status')).toHaveTextContent(
-    'Click Fullscreen in the Overview window to finish.'
-  );
-  fullscreen = true;
-  await act(async () => {
-    host.publishPresence();
-    await Channel.flush();
-  });
-  expect(screen.getByRole('status')).toHaveTextContent('Fullscreen active');
-  expect(
-    screen.queryByText('Click Fullscreen in the Overview window to finish.')
-  ).toBeNull();
+  expect(screen.getByRole('button', { name: 'Recenter view' })).toBeDisabled();
 });
 it('unmount clears the popup discovery timeout', () => {
   vi.spyOn(window, 'open').mockReturnValue(null);
@@ -238,4 +207,30 @@ it('unmount clears the popup discovery timeout', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Open Overview' }));
   view.unmount();
   expect(vi.getTimerCount()).toBe(0);
+});
+
+it('discovers and recenters a legacy Overview window without exposing fullscreen', async () => {
+  const host = display();
+  render(<OverviewDisplaySettingsCard />);
+  await act(Channel.flush);
+  const channel = Channel.instances.find(
+    (peer) => !peer.closed && peer !== Channel.instances[0]
+  )!;
+  act(() =>
+    channel.deliver({
+      v: 1,
+      type: 'presence',
+      sender: host.id,
+      target: null,
+      seq: 100,
+      label: host.label,
+      actions: ['recenter', 'fullscreen'],
+      fullscreen: true,
+    } as unknown as import('@/services/overview-display-protocol').OverviewDisplayMessage)
+  );
+  expect(screen.getByRole('button', { name: 'Recenter view' })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: 'Fullscreen' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Recenter view' }));
+  await act(Channel.flush);
+  expect(screen.getByRole('status')).toHaveTextContent(/Recenter accepted/);
 });

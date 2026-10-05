@@ -6,6 +6,7 @@ import type {
 } from '@/services/overview-adsb';
 export interface AdsbContactView extends AdsbContact {
   included: boolean;
+  selection?: 'included' | 'excluded' | 'background' | 'not_selected';
   freshness: 'current' | 'stale';
   position_age_seconds: number;
   label: string;
@@ -117,4 +118,39 @@ export function acceptAdsbBundle(
     sources: bundle.sources.filter((s) => eligibleKeys.has(s.key)),
     generatedAt: bundle.generated_at_ms,
   };
+}
+
+// Management keeps every fresh catalog contact; Overview eligibility only
+// determines the status badge, never which aircraft can be searched.
+export function projectAdsbCatalog(
+  contacts: readonly AdsbContact[],
+  settings: AdsbSettings,
+  nowMs: number
+): AdsbContactView[] {
+  const selected = new Set(
+    projectAdsbContacts(contacts, settings, nowMs).map((c) => c.hex)
+  );
+  const included = new Set(settings.include_hexes);
+  const excluded = new Set(settings.exclude_hexes);
+  return projectAdsbContacts(
+    contacts,
+    {
+      ...settings,
+      include_hexes: contacts.map((c) => c.hex),
+      exclude_hexes: [],
+      mode: 'military_and_included',
+      callsign_substrings: [],
+    },
+    nowMs
+  ).map((c) => ({
+    ...c,
+    included: included.has(c.hex),
+    selection: excluded.has(c.hex)
+      ? 'excluded'
+      : included.has(c.hex)
+        ? 'included'
+        : selected.has(c.hex)
+          ? 'background'
+          : 'not_selected',
+  }));
 }

@@ -141,6 +141,7 @@ test('2,000 contacts and 50 included identities retain all instances and release
     }
   }
   await page.goto('/configuration');
+  await page.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
   fixture.setSettings(
     adsbSettings({
       revision: 9,

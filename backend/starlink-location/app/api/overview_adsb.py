@@ -58,3 +58,13 @@ async def get_traffic() -> AdsbTrafficBundle:
         return _service.read()
     except (OSError, ValueError, TypeError) as error:
         raise HTTPException(503, "ADS-B settings could not be read") from error
+
+
+@router.get("/api/overview-adsb/catalog", response_model=AdsbTrafficBundle)
+async def get_catalog() -> AdsbTrafficBundle:
+    if _service is None:
+        raise HTTPException(503, "ADS-B acquisition is not initialized")
+    try:
+        return _service.read_catalog()
+    except (OSError, ValueError, TypeError) as error:
+        raise HTTPException(503, "ADS-B settings could not be read") from error

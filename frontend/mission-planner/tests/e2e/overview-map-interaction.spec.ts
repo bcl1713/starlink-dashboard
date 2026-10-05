@@ -318,7 +318,7 @@ test('Configuration opt-in follows fresh positions while default framing remains
   await page.getByRole('button', { name: 'Toggle navigation' }).click();
   await page.getByRole('link', { name: 'Configuration', exact: true }).click();
   await page
-    .getByRole('checkbox', { name: 'Follow aircraft on Overview' })
+    .getByRole('switch', { name: 'Follow aircraft on Overview' })
     .check();
   await page.getByRole('button', { name: 'Toggle navigation' }).click();
   await page.getByRole('link', { name: 'Overview', exact: true }).click();

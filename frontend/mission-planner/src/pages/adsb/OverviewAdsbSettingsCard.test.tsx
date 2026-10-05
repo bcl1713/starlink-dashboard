@@ -2,16 +2,30 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { OverviewAdsbSourceStatus } from './OverviewAdsbSourceStatus';
 import { OverviewAdsbSettingsCard } from './OverviewAdsbSettingsCard';
 import type { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
 import { adsbContact, adsbSettings, ADSB_NOW } from '@/test/adsb-fixtures';
-import { projectAdsbContacts } from './overview-adsb-state';
-let state: ReturnType<typeof useOverviewAdsbLayer>;
+import { projectAdsbCatalog } from './overview-adsb-state';
+let state: ReturnType<typeof useOverviewAdsbLayer> & {
+  contextContacts: ReturnType<typeof adsbContact>[];
+};
 const save = vi.fn();
 let pending = false,
   saveError = false;
 vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
   useOverviewAdsbLayer: () => state,
+}));
+vi.mock('@/hooks/useConfigurationAdsbLayer', () => ({
+  useConfigurationAdsbLayer: () => ({
+    ...state,
+    contacts: projectAdsbCatalog(
+      state.contextContacts,
+      state.settings ?? adsbSettings({ enabled: false }),
+      ADSB_NOW
+    ),
+    sourceErrors: [],
+  }),
 }));
 vi.mock('@/hooks/api/useUpdateOverviewAdsbSettings', () => ({
   useUpdateOverviewAdsbSettings: () => ({
@@ -27,6 +41,7 @@ beforeEach(() => {
   state = {
     settings: adsbSettings({ enabled: false }),
     contacts: [],
+    contextContacts: [],
     sources: [],
     settingsError: false,
     trafficError: false,
@@ -54,13 +69,9 @@ it('defaults off and uses confirmed enable/mode controls with exact mode names',
     screen.getByRole('option', { name: 'Included only' })
   ).toBeInTheDocument();
 });
-it('exclusion removes the active row only after confirmation while keeping the saved list', () => {
+it('exclusion marks the catalog row only after confirmation while keeping the saved list', () => {
   state.settings = adsbSettings();
-  state.contacts = projectAdsbContacts(
-    [adsbContact()],
-    state.settings,
-    ADSB_NOW
-  );
+  state.contextContacts = [adsbContact()];
   const view = render(<OverviewAdsbSettingsCard />);
   fireEvent.click(screen.getByRole('button', { name: 'Exclude 00AB12' }));
   expect(save).toHaveBeenCalledWith({ exclude_hexes: ['00AB12'] });
@@ -71,7 +82,9 @@ it('exclusion removes the active row only after confirmation while keeping the s
     contacts: [],
   };
   view.rerender(<OverviewAdsbSettingsCard />);
-  expect(screen.queryByRole('row', { name: /00AB12/ })).toBeNull();
+  expect(screen.getByRole('row', { name: /00AB12/ })).toHaveTextContent(
+    'Excluded'
+  );
   expect(
     screen.getByRole('region', { name: 'Saved excluded aircraft' })
   ).toHaveTextContent('00AB12');
@@ -102,7 +115,12 @@ it('shows independent source status and provider attribution', () => {
       retry_at_ms: ADSB_NOW + 15000,
     },
   ];
-  render(<OverviewAdsbSettingsCard />);
+  render(
+    <>
+      <OverviewAdsbSettingsCard />
+      <OverviewAdsbSourceStatus />
+    </>
+  );
   expect(screen.getByText(/Provider acquisition failed/)).toBeVisible();
   expect(screen.getByRole('link', { name: 'adsb.lol' })).toHaveAttribute(
     'href',
@@ -112,4 +130,54 @@ it('shows independent source status and provider attribution', () => {
     'href',
     'https://opendatacommons.org/licenses/odbl/1-0/'
   );
+});
+
+it('uses available identity context for an excluded aircraft and keeps it manageable', () => {
+  state.settings = adsbSettings({ exclude_hexes: ['00AB12'] });
+  state.contextContacts = [adsbContact()];
+  render(<OverviewAdsbSettingsCard />);
+  expect(
+    screen.getByRole('region', { name: 'Saved excluded aircraft' })
+  ).toHaveTextContent('00AB12 · RCH123 · N123 · C17');
+  expect(screen.getByRole('row', { name: /00AB12/ })).toHaveTextContent(
+    'Excluded'
+  );
+});
+
+it('toggles each saved list independently using confirmed membership and exclusion precedence', () => {
+  state.settings = adsbSettings({
+    mode: 'included_only',
+    include_hexes: ['00AB12'],
+    exclude_hexes: ['00AB12'],
+  });
+  state.contextContacts = [adsbContact()];
+  const view = render(<OverviewAdsbSettingsCard />);
+  const include = () => screen.getByRole('button', { name: 'Include 00AB12' });
+  const exclude = () => screen.getByRole('button', { name: 'Exclude 00AB12' });
+  expect(include()).toHaveAttribute('aria-pressed', 'true');
+  expect(exclude()).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('row', { name: /00AB12/ })).toHaveTextContent(
+    'Excluded'
+  );
+  fireEvent.click(include());
+  expect(save).toHaveBeenLastCalledWith({ include_hexes: [] });
+  expect(include()).toHaveAttribute('aria-pressed', 'true');
+  state.settings = adsbSettings({
+    mode: 'included_only',
+    exclude_hexes: ['00AB12'],
+    revision: 2,
+  });
+  view.rerender(<OverviewAdsbSettingsCard />);
+  expect(include()).toHaveAttribute('aria-pressed', 'false');
+  expect(exclude()).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(exclude());
+  expect(save).toHaveBeenLastCalledWith({ exclude_hexes: [] });
+  state.settings = adsbSettings({ mode: 'included_only', revision: 3 });
+  view.rerender(<OverviewAdsbSettingsCard />);
+  expect(exclude()).toHaveAttribute('aria-pressed', 'false');
+  expect(screen.getByRole('row', { name: /00AB12/ })).toHaveTextContent(
+    'Not selected'
+  );
+  fireEvent.click(include());
+  expect(save).toHaveBeenLastCalledWith({ include_hexes: ['00AB12'] });
 });

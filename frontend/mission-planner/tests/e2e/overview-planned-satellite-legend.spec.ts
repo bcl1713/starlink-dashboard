@@ -251,6 +251,7 @@ test('retains the shared window through Configuration navigation', async ({
   await expect(page.getByLabel('Overview history window')).toHaveValue('300');
   await page.getByLabel('Overview history window').selectOption('900');
   await expect(page.getByLabel('Overview history window')).toHaveValue('900');
+  await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
   await expect(
     page.getByRole('region', { name: 'Overview map diagnostics' })
   ).toContainText('Selected planned satellite X-6');
@@ -353,6 +354,7 @@ test('reports malformed selection consistently in Overview and Configuration', a
     page.getByRole('region', { name: 'Planned satellite' })
   ).toContainText('UNAVAILABLE');
   await page.getByRole('link', { name: 'Configuration', exact: true }).click();
+  await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
   const diagnostics = page.getByRole('region', {
     name: 'Overview map diagnostics',
   });

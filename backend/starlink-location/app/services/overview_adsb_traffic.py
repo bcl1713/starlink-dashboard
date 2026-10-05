@@ -31,6 +31,7 @@ class AdsbTrafficService:
         self._failures: dict[str, int] = {}
         self._retry: dict[str, float] = {}
         self._next_cycle = 0.0
+        self._catalog_until = 0.0
         self._attempts = 0
         self._lock = asyncio.Lock()
         self._wake = asyncio.Event()
@@ -78,7 +79,7 @@ class AdsbTrafficService:
                 self._contacts.clear()
             else:
                 self._prune(settings)
-            keys = self._source_keys(settings)
+            keys = self._source_keys(self._acquisition_settings(settings))
             now = self._monotonic()
             for mapping in (self._sources, self._failures, self._retry):
                 for key in list(mapping):
@@ -88,11 +89,28 @@ class AdsbTrafficService:
                         del mapping[key]
         return settings
 
+    @staticmethod
+    def _catalog_settings(settings: AdsbSettings) -> AdsbSettings:
+        return settings.model_copy(
+            update={
+                "mode": "military_and_included",
+                "exclude_hexes": [],
+                "callsign_substrings": [],
+            }
+        )
+
+    def _acquisition_settings(self, settings: AdsbSettings) -> AdsbSettings:
+        if self._monotonic() < self._catalog_until:
+            return self._catalog_settings(settings)
+        return settings
+
     def _prune(self, settings: AdsbSettings) -> None:
         self._contacts = {
             c.hex: c
             for c in select_contacts(
-                self._contacts.values(), settings, self._time() * 1000
+                self._contacts.values(),
+                self._catalog_settings(settings),
+                self._time() * 1000,
             )
         }
 
@@ -107,7 +125,28 @@ class AdsbTrafficService:
         return AdsbTrafficBundle(
             settings_revision=settings.revision,
             generated_at_ms=self._time() * 1000,
-            contacts=list(self._contacts.values()),
+            contacts=select_contacts(
+                self._contacts.values(), settings, self._time() * 1000
+            ),
+            sources=[self._sources[k] for k in sorted(self._sources) if k in keys],
+        )
+
+    def read_catalog(self) -> AdsbTrafficBundle:
+        settings = self._sync_settings()
+        if settings.enabled:
+            # Reads only renew demand; acquisition remains owned by the shared
+            # scheduler, including its cadence and upstream retry deadlines.
+            self._catalog_until = self._monotonic() + 30
+            self._wake.set()
+        self._prune(settings)
+        catalog_settings = self._catalog_settings(settings)
+        keys = self._source_keys(catalog_settings)
+        return AdsbTrafficBundle(
+            settings_revision=settings.revision,
+            generated_at_ms=self._time() * 1000,
+            contacts=select_contacts(
+                self._contacts.values(), catalog_settings, self._time() * 1000
+            ),
             sources=[self._sources[k] for k in sorted(self._sources) if k in keys],
         )
 
@@ -139,7 +178,8 @@ class AdsbTrafficService:
         if self._monotonic() < self._next_cycle:
             return None
         self._cycle = asyncio.create_task(
-            self._acquire(settings, self._generation), name="overview-adsb-cycle"
+            self._acquire(self._acquisition_settings(settings), self._generation),
+            name="overview-adsb-cycle",
         )
         return self._cycle
 

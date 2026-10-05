@@ -79,7 +79,7 @@ async function displayBounds(page: Page) {
   });
 }
 
-test('compact paused follow and real fullscreen rejection keep guidance and identity contained through native entry and exit', async ({
+test('compact paused follow and display identity stay contained through local fullscreen entry and exit', async ({
   context,
 }, info) => {
   const fixture = await installOverviewWindowFixture(context);
@@ -103,55 +103,29 @@ test('compact paused follow and real fullscreen rejection keep guidance and iden
     .poll(async () => (await displayBounds(overview)).issues)
     .toEqual([]);
   const paused = await displayBounds(overview);
-  const probe = await context.newCDPSession(overview);
-  const read = async (expression: string) =>
-    (
-      await probe.send('Runtime.evaluate', {
-        expression,
-        returnByValue: true,
-        userGesture: false,
-      })
-    ).result.value;
-  await expect
-    .poll(() => read('navigator.userActivation.isActive'), { timeout: 10000 })
-    .toBe(false);
-  await editing.bringToFront();
+  await editing.getByRole('tab', { name: 'Displays' }).click();
   const card = editing.getByRole('region', { name: 'Overview displays' });
   await expect(
     card.getByRole('option', { name: displayLabel, exact: true })
   ).toHaveCount(1);
-  await card.getByRole('button', { name: 'Fullscreen', exact: true }).click();
-  await expect(card.getByRole('status')).toHaveText(
-    'Click Fullscreen in the Overview window to finish.'
-  );
-  await expect(overview.locator('.overview-fullscreen-feedback')).toBeVisible();
-  expect(await read('!!document.fullscreenElement')).toBe(false);
-  expect(await editing.evaluate(() => document.hasFocus())).toBe(true);
-  const rejected = await displayBounds(overview);
+  await expect(
+    card.getByRole('button', { name: 'Fullscreen', exact: true })
+  ).toHaveCount(0);
   await writeFile(
     info.outputPath('compact-bounds.json'),
-    JSON.stringify({ paused, rejected }, null, 2)
+    JSON.stringify({ paused }, null, 2)
   );
-  await expect
-    .poll(async () => (await displayBounds(overview)).issues)
-    .toEqual([]);
-  await expect(identity).toHaveText(displayLabel);
-  await overview
-    .locator('.overview-fullscreen-feedback')
-    .scrollIntoViewIfNeeded();
-  await overview.screenshot({
-    path: info.outputPath('fullscreen-rejected.png'),
-  });
   await overview.bringToFront();
   await overview
     .getByRole('button', { name: 'Enter fullscreen overview' })
     .click();
   await expect
-    .poll(() => read('document.fullscreenElement === document.documentElement'))
+    .poll(() =>
+      overview.evaluate(
+        () => document.fullscreenElement === document.documentElement
+      )
+    )
     .toBe(true);
-  await expect(
-    card.getByText('Fullscreen active', { exact: true })
-  ).toBeVisible();
   await expect(overview.locator('.overview-fullscreen-feedback')).toHaveCount(
     0
   );
@@ -159,8 +133,9 @@ test('compact paused follow and real fullscreen rejection keep guidance and iden
     .poll(async () => (await displayBounds(overview)).issues)
     .toEqual([]);
   await overview.evaluate(() => document.exitFullscreen());
-  await expect.poll(() => read('!!document.fullscreenElement')).toBe(false);
-  await expect(card.getByText('Windowed', { exact: true })).toBeVisible();
+  await expect
+    .poll(() => overview.evaluate(() => !!document.fullscreenElement))
+    .toBe(false);
   await expect(identity).toHaveText(displayLabel);
   await expect
     .poll(async () => (await displayBounds(overview)).issues)

@@ -1,3 +1,5 @@
+import { Switch } from '@/components/ui/switch';
+import { ConfigurationSection } from './ConfigurationSection';
 import { useId } from 'react';
 import { useOverviewLinkSettings } from '@/hooks/api/useOverviewLinkSettings';
 import { useUpdateOverviewLinkSettings } from '@/hooks/api/useUpdateOverviewLinkSettings';
@@ -31,28 +33,32 @@ export function OverviewLinkSettingsCard() {
   ] as const;
 
   return (
-    <section
-      className="my-6 rounded-lg border p-4"
-      aria-label="Overview data link settings"
+    <ConfigurationSection
+      title="Overview data links"
+      label="Overview data link settings"
+      description="Choose which traffic paths appear on Overview."
     >
-      <h2 className="text-xl font-semibold">Overview data links</h2>
-      <div className="mt-3 space-y-3">
+      <div className="divide-y">
         {controls.map(({ field, label, description }) => (
-          <div key={field}>
-            <label className="flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                role="switch"
+          <div key={field} className="min-w-0 py-4 first:pt-0 last:pb-0">
+            <label className="flex min-h-11 items-center justify-between gap-6 text-sm font-medium">
+              <span>
+                <span className="block">{label}</span>
+                <span
+                  id={`${id}-${field}`}
+                  className="mt-1 block text-sm font-normal text-muted-foreground"
+                >
+                  {description}
+                </span>
+              </span>
+              <Switch
+                aria-label={label}
                 checked={data?.[field] ?? false}
                 disabled={!data || isPending}
                 aria-describedby={`${id}-${field}`}
                 onChange={(event) => mutate({ [field]: event.target.checked })}
               />
-              {label}
             </label>
-            <p id={`${id}-${field}`} className="text-sm text-muted-foreground">
-              {description}
-            </p>
           </div>
         ))}
       </div>
@@ -63,6 +69,6 @@ export function OverviewLinkSettingsCard() {
       {saveError && (
         <p role="alert">Unable to save data link settings. Please try again.</p>
       )}
-    </section>
+    </ConfigurationSection>
   );
 }

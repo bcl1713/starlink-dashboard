@@ -20,6 +20,7 @@ export function useUpdateOverviewAdsbSettings() {
       );
       void client.invalidateQueries({ queryKey: key });
       void client.invalidateQueries({ queryKey: ['overview-adsb-traffic'] });
+      void client.invalidateQueries({ queryKey: ['overview-adsb-catalog'] });
     },
     retry: false,
   });

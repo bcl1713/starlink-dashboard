@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   NavLink,
+  useMatch,
 } from 'react-router-dom';
 import { Menu, Radio } from 'lucide-react';
 import { MissionsPage } from './pages/MissionsPage';
@@ -33,9 +34,13 @@ const navigationItems = [
 
 function AppNavigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const isConfiguration = useMatch('/configuration') !== null;
 
   return (
-    <nav className="border-b bg-card" aria-label="Primary navigation">
+    <nav
+      className={`${isConfiguration ? 'dark text-foreground ' : ''}border-b bg-card`}
+      aria-label="Primary navigation"
+    >
       <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <NavLink
           to="/missions"

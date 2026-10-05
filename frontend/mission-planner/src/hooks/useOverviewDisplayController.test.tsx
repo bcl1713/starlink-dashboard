@@ -27,8 +27,7 @@ function host() {
     role: 'display',
     onSnapshot: () => {},
     readPeer: () => ({
-      fullscreen: false,
-      actions: ['recenter', 'fullscreen'],
+      actions: ['recenter'],
     }),
     onCommand: async () => 'accepted',
   });
@@ -43,8 +42,8 @@ it('discovers existing displays and sends targeted requests with acknowledged fe
     {
       id: display.id,
       label: display.label,
-      fullscreen: false,
-      actions: ['recenter', 'fullscreen'],
+
+      actions: ['recenter'],
     },
   ]);
   act(() => {

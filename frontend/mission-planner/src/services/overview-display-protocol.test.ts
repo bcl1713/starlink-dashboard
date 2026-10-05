@@ -6,8 +6,8 @@ const presence = {
   ...common,
   type: 'presence',
   label: 'Overview play-a',
-  fullscreen: false,
-  actions: ['recenter', 'fullscreen'],
+
+  actions: ['recenter'],
 };
 const command = {
   ...common,
@@ -21,7 +21,6 @@ const result = {
   ...command,
   type: 'result',
   status: 'accepted',
-  fullscreen: true,
 };
 delete (result as Partial<typeof command>).expiresAtMs;
 
@@ -32,14 +31,11 @@ describe('parseOverviewDisplayMessage', () => {
     { ...presence, target: 'controller-a', actions: [] },
     { ...common, type: 'bye' },
     command,
-    { ...command, action: 'fullscreen', expiresAtMs: 0 },
-    ...[
-      'accepted',
-      'interaction-required',
-      'unsupported',
-      'expired',
-      'failed',
-    ].map((status) => ({ ...result, status })),
+    { ...command, expiresAtMs: 0 },
+    ...['accepted', 'unsupported', 'expired', 'failed'].map((status) => ({
+      ...result,
+      status,
+    })),
   ])('accepts a closed valid message: $type $status', (message) => {
     expect(parseOverviewDisplayMessage(message)).toEqual(message);
   });
@@ -63,7 +59,6 @@ describe('parseOverviewDisplayMessage', () => {
     })),
     { ...presence, label: '' },
     { ...presence, label: 'x'.repeat(129) },
-    { ...presence, fullscreen: 'false' },
     { ...presence, actions: 'recenter' },
     { ...presence, actions: ['recenter', 'recenter'] },
     { ...presence, actions: ['recenter', 'reload'] },
@@ -76,13 +71,14 @@ describe('parseOverviewDisplayMessage', () => {
     { ...command, requestId: '' },
     { ...command, requestId: 'x'.repeat(129) },
     { ...command, action: 'reload' },
+    { ...command, action: 'fullscreen' },
+    { ...result, status: 'interaction-required' },
     ...[-1, Infinity, NaN, '3000'].map((expiresAtMs) => ({
       ...command,
       expiresAtMs,
     })),
     { ...result, target: null },
     { ...result, status: 'timeout' },
-    { ...result, fullscreen: 1 },
   ])('rejects malformed, oversized or unknown input %#', (message) => {
     expect(parseOverviewDisplayMessage(message)).toBeNull();
   });
@@ -148,6 +144,7 @@ describe('parseOverviewDisplayMessage', () => {
   it('accepts boundary lengths and detaches the validated capabilities', () => {
     const input = {
       ...presence,
+      actions: [...presence.actions],
       sender: 'x'.repeat(128),
       label: 'y'.repeat(128),
       seq: Number.MAX_SAFE_INTEGER,
@@ -155,9 +152,22 @@ describe('parseOverviewDisplayMessage', () => {
     const parsed = parseOverviewDisplayMessage(input);
     expect(parsed).toEqual(input);
     input.actions.push('reload');
-    expect(parsed?.type === 'presence' && parsed.actions).toEqual([
-      'recenter',
-      'fullscreen',
-    ]);
+    expect(parsed?.type === 'presence' && parsed.actions).toEqual(['recenter']);
   });
+});
+
+it('reads legacy display discovery and recenter acknowledgments while discarding fullscreen metadata', () => {
+  expect(
+    parseOverviewDisplayMessage({
+      ...presence,
+      fullscreen: true,
+      actions: ['recenter', 'fullscreen'],
+    })
+  ).toEqual(presence);
+  expect(parseOverviewDisplayMessage({ ...result, fullscreen: false })).toEqual(
+    result
+  );
+  expect(
+    parseOverviewDisplayMessage({ ...command, action: 'fullscreen' })
+  ).toBeNull();
 });

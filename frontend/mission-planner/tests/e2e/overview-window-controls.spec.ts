@@ -8,7 +8,6 @@ import {
   installOverviewWindowFixture,
   retainedHistoryTimes,
 } from './support/overview-window-fixture';
-import { pressNativeOverviewEscape } from './support/overview-native-escape';
 
 test.use({ viewport: { width: 1920, height: 1080 } });
 async function explore(page: Page) {
@@ -69,6 +68,7 @@ for (const fullscreen of [false, true]) {
     const otherManual = await explore(other);
     const editing = await context.newPage();
     await editing.goto('/configuration');
+    await editing.getByRole('tab', { name: 'Displays' }).click();
     await editing.bringToFront();
     const card = editing.getByRole('region', { name: 'Overview displays' });
     await expect(
@@ -119,80 +119,36 @@ for (const fullscreen of [false, true]) {
     await expect(card).toContainText('Selected display disconnected');
   });
 }
-test(`native remote fullscreen rejection retains Configuration focus and local click plus ${process.env.OVERVIEW_NATIVE_ESCAPE === '1' ? 'OS Escape' : 'local native exit'} publish actual state`, async ({
+test('Open Overview discovers a separate display with recenter and no remote fullscreen', async ({
   context,
-}, info) => {
+}) => {
   await installOverviewWindowFixture(context);
   const editing = await context.newPage();
   await editing.goto('/configuration');
+  await editing.getByRole('tab', { name: 'Displays' }).click();
   const card = editing.getByRole('region', { name: 'Overview displays' });
-  await expect(
-    card.getByRole('button', { name: 'Open Overview' })
-  ).toBeEnabled();
   const popupPromise = context.waitForEvent('page');
   await card.getByRole('button', { name: 'Open Overview' }).click();
   const overview = await popupPromise;
-  await label(overview);
-  const nativeProbe = await context.newCDPSession(overview);
-  const readWithoutGesture = async (expression: string) =>
-    (
-      await nativeProbe.send('Runtime.evaluate', {
-        expression,
-        returnByValue: true,
-        userGesture: false,
-      })
-    ).result.value;
-  expect(await readWithoutGesture('window.opener === null')).toBe(true);
+  const displayLabel = await label(overview);
+  expect(await overview.evaluate(() => window.opener === null)).toBe(true);
+  await expect(card.getByLabel('Overview display')).toHaveValue(/.+/);
+  await expect(
+    card.getByRole('option', { name: displayLabel, exact: true })
+  ).toHaveCount(1);
+  await expect(
+    card.getByRole('button', { name: 'Recenter view' })
+  ).toBeEnabled();
   await expect(
     card.getByRole('button', { name: 'Fullscreen', exact: true })
-  ).toBeEnabled();
-  // Playwright page.evaluate marks evaluations as a user gesture. Probe through
-  // CDP without activation so observation cannot enable remote fullscreen.
-  await expect
-    .poll(() => readWithoutGesture('navigator.userActivation.isActive'), {
-      timeout: 10000,
-    })
-    .toBe(false);
+  ).toHaveCount(0);
   await editing.bringToFront();
-  await card.getByRole('button', { name: 'Fullscreen', exact: true }).click();
-  await expect(card.getByRole('status')).toHaveText(
-    'Click Fullscreen in the Overview window to finish.'
-  );
-  expect(await readWithoutGesture('!!document.fullscreenElement')).toBe(false);
+  await card.getByRole('button', { name: 'Recenter view' }).click();
+  await expect(card.getByRole('status')).toContainText('Recenter accepted');
   expect(await editing.evaluate(() => document.hasFocus())).toBe(true);
-  expect(await editing.evaluate(() => !!document.fullscreenElement)).toBe(
+  expect(await overview.evaluate(() => !!document.fullscreenElement)).toBe(
     false
   );
-  await expect(
-    overview.locator('.overview-fullscreen-controls').getByRole('status')
-  ).toContainText('Click Fullscreen in the Overview window to finish.');
-  await overview.bringToFront();
-  await overview
-    .getByRole('button', { name: 'Enter fullscreen overview' })
-    .click();
-  await expect
-    .poll(() =>
-      readWithoutGesture(
-        'document.fullscreenElement === document.documentElement'
-      )
-    )
-    .toBe(true);
-  await expect(
-    card.getByText('Fullscreen active', { exact: true })
-  ).toBeVisible();
-  await editing.bringToFront();
-  await card.getByRole('button', { name: 'Fullscreen', exact: true }).click();
-  await expect(card.getByRole('status')).toContainText('Fullscreen active');
-  await overview.bringToFront();
-  if (process.env.OVERVIEW_NATIVE_ESCAPE === '1') pressNativeOverviewEscape();
-  else await overview.evaluate(() => document.exitFullscreen());
-  await expect
-    .poll(() => readWithoutGesture('!!document.fullscreenElement'))
-    .toBe(false);
-  await expect(card.getByText('Windowed', { exact: true })).toBeVisible();
-  await overview.screenshot({
-    path: info.outputPath('local-fullscreen-exit.png'),
-  });
 });
 test('blocked Open Overview reports discovery guidance without navigating Configuration', async ({
   context,
@@ -203,6 +159,7 @@ test('blocked Open Overview reports discovery guidance without navigating Config
     window.open = () => null;
   });
   await editing.goto('/configuration');
+  await editing.getByRole('tab', { name: 'Displays' }).click();
   const card = editing.getByRole('region', { name: 'Overview displays' });
   await card.getByRole('button', { name: 'Open Overview' }).click();
   await expect(card.getByRole('alert')).toContainText('popup blocking', {

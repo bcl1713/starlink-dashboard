@@ -1,6 +1,9 @@
-import type { DisplayResult } from '@/services/overview-display-protocol';
+export type FullscreenResult =
+  | 'accepted'
+  | 'unsupported'
+  | 'interaction-required';
 
-export async function requestOverviewFullscreen(): Promise<DisplayResult> {
+export async function requestOverviewFullscreen(): Promise<FullscreenResult> {
   const root = document.documentElement;
   if (document.fullscreenElement === root) return 'accepted';
   if (typeof root.requestFullscreen !== 'function') return 'unsupported';

@@ -94,8 +94,7 @@ function display(
   onCommand = vi.fn(async (): Promise<DisplayResult> => 'accepted')
 ) {
   const peer = {
-    fullscreen: false,
-    actions: ['recenter', 'fullscreen'] as ('recenter' | 'fullscreen')[],
+    actions: ['recenter'] as 'recenter'[],
   };
   const onSnapshot = vi.fn();
   const session = createOverviewDisplaySession({
@@ -118,8 +117,8 @@ function rawPresence(sender: string, seq = 100) {
     target: null,
     seq,
     label: 'Overview raw',
-    fullscreen: false,
-    actions: ['recenter', 'fullscreen'],
+
+    actions: ['recenter'],
   };
 }
 function deliverController(value: unknown) {
@@ -170,13 +169,13 @@ describe('Overview display discovery and lifecycle', () => {
     const host = display();
     await MemoryChannel.flush();
     expect(control.snapshot.peers).toHaveLength(1);
-    host.peer.fullscreen = true;
+    host.peer.actions = [];
     await vi.advanceTimersByTimeAsync(4999);
     await MemoryChannel.flush();
-    expect(control.snapshot.peers[0].fullscreen).toBe(false);
+    expect(control.snapshot.peers[0].actions).toEqual(['recenter']);
     await vi.advanceTimersByTimeAsync(1);
     await MemoryChannel.flush();
-    expect(control.snapshot.peers[0].fullscreen).toBe(true);
+    expect(control.snapshot.peers[0].actions).toEqual([]);
     expect(
       MemoryChannel.sent.filter((message) => message.type === 'presence')
     ).toHaveLength(2);
@@ -228,10 +227,10 @@ describe('Overview display discovery and lifecycle', () => {
     await vi.advanceTimersByTimeAsync(10000);
     deliverController({
       ...rawPresence('silent-display', 99),
-      fullscreen: true,
+      actions: [],
     });
     deliverController(rawPresence('silent-display'));
-    expect(control.snapshot.peers[0].fullscreen).toBe(false);
+    expect(control.snapshot.peers[0].actions).toEqual(['recenter']);
     await vi.advanceTimersByTimeAsync(5000);
     expect(control.snapshot.peers).toEqual([]);
   });
@@ -387,16 +386,16 @@ describe('targeted commands and acknowledgments', () => {
       )
     );
     await MemoryChannel.flush();
-    control.session.request(host.session.id, 'fullscreen');
+    control.session.request(host.session.id, 'recenter');
     await MemoryChannel.flush();
     await vi.advanceTimersByTimeAsync(3000);
-    host.peer.fullscreen = true;
+    host.peer.actions = [];
     complete('accepted');
     await MemoryChannel.flush();
     expect(control.snapshot.feedback?.status).toBe('timeout');
     host.session.publishPresence();
     await MemoryChannel.flush();
-    expect(control.snapshot.peers[0].fullscreen).toBe(true);
+    expect(control.snapshot.peers[0].actions).toEqual([]);
     expect(control.snapshot.feedback?.status).toBe('timeout');
   });
 
@@ -414,25 +413,29 @@ describe('targeted commands and acknowledgments', () => {
       requestId: first,
       action: 'recenter',
       status: 'accepted',
-      fullscreen: false,
     };
     deliverController(reply);
     expect(control.snapshot.feedback?.status).toBe('accepted');
     deliverController({ ...reply, status: 'failed' });
     expect(control.snapshot.feedback?.status).toBe('accepted');
-    const second = control.session.request('a', 'fullscreen');
+    const second = control.session.request('a', 'recenter');
     deliverController({ ...reply, seq: 102 });
     deliverController({
       ...reply,
       requestId: second,
-      action: 'fullscreen',
+      action: 'recenter',
       sender: 'b',
     });
-    deliverController({ ...reply, requestId: second, seq: 103 });
     deliverController({
       ...reply,
       requestId: second,
       action: 'fullscreen',
+      seq: 103,
+    });
+    deliverController({
+      ...reply,
+      requestId: second,
+      action: 'recenter',
       target: 'other',
       seq: 104,
     });
@@ -440,28 +443,28 @@ describe('targeted commands and acknowledgments', () => {
     deliverController({
       ...reply,
       requestId: second,
-      action: 'fullscreen',
-      fullscreen: true,
+      action: 'recenter',
+
       seq: 105,
     });
     expect(control.snapshot.feedback?.status).toBe('accepted');
-    expect(
-      control.snapshot.peers.find((peer) => peer.id === 'a')?.fullscreen
-    ).toBe(true);
   });
 
   it('does not send unsupported or unknown targets and host rechecks current capability', async () => {
     const control = controller();
     const host = display();
     await MemoryChannel.flush();
-    host.peer.actions = ['recenter'];
+    host.peer.actions = [];
     host.session.publishPresence();
     await MemoryChannel.flush();
-    expect(control.session.request(host.session.id, 'fullscreen')).toBeNull();
+    expect(control.session.request(host.session.id, 'recenter')).toBeNull();
     expect(control.session.request('missing', 'recenter')).toBeNull();
     expect(
       MemoryChannel.sent.filter((message) => message.type === 'command')
     ).toHaveLength(0);
+    host.peer.actions = ['recenter'];
+    host.session.publishPresence();
+    await MemoryChannel.flush();
     control.session.request(host.session.id, 'recenter');
     host.peer.actions = [];
     await MemoryChannel.flush();

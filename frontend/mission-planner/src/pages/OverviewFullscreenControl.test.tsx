@@ -41,11 +41,8 @@ describe('OverviewFullscreenControl', () => {
       'Fullscreen is unavailable'
     );
   });
-  it('shows remote fallback then hides it for actual fullscreen and restores the control on Escape', () => {
-    render(<OverviewFullscreenControl feedback="interaction-required" />);
-    expect(screen.getByRole('status').textContent).toContain(
-      'Click Fullscreen in the Overview window to finish.'
-    );
+  it('restores the local control on Escape after actual fullscreen', () => {
+    render(<OverviewFullscreenControl />);
     act(() => {
       Object.defineProperty(document, 'fullscreenElement', {
         configurable: true,

@@ -34,14 +34,7 @@ afterEach(() => {
   Reflect.deleteProperty(document, 'fullscreenElement');
   Reflect.deleteProperty(document.documentElement, 'requestFullscreen');
 });
-function setFullscreen(active: boolean) {
-  Object.defineProperty(document, 'fullscreenElement', {
-    configurable: true,
-    value: active ? document.documentElement : null,
-  });
-  document.dispatchEvent(new Event('fullscreenchange'));
-}
-async function send(action: 'recenter' | 'fullscreen') {
+async function send(action: 'recenter') {
   act(() => {
     controller.request(snapshot.peers[0].id, action);
   });
@@ -62,100 +55,32 @@ it('recenter uses the target existing reset callback and latest closure', async 
   expect(snapshot.feedback?.status).toBe('accepted');
   // Acceptance describes callback execution, not settled camera animation.
 });
-it('publishes actual fullscreenchange, Escape exit, and heartbeat state', async () => {
-  renderHook(() => useOverviewDisplayHost(() => {}));
-  await act(Channel.flush);
-  act(() => setFullscreen(true));
-  await act(Channel.flush);
-  expect(snapshot.peers[0].fullscreen).toBe(true);
-  act(() => setFullscreen(false));
-  await act(Channel.flush);
-  expect(snapshot.peers[0].fullscreen).toBe(false);
-  // Heartbeats read the document, even before a fullscreenchange notification.
-  Object.defineProperty(document, 'fullscreenElement', {
-    configurable: true,
-    value: document.documentElement,
-  });
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(5000);
-    await Channel.flush();
-  });
-  expect(snapshot.peers[0].fullscreen).toBe(true);
-});
-it('remote rejection exposes local-click feedback', async () => {
-  Object.defineProperty(document.documentElement, 'requestFullscreen', {
-    configurable: true,
-    value: async () => {
-      throw new TypeError('Denied');
-    },
-  });
-  const host = renderHook(() => useOverviewDisplayHost(() => {}));
-  await act(Channel.flush);
-  await send('fullscreen');
-  expect(host.result.current.fullscreenFeedback).toBe('interaction-required');
-  expect(snapshot.feedback?.status).toBe('interaction-required');
-});
-it('local fullscreen entry clears old rejection so another rejected request after Escape is visible', async () => {
-  Object.defineProperty(document.documentElement, 'requestFullscreen', {
-    configurable: true,
-    value: async () => {
-      throw new TypeError('Denied');
-    },
-  });
-  const host = renderHook(() => useOverviewDisplayHost(() => {}));
-  await act(Channel.flush);
-  await send('fullscreen');
-  expect(host.result.current.fullscreenFeedback).toBe('interaction-required');
-  act(() => setFullscreen(true));
-  await act(Channel.flush);
-  expect(host.result.current.fullscreenFeedback).toBeNull();
-  act(() => setFullscreen(false));
-  await act(Channel.flush);
-  await send('fullscreen');
-  expect(host.result.current.fullscreenFeedback).toBe('interaction-required');
-});
-it('an in-flight native request never replays or reports late success after deadline', async () => {
-  let resolve!: () => void;
-  const native = vi.fn(
-    () =>
-      new Promise<void>((done) => {
-        resolve = done;
-      })
-  );
+it('advertises recenter only and ignores legacy fullscreen commands', async () => {
+  const native = vi.fn();
   Object.defineProperty(document.documentElement, 'requestFullscreen', {
     configurable: true,
     value: native,
   });
-  const host = renderHook(() => useOverviewDisplayHost(() => {}));
+  const reset = vi.fn();
+  renderHook(() => useOverviewDisplayHost(reset));
   await act(Channel.flush);
-  await send('fullscreen');
-  const command = Channel.sent
-    .filter((message) => message.type === 'command')
-    .at(-1)!;
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(3000);
-    await Channel.flush();
-  });
-  expect(snapshot.feedback?.status).toBe('timeout');
-  await act(async () => {
-    setFullscreen(true);
-    resolve();
-    await Channel.flush();
-  });
-  expect(host.result.current.fullscreenFeedback).toBe('expired');
-  expect(snapshot.feedback?.status).toBe('timeout');
-  expect(snapshot.peers[0].fullscreen).toBe(true);
-  const channel = Channel.instances.find(
+  expect(snapshot.peers[0].actions).toEqual(['recenter']);
+  const target = Channel.instances.find(
     (peer) => !peer.closed && peer !== Channel.instances[0]
   )!;
-  channel.deliver(command);
-  channel.deliver({
-    ...command,
-    requestId: 'different-expired-request',
-    seq: command.seq + 1,
-  } as OverviewDisplayMessage);
+  target.deliver({
+    v: 1,
+    type: 'command',
+    sender: 'legacy',
+    target: snapshot.peers[0].id,
+    seq: 1,
+    requestId: 'fullscreen-old',
+    action: 'fullscreen',
+    expiresAtMs: Date.now() + 3000,
+  } as unknown as OverviewDisplayMessage);
   await act(Channel.flush);
-  expect(native).toHaveBeenCalledTimes(1);
+  expect(native).not.toHaveBeenCalled();
+  expect(reset).not.toHaveBeenCalled();
 });
 it('StrictMode unmount removes presence and releases owned resources', async () => {
   const host = renderHook(() => useOverviewDisplayHost(() => {}), {

@@ -77,21 +77,22 @@ export async function installAdsbFixture(
       generated_at_ms: Date.now(),
       sources: [],
       contacts: settings.enabled
-        ? contacts.filter(
-            (c) =>
-              !settings.exclude_hexes.includes(c.hex) &&
-              (settings.include_hexes.includes(c.hex) ||
-                (settings.mode === 'military_and_included' &&
-                  c.military === true &&
-                  (settings.callsign_substrings.length === 0 ||
-                    settings.callsign_substrings.some((s) =>
-                      (c.callsign ?? '').toUpperCase().includes(s)
-                    ))))
+        ? contacts.filter((c) =>
+            route.request().url().endsWith('/catalog')
+              ? c.military === true || settings.include_hexes.includes(c.hex)
+              : !settings.exclude_hexes.includes(c.hex) &&
+                (settings.include_hexes.includes(c.hex) ||
+                  (settings.mode === 'military_and_included' &&
+                    c.military === true &&
+                    (settings.callsign_substrings.length === 0 ||
+                      settings.callsign_substrings.some((s) =>
+                        (c.callsign ?? '').toUpperCase().includes(s)
+                      ))))
           )
         : [],
     });
-    const pending = hold;
-    hold = null;
+    const pending = route.request().url().endsWith('/catalog') ? null : hold;
+    if (!route.request().url().endsWith('/catalog')) hold = null;
     if (pending) await pending;
     await route
       .fulfill(

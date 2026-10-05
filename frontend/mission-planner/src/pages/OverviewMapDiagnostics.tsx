@@ -1,3 +1,4 @@
+import { ConfigurationSection } from './ConfigurationSection';
 import { useStatus } from '@/hooks/api/useStatus';
 import { useOverviewHistory } from '@/hooks/api/useOverviewHistory';
 import { useSatellites } from '@/hooks/api/useSatellites';
@@ -106,25 +107,21 @@ export function OverviewMapDiagnostics() {
   else if (selectedId && !selection.error && selection.data?.state === 'normal')
     rows.push(['Configured azimuth rule', 'No planned link warning']);
   return (
-    <section
-      className="mt-6 rounded-lg border p-4"
-      aria-label="Overview map diagnostics"
+    <ConfigurationSection
+      title="Overview map diagnostics"
+      description="Configured planning geometry, not measured connectivity. Retained coordinates may be last known; planned link warnings use the configured forbidden-azimuth rule."
     >
-      <h2 className="text-xl font-semibold">Overview map diagnostics</h2>
-      <p className="my-2">
-        Satellite locations and links are configured planning geometry, not
-        measured connectivity. A planned link warning reflects the existing
-        configured forbidden-azimuth rule. Retained geometry and coordinates can
-        be last known.
-      </p>
-      <dl className="space-y-3">
+      <dl className="divide-y">
         {rows.map(([label, value]) => (
-          <div key={label}>
-            <dt className="font-semibold">{label}</dt>
+          <div
+            key={label}
+            className="grid gap-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]"
+          >
+            <dt className="font-medium text-muted-foreground">{label}</dt>
             <dd className="break-words">{value}</dd>
           </div>
         ))}
       </dl>
-    </section>
+    </ConfigurationSection>
   );
 }

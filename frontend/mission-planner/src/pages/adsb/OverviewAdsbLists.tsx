@@ -1,10 +1,13 @@
+import { Button } from '@/components/ui/button';
 import { useId, useState } from 'react';
 import type {
+  AdsbContact,
   AdsbSettings,
   AdsbSettingsUpdate,
 } from '@/services/overview-adsb';
 interface Props {
   settings: AdsbSettings;
+  contacts?: readonly AdsbContact[];
   disabled: boolean;
   onSave: (changes: AdsbSettingsUpdate) => void;
 }
@@ -31,13 +34,27 @@ const fields = [
     kind: 'callsign',
   },
 ] as const;
+function savedAircraftLabel(
+  hex: string,
+  contacts: readonly AdsbContact[]
+): string {
+  const contact = contacts.find((item) => item.hex === hex);
+  const identity = contact
+    ? [contact.callsign, contact.registration, contact.aircraft_type]
+        .map((value) => value?.trim())
+        .filter(Boolean)
+    : [];
+  return [hex, ...identity].join(' · ');
+}
 function ListEditor({
   settings,
+  contacts = [],
   disabled,
   onSave,
   config,
 }: {
   settings: AdsbSettings;
+  contacts?: readonly AdsbContact[];
   disabled: boolean;
   onSave: Props['onSave'];
   config: (typeof fields)[number];
@@ -86,8 +103,8 @@ function ListEditor({
     else setDraft({ confirmed: current, text: current });
   };
   return (
-    <section aria-label={config.region} className="mt-4 rounded border p-3">
-      <h3 className="font-semibold">{config.region}</h3>
+    <section aria-label={config.region} className="min-w-0 space-y-3">
+      <h3 className="text-sm font-semibold">{config.region}</h3>
       {config.field !== 'callsign_substrings' && (
         <ul className="space-y-1">
           {settings[config.field].map((hex) => (
@@ -95,7 +112,9 @@ function ListEditor({
               key={hex}
               className="flex flex-wrap items-center justify-between gap-2"
             >
-              <span className="font-mono">{hex}</span>
+              <span className="min-w-0 break-words font-mono text-xs">
+                {savedAircraftLabel(hex, contacts)}
+              </span>
               {settings.include_hexes.includes(hex) &&
                 settings.exclude_hexes.includes(hex) && (
                   <span className="text-sm">
@@ -104,9 +123,10 @@ function ListEditor({
                     ; exclusion wins.
                   </span>
                 )}
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 type="button"
-                className="min-h-11 rounded border px-2 disabled:opacity-50"
                 disabled={disabled}
                 aria-label={`Remove ${config.kind} ${hex}`}
                 onClick={() =>
@@ -118,7 +138,7 @@ function ListEditor({
                 }
               >
                 Remove
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -137,8 +157,8 @@ function ListEditor({
           id={id}
           value={draft.text}
           disabled={disabled}
-          rows={3}
-          className="w-full rounded border bg-background p-2 disabled:opacity-50"
+          rows={2}
+          className="w-full rounded-md border bg-background p-2 font-mono text-sm focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
           onChange={(e) => {
             setDraft({ ...draft, text: e.target.value });
             setError(null);
@@ -152,27 +172,25 @@ function ListEditor({
             : 'Separate exact six-digit hexes with commas or new lines; leading zeroes are preserved.'}
         </p>
         {error && <p role="alert">{error}</p>}
-        <button
-          type="submit"
-          disabled={disabled}
-          className="min-h-11 rounded border px-3 disabled:opacity-50"
-        >
+        <Button variant="outline" size="sm" type="submit" disabled={disabled}>
           {config.save}
-        </button>
+        </Button>
       </form>
     </section>
   );
 }
 export function OverviewAdsbLists(props: Props) {
   return (
-    <div>
-      <p className="mt-3 text-sm">
+    <div className="space-y-4 border-t pt-5">
+      <p className="text-xs text-muted-foreground">
         Exclusion always wins, including aircraft saved in both lists. Saved
         entries remain when aircraft are unavailable.
       </p>
-      {fields.map((config) => (
-        <ListEditor {...props} key={config.field} config={config} />
-      ))}
+      <div className="grid gap-6 md:grid-cols-3">
+        {fields.map((config) => (
+          <ListEditor {...props} key={config.field} config={config} />
+        ))}
+      </div>
     </div>
   );
 }

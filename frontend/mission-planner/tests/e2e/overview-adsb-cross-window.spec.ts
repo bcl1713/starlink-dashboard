@@ -31,6 +31,7 @@ test('shared saves converge across windows, obsolete replies cannot restore excl
   const before = await settledOverviewCamera(overview);
   const editing = await context.newPage();
   await editing.goto('/configuration');
+  await editing.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
   await editing.getByRole('switch', { name: 'ADS-B aircraft layer' }).click();
   const start = Date.now();
   await expect(
@@ -70,6 +71,7 @@ test('shared saves converge across windows, obsolete replies cannot restore excl
   ).toBeChecked();
   fixture.failSettingsSave(false);
   await editing.reload();
+  await editing.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
   await expect(editing.getByLabel('Excluded ICAO hexes')).toHaveValue(
     '00AB12\n000001'
   );
@@ -100,6 +102,7 @@ test('disabled held response and mission activation preserve saved aircraft sett
   fixture.setContacts([freshContact()]);
   const page = await context.newPage();
   await page.goto('/configuration');
+  await page.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
   await expect(page.getByRole('row', { name: /00AB12/ })).toBeVisible();
   const held = fixture.holdNextTraffic();
   await page.waitForRequest('**/api/overview-adsb/traffic');
@@ -117,6 +120,7 @@ test('disabled held response and mission activation preserve saved aircraft sett
     )
   ).toBe(200);
   await page.reload();
+  await page.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
   await expect(page.getByLabel('Included ICAO hexes')).toHaveValue('00AB12');
   await expect(
     page.getByRole('switch', { name: 'ADS-B aircraft layer' })

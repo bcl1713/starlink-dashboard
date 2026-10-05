@@ -9,7 +9,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { OverviewAdsbLists } from './OverviewAdsbLists';
-import { adsbSettings } from '@/test/adsb-fixtures';
+import { adsbSettings, adsbContact } from '@/test/adsb-fixtures';
 afterEach(cleanup);
 it('normalizes exact hex entries and preserves leading zeroes in partial updates', () => {
   const save = vi.fn();
@@ -116,4 +116,55 @@ it('pending saves disable edits', () => {
     <OverviewAdsbLists settings={adsbSettings()} disabled onSave={vi.fn()} />
   );
   expect(screen.getByLabelText('Included ICAO hexes')).toBeDisabled();
+});
+
+it('adds current contact context to saved hexes while keeping edits and removals hex-only', () => {
+  const save = vi.fn();
+  const view = render(
+    <OverviewAdsbLists
+      settings={adsbSettings({
+        include_hexes: ['00AB12', '000002'],
+        exclude_hexes: ['00AB12'],
+      })}
+      contacts={[adsbContact()]}
+      disabled={false}
+      onSave={save}
+    />
+  );
+  expect(screen.getAllByText('00AB12 · RCH123 · N123 · C17')).toHaveLength(2);
+  expect(screen.getByText('000002')).toBeVisible();
+  expect(screen.getByLabelText('Included ICAO hexes')).toHaveValue(
+    '00AB12\n000002'
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Remove included 00AB12' })
+  );
+  expect(save).toHaveBeenCalledWith({ include_hexes: ['000002'] });
+  view.rerender(
+    <OverviewAdsbLists
+      settings={adsbSettings({ include_hexes: ['00AB12', '000002'] })}
+      contacts={[]}
+      disabled={false}
+      onSave={save}
+    />
+  );
+  expect(screen.getByText('00AB12')).toBeVisible();
+  expect(screen.queryByText(/RCH123/)).toBeNull();
+});
+it('omits missing identity fields from saved context', () => {
+  render(
+    <OverviewAdsbLists
+      settings={adsbSettings({ exclude_hexes: ['00AB12'] })}
+      contacts={[
+        adsbContact({
+          callsign: null,
+          registration: '  ',
+          aircraft_type: 'C17',
+        }),
+      ]}
+      disabled={false}
+      onSave={vi.fn()}
+    />
+  );
+  expect(screen.getByText('00AB12 · C17')).toBeVisible();
 });

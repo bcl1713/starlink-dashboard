@@ -27,6 +27,16 @@ vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
     trafficError: false,
   }),
 }));
+vi.mock('@/hooks/useConfigurationAdsbLayer', () => ({
+  useConfigurationAdsbLayer: () => ({
+    settings: undefined,
+    contacts: [],
+    contextContacts: [],
+    settingsError: false,
+    trafficError: false,
+    sourceErrors: [],
+  }),
+}));
 vi.mock('@/services/orbital-catalog', () => ({
   orbitalCatalogApi: {
     status: vi.fn().mockResolvedValue({
@@ -70,7 +80,11 @@ vi.mock('@/hooks/api/useUpdateOverviewLinkSettings', () => ({
   useUpdateOverviewLinkSettings: () => ({ mutate: vi.fn() }),
 }));
 vi.mock('../components/gps/GPSControlCard', () => ({
-  GPSControlCard: () => null,
+  GPSControlCard: () => (
+    <div role="region" aria-label="GPS Configuration">
+      GPS
+    </div>
+  ),
 }));
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClockSettings';
@@ -110,16 +124,13 @@ describe('ConfigurationPage', () => {
       mutate: vi.fn(),
     } as never);
     render(<ConfigurationPage />);
+    expect(screen.getByLabelText('Overview history window')).not.toBeNull();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Aircraft Traffic' }));
     expect(
       screen.getByRole('region', { name: 'ADS-B aircraft settings' })
     ).not.toBeNull();
-    expect(screen.getByLabelText('Overview history window')).not.toBeNull();
-    expect(
-      screen.getByRole('button', { name: 'Open Overview' })
-    ).not.toBeNull();
-    expect(
-      screen.getByRole('region', { name: 'Orbital traffic diagnostics' })
-    ).not.toBeNull();
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Network Traffic' }));
     expect(
       screen.getByRole('switch', { name: 'Orbital traffic view' })
     ).not.toBeNull();
@@ -129,8 +140,30 @@ describe('ConfigurationPage', () => {
     expect(
       screen.getByRole('switch', { name: 'X-band data link' })
     ).not.toBeNull();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Displays' }));
+    expect(
+      screen.getByRole('button', { name: 'Open Overview' })
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Recenter view' })
+    ).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fullscreen' })).toBeNull();
+    expect(
+      screen.queryByRole('region', { name: 'GPS Configuration' })
+    ).toBeNull();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Terminal Controls' }));
+    expect(
+      screen.getByRole('region', { name: 'GPS Configuration' })
+    ).not.toBeNull();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Diagnostics' }));
+    expect(
+      screen.getByRole('region', { name: 'Orbital traffic diagnostics' })
+    ).not.toBeNull();
     expect(
       screen.getByRole('region', { name: 'Overview map diagnostics' })
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('region', { name: 'ADS-B source status' })
     ).not.toBeNull();
   });
   it('renders the clock editor fields', () => {
@@ -238,7 +271,7 @@ describe('Overview camera preference', () => {
       mutate: vi.fn(),
     } as never);
     const first = render(<ConfigurationPage />);
-    const follow = screen.getByRole('checkbox', {
+    const follow = screen.getByRole('switch', {
       name: 'Follow aircraft on Overview',
     }) as HTMLInputElement;
     expect(follow.checked).toBe(false);
@@ -248,11 +281,30 @@ describe('Overview camera preference', () => {
     render(<ConfigurationPage />);
     expect(
       (
-        screen.getByRole('checkbox', {
+        screen.getByRole('switch', {
           name: 'Follow aircraft on Overview',
         }) as HTMLInputElement
       ).checked
     ).toBe(true);
     localStorage.clear();
   });
+});
+
+it('keeps unsaved clock edits when navigating between configuration sections', () => {
+  mockLoadedClockSettings();
+  vi.mocked(useUpdateOverviewClockSettings).mockReturnValue({
+    mutate: vi.fn(),
+  } as never);
+  render(<ConfigurationPage />);
+  fireEvent.change(screen.getByLabelText('Clock 1 label'), {
+    target: { value: 'Unsaved label' },
+  });
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Aircraft Traffic' }));
+  expect(
+    screen.queryByRole('button', { name: 'Save operational clocks' })
+  ).toBeNull();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Overview' }));
+  expect(
+    (screen.getByLabelText('Clock 1 label') as HTMLInputElement).value
+  ).toBe('Unsaved label');
 });

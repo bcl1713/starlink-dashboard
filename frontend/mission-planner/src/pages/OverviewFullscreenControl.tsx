@@ -1,22 +1,15 @@
 import { Expand } from 'lucide-react';
 import { useState } from 'react';
 import { useDocumentFullscreen } from '@/hooks/useDocumentFullscreen';
-import type { DisplayResult } from '@/services/overview-display-protocol';
+import type { FullscreenResult } from './overview-fullscreen';
 import { requestOverviewFullscreen } from './overview-fullscreen';
-export function OverviewFullscreenControl({
-  feedback = null,
-}: {
-  feedback?: DisplayResult | null;
-}) {
+export function OverviewFullscreenControl() {
   const isFullscreen = useDocumentFullscreen();
-  const [observed, setObserved] = useState({ feedback, isFullscreen });
-  const [result, setResult] = useState(feedback);
-  if (
-    observed.feedback !== feedback ||
-    observed.isFullscreen !== isFullscreen
-  ) {
-    setObserved({ feedback, isFullscreen });
-    setResult(observed.isFullscreen !== isFullscreen ? null : feedback);
+  const [previousFullscreen, setPreviousFullscreen] = useState(isFullscreen);
+  const [result, setResult] = useState<FullscreenResult | null>(null);
+  if (previousFullscreen !== isFullscreen) {
+    setPreviousFullscreen(isFullscreen);
+    setResult(null);
   }
   if (isFullscreen) {
     return null;
@@ -39,9 +32,7 @@ export function OverviewFullscreenControl({
         <p role="status" className="overview-fullscreen-feedback">
           {result === 'unsupported'
             ? 'Fullscreen is unavailable in this browser. '
-            : result === 'expired'
-              ? 'Fullscreen request expired. '
-              : ''}
+            : ''}
           Click Fullscreen in the Overview window to finish.
         </p>
       )}

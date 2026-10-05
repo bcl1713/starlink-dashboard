@@ -1,39 +1,41 @@
+import { Switch } from '@/components/ui/switch';
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   setOverviewFollowPreference,
   useOverviewFollowPreference,
 } from '@/hooks/useOverviewFollowPreference';
-export function OverviewCameraSettingsCard() {
+export function OverviewCameraSettingsCard({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const follow = useOverviewFollowPreference();
   const [failed, setFailed] = useState(false);
-  return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle>Overview camera</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            checked={follow}
-            onChange={(event) =>
-              setFailed(!setOverviewFollowPreference(event.target.checked))
-            }
-          />
+  const content = (
+    <section aria-label="Overview camera" className="py-4">
+      <label className="flex min-h-11 items-center justify-between gap-6 text-sm font-medium">
+        <span>
           Follow aircraft on Overview
-        </label>
-        <p className="text-sm text-muted-foreground">
-          Off by default. When enabled, the camera follows fresh aircraft
-          positions. Manual exploration pauses following; reset the map to
-          resume. This preference is saved in this browser.
+          <span className="mt-1 block max-w-xl text-sm font-normal text-muted-foreground">
+            Follow fresh positions. Manual exploration pauses following;
+            recenter to resume. Saved in this browser, off by default.
+          </span>
+        </span>
+        <Switch
+          aria-label="Follow aircraft on Overview"
+          checked={follow}
+          onChange={(event) =>
+            setFailed(!setOverviewFollowPreference(event.target.checked))
+          }
+        />
+      </label>
+      {failed && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          Unable to save the camera preference in this browser.
         </p>
-        {failed && (
-          <p role="alert">
-            Unable to save the camera preference in this browser.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </section>
   );
+  return embedded ? content : <Card className="px-6">{content}</Card>;
 }

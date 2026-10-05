@@ -219,6 +219,7 @@ for (const fullscreen of [false, true]) {
       await expect(overview.getByLabel('Globe legend')).toContainText(
         'Traffic path'
       );
+      await editing.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
       for (const [label, field] of [
         ['Starshield data link', 'starshield_link_enabled'],
         ['X-band data link', 'x_band_link_enabled'],
@@ -244,6 +245,7 @@ for (const fullscreen of [false, true]) {
         const links = await request.get('/api/overview-links/settings');
         expect((await links.json())[field]).toBe(false);
       }
+      await editing.getByRole('tab', { name: 'Overview', exact: true }).click();
       const historySaved = editing.waitForResponse(
         (r) =>
           r.url().endsWith('/api/overview-history/settings') &&

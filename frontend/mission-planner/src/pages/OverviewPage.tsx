@@ -823,9 +823,7 @@ export function OverviewPage() {
                 {displayHost.label}
               </span>
             )}
-            <OverviewFullscreenControl
-              feedback={displayHost.fullscreenFeedback}
-            />
+            <OverviewFullscreenControl />
           </div>
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />

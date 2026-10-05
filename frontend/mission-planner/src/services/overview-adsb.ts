@@ -54,6 +54,13 @@ export type AdsbContact = z.infer<typeof contactSchema>;
 export type AdsbSourceStatus = z.infer<typeof sourceSchema>;
 export type AdsbTrafficBundle = z.infer<typeof bundleSchema>;
 export const overviewAdsbApi = {
+  async getCatalog(signal?: AbortSignal): Promise<AdsbTrafficBundle> {
+    const { data } = await apiClient.get<unknown>(
+      '/api/overview-adsb/catalog',
+      { signal }
+    );
+    return bundleSchema.parse(data);
+  },
   async getSettings(signal?: AbortSignal): Promise<AdsbSettings> {
     const { data } = await apiClient.get<unknown>(
       '/api/overview-adsb/settings',

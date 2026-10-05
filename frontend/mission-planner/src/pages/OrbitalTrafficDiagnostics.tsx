@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import { ConfigurationSection } from './ConfigurationSection';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { orbitalCatalogApi } from '@/services/orbital-catalog';
 import type { OrbitalTrafficState } from './orbital/lifecycle';
@@ -26,46 +28,51 @@ export function OrbitalTrafficDiagnostics() {
       : (runtime.reason ?? runtime.kind)
     : (data?.fallback_reason ?? 'No Overview observation');
   return (
-    <section
-      className="my-6 rounded-lg border p-4"
-      aria-label="Orbital traffic diagnostics"
+    <ConfigurationSection
+      title="Orbital traffic diagnostics"
+      description="Public Starlink elements provide orbital context, not serving spacecraft identity. The experimental path uses inferred routing and an abstract PoP ground leg."
     >
-      <h2 className="text-xl font-semibold">Orbital traffic diagnostics</h2>
-      <p>
-        Public Starlink elements provide orbital context. They do not identify
-        serving spacecraft.
-      </p>
-      <p>
-        The experimental path uses inferred routing and an abstract PoP ground
-        leg.
-      </p>
       {isError && <p role="alert">Orbital diagnostics unavailable</p>}
-      {!data && !isError && <p>Loading orbital diagnostics…</p>}
+      {!data && !isError && <p role="status">Loading orbital diagnostics…</p>}
       {data && (
         <>
-          <p>Status: {data.status}</p>
-          <p>
-            Eligible objects: {data.eligible_count ?? 0}. Rejected:{' '}
-            {data.rejected_count ?? 0}. Truncated: {data.truncated_count ?? 0}.
-          </p>
-          <p>Catalog acquired: {data.acquired_at ?? 'Never'}</p>
-          <p>Last provider attempt: {data.last_attempt_at ?? 'Never'}</p>
-          <p>Retry after: {data.retry_after_at ?? 'No additional delay'}</p>
-          <p>Arc fallback reason: {fallbackReason}</p>
+          <dl className="divide-y text-sm">
+            {[
+              ['Status', data.status],
+              [
+                'Catalog objects',
+                `Eligible: ${data.eligible_count ?? 0} · Rejected: ${data.rejected_count ?? 0} · Truncated: ${data.truncated_count ?? 0}`,
+              ],
+              ['Catalog acquired', data.acquired_at ?? 'Never'],
+              ['Last provider attempt', data.last_attempt_at ?? 'Never'],
+              ['Retry after', data.retry_after_at ?? 'No additional delay'],
+              ['Arc fallback reason', fallbackReason],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="grid gap-1 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]"
+              >
+                <dt className="font-medium text-muted-foreground">{label}</dt>
+                <dd className="break-words">{value}</dd>
+              </div>
+            ))}
+          </dl>
           {data.provider_error && <p>{data.provider_error}</p>}
           {data.suspended && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               type="button"
               disabled={resume.isPending}
               onClick={() => resume.mutate()}
             >
               Resume orbital provider
-            </button>
+            </Button>
           )}
         </>
       )}
       {resume.isPending && <p role="status">Resuming provider…</p>}
       {resume.isError && <p role="alert">Unable to resume provider</p>}
-    </section>
+    </ConfigurationSection>
   );
 }

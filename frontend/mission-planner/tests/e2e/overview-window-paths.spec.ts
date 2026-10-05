@@ -32,6 +32,7 @@ for (const fullscreen of [false, true]) {
       .elementHandle();
     const editing = await context.newPage();
     await editing.goto('/configuration');
+    await editing.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
     await editing.bringToFront();
     try {
       for (const [label, field, legend] of [
@@ -54,6 +55,7 @@ for (const fullscreen of [false, true]) {
         timings[field] = Date.now() - linkAt;
         expect(fixture.state.links[field]).toBe(false);
       }
+      await editing.getByRole('tab', { name: 'Overview', exact: true }).click();
       await editing.getByLabel('Follow aircraft on Overview').check();
       await expect(
         overview.getByText('Following aircraft', { exact: true })
