@@ -5,18 +5,19 @@ request guidelines for the Starlink Dashboard project.
 
 ## Git Workflow
 
-### 1. Choose the Base Branch
+### 1. Create an Isolated Feature Worktree
 
-Use `dev` as the default base for enhancements and non-urgent fixes. Keep `main`
-reserved for stable mission use and release tags. Branch from `main` only for
-urgent hotfixes that must reach active mission users before the next `dev`
-validation cycle.
+Keep the primary checkout on `dev`. Start each task in a separate worktree and
+feature branch based on the latest `origin/dev`:
 
 ```bash
-git checkout dev
-git pull origin dev
-git checkout -b feat/your-feature-name
+git fetch origin --prune
+git worktree add .worktrees/your-feature-name -b feat/your-feature-name origin/dev
+cd .worktrees/your-feature-name
 ```
+
+The `.worktrees/` directory is ignored by Git. Run edits, commits and checks in
+that task's worktree. Keep `main` reserved for reviewed releases.
 
 ### 2. Make Code Changes
 
@@ -38,10 +39,11 @@ If linting fails, pre-commit will:
 ### 4. Push and Create PR
 
 ```bash
-git push origin feat/your-feature-name
+git push -u origin feat/your-feature-name
+gh pr create --base dev
 ```
 
-Create a pull request from your feature branch. CI/CD will automatically run
+Create a pull request from your feature branch against `dev`. CI/CD will run
 linting checks.
 
 ### 5. Integrate Through `dev`
@@ -51,6 +53,28 @@ to `dev` only after the required exact-head checks and acceptance evidence pass.
 
 `main` is a separate Brian-reviewed release gate. Do not open ordinary
 development PRs against or merge them into `main`.
+
+### 6. Clean Up After Merge
+
+Keep the worktree while the PR is open. After the PR merges, stop and remove its
+task-owned acceptance projects, then return to the primary checkout:
+
+```bash
+cd ../..
+git pull --ff-only origin dev
+git worktree remove .worktrees/your-feature-name
+git branch -d feat/your-feature-name
+git push origin --delete feat/your-feature-name
+git fetch origin --prune
+git worktree prune
+```
+
+Skip remote branch deletion if GitHub already deleted it. For a squash merge,
+verify the PR merged into `dev` before using `git branch -D`. If worktree
+removal reports uncommitted files, preserve them or obtain permission to discard
+them before using `--force`. Remove the task's temporary files and test
+resources; preserve shared runtime configuration, credentials and other tasks'
+resources.
 
 ---
 
@@ -142,16 +166,16 @@ isolated exact-SHA production-image verification, the Nginx proxy path, required
 CI, or rendered-browser evidence.
 
 After `git pull`, run `./scripts/compose.sh up -d --build` for the ordinary
-stack. The wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out
-HEAD before forwarding Compose flags. Raw `docker compose build` requires an
-explicit SHA, for example:
+stack. The wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out HEAD
+before forwarding Compose flags. Raw `docker compose build` requires an explicit
+SHA, for example:
 
 ```bash
 ACCEPTANCE_CANDIDATE_SHA=$(git rev-parse HEAD) docker compose build
 ```
 
-Without it, the Dockerfile guards reject the build. A dirty working tree is
-not an exact acceptance candidate. The final acceptance runner injects its own
+Without it, the Dockerfile guards reject the build. A dirty working tree is not
+an exact acceptance candidate. The final acceptance runner injects its own
 reviewed candidate SHA independently.
 
 Use `--no-cache` when dependency manifests or Dockerfile instructions change,
