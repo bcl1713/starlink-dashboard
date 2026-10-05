@@ -104,8 +104,9 @@ multiple workers.
 
 ## Cadence, hidden tabs and rollback
 
-The shared browser subscription pauses interval polling in hidden tabs and
-refetches on focus. Errors use a five-second polling interval without additional
+The shared browser subscription keeps interval polling enabled in hidden tabs
+and refetches on focus. Hidden charts pause compositor motion while history
+ingestion continues. Errors use a five-second polling interval without additional
 automatic retries. Fresh-history processing is memoized separately from clock
 labels and compositor motion; timer ticks do not reproject or upload traces.
 
