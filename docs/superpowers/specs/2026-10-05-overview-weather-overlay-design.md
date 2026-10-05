@@ -6,9 +6,10 @@ Add current precipitation radar to the native Overview globe so viewers can see
 weather context while monitoring a mission. The layer starts off, updates
 automatically when enabled, and preserves core dashboard availability.
 
-The user approved the conversational design on 2026-10-05, including a shared
-setting controlled only from Configuration. This written specification awaits
-user review before implementation planning. It defines the first increment of
+The user approved the conversational design and this written specification on
+2026-10-05, including a shared setting controlled only from Configuration.
+Implementation awaits review of the plan and selection of an execution method.
+This specification defines the first increment of
 [issue 144](https://github.com/bcl1713/starlink-dashboard/issues/144).
 
 ## Scope and existing behavior
