@@ -260,7 +260,7 @@ test('shared chevrons stay compact at globe and flight zoom with white-blue own 
     const heights = await measure();
     expect(heights.filter((h) => h.own)).toHaveLength(1);
     expect(heights.filter((h) => !h.own)).toHaveLength(3);
-    for (const h of heights) expect(h.pixels).toBeCloseTo(h.own ? 16 : 14, 2);
+    for (const h of heights) expect(h.pixels).toBeCloseTo(h.own ? 12 : 10, 2);
   };
   await check();
   await page.screenshot({ path: info.outputPath('chevrons-flight-view.png') });
@@ -317,12 +317,15 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
       ?.containerInfo?.getState?.();
     if (!state) throw new Error('No scene');
     let own: import('three').Mesh | undefined,
-      traffic: import('three').InstancedMesh | undefined;
+      traffic: import('three').InstancedMesh | undefined,
+      halo: import('three').InstancedMesh | undefined;
     state.scene.traverse((node) => {
       if (node.userData.starMarkerShape === 'chevron')
         own = node as import('three').Mesh;
       if (node.userData.adsbBatch?.hexes.length)
         traffic = node as import('three').InstancedMesh;
+      if (node.userData.adsbHaloBatch?.hexes.length)
+        halo = node as import('three').InstancedMesh;
     });
     if (!own || !traffic) throw new Error('Missing aircraft');
     const rect = state.gl.domElement.getBoundingClientRect();
@@ -358,6 +361,11 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
       const scene = state.scene.clone(false);
       const clone = marker.clone();
       scene.add(clone);
+      const haloClone = !blue ? halo?.clone() : undefined;
+      if (haloClone) {
+        haloClone.count = 1;
+        scene.add(haloClone);
+      }
       const anchor = state.camera.position.clone();
       if ((marker as import('three').InstancedMesh).isInstancedMesh) {
         (clone as import('three').InstancedMesh).count = 1;
@@ -387,7 +395,7 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
       for (let y = 0; y < side; y++)
         for (let x = 0; x < side; x++) {
           const distance = Math.hypot(x - radius, y - radius) / ratio;
-          if (distance < 13 || distance > 22) continue;
+          if (distance < (blue ? 8 : 7) || distance > 11) continue;
           const i = (y * side + x) * 4,
             r = pixels[i],
             b = pixels[i + 2];
@@ -395,6 +403,7 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
         }
       if ((clone as import('three').InstancedMesh).isInstancedMesh)
         (clone as import('three').InstancedMesh).dispose();
+      haloClone?.dispose();
       return count;
     };
     const ownGlowPixels = glowPixels(own, true),
@@ -403,7 +412,259 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
     return { alignment, ownGlowPixels, trafficGlowPixels };
   });
   expect.soft(evidence.alignment).toBeGreaterThan(0.999);
-  expect.soft(evidence.ownGlowPixels).toBeGreaterThan(8);
-  expect.soft(evidence.trafficGlowPixels).toBeGreaterThan(8);
+  // The smaller markers have a narrow rim: require colored light beyond the furthest body vertex.
+  expect.soft(evidence.ownGlowPixels).toBeGreaterThan(3);
+  expect.soft(evidence.trafficGlowPixels).toBeGreaterThan(3);
   await page.screenshot({ path: info.outputPath('heading-labels-glow.png') });
+});
+
+test('own aircraft stays above crossing overlays and coincident traffic does not amplify glow', async ({
+  context,
+}, info) => {
+  const fixture = await installAdsbFixture(context, true);
+  fixture.setAircraftHeading(270);
+  fixture.setContacts(
+    Array.from({ length: 20 }, (_, i) =>
+      freshContact({
+        hex: i.toString(16).padStart(6, '0').toUpperCase(),
+        latitude: 38,
+        longitude: -95,
+        track_degrees: 90,
+      })
+    )
+  );
+  fixture.setSettings(adsbSettings({ include_hexes: ['000000'] }));
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await observeAdsbScene(page);
+  await page.goto('/overview');
+  await expect(page.locator('[data-adsb-label]')).toHaveCount(1);
+  await settledOverviewCamera(page);
+  const evidence = await page.evaluate(() => {
+    const state = window.__overviewEvidenceRoots
+      ?.find(
+        (root) =>
+          root.containerInfo?.getState &&
+          document.contains(root.containerInfo.getState().gl.domElement)
+      )
+      ?.containerInfo?.getState?.();
+    if (!state) throw new Error('No scene');
+    let own: import('three').Mesh | undefined,
+      traffic: import('three').InstancedMesh | undefined,
+      halo: import('three').InstancedMesh | undefined;
+    state.scene.traverse((node) => {
+      if (node.userData.starMarkerShape === 'chevron')
+        own = node as import('three').Mesh;
+      if (node.userData.adsbBatch?.hexes.length)
+        traffic = node as import('three').InstancedMesh;
+      if (node.userData.adsbHaloBatch?.hexes.length)
+        halo = node as import('three').InstancedMesh;
+    });
+    if (!own || !traffic) throw new Error('Missing aircraft');
+    const gl = state.gl.getContext();
+    const read = (anchor: import('three').Vector3, radius: number) => {
+      const projected = anchor.clone().project(state.camera);
+      const cx = Math.round(((projected.x + 1) * gl.drawingBufferWidth) / 2),
+        cy = Math.round(((projected.y + 1) * gl.drawingBufferHeight) / 2);
+      const side = radius * 2 + 1,
+        pixels = new Uint8Array(side * side * 4);
+      gl.readPixels(
+        cx - radius,
+        cy - radius,
+        side,
+        side,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels
+      );
+      return Array.from(pixels);
+    };
+    const ownScene = state.scene.clone(false),
+      ownClone = own.clone();
+    ownScene.add(ownClone);
+    const ownAnchor = state.camera.position
+      .clone()
+      .setFromMatrixPosition(own.matrixWorld);
+    state.gl.render(ownScene, state.camera);
+    const clearOwn = read(ownAnchor, 0);
+    const crossing = own.clone();
+    crossing.clear();
+    crossing.matrix.scale(state.camera.position.clone().set(4, 0.25, 1));
+    crossing.material = (own.material as import('three').Material).clone();
+    const material = crossing.material as import('three').ShaderMaterial & {
+      color?: import('three').Color;
+      vertexColors?: boolean;
+    };
+    if (material.uniforms?.uColor) {
+      material.uniforms.uColor.value.set('#ff00ff');
+      material.uniforms.uCoreColor.value.set('#ff00ff');
+    } else {
+      material.vertexColors = false;
+      material.color?.set('#ff00ff');
+    }
+    crossing.renderOrder = 500;
+    ownScene.add(crossing);
+    state.gl.render(ownScene, state.camera);
+    const crossedOwn = read(ownAnchor, 0);
+    material.dispose();
+    const scene = state.scene.clone(false),
+      bodyClone = traffic.clone(),
+      haloClone = halo?.clone();
+    scene.add(bodyClone);
+    if (haloClone) scene.add(haloClone);
+    bodyClone.count = 1;
+    if (haloClone) haloClone.count = 1;
+    const matrix = traffic.matrixWorld.clone();
+    traffic.getMatrixAt(0, matrix);
+    const anchor = state.camera.position.clone().setFromMatrixPosition(matrix);
+    state.gl.render(scene, state.camera);
+    const single = read(anchor, Math.ceil(20 * state.gl.getPixelRatio()));
+    bodyClone.count = 20;
+    if (haloClone) haloClone.count = 20;
+    state.gl.render(scene, state.camera);
+    const crowded = read(anchor, Math.ceil(20 * state.gl.getPixelRatio()));
+    let maximumIncrease = 0;
+    for (let i = 0; i < single.length; i++)
+      if (i % 4 !== 3)
+        maximumIncrease = Math.max(maximumIncrease, crowded[i] - single[i]);
+    bodyClone.dispose();
+    haloClone?.dispose();
+    state.gl.render(state.scene, state.camera);
+    return { clearOwn, crossedOwn, maximumIncrease };
+  });
+  expect.soft(evidence.crossedOwn).toEqual(evidence.clearOwn);
+  expect.soft(evidence.maximumIncrease).toBeLessThanOrEqual(2);
+  await page.screenshot({
+    path: info.outputPath('foreground-and-dense-glow.png'),
+  });
+});
+
+test('opt-in marker controls change both live renderers, reset and remain scrollable', async ({
+  context,
+}, info) => {
+  const fixture = await installAdsbFixture(context, true);
+  fixture.setContacts([freshContact({ latitude: 38, longitude: -95 })]);
+  fixture.setSettings(adsbSettings({ include_hexes: ['00AB12'] }));
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await observeAdsbScene(page);
+  await page.goto('/overview');
+  await expect(
+    page.getByText('Aircraft marker tuning', { exact: true })
+  ).toHaveCount(0);
+  await page.goto('/overview?markerDebug=1');
+  await expect(
+    page.getByText('Aircraft marker tuning', { exact: true })
+  ).toBeVisible();
+  await settledOverviewCamera(page);
+  const change = async (label: string, value: string) =>
+    page.getByLabel(label, { exact: true }).evaluate((node, next) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )!.set!;
+      setter.call(node, next);
+      node.dispatchEvent(new Event('input', { bubbles: true }));
+    }, value);
+  const rendered = () =>
+    page.evaluate(() => {
+      const state = window.__overviewEvidenceRoots
+        ?.find(
+          (r) =>
+            r.containerInfo?.getState &&
+            document.contains(r.containerInfo.getState().gl.domElement)
+        )
+        ?.containerInfo?.getState?.();
+      if (!state) throw new Error('No scene');
+      let own: import('three').Mesh | undefined,
+        traffic: import('three').InstancedMesh | undefined,
+        halo: import('three').InstancedMesh | undefined;
+      state.scene.traverse((node) => {
+        if (node.userData.starMarkerShape === 'chevron')
+          own = node as import('three').Mesh;
+        if (node.userData.adsbBatch?.hexes.length)
+          traffic = node as import('three').InstancedMesh;
+        if (node.userData.adsbHaloBatch?.hexes.length)
+          halo = node as import('three').InstancedMesh;
+      });
+      if (!own || !traffic || !halo) throw new Error('Missing aircraft');
+      const sample = (
+        matrix: import('three').Matrix4,
+        material: import('three').ShaderMaterial
+      ) => {
+        const a = state.camera.position
+          .clone()
+          .set(0, 1, 0)
+          .applyMatrix4(matrix)
+          .project(state.camera);
+        const b = state.camera.position
+          .clone()
+          .set(0, -1, 0)
+          .applyMatrix4(matrix)
+          .project(state.camera);
+        const rect = state.gl.domElement.getBoundingClientRect();
+        return [
+          Math.round(
+            Math.hypot(
+              ((a.x - b.x) * rect.width) / 2,
+              ((a.y - b.y) * rect.height) / 2
+            )
+          ),
+          Math.round(material.uniforms.uGlowWidth.value * 1000),
+          Math.round(material.uniforms.uStrength.value * 10000) / 10000,
+        ];
+      };
+      const matrix = traffic.matrixWorld.clone();
+      traffic.getMatrixAt(0, matrix);
+      return {
+        own: sample(
+          own.matrixWorld,
+          (own.children[0] as import('three').Mesh)
+            .material as import('three').ShaderMaterial
+        ),
+        traffic: sample(
+          matrix,
+          halo.material as import('three').ShaderMaterial
+        ),
+        sharedMatrix: traffic.instanceMatrix === halo.instanceMatrix,
+      };
+    });
+  await change('Our aircraft size', '9');
+  await change('Other aircraft size', '8');
+  await change('Glow width', '2.4');
+  await change('Glow strength', '0.7');
+  await expect
+    .poll(rendered)
+    .toEqual({
+      own: [9, 533, 0.7],
+      traffic: [8, 600, 0.455],
+      sharedMatrix: true,
+    });
+  expect(
+    JSON.parse(await page.getByLabel('Marker settings to share').inputValue())
+  ).toMatchObject({
+    ownSizePixels: 9,
+    trafficSizePixels: 8,
+    glowWidthPixels: 2.4,
+    glowStrength: 0.7,
+  });
+  await page.screenshot({ path: info.outputPath('live-marker-controls.png') });
+  await page.getByRole('button', { name: 'Reset defaults' }).click();
+  await expect
+    .poll(rendered)
+    .toEqual({
+      own: [12, 217, 0.45],
+      traffic: [10, 260, 0.2925],
+      sharedMatrix: true,
+    });
+  await page.setViewportSize({ width: 844, height: 390 });
+  const panel = page.locator('.overview-marker-debug');
+  await expect
+    .poll(() => panel.evaluate((node) => node.scrollHeight > node.clientHeight))
+    .toBe(true);
+  await panel.hover();
+  await page.mouse.wheel(0, 200);
+  await expect
+    .poll(() => panel.evaluate((node) => node.scrollTop))
+    .toBeGreaterThan(0);
 });

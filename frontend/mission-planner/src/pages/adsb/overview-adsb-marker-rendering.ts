@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { DEFAULT_CHEVRON_SETTINGS } from '../overview-chevron-settings';
 import { globePosition } from '../globe-coordinates';
 import { ROUTE_OVERLAY_RADIUS } from '../globe-render-radii';
 import {
@@ -100,12 +101,14 @@ export function resizeAdsbMarkerMeshes(
   group: THREE.Group,
   camera: THREE.Camera,
   viewportHeight: number,
-  matrix: THREE.Matrix4
+  matrix: THREE.Matrix4,
+  sizePixels = DEFAULT_CHEVRON_SETTINGS.trafficSizePixels
 ) {
   camera.updateMatrixWorld();
   for (const child of group.children) {
     if (!(child instanceof THREE.InstancedMesh)) continue;
-    const batch = child.userData.adsbBatch as AdsbMarkerBatch;
+    const batch = child.userData.adsbBatch as AdsbMarkerBatch | undefined;
+    if (!batch) continue;
     for (let i = 0; i < batch.positions.length; i++) {
       setStarMarkerChevronMatrix(
         matrix,
@@ -113,7 +116,7 @@ export function resizeAdsbMarkerMeshes(
         batch.forwards[i],
         camera,
         viewportHeight,
-        14
+        sizePixels
       );
       if (!isStarMarkerVisible(batch.positions[i], camera)) {
         matrix.elements.fill(0, 0, 12);

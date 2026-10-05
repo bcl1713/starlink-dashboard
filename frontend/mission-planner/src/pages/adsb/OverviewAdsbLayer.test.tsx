@@ -15,7 +15,7 @@ it('uses batched overlay glyphs, retains buffers between updates and releases re
   const occluder = { current: new THREE.Group() };
   const visible = vi.fn();
   const geometry = vi.spyOn(THREE.BufferGeometry.prototype, 'dispose');
-  const material = vi.spyOn(THREE.MeshBasicMaterial.prototype, 'dispose');
+  const material = vi.spyOn(THREE.ShaderMaterial.prototype, 'dispose');
   const props = {
     contacts,
     globeOccluder: occluder,
@@ -80,7 +80,7 @@ it('resizes batched chevrons with camera zoom without replacing their buffers', 
   await act(async () => {
     await view.advanceFrames(1, 0.1);
   });
-  expect(pixelHeight()).toBeCloseTo(14, 4);
+  expect(pixelHeight()).toBeCloseTo(10, 4);
   CameraControls.install({ THREE });
   const controls = new CameraControls(camera);
   await controls.setLookAt(3, 0, 4, 0, 0, 0, false);
@@ -90,7 +90,7 @@ it('resizes batched chevrons with camera zoom without replacing their buffers', 
     await view.advanceFrames(1, 0.1);
   });
   camera.updateMatrixWorld();
-  expect(pixelHeight()).toBeCloseTo(14, 4);
+  expect(pixelHeight()).toBeCloseTo(10, 4);
   controls.dispose();
   expect(mesh.instanceMatrix.array).toBe(buffer);
   await view.unmount();

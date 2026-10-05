@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import {
+  DEFAULT_CHEVRON_SETTINGS,
+  type ChevronSettings,
+} from './overview-chevron-settings';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { GlobeCoordinate } from './globe-route';
 import { globePosition } from './globe-coordinates';
@@ -207,10 +211,66 @@ export function disposeStarMarkerHaloResources({
   }
 }
 
-/** A normalized chevron shared by the own-aircraft and instanced ADS-B markers. */
+const chevronVertexShader = `
+  attribute float markerRing;
+  uniform float uExtent;
+  varying vec2 vPoint;
+  varying float vRing;
+  void main() {
+    vPoint = position.xy * uExtent;
+    vRing = markerRing;
+    vec4 local = vec4(vPoint, position.z, 1.0);
+    #ifdef USE_INSTANCING
+      local = instanceMatrix * local;
+    #endif
+    gl_Position = projectionMatrix * modelViewMatrix * local;
+  }
+`;
+const chevronDistanceShader = `
+  float segmentDistance(vec2 p, vec2 a, vec2 b) {
+    vec2 edge = b - a;
+    return length(p - a - edge * clamp(dot(p - a, edge) / dot(edge, edge), 0.0, 1.0));
+  }
+  float chevronDistance(vec2 p) {
+    vec2 a = vec2(0.0, 1.0), b = vec2(-0.8, -1.0);
+    vec2 c = vec2(0.0, -0.35), d = vec2(0.8, -1.0);
+    return min(min(segmentDistance(p, a, b), segmentDistance(p, b, c)),
+      min(segmentDistance(p, c, d), segmentDistance(p, d, a)));
+  }
+`;
+const chevronBodyShader = `
+  uniform vec3 uColor;
+  uniform vec3 uCoreColor;
+  uniform float uCoreWidth;
+  varying vec2 vPoint;
+  varying float vRing;
+  ${chevronDistanceShader}
+  void main() {
+    float core = smoothstep(0.0, uCoreWidth, chevronDistance(vPoint));
+    gl_FragColor = vRing > 0.5 ? vec4(uColor, 0.8) : vec4(mix(uColor, uCoreColor, core), 1.0);
+    #include <colorspace_fragment>
+  }
+`;
+const chevronGlowShader = `
+  uniform vec3 uColor;
+  uniform float uGlowWidth;
+  uniform float uStrength;
+  varying vec2 vPoint;
+  ${chevronDistanceShader}
+  void main() {
+    float d = chevronDistance(vPoint) / uGlowWidth;
+    float alpha = uStrength * exp(-d * d);
+    if (alpha < 0.004) discard;
+    gl_FragColor = vec4(uColor, 1.0);
+    #include <colorspace_fragment>
+    gl_FragColor = vec4(gl_FragColor.rgb * alpha, alpha);
+  }
+`;
+
+/** A luminous body and restrained edge glow, shared by individual and instanced markers. */
 export function createStarMarkerChevronResources({
   color,
-  coreColor = color,
+  coreColor = CORE_COLOR,
   glowIntensity = 1,
   stale = false,
 }: {
@@ -219,115 +279,114 @@ export function createStarMarkerChevronResources({
   glowIntensity?: number;
   stale?: boolean;
 }) {
-  const pieces: THREE.BufferGeometry[] = [];
-  const outline = (scale: number) => {
-    const shape = new THREE.Shape();
-    shape.moveTo(0, scale);
-    shape.lineTo(-0.8 * scale, -scale);
-    shape.lineTo(0, -0.35 * scale);
-    shape.lineTo(0.8 * scale, -scale);
-    shape.closePath();
-    return shape;
-  };
-  const tint = (
-    geometry: THREE.BufferGeometry,
-    tintColor: string,
-    alpha: number | ((x: number, y: number) => number),
-    glow = false
-  ) => {
-    const rgb = new THREE.Color(tintColor);
-    const positions = geometry.getAttribute('position');
-    const colors = new Float32Array(positions.count * 4);
-    for (let i = 0; i < colors.length; i += 4) {
-      const opacity =
-        typeof alpha === 'number'
-          ? alpha
-          : alpha(positions.getX(i / 4), positions.getY(i / 4));
-      colors.set([rgb.r, rgb.g, rgb.b, opacity], i);
-    }
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 1);
+  shape.lineTo(-0.8, -1);
+  shape.lineTo(0, -0.35);
+  shape.lineTo(0.8, -1);
+  shape.closePath();
+  const body = new THREE.ShapeGeometry(shape);
+  const pieces: THREE.BufferGeometry[] = [body];
+  const markRing = (geometry: THREE.BufferGeometry, ring: number) => {
     geometry.setAttribute(
-      'markerGlow',
+      'markerRing',
       new THREE.Float32BufferAttribute(
-        new Float32Array(positions.count).fill(glow ? 1 : 0),
+        new Float32Array(geometry.getAttribute('position').count).fill(ring),
         1
       )
     );
-    pieces.push(geometry);
   };
-  const band = (
-    outer: number,
-    inner: number,
-    outerAlpha: number,
-    innerAlpha: number,
-    glow = false
-  ) => {
-    const shape = outline(outer);
-    shape.holes.push(outline(inner));
-    tint(
-      new THREE.ShapeGeometry(shape),
-      color,
-      (x, y) => {
-        // Each contour vertex belongs to one homothetic chevron outline.
-        const scale =
-          Math.abs(x) > 1e-6 ? Math.abs(x) / 0.8 : y < 0 ? -y / 0.35 : y;
-        const t = THREE.MathUtils.clamp(
-          (scale - inner) / (outer - inner),
-          0,
-          1
-        );
-        return THREE.MathUtils.lerp(innerAlpha, outerAlpha, t);
-      },
-      glow
-    );
-  };
-  const intensity = Math.max(0, glowIntensity);
-  band(3, 1.7, 0, 0.35 * intensity, true);
-  band(1.7, 1.06, 0.35 * intensity, 0.9 * intensity, true);
-  band(1.06, 0.82, 1, 1);
-  tint(new THREE.ShapeGeometry(outline(0.82)), coreColor, 1);
-  if (stale) {
+  markRing(body, 0);
+  if (stale)
     for (let i = 0; i < 4; i++) {
-      tint(
-        new THREE.RingGeometry(1.38, 1.5, 6, 1, (i * Math.PI) / 2, Math.PI / 3),
-        color,
-        0.8
+      const ring = new THREE.RingGeometry(
+        1.38,
+        1.5,
+        6,
+        1,
+        (i * Math.PI) / 2,
+        Math.PI / 3
       );
+      markRing(ring, 1);
+      pieces.push(ring);
     }
-  }
   const geometry = mergeGeometries(pieces)!;
   for (const piece of pieces) piece.dispose();
-  const material = new THREE.MeshBasicMaterial({
-    vertexColors: true,
+  const haloGeometry = new THREE.PlaneGeometry(2, 2);
+  markRing(haloGeometry, 0);
+  const common = {
+    vertexShader: chevronVertexShader,
     transparent: true,
     side: THREE.DoubleSide,
     forceSinglePass: true,
-    // Alpha-zero premultiplied halo fragments add light; the solid body retains normal coverage.
-    premultipliedAlpha: true,
-    blending: THREE.CustomBlending,
-    blendSrc: THREE.OneFactor,
-    blendDst: THREE.OneMinusSrcAlphaFactor,
-    // Visibility is gated at the anchor; a globe must not slice a screen-space glyph.
+    // Analytical Earth visibility gates the entire screen-space glyph.
     depthTest: false,
     depthWrite: false,
     toneMapped: false,
-  });
-  material.onBeforeCompile = (shader) => {
-    shader.vertexShader = `attribute float markerGlow;
-varying float vMarkerGlow;
-${shader.vertexShader}`.replace(
-      '#include <begin_vertex>',
-      `#include <begin_vertex>
-vMarkerGlow = markerGlow;`
-    );
-    shader.fragmentShader = `varying float vMarkerGlow;
-${shader.fragmentShader}`.replace(
-      '#include <premultiplied_alpha_fragment>',
-      `#include <premultiplied_alpha_fragment>
-if (vMarkerGlow > 0.5) gl_FragColor.a = 0.0;`
-    );
   };
-  return { geometry, material };
+  const material = new THREE.ShaderMaterial({
+    ...common,
+    uniforms: {
+      uColor: { value: new THREE.Color(color) },
+      uCoreColor: { value: new THREE.Color(coreColor) },
+      uCoreWidth: { value: 0.1 },
+      uExtent: { value: 1 },
+    },
+    fragmentShader: chevronBodyShader,
+  });
+  const haloMaterial = new THREE.ShaderMaterial({
+    ...common,
+    uniforms: {
+      uColor: { value: new THREE.Color(color) },
+      uGlowWidth: { value: 0.2 },
+      uStrength: { value: 0.45 },
+      uExtent: { value: 1.6 },
+    },
+    fragmentShader: chevronGlowShader,
+    // Max blending bounds overlapping lights at the brightest halo, instead of adding them.
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.MaxEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
+    blendEquationAlpha: THREE.MaxEquation,
+    blendSrcAlpha: THREE.OneFactor,
+    blendDstAlpha: THREE.OneFactor,
+  });
+  const resources = {
+    geometry,
+    material,
+    haloGeometry,
+    haloMaterial,
+    coreColor,
+    glowIntensity,
+  };
+  updateStarMarkerChevronStyle(
+    resources,
+    DEFAULT_CHEVRON_SETTINGS,
+    DEFAULT_CHEVRON_SETTINGS.ownSizePixels
+  );
+  return resources;
+}
+
+/** Uniform updates preserve geometry, instance buffers and picking while sliders move. */
+export function updateStarMarkerChevronStyle(
+  resources: ReturnType<typeof createStarMarkerChevronResources>,
+  settings: Readonly<ChevronSettings>,
+  sizePixels: number
+) {
+  const normalizedPixel = 2 / Math.max(sizePixels, 1);
+  resources.material.uniforms.uCoreColor.value
+    .copy(resources.material.uniforms.uColor.value)
+    .lerp(new THREE.Color(resources.coreColor), settings.coreWhiteness);
+  resources.material.uniforms.uCoreWidth.value = Math.max(
+    0.001,
+    settings.coreWidthPixels * normalizedPixel
+  );
+  const width = Math.max(0.001, settings.glowWidthPixels * normalizedPixel);
+  resources.haloMaterial.uniforms.uGlowWidth.value = width;
+  resources.haloMaterial.uniforms.uExtent.value = 1 + 3 * width;
+  resources.haloMaterial.uniforms.uStrength.value =
+    settings.glowStrength * resources.glowIntensity;
 }
 
 const screenPosition = new THREE.Vector3();
@@ -430,26 +489,4 @@ export function starMarkerHeadingDirection(
       new THREE.Vector3(-Math.sin(longitude), 0, -Math.cos(longitude)),
       Math.sin(heading)
     );
-}
-
-/** Keep the luminous halo decorative: pointer hits belong to the body or stale ring. */
-export function raycastStarMarkerChevron(
-  this: THREE.Mesh,
-  raycaster: THREE.Raycaster,
-  intersections: THREE.Intersection[]
-) {
-  const start = intersections.length;
-  if ((this as THREE.InstancedMesh).isInstancedMesh) {
-    THREE.InstancedMesh.prototype.raycast.call(this, raycaster, intersections);
-  } else {
-    THREE.Mesh.prototype.raycast.call(this, raycaster, intersections);
-  }
-  const glow = this.geometry.getAttribute('markerGlow');
-  let next = start;
-  for (let i = start; i < intersections.length; i++) {
-    const hit = intersections[i];
-    if (hit.face && glow.getX(hit.face.a) > 0.5) continue;
-    intersections[next++] = hit;
-  }
-  intersections.length = next;
 }

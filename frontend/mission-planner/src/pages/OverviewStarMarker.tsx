@@ -6,7 +6,7 @@ import {
   createStarMarkerChevronResources,
   isStarMarkerVisible,
   starMarkerHeadingDirection,
-  raycastStarMarkerChevron,
+  updateStarMarkerChevronStyle,
   setStarMarkerChevronMatrix,
   DEFAULT_GLOW_SIZE_PIXELS,
   createStarMarkerHaloResources,
@@ -16,6 +16,11 @@ import {
   setStarMarkerHaloPixelRatio,
   type StarMarkerPositionProps,
 } from './overview-star-marker-rendering';
+
+import {
+  DEFAULT_CHEVRON_SETTINGS,
+  type ChevronSettings,
+} from './overview-chevron-settings';
 
 const DEFAULT_CORE_RADIUS = 0.012;
 const DEFAULT_GLOW_INTENSITY = 1;
@@ -27,6 +32,8 @@ export type StarMarkerProps = StarMarkerPositionProps & {
   shape?: 'star' | 'chevron';
   chevronSizePixels?: number;
   headingDegrees?: number;
+  chevronSettings?: Readonly<ChevronSettings>;
+  renderOrder?: number;
   coreColor?: string;
   coreRadius?: number;
   glowSizePixels?: number;
@@ -175,9 +182,16 @@ function ChevronMarker(props: StarMarkerProps) {
     () => () => {
       resources.geometry.dispose();
       resources.material.dispose();
+      resources.haloGeometry.dispose();
+      resources.haloMaterial.dispose();
     },
     [resources]
   );
+  const settings = props.chevronSettings ?? DEFAULT_CHEVRON_SETTINGS;
+  const sizePixels = props.chevronSizePixels ?? settings.ownSizePixels;
+  useEffect(() => {
+    updateStarMarkerChevronStyle(resources, settings, sizePixels);
+  }, [resources, settings, sizePixels]);
   useFrame((state) => {
     if (!mesh.current) return;
     state.camera.updateMatrixWorld();
@@ -189,7 +203,7 @@ function ChevronMarker(props: StarMarkerProps) {
       headingDirection,
       state.camera,
       state.size.height,
-      props.chevronSizePixels ?? 16
+      sizePixels
     );
     mesh.current.matrixWorldNeedsUpdate = true;
   });
@@ -201,8 +215,17 @@ function ChevronMarker(props: StarMarkerProps) {
       matrixAutoUpdate={false}
       dispose={null}
       userData={{ starMarkerShape: 'chevron' }}
-      raycast={raycastStarMarkerChevron}
-    />
+      renderOrder={props.renderOrder ?? 1000}
+    >
+      <mesh
+        geometry={resources.haloGeometry}
+        material={resources.haloMaterial}
+        renderOrder={(props.renderOrder ?? 1000) - 1}
+        frustumCulled={false}
+        raycast={() => {}}
+        dispose={null}
+      />
+    </mesh>
   );
 }
 

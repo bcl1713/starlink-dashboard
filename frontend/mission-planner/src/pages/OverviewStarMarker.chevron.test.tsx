@@ -33,20 +33,28 @@ it('keeps a chevron at the same pixel height when the camera zooms and disposes 
   await act(async () => {
     await view.advanceFrames(1, 0.1);
   });
-  expect(meshes).toHaveLength(1);
-  expect(projectedHeight()).toBeCloseTo(16, 4);
+  expect(meshes).toHaveLength(2);
+  expect(projectedHeight()).toBeCloseTo(12, 4);
   camera.position.z = 3;
   camera.updateMatrixWorld();
   await act(async () => {
     await view.advanceFrames(1, 0.1);
   });
-  expect(projectedHeight()).toBeCloseTo(16, 4);
+  expect(projectedHeight()).toBeCloseTo(12, 4);
   const disposeGeometry = vi.spyOn(marker.geometry, 'dispose');
   const disposeMaterial = vi.spyOn(
     marker.material as THREE.Material,
     'dispose'
   );
+  const halo = marker.children[0] as THREE.Mesh;
+  const disposeHaloGeometry = vi.spyOn(halo.geometry, 'dispose');
+  const disposeHaloMaterial = vi.spyOn(
+    halo.material as THREE.Material,
+    'dispose'
+  );
   await view.unmount();
+  expect(disposeHaloGeometry).toHaveBeenCalledOnce();
+  expect(disposeHaloMaterial).toHaveBeenCalledOnce();
   expect(disposeGeometry).toHaveBeenCalledOnce();
   expect(disposeMaterial).toHaveBeenCalledOnce();
 });

@@ -27,6 +27,11 @@ import {
   projectGroundEntryPoint,
 } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
+import { OverviewMarkerDebug } from './OverviewMarkerDebug';
+import {
+  DEFAULT_CHEVRON_SETTINGS,
+  type ChevronSettings,
+} from './overview-chevron-settings';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import {
@@ -144,10 +149,12 @@ function AircraftMarker({
   coordinate,
   position,
   headingDegrees,
+  chevronSettings,
 }: {
   coordinate: GlobeCoordinate;
   position: [number, number, number] | null;
   headingDegrees?: number;
+  chevronSettings: Readonly<ChevronSettings>;
 }) {
   return position ? (
     <StarMarker
@@ -156,6 +163,8 @@ function AircraftMarker({
       size={0.15}
       shape="chevron"
       headingDegrees={headingDegrees}
+      chevronSettings={chevronSettings}
+      renderOrder={1000}
     />
   ) : (
     <StarMarker
@@ -164,6 +173,8 @@ function AircraftMarker({
       size={0.15}
       shape="chevron"
       headingDegrees={headingDegrees}
+      chevronSettings={chevronSettings}
+      renderOrder={1000}
     />
   );
 }
@@ -228,6 +239,11 @@ function Atmosphere() {
 }
 
 export function OverviewPage() {
+  const markerDebug =
+    new URLSearchParams(window.location.search).get('markerDebug') === '1';
+  const [chevronSettings, setChevronSettings] = useState<
+    Readonly<ChevronSettings>
+  >(DEFAULT_CHEVRON_SETTINGS);
   const followPreference = useOverviewFollowPreference();
   const [resetRevision, setResetRevision] = useState(0);
   const pageRef = useRef<HTMLElement>(null);
@@ -656,6 +672,11 @@ export function OverviewPage() {
     if (!page || !rail || layout.mode !== 'landscape' || exploring) return;
     const wheel = (event: WheelEvent) => {
       if (event.target instanceof Node && rail.contains(event.target)) return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.overview-marker-debug')
+      )
+        return;
       if (event.ctrlKey || event.metaKey || !event.deltaY) return;
       const delta =
         event.deltaY *
@@ -776,6 +797,12 @@ export function OverviewPage() {
         data-flow={layout.flow}
         data-adsb-details-open={selectedAdsbContact !== null}
       >
+        {markerDebug && (
+          <OverviewMarkerDebug
+            settings={chevronSettings}
+            onChange={setChevronSettings}
+          />
+        )}
         <div className="overview-right-overlays">
           <div className="overview-satellite-overlays">
             <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
@@ -987,12 +1014,14 @@ export function OverviewPage() {
                 coordinate={aircraftPosition}
                 position={aircraftScenePosition?.position ?? null}
                 headingDegrees={status?.position?.heading}
+                chevronSettings={chevronSettings}
               />
             )}
           </Suspense>
           {adsb.contacts.length > 0 && (
             <OverviewAdsbLayer
               contacts={adsb.contacts}
+              chevronSettings={chevronSettings}
               globeOccluder={globeOccluder}
               onSelect={selectAdsb}
               onVisibleHexesChange={updateVisibleAdsb}

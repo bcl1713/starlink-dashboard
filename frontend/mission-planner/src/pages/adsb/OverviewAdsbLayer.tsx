@@ -12,7 +12,7 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   createStarMarkerChevronResources,
-  raycastStarMarkerChevron,
+  updateStarMarkerChevronStyle,
 } from '../overview-star-marker-rendering';
 import { globePosition } from '../globe-coordinates';
 import {
@@ -28,6 +28,10 @@ import {
 import { layoutAdsbLabels, type Bounds } from './overview-adsb-label-layout';
 import type { AdsbContactView } from './overview-adsb-state';
 import './OverviewAdsb.css';
+import {
+  DEFAULT_CHEVRON_SETTINGS,
+  type ChevronSettings,
+} from '../overview-chevron-settings';
 
 function visualKey(contacts: readonly AdsbContactView[]): string {
   return contacts
@@ -42,8 +46,10 @@ export function OverviewAdsbLayer({
   globeOccluder,
   onSelect,
   onVisibleHexesChange,
+  chevronSettings = DEFAULT_CHEVRON_SETTINGS,
 }: {
   contacts: readonly AdsbContactView[];
+  chevronSettings?: Readonly<ChevronSettings>;
   globeOccluder: RefObject<THREE.Group>;
   onSelect: (hex: string) => void;
   onVisibleHexesChange: (hexes: readonly string[]) => void;
@@ -70,6 +76,9 @@ export function OverviewAdsbLayer({
   >({});
   const [visible, setVisible] = useState<readonly string[]>([]);
   const lastPose = useRef('');
+  const markerResources = useRef<
+    ReturnType<typeof createStarMarkerChevronResources>[]
+  >([]);
   useLayoutEffect(() => {
     const resources = (
       [
@@ -77,11 +86,12 @@ export function OverviewAdsbLayer({
         ['stale', instances.stale],
       ] as const
     ).map(([kind, batch]) => {
-      const { geometry, material } = createStarMarkerChevronResources({
+      const chevron = createStarMarkerChevronResources({
         color: kind === 'stale' ? '#b99554' : '#efb85b',
         glowIntensity: 0.65,
         stale: kind === 'stale',
       });
+      const { geometry, material, haloGeometry, haloMaterial } = chevron;
       const mesh = new THREE.InstancedMesh(
         geometry,
         material,
@@ -90,24 +100,59 @@ export function OverviewAdsbLayer({
       mesh.instanceMatrix.array.set(batch.matrices);
       mesh.instanceMatrix.needsUpdate = true;
       mesh.userData.adsbBatch = batch;
-      mesh.raycast = raycastStarMarkerChevron;
+      mesh.renderOrder = 10;
+      const halo = new THREE.InstancedMesh(
+        haloGeometry,
+        haloMaterial,
+        batch.hexes.length
+      );
+      halo.instanceMatrix = mesh.instanceMatrix;
+      halo.userData.adsbHaloBatch = batch;
+      halo.renderOrder = 9;
+      halo.frustumCulled = false;
+      halo.raycast = () => {};
       mesh.computeBoundingSphere();
-      group.add(mesh);
-      return { mesh, geometry, material };
+      group.add(mesh, halo);
+      return { mesh, halo, chevron };
     });
+    markerResources.current = resources.map((r) => r.chevron);
     return () => {
+      markerResources.current = [];
       for (const r of resources) {
-        group.remove(r.mesh);
+        group.remove(r.mesh, r.halo);
         r.mesh.dispose();
-        r.geometry.dispose();
-        r.material.dispose();
+        r.halo.dispose();
+        r.chevron.geometry.dispose();
+        r.chevron.material.dispose();
+        r.chevron.haloGeometry.dispose();
+        r.chevron.haloMaterial.dispose();
       }
     };
   }, [group, instances]);
+  useLayoutEffect(() => {
+    for (const resources of markerResources.current)
+      updateStarMarkerChevronStyle(
+        resources,
+        chevronSettings,
+        chevronSettings.trafficSizePixels
+      );
+  }, [instances, chevronSettings]);
   const markerMatrix = useMemo(() => new THREE.Matrix4(), []);
   const resizeMarkers = useCallback(() => {
-    resizeAdsbMarkerMeshes(group, camera, size.height, markerMatrix);
-  }, [camera, group, markerMatrix, size.height]);
+    resizeAdsbMarkerMeshes(
+      group,
+      camera,
+      size.height,
+      markerMatrix,
+      chevronSettings.trafficSizePixels
+    );
+  }, [
+    camera,
+    group,
+    markerMatrix,
+    size.height,
+    chevronSettings.trafficSizePixels,
+  ]);
   useLayoutEffect(() => {
     resizeMarkers();
   }, [instances, resizeMarkers]);

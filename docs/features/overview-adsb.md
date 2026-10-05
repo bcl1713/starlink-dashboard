@@ -18,3 +18,18 @@ altitude.
 
 See [shared aircraft settings](system.md#shared-ads-b-aircraft-settings) and the
 [ADS-B API](../api/endpoints/overview-adsb.md) for precedence and freshness.
+
+## Aircraft marker tuning
+
+Own aircraft uses a white-blue luminous chevron above the scene's lines and
+other markers; Earth still hides it on the far side. Other aircraft use warm
+amber. Both retain their CSS-pixel size when zooming. Outer glow follows the
+chevron's edges, with overlapping halos capped instead of adding brightness.
+
+For live visual experiments, open `/overview?markerDebug=1`. The collapsible
+**Aircraft marker tuning** panel controls own and other aircraft sizes, core
+brightness, colored edge width, glow width and glow strength. **Copy settings**
+exports the numbers for review; the text box also supports manual copying on
+browsers without clipboard access. **Reset defaults** restores the code's
+values. These experimental settings last until the Overview page reloads and
+are not shared with other viewers.
