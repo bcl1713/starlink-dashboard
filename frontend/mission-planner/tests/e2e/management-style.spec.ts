@@ -153,6 +153,7 @@ test('navigation to and from management pages preserves Overview theme', async (
   ).toBeVisible();
   await page.getByRole('link', { name: 'Overview', exact: true }).click();
   await expect(page).toHaveURL(/\/overview$/);
+  await expect(page.locator('.overview-page')).toBeVisible();
   expect(await palette(page.locator('.app-route-content'))).toEqual(before);
   expect(before.background).toBe('#f6f8fb');
   expect(
