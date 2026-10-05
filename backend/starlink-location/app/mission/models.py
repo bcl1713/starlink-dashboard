@@ -647,6 +647,16 @@ class RouteSampleData(BaseModel):
     )
 
 
+class KaCoverageEvent(BaseModel):
+    """Informational footprint sequence, separate from availability conditions."""
+
+    timestamp: datetime
+    event_type: str
+    reason: str
+    coverage: list[str] = Field(default_factory=list)
+    satellite_id: str | None = None
+
+
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
@@ -666,6 +676,10 @@ class MissionLegTimeline(BaseModel):
     statistics: dict = Field(
         default_factory=dict,
         description="Summary statistics (e.g., degraded_seconds, critical_seconds)",
+    )
+    coverage_events: list[KaCoverageEvent] = Field(
+        default_factory=list,
+        description="Starting coverage, footprint boundaries and recommended Ka handoffs",
     )
     samples: list[RouteSampleData] | None = Field(
         default=None,
