@@ -135,10 +135,10 @@ them again.
 
 **Files:** Create
 `B/app/services/overview_weather/{admission.py,acquisitions.py,service.py,request.py}`
-and `B/app/api/overview_weather.py`. Modify B/main.py router, startup*event, and
+and `B/app/api/overview_weather.py`. Modify B/main.py router, `startup_event`, and
 shutdown_event anchors and F/nginx.conf API locations. Remove
 B/app/api/weather.py, B/app/services/weather_radar.py, and their obsolete unit
-tests. Create `B/tests/unit/test_overview_weather*{acquisitions,service,api}.py`
+tests. Create `B/tests/unit/test_overview_weather_{acquisitions,service,api}.py`
 and B/tests/integration/test_overview_weather_lifecycle.py. Reuse Task 2 stream
 fixtures.
 

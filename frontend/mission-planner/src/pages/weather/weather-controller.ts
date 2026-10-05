@@ -165,6 +165,9 @@ export class WeatherController {
       if (!current()) return;
       if (manifest.settings_revision !== revision || manifest.state !== 'ready')
         throw new Error('Weather unavailable');
+      // Start the next interval after validation reaches the browser, so the
+      // provider's 300-second metadata cache has expired on the next read.
+      this.nextCheck = this.clock.nowMono() + 300000;
       this.anchor = {
         utc: Math.max(this.utc(), manifest.generated_at_ms),
         mono: this.clock.nowMono(),

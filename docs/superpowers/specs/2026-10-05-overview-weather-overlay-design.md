@@ -279,6 +279,7 @@ save must change an already-open Overview without reload or added controls.
 Retain screenshots, request/budget counts, resource-disposal evidence, and core
 rendering/telemetry continuity during provider failures. Require focused suites,
 frontend build/lint, applicable CI, fresh specification and quality/security
-review, and documented operator behavior before integration through dev. Keep
-this design PR draft while the written spec and implementation plan await
-review; do not close issue 144 until its implementation acceptance passes.
+review, and documented operator behavior before integration through dev.
+The user approved the written specification and implementation plan and selected
+native execution on 2026-10-05. Do not close issue 144 until its implementation
+acceptance passes.

@@ -139,3 +139,21 @@ it('expires midnight coverage during loading and immediately checks a new manife
   expect(h.api.getFrame).toHaveBeenCalledTimes(2);
   expect(h.controller.snapshot().visible).toBe(false);
 });
+it('checks again 300 seconds after receiving a manifest, beyond provider cache TTL', async () => {
+  const h = harness();
+  h.api.getFrame.mockImplementation(
+    () =>
+      new Promise((resolve) => setTimeout(() => resolve(readyWeather()), 1000))
+  );
+  h.observe();
+  await vi.advanceTimersByTimeAsync(1000);
+  for (let n = 0; n < 59; n++) {
+    await vi.advanceTimersByTimeAsync(5000);
+    h.observe();
+  }
+  await vi.advanceTimersByTimeAsync(4000);
+  h.observe();
+  expect(h.api.getFrame).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(h.api.getFrame).toHaveBeenCalledTimes(2);
+});

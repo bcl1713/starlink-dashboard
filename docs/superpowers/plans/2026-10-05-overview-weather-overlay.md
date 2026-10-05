@@ -152,8 +152,6 @@ cache, and resource-ownership contracts. A fresh whole-branch reviewer checks
 specification and quality/security before acceptance. Subagent execution is also
 available with a fresh implementer/reviewer for each task.
 
-The user must review this written plan and select native or subagent execution
-before product implementation. Spec approval is recorded; this plan remains
-pending review. Following approval, invoke the selected execution skill and
-continue through implementation, required CI, acceptance, and a reviewable dev
-PR.
+The user approved the written specification and implementation plan and selected
+native execution on 2026-10-05. Continue through implementation, required CI,
+acceptance, and a reviewable dev PR.

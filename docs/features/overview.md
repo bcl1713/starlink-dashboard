@@ -4,6 +4,7 @@
 
 This document catalogs features. For saved-state refresh and controls, see
 [Overview windows](system.md#overview-windows-and-display-controls).
+See also [Overview precipitation radar](overview-weather.md).
 
 ---
 
