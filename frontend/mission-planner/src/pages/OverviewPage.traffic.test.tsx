@@ -77,6 +77,7 @@ vi.mock('@react-three/drei', () => ({
   Stars: () => null,
 }));
 vi.mock('./CityLitGlobe', () => ({ CityLitGlobe: () => null }));
+vi.mock('./OverviewLabelLayout', () => ({ OverviewLabelLayout: () => null }));
 vi.mock('./AnimatedFlowLine', async () => {
   const { useId, useLayoutEffect } = await import('react');
   return {

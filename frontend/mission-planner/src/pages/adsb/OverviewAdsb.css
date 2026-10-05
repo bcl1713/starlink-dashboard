@@ -1,12 +1,3 @@
-.adsb-label-wrapper {
-  pointer-events: none !important;
-}
-.adsb-map-label {
-  width: max-content;
-  max-width: 220px;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
 .adsb-details-overlay {
   position: fixed;
   inset: 0;

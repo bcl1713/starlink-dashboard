@@ -274,12 +274,19 @@ connectivity. Cached scene geometry can remain visible after a refresh fails;
 its layer sample remains present alongside the failure state. Status-feed age is
 independent of the position provenance used for arrival estimates.
 
-Aircraft/GEP and configured satellites can remain visible without a route.
-Generated POIs and satellite markers retain their labels and separate accessible
-name lists even when globe occlusion or POI collision handling hides a label.
-Settings, GEO look-angle analysis and optional
-[ADS-B aircraft](overview-adsb.md) controls are in **Configuration**. ADS-B adds
-global positions and read-only details.
+Aircraft/GEP and configured satellites can remain visible without a route. POIs,
+GEP, configured satellites and included ADS-B identities use rounded callout
+bubbles connected to their marker positions by thin leaders. A shared placement
+pass separates labels from each other, other markers and overview panels,
+preserves nearby east/west order, and retains valid offsets as the camera moves.
+Crowded local POI groups use a keyboard-accessible count bubble with an
+expandable name list; unrelated labels stay visible. Included ADS-B identities
+remain individually labelled even when a very dense view cannot fit them
+cleanly. Collision solving runs in a worker rather than blocking globe
+rendering. Generated POIs and satellites also retain their separate accessible
+name lists when their anchors are off screen or occluded by the globe. Settings,
+GEO look-angle analysis and optional [ADS-B aircraft](overview-adsb.md) controls
+are in **Configuration**. ADS-B adds global positions and read-only details.
 
 ### Independent data links
 
