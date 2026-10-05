@@ -115,6 +115,11 @@ export async function seedSimulationRunMission(
   );
   expect(uploaded.ok(), await uploaded.text()).toBeTruthy();
   const leg = (await uploaded.json()).leg;
+  const adjusted = await request.put(
+    `/api/v2/missions/${missionId}/legs/${legId}`,
+    { data: { ...leg, adjusted_departure_time: departure } }
+  );
+  expect(adjusted.ok(), await adjusted.text()).toBeTruthy();
   return {
     missionId,
     legId,
@@ -139,6 +144,7 @@ export async function startSimulation(
   });
   expect(response.ok(), await response.text()).toBeTruthy();
   const preview = await response.json();
+  expect(preview.planned_departure).toBe(seed.departure);
   const start = await request.post(`${path}/activate`, {
     data: { simulation: { pacing, plan_token: preview.plan_token } },
   });

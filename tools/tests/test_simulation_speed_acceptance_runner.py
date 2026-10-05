@@ -85,6 +85,7 @@ def test_uses_archived_production_sources():
     compose = (RUNNER.parent / "compose.yml").read_text()
     assert 'git archive "$ACCEPTANCE_CANDIDATE_SHA"' in source
     assert "SIMULATION_SPEED_SOURCE_ROOT" in compose
+    assert 'cd "$SIMULATION_SPEED_SOURCE_ROOT/frontend/mission-planner"' in source
     assert "15262:80" in compose and "8000:8000" not in compose
     assert "main:app" in source
     assert "git status --porcelain" in source

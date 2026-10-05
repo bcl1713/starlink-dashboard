@@ -3,7 +3,8 @@
 This is a required companion to the
 [simulation speed design](2026-10-05-mission-leg-simulation-speed-design.md) for
 [issue 262](https://github.com/bcl1713/starlink-dashboard/issues/262). Both
-documents were approved on 2026-10-05; product implementation has not started.
+documents and Native implementation were approved on 2026-10-05. Product
+implementation and acceptance are in progress.
 
 ## Verification and documentation
 
@@ -34,9 +35,8 @@ behavioral tests. Cover:
 
 Run affected backend/frontend contracts, the repository's applicable full-suite
 and static checks, and existing route/history/arrival/camera/link regressions.
-This spec-only delivery runs documentation checks; it claims no product tests or
-implemented behavior. Establish the product baseline in the implementation
-stage.
+The implementation stage records product tests separately from this acceptance
+contract. Establish the product baseline before implementation.
 
 For product acceptance, verify the exact candidate SHA through an isolated
 production Docker/Nginx/backend path using the actor's configured Docker daemon.

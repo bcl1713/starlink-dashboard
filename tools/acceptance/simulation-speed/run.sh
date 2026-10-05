@@ -68,7 +68,10 @@ docker image inspect "starlink-262-backend:$ACCEPTANCE_CANDIDATE_SHA" "starlink-
 "${compose[@]}" exec -T starlink-location python --version > "$SIMULATION_SPEED_EVIDENCE_DIR/backend-runtime.txt"
 curl --fail --silent http://127.0.0.1:15262/overview > /dev/null
 export SIMULATION_ACCEPTANCE_BASE_URL=http://127.0.0.1:15262
-cd frontend/mission-planner
+# Browser sources/config/assets must be the same archive as the images.
+# Reuse the already verified locked dependency installation, never local tests.
+ln -s "$root/frontend/mission-planner/node_modules" "$SIMULATION_SPEED_SOURCE_ROOT/frontend/mission-planner/node_modules"
+cd "$SIMULATION_SPEED_SOURCE_ROOT/frontend/mission-planner"
 node --version > "$SIMULATION_SPEED_EVIDENCE_DIR/browser-runtime.txt"
 npx playwright --version >> "$SIMULATION_SPEED_EVIDENCE_DIR/browser-runtime.txt"
 export SIMULATION_ACCEPTANCE_OUTPUT_DIR="$SIMULATION_SPEED_EVIDENCE_DIR/browser"

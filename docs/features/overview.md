@@ -2,8 +2,8 @@
 
 **Related:** [Main README](../../README.md) | [Setup Guide](../setup/README.md)
 
-This document catalogs features. For saved-state refresh and controls, see
-[Overview windows](system.md#overview-windows-and-display-controls).
+See [Overview controls](system.md#overview-windows-and-display-controls) and
+[paced replay](../api/endpoints/simulation-run.md) for shared display behavior.
 
 ---
 

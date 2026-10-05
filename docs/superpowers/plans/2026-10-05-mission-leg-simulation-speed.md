@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development or superpowers:executing-plans to
 > implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for
-> tracking. Execution method awaits the user's choice.
+> tracking. The user approved Native execution on 2026-10-05.
 
 **Goal:** Replay a complete mission leg at a selected multiplier or target
 runtime, with coherent events/timing and network telemetry cards hidden during
@@ -22,8 +22,8 @@ Docker/Nginx/Prometheus.
 [design](../specs/2026-10-05-mission-leg-simulation-speed-design.md) and
 [acceptance contract](../specs/2026-10-05-mission-leg-simulation-speed-acceptance.md).
 
-**Status:** Plan awaits user review and execution choice. No product code
-exists. Continue in `.worktrees/262-simulation-speed` on
+**Status:** Approved on 2026-10-05; Native implementation and acceptance are in
+progress. Continue in `.worktrees/262-simulation-speed` on
 `feat/262-simulation-speed`; draft PR
 [270](https://github.com/bcl1713/starlink-dashboard/pull/270) targets `dev`.
 

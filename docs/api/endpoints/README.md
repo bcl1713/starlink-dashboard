@@ -27,6 +27,9 @@ consumers, integrators, developers
 
 ### Mission V2 activation
 
+See [paced mission simulation](simulation-run.md) for preview, explicit pacing,
+shared status, effective geometry and lifecycle errors.
+
 `/api/missions` has been removed and now returns 404. There are no supported
 operator or API commands under that retired path. The sole supported activation
 operation is `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.

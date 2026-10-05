@@ -9,6 +9,11 @@
 
 ## Guide Sections
 
+For timed Mission V2 replay, see
+[paced simulation](../api/endpoints/simulation-run.md). **Simulate leg…**
+previews and starts a shared replay clock; **Activate** retains ordinary
+behavior. Network telemetry cards are hidden during paced runs.
+
 ### 1. [Mission Planning Overview & Workflow](planning/overview.md)
 
 Introduction to the mission communication planner, system requirements, and
