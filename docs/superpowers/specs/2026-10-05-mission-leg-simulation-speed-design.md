@@ -2,9 +2,9 @@
 
 **Issue:** [262](https://github.com/bcl1713/starlink-dashboard/issues/262)
 
-**Status:** Conversational design approved by the user on 2026-10-05, including
-hiding network telemetry panels. This written spec awaits user review.
-Implementation planning and product implementation have not started.
+**Status:** Written spec approved by the user on 2026-10-05, including hiding
+network telemetry panels. The implementation plan awaits review. Product
+implementation has not started.
 
 **Base:** `origin/dev` at `d0666918f54666687a5a713f77e68b23214cc8d6`. Work
 proceeds in `.worktrees/262-simulation-speed` on `feat/262-simulation-speed`;

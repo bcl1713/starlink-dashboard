@@ -3,7 +3,7 @@
 This is a required companion to the
 [simulation speed design](2026-10-05-mission-leg-simulation-speed-design.md) for
 [issue 262](https://github.com/bcl1713/starlink-dashboard/issues/262). Both
-documents await written-spec review; product implementation has not started.
+documents were approved on 2026-10-05; product implementation has not started.
 
 ## Verification and documentation
 
