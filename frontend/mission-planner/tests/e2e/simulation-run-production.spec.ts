@@ -28,6 +28,22 @@ test('fixed rate matches target runtime', async ({ request }, info) => {
   expect(final.run!.elapsed_real_seconds).toBeGreaterThanOrEqual(120);
   expect(final.run!.elapsed_real_seconds).toBeLessThanOrEqual(121);
 });
+test('short target wakes the producer during an ordinary 30-second wait', async ({
+  request,
+}, info) => {
+  const seed = await seedSimulationRunMission(request);
+  await startSimulation(request, seed, {
+    mode: 'target_runtime',
+    runtime_seconds: 2,
+  });
+  const final = await finishRun(request, seed);
+  expect(final.run!.elapsed_real_seconds).toBeGreaterThanOrEqual(2);
+  expect(final.run!.elapsed_real_seconds).toBeLessThanOrEqual(3);
+  await writeFile(
+    info.outputPath('short-target.json'),
+    JSON.stringify(final, null, 2)
+  );
+});
 test('high-rate frames preserve transitions and slow pacing stays bounded', async ({
   request,
 }, info) => {

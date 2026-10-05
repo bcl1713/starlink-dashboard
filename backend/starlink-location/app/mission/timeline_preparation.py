@@ -75,19 +75,7 @@ def prepare_mission_timeline(
     *,
     normalize_for_simulation: bool = False,
 ) -> TimelineArtifacts:
-    """Compute the mission communication timeline and derived summary.
-
-    Args:
-        mission: Mission leg configuration
-        route_manager: Route manager for loading route data
-        poi_manager: Optional POI manager for satellite POI sync
-        coverage_sampler: Optional coverage sampler for Ka coverage analysis
-        parent_mission_id: Optional parent mission ID for POI scoping
-        include_samples: If True, include route samples in timeline for preview rendering
-
-    Returns:
-        Tuple of (MissionLegTimeline, TimelineSummary)
-    """
+    """Prepare effective geometry, canonical events and POIs without publishing."""
 
     if not mission.route_id:
         raise TimelineComputationError("Mission is missing route_id")
@@ -113,11 +101,17 @@ def prepare_mission_timeline(
         )
         if selected_track:
             estimate = build_derived_route_estimate(route, selected_track, splice)
+            if normalize_for_simulation and not estimate.available:
+                raise TimelineComputationError(
+                    f"Selected diversion is unavailable: {estimate.unavailable_reason}"
+                )
             splice_available = estimate.available
             route = derived_route_for_estimate(route, estimate)
             if normalize_for_simulation and splice_available:
                 for point in route.points:
                     point.expected_segment_speed_knots = None
+        elif normalize_for_simulation:
+            raise TimelineComputationError("Selected diversion track is missing")
     if normalize_for_simulation:
         route = normalize_timed_route(route)
     else:

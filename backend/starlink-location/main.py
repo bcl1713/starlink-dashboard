@@ -74,6 +74,7 @@ from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
+from app.simulation.run_wakeup import ReplayWakeup
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -424,6 +425,7 @@ async def startup_event():
         app.state.simulation_run_service = run_service
 
         if _background_updates_enabled:
+            run_service.wakeup = ReplayWakeup()
             logger.info_json("Starting background update task")
             _background_task = asyncio.create_task(_background_update_loop(poi_manager))
         else:
@@ -644,7 +646,10 @@ async def _background_update_loop(poi_manager=None):
                     if run_service and run_service.status().state == "running"
                     else _simulation_config.update_interval_seconds
                 )
-                await asyncio.sleep(delay)
+                if run_service and run_service.wakeup:
+                    await run_service.wakeup.wait(delay)
+                else:
+                    await asyncio.sleep(delay)
 
             except (
                 Exception

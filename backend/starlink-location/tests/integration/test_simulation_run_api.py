@@ -222,3 +222,36 @@ def test_deactivation_and_edit_conflict(api):
     assert client.post("/api/v2/missions/mission-1/legs/deactivate").status_code == 200
     assert service.status().state == "cancelled"
     assert client.put(LEG, json=leg.model_dump(mode="json")).status_code == 200
+
+
+@pytest.mark.parametrize("failed", [False, True])
+def test_only_committed_activation_wakes_the_producer(api, failed):
+    from types import SimpleNamespace
+
+    client, service, _clocks = api
+    wake_states = []
+    service.wakeup = SimpleNamespace(
+        wake=lambda: wake_states.append(service.status().state)
+    )
+    if failed:
+
+        def fail_publication(*args):
+            raise RuntimeError("Publication failed")
+
+        service.publish = fail_publication
+    response = start(client)
+    assert response.status_code == (500 if failed else 200)
+    assert wake_states == ([] if failed else ["running"])
+
+
+def test_sparse_duplicate_preview_returns_route_422_without_mutation(api):
+    client, service, _clocks = api
+    route = service.route_manager.get_route("replay")
+    route.points[1].longitude = 0
+    route.points[1].expected_arrival_time = None
+    response = preview(client)
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "route"]
+    assert "positive duration" in response.json()["detail"][0]["msg"]
+    assert service.status().state == "idle"
+    assert not load_mission_v2("mission-1").legs[0].is_active

@@ -13,7 +13,8 @@ export function useSimulationClock(
 ) {
   const [clock, setClock] = useState(() => ({
     status,
-    received: performance.now(),
+    sample: status,
+    received: runReceivedAt(status) ?? performance.now(),
     now: performance.now(),
     display:
       status?.state === 'running'
@@ -25,13 +26,20 @@ export function useSimulationClock(
     const sameRun =
       status?.runtime_id === clock.status?.runtime_id &&
       status?.run?.run_id === clock.status?.run?.run_id;
+    const sameObservation =
+      sameRun &&
+      status?.revision === clock.status?.revision &&
+      status?.run?.observed_at === clock.status?.run?.observed_at;
+    const sample = sameObservation ? clock.sample : status;
+    const received = sameObservation ? clock.received : now;
     setClock({
       status,
-      received: now,
+      sample,
+      received,
       now,
       display: projectMissionTime(
-        status,
-        now,
+        sample,
+        received,
         now,
         realNowMs,
         refreshFailed,
@@ -46,7 +54,7 @@ export function useSimulationClock(
         ...previous,
         now,
         display: projectMissionTime(
-          previous.status,
+          previous.sample,
           previous.received,
           now,
           Date.now(),
@@ -60,7 +68,7 @@ export function useSimulationClock(
   return {
     missionNowMs: status?.state === 'running' ? clock.display : realNowMs,
     stale: Boolean(
-      isRunStale(status, clock.received, clock.now, refreshFailed)
+      isRunStale(clock.sample, clock.received, clock.now, refreshFailed)
     ),
   };
 }

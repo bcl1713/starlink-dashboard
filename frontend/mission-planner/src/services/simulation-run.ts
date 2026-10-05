@@ -91,7 +91,7 @@ const runSchema = z
       current <= end &&
       (run.phase === 'post_arrival'
         ? current === end && run.progress_percent === 100
-        : current < end && run.progress_percent < 100)
+        : current < end)
     );
   }, 'Inconsistent simulation phase or progress');
 export const simulationRunSchema = z

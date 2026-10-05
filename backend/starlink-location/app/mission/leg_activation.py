@@ -125,6 +125,8 @@ def activate_leg_transaction(
             clear_telemetry_metrics()
             logger.exception("Paced activation failed and was compensated")
             raise HTTPException(500, "Failed to activate paced mission leg") from exc
+        if run_service.wakeup:
+            run_service.wakeup.wake()
         geography = OfflineClockGeography()
         persist_mission_clock_settings_best_effort(
             lambda: apply_mission_activation_clock_settings(

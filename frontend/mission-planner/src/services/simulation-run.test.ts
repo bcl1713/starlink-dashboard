@@ -80,3 +80,15 @@ it('forwards the status read signal and validates the response', async () => {
     signal: undefined,
   });
 });
+it.each(['running', 'cancelled', 'completed'] as const)(
+  'accepts distance completion during a stationary segment in %s state',
+  (state) => {
+    const status = state === 'completed' ? completedStatus() : runningStatus();
+    status.state = state;
+    status.run!.progress_percent = 100;
+    if (state !== 'completed')
+      status.run!.simulation_time = '2025-01-01T01:10:00Z';
+    if (state === 'cancelled') status.run!.finished_at = status.served_at;
+    expect(simulationRunSchema.safeParse(status).success).toBe(true);
+  }
+);

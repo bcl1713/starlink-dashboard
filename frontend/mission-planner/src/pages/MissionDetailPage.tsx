@@ -19,6 +19,7 @@ import {
 } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
 import { SimulateLegDialog } from '../components/missions/SimulateLegDialog';
+import { MissionSimulationStatus } from '../components/missions/MissionSimulationStatus';
 import { EditableField } from '../components/missions/EditableField';
 import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
@@ -157,6 +158,7 @@ export function MissionDetailPage() {
         </div>
       </div>
 
+      <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
       <div className="border-t pt-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Mission Legs</h2>

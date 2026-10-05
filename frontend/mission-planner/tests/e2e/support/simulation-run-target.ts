@@ -35,6 +35,9 @@ export async function runTargetJourney(
     },
   });
   try {
+    await second.addInitScript(() =>
+      localStorage.setItem('overview.follow-aircraft', 'true')
+    );
     const overview = await second.newPage();
     await installOverviewRouteProbe(overview);
     await overview.goto('/overview');
@@ -75,8 +78,12 @@ export async function runTargetJourney(
     await expect(overview.getByLabel('Overview metric history')).toHaveCount(0);
     await expect(overview.getByText('SIMULATED TIME')).toBeVisible();
     await overview.screenshot({ path: info.outputPath('running-desktop.png') });
-    await page.goto('/overview');
-    await expect(page.getByLabel('Simulation run')).toContainText('Running');
+    await expect(page.getByLabel('Simulation run')).toContainText('Running', {
+      timeout: 3000,
+    });
+    const missionsPropagationMs = performance.now() - startAt;
+    expect(missionsPropagationMs).toBeLessThanOrEqual(3000);
+    await page.screenshot({ path: info.outputPath('missions-running.png') });
     await expect(
       overview.getByLabel('Departure and arrival')
     ).not.toContainText('No active mission leg.', { timeout: 3000 });
@@ -133,6 +140,8 @@ export async function runTargetJourney(
       timeout: 3000,
     });
     const terminalPropagationMs = performance.now() - completedAt;
+    expect(terminalPropagationMs).toBeLessThanOrEqual(3000);
+    await page.screenshot({ path: info.outputPath('missions-completed.png') });
     await expect(overview.getByLabel('Overview metric history')).toBeVisible();
     await expect(overview.getByText('SIMULATED TIME')).toHaveCount(0);
     expect(
@@ -170,6 +179,7 @@ export async function runTargetJourney(
           final,
           elapsedBrowserMs: performance.now() - startAt,
           propagationMs,
+          missionsPropagationMs,
           terminalPropagationMs,
           browser: browser.version(),
           os: `${platform()} ${release()}`,

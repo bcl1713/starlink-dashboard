@@ -96,6 +96,11 @@ def normalize_timed_route(source: ParsedRoute) -> ParsedRoute:
         duration = (
             current.expected_arrival_time - previous.expected_arrival_time
         ).total_seconds()
+        if duration <= 0:
+            raise TimelineComputationError(
+                "Every normalized segment must have positive duration; "
+                "remove duplicate untimed vertices or provide distinct timing anchors"
+            )
         speed = (distances[i] - distances[i - 1]) / duration / 0.514444
         declared = current.expected_segment_speed_knots
         if declared is not None and (

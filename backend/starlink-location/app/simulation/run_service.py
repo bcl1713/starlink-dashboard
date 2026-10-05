@@ -19,6 +19,7 @@ from app.simulation.run_plan import (
     prepare_mission_run,
 )
 from app.simulation.run_runtime import RunTick, SimulationRunRuntime
+from app.simulation.run_wakeup import ReplayWakeup
 
 
 class SimulationRunService:
@@ -35,6 +36,7 @@ class SimulationRunService:
         self.coverage_sampler = coverage_sampler
         self.coordinator: SimulationCoordinator | None = None
         self.publish: Callable[[TelemetryData, RunTick], None] | None = None
+        self.wakeup: ReplayWakeup | None = None
 
     def _assert_mode(self):
         if self.runtime.status().service_mode != "simulation" or (
