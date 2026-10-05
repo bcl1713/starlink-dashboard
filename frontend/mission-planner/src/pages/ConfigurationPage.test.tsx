@@ -18,6 +18,15 @@ function render(element: ReactNode) {
     <QueryClientProvider client={client}>{element}</QueryClientProvider>
   );
 }
+vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
+  useOverviewAdsbLayer: () => ({
+    settings: undefined,
+    contacts: [],
+    sources: [],
+    settingsError: false,
+    trafficError: false,
+  }),
+}));
 vi.mock('@/services/orbital-catalog', () => ({
   orbitalCatalogApi: {
     status: vi.fn().mockResolvedValue({
@@ -101,6 +110,9 @@ describe('ConfigurationPage', () => {
       mutate: vi.fn(),
     } as never);
     render(<ConfigurationPage />);
+    expect(
+      screen.getByRole('region', { name: 'ADS-B aircraft settings' })
+    ).not.toBeNull();
     expect(screen.getByLabelText('Overview history window')).not.toBeNull();
     expect(
       screen.getByRole('button', { name: 'Open Overview' })

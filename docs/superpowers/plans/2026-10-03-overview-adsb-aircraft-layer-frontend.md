@@ -113,7 +113,7 @@ files. Modify `src/pages/ConfigurationPage.tsx` imports/card mounting and
 takes `AdsbSettings`, `boolean`, and `(changes: AdsbSettingsUpdate) => void`.
 Both child views are presentation-only; the parent owns saved-state feedback.
 
-- [ ] **Step 1: Write failing component/integration tests.** Assert default off,
+- [x] **Step 1: Write failing component/integration tests.** Assert default off,
   exact mode names, controlled enable/mode edits, and preserved other fields.
   Test separate include/exclude editors, newline or comma-separated exact hexes,
   visible invalid-entry feedback, normalization, and leading-zero preservation.
@@ -143,9 +143,9 @@ Both child views are presentation-only; the parent owns saved-state feedback.
     .toHaveTextContent('00AB12');
   ```
 
-- [ ] **Step 2: Verify failure.** Run the three new component files and
+- [x] **Step 2: Verify failure.** Run the three new component files and
   `src/pages/ConfigurationPage.test.tsx`; expect missing components/section.
-- [ ] **Step 3: Implement the views and mount the card.** Follow existing
+- [x] **Step 3: Implement the views and mount the card.** Follow existing
   `OverviewLinkSettingsCard` form/save conventions. Table columns: hex, identity,
   included/background status, Current/Stale age, Include and Exclude actions;
   stable hex row keys and deterministic hex sorting. Replace the relevant saved
@@ -156,8 +156,8 @@ Both child views are presentation-only; the parent owns saved-state feedback.
   `Saved included aircraft` and `Saved excluded aircraft`. Include attribution
   `Aircraft data: adsb.lol` and `ODbL license` using main-plan links.
   Mount independently of operational-clock loading/error branches.
-- [ ] **Step 4: Verify success.** Rerun Task 5 and Configuration tests; expect PASS.
-- [ ] **Step 5: Commit Task 5 files.**
+- [x] **Step 4: Verify success.** Rerun Task 5 and Configuration tests; expect PASS.
+- [x] **Step 5: Commit Task 5 files.**
   `git commit -m "feat(configuration): edit ADS-B lists and selected traffic"`.
 
 ## Task 6: Batched globe markers, persistent labels and read-only details
