@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 
 import httpx
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.services.overview_history_prometheus import (
@@ -52,7 +53,9 @@ async def get_overview_history():
             detail="Overview history is not yet initialized",
         )
     try:
-        return await _overview_history_reader()
+        # The reader publishes immutable JSON primitives; encode once without
+        # FastAPI recursively copying the full history into another bundle.
+        return JSONResponse(content=await _overview_history_reader())
     except (httpx.HTTPError, OverviewHistoryPrometheusResponseError) as error:
         raise HTTPException(
             status_code=503,

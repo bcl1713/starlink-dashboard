@@ -1,0 +1,83 @@
+services:
+  starlink-location:
+    image: starlink-224-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    build:
+      context: ${OVERVIEW_PROFILE_SOURCE}/backend/starlink-location
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    environment:
+      STARLINK_MODE: simulation
+      SIMULATION_MODE: "true"
+      STARLINK_ROUTE_LATITUDE_START: "35.0"
+      STARLINK_ROUTE_LONGITUDE_START: "-100.0"
+      STARLINK_GROUND_ENTRY_LATITUDE: "36.0"
+      STARLINK_GROUND_ENTRY_LONGITUDE: "-102.0"
+      STARLINK_PROMETHEUS_URL: http://prometheus:9090
+      OVERVIEW_PROFILE_MODE: ${OVERVIEW_PROFILE_MODE:-incremental}
+      PYTHONPATH: /app:/acceptance
+      NO_PROXY: prometheus,starlink-location,localhost,127.0.0.1
+    command:
+      [
+        uvicorn,
+        overview_history.backend_probe:app,
+        --host,
+        "0.0.0.0",
+        --port,
+        "8000",
+      ]
+    ports:
+      - "127.0.0.1:18224:8000"
+    volumes:
+      - ${OVERVIEW_PROFILE_SOURCE}/tools/acceptance/overview_history:/acceptance/overview_history:ro
+      - missions:/app/data/missions
+      - settings:/app/data/settings
+      - satellites:/app/data/satellites
+      - coverage:/app/data/sat_coverage
+      - routes:/data/routes
+      - simulation-routes:/data/sim_routes
+      - pois:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      interval: 2s
+      timeout: 5s
+      retries: 45
+      start_period: 30s
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ${OVERVIEW_PROFILE_SOURCE}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${OVERVIEW_PROFILE_SOURCE}/monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - ${OVERVIEW_PROFILE_SEED}:/seed/history.openmetrics:ro
+      - metrics:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=3h
+    ports:
+      - "127.0.0.1:19224:9090"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+  mission-planner:
+    image:
+      starlink-224-frontend-${OVERVIEW_PROFILE_CADENCE}:${ACCEPTANCE_CANDIDATE_SHA:?exact
+      SHA required}
+    build:
+      context: ${OVERVIEW_PROFILE_SOURCE}/frontend/mission-planner
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+        VITE_OVERVIEW_HISTORY_POLL_SECONDS: ${OVERVIEW_PROFILE_CADENCE:-5}
+    ports:
+      - "127.0.0.1:15224:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+volumes:
+  missions:
+  settings:
+  satellites:
+  coverage:
+  routes:
+  simulation-routes:
+  pois:
+  metrics:
