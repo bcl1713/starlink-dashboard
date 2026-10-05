@@ -178,6 +178,13 @@ def _gate(value: object, unit: str, passed: bool | None, reason: str) -> dict:
 def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
     """Apply declared budgets while retaining missing provenance/coverage gates."""
     meta, base_meta = candidate.get("metadata", {}), baseline.get("metadata", {})
+    phase_status = meta.get("phase", {}).get("status")
+    phase_errors = meta.get("errors")
+    phase_ok = (
+        False
+        if phase_status == "failed" or phase_errors
+        else True if phase_status == "measured" and phase_errors == [] else None
+    )
     request_ms = candidate.get("request_ms")
     p95 = request_ms.get("p95") if request_ms else None
     budgets = {
@@ -188,6 +195,12 @@ def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
             "Healthy warm p95 must be below 500 ms",
         )
     }
+    budgets["browser_phase"] = _gate(
+        phase_status,
+        "outcome",
+        phase_ok,
+        "Completed browser phase and zero captured errors required",
+    )
     comparable = all(
         field in meta and field in base_meta and meta[field] == base_meta[field]
         for field in COMPARABLE_FIELDS

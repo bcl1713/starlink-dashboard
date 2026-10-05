@@ -25,6 +25,8 @@ def metadata(**changes):
         "warmup_seconds": 300,
         "resource_interval_seconds": 5,
         "cleanup": "passed",
+        "phase": {"status": "measured"},
+        "errors": [],
         "behavior": {name: "passed" for name in BEHAVIORS},
         "upstream_work": "recorded",
         **changes,
@@ -227,3 +229,16 @@ def test_cold_requests_do_not_enter_warm_quantiles():
         }
     )
     assert summarize_phase(rows, metadata())["request_ms"]["p95"] == pytest.approx(499)
+
+
+def test_failed_browser_phase_cannot_pass_with_successful_http_samples():
+    candidate = report()
+    candidate["metadata"]["phase"] = {"status": "failed"}
+    candidate["metadata"]["errors"] = ["unhandled browser exception"]
+    assert evaluate_budgets(baseline(), candidate)["status"] == "failed"
+
+
+def test_missing_browser_phase_outcome_is_incomplete():
+    candidate = report()
+    candidate["metadata"].pop("phase", None)
+    assert evaluate_budgets(baseline(), candidate)["status"] == "incomplete"

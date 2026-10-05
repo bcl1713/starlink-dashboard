@@ -89,6 +89,40 @@ export function classifyPhase({
   };
 }
 
+export function encodeMovie(encoder, frames, output, elapsed) {
+  const input = Buffer.concat(
+    Array.from({ length: 20 }, (_, frame) =>
+      readFileSync(resolve(frames, `${String(frame).padStart(3, "0")}.jpg`)),
+    ),
+  );
+  if (input.length > 64 * 1024 ** 2)
+    throw new Error("bounded video input exceeds 64 MiB");
+  execFileSync(
+    encoder,
+    [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-f",
+      "image2pipe",
+      "-vcodec",
+      "mjpeg",
+      "-r",
+      String(20 / elapsed),
+      "-i",
+      "pipe:0",
+      "-c:v",
+      "libvpx",
+      "-b:v",
+      "1M",
+      "-deadline",
+      "realtime",
+      output,
+    ],
+    { input, maxBuffer: 1024 ** 2 },
+  );
+}
+
 const clock = () => Number(process.hrtime.bigint()) / 1e9;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -166,7 +200,9 @@ async function run(options) {
     sessions = [],
     requests = new WeakMap();
   const errors = [];
-  let measuring = false;
+  let measuring = false,
+    faultControl = false;
+  const subscriptions = [];
   const metadata = {
     sha: readFileSync(resolve(parent, "candidate-sha.txt"), "utf8").trim(),
     images: readFileSync(resolve(parent, "images.txt"), "utf8")
@@ -284,19 +320,34 @@ async function run(options) {
       pages.push(page);
       sessions.push(session);
       const pageId = String(index + 1);
+      const subscription = {
+        page_id: pageId,
+        starts: 0,
+        active: 0,
+        maxActive: 0,
+      };
+      subscriptions.push(subscription);
       page.on("request", (request) => {
-        if (history(request) && measuring)
+        if (history(request) && measuring) {
+          subscription.starts++;
+          subscription.active++;
+          subscription.maxActive = Math.max(
+            subscription.maxActive,
+            subscription.active,
+          );
           requests.set(request, {
             kind: "request",
             started_seconds: clock(),
             page_id: pageId,
             cold: false,
           });
+        }
       });
       page.on("requestfinished", (request) => {
         const row = requests.get(request);
         if (!row) return;
         requests.delete(request);
+        subscription.active--;
         request
           .response()
           .then((response) => {
@@ -310,6 +361,7 @@ async function run(options) {
         const row = requests.get(request);
         if (!row) return;
         requests.delete(request);
+        subscription.active--;
         append({ ...row, completed_seconds: clock(), status: 0 });
         errors.push(request.failure()?.errorText ?? "request failed");
       });
@@ -319,7 +371,12 @@ async function run(options) {
       });
       page.on("console", (message) => {
         if (message.type() === "error") {
-          errors.push(message.text());
+          const expected =
+            faultControl &&
+            new URL(message.location().url || options.origin).pathname ===
+              "/api/overview-history" &&
+            message.text().includes("503");
+          if (!expected) errors.push(message.text());
           event({ kind: "console_error", message: message.text() });
         }
       });
@@ -510,25 +567,65 @@ async function run(options) {
           await sleep(200);
         }
         const elapsed = clock() - began;
-        execFileSync(encoder, [
-          "-hide_banner",
-          "-loglevel",
-          "error",
-          "-framerate",
-          String(60 / elapsed),
-          "-i",
-          resolve(frames, "%03d.png"),
-          "-c:v",
-          "libvpx",
-          "-b:v",
-          "1M",
-          "-deadline",
-          "realtime",
+        encodeMovie(
+          encoder,
+          frames,
           resolve(output, "arrival-rebase.webm"),
-        ]);
-        event({ kind: "bounded_video", frames: 60, elapsed_seconds: elapsed });
+          elapsed,
+        );
+        event({ kind: "bounded_video", frames: 20, elapsed_seconds: elapsed });
       }
       metadata.behavior.motion = "passed";
+      const prom = "starlink-224-history-prometheus-1";
+      if (
+        execFileSync(
+          "docker",
+          [
+            "inspect",
+            "--format",
+            '{{index .Config.Labels "com.docker.compose.project"}}',
+            prom,
+          ],
+          { encoding: "utf8" },
+        ).trim() !== "starlink-224-history"
+      )
+        throw new Error("fault control ownership mismatch");
+      faultControl = true;
+      try {
+        execFileSync("docker", ["stop", prom], { stdio: "ignore" });
+        await expect
+          .poll(
+            () =>
+              page.evaluate(() =>
+                document.body.textContent.includes("refresh unavailable"),
+              ),
+            { timeout: 25000 },
+          )
+          .toBe(true);
+        await expect(page.locator(".uplot canvas")).toHaveCount(5);
+        await page.screenshot({
+          path: resolve(output, "last-good-outage.png"),
+        });
+        event({
+          kind: "raw_source_outage",
+          retained_plots: 5,
+          status: "observed",
+        });
+      } finally {
+        execFileSync("docker", ["start", prom], { stdio: "ignore" });
+      }
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() =>
+              document.body.textContent.includes("refresh unavailable"),
+            ),
+          { timeout: 25000 },
+        )
+        .toBe(false);
+      faultControl = false;
+      event({ kind: "raw_source_recovery", status: "observed" });
+      metadata.behavior.masking = "passed";
       metadata.behavior.lifecycle = "passed";
       event({ kind: "lifecycle_controls", status: "passed" });
     }
@@ -575,7 +672,26 @@ async function run(options) {
       }
     }
     measuring = false;
-    await sleep(1000);
+    for (
+      let drain = 0;
+      drain < 100 && subscriptions.some((entry) => entry.active);
+      drain++
+    )
+      await sleep(100);
+    if (subscriptions.some((entry) => entry.active))
+      errors.push("history requests did not drain");
+    metadata.behavior.shared_subscription = subscriptions.every(
+      (entry) =>
+        entry.maxActive <= 1 &&
+        entry.starts > 0 &&
+        entry.starts <=
+          options.requested_measured_seconds /
+            options.configured_interval_seconds +
+            2,
+    )
+      ? "passed"
+      : "failed";
+    event({ kind: "request_subscriptions", subscriptions });
     await pages.at(-1).screenshot({ path: resolve(output, "end.png") });
     metadata.phase = classifyPhase({
       requested_seconds: options.requested_measured_seconds,
