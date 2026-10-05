@@ -25,9 +25,6 @@ jobs:
           - image: ghcr.io/${{ github.repository }}/prometheus
             context: .
             file: ./deployment/prometheus/Dockerfile
-          - image: ghcr.io/${{ github.repository }}/grafana
-            context: .
-            file: ./deployment/grafana/Dockerfile
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -122,7 +119,7 @@ jobs:
       - name: Inventory GHCR versions without mutation
         run: |
           set -euo pipefail
-          for package in starlink-location mission-planner prometheus grafana; do
+          for package in starlink-location mission-planner prometheus; do
             gh api --paginate --slurp "users/${{ github.repository_owner }}/packages/container/starlink-dashboard%2F$package/versions?per_page=100" |
               jq '{versions: flatten, pagination: {complete: true}}' > "retention/$package-versions.json"
             python tools/github_retention_cli.py ghcr-inventory \

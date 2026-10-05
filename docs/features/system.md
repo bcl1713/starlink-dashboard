@@ -12,13 +12,11 @@ All system configuration via `.env` file.
 - `STARLINK_DISH_HOST` - Terminal IP (live mode)
 - `STARLINK_DISH_PORT` - Terminal gRPC port (live mode)
 - `PROMETHEUS_RETENTION` - Metrics retention period
-- `GRAFANA_ADMIN_PASSWORD` - Grafana password
 
 **Port Configuration:**
 
 - `STARLINK_LOCATION_PORT` - Backend port (default: 8000)
 - `PROMETHEUS_PORT` - Prometheus port (default: 9090)
-- `GRAFANA_PORT` - Grafana port (default: 3000)
 
 **See:**
 [Environment Variables](../setup/configuration/environment-variables.md)

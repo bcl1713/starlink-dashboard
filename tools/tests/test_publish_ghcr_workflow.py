@@ -135,20 +135,20 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         errors = self.validate_workflow_text(workflow_text + duplicate_entry)
 
-        self.assertIn("publish matrix must contain exactly 4 entries, got 5", errors)
+        self.assertIn("publish matrix must contain exactly 3 entries, got 4", errors)
         self.assertIn("duplicate publish matrix images: starlink-location", errors)
 
     def test_rejects_missing_expected_publish_matrix_row(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
-        grafana_entry = """          - image: ghcr.io/${{ github.repository }}/grafana
+        prometheus_entry = """          - image: ghcr.io/${{ github.repository }}/prometheus
             context: .
-            file: ./deployment/grafana/Dockerfile
+            file: ./deployment/prometheus/Dockerfile
 """
 
-        errors = self.validate_workflow_text(workflow_text.replace(grafana_entry, ""))
+        errors = self.validate_workflow_text(workflow_text.replace(prometheus_entry, ""))
 
-        self.assertIn("publish matrix must contain exactly 4 entries, got 3", errors)
-        self.assertIn("missing publish matrix images: grafana", errors)
+        self.assertIn("publish matrix must contain exactly 3 entries, got 2", errors)
+        self.assertIn("missing publish matrix images: prometheus", errors)
 
     def test_rejects_retention_without_publish_dependency(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")

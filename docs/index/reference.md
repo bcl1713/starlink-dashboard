@@ -55,9 +55,9 @@
 - Metrics Reference: [METRICS](../metrics/overview.md)
 - Prometheus Config:
   [monitoring/prometheus/prometheus.yml](../../monitoring/prometheus/prometheus.yml)
-- Grafana Setup: [Grafana Configuration](../grafana-configuration.md)
+- Overview Features: [Overview Features](../features/overview.md)
 - Dashboard Features:
-  [README.md#grafana-dashboards](../../README.md#grafana-dashboards)
+  [docs/features/overview.md](../../docs/features/overview.md)
 - Mission Monitoring:
   [monitoring/README.md#mission-communication-planning](../../monitoring/README.md#mission-communication-planning)
 
@@ -131,7 +131,7 @@
 | troubleshooting/quick-diagnostics.md | 24 KB | Reference | Problem diagnosis and solutions |
 | architecture/design-document.md      | 9 KB  | Design    | Architecture and design         |
 | CONTRIBUTING.md                      | 18 KB | Process   | Contribution guidelines         |
-| grafana-configuration.md             | 12 KB | How-to    | Dashboard configuration         |
+| features/overview.md                 | 12 KB | How-to    | Dashboard configuration         |
 | metrics/overview.md                  | 8 KB  | Reference | Prometheus metrics              |
 | phased-development-plan.md           | 7 KB  | Plan      | Implementation roadmap          |
 | Backend README                       | 14 KB | Overview  | Service documentation           |
@@ -153,7 +153,6 @@
 
 ### External Resources
 
-- [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Docker Documentation](https://docs.docker.com/)
@@ -162,7 +161,7 @@
 
 - Backend API Docs: <http://localhost:8000/docs>
 - Prometheus UI: <http://localhost:9090>
-- Grafana Dashboards: <http://localhost:3000>
+- Overview: <http://localhost:5173>
 
 ---
 

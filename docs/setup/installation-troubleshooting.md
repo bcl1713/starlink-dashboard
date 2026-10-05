@@ -65,7 +65,7 @@ docker compose ps
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:9090/-/healthy
-curl http://localhost:3000/api/health
+curl --fail http://localhost:5173/api/status
 ```
 
 ---
@@ -76,7 +76,7 @@ curl http://localhost:3000/api/health
 
 ```bash
 # Linux/macOS
-lsof -i :3000
+lsof -i :5173
 lsof -i :8000
 lsof -i :9090
 
@@ -88,7 +88,7 @@ kill -9 <PID>
 
 ```bash
 nano .env
-# Change: GRAFANA_PORT=3001
+# Change: STARLINK_LOCATION_PORT=8001
 docker compose down
 docker compose up -d
 ```
@@ -111,24 +111,21 @@ docker compose exec prometheus curl http://starlink-location:8000/health
 
 ---
 
-## Grafana Shows No Data
+## Mission Planner Issues
 
-**Verify data source:**
-
-1. Go to <http://localhost:3000>
-2. Configuration → Data Sources → Prometheus
-3. Click "Test" button
-4. Should show green "Data source is working"
-
-**If test fails:**
+Open <http://localhost:5173> and check the Overview. Verify the same-origin
+backend proxy and Prometheus readiness:
 
 ```bash
-# Check if Prometheus is running
-docker compose ps prometheus
-
-# Test from Grafana container
-docker compose exec grafana curl http://prometheus:9090
+docker compose ps mission-planner starlink-location prometheus
+docker compose logs --tail=30 mission-planner starlink-location
+curl --fail http://localhost:5173/api/status
+curl --fail http://localhost:9090/-/ready
 ```
+
+For empty history graphs, inspect Prometheus targets at
+<http://localhost:9090/targets> and the backend metrics at
+<http://localhost:8000/metrics>.
 
 ---
 

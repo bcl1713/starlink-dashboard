@@ -79,7 +79,7 @@ docker compose logs -f
 ```bash
 docker compose logs -f starlink-location
 docker compose logs -f prometheus
-docker compose logs -f grafana
+docker compose logs -f mission-planner
 ```
 
 ### Filter by Level

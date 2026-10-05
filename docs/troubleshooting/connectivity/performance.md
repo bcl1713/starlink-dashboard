@@ -14,7 +14,7 @@ docker stats --no-stream
 # High CPU in which container?
 # Backend (simulator updates too frequent?)
 # Prometheus (too much data, slow query?)
-# Grafana (dashboard rendering?)
+# Mission Planner (dashboard rendering?)
 ```
 
 **Backend high CPU:**

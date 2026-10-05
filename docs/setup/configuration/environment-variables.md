@@ -8,22 +8,18 @@
 
 All configuration is done via the `.env` file in the project root.
 
-| Variable                          | Default               | Description              | Mode       |
-| --------------------------------- | --------------------- | ------------------------ | ---------- |
-| `STARLINK_MODE`                   | `simulation`          | `simulation` or `live`   | Both       |
-| `STARLINK_DISH_HOST`              | `192.168.100.1`       | Dish IP address          | Live       |
-| `STARLINK_DISH_PORT`              | `9200`                | Dish gRPC port           | Live       |
-| `PROMETHEUS_RETENTION`            | `1y`                  | Data retention period    | Both       |
-| `GRAFANA_ADMIN_PASSWORD`          | `admin`               | Grafana password         | Both       |
-| `STARLINK_LOCATION_PORT`          | `8000`                | Backend port             | Both       |
-| `PROMETHEUS_PORT`                 | `9090`                | Prometheus port          | Both       |
-| `GRAFANA_PORT`                    | `3000`                | Grafana port             | Both       |
-| `TIMEZONE_TAKEOFF`                | `America/Los_Angeles` | Takeoff timezone         | Both       |
-| `TIMEZONE_LANDING`                | `Europe/London`       | Landing timezone         | Both       |
-| `LOG_LEVEL`                       | `INFO`                | Backend log level        | Both       |
-| `JSON_LOGS`                       | `true`                | JSON log format          | Both       |
-| `STARLINK_GROUND_ENTRY_LATITUDE`  | none                  | Simulation GEP Latitude  | Simulation |
-| `STARLINK_GROUND_ENTRY_LONGITUDE` | none                  | Simulation GEP Longitude | Simulation |
+| Variable                          | Default         | Description              | Mode       |
+| --------------------------------- | --------------- | ------------------------ | ---------- |
+| `STARLINK_MODE`                   | `simulation`    | `simulation` or `live`   | Both       |
+| `STARLINK_DISH_HOST`              | `192.168.100.1` | Dish IP address          | Live       |
+| `STARLINK_DISH_PORT`              | `9200`          | Dish gRPC port           | Live       |
+| `PROMETHEUS_RETENTION`            | `1y`            | Data retention period    | Both       |
+| `STARLINK_LOCATION_PORT`          | `8000`          | Backend port             | Both       |
+| `PROMETHEUS_PORT`                 | `9090`          | Prometheus port          | Both       |
+| `LOG_LEVEL`                       | `INFO`          | Backend log level        | Both       |
+| `JSON_LOGS`                       | `true`          | JSON log format          | Both       |
+| `STARLINK_GROUND_ENTRY_LATITUDE`  | none            | Simulation GEP Latitude  | Simulation |
+| `STARLINK_GROUND_ENTRY_LONGITUDE` | none            | Simulation GEP Longitude | Simulation |
 
 ---
 
@@ -100,21 +96,12 @@ Port for Prometheus metrics collector.
 
 **Access:** `http://localhost:9090`
 
-### GRAFANA_PORT
-
-Port for Grafana dashboard interface.
-
-**Default:** `3000`
-
-**Access:** `http://localhost:3000`
-
 **Example:**
 
 ```bash
 # Change ports to avoid conflicts
 STARLINK_LOCATION_PORT=8001
 PROMETHEUS_PORT=9091
-GRAFANA_PORT=3001
 ```
 
 ---
@@ -147,67 +134,14 @@ PROMETHEUS_RETENTION=1y
 
 ---
 
-## Security Settings
+## Operational Clock Settings
 
-### GRAFANA_ADMIN_PASSWORD
+Configure operational clocks in Mission Planner's Configuration page. The
+backend persists them in its application settings data. Mission activation may
+supply departure and arrival clock locations; these settings do not use
+`TIMEZONE_TAKEOFF` or `TIMEZONE_LANDING` environment variables.
 
-Password for Grafana admin user.
-
-**Default:** `admin`
-
-**Security note:** Change this in production!
-
-**Example:**
-
-```bash
-# Development
-GRAFANA_ADMIN_PASSWORD=admin
-
-# Production
-GRAFANA_ADMIN_PASSWORD=your-strong-password-here
-```
-
----
-
-## Timezone Settings
-
-### TIMEZONE_TAKEOFF
-
-Timezone for departure location (mission planning).
-
-**Default:** `America/Los_Angeles`
-
-**Example:**
-
-```bash
-# West Coast USA
-TIMEZONE_TAKEOFF=America/Los_Angeles
-
-# East Coast USA
-TIMEZONE_TAKEOFF=America/New_York
-
-# UK
-TIMEZONE_TAKEOFF=Europe/London
-
-# Japan
-TIMEZONE_TAKEOFF=Asia/Tokyo
-```
-
-### TIMEZONE_LANDING
-
-Timezone for arrival location (mission planning).
-
-**Default:** `Europe/London`
-
-**Common timezones:**
-
-- `America/New_York` (EST/EDT)
-- `America/Chicago` (CST/CDT)
-- `America/Denver` (MST/MDT)
-- `America/Los_Angeles` (PST/PDT)
-- `Europe/London` (GMT/BST)
-- `Asia/Tokyo` (JST)
-- `Australia/Sydney` (AEST/AEDT)
+See [Overview features](../../features/overview.md) for clock behavior.
 
 ---
 

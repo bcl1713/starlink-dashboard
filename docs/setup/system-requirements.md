@@ -166,7 +166,7 @@ curl <http://localhost:8000/health> | jq .
    Open ports if using firewall:
 
    ```bash
-   sudo ufw allow 3000  # Grafana
+   sudo ufw allow 5173  # Mission Planner
    sudo ufw allow 8000  # Backend
    sudo ufw allow 9090  # Prometheus
    ```
@@ -225,28 +225,27 @@ Required for:
 
 - Pulling Docker images
 - Initial setup
-- Grafana plugin downloads (if applicable)
 
 ### Ports
 
 The following ports must be available on localhost:
 
-| Port | Service     | Protocol |
-| ---- | ----------- | -------- |
-| 3000 | Grafana     | HTTP     |
-| 8000 | Backend API | HTTP     |
-| 9090 | Prometheus  | HTTP     |
+| Port | Service         | Protocol |
+| ---- | --------------- | -------- |
+| 5173 | Mission Planner | HTTP     |
+| 8000 | Backend API     | HTTP     |
+| 9090 | Prometheus      | HTTP     |
 
 **Check port availability:**
 
 ```bash
 # Linux/macOS
-lsof -i :3000
+lsof -i :5173
 lsof -i :8000
 lsof -i :9090
 
 # Windows
-netstat -ano | findstr :3000
+netstat -ano | findstr :5173
 netstat -ano | findstr :8000
 netstat -ano | findstr :9090
 ```

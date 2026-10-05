@@ -10,8 +10,6 @@ services:
       SIMULATION_MODE: ${SIMULATION_MODE:-true}
       STARLINK_DISH_HOST: ${STARLINK_DISH_HOST:-192.168.100.1}
       STARLINK_DISH_PORT: ${STARLINK_DISH_PORT:-9200}
-      TIMEZONE_TAKEOFF: ${TIMEZONE_TAKEOFF:-America/Los_Angeles}
-      TIMEZONE_LANDING: ${TIMEZONE_LANDING:-Europe/London}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -50,28 +48,6 @@ services:
       proxy:
         aliases:
           - prometheus
-
-  grafana:
-    image: ghcr.io/bcl1713/starlink-dashboard/grafana:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
-    # Deliberately on-demand: start the Portainer stack when needed.
-    restart: "no"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in Portainer}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_INSTALL_PLUGINS: grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1
-      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
-    volumes:
-      - type: bind
-        source: ${STARLINK_GRAFANA_DATA_PATH:?Set the persistent Grafana data host path}
-        target: /var/lib/grafana
-    depends_on:
-      prometheus:
-        condition: service_started
-    networks:
-      starlink-net: {}
-      proxy:
-        aliases:
-          - grafana
 
   mission-planner:
     image: ghcr.io/bcl1713/starlink-dashboard/mission-planner:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}

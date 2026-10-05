@@ -20,9 +20,9 @@ metrics, and obstruction detection.
 - **Graceful Degradation**: Returns last known good values on errors
 - **Background Updates**: Continuous telemetry generation at 10 Hz
 - **Live Route Metrics**: Background telemetry uses the application's active
-  mission route in both live and simulation modes, including route-aware ETA
-  and automatic arrival evaluation. Activation, replacement and deactivation
-  take effect on the next telemetry update.
+  mission route in both live and simulation modes, including route-aware ETA and
+  automatic arrival evaluation. Activation, replacement and deactivation take
+  effect on the next telemetry update.
 
 Automatic arrival requires an active route and continuous fresh GPS and verified
 speed observations near its destination for the configured detection dwell.
@@ -114,7 +114,7 @@ curl http://localhost:8000/api/status | jq .
 - Exports metrics in Prometheus format
 - 1-second scrape interval support
 - Comprehensive metric coverage
-- Compatible with Grafana dashboards
+- Provides metrics for Prometheus and the Mission Planner overview
 
 ### REST API
 

@@ -27,13 +27,12 @@ The Portainer template has these invariants:
   `STARLINK_IMAGE_TAG` value. Use a reviewed SHA-derived tag or versioned
   release tag, never a mutable tag such as `latest`.
 - The backend and Mission Planner use their GHCR application images. Prometheus
-  and Grafana also use GHCR images built for this profile.
-- Prometheus rules/configuration and Grafana provisioning/customization are
-  baked into those monitoring images. The Portainer template must not mount
-  repository-relative `monitoring/` paths.
+  also uses a GHCR image built for this profile.
+- Prometheus rules/configuration are baked into its monitoring image. The
+  Portainer template must not mount repository-relative `monitoring/` paths.
 - The template joins the pre-existing external `proxy` network without creating
   or reconfiguring it. Its stable aliases are `starlink-location`, `prometheus`,
-  `grafana`, and `mission-planner`.
+  and `mission-planner`.
 - Mission Planner remains reachable through its proxy route. Its dashboard and
   `/api/v2/missions` API are expected to work from the same origin; do not
   substitute direct container or host-port routing.
@@ -57,15 +56,13 @@ The following host-path keys are required and fail closed when missing:
 | `STARLINK_APP_DATA_PATH`        | Application-managed data        |
 | `STARLINK_ROUTE_DATA_PATH`      | Route and simulation-route data |
 | `STARLINK_PROMETHEUS_DATA_PATH` | Prometheus time-series data     |
-| `STARLINK_GRAFANA_DATA_PATH`    | Grafana state and dashboards    |
 
 The template binds these host paths to the containers. Supply existing,
 authorized persistent locations with appropriate service permissions. Do not
 create, delete, relocate, or disclose live paths while following this runbook.
 
-Other stack settings remain Portainer-managed. `GRAFANA_ADMIN_PASSWORD` is a
-secret and must not be copied into documentation, commits, tickets, or command
-history. For non-live work, retain `STARLINK_MODE=simulation`.
+Other stack settings remain Portainer-managed. For non-live work, retain
+`STARLINK_MODE=simulation`.
 
 `STARLINK_PROMETHEUS_URL` defaults to `http://prometheus:9090`, the stable
 Prometheus service alias in this profile. `STARLINK_HISTORY_WINDOW_SECONDS` is
@@ -114,9 +111,8 @@ Before an authorized non-live update:
 2. Record the current immutable tag and the intended replacement in the approved
    change record. The current tag is the rollback selection.
 3. Verify that the selected GHCR images correspond to the reviewed source
-   revision and include the backend, Mission Planner, Prometheus, and Grafana
-   images.
-4. Verify the Git-stack template uses the four required host-path keys, the
+   revision and include the backend, Mission Planner, and Prometheus images.
+4. Verify the Git-stack template uses the three required host-path keys, the
    external `proxy` network, stable aliases, and no repository-relative
    monitoring mounts.
 5. Confirm that required persistent locations already exist and that Portainer,
@@ -133,12 +129,12 @@ For an authorized non-live Portainer Git-stack update:
 1. Select the reviewed repository reference and the dedicated Portainer GHCR
    template path.
 2. Set `STARLINK_IMAGE_TAG` to the approved immutable selection and provide all
-   four required host-path keys in Portainer.
+   three required host-path keys in Portainer.
 3. Enable image pulling so Portainer obtains the chosen immutable images.
 4. Leave image pruning disabled. Pull without prune preserves the prior image
    selection for rollback.
 5. Review the rendered template before submitting it. It must use GHCR images,
-   baked monitoring configuration, the external `proxy` network, and the four
+   baked monitoring configuration, the external `proxy` network, and the three
    stable aliases.
 6. Perform only the approved non-live validation. Do not change DNS, proxy
    routing, persistent storage, credentials, or public hosts.
@@ -154,16 +150,15 @@ services through the external proxy aliases and confirm all of the following:
 ```text
 http://starlink-location:8000/health
 http://prometheus:9090/-/ready
-http://grafana:3000/api/health
 http://mission-planner/
 http://mission-planner/api/v2/missions
 ```
 
-The first three probes verify backend health, Prometheus readiness, and Grafana
-health. The final two verify the Mission Planner dashboard route and its
-same-origin API behavior. Record only pass/fail results and the immutable image
-selection; never include environment addresses, paths, credentials, or storage
-identifiers in the repository.
+The first two probes verify backend health and Prometheus readiness. The final
+two verify the Mission Planner dashboard route and its same-origin API behavior.
+Record only pass/fail results and the immutable image selection; never include
+environment addresses, paths, credentials, or storage identifiers in the
+repository.
 
 ## Rollback
 
@@ -172,7 +167,7 @@ recorded prior immutable selection and use the same Git-stack update flow:
 
 - keep image pulling enabled so the known-good selection can be retrieved
 - keep image pruning disabled so rollback images remain available
-- preserve all four persistence categories and their existing host paths
+- preserve all three persistence categories and their existing host paths
 - preserve the external `proxy` network, aliases, and same-origin routing
 
 Do not roll back by using `latest`, recreating persistent storage, replacing
@@ -203,7 +198,7 @@ The approved change record may contain only non-sensitive evidence:
 
 - selected immutable tag and recorded rollback tag
 - confirmation that pulling was enabled and pruning was disabled
-- confirmation that all four host-path categories were supplied and retained
+- confirmation that all three host-path categories were supplied and retained
 - non-live probe pass/fail outcomes
 - confirmation that external-proxy aliases and Mission Planner same-origin
   behavior were preserved

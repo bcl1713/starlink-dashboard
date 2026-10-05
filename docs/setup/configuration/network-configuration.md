@@ -10,7 +10,7 @@
 
 - Backend: `8000`
 - Prometheus: `9090`
-- Grafana: `3000`
+- Mission Planner: `5173`
 
 ### Changing Ports
 
@@ -19,7 +19,6 @@ Edit `.env`:
 ```bash
 STARLINK_LOCATION_PORT=8001
 PROMETHEUS_PORT=9091
-GRAFANA_PORT=3001
 ```
 
 **Apply:**
@@ -43,7 +42,7 @@ docker compose up -d
 
 ```bash
 # Open ports
-sudo ufw allow 3000/tcp  # Grafana
+sudo ufw allow 5173/tcp  # Mission Planner
 sudo ufw allow 8000/tcp  # Backend
 sudo ufw allow 9090/tcp  # Prometheus
 
@@ -55,7 +54,7 @@ sudo ufw status
 
 ```bash
 # Open ports
-sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=5173/tcp
 sudo firewall-cmd --permanent --add-port=8000/tcp
 sudo firewall-cmd --permanent --add-port=9090/tcp
 
@@ -67,7 +66,7 @@ sudo firewall-cmd --reload
 
 ```powershell
 # Open ports in Windows Firewall
-New-NetFirewallRule -DisplayName "Grafana" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Mission Planner" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Allow
 New-NetFirewallRule -DisplayName "Backend" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
 New-NetFirewallRule -DisplayName "Prometheus" -Direction Inbound -LocalPort 9090 -Protocol TCP -Action Allow
 ```
@@ -88,12 +87,12 @@ macOS firewall typically allows localhost connections by default. If needed:
 
 ```bash
 # Linux/macOS
-lsof -i :3000
+lsof -i :5173
 lsof -i :8000
 lsof -i :9090
 
 # Windows
-netstat -ano | findstr :3000
+netstat -ano | findstr :5173
 ```
 
 ### Test Container Connectivity
@@ -102,7 +101,7 @@ netstat -ano | findstr :3000
 # Test if containers can reach each other
 docker compose exec starlink-location curl http://prometheus:9090
 docker compose exec prometheus curl http://starlink-location:8000/health
-docker compose exec grafana curl http://prometheus:9090
+curl --fail http://localhost:9090/-/ready
 ```
 
 ### Verify Network

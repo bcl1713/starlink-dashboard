@@ -56,7 +56,7 @@ rg -A 5 "volumes:" docker-compose.yml
 # Verify volume exists
 docker volume ls | rg poi
 docker volume ls | rg prometheus
-docker volume ls | rg grafana
+docker volume ls | rg prometheus
 
 # Check volume content
 docker run -v poi_data:/data alpine ls -la /data
@@ -94,7 +94,7 @@ curl http://localhost:8000/api/routes/{route_id} | jq .
 docker compose logs starlink-location | tail -30
 ```
 
-### Issue: Route not displaying in Grafana
+### Issue: Route not displaying in Overview
 
 **Verify route data:**
 
@@ -105,8 +105,8 @@ curl http://localhost:8000/api/routes/active | jq .
 # Verify route metrics
 curl http://localhost:8000/metrics | rg route_progress
 
-# Check Grafana panel query
-# In Grafana > Edit panel > Query inspector
+# Check the frontend proxy
+curl --fail http://localhost:5173/api/routes/active
 ```
 
 ## Mission Planning Issues
@@ -240,10 +240,6 @@ docker compose down
 tar -czf backup/prometheus-$(date +%Y%m%d).tar.gz \
   /var/lib/docker/volumes/starlink-dashboard-dev_prometheus_data/
 docker compose up -d
-
-# Backup Grafana dashboards
-docker compose exec grafana \
-  tar -czf - /var/lib/grafana > backup/grafana-$(date +%Y%m%d).tar.gz
 ```
 
 ### Restore from backup

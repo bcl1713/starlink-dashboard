@@ -25,7 +25,7 @@ predicted.
    - Any error messages at aircraft?
    - Aircraft position (lat/lon) if available
 
-2. **Check Grafana & logs:**
+2. **Check Mission Planner & logs:**
 
    ```bash
    # Check Prometheus for anomalies

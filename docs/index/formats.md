@@ -14,7 +14,7 @@
 - [setup/installation.md](../setup/installation.md) - Setup in simulation or
   live mode
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute
-- [Grafana Configuration](../grafana-configuration.md) - Using Grafana
+- [Overview Features](../features/overview.md) - Using Mission Planner
   dashboards
 - [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
   \- Debugging common issues
@@ -44,8 +44,7 @@ Read in order:
 
 1. [README.md](../../README.md) - Overview (5 min)
 2. [setup/installation.md](../setup/installation.md) - Setup (15 min)
-3. [Grafana Configuration](../grafana-configuration.md) - Using dashboards (10
-   min)
+3. [Overview Features](../features/overview.md) - Using dashboards (10 min)
 
 ### For Contributors
 

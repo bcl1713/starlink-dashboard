@@ -10,7 +10,7 @@
 # Check if containers can reach each other
 docker compose exec starlink-location curl http://prometheus:9090
 docker compose exec prometheus curl http://starlink-location:8000/health
-docker compose exec grafana curl http://prometheus:9090
+curl --fail http://localhost:9090/-/ready
 ```
 
 **Check network configuration:**
