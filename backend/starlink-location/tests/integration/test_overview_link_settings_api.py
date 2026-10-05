@@ -28,6 +28,7 @@ def test_get_returns_default_full_pair(client):
         "starshield_link_enabled": True,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
 
 
@@ -38,6 +39,7 @@ def test_put_returns_and_persists_all_pairs(client, starshield, x_band):
         "starshield_link_enabled": starshield,
         "x_band_link_enabled": x_band,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
     response = client.put(URL, json=payload)
     assert response.status_code == 200
@@ -51,6 +53,7 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
     second = client.put(URL, json={"x_band_link_enabled": False})
     assert second.status_code == 200
@@ -58,6 +61,7 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
 
 
@@ -86,6 +90,7 @@ def test_invalid_updates_return_422_and_preserve_last_confirmed_pair(client, pay
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
     assert client.put(URL, json=saved).status_code == 200
     response = client.put(URL, json=payload)
@@ -125,6 +130,7 @@ def test_failed_write_returns_503_and_keeps_last_confirmed_pair(client, monkeypa
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
     assert client.put(URL, json=saved).status_code == 200
 
@@ -149,11 +155,13 @@ def test_orbital_partial_updates_and_interleaved_viewers(client):
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
     }
     assert client.put(URL, json={"x_band_link_enabled": False}).json() == {
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
     }
 
 
@@ -170,6 +178,7 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
         "future_preference": {"display": "constellation"},
     }
     path.write_text(json.dumps(saved))
@@ -179,6 +188,7 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
     }
     response = client.put(URL, json={"x_band_link_enabled": False})
     assert response.status_code == 200
@@ -186,7 +196,35 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
     }
     assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
     assert client.put(URL, json={"future_preference": False}).status_code == 422
     assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
+
+
+def test_aircraft_history_partial_update_preserves_other_layers(client):
+    assert client.get(URL).json()["aircraft_history_enabled"] is True
+    response = client.put(URL, json={"aircraft_history_enabled": False})
+    assert response.status_code == 200
+    assert response.json() == {
+        "starshield_link_enabled": True,
+        "x_band_link_enabled": True,
+        "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": False,
+    }
+    client.put(URL, json={"orbital_traffic_enabled": True})
+    assert client.get(URL).json()["aircraft_history_enabled"] is False
+    assert (
+        client.put(URL, json={"aircraft_history_enabled": True}).json()[
+            "aircraft_history_enabled"
+        ]
+        is True
+    )
+
+
+@pytest.mark.parametrize("value", [None, "false", 0])
+def test_aircraft_history_api_rejects_non_booleans(client, value):
+    assert client.put(URL, json={"aircraft_history_enabled": False}).status_code == 200
+    assert client.put(URL, json={"aircraft_history_enabled": value}).status_code == 422
+    assert client.get(URL).json()["aircraft_history_enabled"] is False

@@ -17,6 +17,7 @@ const confirmed = {
   starshield_link_enabled: false,
   x_band_link_enabled: true,
   orbital_traffic_enabled: false,
+  aircraft_history_enabled: true,
 };
 let client: QueryClient;
 let wrapper: (props: PropsWithChildren) => ReturnType<typeof createElement>;
@@ -82,6 +83,7 @@ describe('useOverviewLinkSettings', () => {
       starshield_link_enabled: false,
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     };
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: changed });
     await act(async () => {
@@ -112,6 +114,7 @@ describe('useOverviewLinkSettings', () => {
       starshield_link_enabled: true,
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     };
     vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
     await act(async () => {
@@ -136,6 +139,7 @@ describe('useOverviewLinkSettings', () => {
       starshield_link_enabled: true,
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     };
     vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
     await act(async () => {

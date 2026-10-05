@@ -30,13 +30,18 @@ export function OverviewLinkSettingsCard() {
       label: 'X-band data link',
       description: 'Show the configured satellite link and its activity.',
     },
+    {
+      field: 'aircraft_history_enabled',
+      label: 'Aircraft history',
+      description: 'Show the aircraft’s flown track on the globe.',
+    },
   ] as const;
 
   return (
     <ConfigurationSection
-      title="Overview data links"
-      label="Overview data link settings"
-      description="Choose which traffic paths appear on Overview."
+      title="Overview layers"
+      label="Overview layer settings"
+      description="Choose which map layers appear on Overview."
     >
       <div className="divide-y">
         {controls.map(({ field, label, description }) => (
@@ -62,12 +67,12 @@ export function OverviewLinkSettingsCard() {
           </div>
         ))}
       </div>
-      {!data && !isError && <p role="status">Loading data link settings…</p>}
-      {isError && <p role="alert">Data link settings unavailable</p>}
-      {isPending && <p role="status">Saving data link settings…</p>}
-      {isSuccess && <p role="status">Data link settings saved</p>}
+      {!data && !isError && <p role="status">Loading layer settings…</p>}
+      {isError && <p role="alert">Layer settings unavailable</p>}
+      {isPending && <p role="status">Saving layer settings…</p>}
+      {isSuccess && <p role="status">Layer settings saved</p>}
       {saveError && (
-        <p role="alert">Unable to save data link settings. Please try again.</p>
+        <p role="alert">Unable to save layer settings. Please try again.</p>
       )}
     </ConfigurationSection>
   );

@@ -41,33 +41,37 @@ Satellite catalog editing remains in Satellite Manager.
 
 ### Shared data link visibility
 
-**Overview data links** contains independent **Starshield data link** and
-**X-band data link** switches. Both default to `true`. The **Orbital traffic
-view** switch restores the optional Starlink constellation and inferred
-aircraft-to-PoP path; it defaults to `false`. They use
+**Configuration → Network Traffic → Overview layers** contains independent
+**Starshield data link** and **X-band data link** switches. Both default to
+`true`. The **Orbital traffic view** switch restores the optional Starlink
+constellation and inferred aircraft-to-PoP path; it defaults to `false`.
+**Aircraft history** shows the flown track and defaults to `true`. Hiding it
+also removes the **Track history** legend entry; history collection, the
+selected window and network graphs continue to operate. The switches use
 `GET /api/overview-links/settings` and partial
 `PUT /api/overview-links/settings` updates with strict boolean fields
-`starshield_link_enabled`, `x_band_link_enabled` and `orbital_traffic_enabled`.
-A save returns all three fields; changing one preserves the others, including
-concurrent disjoint edits. Orbital visualization requires the Starshield data
-link to be enabled and falls back to the direct arc when no usable orbital
-route exists. See the [orbital view checks](../testing/orbital-traffic-experiment.md)
-for provider, rendering and resource behavior.
+`starshield_link_enabled`, `x_band_link_enabled`, `orbital_traffic_enabled` and
+`aircraft_history_enabled`. A save returns all four fields; changing one
+preserves the others, including concurrent disjoint edits. Orbital visualization
+requires the Starshield data link to be enabled and falls back to the direct arc
+when no usable orbital route exists. See the
+[orbital view checks](../testing/orbital-traffic-experiment.md) for provider,
+rendering and resource behavior.
 
 Settings persist atomically at `data/settings/overview-links.json`, survive
 backend restarts and synchronize mounted Overview windows through five-second
 background reads and focus/network recovery refresh. They are installation
-settings, not browser storage. Before a confirmed read, both switches are
-disabled and both links are hidden; orbital mode also stays off. Read/save
-failures retain the last confirmed values and show error feedback; saves do not
-optimistically change visibility.
+settings, not browser storage. Before a confirmed read, controls are disabled
+and both links are hidden; the aircraft trail retains its enabled default;
+orbital mode also stays off. Read/save failures retain the last confirmed values
+and show error feedback; saves do not optimistically change visibility.
 
 Saved settings are compatible with additive schema changes. Missing fields use
 their defaults, while existing values (including `false`) remain unchanged.
 Unfamiliar saved fields are ignored for this version's display and preserved
-during partial saves so another version can read them later. Reads never
-rewrite the file. Malformed JSON and invalid recognized values still fail
-without replacing the saved data; API updates reject unknown fields.
+during partial saves so another version can read them later. Reads never rewrite
+the file. Malformed JSON and invalid recognized values still fail without
+replacing the saved data; API updates reject unknown fields.
 
 Starshield visualizes measured aircraft–PoP traffic. X-band activity is a local
 illustration; neither switch changes telemetry collection, metric history,

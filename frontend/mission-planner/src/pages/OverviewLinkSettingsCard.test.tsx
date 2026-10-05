@@ -21,11 +21,13 @@ const pair = {
   starshield_link_enabled: false,
   x_band_link_enabled: true,
   orbital_traffic_enabled: false,
+  aircraft_history_enabled: true,
 };
 const switches = () => [
   screen.getByRole('switch', { name: 'Starshield data link' }),
   screen.getByRole('switch', { name: 'X-band data link' }),
   screen.getByRole('switch', { name: 'Orbital traffic view' }),
+  screen.getByRole('switch', { name: 'Aircraft history' }),
 ];
 function renderCard() {
   return render(
@@ -59,6 +61,7 @@ describe('OverviewLinkSettingsCard', () => {
           starshield_link_enabled: starshield,
           x_band_link_enabled: xBand,
           orbital_traffic_enabled: false,
+          aircraft_history_enabled: true,
         },
       });
       renderCard();
@@ -83,7 +86,7 @@ describe('OverviewLinkSettingsCard', () => {
     );
     renderCard();
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Loading data link settings'
+      'Loading layer settings'
     );
     switches().forEach((control) => {
       expect(control).toBeDisabled();
@@ -94,7 +97,7 @@ describe('OverviewLinkSettingsCard', () => {
     });
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Data link settings unavailable'
+        'Layer settings unavailable'
       )
     );
     switches().forEach((control) => expect(control).toBeDisabled());
@@ -108,6 +111,7 @@ describe('OverviewLinkSettingsCard', () => {
         starshield_link_enabled: true,
         x_band_link_enabled: true,
         orbital_traffic_enabled: false,
+        aircraft_history_enabled: true,
       },
     ],
     [
@@ -117,6 +121,7 @@ describe('OverviewLinkSettingsCard', () => {
         starshield_link_enabled: false,
         x_band_link_enabled: false,
         orbital_traffic_enabled: false,
+        aircraft_history_enabled: true,
       },
     ],
   ])(
@@ -134,7 +139,7 @@ describe('OverviewLinkSettingsCard', () => {
       fireEvent.click(screen.getByRole('switch', { name: label }));
       await waitFor(() =>
         expect(screen.getByRole('status')).toHaveTextContent(
-          'Saving data link settings'
+          'Saving layer settings'
         )
       );
       switches().forEach((control) => expect(control).toBeDisabled());
@@ -150,7 +155,7 @@ describe('OverviewLinkSettingsCard', () => {
       });
       await waitFor(() =>
         expect(screen.getByRole('status')).toHaveTextContent(
-          'Data link settings saved'
+          'Layer settings saved'
         )
       );
       expect(switches()[0]).toHaveProperty(
@@ -173,7 +178,7 @@ describe('OverviewLinkSettingsCard', () => {
     fireEvent.click(switches()[1]);
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Unable to save data link settings'
+        'Unable to save layer settings'
       )
     );
     expect(switches()[0]).not.toBeChecked();
@@ -183,17 +188,21 @@ describe('OverviewLinkSettingsCard', () => {
       starshield_link_enabled: false,
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     };
     vi.mocked(apiClient.put).mockResolvedValueOnce({ data: saved });
     vi.mocked(apiClient.get).mockResolvedValue({ data: saved });
     fireEvent.click(switches()[1]);
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Data link settings saved'
+        'Layer settings saved'
       )
     );
     expect(screen.queryByRole('alert')).toBeNull();
-    switches().forEach((control) => expect(control).not.toBeChecked());
+    switches()
+      .slice(0, 3)
+      .forEach((control) => expect(control).not.toBeChecked());
+    expect(switches()[3]).toBeChecked();
   });
 
   it('retains confirmed switch states and permits saves after a refresh error', async () => {
@@ -206,7 +215,7 @@ describe('OverviewLinkSettingsCard', () => {
     });
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Data link settings unavailable'
+        'Layer settings unavailable'
       )
     );
     expect(switches()[0]).not.toBeChecked();
@@ -231,4 +240,24 @@ it('saves orbital alone without changing either link', async () => {
   );
   expect(switches()[0]).not.toBeChecked();
   expect(switches()[1]).toBeChecked();
+});
+
+it('saves only the aircraft history preference and confirms its switch', async () => {
+  let saved = { ...pair, aircraft_history_enabled: true };
+  vi.mocked(apiClient.get).mockImplementation(async () => ({ data: saved }));
+  vi.mocked(apiClient.put).mockImplementation(async (_url, changes) => {
+    saved = { ...saved, ...(changes as object) };
+    return { data: saved };
+  });
+  renderCard();
+  const control = screen.getByRole('switch', { name: 'Aircraft history' });
+  await waitFor(() => expect(control).toBeEnabled());
+  expect(control).toBeChecked();
+  fireEvent.click(control);
+  await waitFor(() => expect(control).not.toBeChecked());
+  expect(apiClient.put).toHaveBeenCalledWith('/api/overview-links/settings', {
+    aircraft_history_enabled: false,
+  });
+  expect(saved.starshield_link_enabled).toBe(false);
+  expect(saved.x_band_link_enabled).toBe(true);
 });

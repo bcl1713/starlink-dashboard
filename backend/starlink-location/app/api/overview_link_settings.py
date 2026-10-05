@@ -10,13 +10,14 @@ router = APIRouter()
 
 
 class OverviewLinkSettingsUpdate(BaseModel):
-    """Strict, nonempty partial update of shared data-link visibility."""
+    """Strict, nonempty partial update of shared map-layer visibility."""
 
     model_config = ConfigDict(extra="forbid")
 
     starshield_link_enabled: StrictBool | None = None
     x_band_link_enabled: StrictBool | None = None
     orbital_traffic_enabled: StrictBool | None = None
+    aircraft_history_enabled: StrictBool | None = None
 
     @model_validator(mode="after")
     def validate_supplied_fields(self) -> Self:
