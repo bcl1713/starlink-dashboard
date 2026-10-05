@@ -55,3 +55,6 @@ frontend/mission-planner/dist/
 
 # Exceptions
 !frontend/mission-planner/src/lib/
+
+# Isolated feature worktrees
+.worktrees/

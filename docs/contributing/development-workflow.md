@@ -6,11 +6,18 @@
 
 ## Development Workflow Steps
 
-### 1. Create a Feature Branch
+### 1. Create an Isolated Feature Worktree
+
+Keep the primary checkout on `dev` and start each task in its own worktree:
 
 ```bash
-git checkout -b feat/your-feature-name
+git fetch origin --prune
+git worktree add .worktrees/your-feature-name -b feat/your-feature-name origin/dev
+cd .worktrees/your-feature-name
 ```
+
+See [Development Workflow](../development/workflow.md#git-workflow) for the
+complete workflow and cleanup commands.
 
 ---
 
@@ -38,17 +45,21 @@ If linting fails, pre-commit will:
 ### 4. Push and Create PR
 
 ```bash
-git push origin feat/your-feature-name
+git push -u origin feat/your-feature-name
+gh pr create --base dev
 ```
 
-Create a pull request from your feature branch. CI/CD will automatically run
-linting checks.
+Create a pull request from your feature branch against `dev`. CI/CD will
+automatically run linting checks.
 
 ---
 
-### 5. Merge to Main
+### 5. Merge to `dev` and Clean Up
 
-Once CI passes and code is reviewed, merge the PR to main/develop.
+Once required checks pass and code is reviewed, merge the PR to `dev`. Remove
+its worktree, local and remote feature branches, and task-owned temporary test
+resources after merge. Keep the worktree while the PR is open. See the
+[cleanup commands](../development/workflow.md#6-clean-up-after-merge).
 
 ---
 
@@ -102,7 +113,7 @@ pushes. Checks are defined in `.github/workflows/lint.yml`.
 
 **Status Checks:**
 
-- All checks must pass before merging to main/develop branches
+- All checks must pass before merging to `dev`
 - Check status appears in PR conversation
 
 ---

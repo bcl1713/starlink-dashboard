@@ -11,8 +11,8 @@ help you get started.
   development process
 - [Code Quality Standards](./docs/code-quality-standards.md) - Formatting,
   linting, testing, and review requirements
-- [Quality Gates](./docs/contributing/quality-gates.md) - Canonical local and
-  CI verification commands
+- [Quality Gates](./docs/contributing/quality-gates.md) - Canonical local and CI
+  verification commands
 - [Architecture Documentation](./docs/architecture/README.md) - System design
   and structure
 
@@ -41,10 +41,12 @@ issue discussion.
 
 ### Making Changes
 
-1. **Create a branch** from `dev`, the integration branch:
+1. **Create an isolated worktree and feature branch** from `origin/dev`:
 
    ```bash
-   git checkout -b feature/your-feature-name
+   git fetch origin --prune
+   git worktree add .worktrees/your-feature-name -b feat/your-feature-name origin/dev
+   cd .worktrees/your-feature-name
    ```
 
 2. **Make your changes** following code quality standards
@@ -75,8 +77,13 @@ issue discussion.
 5. **Push and create pull request**:
 
    ```bash
-   git push -u origin feature/your-feature-name
+   git push -u origin feat/your-feature-name
+   gh pr create --base dev
    ```
+
+6. **Clean up after merge**: remove the task worktree, local and remote feature
+   branches, and task-owned temporary test resources. Follow the
+   [cleanup commands](./docs/development/workflow.md#6-clean-up-after-merge).
 
 ### Pre-commit Hooks
 

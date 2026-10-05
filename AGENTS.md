@@ -1,4 +1,20 @@
-# Workspace runtime
+# Workspace instructions
+
+## Git workflow
+
+Start each task in an isolated Git worktree on its own feature branch, based on
+`origin/dev`. Keep the primary checkout on `dev` and use `.worktrees/` for local
+feature worktrees. Do not make feature changes in the primary checkout.
+
+Push the feature branch and submit a pull request against `dev`. After the PR
+merges, remove the task worktree, delete its local and remote feature branches,
+and remove task-owned acceptance projects and temporary files. Keep worktrees
+for open PRs so review changes stay isolated. Preserve `dev`, `main`, shared
+runtime configuration, and credentials.
+
+See [Development workflow](docs/development/workflow.md) for commands.
+
+## Workspace runtime
 
 In the managed cloud environment, use the actor's configured Docker daemon.
 Preserve `DOCKER_HOST` and the active context when checking `docker info`. The
