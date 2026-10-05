@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fully fabricated issue #271 reproduction; coverage boundaries are test-only. -->
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Synthetic KAAA-KBBB</name>
+<Placemark><name>KAAA</name><description>Time Over Waypoint: 2035-03-01 00:00:00Z</description><Point><coordinates>-135,48</coordinates></Point></Placemark>
+<Placemark><name>WEST</name><description>Time Over Waypoint: 2035-03-01 03:00:00Z</description><Point><coordinates>-172,52</coordinates></Point></Placemark>
+<Placemark><name>SEAM</name><Point><coordinates>-180,52</coordinates></Point></Placemark>
+<Placemark><name>EAST</name><description>Time Over Waypoint: 2035-03-01 03:35:00Z</description><Point><coordinates>170,49</coordinates></Point></Placemark>
+<Placemark><name>MID</name><description>Time Over Waypoint: 2035-03-01 05:00:00Z</description><Point><coordinates>145,31</coordinates></Point></Placemark>
+<Placemark><name>KBBB</name><description>Time Over Waypoint: 2035-03-01 09:00:00Z</description><Point><coordinates>90,15</coordinates></Point></Placemark>
+<Placemark><name>Synthetic route</name><LineString><coordinates>-135,48 -172,52 -180,52 170,49 145,31 90,15</coordinates></LineString></Placemark></Document></kml>

@@ -216,6 +216,7 @@ def build_mission_timeline(
         mission_end=mission_end,
         intervals=intervals,
     )
+    timeline.coverage_events = coverage_result.coverage_events
     annotate_aar_markers(timeline, events)
     normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
