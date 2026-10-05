@@ -216,6 +216,26 @@ class POIManager:
         ) as e:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
+    def checkpoint(self) -> tuple[dict[str, POI], bytes | None]:
+        """Capture owned POIs and exact persisted state for mutation compensation."""
+        return (
+            {key: poi.model_copy(deep=True) for key, poi in self._pois.items()},
+            self.pois_file.read_bytes() if self.pois_file.exists() else None,
+        )
+
+    def restore_checkpoint(
+        self, checkpoint: tuple[dict[str, POI], bytes | None]
+    ) -> None:
+        pois, data = checkpoint
+        with FileLock(self.lock_file, timeout=5):
+            if data is None:
+                self.pois_file.unlink(missing_ok=True)
+            else:
+                temporary = self.pois_file.with_suffix(".restore.tmp")
+                temporary.write_bytes(data)
+                temporary.replace(self.pois_file)
+            self._pois = {key: poi.model_copy(deep=True) for key, poi in pois.items()}
+
     def list_pois(
         self, route_id: str | None = None, mission_id: str | None = None
     ) -> list[POI]:

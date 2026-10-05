@@ -6,9 +6,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.logging import get_logger
-from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.dependencies import (
+    get_optional_simulation_run_service,
+    get_poi_manager,
+    get_route_manager,
+)
+from app.mission.storage import get_active_leg_lock
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.simulation.run_service import SimulationRunService
 
 logger = get_logger(__name__)
 
@@ -22,6 +28,9 @@ async def delete_route(
     route_id: str,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> None:
     """Delete a route and its associated POIs.
 
@@ -49,6 +58,16 @@ async def delete_route(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Route not found: {route_id}",
         )
+
+    with get_active_leg_lock():
+        if (
+            run_service
+            and run_service.status().run
+            and run_service.status().run.route_id == route_id
+        ):
+            run_service.runtime.cancel("Route deleted")
+        if route_manager.get_active_route_id() == route_id:
+            route_manager.deactivate_route(route_id)
 
     try:
         # Delete associated POIs (cascade delete)

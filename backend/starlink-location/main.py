@@ -4,6 +4,7 @@ import asyncio
 import os
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -24,8 +25,8 @@ from app.api import (
     health,
     metrics,
     orbital_catalog,
-    overview_clock_settings,
     overview_adsb,
+    overview_clock_settings,
     overview_history,
     overview_link_settings,
     overview_upcoming_pois,
@@ -35,6 +36,7 @@ from app.api import (
     ui,
     weather,
 )
+from app.api.simulation_run import router as simulation_run_router
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.limiter import limiter
@@ -47,6 +49,7 @@ from app.mission import (
 from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
+from app.services.adsb_lol import AdsbLolProvider
 from app.services.ground_entry_point import (
     get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
@@ -54,6 +57,8 @@ from app.services.ground_entry_point import (
     refresh_ground_entry_point_metrics,
 )
 from app.services.orbital_catalog import OrbitalCatalogService
+from app.services.overview_adsb_settings import AdsbSettingsStore
+from app.services.overview_adsb_traffic import AdsbTrafficService
 from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.services.overview_history_prometheus import (
     OverviewHistoryReader,
@@ -64,12 +69,11 @@ from app.services.overview_history_settings import (
     resolve_overview_history_window_default,
 )
 from app.services.overview_link_settings import OverviewLinkSettingsStore
-from app.services.overview_adsb_settings import AdsbSettingsStore
-from app.services.adsb_lol import AdsbLolProvider
-from app.services.overview_adsb_traffic import AdsbTrafficService
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
+from app.simulation.run_runtime import SimulationRunRuntime
+from app.simulation.run_service import SimulationRunService
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -316,7 +320,7 @@ async def startup_event():
                 logger.info_json("RouteManager injected into SimulationCoordinator")
 
             logger.info_json("Route Manager initialized successfully")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - ETA is optional
             logger.error_json(
                 "Failed to initialize Route Manager",
                 extra_fields={"error": str(e)},
@@ -352,7 +356,7 @@ async def startup_event():
                     "initial_eta_mode": flight_state.get_status().eta_mode.value,
                 },
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - ETA is optional
             logger.error_json(
                 "Failed to initialize Flight State Manager",
                 extra_fields={"error": str(e)},
@@ -407,6 +411,18 @@ async def startup_event():
             },
         )
 
+        run_service = SimulationRunService(
+            SimulationRunRuntime(
+                time.monotonic, lambda: datetime.now(timezone.utc), active_mode
+            ),
+            _route_manager,
+            poi_manager,
+        )
+        if isinstance(_coordinator, SimulationCoordinator):
+            run_service.coordinator = _coordinator
+        run_service.publish = _publish_replay_telemetry
+        app.state.simulation_run_service = run_service
+
         if _background_updates_enabled:
             logger.info_json("Starting background update task")
             _background_task = asyncio.create_task(_background_update_loop(poi_manager))
@@ -416,7 +432,9 @@ async def startup_event():
             )
 
         logger.info_json("Starlink Location Backend ready")
-    except Exception as e:
+    except (
+        Exception
+    ) as e:  # noqa: BLE001 - optional static mount must not block API import
         logger.error_json(
             "Failed to initialize application",
             extra_fields={"error": str(e)},
@@ -433,6 +451,9 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "simulation_run_service"):
+            app.state.simulation_run_service.close()
+            del app.state.simulation_run_service
         if hasattr(app.state, "overview_adsb_service"):
             await app.state.overview_adsb_service.aclose()
             del app.state.overview_adsb_service
@@ -487,6 +508,14 @@ async def shutdown_event():
         )
 
 
+def _publish_replay_telemetry(telemetry, tick):
+    from app.core.metrics import update_metrics_from_telemetry
+
+    update_metrics_from_telemetry(
+        telemetry, _simulation_config, tick.plan.artifacts.route, app.state.poi_manager
+    )
+
+
 async def _background_update_loop(poi_manager=None):
     """Background task that updates simulator every interval."""
     update_count = 0
@@ -513,7 +542,16 @@ async def _background_update_loop(poi_manager=None):
                     )
 
                 if _coordinator:
-                    telemetry = _coordinator.update()
+                    run_service = getattr(app.state, "simulation_run_service", None)
+                    paced = (
+                        run_service is not None
+                        and run_service.runtime.selected_plan() is not None
+                    )
+                    telemetry = (
+                        run_service.collect(_coordinator, _publish_replay_telemetry)
+                        if paced
+                        else _coordinator.update()
+                    )
                     update_count += 1
 
                     if telemetry is None:
@@ -523,7 +561,7 @@ async def _background_update_loop(poi_manager=None):
 
                     # Only update metrics if telemetry is available
                     # In live mode, telemetry will be None when disconnected
-                    if telemetry is not None:
+                    if telemetry is not None and not paced:
                         # Track metric collection duration
                         from app.core.metrics import (
                             starlink_metrics_generation_errors_total,
@@ -574,7 +612,7 @@ async def _background_update_loop(poi_manager=None):
                                     "network_latency_ms": telemetry.network.latency_ms,
                                 },
                             )
-                    else:
+                    elif telemetry is None:
                         # Clear metrics when disconnected to prevent stale data
                         # This sets all telemetry metrics to NaN, which Prometheus won't store
                         from app.core.metrics import clear_telemetry_metrics
@@ -592,11 +630,17 @@ async def _background_update_loop(poi_manager=None):
                             )
 
                 # Sleep for configured update interval
-                await asyncio.sleep(_simulation_config.update_interval_seconds)
+                run_service = getattr(app.state, "simulation_run_service", None)
+                delay = (
+                    run_service.runtime.seconds_until_next_tick()
+                    if run_service and run_service.status().state == "running"
+                    else _simulation_config.update_interval_seconds
+                )
+                await asyncio.sleep(delay)
 
             except (
                 Exception
-            ) as e:  # noqa: BLE001 - log update errors and retry after backoff
+            ) as e:  # noqa: BLE001 - optional DNS/metrics discovery must not block startup
                 error_count += 1
                 logger.warning_json(
                     "Error in background update",
@@ -695,6 +739,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # Register API routers
+app.include_router(simulation_run_router)
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])

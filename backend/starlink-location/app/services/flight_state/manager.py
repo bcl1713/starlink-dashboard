@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Optional
 from typing_extensions import Self
 
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
+from app.services.flight_state.checkpoint import FlightStateCheckpoint
 from app.services.position_freshness import OBSERVATION_FRESHNESS_SECONDS
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
@@ -109,6 +110,28 @@ class FlightStateManager:
         logger.info(
             f"FlightStateManager initialized: {self._status.phase.value} / {self._status.eta_mode.value}"
         )
+
+    def checkpoint(self) -> FlightStateCheckpoint:
+        with self._lock:
+            return FlightStateCheckpoint(
+                self._status.model_copy(deep=True),
+                self._last_detection_observed_at,
+                self._speed_persistence_seconds,
+                self._last_speed_sample_time,
+                self._above_threshold_start_time,
+                self._arrival_start_time,
+                self._arrival_distance_at_start,
+            )
+
+    def restore_checkpoint(self, checkpoint: FlightStateCheckpoint) -> None:
+        with self._lock:
+            self._status = checkpoint.status.model_copy(deep=True)
+            self._last_detection_observed_at = checkpoint.last_detection_observed_at
+            self._speed_persistence_seconds = checkpoint.speed_persistence_seconds
+            self._last_speed_sample_time = checkpoint.last_speed_sample_time
+            self._above_threshold_start_time = checkpoint.above_threshold_start_time
+            self._arrival_start_time = checkpoint.arrival_start_time
+            self._arrival_distance_at_start = checkpoint.arrival_distance_at_start
 
     def get_status(self) -> FlightStatus:
         """
