@@ -37,7 +37,13 @@ for port in (18224, 15224, 19224):
         except OSError as error:
             sys.exit(f'Acceptance port 127.0.0.1:{port} occupied: {error}')
 PY
-if [[ -n $(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history) || -n $(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history) ]]; then
+if ! owned_containers=$(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history); then
+  echo 'Cannot verify owned container inventory; refusing startup.' >&2; exit 2
+fi
+if ! owned_volumes=$(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history); then
+  echo 'Cannot verify owned volume inventory; refusing startup.' >&2; exit 2
+fi
+if [[ -n "$owned_containers" || -n "$owned_volumes" ]]; then
   echo 'Existing starlink-224-history resources found; inspect ownership before cleanup.' >&2
   exit 2
 fi
@@ -62,26 +68,32 @@ cleanup() {
   trap - EXIT
   if [[ $started == 1 ]]; then
     "${compose[@]}" logs --no-color > "$output/containers.log" 2>&1 || true
-    backend=$("${compose[@]}" ps -q starlink-location)
+    backend=''
+    if ! backend=$("${compose[@]}" ps -q starlink-location 2>> "$output/cleanup.log"); then
+      printf '%s\n' 'Backend lookup failed; continuing owned teardown.' >> "$output/cleanup.log"
+      result=1; cleanup_result=1
+    fi
     if [[ -n "$backend" ]]; then
-      docker exec "$backend" cat /data/overview-history-queries.jsonl > "$output/backend-queries.jsonl" 2>> "$output/cleanup.log" || result=1
-      docker exec "$backend" cat /data/overview-history-reads.jsonl > "$output/backend-reads.jsonl" 2>> "$output/cleanup.log" || result=1
+      docker exec "$backend" cat /data/overview-history-queries.jsonl > "$output/backend-queries.jsonl" 2>> "$output/cleanup.log" || { result=1; cleanup_result=1; }
+      docker exec "$backend" cat /data/overview-history-reads.jsonl > "$output/backend-reads.jsonl" 2>> "$output/cleanup.log" || { result=1; cleanup_result=1; }
       if [[ ${OVERVIEW_PROFILE_HTTP_CPU:-0} == 1 ]]; then
-        docker exec "$backend" cat /data/overview-history-http.prof > "$output/http-response.prof" 2>> "$output/cleanup.log" || result=1
+        docker exec "$backend" cat /data/overview-history-http.prof > "$output/http-response.prof" 2>> "$output/cleanup.log" || { result=1; cleanup_result=1; }
       fi
     fi
-    "${compose[@]}" down --volumes > "$output/cleanup.log" 2>&1 || { result=1; cleanup_result=1; }
-    if [[ -n $(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history) || -n $(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history) ]]; then result=1; cleanup_result=1; fi
+    "${compose[@]}" down --volumes >> "$output/cleanup.log" 2>&1 || { result=1; cleanup_result=1; }
+    if ! owned_containers=$(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history 2>> "$output/cleanup.log"); then result=1; cleanup_result=1; fi
+    if ! owned_volumes=$(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history 2>> "$output/cleanup.log"); then result=1; cleanup_result=1; fi
+    if [[ -n "$owned_containers" || -n "$owned_volumes" ]]; then result=1; cleanup_result=1; fi
     python3 - <<'PY' >> "$output/cleanup.log" 2>&1 || { result=1; cleanup_result=1; }
 import socket
 for port in (18224,15224,19224):
     with socket.socket() as listener:
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(('127.0.0.1', port))
-print('Owned project containers/volumes/listeners absent.')
+print('Owned ports have no live listener; Docker inventories checked separately.')
 PY
   fi
-  python3 - "$output" "$cleanup_result" <<'PYUPDATE'
+  python3 - "$output" "$cleanup_result" <<'PYUPDATE' || result=1
 import json
 import sys
 from pathlib import Path

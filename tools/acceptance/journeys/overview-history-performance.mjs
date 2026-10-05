@@ -14,6 +14,27 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { installOverviewHistoryProbe } from "./overview-history-probe.mjs";
 
+export function subscriptionsComplete(subscriptions, start, end, cadence) {
+  // A qualification tolerance for response/GC pauses, not strict one-Hz starts.
+  const tolerance = 30;
+  return (
+    subscriptions.length > 0 &&
+    subscriptions.every(
+      (entry) =>
+        entry.maxActive <= 1 &&
+        entry.starts >= 2 &&
+        entry.starts <= (end - start) / cadence + 2 &&
+        entry.firstStart !== null &&
+        entry.lastCompletion !== null &&
+        entry.firstStart >= start &&
+        entry.firstStart - start <= tolerance &&
+        end - entry.lastCompletion <= tolerance &&
+        entry.lastCompletion - end <= tolerance &&
+        entry.maxStartGap <= tolerance,
+    )
+  );
+}
+
 export function parseArgs(argv) {
   const flags = new Set(["check", "controls", "record-video"]);
   const keys = new Set([
@@ -377,10 +398,22 @@ async function run(options) {
         starts: 0,
         active: 0,
         maxActive: 0,
+        firstStart: null,
+        lastStart: null,
+        lastCompletion: null,
+        maxStartGap: 0,
       };
       subscriptions.push(subscription);
       page.on("request", (request) => {
         if (history(request) && measuring) {
+          const started = clock();
+          if (subscription.lastStart !== null)
+            subscription.maxStartGap = Math.max(
+              subscription.maxStartGap,
+              started - subscription.lastStart,
+            );
+          subscription.firstStart ??= started;
+          subscription.lastStart = started;
           subscription.starts++;
           subscription.active++;
           subscription.maxActive = Math.max(
@@ -389,7 +422,7 @@ async function run(options) {
           );
           requests.set(request, {
             kind: "request",
-            started_seconds: clock(),
+            started_seconds: started,
             page_id: pageId,
             cold: false,
           });
@@ -404,7 +437,12 @@ async function run(options) {
           .response()
           .then((response) => {
             const status = response?.status() ?? 0;
-            append({ ...row, completed_seconds: clock(), status });
+            const completed = clock();
+            subscription.lastCompletion = Math.max(
+              subscription.lastCompletion ?? 0,
+              completed,
+            );
+            append({ ...row, completed_seconds: completed, status });
             if (status >= 400) errors.push(`history HTTP ${status}`);
           })
           .catch((error) => errors.push(error.message));
@@ -414,7 +452,12 @@ async function run(options) {
         if (!row) return;
         requests.delete(request);
         subscription.active--;
-        append({ ...row, completed_seconds: clock(), status: 0 });
+        const completed = clock();
+        subscription.lastCompletion = Math.max(
+          subscription.lastCompletion ?? 0,
+          completed,
+        );
+        append({ ...row, completed_seconds: completed, status: 0 });
         errors.push(request.failure()?.errorText ?? "request failed");
       });
       page.on("pageerror", (error) => {
@@ -763,17 +806,16 @@ async function run(options) {
       await sleep(100);
     if (subscriptions.some((entry) => entry.active))
       errors.push("history requests did not drain");
-    metadata.behavior.shared_subscription = subscriptions.every(
-      (entry) =>
-        entry.maxActive <= 1 &&
-        entry.starts > 0 &&
-        entry.starts <=
-          options.requested_measured_seconds /
-            options.configured_interval_seconds +
-            2,
+    metadata.behavior.shared_subscription = subscriptionsComplete(
+      subscriptions,
+      first.monotonic_seconds,
+      last.monotonic_seconds,
+      options.configured_interval_seconds,
     )
       ? "passed"
       : "failed";
+    if (metadata.behavior.shared_subscription === "failed")
+      errors.push("History subscriptions did not cover the measured period");
     event({ kind: "request_subscriptions", subscriptions });
     await pages.at(-1).screenshot({ path: resolve(output, "end.png") });
     metadata.phase = classifyPhase({

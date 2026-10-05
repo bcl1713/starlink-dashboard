@@ -8,6 +8,10 @@ from collections import defaultdict
 from itertools import pairwise
 
 MIB = 1024**2
+# Qualification tolerances accommodate response time and diagnostic GC pauses;
+# they do not impose a wall-clock polling guarantee on the application.
+REQUEST_COVERAGE_TOLERANCE_SECONDS = 30
+GC_INTERVAL_SECONDS = 300
 BEHAVIORS = ("motion", "provenance", "masking", "shared_subscription", "lifecycle")
 COMPARABLE_FIELDS = (
     "hardware",
@@ -49,6 +53,71 @@ def _growth(rows: list[dict], key: str) -> float | None:
     if len(selected) < 2:
         return None
     return selected[-1][key] - selected[0][key]
+
+
+def _coverage(rows: list[dict], key: str) -> dict:
+    selected = [row for row in rows if key in row]
+    return {
+        "samples": len(selected),
+        "endpoints": bool(rows)
+        and key in rows[0]
+        and key in rows[-1]
+        and len(selected) >= 2,
+        "max_gap_seconds": max(
+            (
+                b["monotonic_seconds"] - a["monotonic_seconds"]
+                for a, b in pairwise(selected)
+            ),
+            default=None,
+        ),
+    }
+
+
+def _request_coverage(resources: list[dict], requests: list[dict]) -> dict:
+    if len(resources) < 2:
+        return {}
+    start, end = (resources[index]["monotonic_seconds"] for index in (0, -1))
+    pages: dict[str, list[dict]] = defaultdict(list)
+    for row in requests:
+        pages[str(row.get("page_id", "unknown"))].append(row)
+    return {
+        page: {
+            "requests": len(rows),
+            "first_start_offset_seconds": min(r["started_seconds"] for r in rows)
+            - start,
+            "last_completion_gap_seconds": end
+            - max(r["completed_seconds"] for r in rows),
+            "max_start_gap_seconds": max(
+                (
+                    b - a
+                    for a, b in pairwise(sorted(r["started_seconds"] for r in rows))
+                ),
+                default=None,
+            ),
+        }
+        for page, rows in pages.items()
+    }
+
+
+def _viewers_covered(summary: dict) -> bool:
+    pages = summary.get("request_coverage", {})
+    expected = summary.get("metadata", {}).get("viewers")
+    tolerance = REQUEST_COVERAGE_TOLERANCE_SECONDS
+    return (
+        expected in (1, 2)
+        and len(pages) == expected
+        and "unknown" not in pages
+        and all(
+            page.get("requests", 0) >= 2
+            and 0 <= page.get("first_start_offset_seconds", tolerance + 1) <= tolerance
+            and -tolerance
+            <= page.get("last_completion_gap_seconds", tolerance + 1)
+            <= tolerance
+            and page.get("max_start_gap_seconds") is not None
+            and page["max_start_gap_seconds"] <= tolerance
+            for page in pages.values()
+        )
+    )
 
 
 def _late_trend(rows: list[dict], key: str) -> dict | None:
@@ -153,6 +222,11 @@ def summarize_phase(samples: list[dict], metadata: dict) -> dict:
         ),
         "request_start_spacing_seconds": quantiles(spacing),
         "observed_viewers": len(starts),
+        "request_coverage": _request_coverage(resources, warm),
+        "memory_coverage": {
+            key: _coverage(resources, key)
+            for key in ("backend_rss_bytes", "post_gc_heap_bytes")
+        },
         "combined_cpu_percent_one_core": cpu,
         "combined_cpu_percent_host": (
             cpu / logical
@@ -208,6 +282,9 @@ def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
     baseline_ok = (
         base_meta.get("phase", {}).get("status") == "measured"
         and base_meta.get("errors") == []
+        and base_meta.get("cleanup") == "passed"
+        and all(base_meta.get("behavior", {}).get(key) == "passed" for key in BEHAVIORS)
+        and _viewers_covered(baseline)
         and base_meta.get("mode") == "full"
         and base_meta.get("cadence_seconds") == 5
         and base_meta.get("warmup_seconds", 0) >= 300
@@ -240,11 +317,34 @@ def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
         ("retained_heap_growth", "retained_heap_growth_bytes"),
     ):
         value = candidate.get(key)
+        field = (
+            "backend_rss_bytes"
+            if name == "backend_rss_growth"
+            else "post_gc_heap_bytes"
+        )
+        coverage = candidate.get("memory_coverage", {}).get(field, {})
+        interval = meta.get("resource_interval_seconds")
+        covered = (
+            coverage.get("endpoints")
+            and isinstance(interval, (int, float))
+            and 0 < interval <= 5
+        )
+        if name == "backend_rss_growth":
+            covered = covered and coverage.get("samples") == candidate.get(
+                "resource_count"
+            )
+        else:
+            covered = (
+                covered
+                and meta.get("gc_mode") == "controlled"
+                and coverage.get("max_gap_seconds") is not None
+                and coverage["max_gap_seconds"] <= GC_INTERVAL_SECONDS + 2 * interval
+            )
         budgets[name] = _gate(
             value,
             "bytes",
-            value <= 16 * MIB if value is not None else None,
-            "After-warm-up growth must be <=16 MiB",
+            value <= 16 * MIB if value is not None and covered else None,
+            "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB",
         )
     duration = candidate.get("measured_duration_seconds", 0)
     budgets["sustained_duration"] = _gate(
@@ -297,8 +397,12 @@ def evaluate_budgets(baseline: dict, candidate: dict) -> dict:
     budgets["viewers"] = _gate(
         observed,
         "viewers",
-        True if observed == meta.get("viewers") and observed in (1, 2) else None,
-        "Measure each requested viewer directly",
+        (
+            True
+            if observed == meta.get("viewers") and _viewers_covered(candidate)
+            else None
+        ),
+        "Each viewer must poll across the measured period; <=30s gaps allow responses and diagnostic pauses",
     )
     errors = candidate.get("request_errors", 0)
     budgets["http_errors"] = _gate(

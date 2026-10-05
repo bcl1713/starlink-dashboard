@@ -196,3 +196,39 @@ console.log(JSON.stringify({{last,captured}}));"""
         row["monotonic_seconds"] < 10 and row["monotonic_seconds"] > 9.999
         for row in data["captured"]
     )
+
+
+@pytest.mark.parametrize("case", ["stopped", "brief_second"])
+def test_shared_subscription_requires_full_period_coverage(case):
+    script = f"""import {{subscriptionsComplete}} from {json.dumps(JOURNEY.as_uri())};
+const complete={{starts:600,maxActive:1,firstStart:0,lastStart:3595,lastCompletion:3595.1,maxStartGap:6}};
+const stopped={{...complete,starts:1,lastStart:0,lastCompletion:0.1}};
+const subscriptions={json.dumps(case)}==='stopped'?[stopped]:[complete,stopped];
+console.log(JSON.stringify(subscriptionsComplete(subscriptions,0,3600,1)));"""
+    result = subprocess.run(
+        [NODE, "--input-type=module", "-e", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) is False
+
+
+def test_subscription_coverage_accepts_response_and_gc_delays_but_rejects_overlap():
+    script = f"""import {{subscriptionsComplete}} from {json.dumps(JOURNEY.as_uri())};
+const complete={{starts:600,maxActive:1,firstStart:2,lastStart:3595,lastCompletion:3595.8,maxStartGap:16}};
+console.log(JSON.stringify([
+ subscriptionsComplete([complete],0,3600,1),
+ subscriptionsComplete([complete,complete],0,3600,1),
+ subscriptionsComplete([{{...complete,maxActive:2}}],0,3600,1),
+ subscriptionsComplete([{{...complete,maxStartGap:31}}],0,3600,1)
+]));"""
+    result = subprocess.run(
+        [NODE, "--input-type=module", "-e", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == [True, True, False, False]

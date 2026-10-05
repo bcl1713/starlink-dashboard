@@ -1,5 +1,6 @@
 """Task runner rejects unsafe builds and preserves provenance on failures."""
 
+import json
 import os
 import shutil
 import signal
@@ -140,7 +141,7 @@ if '--output' in sys.argv:
     result = invoke(checkout, env, "--smoke")
     assert (output / "cleanup.log").exists(), result.stderr
     assert result.returncode == 0, (output / "cleanup.log").read_text()
-    assert "containers/volumes/listeners absent" in (output / "cleanup.log").read_text()
+    assert "no live listener" in (output / "cleanup.log").read_text()
 
 
 def test_build_failure_keeps_candidate_provenance(checkout, tmp_path):
@@ -263,3 +264,67 @@ def test_trace_export_does_not_require_rootless_bind_remounts():
     source = RUNNER.read_text()
     assert 'docker exec "$backend" cat /data/overview-history-queries.jsonl' in source
     assert 'docker exec "$backend" cat /data/overview-history-reads.jsonl' in source
+
+
+@pytest.mark.parametrize("operation", ["ps", "volume"])
+def test_preflight_inventory_errors_refuse_startup(checkout, tmp_path, operation):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    docker = fake / "docker"
+    docker.write_text(f'#!/bin/sh\nif [ "$1" = {operation} ]; then exit 17; fi\n')
+    docker.chmod(0o755)
+    result = invoke(checkout, {**os.environ, "PATH": f"{fake}:{os.environ['PATH']}"})
+    assert result.returncode != 0, "Failed Docker inventory was treated as empty"
+
+
+@pytest.mark.parametrize("failure", ["backend_lookup", "ps", "volume"])
+def test_cleanup_audit_errors_fail_closed_and_still_attempt_down(
+    checkout, tmp_path, failure
+):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    docker = fake / "docker"
+    docker.write_text("""#!/usr/bin/env python3
+import os,sys
+from pathlib import Path
+args=sys.argv[1:]
+out=Path(os.environ['OVERVIEW_PROFILE_OUTPUT'])
+if out.exists():
+    with (out/'docker-calls.txt').open('a') as log:log.write(' '.join(args)+'\\n')
+fail=os.environ['FAILURE']
+if args[0]=='compose' and 'ps' in args and fail=='backend_lookup':sys.exit(17)
+if args[0] in ('ps','volume') and (out/'down-attempted').exists() and args[0]==fail:sys.exit(17)
+if 'down' in args:(out/'down-attempted').touch()
+""")
+    docker.chmod(0o755)
+    curl = fake / "curl"
+    curl.write_text("#!/bin/sh\nprintf '{}\\n'\n")
+    curl.chmod(0o755)
+    python = fake / "profile-python"
+    python.write_text("""#!/usr/bin/env python3
+import sys,json
+from pathlib import Path
+args=sys.argv
+if '--output' in args:Path(args[args.index('--output')+1]).write_text('# EOF\\n')
+if '--artifacts' in args:
+    out=Path(args[args.index('--artifacts')+1]);out.mkdir(parents=True)
+    (out/'metadata.json').write_text(json.dumps({'cleanup':'pending'}))
+    (out/'browser-cleanup.json').write_text(json.dumps({'status':'passed'}))
+""")
+    python.chmod(0o755)
+    output = tmp_path / "evidence"
+    env = {
+        **os.environ,
+        "PATH": f"{fake}:{os.environ['PATH']}",
+        "OVERVIEW_PROFILE_OUTPUT": str(output),
+        "OVERVIEW_PROFILE_PYTHON": str(python),
+        "FAILURE": failure,
+    }
+    result = invoke(checkout, env, "--duration", "60")
+    assert (output / "down-attempted").exists(), result.stderr
+    assert result.returncode != 0, "Failed cleanup audit qualified as empty inventory"
+
+    assert (
+        json.loads((output / "browser/metadata.json").read_text())["cleanup"]
+        == "failed"
+    )

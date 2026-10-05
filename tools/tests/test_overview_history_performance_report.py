@@ -65,17 +65,18 @@ def samples(duration=3600, backend_growth=0, heap_growth=0, cpu_percent=10):
 
 
 def report(**changes):
-    return summarize_phase(samples(**changes), metadata())
+    return summarize_phase(healthy_samples(**changes), metadata())
 
 
 def baseline():
     return summarize_phase(
-        samples(duration=600, cpu_percent=0), metadata(mode="full", cadence_seconds=5)
+        healthy_samples(duration=600, cpu_percent=0),
+        metadata(mode="full", cadence_seconds=5),
     )
 
 
 def test_nearest_rank_quantiles():
-    result = report()
+    result = summarize_phase(samples(), metadata())
     assert result["request_ms"] == pytest.approx({"p50": 30, "p95": 499, "p99": 499})
     assert result["request_start_spacing_seconds"]["p50"] == 1
     assert result["request_count"] == 5
@@ -260,6 +261,106 @@ def test_cpu_budget_requires_a_healthy_comparable_full_range_baseline(problem):
         base["max_resource_gap_seconds"] = 11
     else:
         base["metadata"]["cadence_seconds"] = 1
+    assert (
+        evaluate_budgets(base, report())["budgets"]["cpu_increase"]["status"]
+        == "incomplete"
+    )
+
+
+@pytest.mark.parametrize("field", ["backend_rss_bytes", "post_gc_heap_bytes"])
+@pytest.mark.parametrize("hole", ["final", "interior", "only_early"])
+def test_memory_budget_requires_endpoints_and_scheduled_samples(field, hole):
+    rows = healthy_samples()
+    resources = [row for row in rows if row["kind"] == "resource"]
+    for index, row in enumerate(resources):
+        if (
+            hole == "final"
+            and index == len(resources) - 1
+            or hole == "interior"
+            and 1000 < row["monotonic_seconds"] < 2000
+            or hole == "only_early"
+            and row["monotonic_seconds"] > 5
+        ):
+            row.pop(field)
+    candidate = summarize_phase(rows, metadata())
+    gate = (
+        "backend_rss_growth" if field == "backend_rss_bytes" else "retained_heap_growth"
+    )
+    assert (
+        evaluate_budgets(baseline(), candidate)["budgets"][gate]["status"]
+        == "incomplete"
+    )
+
+
+@pytest.mark.parametrize("cleanup", ["failed", None])
+def test_cpu_baseline_requires_verified_cleanup(cleanup):
+    base = baseline()
+    base["metadata"]["cleanup"] = cleanup
+    assert (
+        evaluate_budgets(base, report())["budgets"]["cpu_increase"]["status"]
+        == "incomplete"
+    )
+
+
+@pytest.mark.parametrize("case", ["stopped_early", "large_gap", "brief_second_viewer"])
+def test_every_viewer_must_poll_across_the_measured_period(case):
+    rows = healthy_samples()
+    meta = metadata()
+    if case == "stopped_early":
+        rows = [r for r in rows if r["kind"] != "request" or r["started_seconds"] < 100]
+    elif case == "large_gap":
+        rows = [
+            r
+            for r in rows
+            if r["kind"] != "request" or not 1000 < r["started_seconds"] < 2000
+        ]
+    else:
+        meta["viewers"] = 2
+        row = next(r for r in rows if r["kind"] == "request")
+        rows.append({**row, "page_id": "two"})
+    candidate = summarize_phase(rows, meta)
+    assert (
+        evaluate_budgets(baseline(), candidate)["budgets"]["viewers"]["status"]
+        == "incomplete"
+    )
+
+
+def test_cpu_baseline_requires_polling_coverage():
+    rows = [
+        r
+        for r in healthy_samples(duration=600)
+        if r["kind"] != "request" or r["started_seconds"] < 100
+    ]
+    base = summarize_phase(rows, metadata(mode="full", cadence_seconds=5))
+    assert (
+        evaluate_budgets(base, report())["budgets"]["cpu_increase"]["status"]
+        == "incomplete"
+    )
+
+
+def healthy_samples(**changes):
+    rows = samples(**changes)
+    duration = changes.get("duration", 3600)
+    rows = [r for r in rows if r["kind"] == "resource"]
+    for index, start in enumerate(range(0, duration, 5)):
+        latency = (10, 20, 30, 40, 499)[index % 5]
+        rows.append(
+            {
+                "kind": "request",
+                "started_seconds": start,
+                "completed_seconds": start + latency / 1000,
+                "status": 200,
+                "page_id": "one",
+                "cold": False,
+            }
+        )
+    return rows
+
+
+@pytest.mark.parametrize("status", ["failed", None])
+def test_cpu_baseline_requires_completed_behavior_controls(status):
+    base = baseline()
+    base["metadata"]["behavior"]["motion"] = status
     assert (
         evaluate_budgets(base, report())["budgets"]["cpu_increase"]["status"]
         == "incomplete"
