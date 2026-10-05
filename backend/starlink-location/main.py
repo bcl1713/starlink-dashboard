@@ -25,6 +25,7 @@ from app.api import (
     metrics,
     orbital_catalog,
     overview_clock_settings,
+    overview_adsb,
     overview_history,
     overview_link_settings,
     overview_upcoming_pois,
@@ -63,6 +64,9 @@ from app.services.overview_history_settings import (
     resolve_overview_history_window_default,
 )
 from app.services.overview_link_settings import OverviewLinkSettingsStore
+from app.services.overview_adsb_settings import AdsbSettingsStore
+from app.services.adsb_lol import AdsbLolProvider
+from app.services.overview_adsb_traffic import AdsbTrafficService
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
@@ -87,6 +91,7 @@ _simulation_config = None
 _route_manager: RouteManager | None = None
 OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
 OVERVIEW_CLOCK_SETTINGS_PATH = Path("data/settings/overview-clocks.json")
+OVERVIEW_ADSB_SETTINGS_PATH = Path("data/settings/overview-adsb.json")
 OVERVIEW_LINK_SETTINGS_PATH = Path("data/settings/overview-links.json")
 OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
 _overview_history_client: httpx.AsyncClient | None = None
@@ -161,6 +166,27 @@ def initialize_overview_link_settings_runtime() -> None:
     app.state.overview_link_settings_store = _overview_link_settings_store
 
 
+def initialize_overview_adsb_runtime() -> None:
+    store = AdsbSettingsStore(OVERVIEW_ADSB_SETTINGS_PATH)
+    app.state.overview_adsb_settings_store = store
+    client = httpx.AsyncClient(
+        base_url="https://api.adsb.lol",
+        timeout=10,
+        headers={
+            "User-Agent": (
+                "starlink-dashboard "
+                "(+https://github.com/bcl1713/starlink-dashboard/issues)"
+            )
+        },
+    )
+    service = AdsbTrafficService(
+        store, AdsbLolProvider(client), time.time, time.monotonic
+    )
+    app.state.overview_adsb_client = client
+    app.state.overview_adsb_service = service
+    overview_adsb.set_overview_adsb_runtime(store, service)
+
+
 async def startup_event():
     """Initialize application on startup."""
     global _coordinator, _background_task, _simulation_config, _route_manager
@@ -185,6 +211,8 @@ async def startup_event():
         initialize_overview_clock_settings_runtime()
         initialize_overview_link_settings_runtime()
         initialize_orbital_catalog_runtime()
+        initialize_overview_adsb_runtime()
+        await app.state.overview_adsb_service.start()
 
         reconciliation = reconcile_active_legs_on_startup()
         logger.info_json(
@@ -405,6 +433,15 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "overview_adsb_service"):
+            await app.state.overview_adsb_service.aclose()
+            del app.state.overview_adsb_service
+        if hasattr(app.state, "overview_adsb_client"):
+            await app.state.overview_adsb_client.aclose()
+            del app.state.overview_adsb_client
+        overview_adsb.set_overview_adsb_runtime(None, None)
+        if hasattr(app.state, "overview_adsb_settings_store"):
+            del app.state.overview_adsb_settings_store
         await shutdown_orbital_catalog_runtime()
         overview_history.set_overview_history_reader(None)
         overview_history.set_overview_history_settings_store(None)
@@ -664,6 +701,7 @@ app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(overview_clock_settings.router, tags=["Overview Clocks"])
 app.include_router(overview_link_settings.router, tags=["Overview Links"])
+app.include_router(overview_adsb.router, tags=["ADS-B Aircraft"])
 app.include_router(orbital_catalog.router, tags=["Orbital Experiment"])
 app.include_router(overview_history.router, tags=["Overview History"])
 app.include_router(overview_upcoming_pois.router, tags=["Overview POIs"])

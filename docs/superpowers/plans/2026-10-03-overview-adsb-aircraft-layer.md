@@ -76,14 +76,64 @@ Testing Library, and Playwright Chromium. No new dependency is planned.
 ## Baseline and authority
 
 Source inspection used clean `feat/starshield-flow-line-arc` at
-`d8df56d9209a1b01e2776c4c79a3e919794a35bc` on 2026-10-03. This request authorizes
-generating the plan; it does not request product implementation, publishing,
+`d8df56d9209a1b01e2776c4c79a3e919794a35bc` on 2026-10-03. The original request authorized
+generating the plan; it did not request product implementation, publishing,
 deployment, or contacting the provider. Keep the approved spec unchanged.
 
 Before execution, reconcile the selected implementation base with the traffic
 arc/link changes and current `dev`, then use `superpowers:using-git-worktrees`
 when isolation is needed. Do not implement against assumed line numbers: the
 integration anchors below are named functions/components from this baseline.
+
+### Issue 244 reconciliation on 2026-10-04
+
+The user requested starting issue
+[244](https://github.com/bcl1713/starlink-dashboard/issues/244) and an isolated
+workspace. Worktree `/tmp/starlink-244`, branch `feat/244-overview-adsb`, starts
+from current local `dev` at `913175dc0e19a349a9d724d1e7efcb32f1489099`.
+Unrelated uncommitted history-efficiency documents in the original workspace
+are excluded. The approved spec, shared wire contracts and seven-task sequence
+remain the feature authority. The user approved the reconciled plan and native
+execution on 2026-10-04; implementation proceeds in this isolated worktree.
+
+Current integration anchors and decisions:
+
+- `main.py` retains the settings initialization functions, `startup_event`,
+  `shutdown_event` and router registration. It now owns an orbital catalog too.
+  Add a separate ADS-B store/service/client and cleanup without replacing the
+  history or orbital runtimes. The Compose settings mount and single-worker
+  Uvicorn command still support the planned persistence/acquisition ownership.
+- `OverviewLinkSettings` now includes `orbital_traffic_enabled`. Keep all three
+  link fields intact; ADS-B has its own revisioned settings endpoint and does
+  not reuse that store or the orbital toggle.
+- Overview's existing queries use `overviewRefreshOptions(true)` for background
+  polling. ADS-B settings and traffic retain their approved visible-only 5000ms
+  polling contract with foreground refresh; do not copy the background override
+  or change the existing queries. Preserve the mutation scope and read-cancel
+  pattern while adding ADS-B revision guards.
+- `ConfigurationPage` now includes orbital diagnostics and display/camera
+  controls. Mount the ADS-B card independently of clock loading/error branches,
+  preserving every existing card and its query inputs.
+- `OverviewPage` now mounts `OrbitalSprites` and chooses an orbital traffic path.
+  Add the independent ADS-B scene layer using its existing `globeOccluder`,
+  `stageRef` and camera-settled/layout signals. Preserve sprite/link predicates,
+  own-aircraft follow and existing legend entries; ADS-B adds its own predicate.
+- The shared `DialogContent` portals to `document.body`. Task 6 must supply the
+  map stage explicitly to a Radix portal for ADS-B details, leaving that shared
+  component's existing consumers intact. Include current POI labels and controls
+  in ADS-B label collision reservations without adopting POI aggregation.
+- Extend current window fixtures with default-off ADS-B responses and retain the
+  complete orbital/link settings payload. Add window-refresh and traffic-path
+  browser regressions plus orbital lifecycle/rendering unit checks to acceptance.
+
+Preparation evidence: the existing link query/mutation, Overview refresh,
+Configuration and legend test files passed in the isolated worktree (5 files,
+61 tests). They used the existing frontend dependency installation through an
+local package symlinks under ignored `node_modules`; no versions changed.
+The actor's configured Docker daemon was verified without changing its endpoint/context:
+`unix:///run/user/1002/docker.sock`, context `default`, Docker `29.8.1`,
+storage driver `overlayfs`. No ADS-B product checks, image builds or production
+acceptance have run; the feature remains unimplemented.
 
 The existing Dockerfile runs one Uvicorn worker. This plan preserves that runtime
 and owns one acquisition service there; adding workers/replicas requires separate
@@ -163,7 +213,6 @@ Coverage: acceptance criteria 1–4 map to Tasks 1–4; 5 to Tasks 4–5; 6 to T
 Tasks 6–7. The five Review Focus cases have named tests in their owning tasks.
 No deferred orbital work or worldwide civilian collection is introduced.
 
-Execution remains pending plan review and an execution-method choice. Recommended
-method: native via `superpowers:executing-plans`. Subagent-driven execution is
-available if selected; do not dispatch implementation or review agents while
-merely generating this plan.
+The user approved the reconciled plan and selected native execution on
+2026-10-04. Use `superpowers:executing-plans` with a final independent review.
+Merge, deployment and provider contact remain outside the authorized work.

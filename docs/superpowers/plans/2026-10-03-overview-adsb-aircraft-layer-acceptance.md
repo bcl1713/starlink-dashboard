@@ -14,6 +14,11 @@ this plan does not run these future product checks or authorize rollout.
 `tools/acceptance/adsb/backend_fixture.py`,
 `docs/api/endpoints/overview-adsb.md`, and
 `docs/reports/2026-10-03-overview-adsb-aircraft-layer.md`.
+Modify the existing browser support fixtures
+`frontend/mission-planner/tests/e2e/support/overview-window-fixture.ts` and
+`frontend/mission-planner/tests/e2e/support/traffic-path-fixture.ts` for
+default-off ADS-B settings/traffic responses; retain all existing settings
+fields, including `orbital_traffic_enabled`.
 Modify `docs/features/overview.md`, `docs/features/system.md`,
 `docs/api/endpoints/README.md`, and `docs/reports/README.md`.
 
@@ -31,7 +36,7 @@ Held responses capture revision/content when requested, before later saves.
 Use existing globe readiness and camera helpers and the tracked Playwright
 configuration. Backend acceptance uses httpx controlled provider fixtures.
 
-- [ ] **Step 1: Add failing browser acceptance cases.** With separate
+- [x] **Step 1: Add failing browser acceptance cases.** With separate
   Configuration and Overview pages, assert enable, include, exclude, mode,
   disable and saved-list edits converge without reload within 5s plus measured
   API response time. Explicit inclusion admits a civilian outside the own
@@ -59,19 +64,19 @@ configuration. Backend acceptance uses httpx controlled provider fixtures.
     .toBeVisible({ timeout: 5500 });
   ```
 
-- [ ] **Step 2: Add backend restart and workload acceptance cases.** Test the
+- [x] **Step 2: Add backend restart and workload acceptance cases.** Test the
   real settings/traffic routers with the owned service and mocked upstream:
   settings survive stop/start, cache starts empty, source failures remain
   independent, and simultaneous clients do not multiply acquisitions. Use a
   controlled dataset of 2,000 military records distributed across hemispheres,
   with duplicates, 50 included identities and stale records; assert all eligible
   hexes remain available in the traffic response and Configuration table.
-- [ ] **Step 3: Verify tests can detect the contract violations.** Run new
+- [x] **Step 3: Verify tests can detect the contract violations.** Run new
   suites before final fixes. If earlier tasks already satisfy a case, temporarily
   mutate its revision check/expiry/occlusion in the isolated test workspace and
   confirm that case fails, then restore the source. Do not leave mutations or
   weaken assertions. Backend acceptance must not contact adsb.lol.
-- [ ] **Step 4: Complete browser fixture and performance checks.** Render the
+- [x] **Step 4: Complete browser fixture and performance checks.** Render the
   2,000-record workload alongside existing route/history/links for 30s of camera
   motion; capture frame-time percentiles, draw calls, contact/instance counts,
   DOM label counts and post-disable resource counts. Use a deterministic 50-label
@@ -81,7 +86,7 @@ configuration. Backend acceptance uses httpx controlled provider fixtures.
   browser/renderer, hardware and a same-scene ADS-B-off comparison. The approved
   spec sets no frame-time threshold: report measurements and visibly delayed
   interaction honestly; improve measured bottlenecks before calling it usable.
-- [ ] **Step 5: Document final behavior and run required checks.** Document
+- [x] **Step 5: Document final behavior and run required checks.** Document
   defaults, mode/filter precedence, conflicts, table scope, shared polling,
   original-position freshness, unavailable fields, units, attribution, source
   failures and rollout usage review. API docs show partial PUT, complete revisioned
@@ -95,7 +100,10 @@ configuration. Backend acceptance uses httpx controlled provider fixtures.
   --project=chromium --workers=1`, then existing globe, map interaction,
   fullscreen route, arrival, POI-responsive and metric-history suites. Expect
   PASS; manually inspect screenshots instead of blindly updating snapshots.
-- [ ] **Step 6: Verify an isolated exact-SHA production path.** Follow
+  Include `overview-window-refresh.spec.ts`, `overview-window-paths.spec.ts`,
+  `overview-window-controls.spec.ts` and `overview-traffic-paths.spec.ts` in
+  existing-browser regressions against the reconciled `dev` base.
+- [x] **Step 6: Verify an isolated exact-SHA production path.** Follow
   `docs/development/workflow.md` and `docs/development/cloud-docker.md`; read
   the runtime skill's Docker proxy/CA reference before builds. Preserve
   `DOCKER_HOST` and active context, discover the actor socket if needed, and
@@ -114,7 +122,7 @@ configuration. Backend acceptance uses httpx controlled provider fixtures.
   --port 8000`; retain the production Nginx and data mounts. This verifies the
   application startup/adapter/cache/API path without upstream network traffic.
   No production admin/test endpoint is needed. Clean up task-owned resources.
-- [ ] **Step 7: Record evidence and commit acceptance files.** Report candidate
+- [x] **Step 7: Record evidence and commit acceptance files.** Report candidate
   full SHA, base, image inputs, viewport, renderer, source mode, timestamps,
   cross-window timing, resource/performance measurements, checks, screenshots
   and recording. Distinguish intercepted browser fixtures from actual Nginx/API

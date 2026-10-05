@@ -119,7 +119,11 @@ for (const fullscreen of [false, true]) {
         .getByRole('button', { name: 'Save operational clocks' })
         .click();
       expect((await rejected).status()).toBe(503);
-      await expect(editing.getByRole('alert')).toContainText('Unable to save');
+      await expect(
+        editing
+          .getByRole('alert')
+          .filter({ hasText: 'Unable to save operational clocks' })
+      ).toContainText('Unable to save');
       expect(fixture.state.clocks.clocks[2].label).toBe('Omaha, NE');
       await expect(
         overview.getByRole('region', {
@@ -387,9 +391,11 @@ test('history rejects a delayed old-window bundle, then recovers and retains sam
     );
     await editing.getByLabel('Overview history window').selectOption('3600');
     expect((await rejected).status()).toBe(503);
-    await expect(editing.getByRole('alert')).toContainText(
-      'Unable to save Overview history window'
-    );
+    await expect(
+      editing
+        .getByRole('alert')
+        .filter({ hasText: 'Unable to save Overview history window' })
+    ).toContainText('Unable to save Overview history window');
     await expect(editing.getByLabel('Overview history window')).toHaveValue(
       '900'
     );

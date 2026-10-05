@@ -279,8 +279,8 @@ independent of the position provenance used for arrival estimates.
 Aircraft/GEP and configured satellites can remain visible without a route.
 Generated POIs and satellite markers retain their labels and separate accessible
 name lists even when globe occlusion or POI collision handling hides a label.
-Settings, counts and GEO look-angle analysis are in **Configuration**, rather
-than additional legend rows.
+Settings, GEO look-angle analysis and optional [ADS-B aircraft](overview-adsb.md)
+controls are in **Configuration**. ADS-B adds global positions and read-only details.
 
 ### Independent data links
 

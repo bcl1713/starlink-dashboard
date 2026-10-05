@@ -47,9 +47,12 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     links: {
       starshield_link_enabled: true,
       x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
     } as OverviewLinkSettings,
     positionAvailable: true,
+    aircraftHeading: undefined as number | undefined,
     activeLeg: null as 'leg-a' | 'leg-b' | null,
+    aircraftHistory: [] as Array<{ latitude: number; longitude: number }>,
   };
   const marker = Math.floor(Date.now() / 1000) - 20;
   const readCounts: Record<string, number> = {};
@@ -132,7 +135,23 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
         : state.activeLeg === 'leg-b'
           ? fixtureRoutes[1]
           : null;
-    if (endpoint === '/api/overview-clocks/settings') {
+    if (endpoint === '/api/overview-adsb/settings') {
+      json = {
+        enabled: false,
+        mode: 'military_and_included',
+        include_hexes: [],
+        exclude_hexes: [],
+        callsign_substrings: [],
+        revision: 0,
+      };
+    } else if (endpoint === '/api/overview-adsb/traffic') {
+      json = {
+        settings_revision: 0,
+        generated_at_ms: Date.now(),
+        contacts: [],
+        sources: [],
+      };
+    } else if (endpoint === '/api/overview-clocks/settings') {
       if (method === 'PUT') state.clocks = request.postDataJSON();
       json = state.clocks;
     } else if (endpoint === '/api/overview-history/settings') {
@@ -204,7 +223,12 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
       json = {
         timestamp: observed,
         position: state.positionAvailable
-          ? { latitude: 35, longitude: -100, altitude: 35000 }
+          ? {
+              latitude: 35,
+              longitude: -100,
+              altitude: 35000,
+              heading: state.aircraftHeading,
+            }
           : null,
         ground_entry_point: { latitude: 36, longitude: -102 },
         metric_availability: {
@@ -234,7 +258,21 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
         start_timestamp_seconds: end - state.history.window_seconds,
         end_timestamp_seconds: end,
         step_seconds: 5,
-        series: Object.fromEntries(metrics.map((name) => [name, samples])),
+        series: {
+          ...Object.fromEntries(metrics.map((name) => [name, samples])),
+          starlink_dish_latitude_degrees: state.aircraftHistory.map(
+            (point, i) => [
+              end - (state.aircraftHistory.length - 1 - i) * 5,
+              point.latitude,
+            ]
+          ),
+          starlink_dish_longitude_degrees: state.aircraftHistory.map(
+            (point, i) => [
+              end - (state.aircraftHistory.length - 1 - i) * 5,
+              point.longitude,
+            ]
+          ),
+        },
         rolling_5m: Object.fromEntries(
           metrics.map((name) => [
             name,

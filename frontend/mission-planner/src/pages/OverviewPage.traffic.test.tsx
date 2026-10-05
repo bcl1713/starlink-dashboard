@@ -1,3 +1,12 @@
+vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
+  useOverviewAdsbLayer: () => ({
+    contacts: [],
+    sources: [],
+    settings: undefined,
+    settingsError: false,
+    trafficError: false,
+  }),
+}));
 /** @vitest-environment jsdom */
 import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen } from '@testing-library/react';

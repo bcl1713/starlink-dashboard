@@ -7,6 +7,7 @@ export async function trafficPathFixture(page: Page) {
     settings: {
       starshield_link_enabled: true,
       x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
     } as OverviewLinkSettings,
     getError: false,
     getStarted: false,
@@ -44,6 +45,26 @@ export async function trafficPathFixture(page: Page) {
   // meaningful. Every successful poll has a fresh acquisition timestamp.
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === '/api/overview-adsb/settings')
+      return route.fulfill({
+        json: {
+          enabled: false,
+          mode: 'military_and_included',
+          include_hexes: [],
+          exclude_hexes: [],
+          callsign_substrings: [],
+          revision: 0,
+        },
+      });
+    if (path === '/api/overview-adsb/traffic')
+      return route.fulfill({
+        json: {
+          settings_revision: 0,
+          generated_at_ms: Date.now(),
+          contacts: [],
+          sources: [],
+        },
+      });
     if (path === '/api/overview-links/settings') {
       if (route.request().method() === 'PUT') {
         if (state.saveError)

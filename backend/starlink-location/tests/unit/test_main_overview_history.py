@@ -110,7 +110,13 @@ def test_lifespan_initializes_and_closes_the_history_runtime(
                 for metric in ROLLUP_METRICS
             },
         }
-    assert len(created_clients) == 1
-    assert created_clients[0].closed is True
+    history_clients = [
+        client
+        for client in created_clients
+        if client.kwargs["base_url"] == "http://prometheus:9090"
+    ]
+    assert len(history_clients) == 1
+    assert history_clients[0].closed is True
+    assert all(client.closed for client in created_clients)
     assert main._overview_history_client is None
     assert main._overview_history_settings_store is None

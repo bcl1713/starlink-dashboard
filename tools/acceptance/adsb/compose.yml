@@ -1,0 +1,65 @@
+services:
+  starlink-location:
+    image: starlink-244-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    build:
+      context: ${ADSB_SOURCE_ROOT:?archived source required}/backend/starlink-location
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    command: [uvicorn, backend_fixture:app, --host, 0.0.0.0, --port, "8000"]
+    environment:
+      PYTHONPATH: /acceptance:/app
+      ADSB_ACCEPTANCE_FAIL: ${ADSB_ACCEPTANCE_FAIL:-0}
+      STARLINK_MODE: simulation
+      SIMULATION_MODE: "true"
+      STARLINK_ROUTE_LATITUDE_START: "35.0"
+      STARLINK_ROUTE_LONGITUDE_START: "-100.0"
+      STARLINK_GROUND_ENTRY_LATITUDE: "36.0"
+      STARLINK_GROUND_ENTRY_LONGITUDE: "-102.0"
+      PROMETHEUS_URL: http://prometheus:9090
+    volumes:
+      - ${ADSB_SOURCE_ROOT}/tools/acceptance/adsb:/acceptance:ro
+      - settings:/app/data/settings
+      - missions:/app/data/missions
+      - satellites:/app/data/satellites
+      - orbital:/app/data/orbital
+      - coverage:/app/data/sat_coverage
+      - routes:/data/routes
+      - simulation-routes:/data/sim_routes
+      - pois:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      interval: 2s
+      timeout: 5s
+      retries: 45
+      start_period: 30s
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ${ADSB_SOURCE_ROOT}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${ADSB_SOURCE_ROOT}/monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - metrics:/prometheus
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=1h]
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+  mission-planner:
+    image: starlink-244-frontend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    build:
+      context: ${ADSB_SOURCE_ROOT}/frontend/mission-planner
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    ports:
+      - "127.0.0.1:15244:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+volumes:
+  settings:
+  missions:
+  satellites:
+  orbital:
+  coverage:
+  routes:
+  simulation-routes:
+  pois:
+  metrics:

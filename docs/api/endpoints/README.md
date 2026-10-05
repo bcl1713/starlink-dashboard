@@ -22,6 +22,9 @@ consumers, integrators, developers
 - **[Overview Upcoming POIs](./overview-upcoming-pois.md)** - Active-route
   generated POI projection, timing provenance, retention, and Top 5 queue
 
+- **[Overview ADS-B aircraft](./overview-adsb.md)** - Optional shared global
+  aircraft settings, acquisition cache, freshness and source errors
+
 ### Mission V2 activation
 
 `/api/missions` has been removed and now returns 404. There are no supported

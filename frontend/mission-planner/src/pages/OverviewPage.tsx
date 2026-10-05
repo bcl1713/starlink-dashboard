@@ -12,6 +12,9 @@ import { Html, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
+import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
+import { OverviewAdsbLayer } from './adsb/OverviewAdsbLayer';
+import { OverviewAdsbDetails } from './adsb/OverviewAdsbDetails';
 import { type GlobeCoordinate } from './globe-route';
 import { activeRouteId } from './active-globe-route';
 import { projectRouteArc } from './globe-route-projection';
@@ -24,6 +27,11 @@ import {
   projectGroundEntryPoint,
 } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
+import { OverviewMarkerDebug } from './OverviewMarkerDebug';
+import {
+  DEFAULT_CHEVRON_SETTINGS,
+  type ChevronSettings,
+} from './overview-chevron-settings';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import {
@@ -140,14 +148,34 @@ const atmosphereFragmentShader = `
 function AircraftMarker({
   coordinate,
   position,
+  headingDegrees,
+  chevronSettings,
 }: {
   coordinate: GlobeCoordinate;
   position: [number, number, number] | null;
+  headingDegrees?: number;
+  chevronSettings: Readonly<ChevronSettings>;
 }) {
   return position ? (
-    <StarMarker position={position} color="#72b7ff" size={0.15} />
+    <StarMarker
+      position={position}
+      color="#72b7ff"
+      size={0.15}
+      shape="chevron"
+      headingDegrees={headingDegrees}
+      chevronSettings={chevronSettings}
+      renderOrder={1000}
+    />
   ) : (
-    <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />
+    <StarMarker
+      coordinate={coordinate}
+      color="#72b7ff"
+      size={0.15}
+      shape="chevron"
+      headingDegrees={headingDegrees}
+      chevronSettings={chevronSettings}
+      renderOrder={1000}
+    />
   );
 }
 
@@ -211,10 +239,42 @@ function Atmosphere() {
 }
 
 export function OverviewPage() {
+  const markerDebug =
+    new URLSearchParams(window.location.search).get('markerDebug') === '1';
+  const [chevronSettings, setChevronSettings] = useState<
+    Readonly<ChevronSettings>
+  >(DEFAULT_CHEVRON_SETTINGS);
   const followPreference = useOverviewFollowPreference();
   const [resetRevision, setResetRevision] = useState(0);
   const pageRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const [stageNode, setStageNode] = useState<HTMLDivElement | null>(null);
+  const captureStage = useCallback((node: HTMLDivElement | null) => {
+    stageRef.current = node;
+    setStageNode(node);
+  }, []);
+  const adsb = useOverviewAdsbLayer();
+  const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
+  const [visibleAdsbHexes, setVisibleAdsbHexes] = useState<readonly string[]>(
+    []
+  );
+  const adsbReturnFocus = useRef<HTMLElement | null>(null);
+  const selectedAdsbContact =
+    adsb.contacts.find((c) => c.hex === selectedAdsbHex) ?? null;
+  if (selectedAdsbHex && !selectedAdsbContact) setSelectedAdsbHex(null);
+  const selectAdsb = useCallback((hex: string) => {
+    adsbReturnFocus.current =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : stageRef.current;
+    setSelectedAdsbHex(hex);
+  }, []);
+  const updateVisibleAdsb = useCallback((hexes: readonly string[]) => {
+    setVisibleAdsbHexes((old) =>
+      old.join('|') === hexes.join('|') ? old : hexes
+    );
+  }, []);
   const [cameraIntent, setCameraIntent] = useState<OverviewCameraIntent>(
     followPreference ? 'follow' : 'automatic'
   );
@@ -612,6 +672,11 @@ export function OverviewPage() {
     if (!page || !rail || layout.mode !== 'landscape' || exploring) return;
     const wheel = (event: WheelEvent) => {
       if (event.target instanceof Node && rail.contains(event.target)) return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.overview-marker-debug')
+      )
+        return;
       if (event.ctrlKey || event.metaKey || !event.deltaY) return;
       const delta =
         event.deltaY *
@@ -726,10 +791,18 @@ export function OverviewPage() {
         />
       </div>
       <div
-        ref={stageRef}
+        ref={captureStage}
+        tabIndex={-1}
         className="overview-map-stage"
         data-flow={layout.flow}
+        data-adsb-details-open={selectedAdsbContact !== null}
       >
+        {markerDebug && (
+          <OverviewMarkerDebug
+            settings={chevronSettings}
+            onChange={setChevronSettings}
+          />
+        )}
         <div className="overview-right-overlays">
           <div className="overview-satellite-overlays">
             <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
@@ -763,6 +836,7 @@ export function OverviewPage() {
               history={aircraftHistoryPoints.length >= 2}
               groundEntryPoint={Boolean(groundEntryPoint)}
               satellites={showSprites}
+              adsb={adsb.contacts.length > 0}
               trafficPath={linkState.starshieldVisible}
               plannedLink={linkState.xBandVisible}
               linkState={activeXLink?.state ?? null}
@@ -785,6 +859,31 @@ export function OverviewPage() {
             <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
           ))}
         </ul>
+        <ul
+          className="adsb-keyboard-contacts"
+          aria-label="Visible ADS-B aircraft"
+        >
+          {adsb.contacts
+            .filter((c) => visibleAdsbHexes.includes(c.hex))
+            .map((c) => (
+              <li key={c.hex}>
+                <button
+                  type="button"
+                  aria-label={`Details for ${c.hex}`}
+                  onClick={() => selectAdsb(c.hex)}
+                >
+                  {c.label} · {c.hex}
+                  {c.freshness === 'stale' ? ' · ◷ Stale' : ''}
+                </button>
+              </li>
+            ))}
+        </ul>
+        <OverviewAdsbDetails
+          contact={selectedAdsbContact}
+          onClose={() => setSelectedAdsbHex(null)}
+          returnFocusRef={adsbReturnFocus}
+          portalContainer={stageNode}
+        />
         <Canvas
           className="overview-globe"
           camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
@@ -914,9 +1013,20 @@ export function OverviewPage() {
               <AircraftMarker
                 coordinate={aircraftPosition}
                 position={aircraftScenePosition?.position ?? null}
+                headingDegrees={status?.position?.heading}
+                chevronSettings={chevronSettings}
               />
             )}
           </Suspense>
+          {adsb.contacts.length > 0 && (
+            <OverviewAdsbLayer
+              contacts={adsb.contacts}
+              chevronSettings={chevronSettings}
+              globeOccluder={globeOccluder}
+              onSelect={selectAdsb}
+              onVisibleHexesChange={updateVisibleAdsb}
+            />
+          )}
           <OverviewMapController
             mode={layout.mode}
             safeRect={layout.safeRect}

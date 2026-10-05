@@ -1,0 +1,87 @@
+.adsb-label-wrapper {
+  pointer-events: none !important;
+}
+.adsb-map-label {
+  width: max-content;
+  max-width: 220px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.adsb-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #0009;
+}
+.adsb-details {
+  position: fixed;
+  z-index: 41;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  padding: 20px;
+  color: #e8eef5;
+  background: #111c2b;
+  border: 1px solid #506075;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.adsb-details h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.adsb-details dl {
+  margin: 12px 0;
+}
+.adsb-details dl > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
+  padding: 3px 0;
+}
+.adsb-details dt {
+  color: #9aadc4;
+}
+.adsb-details-close {
+  border: 1px solid #64748b;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+.adsb-keyboard-contacts {
+  position: absolute;
+  z-index: 15;
+  left: 12px;
+  bottom: 12px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.adsb-keyboard-contacts:focus-within {
+  width: min(300px, calc(100% - 24px));
+  height: auto;
+  max-height: 40%;
+  overflow: auto;
+  clip-path: none;
+  background: #111c2bf5;
+  border: 1px solid #64748b;
+  padding: 8px;
+}
+.adsb-keyboard-contacts button {
+  display: block;
+  padding: 4px;
+}
+.adsb-keyboard-contacts button:focus-visible {
+  outline: 2px solid #b8dce7;
+}
+@media (max-width: 450px) {
+  .adsb-details {
+    padding: 12px;
+  }
+  .adsb-details dl > div {
+    grid-template-columns: 100px minmax(0, 1fr);
+  }
+}

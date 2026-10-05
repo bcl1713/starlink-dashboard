@@ -64,8 +64,8 @@
 }
 
 .globe-legend__marker--aircraft {
-  background: #72b7ff;
-  box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
+  background: #ffffff;
+  filter: drop-shadow(0 0 2px #72b7ff);
 }
 
 .globe-legend__route {
@@ -243,4 +243,15 @@
   width: 4px;
   height: 4px;
   opacity: 0.65;
+}
+
+.globe-legend__marker--aircraft,
+.globe-legend__marker--adsb {
+  clip-path: polygon(50% 0, 0 100%, 50% 67.5%, 100% 100%);
+}
+
+.globe-legend__marker--adsb {
+  background: #efb85b;
+  width: 8px;
+  height: 8px;
 }

@@ -27,9 +27,13 @@ const queries = vi.hoisted(() => ({
   route: {} as Record<string, unknown>,
   pois: {} as Record<string, unknown>,
   links: {} as Record<string, unknown>,
+  adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
 // independently controlled API states. Scene rendering has browser coverage.
+vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
+  useOverviewAdsbLayer: () => queries.adsb,
+}));
 vi.mock('@react-three/fiber', () => ({ Canvas: () => null }));
 vi.mock('@react-three/drei', () => ({
   Html: () => null,
@@ -73,8 +77,11 @@ vi.mock('@/hooks/api/useOverviewUpcomingPois', () => ({
   useOverviewUpcomingPois: () => queries.pois,
 }));
 import { OverviewPage } from './OverviewPage';
+import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
+import { projectAdsbContacts } from './adsb/overview-adsb-state';
 afterEach(cleanup);
 beforeEach(() => {
+  queries.adsb.contacts = [];
   queries.links = {
     data: { starshield_link_enabled: true, x_band_link_enabled: true },
   };
@@ -234,4 +241,21 @@ describe('Overview layer and exception integration', () => {
         .map((item) => item.textContent)
     ).toEqual(['First coincident POI', 'Second coincident POI']);
   });
+});
+
+it('uses active contacts for the ADS-B legend and clears it on expiry or disable', () => {
+  queries.adsb.contacts = projectAdsbContacts(
+    [adsbContact()],
+    adsbSettings(),
+    ADSB_NOW
+  );
+  const view = render(<OverviewPage />);
+  expect(screen.getByText('ADS-B aircraft')).not.toBeNull();
+  expect(
+    screen.getByRole('list', { name: 'Visible ADS-B aircraft' })
+  ).not.toBeNull();
+  queries.adsb.contacts = [];
+  view.rerender(<OverviewPage />);
+  expect(screen.queryByText('ADS-B aircraft')).toBeNull();
+  expect(screen.queryByRole('dialog')).toBeNull();
 });

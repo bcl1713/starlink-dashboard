@@ -10,7 +10,8 @@ with `uv run --with-requirements requirements.txt pytest`.
 **Files:** Create `app/models/overview_adsb.py`,
 `app/services/overview_adsb_settings.py`, `app/api/overview_adsb.py`,
 `tests/unit/test_overview_adsb_settings.py`, and
-`tests/integration/test_overview_adsb_settings_api.py`.
+`tests/integration/test_overview_adsb_settings_api.py`, and
+`tests/unit/test_main_overview_adsb.py`.
 Modify `main.py` at imports, persistent path constants,
 `startup_event`, `shutdown_event`, and router registration.
 
@@ -25,7 +26,7 @@ Settings operations
 work with a store alone. `initialize_overview_adsb_runtime() -> None` initially
 registers the store; Task 3 extends it to acquisition.
 
-- [ ] **Step 1: Write failing store and API tests.**
+- [x] **Step 1: Write failing store and API tests.**
   `test_default_settings_are_off_with_revision_zero` asserts all six fields from
   the main contract. `test_partial_updates_preserve_lists_and_increment_revision`
   saves includes `[' 00ab12 ', '00AB12']`, then only mode; expect
@@ -40,6 +41,9 @@ registers the store; Task 3 extends it to acquisition.
   unknown keys, supplied revision, and empty update: API 422, disk unchanged.
   Corrupt JSON and failed `os.replace` return 503 and preserve bytes, settings,
   and revision; temporary files are removed. Uninitialized store returns 503.
+  Main-runtime tests assert registration, lifespan persistence and shutdown
+  unregistration, following `test_main_overview_link_settings.py`; extend them
+  in Task 3 for service/client cleanup alongside the existing orbital runtime.
   Pin the normalization/merge contract with these store assertions:
 
   ```python
@@ -51,20 +55,22 @@ registers the store; Task 3 extends it to acquisition.
   assert changed.revision == 2
   ```
 
-- [ ] **Step 2: Verify failure.** Run the two new test files with `-q`;
+- [x] **Step 2: Verify failure.** Run the two new test files with `-q`;
   expect missing-model/store/router imports or missing endpoints.
-- [ ] **Step 3: Implement models and atomic settings operations.** Match Task 1
+- [x] **Step 3: Implement models and atomic settings operations.** Match Task 1
   signatures and the main contract. Validate before writing; create list defaults
   with factories. Reject corrupt existing state rather than overwriting it with
   defaults. The locked revision and settings share one atomic JSON record.
   Use existing `overview_link_settings.py` and its API as patterns. Mount settings
   GET/PUT, return complete confirmed state, and notify an installed service after
   successful persistence using Task 3's `settings_changed()`.
-- [ ] **Step 4: Register the settings runtime and verify.** Use
+- [x] **Step 4: Register the settings runtime and verify.** Use
   `data/settings/overview-adsb.json`; unregister on shutdown. Run the new tests
   plus existing unit/integration `test_overview_link_settings*.py`; expect PASS.
+  Also run `tests/unit/test_main_overview_adsb.py` and
+  `tests/unit/test_main_overview_link_settings.py` for lifecycle registration.
   Inspect the existing Compose data mount; no new volume should be needed.
-- [ ] **Step 5: Commit only Task 1 files.**
+- [x] **Step 5: Commit only Task 1 files.**
   `git commit -m "feat(adsb): persist revisioned shared aircraft settings"`.
 
 ## Task 2: Provider normalization, filter precedence and freshness
@@ -88,7 +94,7 @@ Literal['current', 'stale', 'expired']` and
 `select_contacts(contacts: Iterable[AdsbContact], settings: AdsbSettings,
 now_ms: float) -> list[AdsbContact]` are pure selection exports.
 
-- [ ] **Step 1: Write failing adapter/selection tests.** For response `now =
+- [x] **Step 1: Write failing adapter/selection tests.** For response `now =
   1791028800000`, `seen_pos = 2.5`, assert position time `1791028797500`.
   Use the same envelope twice at later acquisition times and assert unchanged
   observation time. `lastPosition` with `seen_pos = 40` uses its own age when
@@ -126,9 +132,9 @@ now_ms: float) -> list[AdsbContact]` are pure selection exports.
   assert position_state(contact, 1791028920000) == "expired"
   ```
 
-- [ ] **Step 2: Verify failure.** Run both new unit files with `-q`;
+- [x] **Step 2: Verify failure.** Run both new unit files with `-q`;
   expect missing adapter/selection exports.
-- [ ] **Step 3: Implement the adapter and selectors.** Use the verified schema
+- [x] **Step 3: Implement the adapter and selectors.** Use the verified schema
   linked from the main plan; only `/v2/mil` and `/v2/hex/{hex_code}` requests.
   Convert `now - seen_pos * 1000` once; validate against acquisition time and
   reject future observations. Omit bad records; fail bad envelopes. Validate
@@ -136,9 +142,9 @@ now_ms: float) -> list[AdsbContact]` are pure selection exports.
   Construct explicit units rather than passing untyped provider fields onward.
   Apply exclusions, inclusion, mode, military classification, then callsign OR;
   include position validity/expiry and normalized-hex deduplication throughout.
-- [ ] **Step 4: Verify success.** Run Task 2 files and Task 1 unit tests;
+- [x] **Step 4: Verify success.** Run Task 2 files and Task 1 unit tests;
   require PASS, including every boundary and malformed-data parameter.
-- [ ] **Step 5: Commit only Task 2 files.**
+- [x] **Step 5: Commit only Task 2 files.**
   `git commit -m "feat(adsb): normalize provider positions and global selection"`.
 
 ## Task 3: Shared acquisition service, cache and traffic API
@@ -147,7 +153,8 @@ now_ms: float) -> list[AdsbContact]` are pure selection exports.
 `tests/unit/test_overview_adsb_traffic.py`, and
 `tests/integration/test_overview_adsb_traffic_api.py`.
 Modify `app/api/overview_adsb.py` runtime/traffic endpoint and `main.py`
-ADS-B initialization, startup and shutdown.
+ADS-B initialization, startup and shutdown; extend
+`tests/unit/test_main_overview_adsb.py` for owned service/client lifecycle.
 
 **Interfaces:** `AdsbTrafficService(store: AdsbSettingsStore,
 provider: AdsbLolProvider, time_source: Callable[[], float],
@@ -160,7 +167,7 @@ by the scheduler and deterministic tests; `read` never calls the provider.
 scheduler. Task 1's initializer creates this service plus one httpx client;
 startup awaits `start`, shutdown awaits `aclose` before closing the client.
 
-- [ ] **Step 1: Write failing deterministic service/API tests.** Fake provider
+- [x] **Step 1: Write failing deterministic service/API tests.** Fake provider
   calls use controllable asyncio events; clocks are injected, no real sleeps.
   `test_viewers_share_one_cycle` issues concurrent refreshes/traffic reads and
   asserts one upstream cycle, identical revision/contact identity, max one cycle
@@ -196,9 +203,9 @@ startup awaits `start`, shutdown awaits `aclose` before closing the client.
   assert "00AB12" not in {contact.hex for contact in bundle.contacts}
   ```
 
-- [ ] **Step 2: Verify failure.** Run the new service/API tests with `-q`;
+- [x] **Step 2: Verify failure.** Run the new service/API tests with `-q`;
   expect missing service or missing traffic route.
-- [ ] **Step 3: Implement acquisition scheduling and cache ownership.** Use one
+- [x] **Step 3: Implement acquisition scheduling and cache ownership.** Use one
   serialized task/lock, a generation per confirmed settings revision, and a
   wake event. Read settings at most one second apart to notice another store
   writer; PUT wakes immediately. Filter reads against current confirmed settings.
@@ -212,15 +219,15 @@ startup awaits `start`, shutdown awaits `aclose` before closing the client.
   Removed/excluded hex keys have no scheduled queries; drop irrelevant source
   status. Store only newest valid positions; retain previous ones to original
   expiry when no valid replacement arrives. Prune expired cache in reads/cycles.
-- [ ] **Step 4: Implement traffic route and application cleanup.** Complete
+- [x] **Step 4: Implement traffic route and application cleanup.** Complete
   Task 3's interfaces. Use `https://api.adsb.lol` for the owned client and return
   generation-consistent revision/bundle snapshots. Sanitize source error text;
   never expose raw upstream bodies. If settings cannot be read, stop acquisition
   and return 503 until recovered. Neither ADS-B failure nor settings failure
   writes telemetry, warning rules, history, or mission services.
-- [ ] **Step 5: Verify success.** Run all `test_overview_adsb*.py` unit/integration
+- [x] **Step 5: Verify success.** Run all `test_overview_adsb*.py` unit/integration
   files and `test_adsb_lol.py`; require PASS. Also run existing history, clock,
   link-settings API tests and startup/health integration tests for lifecycle
   regressions. Inspect cancellation and source-call assertions, not just HTTP 200.
-- [ ] **Step 6: Commit only Task 3 files.**
+- [x] **Step 6: Commit only Task 3 files.**
   `git commit -m "feat(adsb): share acquisition cache and revisioned traffic API"`.
