@@ -23,6 +23,7 @@ vi.mock('@/services/api-client', () => {
 const cases: Array<{
   name: string;
   endpoint: string;
+  interval?: number;
   use: () => { data: unknown };
 }> = [
   {
@@ -37,6 +38,7 @@ const cases: Array<{
   },
   {
     name: 'history bundle',
+    interval: 1000,
     endpoint: '/api/overview-history',
     use: useOverviewHistory,
   },
@@ -137,15 +139,15 @@ afterEach(() => {
 
 describe('Overview saved-state refresh', () => {
   it.each(cases)(
-    'refreshes $name at five seconds without focus, then releases its timer',
-    async ({ use, endpoint }) => {
+    'refreshes $name at its default cadence without focus, then releases its timer',
+    async ({ use, endpoint, interval = 5000 }) => {
       const { result, unmount } = renderHook(use, { wrapper });
       await tick(1);
       const initial = result.current.data;
       expect(initial).toBeDefined();
       expect(apiClient.get).toHaveBeenCalledTimes(1);
       revision = 2;
-      await tick(4998);
+      await tick(interval - 2);
       expect(apiClient.get).toHaveBeenCalledTimes(1);
       await tick(2);
       expect(apiClient.get).toHaveBeenCalledTimes(2);
