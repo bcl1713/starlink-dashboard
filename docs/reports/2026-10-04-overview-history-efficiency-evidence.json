@@ -1,6 +1,198 @@
 {
-  "description": "Derived receipts; observed metadata and raw evidence retained separately without rewriting failed outcomes.",
+  "description": "Derived receipts re-evaluated with corrected gates; observed metadata and raw evidence retained separately without rewriting failed outcomes. Bounded/default controls are not sustained qualification.",
   "phases": [
+    {
+      "relative_directory": "87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde/default-native-2",
+      "summary": {
+        "metadata": {
+          "sha": "87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde",
+          "images": [
+            "[starlink-224-backend:87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde] sha256:5f852e6d7fdd802ceb51c087eafc50933d08110c78d57ec7b1ad61cce718e97f",
+            "[starlink-224-frontend-1:87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde] sha256:7fe606cb763b1315b2dc35a87939ce406068d72ccb20f4e5a5f0600f264edbb0",
+            "[prom/prometheus:v3.5.0] sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+          ],
+          "hardware": {
+            "host": "forge",
+            "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+            "logical_cpus": 20,
+            "memory_bytes": 65915523072
+          },
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "window_seconds": 1800,
+          "viewers": 2,
+          "cadence_seconds": 1,
+          "mode": "incremental",
+          "fixture": "seed-v1-and-public-simulation",
+          "gc_mode": "controlled",
+          "warmup_seconds": 20,
+          "resource_interval_seconds": 5,
+          "cleanup": "passed",
+          "behavior": {
+            "shared_subscription": "passed",
+            "motion": "passed",
+            "masking": "passed",
+            "lifecycle": "passed"
+          },
+          "upstream_work": "recorded",
+          "browser_version": "153.0.8010.12",
+          "viewport": [
+            1920,
+            1080
+          ],
+          "dpr": 1,
+          "limitations": [
+            "Acceptance probes add counters and append-only I/O; cProfile is separate.",
+            "Synthetic historical density; public simulation current scrapes.",
+            "Configured delay is separate from actual request-start spacing.",
+            "Canvas clears are observed redraws, not an exact uPlot setData count."
+          ],
+          "phase": {
+            "status": "measured",
+            "requested_seconds": 60,
+            "measured_seconds": 60.01103953097481,
+            "warmup_seconds": 20,
+            "final_acceptance": false
+          },
+          "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          }
+        },
+        "measured_duration_seconds": 60.01103953097481,
+        "max_resource_gap_seconds": 5.380644508055411,
+        "resource_count": 14,
+        "request_count": 106,
+        "request_errors": 0,
+        "request_ms": {
+          "p50": 138.872174,
+          "p95": 177.273697,
+          "p99": 191.640896
+        },
+        "request_start_spacing_seconds": {
+          "p50": 1.136875,
+          "p95": 1.176053,
+          "p99": 1.192037
+        },
+        "observed_viewers": 2,
+        "request_coverage": {
+          "2": {
+            "requests": 53,
+            "first_start_offset_seconds": 0.8754369799280539,
+            "last_completion_gap_seconds": -0.1543235540157184,
+            "max_start_gap_seconds": 1.164657011977397
+          },
+          "1": {
+            "requests": 53,
+            "first_start_offset_seconds": 0.9336377179715782,
+            "last_completion_gap_seconds": -0.20773207501042634,
+            "max_start_gap_seconds": 1.2048591449856758
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 14,
+            "endpoints": true,
+            "max_gap_seconds": 5.380644508055411
+          },
+          "post_gc_heap_bytes": {
+            "samples": 2,
+            "endpoints": true,
+            "max_gap_seconds": 60.01103953097481
+          }
+        },
+        "combined_cpu_percent_one_core": 17.831952393486844,
+        "combined_cpu_percent_host": 0.8915976196743423,
+        "backend_rss_growth_bytes": 8192,
+        "ordinary_heap_growth_bytes": -6348648,
+        "retained_heap_growth_bytes": -6348648,
+        "retained_heap_late_trend": {
+          "duration_seconds": 60.01103953097481,
+          "range_bytes": 6348648,
+          "slope_bytes_per_minute": -6347480.113277959
+        },
+        "upstream_trace": {
+          "whole_run": {
+            "queries": 2833,
+            "evaluation_points": 426194,
+            "span_counts": {
+              "1800": 64,
+              "13": 32,
+              "300": 32,
+              "11": 2513,
+              "900": 32,
+              "3600": 48,
+              "12": 80,
+              "15": 16,
+              "16": 16
+            },
+            "errors": 1
+          },
+          "measured_phase": {
+            "queries": 928,
+            "evaluation_points": 18122,
+            "span_counts": {
+              "11": 912,
+              "12": 16
+            },
+            "errors": 0
+          },
+          "filter": "upstream completion monotonic time within resource endpoints; excludes controls/warm-up"
+        },
+        "request_work_breakdown": {
+          "method": "Request interval overlaps full-window upstream query completion; includes shared concurrent readers; overall warm quantiles include every request",
+          "first_cold_backend_reader_ms": 151.1512789875269,
+          "cold_limit": "Single first HTTP-reader observation excludes JSON encoding, Nginx and browser; cold replay distributions recorded separately",
+          "groups": {
+            "overlapping_full_range_query": {
+              "requests": 0,
+              "request_ms": null
+            },
+            "ordinary_or_completed_result_reuse": {
+              "requests": 106,
+              "request_ms": {
+                "p50": 138.872174,
+                "p95": 177.273697,
+                "p99": 191.640896
+              }
+            }
+          }
+        },
+        "browser_probe_deltas": {
+          "viewers": [
+            {
+              "historyParseCount": 52,
+              "historyParseMs": 355.49999964237213,
+              "plotClears": 260,
+              "longTasks": 9,
+              "longTaskMs": 4852,
+              "frames": 351,
+              "frameMs": 60030.999999999985,
+              "page_id": "1",
+              "mean_history_parse_ms": 6.836538454661002,
+              "plot_clears_per_parse": 5.0
+            },
+            {
+              "historyParseCount": 52,
+              "historyParseMs": 322.5000001192093,
+              "plotClears": 260,
+              "longTasks": 9,
+              "longTaskMs": 3822,
+              "frames": 355,
+              "frameMs": 60047.59999999999,
+              "page_id": "2",
+              "mean_history_parse_ms": 6.201923079215563,
+              "plot_clears_per_parse": 5.0
+            }
+          ],
+          "method": "Endpoint counter differences only; lifetime maxima include controls/warm-up and are not healthy-phase maxima",
+          "limits": "Canvas clear is not exact uPlot setData; native software-rendered frames include scheduled GC and are not an undisturbed frame-continuity benchmark"
+        }
+      },
+      "budgets": null,
+      "manifest_sha256": "629b59ea72480cdba1d810eb710c439e2fc5162f6bba0f27b74b34d1ab259b1d"
+    },
     {
       "relative_directory": "a3ac77357bfd599eeb413b9ecb6d7a4e73d48346/full-5-2-retry",
       "summary": {
@@ -55,6 +247,11 @@
             "final_acceptance": false
           },
           "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          },
           "deterministic_reference": {
             "path": "/tmp/starlink-224-followup/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/a3ac77357bfd599eeb413b9ecb6d7a4e73d48346/deterministic-reference.json",
             "sha256": "2ddae41a601375d96f7d830270186bd76db02300482560f054130e2f6271cd80",
@@ -84,6 +281,32 @@
           "p99": 5.335301
         },
         "observed_viewers": 2,
+        "request_coverage": {
+          "1": {
+            "requests": 113,
+            "first_start_offset_seconds": 2.35511441109702,
+            "last_completion_gap_seconds": 3.38112456491217,
+            "max_start_gap_seconds": 5.704169429955073
+          },
+          "2": {
+            "requests": 113,
+            "first_start_offset_seconds": 4.946260761003941,
+            "last_completion_gap_seconds": 1.7000396369257942,
+            "max_start_gap_seconds": 5.333228808012791
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 122,
+            "endpoints": true,
+            "max_gap_seconds": 5.486925620003603
+          },
+          "post_gc_heap_bytes": {
+            "samples": 3,
+            "endpoints": true,
+            "max_gap_seconds": 301.75444857007824
+          }
+        },
         "combined_cpu_percent_one_core": 15.16867694633635,
         "combined_cpu_percent_host": 0.7584338473168175,
         "backend_rss_growth_bytes": 7065600,
@@ -167,7 +390,7 @@
         }
       },
       "budgets": null,
-      "manifest_sha256": "6952229c40ceef65ae8b89f82c088fca05e98643175e1406e0f86f54a8123eb5"
+      "manifest_sha256": "41c7ee10a4e395affcf3bc53a04f02cf6f9925f65200aa300e2b72d086727909"
     },
     {
       "relative_directory": "a3ac77357bfd599eeb413b9ecb6d7a4e73d48346/incremental-1-2",
@@ -223,6 +446,11 @@
             "final_acceptance": false
           },
           "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          },
           "deterministic_reference": {
             "path": "/tmp/starlink-224-followup/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/a3ac77357bfd599eeb413b9ecb6d7a4e73d48346/deterministic-reference.json",
             "sha256": "2ddae41a601375d96f7d830270186bd76db02300482560f054130e2f6271cd80",
@@ -252,6 +480,32 @@
           "p99": 1.220559
         },
         "observed_viewers": 2,
+        "request_coverage": {
+          "2": {
+            "requests": 3137,
+            "first_start_offset_seconds": 0.1344523240113631,
+            "last_completion_gap_seconds": -0.32851692906115204,
+            "max_start_gap_seconds": 1.4299126339610666
+          },
+          "1": {
+            "requests": 3137,
+            "first_start_offset_seconds": 0.178752101957798,
+            "last_completion_gap_seconds": -0.26055736804846674,
+            "max_start_gap_seconds": 1.427668640972115
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 715,
+            "endpoints": true,
+            "max_gap_seconds": 5.555654329014942
+          },
+          "post_gc_heap_bytes": {
+            "samples": 13,
+            "endpoints": true,
+            "max_gap_seconds": 304.0787212079158
+          }
+        },
         "combined_cpu_percent_one_core": 18.977453667965122,
         "combined_cpu_percent_host": 0.9488726833982561,
         "backend_rss_growth_bytes": 1654784,
@@ -370,13 +624,13 @@
             "status": "passed",
             "value": 1654784,
             "unit": "bytes",
-            "reason": "After-warm-up growth must be <=16 MiB"
+            "reason": "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB"
           },
           "retained_heap_growth": {
             "status": "passed",
             "value": -3357072,
             "unit": "bytes",
-            "reason": "After-warm-up growth must be <=16 MiB"
+            "reason": "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB"
           },
           "sustained_duration": {
             "status": "passed",
@@ -400,7 +654,7 @@
             "status": "passed",
             "value": 2,
             "unit": "viewers",
-            "reason": "Measure each requested viewer directly"
+            "reason": "Each viewer must poll across the measured period; <=30s gaps allow responses and diagnostic pauses"
           },
           "http_errors": {
             "status": "passed",
@@ -452,7 +706,7 @@
           }
         }
       },
-      "manifest_sha256": "3b699e7f4f001ac13ba82cc1dc50d3a219a4939f484bcfa07e72ed0124903d1b"
+      "manifest_sha256": "a783726449c4f331c2598007e0cdc729079dd69e8e73b488c4901879325c6ad5"
     },
     {
       "relative_directory": "ae8397bf692a6ad0aad839ce3eb0d0745079f26f/full-5-1",
@@ -508,6 +762,11 @@
             "final_acceptance": false
           },
           "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          },
           "deterministic_reference": {
             "path": "/tmp/starlink-224-followup/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/ae8397bf692a6ad0aad839ce3eb0d0745079f26f/deterministic-reference.json",
             "sha256": "ceb9023093f591da14d30610ee5531a8d461598f726ccfa5d0cd8a1607d5095d",
@@ -537,6 +796,26 @@
           "p99": 5.423781
         },
         "observed_viewers": 1,
+        "request_coverage": {
+          "1": {
+            "requests": 113,
+            "first_start_offset_seconds": 1.0568594939541072,
+            "last_completion_gap_seconds": 1.2158044499810785,
+            "max_start_gap_seconds": 5.47911729500629
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 122,
+            "endpoints": true,
+            "max_gap_seconds": 5.124606917961501
+          },
+          "post_gc_heap_bytes": {
+            "samples": 3,
+            "endpoints": true,
+            "max_gap_seconds": 300.8760204339633
+          }
+        },
         "combined_cpu_percent_one_core": 9.374586707643624,
         "combined_cpu_percent_host": 0.4687293353821812,
         "backend_rss_growth_bytes": 180224,
@@ -568,10 +847,47 @@
             "errors": 0
           },
           "filter": "upstream completion monotonic time within resource endpoints; excludes controls/warm-up"
+        },
+        "request_work_breakdown": {
+          "method": "Request interval overlaps full-window upstream query completion; includes shared concurrent readers; overall warm quantiles include every request",
+          "first_cold_backend_reader_ms": 136.5693329134956,
+          "cold_limit": "Single first HTTP-reader observation excludes JSON encoding, Nginx and browser; cold replay distributions recorded separately",
+          "groups": {
+            "overlapping_full_range_query": {
+              "requests": 113,
+              "request_ms": {
+                "p50": 325.794806,
+                "p95": 400.620132,
+                "p99": 424.211081
+              }
+            },
+            "ordinary_or_completed_result_reuse": {
+              "requests": 0,
+              "request_ms": null
+            }
+          }
+        },
+        "browser_probe_deltas": {
+          "viewers": [
+            {
+              "historyParseCount": 113,
+              "historyParseMs": 786.0999999046326,
+              "plotClears": 565,
+              "longTasks": 20,
+              "longTaskMs": 3819,
+              "frames": 6819,
+              "frameMs": 600042.7,
+              "page_id": "1",
+              "mean_history_parse_ms": 6.956637167297633,
+              "plot_clears_per_parse": 5.0
+            }
+          ],
+          "method": "Endpoint counter differences only; lifetime maxima include controls/warm-up and are not healthy-phase maxima",
+          "limits": "Canvas clear is not exact uPlot setData; native software-rendered frames include scheduled GC and are not an undisturbed frame-continuity benchmark"
         }
       },
       "budgets": null,
-      "manifest_sha256": "ffb25e32c3a580b64ada6a376d420c5a879a18161b3edebf8ff0fdd233e8c14e"
+      "manifest_sha256": "8f64c4ca0d4a79ab629b01bb5a18b3362b0a53b9e87290cab7766a83e518cbf1"
     },
     {
       "relative_directory": "ae8397bf692a6ad0aad839ce3eb0d0745079f26f/incremental-1-1",
@@ -627,6 +943,11 @@
             "final_acceptance": false
           },
           "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          },
           "cleanup_audit": {
             "path": "/tmp/starlink-224-followup/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/ae8397bf692a6ad0aad839ce3eb0d0745079f26f/incremental-1-1/cleanup-audit.json",
             "sha256": "96fa9131cc62e0000dac39f481f3e5c3dcedb8bc5248e6b701bf3081bb74ce75",
@@ -662,6 +983,26 @@
           "p99": 1.208152
         },
         "observed_viewers": 1,
+        "request_coverage": {
+          "1": {
+            "requests": 3137,
+            "first_start_offset_seconds": 0.12749411899130791,
+            "last_completion_gap_seconds": -0.12694145902059972,
+            "max_start_gap_seconds": 1.5244684120407328
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 720,
+            "endpoints": true,
+            "max_gap_seconds": 5.141999879968353
+          },
+          "post_gc_heap_bytes": {
+            "samples": 13,
+            "endpoints": true,
+            "max_gap_seconds": 300.88863346201833
+          }
+        },
         "combined_cpu_percent_one_core": 13.399177401434716,
         "combined_cpu_percent_host": 0.6699588700717358,
         "backend_rss_growth_bytes": 1105920,
@@ -769,13 +1110,13 @@
             "status": "passed",
             "value": 1105920,
             "unit": "bytes",
-            "reason": "After-warm-up growth must be <=16 MiB"
+            "reason": "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB"
           },
           "retained_heap_growth": {
             "status": "passed",
             "value": 4550864,
             "unit": "bytes",
-            "reason": "After-warm-up growth must be <=16 MiB"
+            "reason": "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB"
           },
           "sustained_duration": {
             "status": "passed",
@@ -799,7 +1140,7 @@
             "status": "passed",
             "value": 1,
             "unit": "viewers",
-            "reason": "Measure each requested viewer directly"
+            "reason": "Each viewer must poll across the measured period; <=30s gaps allow responses and diagnostic pauses"
           },
           "http_errors": {
             "status": "passed",
@@ -851,7 +1192,7 @@
           }
         }
       },
-      "manifest_sha256": "9085908d6c3d7d406e08c455db2dbf90cbac3fba3426594ecbe0875ae952f326"
+      "manifest_sha256": "8aeccbef64f8b5aecd0147c6087f596c2efff882c72d5f219273ace1b8f0de31"
     },
     {
       "relative_directory": "ae8397bf692a6ad0aad839ce3eb0d0745079f26f/incremental-5-1",
@@ -907,6 +1248,11 @@
             "final_acceptance": false
           },
           "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          },
           "deterministic_reference": {
             "path": "/tmp/starlink-224-followup/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/ae8397bf692a6ad0aad839ce3eb0d0745079f26f/deterministic-reference.json",
             "sha256": "ceb9023093f591da14d30610ee5531a8d461598f726ccfa5d0cd8a1607d5095d",
@@ -936,6 +1282,26 @@
           "p99": 5.412093
         },
         "observed_viewers": 1,
+        "request_coverage": {
+          "1": {
+            "requests": 116,
+            "first_start_offset_seconds": 2.2948840260505676,
+            "last_completion_gap_seconds": 2.989361861953512,
+            "max_start_gap_seconds": 5.456806677975692
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 122,
+            "endpoints": true,
+            "max_gap_seconds": 5.145351593033411
+          },
+          "post_gc_heap_bytes": {
+            "samples": 3,
+            "endpoints": true,
+            "max_gap_seconds": 300.9295355490176
+          }
+        },
         "combined_cpu_percent_one_core": 5.538498386967712,
         "combined_cpu_percent_host": 0.2769249193483856,
         "backend_rss_growth_bytes": 270336,
@@ -997,6 +1363,24 @@
               }
             }
           }
+        },
+        "browser_probe_deltas": {
+          "viewers": [
+            {
+              "historyParseCount": 116,
+              "historyParseMs": 858.9999998807907,
+              "plotClears": 581,
+              "longTasks": 28,
+              "longTaskMs": 5394,
+              "frames": 5951,
+              "frameMs": 599976.0,
+              "page_id": "1",
+              "mean_history_parse_ms": 7.405172412765437,
+              "plot_clears_per_parse": 5.008620689655173
+            }
+          ],
+          "method": "Endpoint counter differences only; lifetime maxima include controls/warm-up and are not healthy-phase maxima",
+          "limits": "Canvas clear is not exact uPlot setData; native software-rendered frames include scheduled GC and are not an undisturbed frame-continuity benchmark"
         }
       },
       "budgets": {
@@ -1024,13 +1408,13 @@
             "status": "passed",
             "value": 270336,
             "unit": "bytes",
-            "reason": "After-warm-up growth must be <=16 MiB"
+            "reason": "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB"
           },
           "retained_heap_growth": {
             "status": "passed",
             "value": 330720,
             "unit": "bytes",
-            "reason": "After-warm-up growth must be <=16 MiB"
+            "reason": "Measured endpoints and scheduled memory samples required; growth must be <=16 MiB"
           },
           "sustained_duration": {
             "status": "incomplete",
@@ -1054,7 +1438,7 @@
             "status": "passed",
             "value": 1,
             "unit": "viewers",
-            "reason": "Measure each requested viewer directly"
+            "reason": "Each viewer must poll across the measured period; <=30s gaps allow responses and diagnostic pauses"
           },
           "http_errors": {
             "status": "passed",
@@ -1106,7 +1490,324 @@
           }
         }
       },
-      "manifest_sha256": "171bf8ccd5103c055cac0a22b1574a76b234639125d7491f85ec29aed2ff7e7e"
+      "manifest_sha256": "6818b7d4adcd599a9a39412b5f41d4f4f417ef6dea8b20f01c47a35e0a795173"
+    },
+    {
+      "relative_directory": "fb43bc63a57cbc947ef18c83b49df280712f86ea/default-native-2",
+      "summary": {
+        "metadata": {
+          "sha": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+          "images": [
+            "[starlink-224-backend:fb43bc63a57cbc947ef18c83b49df280712f86ea] sha256:dba3b5851afaea093959df47641f7386c2c72459f952ca2a442f3d64ef4326b7",
+            "[starlink-224-frontend-1:fb43bc63a57cbc947ef18c83b49df280712f86ea] sha256:1e18cdf091e5b81e22aa303a68df706ae8013bcda97710fef940ca0bafe9ad41",
+            "[prom/prometheus:v3.5.0] sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+          ],
+          "hardware": {
+            "host": "forge",
+            "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+            "logical_cpus": 20,
+            "memory_bytes": 65915523072
+          },
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "window_seconds": 1800,
+          "viewers": 2,
+          "cadence_seconds": 1,
+          "mode": "incremental",
+          "fixture": "seed-v1-and-public-simulation",
+          "gc_mode": "controlled",
+          "warmup_seconds": 20,
+          "resource_interval_seconds": 5,
+          "cleanup": "passed",
+          "behavior": {
+            "shared_subscription": "pending"
+          },
+          "upstream_work": "pending",
+          "browser_version": "153.0.8010.12",
+          "viewport": [
+            1920,
+            1080
+          ],
+          "dpr": 1,
+          "limitations": [
+            "Acceptance probes add counters and append-only I/O; cProfile is separate.",
+            "Synthetic historical density; public simulation current scrapes.",
+            "Configured delay is separate from actual request-start spacing.",
+            "Canvas clears are observed redraws, not an exact uPlot setData count."
+          ],
+          "phase": {
+            "status": "failed",
+            "final_acceptance": false
+          },
+          "errors": [
+            "page.evaluate: Target crashed "
+          ],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          }
+        },
+        "measured_duration_seconds": 0,
+        "max_resource_gap_seconds": null,
+        "resource_count": 0,
+        "request_count": 0,
+        "request_errors": 0,
+        "request_ms": null,
+        "request_start_spacing_seconds": null,
+        "observed_viewers": 0,
+        "request_coverage": {},
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 0,
+            "endpoints": false,
+            "max_gap_seconds": null
+          },
+          "post_gc_heap_bytes": {
+            "samples": 0,
+            "endpoints": false,
+            "max_gap_seconds": null
+          }
+        },
+        "combined_cpu_percent_one_core": null,
+        "combined_cpu_percent_host": null,
+        "backend_rss_growth_bytes": null,
+        "ordinary_heap_growth_bytes": null,
+        "retained_heap_growth_bytes": null,
+        "retained_heap_late_trend": null,
+        "upstream_trace": {
+          "whole_run": {
+            "queries": 928,
+            "evaluation_points": 388804,
+            "span_counts": {
+              "1800": 64,
+              "13": 32,
+              "11": 624,
+              "300": 32,
+              "900": 32,
+              "3600": 48,
+              "12": 80,
+              "15": 16
+            },
+            "errors": 0
+          },
+          "measured_phase": {
+            "queries": 0,
+            "evaluation_points": 0,
+            "span_counts": {},
+            "errors": 0
+          },
+          "filter": "upstream completion monotonic time within resource endpoints; excludes controls/warm-up"
+        },
+        "request_work_breakdown": {
+          "method": "Request interval overlaps full-window upstream query completion; includes shared concurrent readers; overall warm quantiles include every request",
+          "first_cold_backend_reader_ms": 148.8065510056913,
+          "cold_limit": "Single first HTTP-reader observation excludes JSON encoding, Nginx and browser; cold replay distributions recorded separately",
+          "groups": {
+            "overlapping_full_range_query": {
+              "requests": 0,
+              "request_ms": null
+            },
+            "ordinary_or_completed_result_reuse": {
+              "requests": 0,
+              "request_ms": null
+            }
+          }
+        }
+      },
+      "budgets": null,
+      "manifest_sha256": "957e675d9f224b3be654c79de3e80e68368cadb90ce7570d987c0b92133a88ad"
+    },
+    {
+      "relative_directory": "fb43bc63a57cbc947ef18c83b49df280712f86ea/default-native-2-retry",
+      "summary": {
+        "metadata": {
+          "sha": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+          "images": [
+            "[starlink-224-backend:fb43bc63a57cbc947ef18c83b49df280712f86ea] sha256:fb19060f5de22460e3385c47d5ffa89f63a7d799e144354f4c6200b9b85fcdc4",
+            "[starlink-224-frontend-1:fb43bc63a57cbc947ef18c83b49df280712f86ea] sha256:3e2b910dbea5b7524908f47e32580ffe26f233cc377e86578974c89e05ee663a",
+            "[prom/prometheus:v3.5.0] sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+          ],
+          "hardware": {
+            "host": "forge",
+            "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+            "logical_cpus": 20,
+            "memory_bytes": 65915523072
+          },
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "window_seconds": 1800,
+          "viewers": 2,
+          "cadence_seconds": 1,
+          "mode": "incremental",
+          "fixture": "seed-v1-and-public-simulation",
+          "gc_mode": "controlled",
+          "warmup_seconds": 20,
+          "resource_interval_seconds": 5,
+          "cleanup": "passed",
+          "behavior": {
+            "shared_subscription": "passed",
+            "motion": "passed",
+            "masking": "passed",
+            "lifecycle": "passed"
+          },
+          "upstream_work": "recorded",
+          "browser_version": "153.0.8010.12",
+          "viewport": [
+            1920,
+            1080
+          ],
+          "dpr": 1,
+          "limitations": [
+            "Acceptance probes add counters and append-only I/O; cProfile is separate.",
+            "Synthetic historical density; public simulation current scrapes.",
+            "Configured delay is separate from actual request-start spacing.",
+            "Canvas clears are observed redraws, not an exact uPlot setData count."
+          ],
+          "phase": {
+            "status": "measured",
+            "requested_seconds": 60,
+            "measured_seconds": 60.010047520976514,
+            "warmup_seconds": 20,
+            "final_acceptance": false
+          },
+          "errors": [],
+          "evaluation": {
+            "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+            "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+            "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+          }
+        },
+        "measured_duration_seconds": 60.010047520976514,
+        "max_resource_gap_seconds": 5.180558084975928,
+        "resource_count": 14,
+        "request_count": 106,
+        "request_errors": 0,
+        "request_ms": {
+          "p50": 134.637905,
+          "p95": 157.573057,
+          "p99": 194.804346
+        },
+        "request_start_spacing_seconds": {
+          "p50": 1.132873,
+          "p95": 1.156412,
+          "p99": 1.191876
+        },
+        "observed_viewers": 2,
+        "request_coverage": {
+          "2": {
+            "requests": 53,
+            "first_start_offset_seconds": 0.7201990929897875,
+            "last_completion_gap_seconds": 0.33199056796729565,
+            "max_start_gap_seconds": 1.1738187631126493
+          },
+          "1": {
+            "requests": 53,
+            "first_start_offset_seconds": 1.16579878795892,
+            "last_completion_gap_seconds": 0.28217628598213196,
+            "max_start_gap_seconds": 1.2075208449969068
+          }
+        },
+        "memory_coverage": {
+          "backend_rss_bytes": {
+            "samples": 14,
+            "endpoints": true,
+            "max_gap_seconds": 5.180558084975928
+          },
+          "post_gc_heap_bytes": {
+            "samples": 2,
+            "endpoints": true,
+            "max_gap_seconds": 60.010047520976514
+          }
+        },
+        "combined_cpu_percent_one_core": 18.38040870763255,
+        "combined_cpu_percent_host": 0.9190204353816276,
+        "backend_rss_growth_bytes": 20480,
+        "ordinary_heap_growth_bytes": 1451860,
+        "retained_heap_growth_bytes": 1451860,
+        "retained_heap_late_trend": {
+          "duration_seconds": 60.010047520976514,
+          "range_bytes": 1451860,
+          "slope_bytes_per_minute": 1451616.9141434215
+        },
+        "upstream_trace": {
+          "whole_run": {
+            "queries": 2785,
+            "evaluation_points": 425388,
+            "span_counts": {
+              "1800": 64,
+              "13": 32,
+              "11": 2385,
+              "300": 32,
+              "12": 160,
+              "900": 32,
+              "3600": 48,
+              "15": 16,
+              "16": 16
+            },
+            "errors": 1
+          },
+          "measured_phase": {
+            "queries": 944,
+            "evaluation_points": 18434,
+            "span_counts": {
+              "11": 928,
+              "12": 16
+            },
+            "errors": 0
+          },
+          "filter": "upstream completion monotonic time within resource endpoints; excludes controls/warm-up"
+        },
+        "request_work_breakdown": {
+          "method": "Request interval overlaps full-window upstream query completion; includes shared concurrent readers; overall warm quantiles include every request",
+          "first_cold_backend_reader_ms": 147.10576995275915,
+          "cold_limit": "Single first HTTP-reader observation excludes JSON encoding, Nginx and browser; cold replay distributions recorded separately",
+          "groups": {
+            "overlapping_full_range_query": {
+              "requests": 0,
+              "request_ms": null
+            },
+            "ordinary_or_completed_result_reuse": {
+              "requests": 106,
+              "request_ms": {
+                "p50": 134.637905,
+                "p95": 157.573057,
+                "p99": 194.804346
+              }
+            }
+          }
+        },
+        "browser_probe_deltas": {
+          "viewers": [
+            {
+              "historyParseCount": 54,
+              "historyParseMs": 361.100000500679,
+              "plotClears": 270,
+              "longTasks": 9,
+              "longTaskMs": 4354,
+              "frames": 353,
+              "frameMs": 60014.299999999974,
+              "page_id": "1",
+              "mean_history_parse_ms": 6.687037046308871,
+              "plot_clears_per_parse": 5.0
+            },
+            {
+              "historyParseCount": 53,
+              "historyParseMs": 330.900000333786,
+              "plotClears": 265,
+              "longTasks": 7,
+              "longTaskMs": 3310,
+              "frames": 357,
+              "frameMs": 59997.60000000002,
+              "page_id": "2",
+              "mean_history_parse_ms": 6.243396232712944,
+              "plot_clears_per_parse": 5.0
+            }
+          ],
+          "method": "Endpoint counter differences only; lifetime maxima include controls/warm-up and are not healthy-phase maxima",
+          "limits": "Canvas clear is not exact uPlot setData; native software-rendered frames include scheduled GC and are not an undisturbed frame-continuity benchmark"
+        }
+      },
+      "budgets": null,
+      "manifest_sha256": "1a0aee9fef8b0dd9ed25549f1202f4f6e487b1438bcf89e20f331b2b49205e0f"
     }
   ]
 }

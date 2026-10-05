@@ -281,3 +281,15 @@ roughly the right quarter. Backend snapshots remain full-sized at both
 endpoints, but the probe establishes parse/redraw activity and does not measure
 plotted point/time coverage. That appearance remains unexplained; this evidence
 does not establish full-window rendered density or an issue 211 root cause.
+
+The corrected evaluator at `fb43bc63a57cbc947ef18c83b49df280712f86ea`
+re-evaluates both original hours: all seventeen gates still pass. Each viewer
+has 3,137 requests, maximum start gaps 1.524/1.430/1.428 seconds, and measured
+endpoint coverage. RSS covers all 720/715 resource rows; thirteen post-GC rows
+span each hour with maximum gaps 300.889/304.079 seconds. Backend snapshots
+contain 46,826 points at both endpoints. Fresh two-viewer controls at that
+candidate pass after a separate preserved pre-warm native CFI/seccomp failure;
+the unchanged retry measures 60.010 seconds with zero errors and checked
+cleanup. Its omitted-argument default build again matches the served explicit-1
+assets. The complete acceptance-tool suite passes 104 tests. Product sources are
+unchanged by the review fixes; final PR CI verifies the delivered head.
