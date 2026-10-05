@@ -9,11 +9,12 @@ from filelock import FileLock
 
 @dataclass(frozen=True)
 class OverviewLinkSettings:
-    """Shared visibility preferences for the Overview data links and experimental orbital view."""
+    """Shared visibility preferences for Overview map layers."""
 
     starshield_link_enabled: bool = True
     x_band_link_enabled: bool = True
     orbital_traffic_enabled: bool = False
+    aircraft_history_enabled: bool = True
 
 
 _SETTING_FIELDS = frozenset(OverviewLinkSettings.__dataclass_fields__)

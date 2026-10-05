@@ -33,7 +33,7 @@ const sections = [
     value: 'traffic',
     label: 'Network Traffic',
     icon: Radio,
-    description: 'Network data links and traffic paths shown on Overview.',
+    description: 'Map layers and network traffic paths shown on Overview.',
   },
   {
     value: 'aircraft',

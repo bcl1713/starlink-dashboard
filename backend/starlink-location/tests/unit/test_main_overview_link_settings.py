@@ -31,12 +31,14 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
     }
     with TestClient(main.app) as client:
         assert client.get(URL).json() == {
             "starshield_link_enabled": True,
             "x_band_link_enabled": True,
             "orbital_traffic_enabled": False,
+            "aircraft_history_enabled": True,
         }
         assert (
             main.app.state.overview_link_settings_store

@@ -416,6 +416,10 @@ export function OverviewPage() {
     isLoading: isLoadingActiveXLink,
     error: activeXLinkError,
   } = useActiveXLink();
+  const showAircraftHistory =
+    (overviewLinkSettings?.aircraft_history_enabled ?? true) &&
+    aircraftHistoryPoints.length >= 2;
+
   const aircraftPosition = projectAircraftPosition(status ?? {});
   const aircraftScenePosition = projectAircraftScenePosition(status);
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
@@ -831,7 +835,7 @@ export function OverviewPage() {
               collapsible={layout.mode !== 'desktop'}
               aircraft={Boolean(aircraftPosition)}
               route={hasRenderableRoute}
-              history={aircraftHistoryPoints.length >= 2}
+              history={showAircraftHistory}
               groundEntryPoint={Boolean(groundEntryPoint)}
               satellites={showSprites}
               adsb={adsb.contacts.length > 0}
@@ -998,7 +1002,7 @@ export function OverviewPage() {
                 globeOccluder={globeOccluder}
               />
             ))}
-            {aircraftHistoryPoints.length >= 2 && (
+            {showAircraftHistory && (
               <AnimatedFlowLine
                 points={aircraftHistoryPoints}
                 depthWrite={false}

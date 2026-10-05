@@ -4,6 +4,7 @@ import type { CatalogEnvelope, OrbitalSnapshot } from './types';
 import { referenceOmm } from './test-fixtures';
 
 const enabled = {
+  aircraft_history_enabled: true,
   orbital_traffic_enabled: true,
   starshield_link_enabled: true,
   x_band_link_enabled: false,

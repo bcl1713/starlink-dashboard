@@ -96,6 +96,7 @@ function payload(endpoint: string) {
       starshield_link_enabled: revision === 1,
       x_band_link_enabled: true,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     };
   if (endpoint === '/api/satellites')
     return [

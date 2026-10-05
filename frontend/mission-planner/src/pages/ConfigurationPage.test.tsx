@@ -73,6 +73,7 @@ vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
       starshield_link_enabled: false,
       x_band_link_enabled: true,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     },
   }),
 }));

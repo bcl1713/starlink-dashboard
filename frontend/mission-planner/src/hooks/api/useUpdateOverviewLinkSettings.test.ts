@@ -15,11 +15,13 @@ const original = {
   starshield_link_enabled: true,
   x_band_link_enabled: true,
   orbital_traffic_enabled: true,
+  aircraft_history_enabled: true,
 };
 const saved = {
   starshield_link_enabled: false,
   x_band_link_enabled: true,
   orbital_traffic_enabled: false,
+  aircraft_history_enabled: true,
 };
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -144,6 +146,7 @@ describe('useUpdateOverviewLinkSettings', () => {
         starshield_link_enabled: false,
         x_band_link_enabled: false,
         orbital_traffic_enabled: false,
+        aircraft_history_enabled: true,
       };
       vi.mocked(apiClient.put).mockResolvedValueOnce({ data: bothOff });
       await act(async () => {
@@ -165,6 +168,7 @@ describe('useUpdateOverviewLinkSettings', () => {
           starshield_link_enabled: false,
           x_band_link_enabled: false,
           orbital_traffic_enabled: false,
+          aircraft_history_enabled: true,
         },
       });
     vi.mocked(apiClient.get)
@@ -175,6 +179,7 @@ describe('useUpdateOverviewLinkSettings', () => {
           starshield_link_enabled: false,
           x_band_link_enabled: false,
           orbital_traffic_enabled: false,
+          aircraft_history_enabled: true,
         },
       });
     const viewer = renderHook(useOverviewLinkSettings, { wrapper });
@@ -210,6 +215,7 @@ describe('useUpdateOverviewLinkSettings', () => {
       starshield_link_enabled: false,
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
+      aircraft_history_enabled: true,
     });
   });
 });
