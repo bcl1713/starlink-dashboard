@@ -261,6 +261,8 @@ export function OverviewAdsbLayer({
             )}
             occlude={[globeOccluder]}
             zIndexRange={[0, 0]}
+            style={{ pointerEvents: 'none' }}
+            wrapperClass="adsb-label-wrapper"
           >
             <span
               data-adsb-label={c.hex}

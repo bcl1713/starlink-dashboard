@@ -214,3 +214,34 @@ actual browser state. Browser policy can reject remote entry; follow the message
 control, then use Escape or its exit control to leave. No permission changes or
 special browser flags are required. A timeout cannot cancel a native request
 already issued; actual fullscreen changes remain authoritative.
+
+## Shared ADS-B aircraft settings
+
+The optional aircraft layer defaults off. **Military + included** combines the
+military feed with saved exact ICAO hexes; **Included only** acquires only those
+hexes. Exclusion always wins, including overlap and the own aircraft's hex.
+Explicit inclusion permits civilian/unknown classifications and bypasses the
+background callsign filter. Callsign substrings match case-insensitively with
+OR; an empty filter admits all military traffic. Lists preserve six digits and
+zeroes.
+
+Configuration's table contains all global eligible unexpired contacts, including
+positions behind Earth or outside Overview's camera. Include/Exclude acts on a
+stable hex. Separate saved-list editors retain unavailable/expired entries and
+conflicts, and remote polling preserves unrelated unsaved editor text. Controls
+wait for backend confirmation; failed saves keep confirmed state and show
+errors.
+
+Settings persist across service restart independently of missions. One backend
+scheduler acquires every 15 seconds, with bounded individual concurrency and
+independent source backoff. Configuration displays source errors and
+last-success information. Visible pages poll every five seconds and refresh on
+focus; hidden pages catch up on return. Retained observations become Stale at 30
+seconds and expire at 120 seconds even through failures or repeated payloads.
+Browser receipt never renews a position. Live contacts start empty after backend
+restart.
+
+Aircraft data: [adsb.lol](https://adsb.lol/),
+[ODbL license](https://opendatacommons.org/licenses/odbl/1-0/). Review provider
+usage before broad enablement. See the
+[API reference](../api/endpoints/overview-adsb.md).

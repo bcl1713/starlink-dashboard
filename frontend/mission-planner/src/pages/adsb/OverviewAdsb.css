@@ -1,3 +1,6 @@
+.adsb-label-wrapper {
+  pointer-events: none !important;
+}
 .adsb-map-label {
   display: block;
   max-width: 220px;
@@ -14,13 +17,13 @@
   border-style: dashed;
 }
 .adsb-details-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 40;
   background: #0009;
 }
 .adsb-details {
-  position: absolute;
+  position: fixed;
   z-index: 41;
   left: 50%;
   top: 50%;

@@ -47,6 +47,7 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     links: {
       starshield_link_enabled: true,
       x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
     } as OverviewLinkSettings,
     positionAvailable: true,
     activeLeg: null as 'leg-a' | 'leg-b' | null,
@@ -132,7 +133,23 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
         : state.activeLeg === 'leg-b'
           ? fixtureRoutes[1]
           : null;
-    if (endpoint === '/api/overview-clocks/settings') {
+    if (endpoint === '/api/overview-adsb/settings') {
+      json = {
+        enabled: false,
+        mode: 'military_and_included',
+        include_hexes: [],
+        exclude_hexes: [],
+        callsign_substrings: [],
+        revision: 0,
+      };
+    } else if (endpoint === '/api/overview-adsb/traffic') {
+      json = {
+        settings_revision: 0,
+        generated_at_ms: Date.now(),
+        contacts: [],
+        sources: [],
+      };
+    } else if (endpoint === '/api/overview-clocks/settings') {
       if (method === 'PUT') state.clocks = request.postDataJSON();
       json = state.clocks;
     } else if (endpoint === '/api/overview-history/settings') {
