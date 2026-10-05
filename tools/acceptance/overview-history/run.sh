@@ -31,6 +31,7 @@ import socket
 import sys
 for port in (18224, 15224, 19224):
     with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             listener.bind(('127.0.0.1', port))
         except OSError as error:
@@ -75,6 +76,7 @@ cleanup() {
 import socket
 for port in (18224,15224,19224):
     with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(('127.0.0.1', port))
 print('Owned project containers/volumes/listeners absent.')
 PY

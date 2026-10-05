@@ -58,6 +58,7 @@ def test_refuses_dirty_tracked_build(checkout):
 @pytest.mark.parametrize("port", [15224, 18224, 19224])
 def test_refuses_occupied_loopback_port(checkout, port):
     with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(("127.0.0.1", port))
         listener.listen()
         result = invoke(checkout)
@@ -75,6 +76,71 @@ def test_refuses_existing_project_before_build(checkout, tmp_path):
     result = invoke(checkout, env)
     assert result.returncode != 0
     assert "Existing starlink-224-history" in result.stderr
+
+
+def test_finished_tcp_connection_is_not_an_occupied_listener(checkout, tmp_path):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    docker = fake / "docker"
+    docker.write_text("#!/bin/sh\nexit 0\n")
+    docker.chmod(0o755)
+    env = {**os.environ, "PATH": f"{fake}:{os.environ['PATH']}"}
+    # A server actively closing its last connection leaves TIME_WAIT, even
+    # though the listener and process are gone. Real live listeners must still
+    # be rejected by the separate occupied-port controls above.
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 18224))
+        listener.listen()
+        with socket.create_connection(("127.0.0.1", 18224)) as client:
+            peer, _ = listener.accept()
+            with peer:
+                peer.shutdown(socket.SHUT_RDWR)
+            assert client.recv(1) == b""
+    result = invoke(checkout, env)
+    assert result.returncode == 0, result.stderr
+
+
+def test_cleanup_accepts_closed_connection_but_retains_inventory(checkout, tmp_path):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    docker = fake / "docker"
+    docker.write_text("""#!/usr/bin/env python3
+import socket, sys
+if 'down' in sys.argv:
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(('127.0.0.1', 18224))
+        listener.listen()
+        with socket.create_connection(('127.0.0.1', 18224)) as client:
+            peer, _ = listener.accept()
+            with peer:
+                peer.shutdown(socket.SHUT_RDWR)
+            assert client.recv(1) == b''
+""")
+    docker.chmod(0o755)
+    curl = fake / "curl"
+    curl.write_text("#!/bin/sh\nprintf '{}\\n'\n")
+    curl.chmod(0o755)
+    profile_python = fake / "profile-python"
+    profile_python.write_text("""#!/usr/bin/env python3
+import sys
+from pathlib import Path
+if '--output' in sys.argv:
+    Path(sys.argv[sys.argv.index('--output') + 1]).write_text('# EOF\\n')
+""")
+    profile_python.chmod(0o755)
+    output = tmp_path / "evidence"
+    env = {
+        **os.environ,
+        "PATH": f"{fake}:{os.environ['PATH']}",
+        "OVERVIEW_PROFILE_OUTPUT": str(output),
+        "OVERVIEW_PROFILE_PYTHON": str(profile_python),
+    }
+    result = invoke(checkout, env, "--smoke")
+    assert (output / "cleanup.log").exists(), result.stderr
+    assert result.returncode == 0, (output / "cleanup.log").read_text()
+    assert "containers/volumes/listeners absent" in (output / "cleanup.log").read_text()
 
 
 def test_build_failure_keeps_candidate_provenance(checkout, tmp_path):
