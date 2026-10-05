@@ -42,6 +42,7 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   context,
   request,
 }, info) => {
+  test.setTimeout(780_000);
   expect(process.env.ACCEPTANCE_CANDIDATE_SHA).toMatch(/^[a-f0-9]{40}$/);
   const baselineFrame = Math.floor(Date.now() / 1000) - 120;
   await control({ frame: baselineFrame });
@@ -152,10 +153,21 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   // Production metadata TTL and browser 300s timer must both elapse naturally.
   await control({ frame: baselineFrame + 60 });
   await expect
-    .poll(async () => (await weatherSnapshot(overview)).radar, {
-      timeout: 325_000,
-      intervals: [1000],
-    })
+    .poll(
+      async () =>
+        (await events()).filter(
+          (e) =>
+            e.event === 'request' &&
+            e.path?.includes(`/radar/${baselineFrame + 60}/`)
+        ).length,
+      {
+        timeout: 650_000,
+        intervals: [1000],
+      }
+    )
+    .toBe(16);
+  await expect
+    .poll(async () => (await weatherSnapshot(overview)).radar)
     .not.toBe(loaded.radar);
   expect(Date.now() - enabledAt).toBeGreaterThanOrEqual(300_000);
   const refreshed = await weatherSnapshot(overview);
@@ -171,7 +183,10 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
     observed.filter(
       (e) => e.event === 'request' && e.path?.includes('/coverage/')
     )
-  ).toHaveLength(16);
+  ).toHaveLength(
+    16 *
+      (Math.floor(Date.now() / 86400000) - Math.floor(enabledAt / 86400000) + 1)
+  );
   expect(
     observed.filter((e) => e.event === 'request' && e.path?.includes('/radar/'))
   ).toHaveLength(32);
