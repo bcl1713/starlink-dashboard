@@ -51,9 +51,14 @@ test('saved aircraft history visibility reaches an open Overview through product
       historyReads.push(Date.now());
   });
   await overview.goto('/overview');
-  await expect(
-    overview.getByText('Track history', { exact: true })
-  ).toBeVisible({ timeout: 90_000 });
+  const historyEntry = overview.getByText('Track history', { exact: true });
+  await expect(historyEntry).toHaveCount(1, { timeout: 90_000 });
+  const legendToggle = overview.getByRole('button', {
+    name: 'Legend',
+    exact: true,
+  });
+  if (await legendToggle.isVisible()) await legendToggle.click();
+  await expect(historyEntry).toBeVisible();
   await expect
     .poll(() => renderedHistoryPoints(overview))
     .toBeGreaterThanOrEqual(2);
@@ -129,9 +134,9 @@ test('saved aircraft history visibility reaches an open Overview through product
   ).toBe(false);
   await toggle.click();
   await expect(toggle).toBeChecked();
-  await expect(
-    overview.getByText('Track history', { exact: true })
-  ).toBeVisible({ timeout: 10_000 });
+  await expect(historyEntry).toHaveCount(1, { timeout: 10_000 });
+  if (await legendToggle.isVisible()) await legendToggle.click();
+  await expect(historyEntry).toBeVisible();
   await expect
     .poll(() => renderedHistoryPoints(overview))
     .toBeGreaterThanOrEqual(2);
