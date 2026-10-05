@@ -109,7 +109,13 @@ query bounds/points, errors/cancellations and read/request timing without
 logging telemetry payloads or retaining unbounded request lists.
 
 CLI:
-`python tools/profile_overview_history.py --prometheus-url URL --end E --window W --cadence {1,5} --mode {full,incremental} --samples N --output PATH`.
+
+```sh
+python tools/profile_overview_history.py --prometheus-url URL \
+  --end E --window W --cadence {1,5} --mode {full,incremental} \
+  --samples N --output PATH
+```
+
 Replay identical historical endpoints through real httpx, with two sequential
 readers. Save cold/warm timings, query bounds/count/points, diagnostic cProfile
 and JSON encoding time separately.
@@ -151,8 +157,13 @@ and JSON encoding time separately.
 `tools/tests/test_overview_history_browser_contract.py`. Retain existing
 `OverviewMetricHistoryPanel.test.tsx` and `useOverviewHistory.test.ts` controls.
 
-**Interfaces:** Journey arguments are
-`--session CDP_URL --origin LOOPBACK_URL --artifacts DIR --cadence {1,5} --viewers {1,2} --window SECONDS --warmup-seconds 300 --duration-seconds N`.
+**Interfaces:** Journey arguments are:
+
+```text
+--session CDP_URL --origin LOOPBACK_URL --artifacts DIR --cadence {1,5}
+--viewers {1,2} --window SECONDS --warmup-seconds 300 --duration-seconds N
+```
+
 Use locked Playwright and the established platform-owned browser lifecycle. Emit
 append-only request timing, API errors, ordinary/post-GC heap, long-task
 summaries, process CPU/RSS and behavior observations.

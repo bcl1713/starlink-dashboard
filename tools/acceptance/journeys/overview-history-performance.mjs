@@ -500,9 +500,11 @@ async function run(options) {
         const frames = resolve(output, "video-frames");
         mkdirSync(frames, { recursive: true });
         const began = clock();
-        for (let frame = 0; frame < 60; frame++) {
+        for (let frame = 0; frame < 20; frame++) {
           await page.screenshot({
-            path: resolve(frames, `${String(frame).padStart(3, "0")}.png`),
+            path: resolve(frames, `${String(frame).padStart(3, "0")}.jpg`),
+            type: "jpeg",
+            quality: 75,
           });
           event({ kind: "video_frame", frame });
           await sleep(200);
