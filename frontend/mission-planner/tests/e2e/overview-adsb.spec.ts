@@ -152,13 +152,23 @@ test('original observation age survives failures, repeated replies and foregroun
   await expect(label).toHaveCount(0);
   await page.waitForResponse('**/api/overview-adsb/traffic');
   await expect(label).toHaveCount(0);
+  const returning = page.waitForResponse(
+    async (response) =>
+      response.url().endsWith('/api/overview-adsb/traffic') &&
+      response.status() === 200 &&
+      (await response.json()).contacts.some(
+        (contact: { position_observed_at_ms: number }) =>
+          contact.position_observed_at_ms === now + 130000
+      )
+  );
   fixture.setContacts([
     freshContact({
       position_observed_at_ms: now + 130000,
       acquired_at_ms: now + 130000,
     }),
   ]);
-  await expect(label).toBeVisible({ timeout: 5500 });
+  await returning;
+  await expect(label).toBeVisible();
   await expect(label).not.toContainText('Stale');
   await page.goto('/configuration');
   await expect(page.getByLabel('Included ICAO hexes')).toHaveValue('00AB12');

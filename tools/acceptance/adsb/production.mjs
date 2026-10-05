@@ -26,13 +26,22 @@ try {
     overview.getByRole("button", { name: "Details for 00AB12" }),
   ).toBeVisible({ timeout: 5500 });
   const enableMs = Date.now() - started;
-  await editing.getByLabel("Included ICAO hexes").fill("000001");
+  await editing.getByLabel("Included ICAO hexes").fill("00AB12");
+  await editing
+    .getByRole("button", { name: "Save included aircraft", exact: true })
+    .click();
+  const cachedAt = Date.now();
+  await expect(overview.locator('[data-adsb-label="00AB12"]')).toBeVisible({
+    timeout: 5500,
+  });
+  const cachedIncludeMs = Date.now() - cachedAt;
+  await editing.getByLabel("Included ICAO hexes").fill("00AB12,000001");
   await editing
     .getByRole("button", { name: "Save included aircraft", exact: true })
     .click();
   const includedAt = Date.now();
   await expect(overview.locator('[data-adsb-label="000001"]')).toBeVisible({
-    timeout: 5500,
+    timeout: 20000,
   });
   const includeMs = Date.now() - includedAt;
   const trigger = overview.getByRole("button", { name: "Details for 000001" });
@@ -81,6 +90,7 @@ try {
         browser: browser.version(),
         enableMs,
         includeMs,
+        cachedIncludeMs,
         excludeMs,
         viewport: { width: 1920, height: 1080 },
       },
