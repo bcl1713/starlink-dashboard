@@ -15,6 +15,7 @@ import {
   renderedRoutePoints,
 } from './overview-route-probe';
 import { projectRouteArc } from '../../../src/pages/globe-route-projection';
+import { verifyRunLaptopFullscreen } from './simulation-run-laptop';
 import { sampleRunMotion } from './simulation-run-motion-probe';
 import { ROUTE_OVERLAY_RADIUS } from '../../../src/pages/globe-render-radii';
 export async function runTargetJourney(
@@ -142,28 +143,7 @@ export async function runTargetJourney(
     await overview.screenshot({
       path: info.outputPath('running-fullscreen.png'),
     });
-    for (const size of [
-      { width: 1366, height: 768 },
-      { width: 1440, height: 900 },
-    ]) {
-      await overview.setViewportSize(size);
-      await expect(overview.locator('.overview-page')).toHaveAttribute(
-        'data-layout',
-        'landscape'
-      );
-      await expect
-        .poll(() =>
-          overview.evaluate(() => {
-            const page = document.querySelector('.overview-page')!;
-            return page.scrollHeight <= page.clientHeight + 1;
-          })
-        )
-        .toBe(true);
-      await overview.screenshot({
-        path: info.outputPath(`running-fullscreen-${size.width}.png`),
-      });
-    }
-    await overview.setViewportSize({ width: 1920, height: 1080 });
+    await verifyRunLaptopFullscreen(browser, info);
     const final = await finishRun(request, seed),
       completedAt = performance.now();
     await expect(overview.getByLabel('Simulation clock')).toHaveCount(0, {
