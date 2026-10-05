@@ -96,10 +96,7 @@
 .overview-clock-simulation-label {
   color: #38bdf8;
   font-size: 0.75rem;
-  margin: 0 0 4px;
-}
-.overview-metrics-overlays .simulation-run-panel {
-  margin-bottom: 8px;
+  margin: 6px 0 0;
 }
 .overview-page .operational-clock {
   padding: 6px;
@@ -545,4 +542,8 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.overview-page[data-layout='landscape'][data-paced-running='true'] {
+  grid-template-columns: minmax(0, 1fr);
 }

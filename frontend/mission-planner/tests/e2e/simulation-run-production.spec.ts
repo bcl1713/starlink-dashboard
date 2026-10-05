@@ -88,9 +88,10 @@ test('cancel and switch are truthful and restart fixture stays running', async (
       await request.post(`/api/v2/missions/${seed.missionId}/legs/deactivate`)
     ).ok()
   ).toBeTruthy();
-  await expect(page.getByLabel('Simulation run')).toContainText('Cancelled', {
-    timeout: 3000,
-  });
+  await expect
+    .poll(async () => (await readRun(request)).state)
+    .toBe('cancelled');
+  await expect(page.getByLabel('Simulation run')).toHaveCount(0);
   await expect(page.getByLabel('Overview metric history')).toBeVisible();
   await page.screenshot({ path: info.outputPath('cancel-restored.png') });
   await startSimulation(request, seed, { mode: 'multiplier', multiplier: 1 });

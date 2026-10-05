@@ -8,6 +8,45 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+it('advances accelerated time on display frames between server responses and freezes on failure', () => {
+  let monotonic = 0;
+  let frame: FrameRequestCallback | undefined;
+  vi.spyOn(performance, 'now').mockImplementation(() => monotonic);
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frame = callback;
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {
+    frame = undefined;
+  });
+  const status = parseSimulationRun(runningStatus());
+  const { result, rerender, unmount } = renderHook(
+    ({ failed }) => useSimulationClock(status, 0, failed, true),
+    { initialProps: { failed: false } }
+  );
+  const start = result.current.missionNowMs;
+  for (const elapsed of [16, 32, 48]) {
+    act(() => {
+      monotonic = elapsed;
+      const callback = frame;
+      frame = undefined;
+      callback?.(elapsed);
+    });
+    expect(result.current.missionNowMs).toBe(start + elapsed * 10);
+  }
+  rerender({ failed: true });
+  const frozen = result.current.missionNowMs;
+  act(() => {
+    monotonic = 500;
+    frame?.(500);
+  });
+  expect(result.current.missionNowMs).toBe(frozen);
+  expect(result.current.stale).toBe(true);
+  unmount();
+  expect(frame).toBeUndefined();
 });
 it('does not renew a producer observation with repeated reads after backward server UTC', () => {
   vi.useFakeTimers();

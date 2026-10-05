@@ -74,6 +74,7 @@ export function useOverviewLayout(
         clockHeight,
         overlayHeight,
         overflow: flowLatch.current.required,
+        fullscreen,
       });
       const current = page.dataset.layout;
       if (candidate === 'desktop' && current === 'desktop' && contentReady) {
@@ -158,12 +159,15 @@ export function useOverviewLayout(
           ? 360
           : (page.querySelector<HTMLElement>('.overview-satellite-overlays')
               ?.offsetWidth ?? 144) + 24;
+      const leftWidth = page.querySelector('.overview-metrics-overlays')
+        ? 480
+        : 20;
       let safeRect =
         mode === 'desktop'
           ? {
-              x: 480,
+              x: leftWidth,
               y: 136,
-              width: Math.max(1, stageWidth - 840),
+              width: Math.max(1, stageWidth - leftWidth - 360),
               height: Math.max(1, stageHeight - overlayHeight - 156),
             }
           : {
@@ -190,8 +194,7 @@ export function useOverviewLayout(
         const lower = page
           .querySelector('.overview-map-overlays')
           ?.getBoundingClientRect();
-        const x =
-          (metrics?.right ?? stageBounds.left + 460) - stageBounds.left + 20;
+        const x = (metrics?.right ?? stageBounds.left) - stageBounds.left + 20;
         const y =
           Math.max(
             clock?.getBoundingClientRect().bottom ?? stageBounds.top + 116,

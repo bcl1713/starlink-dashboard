@@ -31,11 +31,22 @@ const state = vi.hoisted(() => ({
   historyReads: 0,
   routeReads: 0,
   geometry: undefined as unknown,
+  solarTimes: [] as number[],
 }));
 vi.mock('@/hooks/api/useSimulationRun', () => ({
   useSimulationRun: () => ({ data: state.run, isError: state.failed }),
   useSimulationRunRoute: () => ({ data: state.geometry }),
 }));
+vi.mock('./solar-position', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./solar-position')>();
+  return {
+    ...original,
+    sunLightPosition: (date: Date, distance: number) => {
+      state.solarTimes.push(date.getTime());
+      return original.sunLightPosition(date, distance);
+    },
+  };
+});
 vi.mock('@react-three/fiber', () => ({
   Canvas: function Canvas() {
     useEffect(() => {
@@ -109,6 +120,7 @@ beforeEach(() => {
   state.historyReads = 0;
   state.routeReads = 0;
   state.geometry = undefined;
+  state.solarTimes = [];
 });
 function mount() {
   const client = new QueryClient({
@@ -132,7 +144,7 @@ it('hides all five network cards and header while retaining Canvas and history',
   view.rerenderOverview();
   expect(screen.queryByLabelText('Overview metric history')).toBeNull();
   expect(screen.queryByLabelText('Network history context')).toBeNull();
-  expect(screen.getByLabelText('Simulation run')).toBeVisible();
+  expect(screen.queryByLabelText('Simulation run')).toBeNull();
   expect(screen.getByText('SIMULATED TIME')).toBeVisible();
   expect(screen.getByTestId('canvas')).toBe(canvas);
   expect(state.mounts).toBe(1);
@@ -145,7 +157,11 @@ it('hides all five network cards and header while retaining Canvas and history',
   state.failed = false;
   view.rerenderOverview();
   expect(screen.getByLabelText('Overview metric history')).toBeVisible();
+  expect(screen.queryByLabelText('Simulation run')).toBeNull();
   expect(screen.queryByText('SIMULATED TIME')).toBeNull();
+  expect(state.solarTimes.at(-1)).toBe(
+    Date.parse(state.run.run!.simulation_time)
+  );
   expect(screen.getByTestId('canvas')).toBe(canvas);
   expect(state.mounts).toBe(1);
 });
@@ -163,3 +179,19 @@ it.each(['cancelled', 'failed', 'idle'] as const)(
     expect(state.mounts).toBe(1);
   }
 );
+
+it('places simulated time below the clocks and lights the globe at mission time', () => {
+  state.run = runningStatus();
+  mount();
+  const clocks = screen
+    .getAllByLabelText('Operational clocks')
+    .find((node) => node.tagName === 'ASIDE')!;
+  const label = screen.getByText('SIMULATED TIME');
+  expect(clocks.contains(label)).toBe(false);
+  expect(
+    clocks.compareDocumentPosition(label) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy();
+  expect(state.solarTimes.at(-1)).toBe(
+    Date.parse(state.run.run!.simulation_time)
+  );
+});

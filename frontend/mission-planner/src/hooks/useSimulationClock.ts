@@ -9,7 +9,8 @@ import {
 export function useSimulationClock(
   status: SimulationRunStatus | undefined,
   realNowMs: number,
-  refreshFailed: boolean
+  refreshFailed: boolean,
+  animate = false
 ) {
   const [clock, setClock] = useState(() => ({
     status,
@@ -48,7 +49,8 @@ export function useSimulationClock(
     });
   }
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    let frame = 0;
+    const tick = () => {
       const now = performance.now();
       setClock((previous) => ({
         ...previous,
@@ -62,9 +64,17 @@ export function useSimulationClock(
           previous.display
         ),
       }));
-    }, 250);
+      if (animate && status?.state === 'running' && !refreshFailed) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    };
+    if (animate && status?.state === 'running') {
+      if (!refreshFailed) frame = window.requestAnimationFrame(tick);
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const timer = window.setInterval(tick, 250);
     return () => window.clearInterval(timer);
-  }, [refreshFailed]);
+  }, [refreshFailed, animate, status?.state]);
   return {
     missionNowMs: status?.state === 'running' ? clock.display : realNowMs,
     stale: Boolean(

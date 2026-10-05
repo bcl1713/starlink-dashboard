@@ -16,7 +16,6 @@ describe('OverviewPage generated POI legend and overlay layout contracts', () =>
     expect(pageSource.match(/\buseOverviewLinkSettings\(true\)/g)).toHaveLength(
       1
     );
-    expect(pageSource).toContain('projectAircraftPosition(status ?? {})');
     expect(pageSource).toMatch(
       /projectAircraftHistory\(\s*overviewHistory\?\.series \?\? \{\},/
     );

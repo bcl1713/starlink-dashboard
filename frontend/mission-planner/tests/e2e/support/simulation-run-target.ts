@@ -15,6 +15,7 @@ import {
   renderedRoutePoints,
 } from './overview-route-probe';
 import { projectRouteArc } from '../../../src/pages/globe-route-projection';
+import { sampleRunMotion } from './simulation-run-motion-probe';
 import { ROUTE_OVERLAY_RADIUS } from '../../../src/pages/globe-render-radii';
 export async function runTargetJourney(
   {
@@ -68,12 +69,10 @@ export async function runTargetJourney(
         (await started.json()).simulation_run
       ),
       startAt = performance.now();
-    await expect(overview.getByLabel('Simulation run')).toContainText(
-      'Running',
-      {
-        timeout: 3000,
-      }
-    );
+    await expect(overview.getByLabel('Simulation clock')).toBeVisible({
+      timeout: 3000,
+    });
+    await expect(overview.getByLabel('Simulation run')).toHaveCount(0);
     const propagationMs = performance.now() - startAt;
     await expect(overview.getByLabel('Overview metric history')).toHaveCount(0);
     await expect(overview.getByText('SIMULATED TIME')).toBeVisible();
@@ -87,8 +86,18 @@ export async function runTargetJourney(
     await expect(
       overview.getByLabel('Departure and arrival')
     ).not.toContainText('No active mission leg.', { timeout: 3000 });
+    await expect
+      .poll(async () => (await sampleRunMotion(overview, 0))[0].aircraft)
+      .toBeTruthy();
+    const motion = await sampleRunMotion(overview);
+    expect(
+      new Set(motion.map((sample) => JSON.stringify(sample.aircraft))).size
+    ).toBeGreaterThan(8);
+    expect(
+      new Set(motion.map((sample) => JSON.stringify(sample.sun))).size
+    ).toBeGreaterThan(1);
     await second.setOffline(true);
-    await expect(overview.getByLabel('Simulation run')).toContainText(
+    await expect(overview.getByLabel('Simulation clock')).toContainText(
       'Refresh unavailable',
       { timeout: 3000 }
     );
@@ -96,13 +105,16 @@ export async function runTargetJourney(
     const frozen = await overview
       .locator('.operational-clock__time')
       .allTextContents();
-    await overview.waitForTimeout(1500);
+    const frozenMotion = await sampleRunMotion(overview, 1500);
+    expect(
+      new Set(frozenMotion.map((sample) => JSON.stringify(sample))).size
+    ).toBe(1);
     expect(
       await overview.locator('.operational-clock__time').allTextContents()
     ).toEqual(frozen);
     await overview.screenshot({ path: info.outputPath('stale-running.png') });
     await second.setOffline(false);
-    await expect(overview.getByLabel('Simulation run')).not.toContainText(
+    await expect(overview.getByLabel('Simulation clock')).not.toContainText(
       'Refresh unavailable',
       { timeout: 3000 }
     );
@@ -130,12 +142,33 @@ export async function runTargetJourney(
     await overview.screenshot({
       path: info.outputPath('running-fullscreen.png'),
     });
+    for (const size of [
+      { width: 1366, height: 768 },
+      { width: 1440, height: 900 },
+    ]) {
+      await overview.setViewportSize(size);
+      await expect(overview.locator('.overview-page')).toHaveAttribute(
+        'data-layout',
+        'landscape'
+      );
+      await expect
+        .poll(() =>
+          overview.evaluate(() => {
+            const page = document.querySelector('.overview-page')!;
+            return page.scrollHeight <= page.clientHeight + 1;
+          })
+        )
+        .toBe(true);
+      await overview.screenshot({
+        path: info.outputPath(`running-fullscreen-${size.width}.png`),
+      });
+    }
+    await overview.setViewportSize({ width: 1920, height: 1080 });
     const final = await finishRun(request, seed),
       completedAt = performance.now();
-    await expect(overview.getByLabel('Simulation run')).toContainText(
-      'Completed',
-      { timeout: 3000 }
-    );
+    await expect(overview.getByLabel('Simulation clock')).toHaveCount(0, {
+      timeout: 3000,
+    });
     await expect(page.getByLabel('Simulation run')).toContainText('Completed', {
       timeout: 3000,
     });
@@ -179,6 +212,7 @@ export async function runTargetJourney(
           final,
           elapsedBrowserMs: performance.now() - startAt,
           propagationMs,
+          motionSamples: motion,
           missionsPropagationMs,
           terminalPropagationMs,
           browser: browser.version(),

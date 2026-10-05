@@ -18,10 +18,13 @@ simulated clock. Planned speeds retain their flight units. Telemetry freshness,
 history, ADS-B and acquisition timestamps continue to use real time.
 
 Overview hides all five network cards and their header while a confirmed replay
-is running, replacing them with run progress. Failed refreshes preserve that
-layout and freeze the clock; ten seconds of silence also stops extrapolation.
-Network cards return on completion/cancellation/failure/idle. The globe,
-aircraft trail and follow preference remain available.
+is running. A small **SIMULATED TIME** label sits below the clocks; detailed run
+progress stays on Missions. Aircraft motion advances between server updates, and
+the sun follows the simulated clock. Failed refreshes preserve that layout and
+freeze the clock, aircraft and sun; ten seconds of silence also stops
+extrapolation. Network cards return on completion/cancellation/failure/idle. The
+globe, aircraft trail and follow preference remain available. Native fullscreen
+uses the available frame at common laptop resolutions.
 
 Completion preserves the active leg and freezes terminal flight values. The four
 operational clocks return to real time. Deactivate to cancel; a new paced start
