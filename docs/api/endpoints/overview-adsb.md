@@ -86,6 +86,9 @@ per-source sanitized status and retained unexpired contacts; settings failure
 returns 503. Disabled returns empty contacts/sources. Restart preserves settings
 but starts with no live contacts or source cache.
 
+Outbound provider requests identify `starlink-dashboard` and its public project
+issue URL in the User-Agent header, satisfying the provider's contact requirement.
+
 The application owns one 15-second acquisition cycle, with at most four
 individual requests at once. Current included contacts supplied by the current
 military response avoid an individual request; others use the hex endpoint.

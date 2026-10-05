@@ -169,7 +169,16 @@ def initialize_overview_link_settings_runtime() -> None:
 def initialize_overview_adsb_runtime() -> None:
     store = AdsbSettingsStore(OVERVIEW_ADSB_SETTINGS_PATH)
     app.state.overview_adsb_settings_store = store
-    client = httpx.AsyncClient(base_url="https://api.adsb.lol", timeout=10)
+    client = httpx.AsyncClient(
+        base_url="https://api.adsb.lol",
+        timeout=10,
+        headers={
+            "User-Agent": (
+                "starlink-dashboard "
+                "(+https://github.com/bcl1713/starlink-dashboard/issues)"
+            )
+        },
+    )
     service = AdsbTrafficService(
         store, AdsbLolProvider(client), time.time, time.monotonic
     )
