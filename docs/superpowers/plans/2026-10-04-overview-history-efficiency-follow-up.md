@@ -262,3 +262,33 @@ Brian approved the addendum and this plan and selected native execution. Native
 execution runs in `/tmp/starlink-224-followup`; the durable task ledger records
 completed steps and evidence. Earlier implementation approvals and acceptance
 remain intact.
+
+## Focused task 4a Remove redundant HTTP conversion
+
+**Measured trigger:** The pre-change HTTP profile spends 0.351 of 0.380 profiled
+seconds recursively converting an already primitive history bundle. The
+published full-range diagnostic p95 is 674 ms. The fresh two-viewer incremental
+1s phase's initial 99 warm requests have p95 706 ms and no HTTP/browser errors,
+with combined CPU about 50.5% of one core; its complete 600-second evidence will
+be retained. No default promotion is authorized by these partial measurements.
+
+**Files:** Modify `backend/starlink-location/app/api/overview_history.py`; extend
+`backend/starlink-location/tests/unit/test_overview_history_api_cache.py`.
+
+**Interface:** Preserve GET status, media type, full JSON bundle, timestamps,
+finite values, gaps and aggregate states. Return `JSONResponse` for the already
+validated immutable primitive bundle, avoiding FastAPI's duplicate recursive
+conversion. Keep the reader's dict interface, coalescing, invalidation, failure
+mapping and JSON rendering unchanged. No byte cache, public delta interface or
+scheduling/statistics change is selected.
+
+- [x] Write a failing real-ASGI regression proving identical compact JSON bytes,
+      immutable shared reader snapshots and no generic conversion of the bundle.
+- [x] Watch the old endpoint fail that assertion; return `JSONResponse` directly
+      and run the regression plus existing history API/cache/reference controls.
+- [ ] Rebuild the exact product candidate. Repeat the separate HTTP profile and
+      populated real-path/native controls, keeping profiler overhead outside
+      latency/resource distributions.
+- [ ] Complete canonical checks, comparable full-5s/incremental-5s/incremental-1s
+      phases and fresh one/two-viewer sustained evidence. Report before/after
+      attribution and gates before considering task 5.
