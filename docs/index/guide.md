@@ -12,7 +12,7 @@ Start here if you're new to the project:
 1. **[README.md](../../README.md)** - Project overview and quick start
 2. **[Setup Guide](../setup/installation.md)** - Detailed installation
    instructions
-3. Access: <http://localhost:3000> (Grafana)
+3. Access: <http://localhost:5173> (Mission Planner)
 
 ---
 
@@ -32,12 +32,12 @@ Start here if you're new to the project:
 
 #### Use the dashboards
 
-| Goal                            | Document                                                     | Time   |
-| ------------------------------- | ------------------------------------------------------------ | ------ |
-| Understand available dashboards | [README.md - Dashboards](../../README.md#grafana-dashboards) | 5 min  |
-| Learn dashboard features        | [Grafana Setup](../grafana-configuration.md)                 | 15 min |
-| Create custom dashboards        | [Grafana Setup](../grafana-configuration.md)                 | 20 min |
-| Understand the metrics          | [METRICS](../metrics/overview.md)                            | 10 min |
+| Goal                            | Document                                             | Time   |
+| ------------------------------- | ---------------------------------------------------- | ------ |
+| Understand available dashboards | [Overview Features](../../docs/features/overview.md) | 5 min  |
+| Learn dashboard features        | [Overview Features](../features/overview.md)         | 15 min |
+| Configure Overview              | [Overview Features](../features/overview.md)         | 20 min |
+| Understand the metrics          | [METRICS](../metrics/overview.md)                    | 10 min |
 
 #### Plan missions
 
@@ -59,10 +59,10 @@ Start here if you're new to the project:
 
 #### Debug issues
 
-| Goal                    | Document                                                                                          | Time   |
-| ----------------------- | ------------------------------------------------------------------------------------------------- | ------ |
-| Service won't start     | [Quick Diagnostics - Service Won't Start](../troubleshooting/quick-diagnostics.md#service-issues) | 10 min |
-| Can't access Grafana    | [Quick Diagnostics - Service Issues](../troubleshooting/quick-diagnostics.md#service-issues)      | 5 min  |
-| No data appearing       | [Data Issues](../troubleshooting/data-issues.md)                                                  | 15 min |
-| Live mode won't connect | [Quick Diagnostics - Live Mode](../troubleshooting/quick-diagnostics.md#live-mode-issues)         | 10 min |
-| Port conflicts          | [Quick Diagnostics - Port Conflicts](../troubleshooting/quick-diagnostics.md#port-conflicts)      | 5 min  |
+| Goal                         | Document                                                                                          | Time   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- | ------ |
+| Service won't start          | [Quick Diagnostics - Service Won't Start](../troubleshooting/quick-diagnostics.md#service-issues) | 10 min |
+| Can't access Mission Planner | [Quick Diagnostics - Service Issues](../troubleshooting/quick-diagnostics.md#service-issues)      | 5 min  |
+| No data appearing            | [Data Issues](../troubleshooting/data-issues.md)                                                  | 15 min |
+| Live mode won't connect      | [Quick Diagnostics - Live Mode](../troubleshooting/quick-diagnostics.md#live-mode-issues)         | 10 min |
+| Port conflicts               | [Quick Diagnostics - Port Conflicts](../troubleshooting/quick-diagnostics.md#port-conflicts)      | 5 min  |

@@ -29,8 +29,8 @@ curl http://localhost:8000/api/status | jq .
 # Access Prometheus
 open http://localhost:9090
 
-# Access Grafana
-open http://localhost:3000  # admin/admin
+# Access Mission Planner
+open http://localhost:5173
 ```
 
 ---

@@ -33,13 +33,13 @@ curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 
 ---
 
-### 3. Grafana
+### 3. Mission Planner
 
 ```bash
-curl -s http://localhost:3000/api/health | jq .
+curl --fail http://localhost:5173/api/status | jq .
 ```
 
-✅ Should return `"database": "ok"`
+✅ Should return current status through the frontend proxy
 
 ---
 
@@ -86,8 +86,8 @@ curl -s http://localhost:8000/health | jq .status
 echo "=== Prometheus Targets ==="
 curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 
-echo "=== Grafana Health ==="
-curl -s http://localhost:3000/api/health | jq .database
+echo "=== Mission Planner API ==="
+curl --fail http://localhost:5173/api/status | jq .
 
 echo "=== Current Position ==="
 curl -s http://localhost:8000/api/status | jq '.position | {latitude, longitude}'

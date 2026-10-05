@@ -29,7 +29,7 @@ docker stats --no-stream
 ```bash
 docker compose logs starlink-location
 docker compose logs prometheus
-docker compose logs grafana
+docker compose logs mission-planner
 ```
 
 **Common Causes & Solutions:**
@@ -52,7 +52,7 @@ docker compose up -d
 # Find what's using the port
 lsof -i :8000  # Backend
 lsof -i :9090  # Prometheus
-lsof -i :3000  # Grafana
+lsof -i :5173  # Mission Planner
 
 # Kill process or change port in .env
 kill -9 <PID>
@@ -101,12 +101,12 @@ sudo systemctl start docker
 
 ```bash
 # Linux/macOS
-lsof -i :3000
+lsof -i :5173
 lsof -i :8000
 lsof -i :9090
 
 # Windows
-netstat -ano | findstr :3000
+netstat -ano | findstr :5173
 ```
 
 #### Solution 1: Kill process
@@ -126,7 +126,6 @@ taskkill /PID <PID> /F
 nano .env
 
 # Change port
-GRAFANA_PORT=3001
 STARLINK_LOCATION_PORT=8001
 PROMETHEUS_PORT=9091
 
@@ -139,9 +138,9 @@ docker compose up -d
 
 ```bash
 # See what's actually bound to the port
-netstat -tlnp | rg 3000  # Linux
-lsof -i :3000            # macOS
-netstat -ano | findstr 3000 # Windows
+netstat -tlnp | rg 5173  # Linux
+lsof -i :5173            # macOS
+netstat -ano | findstr 5173 # Windows
 
 # If it's Docker, just restart it
 docker compose restart
@@ -189,7 +188,7 @@ docker compose logs > logs.txt
 # Save specific service logs
 docker compose logs starlink-location > backend.log
 docker compose logs prometheus > prometheus.log
-docker compose logs grafana > grafana.log
+docker compose logs mission-planner > mission-planner.log
 ```
 
 ## Getting Help
@@ -235,6 +234,5 @@ docker compose logs grafana > grafana.log
 - [Setup Guide](../setup/installation.md)
 - [Design Document](../architecture/design-document.md)
 - [Backend README](../../backend/starlink-location/README.md)
-- [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)

@@ -29,8 +29,7 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 1. Open your browser and navigate to:
    `<http://<dashboard-url>/ui/mission-planner`>
 1. The interface loads a four-step form
-1. You do **not** need Grafana or Prometheus experience—the planner is
-   self-contained
+1. You do **not** need Prometheus experience—the planner is self-contained
 
 ### Requirements
 
@@ -84,8 +83,8 @@ computes a timeline. Use Point placemark descriptions in the supported form:
 `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`. KML can be parseable without that
 metadata, but a route without valid timeline timing is not activation-ready.
 
-The retired v1 mission endpoints are not a fallback for this flow and return
-404. Use the V2 UI and V2 API only.
+The retired v1 mission endpoints are not a fallback for this flow and
+return 404. Use the V2 UI and V2 API only.
 
 ### Step 1: Upload Your Route
 

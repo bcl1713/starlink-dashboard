@@ -196,34 +196,17 @@ curl http://localhost:8000/api/pois/etas | jq '.[] | {name, distance_meters, eta
 curl "http://localhost:8000/api/pois/etas?speed_knots=50"
 ```
 
-### Issue: POI table not updating in Grafana
+## POI Display Not Updating
 
-**Verify Infinity datasource:**
-
-```bash
-# Check datasource configured
-# Grafana > Settings > Data Sources
-# Should have "Infinity" datasource
-
-# If missing, add it:
-# Name: Infinity
-# Type: Infinity
-# No other settings needed
-```
-
-**Check POI endpoint:**
+Verify the POI endpoint and reload the POI management page:
 
 ```bash
-# Verify endpoint accessible
-curl http://localhost:8000/api/pois/etas | jq length
-# Should return count of POIs
-
-# Test Infinity query manually
-# In Grafana > Explore
-# Set Data source to Infinity
-# Enter URL: http://starlink-location:8000/api/pois/etas
-# Click Run Query
+curl --fail http://localhost:8000/api/pois/etas | jq length
+open http://localhost:8000/ui/pois
 ```
+
+For the native Overview arrival panel, verify the active Mission V2 leg and its
+matching route. See the Overview features guide for timing and freshness rules.
 
 ## Related Documentation
 

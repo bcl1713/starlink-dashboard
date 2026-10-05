@@ -54,7 +54,7 @@ includes:
 
 - **Backend Service** - FastAPI-based telemetry collection and API
 - **Prometheus** - Time-series metrics database
-- **Grafana** - Visualization dashboards
+- **Mission Planner** - Visualization dashboards
 
 ---
 
@@ -116,7 +116,7 @@ curl <http://localhost:8000/health>
 
 **Access points:**
 
-- Grafana: <<http://localhost:3000>> (admin/admin)
+- Mission Planner: <<http://localhost:5173>>
 - Prometheus: <<http://localhost:9090>>
 - Backend API: <<http://localhost:8000/docs>>
 
@@ -164,8 +164,8 @@ curl <http://localhost:8000/health>
 # 3. Check Prometheus targets
 curl <http://localhost:9090/api/v1/targets>
 
-# 4. Access Grafana
-open <http://localhost:3000>
+# 4. Access Mission Planner
+open <http://localhost:5173>
 ```
 
 All services should show "Up" or "healthy" status.
@@ -177,7 +177,7 @@ All services should show "Up" or "healthy" status.
 After successful setup:
 
 1. **Explore the API** - Interactive docs at <<http://localhost:8000/docs>>
-2. **View Dashboards** - Grafana at <<http://localhost:3000>>
+2. **View Dashboards** - Mission Planner at <<http://localhost:5173>>
 3. **Upload Routes** - Use route management UI
 4. **Create POIs** - Add points of interest for tracking
 

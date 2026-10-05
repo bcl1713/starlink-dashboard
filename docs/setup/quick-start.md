@@ -27,7 +27,7 @@ cp .env.example .env
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
-open http://localhost:3000                # Grafana (admin/admin)
+open http://localhost:5173                # Mission Planner
 ```
 
 **Detailed setup:** See [Installation Guide](./installation.md)
@@ -38,13 +38,13 @@ open http://localhost:3000                # Grafana (admin/admin)
 
 Once services are running:
 
-| Service          | URL                             | Purpose                  |
-| ---------------- | ------------------------------- | ------------------------ |
-| **Grafana**      | <http://localhost:3000>         | Dashboards (admin/admin) |
-| **Prometheus**   | <http://localhost:9090>         | Metrics database         |
-| **Backend API**  | <http://localhost:8000/docs>    | Interactive API docs     |
-| **Health Check** | <http://localhost:8000/health>  | Service status           |
-| **Metrics**      | <http://localhost:8000/metrics> | Raw Prometheus metrics   |
+| Service             | URL                             | Purpose                        |
+| ------------------- | ------------------------------- | ------------------------------ |
+| **Mission Planner** | <http://localhost:5173>         | Dashboard and mission planning |
+| **Prometheus**      | <http://localhost:9090>         | Metrics database               |
+| **Backend API**     | <http://localhost:8000/docs>    | Interactive API docs           |
+| **Health Check**    | <http://localhost:8000/health>  | Service status                 |
+| **Metrics**         | <http://localhost:8000/metrics> | Raw Prometheus metrics         |
 
 ---
 

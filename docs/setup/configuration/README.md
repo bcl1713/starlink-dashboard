@@ -90,7 +90,6 @@ Optimized for production monitoring:
 STARLINK_MODE=live
 STARLINK_DISH_HOST=192.168.100.1
 PROMETHEUS_RETENTION=1y
-GRAFANA_ADMIN_PASSWORD=<strong-password>
 LOG_LEVEL=INFO
 JSON_LOGS=true
 ```
@@ -161,7 +160,7 @@ docker compose ps
 # 2. Health checks
 curl http://localhost:8000/health
 curl http://localhost:9090/-/healthy
-curl http://localhost:3000/api/health
+curl --fail http://localhost:5173/api/status
 
 # 3. Logs for errors
 docker compose logs | rg -i error

@@ -35,11 +35,10 @@ The preview recalculates automatically after a short debounce whenever you edit
 satellite transitions, outages, AAR windows, or manual AR tracks. A manual AR
 track is projected onto the planned route: its earliest and latest projected
 points bound an X-Band degraded interval. The manual track remains an orange
-dashed geographic overlay; it does not replace or redraw the planned route.
-You can make a change, watch the route and status colors update, and only save
-once the result looks sane.
-The preview panel shows an Unsaved badge whenever the current configuration
-differs from the persisted leg.
+dashed geographic overlay; it does not replace or redraw the planned route. You
+can make a change, watch the route and status colors update, and only save once
+the result looks sane. The preview panel shows an Unsaved badge whenever the
+current configuration differs from the persisted leg.
 
 What the preview tells you:
 
@@ -60,8 +59,8 @@ How to use it well:
    the risk sits on the route.
 3. Keep experimenting while the Unsaved badge is present; save only when the
    preview matches the mission intent.
-4. For long routes, expect the table to stay usable by rendering only the visible
-   rows.
+4. For long routes, expect the table to stay usable by rendering only the
+   visible rows.
 
 ![Timeline preview table](../assets/timeline-preview-table.png)
 
@@ -104,29 +103,15 @@ Generate mission briefing documents in multiple formats.
 - Satellite geometry data
 - Recommendations and notes
 
-Mission V2 does not publish replacement export endpoints in this reference.
-Do not use retired mission API paths for export; retain approved briefing
-artifacts through the normal operational archive process.
+Mission V2 does not publish replacement export endpoints in this reference. Do
+not use retired mission API paths for export; retain approved briefing artifacts
+through the normal operational archive process.
 
 **See:** [Mission Communication SOP](../missions/mission-comm-sop.md)
 
-### Grafana Mission Visualization
+### Mission Planner Visualization
 
-Real-time mission timeline and alert integration.
+Use Mission Planner at <http://localhost:5173> for mission and leg planning,
+timeline views, and the native Overview.
 
-**Features:**
-
-- Mission timeline panel
-- Degradation window overlays
-- Satellite coverage indicators
-- Alert rules for approaching windows
-- Transport status gauges
-
-**Dashboards:**
-
-- Mission Overview (timeline and status)
-- Transport Status (per-transport details)
-- Satellite Geometry (azimuth/elevation charts)
-
-**See:**
-[Monitoring Setup - Mission](../../monitoring/README.md#mission-communication-planning)
+**See:** [Overview features](overview.md)

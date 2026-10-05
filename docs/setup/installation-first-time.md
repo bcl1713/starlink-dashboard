@@ -56,11 +56,11 @@ curl -X POST http://localhost:8000/api/pois \
 
 ## View Dashboards
 
-Open Grafana and explore:
+Open Mission Planner at <http://localhost:5173>:
 
-1. **Starlink Overview** - Main dashboard with map
-2. **Network Metrics** - Latency, throughput
-3. **Position & Movement** - Position history
+1. **Overview** - Globe, position history, and network metrics
+2. **Missions** - Mission planning
+3. **Configuration** - Display and history settings
 
 ---
 

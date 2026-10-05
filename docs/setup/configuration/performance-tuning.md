@@ -71,12 +71,6 @@ services:
       resources:
         limits:
           memory: 512M
-
-  grafana:
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 ```
 
 **Apply:**

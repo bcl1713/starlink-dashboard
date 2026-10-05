@@ -45,7 +45,7 @@ The Mission Planning feature enables:
 | **Route Planning** | KML import, waypoint management                |
 | **Timeline**       | Communication windows, conflict detection      |
 | **Satellite**      | Coverage overlay, transport analysis, tracking |
-| **Visualization**  | Grafana dashboards, real-time maps             |
+| **Visualization**  | Mission Planner dashboards, real-time maps     |
 | **Export**         | PDF, PowerPoint, Excel, CSV formats            |
 
 ### Mission V2 activation
@@ -66,8 +66,8 @@ repeat the delete request.
 
 Flat v1 mission artifacts are retained but inert. They have no automatic
 migration or cleanup, and they do not establish Mission V2 activation or
-Overview context. Preserve them as historical files until an explicitly
-approved retention action is defined.
+Overview context. Preserve them as historical files until an explicitly approved
+retention action is defined.
 
 ---
 

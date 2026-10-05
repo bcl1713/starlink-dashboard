@@ -74,10 +74,11 @@ protocols.
      ```
 
 5. **Ongoing Monitoring (during window):**
-   - Assign one operator to watch Grafana
+   - Assign one operator to watch Mission Planner
    - If Ku also degrades unexpectedly: Emergency escalation (call Flight Lead
      immediately)
-   - Ku should stay GREEN (always available) in timeline
+   - Ku remains nominal in the planned timeline; verify actual connectivity
+     independently using measured telemetry and crew reports.
 
 ---
 
@@ -87,13 +88,15 @@ protocols.
 
 **Every 15 minutes (or per SOP interval):**
 
-1. **Check Grafana dashboard:**
-   - Current status: X-Band, Ka, Ku (should match timeline prediction)
-   - Next degradation window (if < 30 min, send crew reminder)
-   - Alert panel: Any red alerts firing?
+1. **Check Mission Planner dashboard:**
+   - Review the active mission-leg timeline for planned communication windows.
+   - Check Overview for measured position and network performance.
+   - Check configured alert status in Prometheus at
+     <http://localhost:9090/alerts>.
+   - Send a crew reminder if a planned window is less than 30 minutes away.
 
 2. **Cross-reference with timeline:**
-   - If current status ≠ predicted: Investigate
+   - If observed connectivity differs from the planned timeline: Investigate
    - Check system logs: `docker logs -f starlink-location | grep mission`
    - Document discrepancy and notify lead
 
@@ -116,7 +119,7 @@ protocols.
    - Is it X-Band transition? Check transition duration (should be ±15 min).
    - Is it Ka gap? Check if route actually in coverage.
 3. **If deviation > 10 min:**
-   - Take screenshot of Grafana
+   - Take screenshot of Mission Planner
    - Check system logs: `docker compose logs starlink-location | tail -50`
    - Contact mission planner with screenshot + crew observations
    - Continue monitoring (do not abort)
@@ -142,9 +145,9 @@ protocols.
 
 **After landing:**
 
-1. **Capture final metrics:** Retain the approved timeline and monitoring artifacts
-   produced during operations. The retired mission API has no supported
-   post-flight timeline command.
+1. **Capture final metrics:** Retain the approved timeline and monitoring
+   artifacts produced during operations. The retired mission API has no
+   supported post-flight timeline command.
 
    Save the selected artifact as `mission-`name`-<date>-actual-timeline.json`.
 
@@ -160,7 +163,7 @@ protocols.
      ├── mission-brief.pdf
      ├── predicted-timeline.json
      ├── actual-timeline.json
-     ├── grafana-screenshots/
+     ├── overview-screenshots/
      └── ops-log.txt
    ```
 

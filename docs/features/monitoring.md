@@ -13,14 +13,14 @@ visualization.
 **Capabilities:**
 
 - Live GPS coordinates (latitude, longitude, altitude)
-- Interactive map display in Grafana
+- Interactive globe display in Mission Planner
 - Historical position trail
 - Speed and heading indicators
 - Position accuracy metrics
 
 **Available In:** Simulation and Live modes
 
-**See:** [Grafana Dashboards](#grafana-dashboards)
+**See:** [Mission Planner Overview](#mission-planner-overview)
 
 ### Network Performance Monitoring
 
@@ -65,70 +65,11 @@ Store and query up to 1 year of metrics data (configurable).
 
 ---
 
-## Grafana Dashboards
+## Mission Planner Overview
 
-### Starlink Overview Dashboard
+Open <http://localhost:5173> for the native Overview. It displays aircraft
+position and history, upcoming POIs, operational clocks, and network history.
+Prometheus supplies the stored network samples through the backend API.
 
-Main monitoring dashboard with comprehensive system view.
-
-**URL:** <http://localhost:3000/d/starlink-overview>
-
-**Panels:**
-
-- Live position map with route overlay
-- POI ETA table with countdown timers
-- Network latency gauge
-- Throughput graphs (download/upload)
-- Signal quality indicators
-- Obstruction percentage
-
-**Use Cases:**
-
-- Real-time flight monitoring
-- Quick system health check
-- Mission planning overview
-
-### Network Metrics Dashboard
-
-Detailed network performance analysis.
-
-**URL:** <http://localhost:3000/d/starlink-network>
-
-**Panels:**
-
-- Latency trend analysis
-- Throughput breakdown by time
-- Packet loss visualization
-- Signal quality over time
-- Connection stability metrics
-- Historical comparisons
-
-**Use Cases:**
-
-- Network troubleshooting
-- Performance optimization
-- SLA monitoring
-
-### Position & Movement Dashboard
-
-Focused location and movement tracking.
-
-**URL:** <http://localhost:3000/d/starlink-position>
-
-**Panels:**
-
-- Interactive map with full history
-- Altitude profile chart
-- Speed trend graph
-- Heading compass
-- Distance traveled metrics
-- Waypoint progress
-
-**Use Cases:**
-
-- Route tracking
-- Movement analysis
-- Position verification
-
-**Configuration Guide:** See
-[Grafana Setup Documentation](../grafana-configuration.md)
+See [Overview features](overview.md) for settings, freshness rules, and display
+behavior.

@@ -42,7 +42,7 @@
 **Symptoms:**
 
 - Prometheus shows no data
-- Grafana dashboards empty
+- Mission Planner dashboards empty
 
 **Solutions:**
 

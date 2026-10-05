@@ -10,7 +10,7 @@ Please see: **[Architecture Documentation](./README.md)**
 
 - **[Overview & Objectives](./README.md)** - Project goals
 - **[System Architecture](./README.md#system-stack)** - Component design
-- **[Core Components](./README.md)** - Backend, Prometheus, Grafana
+- **[Core Components](./README.md)** - Backend, Prometheus, Mission Planner
 - **[Development Workflow](../development/workflow.md)** - Docker rebuild
   process
 - **[Setup Guide](../setup/README.md)** - Installation instructions
@@ -29,13 +29,13 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 - KML route overlays with POIs and ETAs
 - Historical data storage
 - Self-contained Docker Compose stack
-- Grafana-based web dashboard
+- Mission Planner-based web dashboard
 
 ### Technology Stack
 
 - **Backend:** Python 3.13 + FastAPI
 - **Metrics:** Prometheus
-- **Visualization:** Grafana
+- **Visualization:** Mission Planner
 - **Deployment:** Docker Compose
 - **Simulation:** Full simulation mode for development
 

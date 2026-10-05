@@ -12,7 +12,7 @@ This document catalogs features. For saved-state refresh and controls, see
 ### 1. [Monitoring & Dashboards](./monitoring.md)
 
 Core real-time position tracking, network performance metrics, historical data
-retention, and Grafana dashboard details.
+retention, and native Overview details.
 
 ### 2. [Navigation & Timing](./navigation.md)
 
@@ -86,7 +86,6 @@ See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md) for
 timing provenance and independent map retention. A route-only active route is
 not an active Mission V2 leg and may report `no_active_mission`. Map POI names
 remain accessible even when overlapping globe labels are visually suppressed.
-Grafana remains the supported fallback and parity comparator.
 
 ### 5. Overview Metric History
 
@@ -255,8 +254,7 @@ for measured thresholds, scroll ownership and framing limits.
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
 rolling response shapes and error behavior. History-window selection and map
 diagnostics are available in Configuration. Cadence controls and per-panel
-visibility settings remain future work. Grafana remains a supported fallback and
-comparator.
+visibility settings remain future work.
 
 ### Planned satellite and map layers
 
@@ -279,8 +277,9 @@ independent of the position provenance used for arrival estimates.
 Aircraft/GEP and configured satellites can remain visible without a route.
 Generated POIs and satellite markers retain their labels and separate accessible
 name lists even when globe occlusion or POI collision handling hides a label.
-Settings, GEO look-angle analysis and optional [ADS-B aircraft](overview-adsb.md)
-controls are in **Configuration**. ADS-B adds global positions and read-only details.
+Settings, GEO look-angle analysis and optional
+[ADS-B aircraft](overview-adsb.md) controls are in **Configuration**. ADS-B adds
+global positions and read-only details.
 
 ### Independent data links
 

@@ -14,7 +14,7 @@ crew connectivity through predicted degradation windows.
 **Key Responsibilities:**
 
 - **Pre-flight:** Validate timeline predictions
-- **During-flight:** Monitor Grafana dashboards
+- **During-flight:** Monitor Mission Planner dashboards
 - **Alert:** Respond to degradation warnings
 - **Post-flight:** Document and archive mission results
 
@@ -37,8 +37,8 @@ Complete operational procedures for mission communications:
 
 - **Pre-Flight Planning** - Timeline generation, risk window identification,
   crew briefing
-- **Grafana Monitoring Setup** - Dashboard configuration, panel descriptions,
-  alert thresholds
+- **Mission Planner Monitoring Setup** - Dashboard configuration, panel
+  descriptions, alert thresholds
 - **Alert Response** - Degraded and critical window response procedures
 - **During Flight Operations** - Monitoring routine, handling unexpected changes
 - **Export Delivery** - Pre-flight and post-flight export procedures
@@ -64,7 +64,7 @@ Comprehensive incident handling procedures:
 
 ### During Flight
 
-1. Monitor Grafana every 15 min
+1. Monitor Mission Planner every 15 min
 2. Match dashboard to timeline predictions
 3. Alert crew 15 min before any degradation
 4. Log status snapshots every 30 min
@@ -80,13 +80,13 @@ Comprehensive incident handling procedures:
 
 ## Useful URLs
 
-| Resource           | URL                                       |
-| ------------------ | ----------------------------------------- |
-| Mission Planner    | `<http://<dashboard>/ui/mission-planner`> |
-| Grafana Dashboard  | `<http://<dashboard>:3000/d/starlink/*`>  |
-| Prometheus Metrics | `<http://<dashboard>:9090`>               |
-| API Documentation  | `<http://<dashboard>:8000/docs`>          |
-| Health Check       | `<http://<dashboard>:8000/health`>        |
+| Resource                  | URL                                       |
+| ------------------------- | ----------------------------------------- |
+| Mission Planner           | `<http://<dashboard>/ui/mission-planner`> |
+| Mission Planner Dashboard | `<http://<dashboard>:5173`>               |
+| Prometheus Metrics        | `<http://<dashboard>:9090`>               |
+| API Documentation         | `<http://<dashboard>:8000/docs`>          |
+| Health Check              | `<http://<dashboard>:8000/health`>        |
 
 (\* = fullscreen-overview)
 

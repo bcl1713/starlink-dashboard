@@ -63,14 +63,14 @@ Spacing: 18° apart
 Run these commands from the repository root.
 
 ```bash
-# 1. Start the backend and Grafana
+# 1. Start the stack
 ./scripts/compose.sh up -d --build
 
 # 2. Create test POIs
 python3 tools/setup_pois.py
 
-# 3. Open Grafana and view the POI Management dashboard
-# <http://localhost:3000> (admin/admin)
+# 3. Open the POI management interface
+# <http://localhost:8000/ui/pois>
 
 # 4. Observe ETA calculations as the simulated aircraft moves
 # around the circular path
@@ -101,8 +101,7 @@ curl <http://localhost:8000/health>
 pip install requests
 ```
 
-#### POIs don't appear in Grafana
+#### POIs don't appear in the UI
 
-- Check that the Infinity datasource is configured correctly
 - Verify POI API endpoint returns data: `curl <http://localhost:8000/api/pois`>
-- Refresh Grafana dashboard (F5)
+- Refresh the page (F5)
