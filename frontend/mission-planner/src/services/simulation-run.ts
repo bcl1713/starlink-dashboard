@@ -89,10 +89,9 @@ const runSchema = z
     return (
       current >= start &&
       current <= end &&
-      Math.abs(
-        run.progress_percent - ((current - start) / (end - start)) * 100
-      ) < 1e-4 &&
-      (run.phase === 'post_arrival' ? current === end : current < end)
+      (run.phase === 'post_arrival'
+        ? current === end && run.progress_percent === 100
+        : current < end && run.progress_percent < 100)
     );
   }, 'Inconsistent simulation phase or progress');
 export const simulationRunSchema = z

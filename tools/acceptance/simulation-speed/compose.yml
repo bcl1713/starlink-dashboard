@@ -1,0 +1,69 @@
+services:
+  starlink-location:
+    image: starlink-262-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    build:
+      context: ${SIMULATION_SPEED_SOURCE_ROOT:?archive required}/backend/starlink-location
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    command: [uvicorn, "${SIMULATION_BACKEND_APP:-main:app}", --host, 0.0.0.0, --port, "8000"]
+    labels:
+      acceptance.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
+    environment:
+      PYTHONPATH: /acceptance:/app
+      STARLINK_MODE: ${SIMULATION_ACCEPTANCE_MODE:-simulation}
+      SIMULATION_MODE: ${SIMULATION_MODE:-true}
+      STARLINK_ROUTE_LATITUDE_START: "35"
+      STARLINK_ROUTE_LONGITUDE_START: "179"
+      STARLINK_GROUND_ENTRY_LATITUDE: "36"
+      STARLINK_GROUND_ENTRY_LONGITUDE: "175"
+      PROMETHEUS_URL: http://prometheus:9090
+    volumes:
+      - ${SIMULATION_SPEED_SOURCE_ROOT}/tools/acceptance/simulation-speed:/acceptance:ro
+      - missions:/app/data/missions
+      - settings:/app/data/settings
+      - satellites:/app/data/satellites
+      - orbital:/app/data/orbital
+      - coverage:/app/data/sat_coverage
+      - ${SIMULATION_SPEED_SOURCE_ROOT}/tools/acceptance/simulation-speed/coverage.json:/app/data/sat_coverage/commka.geojson:ro
+      - routes:/data/routes
+      - simulation-routes:/data/sim_routes
+      - pois:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      interval: 2s
+      timeout: 5s
+      retries: 45
+      start_period: 30s
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ${SIMULATION_SPEED_SOURCE_ROOT}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${SIMULATION_SPEED_SOURCE_ROOT}/monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - metrics:/prometheus
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=1h]
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+  mission-planner:
+    image: starlink-262-frontend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    build:
+      context: ${SIMULATION_SPEED_SOURCE_ROOT}/frontend/mission-planner
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    labels:
+      acceptance.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
+    ports:
+      - "127.0.0.1:15262:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+volumes:
+  missions:
+  settings:
+  satellites:
+  orbital:
+  coverage:
+  routes:
+  simulation-routes:
+  pois:
+  metrics:

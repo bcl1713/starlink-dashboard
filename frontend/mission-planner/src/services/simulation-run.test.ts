@@ -22,6 +22,11 @@ it('validates confirmed running and terminal contracts', () => {
     simulationRunSchema.parse({ ...completedStatus(), run: terminal }).state
   ).toBe('completed');
 });
+it('accepts distance progress that differs from time progress on variable-speed routes', () => {
+  const status = runningStatus();
+  status.run!.progress_percent = 20;
+  expect(simulationRunSchema.safeParse(status).success).toBe(true);
+});
 it.each([
   { state: 'idle' },
   { run: null },
