@@ -438,6 +438,13 @@ async function run(options) {
               { timeout: 20000 },
             )
             .toBe(window);
+          const label =
+            window % 60 === 0
+              ? `LAST ${window / 60} MIN`
+              : `LAST ${window} SEC`;
+          await expect(
+            page.locator(".overview-metric-history-panels__windows").first(),
+          ).toContainText(label, { timeout: 20000 });
           await expect
             .poll(
               () =>
@@ -505,8 +512,11 @@ async function run(options) {
       await rootSession.detach();
       await page.bringToFront();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
-      await page.goto(`${options.origin}/configuration`);
-      await page.goto(`${options.origin}/overview`);
+      await page
+        .getByRole("link", { name: "Configuration", exact: true })
+        .click();
+      await expect(page.locator("#overview-history-window")).toBeVisible();
+      await page.getByRole("link", { name: "Overview", exact: true }).click();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
       await expect
         .poll(
@@ -556,6 +566,8 @@ async function run(options) {
           throw new Error("bounded recording requires OVERVIEW_PROFILE_FFMPEG");
         const frames = resolve(output, "video-frames");
         mkdirSync(frames, { recursive: true });
+        await session.send("Profiler.enable");
+        await session.send("Profiler.start");
         const began = clock();
         for (let frame = 0; frame < 20; frame++) {
           await page.screenshot({
@@ -567,6 +579,12 @@ async function run(options) {
           await sleep(200);
         }
         const elapsed = clock() - began;
+        const profile = await session.send("Profiler.stop");
+        await session.send("Profiler.disable");
+        writeFileSync(
+          resolve(output, "browser-control.cpuprofile"),
+          JSON.stringify(profile.profile),
+        );
         encodeMovie(
           encoder,
           frames,
