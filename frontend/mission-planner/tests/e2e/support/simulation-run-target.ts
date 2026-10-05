@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { cpus, platform, release } from 'node:os';
 import {
   expect,
   type Browser,
@@ -148,9 +149,10 @@ export async function runTargetJourney(
     await overview.screenshot({
       path: info.outputPath('restored-fullscreen.png'),
     });
-    await overview
-      .getByRole('button', { name: 'Exit fullscreen overview' })
-      .click();
+    await overview.evaluate(() => document.exitFullscreen());
+    await expect
+      .poll(() => overview.evaluate(() => Boolean(document.fullscreenElement)))
+      .toBe(false);
     await overview.screenshot({
       path: info.outputPath('restored-desktop.png'),
     });
@@ -166,7 +168,17 @@ export async function runTargetJourney(
           propagationMs,
           terminalPropagationMs,
           browser: browser.version(),
-          os: process.platform,
+          os: `${platform()} ${release()}`,
+          cpu: cpus()[0]?.model,
+          cpuCount: cpus().length,
+          gpu: await overview.evaluate(() => {
+            const canvas = document.querySelector('canvas');
+            const gl = canvas?.getContext('webgl2');
+            const debug = gl?.getExtension('WEBGL_debug_renderer_info');
+            return gl && debug
+              ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)
+              : 'unavailable';
+          }),
         },
         null,
         2
