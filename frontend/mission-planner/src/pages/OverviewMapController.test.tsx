@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { PerspectiveCamera } from 'three';
+import { PerspectiveCamera, Vector3 } from 'three';
 import type { ComponentProps } from 'react';
 const scene = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
@@ -62,6 +62,8 @@ vi.mock('@react-three/drei', async () => {
 });
 import { OverviewMapController } from './OverviewMapController';
 import { globePosition } from './globe-coordinates';
+import { projectRouteArc } from './globe-route-projection';
+import { syntheticFullscreenCoordinates } from './synthetic-fullscreen-route.test-fixture';
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -91,6 +93,68 @@ function setup() {
   };
   return { camera, props };
 }
+it('frames the full dateline route on load, fullscreen transitions and repeated resets after exploration', () => {
+  const { camera, props } = setup();
+  const width = 1920,
+    height = 1280;
+  camera.aspect = width / height;
+  scene.state.size = { width, height };
+  const route = projectRouteArc(syntheticFullscreenCoordinates, 2.015, 8);
+  const safeRect = { x: 520, y: 380, width: 1380, height: 640 };
+  const desktop = { ...props, mode: 'desktop' as const, route, safeRect };
+  let fullscreen = false;
+  const descriptor = Object.getOwnPropertyDescriptor(
+    document,
+    'fullscreenElement'
+  );
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    get: () => (fullscreen ? document.documentElement : null),
+  });
+  try {
+    const view = render(<OverviewMapController {...desktop} />);
+    const checkSettledRoute = () => {
+      for (let i = 0; i < 3600; i++) scene.frame?.({}, 1 / 60);
+      camera.updateMatrixWorld();
+      for (const point of route) {
+        const p = new Vector3(...point);
+        expect(p.dot(camera.position)).toBeGreaterThan(4);
+        p.project(camera);
+        expect(((p.x + 1) * width) / 2).toBeGreaterThan(safeRect.x);
+        expect(((p.x + 1) * width) / 2).toBeLessThan(
+          safeRect.x + safeRect.width
+        );
+        expect(((1 - p.y) * height) / 2).toBeGreaterThan(safeRect.y);
+        expect(((1 - p.y) * height) / 2).toBeLessThan(
+          safeRect.y + safeRect.height
+        );
+      }
+      const settled = camera.position.clone();
+      for (let i = 0; i < 120; i++) scene.frame?.({}, 1 / 60);
+      expect(camera.position.distanceTo(settled)).toBeLessThan(0.001);
+    };
+    checkSettledRoute();
+    fullscreen = true;
+    act(() => document.dispatchEvent(new Event('fullscreenchange')));
+    checkSettledRoute();
+    for (const resetRevision of [1, 2, 3]) {
+      camera.position.set(-8, 3, 9);
+      camera.lookAt(0, 0, 0);
+      view.rerender(<OverviewMapController {...desktop} intent="manual" />);
+      view.rerender(
+        <OverviewMapController {...desktop} resetRevision={resetRevision} />
+      );
+      checkSettledRoute();
+    }
+    fullscreen = false;
+    act(() => document.dispatchEvent(new Event('fullscreenchange')));
+    checkSettledRoute();
+  } finally {
+    if (descriptor)
+      Object.defineProperty(document, 'fullscreenElement', descriptor);
+    else Reflect.deleteProperty(document, 'fullscreenElement');
+  }
+});
 it('finishes an ongoing automatic move immediately when reduced motion is selected', () => {
   const { camera, props } = setup();
   const view = render(<OverviewMapController {...props} />);

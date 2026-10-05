@@ -2,10 +2,152 @@ import { projectRouteArc } from './globe-route-projection';
 import { globePosition } from './globe-coordinates';
 import { describe, it, expect } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
+import { syntheticFullscreenCoordinates } from './synthetic-fullscreen-route.test-fixture';
 import {
   overviewCameraFrame,
   overviewInitialDirection,
 } from './overview-camera-frame';
+
+describe('wide fullscreen route framing', () => {
+  it('repairs a density-biased route whose feasible cap is close to the orbit horizon', () => {
+    const route = projectRouteArc(
+      [
+        { latitude: -59.683437901864245, longitude: -170.88098415921868 },
+        { latitude: -49.813148769233514, longitude: -173.41491968186335 },
+        { latitude: 49.781640778356596, longitude: -7.117010645365249 },
+      ],
+      2.015,
+      8
+    );
+    const frame = overviewCameraFrame({
+      width: 1920,
+      height: 1280,
+      fov: 45,
+      safeRect: { x: 520, y: 380, width: 1380, height: 640 },
+      route,
+      direction: overviewInitialDirection(route, null, new Vector3(0, 0, 1)),
+      centerGlobe: true,
+    });
+    expect(frame.routeFit).toBe('complete');
+    const position = frame.direction!.clone().multiplyScalar(frame.distance);
+    for (const point of route)
+      expect(new Vector3(...point).dot(position)).toBeGreaterThan(4);
+  });
+  it('fits a visible hemisphere even when dense destination samples bias the initial direction', () => {
+    const route = projectRouteArc(syntheticFullscreenCoordinates, 2.015, 8);
+    route.push(...Array.from({ length: 512 }, () => route[route.length - 1]));
+    const direction = overviewInitialDirection(
+      route,
+      null,
+      new Vector3(0, 0, 1)
+    );
+    const frame = overviewCameraFrame({
+      width: 1920,
+      height: 1280,
+      fov: 45,
+      safeRect: { x: 520, y: 380, width: 1380, height: 640 },
+      route,
+      direction,
+      centerGlobe: true,
+    });
+    const position = frame.direction!.clone().multiplyScalar(frame.distance);
+    expect(frame.routeFit).toBe('complete');
+    for (const point of route)
+      expect(new Vector3(...point).dot(position)).toBeGreaterThan(4);
+  });
+  it('uses the orbit limit and retains full projected geometry for a route beyond one hemisphere', () => {
+    const route = [
+      globePosition(0, 0, 2.015),
+      globePosition(0, 120, 2.015),
+      globePosition(0, -120, 2.015),
+    ];
+    const direction = new Vector3(...globePosition(0, 0, 1));
+    const safeRect = { x: 1100, y: 500, width: 500, height: 300 };
+    const frame = overviewCameraFrame({
+      width: 1920,
+      height: 1280,
+      fov: 45,
+      safeRect,
+      route,
+      direction,
+      centerGlobe: true,
+    });
+    expect(frame.distance).toBe(28);
+    expect(frame.routeFit).toBe('partial');
+    expect(frame.direction!.angleTo(direction)).toBeLessThan(0.001);
+    const camera = new PerspectiveCamera(45, 1920 / 1280);
+    camera.position.copy(
+      frame.direction!.clone().multiplyScalar(frame.distance)
+    );
+    camera.lookAt(0, 0, 0);
+    camera.setViewOffset(1920, 1280, frame.offsetX, frame.offsetY, 1920, 1280);
+    camera.updateMatrixWorld();
+    for (const point of route) {
+      const p = new Vector3(...point).project(camera);
+      expect((p.x + 1) * 960).toBeGreaterThan(safeRect.x);
+      expect((p.x + 1) * 960).toBeLessThan(safeRect.x + safeRect.width);
+      expect((1 - p.y) * 640).toBeGreaterThan(safeRect.y);
+      expect((1 - p.y) * 640).toBeLessThan(safeRect.y + safeRect.height);
+    }
+  });
+  it.each([
+    [1920, 1280, { x: 520, y: 380, width: 1380, height: 640 }],
+    [1920, 1080, { x: 520, y: 180, width: 1380, height: 640 }],
+    [1440, 900, { x: 480, y: 300, width: 940, height: 440 }],
+    [2560, 1440, { x: 520, y: 380, width: 2020, height: 840 }],
+    // Earth's screen center is outside this opening: a projection offset is needed.
+    [1440, 900, { x: 800, y: 300, width: 620, height: 440 }],
+  ] as const)(
+    'keeps the synthetic dateline route visible inside %i × %i overlays',
+    (width, height, safeRect) => {
+      const route = projectRouteArc(syntheticFullscreenCoordinates, 2.015, 8);
+      const direction = overviewInitialDirection(
+        route,
+        null,
+        new Vector3(0, 0, 1)
+      );
+      const original = direction.clone();
+      const frame = overviewCameraFrame({
+        width,
+        height,
+        fov: 45,
+        safeRect,
+        route,
+        direction,
+        centerGlobe: true,
+      });
+      expect(direction.equals(original)).toBe(true);
+      expect(frame.routeFit).toBe('complete');
+      expect(frame.distance).toBeGreaterThanOrEqual(3);
+      expect(frame.distance).toBeLessThanOrEqual(28);
+      const camera = new PerspectiveCamera(45, width / height);
+      camera.position.copy(
+        frame.direction!.clone().multiplyScalar(frame.distance)
+      );
+      camera.lookAt(0, 0, 0);
+      camera.setViewOffset(
+        width,
+        height,
+        frame.offsetX,
+        frame.offsetY,
+        width,
+        height
+      );
+      camera.updateMatrixWorld();
+      for (const point of route) {
+        const p = new Vector3(...point);
+        expect(p.dot(camera.position)).toBeGreaterThan(4);
+        const projected = p.project(camera);
+        const x = ((projected.x + 1) * width) / 2;
+        const y = ((1 - projected.y) * height) / 2;
+        expect(x).toBeGreaterThan(safeRect.x);
+        expect(x).toBeLessThan(safeRect.x + safeRect.width);
+        expect(y).toBeGreaterThan(safeRect.y);
+        expect(y).toBeLessThan(safeRect.y + safeRect.height);
+      }
+    }
+  );
+});
 describe('safe-area camera projection', () => {
   it('keeps Earth centered while fitting a transcontinental fullscreen route across the right-hand opening', () => {
     const route = projectRouteArc(
