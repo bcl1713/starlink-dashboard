@@ -28,7 +28,10 @@ export async function runTargetJourney(
   const second = await browser.newContext({
     baseURL: process.env.SIMULATION_ACCEPTANCE_BASE_URL,
     viewport: { width: 1920, height: 1080 },
-    recordVideo: { dir: info.outputPath('second-video') },
+    recordVideo: {
+      dir: info.outputPath('second-video'),
+      size: { width: 1920, height: 1080 },
+    },
   });
   try {
     const overview = await second.newPage();

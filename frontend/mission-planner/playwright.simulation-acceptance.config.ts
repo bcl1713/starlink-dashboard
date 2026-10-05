@@ -33,7 +33,7 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'retain-on-failure',
-    video: 'on',
+    video: { mode: 'on', size: { width: 1920, height: 1080 } },
     viewport: { width: 1920, height: 1080 },
   },
   projects: [

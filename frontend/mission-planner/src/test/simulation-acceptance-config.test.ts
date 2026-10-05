@@ -27,4 +27,8 @@ it('selects real production journeys with bounded timeout and no Vite server', a
   expect(config.retries).toBe(0);
   expect(config.webServer).toBeUndefined();
   expect(config.use?.baseURL).toBe('http://127.0.0.1:15262');
+  expect(config.use?.video).toEqual({
+    mode: 'on',
+    size: { width: 1920, height: 1080 },
+  });
 });
