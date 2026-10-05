@@ -91,9 +91,8 @@ individual requests at once. Current included contacts supplied by the current
 military response avoid an individual request; others use the hex endpoint.
 Per-source failures back off 15/30/60/120/240/300 seconds, respecting a longer
 Retry-After. Unexpired retry deadlines survive disable/re-enable, mode changes
-and removing/reintroducing a source. Sources recover independently.
-Browser reads never multiply these
-acquisitions.
+and removing/reintroducing a source. Sources recover independently. Browser
+reads never multiply these acquisitions.
 
 Position observation time is provider response `now` minus `seen_pos`, using
 `lastPosition`'s own age when appropriate. Message/receiver age is not
