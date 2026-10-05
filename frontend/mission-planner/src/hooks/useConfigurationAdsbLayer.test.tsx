@@ -19,16 +19,14 @@ afterEach(() => {
 });
 it('reads the independent catalog only while its tab is active, including excluded military', async () => {
   const now = Date.now();
-  const fetch = vi
-    .spyOn(overviewAdsbApi, 'getCatalog')
-    .mockResolvedValue({
-      settings_revision: settings.revision,
-      generated_at_ms: now,
-      sources: [],
-      contacts: [
-        adsbContact({ position_observed_at_ms: now, acquired_at_ms: now }),
-      ],
-    });
+  const fetch = vi.spyOn(overviewAdsbApi, 'getCatalog').mockResolvedValue({
+    settings_revision: settings.revision,
+    generated_at_ms: now,
+    sources: [],
+    contacts: [
+      adsbContact({ position_observed_at_ms: now, acquired_at_ms: now }),
+    ],
+  });
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
