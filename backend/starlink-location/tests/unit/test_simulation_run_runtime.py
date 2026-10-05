@@ -236,3 +236,42 @@ def test_generated_x_schedule_drives_paced_handoff(tmp_path):
     clocks.advance(30)
     tick(runtime)
     assert runtime.frame().x_context.current_satellite_id == "X-2"
+
+
+@pytest.mark.parametrize(
+    "anchors,elapsed,longitude,first_arrival",
+    [
+        ([(0, 0), (0, 600), (2, 1200)], 300, 0, 0),
+        ([(0, 0), (2, 600), (2, 1200)], 900, 2, 600),
+    ],
+)
+def test_stationary_endpoint_segments_preserve_position_and_first_arrival(
+    setup, anchors, elapsed, longitude, first_arrival
+):
+    from app.mission.timeline_builder.calculator import RouteTemporalProjector
+    from app.models.route import RoutePoint
+    from app.simulation.run_replay import project_run_frame
+
+    _runtime, _clocks, plan = setup
+    start = plan.preview.planned_departure
+    route = plan.artifacts.route.model_copy(deep=True)
+    route.points = [
+        RoutePoint(
+            latitude=0,
+            longitude=lon,
+            sequence=i,
+            expected_arrival_time=start + timedelta(seconds=seconds),
+        )
+        for i, (lon, seconds) in enumerate(anchors)
+    ]
+    projector = RouteTemporalProjector(route, start, plan.preview.planned_arrival)
+    plan = replace(
+        plan, artifacts=replace(plan.artifacts, route=route, projector=projector)
+    )
+    now = start + timedelta(seconds=elapsed)
+    frame = project_run_frame(plan, now, None)
+    assert frame.position.longitude == longitude
+    assert frame.position.speed == 0
+    assert projector.timestamp_for_distance(projector.distance_for_timestamp(now)) == (
+        start + timedelta(seconds=first_arrival)
+    )
