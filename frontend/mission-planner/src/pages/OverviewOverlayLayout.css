@@ -232,6 +232,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .overview-page[data-layout='landscape'] .overview-map-stage {
+  max-width: none;
   height: 100%;
   margin: 0;
   width: 100%;

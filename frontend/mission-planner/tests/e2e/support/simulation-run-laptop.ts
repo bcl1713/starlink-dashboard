@@ -54,6 +54,24 @@ export async function verifyRunLaptopFullscreen(
         .toBe(true);
       await expect(page.getByLabel('Simulation run')).toHaveCount(0);
       await expect(page.getByLabel('Overview metric history')).toHaveCount(0);
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const dashboard =
+              document.querySelector<HTMLElement>('.overview-page')!;
+            const stage = document.querySelector<HTMLElement>(
+              '.overview-map-stage'
+            )!;
+            const style = getComputedStyle(dashboard);
+            return Math.abs(
+              stage.clientWidth -
+                (dashboard.clientWidth -
+                  parseFloat(style.paddingLeft) -
+                  parseFloat(style.paddingRight))
+            );
+          })
+        )
+        .toBeLessThanOrEqual(1);
       await settledOverviewCamera(page);
       await page.screenshot({
         path: info.outputPath(`running-fullscreen-${size.width}.png`),
