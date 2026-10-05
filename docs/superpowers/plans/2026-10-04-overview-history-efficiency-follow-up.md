@@ -248,11 +248,11 @@ identifies a statement invalidated by the default change.
       `VITE_OVERVIEW_HISTORY_POLL_SECONDS=5` rollback; keep cadence distinct
       from acquisition freshness and long-window resolution. Run
       hook/build/config tests.
-- [ ] Rebuild at the product candidate's exact SHA. Run fresh relevant canonical
+- [x] Rebuild at the product candidate's exact SHA. Run fresh relevant canonical
       checks, production/browser controls and sustained acceptance after
       material changes. Require exact-head CI and whole-branch review before
       integration.
-- [ ] Deliver a separate PR against then-current `dev`, with passing gates or
+- [x] Deliver a separate PR against then-current `dev`, with passing gates or
       documented blockers. Do not merge/deploy under this measurement plan. Post
       independently relevant issue 211 findings only if externally authorized.
 
