@@ -657,3 +657,34 @@ it('exactly_one_measured_flow_owner uses the inferred route and retains disconne
   expect(screen.queryByText('Satellites')).toBeNull();
   expect(traffic()?.points.length).toBeGreaterThan(3);
 });
+
+it('toggles the aircraft history line and legend while retaining graph data and other layers', () => {
+  const view = render(<OverviewPage />);
+  const historyLine = () =>
+    [...scene.flows.values()].find((props) => props.core?.color === '#d9ffff');
+  expect(historyLine()).toBeDefined();
+  expect(screen.getByText('Track history')).toBeInTheDocument();
+  const history = scene.metrics?.history;
+  queries.links = {
+    data: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      orbital_traffic_enabled: false,
+      aircraft_history_enabled: false,
+    },
+  };
+  view.rerender(<OverviewPage />);
+  expect(historyLine()).toBeUndefined();
+  expect(screen.queryByText('Track history')).toBeNull();
+  expect(scene.metrics?.history).toEqual(history);
+  expect(scene.metrics?.selectedWindowSeconds).toBe(300);
+  expect(traffic()).toBeDefined();
+  expect(xBand()).toBeDefined();
+  expect(screen.getByText('Aircraft', { exact: true })).toBeInTheDocument();
+  queries.links = {
+    data: { ...(queries.links.data as object), aircraft_history_enabled: true },
+  };
+  view.rerender(<OverviewPage />);
+  expect(historyLine()).toBeDefined();
+  expect(screen.getByText('Track history')).toBeInTheDocument();
+});

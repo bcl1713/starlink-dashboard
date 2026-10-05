@@ -77,30 +77,34 @@ window is independent of Prometheus database retention (`PROMETHEUS_RETENTION`).
 
 ## Overview Data Link Persistence
 
-The independent Configuration switches **Starshield data link** and
-**X-band data link** default to enabled. **Orbital traffic view** defaults to
-disabled. The backend persists all three preferences
-under `STARLINK_APP_DATA_PATH/settings/overview-links.json`; the existing
+The independent Configuration switches **Starshield data link** and **X-band
+data link** default to enabled. **Orbital traffic view** defaults to disabled.
+The backend persists all four preferences under
+`STARLINK_APP_DATA_PATH/settings/overview-links.json`; the existing
 application-data mount supplies persistence, with no additional volume or
 bootstrap environment variable. Preserve this category during updates/rollback
 and ensure the service user can write its settings directory.
 
-Same-origin `GET /api/overview-links/settings` returns all three boolean fields;
+The **Aircraft history** switch defaults to `true` and controls the flown track
+and its legend entry without disabling history collection or network graphs.
+Existing saved files missing `aircraft_history_enabled` default to enabled.
+
+Same-origin `GET /api/overview-links/settings` returns all four boolean fields;
 partial `PUT` merges only supplied fields. Missing saved fields use defaults;
 unfamiliar saved fields survive reads and partial saves, preserving preferences
 across compatible schema upgrades and future rollbacks. A deployed version must
 include this compatibility reader to accept fields introduced by a newer
-version. Retain the settings file when redeploying; manual removal is unnecessary
-for additive schema changes. Malformed JSON or invalid recognized values still
-require repair and are never silently reset.
+version. Retain the settings file when redeploying; manual removal is
+unnecessary for additive schema changes. Malformed JSON or invalid recognized
+values still require repair and are never silently reset.
 
-In an isolated non-live acceptance
-project, save all four combinations, restart only that project's backend, and
-confirm each pair survives through the frontend's Nginx API path. Keep its ports
-and persisted data separate from existing installations. A visibility save must
-not change measured status/history or configured warning behavior. Starshield
-particles use measured traffic; X-band's 4/4 Mbps, 500 ms rendering preset is
-illustrative and never persisted as observed telemetry.
+In an isolated non-live acceptance project, save all four combinations, restart
+only that project's backend, and confirm each pair survives through the
+frontend's Nginx API path. Keep its ports and persisted data separate from
+existing installations. A visibility save must not change measured
+status/history or configured warning behavior. Starshield particles use measured
+traffic; X-band's 4/4 Mbps, 500 ms rendering preset is illustrative and never
+persisted as observed telemetry.
 
 ## Select an Immutable Release and Rollback Target
 

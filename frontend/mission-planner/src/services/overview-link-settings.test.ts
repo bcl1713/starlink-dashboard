@@ -10,21 +10,25 @@ const pairs = [
     starshield_link_enabled: true,
     x_band_link_enabled: true,
     orbital_traffic_enabled: false,
+    aircraft_history_enabled: true,
   },
   {
     starshield_link_enabled: false,
     x_band_link_enabled: true,
     orbital_traffic_enabled: false,
+    aircraft_history_enabled: true,
   },
   {
     starshield_link_enabled: true,
     x_band_link_enabled: false,
     orbital_traffic_enabled: false,
+    aircraft_history_enabled: true,
   },
   {
     starshield_link_enabled: false,
     x_band_link_enabled: false,
     orbital_traffic_enabled: false,
+    aircraft_history_enabled: true,
   },
 ];
 
@@ -107,6 +111,36 @@ it.each([undefined, null, 'true', 1])(
         x_band_link_enabled: true,
         orbital_traffic_enabled: value,
       },
+    });
+    await expect(overviewLinkSettingsApi.get()).rejects.toThrow(
+      'Invalid overview link settings'
+    );
+  }
+);
+
+it('retains a confirmed disabled aircraft history layer', async () => {
+  const settings = { ...pairs[0], aircraft_history_enabled: false };
+  vi.mocked(apiClient.get).mockResolvedValue({ data: settings });
+  await expect(overviewLinkSettingsApi.get()).resolves.toEqual(settings);
+});
+
+it('defaults aircraft history on for an older server response', async () => {
+  const legacy = {
+    starshield_link_enabled: true,
+    x_band_link_enabled: true,
+    orbital_traffic_enabled: false,
+  };
+  vi.mocked(apiClient.get).mockResolvedValue({ data: legacy });
+  await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject({
+    aircraft_history_enabled: true,
+  });
+});
+
+it.each([null, 'false', 0])(
+  'rejects invalid aircraft history confirmation %j',
+  async (value) => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { ...pairs[0], aircraft_history_enabled: value },
     });
     await expect(overviewLinkSettingsApi.get()).rejects.toThrow(
       'Invalid overview link settings'

@@ -5,7 +5,10 @@ const port = process.env.PLAYWRIGHT_PORT || '5173';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testIgnore: ['**/overview-window-production.spec.ts'],
+  testIgnore: [
+    '**/overview-window-production.spec.ts',
+    '**/overview-aircraft-history-production.spec.ts',
+  ],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,

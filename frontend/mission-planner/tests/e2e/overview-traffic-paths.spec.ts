@@ -115,7 +115,9 @@ for (const [traffic, xBand] of [
     await installOverviewSceneProbe(page);
     const fixture = await trafficPathFixture(page);
     await page.goto('/configuration');
-    await page.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
+    await page
+      .getByRole('tab', { name: 'Network Traffic', exact: true })
+      .click();
     for (const [label, enabled] of [
       ['Starshield data link', traffic],
       ['X-band data link', xBand],
@@ -181,7 +183,9 @@ for (const [traffic, xBand] of [
     await page
       .getByRole('link', { name: 'Configuration', exact: true })
       .click();
-    await page.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
+    await page
+      .getByRole('tab', { name: 'Network Traffic', exact: true })
+      .click();
     for (const [name, checked] of [
       ['Starshield data link', traffic],
       ['X-band data link', xBand],
@@ -219,12 +223,12 @@ test('keeps last confirmed switches on failed save and refresh error', async ({
   fixture.saveError = true;
   await control.click();
   await expect(
-    page.getByText('Unable to save data link settings. Please try again.')
+    page.getByText('Unable to save layer settings. Please try again.')
   ).toBeVisible();
   await expect(control).toBeChecked();
   fixture.getError = true;
   await expect(
-    page.getByText('Data link settings unavailable', { exact: true })
+    page.getByText('Layer settings unavailable', { exact: true })
   ).toBeVisible({ timeout: 10000 });
   await expect(control).toBeChecked();
   await page.getByRole('link', { name: 'Overview', exact: true }).click();

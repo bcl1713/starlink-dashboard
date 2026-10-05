@@ -52,7 +52,11 @@ def test_all_pairs_survive_store_recreation(tmp_path, starshield, x_band):
     assert OverviewLinkSettingsStore(path).update(payload) == OverviewLinkSettings(
         starshield, x_band
     )
-    assert json.loads(path.read_text()) == {**payload, "orbital_traffic_enabled": False}
+    assert json.loads(path.read_text()) == {
+        **payload,
+        "orbital_traffic_enabled": False,
+        "aircraft_history_enabled": True,
+    }
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         starshield, x_band
     )
@@ -217,6 +221,7 @@ def test_future_fields_survive_reads_partial_saves_and_restart(tmp_path, future_
         "starshield_link_enabled": False,
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
         "future_preference": future_value,
     }
     path.write_text(json.dumps(payload))
@@ -265,7 +270,32 @@ def test_rollback_and_reupgrade_preserve_enabled_orbital_preference(
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": True,
+        "aircraft_history_enabled": True,
     }
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         False, False, True
     )
+
+
+def test_aircraft_history_defaults_on_and_disabled_preference_survives_restart(
+    tmp_path,
+):
+    path = tmp_path / "links.json"
+    path.write_text(json.dumps({"starshield_link_enabled": False}))
+    store = OverviewLinkSettingsStore(path)
+    assert store.get().aircraft_history_enabled is True
+    store.update({"aircraft_history_enabled": False})
+    store.update({"x_band_link_enabled": False})
+    saved = OverviewLinkSettingsStore(path).get()
+    assert saved.aircraft_history_enabled is False
+    assert saved.starshield_link_enabled is False
+    assert saved.x_band_link_enabled is False
+
+
+@pytest.mark.parametrize("value", [None, "false", 0])
+def test_aircraft_history_invalid_updates_preserve_saved_preference(tmp_path, value):
+    store = OverviewLinkSettingsStore(tmp_path / "links.json")
+    saved = store.update({"aircraft_history_enabled": False})
+    with pytest.raises((ValueError, TypeError)):
+        store.update({"aircraft_history_enabled": value})
+    assert store.get() == saved
