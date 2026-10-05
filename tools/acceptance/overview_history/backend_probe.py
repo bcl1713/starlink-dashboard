@@ -14,9 +14,11 @@ from app.services.overview_history_prometheus import (
     query_overview_history_bundle,
 )
 
+from .http_profile import HTTPProfile
 from .trace import QueryTrace
 
 app = main.app
+app.add_middleware(HTTPProfile, output=Path("/data/overview-history-http.prof"))
 original_lifespan = app.router.lifespan_context
 trace: QueryTrace | None = None
 read_count = 0

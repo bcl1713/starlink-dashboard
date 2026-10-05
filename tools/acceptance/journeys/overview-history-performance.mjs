@@ -157,18 +157,10 @@ async function run(options) {
       resolve(output, "events.jsonl"),
       JSON.stringify({ monotonic_seconds: clock(), ...row }) + "\n",
     );
-  const browser = await chromium.connectOverCDP(options.session);
-  const context = await browser.newContext({
-    viewport: null,
-    ...(options["record-video"]
-      ? {
-          recordVideo: {
-            dir: resolve(output, "video"),
-            size: { width: 1920, height: 1080 },
-          },
-        }
-      : {}),
+  const browser = await chromium.connectOverCDP(options.session, {
+    noDefaults: true,
   });
+  const context = browser.contexts()[0];
   await context.addInitScript(installOverviewHistoryProbe);
   const pages = [],
     sessions = [],
@@ -275,6 +267,9 @@ async function run(options) {
     for (let index = 0; index < options.viewers; index++) {
       const page = await context.newPage();
       const session = await context.newCDPSession(page);
+      await session.send("Emulation.setFocusEmulationEnabled", {
+        enabled: false,
+      });
       pages.push(page);
       sessions.push(session);
       const pageId = String(index + 1);
@@ -414,9 +409,16 @@ async function run(options) {
         height: 1080,
       });
       await sleep(1000);
-      await session.send("Browser.setWindowBounds", {
-        windowId: target.windowId,
-        bounds: { windowState: "minimized" },
+      const rootSession = await browser.newBrowserCDPSession();
+      const info = await session.send("Target.getTargetInfo");
+      const background = await rootSession.send("Target.createTarget", {
+        url: "about:blank",
+        browserContextId: info.targetInfo.browserContextId,
+        newWindow: false,
+        background: false,
+      });
+      await rootSession.send("Target.activateTarget", {
+        targetId: background.targetId,
       });
       await expect.poll(() => page.evaluate(() => document.hidden)).toBe(true);
       const hiddenBefore = await page.evaluate(
@@ -429,10 +431,10 @@ async function run(options) {
       if (hiddenAfter <= hiddenBefore)
         throw new Error("background history polling stopped");
       event({ kind: "background_polling", hiddenBefore, hiddenAfter });
-      await session.send("Browser.setWindowBounds", {
-        windowId: target.windowId,
-        bounds: { windowState: "normal" },
+      await rootSession.send("Target.closeTarget", {
+        targetId: background.targetId,
       });
+      await rootSession.detach();
       await page.bringToFront();
       await expect(page.locator(".uplot canvas").first()).toBeVisible();
       await page.goto(`${options.origin}/configuration`);
@@ -463,6 +465,39 @@ async function run(options) {
       if (before === after)
         throw new Error("visible history surface did not move");
       event({ kind: "motion_control", before, after, axis: firstAxis });
+      if (options["record-video"]) {
+        const encoder = process.env.OVERVIEW_PROFILE_FFMPEG;
+        if (!encoder)
+          throw new Error("bounded recording requires OVERVIEW_PROFILE_FFMPEG");
+        const frames = resolve(output, "video-frames");
+        mkdirSync(frames, { recursive: true });
+        const began = clock();
+        for (let frame = 0; frame < 60; frame++) {
+          await page.screenshot({
+            path: resolve(frames, `${String(frame).padStart(3, "0")}.png`),
+          });
+          event({ kind: "video_frame", frame });
+          await sleep(200);
+        }
+        const elapsed = clock() - began;
+        execFileSync(encoder, [
+          "-hide_banner",
+          "-loglevel",
+          "error",
+          "-framerate",
+          String(60 / elapsed),
+          "-i",
+          resolve(frames, "%03d.png"),
+          "-c:v",
+          "libvpx",
+          "-b:v",
+          "1M",
+          "-deadline",
+          "realtime",
+          resolve(output, "arrival-rebase.webm"),
+        ]);
+        event({ kind: "bounded_video", frames: 60, elapsed_seconds: elapsed });
+      }
       metadata.behavior.motion = "passed";
       metadata.behavior.lifecycle = "passed";
       event({ kind: "lifecycle_controls", status: "passed" });

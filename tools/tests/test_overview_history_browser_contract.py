@@ -128,3 +128,9 @@ def test_journey_uses_real_pages_and_never_intercepts_healthy_history():
     assert "post_gc_heap_bytes" in source
     assert "started_seconds" in source
     assert "completed_seconds" in source
+
+
+def test_native_visibility_disables_playwright_focus_emulation():
+    source = JOURNEY.read_text()
+    assert 'Emulation.setFocusEmulationEnabled' in source
+    assert 'enabled: false' in source

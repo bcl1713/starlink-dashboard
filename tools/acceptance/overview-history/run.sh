@@ -65,6 +65,9 @@ cleanup() {
     if [[ -n "$backend" ]]; then
       docker exec "$backend" cat /data/overview-history-queries.jsonl > "$output/backend-queries.jsonl" 2>> "$output/cleanup.log" || result=1
       docker exec "$backend" cat /data/overview-history-reads.jsonl > "$output/backend-reads.jsonl" 2>> "$output/cleanup.log" || result=1
+      if [[ ${OVERVIEW_PROFILE_HTTP_CPU:-0} == 1 ]]; then
+        docker exec "$backend" cat /data/overview-history-http.prof > "$output/http-response.prof" 2>> "$output/cleanup.log" || result=1
+      fi
     fi
     "${compose[@]}" down --volumes > "$output/cleanup.log" 2>&1 || { result=1; cleanup_result=1; }
     if [[ -n $(docker ps -aq --filter label=com.docker.compose.project=starlink-224-history) || -n $(docker volume ls -q --filter label=com.docker.compose.project=starlink-224-history) ]]; then result=1; cleanup_result=1; fi
@@ -131,6 +134,9 @@ if [[ $replay == 1 ]]; then
         --samples 30 --output "$output/replay/$replay_window-$configuration.json"
     done
   done
+fi
+if [[ ${OVERVIEW_PROFILE_HTTP_CPU:-0} == 1 ]]; then
+  curl --fail --silent -H 'X-Overview-CPU-Profile: 1' http://127.0.0.1:15224/api/overview-history > "$output/profiled-history.json"
 fi
 if [[ $smoke == 1 ]]; then exit 0; fi
 "$profile_python" "$root/tools/acceptance/overview_history/run_browser.py" \
