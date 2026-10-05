@@ -232,26 +232,59 @@ export function createStarMarkerChevronResources({
   const tint = (
     geometry: THREE.BufferGeometry,
     tintColor: string,
-    alpha: number
+    alpha: number | ((x: number, y: number) => number),
+    glow = false
   ) => {
     const rgb = new THREE.Color(tintColor);
-    const colors = new Float32Array(
-      geometry.getAttribute('position').count * 4
-    );
+    const positions = geometry.getAttribute('position');
+    const colors = new Float32Array(positions.count * 4);
     for (let i = 0; i < colors.length; i += 4) {
-      colors.set([rgb.r, rgb.g, rgb.b, alpha], i);
+      const opacity =
+        typeof alpha === 'number'
+          ? alpha
+          : alpha(positions.getX(i / 4), positions.getY(i / 4));
+      colors.set([rgb.r, rgb.g, rgb.b, opacity], i);
     }
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+    geometry.setAttribute(
+      'markerGlow',
+      new THREE.Float32BufferAttribute(
+        new Float32Array(positions.count).fill(glow ? 1 : 0),
+        1
+      )
+    );
     pieces.push(geometry);
   };
-  const band = (outer: number, inner: number, alpha: number) => {
+  const band = (
+    outer: number,
+    inner: number,
+    outerAlpha: number,
+    innerAlpha: number,
+    glow = false
+  ) => {
     const shape = outline(outer);
     shape.holes.push(outline(inner));
-    tint(new THREE.ShapeGeometry(shape), color, alpha);
+    tint(
+      new THREE.ShapeGeometry(shape),
+      color,
+      (x, y) => {
+        // Each contour vertex belongs to one homothetic chevron outline.
+        const scale =
+          Math.abs(x) > 1e-6 ? Math.abs(x) / 0.8 : y < 0 ? -y / 0.35 : y;
+        const t = THREE.MathUtils.clamp(
+          (scale - inner) / (outer - inner),
+          0,
+          1
+        );
+        return THREE.MathUtils.lerp(innerAlpha, outerAlpha, t);
+      },
+      glow
+    );
   };
-  band(1.28, 1.15, 0.06 * glowIntensity);
-  band(1.15, 1.06, 0.18 * glowIntensity);
-  band(1.06, 0.82, 1);
+  const intensity = Math.max(0, glowIntensity);
+  band(3, 1.7, 0, 0.35 * intensity, true);
+  band(1.7, 1.06, 0.35 * intensity, 0.9 * intensity, true);
+  band(1.06, 0.82, 1, 1);
   tint(new THREE.ShapeGeometry(outline(0.82)), coreColor, 1);
   if (stale) {
     for (let i = 0; i < 4; i++) {
@@ -264,18 +297,37 @@ export function createStarMarkerChevronResources({
   }
   const geometry = mergeGeometries(pieces)!;
   for (const piece of pieces) piece.dispose();
-  return {
-    geometry,
-    material: new THREE.MeshBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      side: THREE.DoubleSide,
-      // Visibility is gated at the anchor; a globe must not slice a screen-space glyph.
-      depthTest: false,
-      depthWrite: false,
-      toneMapped: false,
-    }),
+  const material = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    side: THREE.DoubleSide,
+    forceSinglePass: true,
+    // Alpha-zero premultiplied halo fragments add light; the solid body retains normal coverage.
+    premultipliedAlpha: true,
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
+    // Visibility is gated at the anchor; a globe must not slice a screen-space glyph.
+    depthTest: false,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = `attribute float markerGlow;
+varying float vMarkerGlow;
+${shader.vertexShader}`.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+vMarkerGlow = markerGlow;`
+    );
+    shader.fragmentShader = `varying float vMarkerGlow;
+${shader.fragmentShader}`.replace(
+      '#include <premultiplied_alpha_fragment>',
+      `#include <premultiplied_alpha_fragment>
+if (vMarkerGlow > 0.5) gl_FragColor.a = 0.0;`
+    );
   };
+  return { geometry, material };
 }
 
 const screenPosition = new THREE.Vector3();
@@ -353,4 +405,51 @@ export function isStarMarkerVisible(
   if (d < 0) return true;
   const hit = (-b - Math.sqrt(d)) / (2 * a);
   return !(hit > 0 && hit < 1 - 1e-6);
+}
+
+/** Telemetry heading is clockwise from geographic north in the local globe tangent plane. */
+export function starMarkerHeadingDirection(
+  position: readonly [number, number, number],
+  headingDegrees: number | undefined
+): THREE.Vector3 | null {
+  if (typeof headingDegrees !== 'number' || !Number.isFinite(headingDegrees))
+    return null;
+  const latitude = Math.atan2(
+    position[1],
+    Math.hypot(position[0], position[2])
+  );
+  const longitude = Math.atan2(-position[2], position[0]);
+  const heading = THREE.MathUtils.degToRad(headingDegrees);
+  return new THREE.Vector3(
+    -Math.sin(latitude) * Math.cos(longitude),
+    Math.cos(latitude),
+    Math.sin(latitude) * Math.sin(longitude)
+  )
+    .multiplyScalar(Math.cos(heading))
+    .addScaledVector(
+      new THREE.Vector3(-Math.sin(longitude), 0, -Math.cos(longitude)),
+      Math.sin(heading)
+    );
+}
+
+/** Keep the luminous halo decorative: pointer hits belong to the body or stale ring. */
+export function raycastStarMarkerChevron(
+  this: THREE.Mesh,
+  raycaster: THREE.Raycaster,
+  intersections: THREE.Intersection[]
+) {
+  const start = intersections.length;
+  if ((this as THREE.InstancedMesh).isInstancedMesh) {
+    THREE.InstancedMesh.prototype.raycast.call(this, raycaster, intersections);
+  } else {
+    THREE.Mesh.prototype.raycast.call(this, raycaster, intersections);
+  }
+  const glow = this.geometry.getAttribute('markerGlow');
+  let next = start;
+  for (let i = start; i < intersections.length; i++) {
+    const hit = intersections[i];
+    if (hit.face && glow.getX(hit.face.a) > 0.5) continue;
+    intersections[next++] = hit;
+  }
+  intersections.length = next;
 }

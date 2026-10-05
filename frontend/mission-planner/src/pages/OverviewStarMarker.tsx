@@ -5,6 +5,8 @@ import {
   CORE_COLOR,
   createStarMarkerChevronResources,
   isStarMarkerVisible,
+  starMarkerHeadingDirection,
+  raycastStarMarkerChevron,
   setStarMarkerChevronMatrix,
   DEFAULT_GLOW_SIZE_PIXELS,
   createStarMarkerHaloResources,
@@ -24,6 +26,7 @@ export type StarMarkerProps = StarMarkerPositionProps & {
   size: number;
   shape?: 'star' | 'chevron';
   chevronSizePixels?: number;
+  headingDegrees?: number;
   coreColor?: string;
   coreRadius?: number;
   glowSizePixels?: number;
@@ -154,6 +157,10 @@ function GlowingStarMarker(props: StarMarkerProps) {
 function ChevronMarker(props: StarMarkerProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const position = resolveStarMarkerPosition(props);
+  const headingDirection = starMarkerHeadingDirection(
+    position,
+    props.headingDegrees
+  );
   const worldPosition = useMemo(() => new THREE.Vector3(), []);
   const resources = useMemo(
     () =>
@@ -179,7 +186,7 @@ function ChevronMarker(props: StarMarkerProps) {
     setStarMarkerChevronMatrix(
       mesh.current.matrix,
       worldPosition,
-      null,
+      headingDirection,
       state.camera,
       state.size.height,
       props.chevronSizePixels ?? 16
@@ -194,6 +201,7 @@ function ChevronMarker(props: StarMarkerProps) {
       matrixAutoUpdate={false}
       dispose={null}
       userData={{ starMarkerShape: 'chevron' }}
+      raycast={raycastStarMarkerChevron}
     />
   );
 }

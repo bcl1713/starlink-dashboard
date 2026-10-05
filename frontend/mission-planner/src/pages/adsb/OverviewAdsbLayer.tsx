@@ -10,7 +10,10 @@ import {
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { createStarMarkerChevronResources } from '../overview-star-marker-rendering';
+import {
+  createStarMarkerChevronResources,
+  raycastStarMarkerChevron,
+} from '../overview-star-marker-rendering';
 import { globePosition } from '../globe-coordinates';
 import {
   ADSB_MARKER_RADIUS,
@@ -76,7 +79,7 @@ export function OverviewAdsbLayer({
     ).map(([kind, batch]) => {
       const { geometry, material } = createStarMarkerChevronResources({
         color: kind === 'stale' ? '#b99554' : '#efb85b',
-        glowIntensity: 0.35,
+        glowIntensity: 0.65,
         stale: kind === 'stale',
       });
       const mesh = new THREE.InstancedMesh(
@@ -87,6 +90,7 @@ export function OverviewAdsbLayer({
       mesh.instanceMatrix.array.set(batch.matrices);
       mesh.instanceMatrix.needsUpdate = true;
       mesh.userData.adsbBatch = batch;
+      mesh.raycast = raycastStarMarkerChevron;
       mesh.computeBoundingSphere();
       group.add(mesh);
       return { mesh, geometry, material };
@@ -251,11 +255,11 @@ export function OverviewAdsbLayer({
           >
             <span
               data-adsb-label={c.hex}
-              className={`adsb-map-label${c.freshness === 'stale' ? ' adsb-map-label--stale' : ''}`}
+              className="globe-marker-label adsb-map-label"
               title={`${c.label} · ${c.hex}`}
               style={{
                 visibility: visibleSet.has(c.hex) ? 'visible' : 'hidden',
-                transform: `translate(${offsets[c.hex]?.[0] ?? 0}px,${offsets[c.hex]?.[1] ?? 0}px)`,
+                transform: `translate(calc(-50% + ${offsets[c.hex]?.[0] ?? 0}px), calc(100% + ${offsets[c.hex]?.[1] ?? 0}px))`,
               }}
             >
               {c.label}

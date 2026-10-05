@@ -50,6 +50,7 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
       orbital_traffic_enabled: false,
     } as OverviewLinkSettings,
     positionAvailable: true,
+    aircraftHeading: undefined as number | undefined,
     activeLeg: null as 'leg-a' | 'leg-b' | null,
     aircraftHistory: [] as Array<{ latitude: number; longitude: number }>,
   };
@@ -222,7 +223,12 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
       json = {
         timestamp: observed,
         position: state.positionAvailable
-          ? { latitude: 35, longitude: -100, altitude: 35000 }
+          ? {
+              latitude: 35,
+              longitude: -100,
+              altitude: 35000,
+              heading: state.aircraftHeading,
+            }
           : null,
         ground_entry_point: { latitude: 36, longitude: -102 },
         metric_availability: {

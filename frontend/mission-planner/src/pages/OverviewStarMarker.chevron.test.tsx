@@ -81,3 +81,38 @@ it('hides the own-aircraft chevron behind Earth and restores it when the camera 
   expect((marker.material as THREE.Material).depthTest).toBe(false);
   await view.unmount();
 });
+
+it.each([
+  [0, [0, 1, 0]],
+  [90, [1, 0, 0]],
+  [180, [0, -1, 0]],
+  [270, [-1, 0, 0]],
+] as const)(
+  'projects own-aircraft heading %s rather than keeping the chevron upright',
+  async (headingDegrees, expected) => {
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, 10);
+    camera.lookAt(0, 0, 0);
+    const view = await create(
+      <StarMarker
+        coordinate={{ latitude: 0, longitude: -90 }}
+        color="#72b7ff"
+        size={0.15}
+        shape="chevron"
+        headingDegrees={headingDegrees}
+      />,
+      { camera }
+    );
+    await act(async () => {
+      await view.advanceFrames(1, 0.1);
+    });
+    const marker = view.scene.findAllByType('Mesh')[0].instance as THREE.Mesh;
+    const direction = new THREE.Vector3(0, 1, 0).transformDirection(
+      marker.matrix
+    );
+    expected.forEach((value, index) =>
+      expect(direction.getComponent(index)).toBeCloseTo(value, 5)
+    );
+    await view.unmount();
+  }
+);

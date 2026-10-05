@@ -2,20 +2,10 @@
   pointer-events: none !important;
 }
 .adsb-map-label {
-  display: block;
   width: max-content;
   max-width: 220px;
-  padding: 2px 5px;
-  border: 1px solid #426577;
-  border-radius: 3px;
-  background: #07121de8;
-  color: #b8dce7;
-  font: 11px/1.3 sans-serif;
+  white-space: normal;
   overflow-wrap: anywhere;
-  pointer-events: none;
-}
-.adsb-map-label--stale {
-  border-style: dashed;
 }
 .adsb-details-overlay {
   position: fixed;

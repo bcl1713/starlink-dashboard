@@ -143,9 +143,11 @@ const atmosphereFragmentShader = `
 function AircraftMarker({
   coordinate,
   position,
+  headingDegrees,
 }: {
   coordinate: GlobeCoordinate;
   position: [number, number, number] | null;
+  headingDegrees?: number;
 }) {
   return position ? (
     <StarMarker
@@ -153,6 +155,7 @@ function AircraftMarker({
       color="#72b7ff"
       size={0.15}
       shape="chevron"
+      headingDegrees={headingDegrees}
     />
   ) : (
     <StarMarker
@@ -160,6 +163,7 @@ function AircraftMarker({
       color="#72b7ff"
       size={0.15}
       shape="chevron"
+      headingDegrees={headingDegrees}
     />
   );
 }
@@ -982,6 +986,7 @@ export function OverviewPage() {
               <AircraftMarker
                 coordinate={aircraftPosition}
                 position={aircraftScenePosition?.position ?? null}
+                headingDegrees={status?.position?.heading}
               />
             )}
           </Suspense>

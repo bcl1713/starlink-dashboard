@@ -137,3 +137,40 @@ it('zero-scales rear-side instances and restores their chevrons when the camera 
   expect(scale().length()).toBeGreaterThan(0);
   await view.unmount();
 });
+
+it('selects the solid chevron while its wider glow does not intercept clicks', async () => {
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0, 10);
+  camera.lookAt(0, 0, 0);
+  const view = await create(
+    <OverviewAdsbLayer
+      contacts={projectAdsbContacts(
+        [adsbContact({ latitude: 0, longitude: -90, track_degrees: 0 })],
+        adsbSettings(),
+        ADSB_NOW
+      )}
+      globeOccluder={{ current: new THREE.Group() }}
+      onSelect={vi.fn()}
+      onVisibleHexesChange={vi.fn()}
+    />,
+    { camera, width: 1000, height: 1000 }
+  );
+  await act(async () => {
+    await view.advanceFrames(1, 0.1);
+  });
+  const mesh = view.scene
+    .findAllByType('Mesh')
+    .map((n) => n.instance)
+    .find(
+      (n) => n instanceof THREE.InstancedMesh && n.count > 0
+    ) as THREE.InstancedMesh;
+  mesh.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(new THREE.Vector2(0.001, 0), camera);
+  expect(ray.intersectObject(mesh).some((hit) => hit.instanceId === 0)).toBe(
+    true
+  );
+  ray.setFromCamera(new THREE.Vector2(0, 0.03), camera);
+  expect(ray.intersectObject(mesh)).toHaveLength(0);
+  await view.unmount();
+});

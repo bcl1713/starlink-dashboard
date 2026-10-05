@@ -273,3 +273,137 @@ test('shared chevrons stay compact at globe and flight zoom with white-blue own 
   await check();
   await page.screenshot({ path: info.outputPath('chevrons-globe-view.png') });
 });
+
+test('telemetry heading, matching globe labels and visible chevron glow', async ({
+  context,
+}, info) => {
+  const fixture = await installAdsbFixture(context, true);
+  fixture.setAircraftHeading(270);
+  fixture.setContacts([
+    freshContact({ latitude: 38, longitude: -95, track_degrees: 90 }),
+  ]);
+  fixture.setSettings(adsbSettings({ include_hexes: ['00AB12'] }));
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await observeAdsbScene(page);
+  await page.goto('/overview');
+  await expect(page.locator('[data-adsb-label]')).toHaveCount(1);
+  await settledOverviewCamera(page);
+  const appearance = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((node) => {
+        const style = getComputedStyle(node);
+        return {
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          color: style.color,
+          letterSpacing: style.letterSpacing,
+          background: style.backgroundColor,
+          border: style.borderWidth,
+        };
+      });
+  expect
+    .soft(await appearance('[data-adsb-label]'))
+    .toEqual(await appearance('[data-poi-label]'));
+  const evidence = await page.evaluate(() => {
+    const state = window.__overviewEvidenceRoots
+      ?.find(
+        (root) =>
+          root.containerInfo?.getState &&
+          document.contains(root.containerInfo.getState().gl.domElement)
+      )
+      ?.containerInfo?.getState?.();
+    if (!state) throw new Error('No scene');
+    let own: import('three').Mesh | undefined,
+      traffic: import('three').InstancedMesh | undefined;
+    state.scene.traverse((node) => {
+      if (node.userData.starMarkerShape === 'chevron')
+        own = node as import('three').Mesh;
+      if (node.userData.adsbBatch?.hexes.length)
+        traffic = node as import('three').InstancedMesh;
+    });
+    if (!own || !traffic) throw new Error('Missing aircraft');
+    const rect = state.gl.domElement.getBoundingClientRect();
+    const center = state.camera.position
+      .clone()
+      .setFromMatrixPosition(own.matrixWorld);
+    const west = center
+      .clone()
+      .set(
+        Math.cos((35 * Math.PI) / 180) * Math.cos((-100.01 * Math.PI) / 180),
+        Math.sin((35 * Math.PI) / 180),
+        -Math.cos((35 * Math.PI) / 180) * Math.sin((-100.01 * Math.PI) / 180)
+      )
+      .multiplyScalar(center.length())
+      .project(state.camera);
+    const tip = center
+      .clone()
+      .set(0, 1, 0)
+      .applyMatrix4(own.matrixWorld)
+      .project(state.camera);
+    center.project(state.camera);
+    const tx = (tip.x - center.x) * rect.width,
+      ty = (tip.y - center.y) * rect.height;
+    const wx = (west.x - center.x) * rect.width,
+      wy = (west.y - center.y) * rect.height;
+    const alignment =
+      (tx * wx + ty * wy) / (Math.hypot(tx, ty) * Math.hypot(wx, wy));
+    const glowPixels = (
+      marker: import('three').Mesh | import('three').InstancedMesh,
+      blue: boolean
+    ) => {
+      // Isolate the real rendered marker from map textures, then inspect actual GPU pixels outside its solid body.
+      const scene = state.scene.clone(false);
+      const clone = marker.clone();
+      scene.add(clone);
+      const anchor = state.camera.position.clone();
+      if ((marker as import('three').InstancedMesh).isInstancedMesh) {
+        (clone as import('three').InstancedMesh).count = 1;
+        const matrix = clone.matrixWorld.clone();
+        (marker as import('three').InstancedMesh).getMatrixAt(0, matrix);
+        anchor.setFromMatrixPosition(matrix);
+      } else anchor.setFromMatrixPosition(marker.matrixWorld);
+      anchor.project(state.camera);
+      state.gl.render(scene, state.camera);
+      const gl = state.gl.getContext(),
+        ratio = state.gl.getPixelRatio();
+      const cx = Math.round(((anchor.x + 1) * gl.drawingBufferWidth) / 2),
+        cy = Math.round(((anchor.y + 1) * gl.drawingBufferHeight) / 2);
+      const radius = Math.ceil(24 * ratio),
+        side = radius * 2;
+      const pixels = new Uint8Array(side * side * 4);
+      gl.readPixels(
+        cx - radius,
+        cy - radius,
+        side,
+        side,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels
+      );
+      let count = 0;
+      for (let y = 0; y < side; y++)
+        for (let x = 0; x < side; x++) {
+          const distance = Math.hypot(x - radius, y - radius) / ratio;
+          if (distance < 13 || distance > 22) continue;
+          const i = (y * side + x) * 4,
+            r = pixels[i],
+            b = pixels[i + 2];
+          if (blue ? b > r + 8 && b > 20 : r > b + 8 && r > 20) count++;
+        }
+      if ((clone as import('three').InstancedMesh).isInstancedMesh)
+        (clone as import('three').InstancedMesh).dispose();
+      return count;
+    };
+    const ownGlowPixels = glowPixels(own, true),
+      trafficGlowPixels = glowPixels(traffic, false);
+    state.gl.render(state.scene, state.camera);
+    return { alignment, ownGlowPixels, trafficGlowPixels };
+  });
+  expect.soft(evidence.alignment).toBeGreaterThan(0.999);
+  expect.soft(evidence.ownGlowPixels).toBeGreaterThan(8);
+  expect.soft(evidence.trafficGlowPixels).toBeGreaterThan(8);
+  await page.screenshot({ path: info.outputPath('heading-labels-glow.png') });
+});

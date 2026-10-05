@@ -10,6 +10,7 @@ import { observeOverviewCamera, overviewCamera } from './overview-camera';
 
 export interface AdsbFixtureController {
   setContacts: (contacts: AdsbContact[]) => void;
+  setAircraftHeading: (heading: number) => void;
   setSettings: (settings: AdsbSettings) => void;
   failSettingsSave: (fail: boolean) => void;
   failTraffic: (fail: boolean) => void;
@@ -101,6 +102,9 @@ export async function installAdsbFixture(
       .catch(() => {});
   });
   return {
+    setAircraftHeading: (heading) => {
+      windowFixture.state.aircraftHeading = heading;
+    },
     setContacts: (value) => {
       contacts = structuredClone(value);
     },
