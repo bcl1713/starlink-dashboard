@@ -69,9 +69,13 @@ def resolve_active_x_context(
     leg: MissionLeg,
     route: ParsedRoute | None,
     telemetry: TelemetryData,
+    *,
+    paced_context: ActiveXContext | None = None,
 ) -> ActiveXContext:
     """Prepare inside the geographic zone and commit at projected route passage."""
 
+    if paced_context is not None:
+        return paced_context
     current_satellite = leg.transports.initial_x_satellite_id
     if not current_satellite:
         return ActiveXContext(None, None, empty_handoff_context())

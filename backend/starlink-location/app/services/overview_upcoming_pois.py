@@ -72,6 +72,7 @@ def project_overview_upcoming_pois(
     flight_phase: str,
     current_progress: float | None,
     calculated_at: datetime,
+    mission_time=None,
 ) -> OverviewUpcomingPoisResponse:
     """Project generated POIs with route-relative in-flight eligibility."""
     if calculated_at.tzinfo is None:
@@ -79,6 +80,7 @@ def project_overview_upcoming_pois(
     else:
         calculated_at = calculated_at.astimezone(timezone.utc)
 
+    mission_now = mission_time.simulation_time if mission_time else calculated_at
     eta_type = "estimated" if flight_phase == "in_flight" else "anticipated"
     projected: list[OverviewUpcomingPoi] = []
     for poi in pois:
@@ -89,7 +91,7 @@ def project_overview_upcoming_pois(
         if eta_seconds is not None and not isfinite(eta_seconds):
             eta_seconds = None
         estimated_arrival_time = (
-            calculated_at + timedelta(seconds=eta_seconds)
+            mission_now + timedelta(seconds=eta_seconds)
             if eta_seconds is not None
             else None
         )
@@ -114,8 +116,7 @@ def project_overview_upcoming_pois(
             map_retained = True
         else:
             map_retained = (
-                calculated_at
-                <= estimated_arrival_time + RETAINED_AFTER_EXPECTED_ARRIVAL
+                mission_now <= estimated_arrival_time + RETAINED_AFTER_EXPECTED_ARRIVAL
             )
 
         projected.append(
@@ -166,6 +167,7 @@ def project_overview_upcoming_pois(
         "available" if any(poi.upcoming for poi in projected) else "no_upcoming_pois"
     )
     return OverviewUpcomingPoisResponse(
+        mission_time=mission_time,
         state=state,
         calculated_at=calculated_at,
         flight_phase=FlightPhase(flight_phase),

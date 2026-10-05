@@ -511,8 +511,16 @@ async def shutdown_event():
 def _publish_replay_telemetry(telemetry, tick):
     from app.core.metrics import update_metrics_from_telemetry
 
+    from app.simulation.run_timing import mission_time_context
+
     update_metrics_from_telemetry(
-        telemetry, _simulation_config, tick.plan.artifacts.route, app.state.poi_manager
+        telemetry,
+        _simulation_config,
+        tick.plan.artifacts.route,
+        app.state.poi_manager,
+        mission_context=mission_time_context(tick.status),
+        simulation_plan=tick.plan,
+        simulation_frame=tick.frame,
     )
 
 

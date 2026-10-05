@@ -48,7 +48,9 @@ class ETACalculator:
         self._passed_pois: set[str] = set()  # Track POI IDs that have been passed
         self._poi_distance_threshold_m = 100.0  # 100m threshold for "passed"
 
-    def update_speed(self, current_speed_knots: float) -> None:
+    def update_speed(
+        self, current_speed_knots: float, *, sample_time_seconds: float | None = None
+    ) -> None:
         """
         Update current speed and recalculate smoothed speed.
 
@@ -58,7 +60,9 @@ class ETACalculator:
         Args:
             current_speed_knots: Current speed in knots
         """
-        current_time = time.time()
+        current_time = (
+            time.time() if sample_time_seconds is None else sample_time_seconds
+        )
         self._speed_history.append((current_speed_knots, current_time))
 
         # Remove samples older than smoothing window

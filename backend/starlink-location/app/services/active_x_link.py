@@ -14,6 +14,7 @@ from app.models.telemetry import TelemetryData
 from app.satellites.geometry import is_in_azimuth_range
 from app.satellites.rules import RuleEngine
 from app.services.active_x_handoff import (
+    ActiveXContext,
     empty_handoff_context,
     resolve_active_x_context,
 )
@@ -44,6 +45,7 @@ def build_active_x_link(
     route_manager: Any,
     poi_manager: Any,
     state_filter: LinkState | None = None,
+    paced_context: ActiveXContext | None = None,
 ) -> dict[str, Any]:
     """Build a two-point route from aircraft to active X-band satellite.
 
@@ -79,7 +81,11 @@ def build_active_x_link(
     if active_leg is None:
         return empty_active_x_link(state_filter)
 
-    active_context = resolve_active_x_context(active_leg, route, telemetry)
+    active_context = (
+        paced_context
+        if paced_context is not None
+        else resolve_active_x_context(active_leg, route, telemetry)
+    )
     satellite_id = active_context.current_satellite_id
     if not satellite_id:
         return empty_active_x_link(state_filter)

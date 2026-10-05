@@ -95,6 +95,7 @@ def activate_leg_transaction(
                 leg_id, tick.plan.artifacts.timeline, parent_mission_id=mission_id
             )
             telemetry = coordinator.update(replay_frame=tick.frame)
+            flight.apply_simulation_frame(tick.plan, tick.frame)
             run_service.publish(telemetry, tick)
             result = run_service.runtime.commit_tick(tick)
         except (

@@ -113,6 +113,7 @@ class SimulationRunService:
             flight_checkpoint = flight.checkpoint()
             try:
                 telemetry = coordinator.update(replay_frame=tick.frame)
+                flight.apply_simulation_frame(tick.plan, tick.frame)
                 publish(telemetry, tick)
                 if advancing:
                     self.runtime.commit_tick(tick)

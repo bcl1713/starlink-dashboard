@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_serializer
 
 from app.models.flight_status import FlightPhase
+from app.models.mission_time import MissionTimeContext
 from app.models.poi import MissionPoiKind
 from app.models.telemetry import PositionState
 
@@ -49,6 +50,8 @@ class OverviewUpcomingPoi(BaseModel):
 
 class OverviewUpcomingPoisResponse(BaseModel):
     """Overview POIs and their availability state."""
+
+    mission_time: MissionTimeContext | None = None
 
     state: OverviewUpcomingPoisState
     calculated_at: datetime
