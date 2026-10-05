@@ -28,11 +28,13 @@ from fastapi.responses import StreamingResponse
 
 from app.core.limiter import limiter
 from app.mission.dependencies import (
+    get_optional_simulation_run_service,
     get_overview_clock_settings_store,
     get_poi_manager,
     get_route_manager,
 )
 from app.mission.derived_route import build_derived_route_estimate
+from app.mission.leg_activation import activate_leg_transaction
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
 from app.mission.package import export_mission_package
 from app.mission.storage import (
@@ -53,6 +55,7 @@ from app.mission.timeline_builder.calculator import (
 from app.mission.timeline_service import build_mission_timeline
 from app.mission.validation import validate_adjusted_departure_time
 from app.models.poi import POICreate
+from app.models.simulation_run import ActivationRequest
 from app.satellites.coverage import CoverageSampler
 from app.services.mission_clock_service import (
     apply_mission_activation_clock_settings,
@@ -64,6 +67,7 @@ from app.services.overview_clock_location import resolve_clock_location
 from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.simulation.run_service import SimulationRunService
 
 logger = logging.getLogger(__name__)
 
@@ -305,6 +309,9 @@ async def delete_mission_endpoint(
     mission_id: str,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> None:
     """Delete a mission and all associated legs, routes, and POIs.
 
@@ -347,6 +354,8 @@ async def delete_mission_endpoint(
                     },
                 )
 
+            if run_service:
+                run_service.cancel_owned(mission_id, None, "Deleted")
             # Log cascade deletion info
             leg_count = len(mission.legs)
             logger.info(
@@ -1170,6 +1179,9 @@ async def update_leg(
     updated_leg: MissionLeg,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> dict:
     """Update an existing leg in a mission.
 
@@ -1185,6 +1197,8 @@ async def update_leg(
         warnings = []
 
         with get_active_leg_lock(), get_mission_lock(mission_id):
+            if run_service:
+                run_service.assert_plan_edit_allowed(mission_id, leg_id)
             # Load mission
             mission = load_mission_v2(mission_id)
             if not mission:
@@ -1343,6 +1357,9 @@ async def delete_leg(
     leg_id: str,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ):
     """Delete a leg from a mission (cascade deletes route and POIs).
 
@@ -1385,6 +1402,8 @@ async def delete_leg(
                     },
                 )
 
+            if run_service:
+                run_service.cancel_owned(mission_id, leg_id, "Deleted")
             # Log cascade deletion info
             route_id = leg.route_id or "none"
             logger.info(f"Cascade deletion: leg {leg_id} with route {route_id}")
@@ -1514,6 +1533,10 @@ async def activate_leg(
     ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
+    activation: ActivationRequest | None = None,
 ) -> dict:
     """Activate one leg globally, rolling back persistence on downstream failure.
 
@@ -1524,6 +1547,19 @@ async def activate_leg(
     Returns:
         Success response with active leg ID
     """
+    if activation and activation.simulation:
+        if run_service is None:
+            raise HTTPException(503, "Simulation runtime is not initialized")
+        return activate_leg_transaction(
+            mission_id,
+            leg_id,
+            route_manager,
+            poi_manager,
+            clock_settings_store,
+            run_service,
+            activation.simulation,
+            _coverage_sampler,
+        )
     try:
         with get_active_leg_lock():
             mission = load_mission_v2(mission_id)
@@ -1671,6 +1707,8 @@ async def activate_leg(
 
             logger.info(f"Activated leg {leg_id} in mission {mission_id}")
 
+            if run_service:
+                run_service.runtime.clear_selection()
             return {"status": "success", "active_leg_id": leg_id}
     except HTTPException:
         raise
@@ -1702,6 +1740,9 @@ async def deactivate_all_legs(
         Depends(get_overview_clock_settings_store),
     ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> dict:
     """Deactivate all legs in the mission.
 
@@ -1737,6 +1778,8 @@ async def deactivate_all_legs(
                 )
                 return {"status": "success", "message": "All legs deactivated"}
 
+            if run_service:
+                run_service.cancel_owned(mission_id, None, "Deactivated")
             active_route_ids = [leg.route_id for leg in mission.legs if leg.is_active]
             for leg in mission.legs:
                 leg.is_active = False
@@ -1871,6 +1914,9 @@ async def update_leg_route(
     file: Annotated[UploadFile, File()] = ...,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> dict:
     """Update a leg's route via KML file upload.
 
@@ -1905,6 +1951,8 @@ async def update_leg_route(
         # Keep the canonical active-leg lock ahead of the parent lock so an
         # activation cannot race a route replacement boundary check.
         with get_active_leg_lock(), get_mission_lock(mission_id):
+            if run_service:
+                run_service.assert_plan_edit_allowed(mission_id, leg_id)
             # Load mission and leg
             mission = load_mission_v2(mission_id)
             if not mission:

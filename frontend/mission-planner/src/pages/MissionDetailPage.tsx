@@ -18,6 +18,8 @@ import {
   useUpdateMission,
 } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
+import { SimulateLegDialog } from '../components/missions/SimulateLegDialog';
+import { MissionSimulationStatus } from '../components/missions/MissionSimulationStatus';
 import { EditableField } from '../components/missions/EditableField';
 import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
@@ -26,6 +28,7 @@ export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
+  const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
@@ -155,6 +158,7 @@ export function MissionDetailPage() {
         </div>
       </div>
 
+      <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
       <div className="border-t pt-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Mission Legs</h2>
@@ -210,6 +214,16 @@ export function MissionDetailPage() {
                       )}
                     </div>
                     <div className="flex gap-2 ml-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSimulationLegId(leg.id);
+                        }}
+                      >
+                        Simulate leg…
+                      </Button>
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -271,6 +285,17 @@ export function MissionDetailPage() {
         existingLegCount={mission?.legs.length || 0}
         onAddLeg={handleAddLeg}
       />
+      {simulationLegId && (
+        <SimulateLegDialog
+          key={simulationLegId}
+          missionId={mission.id}
+          legId={simulationLegId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSimulationLegId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

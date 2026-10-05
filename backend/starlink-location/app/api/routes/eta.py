@@ -8,9 +8,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
-from app.mission.dependencies import get_route_manager
+from app.mission.dependencies import (
+    get_optional_simulation_run_service,
+    get_route_manager,
+)
 from app.services.route_eta_calculator import RouteETACalculator
 from app.services.route_manager import RouteManager
+from app.simulation.run_service import SimulationRunService
+from app.simulation.run_timing import published_replay
 
 logger = get_logger(__name__)
 
@@ -31,6 +36,9 @@ async def calculate_eta_to_waypoint(
         float, Query(description="Current longitude in decimal degrees")
     ] = ...,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> dict:
     """Calculate estimated time of arrival (ETA) to a specific waypoint.
 
@@ -59,6 +67,11 @@ async def calculate_eta_to_waypoint(
         )
 
     parsed_route = route_manager.get_route(route_id)
+    selection = published_replay(run_service)
+    if selection and selection[0].route_id == route_id:
+        parsed_route = selection[0].artifacts.route
+    else:
+        selection = None
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -81,6 +94,19 @@ async def calculate_eta_to_waypoint(
             current_position_lat,
             current_position_lon,
         )
+        if selection:
+            timestamp = (
+                selection[0]
+                .artifacts.projector.project(
+                    parsed_route.waypoints[waypoint_index].latitude,
+                    parsed_route.waypoints[waypoint_index].longitude,
+                )
+                .timestamp
+            )
+            eta_data["estimated_time_remaining_seconds"] = max(
+                0, (timestamp - selection[2].simulation_time).total_seconds()
+            )
+            eta_data["mission_time"] = selection[2].model_dump(mode="json")
         return eta_data
     except (
         RuntimeError,
@@ -118,6 +144,9 @@ async def calculate_eta_to_location(
         float, Query(description="Current longitude in decimal degrees")
     ] = ...,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> dict:
     """Calculate estimated time of arrival (ETA) to an arbitrary location.
 
@@ -146,6 +175,11 @@ async def calculate_eta_to_location(
         )
 
     parsed_route = route_manager.get_route(route_id)
+    selection = published_replay(run_service)
+    if selection and selection[0].route_id == route_id:
+        parsed_route = selection[0].artifacts.route
+    else:
+        selection = None
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -160,6 +194,14 @@ async def calculate_eta_to_location(
             current_position_lat,
             current_position_lon,
         )
+        if selection:
+            timestamp = (
+                selection[0].artifacts.projector.project(latitude, longitude).timestamp
+            )
+            eta_data["estimated_time_remaining_seconds"] = max(
+                0, (timestamp - selection[2].simulation_time).total_seconds()
+            )
+            eta_data["mission_time"] = selection[2].model_dump(mode="json")
         return eta_data
     except (
         RuntimeError,

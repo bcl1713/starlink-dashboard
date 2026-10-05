@@ -6,6 +6,7 @@ export interface OverviewLayoutInput {
   clockHeight: number;
   overlayHeight: number;
   overflow?: boolean;
+  fullscreen?: boolean;
 }
 export interface OverviewSafeRect {
   x: number;
@@ -21,6 +22,7 @@ export function resolveOverviewLayout({
   clockHeight,
   overlayHeight,
   overflow,
+  fullscreen = false,
 }: OverviewLayoutInput): OverviewLayoutMode {
   if (overflow) return 'stacked';
   const scale = Math.max(1, rootFontSize / 16);
@@ -35,7 +37,7 @@ export function resolveOverviewLayout({
   if (
     usable >= 800 * scale &&
     height >= 300 * scale &&
-    height <= 600 &&
+    (height <= 600 || fullscreen) &&
     usable - rail - 12 >= 560 * scale &&
     stageHeight >= 220 * scale &&
     stageHeight - overlayHeight - 24 >= 120 * scale

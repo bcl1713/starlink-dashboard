@@ -1,4 +1,5 @@
 import apiClient from './api-client';
+import type { MissionTimeContext } from './simulation-run';
 
 export type OverviewPoiKind =
   | 'departure'
@@ -32,6 +33,7 @@ export type OverviewFlightPhase =
   | 'post_arrival';
 
 export interface OverviewUpcomingPoisResponse {
+  mission_time?: MissionTimeContext | null;
   state:
     | 'available'
     | 'no_active_mission'

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { missionsApi } from '../../services/missions';
+import type { SimulationStart } from '@/services/simulation-run';
+import { confirmSimulationRun } from './useSimulationRun';
 import type {
   CreateMissionRequest,
   UpdateMissionRequest,
@@ -112,9 +114,33 @@ export function useActivateLeg() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ missionId, legId }: { missionId: string; legId: string }) =>
-      missionsApi.activateLeg(missionId, legId),
-    onSuccess: (_, variables) => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['simulation-run'] });
+    },
+    mutationFn: ({
+      missionId,
+      legId,
+      simulation,
+    }: {
+      missionId: string;
+      legId: string;
+      simulation?: SimulationStart;
+    }) =>
+      simulation
+        ? missionsApi.activateLeg(missionId, legId, simulation)
+        : missionsApi.activateLeg(missionId, legId),
+    onSuccess: (result, variables) => {
+      if (result?.simulation_run)
+        confirmSimulationRun(queryClient, result.simulation_run);
+      for (const key of [
+        'simulation-run',
+        'routes',
+        'status',
+        'overview-upcoming-pois',
+        'flight-status',
+        'active-x-link',
+      ])
+        queryClient.invalidateQueries({ queryKey: [key] });
       queryClient.invalidateQueries({
         queryKey: ['missions', variables.missionId],
       });
@@ -132,6 +158,7 @@ export function useDeactivateAllLegs(missionId: string) {
     mutationFn: () => missionsApi.deactivateAllLegs(missionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['simulation-run'] });
       queryClient.invalidateQueries({
         queryKey: ['overview-clock-settings'],
       });

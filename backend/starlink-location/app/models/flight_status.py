@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from app.models.mission_time import MissionTimeContext
+
 
 class FlightPhase(str, Enum):
     """Enumeration of flight phases for state transitions."""
@@ -105,6 +107,8 @@ class FlightStatus(BaseModel):
 
 class FlightStatusResponse(BaseModel):
     """Response model for flight status API endpoint."""
+
+    mission_time: MissionTimeContext | None = None
 
     phase: FlightPhase = Field(..., description="Current flight phase")
     eta_mode: ETAMode = Field(..., description="Current ETA calculation mode")

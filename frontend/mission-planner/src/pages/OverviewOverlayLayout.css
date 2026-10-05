@@ -93,6 +93,11 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
+.overview-clock-simulation-label {
+  color: #38bdf8;
+  font-size: 0.75rem;
+  margin: 6px 0 0;
+}
 .overview-page .operational-clock {
   padding: 6px;
   line-height: 1.2;
@@ -227,6 +232,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .overview-page[data-layout='landscape'] .overview-map-stage {
+  max-width: none;
   height: 100%;
   margin: 0;
   width: 100%;
@@ -537,4 +543,8 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.overview-page[data-layout='landscape'][data-paced-running='true'] {
+  grid-template-columns: minmax(0, 1fr);
 }

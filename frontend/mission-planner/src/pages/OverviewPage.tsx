@@ -89,6 +89,12 @@ import { useOverviewDisplayHost } from '@/hooks/useOverviewDisplayHost';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { OverviewCameraIntent } from './overview-camera-frame';
 import type { OverviewLayoutMode } from './overview-responsive-layout';
+import {
+  useSimulationRun,
+  useSimulationRunRoute,
+} from '@/hooks/api/useSimulationRun';
+import { useSimulationClock } from '@/hooks/useSimulationClock';
+import { prepareRunMotion, projectRunMotion } from './simulation-run-motion';
 
 const AIRCRAFT_HISTORY_LINE = {
   outer: {
@@ -316,11 +322,6 @@ export function OverviewPage() {
     };
   }, []);
 
-  const sunPosition = useMemo(
-    () => sunLightPosition(solarTime, 10),
-    [solarTime]
-  );
-
   const globeOccluder = useRef<THREE.Group>(new THREE.Group());
 
   const {
@@ -330,12 +331,24 @@ export function OverviewPage() {
   } = useRoutes(true);
 
   const routeId = activeRouteId(routes);
+  const { data: simulationRun, isError: simulationRefreshFailed } =
+    useSimulationRun();
+  const pacedRunning = simulationRun?.state === 'running';
+  const { data: replayGeometry } = useSimulationRunRoute(simulationRun);
 
   const {
-    data: activeRoute,
+    data: ordinaryRoute,
     isLoading: isLoadingRoute,
     error: routeError,
   } = useRoute(routeId ?? '', true);
+  const activeRoute =
+    replayGeometry &&
+    simulationRun &&
+    replayGeometry.runtime_id === simulationRun.runtime_id &&
+    replayGeometry.run_id === simulationRun.run?.run_id &&
+    ['running', 'completed'].includes(simulationRun.state)
+      ? replayGeometry.route
+      : ordinaryRoute;
 
   const routePoints = useMemo(
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
@@ -357,19 +370,57 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
+  const simulationClock = useSimulationClock(
+    simulationRun,
+    currentTime,
+    simulationRefreshFailed,
+    true
+  );
+  const missionNow = simulationClock.missionNowMs;
+  const replaySelected = Boolean(
+    replayGeometry &&
+      simulationRun &&
+      replayGeometry.runtime_id === simulationRun.runtime_id &&
+      replayGeometry.run_id === simulationRun.run?.run_id &&
+      ['running', 'completed'].includes(simulationRun.state)
+  );
+  const runMotion = useMemo(
+    () =>
+      replaySelected ? prepareRunMotion(replayGeometry!.route.points) : null,
+    [replaySelected, replayGeometry]
+  );
+  const sceneTime = pacedRunning
+    ? missionNow
+    : simulationRun?.state === 'completed'
+      ? Date.parse(simulationRun.run!.simulation_time)
+      : solarTime.getTime();
+  const sunPosition = useMemo(
+    () => sunLightPosition(new Date(sceneTime), 10),
+    [sceneTime]
+  );
+  const runPosition = projectRunMotion(runMotion, sceneTime);
   const {
     data: upcomingPoisResponse,
     isError: arrivalRefreshFailed,
     isLoading: isLoadingUpcomingPois,
-  } = useOverviewUpcomingPois();
+  } = useOverviewUpcomingPois(pacedRunning);
   const arrivalState = deriveArrivalPanel(
     upcomingPoisResponse,
     currentTime,
-    arrivalRefreshFailed
+    arrivalRefreshFailed,
+    simulationRun?.state === 'completed' &&
+      upcomingPoisResponse?.mission_time &&
+      upcomingPoisResponse.mission_time.run_id === simulationRun.run?.run_id
+      ? Date.parse(upcomingPoisResponse.mission_time.simulation_time)
+      : missionNow
   );
   const upcomingPoiView = useMemo(
-    () => overviewPoiView(upcomingPoisResponse?.pois ?? []),
-    [upcomingPoisResponse?.pois]
+    () =>
+      overviewPoiView(
+        upcomingPoisResponse?.pois ?? [],
+        pacedRunning ? missionNow : undefined
+      ),
+    [upcomingPoisResponse?.pois, pacedRunning, missionNow]
   );
   const [upcomingPoiLabelLayout, setUpcomingPoiLabelLayout] =
     useState<PoiLabelLayout>({
@@ -420,8 +471,11 @@ export function OverviewPage() {
     (overviewLinkSettings?.aircraft_history_enabled ?? true) &&
     aircraftHistoryPoints.length >= 2;
 
-  const aircraftPosition = projectAircraftPosition(status ?? {});
-  const aircraftScenePosition = projectAircraftScenePosition(status);
+  const displayStatus = runPosition
+    ? { ...status, position: { ...status?.position, ...runPosition } }
+    : status;
+  const aircraftPosition = projectAircraftPosition(displayStatus ?? {});
+  const aircraftScenePosition = projectAircraftScenePosition(displayStatus);
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
   const aircraftLatitude = aircraftScenePosition?.latitude;
   const aircraftLongitude = aircraftScenePosition?.longitude;
@@ -634,6 +688,7 @@ export function OverviewPage() {
     arrivalState.exception,
     plannedSatelliteState,
     mapMessages,
+    pacedRunning,
   ]);
   const contentReady =
     !isLoading &&
@@ -785,14 +840,24 @@ export function OverviewPage() {
       className="overview-page"
       data-layout={layout.mode}
       data-map-exploring={exploring}
+      data-paced-running={pacedRunning}
     >
       <div className="overview-top-overlays">
         <OverviewClockPanel
           clocks={overviewClockSettings?.clocks}
-          currentTime={currentTime}
+          currentTime={missionNow}
           isError={isOverviewClockSettingsError}
           isLoading={isLoadingOverviewClockSettings}
         />
+        {pacedRunning && (
+          <p
+            className="overview-clock-simulation-label"
+            aria-label="Simulation clock"
+          >
+            SIMULATED TIME
+            {simulationClock.stale ? ' · Refresh unavailable' : ''}
+          </p>
+        )}
       </div>
       <div
         ref={captureStage}
@@ -939,7 +1004,7 @@ export function OverviewPage() {
                 poi={poi}
                 color={urgencyColor(
                   poi.estimated_arrival_time,
-                  new Date(currentTime)
+                  new Date(missionNow)
                 )}
                 globeOccluder={globeOccluder}
                 labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
@@ -1015,7 +1080,7 @@ export function OverviewPage() {
               <AircraftMarker
                 coordinate={aircraftPosition}
                 position={aircraftScenePosition?.position ?? null}
-                headingDegrees={status?.position?.heading}
+                headingDegrees={displayStatus?.position?.heading}
                 chevronSettings={chevronSettings}
               />
             )}
@@ -1045,16 +1110,18 @@ export function OverviewPage() {
           />
         </Canvas>
       </div>
-      <div className="overview-metrics-overlays">
-        <OverviewMetricHistoryPanels
-          status={status}
-          statusError={Boolean(statusError)}
-          history={overviewHistory}
-          error={isOverviewHistoryError}
-          selectedWindowSeconds={overviewHistorySettings?.window_seconds}
-          nowMs={currentTime}
-        />
-      </div>
+      {!pacedRunning && (
+        <div className="overview-metrics-overlays">
+          <OverviewMetricHistoryPanels
+            status={status}
+            statusError={Boolean(statusError)}
+            history={overviewHistory}
+            error={isOverviewHistoryError}
+            selectedWindowSeconds={overviewHistorySettings?.window_seconds}
+            nowMs={currentTime}
+          />
+        </div>
+      )}
     </main>
   );
 }

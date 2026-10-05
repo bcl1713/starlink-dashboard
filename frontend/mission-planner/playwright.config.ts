@@ -8,6 +8,7 @@ export default defineConfig({
   testIgnore: [
     '**/overview-window-production.spec.ts',
     '**/overview-aircraft-history-production.spec.ts',
+    '**/simulation-run-production.spec.ts',
   ],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
