@@ -188,3 +188,88 @@ test('original observation age survives failures, repeated replies and foregroun
   await page.goto('/configuration');
   await expect(page.getByLabel('Included ICAO hexes')).toHaveValue('00AB12');
 });
+
+test('shared chevrons stay compact at globe and flight zoom with white-blue own aircraft and amber traffic', async ({
+  context,
+}, info) => {
+  const fixture = await installAdsbFixture(context, true);
+  fixture.setContacts([
+    freshContact({ latitude: 38, longitude: -95, track_degrees: 0 }),
+    freshContact({
+      hex: '000001',
+      latitude: 37,
+      longitude: -87,
+      track_degrees: 90,
+    }),
+    freshContact({
+      hex: '000002',
+      latitude: 34,
+      longitude: -90,
+      track_degrees: 180,
+      position_observed_at_ms: Date.now() - 40000,
+    }),
+  ]);
+  fixture.setSettings(
+    adsbSettings({ include_hexes: ['00AB12', '000001', '000002'] })
+  );
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await observeAdsbScene(page);
+  await page.goto('/overview');
+  await expect(page.locator('[data-adsb-label]')).toHaveCount(3);
+  await settledOverviewCamera(page);
+  const measure = () =>
+    page.evaluate(() => {
+      const state = window.__overviewEvidenceRoots
+        ?.find(
+          (root) =>
+            root.containerInfo?.getState &&
+            document.contains(root.containerInfo.getState().gl.domElement)
+        )
+        ?.containerInfo?.getState?.();
+      if (!state) throw new Error('No scene');
+      const rect = state.gl.domElement.getBoundingClientRect();
+      const heights: { own: boolean; pixels: number }[] = [];
+      state.scene.traverse((node) => {
+        const mesh = node as import('three').Mesh;
+        const batch = node.userData.adsbBatch;
+        if (!batch && node.userData.starMarkerShape !== 'chevron') return;
+        // Derive the visible height from the rendered instance matrices; no production sizing helper.
+        const a = state.camera.position.clone(),
+          b = a.clone();
+        const matrix = node.matrixWorld.clone();
+        for (let i = 0; i < (batch ? batch.hexes.length : 1); i++) {
+          if (batch) {
+            (mesh as import('three').InstancedMesh).getMatrixAt(i, matrix);
+            matrix.premultiply(node.matrixWorld);
+          }
+          a.set(0, 1, 0).applyMatrix4(matrix).project(state.camera);
+          b.set(0, -1, 0).applyMatrix4(matrix).project(state.camera);
+          heights.push({
+            own: !batch,
+            pixels: Math.hypot(
+              ((a.x - b.x) * rect.width) / 2,
+              ((a.y - b.y) * rect.height) / 2
+            ),
+          });
+        }
+      });
+      return heights;
+    });
+  const check = async () => {
+    const heights = await measure();
+    expect(heights.filter((h) => h.own)).toHaveLength(1);
+    expect(heights.filter((h) => !h.own)).toHaveLength(3);
+    for (const h of heights) expect(h.pixels).toBeCloseTo(h.own ? 16 : 14, 2);
+  };
+  await check();
+  await page.screenshot({ path: info.outputPath('chevrons-flight-view.png') });
+  // Zoom out through the real camera controls; camera tracking remains part of the normal scene.
+  const canvas = page.locator('.overview-globe canvas');
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.wheel(0, 1000);
+  await settledOverviewCamera(page);
+  await check();
+  await page.screenshot({ path: info.outputPath('chevrons-globe-view.png') });
+});

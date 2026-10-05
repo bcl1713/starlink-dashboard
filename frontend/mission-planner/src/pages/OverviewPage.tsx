@@ -148,9 +148,19 @@ function AircraftMarker({
   position: [number, number, number] | null;
 }) {
   return position ? (
-    <StarMarker position={position} color="#72b7ff" size={0.15} />
+    <StarMarker
+      position={position}
+      color="#72b7ff"
+      size={0.15}
+      shape="chevron"
+    />
   ) : (
-    <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />
+    <StarMarker
+      coordinate={coordinate}
+      color="#72b7ff"
+      size={0.15}
+      shape="chevron"
+    />
   );
 }
 

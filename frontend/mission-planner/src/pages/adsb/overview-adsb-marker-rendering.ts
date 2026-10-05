@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { globePosition } from '../globe-coordinates';
 import { ROUTE_OVERLAY_RADIUS } from '../globe-render-radii';
+import {
+  isStarMarkerVisible,
+  setStarMarkerChevronMatrix,
+} from '../overview-star-marker-rendering';
 import type { AdsbContactView } from './overview-adsb-state';
 
 export const ADSB_MARKER_RADIUS = ROUTE_OVERLAY_RADIUS + 0.003;
@@ -26,6 +30,7 @@ export interface AdsbMarkerBatch {
   hexes: string[];
   matrices: Float32Array;
   positions: THREE.Vector3[];
+  forwards: THREE.Vector3[];
 }
 export interface AdsbMarkerInstances {
   current: AdsbMarkerBatch;
@@ -38,6 +43,7 @@ export function buildAdsbMarkerInstances(
     const selected = contacts.filter((c) => c.freshness === freshness);
     const matrices = new Float32Array(selected.length * 16);
     const positions: THREE.Vector3[] = [];
+    const forwards: THREE.Vector3[] = [];
     selected.forEach((c, i) => {
       const lat = THREE.MathUtils.degToRad(c.latitude),
         lon = THREE.MathUtils.degToRad(c.longitude);
@@ -54,6 +60,7 @@ export function buildAdsbMarkerInstances(
       const forward = north
         .multiplyScalar(Math.cos(track))
         .add(east.multiplyScalar(Math.sin(track)));
+      forwards.push(forward);
       const right = forward.clone().cross(out);
       const position = new THREE.Vector3(
         ...globePosition(c.latitude, c.longitude, ADSB_MARKER_RADIUS)
@@ -65,27 +72,12 @@ export function buildAdsbMarkerInstances(
         .setPosition(position)
         .toArray(matrices, i * 16);
     });
-    return { hexes: selected.map((c) => c.hex), matrices, positions };
+    return { hexes: selected.map((c) => c.hex), matrices, positions, forwards };
   };
   return { current: build('current'), stale: build('stale') };
 }
-/** The Earth also blocks interaction even if its mesh has no pointer handler. */
-export function isAdsbMarkerVisible(
-  point: THREE.Vector3,
-  camera: THREE.Camera
-): boolean {
-  const clip = point.clone().project(camera);
-  if (Math.abs(clip.x) > 1 || Math.abs(clip.y) > 1 || clip.z < -1 || clip.z > 1)
-    return false;
-  const origin = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
-  const ray = point.clone().sub(origin);
-  const a = ray.lengthSq(),
-    b = 2 * origin.dot(ray),
-    d = b * b - 4 * a * (origin.lengthSq() - 4);
-  if (d < 0) return true;
-  const hit = (-b - Math.sqrt(d)) / (2 * a);
-  return !(hit > 0 && hit < 1 - 1e-6);
-}
+/** Map overlays and picking share the same center-based Earth visibility rule. */
+export const isAdsbMarkerVisible = isStarMarkerVisible;
 export interface AdsbPointerGesture {
   x: number;
   y: number;
@@ -101,4 +93,34 @@ export function adsbClickAllowed(
     Math.max(start.maxDistance, Math.hypot(end.x - start.x, end.y - start.y)) <=
       5
   );
+}
+
+/** Update the real instance transforms so picking follows screen-sized glyphs. */
+export function resizeAdsbMarkerMeshes(
+  group: THREE.Group,
+  camera: THREE.Camera,
+  viewportHeight: number,
+  matrix: THREE.Matrix4
+) {
+  camera.updateMatrixWorld();
+  for (const child of group.children) {
+    if (!(child instanceof THREE.InstancedMesh)) continue;
+    const batch = child.userData.adsbBatch as AdsbMarkerBatch;
+    for (let i = 0; i < batch.positions.length; i++) {
+      setStarMarkerChevronMatrix(
+        matrix,
+        batch.positions[i],
+        batch.forwards[i],
+        camera,
+        viewportHeight,
+        14
+      );
+      if (!isStarMarkerVisible(batch.positions[i], camera)) {
+        matrix.elements.fill(0, 0, 12);
+      }
+      child.setMatrixAt(i, matrix);
+    }
+    child.instanceMatrix.needsUpdate = true;
+    child.computeBoundingSphere();
+  }
 }

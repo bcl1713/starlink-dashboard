@@ -3,6 +3,9 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
   CORE_COLOR,
+  createStarMarkerChevronResources,
+  isStarMarkerVisible,
+  setStarMarkerChevronMatrix,
   DEFAULT_GLOW_SIZE_PIXELS,
   createStarMarkerHaloResources,
   disposeStarMarkerHaloResources,
@@ -19,6 +22,8 @@ const DEFAULT_MAX_CORE_PIXELS = 3;
 export type StarMarkerProps = StarMarkerPositionProps & {
   color: string;
   size: number;
+  shape?: 'star' | 'chevron';
+  chevronSizePixels?: number;
   coreColor?: string;
   coreRadius?: number;
   glowSizePixels?: number;
@@ -80,7 +85,7 @@ function PhysicalCore({
   );
 }
 
-export function StarMarker(props: StarMarkerProps) {
+function GlowingStarMarker(props: StarMarkerProps) {
   const {
     color,
     size,
@@ -143,5 +148,60 @@ export function StarMarker(props: StarMarkerProps) {
         />
       )}
     </>
+  );
+}
+
+function ChevronMarker(props: StarMarkerProps) {
+  const mesh = useRef<THREE.Mesh>(null);
+  const position = resolveStarMarkerPosition(props);
+  const worldPosition = useMemo(() => new THREE.Vector3(), []);
+  const resources = useMemo(
+    () =>
+      createStarMarkerChevronResources({
+        color: props.color,
+        coreColor: props.coreColor ?? CORE_COLOR,
+        glowIntensity: props.glowIntensity ?? DEFAULT_GLOW_INTENSITY,
+      }),
+    [props.color, props.coreColor, props.glowIntensity]
+  );
+  useEffect(
+    () => () => {
+      resources.geometry.dispose();
+      resources.material.dispose();
+    },
+    [resources]
+  );
+  useFrame((state) => {
+    if (!mesh.current) return;
+    state.camera.updateMatrixWorld();
+    worldPosition.set(...position);
+    mesh.current.visible = isStarMarkerVisible(worldPosition, state.camera);
+    setStarMarkerChevronMatrix(
+      mesh.current.matrix,
+      worldPosition,
+      null,
+      state.camera,
+      state.size.height,
+      props.chevronSizePixels ?? 16
+    );
+    mesh.current.matrixWorldNeedsUpdate = true;
+  });
+  return (
+    <mesh
+      ref={mesh}
+      geometry={resources.geometry}
+      material={resources.material}
+      matrixAutoUpdate={false}
+      dispose={null}
+      userData={{ starMarkerShape: 'chevron' }}
+    />
+  );
+}
+
+export function StarMarker(props: StarMarkerProps) {
+  return props.shape === 'chevron' ? (
+    <ChevronMarker {...props} />
+  ) : (
+    <GlowingStarMarker {...props} />
   );
 }

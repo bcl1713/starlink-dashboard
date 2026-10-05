@@ -10,7 +10,7 @@ import {
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { createStarMarkerChevronResources } from '../overview-star-marker-rendering';
 import { globePosition } from '../globe-coordinates';
 import {
   ADSB_MARKER_RADIUS,
@@ -18,6 +18,7 @@ import {
   buildAdsbMarkerInstances,
   createAdsbEarthOccluder,
   isAdsbMarkerVisible,
+  resizeAdsbMarkerMeshes,
   type AdsbMarkerBatch,
   type AdsbPointerGesture,
 } from './overview-adsb-marker-rendering';
@@ -25,33 +26,6 @@ import { layoutAdsbLabels, type Bounds } from './overview-adsb-label-layout';
 import type { AdsbContactView } from './overview-adsb-state';
 import './OverviewAdsb.css';
 
-function aircraftGeometry(stale: boolean): THREE.BufferGeometry {
-  const shape = new THREE.Shape();
-  shape.moveTo(0, 1);
-  shape.lineTo(0.16, 0.2);
-  shape.lineTo(0.8, -0.2);
-  shape.lineTo(0.8, -0.4);
-  shape.lineTo(0.16, -0.2);
-  shape.lineTo(0.16, -0.7);
-  shape.lineTo(0.4, -0.85);
-  shape.lineTo(0.4, -1);
-  shape.lineTo(0, -0.85);
-  shape.lineTo(-0.4, -1);
-  shape.lineTo(-0.4, -0.85);
-  shape.lineTo(-0.16, -0.7);
-  shape.lineTo(-0.16, -0.2);
-  shape.lineTo(-0.8, -0.4);
-  shape.lineTo(-0.8, -0.2);
-  shape.lineTo(-0.16, 0.2);
-  shape.closePath();
-  const glyph = new THREE.ShapeGeometry(shape);
-  if (!stale) return glyph;
-  const ring = new THREE.RingGeometry(1.2, 1.32, 8);
-  const combined = mergeGeometries([glyph, ring]);
-  glyph.dispose();
-  ring.dispose();
-  return combined;
-}
 function visualKey(contacts: readonly AdsbContactView[]): string {
   return contacts
     .map(
@@ -100,12 +74,10 @@ export function OverviewAdsbLayer({
         ['stale', instances.stale],
       ] as const
     ).map(([kind, batch]) => {
-      const geometry = aircraftGeometry(kind === 'stale');
-      const material = new THREE.MeshBasicMaterial({
-        color: kind === 'stale' ? '#a89b78' : '#78aabb',
-        side: THREE.DoubleSide,
-        depthTest: true,
-        depthWrite: true,
+      const { geometry, material } = createStarMarkerChevronResources({
+        color: kind === 'stale' ? '#b99554' : '#efb85b',
+        glowIntensity: 0.35,
+        stale: kind === 'stale',
       });
       const mesh = new THREE.InstancedMesh(
         geometry,
@@ -128,6 +100,13 @@ export function OverviewAdsbLayer({
       }
     };
   }, [group, instances]);
+  const markerMatrix = useMemo(() => new THREE.Matrix4(), []);
+  const resizeMarkers = useCallback(() => {
+    resizeAdsbMarkerMeshes(group, camera, size.height, markerMatrix);
+  }, [camera, group, markerMatrix, size.height]);
+  useLayoutEffect(() => {
+    resizeMarkers();
+  }, [instances, resizeMarkers]);
   useEffect(() => {
     const canvas = gl.domElement;
     const down = (event: PointerEvent) => {
@@ -228,9 +207,10 @@ export function OverviewAdsbLayer({
     };
   }, [schedule, size.width, size.height, contacts]);
   useFrame(() => {
-    const pose = `${camera.position.toArray()}|${camera.quaternion.toArray()}|${camera.projectionMatrix.elements}`;
+    const pose = `${camera.position.toArray()}|${camera.quaternion.toArray()}|${camera.projectionMatrix.elements}|${size.height}`;
     if (pose !== lastPose.current) {
       lastPose.current = pose;
+      resizeMarkers();
       schedule();
     }
   });
