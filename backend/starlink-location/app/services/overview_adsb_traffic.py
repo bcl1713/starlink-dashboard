@@ -48,6 +48,19 @@ class AdsbTrafficService:
         if self._cycle is not None and not self._cycle.done():
             self._cycle.cancel()
 
+    @staticmethod
+    def _source_keys(settings: AdsbSettings) -> set[str]:
+        if not settings.enabled:
+            return set()
+        keys = {
+            f"hex:{h}"
+            for h in settings.include_hexes
+            if h not in settings.exclude_hexes
+        }
+        if settings.mode == "military_and_included":
+            keys.add("military")
+        return keys
+
     def _sync_settings(self) -> AdsbSettings:
         try:
             settings = self._store.get()
@@ -55,28 +68,23 @@ class AdsbTrafficService:
             self._generation += 1
             self._settings = None
             self._cancel_cycle()
-            self._clear()
+            self._contacts.clear()
             raise
         if self._settings is None or settings.revision != self._settings.revision:
             self._generation += 1
             self._cancel_cycle()
             self._settings = settings
             if not settings.enabled:
-                self._clear()
+                self._contacts.clear()
             else:
                 self._prune(settings)
-            keys = {
-                f"hex:{h}"
-                for h in settings.include_hexes
-                if h not in settings.exclude_hexes
-            }
-            if settings.enabled and settings.mode == "military_and_included":
-                keys.add("military")
-            if not settings.enabled:
-                keys.clear()
+            keys = self._source_keys(settings)
+            now = self._monotonic()
             for mapping in (self._sources, self._failures, self._retry):
                 for key in list(mapping):
-                    if key not in keys:
+                    # Configuration must not reset an upstream rate limit.
+                    # Keep inactive failure state only until its deadline.
+                    if key not in keys and self._retry.get(key, 0) <= now:
                         del mapping[key]
         return settings
 
@@ -95,11 +103,12 @@ class AdsbTrafficService:
     def read(self) -> AdsbTrafficBundle:
         settings = self._sync_settings()
         self._prune(settings)
+        keys = self._source_keys(settings)
         return AdsbTrafficBundle(
             settings_revision=settings.revision,
             generated_at_ms=self._time() * 1000,
             contacts=list(self._contacts.values()),
-            sources=[self._sources[k] for k in sorted(self._sources)],
+            sources=[self._sources[k] for k in sorted(self._sources) if k in keys],
         )
 
     async def start(self) -> None:

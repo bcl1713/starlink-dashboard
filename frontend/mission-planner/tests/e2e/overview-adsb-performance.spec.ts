@@ -14,13 +14,19 @@ test('2,000 contacts and 50 included identities retain all instances and release
   browser,
 }, info) => {
   test.setTimeout(180000);
-  const fixture = await installAdsbFixture(context),
+  const fixture = await installAdsbFixture(context, true),
     page = await context.newPage();
   await page.setViewportSize({ width: 1920, height: 1080 });
   await observeAdsbScene(page);
   await page.goto('/overview');
   await expect(page.getByLabel('Globe legend')).toContainText('Aircraft');
   await settledOverviewCamera(page);
+  await expect
+    .poll(async () => (await adsbScene(page)).flightLayers.route)
+    .toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await adsbScene(page)).flightLayers.history)
+    .toBeGreaterThan(0);
   const measure = () =>
     page.evaluate(async () => {
       const state = window.__overviewEvidenceRoots
@@ -56,8 +62,16 @@ test('2,000 contacts and 50 included identities retain all instances and release
         p99: sorted[Math.floor(sorted.length * 0.99)],
       };
     });
+  const profiler = await context.newCDPSession(page);
+  await profiler.send('Profiler.enable');
+  await profiler.send('Profiler.start');
   const off = await measure(),
     baseline = await adsbScene(page);
+  const offProfile = await profiler.send('Profiler.stop');
+  await writeFile(
+    info.outputPath('cpu-profile-off.json'),
+    JSON.stringify(offProfile.profile)
+  );
   const contacts = globalWorkload();
   fixture.setContacts([...contacts, contacts[0]]);
   fixture.setSettings(
@@ -74,8 +88,6 @@ test('2,000 contacts and 50 included identities retain all instances and release
     )
     .toBe(2000);
   await expect(page.locator('[data-adsb-label]')).toHaveCount(50);
-  const profiler = await context.newCDPSession(page);
-  await profiler.send('Profiler.enable');
   await profiler.send('Profiler.start');
   const on = await measure(),
     enabled = await adsbScene(page);
@@ -87,6 +99,8 @@ test('2,000 contacts and 50 included identities retain all instances and release
   await profiler.detach();
   expect(enabled.batches.reduce((n, b) => n + b.count, 0)).toBe(2000);
   expect(enabled.labels).toBe(50);
+  expect(enabled.flightLayers.route).toBeGreaterThan(0);
+  expect(enabled.flightLayers.history).toBeGreaterThan(0);
   await page.screenshot({ path: info.outputPath('workload-50-labels.png') });
   const released = [];
   for (let cycle = 0; cycle < 3; cycle++) {
@@ -99,8 +113,15 @@ test('2,000 contacts and 50 included identities retain all instances and release
       })
       .toBe(0);
     await expect(page.locator('[data-adsb-label]')).toHaveCount(0);
-    const state = await adsbScene(page);
-    expect(state.geometries).toBe(baseline.geometries);
+    let state = await adsbScene(page);
+    await expect
+      .poll(async () => {
+        state = await adsbScene(page);
+        return state.geometries;
+      })
+      .toBe(baseline.geometries);
+    expect(state.flightLayers.route).toBeGreaterThan(0);
+    expect(state.flightLayers.history).toBeGreaterThan(0);
     released.push(state);
     if (cycle < 2) {
       fixture.setContacts(globalWorkload());

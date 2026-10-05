@@ -219,6 +219,57 @@ async def test_backoff_and_retry_after(runtime):
 
 
 @pytest.mark.parametrize(
+    "initial,pause,resume,key",
+    [
+        ({"enabled": True}, {"enabled": False}, {"enabled": True}, "military"),
+        (
+            {"enabled": True},
+            {"mode": "included_only"},
+            {"mode": "military_and_included"},
+            "military",
+        ),
+        (
+            {"enabled": True, "mode": "included_only", "include_hexes": ["00AB12"]},
+            {"exclude_hexes": ["00AB12"]},
+            {"exclude_hexes": []},
+            "hex:00AB12",
+        ),
+        (
+            {"enabled": True, "mode": "included_only", "include_hexes": ["00AB12"]},
+            {"include_hexes": []},
+            {"include_hexes": ["00AB12"]},
+            "hex:00AB12",
+        ),
+    ],
+)
+async def test_settings_round_trip_preserves_retry_deadline(
+    runtime, initial, pause, resume, key
+):
+    store, provider, service, clock = runtime
+    store.update(initial)
+    provider.errors[key] = AdsbProviderError("Provider HTTP 429", 600)
+    started = clock()
+    await service.refresh_once()
+    store.update(pause)
+    service.settings_changed()
+    assert service.read().sources == []
+    clock.advance(15)
+    store.update(resume)
+    service.settings_changed()
+    await service.refresh_once()
+    assert provider.calls == [key]
+    assert service.read().sources[0].retry_at_ms == (started + 600) * 1000
+    clock.advance(584.999)
+    await service.refresh_once()
+    assert provider.calls == [key]
+    clock.advance(0.001)
+    provider.errors.clear()
+    await service.refresh_once()
+    assert provider.calls == [key, key]
+    assert service.read().sources[0].retry_at_ms is None
+
+
+@pytest.mark.parametrize(
     "changes",
     [{"exclude_hexes": ["00AB12"]}, {"mode": "included_only"}, {"enabled": False}],
 )

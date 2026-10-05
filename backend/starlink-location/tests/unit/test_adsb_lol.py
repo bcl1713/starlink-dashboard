@@ -122,6 +122,7 @@ def test_ground_altitude_and_invalid_optional_fields():
         {"ac": {}, "now": NOW},
         {"ac": [], "now": "now"},
         {"ac": [], "now": True},
+        {"ac": [], "now": 10**400},
         {"ac": [], "now": NOW, "msg": "failure"},
     ],
 )
@@ -157,6 +158,28 @@ async def test_invalid_record_is_isolated_and_endpoints_are_exact():
         assert result.contacts[0].military is True
         await provider.fetch_hex("00AB12")
     assert paths == ["/v2/mil", "/v2/hex/00AB12"]
+
+
+@pytest.mark.parametrize("field", ["lat", "lon", "seen_pos", "gs", "track", "alt_baro"])
+async def test_overflow_in_mixed_records_keeps_valid_positions(field):
+    record = {**RECORD, "hex": "000002", field: 10**400}
+    async with httpx.AsyncClient(
+        base_url="https://api.adsb.lol",
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(200, json={"now": NOW, "ac": [record, RECORD]})
+        ),
+    ) as client:
+        result = await AdsbLolProvider(client, lambda: NOW / 1000).fetch_military()
+    if field in {"lat", "lon", "seen_pos"}:
+        assert [c.hex for c in result.contacts] == ["00AB12"]
+    else:
+        assert [c.hex for c in result.contacts] == ["000002", "00AB12"]
+        detail = {
+            "gs": "ground_speed_knots",
+            "track": "track_degrees",
+            "alt_baro": "altitude",
+        }[field]
+        assert getattr(result.contacts[0], detail) is None
 
 
 @pytest.mark.parametrize(

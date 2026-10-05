@@ -51,6 +51,7 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
     } as OverviewLinkSettings,
     positionAvailable: true,
     activeLeg: null as 'leg-a' | 'leg-b' | null,
+    aircraftHistory: [] as Array<{ latitude: number; longitude: number }>,
   };
   const marker = Math.floor(Date.now() / 1000) - 20;
   const readCounts: Record<string, number> = {};
@@ -251,7 +252,21 @@ export async function installOverviewWindowFixture(context: BrowserContext) {
         start_timestamp_seconds: end - state.history.window_seconds,
         end_timestamp_seconds: end,
         step_seconds: 5,
-        series: Object.fromEntries(metrics.map((name) => [name, samples])),
+        series: {
+          ...Object.fromEntries(metrics.map((name) => [name, samples])),
+          starlink_dish_latitude_degrees: state.aircraftHistory.map(
+            (point, i) => [
+              end - (state.aircraftHistory.length - 1 - i) * 5,
+              point.latitude,
+            ]
+          ),
+          starlink_dish_longitude_degrees: state.aircraftHistory.map(
+            (point, i) => [
+              end - (state.aircraftHistory.length - 1 - i) * 5,
+              point.longitude,
+            ]
+          ),
+        },
         rolling_5m: Object.fromEntries(
           metrics.map((name) => [
             name,

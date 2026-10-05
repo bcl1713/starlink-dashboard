@@ -13,9 +13,13 @@ from app.models.overview_adsb import AdsbAltitude, AdsbContact
 
 
 def _number(value: object) -> float | None:
-    if type(value) not in (int, float) or not math.isfinite(value):
+    if type(value) not in (int, float):
         return None
-    return float(value)
+    try:
+        number = float(value)
+    except OverflowError:
+        return None
+    return number if math.isfinite(number) else None
 
 
 def _text(value: object) -> str | None:

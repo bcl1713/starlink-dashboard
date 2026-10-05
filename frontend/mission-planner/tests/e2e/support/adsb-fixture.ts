@@ -38,9 +38,18 @@ export function globalWorkload(): AdsbContact[] {
   );
 }
 export async function installAdsbFixture(
-  context: BrowserContext
+  context: BrowserContext,
+  withFlightLayers = false
 ): Promise<AdsbFixtureController> {
-  await installOverviewWindowFixture(context);
+  const windowFixture = await installOverviewWindowFixture(context);
+  if (withFlightLayers) {
+    windowFixture.state.activeLeg = 'leg-a';
+    windowFixture.state.aircraftHistory = [
+      { latitude: 32, longitude: -110 },
+      { latitude: 33, longitude: -105 },
+      { latitude: 35, longitude: -100 },
+    ];
+  }
   let settings = adsbSettings({ enabled: false, revision: 0 }),
     contacts: AdsbContact[] = [],
     saveError = false,
@@ -149,7 +158,19 @@ export async function adsbScene(page: Page) {
       matrices: number[];
     }[] = [];
     const rect = state.gl.domElement.getBoundingClientRect();
+    const flightLayers = { route: 0, history: 0 };
     state.scene.traverse((node) => {
+      const rendered = node as THREE.Mesh;
+      const material = rendered.material as THREE.ShaderMaterial & {
+        color?: THREE.Color;
+      };
+      const color = (
+        material?.color ?? material?.uniforms?.uColor?.value
+      )?.getHexString?.();
+      if (node.visible && rendered.geometry?.attributes.position?.count) {
+        if (color === 'ffd86b') flightLayers.route++;
+        if (color === 'd9ffff') flightLayers.history++;
+      }
       if (
         !(node as THREE.InstancedMesh).isInstancedMesh ||
         !node.userData.adsbBatch
@@ -178,6 +199,7 @@ export async function adsbScene(page: Page) {
       debug = context.getExtension('WEBGL_debug_renderer_info');
     return {
       batches,
+      flightLayers,
       calls: state.gl.info.render.calls,
       triangles: state.gl.info.render.triangles,
       geometries: state.gl.info.memory.geometries,
