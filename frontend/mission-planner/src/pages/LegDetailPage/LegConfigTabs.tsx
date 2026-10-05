@@ -48,12 +48,14 @@ export function LegConfigTabs({
       </div>
 
       <TabsContent value="xband" className="space-y-4">
-        <div className="rounded-lg border p-4 sm:p-6">
+        <div className="rounded-xl border bg-card p-4 sm:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-xl font-semibold">X-Band Configuration</h2>
+            <h2 className="text-base font-semibold tracking-tight">
+              X-Band Configuration
+            </h2>
             <Link
               to="/satellites"
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-primary hover:underline"
             >
               Manage Satellites →
             </Link>
@@ -77,8 +79,8 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="ka" className="space-y-4">
-        <div className="rounded-lg border p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4">
+        <div className="rounded-xl border bg-card p-4 sm:p-6">
+          <h2 className="text-base font-semibold tracking-tight mb-4">
             Ka Outage Configuration
           </h2>
           <KaOutageConfig
@@ -91,8 +93,8 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="ku" className="space-y-4">
-        <div className="rounded-lg border p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4">
+        <div className="rounded-xl border bg-card p-4 sm:p-6">
+          <h2 className="text-base font-semibold tracking-tight mb-4">
             Ku/Starlink Outage Configuration
           </h2>
           <KuOutageConfig
@@ -105,8 +107,8 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="aar" className="space-y-4">
-        <div className="rounded-lg border p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4">
+        <div className="rounded-xl border bg-card p-4 sm:p-6">
+          <h2 className="text-base font-semibold tracking-tight mb-4">
             AAR Segment Configuration
           </h2>
           <AARSegmentEditor
@@ -120,8 +122,10 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="manual-ar" className="space-y-4">
-        <div className="rounded-lg border p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4">Manual AR Track</h2>
+        <div className="rounded-xl border bg-card p-4 sm:p-6">
+          <h2 className="text-base font-semibold tracking-tight mb-4">
+            Manual AR Track
+          </h2>
           <ManualAARTrackEditor
             tracks={aarConfig.manualTracks}
             onSaveTrack={onManualTrackSave}

@@ -92,6 +92,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -124,6 +125,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --status-nominal: #34d399;
+  --status-nominal-subtle: #34d3991a;
+  --status-advisory: #93c5fd;
+  --status-advisory-subtle: #93c5fd1a;
+  --status-degraded: #fbbf24;
+  --status-degraded-subtle: #fbbf241a;
+  --status-critical: #f87171;
+  --status-critical-subtle: #f871711a;
 }
 
 @layer base {
@@ -150,6 +159,18 @@
 
   .page-description {
     @apply mt-2 max-w-3xl text-sm leading-5 text-muted-foreground;
+  }
+
+  .management-page .app-page {
+    @apply max-w-6xl p-4 sm:p-6;
+  }
+
+  .management-page .page-header {
+    @apply mb-5;
+  }
+
+  .management-page .page-title {
+    @apply text-3xl font-semibold;
   }
 
   .status-nominal {
@@ -185,4 +206,47 @@
   min-height: 0;
   flex: 1;
   overflow-y: auto;
+}
+
+/* Vendor map CSS is unlayered. Keep these overrides at the same cascade level,
+   and include dialog portals which sit outside the management page container. */
+:is(.management-page, .dark[role='dialog']) .leaflet-popup-content-wrapper,
+:is(.management-page, .dark[role='dialog']) .leaflet-popup-tip,
+:is(.management-page, .dark[role='dialog']) .leaflet-bar a,
+:is(.management-page, .dark[role='dialog']) .leaflet-control-attribution {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+}
+
+:is(.management-page, .dark[role='dialog']) .leaflet-bar a:hover {
+  background: var(--muted);
+}
+
+.management-page .simulation-run-panel {
+  border-color: var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--card-foreground);
+}
+
+.management-page .simulation-run-panel progress {
+  accent-color: var(--primary);
+}
+
+.management-page .simulation-run-panel [role='alert'],
+.management-page .simulation-run-panel [role='status'] {
+  color: var(--status-degraded);
+}
+
+:is(.management-page, .dark[role='dialog']) .leaflet-control-attribution a {
+  color: var(--primary);
+}
+
+:is(.management-page, .dark[role='dialog']) .leaflet-popup-close-button {
+  color: var(--muted-foreground);
+}
+
+:is(.management-page, .dark[role='dialog']) .leaflet-popup-close-button:hover {
+  color: var(--foreground);
 }

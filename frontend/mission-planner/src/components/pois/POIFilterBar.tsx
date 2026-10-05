@@ -53,7 +53,7 @@ export function POIFilterBar({
   ];
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
       <div className="flex gap-2">
         <div className="flex-1">
           <Input
@@ -66,7 +66,7 @@ export function POIFilterBar({
         <select
           value={category || ''}
           onChange={(e) => setCategory(e.target.value || null)}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">All Categories</option>
           <option value="airport">Airport</option>

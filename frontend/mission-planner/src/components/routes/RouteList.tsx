@@ -100,7 +100,7 @@ export function RouteList({
         <TableHeader>
           <TableRow>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('name')}
             >
               Name
@@ -111,7 +111,7 @@ export function RouteList({
               />
             </TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('points')}
             >
               Points
@@ -122,7 +122,7 @@ export function RouteList({
               />
             </TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('status')}
             >
               Status
@@ -133,7 +133,7 @@ export function RouteList({
               />
             </TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('created')}
             >
               Imported
@@ -149,7 +149,10 @@ export function RouteList({
         <TableBody>
           {sortedRoutes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+              <TableCell
+                colSpan={5}
+                className="text-center py-8 text-muted-foreground"
+              >
                 No routes yet. Upload a route to get started.
               </TableCell>
             </TableRow>
@@ -162,8 +165,8 @@ export function RouteList({
                   <span
                     className={`px-2 py-1 rounded-full text-sm ${
                       route.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'status-nominal'
+                        : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     {route.is_active ? 'Active' : 'Inactive'}

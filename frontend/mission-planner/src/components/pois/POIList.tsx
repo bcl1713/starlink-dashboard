@@ -126,12 +126,12 @@ export function POIList({
   const colCount = hasEtaData ? 8 : 6;
 
   return (
-    <div className="rounded-md border">
+    <div className="min-w-0 rounded-xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('name')}
             >
               Name
@@ -142,7 +142,7 @@ export function POIList({
               />
             </TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('category')}
             >
               Category
@@ -153,7 +153,7 @@ export function POIList({
               />
             </TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('coordinates')}
             >
               Coordinates
@@ -164,7 +164,7 @@ export function POIList({
               />
             </TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('status')}
             >
               Status
@@ -177,7 +177,7 @@ export function POIList({
             {hasEtaData && (
               <>
                 <TableHead
-                  className="cursor-pointer hover:bg-gray-100 select-none"
+                  className="cursor-pointer hover:bg-muted select-none"
                   onClick={() => handleSort('eta')}
                 >
                   ETA / Bearing
@@ -191,7 +191,7 @@ export function POIList({
               </>
             )}
             <TableHead
-              className="cursor-pointer hover:bg-gray-100 select-none"
+              className="cursor-pointer hover:bg-muted select-none"
               onClick={() => handleSort('created')}
             >
               Created
@@ -209,7 +209,7 @@ export function POIList({
             <TableRow>
               <TableCell
                 colSpan={colCount}
-                className="text-center py-8 text-gray-500"
+                className="text-center py-8 text-muted-foreground"
               >
                 No POIs yet. Create one to get started.
               </TableCell>
@@ -222,7 +222,7 @@ export function POIList({
                   <TableCell className="font-medium">{poi.name}</TableCell>
                   <TableCell>
                     {poi.category || (
-                      <span className="text-gray-400">&mdash;</span>
+                      <span className="text-muted-foreground">&mdash;</span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
@@ -232,8 +232,8 @@ export function POIList({
                     <span
                       className={`px-2 py-1 rounded-full text-sm ${
                         poi.active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'status-nominal'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                     >
                       {poi.active ? 'Active' : 'Inactive'}
@@ -251,21 +251,21 @@ export function POIList({
                               <span
                                 className={`ml-1 text-xs px-1 py-0.5 rounded ${
                                   eta.eta_type === 'anticipated'
-                                    ? 'bg-orange-100 text-orange-700'
-                                    : 'bg-blue-100 text-blue-700'
+                                    ? 'status-degraded'
+                                    : 'status-advisory'
                                 }`}
                               >
                                 {eta.eta_type === 'anticipated' ? 'ant' : 'est'}
                               </span>
                             )}
                             {eta.bearing_degrees != null && (
-                              <span className="text-gray-500 ml-1">
+                              <span className="text-muted-foreground ml-1">
                                 {eta.bearing_degrees.toFixed(0)}&deg;
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400">&mdash;</span>
+                          <span className="text-muted-foreground">&mdash;</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -276,7 +276,7 @@ export function POIList({
                         ) : eta?.course_status ? (
                           <CourseStatusBadge status={eta.course_status} />
                         ) : (
-                          <span className="text-gray-400">&mdash;</span>
+                          <span className="text-muted-foreground">&mdash;</span>
                         )}
                       </TableCell>
                     </>
@@ -327,10 +327,10 @@ function formatETA(seconds: number): string {
 
 function CourseStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    on_course: 'bg-green-100 text-green-800',
-    slightly_off: 'bg-yellow-100 text-yellow-800',
-    off_track: 'bg-orange-100 text-orange-800',
-    behind: 'bg-red-100 text-red-800',
+    on_course: 'status-nominal',
+    slightly_off: 'status-degraded',
+    off_track: 'status-degraded',
+    behind: 'status-critical',
   };
   const labels: Record<string, string> = {
     on_course: 'On Course',
@@ -347,10 +347,10 @@ function CourseStatusBadge({ status }: { status: string }) {
 
 function RouteAwareStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    ahead_on_route: 'bg-blue-100 text-blue-800',
-    already_passed: 'bg-gray-100 text-gray-600',
-    not_on_route: 'bg-yellow-100 text-yellow-800',
-    pre_departure: 'bg-orange-100 text-orange-700',
+    ahead_on_route: 'status-advisory',
+    already_passed: 'bg-muted text-muted-foreground',
+    not_on_route: 'status-degraded',
+    pre_departure: 'status-degraded',
   };
   const labels: Record<string, string> = {
     ahead_on_route: 'Ahead',

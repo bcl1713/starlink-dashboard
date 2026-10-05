@@ -101,7 +101,7 @@ export function POIForm({
   return (
     <form id="poi-form" onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+        <div className="status-critical border border-destructive/30 px-4 py-3 rounded">
           {error}
         </div>
       )}
@@ -116,7 +116,7 @@ export function POIForm({
           disabled={isLoading}
         />
         {errors.name && (
-          <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+          <p className="text-destructive text-sm mt-1">{errors.name}</p>
         )}
       </div>
 
@@ -129,7 +129,7 @@ export function POIForm({
             setFormData({ ...formData, category: e.target.value })
           }
           disabled={isLoading}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">Select a category</option>
           {CATEGORY_OPTIONS.map((option) => (
@@ -139,7 +139,7 @@ export function POIForm({
           ))}
         </select>
         {errors.category && (
-          <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+          <p className="text-destructive text-sm mt-1">{errors.category}</p>
         )}
       </div>
 
@@ -170,7 +170,7 @@ export function POIForm({
             disabled={isLoading}
           />
           {errors.latitude && (
-            <p className="text-red-500 text-sm mt-1">{errors.latitude}</p>
+            <p className="text-destructive text-sm mt-1">{errors.latitude}</p>
           )}
         </div>
 
@@ -191,7 +191,7 @@ export function POIForm({
             disabled={isLoading}
           />
           {errors.longitude && (
-            <p className="text-red-500 text-sm mt-1">{errors.longitude}</p>
+            <p className="text-destructive text-sm mt-1">{errors.longitude}</p>
           )}
         </div>
       </div>
@@ -219,7 +219,7 @@ export function POIForm({
               setFormData({ ...formData, route_id: e.target.value })
             }
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">(None)</option>
             {routes?.map((route) => (
@@ -240,7 +240,7 @@ export function POIForm({
               setFormData({ ...formData, mission_id: e.target.value })
             }
             disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">(None)</option>
             {missions?.map((mission) => (

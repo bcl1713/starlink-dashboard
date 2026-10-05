@@ -236,7 +236,7 @@ export function TimingSection({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Timing</h2>
         {offset && (
-          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+          <span className="text-xs status-degraded px-2 py-1 rounded">
             Adjusted ({offset.display})
           </span>
         )}
@@ -287,14 +287,14 @@ export function TimingSection({
                   )
                 }
                 className={`w-full px-3 py-2 border rounded-md font-mono text-sm ${
-                  timeFormatError ? 'border-red-500' : ''
+                  timeFormatError ? 'border-destructive' : ''
                 }`}
                 disabled={isUpdating}
               />
             </div>
           </div>
           {timeFormatError && (
-            <p className="text-sm text-red-500 mt-1">{timeFormatError}</p>
+            <p className="text-sm text-destructive mt-1">{timeFormatError}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">
             Enter time in UTC timezone (24-hour format: HH:mm)
@@ -315,8 +315,8 @@ export function TimingSection({
 
         {/* Warnings */}
         {warnings.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-            <p className="text-sm text-yellow-800">
+          <div className="status-degraded border border-[var(--status-degraded)]/30 rounded-md p-3">
+            <p className="text-sm text-[var(--status-degraded)]">
               {warnings.map((warning, idx) => (
                 <span key={idx} className="block">
                   ⚠️ {warning}

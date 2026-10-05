@@ -31,7 +31,9 @@ export function SatelliteList({
   }
 
   if (!satellites || satellites.length === 0) {
-    return <p className="mt-4 text-gray-500">No satellites in catalog.</p>;
+    return (
+      <p className="mt-4 text-muted-foreground">No satellites in catalog.</p>
+    );
   }
 
   return (

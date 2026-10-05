@@ -118,14 +118,14 @@ export function DataExportPage() {
     startTime && endTime && new Date(startTime) < new Date(endTime);
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Data Export</h1>
-        <p className="text-gray-600 mt-2">
+    <div className="app-page">
+      <header className="mb-5">
+        <h1 className="page-title">Data Export</h1>
+        <p className="page-description">
           Export historical Starlink telemetry and Ground Entry Point data to
           CSV
         </p>
-      </div>
+      </header>
 
       <Card className="max-w-xl">
         <CardHeader>
@@ -172,7 +172,7 @@ export function DataExportPage() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Auto adjusts based on time range (1s for short ranges, 5min for
               long ranges)
             </p>
@@ -180,7 +180,7 @@ export function DataExportPage() {
 
           {/* Error message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+            <div className="p-3 status-critical border border-destructive/30 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -195,7 +195,7 @@ export function DataExportPage() {
           </Button>
 
           {!isValid && startTime && endTime && (
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-destructive">
               Start time must be before end time
             </p>
           )}
@@ -208,10 +208,10 @@ export function DataExportPage() {
           <CardTitle>Exported Data</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-muted-foreground mb-3">
             The CSV export includes the following metrics:
           </p>
-          <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
             <li>Position: latitude, longitude, altitude, speed, heading</li>
             <li>Network: latency, throughput (up/down), packet loss</li>
             <li>Signal: obstruction percent, signal quality</li>

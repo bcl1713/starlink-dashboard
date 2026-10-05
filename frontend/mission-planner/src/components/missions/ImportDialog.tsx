@@ -72,21 +72,23 @@ export function ImportDialog({ open, onClose, onSuccess }: ImportDialogProps) {
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
               isDragActive
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 hover:border-gray-400'
+                ? 'border-ring bg-accent'
+                : 'border-input hover:border-ring'
             }`}
           >
             <input {...getInputProps()} />
             {uploading ? (
-              <p className="text-gray-600">Uploading and validating...</p>
+              <p className="text-muted-foreground">
+                Uploading and validating...
+              </p>
             ) : isDragActive ? (
-              <p className="text-blue-600">Drop the zip file here...</p>
+              <p className="text-primary">Drop the zip file here...</p>
             ) : (
               <div>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Drag and drop a mission zip file here, or click to select
                 </p>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   Only .zip files are accepted
                 </p>
               </div>
@@ -96,9 +98,7 @@ export function ImportDialog({ open, onClose, onSuccess }: ImportDialogProps) {
           {result && (
             <div
               className={`p-4 rounded-md ${
-                result.success
-                  ? 'bg-green-50 text-green-800'
-                  : 'bg-red-50 text-red-800'
+                result.success ? 'status-nominal' : 'status-critical'
               }`}
             >
               {result.success ? (
