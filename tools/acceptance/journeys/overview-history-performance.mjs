@@ -89,6 +89,17 @@ export function classifyPhase({
   };
 }
 
+export function expectedOutageError(message, url, active, origin) {
+  if (!active || !message.includes("503")) return false;
+  const source = new URL(url || origin);
+  if (source.origin !== new URL(origin).origin) return false;
+  return (
+    source.pathname === "/api/overview-history" ||
+    (message.startsWith("API Error:") &&
+      message.includes("Overview history is temporarily unavailable"))
+  );
+}
+
 export function encodeMovie(encoder, frames, output, elapsed) {
   const input = Buffer.concat(
     Array.from({ length: 20 }, (_, frame) =>
@@ -371,13 +382,18 @@ async function run(options) {
       });
       page.on("console", (message) => {
         if (message.type() === "error") {
-          const expected =
-            faultControl &&
-            new URL(message.location().url || options.origin).pathname ===
-              "/api/overview-history" &&
-            message.text().includes("503");
+          const expected = expectedOutageError(
+            message.text(),
+            message.location().url,
+            faultControl,
+            options.origin,
+          );
           if (!expected) errors.push(message.text());
-          event({ kind: "console_error", message: message.text() });
+          event({
+            kind: "console_error",
+            message: message.text(),
+            expected_control_error: expected,
+          });
         }
       });
       const target = await session.send("Browser.getWindowForTarget");
@@ -646,6 +662,7 @@ async function run(options) {
       metadata.behavior.masking = "passed";
       metadata.behavior.lifecycle = "passed";
       event({ kind: "lifecycle_controls", status: "passed" });
+      save();
     }
     console.log(
       JSON.stringify({ stage: "warmup", seconds: options.warmup_seconds }),

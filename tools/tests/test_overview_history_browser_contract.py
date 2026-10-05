@@ -134,3 +134,23 @@ def test_native_visibility_disables_playwright_focus_emulation():
     source = JOURNEY.read_text()
     assert "Emulation.setFocusEmulationEnabled" in source
     assert "enabled: false" in source
+
+
+def test_only_history_outage_errors_are_expected_during_fault_controls():
+    script = f"""import {{expectedOutageError}} from {json.dumps(JOURNEY.as_uri())};
+const origin='http://127.0.0.1:15224';
+console.log(JSON.stringify([
+ expectedOutageError('Failed to load resource: status 503',origin+'/api/overview-history',true,origin),
+ expectedOutageError('API Error: {{status: 503, message: Overview history is temporarily unavailable}}',origin+'/assets/index.js',true,origin),
+ expectedOutageError('API Error: {{status: 503, message: Another API failed}}',origin+'/assets/index.js',true,origin),
+ expectedOutageError('Failed to load resource: status 503',origin+'/api/overview-history',false,origin),
+ expectedOutageError('API Error: {{status: 503, message: Overview history is temporarily unavailable}}','http://example.com/script.js',true,origin)
+]));"""
+    result = subprocess.run(
+        [NODE, "--input-type=module", "-e", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == [True, True, False, False, False]
