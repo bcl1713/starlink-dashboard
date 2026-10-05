@@ -6,10 +6,16 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
-from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.dependencies import (
+    get_optional_simulation_run_service,
+    get_poi_manager,
+    get_route_manager,
+)
+from app.mission.storage import get_active_leg_lock
 from app.models.route import RouteDetailResponse, RouteListResponse, RouteResponse
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.simulation.run_service import SimulationRunService
 
 logger = get_logger(__name__)
 
@@ -195,6 +201,9 @@ async def activate_route(
     route_id: str,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> RouteResponse:
     """
     Activate a route for tracking and visualization.
@@ -225,8 +234,10 @@ async def activate_route(
             detail=f"Route not found: {route_id}",
         )
 
-    route_manager.activate_route(route_id)
-
+    with get_active_leg_lock():
+        route_manager.activate_route(route_id)
+        if run_service:
+            run_service.runtime.cancel("Route selected directly")
     # Calculate POI projections for the newly activated route
     if poi_manager:
         try:
@@ -308,6 +319,9 @@ async def activate_route(
 async def deactivate_route(
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> dict:
     """
     Deactivate the currently active route.
@@ -321,7 +335,10 @@ async def deactivate_route(
             detail="Route manager not initialized",
         )
 
-    route_manager.deactivate_route()
+    with get_active_leg_lock():
+        if run_service:
+            run_service.runtime.cancel("Route deactivated")
+        route_manager.deactivate_route()
 
     # Clear POI projections on route deactivation
     if poi_manager:

@@ -49,6 +49,8 @@ class ETAProjection:
         active_route: Optional["ParsedRoute"] = None,
         eta_mode: ETAMode = ETAMode.ESTIMATED,
         flight_phase: FlightPhase | None = None,
+        *,
+        mission_now: datetime | None = None,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -96,7 +98,15 @@ class ETAProjection:
                 else:
                     # In anticipated mode, use planned route times
                     eta = self._calculate_route_aware_eta_anticipated(
-                        current_lat, current_lon, poi, active_route
+                        current_lat,
+                        current_lon,
+                        poi,
+                        active_route,
+                        **(
+                            {"mission_now": mission_now}
+                            if mission_now is not None
+                            else {}
+                        ),
                     )
 
             # Fall back to distance/speed calculation if route-aware failed
@@ -203,6 +213,8 @@ class ETAProjection:
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
+        *,
+        mission_now: datetime | None = None,
     ) -> float | None:
         """
         Calculate ETA using expected times from flight plan (anticipated/pre-departure mode).
@@ -234,7 +246,9 @@ class ETAProjection:
             return None
 
         try:
-            current_time = datetime.now(timezone.utc)
+            current_time = (
+                mission_now if mission_now is not None else datetime.now(timezone.utc)
+            )
 
             def anticipated_eta_for_waypoint(waypoint: "RouteWaypoint") -> float | None:
                 if not waypoint.expected_arrival_time:
@@ -243,6 +257,12 @@ class ETAProjection:
                 planned_duration = waypoint.expected_arrival_time - departure_time
                 if planned_duration.total_seconds() < 0:
                     return None
+
+                if mission_now is not None:
+                    return max(
+                        0.0,
+                        (waypoint.expected_arrival_time - current_time).total_seconds(),
+                    )
 
                 if departure_time > current_time:
                     return (

@@ -17,6 +17,10 @@ vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
     trafficError: false,
   }),
 }));
+vi.mock('@/hooks/api/useSimulationRun', () => ({
+  useSimulationRun: () => ({}),
+  useSimulationRunRoute: () => ({}),
+}));
 /** @vitest-environment jsdom */
 import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen } from '@testing-library/react';

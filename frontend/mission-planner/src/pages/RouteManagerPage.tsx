@@ -38,9 +38,9 @@ export function RouteManagerPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Route Manager</h1>
+    <div className="app-page">
+      <div className="page-header">
+        <h1 className="page-title">Route Manager</h1>
         <Button onClick={() => setUploadOpen(true)}>Upload Route</Button>
       </div>
 

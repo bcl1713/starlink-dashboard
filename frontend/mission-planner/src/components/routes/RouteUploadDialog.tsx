@@ -66,8 +66,8 @@ export function RouteUploadDialog({
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
             dragActive
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-ring bg-accent'
+              : 'border-input hover:border-ring'
           }`}
         >
           <input
@@ -79,8 +79,8 @@ export function RouteUploadDialog({
             disabled={isLoading}
           />
           <label htmlFor="route-upload" className="cursor-pointer">
-            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm text-gray-600">
+            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
               Drag and drop your KML file here, or click to browse
             </p>
           </label>

@@ -2,6 +2,25 @@ import { describe, it, expect } from 'vitest';
 import { resolveOverviewLayout } from './overview-responsive-layout';
 describe('available Overview viewport', () => {
   it.each([
+    [1366, 768],
+    [1440, 900],
+    [1920, 835],
+  ])(
+    'uses the complete fullscreen frame on a %sx%s laptop',
+    (width, height) => {
+      expect(
+        resolveOverviewLayout({
+          width,
+          height,
+          rootFontSize: 16,
+          clockHeight: 56,
+          overlayHeight: 90,
+          fullscreen: true,
+        })
+      ).toBe('landscape');
+    }
+  );
+  it.each([
     [1920, 1015, 16, 'desktop'],
     [2000, 1268, 16, 'desktop'],
     [2000, 1268, 24, 'stacked'],

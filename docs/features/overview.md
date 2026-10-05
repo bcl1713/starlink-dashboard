@@ -2,9 +2,9 @@
 
 **Related:** [Main README](../../README.md) | [Setup Guide](../setup/README.md)
 
-This document catalogs features. For saved-state refresh and controls, see
-[Overview windows](system.md#overview-windows-and-display-controls).
-See also [Overview precipitation radar](overview-weather.md).
+See [Overview controls](system.md#overview-windows-and-display-controls),
+[paced replay](../api/endpoints/simulation-run.md), and
+[precipitation radar](overview-weather.md) for shared display behavior.
 
 ---
 

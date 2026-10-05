@@ -83,8 +83,8 @@ export function LegHeader({
       </Button>
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold sm:text-3xl">Leg Configuration</h1>
-          <p className="text-muted-foreground">
+          <h1 className="page-title">Leg Configuration</h1>
+          <p className="page-description">
             Mission: {missionId} | Leg: {legId}
           </p>
           {routeId && (

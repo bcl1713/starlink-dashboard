@@ -18,6 +18,8 @@ import {
   useUpdateMission,
 } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
+import { SimulateLegDialog } from '../components/missions/SimulateLegDialog';
+import { MissionSimulationStatus } from '../components/missions/MissionSimulationStatus';
 import { EditableField } from '../components/missions/EditableField';
 import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
@@ -26,6 +28,7 @@ export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
+  const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
@@ -36,7 +39,7 @@ export function MissionDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="app-page">
         <p className="text-muted-foreground">Loading mission...</p>
       </div>
     );
@@ -44,8 +47,8 @@ export function MissionDetailPage() {
 
   if (error || !mission) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-red-600">
+      <div className="app-page">
+        <p className="text-destructive">
           {error ? 'Error loading mission' : 'Mission not found'}
         </p>
         <Button onClick={() => navigate('/missions')} className="mt-4">
@@ -108,15 +111,15 @@ export function MissionDetailPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-start">
-        <div className="flex-1 mr-4">
+    <div className="app-page space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+        <div className="min-w-0 flex-1">
           <EditableField
             value={mission.name}
             onSave={handleUpdateName}
             isLoading={updateMissionMutation.isPending}
             placeholder="Mission name"
-            className="text-3xl font-bold"
+            className="page-title"
           />
           <EditableField
             value={mission.description || 'No description'}
@@ -126,9 +129,9 @@ export function MissionDetailPage() {
             multiline
             className="text-muted-foreground mt-2"
           />
-          <p className="text-sm text-gray-500 mt-2">ID: {mission.id}</p>
+          <p className="text-sm text-muted-foreground mt-2">ID: {mission.id}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => navigate('/missions')}>
             Back to Missions
           </Button>
@@ -155,10 +158,13 @@ export function MissionDetailPage() {
         </div>
       </div>
 
+      <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
       <div className="border-t pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">Mission Legs</h2>
-          <div className="flex gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold tracking-tight">
+            Mission Legs
+          </h2>
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleDeactivateAllLegs}
               disabled={
@@ -188,19 +194,19 @@ export function MissionDetailPage() {
               <Card
                 key={leg.id}
                 className={`hover:shadow-lg transition-shadow cursor-pointer ${
-                  leg.is_active ? 'border-green-600 border-2' : ''
+                  leg.is_active ? 'border-[var(--status-nominal)] border-2' : ''
                 }`}
                 onClick={() =>
                   navigate(`/missions/${mission.id}/legs/${leg.id}`)
                 }
               >
                 <CardHeader>
-                  <div className="flex justify-between items-start">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <CardTitle>{leg.name}</CardTitle>
                         {leg.is_active && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-600 text-white">
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold status-nominal">
                             Active
                           </span>
                         )}
@@ -209,7 +215,17 @@ export function MissionDetailPage() {
                         <CardDescription>{leg.description}</CardDescription>
                       )}
                     </div>
-                    <div className="flex gap-2 ml-2">
+                    <div className="flex flex-wrap gap-2 ml-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSimulationLegId(leg.id);
+                        }}
+                      >
+                        Simulate leg…
+                      </Button>
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -251,9 +267,11 @@ export function MissionDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <p className="text-sm text-gray-600">ID: {leg.id}</p>
+                    <p className="text-sm text-muted-foreground">
+                      ID: {leg.id}
+                    </p>
                     {leg.route_id && (
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Route: {leg.route_id}
                       </p>
                     )}
@@ -271,6 +289,17 @@ export function MissionDetailPage() {
         existingLegCount={mission?.legs.length || 0}
         onAddLeg={handleAddLeg}
       />
+      {simulationLegId && (
+        <SimulateLegDialog
+          key={simulationLegId}
+          missionId={mission.id}
+          legId={simulationLegId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSimulationLegId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

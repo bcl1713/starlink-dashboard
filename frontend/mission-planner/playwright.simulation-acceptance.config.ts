@@ -1,0 +1,49 @@
+/// <reference types="node" />
+import { defineConfig, devices } from '@playwright/test';
+const baseURL = process.env.SIMULATION_ACCEPTANCE_BASE_URL;
+try {
+  const url = new URL(baseURL ?? '');
+  if (
+    url.protocol !== 'http:' ||
+    !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
+    url.username ||
+    url.password ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash
+  )
+    throw new Error();
+} catch {
+  throw new Error(
+    'SIMULATION_ACCEPTANCE_BASE_URL requires a loopback HTTP origin'
+  );
+}
+export default defineConfig({
+  testDir: './tests/e2e',
+  testMatch: 'simulation-run-production.spec.ts',
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  workers: 1,
+  retries: 0,
+  timeout: 240_000,
+  reporter: 'line',
+  outputDir:
+    process.env.SIMULATION_ACCEPTANCE_OUTPUT_DIR ??
+    'test-results/simulation-production',
+  use: {
+    baseURL,
+    launchOptions: { args: ['--window-size=1920,1080'] },
+    trace: 'retain-on-failure',
+    video: { mode: 'on', size: { width: 1920, height: 1080 } },
+    viewport: { width: 1920, height: 1080 },
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+    },
+  ],
+});

@@ -19,6 +19,7 @@ from app.services.poi_manager import POIManager
 from app.services.position_freshness import position_observation, speed_is_fresh
 from app.services.route_eta_calculator import RouteETACalculator
 from app.services.route_manager import RouteManager
+from app.simulation.run_timing import planned_poi_eta, published_replay
 
 router = APIRouter(prefix="/api/overview", tags=["overview"])
 
@@ -57,7 +58,17 @@ async def get_overview_upcoming_pois(
     active_route_id = resolution.context.route_id
     active_route = resolution.context.route
 
-    flight_phase = get_flight_state_manager().get_status().phase.value
+    selection = published_replay(
+        getattr(request.app.state, "simulation_run_service", None)
+    )
+    context = selection[2] if selection else None
+    if selection:
+        active_route = selection[0].artifacts.route
+    flight_phase = (
+        context.phase
+        if context
+        else get_flight_state_manager().get_status().phase.value
+    )
     generated_pois = [
         poi
         for poi in poi_manager.list_pois(mission_id=mission_id)
@@ -112,6 +123,11 @@ async def get_overview_upcoming_pois(
             speed_knots=speed_knots,
         )
     )
+    if selection and not timing_unavailable:
+        eta_results = {
+            poi.id: planned_poi_eta(selection[0], selection[1], poi)
+            for poi in generated_pois
+        }
     current_progress = (
         _route_progress(active_route, latitude, longitude)
         if position_state != "unavailable"
@@ -125,6 +141,7 @@ async def get_overview_upcoming_pois(
         flight_phase=flight_phase,
         current_progress=current_progress,
         calculated_at=calculated_at,
+        mission_time=context,
     )
     departures = [poi for poi in generated_pois if poi.kind == "departure"]
     response.scheduled_departure_time = (

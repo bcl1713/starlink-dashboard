@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { overviewUpcomingPoisApi } from '@/services/overview-upcoming-pois';
 
-export function useOverviewUpcomingPois() {
+export function useOverviewUpcomingPois(pacedRun = false) {
   return useQuery({
     queryKey: ['overview-upcoming-pois'],
     queryFn: overviewUpcomingPoisApi.get,
-    refetchInterval: 5_000,
+    refetchInterval: pacedRun ? 1_000 : 5_000,
     refetchIntervalInBackground: true,
     retry: false,
   });

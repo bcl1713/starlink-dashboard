@@ -153,10 +153,10 @@ export function POIMap({
             <div className="space-y-2">
               <p className="font-semibold">{poi.name}</p>
               {poi.category && (
-                <p className="text-sm text-gray-600">{poi.category}</p>
+                <p className="text-sm text-muted-foreground">{poi.category}</p>
               )}
               {poi.description && <p className="text-sm">{poi.description}</p>}
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {poi.latitude.toFixed(4)}, {poi.longitude.toFixed(4)}
               </p>
             </div>

@@ -189,7 +189,7 @@ class RouteTemporalProjector:
             distance = self.cumulative_distances[index]
             previous_distance, previous_time = anchors[-1]
             if (
-                previous_distance < distance < self.total_distance
+                previous_distance <= distance <= self.total_distance
                 and previous_time < timestamp < self.end_time
             ):
                 anchors.append((distance, timestamp))
@@ -202,6 +202,8 @@ class RouteTemporalProjector:
             self.time_anchors, self.time_anchors[1:]
         ):
             if start_distance <= distance <= end_distance:
+                if end_distance == start_distance:
+                    return start
                 fraction = (distance - start_distance) / (end_distance - start_distance)
                 return start + (end - start) * fraction
         return self.end_time

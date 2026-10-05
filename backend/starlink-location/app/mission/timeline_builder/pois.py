@@ -39,16 +39,46 @@ def sync_mission_pois(
     parent_mission_id: str | None = None,
 ) -> None:
     """Replace generated mission POIs while preserving manually managed POIs."""
-    effective_mission_id = parent_mission_id or mission.id
+    generated = construct_mission_pois(
+        mission,
+        route,
+        mission_start=mission_start,
+        mission_end=mission_end,
+        aar_windows=aar_windows,
+        transition_schedule=transition_schedule,
+        coverage=coverage,
+        parent_mission_id=parent_mission_id,
+    )
     if not mission.route_id:
         return
-
     poi_manager.delete_leg_pois(
         route_id=mission.route_id,
-        mission_id=effective_mission_id,
+        mission_id=parent_mission_id or mission.id,
         kinds=MISSION_POI_KINDS,
         generated_source="mission-timeline",
     )
+    for poi in generated:
+        poi_manager.create_poi(
+            poi, active_route=route, generated_source="mission-timeline"
+        )
+
+
+def construct_mission_pois(
+    mission: MissionLeg,
+    route: ParsedRoute,
+    *,
+    mission_start: datetime,
+    mission_end: datetime,
+    aar_windows: Sequence[ResolvedAARWindow],
+    transition_schedule: Sequence[tuple[datetime, str, str | None]],
+    coverage: CoverageAnalysisResult,
+    parent_mission_id: str | None = None,
+) -> tuple[POICreate, ...]:
+    """Construct generated POIs without touching stores or files."""
+    effective_mission_id = parent_mission_id or mission.id
+    generated: list[POICreate] = []
+    if not mission.route_id:
+        return ()
 
     def create(
         *,
@@ -60,7 +90,7 @@ def sync_mission_pois(
         expected_arrival_time: datetime,
         description: str | None = None,
     ) -> None:
-        poi_manager.create_poi(
+        generated.append(
             POICreate(
                 name=name,
                 latitude=latitude,
@@ -73,8 +103,6 @@ def sync_mission_pois(
                 kind=kind,
                 expected_arrival_time=expected_arrival_time,
             ),
-            active_route=route,
-            generated_source="mission-timeline",
         )
 
     departure = _endpoint(route, "departure", route.points[0], "Departure")
@@ -99,6 +127,7 @@ def sync_mission_pois(
     _create_aar_pois(create, mission, route, aar_windows)
     _create_x_transition_pois(create, mission, transition_schedule)
     _create_ka_pois(create, coverage)
+    return tuple(generated)
 
 
 def _endpoint(

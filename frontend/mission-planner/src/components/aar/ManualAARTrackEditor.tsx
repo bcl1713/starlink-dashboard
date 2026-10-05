@@ -222,7 +222,7 @@ export function ManualAARTrackEditor({
           </p>
         )}
         {success && (
-          <p role="status" className="text-sm text-green-700">
+          <p role="status" className="text-sm text-[var(--status-nominal)]">
             {success}
           </p>
         )}

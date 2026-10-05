@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+  <name>Paced 20-minute dateline route</name>
+  <Placemark><name>Departure</name><description>Time Over Waypoint: 2025-01-01 00:00:00Z</description><Point><coordinates>179,35,11000</coordinates></Point></Placemark>
+  <Placemark><name>AAR Start</name><description>Time Over Waypoint: 2025-01-01 00:05:00Z</description><Point><coordinates>180,35,11000</coordinates></Point></Placemark>
+  <Placemark><name>AAR End</name><description>Time Over Waypoint: 2025-01-01 00:15:00Z</description><Point><coordinates>-179.5,35,11000</coordinates></Point></Placemark>
+  <Placemark><name>Arrival</name><description>Time Over Waypoint: 2025-01-01 00:20:00Z</description><Point><coordinates>-179,35,11000</coordinates></Point></Placemark>
+  <Placemark><name>Flight path</name><LineString><coordinates>179,35,11000 180,35,11000 -179.5,35,11000 -179,35,11000</coordinates></LineString></Placemark>
+</Document></kml>

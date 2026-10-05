@@ -5,6 +5,19 @@ import axios from 'axios';
 // Do not configure a VITE API base: `/api` here would duplicate every path.
 const API_BASE_URL = '';
 
+function readableError(value: unknown): string | undefined {
+  if (typeof value === 'string' && value) return value;
+  if (Array.isArray(value)) {
+    const messages = value.map(readableError).filter(Boolean);
+    return messages.length ? messages.join('; ') : undefined;
+  }
+  if (value && typeof value === 'object') {
+    if ('message' in value) return readableError(value.message);
+    if ('msg' in value) return readableError(value.msg);
+  }
+  return undefined;
+}
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -18,9 +31,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const errorMessage =
-      error.response?.data?.detail ||
-      error.response?.data?.message ||
-      error.response?.data?.error ||
+      readableError(error.response?.data?.detail) ||
+      readableError(error.response?.data?.message) ||
+      readableError(error.response?.data?.error) ||
       error.message ||
       'An unknown error occurred';
 

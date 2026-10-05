@@ -49,7 +49,7 @@ export function EditableField({
   if (!isEditing) {
     return (
       <div
-        className={`cursor-pointer hover:bg-gray-100 rounded px-2 py-1 ${className}`}
+        className={`cursor-pointer hover:bg-muted rounded px-2 py-1 ${className}`}
         onClick={() => {
           setEditValue(value);
           setIsEditing(true);
@@ -69,7 +69,7 @@ export function EditableField({
           onChange={(e) => setEditValue(e.target.value)}
           placeholder={placeholder}
           disabled={isLoading}
-          className="w-full border rounded-md px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-md px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-ring"
           rows={3}
           autoFocus
         />
@@ -91,7 +91,7 @@ export function EditableField({
         />
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex gap-2">
         <Button size="sm" onClick={handleSave} disabled={isLoading}>

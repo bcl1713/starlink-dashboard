@@ -18,6 +18,7 @@ import { POIManagerPage } from './pages/POIManagerPage';
 import { DataExportPage } from './pages/DataExportPage';
 import { ConfigurationPage } from './pages/ConfigurationPage';
 import { OverviewPage } from './pages/OverviewPage';
+import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 
 const queryClient = new QueryClient();
@@ -34,11 +35,10 @@ const navigationItems = [
 
 function AppNavigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const isConfiguration = useMatch('/configuration') !== null;
 
   return (
     <nav
-      className={`${isConfiguration ? 'dark text-foreground ' : ''}border-b bg-card`}
+      className="dark border-b bg-card text-foreground"
       aria-label="Primary navigation"
     >
       <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -105,34 +105,46 @@ function AppNavigation() {
   );
 }
 
-function App() {
+function AppShell() {
   const isFullscreen = useDocumentFullscreen();
+  const isOverview = useMatch('/overview') !== null;
+  const theme = isOverview ? '' : 'dark text-foreground';
+  return (
+    <PageThemeContext.Provider value={theme}>
+      <div className="app-shell">
+        {!isFullscreen && <AppNavigation />}
+        <div
+          className={`app-route-content ${isOverview ? '' : 'management-page dark bg-background text-foreground'}`}
+        >
+          <Routes>
+            <Route path="/overview" element={<OverviewPage />} />
+            <Route path="/missions" element={<MissionsPage />} />
+            <Route
+              path="/missions/:missionId"
+              element={<MissionDetailPage />}
+            />
+            <Route
+              path="/missions/:missionId/legs/:legId"
+              element={<LegDetailPage />}
+            />
+            <Route path="/satellites" element={<SatelliteManagerPage />} />
+            <Route path="/pois" element={<POIManagerPage />} />
+            <Route path="/routes" element={<RouteManagerPage />} />
+            <Route path="/export" element={<DataExportPage />} />
+            <Route path="/configuration" element={<ConfigurationPage />} />
+            <Route path="/" element={<Navigate to="/missions" replace />} />
+          </Routes>
+        </div>
+      </div>
+    </PageThemeContext.Provider>
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="app-shell">
-          {!isFullscreen && <AppNavigation />}
-          <div className="app-route-content">
-            <Routes>
-              <Route path="/overview" element={<OverviewPage />} />
-              <Route path="/missions" element={<MissionsPage />} />
-              <Route
-                path="/missions/:missionId"
-                element={<MissionDetailPage />}
-              />
-              <Route
-                path="/missions/:missionId/legs/:legId"
-                element={<LegDetailPage />}
-              />
-              <Route path="/satellites" element={<SatelliteManagerPage />} />
-              <Route path="/pois" element={<POIManagerPage />} />
-              <Route path="/routes" element={<RouteManagerPage />} />
-              <Route path="/export" element={<DataExportPage />} />
-              <Route path="/configuration" element={<ConfigurationPage />} />
-              <Route path="/" element={<Navigate to="/missions" replace />} />
-            </Routes>
-          </div>
-        </div>
+        <AppShell />
       </BrowserRouter>
     </QueryClientProvider>
   );

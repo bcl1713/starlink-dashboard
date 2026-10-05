@@ -15,10 +15,13 @@ from typing import TYPE_CHECKING, Optional
 from typing_extensions import Self
 
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
+from app.services.flight_state.checkpoint import FlightStateCheckpoint
 from app.services.position_freshness import OBSERVATION_FRESHNESS_SECONDS
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from app.models.route import ParsedRoute
+    from app.simulation.run_plan import PreparedMissionRun
+    from app.simulation.run_replay import ReplayFrame
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +113,52 @@ class FlightStateManager:
             f"FlightStateManager initialized: {self._status.phase.value} / {self._status.eta_mode.value}"
         )
 
-    def get_status(self) -> FlightStatus:
+    def apply_simulation_frame(
+        self, plan: "PreparedMissionRun", frame: "ReplayFrame"
+    ) -> None:
+        """Apply committed candidate mission timing without live detection dwell."""
+        with self._lock:
+            self._status = FlightStatus(
+                phase=frame.phase,
+                eta_mode=ETAMode.ESTIMATED,
+                active_route_id=plan.route_id,
+                active_route_name=plan.artifacts.route.metadata.name,
+                has_timing_data=True,
+                scheduled_departure_time=plan.preview.planned_departure,
+                scheduled_arrival_time=plan.preview.planned_arrival,
+                departure_time=plan.preview.planned_departure,
+                arrival_time=(
+                    plan.preview.planned_arrival
+                    if frame.phase == FlightPhase.POST_ARRIVAL
+                    else None
+                ),
+            )
+            self._reset_detection()
+            self._speed_persistence_seconds = 0.0
+
+    def checkpoint(self) -> FlightStateCheckpoint:
+        with self._lock:
+            return FlightStateCheckpoint(
+                self._status.model_copy(deep=True),
+                self._last_detection_observed_at,
+                self._speed_persistence_seconds,
+                self._last_speed_sample_time,
+                self._above_threshold_start_time,
+                self._arrival_start_time,
+                self._arrival_distance_at_start,
+            )
+
+    def restore_checkpoint(self, checkpoint: FlightStateCheckpoint) -> None:
+        with self._lock:
+            self._status = checkpoint.status.model_copy(deep=True)
+            self._last_detection_observed_at = checkpoint.last_detection_observed_at
+            self._speed_persistence_seconds = checkpoint.speed_persistence_seconds
+            self._last_speed_sample_time = checkpoint.last_speed_sample_time
+            self._above_threshold_start_time = checkpoint.above_threshold_start_time
+            self._arrival_start_time = checkpoint.arrival_start_time
+            self._arrival_distance_at_start = checkpoint.arrival_distance_at_start
+
+    def get_status(self, *, mission_now: datetime | None = None) -> FlightStatus:
         """
         Get current flight status.
 
@@ -133,7 +181,7 @@ class FlightStateManager:
                 last_arrival_check_time=self._status.last_arrival_check_time,
             )
 
-        now_utc = datetime.now(timezone.utc)
+        now_utc = mission_now if mission_now is not None else datetime.now(timezone.utc)
         departure_utc = _normalize_to_utc(status_copy.departure_time)
         scheduled_departure_utc = _normalize_to_utc(
             status_copy.scheduled_departure_time
