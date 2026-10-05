@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector3 } from 'three';
+import { Matrix3, Matrix4, Quaternion, Triangle, Vector3 } from 'three';
 import { globePosition } from './globe-coordinates';
 import type { GlobeCoordinate } from './globe-route';
 import type { OverviewSafeRect } from './overview-responsive-layout';
@@ -17,6 +17,8 @@ interface CameraFrame {
   offsetX: number;
   offsetY: number;
   direction?: Vector3;
+  /** Partial means the orbit limit or hemisphere prevents a complete route fit. */
+  routeFit?: 'complete' | 'partial';
 }
 /** Fit the unchanged radius-two globe into measured CSS space, with 10% margin. */
 export function overviewCameraFrame({
@@ -50,10 +52,7 @@ export function overviewCameraFrame({
     direction &&
     route &&
     route.length >= 2 &&
-    route.every(
-      (point) =>
-        point.every(Number.isFinite) && new Vector3(...point).dot(direction) > 0
-    )
+    route.every((point) => point.every(Number.isFinite))
   ) {
     const orientation = new Quaternion().setFromRotationMatrix(
       new Matrix4().lookAt(direction, new Vector3(), new Vector3(0, 1, 0))
@@ -67,7 +66,8 @@ export function overviewCameraFrame({
       ...route.map((point) => {
         const p = new Vector3(...point);
         return Math.max(
-          4.04 / p.dot(direction),
+          // Keep fitting all geometry even when some samples cannot be visible.
+          p.dot(direction) > 0 ? 4.04 / p.dot(direction) : 28,
           p.dot(direction) +
             Math.max(
               (1.1 * Math.abs(p.dot(right))) / availableX,
@@ -84,7 +84,105 @@ export function overviewCameraFrame({
       ? 0
       : fullHeight / 2 - safeRect.y - safeRect.height / 2,
     direction,
+    ...(route && direction && route.length > 1
+      ? {
+          routeFit:
+            distance <= 28 &&
+            route.every(
+              (point) =>
+                new Vector3(...point).dot(direction) * Math.max(3, distance) >=
+                4.04
+            )
+              ? ('complete' as const)
+              : ('partial' as const),
+        }
+      : {}),
   };
+}
+
+/** Find a containing hemisphere from route extremes, independent of sample density.
+ * The closest point to the origin in their convex hull faces the smallest cap.
+ * Fully correct a support of at most four points each step, avoiding slow segment
+ * convergence near the horizon. A hull containing the origin has no hemisphere.
+ */
+function routeHemisphere(points: Vector3[], seed: Vector3): Vector3 {
+  const directions = points.map((point) => point.clone().normalize());
+  let support = [directions[0]];
+  const center = support[0].clone();
+  const origin = new Vector3();
+  for (let iteration = 0; iteration < 256; iteration++) {
+    const extreme = directions.reduce((worst, point) =>
+      point.dot(center) < worst.dot(center) ? point : worst
+    );
+    if (center.lengthSq() - extreme.dot(center) < 1e-10) break;
+    const vertices = [...support, extreme];
+    if (vertices.length === 4) {
+      const [a, b, c, d] = vertices.map((p) => p.clone());
+      a.sub(d);
+      b.sub(d);
+      c.sub(d);
+      const basis = new Matrix3().set(
+        a.x,
+        b.x,
+        c.x,
+        a.y,
+        b.y,
+        c.y,
+        a.z,
+        b.z,
+        c.z
+      );
+      if (Math.abs(basis.determinant()) > 1e-12) {
+        const weights = d.negate().applyMatrix3(basis.invert());
+        if (
+          Math.min(weights.x, weights.y, weights.z) >= -1e-10 &&
+          weights.x + weights.y + weights.z <= 1 + 1e-10
+        )
+          return seed.clone().normalize();
+      }
+    }
+    let closest = vertices[0].clone(),
+      nextSupport = [vertices[0]];
+    const consider = (point: Vector3, active: Vector3[]) => {
+      if (point.lengthSq() < closest.lengthSq()) {
+        closest = point;
+        nextSupport = active;
+      }
+    };
+    for (let i = 0; i < vertices.length; i++) {
+      const a = vertices[i];
+      consider(a.clone(), [a]);
+      for (let j = 0; j < i; j++) {
+        const b = vertices[j],
+          edge = b.clone().sub(a);
+        if (edge.lengthSq() > 1e-12) {
+          const weight = Math.min(
+            1,
+            Math.max(0, -a.dot(edge) / edge.lengthSq())
+          );
+          consider(a.clone().addScaledVector(edge, weight), [a, b]);
+        }
+        for (let k = 0; k < j; k++) {
+          const c = vertices[k];
+          if (edge.clone().cross(c.clone().sub(a)).lengthSq() < 1e-16) continue;
+          const triangle = new Triangle(a, b, c);
+          const point = triangle.closestPointToPoint(origin, new Vector3());
+          const weights = triangle.getBarycoord(point, new Vector3())!;
+          consider(
+            point,
+            [a, b, c].filter((_, index) => weights.getComponent(index) > 1e-10)
+          );
+        }
+      }
+    }
+    center.copy(closest);
+    support = nextSupport;
+    if (center.lengthSq() < 1e-8) return seed.clone().normalize();
+  }
+  const facing = center.normalize();
+  return points.every((point) => point.dot(facing) * 28 >= 4.04)
+    ? facing
+    : seed.clone().normalize();
 }
 
 /** Rotate under a centered camera to fill the opening below the right cards. */
@@ -96,7 +194,10 @@ function centeredRouteFrame({
   route,
   direction,
 }: FrameInput): CameraFrame {
-  const facing = direction!.clone().normalize();
+  const points = route!.map((point) => new Vector3(...point));
+  const facing = points.every((point) => point.dot(direction!) * 28 >= 4.04)
+    ? direction!.clone().normalize()
+    : routeHemisphere(points, direction!);
   const focal = height / (2 * Math.tan((fov * Math.PI) / 360));
   const limits = [
     (width / 2 - safeRect.x) / focal,
@@ -104,7 +205,17 @@ function centeredRouteFrame({
     (height / 2 - safeRect.y) / focal,
     (safeRect.y + safeRect.height - height / 2) / focal,
   ];
-  const points = route!.map((point) => new Vector3(...point));
+  // Preserve the route's original hemisphere and geometry if centering fails.
+  // Moving Earth's screen center into the opening is preferable to hiding a route.
+  const fallback = overviewCameraFrame({
+    width,
+    height,
+    fov,
+    safeRect,
+    route,
+    direction: facing.clone(),
+  });
+  let validFrame: CameraFrame | undefined;
   let distance = 28;
   for (let iteration = 0; iteration < 32; iteration++) {
     const orientation = new Quaternion().setFromRotationMatrix(
@@ -121,14 +232,7 @@ function centeredRouteFrame({
       limits.some((limit) => limit <= 0) ||
       coordinates.some((p) => p.z <= 0 || !Number.isFinite(p.z))
     ) {
-      const fallback = overviewCameraFrame({
-        width,
-        height,
-        fov,
-        safeRect,
-        direction: facing,
-      });
-      return { ...fallback, offsetX: 0, offsetY: 0, direction: facing };
+      return validFrame ?? fallback;
     }
     distance = Math.min(
       28,
@@ -149,6 +253,26 @@ function centeredRouteFrame({
     const ys = coordinates.map(
       (p) => height / 2 - (focal * p.y) / (distance - p.z)
     );
+    // Clamping the distance can invalidate both surface visibility and bounds.
+    // A positive facing dot product alone does not establish an unobscured route.
+    if (
+      coordinates.some(
+        (p, i) =>
+          p.z * distance < 4.04 ||
+          xs[i] < safeRect.x ||
+          xs[i] > safeRect.x + safeRect.width ||
+          ys[i] < safeRect.y ||
+          ys[i] > safeRect.y + safeRect.height
+      )
+    )
+      return validFrame ?? fallback;
+    validFrame = {
+      distance,
+      direction: facing.clone(),
+      offsetX: 0,
+      offsetY: 0,
+      routeFit: 'complete',
+    };
     const dx =
       (Math.min(...xs) + Math.max(...xs)) / 2 - safeRect.x - safeRect.width / 2;
     const dy =
@@ -166,7 +290,7 @@ function centeredRouteFrame({
         .normalize();
     }
   }
-  return { distance, direction: facing, offsetX: 0, offsetY: 0 };
+  return validFrame ?? fallback;
 }
 export type OverviewCameraIntent = 'automatic' | 'manual' | 'follow';
 
