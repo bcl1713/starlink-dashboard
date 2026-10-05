@@ -5,12 +5,13 @@ import json
 
 import fastapi.routing
 import httpx
+from fastapi import FastAPI
+
 from app.api import overview_history
 from app.services.overview_history_prometheus import (
     OverviewHistoryPrometheusResponseError,
 )
 from app.services.overview_history_settings import OverviewHistorySettingsStore
-from fastapi import FastAPI
 
 
 async def test_settings_invalidate_after_persistence_even_when_duration_is_unchanged(
