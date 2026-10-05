@@ -2,8 +2,9 @@
 
 Issue 224's incremental reader and chart memoization were already delivered in
 PR 228. This work amends their existing spec and measures the remaining HTTP,
-browser and sustained resource costs. The default remains five seconds while
-qualification is pending.
+browser and sustained resource costs. Both one- and two-viewer one-hour runs
+qualify the one-second cadence. The default promotion is tracked separately
+below.
 
 ## Measurement environment
 
@@ -76,6 +77,48 @@ The corrected harness scopes fixture-declared errors to their controls and
 requires a final GC sample at or beyond the deadline. An invalid baseline cannot
 pass the CPU comparison gate.
 
+## HTTP response change
+
+The history reader already publishes an immutable bundle of JSON primitives.
+Returning it as a `JSONResponse` skips FastAPI's redundant generic recursive
+conversion while retaining the full bundle and normal JSON rendering. A real
+ASGI regression first failed on the old endpoint's duplicate conversion, then
+passed with byte-identical compact JSON, the same media type, no mutation of the
+shared snapshot and zero generic-conversion calls. Cache/coalescing, scheduling,
+source authority and statistics remain unchanged.
+
+A separate after-change profile at `e688f7e6` records 1,429 calls and 0.03343
+profiled seconds, with zero generic-encoder calls. Its production app tree is
+identical to frozen candidate `ae8397bf692a6ad0aad839ce3eb0d0745079f26f`. The
+earlier diagnostic recorded 1,407,104 calls and 0.380 seconds, including 140,563
+generic-encoder calls. Both are separate attribution diagnostics; the healthy
+production-path distributions below establish acceptance latency.
+
+## Controlled comparisons
+
+Candidate `ae8397bf692a6ad0aad839ce3eb0d0745079f26f` uses the same host,
+30-minute populated history, native renderer, viewport and one viewer. Each
+finished phase follows 300 seconds of warm-up and measures at least 600 seconds.
+Both finished phases have zero HTTP/browser errors and passed owned cleanup.
+
+| Phase          |   Warm p50 / p95 / p99 (ms) | Combined CPU (% one core) | Requested evaluation points |
+| -------------- | --------------------------: | ------------------------: | --------------------------: |
+| Full-range 5s  | 325.795 / 400.620 / 424.211 |                     9.375 |                   5,291,338 |
+| Incremental 5s | 165.942 / 206.583 / 413.530 |                     5.538 |                     141,596 |
+
+The incremental phase includes two full reconciliations in its overall warm
+quantiles. Requests overlapping full-window query completion have p95 458.405
+ms; ordinary/completed-result requests have p95 197.803 ms. This classification
+uses observed query spans within request intervals and includes shared readers;
+it does not infer a new scheduler state. Healthy upstream counts use completion
+monotonic timestamps between measured resource endpoints, excluding warm-up and
+controlled outages. Whole-run traces preserve those controls separately.
+
+Actual five-second request-start spacing has p50/p95 5.324/5.398 seconds for
+full-range and 5.165/5.205 seconds for incremental polling. Configured delay is
+separate from response time and source acquisition cadence. The short phases
+correctly remain incomplete for sustained-memory acceptance.
+
 ## Native behavior controls
 
 The real-path controls cover both cadences, one/two native viewer windows, all
@@ -100,24 +143,138 @@ app's actual navigation links, retaining the native sandbox. Repeated full-page
 reload is not covered by this run. The earlier PR 228 recording/RSS exceptions
 have not been inherited.
 
-## Qualification status
+## One-viewer sustained result
 
-Comparable release phases and the one/two-viewer 60-minute soaks remain pending.
-The budgets require warm p95 below 500 ms, combined CPU increase at most 10
-percentage points of one core over a healthy comparable full-range 5s baseline,
-and backend RSS/retained browser heap growth at most 16 MiB after warm-up over
-at least 3,600 measured seconds. Missing duration, provenance, behavior,
-resource samples or cleanup remains incomplete.
+At frozen product candidate `ae8397bf692a6ad0aad839ce3eb0d0745079f26f`,
+incremental 1s polling completed 3,600.040932 measured seconds after 300 seconds
+of warm-up: 3,137 requests and zero HTTP/browser errors. Warm p50/p95/p99 are
+148.122/169.093/208.510 ms. Combined CPU is 13.399% of one core, an increase of
+4.025 percentage points over the qualified one-viewer full-range 5s baseline.
+Backend RSS growth is 1.055 MiB and retained browser heap growth is 4.340 MiB.
+The last 1,193.406 seconds have retained-heap range 3.517 MiB and slope -4,890
+bytes/minute. Actual request-start p50/p95/p99 are 1.147/1.168/1.208 seconds.
 
-The canonical backend gate passed 1,478 tests with 20 existing skips. The
-canonical frontend gate passed 858 tests and the production build. Canonical
-static checks passed after correcting two line lengths in the amended plan. The
-expanded acceptance-tool suite passed 80 tests. These precede any proposed
-production change and do not qualify a one-second default by themselves.
+Twelve requests overlap full-range reconciliation query completion; their p95 is
+362.743 ms and they remain included in the overall warm distribution. The probe
+observes one parse per history response, average parse time 6.417 ms, and five
+plot canvas clears per accepted bundle across 45,622 frame observations. This
+corroborates the deterministic clock-only processing controls; canvas clears
+remain an observation rather than an exact uPlot upload counter.
 
-Raw evidence remains in the task-owned acceptance directory:
+The initial post-down port check failed on a closed connection's TCP TIME_WAIT.
+Docker had removed owned containers/volumes and native browser cleanup passed. A
+separate checked Docker inventory, `ss` live-listener inventory and reusable
+bind audit confirmed all resources/listeners absent. Its checksum is cited by
+the derived summary; the original failed metadata/logs remain unchanged.
+Functional preflight/post-down regressions reproduce the false failure and pass
+after `SO_REUSEADDR`, while occupied live listeners remain rejected. This is
+actual later cleanup verification; no performance budget is waived.
+
+All seventeen one-viewer gates pass with that explicit cleanup receipt. The
+two-viewer baseline's first native attempt crashed during the pre-warm-up
+hidden-tab control: Chromium reported a CFI SIGILL followed by seccomp failure
+0x25. It has no acceptance measurements; cleanup passed. A fresh retry at the
+same candidate passed every native control and the 600-second baseline. The
+subsequent two-viewer hour also passed, without browser security or rendering
+flag changes. The failed attempt remains preserved and unqualified.
+
+## Two-viewer sustained result
+
+Acceptance-tool candidate `a3ac77357bfd599eeb413b9ecb6d7a4e73d48346` changes
+only the post-down/preflight TIME_WAIT audit and its regressions. The entire
+backend and frontend trees are identical to `ae8397bf`; both two-viewer phases
+use the same new tooling candidate, host, history, renderer and native controls.
+
+| Observation                         |      Full-range 5s baseline |    Incremental 1s sustained |
+| ----------------------------------- | --------------------------: | --------------------------: |
+| Measured seconds after 300s warm-up |                     600.009 |                   3,600.008 |
+| Healthy requests / errors           |                     226 / 0 |                   6,274 / 0 |
+| Warm p50 / p95 / p99 (ms)           | 301.278 / 326.474 / 337.256 | 148.823 / 192.098 / 221.088 |
+| Request-start p50 / p95 / p99 (s)   |       5.300 / 5.324 / 5.335 |       1.147 / 1.191 / 1.221 |
+| Combined CPU (% one core)           |                      15.169 |                      18.977 |
+| Host-normalized combined CPU (%)    |                       0.758 |                       0.949 |
+| Requested evaluation points         |                  10,582,676 |                   1,648,712 |
+| Backend RSS endpoint growth (MiB)   |          6.738 (short only) |                       1.578 |
+| Retained heap endpoint growth (MiB) |         -2.497 (short only) |                      -3.202 |
+
+The sustained CPU increase is 3.809 percentage points of one core. Its 715
+resource samples have maximum gap 5.556 seconds. The last 1,175.744 seconds of
+post-GC samples have range 4.817 MiB and slope -200,842 bytes/minute. Twelve
+full reconciliations are included; 24 overlapping requests have p95 431.690 ms
+and the other 6,250 requests have p95 189.993 ms. Native browser and owned
+project/listener cleanup passed immediately. All seventeen gates pass.
+
+Each actual viewer records 3,136 parse completions, mean parse time 6.497/6.444
+ms, and 15,680 plot clears. The endpoint counter boundary explains the
+difference from 6,274 request completions. The two pages record 20,444/20,468
+frame callbacks across the hour. These software-rendered native observations
+include GC and are not a 60-fps continuity claim. Retained JS heap is separate
+from browser process RSS, GPU allocations and external memory; these results do
+not resolve issue 211.
+
+## Qualification status and reproducibility
+
+Both one-second sustained phases pass warm p95 <500 ms, combined CPU increase
+<=10 percentage points of one core over their matching qualified full-5s
+baseline, and backend RSS/retained browser heap growth <=16 MiB over >=3,600
+measured seconds after warm-up. Both include scheduled full loads, deterministic
+source/clock/restart controls, native lifecycle controls and checked cleanup.
+Short comparison phases remain incomplete for sustained-memory acceptance;
+failed native or earlier diagnostic phases are never substituted as baselines.
+No earlier operator waiver is inherited. Load/order did not change the budget
+conclusions, so no reverse-order repeat was needed.
+
+The post-change canonical backend gate passed 1,479 tests with 20 existing
+skips; frontend passed 858 tests and its production build. Canonical static
+checks pass. The expanded acceptance-tool suite passes 82 tests. Frozen
+`ae8397bf` additionally passed 102 backend and 82 frontend deterministic
+reference checks. Its receipt records exact tested SHA, logs and canonical
+source-tree equivalence. The `a3ac7735` receipt explicitly inherits those
+source-equivalent checks and records fresh static/tool checks, rather than
+claiming they were rerun at a different SHA. Derived summaries cite receipt
+checksums while preserving original observed browser metadata.
+
+The application tree is `ad4f088db9c89dd0748ffbb1f598edfa5241585b`; the complete
+frontend tree is `519f9cc02e183e05c3df28d56773546330941302`. Repeat builds have
+different OCI attestation-index IDs, retained verbatim in `images.txt` and the
+phase metadata. Runtime config digests in the build logs remain identical:
+backend `06fda224dc75753f35d3cfbe9d264dc41bd76249c12c27a5d95432e6a0658e5d`,
+frontend poll-5
+`d594be85518ec53a960f764667670781d16e3d05ad695c6f87e886e0c0235486`, and frontend
+poll-1 `da114077e74595b910cc79336d94dd1a35aefac22d4fc67c311656f0311997d6`.
+
+First cold HTTP-reader observations are single backend-reader timings and
+exclude JSON, Nginx and browser: 152.646 ms for incremental-5s, 172.813 ms for
+one-viewer incremental-1s, 132.764 ms for the two-viewer full baseline and
+149.604 ms for two-viewer incremental-1s. Cold replay distributions, profiles
+and full-window points are recorded separately; these are not cold browser
+latency quantiles. Actual one-second starts include response and timer delay, so
+neither source acquisition freshness nor strict one-Hz starts are promised.
+
+Raw evidence is retained at
 `/tmp/starlink-224-followup/.superpowers/sdd/2026-10-04-overview-history-efficiency-follow-up/evidence/`.
-Each completed phase records candidate SHA, image IDs, runtime, raw timings,
-resource samples, native artifacts, process logs and cleanup; checksums
-accompany finalized evidence. Failed/interrupted runs remain available. No
-production stack was deployed and issues 211/213 remain open.
+Qualified directories are:
+
+- `ae8397bf692a6ad0aad839ce3eb0d0745079f26f/full-5-1`
+- `ae8397bf692a6ad0aad839ce3eb0d0745079f26f/incremental-5-1`
+- `ae8397bf692a6ad0aad839ce3eb0d0745079f26f/incremental-1-1`
+- `a3ac77357bfd599eeb413b9ecb6d7a4e73d48346/full-5-2-retry`
+- `a3ac77357bfd599eeb413b9ecb6d7a4e73d48346/incremental-1-2`
+
+The
+[machine-readable evidence index](2026-10-04-overview-history-efficiency-evidence.json)
+contains exact phase image IDs, summaries, gates and manifest digests. Each raw
+directory contains candidate SHA, build/Compose/runtime receipts, images, seed,
+append-only backend queries/reads, browser request/resource JSONL, screenshots,
+recording/profile, observed metadata, derived summary/budgets and SHA-256
+manifest. The one-viewer later cleanup audit SHA-256 is
+`96fa9131cc62e0000dac39f481f3e5c3dcedb8bc5248e6b701bf3081bb74ce75`.
+Failed/interrupted runs and their original logs remain available. Measurement
+and summary helper scripts are retained with the evidence archive. To reproduce,
+freeze a clean tracked candidate and run the task-owned runner with
+`--phase full --cadence 5 --viewers N --warmup 300 --duration 600`, then
+`--phase incremental --cadence 1 --viewers N --warmup 300 --duration 3600` for
+N=1 and N=2, using the same pinned native profile. The incremental-5s comparison
+uses one viewer and 600 measured seconds. Full commands/environment appear in
+the retained executor scripts. No production stack was deployed and issues
+211/213 remain open.

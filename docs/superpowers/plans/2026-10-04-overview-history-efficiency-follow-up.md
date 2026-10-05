@@ -203,25 +203,25 @@ evidence goes in a task-owned SHA-qualified directory outside source.
 report containing exact phase SHAs/images, hardware, source/data density,
 viewport/renderer, cold/warm quantiles, CPU/RSS/heap, cadence and cleanup.
 
-- [ ] Freeze candidate; run focused and canonical relevant backend/frontend/
+- [x] Freeze candidate; run focused and canonical relevant backend/frontend/
       static checks. An intentionally short run must report incomplete sustained
       acceptance. Inventory artifacts and checksums.
-- [ ] On the same host, run populated-history full-5s, incremental-5s and
+- [x] On the same host, run populated-history full-5s, incremental-5s and
       incremental-1s phases with 300s warm-up and >=600s measured duration each.
       Keep viewer/window/browser configuration equal. Repeat in reverse order if
       phase ordering or host load changes conclusions.
-- [ ] Run >=3600 measured seconds after warm-up at incremental 1s, first one
+- [x] Run >=3600 measured seconds after warm-up at incremental 1s, first one
       then two viewers; sample CPU/RSS/heap every 5s. Save requests/phase
       markers on disk, including scheduled full loads. Provide user updates at
       least once per minute while supervising. Preserve evidence on
       interruption.
-- [ ] Evaluate budgets and retained-heap endpoints/trends. Publish failed or
+- [x] Evaluate budgets and retained-heap endpoints/trends. Publish failed or
       incomplete gates, verify checksums and task-only cleanup.
-- [ ] Correct the API's hidden-tab statement to shipped background polling.
+- [x] Correct the API's hidden-tab statement to shipped background polling.
       Document fixture/profiler/renderer/baseline limits. Attribute cadence loss
       only where query/timer/browser profiles support it. Commit
       report/guidance.
-- [ ] If a bottleneck fails a budget, append a focused implementation task with
+- [x] If a bottleneck fails a budget, append a focused implementation task with
       exact reproducer, interface and before/after measurement before product
       edits. Material interface/statistics/scheduling changes require design
       review. Otherwise continue to task 5; measurements cannot silently waive a
@@ -286,9 +286,9 @@ scheduling/statistics change is selected.
       immutable shared reader snapshots and no generic conversion of the bundle.
 - [x] Watch the old endpoint fail that assertion; return `JSONResponse` directly
       and run the regression plus existing history API/cache/reference controls.
-- [ ] Rebuild the exact product candidate. Repeat the separate HTTP profile and
+- [x] Rebuild the exact product candidate. Repeat the separate HTTP profile and
       populated real-path/native controls, keeping profiler overhead outside
       latency/resource distributions.
-- [ ] Complete canonical checks, comparable full-5s/incremental-5s/incremental-1s
+- [x] Complete canonical checks, comparable full-5s/incremental-5s/incremental-1s
       phases and fresh one/two-viewer sustained evidence. Report before/after
       attribution and gates before considering task 5.
