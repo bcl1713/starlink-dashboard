@@ -53,6 +53,11 @@ for (const viewport of [
     await expect(page.locator('[data-adsb-label="000001"]')).toContainText(
       'REG-FALLBACK'
     );
+    const identityBounds = await page
+      .locator('[data-adsb-label="000001"]')
+      .boundingBox();
+    expect(identityBounds!.width).toBeGreaterThan(50);
+    expect(identityBounds!.height).toBeLessThan(40);
     await expect(
       page.getByRole('button', { name: 'Details for 000003' })
     ).toHaveCount(0);

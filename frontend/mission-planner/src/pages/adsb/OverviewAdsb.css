@@ -3,6 +3,7 @@
 }
 .adsb-map-label {
   display: block;
+  width: max-content;
   max-width: 220px;
   padding: 2px 5px;
   border: 1px solid #426577;

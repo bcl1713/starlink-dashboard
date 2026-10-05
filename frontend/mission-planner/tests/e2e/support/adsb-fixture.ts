@@ -179,6 +179,7 @@ export async function adsbScene(page: Page) {
     return {
       batches,
       calls: state.gl.info.render.calls,
+      triangles: state.gl.info.render.triangles,
       geometries: state.gl.info.memory.geometries,
       textures: state.gl.info.memory.textures,
       renderer: debug

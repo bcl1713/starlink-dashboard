@@ -4,6 +4,24 @@ import { ROUTE_OVERLAY_RADIUS } from '../globe-render-radii';
 import type { AdsbContactView } from './overview-adsb-state';
 
 export const ADSB_MARKER_RADIUS = ROUTE_OVERLAY_RADIUS + 0.003;
+
+/** Label occlusion against the existing radius-two globe, without triangle scans. */
+export function createAdsbEarthOccluder(globe: {
+  current: THREE.Group;
+}): THREE.Object3D {
+  const earth = new THREE.Object3D();
+  const local = new THREE.Sphere(new THREE.Vector3(), 2);
+  const world = new THREE.Sphere(),
+    point = new THREE.Vector3();
+  earth.raycast = (raycaster, intersections) => {
+    world.copy(local).applyMatrix4(globe.current.matrixWorld);
+    if (!raycaster.ray.intersectSphere(world, point)) return;
+    const distance = raycaster.ray.origin.distanceTo(point);
+    if (distance >= raycaster.near && distance <= raycaster.far)
+      intersections.push({ distance, point: point.clone(), object: earth });
+  };
+  return earth;
+}
 export interface AdsbMarkerBatch {
   hexes: string[];
   matrices: Float32Array;

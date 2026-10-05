@@ -16,6 +16,7 @@ import {
   ADSB_MARKER_RADIUS,
   adsbClickAllowed,
   buildAdsbMarkerInstances,
+  createAdsbEarthOccluder,
   isAdsbMarkerVisible,
   type AdsbMarkerBatch,
   type AdsbPointerGesture,
@@ -45,7 +46,7 @@ function aircraftGeometry(stale: boolean): THREE.BufferGeometry {
   shape.closePath();
   const glyph = new THREE.ShapeGeometry(shape);
   if (!stale) return glyph;
-  const ring = new THREE.RingGeometry(1.2, 1.32, 20);
+  const ring = new THREE.RingGeometry(1.2, 1.32, 8);
   const combined = mergeGeometries([glyph, ring]);
   glyph.dispose();
   ring.dispose();
@@ -80,6 +81,10 @@ export function OverviewAdsbLayer({
   );
   const { current: currentBatch, stale: staleBatch } = instances;
   const group = useMemo(() => new THREE.Group(), []);
+  const earthOccluder = useMemo(
+    () => ({ current: createAdsbEarthOccluder(globeOccluder) }),
+    [globeOccluder]
+  );
   const gesture = useRef<AdsbPointerGesture | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousOffsets = useRef<Record<string, readonly [number, number]>>({});
@@ -259,7 +264,7 @@ export function OverviewAdsbLayer({
               c.longitude,
               ADSB_MARKER_RADIUS
             )}
-            occlude={[globeOccluder]}
+            occlude={[earthOccluder]}
             zIndexRange={[0, 0]}
             style={{ pointerEvents: 'none' }}
             wrapperClass="adsb-label-wrapper"

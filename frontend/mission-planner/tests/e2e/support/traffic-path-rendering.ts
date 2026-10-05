@@ -11,6 +11,7 @@ async function updateLinks(
   xBand: boolean
 ) {
   fixture.settings = {
+    ...fixture.settings,
     starshield_link_enabled: traffic,
     x_band_link_enabled: xBand,
   };

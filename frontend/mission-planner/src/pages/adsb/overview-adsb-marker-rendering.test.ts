@@ -4,10 +4,31 @@ import {
   buildAdsbMarkerInstances,
   isAdsbMarkerVisible,
   adsbClickAllowed,
+  createAdsbEarthOccluder,
 } from './overview-adsb-marker-rendering';
 import { projectAdsbContacts } from './overview-adsb-state';
 import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
 import { ROUTE_OVERLAY_RADIUS } from '../globe-render-radii';
+
+it('uses the actual globe transform for an analytic Earth intersection and respects ray distance bounds', () => {
+  const globe = new THREE.Group();
+  globe.position.set(3, 0, 0);
+  globe.scale.setScalar(2);
+  globe.updateMatrixWorld();
+  const earth = createAdsbEarthOccluder({ current: globe });
+  const ray = new THREE.Raycaster(
+    new THREE.Vector3(3, 0, 10),
+    new THREE.Vector3(0, 0, -1)
+  );
+  const [hit] = ray.intersectObject(earth, true);
+  expect(hit.distance).toBe(6);
+  expect(hit.point.toArray()).toEqual([3, 0, 4]);
+  ray.far = 5;
+  expect(ray.intersectObject(earth, true)).toEqual([]);
+  ray.far = 20;
+  ray.ray.origin.x = 10;
+  expect(ray.intersectObject(earth, true)).toEqual([]);
+});
 it.each([
   [0, [0, 1, 0]],
   [90, [0, 0, -1]],

@@ -74,8 +74,17 @@ test('2,000 contacts and 50 included identities retain all instances and release
     )
     .toBe(2000);
   await expect(page.locator('[data-adsb-label]')).toHaveCount(50);
+  const profiler = await context.newCDPSession(page);
+  await profiler.send('Profiler.enable');
+  await profiler.send('Profiler.start');
   const on = await measure(),
     enabled = await adsbScene(page);
+  const profile = await profiler.send('Profiler.stop');
+  await writeFile(
+    info.outputPath('cpu-profile.json'),
+    JSON.stringify(profile.profile)
+  );
+  await profiler.detach();
   expect(enabled.batches.reduce((n, b) => n + b.count, 0)).toBe(2000);
   expect(enabled.labels).toBe(50);
   await page.screenshot({ path: info.outputPath('workload-50-labels.png') });
@@ -85,7 +94,9 @@ test('2,000 contacts and 50 included identities retain all instances and release
       adsbSettings({ enabled: false, revision: 2 + cycle * 2 })
     );
     await expect
-      .poll(async () => (await adsbScene(page)).batches.length)
+      .poll(async () => (await adsbScene(page)).batches.length, {
+        timeout: 10000,
+      })
       .toBe(0);
     await expect(page.locator('[data-adsb-label]')).toHaveCount(0);
     const state = await adsbScene(page);

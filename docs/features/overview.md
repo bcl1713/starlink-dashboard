@@ -279,8 +279,8 @@ independent of the position provenance used for arrival estimates.
 Aircraft/GEP and configured satellites can remain visible without a route.
 Generated POIs and satellite markers retain their labels and separate accessible
 name lists even when globe occlusion or POI collision handling hides a label.
-Settings, counts and GEO look-angle analysis are in **Configuration**, rather
-than additional legend rows.
+Settings, GEO look-angle analysis and optional [ADS-B aircraft](overview-adsb.md)
+controls are in **Configuration**. ADS-B adds global positions and read-only details.
 
 ### Independent data links
 
@@ -292,27 +292,6 @@ Hiding links preserves collection, metrics, warnings, route/history, markers and
 camera. Hidden pages clear/pause particles; reduced motion keeps lines. See
 [shared settings](system.md#shared-data-link-visibility) for persistence/errors.
 The deployment laptop still requires hardware validation.
-
-### Optional ADS-B aircraft
-
-Configuration's **ADS-B aircraft layer** defaults off. It adds global eligible
-positions independently of the own aircraft, route, history, links and warnings.
-Smaller batched glyphs follow observed ground track. Earth blocks rear-side
-markers and selection. Stale glyphs have a ring; included labels show **◷
-Stale**. Only saved included aircraft have permanent labels, using callsign,
-registration, then hex. Crowded labels retain every identity rather than
-becoming a count.
-
-Click a visible glyph or focus its **Details for <hex>** button to open
-read-only observations. Close/Escape restores focus; details remain available in
-native fullscreen. Camera drag over five CSS pixels cannot select, and selection
-does not alter camera or follow state. Expiry, exclusion or disabling closes
-details. The ADS-B legend appears while the layer has unexpired contacts,
-independently of camera occlusion. Map placement does not imply a measured
-altitude.
-
-See [shared aircraft settings](system.md#shared-ads-b-aircraft-settings) and the
-[ADS-B API](../api/endpoints/overview-adsb.md) for precedence and freshness.
 
 ## Related Documentation
 
