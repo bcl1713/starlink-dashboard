@@ -289,3 +289,17 @@ unchanged. This selects the same one-second scheduler already exercised by the
 qualified explicit-`1` builds. Fresh canonical checks and a rebuilt exact-SHA
 native control run verify the default path; the sustained evidence above retains
 its actual earlier SHAs and is not relabeled as an exact-head soak.
+
+The
+[default-validation receipt](2026-10-04-overview-history-default-validation.json)
+records production candidate `87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde`, fresh
+native controls with two actual viewers, 20-second warm-up and 60.011 measured
+seconds, zero errors and immediate owned cleanup. The Docker build omits the
+cadence argument; its complete served asset manifest is identical to the
+explicit-1 build used by the native control. Production Compose is also checked
+for unset, explicit rollback, empty and invalid values. This bounded run
+verifies default selection and lifecycle behavior; it is incomplete for
+sustained gates. Fresh canonical checks pass 1,479 backend tests (20 skips), 858
+frontend tests and the production build, plus static checks. The backend/static
+tested SHA is `b93c8307`; the only subsequent source change is the refresh
+integration test, which is included in the `87112f0a` canonical frontend run.
