@@ -96,9 +96,9 @@ def prepare_mission_timeline(
     if not route:
         raise TimelineComputationError(f"Route {mission.route_id} not loaded")
 
-    route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
     if normalize_for_simulation:
         route = normalize_timed_route(route)
+    route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
     splice = mission.transports.manual_route_splice
     selected_track = None
     splice_available = False

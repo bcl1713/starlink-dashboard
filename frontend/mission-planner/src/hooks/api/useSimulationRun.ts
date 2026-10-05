@@ -79,6 +79,7 @@ export function useSimulationRun() {
       throw new Error('Obsolete simulation response');
     },
     refetchInterval: 1000,
+    networkMode: 'always',
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',

@@ -8,7 +8,7 @@ from app.mission.timeline_builder.calculator import (
     derive_mission_window,
     ensure_timezone,
 )
-from app.models.route import ParsedRoute
+from app.models.route import ParsedRoute, RouteTimingProfile
 from app.services.route_eta_calculator import RouteETACalculator
 
 
@@ -28,6 +28,7 @@ def normalize_timed_route(source: ParsedRoute) -> ParsedRoute:
         if point.expected_arrival_time:
             point.expected_arrival_time = ensure_timezone(point.expected_arrival_time)
     profile = route.timing_profile
+
     if profile:
         if profile.departure_time:
             profile.departure_time = ensure_timezone(profile.departure_time)
@@ -38,6 +39,12 @@ def normalize_timed_route(source: ParsedRoute) -> ParsedRoute:
         start, end = profile.departure_time, profile.arrival_time
     if end <= start:
         raise TimelineComputationError("Arrival must follow departure")
+    route.timing_profile = profile or RouteTimingProfile()
+    route.timing_profile.departure_time = start
+    route.timing_profile.arrival_time = end
+    route.timing_profile.total_expected_duration_seconds = (end - start).total_seconds()
+    route.timing_profile.has_timing_data = True
+    route.timing_profile.segment_count_with_timing = len(route.points) - 1
     for point in [*route.points, *route.waypoints]:
         if (
             point.expected_arrival_time

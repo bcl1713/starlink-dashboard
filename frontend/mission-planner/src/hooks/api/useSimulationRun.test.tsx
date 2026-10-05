@@ -55,6 +55,7 @@ it('two consumers share a cancellable background polling query', async () => {
     refetchInterval: 1000,
     refetchIntervalInBackground: true,
     retry: false,
+    networkMode: 'always',
   });
   view.unmount();
   client.clear();
