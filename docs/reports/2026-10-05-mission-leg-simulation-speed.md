@@ -25,10 +25,10 @@ See [API contracts](../api/endpoints/simulation-run.md) and
 
 ## Candidate and environment
 
-Measured production candidate: `cf2500c859f54e32dff184701443b216d23bf421`. Merge
+Measured production candidate: `57494bf8120834e0e6e456444992e2516ba7af6c`. Merge
 base with `origin/dev`: `8054b81fd474f70e1e1bd065a300c0092940f52f`. Evidence
 directory:
-`/tmp/starlink-262-evidence-cf2500c859f54e32dff184701443b216d23bf421`. This
+`/tmp/starlink-262-evidence-57494bf8120834e0e6e456444992e2516ba7af6c`. This
 local directory contains immutable candidate/image/runtime records, container
 logs, per-case JSON, screenshots and videos; it is not a public URL.
 
@@ -49,33 +49,32 @@ expectations independently define X/Ka/Ku/AAR outcomes. A controlled Ka coverage
 GeoJSON makes coverage deterministic. ADS-B is disabled. The live rejection case
 launches the real app with hardware connection, telemetry and
 public-IP/geolocation discovery forced disconnected. The initial live attempt
-exposed missed discovery paths; final acceptance must verify the corrected
-fixture makes no external calls.
+exposed missed discovery paths; the corrected run passed the live controls and
+had no external discovery URLs in its retained logs.
 
 ## Measured results
 
 | Journey                     |     Measured real time |   Lateness | Events / result                        |
 | --------------------------- | ---------------------: | ---------: | -------------------------------------- |
-| Target runtime, 120 seconds |           120.001548 s | 0.001548 s | 21, final arrival                      |
-| Fixed multiplier, 10×       |           120.001095 s | 0.001095 s | 21, final arrival                      |
-| Long fixture, 1000×         |            12.001580 s | 0.001580 s | 22, final arrival                      |
-| Slow fixture, 0.1×          | 1.809029 s observation |          — | 0.180903 simulated s                   |
-| Running propagation         |             243.461 ms |          — | Independent Overview context           |
-| Completion propagation      |             979.903 ms |          — | Both visible contexts                  |
+| Target runtime, 120 seconds |           120.002035 s | 0.002035 s | 21, final arrival                      |
+| Fixed multiplier, 10×       |           120.001744 s | 0.001744 s | 21, final arrival                      |
+| Long fixture, 1000×         |            12.001395 s | 0.001395 s | 22, final arrival                      |
+| Slow fixture, 0.1×          | 1.785399 s observation |          — | 0.178540 simulated s                   |
+| Running propagation         |             143.557 ms |          — | Independent Overview context           |
+| Completion propagation      |             992.791 ms |          — | Both visible contexts                  |
 | Cancellation / direct route |                 Passed |          — | Restored cards / cancelled run         |
 | Backend restart             |                 Passed |          — | New incarnation, idle, no active flags |
-| Controlled live rejection   |                Pending |          — | Both paced entry points                |
+| Controlled live rejection   |                 Passed |          — | Both paced entry points                |
 
 All completed runs must finish at the exact route endpoint, 100%, POST_ARRIVAL,
 X satellite Paced-X-3 and final X/Ka/Ku offline states. The normal fixture
 consumes 21 events; the long fixture consumes 22. Deterministic tests separately
 check simultaneous-event ordering, delayed multi-event ticks and repeated reads.
 
-Behavioral assertions passed on this candidate. Its fullscreen video still
-showed Chromium’s default 800×600 native window inside the recording frame. The
-final runner now specifies the native launch window and screen as 1920×1080; a
-short diagnostic recording confirms uncropped capture. Final production video
-inspection remains required.
+All six production cases passed on this candidate, including actual backend
+restart and live-mode 409 controls. Cleanup passed. Inspection of desktop,
+responsive, fullscreen and restored screenshots plus decoded video frames
+confirms the corrected 1920×1080 native window is captured without cropping.
 
 The target journey records desktop 1920×1080, responsive 390×844 and native
 fullscreen screenshots, plus explicitly sized 1920×1080 videos from both
@@ -92,9 +91,12 @@ build. Canonical static verification passes formatting, lint, Markdown/link
 checks and acceptance typing policy checks. New harness/config contracts were
 observed failing before implementation and then passing.
 
-Existing globe, camera, route, arrival, traffic and metric-history browser
-regressions run through their controlled Vite fixture lane. These diagnostic
-checks are recorded separately from real Nginx acceptance.
+Existing controlled globe/camera/route/arrival/traffic/history browser
+regressions passed 59 checks with the default cadence. Two pre-existing history
+fixtures advance five seconds per response and require at least four seconds
+between requests; they initially failed at the base branch’s one-second default
+and pass separately at the documented five-second rollback cadence. These
+diagnostic checks remain separate from real Nginx acceptance.
 
 The report commit is followed by an exact-final-head production rerun, static
 gates and applicable GitHub CI. Its external evidence is linked in PR #270 to
@@ -125,6 +127,29 @@ a later head or authorize merge/deployment.
 
 Earlier failed candidates and traces remain diagnostic evidence. Their cleanup
 logs confirm project resources and the port were released on failure.
+
+## Independent review and fix pass
+
+One fresh whole-branch review found seven important issues and no critical
+issues. One tested fix pass addresses duplicate/rounded nonpositive segment
+durations with route validation, rejects unavailable selected diversions,
+accepts distance 100% during a timed stationary terminal segment, wakes the
+producer on committed activation, decodes structured error messages, presents
+confirmed status in Missions, and retains monotonic age for unchanged producer
+observations after backward UTC corrections. Focused tests were observed failing
+then passing; the full backend suite passes 1715 tests (20 existing skips),
+frontend passes 1013, and production build/static gates pass. Exact-head CI and
+production proof follow this commit. The runner now uses a 30-second ordinary
+interval and a two-second target to test wakeup, and keeps the initiating window
+in Missions through completion.
+
+Three minor presentation findings are deferred: initial 10× versus specified 1×
+and missing immediate-departure explanation; live-mode entry control remains
+visible while actual start is blocked; independently polled arrival presentation
+can briefly lag Completed. The PR records them for the next review decision. The
+earlier exact-head static CI job passed code/Markdown checks but timed out on
+five existing CelesTrak documentation links; this external failure is not a
+product-test failure. Final CI is rerun without suppressing those checks.
 
 ## Scope and limits
 

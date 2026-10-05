@@ -25,6 +25,10 @@ Multiplier limits are inclusive **0.1–1000**. A target runtime must be at leas
 **1 real second**, and its derived multiplier must be within those limits.
 Numbers must be finite JSON numbers; unknown fields are rejected.
 
+Every normalized route segment needs positive duration. Duplicate untimed
+vertices need removal or distinct timing anchors. A missing or unavailable
+selected diversion rejects paced preview rather than replaying the base route.
+
 For planned duration `D` simulated seconds, multiplier `M` gives `D / M` real
 seconds. Target runtime `R` gives multiplier `D / R`. A 1200-second flight at
 10× and a 120-second target therefore produce the same pacing.
