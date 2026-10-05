@@ -449,3 +449,101 @@ class TestRuleEngine:
         assert is_violation is True
         assert debug["violation_reason"] == "elevation"
         assert debug["elevation_below_min"] is True
+
+    @pytest.mark.parametrize("is_aar_mode", [False, True], ids=["normal", "aar"])
+    @pytest.mark.parametrize(
+        "elevation, expected_violation",
+        [(5.0, True), (9.999, True), (10.0, False), (10.001, False)],
+    )
+    def test_x_elevation_minimum_boundary(
+        self, monkeypatch, is_aar_mode, elevation, expected_violation
+    ):
+        """Both modes reject positive elevations below 10°, inclusively allowing 10°."""
+        # Isolate the elevation boundary with an azimuth outside both cones.
+        monkeypatch.setattr(
+            "app.satellites.rules.look_angles", lambda *args: (90.0, elevation)
+        )
+        violation, azimuth, debug = RuleEngine().evaluate_x_azimuth_window(
+            0.0,
+            0.0,
+            0.0,
+            72.0,
+            timestamp=datetime(2035, 3, 1, tzinfo=timezone.utc),
+            heading_deg=0.0,
+            is_aar_mode=is_aar_mode,
+        )
+
+        assert violation is expected_violation
+        assert azimuth == 90.0
+        assert debug["elevation_degrees"] == elevation
+        assert debug["min_elevation_degrees"] == 10.0
+        assert debug["elevation_below_min"] is expected_violation
+        assert debug.get("violation_reason") == (
+            "elevation" if expected_violation else None
+        )
+
+    @pytest.mark.parametrize("is_aar_mode", [False, True], ids=["normal", "aar"])
+    def test_x_low_elevation_real_geometry(self, is_aar_mode):
+        """An invented equatorial aircraft cannot use a satellite 72° east."""
+        violation, azimuth, debug = RuleEngine().evaluate_x_azimuth_window(
+            0.0,
+            0.0,
+            0.0,
+            72.0,
+            timestamp=datetime(2035, 3, 1, tzinfo=timezone.utc),
+            heading_deg=0.0,
+            is_aar_mode=is_aar_mode,
+        )
+
+        assert azimuth == pytest.approx(90.0)
+        assert debug["elevation_degrees"] == pytest.approx(9.4177, abs=0.0001)
+        assert violation is True
+        assert debug["violation_reason"] == "elevation"
+        assert debug["elevation_below_min"] is True
+        assert debug["min_elevation_degrees"] == 10.0
+
+    @pytest.mark.parametrize("is_aar_mode", [False, True], ids=["normal", "aar"])
+    @pytest.mark.parametrize(
+        "minimum, expected_violation", [(0.0, False), (15.0, True)]
+    )
+    def test_x_explicit_elevation_override(
+        self, is_aar_mode, minimum, expected_violation
+    ):
+        """Explicit minima can still allow or reject the same real geometry."""
+        engine = RuleEngine(ConstraintConfig(elevation_min_degrees=minimum))
+        violation, _, debug = engine.evaluate_x_azimuth_window(
+            0.0,
+            0.0,
+            0.0,
+            72.0,
+            timestamp=datetime(2035, 3, 1, tzinfo=timezone.utc),
+            heading_deg=0.0,
+            is_aar_mode=is_aar_mode,
+        )
+
+        assert violation is expected_violation
+        assert debug["min_elevation_degrees"] == minimum
+        assert debug["elevation_below_min"] is expected_violation
+
+    @pytest.mark.parametrize("is_aar_mode, azimuth", [(False, 180.0), (True, 0.0)])
+    def test_x_minimum_elevation_still_enforces_azimuth_cones(
+        self, monkeypatch, is_aar_mode, azimuth
+    ):
+        """Meeting the elevation minimum does not bypass heading-relative cones."""
+        monkeypatch.setattr(
+            "app.satellites.rules.look_angles", lambda *args: (azimuth + 20.0, 10.0)
+        )
+        violation, relative, debug = RuleEngine().evaluate_x_azimuth_window(
+            0.0,
+            0.0,
+            0.0,
+            72.0,
+            timestamp=datetime(2035, 3, 1, tzinfo=timezone.utc),
+            heading_deg=20.0,
+            is_aar_mode=is_aar_mode,
+        )
+
+        assert violation is True
+        assert relative == azimuth
+        assert debug["elevation_below_min"] is False
+        assert debug["violation_reason"] == "azimuth"
