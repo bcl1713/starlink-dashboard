@@ -265,7 +265,18 @@ async function run(options) {
     request.method() === "GET";
   try {
     for (let index = 0; index < options.viewers; index++) {
-      const page = await context.newPage();
+      let page;
+      if (index === 0) page = await context.newPage();
+      else {
+        const rootSession = await browser.newBrowserCDPSession();
+        const ready = context.waitForEvent("page");
+        await rootSession.send("Target.createTarget", {
+          url: "about:blank",
+          newWindow: true,
+        });
+        page = await ready;
+        await rootSession.detach();
+      }
       const session = await context.newCDPSession(page);
       await session.send("Emulation.setFocusEmulationEnabled", {
         enabled: false,
@@ -452,13 +463,30 @@ async function run(options) {
       const axes = page.locator(".overview-metric-history__value-axis").first();
       const surface = page.locator(".overview-metric-history__surface").first();
       const firstAxis = await axes.boundingBox();
-      const before = await surface.evaluate(
-        (node) => getComputedStyle(node).transform,
-      );
-      await sleep(250);
-      const after = await surface.evaluate(
-        (node) => getComputedStyle(node).transform,
-      );
+      let before, after;
+      for (let attempt = 0; attempt < 10; attempt++) {
+        before = await surface.evaluate(
+          (node) => getComputedStyle(node).transform,
+        );
+        await sleep(500);
+        after = await surface.evaluate(
+          (node) => getComputedStyle(node).transform,
+        );
+        event({
+          kind: "motion_sample",
+          before,
+          after,
+          diagnostic: await page.evaluate(() => ({
+            hidden: document.hidden,
+            reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+            probe: window.__overviewHistoryProbe.snapshot(),
+            statuses: [...document.querySelectorAll("[role=status]")].map(
+              (node) => node.textContent,
+            ),
+          })),
+        });
+        if (before !== after) break;
+      }
       const lastAxis = await axes.boundingBox();
       if (JSON.stringify(firstAxis) !== JSON.stringify(lastAxis))
         throw new Error("stationary axis moved");
@@ -559,6 +587,11 @@ async function run(options) {
     if (errors.length)
       throw new Error(`${errors.length} captured browser errors`);
   } catch (error) {
+    if (pages.length)
+      await pages
+        .at(-1)
+        .screenshot({ path: resolve(output, "failure.png") })
+        .catch(() => {});
     metadata.phase = { status: "failed", final_acceptance: false };
     metadata.errors = [...errors, error.message];
     save();
