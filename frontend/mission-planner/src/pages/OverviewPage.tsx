@@ -938,7 +938,12 @@ export function OverviewPage() {
             capabilities={weather.detailContext?.manifest ?? null}
             onDemand={weather.onDemand}
           />
-          <OverviewWeatherLayer atlas={weather.atlas} />
+          <OverviewWeatherLayer
+            atlas={weather.atlas}
+            context={weather.detailContext}
+            pairs={weather.detailPairs}
+            work={weather.work}
+          />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
               kind="countries"
