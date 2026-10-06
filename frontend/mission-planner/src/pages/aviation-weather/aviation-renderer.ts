@@ -20,6 +20,8 @@ export const earthPoint = (lat: number, lon: number, radius = 2.026) => {
 export type AviationDrawing = {
   object: THREE.Object3D;
   bytes: number;
+  // Point/segment vertex index, or a SIGMET triangle face index.
+  featureAt: (index: number) => string | undefined;
   dispose: () => void;
 };
 const colors = {
@@ -37,8 +39,10 @@ export function createAviationDrawing(
   if (layer === 'sigmet')
     return advisoryDrawing(activeFeatures(c, layer, now) as AviationAdvisory[]);
   const positions: number[] = [],
-    rgb: number[] = [];
+    rgb: number[] = [],
+    featureIds: string[] = [];
   for (const f of activeFeatures(c, layer, now) as AviationStation[]) {
+    featureIds.push(f.id);
     const [lon, lat] = f.geometry.coordinates,
       center = earthPoint(lat, lon);
     const groups = currentForecastGroups(f, now);
@@ -114,6 +118,10 @@ export function createAviationDrawing(
   return {
     object,
     bytes: (positions.length + rgb.length) * 4,
+    featureAt: (index) =>
+      Number.isInteger(index) && index >= 0
+        ? featureIds[Math.floor(index / (layer === 'metar' ? 1 : 8))]
+        : undefined,
     dispose: () => {
       geometry.dispose();
       material.dispose();
@@ -122,7 +130,8 @@ export function createAviationDrawing(
 }
 function advisoryDrawing(features: AviationAdvisory[]): AviationDrawing {
   const positions: number[] = [],
-    outlines: number[] = [];
+    outlines: number[] = [],
+    ranges: { start: number; end: number; id: string }[] = [];
   const admit = (extra: number) => {
     if (positions.length + outlines.length + extra > 300000)
       throw Error('Advisory rendered vertex budget');
@@ -152,6 +161,7 @@ function advisoryDrawing(features: AviationAdvisory[]): AviationDrawing {
   };
   for (const f of features) {
     if (!f.geometry) continue;
+    const start = positions.length / 9;
     const polygons =
       f.geometry.type === 'Polygon'
         ? [f.geometry.coordinates]
@@ -209,6 +219,7 @@ function advisoryDrawing(features: AviationAdvisory[]): AviationDrawing {
       for (const indexes of faces)
         triangle(all[indexes[0]], all[indexes[1]], all[indexes[2]]);
     }
+    ranges.push({ start, end: positions.length / 9, id: f.id });
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
@@ -242,6 +253,10 @@ function advisoryDrawing(features: AviationAdvisory[]): AviationDrawing {
   return {
     object: mesh,
     bytes: (positions.length + outlines.length) * 4,
+    featureAt: (index) =>
+      Number.isInteger(index)
+        ? ranges.find((r) => r.start <= index && index < r.end)?.id
+        : undefined,
     dispose: () => {
       geometry.dispose();
       material.dispose();

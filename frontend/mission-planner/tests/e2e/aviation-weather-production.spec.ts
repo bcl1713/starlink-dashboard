@@ -113,6 +113,9 @@ async function nativeSnapshot(page: Page, recordDisposals = false) {
       });
       return {
         objects,
+        selected:
+          state.scene.getObjectByName('Selected aviation weather report')
+            ?.type ?? null,
         calls: state.gl.info.render.calls,
         geometries: state.gl.info.memory.geometries,
         disposed: [...target.__aviationDisposals],
@@ -205,6 +208,50 @@ async function advisoryPixel(page: Page, latitude: number, longitude: number) {
   );
 }
 
+async function aviationPoint(page: Page, latitude: number, longitude: number) {
+  return page.evaluate(
+    ({ latitude, longitude }) => {
+      const state = (window as ProbeWindow).__overviewEvidenceRoots
+        ?.find(
+          (root) => root.containerInfo?.getState?.().gl.domElement.isConnected
+        )
+        ?.containerInfo?.getState?.();
+      if (!state) throw Error('No mounted native renderer');
+      const lat = (latitude * Math.PI) / 180,
+        lon = (longitude * Math.PI) / 180;
+      const controls = state.controls as unknown as {
+        setLookAt: (...v: (number | boolean)[]) => void;
+        update: (delta: number) => void;
+      };
+      controls.setLookAt(
+        3 * Math.cos(lat) * Math.cos(lon),
+        3 * Math.sin(lat),
+        -3 * Math.cos(lat) * Math.sin(lon),
+        0,
+        0,
+        0,
+        false
+      );
+      controls.update(0);
+      state.camera.updateMatrixWorld();
+      const point = state.camera.position
+        .clone()
+        .set(
+          2.026 * Math.cos(lat) * Math.cos(lon),
+          2.026 * Math.sin(lat),
+          -2.026 * Math.cos(lat) * Math.sin(lon)
+        )
+        .project(state.camera);
+      const rect = state.gl.domElement.getBoundingClientRect();
+      return {
+        x: rect.left + ((point.x + 1) * rect.width) / 2,
+        y: rect.top + ((1 - point.y) * rect.height) / 2,
+      };
+    },
+    { latitude, longitude }
+  );
+}
+
 test('exact production SHA: native station forecasts and advisory topology coexist with radar and dispose on disable', async ({
   context,
   request,
@@ -276,10 +323,8 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       await expect(status).toContainText(text, { timeout: 30000 });
     await expect(status).toContainText('Coverage unknown');
     await expect(status).toContainText('1 unlocated');
-    await expect(status).toContainText('future');
-    await expect(status).toContainText('m/s');
-    await expect(status).toContainText('m AGL');
-    await expect(status).toContainText('UTC');
+    await expect(overview.getByLabel('METAR station reports')).toHaveCount(0);
+    await expect(status).not.toContainText('METAR KJFK');
     await expect(overview.getByRole('switch')).toHaveCount(0);
     const afterSettings = await (
       await request.get('/api/aviation-weather/v1/settings')
@@ -356,6 +401,56 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       exact: true,
     });
     if (await explore.isVisible()) await explore.click();
+    const popup = overview.getByRole('dialog');
+    let click = await aviationPoint(overview, 40.64, -73.78);
+    await overview.mouse.click(click.x, click.y);
+    await expect(popup).toContainText('KJFK METAR observation');
+    expect((await nativeSnapshot(overview)).selected).toBe('Points');
+    await expect(popup).toContainText('m/s');
+    await expect(popup).toContainText('m AGL');
+    await expect(popup).toContainText('UTC');
+    await overview
+      .getByLabel('Weather report', { exact: true })
+      .selectOption({ label: 'TAF · KJFK' });
+    await expect(popup).toContainText('KJFK terminal forecast');
+    expect((await nativeSnapshot(overview)).selected).toBe('LineSegments');
+    await popup.getByText('Forecast groups (2)', { exact: true }).click();
+    await expect(popup).toContainText('future');
+    await overview.screenshot({
+      path: info.outputPath('aviation-station-inspection.png'),
+    });
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
+      .click();
+    await expect(popup).toHaveCount(0);
+    click = await aviationPoint(overview, 36, -78);
+    await overview.mouse.click(click.x, click.y);
+    await expect(popup).toContainText('series A1');
+    expect((await nativeSnapshot(overview)).selected).toBe('Mesh');
+    await expect(popup).toContainText('180 flight-level');
+    await overview.screenshot({
+      path: info.outputPath('aviation-advisory-inspection.png'),
+    });
+    await overview.keyboard.press('Escape');
+    await expect(popup).toHaveCount(0);
+    click = await aviationPoint(overview, 40, -74);
+    await overview.mouse.click(click.x, click.y);
+    await expect(popup).toHaveCount(0);
+    for (const lon of [179, -179]) {
+      click = await aviationPoint(overview, 40, lon);
+      await overview.mouse.click(click.x, click.y);
+      await expect(popup).toContainText('series B1');
+      await overview
+        .getByRole('button', { name: 'Close weather report' })
+        .click();
+    }
+    click = await aviationPoint(overview, 36, -78);
+    await overview.mouse.move(click.x, click.y);
+    await overview.mouse.down();
+    await overview.mouse.move(click.x + 30, click.y, { steps: 5 });
+    await overview.mouse.move(click.x, click.y, { steps: 5 });
+    await overview.mouse.up();
+    await expect(popup).toHaveCount(0);
     const pixels = [];
     for (const [lat, lon, inside] of [
       [36, -78, true],
@@ -412,6 +507,18 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       .poll(() => overview.evaluate(() => !!document.fullscreenElement))
       .toBe(true);
     await expect(status).toBeVisible();
+    await overview
+      .getByRole('button', { name: 'Inspect weather reports' })
+      .click();
+    await expect(popup).toBeVisible();
+    expect(
+      await popup.evaluate(
+        (node) => !!document.fullscreenElement?.contains(node)
+      )
+    ).toBe(true);
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
+      .click();
     expect((await weatherSnapshot(overview)).canvas).toBe(baseline.canvas);
     await overview.screenshot({
       path: info.outputPath('aviation-fullscreen.png'),
@@ -426,15 +533,33 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     });
     await status.scrollIntoViewIfNeeded();
     await expect(status).toBeInViewport();
+    await overview
+      .getByRole('button', { name: 'Inspect weather reports' })
+      .click();
+    await expect(popup).toBeInViewport();
     await overview.screenshot({
       path: info.outputPath('aviation-mobile-reports.png'),
     });
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
+      .click();
     await overview.setViewportSize({ width: 1920, height: 1080 });
+    await overview
+      .getByRole('button', { name: 'Inspect weather reports' })
+      .click();
+    await overview
+      .getByLabel('Weather report', { exact: true })
+      .selectOption({ label: 'METAR · KJFK' });
+    await expect(popup).toBeVisible();
     for (const name of switches) {
       const toggle = config.getByRole('switch', { name, exact: true });
       await toggle.click();
       await expect(toggle).not.toBeChecked();
       await expect(toggle).toBeEnabled();
+      if (name === switches[0]) {
+        await expect(popup).toHaveCount(0);
+        expect((await nativeSnapshot(overview)).selected).toBeNull();
+      }
     }
     await expect(status).toHaveCount(0, { timeout: 15000 });
     await expect

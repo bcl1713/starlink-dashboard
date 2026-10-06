@@ -50,6 +50,20 @@ data. The current AWC station captures therefore show partial global coverage.
 
 ## Runtime and acceptance
 
+Overview shows compact feed status, counts and a legend. Click or tap a station
+marker, forecast diamond or advisory polygon to highlight it and inspect its
+matching report in a popup. Overlapping reports have a chooser. Polygon holes
+and the hidden side of the globe do not select a bulletin; globe drag and
+two-finger zoom do not open inspection.
+
+The **Inspect weather reports** button provides keyboard access to the admitted
+reports, including unlocated advisories. The popup contains UTC validity,
+unknown values, source attribution, coverage omissions, forecast groups and the
+original bulletin. It closes when the selected report expires or its feed is
+disabled. Popup selection is local to that browser. Any future hover linking
+between Overview and Configuration must synchronize between browsers, as
+requested by the operator; it is outside this click-inspection increment.
+
 Enabled readers share source acquisition and constrained disposable
 normalization workers. METAR/SIGMET refresh every five minutes and TAF every ten
 minutes; there is no source work at startup or with all layers disabled. Source

@@ -2,6 +2,68 @@ import { describe, expect, it, vi } from 'vitest';
 import { earthPoint, createAviationDrawing } from './aviation-renderer';
 import { parseAviationFeatures } from '@/services/aviation-features';
 import { NOW, station, advisory, collection } from './fixtures';
+import * as THREE from 'three';
+
+it('maps rendered stations and forecast segments to exact report identities after expiry filtering', () => {
+  for (const layer of ['metar', 'taf'] as const) {
+    const expired = station(layer === 'taf');
+    expired.id = 'expired';
+    expired.properties.station_id = 'OLD';
+    expired.properties.expires_at_ms = NOW;
+    expired.properties.fresh_until_ms = NOW - 1;
+    if (layer === 'taf') {
+      expired.properties.valid_from_ms = NOW - 3600000;
+      expired.properties.valid_to_ms = NOW;
+      expired.properties.forecast_groups[0].valid_from_ms = NOW - 3600000;
+      expired.properties.forecast_groups[0].valid_to_ms = NOW;
+    }
+    const valid = station(layer === 'taf');
+    valid.id = 'live-report';
+    const drawing = createAviationDrawing(
+      parseAviationFeatures(collection([expired, valid]), layer),
+      layer,
+      NOW
+    );
+    const featureAt = (
+      drawing as typeof drawing & {
+        featureAt?: (index: number) => string | undefined;
+      }
+    ).featureAt;
+    expect(featureAt?.(0)).toBe('live-report');
+    expect(featureAt?.(layer === 'metar' ? 1 : 8)).toBeUndefined();
+    drawing.dispose();
+  }
+});
+
+it('maps tessellated SIGMET faces to their bulletin and leaves polygon holes unpickable', () => {
+  const first = advisory();
+  const second = advisory();
+  second.id = 'second-bulletin';
+  second.geometry.coordinates = second.geometry.coordinates.map((r) =>
+    r.map(([lon, lat]) => [lon + 8, lat])
+  );
+  const drawing = createAviationDrawing(
+    parseAviationFeatures(collection([first, second]), 'sigmet'),
+    'sigmet',
+    NOW
+  );
+  const ray = (lat: number, lon: number) => {
+    const target = earthPoint(lat, lon);
+    return new THREE.Raycaster(
+      target.clone().normalize().multiplyScalar(5),
+      target.clone().normalize().negate()
+    ).intersectObject(drawing.object, false);
+  };
+  const featureAt = (
+    drawing as typeof drawing & {
+      featureAt?: (index: number) => string | undefined;
+    }
+  ).featureAt;
+  expect(featureAt?.(ray(0.5, 0.5)[0].faceIndex!)).toBe('test-advisory');
+  expect(featureAt?.(ray(0.5, 8.5)[0].faceIndex!)).toBe('second-bulletin');
+  expect(ray(2, 2)).toHaveLength(0);
+  drawing.dispose();
+});
 describe('native aviation geometry', () => {
   it('matches the native coordinate handedness', () => {
     expect(earthPoint(0, 0).toArray()).toEqual([2.026, 0, -0]);

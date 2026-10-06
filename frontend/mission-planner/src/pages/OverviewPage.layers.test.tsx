@@ -1,12 +1,5 @@
 vi.mock('@/hooks/useAviationWeather', () => ({
-  useAviationWeather: () => ({
-    now: 0,
-    layers: {
-      metar: { state: 'off' },
-      taf: { state: 'off' },
-      sigmet: { state: 'off' },
-    },
-  }),
+  useAviationWeather: () => queries.aviation,
 }));
 vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
   OverviewWeatherCameraObserver: () => null,
@@ -14,6 +7,7 @@ vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
 /** @vitest-environment jsdom */
 import {
   cleanup,
+  fireEvent,
   render as renderTesting,
   screen,
   within,
@@ -53,6 +47,7 @@ const queries = vi.hoisted(() => ({
     onDemand: () => {},
   } as WeatherLayerView,
   adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
+  aviation: {} as AviationView,
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
 // independently controlled API states. Scene rendering has browser coverage.
@@ -108,8 +103,15 @@ import type { WeatherLayerView } from './weather/weather-state';
 import { OverviewPage } from './OverviewPage';
 import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
 import { projectAdsbContacts } from './adsb/overview-adsb-state';
+import {
+  emptyAviationView,
+  type AviationView,
+} from './aviation-weather/aviation-controller';
+import { NOW, collection, station } from './aviation-weather/fixtures';
+import { parseAviationFeatures } from '@/services/aviation-features';
 afterEach(cleanup);
 beforeEach(() => {
+  queries.aviation = emptyAviationView;
   queries.weather = {
     configuredEnabled: false,
     visible: true,
@@ -143,6 +145,32 @@ beforeEach(() => {
   queries.pois = { data: { state: 'no_generated_pois', pois: [] } };
 });
 describe('Overview layer and exception integration', () => {
+  it('opens weather inspection from the compact status and keeps the raw report out of the rail', () => {
+    queries.aviation = {
+      ...emptyAviationView,
+      now: NOW,
+      layers: {
+        ...emptyAviationView.layers,
+        metar: {
+          state: 'current',
+          data: parseAviationFeatures(collection([station()]), 'metar'),
+        },
+      },
+    };
+    render(<OverviewPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Inspect weather reports' })
+    );
+    const popup = screen.getByRole('dialog');
+    expect(popup.textContent).toContain('TEST METAR observation');
+    expect(
+      screen.getByLabelText('Aviation weather status').textContent
+    ).not.toContain('TEST report');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Close weather report' })
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
   it('keeps aircraft, GEP and selected planning link with no route', () => {
     render(<OverviewPage />);
     const legend = screen.getByLabelText('Globe legend');

@@ -2,11 +2,41 @@
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { AviationStatus } from './AviationStatus';
+import { AviationReport } from './AviationReport';
 import { emptyAviationView } from './aviation-controller';
 import { parseAviationFeatures } from '@/services/aviation-features';
 import { NOW, station, advisory, collection, weatherValues } from './fixtures';
 afterEach(cleanup);
-it('reports unknown coverage, SI observations, passive forecast alternatives and textual hazards', () => {
+it('keeps report bodies out of the Overview while exposing inspection', () => {
+  render(
+    <AviationStatus
+      view={{
+        ...emptyAviationView,
+        now: NOW,
+        layers: {
+          ...emptyAviationView.layers,
+          metar: {
+            state: 'current',
+            data: parseAviationFeatures(collection([station()]), 'metar'),
+          },
+        },
+      }}
+      onInspect={() => {}}
+    />
+  );
+  expect(
+    screen.getByLabelText('Aviation weather status').textContent
+  ).not.toContain('TEST report');
+  expect(screen.queryByLabelText('METAR station reports')).toBeNull();
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Inspect weather reports',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(false);
+});
+it('keeps unknown coverage and unlocated hazards visible in the compact status', () => {
   const taf = station(true);
   taf.properties.forecast_groups.push({
     ...weatherValues,
@@ -45,13 +75,10 @@ it('reports unknown coverage, SI observations, passive forecast alternatives and
   ).toContain('Coverage unknown');
   expect(
     screen.getByLabelText('Aviation weather status').textContent
-  ).toContain('Forecast alternative TEMPO 30%');
+  ).not.toContain('TEST report');
   expect(
     screen.getByLabelText('Aviation weather status').textContent
   ).toContain('1 unlocated');
-  expect(
-    screen.getByLabelText('Aviation weather status').textContent
-  ).toContain('5 m/s');
   expect(screen.queryByRole('switch')).toBeNull();
 });
 it('uses later active FM values instead of the expired initial TAF group', () => {
@@ -67,23 +94,12 @@ it('uses later active FM values instead of the expired initial TAF group', () =>
     valid_to_ms: NOW + 3600000,
   });
   render(
-    <AviationStatus
-      view={{
-        ...emptyAviationView,
-        now: NOW + 60000,
-        layers: {
-          ...emptyAviationView.layers,
-          taf: {
-            state: 'current',
-            data: parseAviationFeatures(collection([taf]), 'taf'),
-          },
-        },
-      }}
+    <AviationReport
+      feature={parseAviationFeatures(collection([taf]), 'taf').features[0]}
+      now={NOW + 60000}
     />
   );
-  expect(
-    screen.getByLabelText('Aviation weather status').textContent
-  ).toContain('15 m/s');
+  expect(screen.getByRole('article').textContent).toContain('15 m/s');
 });
 
 it('labels fractional-millisecond timestamps explicitly as UTC without losing precision', () => {
@@ -93,20 +109,8 @@ it('labels fractional-millisecond timestamps explicitly as UTC without losing pr
     { ...collection([report]), retrieved_at_ms: NOW + 123 },
     'metar'
   );
-  render(
-    <AviationStatus
-      view={{
-        ...emptyAviationView,
-        now: NOW + 123,
-        layers: {
-          ...emptyAviationView.layers,
-          metar: { state: 'current', data },
-        },
-      }}
-    />
-  );
-  const status = screen.getByLabelText('Aviation weather status');
-  expect(status.textContent).toContain('Observed 2026-10-06T11:59:00.123 UTC');
-  expect(status.textContent).toContain('retrieved 2026-10-06T12:00:00.123 UTC');
-  expect(status.textContent).not.toContain('.123Z');
+  render(<AviationReport feature={data.features[0]} now={NOW + 123} />);
+  const article = screen.getByRole('article');
+  expect(article.textContent).toContain('Observed 2026-10-06T11:59:00.123 UTC');
+  expect(article.textContent).not.toContain('.123Z');
 });
