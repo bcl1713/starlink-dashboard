@@ -196,14 +196,16 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   await overview.setViewportSize({ width: 1920, height: 1080 });
   // No synthetic clock, reload, query invalidation, or mission operation here.
   // Production metadata TTL and browser 300s timer must both elapse naturally.
-  await control({ frame: baselineFrame + 60 });
+  await control({
+    frame: baselineFrame + 60,
+    radar_path: '/v2/radar/a487536b232a',
+  });
   await expect
     .poll(
       async () =>
         (await events()).filter(
           (e) =>
-            e.event === 'request' &&
-            e.path?.includes(`/radar/${baselineFrame + 60}/`)
+            e.event === 'request' && e.path?.includes('/radar/a487536b232a/')
         ).length,
       {
         timeout: 650_000,

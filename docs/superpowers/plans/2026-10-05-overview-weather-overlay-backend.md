@@ -188,7 +188,7 @@ metadata/PNG not cached; cooldown 30/300 seconds; no immediate retry; disabled
 route has zero cache-body/provider access.
 
 Pin radar.past-only selection, 60-second future tolerance, no frame regression,
-age >=3600000 removal even from cached metadata, timestamp/path mismatch,
+age >=3600000 removal even from cached metadata, unsafe provider paths,
 512-square signature/IHDR, two admitted frames, one coverage token, and UTC
 midnight invalidating old coverage/cache entries. API tests cover strict saves,
 failed saves, late older revisions, coords 400, unknown/expired token 404,

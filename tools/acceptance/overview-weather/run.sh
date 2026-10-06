@@ -62,6 +62,8 @@ PY
   exit "$result"
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 git archive "$ACCEPTANCE_CANDIDATE_SHA" | tar -x -C "$WEATHER_ACCEPTANCE_SOURCE_ROOT"
 docker info --format '{{.ServerVersion}} {{.Driver}}' > "$WEATHER_ACCEPTANCE_OUTPUT_DIR/docker-runtime.txt"
 docker context show >> "$WEATHER_ACCEPTANCE_OUTPUT_DIR/docker-runtime.txt"

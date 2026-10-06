@@ -81,8 +81,10 @@ geographic context; zooming does not request sharper detail. Coverage uses the
 documented coverage path with color/options 0/0_0 and the same tile grid.
 
 Validate metadata before caching: bounded object and list sizes, exact HTTPS
-provider host, integral nonnegative timestamps excluding booleans, and numeric
-frame paths matching their timestamp. Reject future frames beyond a 60-second
+provider host, integral nonnegative timestamps excluding booleans, and bounded
+`/v2/radar/` paths with one alphanumeric, underscore, or hyphen identifier.
+Preserve each provider path independently of its timestamp; identifiers can be
+opaque. Reject future frames beyond a 60-second
 clock tolerance; only frames younger than 60 minutes are eligible. Select the
 newest eligible observed frame and never regress a retained frame's time.
 Recheck time eligibility on cached reads and clamp tolerated future frame age to

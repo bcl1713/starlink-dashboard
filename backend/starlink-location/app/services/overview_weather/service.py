@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import re
 import struct
 
 from app.models.overview_weather import WeatherManifest, WeatherSettings
@@ -11,6 +10,7 @@ from .acquisitions import WeatherAcquisitionPool
 from .clock import WeatherClock
 from .protocol import WeatherPayload, WeatherUnavailable
 from .settings import WeatherSettingsStore
+from .transport import RADAR_PATH
 
 METADATA_URL = "https://api.rainviewer.com/public/weather-maps.json"
 TILE_HOST = "https://tilecache.rainviewer.com"
@@ -33,7 +33,7 @@ def validate_png(body: bytes) -> None:
         raise ValueError("Invalid weather image")
 
 
-def observed_frames(body: bytes) -> list[int]:
+def observed_frames(body: bytes) -> dict[int, str]:
     payload = json.loads(body)
     if (
         not isinstance(payload, dict)
@@ -47,7 +47,7 @@ def observed_frames(body: bytes) -> list[int]:
     past = radar.get("past")
     if not isinstance(past, list) or len(past) > 32:
         raise ValueError("Invalid observed frame list")
-    frames = []
+    frames = {}
     for entry in past:
         if not isinstance(entry, dict) or len(entry) > 4:
             raise ValueError("Invalid observed frame")
@@ -56,11 +56,11 @@ def observed_frames(body: bytes) -> list[int]:
             type(timestamp) is not int
             or timestamp < 0
             or not isinstance(path, str)
-            or not re.fullmatch(r"/v2/radar/[0-9]+", path)
-            or path != f"/v2/radar/{timestamp}"
+            or not RADAR_PATH.fullmatch(path)
+            or (timestamp in frames and frames[timestamp] != path)
         ):
             raise ValueError("Invalid observed frame identity")
-        frames.append(timestamp)
+        frames[timestamp] = path
     return frames
 
 
@@ -75,7 +75,7 @@ class WeatherService:
         self._revision = -1
         self._enabled = False
         self._closed = False
-        self._frames: list[int] = []
+        self._frames: dict[int, str] = {}
         self._coverage: int | None = None
         self._settings_lock = asyncio.Lock()
 
@@ -110,7 +110,9 @@ class WeatherService:
         return -60000 <= age < 3600000
 
     async def _prune(self):
-        self._frames = [frame for frame in self._frames if self._eligible(frame)]
+        self._frames = {
+            frame: path for frame, path in self._frames.items() if self._eligible(frame)
+        }
         if self._coverage != self.clock.utc_ms() // DAY_MS:
             self._coverage = None
         frames, coverage = set(self._frames), self._coverage
@@ -161,15 +163,20 @@ class WeatherService:
             )
             if not self._enabled or revision != self._revision:
                 raise WeatherUnavailable()
-            eligible = [
-                frame
-                for frame in observed_frames(metadata.body)
+            eligible = {
+                frame: path
+                for frame, path in observed_frames(metadata.body).items()
                 if self._eligible(frame)
-            ]
+            }
             if not eligible:
                 raise WeatherUnavailable()
-            selected = max(eligible + self._frames)
-            self._frames = sorted(set(self._frames + [selected]), reverse=True)[:2]
+            selected = max(eligible.keys() | self._frames.keys())
+            if selected not in self._frames:
+                self._frames[selected] = eligible[selected]
+            self._frames = {
+                frame: self._frames[frame]
+                for frame in sorted(self._frames, reverse=True)[:2]
+            }
             self._coverage = self.clock.utc_ms() // DAY_MS
             await self._prune()
             if not self._enabled or revision != self._revision:
@@ -201,7 +208,7 @@ class WeatherService:
             raise WeatherTileError(404)
         revision = self._revision
         path = (
-            f"/v2/radar/{token}/512/2/{x}/{y}/2/1_1.png"
+            f"{self._frames[token]}/512/2/{x}/{y}/2/1_1.png"
             if kind == "radar"
             else f"/v2/coverage/0/512/2/{x}/{y}/0/0_0.png"
         )

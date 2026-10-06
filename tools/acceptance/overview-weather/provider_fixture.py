@@ -75,17 +75,26 @@ class Writer:
         event("request", path=path, host=self.host)
         await asyncio.sleep(float(settings.get("delay", 0)))
         status = 503 if settings.get("fail") else 200
+        frame = settings.get("frame", int(time.time()) // 60 * 60 - 120)
+        radar_path = settings.get("radar_path", f"/v2/radar/frame_{frame:x}")
         if self.host == "api.rainviewer.com":
-            frame = settings.get("frame", int(time.time()) // 60 * 60 - 120)
             body = json.dumps(
                 {
+                    "version": "2.0",
+                    "generated": int(time.time()),
                     "host": "https://tilecache.rainviewer.com",
-                    "radar": {"past": [{"time": frame, "path": f"/v2/radar/{frame}"}]},
+                    "radar": {
+                        "past": [{"time": frame, "path": radar_path}],
+                        "nowcast": [],
+                    },
+                    "satellite": {"infrared": []},
                 }
             ).encode()
             content_type = "application/json"
         else:
             parts = path.split("/")
+            if "/radar/" in path and not path.startswith(radar_path + "/512/2/"):
+                status = 404
             body = tile_png(int(parts[6]), int(parts[7]), coverage="coverage" in path)
             content_type = "image/png"
         wire = (

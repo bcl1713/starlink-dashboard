@@ -18,8 +18,10 @@ TlsOpener = Callable[
     [str, str, ssl.SSLContext, float],
     Awaitable[tuple[asyncio.StreamReader, asyncio.StreamWriter]],
 ]
+RADAR_PATH = re.compile(r"/v2/radar/[A-Za-z0-9_-]{1,128}")
 TILE_PATH = re.compile(
-    r"/v2/(?:radar/[0-9]+/512/2/[0-3]/[0-3]/2/1_1|coverage/0/512/2/[0-3]/[0-3]/0/0_0)\.png"
+    rf"(?:{RADAR_PATH.pattern}/512/2/[0-3]/[0-3]/2/1_1"
+    r"|/v2/coverage/0/512/2/[0-3]/[0-3]/0/0_0)\.png"
 )
 
 
@@ -61,7 +63,7 @@ class PinnedWeatherTransport:
         expected_type: str,
         deadline: float,
         *,
-        before_attempt: Callable[[], None]
+        before_attempt: Callable[[], None],
     ) -> WeatherPayload:
         parsed = urlsplit(url)
         if (

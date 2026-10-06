@@ -49,7 +49,9 @@ provide no availability guarantee. Check the provider's current terms before a
 commercial deployment. The globe includes the attribution automatically.
 
 Provider acquisition is shared across displays in one backend worker. Metadata
-is cached for five minutes. The server limits actual attempts to 90 per rolling
+advertises a separate radar path for each timestamp; the server preserves its
+validated opaque identifier instead of constructing a path from the timestamp.
+Metadata is cached for five minutes. The server limits actual attempts to 90 per rolling
 minute, four active exchanges, and 32 pending acquisitions. Failed acquisitions
 have a 30-second cooldown, respecting bounded provider retry guidance. The PNG
 cache retains at most 48 tiles and 64 MiB of compressed bytes. Only the latest

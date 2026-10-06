@@ -32,6 +32,27 @@ async def test_numeric_dial_original_host_and_exact_once_completion():
     assert streams.writers[0].wait_closed_calls == 1
 
 
+async def test_opaque_radar_tile_path_uses_pinned_verified_provider_connection():
+    streams = WeatherStreams(http_response(b"png", "image/png"))
+    clock = WeatherClock()
+    transport = PinnedWeatherTransport(clock, streams.resolve, streams.open)
+    payload = await transport.fetch(
+        "https://tilecache.rainviewer.com/v2/radar/f1fa64870793/512/2/1/1/2/1_1.png",
+        2097152,
+        "image/png",
+        clock.monotonic() + 5,
+        before_attempt=lambda: None,
+    )
+    assert payload.body == b"png"
+    assert streams.dials == [("1.1.1.1", "tilecache.rainviewer.com")]
+    assert (
+        b"GET /v2/radar/f1fa64870793/512/2/1/1/2/1_1.png HTTP/1.1"
+        in streams.writers[0].written
+    )
+    assert streams.writers[0].close_calls == 1
+    assert streams.writers[0].wait_closed_calls == 1
+
+
 async def test_cancel_after_open_closes_once():
     streams = WeatherStreams()
     task = asyncio.create_task(fetch(streams))

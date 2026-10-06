@@ -16,12 +16,14 @@ from tests.unit.test_overview_weather_acquisitions import pool_for
 NOW = 1791244800000
 
 
-def metadata(time_seconds=1791244200):
+def metadata(time_seconds=1791244200, path=None):
     return json.dumps(
         {
             "host": "https://tilecache.rainviewer.com",
             "radar": {
-                "past": [{"time": time_seconds, "path": f"/v2/radar/{time_seconds}"}],
+                "past": [
+                    {"time": time_seconds, "path": path or f"/v2/radar/{time_seconds}"}
+                ],
                 "nowcast": [{"time": 1791244800, "path": "/v2/radar/1791244800"}],
             },
         }
@@ -86,7 +88,7 @@ async def test_ineligible_times_cannot_admit_frame(tmp_path, frame):
     "change",
     [
         lambda p: p.update(host="https://localhost"),
-        lambda p: p["radar"]["past"][0].update(path="/v2/radar/1"),
+        lambda p: p["radar"]["past"][0].update(path="/v2/radar/../private"),
         lambda p: p["radar"].update(past=[p["radar"]["past"][0]] * 33),
     ],
 )
@@ -163,3 +165,56 @@ async def test_ineligible_metadata_recovers_after_failure_cooldown(tmp_path, bad
     assert recovered.frame_time_ms == NOW
     assert len(streams.dials) == 2
     await service.aclose()
+
+
+@pytest.mark.parametrize("path", ["/v2/radar/f1fa64870793", "/v2/radar/frame_ID-2"])
+async def test_observed_opaque_path_serves_radar_under_local_timestamp(tmp_path, path):
+    streams = WeatherStreams(http_response(metadata(path=path)))
+    service, store = service_for(tmp_path, streams)
+    store.update({"enabled": True})
+    try:
+        ready = await service.read_frame()
+        assert ready.state == "ready"
+        assert ready.frame_time_ms == 1791244200000
+        assert ready.radar_tile_template == (
+            "/api/overview-weather/radar/1791244200/{z}/{x}/{y}.png"
+        )
+        png = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR"
+            + struct.pack(">II", 512, 512)
+            + b"\x08\x06\x00\x00\x00\x00\x00\x00\x00"
+        )
+        streams.wire = http_response(png, "image/png")
+        assert (await service.radar_tile(1791244200, 2, 1, 1)).body == png
+        assert f"GET {path}/512/2/1/1/2/1_1.png HTTP/1.1".encode() in (
+            streams.writers[-1].written
+        )
+    finally:
+        await service.aclose()
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/v2/radar/../private",
+        "/v2/radar/%2e%2e",
+        "/v2/radar/id/extra",
+        "/v2/radar/id?url=http://localhost",
+        "/v2/radar/id#fragment",
+        "/v2/radar/",
+        "/v2/radar/" + "a" * 129,
+        "https://evil.example/v2/radar/id",
+    ],
+)
+async def test_unsafe_provider_frame_paths_are_not_admitted(tmp_path, path):
+    streams = WeatherStreams(http_response(metadata(path=path)))
+    service, store = service_for(tmp_path, streams)
+    store.update({"enabled": True})
+    try:
+        assert (await service.read_frame()).state == "unavailable"
+        with pytest.raises(WeatherTileError) as caught:
+            await service.radar_tile(1791244200, 2, 1, 1)
+        assert caught.value.status_code == 404
+        assert len(streams.dials) == 1
+    finally:
+        await service.aclose()
