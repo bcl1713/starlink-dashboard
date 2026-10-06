@@ -5,11 +5,11 @@ import struct
 
 import httpx
 import pytest
+
 from app.services.overview_weather.admission import WeatherAdmission
 from app.services.overview_weather.clock import WeatherClock
 from app.services.overview_weather.protocol import WeatherUnavailable
 from app.services.overview_weather.service import WeatherService, WeatherTileError
-
 from tests.fixtures.weather_streams import WeatherStreams, http_response
 from tests.unit.test_overview_weather_api import weather_app
 from tests.unit.test_overview_weather_service import metadata, service_for

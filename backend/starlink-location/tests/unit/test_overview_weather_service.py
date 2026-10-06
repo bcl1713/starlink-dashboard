@@ -2,6 +2,7 @@ import json
 import struct
 
 import pytest
+
 from app.services.overview_weather.clock import WeatherClock
 from app.services.overview_weather.service import (
     WeatherService,
@@ -9,7 +10,6 @@ from app.services.overview_weather.service import (
     validate_png,
 )
 from app.services.overview_weather.settings import WeatherSettingsStore
-
 from tests.fixtures.weather_streams import WeatherStreams, http_response
 from tests.unit.test_overview_weather_acquisitions import pool_for
 

@@ -12,12 +12,10 @@ const context: DetailContext = {
 const draw = vi.fn(),
   clear = vi.fn();
 beforeEach(() =>
-  vi
-    .spyOn(HTMLCanvasElement.prototype, 'getContext')
-    .mockReturnValue({
-      drawImage: draw,
-      clearRect: clear,
-    } as unknown as CanvasRenderingContext2D)
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    drawImage: draw,
+    clearRect: clear,
+  } as unknown as CanvasRenderingContext2D)
 );
 afterEach(() => {
   vi.restoreAllMocks();

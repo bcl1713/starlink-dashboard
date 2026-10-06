@@ -930,6 +930,8 @@ test('native coverage stays conservative at shared boundaries, fades and antimer
   request,
 }, info) => {
   test.setTimeout(240000);
+  // Source-switch fixtures share the real rolling allowance with replay.
+  await page.waitForTimeout(61000);
   const frame = Math.floor(Date.now() / 1000) - 120;
   await control({ frame, detail_fixture: true, boundary_fixture: true });
   await request.put('/api/overview-weather/settings', {
@@ -974,6 +976,9 @@ test('native coverage stays conservative at shared boundaries, fades and antimer
     const epsilon = (360 * (b[2] - b[0])) / 510 / 4;
     for (const fade of [0.25, 0.5, 1]) {
       const sample = await boundaryPixel(page, edge - epsilon, fade, false);
+      const actualDistance = (edge - sample.sampleLongitude + 360) % 360;
+      expect(actualDistance).toBeGreaterThan(0);
+      expect(actualDistance).toBeLessThan(epsilon * 4);
       expect(
         hatchColumn(sample).length,
         `covered side next to missing neighbor: edge=${edge}, fade=${fade}`
@@ -1002,6 +1007,7 @@ test('native coverage stays conservative at shared boundaries, fades and antimer
 type BoundarySample = {
   patchWithWeather: number[];
   patchWithoutWeather: number[];
+  sampleLongitude: number;
 };
 function hatchColumn(sample: BoundarySample) {
   const marked = [];
@@ -1056,6 +1062,9 @@ async function boundaryPixel(
       const originalFades = [...uniforms.detailFades.value];
       const originalOpacity = uniforms.radarOpacity.value;
       const u = (((longitude / 360 + 0.5) % 1) + 1) % 1;
+      const first = target.__weatherPixel(10, longitude, true, 3);
+      const correction =
+        ((first.sampleLongitude - longitude + 540) % 360) - 180;
       try {
         // Observe mask output alone, without replacing textures or the shader.
         uniforms.radarOpacity.value = 0;
@@ -1066,7 +1075,7 @@ async function boundaryPixel(
             if (!(u >= b.x && u < b.z && 0.4721 >= b.y && 0.4721 < b.w))
               uniforms.detailValid.value[i] = 0;
           });
-        return target.__weatherPixel(10, longitude, true, 3);
+        return target.__weatherPixel(10, longitude - correction, true, 3);
       } finally {
         uniforms.detailValid.value.set(originalValid);
         uniforms.detailFades.value.set(originalFades);

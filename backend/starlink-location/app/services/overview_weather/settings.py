@@ -5,8 +5,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from app.models.overview_weather import WeatherSettings, WeatherSettingsUpdate
 from filelock import FileLock
+
+from app.models.overview_weather import WeatherSettings, WeatherSettingsUpdate
 
 
 class WeatherSettingsStore:

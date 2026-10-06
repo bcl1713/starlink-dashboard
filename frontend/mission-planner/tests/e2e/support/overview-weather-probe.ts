@@ -115,6 +115,33 @@ export async function installWeatherProbe(page: Page) {
           -2 * Math.cos(lat) * Math.sin(lon)
         )
         .project(s.camera);
+      // Recover the center pixel's geographic ray, including pixel rounding.
+      // A sub-texel seam check must know which side was actually rasterized.
+      const glContext = s.gl.getContext();
+      const pixelX = Math.floor(
+        (landmark.x / 2 + 0.5) * glContext.drawingBufferWidth
+      );
+      const pixelY = Math.floor(
+        (landmark.y / 2 + 0.5) * glContext.drawingBufferHeight
+      );
+      const ray = s.camera.position
+        .clone()
+        .set(
+          ((pixelX + 0.5) / glContext.drawingBufferWidth) * 2 - 1,
+          ((pixelY + 0.5) / glContext.drawingBufferHeight) * 2 - 1,
+          1
+        )
+        .unproject(s.camera)
+        .sub(s.camera.position)
+        .normalize();
+      const along = s.camera.position.dot(ray);
+      const point = s.camera.position
+        .clone()
+        .addScaledVector(
+          ray,
+          -along - Math.sqrt(along * along - s.camera.position.lengthSq() + 4)
+        );
+      const sampleLongitude = (Math.atan2(-point.z, point.x) * 180) / Math.PI;
       const lights: Array<{ light: Light; intensity: number }> = [];
       if (night)
         s.scene.traverse((node) => {
@@ -151,6 +178,7 @@ export async function installWeatherProbe(page: Page) {
         latitude,
         longitude,
         night,
+        sampleLongitude,
         patchWithWeather: withWeather,
         patchWithoutWeather: withoutWeather,
         withWeather: withWeather.slice((6 * 12 + 6) * 4, (6 * 12 + 7) * 4),

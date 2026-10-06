@@ -10,8 +10,9 @@ increment in [the weather overlay design][baseline].
 The user agreed to target 1080p desktop and fullscreen presentations plus mobile
 across the existing camera range. The user also agreed to preserve current
 request and memory limits, retaining coarse weather during rapid movement or
-heavy multi-viewer demand. This specification records the recommended design for
-review; implementation has not started.
+heavy multi-viewer demand. This approved specification is implemented by the
+[production plan](../plans/2026-10-06-overview-weather-detail-production.md).
+The [source comparison][comparison] selected RainViewer for this increment.
 
 The user subsequently asked to consider different providers and maps generated
 from raw data, and confirmed that international coverage must remain. The
@@ -19,9 +20,9 @@ from raw data, and confirmed that international coverage must remain. The
 existing self-hosted ingestion software. The user chose to avoid ongoing API
 fees, so compare free RainViewer delivery with bounded raw-composite generation;
 paid services are excluded from the implementation path. Provider selection is
-provisional; the RainViewer-specific contracts and allocation scheme below
-describe the current implementation candidate, not a restriction against a
-better source.
+complete for this increment; the RainViewer-specific contracts and allocation
+scheme below describe the selected adapter, while normalization permits a later
+source change backed by new evidence.
 
 Use a lower fixed radar opacity, selected through rendered comparisons. Keep the
 existing optional, default-off setting in Configuration. Add no opacity slider,
@@ -280,6 +281,7 @@ against `dev`; do not merge or publish to `main` as part of this task.
 [provider]: https://www.rainviewer.com/api/weather-maps-api.html
 [transition]: https://www.rainviewer.com/api/transition-faq.html
 [assessment]: ../../reports/2026-10-06-overview-weather-provider-assessment.md
+[comparison]: ../../reports/2026-10-06-weather-source-comparison-results.md
 [aviation-direction]:
   https://github.com/bcl1713/starlink-dashboard/issues/288#issuecomment-6008230258
 [provider-neutral-review]:

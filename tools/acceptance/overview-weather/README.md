@@ -52,6 +52,11 @@ from live synthetic fixture status; bounded recorded regional demand goes
 through production owners rather than injected textures or a replacement shader.
 Native camera selection is tested separately.
 
+Coverage-edge checks use actual XYZ boundaries and antimeridian neighbors,
+including partial fades and an unavailable neighbor. The probe corrects pixel
+rounding using the sampled geographic ray and inspects the coverage output with
+radar opacity temporarily zero; textures and the production shader stay intact.
+
 For focused development checks, set `WEATHER_ACCEPTANCE_GREP` to a Playwright
 name pattern. Leave it unset for final acceptance. Record this distinction in
 evidence; filtered runs do not satisfy the full delivery gate. The provider's
