@@ -1,3 +1,4 @@
+vi.mock('@/hooks/useGfsWeather', () => ({ useGfsWeather: () => queries.gfs }));
 vi.mock('@/hooks/useAviationWeather', () => ({
   useAviationWeather: () => queries.aviation,
 }));
@@ -48,6 +49,7 @@ const queries = vi.hoisted(() => ({
   } as WeatherLayerView,
   adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
   aviation: {} as AviationView,
+  gfs: { now: 0, state: 'off', products: {} } as GfsView,
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
 // independently controlled API states. Scene rendering has browser coverage.
@@ -107,11 +109,13 @@ import {
   emptyAviationView,
   type AviationView,
 } from './aviation-weather/aviation-controller';
+import type { GfsView } from './aviation-weather/gfs-controller';
 import { NOW, collection, station } from './aviation-weather/fixtures';
 import { parseAviationFeatures } from '@/services/aviation-features';
 afterEach(cleanup);
 beforeEach(() => {
   queries.aviation = emptyAviationView;
+  queries.gfs = { now: 0, state: 'off', products: {} };
   queries.weather = {
     configuredEnabled: false,
     visible: true,
@@ -145,6 +149,17 @@ beforeEach(() => {
   queries.pois = { data: { state: 'no_generated_pois', pois: [] } };
 });
 describe('Overview layer and exception integration', () => {
+  it('shows passive unavailable atmosphere status alongside core controls without adding model selectors', () => {
+    queries.gfs = { now: 0, state: 'unavailable', products: {} };
+    render(<OverviewPage />);
+    expect(
+      screen.getByLabelText('Flight-level atmosphere status').textContent
+    ).toContain('Unavailable');
+    expect(
+      screen.queryByRole('combobox', { name: 'Atmosphere level' })
+    ).toBeNull();
+    expect(screen.getByLabelText('Globe legend')).toBeTruthy();
+  });
   it('opens weather inspection from the compact status and keeps the raw report out of the rail', () => {
     queries.aviation = {
       ...emptyAviationView,

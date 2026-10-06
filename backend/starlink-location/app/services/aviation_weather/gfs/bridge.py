@@ -90,8 +90,8 @@ def _envelope(kind, settings, now_ms, descriptor=None, body=None):
             "content_type": "application/json",
             "encoded_bytes": len(body)
             + sum(buffer.byte_length for buffer in descriptor.buffers.values()),
-            "decoded_bytes": 5 * 1024**2,
-            "gpu_bytes": 2 * 1024**2,
+            "decoded_bytes": 12 * 1024**2,
+            "gpu_bytes": 4 * 1024**2,
         },
     )
     if descriptor.vertical.kind == "flight-level":

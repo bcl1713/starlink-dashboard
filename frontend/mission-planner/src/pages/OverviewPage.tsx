@@ -13,6 +13,9 @@ import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
 import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
+import { useGfsWeather } from '@/hooks/useGfsWeather';
+import { GfsLayer } from './aviation-weather/GfsLayer';
+import { GfsStatus } from './aviation-weather/GfsStatus';
 import { useAviationWeather } from '@/hooks/useAviationWeather';
 import { AviationStatus } from './aviation-weather/AviationStatus';
 import { AviationLayer } from './aviation-weather/AviationLayer';
@@ -281,6 +284,7 @@ export function OverviewPage() {
   const adsb = useOverviewAdsbLayer();
   const weather = useOverviewWeatherLayer();
   const aviation = useAviationWeather();
+  const gfs = useGfsWeather();
   const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
   const [weatherCandidates, setWeatherCandidates] = useState<
     readonly AviationSelection[]
@@ -864,6 +868,7 @@ export function OverviewPage() {
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
             <OverviewWeatherStatus weather={weather} />
+            <GfsStatus view={gfs} />
             <AviationStatus
               view={aviation}
               onInspect={() =>
@@ -996,6 +1001,7 @@ export function OverviewPage() {
             pairs={weather.detailPairs}
             work={weather.work}
           />
+          <GfsLayer view={gfs} />
           <AviationLayer
             view={aviation}
             selection={selectedWeather}

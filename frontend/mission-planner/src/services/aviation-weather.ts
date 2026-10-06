@@ -397,6 +397,12 @@ export type AviationProduct = z.infer<typeof weatherProductSchema>;
 export type AviationSettings = z.input<typeof settingsSchema>;
 export type ResolvedAviationSettings = z.output<typeof settingsSchema>;
 export type AviationLayer = 'metar' | 'taf' | 'sigmet';
+export type AviationSettingsChanges = Partial<
+  Pick<
+    ResolvedAviationSettings,
+    AviationLayer | 'winds' | 'temperature' | 'gfs_selection'
+  >
+>;
 export const parseAviationCatalog = (data: unknown): AviationCatalog =>
   catalogSchema.parse(data);
 export const parseAviationSettings = (
@@ -410,9 +416,7 @@ export const aviationWeatherApi = {
     );
     return parseAviationSettings(data);
   },
-  async updateSettings(
-    changes: Partial<Pick<AviationSettings, AviationLayer>>
-  ) {
+  async updateSettings(changes: AviationSettingsChanges) {
     const { data } = await apiClient.put<unknown>(
       '/api/aviation-weather/v1/settings',
       changes
