@@ -32,6 +32,7 @@ async function events() {
             path?: string;
             count?: number;
             at: number;
+            stream_id?: string;
           }
       );
   } catch {
@@ -526,9 +527,9 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
     .toBeGreaterThan(15);
   const storm = await weatherPixel(page, 33, -76, true, 3);
   expect(storm.withWeather[1]).toBeGreaterThan(storm.withWeather[2] + 15);
-  await aim(page, 34, -76);
+  await aim(page, 36, -76);
   await page.waitForTimeout(1000);
-  const absent = await weatherPixel(page, 34, -76, true, 3);
+  const absent = await weatherPixel(page, 36, -76, true, 3);
   const hatch = [];
   for (let offset = 0; offset < absent.patchWithWeather.length; offset += 4) {
     const delta = [0, 1, 2].map(
@@ -564,7 +565,8 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
         .toBe(true);
     }
     await aim(page, 33, -76);
-    for (const night of [false, true])
+    for (const night of [false, true]) {
+      await lights(page, night);
       for (const alpha of [0.35, 0.4, 0.45, 0.72]) {
         await opacity(page, alpha);
         const pixel = await weatherPixel(page, 33, -76, night, 3);
@@ -577,10 +579,46 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
         await page.screenshot({ path: info.outputPath(filename) });
         views.push({ view, night, alpha, pixel, snapshot, filename });
       }
+    }
+    await lights(page, false);
     if (view === 'fullscreen')
       await page.evaluate(() => document.exitFullscreen());
   }
   await opacity(page, 0.4);
+  await aim(page, 33, -76, 5);
+  const touchBefore = await settledOverviewCamera(page);
+  const touch = await page.context().newCDPSession(page);
+  try {
+    await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+    const box = (await page.locator('.overview-globe canvas').boundingBox())!;
+    const x = box.x + box.width * 0.5,
+      y = box.y + box.height * 0.4;
+    await touch.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: x - 20, y, id: 1 },
+        { x: x + 20, y, id: 2 },
+      ],
+    });
+    for (const spread of [25, 30, 40, 55])
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          { x: x - spread, y, id: 1 },
+          { x: x + spread, y, id: 2 },
+        ],
+      });
+    await touch.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+  } finally {
+    await touch.detach();
+  }
+  const touchAfter = await settledOverviewCamera(page);
+  expect(Math.hypot(...touchAfter.position)).toBeLessThan(
+    Math.hypot(...touchBefore.position)
+  );
   const beforeFailure = await weatherSnapshot(page);
   await control({ frame, detail_fixture: true, detail_fail: true });
   await aim(page, 33, 40);
@@ -595,6 +633,23 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
   });
   const observed = await events();
   const attempts = observed.filter((event) => event.event === 'request');
+  const paths = new Map(attempts.map((event) => [event.stream_id, event.path]));
+  const active = new Set<string>();
+  let peakActive = 0,
+    peakDetail = 0;
+  for (const event of observed) {
+    if (event.stream_id && event.event === 'dial') active.add(event.stream_id);
+    if (event.stream_id && event.event === 'close')
+      active.delete(event.stream_id);
+    peakActive = Math.max(peakActive, active.size);
+    peakDetail = Math.max(
+      peakDetail,
+      [...active].filter((id) => /\/512\/[3-7]\//.test(paths.get(id) ?? ''))
+        .length
+    );
+  }
+  expect(peakActive).toBeLessThanOrEqual(4);
+  expect(peakDetail).toBeLessThanOrEqual(2);
   for (const event of attempts) {
     const window = attempts.filter(
       (other) => other.at > event.at - 60 && other.at <= event.at
@@ -610,6 +665,10 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
       {
         sha: process.env.ACCEPTANCE_CANDIDATE_SHA,
         native,
+        peakActive,
+        peakDetail,
+        touchBefore,
+        touchAfter,
         storm,
         absent,
         views,
@@ -626,6 +685,7 @@ test('normalized alternate source fixture drives native max zoom and displayed a
   page,
   request,
 }, info) => {
+  await page.waitForTimeout(61_000);
   const frame = Math.floor(Date.now() / 1000) - 120;
   await control({
     frame,
@@ -654,6 +714,13 @@ test('normalized alternate source fixture drives native max zoom and displayed a
   expect(manifest.source).toBe('fixture-radar');
   expect(manifest.max_zoom).toBe(5);
   await aim(page, 33, -76);
+  await expect
+    .poll(
+      async () =>
+        (await weatherSnapshot(page)).detailSlots.filter(Boolean).length,
+      { timeout: 30000 }
+    )
+    .toBeGreaterThan(0);
   const snapshot = await weatherSnapshot(page);
   expect(snapshot.weatherGPUBytes).toBeLessThanOrEqual(48 * 1024 * 1024);
   expect(snapshot.work?.peakDecodedBytes).toBeLessThanOrEqual(96 * 1024 * 1024);
@@ -790,6 +857,7 @@ test('dated actual RainViewer captures use production pairing, scheduling and sh
   );
   const records = [];
   for (const night of [false, true]) {
+    await lights(page, night);
     await weatherPixel(
       page,
       match.region.latitude,
@@ -825,3 +893,34 @@ test('dated actual RainViewer captures use production pairing, scheduling and sh
     )
   );
 });
+
+async function lights(page: import('@playwright/test').Page, night: boolean) {
+  await page.evaluate((dark) => {
+    const target = window as unknown as {
+      __overviewEvidenceRoots: {
+        containerInfo?: {
+          getState?: () => import('@react-three/fiber').RootState;
+        };
+      }[];
+      __weatherLights?: { light: import('three').Light; intensity: number }[];
+    };
+    const state = target.__overviewEvidenceRoots
+      .find(
+        (root) => root.containerInfo?.getState?.().gl.domElement.isConnected
+      )
+      ?.containerInfo?.getState?.();
+    if (!state) throw new Error('No native renderer');
+    if (!target.__weatherLights) {
+      target.__weatherLights = [];
+      state.scene.traverse((node) => {
+        if ((node as import('three').Light).isLight) {
+          const light = node as import('three').Light;
+          target.__weatherLights!.push({ light, intensity: light.intensity });
+        }
+      });
+    }
+    for (const entry of target.__weatherLights)
+      entry.light.intensity = dark ? 0 : entry.intensity;
+    state.gl.render(state.scene, state.camera);
+  }, night);
+}

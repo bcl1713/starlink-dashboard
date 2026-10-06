@@ -99,4 +99,6 @@ cd frontend/mission-planner
 node --version > "$WEATHER_ACCEPTANCE_OUTPUT_DIR/browser-runtime.txt"
 npm --version >> "$WEATHER_ACCEPTANCE_OUTPUT_DIR/browser-runtime.txt"
 npx playwright --version >> "$WEATHER_ACCEPTANCE_OUTPUT_DIR/browser-runtime.txt"
-WEATHER_ACCEPTANCE_OUTPUT_DIR="$WEATHER_ACCEPTANCE_OUTPUT_DIR/browser" npx playwright test --config playwright.weather-acceptance.config.ts
+playwright=(npx playwright test --config playwright.weather-acceptance.config.ts)
+if [[ -n ${WEATHER_ACCEPTANCE_GREP:-} ]]; then playwright+=(--grep "$WEATHER_ACCEPTANCE_GREP"); fi
+WEATHER_ACCEPTANCE_OUTPUT_DIR="$WEATHER_ACCEPTANCE_OUTPUT_DIR/browser" "${playwright[@]}"

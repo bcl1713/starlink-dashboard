@@ -1,3 +1,6 @@
+vi.mock('./weather/OverviewWeatherLayer', () => ({
+  OverviewWeatherLayer: () => null,
+}));
 vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
   OverviewWeatherCameraObserver: () => null,
 }));

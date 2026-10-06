@@ -6,11 +6,11 @@ setting applies to every Overview display; visible windows read it every five
 seconds. No weather control or manual refresh is needed on Overview.
 
 Overview shows a passive weather status, the observed frame's UTC time and age,
-a precipitation legend, and linked RainViewer attribution. Hatching means no
-radar coverage, including the polar regions outside Web Mercator; transparent
-radar within coverage means no reported precipitation. Weather remains visible
-on the night side and follows the globe as you rotate, zoom, or enter
-fullscreen.
+a precipitation legend, and linked attribution for the displayed source.
+Hatching means no radar coverage, including the polar regions outside Web
+Mercator; transparent radar within coverage means no reported precipitation.
+Weather remains visible on the night side and follows the globe as you rotate,
+zoom, or enter fullscreen.
 
 ## Automatic refresh and freshness
 
@@ -37,11 +37,23 @@ failure.
 
 ## Data source and limits
 
-The layer uses observed precipitation from RainViewer's past radar frames, zoom
-2, 512-pixel tiles, and provider coverage masks. It does not display a forecast,
-cloud cover, wind, turbulence, icing, or an aviation hazard advisory. METAR
-flight categories and SIGMET polygons are possible future aviation layers; each
-needs its own data source, freshness rules, and approved scope.
+The layer initially uses observed precipitation from RainViewer's past radar
+frames, 512-pixel tiles and provider coverage masks. A complete zoom-2 atlas
+remains available while the native camera selects up to eight visible regional
+tile pairs at higher zoom, bounded by the manifest's maximum (initially 7).
+Demand is sampled at most four times per second and must remain stable for 400
+ms. Small camera movements retain eligible overlapping imagery.
+
+Radar opacity is a fixed 0.40; coverage hatching remains independently 0.17.
+Regional detail publishes only after both radar and coverage decode for the
+displayed frame. Missing detail uses the complete fallback and does not change
+frame age or mark otherwise confirmed imagery stale. Refreshing the complete
+frame clears old detail atomically; source/schema changes also invalidate
+incompatible tiles. Human-readable provenance changes update metadata without
+forcing downloads. It does not display a forecast, cloud cover, wind,
+turbulence, icing, or an aviation hazard advisory. METAR flight categories and
+SIGMET polygons are possible future aviation layers; each needs its own data
+source, freshness rules, and approved scope.
 
 [RainViewer's API terms](https://www.rainviewer.com/api.html) target personal,
 educational, and small community use, require visible linked attribution, and
@@ -51,14 +63,18 @@ commercial deployment. The globe includes the attribution automatically.
 Provider acquisition is shared across displays in one backend worker. Metadata
 advertises a separate radar path for each timestamp; the server preserves its
 validated opaque identifier instead of constructing a path from the timestamp.
-Metadata is cached for five minutes. The server limits actual attempts to 90
-per rolling minute, four active exchanges, and 32 pending acquisitions. Failures
-have a 30-second cooldown, respecting bounded provider retry guidance. The PNG
-cache retains at most 48 tiles and 64 MiB of compressed bytes. Only the latest
-and previous eligible radar frames and the current coverage generation are
-served. Browser image work is limited to four concurrent operations and a
-45-second complete-load deadline. GPU atlas storage stays within 48 MiB without
-mipmaps.
+Metadata is cached for five minutes. The server limits actual attempts to 90 per
+rolling minute, four active exchanges, and 32 pending acquisitions.
+Higher-detail work uses at most 30 of those attempts and two exchanges; coarse
+imagery and metadata retain priority. Failures have a 30-second cooldown,
+respecting bounded provider retry guidance. The PNG cache retains at most 48
+tiles and 64 MiB of compressed bytes. Only the latest and previous eligible
+radar frames and the current coverage generation are served. Browser image work
+is limited to four concurrent operations and a 45-second load deadline, with at
+most two detail operations. Browser-owned decoded canvases/bitmaps share a 96
+MiB allocation budget. GPU storage uses 32 MiB for the complete pair plus 16 MiB
+for eight fixed detail slots, without mipmaps. Detail textures are disposed
+before coarse replacement so its peak also remains within 48 MiB.
 
 ## Operation
 

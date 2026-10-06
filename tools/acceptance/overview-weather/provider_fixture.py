@@ -7,6 +7,7 @@ import os
 import ssl
 import struct
 import time
+import uuid
 import zlib
 from pathlib import Path
 
@@ -60,12 +61,10 @@ def tile_png(x, y, *, coverage=False, z=2, detail=False):
             for col in range(512):
                 longitude = (x + (col + 0.5) / 512) / 2**z * 360 - 180
                 value = color
-                if -78 < longitude < -74 and 31 < latitude < 35:
-                    value = (
-                        [0, 0, 0, 255 if latitude > 33.8 else 0]
-                        if coverage
-                        else [20, 255, 20, 255]
-                    )
+                if coverage and -78 < longitude < -74 and 33.8 < latitude < 38:
+                    value = [0, 0, 0, 255]
+                elif not coverage and -78 < longitude < -74 and 31 < latitude < 35:
+                    value = [20, 255, 20, 255]
                 line.extend(value)
             lines.append(bytes(line))
         rows = b"".join(lines)
@@ -84,6 +83,7 @@ async def resolve(host, timeout):
 
 class Writer:
     def __init__(self, reader, host):
+        self.stream_id = uuid.uuid4().hex
         self.reader, self.host = reader, host
         self.request = b""
         self.path = None
@@ -97,7 +97,7 @@ class Writer:
         path = self.request.decode().split(" ")[1]
         self.path = path
         settings = control()
-        event("request", path=path, host=self.host)
+        event("request", path=path, host=self.host, stream_id=self.stream_id)
         await asyncio.sleep(float(settings.get("delay", 0)))
         status = 503 if settings.get("fail") else 200
         frame = settings.get("frame", int(time.time()) // 60 * 60 - 120)
@@ -154,7 +154,7 @@ class Writer:
                         raise ValueError("Capture hash changed")
                 else:
                     status = 503
-            event("response", path=path, status=status)
+            event("response", path=path, status=status, stream_id=self.stream_id)
             content_type = "image/png"
         wire = (
             f"HTTP/1.1 {status} OK\r\nContent-Type: {content_type}\r\nContent-Length: {len(body)}\r\nRetry-After: 30\r\nConnection: close\r\n\r\n"
@@ -164,11 +164,13 @@ class Writer:
 
     def close(self):
         self.closed += 1
-        event("close", path=self.path, count=self.closed)
+        event("close", path=self.path, count=self.closed, stream_id=self.stream_id)
 
     async def wait_closed(self):
         self.waited += 1
-        event("wait_closed", path=self.path, count=self.waited)
+        event(
+            "wait_closed", path=self.path, count=self.waited, stream_id=self.stream_id
+        )
 
 
 async def open_tls(ip, host, context, timeout):
@@ -177,6 +179,7 @@ async def open_tls(ip, host, context, timeout):
         and context.check_hostname
         and context.verify_mode == ssl.CERT_REQUIRED
     )
-    event("dial", host=host, ip=ip, verified=True)
     reader = asyncio.StreamReader()
-    return reader, Writer(reader, host)
+    writer = Writer(reader, host)
+    event("dial", host=host, ip=ip, verified=True, stream_id=writer.stream_id)
+    return reader, writer
