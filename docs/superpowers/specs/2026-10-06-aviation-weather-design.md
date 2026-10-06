@@ -84,7 +84,8 @@ entries may have a payload. Every published entry contains:
 | `source_id`, `provenance`, `attribution[]`                              | Adapter identity; origin/issuer and processing lineage; display labels with HTTPS attribution links                                              |
 | `time_kind`                                                             | `observation`, `forecast` or `analysis`                                                                                                          |
 | `method_kind`                                                           | `reported`, `sensor`, `numerical-model` or `derived`; separates modeled analyses from observations                                               |
-| `observed_at_ms`, `issued_at_ms`, `valid_from_ms`, `valid_to_ms`        | Relevant source times; finite validity interval; per-feature times for mixed collections                                                         |
+| `observed_at_ms`, `issued_at_ms`, `scan_start_ms`, `scan_end_ms`        | Observation/issue instants or sensor scan support; null where inapplicable; per-feature times for mixed collections                              |
+| `validity_kind`, `valid_at_ms`, `valid_from_ms`, `valid_to_ms`          | Tagged instant or interval; exact model sample instant or finite bulletin validity; see invariants below                                         |
 | `run_at_ms`, `lead_seconds`                                             | Required for numerical-model forecast or analysis; exact valid instant equals run plus lead; analysis lead is zero                               |
 | `vertical`                                                              | Tagged `surface`, `pressure`, `flight-level`, `bounds` or `not-applicable`; explicit units, altitude reference and derivation                    |
 | `coverage`                                                              | Generation identity, extent, original expiry, mask encoding and missing-data meaning; feed completeness for feature collections                  |
@@ -106,10 +107,18 @@ the polygon. TAF retains issue time and each change-group validity. GFS F000 is
 modeled analysis, not observed weather. Satellite brightness temperature is a
 sensor observation; derived cloud-top height uses a separate derived product.
 
-Valid intervals are half-open. Reject unsupported future observation skew over
-60 seconds. Clock failure hides time-dependent products; mission simulation time
-never changes weather age. Forecast selection explicitly uses forecast-valid
-UTC, with model run/lead shown; station/advisory validity still uses real UTC.
+For `validity_kind=instant`, require `valid_at_ms` and null interval endpoints;
+model valid time equals `run_at_ms + 1000 * lead_seconds`. Instant samples do
+not imply a period of constant weather. For `validity_kind=interval`, require
+`valid_from_ms < valid_to_ms` and null `valid_at_ms`; intervals are half-open.
+TAF/SIGMET use intervals; model snapshots and METAR use instants. Satellite
+`scan_start_ms <= scan_end_ms` describes sensor support; its display instant is
+scan end, with acquisition and freshness/expiry kept separate. Mixed collections
+carry validity per feature and a catalog selection extent. Reject unsupported
+future observation skew over 60 seconds. Clock failure hides time-dependent
+products; mission simulation time never changes weather age. Forecast selection
+uses forecast-valid UTC with model run/lead shown; station/advisory validity
+still uses real UTC.
 
 ### Vertical and forecast selection
 

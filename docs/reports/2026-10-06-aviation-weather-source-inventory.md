@@ -60,9 +60,9 @@ FL100–FL450. Do not label missing levels as zero risk. The
 `kwbc_wafshzds_blended_ice_0p25` and `kwbc_wafshzds_blended_turb_0p25`, GRIB2
 items, and four daily updates. Hazard forecasts stop at T+48. Poll metadata
 every 10 minutes around expected arrivals; respect the documented 100
-requests/minute and 5,000 data requests/day limits. Keep access and
-redistribution as a phase-entry gate; public display graphics are not evidence
-of open raw-data access.
+requests/minute, one request/minute per thread and 5,000 data requests/day
+limits. Keep access and redistribution as a phase-entry gate; public display
+graphics are not evidence of open raw-data access.
 
 The [NOAA GOES registry](https://registry.opendata.aws/noaa-goes/) identifies
 GOES-19 and GOES-18 as the current East/West data buckets and provides public
@@ -137,14 +137,14 @@ AHI-L1b-FLDK/2026/10/06/0000/HS_H09_20261006_0000_B01_FLDK_R10_S0110.DAT.bz2
 These estimates assume unchanged snapshot sizes and the proposed sampling
 policy. They are planning inputs, not peak sizes or provider guarantees.
 
-| Selection                                                     | Estimated acquisition                                         | Retention and outstanding measurement                                             |
-| ------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| METAR every five minutes                                      | 71.4 MB/day using measured CSV size                           | Latest/previous complete snapshots; measure XML size if chosen                    |
-| TAF every 10 minutes                                          | 45.3 MB/day                                                   | Latest/previous snapshot; preserve active forecast groups                         |
-| International SIGMET every five minutes                       | 27.4 MB/day                                                   | Active advisories plus cancellation/amendment lineage; verify truncation behavior |
-| GFS U/V/T at eight selected levels, nine times, four runs/day | 864 messages/day; source bytes require range-size measurement | Two complete runs; only selected fields and times                                 |
-| GOES channel 13 every 30 minutes, two regions                 | About 2.30 GB/day if both equal the measured East object      | Two normalized scans per region; raw input deleted after validation               |
-| WAFS, Meteosat and Himawari IR                                | No approved continuous-ingest volume                          | Measure exact collection/field bytes under the worker cap before enabling         |
+| Selection                                                                    | Estimated acquisition                                         | Retention and outstanding measurement                                             |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| METAR every five minutes                                                     | 71.4 MB/day using measured CSV size                           | Latest/previous complete snapshots; measure XML size if chosen                    |
+| TAF every 10 minutes                                                         | 45.3 MB/day                                                   | Latest/previous snapshot; preserve active forecast groups                         |
+| International SIGMET every five minutes                                      | 27.4 MB/day                                                   | Active advisories plus cancellation/amendment lineage; verify truncation behavior |
+| GFS U/V/T at eight illustrative pressure surfaces, nine times, four runs/day | 864 messages/day; source bytes require range-size measurement | Two complete runs; measure additional bracketing/surface fields for FL selections |
+| GOES channel 13 every 30 minutes, two regions                                | About 2.30 GB/day if both equal the measured East object      | Two normalized scans per region; raw input deleted after validation               |
+| WAFS, Meteosat and Himawari IR                                               | No approved continuous-ingest volume                          | Measure exact collection/field bytes under the worker cap before enabling         |
 
 A 1440 × 721 GFS field occupies 4,152,960 bytes as Float32. U/V/T for eight
 levels, nine forecast times and two runs would occupy about 1.67 GiB

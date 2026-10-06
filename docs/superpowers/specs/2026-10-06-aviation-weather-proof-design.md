@@ -31,6 +31,15 @@ hierarchy. Show source, observed/forecast semantics, UTC, level and units in
 every screenshot. A flat Python plot may help diagnose reprojection but does not
 satisfy the native-globe proof.
 
+For model and satellite grids, verify ten visible geographic samples through GPU
+readback using the actual renderer sampling/projection shader. A diagnostic
+render target emits sampled quantity and mask; compare decoded readback with the
+CPU sampler within one output quantization step, accounting for readback
+encoding. Include seam, pole and missing-mask samples. Also compare screenshot
+pixels with the declared legend and opacity on a known background, with a
+recorded color-space/antialias tolerance. Source-to-normalized numeric checks
+alone do not validate the shader or final presentation.
+
 Record command/session, PID/process group, private Compose project/volumes,
 ports and temporary paths before starting. Wrap the entire runner in
 `timeout --kill-after=10s 20m`; separately cap each decode at 120 seconds.
