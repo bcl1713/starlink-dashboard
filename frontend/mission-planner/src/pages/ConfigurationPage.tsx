@@ -23,6 +23,7 @@ import { GPSControlCard } from '../components/gps/GPSControlCard';
 import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClockSettings';
 import { OperationalClockSettingsForm } from './OperationalClockSettingsForm';
 import { ConfigurationSection } from './ConfigurationSection';
+import { OverviewWeatherSettingsCard } from './weather/OverviewWeatherSettingsCard';
 
 const sections = [
   {
@@ -30,7 +31,7 @@ const sections = [
     label: 'Overview',
     icon: Globe2,
     description:
-      'History, camera behavior, geographic layers and operational clocks.',
+      'History, camera behavior, geographic layers, weather and operational clocks.',
   },
   {
     value: 'traffic',
@@ -120,6 +121,7 @@ export function ConfigurationPage() {
               </div>
             </ConfigurationSection>
             <OverviewBoundarySettingsCard />
+            <OverviewWeatherSettingsCard />
             {isLoading ? (
               <ConfigurationSection title="Operational clocks">
                 <p role="status">Loading operational clocks...</p>

@@ -2,10 +2,8 @@
 
 **Related:** [Main README](../../README.md) | [Setup Guide](../setup/README.md)
 
-See [Overview controls](system.md#overview-windows-and-display-controls) and
-[paced replay](../api/endpoints/simulation-run.md) for shared display behavior.
-
----
+Shared displays: [controls](system.md#overview-windows-and-display-controls),
+[paced replay](../api/endpoints/simulation-run.md), [weather](overview-weather.md).
 
 ## Feature Categories
 

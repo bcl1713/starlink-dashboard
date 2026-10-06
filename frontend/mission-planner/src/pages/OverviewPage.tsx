@@ -13,6 +13,9 @@ import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
 import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
+import { useOverviewWeatherLayer } from '@/hooks/useOverviewWeatherLayer';
+import { OverviewWeatherLayer } from './weather/OverviewWeatherLayer';
+import { OverviewWeatherStatus } from './weather/OverviewWeatherStatus';
 import { OverviewAdsbLayer } from './adsb/OverviewAdsbLayer';
 import { OverviewAdsbDetails } from './adsb/OverviewAdsbDetails';
 import { type GlobeCoordinate } from './globe-route';
@@ -266,6 +269,7 @@ export function OverviewPage() {
     setStageNode(node);
   }, []);
   const adsb = useOverviewAdsbLayer();
+  const weather = useOverviewWeatherLayer();
   const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
   const [visibleAdsbHexes, setVisibleAdsbHexes] = useState<readonly string[]>(
     []
@@ -823,6 +827,7 @@ export function OverviewPage() {
           </div>
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
+            <OverviewWeatherStatus weather={weather} />
             {(countryBoundaries.loading ||
               stateBoundaries.loading ||
               countryBoundaries.unavailable ||
@@ -928,6 +933,7 @@ export function OverviewPage() {
             fade
             speed={reducedMotion ? 0 : 0.1}
           />
+          <OverviewWeatherLayer atlas={weather.atlas} />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
               kind="countries"

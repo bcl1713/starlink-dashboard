@@ -24,6 +24,9 @@ provides quick navigation to all endpoint categories.
 
 ---
 
+[Overview weather endpoints](api/endpoints/overview-weather.md) cover shared
+precipitation settings, frame manifests, and buffered tiles.
+
 ## Endpoint Categories
 
 ### Core Endpoints
