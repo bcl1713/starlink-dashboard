@@ -14,7 +14,7 @@ const attribution = z.strictObject({
     .max(2048)
     .regex(/^https:\/\/[^\s]+$/),
 });
-const verticalSchema = z.union([
+export const verticalSchema = z.union([
   z.strictObject({ kind: z.literal('surface') }),
   z.strictObject({ kind: z.literal('not-applicable') }),
   z.strictObject({
@@ -93,7 +93,7 @@ const componentSchema = z
     offset: finite,
   })
   .refine((v) => v.unit === (v.quantity.startsWith('wind-') ? 'm/s' : 'K'));
-const gridSchema = z
+export const gridSchema = z
   .strictObject({
     width: integer.min(2).max(720),
     height: integer.min(2).max(361),
@@ -395,11 +395,13 @@ const settingsSchema = z.strictObject({
 export type AviationCatalog = z.infer<typeof catalogSchema>;
 export type AviationProduct = z.infer<typeof weatherProductSchema>;
 export type AviationSettings = z.input<typeof settingsSchema>;
+export type ResolvedAviationSettings = z.output<typeof settingsSchema>;
 export type AviationLayer = 'metar' | 'taf' | 'sigmet';
 export const parseAviationCatalog = (data: unknown): AviationCatalog =>
   catalogSchema.parse(data);
-export const parseAviationSettings = (data: unknown): AviationSettings =>
-  settingsSchema.parse(data);
+export const parseAviationSettings = (
+  data: unknown
+): ResolvedAviationSettings => settingsSchema.parse(data);
 export const aviationWeatherApi = {
   async getSettings(signal?: AbortSignal) {
     const { data } = await apiClient.get<unknown>(

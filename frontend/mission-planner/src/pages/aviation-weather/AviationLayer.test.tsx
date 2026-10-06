@@ -111,3 +111,43 @@ it('selects a tapped station, suppresses globe drags and releases highlight reso
     drawing.dispose();
   }
 });
+
+it('reserves inspection highlights against model GPU ownership before creating geometry', async () => {
+  const { WeatherBudget } = await import('./weather-budget');
+  const budget = new WeatherBudget();
+  const owned = budget.reserve('model-ownership', {
+    encoded: 0,
+    decoded: 0,
+    gpu: 16 * 1024 ** 2,
+  });
+  const data = parseAviationFeatures(collection([station()]), 'metar');
+  const drawing = createAviationDrawing(data, 'metar', NOW);
+  const view: AviationView = {
+    ...emptyAviationView,
+    now: NOW,
+    layers: {
+      ...emptyAviationView.layers,
+      metar: { state: 'current', data, drawing },
+    },
+  };
+  const renderer = await create(
+    <AviationLayer
+      view={view}
+      selection={{ layer: 'metar', id: 'test-station' }}
+      onSelect={() => {}}
+      budget={budget}
+    />
+  );
+  try {
+    expect(
+      renderer.scene.instance.getObjectByName(
+        'Selected aviation weather report'
+      )
+    ).toBeUndefined();
+  } finally {
+    await renderer.unmount();
+    drawing.dispose();
+    owned.release();
+  }
+  expect(budget.snapshot()).toMatchObject({ encoded: 0, decoded: 0, gpu: 0 });
+});

@@ -7,14 +7,17 @@ import {
   resolveAviationSelection,
   type AviationSelection,
 } from './aviation-inspection';
-import { createAviationDrawing } from './aviation-renderer';
+import { createBudgetedAviationDrawing } from './aviation-renderer';
+import { optionalWeatherBudget, type WeatherBudget } from './weather-budget';
 // Geometry/material ownership belongs to the controller; React only attaches
 // admitted objects. Fiber must not dispose objects retained between renders.
 export function AviationLayer({
   view,
   selection,
   onSelect,
+  budget = optionalWeatherBudget,
 }: {
+  budget?: WeatherBudget;
   view: AviationView;
   selection: AviationSelection | null;
   onSelect: (candidates: readonly AviationSelection[]) => void;
@@ -33,11 +36,17 @@ export function AviationLayer({
   useLayoutEffect(() => {
     if (!feature?.geometry || !layer || !base) return;
     const data = view.layers[layer].data!;
-    const drawing = createAviationDrawing(
-      { ...data, features: [feature] },
-      layer,
-      view.now
-    );
+    let drawing;
+    try {
+      drawing = createBudgetedAviationDrawing(
+        { ...data, features: [feature] },
+        layer,
+        view.now,
+        budget
+      );
+    } catch {
+      return;
+    }
     const total =
       Object.values(view.layers).reduce(
         (sum, item) => sum + (item.drawing?.bytes ?? 0),
@@ -68,7 +77,7 @@ export function AviationLayer({
       highlight.remove(drawing.object);
       drawing.dispose();
     };
-  }, [feature, layer, base, highlight, view]);
+  }, [feature, layer, base, highlight, view, budget]);
   useEffect(() => {
     const canvas = gl.domElement;
     const down = (event: PointerEvent) => {

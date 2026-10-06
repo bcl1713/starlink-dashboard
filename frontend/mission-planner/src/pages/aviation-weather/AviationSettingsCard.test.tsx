@@ -18,7 +18,18 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 it('offers independent default-off switches and confirms server changes in shared cache', async () => {
-  const initial = { metar: false, taf: false, sigmet: false, revision: 1 };
+  const initial = {
+    metar: false,
+    taf: false,
+    sigmet: false,
+    winds: false,
+    temperature: false,
+    gfs_selection: {
+      vertical: { kind: 'pressure' as const, pressure_pa: 50000 as const },
+      horizon_hours: 0 as const,
+    },
+    revision: 1,
+  };
   vi.mocked(aviationWeatherApi.getSettings).mockResolvedValue(initial);
   let resolve: (v: typeof initial) => void = () => {};
   vi.mocked(aviationWeatherApi.updateSettings).mockImplementation(

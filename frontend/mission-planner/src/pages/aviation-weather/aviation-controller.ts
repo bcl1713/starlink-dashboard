@@ -1,4 +1,10 @@
-import { sha256 } from '@noble/hashes/sha2.js';
+import { boundedWeatherBytes, weatherDigest } from '@/services/aviation-grid';
+import {
+  optionalWeatherBudget,
+  weatherKey,
+  type Reservation,
+  type WeatherBudget,
+} from './weather-budget';
 import type {
   AviationCatalog,
   AviationLayer,
@@ -13,7 +19,7 @@ import {
   type AviationStation,
 } from '@/services/aviation-features';
 import {
-  createAviationDrawing,
+  createBudgetedAviationDrawing,
   type AviationDrawing,
 } from './aviation-renderer';
 const layers: AviationLayer[] = ['metar', 'taf', 'sigmet'];
@@ -42,6 +48,7 @@ type Entry = {
   drawing: AviationDrawing;
   signature: string;
   failed: boolean;
+  allocation: Reservation;
 };
 type Fetcher = (
   input: RequestInfo | URL,
@@ -55,7 +62,8 @@ export async function fetchAviationPayload(
   product: AviationProduct,
   layer: AviationLayer,
   signal: AbortSignal,
-  fetcher: Fetcher = fetch
+  fetcher: Fetcher = fetch,
+  budget: WeatherBudget = optionalWeatherBudget
 ): Promise<AviationCollection> {
   const p = product.payload;
   if (
@@ -67,58 +75,31 @@ export async function fetchAviationPayload(
     p.content_type !== 'application/geo+json'
   )
     throw Error('Invalid immutable weather payload');
-  const response = await fetcher(p.path, {
-    signal,
-    credentials: 'same-origin',
-    cache: 'no-cache',
-    redirect: 'error',
-  });
-  if (
-    !response.ok ||
-    response.headers.get('Content-Type')?.split(';')[0].trim() !==
-      p.content_type ||
-    (response.headers.has('Content-Length') &&
-      Number(response.headers.get('Content-Length')) !== p.encoded_bytes) ||
-    !response.body
-  )
-    throw Error('Weather payload type or size');
-  const reader = response.body.getReader(),
-    parts: Uint8Array[] = [];
-  let size = 0;
+  const slot = await budget.acquire(signal);
+  let transfer: Awaited<ReturnType<typeof boundedWeatherBytes>> | undefined;
   try {
-    while (true) {
-      signal.throwIfAborted();
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > p.encoded_bytes || size > limits[0])
-        throw Error('Weather payload byte budget');
-      parts.push(value);
-    }
+    transfer = await boundedWeatherBytes(
+      p.path,
+      p.content_type,
+      p.encoded_bytes,
+      true,
+      signal,
+      budget,
+      fetcher
+    );
+    if (weatherDigest(transfer.bytes) !== p.sha256)
+      throw Error('Weather payload digest');
+    signal.throwIfAborted();
+    return parseAviationFeatures(
+      JSON.parse(
+        new TextDecoder('utf-8', { fatal: true }).decode(transfer.bytes)
+      ),
+      layer
+    );
   } finally {
-    await reader.cancel();
-    reader.releaseLock();
+    transfer?.release();
+    slot();
   }
-  if (size !== p.encoded_bytes) throw Error('Weather payload exact bytes');
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const part of parts) {
-    bytes.set(part, offset);
-    offset += part.length;
-  }
-  parts.length = 0;
-  const digest = Array.from(
-    globalThis.crypto?.subtle
-      ? new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', bytes))
-      : sha256(bytes),
-    (v) => v.toString(16).padStart(2, '0')
-  ).join('');
-  signal.throwIfAborted();
-  if (digest !== p.sha256) throw Error('Weather payload digest');
-  return parseAviationFeatures(
-    JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)),
-    layer
-  );
 }
 async function withAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   signal.throwIfAborted();
@@ -150,7 +131,7 @@ export class AviationController {
   private tickTimer: ReturnType<typeof setInterval> | undefined;
   private pollTimer: ReturnType<typeof setInterval> | undefined;
   private records = new Map<AviationLayer, Entry>();
-  private reservations = new Map<AviationLayer, number[]>();
+  private reservations = new Map<AviationLayer, Reservation>();
   private failed = new Set<AviationLayer>();
   private listeners = new Set<() => void>();
   private view = emptyAviationView;
@@ -158,12 +139,15 @@ export class AviationController {
     getCatalog: (signal?: AbortSignal) => Promise<AviationCatalog>;
   };
   private fetcher: Fetcher;
+  private budget: WeatherBudget;
   constructor(
     api: { getCatalog: (signal?: AbortSignal) => Promise<AviationCatalog> },
-    fetcher: Fetcher = fetch
+    fetcher: Fetcher = fetch,
+    budget: WeatherBudget = optionalWeatherBudget
   ) {
     this.api = api;
     this.fetcher = fetcher;
+    this.budget = budget;
   }
   snapshot = () => this.view;
   subscribe = (listener: () => void) => {
@@ -226,10 +210,12 @@ export class AviationController {
     this.cycle = null;
     if (this.deadline) clearTimeout(this.deadline);
     this.deadline = undefined;
+    for (const reservation of this.reservations.values()) reservation.release();
     this.reservations.clear();
   }
   private remove(layer: AviationLayer) {
     this.records.get(layer)?.drawing.dispose();
+    this.records.get(layer)?.allocation.release();
     this.records.delete(layer);
     this.failed.delete(layer);
   }
@@ -271,7 +257,12 @@ export class AviationController {
         const signature = this.signature(data, l, now);
         if (signature !== record.signature) {
           try {
-            const candidate = createAviationDrawing(data, l, now);
+            const candidate = createBudgetedAviationDrawing(
+              data,
+              l,
+              now,
+              this.budget
+            );
             if (
               candidate.bytes > record.product.payload!.gpu_bytes ||
               candidate.bytes +
@@ -323,25 +314,25 @@ export class AviationController {
     for (const listener of this.listeners) listener();
   }
   private reserve(layer: AviationLayer, product: AviationProduct) {
-    const amounts = usage(product),
-      total = [0, 0, 0];
+    const amounts = usage(product);
     if (amounts[1] < amounts[0] * 4)
       throw Error('Underdeclared decoded reserve');
-    for (const r of this.records.values())
-      usage(r.product).forEach((v, i) => {
-        total[i] += v;
-      });
-    for (const r of this.reservations.values())
-      r.forEach((v, i) => {
-        total[i] += v;
-      });
-    if (
-      amounts.some(
-        (v, i) => !Number.isSafeInteger(v) || v < 0 || total[i] + v > limits[i]
-      )
-    )
-      throw Error('Weather replacement resource budget');
-    this.reservations.set(layer, amounts);
+    const allocation = this.budget.reserve(weatherKey(`bulletin:${layer}`), {
+      encoded: amounts[0],
+      decoded: amounts[1],
+      gpu: amounts[2],
+    });
+    this.reservations.set(layer, allocation);
+    return allocation;
+  }
+  private async catalog(signal: AbortSignal) {
+    const slot =
+      this.budget.tryAcquire(signal) ?? (await this.budget.acquire(signal));
+    try {
+      return await withAbort(this.api.getCatalog(signal), signal);
+    } finally {
+      slot();
+    }
   }
   async refresh() {
     if (!this.runnable() || this.cycle) return;
@@ -353,6 +344,8 @@ export class AviationController {
       owner.abort();
       if (this.cycle === owner) {
         this.generation++;
+        for (const reservation of this.reservations.values())
+          reservation.release();
         this.reservations.clear();
         this.cycle = null;
         for (const l of layers)
@@ -371,10 +364,7 @@ export class AviationController {
       this.settings!.revision === revision &&
       !owner.signal.aborted;
     try {
-      const catalog = await withAbort(
-        this.api.getCatalog(owner.signal),
-        owner.signal
-      );
+      const catalog = await withAbort(this.catalog(owner.signal), owner.signal);
       if (!current() || catalog.settings_revision !== revision)
         throw Error('Obsolete weather catalog');
       this.anchor = {
@@ -398,6 +388,8 @@ export class AviationController {
                     } as const
                   )[l]
             );
+            let allocation: Reservation | undefined,
+              transferred = false;
             try {
               if (
                 !p?.payload ||
@@ -411,9 +403,15 @@ export class AviationController {
                 previous.failed = false;
                 return;
               }
-              this.reserve(l, p);
+              allocation = this.reserve(l, p);
               const data = await withAbort(
-                fetchAviationPayload(p, l, owner.signal, this.fetcher),
+                fetchAviationPayload(
+                  p,
+                  l,
+                  owner.signal,
+                  this.fetcher,
+                  this.budget
+                ),
                 owner.signal
               );
               if (!current()) return;
@@ -428,7 +426,12 @@ export class AviationController {
                   ))
               )
                 throw Error('Future weather observation');
-              const drawing = createAviationDrawing(data, l, this.utc());
+              const drawing = createBudgetedAviationDrawing(
+                data,
+                l,
+                this.utc(),
+                this.budget
+              );
               if (drawing.bytes > p.payload.gpu_bytes) {
                 drawing.dispose();
                 throw Error('Underdeclared native GPU reserve');
@@ -440,7 +443,9 @@ export class AviationController {
                 drawing,
                 signature: this.signature(data, l, this.utc()),
                 failed: false,
+                allocation,
               });
+              transferred = true;
               this.failed.delete(l);
             } catch {
               if (current()) {
@@ -449,6 +454,7 @@ export class AviationController {
                 if (r) r.failed = true;
               }
             } finally {
+              if (!transferred) allocation?.release();
               if (this.generation === generation) this.reservations.delete(l);
             }
           })

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { weatherKey, type WeatherBudget } from './weather-budget';
 import {
   activeFeatures,
   currentForecastGroups,
@@ -264,4 +265,54 @@ function advisoryDrawing(features: AviationAdvisory[]): AviationDrawing {
       outlineMaterial.dispose();
     },
   };
+}
+
+/** Covers bounded JS conversion, geometry arrays and materials before allocation. */
+export function createBudgetedAviationDrawing(
+  c: AviationCollection,
+  layer: AviationLayer,
+  now: number,
+  budget: WeatherBudget
+): AviationDrawing {
+  let decoded: number, gpu: number;
+  if (layer === 'sigmet') {
+    let points = 0;
+    for (const feature of c.features as AviationAdvisory[]) {
+      if (!feature.geometry) continue;
+      const polygons =
+        feature.geometry.type === 'Polygon'
+          ? [feature.geometry.coordinates]
+          : feature.geometry.coordinates;
+      for (const polygon of polygons)
+        for (const ring of polygon) points += ring.length;
+    }
+    // The renderer caps all position/outlines at 300,000 scalar coordinates;
+    // source topology work is linear in the already bounded point inventory.
+    decoded = 300000 * 24 + points * 512 + 65536;
+    gpu = 300000 * 4 + 2048;
+  } else {
+    decoded = c.features.length * (layer === 'metar' ? 400 : 768) + 4096;
+    gpu = c.features.length * (layer === 'metar' ? 24 : 192) + 2048;
+  }
+  const reservation = budget.reserve(weatherKey('bulletin-drawing'), {
+    encoded: 0,
+    decoded,
+    gpu,
+  });
+  try {
+    const drawing = createAviationDrawing(c, layer, now);
+    let owned = true;
+    return {
+      ...drawing,
+      dispose: () => {
+        if (!owned) return;
+        owned = false;
+        drawing.dispose();
+        reservation.release();
+      },
+    };
+  } catch (error) {
+    reservation.release();
+    throw error;
+  }
 }
