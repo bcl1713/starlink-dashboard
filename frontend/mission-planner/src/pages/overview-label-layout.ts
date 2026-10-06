@@ -245,7 +245,8 @@ export function layoutOverviewLabels(
   const place = (
     label: ProjectedOverviewLabel,
     prev?: OverviewLabelOffset,
-    avoidPaths = true
+    avoidPaths = true,
+    avoidMarkers = true
   ): LabelPlacement | null => {
     const options = candidates(label, ordered, prev);
     const previousBox = prev ? options.shift() : undefined;
@@ -260,7 +261,7 @@ export function layoutOverviewLabels(
     const blockers = [
       ...reserved,
       ...geometry.aircraft,
-      ...(geometry.markers ?? []),
+      ...(avoidMarkers ? (geometry.markers ?? []) : []),
       ...anchors,
       ...entries.map((e) => e.placement.bounds),
     ];
@@ -337,7 +338,8 @@ export function layoutOverviewLabels(
   for (const source of ordered) {
     const placement =
       place(source, previous[source.id]) ??
-      place(source, previous[source.id], false);
+      place(source, previous[source.id], false) ??
+      place(source, previous[source.id], false, false);
     if (placement) {
       entries.push({ label: source, ids: [source.id], placement });
       continue;

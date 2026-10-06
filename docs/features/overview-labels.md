@@ -8,14 +8,15 @@ position becomes unsafe is hidden until a safe placement is available; the
 aircraft and underlying markers and paths remain present.
 
 Placement first seeks clear space around the aircraft, route/link/history paths,
-POI/GEP symbols, other labels and fixed panels. When those softer constraints
-conflict, traffic identities use the least occupied safe callout and nearby POIs
-can share a compact disclosure. The own-aircraft exclusion is never relaxed. If
-no safe rectangle fits, the visual label is suppressed. POI and satellite names
-remain in their accessible map lists; ADS-B identities and details remain
-available through marker selection and keyboard contact buttons. An open
-disclosure moves clear of the aircraft while preserving its open state and
-focus; a list that cannot fit safely is hidden until space opens.
+POI/GEP symbols, other labels and fixed panels. Before grouping POIs, placement
+can relax path avoidance, then the conservative marker footprints while keeping
+other marker anchors clear. Traffic identities can use the least occupied safe
+callout; nearby POIs can share a compact disclosure. The own-aircraft exclusion
+is never relaxed. If no safe rectangle fits, the visual label is suppressed. POI
+and satellite names remain in their accessible map lists; ADS-B identities and
+details remain available through marker selection and keyboard contact buttons.
+An open disclosure moves clear of the aircraft while preserving its open state
+and focus; a list that cannot fit safely is hidden until space opens.
 
 The tracked browser scenario uses a deterministic KADW/GEP/traffic cluster and
 monitors every animation frame during camera gestures, telemetry movement,

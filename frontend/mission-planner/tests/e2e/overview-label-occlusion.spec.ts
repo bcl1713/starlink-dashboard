@@ -285,7 +285,9 @@ for (const viewport of [
       await page.screenshot({
         path: info.outputPath('own-aircraft-fullscreen.png'),
       });
-      await page.keyboard.press('Escape');
+      await page
+        .getByRole('button', { name: 'Exit fullscreen overview' })
+        .click();
       await expect
         .poll(() => page.evaluate(() => !!document.fullscreenElement))
         .toBe(false);
@@ -331,7 +333,13 @@ for (const viewport of [
     moving = false;
     await page.evaluate(() => {
       document.documentElement.style.fontSize = '';
+      for (const details of document.querySelectorAll<HTMLDetailsElement>(
+        '.overview-label-group'
+      ))
+        details.open = false;
     });
+    await page.locator('.overview-map-stage').scrollIntoViewIfNeeded();
+    await page.getByRole('button', { name: 'Reset map view' }).click();
     await settledOverviewCamera(page);
     // Marker selection and its accessible identity survive label movement.
     const point = (await adsbScene(page)).batches
@@ -339,6 +347,12 @@ for (const viewport of [
       .find((p) => p.hex === '00AB12')!;
     await page.mouse.click(point.x, point.y);
     await expect(page.getByRole('dialog')).toBeVisible();
+    // Coincident contacts share a hit target; either identity can be picked.
+    await expect(page.getByRole('dialog')).toContainText(/00AB12|000001/);
+    await page.keyboard.press('Escape');
+    await page
+      .getByRole('button', { name: 'Details for 00AB12' })
+      .press('Enter');
     await expect(page.getByRole('dialog')).toContainText('00AB12');
     await page.keyboard.press('Escape');
   });

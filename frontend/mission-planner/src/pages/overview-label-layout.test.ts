@@ -342,3 +342,60 @@ it('keeps feasible POI identities individual when only soft route paths obstruct
   expect(overlaps(boxes[0], boxes[1])).toBe(false);
   for (const box of boxes) expect(overlaps(box, aircraft)).toBe(false);
 });
+
+it('keeps Enter and Exit individual in the production 704px marker-clearance conflict', () => {
+  // Projected inputs captured from the exact production browser regression.
+  const labels: ProjectedOverviewLabel[] = (
+    [
+      ['adsb:00AB12', 289.58, 211.07, 76.91, 0, true],
+      ['poi:departure', 474.0, 201.64, 63.62, 2, false],
+      ['poi:commka-exit', 230.35, 192.53, 117.98, 2, false],
+      ['poi:commka-enter', 222.37, 191.11, 129.69, 2, false],
+      ['poi:arrival', 112.74, 33.1, 56.98, 2, false],
+      ['gep', 336.21, 283.81, 47.73, 1, false],
+    ] as const
+  ).map(([id, x, y, width, priority, retainIdentity]) => ({
+    id,
+    bounds: { x, y, width, height: 28 },
+    priority,
+    retainIdentity,
+  }));
+  const reserved = [
+    [0, -133.56, 680, 121.56],
+    [508, 12, 160, 73.17],
+    [508, 93.17, 160, 44],
+    [12, 93.17, 143.83, 37],
+    [12, 138.17, 44, 44],
+    [12, 12, 90, 46],
+    [12, 315.7, 656, 52.3],
+    [0, 392, 680, 328.08],
+  ].map(([x, y, width, height]) => ({ x, y, width, height }));
+  const aircraft = { x: 320.56, y: 258.76, width: 61, height: 61 };
+  const result = layoutOverviewLabels(
+    labels,
+    { width: 680, height: 380 },
+    reserved,
+    {},
+    {
+      aircraft: [aircraft],
+      markers: labels.map((l) => {
+        const radius = l.retainIdentity ? 21.22 : 17;
+        return {
+          x: l.bounds.x - radius,
+          y: l.bounds.y - radius,
+          width: radius * 2,
+          height: radius * 2,
+        };
+      }),
+    }
+  );
+  expect(result.groups).toEqual([]);
+  expect(Object.keys(result.offsets)).toHaveLength(6);
+  const boxes = Object.values(result.placements).map((p) => p.bounds);
+  for (const [i, box] of boxes.entries()) {
+    expect(overlaps(box, aircraft)).toBe(false);
+    for (const other of boxes.slice(i + 1))
+      expect(overlaps(box, other)).toBe(false);
+    for (const panel of reserved) expect(overlaps(box, panel)).toBe(false);
+  }
+});
