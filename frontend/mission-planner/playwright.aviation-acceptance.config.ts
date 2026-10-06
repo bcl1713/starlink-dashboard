@@ -22,9 +22,7 @@ export default defineConfig({
   retries: 0,
   timeout: 180000,
   reporter: 'line',
-  outputDir:
-    process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR ??
-    'test-results/aviation-weather',
+  outputDir: `${process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR ?? 'test-results/aviation-weather'}/playwright`,
   use: {
     baseURL,
     viewport: { width: 1920, height: 1080 },

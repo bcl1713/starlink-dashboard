@@ -436,7 +436,11 @@ test('exact production SHA: native station forecasts and advisory topology coexi
           (e) => e.layer === layer && e.source_generation === 1
         )
       ).toBe(true);
-    expect((await request.get('/health')).status()).toBe(200);
+    const coreHealth = await request.get(
+      `http://127.0.0.1:${process.env.WEATHER_ACCEPTANCE_BACKEND_PORT}/health`
+    );
+    expect(coreHealth.status()).toBe(200);
+    expect((await coreHealth.json()).mode).toBe('simulation');
     const finalStatusResponse = await request.get('/api/status');
     expect(finalStatusResponse.status()).toBe(200);
     const finalStatus = await finalStatusResponse.json();

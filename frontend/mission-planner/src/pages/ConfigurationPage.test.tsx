@@ -1,13 +1,11 @@
 vi.mock('@/services/aviation-weather', () => ({
   aviationWeatherApi: {
-    getSettings: vi
-      .fn()
-      .mockResolvedValue({
-        metar: false,
-        taf: false,
-        sigmet: false,
-        revision: 0,
-      }),
+    getSettings: vi.fn().mockResolvedValue({
+      metar: false,
+      taf: false,
+      sigmet: false,
+      revision: 0,
+    }),
     updateSettings: vi.fn(),
   },
 }));
