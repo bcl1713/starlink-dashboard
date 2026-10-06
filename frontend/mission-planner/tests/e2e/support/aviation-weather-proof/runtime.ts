@@ -295,6 +295,13 @@ function sample(latitude: number, longitude: number) {
         ? null
         : raw * installed.d.components.t.scale! +
           installed.d.components.t.offset!;
+    const geographicRead = (mode: number, span: number, start: number) => {
+      scalar.material.uniforms.diagnostic.value = mode;
+      const b = read();
+      return ((b[0] * 65536 + b[1] * 256 + b[2]) / 16777215) * span + start;
+    };
+    const gpuLongitude = geographicRead(2, 360, -180),
+      gpuLatitude = geographicRead(3, 180, -90);
     scalar.material.uniforms.diagnostic.value = 0;
     scalar.material.blending = THREE.NormalBlending;
     // Render known background through the actual Overview scene, keeping only
@@ -328,6 +335,8 @@ function sample(latitude: number, longitude: number) {
       longitude,
       sampleLatitude,
       sampleLongitude,
+      gpuLongitude,
+      gpuLatitude,
       pixel: { x, y, width, height },
       value,
       mask,

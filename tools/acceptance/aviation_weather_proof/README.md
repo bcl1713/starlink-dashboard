@@ -91,8 +91,9 @@ Int16 components and mask bytes; the scalar shader manually interpolates and
 requires all four stencil masks valid, including zero-weight neighbors. A
 full-resolution RGBA8 color-only target preserves the native projection (no depth
 or multisample attachments). The independently rounded viewport pixel has a ray
-intersection against the actual tessellated mesh. A cropped projection was
-rejected by numeric controls because float cancellation changed steep gradients. Quantity/mask and
+intersection against the actual tessellated mesh. The earlier cropped-projection hypothesis was ruled out: the same numeric
+discrepancy persisted with the original projection. GPU geographic readback
+separately diagnoses coordinate reconstruction. Quantity/mask and
 palette measurements use that same shader. Independent Python geographic
 bracketing checks the retained GPU hit coordinates. Palette checks use a known
 linear framebuffer background, no tone mapping or output conversion in the
