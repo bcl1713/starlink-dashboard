@@ -10,6 +10,7 @@ export default defineConfig({
     '**/overview-aircraft-history-production.spec.ts',
     '**/simulation-run-production.spec.ts',
     '**/overview-fallback-production.spec.ts',
+    '**/manual-x-selection-production.spec.ts',
   ],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

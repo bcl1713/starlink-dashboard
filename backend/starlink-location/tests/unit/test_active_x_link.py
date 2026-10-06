@@ -106,6 +106,9 @@ def test_active_x_link_endpoint_returns_public_response(test_client) -> None:
         "links": [],
         "total": 0,
         "satellite_id": None,
+        "manual_satellite_id": None,
+        "selection_source": "none",
+        "manual_selection_invalid": False,
         "pending_satellite_id": None,
         "handoff": {
             "phase": "outside",

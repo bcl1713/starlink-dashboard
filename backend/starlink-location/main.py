@@ -71,6 +71,7 @@ from app.services.overview_history_settings import (
 from app.services.overview_link_settings import OverviewLinkSettingsStore
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.x_band_selection import XBandSelectionStore
 from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
@@ -98,6 +99,7 @@ OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
 OVERVIEW_CLOCK_SETTINGS_PATH = Path("data/settings/overview-clocks.json")
 OVERVIEW_ADSB_SETTINGS_PATH = Path("data/settings/overview-adsb.json")
 OVERVIEW_LINK_SETTINGS_PATH = Path("data/settings/overview-links.json")
+X_BAND_SELECTION_PATH = Path("data/settings/x-band-selection.json")
 OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
 _overview_history_client: httpx.AsyncClient | None = None
 _overview_history_settings_store: OverviewHistorySettingsStore | None = None
@@ -215,6 +217,7 @@ async def startup_event():
         initialize_overview_history_runtime()
         initialize_overview_clock_settings_runtime()
         initialize_overview_link_settings_runtime()
+        app.state.x_band_selection_store = XBandSelectionStore(X_BAND_SELECTION_PATH)
         initialize_orbital_catalog_runtime()
         initialize_overview_adsb_runtime()
         await app.state.overview_adsb_service.start()
@@ -470,6 +473,8 @@ async def shutdown_event():
         overview_history.set_overview_history_settings_store(None)
         overview_clock_settings.set_overview_clock_settings_store(None)
         overview_link_settings.set_overview_link_settings_store(None)
+        if hasattr(app.state, "x_band_selection_store"):
+            del app.state.x_band_selection_store
         _overview_link_settings_store = None
         if hasattr(app.state, "overview_link_settings_store"):
             del app.state.overview_link_settings_store
