@@ -327,34 +327,69 @@ const catalogSchema = z
       new Set(c.products.map((p) => p.layer_id)).size === c.products.length &&
       c.products.every((p) => p.generated_at_ms === c.generated_at_ms)
   );
+const pressureSelectionSchema = z.union([
+  z.literal(85000),
+  z.literal(50000),
+  z.literal(30000),
+  z.literal(25000),
+  z.literal(20000),
+]);
+const horizonSchema = z.union([
+  z.literal(0),
+  z.literal(3),
+  z.literal(6),
+  z.literal(9),
+  z.literal(12),
+  z.literal(18),
+  z.literal(24),
+  z.literal(36),
+  z.literal(48),
+]);
+const selectionVerticalSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('pressure'),
+    pressure_pa: pressureSelectionSchema,
+  }),
+  z.strictObject({
+    kind: z.literal('flight-level'),
+    flight_level: z.union([
+      z.literal(50),
+      z.literal(100),
+      z.literal(180),
+      z.literal(240),
+      z.literal(300),
+      z.literal(340),
+      z.literal(390),
+      z.literal(450),
+    ]),
+  }),
+]);
+export const gfsSelectionSchema = z.union([
+  z.strictObject({
+    vertical: selectionVerticalSchema,
+    horizon_hours: horizonSchema,
+  }),
+  z
+    .strictObject({
+      pressure_pa: pressureSelectionSchema,
+      horizon_hours: horizonSchema,
+    })
+    .transform(({ pressure_pa, horizon_hours }) => ({
+      vertical: { kind: 'pressure' as const, pressure_pa },
+      horizon_hours,
+    })),
+]);
+export type GfsSelection = z.output<typeof gfsSelectionSchema>;
 const settingsSchema = z.strictObject({
   metar: z.boolean(),
   taf: z.boolean(),
   sigmet: z.boolean(),
   winds: z.boolean().default(false),
   temperature: z.boolean().default(false),
-  gfs_selection: z
-    .strictObject({
-      pressure_pa: z.union([
-        z.literal(85000),
-        z.literal(50000),
-        z.literal(30000),
-        z.literal(25000),
-        z.literal(20000),
-      ]),
-      horizon_hours: z.union([
-        z.literal(0),
-        z.literal(3),
-        z.literal(6),
-        z.literal(9),
-        z.literal(12),
-        z.literal(18),
-        z.literal(24),
-        z.literal(36),
-        z.literal(48),
-      ]),
-    })
-    .default({ pressure_pa: 50000, horizon_hours: 0 }),
+  gfs_selection: gfsSelectionSchema.default({
+    vertical: { kind: 'pressure', pressure_pa: 50000 },
+    horizon_hours: 0,
+  }),
   revision: integer,
 });
 export type AviationCatalog = z.infer<typeof catalogSchema>;

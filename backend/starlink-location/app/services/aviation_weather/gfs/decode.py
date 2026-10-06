@@ -16,6 +16,7 @@ class DecodedFields:
     latitudes: Any
     longitudes: Any
     components: dict
+    terrain: Any = None
 
 
 def _instant(date, clock):

@@ -125,3 +125,29 @@ def select_ranges(
     if any(value is None for value in required.values()):
         raise ValueError("Incomplete selected source fields")
     return tuple(result)
+
+
+def available_pressures(index: bytes) -> tuple[int, ...]:
+    """Find complete triplets; select_ranges separately verifies all identity."""
+    if not index or len(index) > MAX_METADATA:
+        raise ValueError("Invalid scientific pressure inventory")
+    fields_by_pressure = {}
+    try:
+        for line in index.decode("ascii").splitlines():
+            fields = line.split(":")
+            if len(fields) < 7:
+                raise ValueError("Malformed inventory")
+            pressure = re.fullmatch(r"(\d+) mb", fields[4])
+            if pressure and fields[3] in {"UGRD", "VGRD", "TMP"}:
+                value = int(pressure[1]) * 100
+                if 0 < value <= 110000:
+                    fields_by_pressure.setdefault(value, set()).add(fields[3])
+    except UnicodeError as error:
+        raise ValueError("Malformed scientific pressure inventory") from error
+    return tuple(
+        sorted(
+            p
+            for p, names in fields_by_pressure.items()
+            if names == {"UGRD", "VGRD", "TMP"}
+        )
+    )

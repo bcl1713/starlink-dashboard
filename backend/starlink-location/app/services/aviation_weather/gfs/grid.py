@@ -16,6 +16,7 @@ from app.models.aviation_grid import (
 )
 
 from .decode import DecodedFields
+from .vertical import interpolate_vertical, selected_pressure, source_pressures
 
 
 def canonical(value):
@@ -33,7 +34,20 @@ def normalize_grid(
 ) -> GridCandidate:
     import numpy as np
 
-    pressure = selection.pressure_pa
+    pressure = selected_pressure(selection)
+    vertical = {"kind": "pressure", "pressure_pa": float(pressure)}
+    if selection.vertical.kind == "flight-level":
+        brackets = source_pressures(
+            selection, tuple({p for name, p in fields.components if name != "sp"})
+        )
+        vertical = {
+            "kind": "flight-level",
+            "flight_level": selection.vertical.flight_level,
+            "reference": "pressure-altitude-1013.25hpa",
+            "derivation": "isa-log-pressure-v1",
+            "source_pressures_pa": list(brackets),
+        }
+        fields = interpolate_vertical(fields, pressure)
     components = {name: fields.components[(name, pressure)] for name in ("u", "v", "t")}
     surface, surface_valid = fields.components[("sp", None)]
     lat, lon = fields.latitudes, fields.longitudes
@@ -46,6 +60,8 @@ def normalize_grid(
     xw = (target_lon - extended_lon[xi]) / (extended_lon[xi + 1] - extended_lon[xi])
     missing = ~surface_valid.copy()
     terrain = surface_valid & (pressure > surface)
+    if fields.terrain is not None:
+        terrain |= fields.terrain
     for values, validity in components.values():
         missing |= ~validity | ~np.isfinite(values)
     mask = np.zeros((361, 720), dtype="u1")
@@ -103,7 +119,7 @@ def normalize_grid(
     machine = {
         "version": "gfs-regular-ll-v1",
         "grid": geometry,
-        "vertical": {"kind": "pressure", "pressure_pa": float(pressure)},
+        "vertical": vertical,
         "mask": "shared-conservative-uvt",
     }
     product = hashlib.sha256(canonical(machine)).hexdigest()
