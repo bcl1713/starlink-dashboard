@@ -116,6 +116,8 @@ async def test_settings_default_off_and_invalid_updates_do_not_acquire(tmp_path)
             "off",
             "off",
             "off",
+            "off",
+            "off",
         ]
         assert source.calls == []
     await service.aclose()

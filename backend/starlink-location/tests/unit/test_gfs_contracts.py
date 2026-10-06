@@ -87,3 +87,12 @@ def test_rejects_model_time_or_component_mismatch():
     data["grid"]["components"][0]["quantity"] = "air-temperature"
     with pytest.raises(ValidationError):
         GridDescriptor.model_validate(data)
+
+
+def test_public_descriptor_declares_shared_conservative_mask_scope():
+    from app.models.aviation_grid import GridDescriptor
+
+    assert (
+        GridDescriptor.model_validate(descriptor()).model_dump()["mask_scope"]
+        == "shared-conservative-uvt"
+    )

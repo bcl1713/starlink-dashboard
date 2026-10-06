@@ -9,12 +9,14 @@ service.
 
 ## Endpoints
 
-| Method | Path                                                        | Result                                                                            |
-| ------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| GET    | `/api/aviation-weather/v1/settings`                         | Boolean `metar`, `taf`, `sigmet` and integer `revision`                           |
-| PUT    | `/api/aviation-weather/v1/settings`                         | Atomically save a nonempty subset of those booleans and return confirmed settings |
-| GET    | `/api/aviation-weather/v1/catalog`                          | Versioned product envelopes for existing radar and the three aviation layers      |
-| GET    | `/api/aviation-weather/v1/products/{instance}/{layer}.json` | Immutable normalized GeoJSON for the currently admitted, enabled instance         |
+| Method | Path                                                        | Result                                                                         |
+| ------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| GET    | `/api/aviation-weather/v1/settings`                         | Default-off bulletin/model preferences, `gfs_selection` and integer `revision` |
+| PUT    | `/api/aviation-weather/v1/settings`                         | Atomically save a nonempty subset of preferences and return confirmed settings |
+| GET    | `/api/aviation-weather/v1/catalog`                          | Versioned radar, bulletin, GFS wind and temperature envelopes                  |
+| GET    | `/api/aviation-weather/v1/products/{instance}/{layer}.json` | Immutable normalized GeoJSON for the currently admitted, enabled instance      |
+| GET    | `/api/aviation-weather/v1/products/{instance}/grid.json`    | Immutable scientific descriptor with same-origin component hashes              |
+| GET    | `/api/aviation-weather/v1/products/{instance}/{field}.bin`  | Admitted `u`, `v`, `t` or `mask` buffer with a SHA-256 ETag                    |
 
 Settings and catalog responses use `Cache-Control: no-store`. Payloads use
 `private, no-cache`, an ETag and a SHA-256 identity. Unknown, disabled, expired
@@ -84,4 +86,52 @@ project and volumes. Fixtures are deterministic controls, not live-weather
 claims. Source normalization also has dated live-capture controls.
 
 Scientific model grids, satellite imagery, wind/cloud/humidity views and route
-weather decisions remain later phases of issue 290.
+weather decisions have separate delivery increments. The GFS foundation below
+provides model data; Configuration controls and native model rendering follow in
+the Phase 2 presentation PR. Satellite/cloud/humidity and route decisions remain
+later phases of issue 290.
+
+## GFS foundation
+
+`winds` and `temperature` default to false. `gfs_selection` defaults to
+`{"pressure_pa":50000,"horizon_hours":0}`. Supported pressures are 85000, 50000,
+30000, 25000 and 20000 Pa; horizons are 0, 3, 6, 9, 12, 18, 24, 36 and 48 hours.
+Selection uses the nearest available instantaneous model lead to current UTC
+plus horizon, with earlier ties. Catalogs disclose the actual run, lead and
+valid UTC. F000 is analysis; positive leads are forecasts. Native pressure
+surfaces do not claim flight-level derivation.
+
+Model freshness is fixed at run plus nine hours and expiry at run plus eighteen
+hours. Source failure cannot renew either deadline. Targets outside F000–F048
+and targets beyond the current lead's actual inventory midpoint have no payload.
+Missing or stale worker ownership leaves models unavailable while settings,
+bulletins, radar and core health remain usable.
+
+Descriptors declare a 720×361 globe, longitude -180/+0.5 and latitude +90/-0.5,
+with a shared conservative U/V/T validity mask. U/V are little-endian Int16 m/s
+at scale 0.01; temperature is Int16 K at scale 0.01 and offset 273.15. Mask
+values are 0 valid, 1 outside coverage, 2 missing and 3 quality rejected.
+Surface pressure masks below-terrain samples before interpolation; any missing
+contributor stays unknown. A true zero wind remains valid. Each complete binary
+generation is 1,819,440 bytes; envelope allocation bounds include its
+descriptor.
+
+Install the optional worker with the GFS Compose overlay and profile:
+
+```bash
+scripts/compose.sh -f docker-compose.yml -f docker-compose.gfs.yml --profile gfs up -d --build
+```
+
+The worker shares one CPU and 1 GiB across its owner and disposable decoder;
+scientific dependencies stay in its image. API mounts artifacts read-only and
+the mailbox read-write. Worker settings are read-only. A visible catalog renews
+one API startup owner's 120-second demand lease; readers share one selection.
+HTTP budgets and received bytes persist across worker restarts. No ingest runs
+at API startup or with no admitted readers.
+
+Settings saves invalidate old demand under the publication lock. Disable denies
+payloads immediately and waits up to fifteen seconds for obsolete work to exit.
+If acknowledgement is missing, the API returns sanitized 503 while the disabled
+save remains committed. Immutable response leases prevent retention from
+deleting an open buffer, and release on disconnect. Unknown, disabled, expired,
+obsolete, damaged and private-lineage paths have no accessible payload.

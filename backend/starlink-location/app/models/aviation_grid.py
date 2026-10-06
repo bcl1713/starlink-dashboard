@@ -43,6 +43,7 @@ class GridBuffer(Contract):
 class GridDescriptor(Contract):
     schema_version: Literal["aviation-weather-v1"] = Field(alias="schema")
     representation: Literal["latlon-grid-v1"]
+    mask_scope: Literal["shared-conservative-uvt"] = "shared-conservative-uvt"
     product_id: Hash
     instance_id: Hash
     normalization_version: Literal["gfs-regular-ll-v1"]

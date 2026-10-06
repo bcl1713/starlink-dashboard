@@ -70,6 +70,7 @@ from app.services.overview_history_settings import (
     resolve_overview_history_window_default,
 )
 from app.services.overview_link_settings import OverviewLinkSettingsStore
+from app.services.aviation_weather.gfs.bridge import GfsBridge
 from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
 from app.services.aviation_weather.transport import AwcTransport
@@ -235,6 +236,15 @@ def initialize_aviation_weather_runtime() -> None:
         logger.warning_json(
             "Aviation weather initialization unavailable", exc_info=True
         )
+        return
+    try:
+        app.state.aviation_gfs_bridge = GfsBridge(
+            store,
+            Path(os.environ.get("GFS_ARTIFACT_PATH", str(store.path.parent.parent / "gfs"))),
+            Path(os.environ.get("GFS_MAILBOX_PATH", str(store.path.parent.parent / "gfs-mailbox"))),
+        )
+    except Exception:  # noqa: BLE001 - optional GFS must preserve bulletin/core startup
+        logger.warning_json("GFS bridge initialization unavailable", exc_info=True)
 
 
 async def startup_event():
@@ -501,6 +511,12 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "aviation_gfs_bridge"):
+            try:
+                await app.state.aviation_gfs_bridge.aclose()
+            except (OSError, ValueError, TimeoutError):
+                logger.warning_json("GFS demand withdrawal unavailable")
+            del app.state.aviation_gfs_bridge
         if hasattr(app.state, "aviation_weather_service"):
             await app.state.aviation_weather_service.aclose()
             del app.state.aviation_weather_service

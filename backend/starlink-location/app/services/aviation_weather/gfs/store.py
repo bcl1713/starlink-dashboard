@@ -54,9 +54,22 @@ def read_json(path):
 
 
 @contextmanager
-def control_lock(mailbox):
+def control_lock(mailbox, *, timeout=None):
     with (mailbox / ".control.lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        if timeout is None:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+        else:
+            deadline = time.monotonic() + timeout
+            while True:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(
+                            "Scientific control lock unavailable"
+                        ) from None
+                    time.sleep(0.01)
         yield
 
 
@@ -261,11 +274,11 @@ class GfsProductStore:
             return ()
 
     @contextmanager
-    def lease(self, instance):
+    def lease(self, instance, *, blocking=True):
         if not re.fullmatch(r"[a-f0-9]{64}", instance):
             raise ValueError("Invalid scientific instance")
         with (self.mailbox / "leases" / instance).open("a") as lock:
-            fcntl.flock(lock, fcntl.LOCK_SH)
+            fcntl.flock(lock, fcntl.LOCK_SH | (0 if blocking else fcntl.LOCK_NB))
             yield self._descriptor(instance)
 
     def prune(self, now_ms: int) -> None:

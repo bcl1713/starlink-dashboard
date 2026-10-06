@@ -31,7 +31,7 @@ class GfsMailbox:
     def renew(self, owner: str, settings, now_ms: int) -> None:
         if not re.fullmatch(r"[a-f0-9]{32}", owner):
             raise ValueError("Invalid API startup identity")
-        with control_lock(self.root):
+        with control_lock(self.root, timeout=1):
             current = self.settings.get()
             data = self._demand()
             if now_ms < data["last_ms"]:
@@ -60,7 +60,7 @@ class GfsMailbox:
             self._save(data)
 
     def withdraw(self, owner: str) -> None:
-        with control_lock(self.root):
+        with control_lock(self.root, timeout=1):
             data = self._demand()
             data["owners"].pop(owner, None)
             self._save(data)
@@ -71,11 +71,11 @@ class GfsMailbox:
         self._save(data)
 
     def invalidate(self, revision: int) -> None:
-        with control_lock(self.root):
+        with control_lock(self.root, timeout=1):
             self.invalidate_locked(revision)
 
     def current(self, now_ms: int):
-        with control_lock(self.root):
+        with control_lock(self.root, timeout=1):
             return self.current_locked(now_ms)
 
     def current_locked(self, now_ms: int):
@@ -117,13 +117,13 @@ class GfsMailbox:
             return False
 
     def worker_started(self, owner, now_ms):
-        with control_lock(self.root):
+        with control_lock(self.root, timeout=1):
             atomic_json(
                 self.root / "worker.json", {"owner": owner, "started_ms": now_ms}
             )
 
     def heartbeat(self, revision, owner, now_ms):
-        with control_lock(self.root):
+        with control_lock(self.root, timeout=1):
             try:
                 identity = read_json(self.root / "worker.json")
             except FileNotFoundError:
