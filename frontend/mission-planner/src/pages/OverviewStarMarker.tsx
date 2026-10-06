@@ -34,6 +34,7 @@ export type StarMarkerProps = StarMarkerPositionProps & {
   headingDegrees?: number;
   chevronSettings?: Readonly<ChevronSettings>;
   renderOrder?: number;
+  ownAircraft?: boolean;
   coreColor?: string;
   coreRadius?: number;
   glowSizePixels?: number;
@@ -210,6 +211,7 @@ function ChevronMarker(props: StarMarkerProps) {
   return (
     <mesh
       ref={mesh}
+      name={props.ownAircraft ? 'overview-own-aircraft' : undefined}
       geometry={resources.geometry}
       material={resources.material}
       matrixAutoUpdate={false}

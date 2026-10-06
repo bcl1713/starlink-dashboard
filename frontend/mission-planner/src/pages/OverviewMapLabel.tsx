@@ -1,5 +1,5 @@
 import { Html } from '@react-three/drei';
-import type { RefObject } from 'react';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 import type * as THREE from 'three';
 import { positionOverviewDisclosure } from './overview-label-dom';
 
@@ -11,6 +11,7 @@ interface ContentProps {
   poiId?: string;
   hex?: string;
   title?: string;
+  markerRadiusPixels?: number;
 }
 
 export function OverviewMapLabelContent({
@@ -21,16 +22,29 @@ export function OverviewMapLabelContent({
   poiId,
   hex,
   title,
+  markerRadiusPixels = 17,
 }: ContentProps) {
   const label = text.replace(/\s+/g, ' ').trim();
+  const root = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const source = root.current?.querySelector<HTMLElement>(
+      '[data-label-source]'
+    );
+    if (source) {
+      source.style.visibility = 'hidden';
+      source.dataset.layoutVisible = 'false';
+    }
+  }, [label]);
   return (
     <div
+      ref={root}
       className="overview-map-callout"
       data-overview-label-id={id}
       data-label-kind={kind}
       data-label-text={label}
       data-label-priority={priority}
       data-label-retain-identity={kind === 'adsb' ? 'true' : undefined}
+      data-label-marker-radius={markerRadiusPixels}
     >
       <svg
         className="overview-label-stick"

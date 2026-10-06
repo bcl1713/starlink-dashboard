@@ -233,3 +233,86 @@ it('revalidates an ADS-B previous stick when another marker moves into its path'
   expect(result.offsets.b).toBeDefined();
   expect(result.groups).toEqual([]);
 });
+
+it('keeps every label kind clear of the full aircraft footprint during movement and text growth', () => {
+  let previous = {};
+  for (const [width, height] of [
+    [1920, 1080],
+    [390, 844],
+    [844, 390],
+  ]) {
+    for (let frame = 0; frame < 30; frame++) {
+      const aircraft = {
+        x: width / 2 + frame - 45,
+        y: height / 2 - 30,
+        width: 90,
+        height: 60,
+      };
+      const labels = ['adsb', 'poi', 'gep', 'satellite', 'own'].map(
+        (kind, i) => ({
+          id: kind,
+          retainIdentity: kind === 'adsb',
+          bounds: {
+            x: width / 2 + i,
+            y: height / 2,
+            width: frame % 2 ? 220 : 100,
+            height: frame % 2 ? 56 : 28,
+          },
+        })
+      );
+      const result = layoutOverviewLabels(
+        labels,
+        { width, height },
+        [],
+        previous,
+        { aircraft: [aircraft] }
+      );
+      for (const placement of Object.values(result.placements))
+        expect(overlaps(placement.bounds, aircraft)).toBe(false);
+      previous = result.offsets;
+    }
+  }
+});
+
+it.each([true, false])(
+  'suppresses an impossible label rather than putting its fallback over the aircraft (retain=%s)',
+  (retainIdentity) => {
+    const result = layoutOverviewLabels(
+      [
+        {
+          id: 'crowded',
+          retainIdentity,
+          bounds: { x: 80, y: 80, width: 150, height: 28 },
+        },
+      ],
+      { width: 220, height: 160 },
+      [],
+      {},
+      { aircraft: [{ x: 0, y: 0, width: 220, height: 160 }] }
+    );
+    expect(result.placements).toEqual({});
+    expect(result.groups).toEqual([]);
+  }
+);
+
+it('prefers a placement clear of a displayed route and a POI halo', () => {
+  const result = layoutOverviewLabels(
+    [
+      {
+        id: 'traffic',
+        retainIdentity: true,
+        bounds: { x: 300, y: 200, width: 150, height: 28 },
+      },
+    ],
+    { width: 700, height: 500 },
+    [],
+    {},
+    {
+      aircraft: [],
+      markers: [{ x: 310, y: 180, width: 40, height: 40 }],
+      paths: [{ start: { x: 330, y: 50 }, end: { x: 330, y: 400 } }],
+    }
+  );
+  const box = result.placements.traffic.bounds;
+  expect(box.x + box.width).toBeLessThan(310);
+});

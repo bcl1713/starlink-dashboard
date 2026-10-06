@@ -245,6 +245,14 @@ export function OverviewAdsbLayer({
             key={c.hex}
             id={`adsb:${c.hex}`}
             kind="adsb"
+            markerRadiusPixels={
+              Math.max(
+                chevronSettings.trafficSizePixels * 0.75,
+                chevronSettings.trafficSizePixels / 2 +
+                  (3 * chevronSettings.trafficSizePixels) /
+                    Math.max(1, chevronSettings.glowWidthDivisor)
+              ) * Math.SQRT2
+            }
             hex={c.hex}
             text={`${c.label}${c.freshness === 'stale' ? ' · ◷ Stale' : ''}`}
             title={`${c.label} · ${c.hex}`}

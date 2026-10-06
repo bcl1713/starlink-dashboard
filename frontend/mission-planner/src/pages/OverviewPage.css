@@ -162,6 +162,7 @@
   border-radius: 7px;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
 }
 .overview-label-group ul {
   position: absolute;
