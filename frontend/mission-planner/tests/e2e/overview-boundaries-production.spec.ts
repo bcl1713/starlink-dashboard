@@ -366,7 +366,7 @@ test('fixture operational overlays remain readable with real bundled borders', a
   // assets, renderer and saved layer settings are the production Nginx path.
   const fixture = await installAdsbFixture(context, true);
   fixture.setContacts([
-    freshContact({ latitude: 36, longitude: -96, callsign: 'BORDER-TEST' }),
+    freshContact({ latitude: 38, longitude: -90, callsign: 'BORDER-TEST' }),
   ]);
   fixture.setSettings(adsbSettings({ enabled: true }));
   await context.route('**/api/overview-links/settings', (route) =>
