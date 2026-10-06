@@ -12,6 +12,8 @@ function fixture(): OverviewLinkStateInput {
       x_band_link_enabled: true,
       orbital_traffic_enabled: false,
       aircraft_history_enabled: true,
+      country_borders_enabled: false,
+      state_borders_enabled: false,
     },
     status: {
       timestamp: '2026-10-03T12:00:00.000Z',
@@ -69,6 +71,8 @@ describe('independent Overview link state', () => {
         x_band_link_enabled: xBand,
         orbital_traffic_enabled: false,
         aircraft_history_enabled: true,
+        country_borders_enabled: false,
+        state_borders_enabled: false,
       };
       const state = assertActivity(input, starshield, xBand);
       expect(state.starshieldVisible).toBe(starshield);

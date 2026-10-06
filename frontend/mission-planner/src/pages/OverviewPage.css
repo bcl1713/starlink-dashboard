@@ -327,3 +327,19 @@
 .overview-map-callout[data-label-in-view='false'] * {
   visibility: hidden !important;
 }
+
+.globe-legend__route--countries {
+  height: 2px;
+  background: #dde4ee;
+}
+.globe-legend__route--subdivisions {
+  height: 1px;
+  background: #9aaebf;
+}
+.globe-legend__boundary-note,
+.overview-boundary-status {
+  max-width: 17rem;
+  color: #b8c5d4;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}

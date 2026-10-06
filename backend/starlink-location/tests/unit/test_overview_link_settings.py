@@ -56,6 +56,8 @@ def test_all_pairs_survive_store_recreation(tmp_path, starshield, x_band):
         **payload,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         starshield, x_band
@@ -222,6 +224,8 @@ def test_future_fields_survive_reads_partial_saves_and_restart(tmp_path, future_
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
         "future_preference": future_value,
     }
     path.write_text(json.dumps(payload))
@@ -271,6 +275,8 @@ def test_rollback_and_reupgrade_preserve_enabled_orbital_preference(
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         False, False, True

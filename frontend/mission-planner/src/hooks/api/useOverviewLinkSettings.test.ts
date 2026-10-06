@@ -18,6 +18,8 @@ const confirmed = {
   x_band_link_enabled: true,
   orbital_traffic_enabled: false,
   aircraft_history_enabled: true,
+  country_borders_enabled: false,
+  state_borders_enabled: false,
 };
 let client: QueryClient;
 let wrapper: (props: PropsWithChildren) => ReturnType<typeof createElement>;
@@ -84,6 +86,8 @@ describe('useOverviewLinkSettings', () => {
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
       aircraft_history_enabled: true,
+      country_borders_enabled: false,
+      state_borders_enabled: false,
     };
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: changed });
     await act(async () => {
@@ -115,6 +119,8 @@ describe('useOverviewLinkSettings', () => {
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
       aircraft_history_enabled: true,
+      country_borders_enabled: false,
+      state_borders_enabled: false,
     };
     vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
     await act(async () => {
@@ -140,6 +146,8 @@ describe('useOverviewLinkSettings', () => {
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
       aircraft_history_enabled: true,
+      country_borders_enabled: false,
+      state_borders_enabled: false,
     };
     vi.mocked(apiClient.get).mockResolvedValue({ data: changed });
     await act(async () => {

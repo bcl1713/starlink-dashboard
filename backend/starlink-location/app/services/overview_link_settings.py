@@ -15,6 +15,8 @@ class OverviewLinkSettings:
     x_band_link_enabled: bool = True
     orbital_traffic_enabled: bool = False
     aircraft_history_enabled: bool = True
+    country_borders_enabled: bool = False
+    state_borders_enabled: bool = False
 
 
 _SETTING_FIELDS = frozenset(OverviewLinkSettings.__dataclass_fields__)

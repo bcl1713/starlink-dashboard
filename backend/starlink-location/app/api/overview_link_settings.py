@@ -18,6 +18,8 @@ class OverviewLinkSettingsUpdate(BaseModel):
     x_band_link_enabled: StrictBool | None = None
     orbital_traffic_enabled: StrictBool | None = None
     aircraft_history_enabled: StrictBool | None = None
+    country_borders_enabled: StrictBool | None = None
+    state_borders_enabled: StrictBool | None = None
 
     @model_validator(mode="after")
     def validate_supplied_fields(self) -> Self:

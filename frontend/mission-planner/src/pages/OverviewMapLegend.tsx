@@ -4,6 +4,8 @@ import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 
 interface OverviewMapLegendProps {
   collapsible?: boolean;
+  countries?: boolean;
+  subdivisions?: boolean;
   satellites?: boolean;
   adsb?: boolean;
   aircraft: boolean;
@@ -18,6 +20,8 @@ interface OverviewMapLegendProps {
 /** Layer samples use the scene's draw guards, including retained geometry. */
 export function OverviewMapLegend({
   collapsible = false,
+  countries = false,
+  subdivisions = false,
   satellites = false,
   adsb = false,
   aircraft,
@@ -32,6 +36,16 @@ export function OverviewMapLegend({
   const toggle = useRef<HTMLButtonElement>(null);
   const listId = useId();
   const entries = [
+    {
+      visible: countries,
+      label: 'Country borders',
+      sample: 'globe-legend__route globe-legend__route--countries',
+    },
+    {
+      visible: subdivisions,
+      label: 'State/province borders',
+      sample: 'globe-legend__route globe-legend__route--subdivisions',
+    },
     {
       visible: adsb,
       label: 'ADS-B aircraft',
@@ -94,6 +108,11 @@ export function OverviewMapLegend({
         </button>
       ) : (
         <p className="globe-legend__title">Legend</p>
+      )}
+      {(countries || subdivisions) && (
+        <p className="globe-legend__boundary-note">
+          Natural Earth · dashed: disputed/uncertain
+        </p>
       )}
       <ul
         id={listId}
