@@ -89,8 +89,10 @@ fails and retains platform diagnostics. Use the configured actor Docker daemon.
 Browser support is test-only. RGBA8 nearest textures hold signed little-endian
 Int16 components and mask bytes; the scalar shader manually interpolates and
 requires all four stencil masks valid, including zero-weight neighbors. A
-one-pixel RGBA8/depth target crops an independently rounded native viewport pixel,
-with a ray intersection against the actual tessellated mesh. Quantity/mask and
+full-resolution RGBA8 color-only target preserves the native projection (no depth
+or multisample attachments). The independently rounded viewport pixel has a ray
+intersection against the actual tessellated mesh. A cropped projection was
+rejected by numeric controls because float cancellation changed steep gradients. Quantity/mask and
 palette measurements use that same shader. Independent Python geographic
 bracketing checks the retained GPU hit coordinates. Palette checks use a known
 linear framebuffer background, no tone mapping or output conversion in the
@@ -105,7 +107,7 @@ cloud height and each regional scan interval remains visible.
 
 Allocations reserve encoded buffers, decoded/geometry and GPU bytes before
 candidate creation, including both generations during replacement, packed
-textures, geometry and diagnostic color/depth attachments. Conservative geometry
+textures, geometry and diagnostic color attachments (depth allocation is zero). Conservative geometry
 reservations exceed actual typed-buffer sizes; shader/material driver bookkeeping
 is not measurable by WebGL. The diagnostic envelope is additional 32 MiB decoded
 and 16 MiB GPU to preserve radar's 96/48 MiB budgets and its 0.40/0.17 opacity/hatch.

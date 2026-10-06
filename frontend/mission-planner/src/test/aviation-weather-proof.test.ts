@@ -21,7 +21,15 @@ const descriptor = {
   schema: 'aviation-weather-v1',
   representation: 'latlon-grid-v1',
   grid,
-  components: { t: { scale: 0.01, offset: 273.15, units: 'K', byte_size: 519840, sha256: '0'.repeat(64) } },
+  components: {
+    t: {
+      scale: 0.01,
+      offset: 273.15,
+      units: 'K',
+      byte_size: 519840,
+      sha256: '0'.repeat(64),
+    },
+  },
   mask: { byte_size: 259920, sha256: '0'.repeat(64) },
 } as Descriptor;
 describe('aviation native proof', () => {

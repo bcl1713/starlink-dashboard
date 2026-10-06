@@ -7,6 +7,8 @@ from pathlib import Path
 import signal
 import subprocess
 import sys
+import threading
+import time
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -33,13 +35,36 @@ def execute(arguments: list[str]) -> int:
     output.mkdir(parents=True, exist_ok=True)
     session = None
     child = None
+    stop_metrics = threading.Event()
+    monitor = None
+    measurements: list[dict] = []
     cleanup: dict = {'status': 'pending', 'killed_descendants': [], 'remaining': []}
     try:
         session = start_final_browser_session(_load_profile(Path(args.profile)), output/'platform', PlatformHealthExecutor(probe=_probe))
         (output/'platform.json').write_text(json.dumps({'metrics': session.metrics, 'webgl2': session.webgl2}, indent=2))
         command = ['node', str(ROOT/'tools/acceptance/aviation_weather_proof/journey.mjs'), '--session', session.cdp_url, '--origin', args.origin, '--artifacts', str(output)]
         (output/'journey-owner.json').write_text(json.dumps({'command':command,'parent_pid':os.getpid(),'session_cdp':session.cdp_url}))
+        browser_group = session._browser_group
+        (output/'browser-owner.json').write_text(json.dumps({'browser_pid':session._browser.pid,'browser_pgid':browser_group,'xvfb_pid':session._xvfb.pid,'cdp_url':session.cdp_url,'profile_directory':str(session.profile_dir),'display':session.display}))
         child = subprocess.Popen(command, start_new_session=True)
+        groups = {browser_group, child.pid, os.getpgid(session._xvfb.pid)}
+        def measure():
+            while not stop_metrics.is_set():
+                records=[]
+                for entry in Path('/proc').iterdir():
+                    if not entry.name.isdigit(): continue
+                    try:
+                        fields=(entry/'stat').read_text().rsplit(')',1)[1].split()
+                        group=int(fields[2])
+                        if group not in groups:continue
+                        # stat fields after comm: state=3, pgrp=5, utime=14,
+                        # stime=15, rss=24. RSS is resident pages.
+                        records.append({'pid':int(entry.name),'pgid':group,'cpu_seconds':(int(fields[11])+int(fields[12]))/os.sysconf('SC_CLK_TCK'),'rss_bytes':int(fields[21])*os.sysconf('SC_PAGE_SIZE')})
+                    except (OSError,ValueError,IndexError):continue
+                measurements.append({'monotonic':time.monotonic(),'processes':records})
+                stop_metrics.wait(.5)
+        monitor=threading.Thread(target=measure,name='aviation-owned-resource-monitor')
+        monitor.start()
         (output/'journey-process.json').write_text(json.dumps({'pid':child.pid,'pgid':child.pid}))
         return child.wait(timeout=600)
     except BaseException as error:
@@ -51,6 +76,9 @@ def execute(arguments: list[str]) -> int:
         (output/'browser-start-or-journey-failure.json').write_text(json.dumps({'error':str(error),'cleanup_error':getattr(error,'platform_cleanup_error','')}))
         raise
     finally:
+        stop_metrics.set()
+        if monitor is not None: monitor.join(timeout=5)
+        (output/'process-metrics.json').write_text(json.dumps(measurements,indent=2))
         try:
             if child is not None:
                 if child.poll() is None:

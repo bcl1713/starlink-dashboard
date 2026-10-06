@@ -177,6 +177,7 @@ async function install(url: string) {
   }
 }
 function dispose(restore = true) {
+  night(false);
   if (!installed) return;
   const old = installed;
   installed = undefined;
@@ -257,20 +258,15 @@ function sample(latitude: number, longitude: number) {
   const p = scalar.worldToLocal(hit.point.clone()),
     sampleLatitude = (Math.asin(p.y / p.length()) * 180) / Math.PI,
     sampleLongitude = (Math.atan2(-p.z, p.x) * 180) / Math.PI;
-  const camera = s.camera.clone();
-  const matrix = camera.projectionMatrix.elements;
-  // Exact one-pixel crop of the independently rounded native framebuffer pixel.
-  for (let col = 0; col < 4; col++) {
-    matrix[col * 4] = width * (matrix[col * 4] - ndc.x * matrix[col * 4 + 3]);
-    matrix[col * 4 + 1] =
-      height * (matrix[col * 4 + 1] - ndc.y * matrix[col * 4 + 3]);
-  }
-  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
-  camera.updateMatrixWorld();
-  const release = allocation.reserve(0, 16, 8); // RGBA8 color + DEPTH_COMPONENT24 renderbuffer, rounded 4B/pixel
-  const target = new THREE.WebGLRenderTarget(1, 1, {
-    depthBuffer: true,
+  // Retain the exact native projection. A one-pixel projection crop amplified
+  // float matrix cancellation enough to fail steep-gradient controls. A full
+  // RGBA8 color attachment WITHOUT depth is 8,294,400 bytes at 1920×1080 and
+  // fits the total budget alongside the current overlay. No MSAA attachments.
+  const release = allocation.reserve(0, 16, width * height * 4);
+  const target = new THREE.WebGLRenderTarget(width, height, {
+    depthBuffer: false,
     stencilBuffer: false,
+    samples: 0,
   });
   const oldTarget = s.gl.getRenderTarget(),
     oldOrder = scalar.renderOrder,
@@ -282,8 +278,8 @@ function sample(latitude: number, longitude: number) {
       .map((o) => [o.mesh, o.mesh.visible] as const);
   const read = () => {
     s.gl.setRenderTarget(target);
-    s.gl.render(s.scene, camera);
-    s.gl.readRenderTargetPixels(target, 0, 0, 1, 1, pixels);
+    s.gl.render(s.scene, s.camera);
+    s.gl.readRenderTargetPixels(target, x, y, 1, 1, pixels);
     return [...pixels];
   };
   try {
@@ -354,4 +350,28 @@ function sample(latitude: number, longitude: number) {
     s.invalidate();
   }
 }
-win.aviationProof = { install, dispose, sample, snapshot, look };
+const lights = new Map<THREE.Light, number>();
+function night(enabled: boolean) {
+  if (enabled)
+    state().scene.traverse((node) => {
+      if ((node as THREE.Light).isLight) {
+        const light = node as THREE.Light;
+        if (!lights.has(light)) lights.set(light, light.intensity);
+        light.intensity = 0;
+      }
+    });
+  else {
+    for (const [light, intensity] of lights) light.intensity = intensity;
+    lights.clear();
+  }
+  state().invalidate();
+}
+win.aviationProof = {
+  install,
+  dispose,
+  sample,
+  snapshot,
+  look,
+  night,
+  reserveControlGeometry: (bytes: number) => allocation.reserve(0, bytes, 0),
+};
