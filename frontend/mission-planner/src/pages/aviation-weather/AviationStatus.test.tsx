@@ -85,3 +85,28 @@ it('uses later active FM values instead of the expired initial TAF group', () =>
     screen.getByLabelText('Aviation weather status').textContent
   ).toContain('15 m/s');
 });
+
+it('labels fractional-millisecond timestamps explicitly as UTC without losing precision', () => {
+  const report = station();
+  report.properties.observed_at_ms = NOW - 60000 + 123;
+  const data = parseAviationFeatures(
+    { ...collection([report]), retrieved_at_ms: NOW + 123 },
+    'metar'
+  );
+  render(
+    <AviationStatus
+      view={{
+        ...emptyAviationView,
+        now: NOW + 123,
+        layers: {
+          ...emptyAviationView.layers,
+          metar: { state: 'current', data },
+        },
+      }}
+    />
+  );
+  const status = screen.getByLabelText('Aviation weather status');
+  expect(status.textContent).toContain('Observed 2026-10-06T11:59:00.123 UTC');
+  expect(status.textContent).toContain('retrieved 2026-10-06T12:00:00.123 UTC');
+  expect(status.textContent).not.toContain('.123Z');
+});

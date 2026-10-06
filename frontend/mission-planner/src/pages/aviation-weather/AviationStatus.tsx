@@ -8,7 +8,7 @@ import {
 import type { AviationLayer } from '@/services/aviation-weather';
 import './AviationWeather.css';
 const utc = (n: number | null) =>
-  n === null ? 'unknown' : new Date(n).toISOString().replace('.000Z', ' UTC');
+  n === null ? 'unknown' : new Date(n).toISOString().replace(/Z$/, ' UTC');
 const measured = (v: number | null, unit: string) =>
   v === null ? 'unknown' : `${Number(v.toFixed(1))} ${unit}`;
 function weatherSummary(
