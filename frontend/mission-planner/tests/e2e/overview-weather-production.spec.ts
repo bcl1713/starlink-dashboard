@@ -986,7 +986,10 @@ test('native coverage stays conservative at shared boundaries, fades and antimer
       evidence.push({ edge, fade, sample });
     }
     const fallback = await boundaryPixel(page, edge - epsilon, 1, true);
-    expect(hatchColumn(fallback)).toHaveLength(0);
+    // The complete atlas repeats across the antimeridian. Its bilinear mask
+    // retains uncertainty from the absent western neighbor during fallback.
+    if (edge === 180) expect(hatchColumn(fallback).length).toBeGreaterThan(0);
+    else expect(hatchColumn(fallback)).toHaveLength(0);
     if (edge === 0) {
       const absentFallback = await boundaryPixel(page, epsilon, 0.5, true);
       await writeFile(
