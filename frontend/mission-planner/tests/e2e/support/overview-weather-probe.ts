@@ -72,6 +72,17 @@ export async function installWeatherProbe(page: Page) {
       );
       controls.update(0);
       s.camera.updateMatrixWorld();
+      // Overview deliberately offsets its projection around DOM overlays.
+      // Sample the independent geographic landmark's projected position,
+      // rather than assuming it lies at the viewport center.
+      const landmark = s.camera.position
+        .clone()
+        .set(
+          2 * Math.cos(lat) * Math.cos(lon),
+          2 * Math.sin(lat),
+          -2 * Math.cos(lat) * Math.sin(lon)
+        )
+        .project(s.camera);
       const lights: Array<{ light: Light; intensity: number }> = [];
       if (night)
         s.scene.traverse((node) => {
@@ -86,8 +97,8 @@ export async function installWeatherProbe(page: Page) {
         const gl = s.gl.getContext();
         const pixels = new Uint8Array(12 * 12 * 4);
         gl.readPixels(
-          Math.floor(gl.drawingBufferWidth / 2) - 6,
-          Math.floor(gl.drawingBufferHeight / 2) - 6,
+          Math.floor((landmark.x / 2 + 0.5) * gl.drawingBufferWidth) - 6,
+          Math.floor((landmark.y / 2 + 0.5) * gl.drawingBufferHeight) - 6,
           12,
           12,
           gl.RGBA,
