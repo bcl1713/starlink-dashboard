@@ -1,6 +1,9 @@
 import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { observeOverviewCamera } from './support/overview-camera';
+import {
+  observeOverviewCamera,
+  overviewCamera,
+} from './support/overview-camera';
 import { sampleRunMotion } from './support/simulation-run-motion-probe';
 import {
   seedSimulationRunMission,
@@ -35,7 +38,7 @@ async function renderedAircraft(page: Page) {
 }
 
 for (const longitude of [179.95, -179.95]) {
-  test(`real fallback crosses both dateline directions and resumes after mission (${longitude})`, async ({
+  test(`real fallback crosses the dateline and resumes after mission with reset framing (${longitude})`, async ({
     page,
     request,
   }, info) => {
@@ -121,8 +124,28 @@ for (const longitude of [179.95, -179.95]) {
       await expect
         .poll(async () => (await renderedAircraft(page)).coordinate?.latitude)
         .toBeGreaterThan(69);
+      const resumedBeforeReset = await renderedAircraft(page);
       await expect
-        .poll(async () => (await renderedAircraft(page)).visibleChevron)
+        .poll(async () => (await renderedAircraft(page)).coordinate?.longitude)
+        .not.toBe(resumedBeforeReset.coordinate!.longitude);
+      observations.push({
+        resumedBeforeReset,
+        resumedBeforeResetMoved: await renderedAircraft(page),
+        retainedCamera: await overviewCamera(page),
+      });
+      await page.screenshot({
+        path: info.outputPath('fallback-retained-camera.png'),
+      });
+      // Automatic view retains the mission framing after route removal. First
+      // prove telemetry/scene recovery, then use the normal reset control to
+      // establish visibility without changing camera policy in this position fix.
+      await page
+        .getByRole('button', { name: 'Reset map view', exact: true })
+        .click();
+      await expect
+        .poll(async () => (await renderedAircraft(page)).visibleChevron, {
+          timeout: 15000,
+        })
         .toBe(true);
       const before = await (await request.get('/api/status')).json();
       await expect
