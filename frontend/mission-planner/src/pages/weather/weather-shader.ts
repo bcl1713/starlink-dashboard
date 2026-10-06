@@ -39,7 +39,7 @@ export const weatherFragmentShader = `
         // Eligible adjacent slots remove the fallback seam. Their absence
         // masks remain conservative within one texel of the shared boundary.
         for (int j=0; j<8; j++) {
-          if (i==j || detailValid[j]<0.5 || detailFades[j]<0.999) continue;
+          if (i==j || detailValid[j]<0.5) continue;
           vec4 c = detailBounds[j];
           bool sameRow = abs(c.y-b.y)<0.000001 && abs(c.w-b.w)<0.000001;
           bool sameCol = abs(c.x-b.x)<0.000001 && abs(c.z-b.z)<0.000001;
@@ -47,10 +47,12 @@ export const weatherFragmentShader = `
           bool right = sameRow && (abs(c.x-b.z)<0.000001 || abs(c.x-b.z+1.0)<0.000001);
           bool top = sameCol && abs(c.w-b.y)<0.000001;
           bool bottom = sameCol && abs(c.y-b.w)<0.000001;
-          if (left) weights.x=1.0;
-          if (right) weights.y=1.0;
-          if (top) weights.z=1.0;
-          if (bottom) weights.w=1.0;
+          if (detailFades[j]>=0.999) {
+            if (left) weights.x=1.0;
+            if (right) weights.y=1.0;
+            if (top) weights.z=1.0;
+            if (bottom) weights.w=1.0;
+          }
           if ((left && distances.x<edge.x) || (right && distances.y<edge.x) || (top && distances.z<edge.y) || (bottom && distances.w<edge.y)) {
             vec2 nearUv=uv;
             if(left && c.z>b.x+0.5)nearUv.x+=1.0;

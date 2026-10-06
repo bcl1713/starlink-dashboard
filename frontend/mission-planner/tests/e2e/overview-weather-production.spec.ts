@@ -546,14 +546,17 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
   await expect
     .poll(
       async () => {
-        const sample = await weatherPixel(page, 33, -76, true, 3);
+        const sample = await weatherPixel(page, 32, -75, true, 3);
         return sample.withWeather[1] - sample.withWeather[2];
       },
       { timeout: 30000 }
     )
     .toBeGreaterThan(15);
-  const storm = await weatherPixel(page, 33, -76, true, 3);
+  // Sample off the populated route: route/aircraft color must not satisfy the
+  // precipitation assertion. Overlay visibility is retained for comparison.
+  const storm = await weatherPixel(page, 32, -75, true, 3);
   expect(storm.withWeather[1]).toBeGreaterThan(storm.withWeather[2] + 15);
+  expect(storm.withWeather[1] - storm.withoutWeather[1]).toBeGreaterThan(15);
   await aim(page, 36, -76);
   await page.waitForTimeout(1000);
   const absent = await weatherPixel(page, 36, -76, true, 3);
