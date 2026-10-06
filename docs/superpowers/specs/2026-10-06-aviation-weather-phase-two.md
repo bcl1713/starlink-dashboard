@@ -1,6 +1,6 @@
 # Aviation weather Phase 2: GFS winds and temperature
 
-Status: proposed for owner review; implementation has not started.
+Status: approved by the owner in this session; implementation has not started.
 
 For [issue 290](https://github.com/bcl1713/starlink-dashboard/issues/290),
 extend the merged Phase 1 aviation weather with global modeled winds and
@@ -228,10 +228,9 @@ Acceptance must demonstrate:
 
 ## Review and next step
 
-Review this scope and two-PR split before writing implementation plans. The
-first implementation plan must specify worker packaging/IPC, disk leases and
-failure recovery, settings compatibility, descriptor schema, exact file map and
-the smallest meaningful red/green contract checks. The second must specify FL
-derivation, rendering reservations and integrated browser acceptance. Neither
-the old diagnostic proof nor approval of this draft constitutes completion of
-Phase 2.
+The owner approved this scope and two-PR split. The first implementation plan
+must specify worker packaging/IPC, disk leases and failure recovery, settings
+compatibility, descriptor schema, exact file map and the smallest meaningful
+red/green contract checks. The second must specify FL derivation, rendering
+reservations and integrated browser acceptance. Neither the old diagnostic proof
+nor approval of this spec constitutes completion of Phase 2.
