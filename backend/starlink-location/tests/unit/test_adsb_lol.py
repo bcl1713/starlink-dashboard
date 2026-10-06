@@ -3,6 +3,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+
 from app.services.adsb_lol import AdsbLolProvider, AdsbProviderError, normalize_contact
 
 NOW = 1791028800000.0

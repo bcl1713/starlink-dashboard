@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 import pytest
+
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.overview_adsb_traffic import AdsbTrafficService

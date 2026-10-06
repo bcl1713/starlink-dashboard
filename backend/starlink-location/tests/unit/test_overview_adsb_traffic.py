@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from app.models.overview_adsb import AdsbContact
 from app.services.adsb_lol import AdsbProviderError, AdsbProviderResult
 from app.services.overview_adsb_settings import AdsbSettingsStore
