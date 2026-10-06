@@ -80,6 +80,8 @@ BACKEND_COMMANDS: list[Command] = [
             "run",
             "--with-requirements",
             str(ROOT / "backend/starlink-location/requirements-dev.txt"),
+            "--with-requirements",
+            str(ROOT / "backend/starlink-location/requirements-gfs.txt"),
             "pytest",
             "tests/",
             "-q",

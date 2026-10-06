@@ -1,0 +1,35 @@
+services:
+  starlink-location:
+    volumes:
+      - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/gfs-weather:/acceptance:ro
+      - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/aviation-weather:/aviation-acceptance:ro
+      - gfs_products:/app/data/gfs:ro
+      - gfs_mailbox:/app/data/gfs-mailbox
+    environment:
+      GFS_ARTIFACT_PATH: /app/data/gfs
+      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
+  gfs-worker:
+    image: ${WEATHER_ACCEPTANCE_PROJECT}-worker:${ACCEPTANCE_CANDIDATE_SHA}
+    build:
+      context: ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/backend/starlink-location
+      dockerfile: Dockerfile.gfs
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    command: [python, /acceptance/source_fixture.py]
+    user: "1000:1000"
+    cpus: 1.0
+    mem_limit: 1g
+    init: true
+    stop_grace_period: 15s
+    environment:
+      PYTHONPATH: /app
+    volumes:
+      - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/gfs-weather:/acceptance:ro
+      - ${WEATHER_ACCEPTANCE_CONTROL_DIR}:/control
+      - ${WEATHER_ACCEPTANCE_CAPTURE_DIR}:/capture:ro
+      - gfs_products:/app/data/gfs
+      - gfs_mailbox:/app/data/gfs-mailbox
+      - settings:/app/data/settings:ro
+volumes:
+  gfs_products:
+  gfs_mailbox:
