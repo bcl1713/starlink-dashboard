@@ -6,7 +6,6 @@ import json
 import re
 import threading
 import time
-import urllib.request
 import xml.etree.ElementTree as ET
 from collections import deque
 from datetime import datetime, timezone
@@ -14,7 +13,9 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import quote, urlsplit
 
+from .exchange import open_exchange
 from .model import CaptureSet, Snapshot, digest, relative, write_capture
+from .storage import discard, publish, write_chunk
 
 MIB = 1024**2
 HOSTS = {
@@ -46,11 +47,6 @@ def approved(url):
     return url
 
 
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise ValueError("redirect refused; capture an explicit approved URL")
-
-
 class Downloader:
     active_limit = 2
 
@@ -66,7 +62,9 @@ class Downloader:
     ):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
-        self.opener = opener or urllib.request.build_opener(NoRedirect()).open
+        self.opener = opener or (
+            lambda url, timeout: open_exchange(url, timeout=timeout, record=self.event)
+        )
         self.clock, self.sleep = clock, sleep
         self.object_limit, self.storage_limit = object_limit, storage_limit
         self.attempts = deque()
@@ -82,8 +80,13 @@ class Downloader:
                     self.attempts.append(event["monotonic"])
 
     def event(self, **values):
-        with self.events.open("a") as output:
-            output.write(json.dumps({"utc": time.time(), **values}) + "\n")
+        with self.events.open("ab") as output:
+            write_chunk(
+                self.root,
+                output,
+                (json.dumps({"utc": time.time(), **values}) + "\n").encode(),
+                self.storage_limit,
+            )
 
     def get(self, url, filename, *, limit=None):
         approved(url)
@@ -111,20 +114,20 @@ class Downloader:
                     with self.opener(url, timeout=45) as response, temporary.open(
                         "wb"
                     ) as output:
-                        used = sum(
-                            p.stat().st_size
-                            for p in self.root.rglob("*")
-                            if p.is_file()
-                        )
                         size = 0
-                        while chunk := response.read(64 * 1024):
-                            size += len(chunk)
-                            if self.clock() - started > 45:
+                        while True:
+                            if self.clock() - started >= 45:
                                 raise TimeoutError("capture deadline")
-                            if size > maximum or used + size > self.storage_limit:
+                            chunk = response.read(64 * 1024)
+                            if self.clock() - started >= 45:
+                                raise TimeoutError("capture deadline")
+                            if not chunk:
+                                break
+                            size += len(chunk)
+                            if size > maximum:
                                 raise ValueError("download storage limit")
-                            output.write(chunk)
-                    temporary.replace(target)
+                            write_chunk(self.root, output, chunk, self.storage_limit)
+                    publish(temporary, target, self.root)
                     self.event(
                         event="complete",
                         url=url,
@@ -147,11 +150,18 @@ class Downloader:
                         ) from error
                     self.sleep(delay)
                 finally:
-                    temporary.unlink(missing_ok=True)
+                    discard(temporary, self.root)
         raise RuntimeError("capture attempts exhausted")
 
 
-def decompress(source: Path, destination: Path, limit=256 * MIB):
+def decompress(
+    source: Path,
+    destination: Path,
+    limit=256 * MIB,
+    *,
+    storage_limit=1024 * MIB,
+    storage_root=None,
+):
     temporary = destination.with_suffix(destination.suffix + ".partial")
     try:
         with gzip.open(source, "rb") as stream, temporary.open("wb") as output:
@@ -160,10 +170,12 @@ def decompress(source: Path, destination: Path, limit=256 * MIB):
                 total += len(chunk)
                 if total > limit:
                     raise ValueError("decompression limit")
-                output.write(chunk)
-        temporary.replace(destination)
+                write_chunk(
+                    storage_root or destination.parent, output, chunk, storage_limit
+                )
+        publish(temporary, destination, storage_root or destination.parent)
     finally:
-        temporary.unlink(missing_ok=True)
+        discard(temporary, storage_root or destination.parent)
     return destination
 
 

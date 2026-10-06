@@ -135,9 +135,9 @@ def write_capture(captures: CaptureSet) -> Path:
             entries.append({"key": asdict(key), "pair": entry})
         data["tiles"][identity] = entries
     path = captures.root / "capture.json"
-    temporary = path.with_suffix(".partial")
-    temporary.write_text(json.dumps(data, indent=2) + "\n")
-    temporary.replace(path)
+    from .storage import atomic_write
+
+    atomic_write(path, (json.dumps(data, indent=2) + "\n").encode(), root=captures.root)
     return path
 
 

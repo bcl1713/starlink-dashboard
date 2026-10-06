@@ -91,8 +91,10 @@ Synthetic tests independently verify geographic lookup, mask polarity, mixed
 identity rejection and texture restoration after both success and failure.
 Report tests reject incomplete costs, missing precipitation, mismatched camera
 conditions or timestamps, unverified hashes, synthetic substitution and failed
-cleanup/restoration. Research suite: 67 passed; frontend acceptance selection: 9
-passed. The new production plan covers remaining behavior and final-SHA
+cleanup/restoration, missing detail/opacity variants and duplicate rows.
+Research suite after review fixes: 76 passed; frontend acceptance selection: 9
+passed. Absolute request deadlines and shared disk limits also have interruption
+and concurrency regressions. The production plan covers remaining final-SHA
 acceptance.
 
 ## Retained evidence and cleanup

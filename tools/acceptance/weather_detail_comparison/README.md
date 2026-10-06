@@ -7,9 +7,10 @@ for absent/unknown observations and 0 for valid observations, including covered
 zero rain. Raw rain-rate palette thresholds are recorded in capture metadata;
 they do not imply equivalence to RainViewer colors.
 
-Create an isolated Python 3.11 environment using `requirements.txt`, plus
-`pytest-asyncio` for existing acceptance tests. Use an ignored task-owned output
-directory, preserve proxy/CA settings and use explicit wall-clock limits.
+Use Linux for process ownership and file locking. Create an isolated Python 3.11
+environment using `requirements.txt`, plus `pytest-asyncio` for existing
+acceptance tests. Use an ignored task-owned output directory, preserve proxy/CA
+settings and use explicit wall-clock limits.
 
 ```bash
 PYTHONPATH=tools timeout --kill-after=10s 5m python -m \
@@ -29,7 +30,10 @@ PYTHONPATH=tools timeout --kill-after=10s 15m python -m \
 ```
 
 Detail capture checkpoints after each complete pair and respects 30 attempts per
-rolling minute, two active requests and 45-second request deadlines. It uses
+rolling minute, two active requests and absolute 45-second exchange deadlines.
+Each network exchange runs in an owned worker, cancelled/reaped on deadline and
+terminated when its capture parent dies. Shared locked accounting includes
+concurrent downloads, decompression, PNGs and manifests within 1 GiB. It uses
 provider frames within five minutes of each raw observation. Coverage capture
 time is recorded separately; RainViewer's current mask has no historical
 observation timestamp. Clear or unmatched data cannot establish better detail.
@@ -63,3 +67,15 @@ The owner wrapper reaps its child group on timeout/signals. Compose cleanup
 removes only this project's containers, networks and disposable volumes, then
 verifies both ports. A cleanup failure fails the run. Before handoff, verify
 recorded host PIDs as well; preserve evidence but stop every runtime resource.
+
+Validate retained evidence after replay:
+
+```bash
+PYTHONPATH=tools python -m acceptance.weather_detail_comparison.report \
+  /absolute/candidate-evidence /absolute/capture-directory
+```
+
+The report requires every planned source/view/day-night/detail/opacity variant
+and rejects duplicate rows. A complete report still does not verify production
+refinement. Its legacy `decoded_png_bytes` field records compressed PNG traffic;
+owned decoded allocation has a separate byte measurement.

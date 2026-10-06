@@ -36,10 +36,15 @@ def evidence():
                 }
             )
     rows = [
-        dict(row, view=view, night=night)
+        dict(row, view=view, night=night, level=level, opacity=opacity)
         for row in rows
         for view in ("desktop", "fullscreen", "mobile")
         for night in (False, True)
+        for level, opacity in (
+            [(2, 0.72), (6, 0.4), (5, 0.4), (7, 0.4), (6, 0.35), (6, 0.45)]
+            if view == "desktop"
+            else [(2, 0.72), (6, 0.4)]
+        )
     ]
     return {
         "browser": {
@@ -177,4 +182,18 @@ def test_invalid_resources_are_inconclusive(field, value):
 def test_failed_shader_restoration_is_inconclusive():
     data = evidence()
     data["browser"]["restoreFailure"] = "disposed material was not restored"
+    assert summarize(data)["status"] == "inconclusive"
+
+
+def test_baseline_only_comparison_is_inconclusive():
+    data = evidence()
+    data["browser"]["records"] = [
+        dict(row, level=2, opacity=0.72) for row in data["browser"]["records"]
+    ]
+    assert summarize(data)["status"] == "inconclusive"
+
+
+def test_duplicate_variant_rows_are_inconclusive():
+    data = evidence()
+    data["browser"]["records"].append(deepcopy(data["browser"]["records"][0]))
     assert summarize(data)["status"] == "inconclusive"

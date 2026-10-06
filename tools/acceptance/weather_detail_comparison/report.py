@@ -82,6 +82,24 @@ def summarize(evidence: dict) -> dict:
             problems.append(
                 f"{region}: desktop/fullscreen/mobile day/night coverage incomplete"
             )
+    for region in ("mrms", "opera"):
+        for source in ("rainviewer", region):
+            for view, night in expected_views:
+                variants = [(2, 0.72), (6, 0.4)]
+                if view == "desktop":
+                    variants += [(5, 0.4), (7, 0.4), (6, 0.35), (6, 0.45)]
+                observed = [
+                    (r.get("level"), r.get("opacity"))
+                    for r in records
+                    if r.get("region") == region
+                    and r.get("source") == source
+                    and r.get("view") == view
+                    and r.get("night") == night
+                ]
+                if len(observed) != len(variants) or set(observed) != set(variants):
+                    problems.append(
+                        f"{region}/{source}/{view}: variant matrix incomplete or duplicated"
+                    )
     numeric = (
         "pngRequests",
         "pngBytes",

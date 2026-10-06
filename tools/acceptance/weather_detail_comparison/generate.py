@@ -1,6 +1,7 @@
 """Observed-rate adapters and bounded, mask-preserving regional XYZ tiles."""
 
 import argparse
+import io
 import json
 import math
 import resource
@@ -177,6 +178,8 @@ def render(
     snapshot: Snapshot,
     keys: tuple[TileKey, ...],
     destination: Path,
+    *,
+    storage_root=None,
 ):
     pairs = {}
     if len(set(keys)) > 40:
@@ -202,15 +205,15 @@ def render(
         directory = destination / snapshot.identity / str(key.z) / str(key.x)
         directory.mkdir(parents=True, exist_ok=True)
         paths = [directory / f"{key.y}-{kind}.png" for kind in ("radar", "absence")]
+        from .storage import atomic_write
+
         for path, pixels in zip(paths, (rgba, absence)):
-            Image.fromarray(pixels).save(path)
-            if path.stat().st_size > 2 * MIB:
+            encoded = io.BytesIO()
+            Image.fromarray(pixels).save(encoded, format="PNG")
+            data = encoded.getvalue()
+            if len(data) > 2 * MIB:
                 raise ValueError("PNG limit")
-        if (
-            sum(p.stat().st_size for p in destination.rglob("*") if p.is_file())
-            > 1024 * MIB
-        ):
-            raise ValueError("sample storage limit")
+            atomic_write(path, data, root=storage_root or destination)
         pairs[key] = TilePair(snapshot.identity, *paths, *(digest(p) for p in paths))
     return pairs
 
