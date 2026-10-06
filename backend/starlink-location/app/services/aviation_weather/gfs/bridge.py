@@ -179,11 +179,10 @@ class GfsBridge:
             raise WeatherUnavailable() from None
 
     def _current(self, settings, now_ms):
-        if (
-            self._closed
-            or not self._valid_clock(now_ms)
-            or not self.mailbox.healthy(now_ms)
-        ):
+        if self._closed or not self._valid_clock(now_ms):
+            return ()
+        self.mailbox.observe_clock_locked(now_ms)
+        if not self.mailbox.healthy(now_ms):
             return ()
         pointer = read_json(self.store.root / "current.json")
         if pointer["revision"] != settings.revision:

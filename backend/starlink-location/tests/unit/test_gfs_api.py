@@ -126,6 +126,101 @@ async def test_original_freshness_and_expiry_are_not_renewed(tmp_path):
     await service.aclose()
 
 
+@pytest.mark.parametrize("expiry_request", ["catalog", "payload"])
+async def test_restart_and_clock_rollback_cannot_revive_expired_payloads(
+    tmp_path, expiry_request
+):
+    from app.services.aviation_weather.gfs.bridge import GfsBridge
+
+    app, service, bridge, products, enabled, now, _source = runtime(tmp_path)
+    with other_owner(bridge.mailbox.root / "worker.lock"):
+        owner = uuid.uuid4().hex
+        bridge.mailbox.heartbeat(enabled.revision, owner, now[0])
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app), base_url="http://test"
+        ) as client:
+            model = (await bridge.products(enabled, now[0]))[0]
+            path = model.payload.path
+            binary = path.replace("grid.json", "u.bin")
+            etag = (await client.get(binary)).headers["etag"]
+            now[0] = RUN + 18 * 3600000
+            bridge.mailbox.heartbeat(enabled.revision, owner, now[0])
+            if expiry_request == "catalog":
+                assert (await bridge.products(enabled, now[0]))[
+                    0
+                ].state == "unavailable"
+            else:
+                assert (await client.get(binary)).status_code == 404
+            await bridge.aclose()
+            now[0] = RUN + 6 * 3600000
+            bridge = GfsBridge(
+                service.store,
+                products.root,
+                products.mailbox,
+                clock=lambda: now[0] / 1000,
+            )
+            app.state.aviation_gfs_bridge = bridge
+            replacement = uuid.uuid4().hex
+            bridge.mailbox.worker_started(replacement, now[0])
+            bridge.mailbox.heartbeat(enabled.revision, replacement, now[0])
+            # Direct URLs must fail even before a catalog poll rejects demand.
+            for requested, headers in (
+                (path, {}),
+                (binary, {}),
+                (binary, {"If-None-Match": etag}),
+            ):
+                denied = await client.get(requested, headers=headers)
+                assert denied.status_code == 404
+            assert (await bridge.products(enabled, now[0]))[0].state == "unavailable"
+    await bridge.aclose()
+    await service.aclose()
+
+
+async def test_prepared_response_rechecks_persistent_clock_after_restart(tmp_path):
+    from app.services.aviation_weather.gfs.bridge import GfsBridge
+
+    _app, service, bridge, products, enabled, now, _source = runtime(tmp_path)
+    with other_owner(bridge.mailbox.root / "worker.lock"):
+        bridge.mailbox.heartbeat(enabled.revision, uuid.uuid4().hex, RUN)
+        descriptor = products.read_current(enabled.gfs_selection, RUN)[0]
+        response = await bridge.response(descriptor.instance_id, "u.bin", enabled, RUN)
+        assert response is not None
+        observer = GfsBridge(service.store, products.root, products.mailbox)
+        await observer.products(enabled, RUN + 18 * 3600000)
+        await observer.aclose()
+        await bridge.aclose()
+        replacement = GfsBridge(
+            service.store,
+            products.root,
+            products.mailbox,
+            clock=lambda: now[0] / 1000,
+        )
+        response.bridge = replacement
+        worker = uuid.uuid4().hex
+        replacement.mailbox.worker_started(worker, RUN)
+        replacement.mailbox.heartbeat(enabled.revision, worker, RUN)
+        messages = []
+
+        async def receive():
+            return {"type": "http.disconnect"}
+
+        async def send(message):
+            messages.append(message)
+
+        await response(
+            {
+                "type": "http",
+                "method": "GET",
+                "headers": [(b"if-none-match", response.headers["etag"].encode())],
+            },
+            receive,
+            send,
+        )
+        assert messages[0]["status"] == 404
+        await replacement.aclose()
+    await service.aclose()
+
+
 async def test_disabled_obsolete_and_unknown_paths_have_no_payload(tmp_path):
     app, service, bridge, _products, enabled, now, _source = runtime(tmp_path)
     with other_owner(bridge.mailbox.root / "worker.lock"):

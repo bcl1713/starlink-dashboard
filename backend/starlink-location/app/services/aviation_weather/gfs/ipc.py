@@ -28,16 +28,26 @@ class GfsMailbox:
     def _save(self, data):
         atomic_json(self.root / "demand.json", data)
 
+    def observe_clock_locked(self, now_ms: int):
+        # All catalog and payload admission shares this durable high-water
+        # mark. Callers hold the control lock, including ASGI's second check.
+        data = self._demand()
+        if now_ms < data["last_ms"]:
+            if data["owners"]:
+                data["owners"] = {}
+                self._save(data)
+            raise ValueError("Clock rollback invalidates scientific admission")
+        if now_ms > data["last_ms"]:
+            data["last_ms"] = now_ms
+            self._save(data)
+        return data
+
     def renew(self, owner: str, settings, now_ms: int) -> None:
         if not re.fullmatch(r"[a-f0-9]{32}", owner):
             raise ValueError("Invalid API startup identity")
         with control_lock(self.root, timeout=1):
             current = self.settings.get()
-            data = self._demand()
-            if now_ms < data["last_ms"]:
-                data["owners"] = {}
-                self._save(data)
-                raise ValueError("Clock rollback invalidates scientific demand")
+            data = self.observe_clock_locked(now_ms)
             if settings != current:
                 raise ValueError("Obsolete scientific settings revision")
             if data["revision"] != settings.revision:
