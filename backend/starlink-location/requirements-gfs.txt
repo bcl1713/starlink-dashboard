@@ -3,3 +3,6 @@ eccodes==2.49.0
 eccodeslib==2.49.0.30
 eckitlib==2.3.0.30
 numpy==2.4.6
+pydantic==2.13.5
+httpx==0.28.1
+filelock==4.0.12

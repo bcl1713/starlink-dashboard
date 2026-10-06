@@ -1,0 +1,19 @@
+FROM python:3.11-slim AS builder
+WORKDIR /app
+COPY requirements-gfs.txt .
+RUN pip install --user --no-cache-dir -r requirements-gfs.txt
+
+FROM python:3.11-slim
+WORKDIR /app
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/data/gfs/products /app/data/gfs/staging /app/data/gfs-mailbox/leases && \
+    chown -R appuser:appuser /app/data
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+COPY --chown=appuser:appuser app/ ./app/
+ARG ACCEPTANCE_CANDIDATE_SHA
+RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
+LABEL org.opencontainers.image.revision=$ACCEPTANCE_CANDIDATE_SHA
+ENV PATH=/home/appuser/.local/bin:$PATH \
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+USER 1000:1000
+CMD ["python", "-m", "app.services.aviation_weather.gfs.worker"]

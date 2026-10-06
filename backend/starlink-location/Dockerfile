@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create non-root user for security before copying dependencies into its home.
 # COPY --chown avoids a slow recursive chown over the installed Python package tree.
 RUN useradd -m -u 1000 appuser
+RUN mkdir -p /app/data/gfs/products /app/data/gfs/staging /app/data/gfs-mailbox/leases && \
+    chown -R appuser:appuser /app/data/gfs /app/data/gfs-mailbox
 
 # Copy Python dependencies from builder with final ownership already set
 COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local

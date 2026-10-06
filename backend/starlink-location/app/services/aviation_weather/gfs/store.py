@@ -76,10 +76,19 @@ def occupied(path):
 
 class GfsProductStore:
     def __init__(
-        self, root: Path, mailbox: Path, settings, *, readonly=False, clock=time.time
+        self,
+        root: Path,
+        mailbox: Path,
+        settings,
+        *,
+        readonly=False,
+        clock=time.time,
+        require_demand=False,
     ):
         self.root, self.mailbox, self.settings = Path(root), Path(mailbox), settings
         self.clock = clock
+        self.require_demand = require_demand
+        self.demand_check = None
         self.mailbox.mkdir(parents=True, exist_ok=True)
         (self.mailbox / "leases").mkdir(exist_ok=True)
         if not readonly:
@@ -131,6 +140,19 @@ class GfsProductStore:
             settings = self.settings.get()
             now = int(self.clock() * 1000)
             target = now + settings.gfs_selection.horizon_hours * 3600000
+            if self.require_demand:
+                if self.demand_check is not None and self.demand_check(now) is None:
+                    raise ValueError("Scientific monotonic demand expired")
+                demand = read_json(self.mailbox / "demand.json")
+                if (
+                    demand["revision"] != revision
+                    or now < demand["last_ms"]
+                    or not any(
+                        owner["renewed_ms"] <= now < owner["expires_ms"]
+                        for owner in demand["owners"].values()
+                    )
+                ):
+                    raise ValueError("Scientific demand expired before publication")
             if (
                 settings.revision != revision
                 or not (settings.winds or settings.temperature)

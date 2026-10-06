@@ -5,11 +5,10 @@ import os
 import tempfile
 from pathlib import Path
 
-from filelock import FileLock
-from pydantic import Field
-
 from app.models.aviation_grid import GfsSelection
 from app.models.aviation_weather import Contract
+from filelock import FileLock
+from pydantic import Field
 
 
 class AviationSettings(Contract):
@@ -38,8 +37,9 @@ class AviationSettingsUpdate(Contract):
 
 
 class AviationSettingsStore:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, *, readonly=False):
         self.path = path
+        self.readonly = readonly
         self.lock = FileLock(f"{path}.lock")
 
     def _read(self):
@@ -49,11 +49,15 @@ class AviationSettingsStore:
             return AviationSettings()
 
     def get(self):
+        if self.readonly:
+            return self._read()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.lock:
             return self._read()
 
     def update(self, changes: dict):
+        if self.readonly:
+            raise RuntimeError("Scientific worker settings are read-only")
         changes = AviationSettingsUpdate.model_validate(changes).changes()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.lock:
