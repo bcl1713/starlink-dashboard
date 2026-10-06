@@ -134,13 +134,38 @@ export async function installWeatherProbe(page: Page) {
         .unproject(s.camera)
         .sub(s.camera.position)
         .normalize();
-      const along = s.camera.position.dot(ray);
-      const point = s.camera.position
-        .clone()
-        .addScaledVector(
-          ray,
-          -along - Math.sqrt(along * along - s.camera.position.lengthSq() + 4)
-        );
+      // Intersect the actual tessellated sphere, rather than an ideal sphere:
+      // their small depth difference matters for sub-texel seam samples.
+      const positions = mesh.geometry.getAttribute('position');
+      const indices = mesh.geometry.getIndex()!;
+      let nearest = Infinity;
+      for (let i = 0; i < indices.count; i += 3) {
+        const a = s.camera.position
+          .clone()
+          .fromBufferAttribute(positions, indices.getX(i));
+        const b = s.camera.position
+          .clone()
+          .fromBufferAttribute(positions, indices.getX(i + 1));
+        const c = s.camera.position
+          .clone()
+          .fromBufferAttribute(positions, indices.getX(i + 2));
+        const edge1 = b.sub(a),
+          edge2 = c.sub(a);
+        const cross = ray.clone().cross(edge2);
+        const determinant = edge1.dot(cross);
+        if (Math.abs(determinant) < 1e-9) continue;
+        const offset = s.camera.position.clone().sub(a);
+        const u = offset.dot(cross) / determinant;
+        if (u < 0 || u > 1) continue;
+        const q = offset.cross(edge1);
+        const v = ray.dot(q) / determinant;
+        if (v < 0 || u + v > 1) continue;
+        const distance = edge2.dot(q) / determinant;
+        if (distance > 0) nearest = Math.min(nearest, distance);
+      }
+      if (!Number.isFinite(nearest))
+        throw new Error('Sample misses native weather geometry');
+      const point = s.camera.position.clone().addScaledVector(ray, nearest);
       const sampleLongitude = (Math.atan2(-point.z, point.x) * 180) / Math.PI;
       const lights: Array<{ light: Light; intensity: number }> = [];
       if (night)

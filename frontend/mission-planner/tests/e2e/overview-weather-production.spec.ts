@@ -989,6 +989,16 @@ test('native coverage stays conservative at shared boundaries, fades and antimer
     expect(hatchColumn(fallback)).toHaveLength(0);
     if (edge === 0) {
       const absentFallback = await boundaryPixel(page, epsilon, 0.5, true);
+      await writeFile(
+        info.outputPath('boundary-diagnostic.json'),
+        JSON.stringify(
+          { edge, epsilon, evidence, fallback, absentFallback },
+          null,
+          2
+        )
+      );
+      expect(absentFallback.sampleLongitude).toBeGreaterThan(0);
+      expect(absentFallback.sampleLongitude).toBeLessThan(epsilon * 4);
       expect(hatchColumn(absentFallback).length).toBeGreaterThan(0);
       evidence.push({ edge, absentFallback });
     }
@@ -1062,9 +1072,11 @@ async function boundaryPixel(
       const originalFades = [...uniforms.detailFades.value];
       const originalOpacity = uniforms.radarOpacity.value;
       const u = (((longitude / 360 + 0.5) % 1) + 1) % 1;
-      const first = target.__weatherPixel(10, longitude, true, 3);
-      const correction =
-        ((first.sampleLongitude - longitude + 540) % 360) - 180;
+      let aimLongitude = longitude;
+      for (let i = 0; i < 2; i++) {
+        const first = target.__weatherPixel(10, aimLongitude, true, 3);
+        aimLongitude -= ((first.sampleLongitude - longitude + 540) % 360) - 180;
+      }
       try {
         // Observe mask output alone, without replacing textures or the shader.
         uniforms.radarOpacity.value = 0;
@@ -1075,7 +1087,7 @@ async function boundaryPixel(
             if (!(u >= b.x && u < b.z && 0.4721 >= b.y && 0.4721 < b.w))
               uniforms.detailValid.value[i] = 0;
           });
-        return target.__weatherPixel(10, longitude - correction, true, 3);
+        return target.__weatherPixel(10, aimLongitude, true, 3);
       } finally {
         uniforms.detailValid.value.set(originalValid);
         uniforms.detailFades.value.set(originalFades);
