@@ -1,3 +1,4 @@
+import { settledOverviewCamera } from './support/overview-camera';
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import {
@@ -114,8 +115,14 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   }
   // Both antimeridian sides and poles must distinguish absence of coverage
   // from precipitation. Night pixels remove terrain lighting from the test.
+  const westSeam = await weatherPixel(overview, 0, -179, true);
+  const centerDelta = westSeam.withWeather
+    .slice(0, 3)
+    .map((value, index) => value - westSeam.withoutWeather[index]);
+  expect(Math.max(...centerDelta) - Math.min(...centerDelta)).toBeLessThan(12);
+  pixels.push({ lat: 0, lon: -179, ...westSeam });
   for (const [lat, lon] of [
-    [0, -179],
+    [0, -170],
     [88, 45],
     [-88, 45],
   ]) {
@@ -136,6 +143,37 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
     expect(hatchPixels).toBeLessThan(144);
     pixels.push({ lat, lon, hatchPixels, ...sample });
   }
+  const cameraBefore = await settledOverviewCamera(overview);
+  const box = (await overview.locator('.overview-globe canvas').boundingBox())!;
+  await overview.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.6);
+  await overview.mouse.down();
+  await overview.mouse.move(
+    box.x + box.width * 0.48,
+    box.y + box.height * 0.48,
+    { steps: 10 }
+  );
+  await overview.mouse.up();
+  const rotated = await settledOverviewCamera(overview);
+  expect(rotated.position).not.toEqual(cameraBefore.position);
+  await overview.mouse.wheel(0, -150);
+  const zoomed = await settledOverviewCamera(overview);
+  expect(Math.hypot(...zoomed.position)).toBeLessThan(
+    Math.hypot(...rotated.position)
+  );
+  await overview
+    .getByRole('button', { name: 'Reset map view', exact: true })
+    .click();
+  await settledOverviewCamera(overview);
+  const follow = config.getByRole('switch', {
+    name: 'Follow aircraft on Overview',
+  });
+  await follow.click();
+  await expect(follow).toBeChecked();
+  await expect(
+    overview.getByText('Following aircraft', { exact: true })
+  ).toBeVisible();
+  expect((await weatherSnapshot(overview)).radar).toBe(loaded.radar);
+  expect((await weatherSnapshot(overview)).canvas).toBe(initial.canvas);
   await overview.screenshot({ path: info.outputPath('weather-globe.png') });
   await overview
     .getByRole('button', { name: 'Enter fullscreen overview' })
