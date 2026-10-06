@@ -25,3 +25,21 @@ def test_private_products_are_readable_only_inside_fixture_mount(tmp_path):
     prepare_fixture_mount(products)
     assert product.stat().st_mode & 0o777 == 0o755
     assert parent.stat().st_mode & 0o777 == 0o700
+
+
+def test_port_cleanup_waits_for_release_and_still_rejects_live_listener():
+    import socket
+    import threading
+    from acceptance.aviation_weather_proof.runner import wait_ports_free
+    listener=socket.socket();listener.bind(('127.0.0.1',0));listener.listen()
+    port=listener.getsockname()[1]
+    try:
+        blocked=wait_ports_free([port],seconds=.02)
+        assert blocked['remaining']==[f'listener:{port}']
+        assert blocked['observations']
+        closer=threading.Timer(.05,listener.close);closer.start()
+        try:
+            released=wait_ports_free([port],seconds=1)
+            assert released['remaining']==[]
+        finally:closer.join()
+    finally:listener.close()

@@ -27,6 +27,45 @@ def prepare_fixture_mount(products: Path) -> None:
         path.chmod(0o755 if path.is_dir() else 0o644)
 
 
+
+def wait_ports_free(ports: list[int], *, seconds: float = 65) -> dict:
+    """Require the original exclusive-bind criterion after bounded teardown lag."""
+    start = time.monotonic()
+    observations = []
+    while True:
+        failures = {}
+        for port in ports:
+            try:
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', port))
+            except OSError as error:
+                failures[port] = str(error)
+        if not failures:
+            return {'remaining': [], 'observations': observations, 'elapsed_seconds': time.monotonic()-start}
+        rows = []
+        inodes = set()
+        for table in ('tcp', 'tcp6'):
+            for line in (Path('/proc/net')/table).read_text().splitlines()[1:]:
+                fields = line.split()
+                if int(fields[1].rsplit(':', 1)[1], 16) in failures:
+                    rows.append({'table': table, 'entry': line.strip()})
+                    inodes.add(fields[9])
+        owners = []
+        if not observations:
+            for process in Path('/proc').iterdir():
+                if not process.name.isdigit(): continue
+                try:
+                    for fd in (process/'fd').iterdir():
+                        link = os.readlink(fd)
+                        if link.startswith('socket:[') and link[8:-1] in inodes:
+                            owners.append({'pid':int(process.name),'pgid':os.getpgid(int(process.name)),'comm':(process/'comm').read_text().strip(),'socket':link})
+                except (OSError, ProcessLookupError): continue
+        observations.append({'at_ms':int(time.time()*1000),'bind_errors':failures,'kernel_sockets':rows,'owners':owners})
+        if time.monotonic()-start >= seconds:
+            return {'remaining':[f'listener:{p}' for p in failures], 'observations':observations,'elapsed_seconds':time.monotonic()-start}
+        time.sleep(max(0,min(.25, seconds-(time.monotonic()-start))))
+
+
 def run(candidate:str,captures:Path,profile:Path)->int:
     if not re.fullmatch('[0-9a-f]{40}',candidate):raise ValueError('clean 40-hex SHA required')
     if subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()!=candidate or subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],cwd=ROOT,text=True).strip():raise ValueError('candidate must be clean tracked HEAD')
@@ -113,10 +152,9 @@ def run(candidate:str,captures:Path,profile:Path)->int:
             try:os.killpg(child['pgid'],0)
             except ProcessLookupError:pass
             else:cleanup_errors.append(f"process-group:{child['pgid']}")
-        for port in (15290,18290):
-            try:
-                with socket.socket() as listener:listener.bind(('127.0.0.1',port))
-            except OSError:cleanup_errors.append(f'listener:{port}')
+        ports=wait_ports_free([15290,18290])
+        (output/'port-cleanup.json').write_text(json.dumps(ports,indent=2))
+        cleanup_errors.extend(ports['remaining'])
         (output/'cleanup.json').write_text(json.dumps({'status':'passed' if not cleanup_errors and not killed else 'failed','remaining':cleanup_errors,'killed_descendants':killed,'docker':remnants,'ports':[15290,18290],'verified_at_ms':int(time.time()*1000)},indent=2))
         shutil.rmtree(source)
         (stage/'candidate.tar').unlink(missing_ok=True)

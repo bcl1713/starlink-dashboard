@@ -24,7 +24,10 @@ try{
  const activated=await request.post(`${args.origin}/api/v2/missions/${mission}/legs/${leg}/activate`);if(!activated.ok())throw Error(`activate route ${activated.status()} ${await activated.text()}`);
  const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));
  await page.route('**/*',route=>{const url=new URL(route.request().url());const allowed=url.origin===args.origin||['data:','blob:'].includes(url.protocol);requests.push({url:url.href,allowed,method:route.request().method()});return allowed?route.continue():route.abort();});
- await page.addInitScript(()=>{const roots=[];Object.assign(window,{__overviewEvidenceRoots:roots,__REACT_DEVTOOLS_GLOBAL_HOOK__:{supportsFiber:true,inject:()=>1,onCommitFiberRoot:(_id,root)=>{if(!roots.includes(root))roots.push(root);},onCommitFiberUnmount:()=>{},onPostCommitFiberRoot:()=>{},checkDCE:()=>{}}});});
+ const observerCode=buildSync({entryPoints:[resolve(root,'frontend/mission-planner/tests/e2e/support/overview-camera.ts')],bundle:true,write:false,platform:'node',format:'cjs',packages:'external'}).outputFiles[0].text;
+ const observer={exports:{}};
+ new Function('require','module','exports',observerCode)(require,observer,observer.exports);
+ await observer.exports.observeOverviewCamera(page);
  await page.goto(`${args.origin}/overview`,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__overviewEvidenceRoots?.some(r=>r.containerInfo?.getState?.().gl.domElement.isConnected),null,{timeout:60000});
  const built=buildSync({entryPoints:[resolve(root,'frontend/mission-planner/tests/e2e/support/aviation-weather-proof/runtime.ts')],bundle:true,write:false,format:'iife',define:{'process.env.NODE_ENV':'"production"'}});
