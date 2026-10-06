@@ -13,9 +13,29 @@ vi.mock('@/hooks/api/useSimulationRun', () => ({
 }));
 /** @vitest-environment jsdom */
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  render as renderTesting,
+  screen,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const clients: QueryClient[] = [];
+function render(node: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  clients.push(client);
+  return renderTesting(node, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
+}
+afterEach(() => {
+  clients.splice(0).forEach((client) => client.clear());
+});
 import type { OrbitalTrafficState } from './orbital/lifecycle';
 import { spriteSnapshot } from './orbital/sprite-test-fixtures';
 import { selectRoute, emptyRoutingState } from './orbital/routing';

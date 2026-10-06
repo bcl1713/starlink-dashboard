@@ -8,6 +8,7 @@ import {
   Satellite,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { OverviewBoundarySettingsCard } from './OverviewBoundarySettingsCard';
 import { OverviewCameraSettingsCard } from './OverviewCameraSettingsCard';
 import { OverviewDisplaySettingsCard } from './OverviewDisplaySettingsCard';
 import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
@@ -27,7 +28,8 @@ const sections = [
     value: 'overview',
     label: 'Overview',
     icon: Globe2,
-    description: 'History, camera behavior and operational clocks.',
+    description:
+      'History, camera behavior, geographic layers and operational clocks.',
   },
   {
     value: 'traffic',
@@ -116,6 +118,7 @@ export function ConfigurationPage() {
                 <OverviewCameraSettingsCard embedded />
               </div>
             </ConfigurationSection>
+            <OverviewBoundarySettingsCard />
             {isLoading ? (
               <ConfigurationSection title="Operational clocks">
                 <p role="status">Loading operational clocks...</p>
