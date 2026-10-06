@@ -3,6 +3,7 @@
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import shutil
 import signal
@@ -67,14 +68,20 @@ def require_pass(proofs):
         raise ValueError("incomplete foundation evidence")
     metrics = proofs["metrics"]
     if any(
-        not isinstance(metrics.get(key), (int, float)) or metrics[key] <= 0
+        not isinstance(metrics.get(key), (int, float))
+        or not math.isfinite(metrics[key])
+        or metrics[key] <= 0
         for key in ("cpu_usec", "memory_peak", "disk_bytes", "network_bytes")
     ):
         raise ValueError("incomplete foundation measurements")
     cleanup = proofs["cleanup"]
-    if not cleanup.get("ports_free") or any(
-        cleanup.get(kind) != []
-        for kind in ("containers", "networks", "volumes", "processes")
+    if (
+        cleanup.get("errors")
+        or not cleanup.get("ports_free")
+        or any(
+            cleanup.get(kind) != []
+            for kind in ("containers", "networks", "volumes", "processes")
+        )
     ):
         raise ValueError("incomplete foundation cleanup")
 
@@ -420,18 +427,22 @@ class Runner:
         }
 
     def cleanup(self):
+        errors = []
         if self.allocated:
-            self.command(
-                [*self.compose, "logs", "--no-color"],
-                name="containers.log",
-                allow_failure=True,
-            )
-            self.command(
-                [*self.compose, "down", "--volumes", "--remove-orphans"],
-                seconds=90,
-                name="cleanup.log",
-            )
-        shutil.rmtree(self.source)
+            for args, kwargs in (
+                (
+                    ["logs", "--no-color"],
+                    {"name": "containers.log", "allow_failure": True},
+                ),
+                (
+                    ["down", "--volumes", "--remove-orphans"],
+                    {"seconds": 90, "name": "cleanup.log"},
+                ),
+            ):
+                try:
+                    self.command([*self.compose, *args], **kwargs)
+                except (OSError, RuntimeError, TimeoutError) as error:
+                    errors.append(str(error))
         table = process_table()
         survivors = [
             pid
@@ -463,12 +474,18 @@ class Runner:
                 break
             except OSError:
                 time.sleep(1)
+        inventory = self.inventory()
+        if not any(inventory.values()):
+            shutil.rmtree(self.source)
         self.proofs["cleanup"] = {
-            **self.inventory(),
+            **inventory,
             "processes": remaining,
             "ports_free": ports_free,
+            "errors": errors,
         }
         self.record("cleanup.json", self.proofs["cleanup"])
+        if errors:
+            raise RuntimeError("Foundation cleanup failed: " + "; ".join(errors))
 
 
 def main():
