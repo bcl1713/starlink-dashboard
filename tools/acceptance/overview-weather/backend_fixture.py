@@ -22,6 +22,14 @@ if os.environ.get("WEATHER_ACCEPTANCE_MODE") == "comparison":
     )
 
 
+if os.environ.get("WEATHER_ACCEPTANCE_MODE") == "aviation-proof":
+    app.mount(
+        "/api/overview-weather/aviation-proof-assets",
+        StaticFiles(directory="/capture"),
+        name="aviation-proof-assets",
+    )
+
+
 # Only acceptance controls can choose a normalized fixture source or historical
 # replay epoch. Production WeatherService/transport/admission/freshness stay real.
 import time
