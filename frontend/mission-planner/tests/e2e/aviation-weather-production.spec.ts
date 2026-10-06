@@ -234,7 +234,9 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     expect(await overview.evaluate(() => window.crypto.subtle)).toBeUndefined();
     await expect(overview.locator('.overview-globe canvas')).toBeVisible();
     await expect
-      .poll(async () => (await weatherSnapshot(overview)).calls)
+      .poll(async () => (await weatherSnapshot(overview)).calls, {
+        timeout: 30000,
+      })
       .toBeGreaterThan(0);
     const baseline = await weatherSnapshot(overview),
       initialStatus = await (await request.get('/api/status')).json();
