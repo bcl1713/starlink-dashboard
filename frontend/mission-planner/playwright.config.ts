@@ -7,6 +7,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   testIgnore: [
     '**/overview-weather-production.spec.ts',
+    '**/overview-weather-comparison.spec.ts',
     '**/overview-window-production.spec.ts',
     '**/overview-boundaries-production.spec.ts',
     '**/overview-aircraft-history-production.spec.ts',

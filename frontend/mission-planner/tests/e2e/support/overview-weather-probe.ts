@@ -14,7 +14,8 @@ export async function installWeatherProbe(page: Page) {
       __weatherPixel?: (
         latitude: number,
         longitude: number,
-        night: boolean
+        night: boolean,
+        radius?: number
       ) => unknown;
     };
     const state = () => {
@@ -49,7 +50,7 @@ export async function installWeatherProbe(page: Page) {
         renderOrder: mesh?.renderOrder,
       };
     };
-    target.__weatherPixel = (latitude, longitude, night) => {
+    target.__weatherPixel = (latitude, longitude, night, radius = 5) => {
       const s = state();
       const mesh = s.scene.getObjectByName(
         'Overview precipitation radar'
@@ -62,9 +63,9 @@ export async function installWeatherProbe(page: Page) {
         update: (delta: number) => void;
       };
       controls.setLookAt(
-        5 * Math.cos(lat) * Math.cos(lon),
-        5 * Math.sin(lat),
-        -5 * Math.cos(lat) * Math.sin(lon),
+        radius * Math.cos(lat) * Math.cos(lon),
+        radius * Math.sin(lat),
+        -radius * Math.cos(lat) * Math.sin(lon),
         0,
         0,
         0,
@@ -167,16 +168,18 @@ export async function weatherPixel(
   page: Page,
   latitude: number,
   longitude: number,
-  night = false
+  night = false,
+  radius = 5
 ) {
   return page.evaluate(
-    ([lat, lon, dark]) =>
+    ([lat, lon, dark, distance]) =>
       (
         window as unknown as {
           __weatherPixel: (
             lat: number,
             lon: number,
-            night: boolean
+            night: boolean,
+            radius?: number
           ) => {
             withWeather: number[];
             withoutWeather: number[];
@@ -184,7 +187,12 @@ export async function weatherPixel(
             patchWithoutWeather: number[];
           };
         }
-      ).__weatherPixel(lat as number, lon as number, dark as boolean),
-    [latitude, longitude, night]
+      ).__weatherPixel(
+        lat as number,
+        lon as number,
+        dark as boolean,
+        distance as number
+      ),
+    [latitude, longitude, night, radius]
   );
 }

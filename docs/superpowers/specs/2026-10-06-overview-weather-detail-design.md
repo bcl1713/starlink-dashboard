@@ -90,6 +90,12 @@ chosen source supplies 256-pixel tiles or packed precipitation/coverage values,
 revise both the allocation proof and strict contracts before implementation.
 Keep the 48 MiB GPU ceiling; a source change does not authorize higher limits.
 
+The [aviation-weather follow-on direction][aviation-direction] reinforces this
+backend normalization boundary. Keep rendering independent of provider URL
+grammars and raw formats, with truthful observation time, provenance and
+coverage. This issue continues to display observed precipitation only; METAR,
+SIGMET, satellite, model and flight-level layers need their own designs.
+
 The manifest keeps `zoom: 2` as the fallback level and adds `max_zoom: 7`.
 Update backend and frontend strict contracts together. Radar and coverage routes
 accept canonical integer XYZ coordinates for zooms 2 through 7, with
@@ -265,3 +271,5 @@ against `dev`; do not merge or publish to `main` as part of this task.
 [provider]: https://www.rainviewer.com/api/weather-maps-api.html
 [transition]: https://www.rainviewer.com/api/transition-faq.html
 [assessment]: ../../reports/2026-10-06-overview-weather-provider-assessment.md
+[aviation-direction]:
+  https://github.com/bcl1713/starlink-dashboard/issues/288#issuecomment-6008230258

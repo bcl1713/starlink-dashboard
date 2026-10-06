@@ -22,7 +22,10 @@ try {
 }
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'overview-weather-production.spec.ts',
+  testMatch:
+    process.env.WEATHER_ACCEPTANCE_MODE === 'comparison'
+      ? 'overview-weather-comparison.spec.ts'
+      : 'overview-weather-production.spec.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   workers: 1,

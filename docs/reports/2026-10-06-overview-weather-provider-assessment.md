@@ -21,6 +21,17 @@ allowances do not satisfy that recurring-cost constraint for an always-on app.
 
 ## Recommendation
 
+The [aviation-weather architecture comment][aviation-direction], reviewed on
+2026-10-06, recommends local ingest/cache/normalization and a consistent
+frontend contract for future aviation hazards, flight-level atmosphere,
+satellite and terminal products. Its explicit implementation order finishes
+radar detail and opacity in this issue first. Carry that boundary into source
+selection: keep provider adaptation server-side and retain
+observed-versus-modeled provenance. These follow-on products are not part of
+this comparison or issue acceptance. Missing radar coverage continues to be
+shown as missing observations, pending a separate design for clearly labeled
+satellite or model fallbacks.
+
 Compare the existing free RainViewer path against locally generated tiles from
 MRMS and OPERA composites before finalizing the source. Begin with one or two
 immutable snapshots per region, observed precipitation only, no history,
@@ -246,6 +257,8 @@ selection can additionally change tile size, payload encoding, masks and the
 maximum meaningful zoom.
 
 [issue]: https://github.com/bcl1713/starlink-dashboard/issues/288
+[aviation-direction]:
+  https://github.com/bcl1713/starlink-dashboard/issues/288#issuecomment-6008230258
 [rainviewer]: https://www.rainviewer.com/api/weather-maps-api.html
 [transition]: https://www.rainviewer.com/api/transition-faq.html
 [rainviewer-faq]: https://www.rainviewer.com/api.html

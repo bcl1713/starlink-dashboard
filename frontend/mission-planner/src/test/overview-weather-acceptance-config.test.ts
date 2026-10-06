@@ -6,6 +6,18 @@ afterEach(() => {
   vi.resetModules();
 });
 describe('production weather acceptance isolation', () => {
+  it('selects only the isolated source-comparison spec', async () => {
+    vi.stubEnv('WEATHER_ACCEPTANCE_BASE_URL', 'http://127.0.0.1:15288');
+    vi.stubEnv('WEATHER_ACCEPTANCE_MODE', 'comparison');
+    const { default: config } = await import(
+      '../../playwright.weather-acceptance.config'
+    );
+    expect(config.testMatch).toBe('overview-weather-comparison.spec.ts');
+    expect(config.webServer).toBeUndefined();
+    expect(ordinary.testIgnore).toContain(
+      '**/overview-weather-comparison.spec.ts'
+    );
+  });
   it.each([
     undefined,
     'https://127.0.0.1:15278',

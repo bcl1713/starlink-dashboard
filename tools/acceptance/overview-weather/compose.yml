@@ -1,6 +1,8 @@
 services:
   starlink-location:
-    image: starlink-144-weather-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact candidate SHA required}
+    image:
+      ${WEATHER_ACCEPTANCE_PROJECT:-starlink-144-weather}-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact
+      candidate SHA required}
     build:
       context: ${WEATHER_ACCEPTANCE_SOURCE_ROOT:-../../..}/backend/starlink-location
       args:
@@ -9,6 +11,7 @@ services:
     environment:
       PYTHONPATH: /acceptance:/app
       WEATHER_ACCEPTANCE_CONTROL_PATH: /control/control.json
+      WEATHER_ACCEPTANCE_MODE: ${WEATHER_ACCEPTANCE_MODE:-production}
       STARLINK_MODE: simulation
       SIMULATION_MODE: "true"
       STARLINK_ROUTE_LATITUDE_START: "35.0"
@@ -17,10 +20,12 @@ services:
       STARLINK_GROUND_ENTRY_LONGITUDE: "-102.0"
       PROMETHEUS_URL: http://prometheus:9090
     ports:
-      - "127.0.0.1:18278:8000"
+      - "127.0.0.1:${WEATHER_ACCEPTANCE_BACKEND_PORT:-18278}:8000"
     volumes:
       - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/overview-weather:/acceptance:ro
       - ${WEATHER_ACCEPTANCE_CONTROL_DIR:?control directory required}:/control
+      - ${WEATHER_ACCEPTANCE_CAPTURE_DIR:?capture or fixture directory
+        required}:/capture:ro
       - missions:/app/data/missions
       - settings:/app/data/settings
       - satellites:/app/data/satellites
@@ -47,13 +52,15 @@ services:
       starlink-location:
         condition: service_healthy
   mission-planner:
-    image: starlink-144-weather-frontend:${ACCEPTANCE_CANDIDATE_SHA:?exact candidate SHA required}
+    image:
+      ${WEATHER_ACCEPTANCE_PROJECT:-starlink-144-weather}-frontend:${ACCEPTANCE_CANDIDATE_SHA:?exact
+      candidate SHA required}
     build:
       context: ${WEATHER_ACCEPTANCE_SOURCE_ROOT:-../../..}/frontend/mission-planner
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
     ports:
-      - "127.0.0.1:15278:80"
+      - "127.0.0.1:${WEATHER_ACCEPTANCE_FRONTEND_PORT:-15278}:80"
     depends_on:
       starlink-location:
         condition: service_healthy
