@@ -101,15 +101,29 @@ def write_grid(descriptor: dict, components: dict[str, np.ndarray], mask: np.nda
     for name, payload in encoded.items():
         entry = descriptor["mask"] if name == "mask" else descriptor["components"][name]
         entry.update(path=f"{name}.bin", sha256=hashlib.sha256(payload).hexdigest(), byte_size=len(payload), dtype="uint8" if name == "mask" else "int16-le")
+    return publish_payloads(descriptor, {f"{name}.bin": payload for name, payload in encoded.items()}, receipt, destination)
+
+
+def publish_payloads(descriptor: dict, payloads: dict[str, bytes], receipt: Path, destination: Path) -> ProductArtifact:
+    """Atomically publish a bounded product under the shared parent quota lock.
+
+    Grid and advisory payloads share admission, fsync, rename and cleanup. Receipt
+    is the original verified manifest and never copied into the browser product.
+    """
+    destination = Path(destination)
+    if destination.exists():
+        raise ValueError("product destination already exists")
+    if not payloads or any(not re.fullmatch(r"[a-z][a-z0-9_-]*\.(?:bin|geojson)", name) or not isinstance(payload, bytes) for name, payload in payloads.items()):
+        raise ValueError("payload paths must be confined and bounded")
     metadata = canonical(descriptor) + b"\n"
-    total = len(metadata) + sum(map(len, encoded.values()))
+    total = len(metadata) + sum(map(len, payloads.values()))
     if total > MAX_GENERATION_BYTES or total > STAGING_QUOTA_BYTES:
-        raise ValueError("grid staging/generation quota exceeded")
+        raise ValueError("product staging/generation quota exceeded")
     destination.parent.mkdir(parents=True, exist_ok=True)
     with (destination.parent / ".grid-quota.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if destination.exists():
-            raise ValueError("grid destination already exists")
+            raise ValueError("product destination already exists")
         used = sum(p.stat().st_size for p in destination.parent.rglob("*") if p.is_file())
         if used + total > PUBLISHED_QUOTA_BYTES:
             raise ValueError("published grid quota exceeded")
@@ -117,7 +131,7 @@ def write_grid(descriptor: dict, components: dict[str, np.ndarray], mask: np.nda
             raise ValueError("insufficient disk reserve")
         stage = Path(tempfile.mkdtemp(prefix=".grid-stage-", dir=destination.parent))
         try:
-            for name, payload in {**{f"{k}.bin": v for k, v in encoded.items()}, "descriptor.json": metadata}.items():
+            for name, payload in {**payloads, "descriptor.json": metadata}.items():
                 with (stage / name).open("xb") as stream:
                     stream.write(payload)
                     stream.flush()
@@ -131,4 +145,4 @@ def write_grid(descriptor: dict, components: dict[str, np.ndarray], mask: np.nda
         finally:
             if stage.exists():
                 shutil.rmtree(stage)
-    return ProductArtifact(destination / "descriptor.json", tuple(destination / f"{name}.bin" for name in encoded), receipt)
+    return ProductArtifact(destination / "descriptor.json", tuple(destination / name for name in payloads), receipt)
