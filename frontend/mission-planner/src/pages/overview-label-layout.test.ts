@@ -316,3 +316,29 @@ it('prefers a placement clear of a displayed route and a POI halo', () => {
   const box = result.placements.traffic.bounds;
   expect(box.x + box.width).toBeLessThan(310);
 });
+
+it('keeps feasible POI identities individual when only soft route paths obstruct them', () => {
+  const labels = [
+    { id: 'enter', bounds: { x: 348, y: 260, width: 112, height: 28 } },
+    { id: 'exit', bounds: { x: 352, y: 261, width: 100, height: 28 } },
+  ];
+  const aircraft = { x: 320, y: 340, width: 70, height: 60 };
+  const result = layoutOverviewLabels(
+    labels,
+    { width: 704, height: 500 },
+    [],
+    {},
+    {
+      aircraft: [aircraft],
+      paths: Array.from({ length: 100 }, (_, i) => ({
+        start: { x: 0, y: i * 5 },
+        end: { x: 704, y: i * 5 },
+      })),
+    }
+  );
+  expect(result.groups).toEqual([]);
+  expect(Object.keys(result.offsets).sort()).toEqual(['enter', 'exit']);
+  const boxes = Object.values(result.placements).map((p) => p.bounds);
+  expect(overlaps(boxes[0], boxes[1])).toBe(false);
+  for (const box of boxes) expect(overlaps(box, aircraft)).toBe(false);
+});

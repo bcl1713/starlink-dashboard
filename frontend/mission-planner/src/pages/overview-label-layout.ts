@@ -244,7 +244,8 @@ export function layoutOverviewLabels(
   };
   const place = (
     label: ProjectedOverviewLabel,
-    prev?: OverviewLabelOffset
+    prev?: OverviewLabelOffset,
+    avoidPaths = true
   ): LabelPlacement | null => {
     const options = candidates(label, ordered, prev);
     const previousBox = prev ? options.shift() : undefined;
@@ -266,7 +267,8 @@ export function layoutOverviewLabels(
     const rectangleValid = (box: LabelBounds) =>
       inside(box, viewport) &&
       !blockers.some((b) => labelBoundsOverlap(box, b)) &&
-      !(geometry.paths ?? []).some((line) => throughBox(line, box));
+      (!avoidPaths ||
+        !(geometry.paths ?? []).some((line) => throughBox(line, box)));
     const valid = (box: LabelBounds) => {
       if (!rectangleValid(box)) return false;
       const leader = calloutLeader(label.bounds, box);
@@ -333,7 +335,9 @@ export function layoutOverviewLabels(
       : null;
   };
   for (const source of ordered) {
-    const placement = place(source, previous[source.id]);
+    const placement =
+      place(source, previous[source.id]) ??
+      place(source, previous[source.id], false);
     if (placement) {
       entries.push({ label: source, ids: [source.id], placement });
       continue;

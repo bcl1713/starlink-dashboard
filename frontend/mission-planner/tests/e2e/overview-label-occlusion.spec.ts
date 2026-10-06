@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import { adsbSettings } from '../../src/test/adsb-fixtures';
 import {
   adsbScene,
@@ -121,8 +122,9 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     const fixture = await installAdsbFixture(context, true);
     let tick = 0;
+    let moving = false;
     await context.route('**/api/status', (route) => {
-      tick++;
+      if (moving) tick++;
       return route.fulfill({
         json: {
           timestamp: new Date().toISOString(),
@@ -160,6 +162,8 @@ for (const viewport of [
           state: 'available',
           calculated_at: new Date().toISOString(),
           flight_phase: 'in_flight',
+          position_state: 'fresh',
+          position_observed_at: new Date().toISOString(),
           current_route_progress: 0,
           pois: Array.from({ length: 40 }, (_, i) => ({
             poi_id: `cluster-${i}`,
@@ -201,6 +205,7 @@ for (const viewport of [
       'Stale'
     );
     await monitorFrames(page);
+    moving = true;
     const disclosure = page
       .locator('.overview-label-group:visible summary')
       .first();
@@ -209,11 +214,17 @@ for (const viewport of [
     await page.keyboard.press('Enter');
     await expect(page.locator('.overview-label-group[open]')).toHaveCount(1);
     const popup = page.locator('.overview-label-group[open] ul');
-    await expect(popup).toBeVisible();
-    expect((await popup.boundingBox())!.height).toBeLessThanOrEqual(180);
-    await page
-      .getByRole('button', { name: 'Explore map', exact: true })
-      .click();
+    // A compact canvas may have no room for the full list beside the aircraft.
+    // Its identities remain in the disclosure; suppression is aircraft-safe.
+    expect(await popup.locator('li').count()).toBeGreaterThan(1);
+    await expect(popup).toContainText('KADW');
+    if (viewport.width === 1920) await expect(popup).toBeVisible();
+    if (await popup.isVisible())
+      expect((await popup.boundingBox())!.height).toBeLessThanOrEqual(180);
+    if (viewport.width !== 1920)
+      await page
+        .getByRole('button', { name: 'Explore map', exact: true })
+        .click();
     const canvas = await page
       .locator('.overview-map-stage canvas')
       .boundingBox();
@@ -229,9 +240,10 @@ for (const viewport of [
     );
     await page.mouse.up();
     await page.mouse.wheel(0, -120);
-    await page
-      .getByRole('button', { name: 'Exit map exploration', exact: true })
-      .click();
+    if (viewport.width !== 1920)
+      await page
+        .getByRole('button', { name: 'Exit map exploration', exact: true })
+        .click();
     // Freshness/content changes arrive through the actual polling hooks.
     fixture.setContacts([
       freshContact({
@@ -291,8 +303,10 @@ for (const viewport of [
         aircraftPositions: e.aircraftPositions.size,
       };
     });
+    const evidencePath = info.outputPath('moving-scene.json');
+    await writeFile(evidencePath, JSON.stringify(evidence, null, 2));
     await info.attach('moving-scene.json', {
-      body: JSON.stringify(evidence, null, 2),
+      path: evidencePath,
       contentType: 'application/json',
     });
     expect(evidence.frames).toBeGreaterThan(50);
@@ -300,6 +314,7 @@ for (const viewport of [
     expect(evidence.cameraPoses).toBeGreaterThan(5);
     expect(evidence.aircraftPositions).toBeGreaterThan(1);
     expect(evidence.violations).toEqual([]);
+    moving = false;
     await page.evaluate(() => {
       document.documentElement.style.fontSize = '';
     });

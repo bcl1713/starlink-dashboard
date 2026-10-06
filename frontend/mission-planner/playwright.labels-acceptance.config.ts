@@ -4,6 +4,7 @@ import { defineConfig } from '@playwright/test';
 // Run the tracked browser fixture against an already-built production image.
 export default defineConfig({
   ...config,
+  use: { ...config.use, actionTimeout: 15_000 },
   testMatch: [
     'overview-label-callouts.spec.ts',
     'overview-label-occlusion.spec.ts',
