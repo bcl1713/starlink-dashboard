@@ -4,18 +4,20 @@ This is the bounded evidence work required by the
 [architecture proposal](./2026-10-06-aviation-weather-design.md) for
 [issue 290](https://github.com/bcl1713/starlink-dashboard/issues/290). Determine
 whether real scientific and advisory inputs can be decoded into the proposed
-representations and displayed on the native globe within the stated budgets. All
-three proofs are pending design review and execution. No sample decode or render
-is claimed by the source endpoint measurements.
+representations and displayed on the native globe within the stated budgets. The
+owner's PR review accepts the architecture; all three proofs await
+implementation-plan review and execution. No sample decode or render is claimed
+by the source endpoint measurements.
 
 ## Common controls
 
-Use a research tool under `tools/aviation-weather-proof/`, independent of the
-production API and settings. Pin decoder dependencies in the research tool; do
-not add scientific-format parsers to frontend dependencies. Prefer ecCodes for
-GRIB2, netCDF4 for GOES CMI, pyproj for source navigation, NumPy for bounded
-arrays, and the existing Three/Playwright toolchain for local rendering. Verify
-current upstream documentation and dependency licences before pinning versions.
+Use a research tool under `tools/acceptance/aviation_weather_proof/`,
+independent of the production API and settings. Pin decoder dependencies in the
+research tool; do not add scientific-format parsers to frontend dependencies.
+Prefer ecCodes for GRIB2, netCDF4 for GOES CMI, pyproj for source navigation,
+NumPy for bounded arrays, and the existing Three/Playwright toolchain for local
+rendering. Verify current upstream documentation and dependency licences before
+pinning versions.
 
 Every acquired artifact records exact public URL/key, retrieval UTC, source
 times, content length, SHA-256 and licence/attribution. A replay uses pinned
@@ -106,11 +108,25 @@ unavailable ocean/polar areas explicit. Retain scientific values; the backend
 does not import a provider's colored map screenshot.
 
 Capture Americas, Atlantic edge/limb and night-side views. Verify ten geographic
-samples against the decoded input within a declared resampling tolerance.
-Include a separate two-region synthetic seam fixture to test unequal times,
-missing pixels and deterministic region ownership. One GOES sample establishes
-that rendering path only; it does not establish global satellite completeness,
+samples against the decoded input within a declared resampling tolerance. Assert
+that the passive label preserves the full source scan start/end in UTC, with any
+scan-end display instant explicitly labeled as such. For an asynchronous
+two-region fixture, display both region intervals and retain their separate
+identities; never present the mosaic as one precise observation time. Include a
+separate two-region synthetic seam fixture to test unequal times, missing pixels
+and deterministic region ownership. One GOES sample establishes that rendering
+path only; it does not establish global satellite completeness,
 Meteosat/Himawari access, or multi-region calibration compatibility.
+
+The international advisory proof must explicitly distinguish complete scoped
+feed, incomplete/truncated feed, successful empty response and acquisition
+failure. An empty or HTTP-successful response may not produce a worldwide
+no-hazards state. Retain completeness/truncation controls as a hard gate for the
+later product adapter.
+
+See the
+[implementation plan](../plans/2026-10-06-aviation-weather-local-proofs.md) for
+the capture, normalization and native rendering tasks.
 
 ## Evidence and phase entry
 
