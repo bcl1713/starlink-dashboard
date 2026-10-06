@@ -29,3 +29,14 @@ def test_scientific_dependencies_are_separate_from_core_image():
     assert "ACCEPTANCE_CANDIDATE_SHA" in worker
     assert "1000" in worker
     assert "OPENBLAS_NUM_THREADS=1" in worker
+
+
+def test_every_production_candidate_image_has_a_revision_label():
+    for name in (
+        "backend/starlink-location/Dockerfile",
+        "backend/starlink-location/Dockerfile.gfs",
+        "frontend/mission-planner/Dockerfile",
+    ):
+        runtime = (ROOT / name).read_text().rsplit("FROM ", 1)[1]
+        assert "ARG ACCEPTANCE_CANDIDATE_SHA" in runtime
+        assert "LABEL org.opencontainers.image.revision=$ACCEPTANCE_CANDIDATE_SHA" in runtime

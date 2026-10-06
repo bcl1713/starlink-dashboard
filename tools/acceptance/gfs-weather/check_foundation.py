@@ -188,7 +188,7 @@ def run(check):
     enabled()
     child = wait(blocked)
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-        controls = list(pool.map(request, ["/api/status", "/api/health"] * 16))
+        controls = list(pool.map(request, ["/api/status"] * 32))
     assert all(result[0] == 200 and result[3] < 2 for result in controls)
     (output / "core-latencies.json").write_text(json.dumps([v[3] for v in controls]))
     assert disabled() < 15

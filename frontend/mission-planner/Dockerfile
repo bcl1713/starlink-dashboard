@@ -22,6 +22,10 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
+ARG ACCEPTANCE_CANDIDATE_SHA
+RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
+LABEL org.opencontainers.image.revision=$ACCEPTANCE_CANDIDATE_SHA
+
 # Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
