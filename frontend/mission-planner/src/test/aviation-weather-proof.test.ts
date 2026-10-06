@@ -136,3 +136,30 @@ describe('aviation native proof', () => {
     expect(barb(0, -10).fromNorth).toBe(1);
   });
 });
+
+it('triangle planes describe the actual tessellated mesh within the reserved geometry budget', async () => {
+  const { gridMesh, geometryBytes } = await import(
+    '../../tests/e2e/support/aviation-weather-proof/grid-renderer'
+  );
+  const owned = gridMesh(
+    descriptor,
+    new Int16Array(720 * 361),
+    new Uint8Array(720 * 361)
+  );
+  try {
+    const positions = owned.mesh.geometry.getAttribute('position');
+    const planes = owned.mesh.geometry.getAttribute('trianglePlane');
+    expect(planes).toBeDefined();
+    expect(geometryBytes(owned.mesh.geometry)).toBeLessThan(3_000_000);
+    for (let i = 0; i < positions.count; i++) {
+      const residual =
+        positions.getX(i) * planes.getX(i) +
+        positions.getY(i) * planes.getY(i) +
+        positions.getZ(i) * planes.getZ(i) -
+        planes.getW(i);
+      expect(Math.abs(residual)).toBeLessThan(0.000001);
+    }
+  } finally {
+    owned.dispose();
+  }
+});

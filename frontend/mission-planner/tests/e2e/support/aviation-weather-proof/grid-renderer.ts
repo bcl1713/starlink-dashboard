@@ -3,15 +3,17 @@ import type { Descriptor } from './model';
 import { barb } from './sampling';
 export const samplingShader = `
  uniform sampler2D packedGrid; uniform vec2 size; uniform float scale; uniform float offset; uniform int diagnostic;
- varying vec3 earth;
+ varying vec3 rasterEarth; flat varying vec4 facePlane;
+ uniform mat4 inverseProjection; uniform mat4 cameraWorld; uniform vec3 eye; uniform vec2 framebuffer;
+ vec3 fragmentPoint(){vec2 ndc=gl_FragCoord.xy/framebuffer*2.0-1.0;vec4 view=inverseProjection*vec4(ndc,1.0,1.0);vec3 farPoint=(cameraWorld*vec4(view.xyz/view.w,1.0)).xyz;vec3 ray=farPoint-eye;return eye+ray*((facePlane.w-dot(facePlane.xyz,eye))/dot(facePlane.xyz,ray));}
  vec3 node(vec2 p){vec4 c=texture2D(packedGrid,(p+0.5)/size);float q=floor(c.r*255.0+0.5)+256.0*floor(c.g*255.0+0.5);return vec3(q>=32768.0?q-65536.0:q,floor(c.b*255.0+0.5),0.0);}
- vec2 geography(){vec3 p=normalize(earth);return vec2(degrees(atan(-p.z,p.x)),degrees(asin(clamp(p.y,-1.0,1.0))));}
+ vec2 geography(){vec3 p=normalize(fragmentPoint());return vec2(degrees(atan(-p.z,p.x)),degrees(asin(clamp(p.y,-1.0,1.0))));}
  vec2 sampleValue(){vec2 geo=geography();float lon=geo.x;float lat=geo.y;vec2 q=vec2(mod(lon+180.0,360.0)*2.0,(90.0-lat)*2.0);
  if(q.y<0.0||q.y>size.y-1.0||(size.x<720.0&&q.x>size.x-1.0))return vec2(0.0,1.0);
  vec2 lo=floor(q),hi=min(lo+1.0,size-1.0);if(size.x==720.0)hi.x=mod(lo.x+1.0,size.x);
  vec3 a=node(lo),b=node(vec2(hi.x,lo.y)),c=node(vec2(lo.x,hi.y)),d=node(hi);float mask=max(max(a.y,b.y),max(c.y,d.y));
  return vec2(mix(mix(a.x,b.x,fract(q.x)),mix(c.x,d.x,fract(q.x)),fract(q.y)),mask);}
- void main(){if(diagnostic>=2){vec2 geo=geography();float value=diagnostic==2?(geo.x+180.0)/360.0:diagnostic==3?(geo.y+90.0)/180.0:diagnostic==4?(earth.x+3.0)/6.0:diagnostic==5?(earth.y+3.0)/6.0:(earth.z+3.0)/6.0;float q=floor(value*16777215.0+0.5);gl_FragColor=vec4(floor(q/65536.0),mod(floor(q/256.0),256.0),mod(q,256.0),255.0)/255.0;return;}vec2 s=sampleValue();if(diagnostic==1){float q=floor(s.x+32768.0+0.5);gl_FragColor=vec4(floor(q/256.0)/255.0,mod(q,256.0)/255.0,s.y/255.0,1.0);return;}
+ void main(){if(diagnostic>=2){vec3 earth=diagnostic>=7?rasterEarth:fragmentPoint();int mode=diagnostic>=7?diagnostic-3:diagnostic;vec2 geo=geography();float value=diagnostic==2?(geo.x+180.0)/360.0:diagnostic==3?(geo.y+90.0)/180.0:mode==4?(earth.x+3.0)/6.0:mode==5?(earth.y+3.0)/6.0:(earth.z+3.0)/6.0;float q=floor(value*16777215.0+0.5);gl_FragColor=vec4(floor(q/65536.0),mod(floor(q/256.0),256.0),mod(q,256.0),255.0)/255.0;return;}vec2 s=sampleValue();if(diagnostic==1){float q=floor(s.x+32768.0+0.5);gl_FragColor=vec4(floor(q/256.0)/255.0,mod(q,256.0)/255.0,s.y/255.0,1.0);return;}
  if(s.y>0.0)discard;float t=clamp((s.x*scale+offset-190.0)/120.0,0.0,1.0);gl_FragColor=vec4(t,0.25,1.0-t,0.4);}
 `;
 export function earthPoint(lat: number, lon: number, r = 2.012) {
@@ -40,7 +42,26 @@ export function gridMesh(d: Descriptor, values: Int16Array, mask: Uint8Array) {
   texture.minFilter = texture.magFilter = THREE.NearestFilter;
   texture.generateMipmaps = false;
   texture.needsUpdate = true;
-  const geometry = new THREE.SphereGeometry(2.012, 180, 90);
+  const indexed = new THREE.SphereGeometry(2.012, 180, 90);
+  indexed.deleteAttribute('normal');
+  indexed.deleteAttribute('uv');
+  const geometry = indexed.toNonIndexed();
+  indexed.dispose();
+  const positions = geometry.getAttribute('position');
+  const planes = new Float32Array(positions.count * 4);
+  const a = new THREE.Vector3(),
+    b = new THREE.Vector3(),
+    c = new THREE.Vector3();
+  for (let i = 0; i < positions.count; i += 3) {
+    a.fromBufferAttribute(positions, i);
+    b.fromBufferAttribute(positions, i + 1);
+    c.fromBufferAttribute(positions, i + 2);
+    const normal = b.sub(a).cross(c.sub(a)).normalize(),
+      distance = normal.dot(a);
+    for (let j = 0; j < 3; j++)
+      planes.set([normal.x, normal.y, normal.z, distance], (i + j) * 4);
+  }
+  geometry.setAttribute('trianglePlane', new THREE.BufferAttribute(planes, 4));
   const material = new THREE.ShaderMaterial({
     uniforms: {
       packedGrid: { value: texture },
@@ -48,15 +69,30 @@ export function gridMesh(d: Descriptor, values: Int16Array, mask: Uint8Array) {
       scale: { value: d.components.t.scale },
       offset: { value: d.components.t.offset },
       diagnostic: { value: 0 },
+      inverseProjection: { value: new THREE.Matrix4() },
+      cameraWorld: { value: new THREE.Matrix4() },
+      eye: { value: new THREE.Vector3() },
+      framebuffer: { value: new THREE.Vector2() },
     },
     vertexShader:
-      'varying vec3 earth;void main(){earth=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      'attribute vec4 trianglePlane;varying vec3 rasterEarth;flat varying vec4 facePlane;void main(){rasterEarth=position;facePlane=trianglePlane;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
     fragmentShader: samplingShader,
     transparent: true,
     depthWrite: false,
     toneMapped: false,
   });
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.onBeforeRender = (renderer, _scene, camera) => {
+    material.uniforms.inverseProjection.value.copy(
+      camera.projectionMatrixInverse
+    );
+    material.uniforms.cameraWorld.value.copy(camera.matrixWorld);
+    material.uniforms.eye.value.setFromMatrixPosition(camera.matrixWorld);
+    const target = renderer.getRenderTarget();
+    if (target)
+      material.uniforms.framebuffer.value.set(target.width, target.height);
+    else renderer.getDrawingBufferSize(material.uniforms.framebuffer.value);
+  };
   mesh.name = 'Aviation diagnostic scalar';
   mesh.renderOrder = 20;
   return {

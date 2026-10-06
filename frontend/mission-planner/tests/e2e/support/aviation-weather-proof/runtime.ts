@@ -119,8 +119,8 @@ async function install(url: string) {
       // Reserve conservative geometry and packed texture bytes BEFORE constructors.
       const gridReserve = allocation.reserve(
         0,
-        cells * 4 + 1_000_000,
-        cells * 4 + 1_000_000
+        cells * 4 + 3_000_000,
+        cells * 4 + 3_000_000
       );
       releases.push(gridReserve);
       const scalar = gridMesh(d, values, mask);
@@ -224,6 +224,11 @@ function snapshot() {
       dpr: devicePixelRatio,
     },
     renderer: {
+      subpixelBits: gl.getParameter(gl.SUBPIXEL_BITS),
+      highFloatPrecision: gl.getShaderPrecisionFormat(
+        gl.FRAGMENT_SHADER,
+        gl.HIGH_FLOAT
+      )?.precision,
       version: gl.getParameter(gl.VERSION),
       renderer: gl.getParameter(gl.RENDERER),
     },
@@ -233,7 +238,7 @@ function snapshot() {
 function sample(latitude: number, longitude: number) {
   if (!installed?.values || !installed.mask) throw Error('scalar required');
   const scalar = installed.objects[0].mesh as THREE.Mesh<
-    THREE.SphereGeometry,
+    THREE.BufferGeometry,
     THREE.ShaderMaterial
   >;
   const s = state();
@@ -307,6 +312,11 @@ function sample(latitude: number, longitude: number) {
       geographicRead(5, 6, -3),
       geographicRead(6, 6, -3),
     ];
+    const gpuRasterPoint = [
+      geographicRead(7, 6, -3),
+      geographicRead(8, 6, -3),
+      geographicRead(9, 6, -3),
+    ];
     scalar.material.uniforms.diagnostic.value = 0;
     scalar.material.blending = THREE.NormalBlending;
     // Render known background through the actual Overview scene, keeping only
@@ -344,6 +354,7 @@ function sample(latitude: number, longitude: number) {
       gpuLatitude,
       meshPoint: p.toArray(),
       gpuMeshPoint,
+      gpuRasterPoint,
       pixel: { x, y, width, height },
       value,
       mask,
