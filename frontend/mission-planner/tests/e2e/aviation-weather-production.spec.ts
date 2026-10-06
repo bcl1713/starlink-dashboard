@@ -424,6 +424,11 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       path: info.outputPath('aviation-mobile.png'),
       fullPage: true,
     });
+    await status.scrollIntoViewIfNeeded();
+    await expect(status).toBeInViewport();
+    await overview.screenshot({
+      path: info.outputPath('aviation-mobile-reports.png'),
+    });
     await overview.setViewportSize({ width: 1920, height: 1080 });
     for (const name of switches) {
       const toggle = config.getByRole('switch', { name, exact: true });
