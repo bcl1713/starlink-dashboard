@@ -7,7 +7,6 @@ import struct
 import time
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 API = "http://127.0.0.1:15292"
 

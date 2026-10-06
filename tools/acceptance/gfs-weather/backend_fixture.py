@@ -1,7 +1,6 @@
 """Existing radar/bulletin fixture, plus an explicit historical replay clock."""
 
 import importlib.util
-from pathlib import Path
 
 spec = importlib.util.spec_from_file_location(
     "aviation_acceptance", "/aviation-acceptance/backend_fixture.py"

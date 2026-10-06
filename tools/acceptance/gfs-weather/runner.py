@@ -495,7 +495,7 @@ def main():
     error = None
     try:
         runner.execute()
-    except BaseException as caught:
+    except (Exception, KeyboardInterrupt) as caught:  # noqa: BLE001 - retain failure before resource cleanup
         error = caught
         runner.record(
             "failure.json", {"type": type(caught).__name__, "message": str(caught)}
