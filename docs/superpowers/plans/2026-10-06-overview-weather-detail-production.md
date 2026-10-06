@@ -152,9 +152,10 @@ z/x/y; retain all current coalescing, capacity and security guarantees.
 `CameraSnapshot`, normalized `WeatherCapabilities` and `DetailDemand | null`;
 `DetailDemandStabilizer.update(demand, nowMono)` takes `DetailDemand` and
 monotonic milliseconds, returning `DetailDemand | null` only after stability.
-Observer consumes `capabilities: WeatherCapabilities | null`; its
-`onDemand(demand: DetailDemand): void` prop forwards actual canvas snapshots. It
-owns the sampling clock.
+Observer consumes `capabilities: WeatherCapabilities | null`, owns the sampling
+clock, captures actual canvas camera snapshots and runs selection/stabilization.
+Its `onDemand(demand: DetailDemand): void` prop forwards stabilized
+`DetailDemand`.
 
 - [ ] Write independent geometry tests with known globe landmarks, perspective
       projection/view offset and drawing-buffer changes. Assert <=8 canonical

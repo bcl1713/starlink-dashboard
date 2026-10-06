@@ -50,8 +50,10 @@ product ownership explicit in the advertised templates:
 /api/overview-weather/coverage/{coverage}/{z}/{x}/{y}.png?product_id={product_id}
 ```
 
-The backend derives `product_id` from source, provenance, product, tile schema,
-coverage encoding and capabilities, independently of the observed frame time.
+The backend derives `product_id` from stable machine fields only: source,
+product, tile schema/version, coverage encoding, tile size and canonical
+capability/version identity, independently of the observed frame time.
+Human-readable provenance is informational and excluded from this identity.
 Radar/coverage templates contain the actual admitted identifier; the frontend
 validates the normalized same-origin contract, never upstream URLs. Product IDs
 are opaque to the browser. They prevent immutable browser-cache collisions when
@@ -64,6 +66,11 @@ caps. Retain source-appropriate coverage reuse within the same product identity;
 do not make coverage downloads repeat solely because radar time advances.
 Provider-specific path construction and HTTPS/public-IP/TLS checks remain in the
 backend. No generic provider registry or second live adapter is required.
+
+Pin regressions that changing only provenance (for example, `RainViewer` to
+`RainViewer observed radar`) preserves `product_id`, advertised tile URLs and
+acquisition/cache keys. Changing a machine identity field changes `product_id`;
+serialization must be canonical so harmless field ordering cannot change it.
 
 ## Frontend interfaces and lifecycle identity
 
@@ -102,18 +109,22 @@ type DetailPair = {
 
 Produce `detailContextIdentity(context: DetailContext): string` in
 `weather-detail.ts`. Its stable tuple includes settings revision/generation,
-product ID, source/provenance, product, observed frame time, coverage generation
-and expiry, schema/version, encoding and tile dimensions/capabilities. Every
+product ID, source, product, observed frame time, coverage generation and
+expiry, schema/version, encoding and tile dimensions/capabilities. Every
 pair/cache/slot carries this identity plus XYZ. Source/schema changes cannot
 reuse incompatible detail even when XYZ, time and coverage token match.
 
-The controller compares full normalized identity before its existing same-frame
-shortcut. It owns cancellation and displayed-frame metadata: late completions
-close bitmaps, incompatible slots are invalidated, and a replacement coarse
-frame publishes its own source/provenance atomically. Preserve eligible coarse
-fallback and existing freshness/trust rules; source change never resets UTC age
-or extends validity. Detail remains tied to the displayed frame rather than a
-pending newer manifest.
+Track provenance separately in frontend presentation context so metadata changes
+update displayed text without invalidating compatible tile resources or causing
+reacquisition. Pin this behavior with a provenance-only manifest update.
+
+The controller compares resource identity before its existing same-frame
+shortcut and updates presentation metadata even when resources match. It owns
+cancellation and displayed-frame metadata: late completions close bitmaps,
+incompatible slots are invalidated, and a replacement coarse frame publishes its
+own source/provenance atomically. Preserve eligible coarse fallback and existing
+freshness/trust rules; source change never resets UTC age or extends validity.
+Detail remains tied to the displayed frame rather than a pending newer manifest.
 
 Regression fixture: `source: fixture-radar`, distinct provenance/product ID, max
 zoom 5, supported 512px schema, and only dashboard API templates. Verify

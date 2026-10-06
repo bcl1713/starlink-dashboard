@@ -98,10 +98,11 @@ SIGMET, satellite, model and flight-level layers need their own designs.
 
 The [provider-neutral plan review][provider-neutral-review] requires frontend
 selection/loading/caching/rendering to consume normalized manifest capabilities,
-with RainViewer only the initial adapter. Source/provenance, observed product,
-frame time, coverage generation and tile schema/version form the full detail
-identity. Product-aware same-origin templates/cache keys prevent source changes
-from reusing incompatible imagery even when time and XYZ match. Include an
+with RainViewer only the initial adapter. Source, observed product, frame time,
+coverage generation and tile schema/version form the full detail identity;
+provenance remains informational presentation metadata. Product-aware
+same-origin templates/cache keys prevent source changes from reusing
+incompatible imagery even when time and XYZ match. Include an
 alternative-source/max-zoom normalized fixture without another live provider.
 
 The RainViewer adapter advertises `zoom: 2`, `max_zoom: 7` and 512px tiles.
