@@ -53,6 +53,9 @@ frontend/mission-planner/dist/
 # Plan workspaces (local scratch reports and execution evidence)
 .superpowers/sdd/
 
+# SHA-qualified production acceptance evidence
+/test-results/gfs-foundation/
+
 # Exceptions
 !frontend/mission-planner/src/lib/
 

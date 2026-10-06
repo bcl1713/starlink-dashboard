@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from app.models.aviation_weather import AviationCatalog
 from app.services.aviation_weather.catalog import radar_product
+from app.services.aviation_weather.gfs.bridge import FILES, unavailable_products
 from app.services.aviation_weather.settings import AviationSettingsUpdate
 from app.services.overview_weather.protocol import WeatherUnavailable
 from app.services.overview_weather.request import (
@@ -68,8 +69,12 @@ async def put_settings(
     service = runtime(request)
 
     async def save():
-        settings = service.store.update(update)
-        await service.settings_changed(settings)
+        bridge = getattr(request.app.state, "aviation_gfs_bridge", None)
+        settings = await bridge.save(update) if bridge else service.store.update(update)
+        operations = [service.settings_changed(settings)]
+        if bridge:
+            operations.append(bridge.settings_changed(settings))
+        await asyncio.gather(*operations)
         return settings
 
     return await guarded(request, save)
@@ -92,13 +97,20 @@ async def get_catalog(request: Request, response: Response):
 
         products, manifest = await asyncio.gather(service.products(), radar_frame())
         now = service.utc_ms()
+        settings = service.store.get()
+        bridge = getattr(request.app.state, "aviation_gfs_bridge", None)
+        models = (
+            await bridge.products(settings, now)
+            if bridge
+            else unavailable_products(settings, now)
+        )
         # Build all envelope states against one admission clock after acquisition.
         products = service.admitted_products(now)
         return AviationCatalog(
             schema="aviation-weather-v1",
             generated_at_ms=now,
-            settings_revision=service.store.get().revision,
-            products=[radar_product(manifest, now), *products],
+            settings_revision=settings.revision,
+            products=[radar_product(manifest, now), *products, *models],
         )
 
     return await guarded(request, read)
@@ -106,16 +118,33 @@ async def get_catalog(request: Request, response: Response):
 
 @router.get("/products/{instance}/{filename}")
 async def get_product(instance: str, filename: str, request: Request):
-    if re.fullmatch(r"[a-f0-9]{64}", instance) is None or filename not in {
-        "metar.json",
-        "taf.json",
-        "sigmet.json",
-    }:
+    if (
+        re.fullmatch(r"[a-f0-9]{64}", instance) is None
+        or filename
+        not in {
+            "metar.json",
+            "taf.json",
+            "sigmet.json",
+        }
+        | FILES
+    ):
         raise HTTPException(404, "Aviation weather product unavailable")
     service = runtime(request)
 
     # Settings from another process must invalidate payload eligibility too.
     async def read():
+        if filename in FILES:
+            bridge = getattr(request.app.state, "aviation_gfs_bridge", None)
+            model = (
+                await bridge.response(
+                    instance, filename, service.store.get(), service.utc_ms()
+                )
+                if bridge
+                else None
+            )
+            if model is None:
+                raise HTTPException(404, "Aviation weather product unavailable")
+            return model
         await service.settings_changed(service.store.get())
         body = service.payload(instance, filename)
         if body is None:

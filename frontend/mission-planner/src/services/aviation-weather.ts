@@ -331,11 +331,35 @@ const settingsSchema = z.strictObject({
   metar: z.boolean(),
   taf: z.boolean(),
   sigmet: z.boolean(),
+  winds: z.boolean().default(false),
+  temperature: z.boolean().default(false),
+  gfs_selection: z
+    .strictObject({
+      pressure_pa: z.union([
+        z.literal(85000),
+        z.literal(50000),
+        z.literal(30000),
+        z.literal(25000),
+        z.literal(20000),
+      ]),
+      horizon_hours: z.union([
+        z.literal(0),
+        z.literal(3),
+        z.literal(6),
+        z.literal(9),
+        z.literal(12),
+        z.literal(18),
+        z.literal(24),
+        z.literal(36),
+        z.literal(48),
+      ]),
+    })
+    .default({ pressure_pa: 50000, horizon_hours: 0 }),
   revision: integer,
 });
 export type AviationCatalog = z.infer<typeof catalogSchema>;
 export type AviationProduct = z.infer<typeof weatherProductSchema>;
-export type AviationSettings = z.infer<typeof settingsSchema>;
+export type AviationSettings = z.input<typeof settingsSchema>;
 export type AviationLayer = 'metar' | 'taf' | 'sigmet';
 export const parseAviationCatalog = (data: unknown): AviationCatalog =>
   catalogSchema.parse(data);
