@@ -333,7 +333,9 @@ class Runner:
             [*self.compose, "config", "--format", "json"], name="compose.log"
         )
         self.record("compose.json", json.loads(config.stdout))
-        self.command([*self.compose, "build"], seconds=1200, name="build.log")
+        self.command(
+            [*self.compose, "build", "--no-cache"], seconds=1200, name="build.log"
+        )
         images = []
         for kind in ("backend", "frontend", "worker"):
             inspected = json.loads(
