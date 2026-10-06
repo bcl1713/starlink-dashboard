@@ -56,8 +56,10 @@ development PRs against or merge them into `main`.
 
 ### 6. Clean Up After Merge
 
-Keep the worktree while the PR is open. After the PR merges, stop and remove its
-task-owned acceptance projects, then return to the primary checkout:
+Keep the worktree while the PR is open. Stop its workers and remove its
+task-owned acceptance projects as soon as checks finish, including failed or
+cancelled runs. An open PR does not require a running acceptance environment.
+After the PR merges, return to the primary checkout:
 
 ```bash
 cd ../..
@@ -84,12 +86,32 @@ Use the smallest tier that can answer the current development question. Faster
 feedback supplements rather than replaces production-path and rendered-browser
 acceptance.
 
+### Resource Lifecycle for Every Tier
+
+Before starting a check, record its command/session handle, PID and process
+group, task-specific Compose project, private volumes, and temporary paths. Use
+GNU `timeout` around the entire test command, including `uv` or `npm`, as shown
+below. Choose an explicit longer limit for builds or acceptance when needed.
+Tool output-yield limits and pytest's `faulthandler_timeout` do not terminate
+hung tests. Treat timeouts as failed checks and verify the old process tree is
+gone before retrying.
+
+Resource-owning runners must install cleanup handlers for normal exit and
+`INT`/`TERM`, close browser contexts, terminate and reap their workers, and tear
+down their Compose project. Cleanup handlers cannot handle `SIGKILL`, so always
+verify cleanup after forced termination. Stop temporary servers before handing
+work back unless the user explicitly requests that they stay running.
+
+Follow [Cloud Docker runtime](cloud-docker.md#task-teardown-verification) for
+scoped teardown and host verification. Preserve evidence and open-PR worktrees
+without keeping their processes alive. Report any resources left behind.
+
 ### 1. Fast Focused Feedback
 
 From `backend/starlink-location`, run the tracked backend command:
 
 ```bash
-./scripts/test-config.sh
+timeout --kill-after=10s 10m ./scripts/test-config.sh
 ```
 
 It uses the tracked Python 3.11 selection and uv to run the focused
@@ -100,13 +122,13 @@ rendering.
 From `frontend/mission-planner`, run a focused frontend test:
 
 ```bash
-npm run test:unit -- src/pages/status-projection.test.ts
+timeout --kill-after=10s 10m npm run test:unit -- src/pages/status-projection.test.ts
 ```
 
 Run the unit-test suite from the same directory with:
 
 ```bash
-npm run test:unit
+timeout --kill-after=10s 10m npm run test:unit
 ```
 
 These commands prove selected Vitest contracts only. They do not prove Vite
@@ -117,7 +139,7 @@ proxy behavior, Nginx behavior, or rendered-browser behavior.
 From repository root, start only the isolated development backend:
 
 ```bash
-./scripts/compose.sh -p starlink-dashboard-dev \
+./scripts/compose.sh -p starlink-dashboard-dev-your-feature-name \
   -f docker-compose.yml \
   -f docker-compose.dev.yml \
   up -d --build --no-deps starlink-location
@@ -127,7 +149,7 @@ From `frontend/mission-planner`, run Vite against that backend:
 
 ```bash
 STARLINK_DEV_BACKEND_ORIGIN=http://127.0.0.1:18000 \
-  npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
+  timeout --kill-after=10s 30m npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
 ```
 
 The development override bind-mounts backend source at `/app` and runs Uvicorn
@@ -146,7 +168,7 @@ After the task-owned control, stop Vite and, from repository root, remove only
 the development project:
 
 ```bash
-docker compose -p starlink-dashboard-dev \
+docker compose -p starlink-dashboard-dev-your-feature-name \
   -f docker-compose.yml \
   -f docker-compose.dev.yml \
   down
