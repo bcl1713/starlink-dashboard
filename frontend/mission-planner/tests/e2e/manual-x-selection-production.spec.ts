@@ -132,7 +132,15 @@ test('Configuration selects planned satellites in an open Overview and yields to
 
   const seed = await seedOverviewWindowMission(request);
   const legPath = `/api/v2/missions/${seed.missionId}/legs/${seed.firstLegId}`;
-  const leg = await (await request.get(legPath)).json();
+  const missionResponse = await request.get(
+    `/api/v2/missions/${seed.missionId}`
+  );
+  expect(missionResponse.ok(), await missionResponse.text()).toBe(true);
+  const mission = await missionResponse.json();
+  const leg = mission.legs.find(
+    (candidate: { id: string }) => candidate.id === seed.firstLegId
+  );
+  expect(leg).toBeDefined();
   const updated = await request.put(legPath, {
     data: {
       ...leg,
