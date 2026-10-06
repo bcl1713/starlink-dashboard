@@ -6,8 +6,8 @@ import uuid
 from contextlib import contextmanager
 
 import pytest
-from app.services.aviation_weather.settings import AviationSettingsStore
 
+from app.services.aviation_weather.settings import AviationSettingsStore
 from tests.fixtures.gfs_fields import RUN
 
 

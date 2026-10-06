@@ -1,7 +1,8 @@
 """Optional aviation initialization never prevents the real core lifespan."""
 
-import main
 from fastapi.testclient import TestClient
+
+import main
 
 
 def test_optional_aviation_constructor_failure_preserves_core_health(monkeypatch):

@@ -4,8 +4,8 @@ import hashlib
 
 import numpy as np
 import pytest
-from app.models.aviation_grid import GfsSelection
 
+from app.models.aviation_grid import GfsSelection
 from tests.fixtures.gfs_fields import RUN, grib_bundle
 
 

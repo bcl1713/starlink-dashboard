@@ -7,9 +7,9 @@ import uuid
 
 import httpx
 import pytest
+
 from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
-
 from tests.fixtures.gfs_fields import RUN
 from tests.unit.test_aviation_weather_runtime import Source, app_for
 from tests.unit.test_gfs_grid import candidate
@@ -319,11 +319,16 @@ async def test_oversized_damaged_binary_is_rejected_before_allocation(tmp_path):
     with other_owner(bridge.mailbox.root / "worker.lock"):
         bridge.mailbox.heartbeat(enabled.revision, uuid.uuid4().hex, RUN)
         descriptor = products.read_current(enabled.gfs_selection, RUN)[0]
-        with (products.root / "products" / descriptor.instance_id / "u.bin").open("r+b") as stream:
+        with (products.root / "products" / descriptor.instance_id / "u.bin").open(
+            "r+b"
+        ) as stream:
             stream.truncate(32 * 1024**2)
         tracemalloc.start()
         try:
-            assert await bridge.response(descriptor.instance_id, "u.bin", enabled, RUN) is None
+            assert (
+                await bridge.response(descriptor.instance_id, "u.bin", enabled, RUN)
+                is None
+            )
             _current, peak = tracemalloc.get_traced_memory()
         finally:
             tracemalloc.stop()

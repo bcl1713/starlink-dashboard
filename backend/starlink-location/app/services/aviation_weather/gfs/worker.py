@@ -12,6 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import httpx
+
 from app.models.aviation_grid import GridCandidate, GridDescriptor
 from app.services.aviation_weather.settings import AviationSettingsStore
 

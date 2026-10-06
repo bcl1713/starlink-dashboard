@@ -1,9 +1,9 @@
 """Publication is atomic, settings-bound, durable and response-lease safe."""
 
 import pytest
+
 from app.models.aviation_grid import GfsSelection
 from app.services.aviation_weather.settings import AviationSettingsStore
-
 from tests.fixtures.gfs_fields import RUN
 from tests.unit.test_gfs_grid import candidate
 
@@ -152,7 +152,6 @@ def test_actual_inventory_midpoint_limits_retained_validity(tmp_path):
 def test_third_run_is_refused_while_an_old_reader_holds_a_lease(tmp_path):
     from app.services.aviation_weather.gfs.decode import decode_bundle
     from app.services.aviation_weather.gfs.grid import normalize_grid
-
     from tests.fixtures.gfs_fields import grib_bundle
 
     products, _settings, enabled = store(tmp_path)

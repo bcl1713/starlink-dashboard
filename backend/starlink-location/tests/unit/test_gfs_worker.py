@@ -10,8 +10,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from app.services.aviation_weather.settings import AviationSettingsStore
 
+from app.services.aviation_weather.settings import AviationSettingsStore
 from tests.fixtures.gfs_fields import RUN
 
 
@@ -152,7 +152,6 @@ async def test_aclose_waits_for_worker_lock_and_child_release(tmp_path):
 
     from app.services.aviation_weather.gfs.store import GfsProductStore
     from app.services.aviation_weather.gfs.worker import GfsWorker
-
     from tests.fixtures.gfs_worker_process import FixtureTransport
 
     mailbox, settings, _enabled = setup(tmp_path)
@@ -198,7 +197,6 @@ async def test_scientific_deadline_reaps_child_and_removes_stage(tmp_path, monke
 
     import app.services.aviation_weather.gfs.worker as module
     from app.services.aviation_weather.gfs.store import GfsProductStore
-
     from tests.fixtures.gfs_worker_process import FixtureTransport
 
     monkeypatch.setattr(module, "DECODE_SECONDS", 0.5)
@@ -242,7 +240,6 @@ async def test_scientific_deadline_reaps_child_and_removes_stage(tmp_path, monke
 async def test_second_worker_refuses_ownership_and_closes_its_transport(tmp_path):
     from app.services.aviation_weather.gfs.store import GfsProductStore
     from app.services.aviation_weather.gfs.worker import GfsWorker
-
     from tests.fixtures.gfs_worker_process import FixtureTransport
     from tests.unit.test_gfs_ipc import other_owner
 
