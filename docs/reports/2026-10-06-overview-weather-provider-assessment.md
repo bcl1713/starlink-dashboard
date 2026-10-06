@@ -159,13 +159,13 @@ observed-radar scope. Do not infer production stability from its tile zoom.
 
 ### Prefer existing gridded composites to radar volumes
 
-[NOAA MRMS][mrms] documents kilometer-scale mosaics with a two-minute update
-cycle and domains including the continental U.S. and additional U.S. regions.
-Its [product table][mrms-products] identifies precipitation rate and
-reflectivity products, update frequencies and distinct missing/no-coverage
-values. Start with a selected two-dimensional composite, not individual radar
-volumes or the full suite of products. A single national composite already
-avoids recreating radar quality control and mosaicking.
+[NOAA MRMS][mrms] documents operational products across U.S. domains. Its
+[surface precipitation-rate guide][mrms-products] specifies a 1 km grid and
+two-minute update cycle. Preserve the selected product's missing values and
+coverage metadata rather than treating absent observations as zero rain. Start
+with a selected two-dimensional composite, not individual radar volumes or the
+full suite of products. A single national composite already avoids recreating
+radar quality control and mosaicking.
 
 [EUMETNET Open Radar Data][opera] supplies European OPERA composites in ODIM
 HDF5 and cloud-optimized GeoTIFF. CIRRUS reflectivity has 1 km gridding and a
@@ -279,8 +279,9 @@ masks and the maximum meaningful zoom.
 [openweather]: https://openweathermap.org/api/global-precipitation-map
 [google-weather]:
   https://developers.google.com/maps/documentation/weather/weather-map
-[mrms]: https://www.nssl.noaa.gov/projects/mrms/
-[mrms-products]: https://www.nssl.noaa.gov/projects/mrms/operational/tables.php
+[mrms]: https://vlab.noaa.gov/web/mrms
+[mrms-products]:
+  https://vlab.noaa.gov/web/wdtd/-/surface-precipitation-rate-spr-1
 [opera]:
   https://eumetnet.github.io/openradardata-documentation/1-ORD-API-overview/
 [librewxr]: https://github.com/JoshuaKimsey/LibreWXR
