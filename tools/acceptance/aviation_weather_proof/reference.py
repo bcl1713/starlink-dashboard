@@ -76,7 +76,8 @@ def sample_grid(descriptor_path: Path, longitude: float, latitude: float) -> dic
         arrays[name] = array.reshape(height, width)
     stencil = [(y, x, wy * wx) for y, wy in ys for x, wx in xs]
     masks = [int(arrays["mask"][y, x]) for y, x, _ in stencil]
-    invalid = next((value for value in masks if value != 0), 0)
+    # Independent categorical rule: quality rejected > missing > outside > valid.
+    invalid = max(masks)
     contributing = [(y, x, weight) for y, x, weight in stencil if weight > 0]
     values = {}
     for name, declaration in descriptor["components"].items():

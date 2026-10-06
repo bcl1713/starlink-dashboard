@@ -340,3 +340,112 @@ def test_reference_full_grid_seam_validates_zero_weight_wrapped_neighbor(tmp_pat
     sampled = reference.sample_grid(artifact.descriptor_path, 179.5, 90)
     assert sampled["mask"] == 2
     assert sampled["values"] == {"t": None}
+
+
+@pytest.mark.parametrize(
+    "flags,want", [([1, 3, 0, 0], 3), ([1, 2, 0, 0], 2), ([2, 1, 3, 0], 3)]
+)
+def test_reference_mixed_invalid_precedence(tmp_path, flags, want):
+    from acceptance.aviation_weather_proof.reference import sample_grid
+    import hashlib
+
+    values = np.zeros(4, dtype="<i2").tobytes()
+    mask = bytes(flags)
+    (tmp_path / "t.bin").write_bytes(values)
+    (tmp_path / "mask.bin").write_bytes(mask)
+    payload = lambda name, data: dict(
+        path=name,
+        byte_size=len(data),
+        sha256=hashlib.sha256(data).hexdigest(),
+        scale=0.01,
+        offset=273.15,
+    )
+    d = dict(
+        schema="aviation-weather-v1",
+        representation="latlon-grid-v1",
+        grid=dict(
+            width=2,
+            height=2,
+            longitude_start=-180,
+            longitude_step=0.5,
+            latitude_start=90,
+            latitude_step=-0.5,
+        ),
+        components={"t": payload("t.bin", values)},
+        mask=payload("mask.bin", mask),
+    )
+    (tmp_path / "descriptor.json").write_text(json.dumps(d))
+    assert sample_grid(tmp_path / "descriptor.json", -179.75, 89.75)["mask"] == want
+
+
+@pytest.mark.parametrize(
+    "candidates,want",
+    [
+        (
+            [
+                dict(region="A", mask=2, value=250, view_angle=10, scan_end_ms=1000),
+                dict(region="B", mask=0, value=270, view_angle=30, scan_end_ms=3000),
+            ],
+            ("B", 270, 0),
+        ),
+        (
+            [
+                dict(region="A", mask=0, value=250, view_angle=10, scan_end_ms=1000),
+                dict(region="B", mask=0, value=270, view_angle=30, scan_end_ms=3000),
+            ],
+            ("A", 250, 0),
+        ),
+        (
+            [
+                dict(region="A", mask=0, value=250, view_angle=10, scan_end_ms=1000),
+                dict(region="B", mask=0, value=270, view_angle=10, scan_end_ms=3000),
+            ],
+            ("B", 270, 0),
+        ),
+        (
+            [
+                dict(region="B", mask=0, value=270, view_angle=10, scan_end_ms=1000),
+                dict(region="A", mask=0, value=250, view_angle=10, scan_end_ms=1000),
+            ],
+            ("A", 250, 0),
+        ),
+        (
+            [
+                dict(region="A", mask=2, value=250, view_angle=10, scan_end_ms=1000),
+                dict(region="B", mask=3, value=270, view_angle=10, scan_end_ms=3000),
+            ],
+            (None, None, 3),
+        ),
+    ],
+)
+def test_regional_owner_policy(candidates, want):
+    from acceptance.aviation_weather_proof import grid
+
+    assert hasattr(grid, "regional_owner")
+    actual = grid.regional_owner(candidates)
+    assert (actual["region"], actual["value"], actual["mask"]) == want
+    assert grid.regional_owner(candidates[::-1]) == actual
+
+
+def test_synthetic_lineage_is_hashed_and_published_with_grid(api, tmp_path):
+    from acceptance.aviation_weather_proof.grid import write_grid
+    from acceptance.aviation_weather_proof.model import capture_manifest_path
+
+    cap = capture(tmp_path)
+    d, values, mask = decoded(api.normalize_gfs(cap, tmp_path / "model"))
+    d["normalization_version"] = "synthetic-controls-only"
+    d["capture_manifest_path"] = str(capture_manifest_path(cap))
+    owners = np.ones(mask.shape, dtype="u1")
+    owners[:, 360:] = 2
+    owners[180, 360] = 0
+    artifact = write_grid(d, values, mask, tmp_path / "synthetic", lineage=owners)
+    published = json.loads(artifact.descriptor_path.read_text())
+    entry = published["lineage"]
+    path = artifact.descriptor_path.parent / entry["path"]
+    assert entry["dtype"] == "uint8" and entry["byte_size"] == 720 * 361
+    assert file_hash(path) == entry["sha256"]
+    assert path.read_bytes()[180 * 720 + 360] == 0
+    assert entry["encoding"] == {"0": "unavailable", "1": "A", "2": "B"}
+    with pytest.raises(ValueError, match="lineage"):
+        write_grid(d, values, mask, tmp_path / "bad", lineage=np.ones((2, 2)))
+    assert not (tmp_path / "bad").exists()

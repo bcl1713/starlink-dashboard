@@ -135,13 +135,14 @@ try {
   await page.addScriptTag({ content: built.outputFiles[0].text });
   result.native_overview = true;
   result.initial = await page.evaluate(() => window.aviationProof.snapshot());
-  const install = async (source) => {
+  const install = async (source, selectedId) => {
     await page.evaluate(
-      (source) =>
+      ([source, selectedId]) =>
         window.aviationProof.install(
           `/api/overview-weather/aviation-proof-assets/${source}/descriptor.json`,
+          selectedId,
         ),
-      source,
+      [source, selectedId],
     );
     result.metrics.push(
       await page.evaluate(() => window.aviationProof.snapshot()),
@@ -154,10 +155,39 @@ try {
     );
     await page.waitForTimeout(150);
     const path = `${name}.png`;
+    const legend = page.locator("[data-aviation-palette]");
+    let palette;
+    if (await legend.count()) {
+      const bounds = await legend.boundingBox(),
+        viewport = page.viewportSize();
+      const visible =
+        (await legend.isVisible()) &&
+        bounds &&
+        bounds.x >= 0 &&
+        bounds.y >= 0 &&
+        bounds.x + bounds.width <= viewport.width &&
+        bounds.y + bounds.height <= viewport.height;
+      const text = await legend.innerText();
+      if (
+        !visible ||
+        !["190 K", "250 K", "310 K", "40%", "Unavailable"].every((part) =>
+          text.includes(part),
+        )
+      )
+        throw Error("scalar legend hidden/incomplete");
+      palette = {
+        visible: true,
+        text,
+        declaration: JSON.parse(
+          await legend.getAttribute("data-aviation-palette"),
+        ),
+      };
+    }
     await page.screenshot({ path: resolve(output, path) });
     result.captures.push(path);
     (result.views ??= []).push({
       path,
+      palette,
       ...(await page.evaluate(() => window.aviationProof.snapshot())),
     });
   };
@@ -198,7 +228,23 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await capture("model-mobile", 35, -100);
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await install("isigmet");
+  const advisoryResponse = await request.get(
+    `${args.origin}/api/overview-weather/aviation-proof-assets/isigmet/advisories.geojson`,
+  );
+  const selected = (await advisoryResponse.json()).features.find(
+    (f) =>
+      f.properties.issuer === "PHFO" &&
+      f.properties.fir_id === "KZAK" &&
+      f.properties.series_id === "VICTOR 6",
+  );
+  if (!selected) throw Error("pinned VICTOR 6 bulletin unavailable");
+  await install("isigmet", selected.id);
+  result.selected_advisory = await page.evaluate(() =>
+    window.aviationProof.snapshot(),
+  );
+  if (!(await page.locator("[data-aviation-proof]").isVisible()))
+    throw Error("advisory context hidden");
+  result.selected_advisory.visible = true;
   result.advisory_label = await page
     .locator("[data-aviation-proof]")
     .innerText();
@@ -260,6 +306,31 @@ try {
       "/api/overview-weather/aviation-proof-assets/synthetic/descriptor.json",
     capture: "synthetic-regional-intervals.png",
   };
+  const regionalDescriptor = await (
+    await request.get(
+      `${args.origin}/api/overview-weather/aviation-proof-assets/synthetic/descriptor.json`,
+    )
+  ).json();
+  result.regional_samples = [];
+  for (const c of regionalDescriptor.synthetic_controls)
+    result.regional_samples.push({
+      name: c.name,
+      ...(await page.evaluate(
+        ([lat, lon]) => window.aviationProof.regionalSample(lat, lon),
+        [c.latitude, c.longitude],
+      )),
+    });
+  result.regional_seam = await page.evaluate(() =>
+    window.aviationProof.regionalSample(30, -0.25),
+  );
+  result.controls.regional_ownership = result.regional_samples.every(
+    (s, i) =>
+      s.region === ["B", "A", "A", "B", null][i] &&
+      s.mask === [0, 0, 0, 0, 3][i] &&
+      (i === 4
+        ? s.value === null
+        : Math.abs(s.value - [270, 250, 250, 270][i]) <= 0.01),
+  );
   save("synthetic-regional-intervals.json", result.synthetic_regions);
   if (!result.controls.asynchronous)
     throw Error("synthetic regional intervals absent from visible overlay");

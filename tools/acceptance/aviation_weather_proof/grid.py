@@ -69,7 +69,14 @@ def _validate(descriptor, components, mask):
     return encoded
 
 
-def write_grid(descriptor: dict, components: dict[str, np.ndarray], mask: np.ndarray, destination: Path) -> ProductArtifact:
+def write_grid(
+    descriptor: dict,
+    components: dict[str, np.ndarray],
+    mask: np.ndarray,
+    destination: Path,
+    *,
+    lineage: np.ndarray | None = None,
+) -> ProductArtifact:
     """Publish all payloads together; retain the original verified source receipt.
 
     Input capture_manifest_path is private and removed from the browser descriptor.
@@ -81,6 +88,16 @@ def write_grid(descriptor: dict, components: dict[str, np.ndarray], mask: np.nda
         raise ValueError("grid destination already exists")
     descriptor = deepcopy(descriptor)
     encoded = _validate(descriptor, components, mask)
+    if lineage is not None:
+        lineage = np.asarray(lineage)
+        if (
+            descriptor.get("normalization_version") != "synthetic-controls-only"
+            or lineage.shape != np.asarray(mask).shape
+            or not np.isin(lineage, [0, 1, 2]).all()
+        ):
+            raise ValueError("synthetic regional lineage shape/codes")
+        encoded["lineage"] = lineage.astype("u1").tobytes()
+        descriptor["lineage"] = {"encoding": {"0": "unavailable", "1": "A", "2": "B"}}
     capture = load_capture(Path(descriptor.pop("capture_manifest_path")))
     receipt = capture_manifest_path(capture)
     descriptor["capture_manifest_sha256"] = file_hash(receipt)
@@ -99,8 +116,17 @@ def write_grid(descriptor: dict, components: dict[str, np.ndarray], mask: np.nda
         "scan_end_ms": descriptor.get("scan_end_ms"),
     })).hexdigest()
     for name, payload in encoded.items():
-        entry = descriptor["mask"] if name == "mask" else descriptor["components"][name]
-        entry.update(path=f"{name}.bin", sha256=hashlib.sha256(payload).hexdigest(), byte_size=len(payload), dtype="uint8" if name == "mask" else "int16-le")
+        entry = (
+            descriptor[name]
+            if name in ("mask", "lineage")
+            else descriptor["components"][name]
+        )
+        entry.update(
+            path=f"{name}.bin",
+            sha256=hashlib.sha256(payload).hexdigest(),
+            byte_size=len(payload),
+            dtype="uint8" if name in ("mask", "lineage") else "int16-le",
+        )
     return publish_payloads(descriptor, {f"{name}.bin": payload for name, payload in encoded.items()}, receipt, destination)
 
 
@@ -146,3 +172,16 @@ def publish_payloads(descriptor: dict, payloads: dict[str, bytes], receipt: Path
             if stage.exists():
                 shutil.rmtree(stage)
     return ProductArtifact(destination / "descriptor.json", tuple(destination / name for name in payloads), receipt)
+
+
+def regional_owner(candidates):
+    """Synthetic overlap policy: valid, lower view angle, newer scan, stable ID."""
+    valid = [c for c in candidates if c["mask"] == 0]
+    if not valid:
+        return {
+            "region": None,
+            "value": None,
+            "mask": max(c["mask"] for c in candidates),
+        }
+    winner = min(valid, key=lambda c: (c["view_angle"], -c["scan_end_ms"], c["region"]))
+    return {"region": winner["region"], "value": winner["value"], "mask": 0}

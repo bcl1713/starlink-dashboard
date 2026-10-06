@@ -18,6 +18,7 @@ export function sampleGrid(
     x1 = w === 720 ? (x0 + 1) % w : Math.min(x0 + 1, w - 1),
     y1 = Math.min(y0 + 1, h - 1);
   const ids = [y0 * w + x0, y0 * w + x1, y1 * w + x0, y1 * w + x1];
+  // Categorical precedence: quality rejected > missing > outside > valid.
   const invalid = Math.max(...ids.map((i) => mask[i]));
   if (invalid) return { value: null, mask: invalid };
   const tx = x - x0,

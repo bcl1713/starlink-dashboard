@@ -16,7 +16,7 @@ from .model import CaptureManifest, ProductArtifact, capture_manifest_path, obje
 
 EXPANDED_LIMIT = 256 * 1024**2
 WINDOW_ROWS = 128
-NORMALIZATION_VERSION = 'diagnostic-goes19-c13-dqf0-zenith75-bilinear-v1'
+NORMALIZATION_VERSION = "diagnostic-goes19-c13-dqf0-zenith75-bilinear-instant-v2"
 
 
 def _timestamp(value):
@@ -155,22 +155,77 @@ def normalize_satellite(capture: CaptureManifest,destination: Path) -> ProductAr
         navigation={key:projection.getncattr(key) for key in ('grid_mapping_name','sweep_angle_axis','perspective_point_height','semi_major_axis','semi_minor_axis','longitude_of_projection_origin','latitude_of_projection_origin')}
         scene=dataset.scene_id
         sensor={'platform':dataset.platform_ID,'instrument':dataset.instrument_type,'band':13}
-    descriptor={
-        'schema':'aviation-weather-v1','representation':'latlon-grid-v1','diagnostic':True,
-        'normalization_version':NORMALIZATION_VERSION,'source_id':'noaa-goes19-abi','layer_id':'goes19-c13-brightness-temperature',
-        'product_type':'satellite-brightness-temperature','capture_manifest_path':str(receipt),
-        'attribution':list(capture.attribution),'sensor':sensor,
-        'time_kind':'observed','method_kind':'satellite','validity_kind':'scan-interval',
-        'valid_at_ms':end,'valid_from_ms':start,'valid_to_ms':end,'scan_start_ms':start,'scan_end_ms':end,
-        'observed_at_ms':end,'issued_at_ms':None,'run_at_ms':None,'lead_seconds':None,
-        'retrieved_at_ms':capture.captured_at_ms,'generated_at_ms':round(time.time()*1000),
-        'region_intervals':[{'region':scene,'scan_start_ms':start,'scan_end_ms':end}],
-        'vertical':{'kind':'radiometric','reference':'top-of-atmosphere','derivation':'native-brightness-temperature'},
-        'coverage':{'kind':'geostationary-scan','region':scene,'missing':'mask','interpolation':'bilinear-nonzero-contributors-valid'},
-        'quality_policy':{'accepted_dqf':[0],'maximum_view_zenith_degrees':75,'off_earth_mask':1,'fill_mask':2,'rejected_mask':3,'parallax_correction':False},
-        'provenance':{'source_objects':[{'sha256':o.sha256,'byte_size':o.byte_size,'url':o.url} for o in capture.objects],
-                      'source_navigation':navigation,'expanded_object_bytes':expanded,'decoder_allocation':allocation},
-        'grid':{'width':720,'height':361,'longitude_start':-180,'longitude_step':.5,'latitude_start':90,'latitude_step':-.5},
-        'components':{'t':{'quantity':'brightness-temperature','units':'K','offset':273.15,'scale':.01}},
+    descriptor = {
+        "schema": "aviation-weather-v1",
+        "representation": "latlon-grid-v1",
+        "diagnostic": True,
+        "normalization_version": NORMALIZATION_VERSION,
+        "source_id": "noaa-goes19-abi",
+        "layer_id": "goes19-c13-brightness-temperature",
+        "product_type": "satellite-brightness-temperature",
+        "capture_manifest_path": str(receipt),
+        "attribution": list(capture.attribution),
+        "sensor": sensor,
+        "time_kind": "observation",
+        "method_kind": "sensor",
+        "validity_kind": "instant",
+        "valid_at_ms": end,
+        "valid_from_ms": None,
+        "valid_to_ms": None,
+        "scan_start_ms": start,
+        "scan_end_ms": end,
+        "observed_at_ms": end,
+        "issued_at_ms": None,
+        "run_at_ms": None,
+        "lead_seconds": None,
+        "retrieved_at_ms": capture.captured_at_ms,
+        "generated_at_ms": round(time.time() * 1000),
+        "region_intervals": [
+            {"region": scene, "scan_start_ms": start, "scan_end_ms": end}
+        ],
+        "vertical": {
+            "kind": "radiometric",
+            "reference": "top-of-atmosphere",
+            "derivation": "native-brightness-temperature",
+        },
+        "coverage": {
+            "kind": "geostationary-scan",
+            "region": scene,
+            "missing": "mask",
+            "interpolation": "bilinear-nonzero-contributors-valid",
+        },
+        "quality_policy": {
+            "accepted_dqf": [0],
+            "maximum_view_zenith_degrees": 75,
+            "off_earth_mask": 1,
+            "fill_mask": 2,
+            "rejected_mask": 3,
+            "parallax_correction": False,
+        },
+        "provenance": {
+            "source_objects": [
+                {"sha256": o.sha256, "byte_size": o.byte_size, "url": o.url}
+                for o in capture.objects
+            ],
+            "source_navigation": navigation,
+            "expanded_object_bytes": expanded,
+            "decoder_allocation": allocation,
+        },
+        "grid": {
+            "width": 720,
+            "height": 361,
+            "longitude_start": -180,
+            "longitude_step": 0.5,
+            "latitude_start": 90,
+            "latitude_step": -0.5,
+        },
+        "components": {
+            "t": {
+                "quantity": "brightness-temperature",
+                "units": "K",
+                "offset": 273.15,
+                "scale": 0.01,
+            }
+        },
     }
     return write_grid(descriptor,{'t':values},mask,destination)

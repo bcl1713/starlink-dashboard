@@ -200,3 +200,143 @@ it('replacement waits for obsolete work cleanup and cancels stale generations', 
   expect(await last).toBe('current');
   expect(peak).toBe(1);
 });
+
+it('outlines exterior and hole rings with tessellation, accounting and disposal', async () => {
+  const { advisoryMesh } = await import(
+    '../../tests/e2e/support/aviation-weather-proof/advisory-renderer'
+  );
+  const owned = advisoryMesh(
+    [
+      {
+        id: 'hole',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [0, 0],
+              [10, 0],
+              [10, 10],
+              [0, 10],
+              [0, 0],
+            ],
+            [
+              [2, 2],
+              [2, 4],
+              [4, 4],
+              [4, 2],
+              [2, 2],
+            ],
+          ],
+        },
+        properties: {
+          validity: { start_ms: 0, end_ms: 10 },
+          cancellation: { cancelled: false },
+          status: 'active',
+        },
+      },
+    ],
+    5
+  );
+  try {
+    const outline = owned.mesh.children.find(
+      (o) => o.type === 'LineSegments'
+    ) as import('three').LineSegments;
+    expect(outline).toBeDefined();
+    expect(outline.geometry.getAttribute('position').count).toBe(96); // 80 exterior + 16 hole vertices at one-degree segments
+    expect(owned.bytes).toBe(
+      owned.mesh.geometry.getAttribute('position').array.byteLength +
+        outline.geometry.getAttribute('position').array.byteLength
+    );
+    let disposed = 0;
+    outline.geometry.addEventListener('dispose', () => disposed++);
+    owned.dispose();
+    expect(disposed).toBe(1);
+  } finally {
+    owned.dispose();
+  }
+});
+it('labels the selected bulletin identity, half-open validity and explicit vertical context', async () => {
+  const module = await import(
+    '../../tests/e2e/support/aviation-weather-proof/advisory-renderer'
+  );
+  expect('advisoryContext' in module).toBe(true);
+  const f = {
+    id: 'selected',
+    geometry: null,
+    properties: {
+      issuer: 'PHFO',
+      fir_id: 'KZAK',
+      series_id: 'VICTOR 6',
+      hazard: 'TC',
+      qualifier: 'KOGUMA',
+      validity: { start_ms: 1791271800000, end_ms: 1791293400000 },
+      cancellation: { cancelled: false },
+      status: 'active',
+      vertical: { status: 'unknown' },
+    },
+  };
+  const label = (
+    module as unknown as { advisoryContext: (f: unknown) => string }
+  ).advisoryContext(f);
+  for (const part of [
+    'PHFO',
+    'KZAK',
+    'VICTOR 6',
+    'TC',
+    'KOGUMA',
+    '[2026-10-06T07:30:00.000Z, 2026-10-06T13:30:00.000Z)',
+    'vertical unknown',
+  ])
+    expect(label).toContain(part);
+});
+it.each([
+  [1, 3, 0, 0, 3],
+  [1, 2, 0, 0, 2],
+  [2, 1, 3, 0, 3],
+])(
+  'uses categorical maximum for mixed masks %s %s %s %s',
+  (a, b, c, d, want) => {
+    expect(
+      sampleGrid(
+        { ...descriptor, grid: { ...grid, width: 2, height: 2 } },
+        new Int16Array(4),
+        new Uint8Array([a, b, c, d]),
+        89.75,
+        -179.75
+      )
+    ).toEqual({ value: null, mask: want });
+  }
+);
+
+it('retains known advisory vertical units and reference', async () => {
+  const { advisoryContext } = await import(
+    '../../tests/e2e/support/aviation-weather-proof/advisory-renderer'
+  );
+  const label = advisoryContext({
+    id: 'known',
+    geometry: null,
+    properties: {
+      validity: { start_ms: 0, end_ms: 10 },
+      status: 'active',
+      cancellation: { cancelled: false },
+      vertical: {
+        status: 'known',
+        base: {
+          kind: 'flight-level',
+          value: 200,
+          units: 'hundreds-of-feet',
+          reference: 'standard-pressure',
+        },
+        top: {
+          kind: 'flight-level',
+          value: 300,
+          units: 'hundreds-of-feet',
+          reference: 'standard-pressure',
+        },
+      },
+    },
+  });
+  expect(label).toContain(
+    'flight-level 200 hundreds-of-feet standard-pressure → flight-level 300 hundreds-of-feet standard-pressure'
+  );
+});

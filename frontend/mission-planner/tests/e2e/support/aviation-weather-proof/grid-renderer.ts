@@ -11,6 +11,7 @@ export const samplingShader = `
  vec2 sampleValue(){vec2 geo=geography();float lon=geo.x;float lat=geo.y;vec2 q=vec2(mod(lon+180.0,360.0)*2.0,(90.0-lat)*2.0);
  if(q.y<0.0||q.y>size.y-1.0||(size.x<720.0&&q.x>size.x-1.0))return vec2(0.0,1.0);
  vec2 lo=floor(q),hi=min(lo+1.0,size-1.0);if(size.x==720.0)hi.x=mod(lo.x+1.0,size.x);
+ // Categorical precedence: quality rejected > missing > outside > valid.
  vec3 a=node(lo),b=node(vec2(hi.x,lo.y)),c=node(vec2(lo.x,hi.y)),d=node(hi);float mask=max(max(a.y,b.y),max(c.y,d.y));
  return vec2(mix(mix(a.x,b.x,fract(q.x)),mix(c.x,d.x,fract(q.x)),fract(q.y)),mask);}
  void main(){if(diagnostic>=2){vec3 earth=diagnostic>=7?rasterEarth:fragmentPoint();int mode=diagnostic>=7?diagnostic-3:diagnostic;vec2 geo=geography();float value=diagnostic==2?(geo.x+180.0)/360.0:diagnostic==3?(geo.y+90.0)/180.0:mode==4?(earth.x+3.0)/6.0:mode==5?(earth.y+3.0)/6.0:(earth.z+3.0)/6.0;float q=floor(value*16777215.0+0.5);gl_FragColor=vec4(floor(q/65536.0),mod(floor(q/256.0),256.0),mod(q,256.0),255.0)/255.0;return;}vec2 s=sampleValue();if(diagnostic==1){float q=floor(s.x+32768.0+0.5);gl_FragColor=vec4(floor(q/256.0)/255.0,mod(q,256.0)/255.0,s.y/255.0,1.0);return;}

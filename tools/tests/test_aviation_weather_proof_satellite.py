@@ -1,7 +1,6 @@
 """Small real NetCDF fixtures expose navigation, quality and scan mistakes."""
 import importlib
 import json
-from pathlib import Path
 
 import numpy as np
 from netCDF4 import Dataset
@@ -67,6 +66,12 @@ def test_scan_interval_survives_identity(tmp_path):
     b=decoded(normalize(source(tmp_path/'b',start='2026-10-06T00:00:21.0Z'),tmp_path/'pb'))[0]
     assert a['scan_start_ms']==1791244820900 and a['scan_end_ms']==1791245392800
     assert a['valid_at_ms']==a['scan_end_ms']
+    assert (a["time_kind"], a["method_kind"], a["validity_kind"]) == (
+        "observation",
+        "sensor",
+        "instant",
+    )
+    assert a["valid_from_ms"] is None and a["valid_to_ms"] is None
     assert a['product_id']==b['product_id'] and a['instance_id']!=b['instance_id']
     assert a['sensor']['band']==13 and a['sensor']['platform']=='G19'
     assert a['components']['t']['quantity']=='brightness-temperature'
@@ -149,6 +154,7 @@ def test_supported_native_bootstrap_survives_real_mixed_library_worker():
         "assert pyproj.proj_version_str==pyproj.__proj_version__; print('clean native transform')"],
         capture_output=True,text=True,timeout=30)
     assert result.returncode==0,result.stdout+result.stderr
+    assert result.stderr == ""
     assert result.stdout.strip()=='clean native transform'
 
 
@@ -159,3 +165,4 @@ def test_satellite_oracle_does_not_load_grib_native_library():
         "import sys; import acceptance.aviation_weather_proof.reference; "
         "assert 'eccodes' not in sys.modules"],capture_output=True,text=True,timeout=30)
     assert result.returncode==0,result.stdout+result.stderr
+    assert result.stderr == ""

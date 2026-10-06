@@ -9,7 +9,12 @@ import {
   type Payload,
 } from './model';
 import { gridMesh, windBarbs, earthPoint } from './grid-renderer';
-import { advisoryMesh, type Feature } from './advisory-renderer';
+import {
+  active,
+  advisoryContext,
+  advisoryMesh,
+  type Feature,
+} from './advisory-renderer';
 import { sampleGrid } from './sampling';
 const allocation = new Allocation();
 const queue = new InstallQueue();
@@ -30,9 +35,12 @@ let installed:
       d: Descriptor;
       values?: Int16Array;
       mask?: Uint8Array;
+      lineage?: Uint8Array;
       objects: Owned[];
       releases: (() => void)[];
-      label: HTMLElement;
+      label: ReturnType<typeof mountProofLabel>;
+      selectedAdvisory?: Feature;
+      outlineVertices: number;
       saved: { position: THREE.Vector3; target: THREE.Vector3 };
     }
   | undefined;
@@ -50,14 +58,20 @@ function look(latitude: number, longitude: number, radius = 5) {
   state().camera.updateMatrixWorld();
   state().invalidate();
 }
-function install(url: string) {
-  return queue.run((signal) => performInstall(url, signal));
+function install(url: string, selectedId?: string) {
+  return queue.run((signal) => performInstall(url, signal, selectedId));
 }
-async function performInstall(url: string, signal: AbortSignal) {
+async function performInstall(
+  url: string,
+  signal: AbortSignal,
+  selectedId?: string
+) {
   const objects: Owned[] = [],
     releases: (() => void)[] = [];
-  let label: HTMLElement | undefined;
+  let label: ReturnType<typeof mountProofLabel> | undefined;
   let advisoryLabel = '';
+  let selectedAdvisory: Feature | undefined;
+  let outlineVertices = 0;
   try {
     releases.push(allocation.reserve(1024 ** 2, 4 * 1024 ** 2, 0));
     const boundedRead = async (
@@ -118,7 +132,9 @@ async function performInstall(url: string, signal: AbortSignal) {
       const b = await boundedRead(r, p.byte_size);
       return b;
     };
-    let values: Int16Array | undefined, mask: Uint8Array | undefined;
+    let values: Int16Array | undefined,
+      mask: Uint8Array | undefined,
+      lineage: Uint8Array | undefined;
     if (d.representation === 'latlon-grid-v1') {
       const g = d.grid;
       if (
@@ -144,9 +160,25 @@ async function performInstall(url: string, signal: AbortSignal) {
       )
         throw Error('components');
       const encoded =
-        entries.reduce((s, [, p]) => s + p.byte_size, 0) + d.mask.byte_size;
+        entries.reduce((s, [, p]) => s + p.byte_size, 0) +
+        d.mask.byte_size +
+        (d.lineage?.byte_size ?? 0);
+      if (d.lineage && entries.length > 2) throw Error('four-fetch budget');
       releases.push(allocation.reserve(encoded, encoded * 2, 0));
       const settled = await Promise.allSettled([
+        ...(d.lineage
+          ? [
+              (async () =>
+                [
+                  'lineage',
+                  await decodePayload(
+                    await fetchPayload(d.lineage!),
+                    { ...d.lineage!, dtype: 'uint8' },
+                    cells
+                  ),
+                ] as const)(),
+            ]
+          : []),
         ...entries.map(
           async ([k, p]) =>
             [k, await decodePayload(await fetchPayload(p), p, cells)] as const
@@ -164,6 +196,8 @@ async function performInstall(url: string, signal: AbortSignal) {
       const arrays = Object.fromEntries(results);
       values = arrays.t as Int16Array;
       mask = arrays.mask as Uint8Array;
+      lineage = arrays.lineage as Uint8Array | undefined;
+      if (lineage?.some((n) => n > 2)) throw Error('lineage');
       if (mask.some((x) => x > 3)) throw Error('mask');
       // Reserve conservative geometry and packed texture bytes BEFORE constructors.
       const gridReserve = allocation.reserve(
@@ -191,23 +225,15 @@ async function performInstall(url: string, signal: AbortSignal) {
         features: Feature[];
       };
       if (collection.features.length > 500) throw Error('advisory count');
-      advisoryLabel = collection.features
-        .filter((f) => [0, 6].includes(f.properties.source_index ?? -1))
-        .map((f) => {
-          const v = f.properties.vertical as {
-            status: string;
-            base?: { kind: string; value: number };
-            top?: { kind: string; value: number };
-          };
-          return `Source record ${f.properties.source_index}: ${v.status === 'known' ? `${v.base?.kind} ${v.base?.value} → ${v.top?.kind} ${v.top?.value}` : 'vertical unknown'}`;
-        })
-        .join('; ');
-      objects.push(
-        advisoryMesh(
-          collection.features,
-          d.diagnostic_replay_at_ms ?? Date.now()
-        )
+      const now = d.diagnostic_replay_at_ms ?? Date.now();
+      selectedAdvisory = collection.features.find(
+        (f) => (selectedId ? f.id === selectedId : true) && active(f, now)
       );
+      if (!selectedAdvisory) throw Error('selected bulletin unavailable');
+      advisoryLabel = advisoryContext(selectedAdvisory);
+      const advisory = advisoryMesh(collection.features, now);
+      outlineVertices = advisory.outlineVertices;
+      objects.push(advisory);
     } else throw Error('representation');
     signal.throwIfAborted();
     const s = state();
@@ -220,13 +246,24 @@ async function performInstall(url: string, signal: AbortSignal) {
     dispose(false);
     label = mountProofLabel(d, advisoryLabel);
     for (const object of objects) s.scene.add(object.mesh);
-    installed = { d, values, mask, objects, releases, label, saved };
+    installed = {
+      d,
+      values,
+      mask,
+      lineage,
+      objects,
+      releases,
+      label,
+      saved,
+      selectedAdvisory,
+      outlineVertices,
+    };
     s.invalidate();
     return snapshot();
   } catch (error) {
     for (const object of objects) object.dispose();
     for (const release of releases) release();
-    label?.remove();
+    label?.dispose();
     throw error;
   }
 }
@@ -245,7 +282,7 @@ function dispose(restore = true) {
     o.dispose();
   }
   for (const release of old.releases) release();
-  old.label.remove();
+  old.label.dispose();
   if (restore) {
     const p = old.saved.position,
       t = old.saved.target;
@@ -263,15 +300,21 @@ function snapshot() {
       peak: { ...allocation.peak },
     },
     label: installed?.label.textContent,
+    selectedAdvisory: installed?.selectedAdvisory,
+    outlineVertices: installed?.outlineVertices,
     objects: installed?.objects.map((o) => ({
       name: o.mesh.name,
-      geometryBytes:
-        'geometry' in o.mesh
-          ? Object.values((o.mesh as THREE.Mesh).geometry.attributes).reduce(
-              (n, a) => n + a.array.byteLength,
-              0
-            )
-          : 0,
+      geometryBytes: (() => {
+        let bytes = 0;
+        o.mesh.traverse((node) => {
+          if ('geometry' in node)
+            for (const a of Object.values(
+              (node as THREE.Mesh).geometry.attributes
+            ))
+              bytes += a.array.byteLength;
+        });
+        return bytes;
+      })(),
     })),
     savedView: installed?.saved.position.toArray(),
     camera: {
@@ -454,7 +497,29 @@ function night(enabled: boolean) {
   }
   state().invalidate();
 }
+function regionalSample(latitude: number, longitude: number) {
+  if (!installed?.lineage) throw Error('regional lineage required');
+  const gpu = sample(latitude, longitude),
+    g = installed.d.grid;
+  const x = Math.floor(
+      (gpu.sampleLongitude - g.longitude_start) / g.longitude_step
+    ),
+    y = Math.floor((gpu.sampleLatitude - g.latitude_start) / g.latitude_step);
+  const lineage = [
+    y * g.width + x,
+    y * g.width + ((x + 1) % g.width),
+    Math.min(y + 1, g.height - 1) * g.width + x,
+    Math.min(y + 1, g.height - 1) * g.width + ((x + 1) % g.width),
+  ].map((i) => installed!.lineage![i]);
+  const regions = lineage.map((n) => (n === 1 ? 'A' : n === 2 ? 'B' : null));
+  return {
+    ...gpu,
+    region: regions.every((r) => r === regions[0]) ? regions[0] : null,
+    lineage: regions,
+  };
+}
 win.aviationProof = {
+  regionalSample,
   install,
   dispose: restore,
   sample,

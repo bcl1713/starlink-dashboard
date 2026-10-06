@@ -17,8 +17,8 @@ The records retain the exact frozen constructors in the approved plan.
 Transport: explicit allowlisted HTTPS, no redirects, custom User-Agent, 30-second
 absolute exchange deadline, parent-death worker signal, two concurrent exchanges,
 20 attempts per 60 seconds, 32 MiB/object and conservative 5 GiB/day reservations.
-All transitive research versions are pinned in `requirements.txt`. No topology
-dependency is installed; a later advisory proof must verify and pin one if needed.
+All transitive research versions are pinned in `requirements.txt`. Shapely is pinned and used for advisory topology validation and antimeridian
+clipping, including polygon holes.
 
 Admission state is shared across workers under `/tmp/aviation-proof-admission-UID`.
 Acquisition publishes a directory only after all objects succeed; staging is
@@ -170,3 +170,29 @@ an independent long grace. The late-signal control seals a 32 MiB failed fixture
 Xvfb inherits the browser wrapper group in the platform launcher; the wrapper
 terminates/reaps that exact owned Popen child individually, while private Chrome
 and journey groups retain group cleanup. The shared-group safety guard is unchanged.
+
+
+Final diagnostic evidence requires bound scientific receipts for every real
+source: capture and descriptor SHA-256, source/time identity, retained numeric
+comparisons, and finite measured wall/CPU/RSS/cgroup memory within the decoder
+caps. Source normalization allows 0.005 K quantization error; native sampling
+allows 0.01 K and palette compositing allows 3 RGB levels. The visible passive
+legend declares 190–310 K and 40% opacity, with unavailable masks transparent.
+Normalized mixed-mask stencils use quality rejected (3) > missing (2) > outside
+(1) > valid (0), including zero-weight neighbors; source interpolation retains
+its separately documented contributor rules.
+
+GOES v1 envelopes use observation/sensor/instant tags, scan end as display
+instant, null validity endpoints, and separate complete scan/region support.
+The normalization version ends in `bilinear-instant-v2` so the corrected time
+contract gets a new product identity. Prior evidence is never relabeled.
+The selected advisory identifies the actual issuer/FIR/series/hazard and
+half-open validity, with replay UTC separate and unknown vertical context
+explicit. Filled geometry and exterior/hole outlines share the same budget.
+
+The separate synthetic regional fixture retains two competing scans, invalid
+cells, values and a hashed per-cell lineage payload. Policy is valid region,
+lower view angle, newer scan end, then stable region ID. Five literal overlap
+controls exercise values/masks/lineage; a separate equal-time tie probe exercises
+stable IDs. Region intervals are preserved; absent aggregate times are not dates.
+These controls establish no real worldwide mosaic or inter-sensor calibration.

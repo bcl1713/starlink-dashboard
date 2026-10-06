@@ -41,7 +41,7 @@ export function geometryControls(reserve: (bytes: number) => () => void) {
       return new THREE.Raycaster(
         p,
         p.clone().normalize().negate()
-      ).intersectObject(object.mesh).length;
+      ).intersectObject(object.mesh, false).length;
     };
     const result = {
       holes: ray(0, 0) === 0 && ray(5, 5) > 0,
@@ -95,7 +95,7 @@ export function geometryControls(reserve: (bytes: number) => () => void) {
       return new THREE.Raycaster(
         p,
         p.clone().normalize().negate()
-      ).intersectObject(seam.mesh).length;
+      ).intersectObject(seam.mesh, false).length;
     };
     result.advisory_dateline = hits(178) > 0 && hits(-178) > 0 && hits(0) === 0;
     return result;

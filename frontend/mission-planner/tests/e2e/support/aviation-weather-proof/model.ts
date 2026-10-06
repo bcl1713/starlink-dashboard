@@ -22,11 +22,30 @@ export type Descriptor = {
   };
   components: Record<string, Payload>;
   mask: Payload;
+  lineage?: Payload;
+  synthetic_controls?: {
+    name: string;
+    longitude: number;
+    latitude: number;
+    candidates: {
+      region: string;
+      value: number;
+      mask: number;
+      view_angle: number;
+      scan_start_ms?: number;
+      scan_end_ms: number;
+    }[];
+  }[];
   advisories?: Payload;
   records?: Payload;
-  scan_start_ms?: number;
-  scan_end_ms?: number;
-  valid_at_ms?: number;
+  scan_start_ms?: number | null;
+  scan_end_ms?: number | null;
+  valid_at_ms?: number | null;
+  time_kind?: 'observation' | 'forecast' | 'analysis';
+  method_kind?: 'reported' | 'sensor' | 'numerical-model' | 'derived';
+  validity_kind?: 'instant' | 'interval';
+  valid_from_ms?: number | null;
+  valid_to_ms?: number | null;
   diagnostic_replay_at_ms?: number;
   region_intervals?: {
     region: string;
@@ -62,10 +81,10 @@ export async function decodePayload(
 export function labels(d: Descriptor) {
   const utc = (n: number) => new Date(n).toISOString();
   if (d.representation === 'advisory-v1')
-    return `International SIGMET • Coverage ${d.coverage?.completeness ?? 'unverified'} • ${d.diagnostic_replay_at_ms === undefined ? 'UTC validity rechecked' : `Diagnostic replay ${utc(d.diagnostic_replay_at_ms)}`} • Unknown vertical limits remain unknown`;
+    return `International SIGMET reported forecast • Coverage ${d.coverage?.completeness ?? 'unverified'} • ${d.diagnostic_replay_at_ms === undefined ? 'UTC validity rechecked' : `Diagnostic replay ${utc(d.diagnostic_replay_at_ms)}`} • Unknown vertical limits remain unknown`;
   if (typeof d.scan_start_ms === 'number' || d.region_intervals)
-    return `${d.source_id ?? 'Satellite'} • brightness temperature K (not cloud height) • ${d.scan_start_ms === undefined ? '' : `${utc(d.scan_start_ms)} – ${utc(d.scan_end_ms!)}`} • ${(d.region_intervals ?? []).map((r) => `${r.region}: ${utc(r.scan_start_ms)} – ${utc(r.scan_end_ms)}`).join('; ')}`;
-  return `${d.source_id ?? 'GFS'} • 500 hPa model forecast • Temperature K; wind m/s • Valid ${d.valid_at_ms === undefined ? 'unknown' : utc(d.valid_at_ms)} • Barbs: FROM direction; m/s × 1.94384449 → nearest 5 knots`;
+    return `${d.source_id ?? 'Satellite'} • brightness temperature K (not cloud height) • ${typeof d.scan_start_ms !== 'number' || typeof d.scan_end_ms !== 'number' ? '' : `Observation scan ${utc(d.scan_start_ms)} – ${utc(d.scan_end_ms)}; display instant (scan end) ${utc(d.scan_end_ms)}`} • ${(d.region_intervals ?? []).map((r) => `${r.region}: ${utc(r.scan_start_ms)} – ${utc(r.scan_end_ms)}`).join('; ')}`;
+  return `${d.source_id ?? 'GFS'} • 500 hPa model forecast • Temperature K; wind m/s • Valid ${typeof d.valid_at_ms !== 'number' ? 'unknown' : utc(d.valid_at_ms)} • Barbs: FROM direction; m/s × 1.94384449 → nearest 5 knots`;
 }
 export class Allocation {
   current = { encoded: 0, decoded: 0, gpu: 0 };

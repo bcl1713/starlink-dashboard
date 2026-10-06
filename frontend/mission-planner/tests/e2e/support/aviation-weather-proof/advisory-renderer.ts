@@ -8,7 +8,26 @@ export type Feature = {
     cancellation: { cancelled: boolean };
     status: string;
     source_index?: number;
-    vertical?: unknown;
+    issuer?: string | null;
+    fir_id?: string | null;
+    series_id?: string | null;
+    hazard?: string | null;
+    qualifier?: string | null;
+    vertical?: {
+      status: string;
+      base?: {
+        kind: string;
+        value: number;
+        units?: string;
+        reference?: string;
+      } | null;
+      top?: {
+        kind: string;
+        value: number;
+        units?: string;
+        reference?: string;
+      } | null;
+    };
   };
 };
 export function active(feature: Feature, now: number) {
@@ -21,8 +40,20 @@ export function active(feature: Feature, now: number) {
     now < p.validity.end_ms
   );
 }
+export function advisoryContext(f: Feature) {
+  const p = f.properties,
+    v = p.vertical;
+  const level = (n: NonNullable<Feature['properties']['vertical']>['base']) =>
+    n
+      ? `${n.kind} ${n.value} ${n.units ?? ''} ${n.reference ?? ''}`.trim()
+      : 'unknown';
+  const utc = (n: number | null) =>
+    n === null ? 'unknown' : new Date(n).toISOString();
+  return `Issuer ${p.issuer ?? 'unknown'} • FIR ${p.fir_id ?? 'unknown'} • Series ${p.series_id ?? 'unknown'} • Hazard ${p.hazard ?? 'unknown'} ${p.qualifier ?? ''} • Bulletin validity [${utc(p.validity.start_ms)}, ${utc(p.validity.end_ms)}) UTC • ${v?.status === 'known' ? `vertical ${level(v.base)} → ${level(v.top)}` : 'vertical unknown (base/top units and reference unverified)'}`;
+}
 export function advisoryMesh(features: Feature[], now: number) {
-  const positions: number[] = [];
+  const positions: number[] = [],
+    outlines: number[] = [];
   let triangles = 0;
   // Triangulate planar clipped polygons with holes, then subdivide every triangle
   // internally before projection. This keeps wide interiors above the Earth.
@@ -45,7 +76,8 @@ export function advisoryMesh(features: Feature[], now: number) {
       triangle(ab, bc, ca, depth + 1);
       return;
     }
-    if (positions.length + 9 > 300_000) throw Error('advisory geometry budget');
+    if (positions.length + outlines.length + 9 > 300_000)
+      throw Error('advisory geometry budget');
     for (const p of [a, b, c])
       positions.push(...earthPoint(p.y, p.x, 2.024).toArray());
     triangles++;
@@ -59,6 +91,26 @@ export function advisoryMesh(features: Feature[], now: number) {
         ? [f.geometry.coordinates as number[][][]]
         : (f.geometry.coordinates as number[][][][]);
     for (const polygon of polygons) {
+      for (const ring of polygon)
+        for (let i = 1; i < ring.length; i++) {
+          const a = ring[i - 1],
+            b = ring[i],
+            steps = Math.max(
+              1,
+              Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 1)
+            );
+          if (positions.length + outlines.length + steps * 6 > 300_000)
+            throw Error('advisory geometry budget');
+          for (let j = 0; j < steps; j++)
+            for (const t of [j / steps, (j + 1) / steps])
+              outlines.push(
+                ...earthPoint(
+                  a[1] + (b[1] - a[1]) * t,
+                  a[0] + (b[0] - a[0]) * t,
+                  2.028
+                ).toArray()
+              );
+        }
       const rings = polygon.map((r) =>
           r.slice(0, -1).map((p) => new THREE.Vector2(p[0], p[1]))
         ),
@@ -84,16 +136,33 @@ export function advisoryMesh(features: Feature[], now: number) {
     toneMapped: false,
   });
   const mesh = new THREE.Mesh(geometry, material);
+  const outlineGeometry = new THREE.BufferGeometry();
+  outlineGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(outlines, 3)
+  );
+  const outlineMaterial = new THREE.LineBasicMaterial({
+    color: 0xffdf91,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const outline = new THREE.LineSegments(outlineGeometry, outlineMaterial);
+  outline.name = 'SIGMET exterior and hole outlines';
+  outline.renderOrder = 23;
+  mesh.add(outline);
   mesh.name = 'Aviation diagnostic active SIGMET';
   mesh.renderOrder = 22;
   return {
     mesh,
     selected,
     triangles,
-    bytes: geometryBytes(geometry),
+    bytes: geometryBytes(geometry) + geometryBytes(outlineGeometry),
+    outlineVertices: outlines.length / 3,
     dispose: () => {
       geometry.dispose();
       material.dispose();
+      outlineGeometry.dispose();
+      outlineMaterial.dispose();
     },
   };
 }
