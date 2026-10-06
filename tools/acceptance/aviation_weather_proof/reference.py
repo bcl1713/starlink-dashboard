@@ -146,3 +146,129 @@ def compare_gfs(capture: CaptureManifest, descriptor_path: Path, coordinates=DEF
     if any(set(record["source_values"]) != {"u", "v", "t"} for record in records):
         raise ValueError("independent source controls incomplete")
     return records
+
+
+DEFAULT_SATELLITE_COORDINATES = (
+    (-75, 0), (-80, 10), (-100, 20), (-60, 30), (-90, 40),
+    (-50, -10), (-65, -25), (-100, -30), (-120, 5), (-35, 15),
+)
+
+
+def compare_satellite(capture: CaptureManifest, descriptor_path: Path,
+                      coordinates=DEFAULT_SATELLITE_COORDINATES) -> list[dict]:
+    """Independent NOAA PUG ellipsoid/scan-angle source and normalized checks.
+
+    Uses analytic Earth/satellite vectors, not PROJ or normalizer coordinate
+    helpers. Controls are exact geographic output nodes. Each record compares
+    the source bilinear value to the normalized buffer, while reporting the
+    difference from the nearest source pixel separately as a local resampling
+    measurement. That local difference is not a global reconstruction bound.
+    """
+    from datetime import datetime
+    from netCDF4 import Dataset
+
+    descriptor_path=Path(descriptor_path)
+    descriptor=json.loads(descriptor_path.read_text())
+    if capture.source!='goes19-c13' or len(capture.objects)!=1:
+        raise ValueError('satellite reference requires GOES-19 C13 capture')
+    obj=capture.objects[0]
+    if descriptor['provenance']['source_objects'][0]['sha256']!=obj.sha256:
+        raise ValueError('satellite reference provenance differs')
+    records=[]
+    with Dataset(object_path(capture,obj)) as dataset:
+        projection=dataset.variables['goes_imager_projection']
+        if projection.grid_mapping_name!='geostationary' or projection.sweep_angle_axis!='x' or projection.latitude_of_projection_origin!=0:
+            raise ValueError('reference requires supported GOES fixed grid')
+        a=float(projection.semi_major_axis); b=float(projection.semi_minor_axis)
+        h=float(projection.perspective_point_height)+a
+        lon0=math.radians(float(projection.longitude_of_projection_origin))
+        e2=1-(b/a)**2
+        x=np.asarray(dataset.variables['x'][:],dtype='f8')
+        y=np.asarray(dataset.variables['y'][:],dtype='f8')
+        xnodes=sorted((float(value),index) for index,value in enumerate(x))
+        ynodes=sorted((float(value),index) for index,value in enumerate(y))
+        cmi=dataset.variables['CMI']; dqf=dataset.variables['DQF']
+        cmi.set_auto_maskandscale(False); dqf.set_auto_maskandscale(False)
+        for field,attribute in [('scan_start_ms','time_coverage_start'),('scan_end_ms','time_coverage_end')]:
+            ms=round(datetime.fromisoformat(dataset.getncattr(attribute).replace('Z','+00:00')).timestamp()*1000)
+            if descriptor[field]!=ms:
+                raise ValueError('satellite reference scan interval differs')
+        for longitude,latitude in coordinates:
+            # Controls must hit published grid nodes; no browser texture math.
+            grid=descriptor['grid']
+            if longitude not in [grid['longitude_start']+i*grid['longitude_step'] for i in range(grid['width'])] or latitude not in [grid['latitude_start']+i*grid['latitude_step'] for i in range(grid['height'])]:
+                raise ValueError('source comparison requires exact geographic output nodes')
+            lat=math.radians(latitude); lon=math.radians(longitude)-lon0
+            radius=a/math.sqrt(1-e2*math.sin(lat)**2)
+            ex=radius*math.cos(lat)*math.cos(lon)
+            ey=radius*math.cos(lat)*math.sin(lon)
+            ez=radius*(1-e2)*math.sin(lat)
+            sx=h-ex
+            distance=math.sqrt(sx*sx+ey*ey+ez*ez)
+            scan_x=math.asin(ey/distance); scan_y=math.atan2(ez,sx)
+            cosine=(sx*math.cos(lat)*math.cos(lon)-ey*math.cos(lat)*math.sin(lon)-ez*math.sin(lat))/distance
+            zenith=math.degrees(math.acos(max(-1,min(1,cosine))))
+            if zenith>75:
+                raise ValueError('satellite control outside conservative zenith policy')
+            xs=_bracket(xnodes,scan_x); ys=_bracket(ynodes,scan_y)
+            contributors=[]
+            for row,wy in ys:
+                for column,wx in xs:
+                    weight=wx*wy
+                    if weight<=0: continue
+                    raw=int(cmi[row,column]); quality=int(dqf[row,column])
+                    if raw==int(cmi.getncattr('_FillValue')) or quality!=0:
+                        raise ValueError('satellite control has missing/rejected source contributor')
+                    if getattr(cmi,'_Unsigned','false')=='true' and raw<0:
+                        raw+=1<<(8*cmi.dtype.itemsize)
+                    minimum,maximum=cmi.valid_range
+                    if not minimum<=raw<=maximum:
+                        raise ValueError('satellite source value outside valid range')
+                    value=raw*float(cmi.scale_factor)+float(cmi.add_offset)
+                    # NOAA PUG ray/ellipsoid intersection, independent of PROJ.
+                    xx=float(x[column]); yy=float(y[row])
+                    aa=math.sin(xx)**2+math.cos(xx)**2*(math.cos(yy)**2+(a/b)**2*math.sin(yy)**2)
+                    bb=-2*h*math.cos(xx)*math.cos(yy)
+                    cc=h*h-a*a
+                    discriminant=bb*bb-4*aa*cc
+                    if discriminant<0: raise ValueError('off-Earth source contributor')
+                    ray=(-bb-math.sqrt(discriminant))/(2*aa)
+                    vx=h-ray*math.cos(xx)*math.cos(yy)
+                    vy=ray*math.sin(xx)
+                    vz=ray*math.cos(xx)*math.sin(yy)
+                    source_lat=math.atan((a/b)**2*vz/math.hypot(vx,vy))
+                    source_lon=lon0+math.atan2(vy,vx)
+                    n=a/math.sqrt(1-e2*math.sin(source_lat)**2)
+                    rx=n*math.cos(source_lat)*math.cos(source_lon-lon0)
+                    ry=n*math.cos(source_lat)*math.sin(source_lon-lon0)
+                    rz=n*(1-e2)*math.sin(source_lat)
+                    dx=h-rx; magnitude=math.sqrt(dx*dx+ry*ry+rz*rz)
+                    back_x=math.asin(ry/magnitude); back_y=math.atan2(rz,dx)
+                    normal_dot=(dx*math.cos(source_lat)*math.cos(source_lon-lon0)-ry*math.cos(source_lat)*math.sin(source_lon-lon0)-rz*math.sin(source_lat))/magnitude
+                    source_zenith=math.degrees(math.acos(max(-1,min(1,normal_dot))))
+                    if source_zenith>75: raise ValueError('source contributor exceeds zenith policy')
+                    contributors.append({'row':row,'column':column,'scan_x_rad':xx,'scan_y_rad':yy,
+                        'longitude':math.degrees(source_lon),'latitude':math.degrees(source_lat),
+                        'navigation_roundtrip_error_rad':max(abs(back_x-xx),abs(back_y-yy)),
+                        'view_zenith_degrees':source_zenith,'packed_value':raw,'dqf':quality,'value_K':value,'weight':weight})
+            regridded=sum(point['value_K']*point['weight'] for point in contributors)
+            nearest=min(contributors,key=lambda point:(point['scan_x_rad']-scan_x)**2+(point['scan_y_rad']-scan_y)**2)
+            source_values=[point['value_K'] for point in contributors]
+            normalized=sample_grid(descriptor_path,longitude,latitude)
+            normalized_value=normalized['values']['t']
+            if normalized['mask']!=0 or normalized_value is None:
+                raise ValueError('satellite control has invalid normalized stencil')
+            tolerance=descriptor['components']['t']['scale']/2
+            quantization_error=abs(normalized_value-regridded)
+            if quantization_error>tolerance+1e-7:
+                raise ValueError('satellite source-to-normalized quantization comparison failed')
+            records.append({'longitude':longitude,'latitude':latitude,'source_hash':obj.sha256,
+                'scan_start_ms':descriptor['scan_start_ms'],'scan_end_ms':descriptor['scan_end_ms'],
+                'target_scan_x_rad':scan_x,'target_scan_y_rad':scan_y,'target_view_zenith_degrees':zenith,
+                'source_contributors':contributors,'nearest_source_value':nearest['value_K'],
+                'regridded_value':regridded,'normalized_value':normalized_value,'normalized_mask':normalized['mask'],
+                'resampling_error':abs(regridded-nearest['value_K']),
+                'resampling_local_range_bound':max(source_values)-min(source_values),
+                'resampling_claim':'local bilinear-versus-nearest difference; no global accuracy claim',
+                'quantization_tolerance':tolerance,'quantization_error':quantization_error})
+    return records
