@@ -28,7 +28,9 @@ async function scene(page: Page) {
                   fn: (o: {
                     name: string;
                     geometry?: {
-                      attributes: { instanceStart?: { count: number } };
+                      attributes: { position?: { count: number } };
+                      type: string;
+                      parameters?: { radius?: number };
                     };
                     material?: { depthTest: boolean; depthWrite: boolean };
                   }) => void
@@ -47,6 +49,7 @@ async function scene(page: Page) {
       )
       ?.containerInfo?.getState?.();
     if (!state) return { borders: [], geometries: 0, calls: 0 };
+    let earth = false;
     const borders: {
       name: string;
       count: number;
@@ -54,16 +57,22 @@ async function scene(page: Page) {
       depthWrite?: boolean;
     }[] = [];
     state.scene.traverse((o) => {
+      if (
+        o.geometry?.type === 'SphereGeometry' &&
+        o.geometry.parameters?.radius === 2
+      )
+        earth = true;
       if (o.name.startsWith('overview-boundaries-'))
         borders.push({
           name: o.name,
-          count: o.geometry?.attributes.instanceStart?.count ?? 0,
+          count: (o.geometry?.attributes.position?.count ?? 0) / 2,
           depthTest: o.material?.depthTest,
           depthWrite: o.material?.depthWrite,
         });
     });
     return {
       borders,
+      earth,
       geometries: state.gl.info.memory.geometries,
       calls: state.gl.info.render.calls,
     };
@@ -139,189 +148,201 @@ function frameStats(times: number[]) {
 }
 
 for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
-  test(`real saved borders reach ${mode} Overview without mission, reload or camera reset`, async ({
-    context,
-    request,
-  }, info) => {
-    if (mode === 'mobile') await context.setDefaultTimeout(20_000);
-    const reset = await request.put('/api/overview-links/settings', {
-      data: { country_borders_enabled: false, state_borders_enabled: false },
-    });
-    expect(reset.status()).toBe(200);
-    expect(await (await request.get('/api/routes')).json()).toMatchObject({
-      routes: [],
-    });
-    const overview = await context.newPage();
-    if (mode === 'mobile')
-      await overview.setViewportSize({ width: 390, height: 844 });
-    await observeOverviewCamera(overview);
-    const errors: string[] = [];
-    overview.on('pageerror', (error) => errors.push(error.message));
-    const assets: string[] = [];
-    overview.on('request', (request) => {
-      if (request.url().includes('/boundaries/')) assets.push(request.url());
-    });
-    await overview.goto('/overview');
-    await settledOverviewCamera(overview);
-    const originalScene = await scene(overview);
-    expect(originalScene.borders).toHaveLength(0);
-    expect(assets).toHaveLength(0);
-    await expect(overview.getByRole('switch')).toHaveCount(0);
-    await expect(overview.getByLabel('Map status')).toContainText(
-      'No active route'
-    );
-    if (mode === 'fullscreen') {
-      await overview
-        .getByRole('button', { name: 'Enter fullscreen overview' })
-        .click();
+  test.describe(mode, () => {
+    test.use({ deviceScaleFactor: mode === 'mobile' ? 2 : 1 });
+    test(`real saved borders reach ${mode} Overview without mission, reload or camera reset`, async ({
+      context,
+      request,
+    }, info) => {
+      if (mode === 'mobile') await context.setDefaultTimeout(20_000);
+      const reset = await request.put('/api/overview-links/settings', {
+        data: { country_borders_enabled: false, state_borders_enabled: false },
+      });
+      expect(reset.status()).toBe(200);
+      expect(await (await request.get('/api/routes')).json()).toMatchObject({
+        routes: [],
+      });
+      const overview = await context.newPage();
+      if (mode === 'mobile')
+        await overview.setViewportSize({ width: 390, height: 844 });
+      await observeOverviewCamera(overview);
+      const errors: string[] = [];
+      overview.on('pageerror', (error) => errors.push(error.message));
+      const assets: string[] = [];
+      overview.on('request', (request) => {
+        if (request.url().includes('/boundaries/')) assets.push(request.url());
+      });
+      await overview.goto('/overview');
+      await settledOverviewCamera(overview);
       await expect
-        .poll(() => overview.evaluate(() => !!document.fullscreenElement))
+        .poll(async () => (await scene(overview)).earth, { timeout: 30_000 })
         .toBe(true);
-    }
-    // With no mission, automatic framing follows changing simulation positions.
-    // Establish a user-explored view to prove that saves preserve that view.
-    await overview
-      .getByRole('button', { name: 'Explore map', exact: true })
-      .click();
-    const box = (await overview
-      .locator('.overview-globe canvas')
-      .boundingBox())!;
-    await overview.mouse.move(
-      box.x + box.width * 0.55,
-      box.y + box.height * 0.55
-    );
-    await overview.mouse.down();
-    await overview.mouse.move(
-      box.x + box.width * 0.65,
-      box.y + box.height * 0.5,
-      { steps: 10 }
-    );
-    await overview.mouse.up();
-    await overview.mouse.wheel(0, -900);
-    const camera = await settledOverviewCamera(overview);
-    const baselineFrames = frameStats(await frameSample(overview));
-    const editing = await context.newPage();
-    await editing.goto('/configuration');
-    await expect(
-      editing.getByRole('heading', { name: 'Geographic boundaries' })
-    ).toBeVisible();
-    const before = await overview.evaluate(() => performance.timeOrigin);
-    const countryMs = await toggle(
-      editing,
-      overview,
-      'Country borders',
-      'countries',
-      true
-    );
-    const countryScene = await scene(overview);
-    expect(countryScene.borders).toHaveLength(4);
-    await expect(
-      (await legend(overview)).getByText('Country borders', { exact: true })
-    ).toBeVisible();
-    const stateMs = await toggle(
-      editing,
-      overview,
-      'State/province borders',
-      'subdivisions',
-      true
-    );
-    const bothScene = await scene(overview);
-    expect(bothScene.borders).toHaveLength(8);
-    expect(bothScene.calls - originalScene.calls).toBeLessThanOrEqual(8);
-    for (const line of bothScene.borders) {
-      expect(line.count).toBeGreaterThan(0);
-      expect(line.depthTest).toBe(true);
-      expect(line.depthWrite).toBe(false);
-    }
-    await expect(
-      (await legend(overview)).getByText('Aircraft', { exact: true })
-    ).toBeVisible();
-    expectSameCamera(await settledOverviewCamera(overview), camera);
-    expect(await overview.evaluate(() => performance.timeOrigin)).toBe(before);
-    if (mode === 'fullscreen')
-      expect(await overview.evaluate(() => !!document.fullscreenElement)).toBe(
+      expect((await scene(overview)).borders).toHaveLength(0);
+      expect(assets).toHaveLength(0);
+      await expect(overview.getByRole('switch')).toHaveCount(0);
+      await expect(overview.getByLabel('Map status')).toContainText(
+        'No active route'
+      );
+      if (mode === 'fullscreen') {
+        await overview
+          .getByRole('button', { name: 'Enter fullscreen overview' })
+          .click();
+        await expect
+          .poll(() => overview.evaluate(() => !!document.fullscreenElement))
+          .toBe(true);
+      }
+      // With no mission, automatic framing follows changing simulation positions.
+      // Establish a user-explored view to prove that saves preserve that view.
+      const explore = overview.getByRole('button', {
+        name: 'Explore map',
+        exact: true,
+      });
+      if (await explore.isVisible()) await explore.click();
+      const box = (await overview
+        .locator('.overview-globe canvas')
+        .boundingBox())!;
+      await overview.mouse.move(
+        box.x + box.width * 0.55,
+        box.y + box.height * 0.55
+      );
+      await overview.mouse.down();
+      await overview.mouse.move(
+        box.x + box.width * 0.65,
+        box.y + box.height * 0.5,
+        { steps: 10 }
+      );
+      await overview.mouse.up();
+      await overview.mouse.wheel(0, -900);
+      const camera = await settledOverviewCamera(overview);
+      const baselineFrames = frameStats(await frameSample(overview));
+      const originalScene = await scene(overview);
+      const editing = await context.newPage();
+      await editing.goto('/configuration');
+      await expect(
+        editing.getByRole('heading', { name: 'Geographic boundaries' })
+      ).toBeVisible();
+      const before = await overview.evaluate(() => performance.timeOrigin);
+      const countryMs = await toggle(
+        editing,
+        overview,
+        'Country borders',
+        'countries',
         true
       );
-    await overview.screenshot({ path: info.outputPath(`${mode}-borders.png`) });
-    await editing.screenshot({
-      path: info.outputPath(`${mode}-settings.png`),
-      fullPage: true,
-    });
-    const borderFrames = frameStats(await frameSample(overview));
-    expect(borderFrames.median).toBeLessThan(
-      Math.max(100, baselineFrames.median * 2)
-    );
-    expect(borderFrames.p95).toBeLessThan(
-      Math.max(200, baselineFrames.p95 * 3)
-    );
-    const countryOffMs = await toggle(
-      editing,
-      overview,
-      'Country borders',
-      'countries',
-      false
-    );
-    expect((await scene(overview)).borders).toHaveLength(4);
-    const stateOffMs = await toggle(
-      editing,
-      overview,
-      'State/province borders',
-      'subdivisions',
-      false
-    );
-    expect((await scene(overview)).borders).toHaveLength(0);
-    await expect(
-      (await legend(overview)).getByText('State/province borders', {
-        exact: true,
-      })
-    ).toHaveCount(0);
-    for (let i = 0; i < 2; i++) {
-      await toggle(
+      const countryScene = await scene(overview);
+      expect(countryScene.borders).toHaveLength(2);
+      await expect(
+        (await legend(overview)).getByText('Country borders', { exact: true })
+      ).toBeVisible();
+      const stateMs = await toggle(
         editing,
         overview,
         'State/province borders',
         'subdivisions',
         true
       );
-      await toggle(
+      const bothScene = await scene(overview);
+      expect(bothScene.borders).toHaveLength(4);
+      expect(bothScene.calls - originalScene.calls).toBeLessThanOrEqual(4);
+      for (const line of bothScene.borders) {
+        expect(line.count).toBeGreaterThan(0);
+        expect(line.depthTest).toBe(true);
+        expect(line.depthWrite).toBe(false);
+      }
+      await expect(
+        (await legend(overview)).getByText('Aircraft', { exact: true })
+      ).toBeVisible();
+      expectSameCamera(await settledOverviewCamera(overview), camera);
+      expect(await overview.evaluate(() => performance.timeOrigin)).toBe(
+        before
+      );
+      if (mode === 'fullscreen')
+        expect(
+          await overview.evaluate(() => !!document.fullscreenElement)
+        ).toBe(true);
+      await overview.screenshot({
+        path: info.outputPath(`${mode}-borders.png`),
+      });
+      await editing.screenshot({
+        path: info.outputPath(`${mode}-settings.png`),
+        fullPage: true,
+      });
+      const borderFrames = frameStats(await frameSample(overview));
+      expect(borderFrames.median).toBeLessThan(
+        Math.max(100, baselineFrames.median * 2)
+      );
+      expect(borderFrames.p95).toBeLessThan(
+        Math.max(200, baselineFrames.p95 * 3)
+      );
+      const countryOffMs = await toggle(
+        editing,
+        overview,
+        'Country borders',
+        'countries',
+        false
+      );
+      expect((await scene(overview)).borders).toHaveLength(2);
+      const stateOffMs = await toggle(
         editing,
         overview,
         'State/province borders',
         'subdivisions',
         false
       );
-    }
-    // Successful immutable assets are reused; no polling or per-feature requests.
-    expect(assets).toHaveLength(2);
-    await expect
-      .poll(async () => (await scene(overview)).geometries)
-      .toBe(originalScene.geometries);
-    await editing.reload();
-    await expect(
-      editing.getByRole('switch', { name: 'State/province borders' })
-    ).not.toBeChecked();
-    expect(errors).toEqual([]);
-    await writeFile(
-      info.outputPath('observations.json'),
-      JSON.stringify(
-        {
-          candidate: process.env.ACCEPTANCE_CANDIDATE_SHA,
-          mode,
-          countryMs,
-          stateMs,
-          countryOffMs,
-          stateOffMs,
-          assets,
-          originalScene,
-          bothScene,
-          baselineFrames,
-          borderFrames,
-          errors,
-        },
-        null,
-        2
-      )
-    );
+      expect((await scene(overview)).borders).toHaveLength(0);
+      await expect(
+        (await legend(overview)).getByText('State/province borders', {
+          exact: true,
+        })
+      ).toHaveCount(0);
+      for (let i = 0; i < 2; i++) {
+        await toggle(
+          editing,
+          overview,
+          'State/province borders',
+          'subdivisions',
+          true
+        );
+        await toggle(
+          editing,
+          overview,
+          'State/province borders',
+          'subdivisions',
+          false
+        );
+      }
+      // Successful immutable assets are reused; no polling or per-feature requests.
+      expect(assets).toHaveLength(2);
+      await expect
+        .poll(async () => (await scene(overview)).geometries)
+        .toBe(originalScene.geometries);
+      await editing.reload();
+      await expect(
+        editing.getByRole('switch', { name: 'State/province borders' })
+      ).not.toBeChecked();
+      expect(errors).toEqual([]);
+      await writeFile(
+        info.outputPath('observations.json'),
+        JSON.stringify(
+          {
+            candidate: process.env.ACCEPTANCE_CANDIDATE_SHA,
+            mode,
+            countryMs,
+            stateMs,
+            countryOffMs,
+            stateOffMs,
+            assets,
+            originalScene,
+            bothScene,
+            baselineFrames,
+            borderFrames,
+            errors,
+          },
+          null,
+          2
+        )
+      );
+    });
   });
 }
 
@@ -423,7 +444,7 @@ test('fixture operational overlays remain readable with real bundled borders', a
     .poll(async () => (await scene(overview)).borders.length, {
       timeout: 20_000,
     })
-    .toBe(8);
+    .toBe(4);
   const entries = await legend(overview);
   for (const label of [
     'Country borders',
@@ -496,7 +517,7 @@ test('fixture operational overlays remain readable with real bundled borders', a
       { latitude, longitude }
     );
     await settledOverviewCamera(overview);
-    expect((await scene(overview)).borders).toHaveLength(8);
+    expect((await scene(overview)).borders).toHaveLength(4);
     await overview.screenshot({ path: info.outputPath(`${name}-borders.png`) });
   }
   expect(errors).toEqual([]);

@@ -31,9 +31,12 @@ it('batches border segments, preserves earth occlusion and releases GPU resource
   const view = await create(
     <OverviewBoundaryLayer kind="countries" segments={segments} />
   );
-  const borders = view.scene.instance.children[0].children as THREE.Mesh[];
-  expect(borders).toHaveLength(4);
+  const borders = view.scene.instance.children[0]
+    .children as THREE.LineSegments[];
+  expect(borders).toHaveLength(2);
   for (const border of borders) {
+    expect(border.isLineSegments).toBe(true);
+    expect(border.geometry.attributes.position.count).toBeGreaterThan(0);
     const mat = border.material as THREE.Material;
     expect(mat.depthTest).toBe(true);
     expect(mat.depthWrite).toBe(false);
@@ -44,8 +47,9 @@ it('batches border segments, preserves earth occlusion and releases GPU resource
     <OverviewBoundaryLayer kind="countries" segments={segments} />
   );
   expect(view.scene.instance.children[0].children).toEqual(objects);
+  expect(borders[1].material).toBeInstanceOf(THREE.LineDashedMaterial);
   await view.unmount();
   expect(geometry).toHaveBeenCalledTimes(2);
-  expect(material).toHaveBeenCalledTimes(4);
+  expect(material).toHaveBeenCalledTimes(2);
   vi.restoreAllMocks();
 });

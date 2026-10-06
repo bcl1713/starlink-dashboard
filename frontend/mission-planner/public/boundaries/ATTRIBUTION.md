@@ -59,6 +59,6 @@ Overview operational.
 Runtime limits are 4 MB and 120,000 source points per dataset and 250,000
 projected segments per layer. Projection densifies geographic lines at a
 maximum 0.5-degree latitude/longitude step, uses the short date-line path and
-retains high-latitude parallels. Each layer uses at most four batched draws
-(solid and dashed, each with a contrast stroke), with depth testing enabled and
-depth writing disabled.
+retains high-latitude parallels. Each layer uses at most two batched draws
+(solid and dashed native one-pixel lines), with depth testing enabled and depth
+writing disabled. Countries use a brighter stroke than subdivisions.

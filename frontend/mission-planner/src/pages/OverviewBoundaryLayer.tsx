@@ -1,8 +1,11 @@
 import { useEffect, useMemo } from 'react';
-import { useThree } from '@react-three/fiber';
-import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
-import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  LineBasicMaterial,
+  LineDashedMaterial,
+  LineSegments,
+} from 'three';
 import type { BoundaryKind, projectBoundaries } from './overview-boundaries';
 
 export function OverviewBoundaryLayer({
@@ -12,60 +15,41 @@ export function OverviewBoundaryLayer({
   kind: BoundaryKind;
   segments: ReturnType<typeof projectBoundaries>;
 }) {
-  const { width, height } = useThree((state) => state.size);
   const batch = useMemo(() => {
-    const geometries: LineSegmentsGeometry[] = [];
-    const materials: LineMaterial[] = [];
-    const objects: LineSegments2[] = [];
+    const geometries: BufferGeometry[] = [];
+    const materials: LineBasicMaterial[] = [];
+    const objects: LineSegments[] = [];
     for (const [disputed, positions] of [
       [false, segments.standard],
       [true, segments.disputed],
     ] as const) {
       if (positions.length === 0) continue;
-      const geometry = new LineSegmentsGeometry();
-      geometry.setPositions(positions);
+      const geometry = new BufferGeometry();
+      geometry.setAttribute('position', new BufferAttribute(positions, 3));
       geometries.push(geometry);
-      // Two screen-space strokes keep reference lines readable over bright land
-      // and dark oceans without competing with the colored operational layers.
-      for (const halo of [true, false]) {
-        const material = new LineMaterial({
-          color: halo
-            ? '#10151d'
-            : kind === 'countries'
-              ? '#dde4ee'
-              : '#9aaebf',
-          linewidth: halo
-            ? kind === 'countries'
-              ? 3
-              : 2.5
-            : kind === 'countries'
-              ? 1.2
-              : 0.8,
-          opacity: halo ? 0.45 : kind === 'countries' ? 0.85 : 0.6,
-          transparent: true,
-          depthTest: true,
-          depthWrite: false,
-          toneMapped: false,
-          dashed: disputed,
-          dashScale: 1,
-          dashSize: 0.015,
-          gapSize: 0.01,
-        });
-        const object = new LineSegments2(geometry, material);
-        object.computeLineDistances();
-        object.renderOrder = halo ? -4 : -3;
-        object.raycast = () => {};
-        object.name = `overview-boundaries-${kind}${disputed ? '-disputed' : ''}${halo ? '-halo' : ''}`;
-        materials.push(material);
-        objects.push(object);
-      }
+      // Native one-pixel lines avoid expanding every reference segment into
+      // triangles. Operational layers retain their stronger screen-space strokes.
+      const style = {
+        color: kind === 'countries' ? '#dde4ee' : '#9aaebf',
+        opacity: kind === 'countries' ? 0.9 : 0.65,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false,
+        toneMapped: false,
+      };
+      const material = disputed
+        ? new LineDashedMaterial({ ...style, dashSize: 0.015, gapSize: 0.01 })
+        : new LineBasicMaterial(style);
+      const object = new LineSegments(geometry, material);
+      if (disputed) object.computeLineDistances();
+      object.renderOrder = kind === 'countries' ? -3 : -4;
+      object.raycast = () => {};
+      object.name = `overview-boundaries-${kind}${disputed ? '-disputed' : ''}`;
+      materials.push(material);
+      objects.push(object);
     }
     return { geometries, materials, objects };
   }, [kind, segments]);
-  useEffect(() => {
-    for (const material of batch.materials)
-      material.resolution.set(width, height);
-  }, [batch, width, height]);
   useEffect(
     () => () => {
       batch.geometries.forEach((geometry) => geometry.dispose());
