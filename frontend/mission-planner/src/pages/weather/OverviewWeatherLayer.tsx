@@ -40,6 +40,7 @@ export function OverviewWeatherLayer({
   const material = useRef<THREE.ShaderMaterial>(null);
   const uniforms = useMemo(
     () => ({
+      radarOpacity: { value: 0.4 },
       radarTexture: { value: null as THREE.Texture | null },
       coverageTexture: { value: null as THREE.Texture | null },
       detailRadar: { value: null as THREE.Texture | null },

@@ -36,7 +36,23 @@ export async function installWeatherProbe(page: Page) {
       const radar = material?.uniforms.radarTexture.value as
         | CanvasTexture
         | undefined;
+      type Fiber = {
+        memoizedProps?: { work?: { snapshot: () => unknown }; atlas?: unknown };
+        child?: Fiber;
+        sibling?: Fiber;
+      };
+      const find = (node: Fiber | undefined): Fiber | undefined => {
+        if (!node) return;
+        if (node.memoizedProps?.work && node.memoizedProps.atlas) return node;
+        return find(node.child) ?? find(node.sibling);
+      };
+      const owner = (
+        target.__overviewEvidenceRoots as unknown as { current?: Fiber }[]
+      )
+        .map((root) => find(root.current))
+        .find(Boolean)?.memoizedProps?.work;
       return {
+        work: owner?.snapshot() ?? null,
         canvas:
           s.gl.domElement.dataset.weatherEvidence ??
           (s.gl.domElement.dataset.weatherEvidence = crypto.randomUUID()),
@@ -45,6 +61,21 @@ export async function installWeatherProbe(page: Page) {
         calls: s.gl.info.render.calls,
         radar: radar?.uuid ?? null,
         width: radar?.image.width ?? null,
+        detailSlots: [...(material?.uniforms.detailValid.value ?? [])],
+        detailFades: [...(material?.uniforms.detailFades.value ?? [])],
+        detailBounds: (material?.uniforms.detailBounds.value ?? []).map(
+          (value: { toArray(): number[] }) => value.toArray()
+        ),
+        opacity: material?.uniforms.radarOpacity.value,
+        weatherGPUBytes: [
+          'radarTexture',
+          'coverageTexture',
+          'detailRadar',
+          'detailCoverage',
+        ].reduce((sum, key) => {
+          const image = material?.uniforms[key].value?.image;
+          return sum + (image ? image.width * image.height * 4 : 0);
+        }, 0),
         depthTest: material?.depthTest,
         depthWrite: material?.depthWrite,
         renderOrder: mesh?.renderOrder,
@@ -156,6 +187,17 @@ export async function weatherSnapshot(page: Page) {
           calls: number;
           radar: string | null;
           width: number | null;
+          work: {
+            active: number;
+            detailActive: number;
+            decodedBytes: number;
+            peakDecodedBytes: number;
+          } | null;
+          detailSlots: number[];
+          detailFades: number[];
+          detailBounds: number[][];
+          opacity: number;
+          weatherGPUBytes: number;
           depthTest?: boolean;
           depthWrite?: boolean;
           renderOrder?: number;

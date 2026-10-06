@@ -84,7 +84,7 @@ it('disposes detail before replacing coarse textures and preserves uniform objec
     .material as THREE.ShaderMaterial;
   const uniforms = material.uniforms;
   expect(work.snapshot().decodedBytes).toBe(16 * 1024 * 1024);
-  expect(material.fragmentShader).toContain('rain.a*0.40');
+  expect(material.uniforms.radarOpacity.value).toBe(0.4);
   await view.update(
     <OverviewWeatherLayer
       atlas={{ ...atlas, radar: canvas() }}

@@ -1,5 +1,6 @@
 import { MERCATOR_LIMIT } from './weather-projection';
 export const weatherFragmentShader = `
+  uniform float radarOpacity;
   uniform sampler2D radarTexture;
   uniform sampler2D coverageTexture;
   uniform sampler2D detailRadar;
@@ -66,9 +67,9 @@ export const weatherFragmentShader = `
     }
     float hatch = 1.0-step(1.5,mod(gl_FragCoord.x+gl_FragCoord.y,12.0));
     float hatchAlpha = absent*hatch*0.17;
-    float alpha = rain.a*0.40+hatchAlpha;
+    float alpha = rain.a*radarOpacity+hatchAlpha;
     if(alpha<=0.001)discard;
-    vec3 color=(rain.rgb*0.40+vec3(0.42)*hatchAlpha)/alpha;
+    vec3 color=(rain.rgb*radarOpacity+vec3(0.42)*hatchAlpha)/alpha;
     gl_FragColor=vec4(color,alpha);
     #include <colorspace_fragment>
   }

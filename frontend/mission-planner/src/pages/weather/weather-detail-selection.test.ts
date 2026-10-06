@@ -132,3 +132,8 @@ it('keeps polar missing coverage at the coarse fallback and rejects tangent-only
     ).keys
   ).toEqual([]);
 });
+it('adds detail within the existing native minimum camera distance of three', () => {
+  const demand = selectDetail(camera(3), readyWeather(), null);
+  expect(demand.level).toBeGreaterThan(2);
+  expect(demand.keys.length).toBeGreaterThan(0);
+});
