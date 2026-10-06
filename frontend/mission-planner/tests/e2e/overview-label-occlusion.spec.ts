@@ -240,6 +240,20 @@ for (const viewport of [
     );
     await page.mouse.up();
     await page.mouse.wheel(0, -120);
+    // Exercise a deterministic damped camera transition as well as gestures;
+    // compact overlay rails can intercept the pointer path.
+    await page.evaluate(() => {
+      const state = window.__overviewEvidenceRoots
+        ?.find(
+          (root) =>
+            root.containerInfo?.getState &&
+            document.contains(root.containerInfo.getState().gl.domElement)
+        )
+        ?.containerInfo?.getState?.();
+      if (!state?.controls) throw new Error('No camera controls');
+      void state.controls.rotate(0.08, 0.03, true);
+    });
+    await page.waitForTimeout(1500);
     if (viewport.width !== 1920)
       await page
         .getByRole('button', { name: 'Exit map exploration', exact: true })
