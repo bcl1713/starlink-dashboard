@@ -59,8 +59,23 @@ vi.mock('@/hooks/api/useStatus', () => ({ useStatus: () => ({}) }));
 vi.mock('@/hooks/api/useOverviewHistory', () => ({
   useOverviewHistory: () => ({}),
 }));
-vi.mock('@/hooks/api/useSatellites', () => ({ useSatellites: () => ({}) }));
-vi.mock('@/hooks/api/useActiveXLink', () => ({ useActiveXLink: () => ({}) }));
+vi.mock('@/hooks/api/useSatellites', () => ({
+  useSatellites: () => ({
+    data: [
+      { satellite_id: 'X-1', transport: 'X', longitude: 30, color: '#FFFFFF' },
+    ],
+  }),
+}));
+vi.mock('@/hooks/api/useActiveXLink', () => ({
+  useActiveXLink: () => ({
+    data: {
+      satellite_id: null,
+      selection_source: 'none',
+      manual_satellite_id: null,
+      manual_selection_invalid: false,
+    },
+  }),
+}));
 vi.mock('@/hooks/api/useOverviewClockSettings', () => ({
   useOverviewClockSettings: vi.fn(),
 }));
@@ -132,6 +147,9 @@ describe('ConfigurationPage', () => {
     ).not.toBeNull();
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Network Traffic' }));
+    expect(
+      screen.getByRole('combobox', { name: 'Planned X-band satellite' })
+    ).not.toBeNull();
     expect(
       screen.getByRole('switch', { name: 'Orbital traffic view' })
     ).not.toBeNull();

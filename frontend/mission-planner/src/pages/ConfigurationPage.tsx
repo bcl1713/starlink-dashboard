@@ -13,6 +13,7 @@ import { OverviewDisplaySettingsCard } from './OverviewDisplaySettingsCard';
 import { OverviewHistorySettingsCard } from './OverviewHistorySettingsCard';
 import { OverviewMapDiagnostics } from './OverviewMapDiagnostics';
 import { OverviewLinkSettingsCard } from './OverviewLinkSettingsCard';
+import { ManualXBandSelectionCard } from './ManualXBandSelectionCard';
 import { OrbitalTrafficDiagnostics } from './OrbitalTrafficDiagnostics';
 import { OverviewAdsbSettingsCard } from './adsb/OverviewAdsbSettingsCard';
 import { OverviewAdsbSourceStatus } from './adsb/OverviewAdsbSourceStatus';
@@ -144,6 +145,7 @@ export function ConfigurationPage() {
             className={panelClass}
           >
             <OverviewLinkSettingsCard />
+            <ManualXBandSelectionCard />
           </TabsContent>
           <TabsContent
             value="aircraft"
