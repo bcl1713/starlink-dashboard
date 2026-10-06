@@ -135,3 +135,27 @@ def test_off_earth_source_contributors_remain_unknown(tmp_path):
     _,t,mask=decoded(normalize(load_capture(tmp_path/'capture.json'),tmp_path/'product'))
     assert mask[180,210]==1
     assert t[180,210]==0
+
+
+def test_supported_native_bootstrap_survives_real_mixed_library_worker():
+    import subprocess
+    import sys
+    result=subprocess.run([sys.executable,'-c',
+        "from acceptance.aviation_weather_proof.native import initialize_native; "
+        "initialize_native(); import eccodes; import pyproj; "
+        "from pyproj import CRS,Transformer; "
+        "p=CRS.from_proj4('+proj=geos +h=35786023 +lon_0=-75 +a=6378137 +b=6356752.31414 +sweep=x +units=m'); "
+        "assert Transformer.from_crs(p.geodetic_crs,p,always_xy=True).transform(-75,0)==(0.0,0.0); "
+        "assert pyproj.proj_version_str==pyproj.__proj_version__; print('clean native transform')"],
+        capture_output=True,text=True,timeout=30)
+    assert result.returncode==0,result.stdout+result.stderr
+    assert result.stdout.strip()=='clean native transform'
+
+
+def test_satellite_oracle_does_not_load_grib_native_library():
+    import subprocess
+    import sys
+    result=subprocess.run([sys.executable,'-c',
+        "import sys; import acceptance.aviation_weather_proof.reference; "
+        "assert 'eccodes' not in sys.modules"],capture_output=True,text=True,timeout=30)
+    assert result.returncode==0,result.stdout+result.stderr

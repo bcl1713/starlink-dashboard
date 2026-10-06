@@ -9,7 +9,6 @@ import json
 import math
 from pathlib import Path
 
-import eccodes as ec
 import numpy as np
 
 from .model import CaptureManifest, confined, file_hash, object_path
@@ -96,6 +95,8 @@ def compare_gfs(capture: CaptureManifest, descriptor_path: Path, coordinates=DEF
     resampling tolerance is zero. Quantization tolerance is half a declared step.
     Off-node renderer controls use sample_grid without claiming source equality.
     """
+    import eccodes as ec
+
     descriptor = json.loads(Path(descriptor_path).read_text())
     records = [{"longitude": lon, "latitude": lat, "source_values": {}, "source_coordinates": {},
                 "source_metadata": {}, "source_hashes": {}, "normalized_values": sample_grid(descriptor_path, lon, lat)["values"],
