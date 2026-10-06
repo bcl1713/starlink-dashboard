@@ -1,0 +1,5 @@
+h5py==3.16.0
+numpy==2.4.6
+Pillow==12.3.0
+pytest==9.1.1
+rasterio==1.4.4
