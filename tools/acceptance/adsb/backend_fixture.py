@@ -6,11 +6,10 @@ ADSB_ACCEPTANCE_FAIL=1 makes subsequent provider acquisition fail after restart.
 
 import json
 import os
-from pathlib import Path
 import time
+from pathlib import Path
 
 import httpx
-
 import main
 
 _original_client = httpx.AsyncClient
@@ -28,7 +27,8 @@ def _respond(request: httpx.Request) -> httpx.Response:
         else [
             record
             for record in records
-            if record["hex"].upper() == request.url.path.rsplit("/", 1)[-1].upper()
+            if record["hex"].upper()
+            in request.url.path.rsplit("/", 1)[-1].upper().split(",")
         ]
     )
     return httpx.Response(200, json={"now": time.time() * 1000, "ac": selected})

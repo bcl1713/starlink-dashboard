@@ -47,8 +47,9 @@ class Provider:
     async def fetch_military(self):
         return await self.fetch("military", self.military)
 
-    async def fetch_hex(self, hex_code):
-        return await self.fetch("hex:" + hex_code, self.hexes.get(hex_code, []))
+    async def fetch_hexes(self, hex_codes):
+        contacts = [c for hex_code in hex_codes for c in self.hexes.get(hex_code, [])]
+        return await self.fetch("hex:" + ",".join(hex_codes), contacts)
 
 
 def contact(clock, hex="00AB12", **changes):
@@ -115,7 +116,7 @@ async def test_mode_controls_acquisition(runtime):
     service.settings_changed()
     clock.advance(15)
     await service.refresh_once()
-    assert provider.calls[-2:] == ["hex:00AB12", "hex:000002"]
+    assert provider.calls[-1] == "hex:00AB12,000002"
     store.update({"include_hexes": []})
     service.settings_changed()
     clock.advance(15)
@@ -304,7 +305,7 @@ async def test_shutdown_cancels_tasks_and_clears_ephemeral_cache(runtime):
     assert store.get().enabled is True
 
 
-async def test_hex_concurrency_is_bounded(runtime):
+async def test_hex_acquisition_is_one_shared_batch(runtime):
     store, provider, service, _ = runtime
     hexes = [f"{i:06X}" for i in range(10)]
     store.update({"enabled": True, "mode": "included_only", "include_hexes": hexes})
@@ -312,10 +313,10 @@ async def test_hex_concurrency_is_bounded(runtime):
     refresh = asyncio.create_task(service.refresh_once())
     await provider.entered.wait()
     await asyncio.sleep(0)
-    assert provider.max_active <= 4
+    assert provider.max_active == 1
     provider.block.set()
     await refresh
-    assert len(provider.calls) == 10
+    assert provider.calls == ["hex:" + ",".join(hexes)]
 
 
 async def test_settings_failure_stops_acquisition_until_recovered(runtime):

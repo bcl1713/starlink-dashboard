@@ -238,3 +238,42 @@ async def test_saved_provider_fixtures(name, hex_code, age, military):
         assert result.contacts[0].hex == hex_code
         assert result.contacts[0].position_observed_at_ms == NOW - age * 1000
         assert result.contacts[0].military is military
+
+
+@pytest.mark.parametrize(
+    "hexes",
+    [
+        ["000001", "BAD"],
+        ["000001", "000002%2C000003"],
+        ["000001", "00002"],
+        [f"{i:06X}" for i in range(1001)],
+    ],
+)
+async def test_invalid_batch_is_rejected_before_transport(hexes):
+    requests = []
+
+    def transport(request):
+        requests.append(request)
+        return httpx.Response(200, json={"now": NOW, "ac": []})
+
+    async with httpx.AsyncClient(
+        base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+    ) as client:
+        with pytest.raises(AdsbProviderError):
+            await AdsbLolProvider(client, lambda: NOW / 1000).fetch_hexes(hexes)
+    assert requests == []
+
+
+async def test_empty_batch_skips_transport():
+    requests = []
+
+    def transport(request):
+        requests.append(request)
+        return httpx.Response(200, json={"now": NOW, "ac": []})
+
+    async with httpx.AsyncClient(
+        base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+    ) as client:
+        result = await AdsbLolProvider(client, lambda: NOW / 1000).fetch_hexes([])
+    assert result.contacts == []
+    assert requests == []
