@@ -444,21 +444,47 @@ async function aim(
 async function seedOverlays(
   request: import('@playwright/test').APIRequestContext
 ) {
-  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Weather acceptance</name><Placemark><name>Storm departure</name><Point><coordinates>-78,32,10000</coordinates></Point></Placemark><Placemark><name>Storm arrival</name><Point><coordinates>-74,34,10000</coordinates></Point></Placemark><Placemark><name>Weather route</name><LineString><coordinates>-78,32,10000 -76,33,10000 -74,34,10000</coordinates></LineString></Placemark></Document></kml>`;
-  const uploaded = await request.post('/api/routes/upload?import_pois=true', {
-    multipart: {
-      file: {
-        name: 'weather-acceptance.kml',
-        mimeType: 'application/vnd.google-earth.kml+xml',
-        buffer: Buffer.from(kml),
-      },
+  const waypointTime = (offset: number) =>
+    new Date(Date.now() + offset).toISOString().replace('T', ' ').slice(0, 19) +
+    'Z';
+  const mission = 'weather-opacity';
+  const leg = 'weather-leg';
+  const created = await request.post('/api/v2/missions', {
+    data: {
+      id: mission,
+      name: 'Weather opacity acceptance',
+      legs: [
+        {
+          id: leg,
+          name: 'Storm route',
+          route_id: 'weather-route',
+          transports: { initial_x_satellite_id: 'X-1' },
+        },
+      ],
     },
   });
-  expect(uploaded.ok()).toBe(true);
-  const route = await uploaded.json();
-  expect((await request.post(`/api/routes/${route.id}/activate`)).ok()).toBe(
-    true
+  expect(created.ok(), await created.text()).toBe(true);
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Weather acceptance</name><Placemark><name>Storm departure</name><description>Time Over Waypoint: ${waypointTime(-600000)}</description><Point><coordinates>-78,32,10000</coordinates></Point></Placemark><Placemark><name>Storm arrival</name><description>Time Over Waypoint: ${waypointTime(1800000)}</description><Point><coordinates>-74,34,10000</coordinates></Point></Placemark><Placemark><name>Weather route</name><LineString><coordinates>-78,32,10000 -76,33,10000 -74,34,10000</coordinates></LineString></Placemark></Document></kml>`;
+  const uploaded = await request.put(
+    `/api/v2/missions/${mission}/legs/${leg}/route`,
+    {
+      multipart: {
+        file: {
+          name: 'weather-acceptance.kml',
+          mimeType: 'application/vnd.google-earth.kml+xml',
+          buffer: Buffer.from(kml),
+        },
+      },
+    }
   );
+  expect(uploaded.ok(), await uploaded.text()).toBe(true);
+  const route = await uploaded.json();
+  const activated = await request.post(
+    `/api/v2/missions/${mission}/legs/${leg}/activate`
+  );
+  expect(activated.ok(), await activated.text()).toBe(true);
+  const upcoming = await request.get('/api/overview/upcoming-pois');
+  expect((await upcoming.json()).pois.length).toBeGreaterThan(0);
   await writeFile(
     `${process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR}/seeded-route.json`,
     JSON.stringify(route)
@@ -495,6 +521,7 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
   });
   if (await explore.isVisible()) await explore.click();
   await aim(page, 33, -76);
+  await expect(page.locator('[data-poi-label]').first()).toBeVisible();
   await expect
     .poll(
       async () =>
@@ -585,6 +612,7 @@ test('native detail acquisition, geographic pixels, resource limits, failure fal
       await page.evaluate(() => document.exitFullscreen());
   }
   await opacity(page, 0.4);
+  if (await explore.isVisible()) await explore.click();
   await aim(page, 33, -76, 5);
   const touchBefore = await settledOverviewCamera(page);
   const touch = await page.context().newCDPSession(page);
