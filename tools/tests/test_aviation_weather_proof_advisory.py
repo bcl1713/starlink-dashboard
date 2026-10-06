@@ -164,3 +164,18 @@ def test_vertex_cap_preserves_text_and_marks_incomplete(tmp_path, monkeypatch):
     assert d["coverage"]["completeness"] == "incomplete"
     assert active["features"] == []
     assert records["features"][0]["properties"]["raw_text"] == "SYNTHETIC TEST SFC/FL070"
+
+
+@pytest.mark.parametrize("west,east", [(170, 190), (-190, -170)])
+def test_provider_unwrapped_dateline_coordinates(tmp_path, west, east):
+    # AWC sometimes shifts WI longitudes by360 to keep source rings continuous.
+    f = feature()
+    f["geometry"]["coordinates"] = [[[west, -10], [east, -10], [east, 10], [west, 10], [west, -10]]]
+    _, _, active, records = normalize(tmp_path, [f])
+    assert len(active["features"]) == 1
+    polygon = shape(active["features"][0]["geometry"])
+    assert polygon.is_valid and polygon.geom_type == "MultiPolygon"
+    assert polygon.area == pytest.approx(400)
+    assert polygon.covers(Point(175, 0)) and polygon.covers(Point(-175, 0))
+    assert not polygon.covers(Point(0, 0))
+    assert records["features"][0]["properties"]["location_status"] == "located"

@@ -62,9 +62,11 @@ def _unwrap_ring(ring):
         if not isinstance(position, (list, tuple)) or len(position) != 2:
             raise ValueError("unsupported polygon position")
         lon, lat = position
+        # Provider WI geometry sometimes unwraps longitude into[-360,360].
+        # Accept that bounded degree convention; clipping publishes[-180,180].
         if (type(lon) not in (int, float) or type(lat) not in (int, float)
                 or not math.isfinite(lon) or not math.isfinite(lat)
-                or not -180 <= lon <= 180 or not -90 <= lat <= 90):
+                or not -360 <= lon <= 360 or not -90 <= lat <= 90):
             raise ValueError("invalid geographic coordinate")
         if output:
             while lon - output[-1][0] > 180:
