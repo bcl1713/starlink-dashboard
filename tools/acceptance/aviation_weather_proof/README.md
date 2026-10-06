@@ -160,3 +160,13 @@ native-overlay path, with a visible SYNTHETIC label and both complete scan
 intervals. Its screenshot and DOM receipt are retained separately from the real
 GOES source samples. Geometry controls live in the named test-only synthetic
 controls module.
+
+Cleanup polling observes the live deadline even when SIGTERM/SIGINT arrives after
+port or process-group teardown has started. CLI inspection calls use the same
+owned command polling, reserving three seconds for sealing and an additional
+half-second for stopping the CLI itself. Platform session close and evidence
+publication have mutable-deadline guards, so an internal fallback cannot restore
+an independent long grace. The late-signal control seals a 32 MiB failed fixture.
+Xvfb inherits the browser wrapper group in the platform launcher; the wrapper
+terminates/reaps that exact owned Popen child individually, while private Chrome
+and journey groups retain group cleanup. The shared-group safety guard is unchanged.

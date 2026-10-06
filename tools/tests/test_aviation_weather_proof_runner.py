@@ -152,7 +152,7 @@ def test_timeout_cleans_owned_container_and_seals_failure(tmp_path, interrupt):
                 finally:
                     budget.begin_cleanup()
                     cleanup_owned_runtime(output,owner,budget,compose=None,env=None,ports=[])
-                result=publish_evidence(root,output,'0'*40,root/'sealed')
+                result=publish_evidence(root,output,'0'*40,root/'sealed',budget=budget)
             cleanup=json.loads((output/'cleanup.json').read_text())
             sealed=root/'sealed'/root.name/('0'*40)
             verify_manifest(sealed); read_fingerprint_authority(sealed)
@@ -169,6 +169,60 @@ def test_timeout_cleans_owned_container_and_seals_failure(tmp_path, interrupt):
         capture_output=True,
         text=True,
         timeout=35,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_late_sigterm_during_port_cleanup_retains_sealed_failure(tmp_path):
+    import subprocess
+    import sys
+    import textwrap
+
+    script = tmp_path / "control.py"
+    script.write_text(textwrap.dedent("""
+        import json,os,signal,socket,sys,threading,time
+        from pathlib import Path
+        from acceptance.aviation_weather_proof.lifecycle import Deadline
+        from acceptance.aviation_weather_proof.runner import cleanup_owned_runtime,publish_evidence
+        from acceptance.platform.evidence import verify_manifest,read_fingerprint_authority
+        root=Path(sys.argv[1]);output=root/'evidence';output.mkdir()
+        # Similar size to the retained native evidence, so sealing is not a tiny placeholder.
+        (output/'diagnostic-payload.bin').write_bytes(bytes(32*1024*1024))
+        listener=socket.socket();listener.bind(('127.0.0.1',0));listener.listen()
+        port=listener.getsockname()[1]
+        owner={'workers':[],'children':[],'pid':os.getpid(),'pgid':os.getpgrp(),'port':port}
+        (output/'runtime-owner.json').write_text(json.dumps(owner))
+        signal_times=[];signal_wall=[]
+        def interrupt():
+            signal_times.append(time.monotonic());signal_wall.append(int(time.time()*1000));os.kill(os.getpid(),signal.SIGTERM)
+        timer=threading.Timer(.2,interrupt);start=time.monotonic()
+        try:
+            with Deadline(work_seconds=5,total_seconds=10,signal_seconds=3) as budget:
+                budget.begin_cleanup();timer.start()
+                cleanup=cleanup_owned_runtime(output,owner,budget,compose=None,env=None,ports=[port])
+                assert signal_times and budget.interrupted
+                observations=json.loads((output/'port-cleanup.json').read_text())['observations']
+                signal_during_wait=bool(observations and observations[0]['at_ms']<signal_wall[0])
+                assert signal_during_wait
+                assert cleanup['status']=='failed' and cleanup['remaining']==[f'listener:{port}']
+                (output/'failure.json').write_text(json.dumps({'error':'late cleanup signal'}))
+                result=publish_evidence(root,output,'0'*40,root/'sealed',budget=budget)
+            sealed=root/'sealed'/root.name/('0'*40)
+            verify_manifest(sealed);read_fingerprint_authority(sealed)
+            elapsed=time.monotonic()-start
+            receipt={'elapsed_seconds':elapsed,'after_signal_seconds':time.monotonic()-signal_times[0],'signal_during_port_wait':signal_during_wait,'sealed_failure':result==1}
+            (root/'receipt.json').write_text(json.dumps(receipt))
+            assert elapsed<2,receipt
+        finally:
+            timer.cancel();timer.join();listener.close()
+        with socket.socket() as verification:verification.bind(('127.0.0.1',port))
+    """))
+    result = subprocess.run(
+        [sys.executable, str(script), str(tmp_path)],
+        capture_output=True,
+        text=True,
+        timeout=12,
         check=False,
     )
     assert result.returncode == 0, result.stderr

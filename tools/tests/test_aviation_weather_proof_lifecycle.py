@@ -93,33 +93,99 @@ def test_browser_wrapper_reaps_dead_journey_leader_and_closes_owned_session(tmp_
         from acceptance.aviation_weather_proof.run_browser import execute
         root=Path(sys.argv[1]); original=subprocess.Popen
         browser=original([sys.executable,'-c','import time;time.sleep(30)'],start_new_session=True)
-        xvfb=original([sys.executable,'-c','import time;time.sleep(30)'],start_new_session=True)
-        class Session:
-            metrics={};webgl2={};artifacts={};cdp_url='http://127.0.0.1:1';display=':unit'
-            profile_dir=root/'profile';_browser=browser;_browser_group=browser.pid;_xvfb=xvfb
-            closed=False
-            def close(self): self.closed=True
-        session=Session()
+        xvfb=original([sys.executable,'-c','import time;time.sleep(30)'])
+        assert os.getpgid(xvfb.pid)==os.getpgrp()
+        journeys=[]
+        from types import SimpleNamespace
+        from acceptance.platform.health import PlatformBrowserSession
+        profile=root/'profile';profile.mkdir();(profile/'owned-marker').write_text('diagnostic')
+        session=PlatformBrowserSession(cdp_url='http://127.0.0.1:1',display=':unit',profile_dir=profile,
+            metrics={},webgl2={},artifacts={},_bundle=SimpleNamespace(close=lambda:None),
+            _launch=SimpleNamespace(close=lambda:None),_browser=browser,_browser_group=browser.pid,_xvfb=xvfb)
         def start(argv,**kwargs):
             assert argv[0]=='node'
             code='import os,time; p=os.fork(); (os._exit(0) if p else None); time.sleep(30)'
-            return original([sys.executable,'-c',code],**kwargs)
+            child=original([sys.executable,'-c',code],**kwargs)
+            journeys.append(child)
+            return child
         try:
             with patch('acceptance.platform.runner._load_profile',return_value=object()), patch('acceptance.platform.health.start_final_browser_session',return_value=session), patch('subprocess.Popen',side_effect=start), Deadline(work_seconds=3,total_seconds=6) as budget:
                 assert execute(['--origin','http://127.0.0.1:15290','--artifacts',str(root),'--profile','unused'],budget)==0
-            assert session.closed
+            assert session._closed
+            assert not profile.exists()
             assert not Path('/proc',str(browser.pid)).exists()
             assert not Path('/proc',str(xvfb.pid)).exists()
             receipt=json.loads((root/'browser-cleanup.json').read_text())
             (root/'receipt.json').write_text(json.dumps(receipt))
         finally:
-            for child in (browser,xvfb):
-                try: os.killpg(child.pid,9)
-                except ProcessLookupError: pass
-                child.wait(timeout=2)
+            from acceptance.aviation_weather_proof.lifecycle import stop_owned_groups
+            stop_owned_groups([browser.pid,*[p.pid for p in journeys]],grace=.1,seconds=1)
+            if xvfb.poll() is None: xvfb.kill()
+            for child in (browser,xvfb,*journeys): child.wait(timeout=2)
     """,
         python=shutil.which("python3"),
     )
     assert receipt["remaining"] == []
     assert receipt["killed_descendants"] == []
     assert receipt["status"] == "passed"
+
+
+def test_late_signal_shortens_active_group_teardown(tmp_path):
+    receipt = run_control(
+        tmp_path,
+        """
+        import json,os,signal,subprocess,sys,threading,time
+        from pathlib import Path
+        from acceptance.aviation_weather_proof.lifecycle import Deadline,stop_owned_groups,enable_subreaper
+        root=Path(sys.argv[1]);enable_subreaper()
+        child=subprocess.Popen([sys.executable,'-c',"import signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);print('ready',flush=True);time.sleep(30)"],stdout=subprocess.PIPE,text=True,start_new_session=True)
+        assert child.stdout.readline().strip()=='ready'
+        timer=threading.Timer(.1,lambda:os.kill(os.getpid(),signal.SIGTERM));start=time.monotonic()
+        try:
+            with Deadline(work_seconds=5,total_seconds=8,signal_seconds=.3) as budget:
+                budget.begin_cleanup();timer.start()
+                receipt=stop_owned_groups([child.pid],grace=4,seconds=5,budget=budget,reserve=.05)
+            receipt['elapsed_seconds']=time.monotonic()-start
+            assert receipt['remaining']==[] and receipt['killed_descendants']==[child.pid]
+            assert receipt['elapsed_seconds']<1
+            (root/'receipt.json').write_text(json.dumps(receipt))
+        finally:
+            timer.cancel();timer.join()
+            if child.poll() is None:child.kill()
+            child.wait(timeout=2);child.stdout.close()
+    """,
+    )
+    assert receipt["elapsed_seconds"] < 1
+
+
+def test_platform_close_cannot_restore_long_wait_after_late_signal(tmp_path):
+    receipt = run_control(
+        tmp_path,
+        """
+        import json,os,signal,sys,threading,time
+        from pathlib import Path
+        from acceptance.aviation_weather_proof.lifecycle import Deadline,CleanupDeadlineExpired
+        root=Path(sys.argv[1]);timer=threading.Timer(.05,lambda:os.kill(os.getpid(),signal.SIGTERM));start=time.monotonic()
+        try:
+            with Deadline(work_seconds=5,total_seconds=8,signal_seconds=.2) as budget:
+                budget.begin_cleanup();timer.start()
+                try:
+                    with budget.cleanup_phase(reserve=0):
+                        try:time.sleep(5)
+                        except Exception:time.sleep(5)
+                    raise AssertionError('long fallback escaped deadline')
+                except CleanupDeadlineExpired:
+                    (root/'receipt.json').write_text(json.dumps({'elapsed_seconds':time.monotonic()-start,'expired':True}))
+        finally:timer.cancel();timer.join()
+    """,
+    )
+    assert receipt["expired"] and receipt["elapsed_seconds"] < 0.8
+
+
+def test_shared_group_guard_remains_closed():
+    import os
+
+    from acceptance.aviation_weather_proof.lifecycle import stop_owned_groups
+
+    with pytest.raises(ValueError, match="shared process group"):
+        stop_owned_groups([os.getpgrp()])

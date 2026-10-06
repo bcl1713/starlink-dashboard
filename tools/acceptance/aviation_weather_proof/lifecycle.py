@@ -7,7 +7,14 @@ import os
 import signal
 import subprocess
 import time
+from contextlib import contextmanager
 from pathlib import Path
+
+SEAL_RESERVE_SECONDS = 3.0
+
+
+class CleanupDeadlineExpired(BaseException):
+    """Cannot be swallowed by a platform helper's ordinary exception fallback."""
 
 
 class Deadline:
@@ -23,6 +30,7 @@ class Deadline:
         self.interrupted = False
         self.work_stopped = False
         self.previous: dict = {}
+        self.phase_reserve: float | None = None
 
     def __enter__(self):
         for number in (signal.SIGALRM, signal.SIGTERM, signal.SIGINT):
@@ -31,9 +39,19 @@ class Deadline:
         return self
 
     def _interrupt(self, number, _frame):
+        if (
+            number == signal.SIGALRM
+            and self.cleaning
+            and self.phase_reserve is not None
+        ):
+            raise CleanupDeadlineExpired("cleanup operation exhausted mutable deadline")
         if number != signal.SIGALRM:
             self.interrupted = True
             self.end = min(self.end, time.monotonic() + self.signal_seconds)
+            if self.phase_reserve is not None:
+                signal.setitimer(
+                    signal.ITIMER_REAL, max(0.001, self.remaining(self.phase_reserve))
+                )
         if not self.cleaning:
             self.work_stopped = True
             if number == signal.SIGALRM:
@@ -58,6 +76,21 @@ class Deadline:
             except subprocess.TimeoutExpired:
                 pass
         return child.returncode
+
+    @contextmanager
+    def cleanup_phase(self, *, reserve=SEAL_RESERVE_SECONDS):
+        """Bound platform/file operations, including a signal arriving mid-call."""
+        if not self.cleaning or self.phase_reserve is not None:
+            raise ValueError("cleanup phase must be unnested and follow begin_cleanup")
+        if self.remaining(reserve) <= 0:
+            raise CleanupDeadlineExpired("no time available for cleanup operation")
+        self.phase_reserve = reserve
+        signal.setitimer(signal.ITIMER_REAL, self.remaining(reserve))
+        try:
+            yield
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            self.phase_reserve = None
 
     def __exit__(self, *_):
         signal.setitimer(signal.ITIMER_REAL, 0)
@@ -86,13 +119,29 @@ def group_members(groups: set[int]) -> list[int]:
     return members
 
 
-def stop_owned_groups(groups: list[int], *, grace=1.0, seconds=3.0) -> dict:
+def stop_owned_groups(
+    groups: list[int],
+    *,
+    grace=1.0,
+    seconds=3.0,
+    budget: Deadline | None = None,
+    reserve=SEAL_RESERVE_SECONDS,
+) -> dict:
     """Signal only recorded private groups, even if their leaders already exited."""
     owned = set(groups)
     if any(group <= 1 or group == os.getpgrp() for group in owned):
         raise ValueError("refusing unowned/shared process group")
     end = time.monotonic() + max(0, seconds)
     killed = []
+
+    def available(until, force_reserve=0):
+        return max(
+            0,
+            min(
+                until - time.monotonic(),
+                budget.remaining(reserve + force_reserve) if budget else float("inf"),
+            ),
+        )
 
     def reap():
         # Only adopted children in explicitly owned groups; never unrelated children.
@@ -111,7 +160,7 @@ def stop_owned_groups(groups: list[int], *, grace=1.0, seconds=3.0) -> dict:
 
     send(signal.SIGTERM)
     graceful_end = min(end, time.monotonic() + grace)
-    while group_members(owned) and time.monotonic() < graceful_end:
+    while group_members(owned) and available(graceful_end, 0.25) > 0:
         reap()
         time.sleep(0.01)
     reap()
@@ -122,8 +171,32 @@ def stop_owned_groups(groups: list[int], *, grace=1.0, seconds=3.0) -> dict:
                 os.killpg(group, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-    while group_members(owned) and time.monotonic() < end:
+    while group_members(owned) and available(end) > 0:
         reap()
         time.sleep(0.01)
     reap()
     return {"remaining": group_members(owned), "killed_descendants": killed}
+
+
+def stop_owned_process(
+    child: subprocess.Popen, budget: Deadline, *, grace=0.5, reserve=1.0
+) -> dict:
+    """Stop an exact owned child that legitimately shares the wrapper group."""
+    if child.pid <= 1 or child.pid == os.getpid():
+        raise ValueError("refusing unowned process")
+    killed = []
+    if child.poll() is None:
+        child.terminate()
+        try:
+            budget.wait(child, grace, reserve=reserve + 0.25)
+        except subprocess.TimeoutExpired:
+            killed.append(child.pid)
+            child.kill()
+            try:
+                budget.wait(child, 0.5, reserve=reserve)
+            except subprocess.TimeoutExpired:
+                pass
+    return {
+        "remaining": [child.pid] if child.poll() is None else [],
+        "killed_descendants": killed,
+    }

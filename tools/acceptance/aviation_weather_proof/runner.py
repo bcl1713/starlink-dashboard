@@ -21,7 +21,12 @@ from acceptance.platform.evidence import (
     write_artifacts,
 )
 
-from .lifecycle import Deadline, enable_subreaper, stop_owned_groups
+from .lifecycle import (
+    SEAL_RESERVE_SECONDS,
+    Deadline,
+    enable_subreaper,
+    stop_owned_groups,
+)
 from .report import evaluate_proofs
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -37,7 +42,9 @@ def prepare_fixture_mount(products: Path) -> None:
         path.chmod(0o755 if path.is_dir() else 0o644)
 
 
-def wait_ports_free(ports: list[int], *, seconds: float = 65) -> dict:
+def wait_ports_free(
+    ports: list[int], *, seconds: float = 65, budget: Deadline | None = None
+) -> dict:
     """Require the original exclusive-bind criterion after bounded teardown lag."""
     start = time.monotonic()
     observations = []
@@ -66,6 +73,10 @@ def wait_ports_free(ports: list[int], *, seconds: float = 65) -> dict:
         owners = []
         if not observations:
             for process in Path("/proc").iterdir():
+                if budget is not None and (
+                    budget.interrupted or budget.remaining(SEAL_RESERVE_SECONDS) <= 0
+                ):
+                    break
                 if not process.name.isdigit():
                     continue
                 try:
@@ -90,13 +101,17 @@ def wait_ports_free(ports: list[int], *, seconds: float = 65) -> dict:
                 "owners": owners,
             }
         )
-        if time.monotonic() - start >= seconds:
+        available = min(
+            seconds - (time.monotonic() - start),
+            budget.remaining(SEAL_RESERVE_SECONDS) if budget else float("inf"),
+        )
+        if available <= 0 or (budget is not None and budget.interrupted):
             return {
                 "remaining": [f"listener:{p}" for p in failures],
                 "observations": observations,
                 "elapsed_seconds": time.monotonic() - start,
             }
-        time.sleep(max(0, min(0.25, seconds - (time.monotonic() - start))))
+        time.sleep(max(0, min(0.05, available)))
 
 
 def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
@@ -107,7 +122,7 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
     killed_containers = []
     commands = []
 
-    def command(argv, name, seconds=20):
+    def command(argv, name, seconds=20, *, check=True):
         record = {"command": argv, "name": name, "state": "starting"}
         commands.append(record)
         (output / "cleanup-commands.json").write_text(json.dumps(commands, indent=2))
@@ -124,12 +139,12 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
                 json.dumps(commands, indent=2)
             )
             try:
-                code = budget.wait(child, seconds, reserve=2)
-                if code:
+                code = budget.wait(child, seconds, reserve=SEAL_RESERVE_SECONDS + 0.5)
+                if code and check:
                     raise RuntimeError(f"{name} exited {code}")
             finally:
                 stopped = stop_owned_groups(
-                    [child.pid], grace=0.1, seconds=min(0.5, budget.remaining(2))
+                    [child.pid], grace=0.1, seconds=0.5, budget=budget
                 )
                 killed.extend(stopped["killed_descendants"])
                 errors.extend(f"process:{pid}" for pid in stopped["remaining"])
@@ -138,6 +153,9 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
                 (output / "cleanup-commands.json").write_text(
                     json.dumps(commands, indent=2)
                 )
+        return subprocess.CompletedProcess(
+            argv, code, stdout=(output / (name + ".log")).read_text()
+        )
 
     def attempt(operation):
         try:
@@ -154,22 +172,17 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
     browser_owner = output / "browser" / "browser-owner.json"
     if browser_owner.exists():
         browser = json.loads(browser_owner.read_text())
-        groups.extend(
-            [browser["browser_pgid"], browser.get("xvfb_pgid", browser["xvfb_pid"])]
-        )
-    stopped = stop_owned_groups(groups, grace=0.5, seconds=min(1, budget.remaining(3)))
+        groups.extend([browser["browser_pgid"]])
+    stopped = stop_owned_groups(groups, grace=0.5, seconds=1, budget=budget)
     killed.extend(stopped["killed_descendants"])
     errors.extend(f"process:{pid}" for pid in stopped["remaining"])
 
     # Stop/remove recorded workers in one bounded operation, not one grace per worker.
     existing = []
-    for name in owner["workers"]:
+    for index, name in enumerate(owner["workers"]):
         try:
-            result = subprocess.run(
-                ["docker", "inspect", name],
-                capture_output=True,
-                timeout=max(0.01, min(1, budget.remaining(3))),
-                check=False,
+            result = command(
+                ["docker", "inspect", name], f"worker-check-{index}", 1, check=False
             )
             if result.returncode == 0:
                 existing.append(name)
@@ -183,12 +196,8 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
         )
         for name in existing:
             try:
-                result = subprocess.run(
-                    ["docker", "inspect", name],
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    timeout=max(0.01, min(0.5, budget.remaining(2))),
+                result = command(
+                    ["docker", "inspect", name], f"worker-state-{name}", 0.5
                 )
                 if json.loads(result.stdout)[0]["State"]["ExitCode"] == 137:
                     killed_containers.append(name)
@@ -220,12 +229,10 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
     )
     for kind, argv in queries.items():
         try:
-            result = subprocess.run(
+            result = command(
                 [*argv, "--filter", f"label=com.docker.compose.project={PROJECT}"],
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=max(0.01, min(2, budget.remaining(2))),
+                f"remaining-{kind}",
+                2,
             )
             remnants[kind] = result.stdout.split()
             errors.extend(f"{kind}:{item}" for item in remnants[kind])
@@ -233,19 +240,14 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
             errors.append(str(error))
     for name in existing:
         try:
-            result = subprocess.run(
-                ["docker", "inspect", name],
-                capture_output=True,
-                timeout=max(0.01, min(1, budget.remaining(2))),
-                check=False,
+            result = command(
+                ["docker", "inspect", name], f"worker-verify-{name}", 1, check=False
             )
             if result.returncode == 0:
                 errors.append(f"worker:{name}")
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
             errors.append(str(error))
-    port_result = wait_ports_free(
-        ports, seconds=0 if budget.interrupted else min(65, budget.remaining(3))
-    )
+    port_result = wait_ports_free(ports, seconds=65, budget=budget)
     (output / "port-cleanup.json").write_text(json.dumps(port_result, indent=2))
     errors.extend(port_result["remaining"])
     receipt = {
@@ -265,7 +267,14 @@ def cleanup_owned_runtime(output, owner, budget, *, compose, env, ports):
     return receipt
 
 
-def publish_evidence(stage, output, candidate, evidence_root=None):
+def publish_evidence(stage, output, candidate, evidence_root=None, *, budget=None):
+    if budget is None:
+        return _publish_evidence(stage, output, candidate, evidence_root)
+    with budget.cleanup_phase(reserve=0):
+        return _publish_evidence(stage, output, candidate, evidence_root)
+
+
+def _publish_evidence(stage, output, candidate, evidence_root=None):
     result = evaluate_proofs(output)
     if (output / "failure.json").exists():
         result["runner_error"] = json.loads((output / "failure.json").read_text())[
@@ -624,7 +633,7 @@ def run(candidate: str, captures: Path, profile: Path, budget: Deadline) -> int:
         )
     )
     # Evidence precedes optional disk staging removal, especially after a signal.
-    result = publish_evidence(stage, output, candidate)
+    result = publish_evidence(stage, output, candidate, budget=budget)
     if not budget.interrupted and budget.remaining() > 10:
         shutil.rmtree(source)
         (stage / "candidate.tar").unlink(missing_ok=True)

@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from .lifecycle import Deadline, enable_subreaper, stop_owned_groups
+from .lifecycle import Deadline, enable_subreaper, stop_owned_groups, stop_owned_process
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -54,7 +54,7 @@ def execute(arguments: list[str], budget: Deadline) -> int:
             output / "platform",
             PlatformHealthExecutor(probe=_probe),
         )
-        session_groups = [session._browser_group, os.getpgid(session._xvfb.pid)]
+        session_groups = [session._browser_group]
         (output / "platform.json").write_text(
             json.dumps({"metrics": session.metrics, "webgl2": session.webgl2}, indent=2)
         )
@@ -162,14 +162,20 @@ def execute(arguments: list[str], budget: Deadline) -> int:
             stopped = stop_owned_groups(
                 groups,
                 grace=0.5 if budget.interrupted else 3,
-                seconds=min(1.5 if budget.interrupted else 4, budget.remaining(2)),
+                seconds=1.5 if budget.interrupted else 4,
+                budget=budget,
+                reserve=1,
             )
             cleanup["killed_descendants"].extend(stopped["killed_descendants"])
             cleanup["remaining"].extend(stopped["remaining"])
             if child is not None:
                 child.poll()
             if session is not None:
-                session.close()
+                xvfb = stop_owned_process(session._xvfb, budget)
+                cleanup["killed_descendants"].extend(xvfb["killed_descendants"])
+                cleanup["remaining"].extend(xvfb["remaining"])
+                with budget.cleanup_phase(reserve=0.5):
+                    session.close()
             cleanup["status"] = (
                 "passed"
                 if not cleanup["remaining"]
@@ -182,6 +188,9 @@ def execute(arguments: list[str], budget: Deadline) -> int:
             raise
         finally:
             if session is not None:
+                if session.profile_dir.exists():
+                    cleanup["status"] = "failed"
+                    cleanup["remaining"].append(f"profile:{session.profile_dir}")
                 for name, content in session.artifacts.items():
                     destination = output / "platform" / name
                     destination.parent.mkdir(parents=True, exist_ok=True)
