@@ -39,3 +39,6 @@ playwright-report/
 # Pre-built/generated files that shouldn't be reformatted
 frontend/mission-planner/dist/**
 frontend/mission-planner/build/**
+
+# Compact generated boundary datasets; reproduce with tools/build-overview-boundaries.py
+frontend/mission-planner/public/boundaries/*.json

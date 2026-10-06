@@ -97,6 +97,8 @@ function payload(endpoint: string) {
       x_band_link_enabled: true,
       orbital_traffic_enabled: false,
       aircraft_history_enabled: true,
+      country_borders_enabled: false,
+      state_borders_enabled: false,
     };
   if (endpoint === '/api/satellites')
     return [

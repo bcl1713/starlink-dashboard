@@ -5,6 +5,8 @@ export interface OverviewLinkSettings {
   x_band_link_enabled: boolean;
   orbital_traffic_enabled: boolean;
   aircraft_history_enabled: boolean;
+  country_borders_enabled: boolean;
+  state_borders_enabled: boolean;
 }
 
 export type OverviewLinkSettingsUpdate = Partial<OverviewLinkSettings>;
@@ -20,7 +22,11 @@ function confirmedSettings(data: unknown): OverviewLinkSettings {
     typeof data.starshield_link_enabled !== 'boolean' ||
     typeof data.x_band_link_enabled !== 'boolean' ||
     ('aircraft_history_enabled' in data &&
-      typeof data.aircraft_history_enabled !== 'boolean')
+      typeof data.aircraft_history_enabled !== 'boolean') ||
+    ('country_borders_enabled' in data &&
+      typeof data.country_borders_enabled !== 'boolean') ||
+    ('state_borders_enabled' in data &&
+      typeof data.state_borders_enabled !== 'boolean')
   ) {
     throw new Error('Invalid overview link settings');
   }
@@ -34,6 +40,14 @@ function confirmedSettings(data: unknown): OverviewLinkSettings {
       typeof data.aircraft_history_enabled === 'boolean'
         ? data.aircraft_history_enabled
         : true,
+    country_borders_enabled:
+      'country_borders_enabled' in data
+        ? (data.country_borders_enabled as boolean)
+        : false,
+    state_borders_enabled:
+      'state_borders_enabled' in data
+        ? (data.state_borders_enabled as boolean)
+        : false,
   };
 }
 

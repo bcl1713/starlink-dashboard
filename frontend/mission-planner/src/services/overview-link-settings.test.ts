@@ -11,24 +11,32 @@ const pairs = [
     x_band_link_enabled: true,
     orbital_traffic_enabled: false,
     aircraft_history_enabled: true,
+    country_borders_enabled: false,
+    state_borders_enabled: false,
   },
   {
     starshield_link_enabled: false,
     x_band_link_enabled: true,
     orbital_traffic_enabled: false,
     aircraft_history_enabled: true,
+    country_borders_enabled: false,
+    state_borders_enabled: false,
   },
   {
     starshield_link_enabled: true,
     x_band_link_enabled: false,
     orbital_traffic_enabled: false,
     aircraft_history_enabled: true,
+    country_borders_enabled: false,
+    state_borders_enabled: false,
   },
   {
     starshield_link_enabled: false,
     x_band_link_enabled: false,
     orbital_traffic_enabled: false,
     aircraft_history_enabled: true,
+    country_borders_enabled: false,
+    state_borders_enabled: false,
   },
 ];
 
@@ -133,6 +141,8 @@ it('defaults aircraft history on for an older server response', async () => {
   vi.mocked(apiClient.get).mockResolvedValue({ data: legacy });
   await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject({
     aircraft_history_enabled: true,
+    country_borders_enabled: false,
+    state_borders_enabled: false,
   });
 });
 
@@ -145,5 +155,37 @@ it.each([null, 'false', 0])(
     await expect(overviewLinkSettingsApi.get()).rejects.toThrow(
       'Invalid overview link settings'
     );
+  }
+);
+
+it('defaults geographic boundaries off when an older server omits them', async () => {
+  vi.mocked(apiClient.get).mockResolvedValue({ data: pairs[0] });
+  await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject({
+    country_borders_enabled: false,
+    state_borders_enabled: false,
+  });
+});
+
+it('preserves independently confirmed boundary preferences', async () => {
+  vi.mocked(apiClient.get).mockResolvedValue({
+    data: {
+      ...pairs[0],
+      country_borders_enabled: false,
+      state_borders_enabled: true,
+    },
+  });
+  await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject({
+    country_borders_enabled: false,
+    state_borders_enabled: true,
+  });
+});
+
+it.each(['country_borders_enabled', 'state_borders_enabled'])(
+  'rejects malformed %s confirmation',
+  async (field) => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { ...pairs[0], [field]: 'true' },
+    });
+    await expect(overviewLinkSettingsApi.get()).rejects.toThrow();
   }
 );

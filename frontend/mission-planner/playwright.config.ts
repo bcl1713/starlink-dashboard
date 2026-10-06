@@ -8,8 +8,10 @@ export default defineConfig({
   testIgnore: [
     '**/overview-weather-production.spec.ts',
     '**/overview-window-production.spec.ts',
+    '**/overview-boundaries-production.spec.ts',
     '**/overview-aircraft-history-production.spec.ts',
     '**/simulation-run-production.spec.ts',
+    '**/overview-fallback-production.spec.ts',
     '**/manual-x-selection-production.spec.ts',
   ],
   fullyParallel: false,

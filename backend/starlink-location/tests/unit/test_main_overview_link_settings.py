@@ -32,6 +32,8 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     with TestClient(main.app) as client:
         assert client.get(URL).json() == {
@@ -39,6 +41,8 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
             "x_band_link_enabled": True,
             "orbital_traffic_enabled": False,
             "aircraft_history_enabled": True,
+            "country_borders_enabled": False,
+            "state_borders_enabled": False,
         }
         assert (
             main.app.state.overview_link_settings_store

@@ -41,6 +41,8 @@ import {
   GEO_ANALYSIS_CAMERA_POSITION,
   ROUTE_OVERLAY_RADIUS,
 } from './globe-render-radii';
+import { OverviewBoundaryLayer } from './OverviewBoundaryLayer';
+import { useOverviewBoundaries } from '@/hooks/useOverviewBoundaries';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
@@ -441,6 +443,14 @@ export function OverviewPage() {
   // Link activity stops on the first failed attempt and resumes on success.
   const statusRequestFailed = Boolean(statusError) || statusFailureCount > 0;
   const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
+  const countryBoundaries = useOverviewBoundaries(
+    'countries',
+    overviewLinkSettings?.country_borders_enabled ?? false
+  );
+  const stateBoundaries = useOverviewBoundaries(
+    'subdivisions',
+    overviewLinkSettings?.state_borders_enabled ?? false
+  );
   const {
     data: overviewHistory,
     isLoading: isLoadingOverviewHistory,
@@ -818,7 +828,22 @@ export function OverviewPage() {
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
             <OverviewWeatherStatus weather={weather} />
+            {(countryBoundaries.loading ||
+              stateBoundaries.loading ||
+              countryBoundaries.unavailable ||
+              stateBoundaries.unavailable) && (
+              <p className="overview-boundary-status" role="status">
+                {countryBoundaries.loading && 'Country borders loading. '}
+                {stateBoundaries.loading && 'State/province borders loading. '}
+                {countryBoundaries.unavailable &&
+                  'Country borders unavailable. '}
+                {stateBoundaries.unavailable &&
+                  'State/province borders unavailable. '}
+              </p>
+            )}
             <OverviewMapLegend
+              countries={Boolean(countryBoundaries.data)}
+              subdivisions={Boolean(stateBoundaries.data)}
               collapsible={layout.mode !== 'desktop'}
               aircraft={Boolean(aircraftPosition)}
               route={hasRenderableRoute}
@@ -909,6 +934,18 @@ export function OverviewPage() {
             speed={reducedMotion ? 0 : 0.1}
           />
           <OverviewWeatherLayer atlas={weather.atlas} />
+          {countryBoundaries.data && (
+            <OverviewBoundaryLayer
+              kind="countries"
+              segments={countryBoundaries.data.segments}
+            />
+          )}
+          {stateBoundaries.data && (
+            <OverviewBoundaryLayer
+              kind="subdivisions"
+              segments={stateBoundaries.data.segments}
+            />
+          )}
           <Suspense fallback={null}>
             <group ref={globeOccluder}>
               <CityLitGlobe sunPosition={sunPosition} />

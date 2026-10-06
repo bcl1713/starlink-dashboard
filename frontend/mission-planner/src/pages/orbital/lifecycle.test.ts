@@ -5,6 +5,8 @@ import { referenceOmm } from './test-fixtures';
 
 const enabled = {
   aircraft_history_enabled: true,
+  country_borders_enabled: false,
+  state_borders_enabled: false,
   orbital_traffic_enabled: true,
   starshield_link_enabled: true,
   x_band_link_enabled: false,

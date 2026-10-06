@@ -52,6 +52,15 @@ class TestCalculateDestination:
         assert lat == pytest.approx(40.0)
         assert lon == pytest.approx(-74.0)
 
+    @pytest.mark.parametrize(
+        ("longitude", "bearing", "expected_longitude"),
+        [(179.95, 90, -177.42218766), (-179.95, 270, 177.42218766)],
+    )
+    def test_destination_wraps_dateline(self, longitude, bearing, expected_longitude):
+        lat, lon = calculate_destination(70, longitude, bearing, 100)
+        assert lat == pytest.approx(69.9806179)
+        assert lon == pytest.approx(expected_longitude)
+
 
 class TestCircularRoute:
     """Test circular route generation."""
@@ -109,6 +118,34 @@ class TestCircularRoute:
         assert abs(lat2 - lat1) < 1.0
         assert abs(lon2 - lon1) < 1.0
 
+    @pytest.mark.parametrize("center_lon", [179.95, -179.95, 180.0])
+    def test_dateline_circle_stays_local_and_continuous(self, center_lon):
+        route = CircularRoute(70, center_lon, 100)
+        assert all(-180 <= lon <= 180 for _, lon, _ in route.points)
+        previous = None
+        longitudes = []
+        # Include interior points of every segment and the closing segment.
+        for step in range(1441):
+            lat, lon, heading = route.get_segment(step / 1440)
+            assert 69 <= lat <= 71
+            assert -180 <= lon <= 180
+            assert abs(lon) > 177
+            assert 0 <= heading < 360
+            longitudes.append(lon)
+            if previous is not None:
+                old_lat, old_lon = previous
+                # Angular separation on the sphere, independent of route interpolation.
+                a = math.sin(math.radians(lat - old_lat) / 2) ** 2 + (
+                    math.cos(math.radians(old_lat))
+                    * math.cos(math.radians(lat))
+                    * math.sin(math.radians(lon - old_lon) / 2) ** 2
+                )
+                distance_km = 6371 * 2 * math.asin(math.sqrt(a))
+                assert 0.1 < distance_km < 0.6
+            previous = lat, lon
+        assert any(lon < -177 for lon in longitudes)
+        assert any(lon > 177 for lon in longitudes)
+
 
 class TestStraightRoute:
     """Test straight line route generation."""
@@ -122,6 +159,13 @@ class TestStraightRoute:
         assert route.end_lon == -73.0
         assert route.distance_km > 0
         assert 0 <= route.bearing < 360
+
+    def test_straight_route_crosses_dateline_on_short_path(self):
+        route = StraightRoute(0, 179, 0, -179)
+        for progress, expected in [(0, 179), (0.25, 179.5), (0.75, -179.5)]:
+            lat, lon, _ = route.get_segment(progress)
+            assert lat == pytest.approx(0, abs=1e-10)
+            assert lon == pytest.approx(expected)
 
     def test_straight_route_get_segment_start(self):
         """Test getting start of straight route."""

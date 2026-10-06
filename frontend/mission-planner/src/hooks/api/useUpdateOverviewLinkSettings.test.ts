@@ -16,12 +16,16 @@ const original = {
   x_band_link_enabled: true,
   orbital_traffic_enabled: true,
   aircraft_history_enabled: true,
+  country_borders_enabled: false,
+  state_borders_enabled: false,
 };
 const saved = {
   starshield_link_enabled: false,
   x_band_link_enabled: true,
   orbital_traffic_enabled: false,
   aircraft_history_enabled: true,
+  country_borders_enabled: false,
+  state_borders_enabled: false,
 };
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -147,6 +151,8 @@ describe('useUpdateOverviewLinkSettings', () => {
         x_band_link_enabled: false,
         orbital_traffic_enabled: false,
         aircraft_history_enabled: true,
+        country_borders_enabled: false,
+        state_borders_enabled: false,
       };
       vi.mocked(apiClient.put).mockResolvedValueOnce({ data: bothOff });
       await act(async () => {
@@ -169,6 +175,8 @@ describe('useUpdateOverviewLinkSettings', () => {
           x_band_link_enabled: false,
           orbital_traffic_enabled: false,
           aircraft_history_enabled: true,
+          country_borders_enabled: false,
+          state_borders_enabled: false,
         },
       });
     vi.mocked(apiClient.get)
@@ -180,6 +188,8 @@ describe('useUpdateOverviewLinkSettings', () => {
           x_band_link_enabled: false,
           orbital_traffic_enabled: false,
           aircraft_history_enabled: true,
+          country_borders_enabled: false,
+          state_borders_enabled: false,
         },
       });
     const viewer = renderHook(useOverviewLinkSettings, { wrapper });
@@ -216,6 +226,8 @@ describe('useUpdateOverviewLinkSettings', () => {
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,
       aircraft_history_enabled: true,
+      country_borders_enabled: false,
+      state_borders_enabled: false,
     });
   });
 });

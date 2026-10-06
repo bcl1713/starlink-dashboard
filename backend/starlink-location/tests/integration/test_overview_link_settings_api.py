@@ -29,6 +29,8 @@ def test_get_returns_default_full_pair(client):
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
 
 
@@ -40,6 +42,8 @@ def test_put_returns_and_persists_all_pairs(client, starshield, x_band):
         "x_band_link_enabled": x_band,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     response = client.put(URL, json=payload)
     assert response.status_code == 200
@@ -54,6 +58,8 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     second = client.put(URL, json={"x_band_link_enabled": False})
     assert second.status_code == 200
@@ -62,6 +68,8 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
 
 
@@ -91,6 +99,8 @@ def test_invalid_updates_return_422_and_preserve_last_confirmed_pair(client, pay
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     assert client.put(URL, json=saved).status_code == 200
     response = client.put(URL, json=payload)
@@ -131,6 +141,8 @@ def test_failed_write_returns_503_and_keeps_last_confirmed_pair(client, monkeypa
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     assert client.put(URL, json=saved).status_code == 200
 
@@ -156,12 +168,16 @@ def test_orbital_partial_updates_and_interleaved_viewers(client):
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     assert client.put(URL, json={"x_band_link_enabled": False}).json() == {
         "starshield_link_enabled": False,
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
 
 
@@ -179,6 +195,8 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
         "future_preference": {"display": "constellation"},
     }
     path.write_text(json.dumps(saved))
@@ -189,6 +207,8 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     response = client.put(URL, json={"x_band_link_enabled": False})
     assert response.status_code == 200
@@ -197,6 +217,8 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "x_band_link_enabled": False,
         "orbital_traffic_enabled": True,
         "aircraft_history_enabled": True,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
     assert client.put(URL, json={"future_preference": False}).status_code == 422
@@ -212,6 +234,8 @@ def test_aircraft_history_partial_update_preserves_other_layers(client):
         "x_band_link_enabled": True,
         "orbital_traffic_enabled": False,
         "aircraft_history_enabled": False,
+        "country_borders_enabled": False,
+        "state_borders_enabled": False,
     }
     client.put(URL, json={"orbital_traffic_enabled": True})
     assert client.get(URL).json()["aircraft_history_enabled"] is False
@@ -228,3 +252,27 @@ def test_aircraft_history_api_rejects_non_booleans(client, value):
     assert client.put(URL, json={"aircraft_history_enabled": False}).status_code == 200
     assert client.put(URL, json={"aircraft_history_enabled": value}).status_code == 422
     assert client.get(URL).json()["aircraft_history_enabled"] is False
+
+
+def test_boundary_layers_default_off_and_merge_independently(client, tmp_path):
+    initial = client.get(URL).json()
+    assert initial["country_borders_enabled"] is False
+    assert initial["state_borders_enabled"] is False
+    assert client.put(URL, json={"country_borders_enabled": True}).status_code == 200
+    assert client.put(URL, json={"state_borders_enabled": True}).status_code == 200
+    assert client.put(URL, json={"country_borders_enabled": False}).status_code == 200
+    saved = client.get(URL).json()
+    assert saved == {**initial, "state_borders_enabled": True}
+    # Recreate the process-owned store against the same file.
+    overview_link_settings.set_overview_link_settings_store(
+        OverviewLinkSettingsStore(tmp_path / "overview-links.json")
+    )
+    assert client.get(URL).json() == saved
+
+
+@pytest.mark.parametrize("field", ["country_borders_enabled", "state_borders_enabled"])
+@pytest.mark.parametrize("value", [None, "true", 1, []])
+def test_boundary_layers_require_boolean_confirmation(client, field, value):
+    before = client.get(URL).json()
+    assert client.put(URL, json={field: value}).status_code == 422
+    assert client.get(URL).json() == before

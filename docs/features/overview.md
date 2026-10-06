@@ -245,8 +245,7 @@ translation while truthful source updates, gaps and time bounds still update.
 The globe's geometry and natural lighting are retained; a route spanning its far
 side can remain occluded by Earth.
 
-See
-[responsive layout architecture](../architecture/overview-responsive-layout.md)
+See [responsive layout architecture](../architecture/overview-responsive-layout.md)
 for measured thresholds, scroll ownership and framing limits.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
@@ -293,5 +292,6 @@ The deployment laptop still requires hardware validation.
 
 ## Related Documentation
 
-See [setup](../setup/README.md), [API reference](../api/README.md),
-[troubleshooting](../troubleshooting/README.md) and [README](../../README.md).
+See [optional boundaries](overview-boundaries.md), [setup](../setup/README.md),
+[API reference](../api/README.md), [troubleshooting](../troubleshooting/README.md)
+and [README](../../README.md).
