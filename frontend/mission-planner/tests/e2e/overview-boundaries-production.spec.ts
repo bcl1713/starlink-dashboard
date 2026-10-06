@@ -174,6 +174,25 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
         .poll(() => overview.evaluate(() => !!document.fullscreenElement))
         .toBe(true);
     }
+    // With no mission, automatic framing follows changing simulation positions.
+    // Establish a user-explored view to prove that saves preserve that view.
+    await overview
+      .getByRole('button', { name: 'Explore map', exact: true })
+      .click();
+    const box = (await overview
+      .locator('.overview-globe canvas')
+      .boundingBox())!;
+    await overview.mouse.move(
+      box.x + box.width * 0.55,
+      box.y + box.height * 0.55
+    );
+    await overview.mouse.down();
+    await overview.mouse.move(
+      box.x + box.width * 0.65,
+      box.y + box.height * 0.5,
+      { steps: 10 }
+    );
+    await overview.mouse.up();
     const camera = await settledOverviewCamera(overview);
     const baselineFrames = frameStats(await frameSample(overview));
     const editing = await context.newPage();
@@ -394,7 +413,12 @@ test('fixture operational overlays remain readable with real bundled borders', a
   const errors: string[] = [];
   overview.on('pageerror', (error) => errors.push(error.message));
   await overview.goto('/overview');
-  await expect.poll(async () => (await scene(overview)).borders.length).toBe(8);
+  await settledOverviewCamera(overview);
+  await expect
+    .poll(async () => (await scene(overview)).borders.length, {
+      timeout: 20_000,
+    })
+    .toBe(8);
   const entries = await legend(overview);
   for (const label of [
     'Country borders',
@@ -424,12 +448,34 @@ test('fixture operational overlays remain readable with real bundled borders', a
   ] as const) {
     await overview.evaluate(
       ({ latitude, longitude }) => {
-        const roots = (window as any).__overviewEvidenceRoots;
+        type Root = {
+          containerInfo?: {
+            getState?: () => {
+              gl: { domElement: HTMLCanvasElement };
+              controls: {
+                setLookAt: (
+                  x: number,
+                  y: number,
+                  z: number,
+                  tx: number,
+                  ty: number,
+                  tz: number,
+                  transition: boolean
+                ) => void;
+              };
+            };
+          };
+        };
+        const roots = (window as unknown as { __overviewEvidenceRoots: Root[] })
+          .__overviewEvidenceRoots;
         const state = roots
           .find(
-            (root: any) => typeof root.containerInfo?.getState === 'function'
+            (root) =>
+              typeof root.containerInfo?.getState === 'function' &&
+              document.contains(root.containerInfo.getState().gl.domElement)
           )
-          ?.containerInfo.getState();
+          ?.containerInfo?.getState?.();
+        if (!state) throw new Error('Renderer not observed');
         const lat = (latitude * Math.PI) / 180,
           lon = (longitude * Math.PI) / 180;
         state.controls.setLookAt(
