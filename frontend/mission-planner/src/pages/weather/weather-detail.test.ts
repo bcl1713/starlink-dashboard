@@ -26,7 +26,52 @@ beforeEach(() => {
 });
 afterEach(() => {
   owners.splice(0).forEach((owner) => owner.dispose());
+  vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+it('retries an owned deadline after cooldown without camera movement', async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn<typeof fetch>();
+  fetcher.mockImplementationOnce(
+    (_url, init) =>
+      new Promise((_resolve, reject) =>
+        init!.signal!.addEventListener(
+          'abort',
+          () => reject(init!.signal!.reason),
+          { once: true }
+        )
+      )
+  );
+  fetcher.mockImplementation(
+    async () =>
+      new Response('png', {
+        headers: { 'Content-Type': 'image/png' },
+      })
+  );
+  const work = new WeatherWork();
+  const owner = new WeatherDetailOwner(
+    fetcher,
+    { nowMono: () => Date.now() },
+    work
+  );
+  owners.push(owner);
+  owner.setContext(context());
+  owner.setDemand(demand);
+  await flush();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(45000);
+  expect(owner.snapshot()).toHaveLength(0);
+  expect(work.snapshot().decodedBytes).toBe(0);
+  await vi.advanceTimersByTimeAsync(29999);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  await flush();
+  expect(fetcher).toHaveBeenCalledTimes(3);
+  expect(owner.snapshot()).toHaveLength(1);
+  owner.dispose();
+  expect(vi.getTimerCount()).toBe(0);
+  expect(work.snapshot().decodedBytes).toBe(0);
 });
 function harness(
   fetcher = vi.fn<typeof fetch>(

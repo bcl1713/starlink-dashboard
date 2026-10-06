@@ -922,6 +922,158 @@ test('dated actual RainViewer captures use production pairing, scheduling and sh
   );
 });
 
+test('native coverage stays conservative at shared boundaries, fades and antimeridian fallback', async ({
+  page,
+  request,
+}, info) => {
+  test.setTimeout(240000);
+  const frame = Math.floor(Date.now() / 1000) - 120;
+  await control({ frame, detail_fixture: true, boundary_fixture: true });
+  await request.put('/api/overview-weather/settings', {
+    data: { enabled: false },
+  });
+  await request.put('/api/overview-weather/settings', {
+    data: { enabled: true },
+  });
+  await installWeatherProbe(page);
+  await page.goto('/overview');
+  await expect(
+    page.getByText('Current precipitation', { exact: true })
+  ).toBeVisible({ timeout: 30000 });
+  const explore = page.getByRole('button', {
+    name: 'Explore map',
+    exact: true,
+  });
+  if (await explore.isVisible()) await explore.click();
+  const evidence = [];
+  for (const edge of [0, 180]) {
+    await aim(page, 10, edge === 180 ? 179 : -1);
+    await expect
+      .poll(
+        async () => {
+          const s = await weatherSnapshot(page);
+          const u = edge === 180 ? 1 : 0.5;
+          return s.detailBounds.filter(
+            (b, i) =>
+              s.detailSlots[i] &&
+              b[1] < 0.4721 &&
+              b[3] > 0.4721 &&
+              (Math.abs(b[0] - (u % 1)) < 1e-6 || Math.abs(b[2] - u) < 1e-6)
+          ).length;
+        },
+        { timeout: 30000 }
+      )
+      .toBeGreaterThanOrEqual(2);
+    const s = await weatherSnapshot(page);
+    const b = s.detailBounds.find(
+      (b, i) => s.detailSlots[i] && b[1] < 0.4721 && b[3] > 0.4721
+    )!;
+    const epsilon = (360 * (b[2] - b[0])) / 510 / 4;
+    for (const fade of [0.25, 0.5, 1]) {
+      const sample = await boundaryPixel(page, edge - epsilon, fade, false);
+      expect(
+        hatchColumn(sample).length,
+        `covered side next to missing neighbor: edge=${edge}, fade=${fade}`
+      ).toBeGreaterThan(0);
+      evidence.push({ edge, fade, sample });
+    }
+    const fallback = await boundaryPixel(page, edge - epsilon, 1, true);
+    expect(hatchColumn(fallback)).toHaveLength(0);
+    if (edge === 0) {
+      const absentFallback = await boundaryPixel(page, epsilon, 0.5, true);
+      expect(hatchColumn(absentFallback).length).toBeGreaterThan(0);
+      evidence.push({ edge, absentFallback });
+    }
+    evidence.push({ edge, fallback, snapshot: s });
+  }
+  await page.goto('/configuration');
+  await request.put('/api/overview-weather/settings', {
+    data: { enabled: false },
+  });
+  await writeFile(
+    info.outputPath('coverage-boundary-evidence.json'),
+    JSON.stringify(evidence, null, 2)
+  );
+});
+
+type BoundarySample = {
+  patchWithWeather: number[];
+  patchWithoutWeather: number[];
+};
+function hatchColumn(sample: BoundarySample) {
+  const marked = [];
+  for (let row = 0; row < 12; row++) {
+    const offset = (row * 12 + 6) * 4;
+    const delta = [0, 1, 2].map(
+      (c) =>
+        sample.patchWithWeather[offset + c] -
+        sample.patchWithoutWeather[offset + c]
+    );
+    if (Math.max(...delta) > 8) {
+      expect(Math.max(...delta) - Math.min(...delta)).toBeLessThan(12);
+      marked.push(delta);
+    }
+  }
+  return marked;
+}
+async function boundaryPixel(
+  page: import('@playwright/test').Page,
+  longitude: number,
+  fade: number,
+  onlyContaining: boolean
+) {
+  return page.evaluate(
+    ({ longitude, fade, onlyContaining }) => {
+      const target = window as unknown as {
+        __overviewEvidenceRoots: {
+          containerInfo?: {
+            getState?: () => import('@react-three/fiber').RootState;
+          };
+        }[];
+        __weatherPixel: (
+          lat: number,
+          lon: number,
+          dark: boolean,
+          radius: number
+        ) => BoundarySample;
+      };
+      const state = target.__overviewEvidenceRoots
+        .find(
+          (root) => root.containerInfo?.getState?.().gl.domElement.isConnected
+        )
+        ?.containerInfo?.getState?.();
+      if (!state) throw new Error('No native renderer');
+      const material = (
+        state.scene.getObjectByName(
+          'Overview precipitation radar'
+        ) as import('three').Mesh
+      ).material as import('three').ShaderMaterial;
+      const uniforms = material.uniforms;
+      const originalValid = [...uniforms.detailValid.value];
+      const originalFades = [...uniforms.detailFades.value];
+      const originalOpacity = uniforms.radarOpacity.value;
+      const u = (((longitude / 360 + 0.5) % 1) + 1) % 1;
+      try {
+        // Observe mask output alone, without replacing textures or the shader.
+        uniforms.radarOpacity.value = 0;
+        uniforms.detailFades.value.fill(fade);
+        if (onlyContaining)
+          uniforms.detailValid.value.forEach((_value: number, i: number) => {
+            const b = uniforms.detailBounds.value[i] as import('three').Vector4;
+            if (!(u >= b.x && u < b.z && 0.4721 >= b.y && 0.4721 < b.w))
+              uniforms.detailValid.value[i] = 0;
+          });
+        return target.__weatherPixel(10, longitude, true, 3);
+      } finally {
+        uniforms.detailValid.value.splice(0, 8, ...originalValid);
+        uniforms.detailFades.value.splice(0, 8, ...originalFades);
+        uniforms.radarOpacity.value = originalOpacity;
+      }
+    },
+    { longitude, fade, onlyContaining }
+  );
+}
+
 async function lights(page: import('@playwright/test').Page, night: boolean) {
   await page.evaluate((dark) => {
     const target = window as unknown as {

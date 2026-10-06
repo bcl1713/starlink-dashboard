@@ -57,7 +57,9 @@ class WeatherAcquisitionPool:
             raise WeatherUnavailable(int(failed[0] - now + 1))
         acquisition = self._tasks.get(key)
         if acquisition is None:
-            if len(self._tasks) >= 36:
+            detail = key[-3] > 2
+            detail_tasks = sum(existing[-3] > 2 for existing in self._tasks)
+            if len(self._tasks) >= 36 or (detail and detail_tasks >= 32):
                 raise WeatherUnavailable()
             generation = self._generation
             deadline = now + 5

@@ -308,7 +308,8 @@ export class WeatherDetailOwner {
       release = undefined;
     } catch (error) {
       if (
-        !signal.aborted &&
+        (!signal.aborted || signal.reason?.name === 'TimeoutError') &&
+        this.entries.get(id) === entry &&
         this.context &&
         detailContextIdentity(context) === detailContextIdentity(this.context)
       )

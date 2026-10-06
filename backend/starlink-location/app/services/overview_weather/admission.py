@@ -59,7 +59,10 @@ class WeatherAdmission:
 
     @asynccontextmanager
     async def admit(self, deadline: float, *, detail: bool = False):
-        if self._pending >= 32:
+        # Two queue positions, like the exchange slots, remain available for
+        # metadata/coarse work even when many viewers request unique detail.
+        detail_pending = sum(ticket.detail for ticket in self._waiting)
+        if self._pending >= 32 or (detail and detail_pending >= 30):
             raise WeatherUnavailable()
         ticket = Ticket(asyncio.get_running_loop().create_future(), detail)
         self._waiting.append(ticket)
