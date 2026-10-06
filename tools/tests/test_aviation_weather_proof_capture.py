@@ -380,6 +380,48 @@ def test_malformed_manifest_raises_value_error(api, tmp_path, contents):
         api.load_capture(path)
 
 
+@pytest.mark.parametrize(
+    "section, field, value",
+    [
+        ("object", "relative_path", None),
+        ("object", "relative_path", []),
+        ("object", "url", {}),
+        ("object", "url", 42),
+        ("object", "sha256", []),
+        ("object", "byte_size", "3"),
+        ("object", "byte_range", [[], 12]),
+        ("manifest", "attribution", [{}]),
+        ("manifest", "attribution", [None]),
+        ("manifest", "attribution", "NOAA"),
+        ("manifest", "objects", {}),
+        ("manifest", "captured_at_ms", True),
+    ],
+)
+def test_nested_manifest_types_raise_value_error(api, tmp_path, section, field, value):
+    # These invalid values must be rejected before path parsing or registry hashing.
+    (tmp_path / "object.bin").write_bytes(b"abc")
+    data = {
+        "source": "isigmet",
+        "captured_at_ms": 1791288000000,
+        "objects": [
+            {
+                "url": "https://aviationweather.gov/test",
+                "byte_range": None,
+                "relative_path": "object.bin",
+                "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                "byte_size": 3,
+            }
+        ],
+        "attribution": ["NOAA"],
+    }
+    target = data["objects"][0] if section == "object" else data
+    target[field] = value
+    path = tmp_path / "capture.json"
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError):
+        api.load_capture(path)
+
+
 def test_departed_manifest_raises_value_error(api, tmp_path):
     with pytest.raises(ValueError):
         api.load_capture(tmp_path / "departed.json")

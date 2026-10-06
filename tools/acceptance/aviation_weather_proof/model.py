@@ -91,6 +91,35 @@ def load_capture(manifest_path: Path) -> CaptureManifest:
     if path.stat().st_size > 1024 * 1024:
         raise ValueError("manifest too large")
     data = json.loads(path.read_text())
+    # Validate JSON field types before path parsing or hashing frozen records.
+    # Converting arbitrary containers to tuples can otherwise hide bad inputs
+    # or leave unhashable nested objects inside the manifest registry key.
+    if (
+        not isinstance(data, dict)
+        or not isinstance(data.get("source"), str)
+        or type(data.get("captured_at_ms")) is not int
+        or not isinstance(data.get("objects"), list)
+        or not isinstance(data.get("attribution"), list)
+        or any(not isinstance(item, str) for item in data["attribution"])
+    ):
+        raise ValueError("invalid manifest field types")
+    for item in data["objects"]:
+        if (
+            not isinstance(item, dict)
+            or any(
+                not isinstance(item.get(field), str)
+                for field in ("url", "relative_path", "sha256")
+            )
+            or type(item.get("byte_size")) is not int
+            or (
+                item.get("byte_range") is not None
+                and (
+                    not isinstance(item["byte_range"], list)
+                    or any(type(value) is not int for value in item["byte_range"])
+                )
+            )
+        ):
+            raise ValueError("invalid captured object field types")
     try:
         objects = tuple(
             CapturedObject(
