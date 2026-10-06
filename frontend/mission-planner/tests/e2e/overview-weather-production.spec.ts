@@ -1065,8 +1065,8 @@ async function boundaryPixel(
           });
         return target.__weatherPixel(10, longitude, true, 3);
       } finally {
-        uniforms.detailValid.value.splice(0, 8, ...originalValid);
-        uniforms.detailFades.value.splice(0, 8, ...originalFades);
+        uniforms.detailValid.value.set(originalValid);
+        uniforms.detailFades.value.set(originalFades);
         uniforms.radarOpacity.value = originalOpacity;
       }
     },

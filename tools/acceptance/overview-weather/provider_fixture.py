@@ -26,7 +26,7 @@ def event(kind, **values):
         output.write(json.dumps({"event": kind, "at": time.time(), **values}) + "\n")
 
 
-def tile_png(x, y, *, coverage=False, z=2, detail=False):
+def tile_png(x, y, *, coverage=False, z=2, detail=False, boundary=False):
     # Independently specified XYZ rows distinguish Mercator from latitude-linear
     # sampling, and columns distinguish the prime-meridian/antimeridian edges.
     colors = [
@@ -61,7 +61,9 @@ def tile_png(x, y, *, coverage=False, z=2, detail=False):
             for col in range(512):
                 longitude = (x + (col + 0.5) / 512) / 2**z * 360 - 180
                 value = color
-                if coverage and -78 < longitude < -74 and 33.8 < latitude < 38:
+                if coverage and boundary and 0 < longitude < 3 and 7 < latitude < 13:
+                    value = [0, 0, 0, 255]
+                elif coverage and -78 < longitude < -74 and 33.8 < latitude < 38:
                     value = [0, 0, 0, 255]
                 elif not coverage and -78 < longitude < -74 and 31 < latitude < 35:
                     value = [20, 255, 20, 255]
@@ -129,6 +131,7 @@ class Writer:
                 z=z,
                 coverage="coverage" in path,
                 detail=settings.get("detail_fixture", False),
+                boundary=settings.get("boundary_fixture", False),
             )
             if settings.get("capture_identity"):
                 capture = json.loads(Path("/capture/capture.json").read_text())
