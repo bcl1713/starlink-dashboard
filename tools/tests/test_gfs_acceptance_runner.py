@@ -139,6 +139,9 @@ def test_failed_teardown_still_removes_unaffected_temporary_paths(
         def bind(self, address):
             pass
 
+        def setsockopt(self, *args):
+            pass
+
     monkeypatch.setattr(module.socket, "socket", FreeSocket)
     with pytest.raises(RuntimeError):
         owner.cleanup()
@@ -153,3 +156,20 @@ def test_cleanup_command_error_prevents_pass_even_with_empty_inventory():
     evidence["cleanup"]["errors"] = ["down failed"]
     with pytest.raises(ValueError, match="cleanup"):
         module.require_pass(evidence)
+
+
+def test_port_check_rejects_live_listener_and_accepts_closed_time_wait():
+    import socket
+
+    module = runner()
+    with socket.socket() as server:
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        port = server.getsockname()[1]
+        server.listen()
+        assert not module.ports_available((port,))
+        with socket.create_connection(("127.0.0.1", port)) as client:
+            accepted, _ = server.accept()
+            accepted.close()
+            assert client.recv(1) == b""
+    assert module.ports_available((port,))

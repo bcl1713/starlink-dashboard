@@ -99,6 +99,18 @@ def process_table():
     return result
 
 
+def ports_available(ports=PORTS):
+    try:
+        for port in ports:
+            with socket.socket() as sock:
+                # Closed TCP TIME_WAIT connections are not live listeners.
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                sock.bind(("127.0.0.1", port))
+        return True
+    except OSError:
+        return False
+
+
 class Runner:
     def __init__(self, root, sha, browser):
         self.root, self.sha, self.browser = root, sha, browser
@@ -234,9 +246,8 @@ class Runner:
     def prepare(self):
         if any(self.inventory().values()):
             raise ValueError("Existing acceptance project; ownership refused")
-        for port in PORTS:
-            with socket.socket() as sock:
-                sock.bind(("127.0.0.1", port))
+        if not ports_available():
+            raise ValueError("Acceptance ports already have listeners")
         archive = self.command(
             [
                 "git",
@@ -481,14 +492,10 @@ class Runner:
         ]
         ports_free = False
         for _ in range(30):
-            try:
-                for port in PORTS:
-                    with socket.socket() as sock:
-                        sock.bind(("127.0.0.1", port))
+            if ports_available():
                 ports_free = True
                 break
-            except OSError:
-                time.sleep(1)
+            time.sleep(1)
         inventory = self.inventory()
         if not any(inventory.values()):
             shutil.rmtree(self.source)
