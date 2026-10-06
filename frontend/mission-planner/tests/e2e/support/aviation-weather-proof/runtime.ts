@@ -1,10 +1,10 @@
+import { mountProofLabel } from './proof-label';
 import * as THREE from 'three';
 import type { RootState } from '@react-three/fiber';
 import {
   Allocation,
   InstallQueue,
   decodePayload,
-  labels,
   type Descriptor,
   type Payload,
 } from './model';
@@ -218,12 +218,7 @@ async function performInstall(url: string, signal: AbortSignal) {
     // Replacement is allocated while the old generation remains owned; accounting
     // covers both. A failed candidate leaves the prior visualization intact.
     dispose(false);
-    label = document.createElement('aside');
-    label.dataset.aviationProof = 'true';
-    label.style.cssText =
-      'position:fixed;z-index:9999;bottom:10px;left:12px;max-width:900px;background:#101829ee;color:white;font:12px sans-serif;padding:10px;pointer-events:none';
-    label.textContent = `DIAGNOSTIC • ${labels(d)} • ${advisoryLabel} • ${(d.attribution ?? []).join('; ')}`;
-    document.body.append(label);
+    label = mountProofLabel(d, advisoryLabel);
     for (const object of objects) s.scene.add(object.mesh);
     installed = { d, values, mask, objects, releases, label, saved };
     s.invalidate();

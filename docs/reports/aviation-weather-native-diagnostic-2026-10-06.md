@@ -10,11 +10,11 @@ Private sealed evidence:
 All nine success/failure attempt manifests and fingerprints were independently
 verified after cleanup; earlier evidence was preserved.
 
-| Native measurement | GFS 500 hPa | GOES-19 C13 |
-| --- | ---: | ---: |
-| Real-source GPU/independent Python samples | 10 | 10 |
-| Maximum quantity error, K (limit 0.01 K) | 0.004220 | 0.003234 |
-| Maximum palette error, RGB × 255 (limit 3) | 0.482463 | 0.486923 |
+| Native measurement                         | GFS 500 hPa | GOES-19 C13 |
+| ------------------------------------------ | ----------: | ----------: |
+| Real-source GPU/independent Python samples | 10          | 10          |
+| Maximum quantity error, K (limit 0.01 K)   | 0.004220    | 0.003234    |
+| Maximum palette error, RGB × 255 (limit 3) | 0.482463    | 0.486923    |
 
 The quantity and mask readback use the same packed Int16/manual-bilinear shader
 as the native overlay. Every stencil corner must be valid, including zero-weight
@@ -51,7 +51,8 @@ GOES normalization took 0.854/0.084/1.173 seconds and reported peak process RSS
 204,963,840/56,758,272/120,573,952 bytes. Source controls and independently sampled
 normalized products were retained alongside hashes, URLs, provenance, and times.
 GFS is the 00Z F006 500 hPa field valid 06Z, without a flight-level claim. GOES
-retains the full 00:00:20.900–00:09:52.800 UTC scan and brightness temperature in K.
+retains the full 00:00:20.900–00:09:52.800 UTC scan and brightness
+temperature in K.
 Advisory display explicitly replays descriptor epoch 1791288447898
 (2026-10-06T12:07:27.898Z); expired/cancelled controls remain inactive otherwise.
 

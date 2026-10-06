@@ -144,3 +144,19 @@ The entrypoint holds the actor-wide lock
 `${XDG_CACHE_HOME:-$HOME/.cache}/starlink-acceptance/scientific-decoder.lock`
 through worker, browser, and Compose cleanup. All concurrent scientific checks
 must acquire this same lock; it survives deletion of task planning workspaces.
+
+The unchanged outer 20-minute/10-second-kill bound includes admission waiting.
+Work stops with four minutes reserved for cleanup and sealing; an admission wait
+that consumes that reserve prevents allocation. SIGTERM/SIGINT shorten the
+remaining budget to eight seconds. Emergency cleanup stops owned groups and
+containers before inspecting ports; it records TIME_WAIT without spending the
+normal 65-second wait and seals a failed result. It does not claim such a port
+passed. Optional source-staging deletion follows sealing. Linux subreaper mode
+allows recorded orphaned descendants to be terminated and reaped even after a
+leader exits; forced cleanup always fails the diagnostic gate.
+
+The synthetic regional descriptor is installed through the same fixture and
+native-overlay path, with a visible SYNTHETIC label and both complete scan
+intervals. Its screenshot and DOM receipt are retained separately from the real
+GOES source samples. Geometry controls live in the named test-only synthetic
+controls module.
