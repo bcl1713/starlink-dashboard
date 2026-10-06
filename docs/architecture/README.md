@@ -55,3 +55,14 @@ Starlink dish or simulator
 See
 [responsive layout, camera and scroll ownership](./overview-responsive-layout.md)
 for the single-tree mobile/scaled-desktop implementation.
+
+## Aviation weather proposal
+
+See the
+[aviation weather architecture design](../superpowers/specs/2026-10-06-aviation-weather-design.md),
+[source inventory](../reports/2026-10-06-aviation-weather-source-inventory.md),
+and
+[local rendering proof design](../superpowers/specs/2026-10-06-aviation-weather-proof-design.md)
+for the proposed provider-neutral extension of the existing observed radar.
+Scientific decode and local-render evidence remain prerequisites for product
+implementation.
