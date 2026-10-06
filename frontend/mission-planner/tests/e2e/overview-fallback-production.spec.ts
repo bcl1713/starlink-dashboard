@@ -42,61 +42,63 @@ for (const longitude of [179.95, -179.95]) {
     expect(process.env.ACCEPTANCE_CANDIDATE_SHA).toMatch(/^[a-f0-9]{40}$/);
     expect(await (await request.get('/api/v2/missions')).json()).toEqual([]);
     const original = await (await request.get('/api/config')).json();
-    // Supported simulator settings accelerate a fabricated 100 km circle so
-    // both dateline crossings fit in a bounded browser observation.
-    const configured = await request.post('/api/config', {
-      data: {
-        ...original,
-        route: {
-          ...original.route,
-          latitude_start: 70,
-          longitude_start: longitude,
-        },
-        position: {
-          ...original.position,
-          speed_min_knots: 60000,
-          speed_max_knots: 60000,
-        },
-      },
-    });
-    expect(configured.ok(), await configured.text()).toBeTruthy();
-    await observeOverviewCamera(page);
-    await page.goto('/overview');
-    await expect(
-      page.getByText('No active route.', { exact: true })
-    ).toBeVisible();
     const observations: unknown[] = [];
-    const longitudes: number[] = [];
-    const renderedLongitudes: number[] = [];
-    for (let index = 0; index < 26; index++) {
-      const response = await request.get('/api/status');
-      expect(response.ok()).toBeTruthy();
-      expect(response.headers().server).toMatch(/nginx/);
-      const status = await response.json();
-      expect(status.position.latitude).toBeGreaterThan(69);
-      expect(status.position.latitude).toBeLessThan(71);
-      expect(Math.abs(status.position.longitude)).toBeGreaterThan(177);
-      expect(Math.abs(status.position.longitude)).toBeLessThanOrEqual(180);
-      longitudes.push(status.position.longitude);
-      await expect
-        .poll(async () => (await renderedAircraft(page)).visibleChevron)
-        .toBe(true);
-      const rendered = await renderedAircraft(page);
-      expect(rendered.coordinate).toBeDefined();
-      expect(Math.abs(rendered.coordinate!.longitude)).toBeGreaterThan(177);
-      expect(Math.abs(rendered.coordinate!.longitude)).toBeLessThanOrEqual(180);
-      renderedLongitudes.push(rendered.coordinate!.longitude);
-      observations.push({ status, rendered });
-      await page.waitForTimeout(1000);
-    }
-    expect(longitudes.some((lon) => lon < -177)).toBe(true);
-    expect(longitudes.some((lon) => lon > 177)).toBe(true);
-    expect(new Set(longitudes).size).toBeGreaterThan(20);
-    expect(new Set(renderedLongitudes).size).toBeGreaterThan(5);
-    await page.screenshot({ path: info.outputPath('fallback-dateline.png') });
-
-    const seed = await seedSimulationRunMission(request);
     try {
+      // Supported simulator settings accelerate a fabricated 100 km circle so
+      // both dateline crossings fit in a bounded browser observation.
+      const configured = await request.post('/api/config', {
+        data: {
+          ...original,
+          route: {
+            ...original.route,
+            latitude_start: 70,
+            longitude_start: longitude,
+          },
+          position: {
+            ...original.position,
+            speed_min_knots: 60000,
+            speed_max_knots: 60000,
+          },
+        },
+      });
+      expect(configured.ok(), await configured.text()).toBeTruthy();
+      await observeOverviewCamera(page);
+      await page.goto('/overview');
+      await expect(
+        page.getByText('No active route.', { exact: true })
+      ).toBeVisible();
+      const longitudes: number[] = [];
+      const renderedLongitudes: number[] = [];
+      for (let index = 0; index < 26; index++) {
+        const response = await request.get('/api/status');
+        expect(response.ok()).toBeTruthy();
+        expect(response.headers().server).toMatch(/nginx/);
+        const status = await response.json();
+        expect(status.position.latitude).toBeGreaterThan(69);
+        expect(status.position.latitude).toBeLessThan(71);
+        expect(Math.abs(status.position.longitude)).toBeGreaterThan(177);
+        expect(Math.abs(status.position.longitude)).toBeLessThanOrEqual(180);
+        longitudes.push(status.position.longitude);
+        await expect
+          .poll(async () => (await renderedAircraft(page)).visibleChevron)
+          .toBe(true);
+        const rendered = await renderedAircraft(page);
+        expect(rendered.coordinate).toBeDefined();
+        expect(Math.abs(rendered.coordinate!.longitude)).toBeGreaterThan(177);
+        expect(Math.abs(rendered.coordinate!.longitude)).toBeLessThanOrEqual(
+          180
+        );
+        renderedLongitudes.push(rendered.coordinate!.longitude);
+        observations.push({ status, rendered });
+        await page.waitForTimeout(1000);
+      }
+      expect(longitudes.some((lon) => lon < -177)).toBe(true);
+      expect(longitudes.some((lon) => lon > 177)).toBe(true);
+      expect(new Set(longitudes).size).toBeGreaterThan(20);
+      expect(new Set(renderedLongitudes).size).toBeGreaterThan(5);
+      await page.screenshot({ path: info.outputPath('fallback-dateline.png') });
+
+      const seed = await seedSimulationRunMission(request);
       await startSimulation(request, seed, {
         mode: 'target_runtime',
         runtime_seconds: 20,
@@ -132,10 +134,15 @@ for (const longitude of [179.95, -179.95]) {
       observations.push({ resumed: await renderedAircraft(page) });
       await page.screenshot({ path: info.outputPath('fallback-resumed.png') });
     } finally {
-      await request.post(`/api/v2/missions/${seed.missionId}/legs/deactivate`);
-      expect(
-        (await request.delete(`/api/v2/missions/${seed.missionId}`)).status()
-      ).toBe(204);
+      // This project starts with empty task-owned storage, so also remove any
+      // partially seeded mission after an early assertion or upload failure.
+      const missions = await (await request.get('/api/v2/missions')).json();
+      for (const mission of missions) {
+        await request.post(`/api/v2/missions/${mission.id}/legs/deactivate`);
+        expect(
+          (await request.delete(`/api/v2/missions/${mission.id}`)).status()
+        ).toBe(204);
+      }
       expect(
         (await request.post('/api/config', { data: original })).ok()
       ).toBeTruthy();
