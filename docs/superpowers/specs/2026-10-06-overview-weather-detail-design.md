@@ -96,7 +96,15 @@ grammars and raw formats, with truthful observation time, provenance and
 coverage. This issue continues to display observed precipitation only; METAR,
 SIGMET, satellite, model and flight-level layers need their own designs.
 
-The manifest keeps `zoom: 2` as the fallback level and adds `max_zoom: 7`.
+The [provider-neutral plan review][provider-neutral-review] requires frontend
+selection/loading/caching/rendering to consume normalized manifest capabilities,
+with RainViewer only the initial adapter. Source/provenance, observed product,
+frame time, coverage generation and tile schema/version form the full detail
+identity. Product-aware same-origin templates/cache keys prevent source changes
+from reusing incompatible imagery even when time and XYZ match. Include an
+alternative-source/max-zoom normalized fixture without another live provider.
+
+The RainViewer adapter advertises `zoom: 2`, `max_zoom: 7` and 512px tiles.
 Update backend and frontend strict contracts together. Radar and coverage routes
 accept canonical integer XYZ coordinates for zooms 2 through 7, with
 `0 <= x,y < 2**z`. The provider transport independently validates the expanded
@@ -273,3 +281,5 @@ against `dev`; do not merge or publish to `main` as part of this task.
 [assessment]: ../../reports/2026-10-06-overview-weather-provider-assessment.md
 [aviation-direction]:
   https://github.com/bcl1713/starlink-dashboard/issues/288#issuecomment-6008230258
+[provider-neutral-review]:
+  https://github.com/bcl1713/starlink-dashboard/issues/288#issuecomment-6008868505

@@ -7,11 +7,10 @@
 **Goal:** Improve observed radar detail during native Overview zoom and reduce
 radar opacity while preserving international coverage and current resource caps.
 
-**Architecture:** Retain RainViewer behind the backend's normalized contract and
-keep complete zoom-2 fallback atlases. Select at most eight visible
-higher-detail pairs from the existing camera, load them under shared budgets,
-and publish matched slots into fixed detail textures owned by the displayed
-frame.
+**Architecture:** Retain the normalized backend weather contract. RainViewer is
+the initial observed-radar adapter unless Task 0 demonstrates a practical
+replacement. Manifest capabilities drive bounded camera selection, paired
+loading and fixed texture packing; provider URL grammar stays server-side.
 
 **Tech stack:** FastAPI/Pydantic, asyncio, React/TypeScript, Three/React Three
 Fiber, Vitest, pytest, Playwright, production Docker and Nginx.
@@ -29,8 +28,7 @@ Fiber, Vitest, pytest, Playwright, production Docker and Nginx.
   48 cached PNGs/64 MiB. Detail subset: 30 attempts/minute, two exchanges;
   reserve two exchanges for coarse/metadata and prioritize their admission.
 - Browser: four fetch/decode operations total, two detail; 45-second load
-  deadline, 2 MiB PNG payload, strict 512-square decode, 96 MiB owned decoded
-  ceiling.
+  deadline, 2 MiB PNG payload, schema-validated dimensions, 96 MiB decoded cap.
 - GPU: 32 MiB coarse plus 16 MiB detail, total 48 MiB. Two 2048-by-1024 detail
   atlases, eight 512-square slots, one-pixel gutters/510-square interiors; no
   mipmaps, double-buffered detail set or additional GPU metadata texture.
@@ -38,9 +36,11 @@ Fiber, Vitest, pytest, Playwright, production Docker and Nginx.
   bitmap pairs 16 MiB; staging shares that pair budget, reserve before decoding.
 - Selection: actual projection/view offset/globe transform/drawing buffer; at
   most 4 Hz, 400 ms stable demand, 20 percent resolution hysteresis, maximum
-  zoom 7 and eight pairs. Retain eligible overlaps and coarse fallback.
-- Preserve frame/settings/coverage identity, settings trust, existing 20-minute
-  stale threshold, 60-minute expiry, midnight coverage expiry and attribution.
+  zoom from manifest capabilities and eight pairs. Retain eligible overlaps and
+  coarse fallback.
+- Preserve source/provenance/product/schema/frame/coverage identity, settings
+  trust, existing 20-minute stale threshold, 60-minute expiry, midnight coverage
+  expiry and attribution.
 - Radar opacity candidate 0.40, compare 0.35/0.45/0.72 with operational
   overlays; hatch factor remains independently 0.17. Final choice needs rendered
   evidence.
@@ -58,7 +58,8 @@ Fiber, Vitest, pytest, Playwright, production Docker and Nginx.
 2. Camera view offsets, antimeridian, poles and foreshortened horizon cannot
    request invisible regions or starve useful visible detail (Task 2).
 3. Old decode completions after frame/settings/coverage changes close resources
-   and cannot paint newer slots or extend freshness (Task 3).
+   and cannot paint newer slots or extend freshness; a different normalized
+   source with matching XYZ/time cannot reuse old detail (Tasks 1, 2 and 3).
 4. Missing coverage on a slot boundary remains hatched during interpolation,
    fading, adjacency and coarse fallback (Task 4).
 5. Coarse refresh under saturated multi-viewer detail demand retains priority,
@@ -71,7 +72,9 @@ are relative to `frontend/mission-planner/`.
 
 - Modify backend models/API/service/transport/admission/acquisitions under
   `app/models/overview_weather.py`, `app/api/overview_weather.py` and
-  `app/services/overview_weather/` and their existing unit tests.
+  `app/services/overview_weather/` and their existing unit tests. Create
+  `app/services/overview_weather/rainviewer.py` for adapter-specific discovery,
+  paths and capability constants; no second live adapter or ingest framework.
 - Modify frontend `src/services/overview-weather.ts` and its strict contract
   tests.
 - Create `src/pages/weather/weather-detail-selection.ts` and tests: pure demand.
@@ -79,52 +82,28 @@ are relative to `frontend/mission-planner/`.
 - Create `src/pages/weather/weather-work.ts` and tests: shared operations/bytes.
 - Create `src/pages/weather/weather-detail.ts` and tests: pairs/cache/lifecycle.
 - Create `src/pages/weather/weather-detail-textures.ts` and tests: atlas slots.
-- Modify existing atlas/controller/state/textures/layer, their tests, weather
+- Modify atlas/controller/state/textures/layer/status, their tests, weather
   hook, `OverviewPage.tsx` and related mocked views to pass context/demand.
 - Extend production e2e fixtures/spec/runner and feature/API documentation.
 
-Shared types in `weather-detail-selection.ts` (first three) and
-`weather-detail.ts` (last two):
+Shared contracts, exact types and bounded test helpers are defined in the
+[normalized contract](2026-10-06-overview-weather-detail-contract.md).
 
-```ts
-type DetailKey = { z: number; x: number; y: number };
-type CameraSnapshot = {
-  projection: readonly number[];
-  cameraWorld: readonly number[];
-  globeWorld: readonly number[];
-  drawingBuffer: readonly [number, number];
-};
-type DetailDemand = {
-  keys: readonly DetailKey[];
-  level: number;
-  texelPixels: number;
-};
-type DetailContext = {
-  generation: number;
-  settingsRevision: number;
-  manifest: ReadyWeatherManifest;
-};
-type DetailPair = {
-  context: DetailContext;
-  key: DetailKey;
-  radar: ImageBitmap;
-  coverage: ImageBitmap;
-  dispose(): void;
-};
-```
+## Task 0: Provider decision and validation (completed)
 
-Use bounded test helpers from the worktree root:
+**Files/Interfaces:** [Comparison results][results] select the Task 1 adapter.
 
-```bash
-backend_weather_tests() {
-  (cd backend/starlink-location && timeout --kill-after=10s 10m \
-    uv run --with-requirements requirements.txt pytest "$@" -q)
-}
-frontend_weather_tests() {
-  (cd frontend/mission-planner && timeout --kill-after=10s 10m \
-    npm run test:unit -- "$@")
-}
-```
+- [x] Compare immutable RainViewer z2 and z5/z6/z7 imagery against bounded MRMS
+      and OPERA observed composites: 80 native desktop/fullscreen/mobile,
+      day/night views. Record visible detail, requests/storage, processing,
+      fetch/decode/upload latency, CPU/RAM and measurement limitations.
+- [x] Record decision: raw generation is feasible but does not justify changing
+      #288 or replace international coverage. Proceed with the RainViewer
+      adapter, advertising max zoom 7 and 512px tiles; no continuous ingest. The
+      48 MiB proof applies to this selected schema, not every future source.
+- [x] Evidence validated by the completed comparison workflow: replay candidate
+      `553d96ded55971cda417cd79f1c14182d7d2bab6`, hashes and cleanup retained.
+      Reuse these results; repeat only if evidence becomes insufficient.
 
 ## Task 1: Normalized higher-zoom delivery and coarse priority
 
@@ -132,30 +111,35 @@ frontend_weather_tests() {
 unit tests; frontend service contract/fixtures/tests; API endpoint
 documentation.
 
-**Interfaces:** Produce manifest `max_zoom: 7`, `source: 'rainviewer'`,
-`product: 'observed-radar'`, `coverage_encoding: 'absence-rgba-v1'` in all
-states; retain `zoom: 2`, tile size 512 and same-origin admitted templates.
-Extend `WeatherAdmission.take_attempt(*, detail: bool = False)` and
-`admit(deadline: float, *, detail: bool = False)`; zoom >2 determines detail.
-Existing default consumers remain coarse. Cache keys retain kind/token/z/x/y.
+**Interfaces:** Produce the strict normalized manifest in the linked contract.
+The selected adapter advertises its capabilities; the browser accepts bounded
+source identifiers rather than a RainViewer source enum. Keep source-neutral
+same-origin routes and admitted product identities. Extend
+`WeatherAdmission.take_attempt(*, detail: bool = False)` and
+`admit(deadline: float, *, detail: bool = False)`; z>fallback determines detail.
+Include normalized product identity in acquisition/cache keys before kind/token/
+z/x/y; retain all current coalescing, capacity and security guarantees.
 
 - [ ] Write regressions for accepted z2/z7 edges and rejection of z1/z8,
       negative, fractional/boolean values, x/y equal to 2\*\*z, leading zeros
       and signs. Transport rejection must occur before a DNS spy is called. Pin
-      strict frontend/backend provenance/max-zoom/encoding and reject unknown
-      fields.
+      strict normalized capabilities/provenance/schema and reject unknown
+      fields. Test source-neutral template/product admission before DNS and
+      source-change cache isolation with identical time/XYZ; frontend parsing
+      accepts the normalized alternative-source/max-zoom fixture.
 - [ ] Add fake-clock saturation tests: 30 detail attempts block the 31st; coarse
       still uses remaining overall budget, the 91st total attempt fails; every
       numeric retry counts. Two active detail tasks leave two coarse slots;
       queued coarse demand precedes detail; pending never exceeds 32.
       Cancellation/disable/shutdown release leases without invalidating others.
 - [ ] Run affected backend tests and
-      `frontend_weather_tests     src/services/overview-weather.test.ts`; expect
-      RED on z7/new contracts.
+      `frontend_weather_tests src/services/overview-weather.test.ts`; expect RED
+      on z7/new contracts.
 - [ ] Implement canonical raw-coordinate validation before conversion, expand
-      transport grammar with independent 2\*\*z bounds, add advertised literals,
-      and bounded priority admission. Preserve public-IP pinning, TLS, frame
-      admission, five-second provider deadlines, coalescing and cooldowns.
+      provider transport grammar with independent 2\*\*z bounds, isolate adapter
+      assumptions, emit normalized capabilities and enforce priority admission.
+      Preserve public-IP pinning, TLS, frame admission, five-second provider
+      deadlines, coalescing and cooldowns.
 - [ ] Repeat tests to PASS, including existing transport/acquisition/lifecycle
       tests; commit `feat: deliver bounded higher-zoom weather tiles`.
 
@@ -164,35 +148,41 @@ Existing default consumers remain coarse. Cache keys retain kind/token/z/x/y.
 **Files:** Selector/observer/tests, Overview page and map-controller tests.
 
 **Interfaces:** Produce
-`selectDetail(snapshot: CameraSnapshot, previous: DetailDemand | null): DetailDemand`;
+`selectDetail(snapshot, capabilities, previous): DetailDemand` consumes
+`CameraSnapshot`, normalized `WeatherCapabilities` and `DetailDemand | null`;
 `DetailDemandStabilizer.update(demand, nowMono)` takes `DetailDemand` and
 monotonic milliseconds, returning `DetailDemand | null` only after stability.
-Observer prop `onDemand(demand: DetailDemand): void` forwards actual canvas
-camera snapshots; it owns its sampling clock.
+Observer consumes `capabilities: WeatherCapabilities | null`; its
+`onDemand(demand: DetailDemand): void` prop forwards actual canvas snapshots. It
+owns the sampling clock.
 
 - [ ] Write independent geometry tests with known globe landmarks, perspective
       projection/view offset and drawing-buffer changes. Assert <=8 canonical
-      visible keys, zoom<=7, antimeridian wrap, Mercator limit, no back
-      hemisphere or near-horizon-only refinement; regional zoom yields level >2.
+      visible keys, zoom<=manifest max, antimeridian wrap, Mercator limit, no
+      back hemisphere or near-horizon-only refinement; regional zoom yields
+      level >2.
 - [ ] Add fake-clock tests: 399 ms gives no changed demand, 400 ms does;
       oscillation inside 20 percent keeps level, identical keys cause no event,
       stable overlap is retained, rapid movement replaces pending selection.
       Native follow/reset/rotate/zoom matrices and controls remain unchanged.
+- [ ] Add `normalized source capabilities drive selection`: fixture source
+      `fixture-radar`, max zoom 5, the same supported 512px schema and only
+      dashboard API URLs. Expect level<=5 and no provider-domain requests or
+      provider URL parsing. Reject unsupported schemas before acquisition.
 - [ ] Run
       `frontend_weather_tests src/pages/weather/weather-detail-selection.test.ts`
       and the existing map-controller test; expect RED on missing selector.
 - [ ] Implement sphere intersections and projected tile footprint ranking using
-      the actual matrices; choose finest fitting level or bounded coarser
-      demand. Observer samples at most 4 Hz with no alternate camera/controls or
-      polling outside the canvas. Suspend/clear pending demand with inactive
-      context.
+      the actual matrices; choose finest fitting level or bounded coarser demand
+      from manifest capabilities. Observer samples at most 4 Hz with no
+      alternate camera/controls or polling outside the canvas. Suspend/clear
+      pending demand with inactive context.
 - [ ] Repeat tests to PASS; commit
       `feat: select weather detail from native camera`.
 
 ## Task 3: Shared browser budgets and frame-owned paired detail
 
-**Files:** Work/detail owners/tests, atlas/controller/state/hook and
-integration.
+**Files:** Work/detail owners/tests, atlas/controller/state/hook/status.
 
 **Interfaces:** Produce
 `WeatherWork.run<T>(kind, signal, operation): Promise<T>` takes
@@ -203,7 +193,8 @@ instance is shared by atlas/detail owners. Produce
 `WeatherDetailOwner.setContext(context: DetailContext | null): void`,
 `setDemand(demand: DetailDemand): void`, `snapshot(): readonly DetailPair[]`,
 `subscribe(listener: () => void): () => void`, `dispose(): void`. Controller
-owns the context and its generation, tied to the displayed manifest.
+owns context/generation tied to the displayed manifest and its full normalized
+identity; the contract defines the required identity fields and invalidation.
 
 - [ ] Add delayed real-promise tests: four total/two detail operations, coarse
       priority, reservation before decode, eight pairs including staging,
@@ -216,15 +207,18 @@ owns the context and its generation, tied to the displayed manifest.
 - [ ] Test successful coarse swap clears old detail in the same context update;
       late decode after swap, settings revision, midnight, hide, disable,
       disconnect, navigation or StrictMode cleanup closes its bitmap and cannot
-      publish. Preserve 20/60-minute freshness and existing recovery behavior.
+      publish. Change source/provenance/product/schema while XYZ/time match;
+      assert cancellation, bitmap closure, cache/slot invalidation and a new
+      coarse identity, without extending freshness. Preserve 20/60-minute
+      policy.
 - [ ] Run all weather atlas/controller/work/detail unit tests; expect RED on
       shared limits and missing context owner.
 - [ ] Refactor atlas operations through shared work owner, evict detail bitmaps
       when coarse staging needs decoded reservations, and implement matched
       detail pairs/cache, reserve bitmap bytes before decoding and release on
-      every path. Expose controller-owned context through hook/view; publish
-      null when acquisition is disallowed. Bound pending demand to one
-      selection.
+      every path. Expose displayed provenance/attribution and context via the
+      hook/view/status; publish null when acquisition is disallowed. Bound
+      pending demand to one selection.
 - [ ] Repeat full frontend weather tests to PASS; commit
       `feat: own weather detail within displayed frame and shared budgets`.
 
@@ -251,10 +245,11 @@ disposes detail first.
       and seams; detail from another context is rejected. Keep shader uniform
       object identity stable (Three caches it when a program is reused).
 - [ ] Run texture/layer tests to RED, implement packing plus geographic lookup,
-      200 ms entry fade and one-provider-texel edge transition to matching base.
-      Blend premultiplied radar weighted by coverage, using conservative absent
-      mask combination. Use candidate radar factor 0.40 and independent hatch
-      0.17; retain depth settings, ignored raycast and native geometry.
+      200 ms entry fade and one-normalized-texel transition to matching base.
+      Packing consumes validated schema/tile-size capabilities, never source
+      IDs. Blend premultiplied radar weighted by coverage, using conservative
+      absent mask combination. Use candidate radar factor 0.40 and independent
+      hatch 0.17; retain depth settings, ignored raycast and native geometry.
 - [ ] Run all weather unit tests to PASS; commit
       `feat: render paired regional weather detail with lighter opacity`.
 
@@ -270,8 +265,10 @@ shader, with replay timestamps clearly distinguished from live fixture status.
 
 - [ ] Extend provider fixtures with geographically independent detail-only rain
       and matched mask boundaries; force detail errors, quota saturation,
-      changed frame and late completions. Seed aircraft/track, active route,
-      POIs and labels over precipitation regions; keep telemetry/GEPs/borders.
+      changed frame/source and late completions. Add the normalized alternative
+      source/capability fixture to production browser acceptance; no live
+      provider. Seed aircraft/track, active route, POIs and labels over
+      precipitation regions; keep telemetry/GEPs/borders.
 - [ ] Extend native tests for existing camera minimum/maximum, wheel/touch,
       rotate/follow/reset, 1080p/fullscreen/mobile day/night; assert z>2 actual
       acquisition and added detail via pixels, paired identity and coarse
@@ -297,3 +294,5 @@ shader, with replay timestamps clearly distinguished from live fixture status.
       applicable exact-head CI and leave issue open until implementation
       satisfies acceptance. Stop/reap/verify all runtime resources immediately;
       retain only open-PR worktree and evidence.
+
+[results]: ../../reports/2026-10-06-weather-source-comparison-results.md
