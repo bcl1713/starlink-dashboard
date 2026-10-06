@@ -383,6 +383,25 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       pixels.push({ ...sample, inside, difference });
     }
     await advisoryPixel(overview, 40, -74);
+    await expect
+      .poll(() =>
+        overview.evaluate(() => {
+          const controls = document
+            .querySelector('.overview-map-controls')!
+            .getBoundingClientRect();
+          const reports = document
+            .querySelector('.overview-map-overlays')!
+            .getBoundingClientRect();
+          const rail = document
+            .querySelector('.overview-right-overlays')!
+            .getBoundingClientRect();
+          return (
+            controls.bottom <= reports.top + 1 &&
+            reports.bottom <= rail.bottom + 1
+          );
+        })
+      )
+      .toBe(true);
     await overview.screenshot({
       path: info.outputPath('aviation-desktop.png'),
     });
@@ -401,7 +420,10 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     await overview.setViewportSize({ width: 390, height: 844 });
     await expect(status).toBeVisible();
     await expect(overview.getByLabel('Map status')).toBeVisible();
-    await overview.screenshot({ path: info.outputPath('aviation-mobile.png') });
+    await overview.screenshot({
+      path: info.outputPath('aviation-mobile.png'),
+      fullPage: true,
+    });
     await overview.setViewportSize({ width: 1920, height: 1080 });
     for (const name of switches) {
       const toggle = config.getByRole('switch', { name, exact: true });

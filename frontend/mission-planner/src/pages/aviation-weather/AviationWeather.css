@@ -31,3 +31,27 @@
     font-size: 0.62rem;
   }
 }
+
+/* Keep operational controls and the legend visible when optional reports grow.
+   The report uses the remaining rail height; very short rails can still scroll. */
+.overview-page[data-layout='desktop']
+  .overview-right-overlays:has(.aviation-weather-status) {
+  grid-template-rows: auto auto minmax(min-content, 1fr) minmax(0, auto);
+}
+.overview-page[data-layout='desktop']
+  .overview-map-overlays:has(.aviation-weather-status) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+.overview-page[data-layout='desktop']
+  .overview-map-overlays:has(.aviation-weather-status)
+  > :not(.aviation-weather-status) {
+  flex: 0 0 auto;
+}
+.overview-page[data-layout='desktop'] .aviation-weather-status {
+  min-height: 0;
+  flex: 0 1 auto;
+}
