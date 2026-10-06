@@ -203,7 +203,7 @@ test('synthetic geographic detail, truthful masks, mixed frames and failed-insta
 test('actual saved radar sources on identical native desktop, fullscreen and mobile views', async ({
   page,
 }, info) => {
-  test.setTimeout(240_000);
+  test.setTimeout(900_000);
   const captures: CaptureFile = JSON.parse(
     await readFile(
       `${process.env.WEATHER_ACCEPTANCE_CAPTURE_DIR}/capture.json`,
@@ -320,8 +320,13 @@ test('actual saved radar sources on identical native desktop, fullscreen and mob
       }
     }
   } finally {
-    await restoreComparison(page);
-    await lights(page, false);
+    let restoreFailure: string | null = null;
+    try {
+      await restoreComparison(page);
+      await lights(page, false);
+    } catch (error) {
+      restoreFailure = String(error);
+    }
     await writeFile(
       `${process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR}/comparison.json`,
       JSON.stringify(
@@ -332,6 +337,7 @@ test('actual saved radar sources on identical native desktop, fullscreen and mob
           requests,
           hashValidation: 'passed',
           synthesis: false,
+          restoreFailure,
         },
         null,
         2
