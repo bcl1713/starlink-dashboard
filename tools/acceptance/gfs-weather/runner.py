@@ -322,9 +322,7 @@ class Runner:
             [*self.compose, "config", "--format", "json"], name="compose.log"
         )
         self.record("compose.json", json.loads(config.stdout))
-        self.command(
-            [*self.compose, "build", "--no-cache"], seconds=1200, name="build.log"
-        )
+        self.command([*self.compose, "build"], seconds=1200, name="build.log")
         images = []
         for kind in ("backend", "frontend", "worker"):
             inspected = json.loads(
@@ -367,17 +365,34 @@ class Runner:
             name="browser.log",
         )
         self.proofs["browser_regression"] = True
+        # Historical replay starts on fresh private volumes. Production rollback
+        # protection correctly remembers the native browser phase's later UTC.
+        self.command(
+            [*self.compose, "down", "--volumes", "--remove-orphans"],
+            seconds=90,
+            name="browser-phase-cleanup.log",
+        )
+        assert not any(self.inventory().values())
         (self.output / "control/control.json").write_text(
             json.dumps({"replay_utc_ms": 1791288447620, "frame": 1791288327})
         )
         (self.output / "control/control.json").chmod(0o666)
-        # Start each clock authority at the replay epoch. No production clock is rewritten.
+        # New clock authorities; production rollback guards remain active.
         self.command(
-            [*self.compose, "restart", "starlink-location"],
-            seconds=90,
-            name="replay-restart.log",
+            [
+                *self.compose,
+                "up",
+                "-d",
+                "--no-build",
+                "--wait",
+                "--wait-timeout",
+                "180",
+                "mission-planner",
+                "prometheus",
+            ],
+            seconds=300,
+            name="replay-start.log",
         )
-        time.sleep(3)
         self.command(
             [*self.compose, "up", "-d", "--no-build", "gfs-worker"],
             seconds=60,
