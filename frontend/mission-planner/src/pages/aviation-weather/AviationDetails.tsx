@@ -62,6 +62,14 @@ export function AviationDetails({
           className="aviation-details"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
+            // Deferred cleanup from a previous popup must not steal focus from
+            // a newly opened report or aircraft dialog.
+            if (
+              (portalContainer ?? document.body).querySelector(
+                '[role="dialog"][data-state="open"]'
+              )
+            )
+              return;
             (returnFocusRef.current?.isConnected
               ? returnFocusRef.current
               : portalContainer

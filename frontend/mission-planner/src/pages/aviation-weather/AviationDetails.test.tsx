@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { afterEach, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { AviationDetails } from './AviationDetails';
 import { emptyAviationView, type AviationView } from './aviation-controller';
@@ -11,6 +17,9 @@ import {
 } from './aviation-inspection';
 import { collection, NOW, station } from './fixtures';
 import { parseAviationFeatures } from '@/services/aviation-features';
+import { OverviewAdsbDetails } from '../adsb/OverviewAdsbDetails';
+import { projectAdsbContacts } from '../adsb/overview-adsb-state';
+import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
 afterEach(cleanup);
 const first = station(),
   second = station();
@@ -40,24 +49,86 @@ const view: AviationView = {
     },
   },
 };
-function Harness({ current = view }: { current?: AviationView }) {
+function Harness({
+  current = view,
+  aircraft = false,
+}: {
+  current?: AviationView;
+  aircraft?: boolean;
+}) {
   const candidates = inspectionReports(current).map((r) => r.selection);
   const [selected, setSelected] = useState<AviationSelection | null>(
-    candidates[0] ?? null
+    aircraft ? null : (candidates[0] ?? null)
   );
-  const focus = useRef<HTMLElement | null>(null);
+  const [showAircraft, setShowAircraft] = useState(aircraft);
+  const focus = useRef<HTMLButtonElement | null>(null);
   return (
-    <AviationDetails
-      view={current}
-      candidates={candidates}
-      selection={selected}
-      onSelectionChange={setSelected}
-      onClose={() => setSelected(null)}
-      returnFocusRef={focus}
-      portalContainer={document.body}
-    />
+    <>
+      <button
+        ref={focus}
+        onClick={() => {
+          setShowAircraft(false);
+          setSelected(candidates[0]);
+        }}
+      >
+        Open report
+      </button>
+      <OverviewAdsbDetails
+        contact={
+          showAircraft
+            ? projectAdsbContacts([adsbContact()], adsbSettings(), ADSB_NOW)[0]
+            : null
+        }
+        onClose={() => setShowAircraft(false)}
+        returnFocusRef={focus}
+        portalContainer={document.body}
+      />
+      <AviationDetails
+        view={current}
+        candidates={candidates}
+        selection={selected}
+        onSelectionChange={setSelected}
+        onClose={() => setSelected(null)}
+        returnFocusRef={focus}
+        portalContainer={document.body}
+      />
+    </>
   );
 }
+it.each([false, true])(
+  'keeps a new weather report open while the previous weather/aircraft popup finishes restoring focus (aircraft: %s)',
+  async (aircraft) => {
+    vi.useFakeTimers();
+    try {
+      render(<Harness aircraft={aircraft} />);
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: aircraft ? 'Close' : 'Close weather report',
+        })
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Open report' }));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      await act(async () => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Close weather report' })
+      ).toHaveFocus();
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Close weather report' })
+      );
+      await act(async () => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.getByRole('button', { name: 'Open report' })).toHaveFocus();
+    } finally {
+      cleanup();
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    }
+  }
+);
 it('opens only the selected observation and lets overlapping reports be selected by keyboard', () => {
   render(<Harness />);
   const popup = screen.getByRole('dialog');

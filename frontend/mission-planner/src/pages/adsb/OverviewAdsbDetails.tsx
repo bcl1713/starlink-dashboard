@@ -70,6 +70,14 @@ export function OverviewAdsbDetails({
           className="adsb-details"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
+            // A newly opened weather/aircraft dialog owns focus even if this
+            // previous dialog's deferred cleanup runs afterward.
+            if (
+              (portalContainer ?? document.body).querySelector(
+                '[role="dialog"][data-state="open"]'
+              )
+            )
+              return;
             (returnFocusRef.current?.isConnected
               ? returnFocusRef.current
               : portalContainer
