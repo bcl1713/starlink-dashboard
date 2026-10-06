@@ -13,6 +13,16 @@ request and memory limits, retaining coarse weather during rapid movement or
 heavy multi-viewer demand. This specification records the recommended design for
 review; implementation has not started.
 
+The user subsequently asked to consider different providers and maps generated
+from raw data, and confirmed that international coverage must remain. The
+[provider assessment][assessment] compares managed services, open composites and
+existing self-hosted ingestion software. The user chose to avoid ongoing API
+fees, so compare free RainViewer delivery with bounded raw-composite generation;
+paid services are excluded from the implementation path. Provider selection is
+provisional; the RainViewer-specific contracts and allocation scheme below
+describe the current implementation candidate, not a restriction against a
+better source.
+
 Use a lower fixed radar opacity, selected through rendered comparisons. Keep the
 existing optional, default-off setting in Configuration. Add no opacity slider,
 weather interaction, manual refresh, or resolution preference.
@@ -24,6 +34,22 @@ maximum zoom 7, 256/512-pixel tiles, observed frames, and coverage masks. Its
 [transition summary][transition] specifies 100 requests per IP per minute.
 Continue using 512-pixel tiles, the existing admitted opaque radar path,
 Universal Blue parameters, and verified same-origin backend acquisition.
+
+That is the baseline candidate pending source comparison. Compare actual
+higher-zoom RainViewer imagery with tiles generated from NOAA MRMS and OPERA
+snapshots. Inspect LibreWXR as prior work; its full deployment defaults are not
+assumed to fit the dashboard's hardware. A replacement requires demonstrated
+added detail, international coverage, truthful missing-data masks, immutable
+frame identity, approved operating cost and bounded server resources. Do not
+adopt model or satellite filling without an explicit product decision.
+
+The raw-data comparison starts with one or two immutable regional snapshots,
+observed precipitation and masks only, without a continuous ingest service.
+Record download size, decode and render latency, server RAM, browser request
+counts and 1080p image quality. Adopt self-hosted generation only if the
+evidence shows a worthwhile benefit and its separate CPU/RAM/disk limits are
+agreed. Preserve remaining international observed coverage through a fully
+specified source plan; MRMS and OPERA alone are not a worldwide replacement.
 
 A fixed zoom-3 world atlas needs 64 radar and 64 coverage tiles. Its two
 4096-square RGBA textures alone need 128 MiB, versus the current 48 MiB GPU
@@ -55,6 +81,14 @@ allowed and which complete frame is displayed. Detail loading cannot extend a
 frame's lifetime, confirm settings, advance the frame clock, or restore an
 expired layer. Connect detail ownership to the same activity and generation
 fences rather than creating independent settings polling.
+
+Keep source adaptation on the backend and validate a single normalized browser
+contract for the selected source. Advertise its tile dimensions, zoom limits,
+frame identity, provenance and coverage encoding explicitly. The following
+512-pixel paired-atlas calculations apply to the RainViewer candidate. If the
+chosen source supplies 256-pixel tiles or packed precipitation/coverage values,
+revise both the allocation proof and strict contracts before implementation.
+Keep the 48 MiB GPU ceiling; a source change does not authorize higher limits.
 
 The manifest keeps `zoom: 2` as the fallback level and adds `max_zoom: 7`.
 Update backend and frontend strict contracts together. Radar and coverage routes
@@ -230,3 +264,4 @@ against `dev`; do not merge or publish to `main` as part of this task.
 [baseline]: 2026-10-05-overview-weather-overlay-design.md
 [provider]: https://www.rainviewer.com/api/weather-maps-api.html
 [transition]: https://www.rainviewer.com/api/transition-faq.html
+[assessment]: ../../reports/2026-10-06-overview-weather-provider-assessment.md
