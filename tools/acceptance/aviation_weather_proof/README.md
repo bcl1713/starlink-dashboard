@@ -139,3 +139,8 @@ work and wait for every payload to settle before releasing it. Response streams
 are bounded before decoding. Restoration cancels/drains pending work and restores
 the prior camera. Geometry reservations include temporary number arrays and
 float buffers, and advisory tessellation is capped at 100,000 vertices.
+
+The entrypoint holds the actor-wide lock
+`${XDG_CACHE_HOME:-$HOME/.cache}/starlink-acceptance/scientific-decoder.lock`
+through worker, browser, and Compose cleanup. All concurrent scientific checks
+must acquire this same lock; it survives deletion of task planning workspaces.

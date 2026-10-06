@@ -43,3 +43,34 @@ def test_port_cleanup_waits_for_release_and_still_rejects_live_listener():
             assert released['remaining']==[]
         finally:closer.join()
     finally:listener.close()
+
+
+def test_entrypoint_uses_persistent_actor_lock_and_retains_it_until_exit(tmp_path):
+    import os
+    import subprocess
+    import textwrap
+    actor_cache = tmp_path / 'actor-cache'
+    lock = actor_cache / 'starlink-acceptance' / 'scientific-decoder.lock'
+    bin_dir = tmp_path / 'bin'; bin_dir.mkdir()
+    receipt = tmp_path / 'receipt'
+    python = bin_dir / 'python3'
+    python.write_text(textwrap.dedent('''\
+        #!/usr/bin/env bash
+        set -euo pipefail
+        test "$1" = -m
+        test "$2" = acceptance.aviation_weather_proof.runner
+        test -f "$PROOF_EXPECTED_LOCK"
+        if flock -n "$PROOF_EXPECTED_LOCK" true; then exit 9; fi
+        printf 'held' > "$PROOF_LOCK_RECEIPT"
+    '''))
+    python.chmod(0o700)
+    env = {**os.environ, 'XDG_CACHE_HOME': str(actor_cache),
+           'PATH': f'{bin_dir}:{os.environ["PATH"]}',
+           'PROOF_EXPECTED_LOCK': str(lock), 'PROOF_LOCK_RECEIPT': str(receipt)}
+    result = subprocess.run(['bash', 'tools/acceptance/aviation_weather_proof/run.sh',
+                             '0' * 40, '/capture', '/profile'], env=env,
+                            capture_output=True, text=True, timeout=5)
+    assert result.returncode == 0, result.stderr
+    assert receipt.read_text() == 'held'
+    assert subprocess.run(['flock', '-n', str(lock), 'true'], timeout=5).returncode == 0
+    assert lock.parent.stat().st_mode & 0o777 == 0o700
