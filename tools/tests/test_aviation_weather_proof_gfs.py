@@ -201,6 +201,7 @@ def test_independent_reference_sampler_at_seam_poles_and_between_nodes(api, tmp_
     assert reference.sample_grid(artifact.descriptor_path, 0, -90)["values"]["u"] == 3
     assert reference.sample_grid(artifact.descriptor_path, -90, 0)["values"]["u"] == 2.25
     assert reference.sample_grid(artifact.descriptor_path, 0.25, 90)["values"]["u"] == pytest.approx(0.005)
+    assert reference.sample_grid(artifact.descriptor_path, 0, 90)["values"]["u"] == 0
 
 
 def test_independent_reference_source_comparison(api, tmp_path):
@@ -220,7 +221,9 @@ def test_reference_keeps_missing_distinct_from_physical_zero(api, tmp_path):
     missing = reference.sample_grid(artifact.descriptor_path, -180, -90)
     assert missing["mask"] == 2
     assert missing["values"] == {"u": None, "v": None, "t": None}
-    assert reference.sample_grid(artifact.descriptor_path, 0, 90)["values"]["u"] == 0
+    # Source regridding allows zero-weight missing neighbors, but normalized
+    # sampling validates every corner in its own enclosing output stencil.
+    assert reference.sample_grid(artifact.descriptor_path, 0, 90)["mask"] == 2
 
 
 def test_source_oracle_catches_common_shift_in_published_coordinate_metadata(api, tmp_path):
@@ -296,3 +299,44 @@ def test_reference_partial_grid_does_not_wrap_across_uncovered_world(tmp_path, l
     assert outside["mask"] == 1
     assert outside["values"] == {"t": None}
     assert outside["contributors"] == []
+
+
+@pytest.mark.parametrize("mask,longitude,latitude", [
+    ([[0, 2], [0, 0]], -180, 90),
+    ([[0, 2], [0, 0]], -180, 89.75),
+    ([[0, 0], [3, 0]], -180, 90),
+    ([[0, 0], [3, 0]], -179.75, 90),
+    ([[0, 0], [0, 1]], -180, 90),
+])
+def test_reference_requires_all_stencil_corners_even_with_zero_weight(tmp_path, mask, longitude, latitude):
+    grid = importlib.import_module("acceptance.aviation_weather_proof.grid")
+    reference = importlib.import_module("acceptance.aviation_weather_proof.reference")
+    descriptor = writer_descriptor(capture(tmp_path))
+    artifact = grid.write_grid(descriptor, {"t": np.full((2, 2), 273.15)}, np.array(mask, dtype=np.uint8), tmp_path / "product")
+    sampled = reference.sample_grid(artifact.descriptor_path, longitude, latitude)
+    assert sampled["mask"] == max(max(row) for row in mask)
+    assert sampled["values"] == {"t": None}
+
+
+@pytest.mark.parametrize("longitude,latitude", [(-179.5, 90), (-179.5, 89.5), (-179.75, 89.5)])
+def test_reference_partial_boundary_clamps_stencil_without_unrelated_corners(tmp_path, longitude, latitude):
+    grid = importlib.import_module("acceptance.aviation_weather_proof.grid")
+    reference = importlib.import_module("acceptance.aviation_weather_proof.reference")
+    descriptor = writer_descriptor(capture(tmp_path))
+    artifact = grid.write_grid(descriptor, {"t": np.full((2, 2), 273.15)}, np.array([[2, 0], [0, 0]], dtype=np.uint8), tmp_path / "product")
+    sampled = reference.sample_grid(artifact.descriptor_path, longitude, latitude)
+    assert sampled["mask"] == 0
+    assert sampled["values"] == {"t": 273.15}
+
+
+def test_reference_full_grid_seam_validates_zero_weight_wrapped_neighbor(tmp_path):
+    grid = importlib.import_module("acceptance.aviation_weather_proof.grid")
+    reference = importlib.import_module("acceptance.aviation_weather_proof.reference")
+    descriptor = writer_descriptor(capture(tmp_path))
+    descriptor["grid"].update(width=720)
+    mask = np.zeros((2, 720), dtype=np.uint8)
+    mask[0, 0] = 2
+    artifact = grid.write_grid(descriptor, {"t": np.full((2, 720), 273.15)}, mask, tmp_path / "product")
+    sampled = reference.sample_grid(artifact.descriptor_path, 179.5, 90)
+    assert sampled["mask"] == 2
+    assert sampled["values"] == {"t": None}

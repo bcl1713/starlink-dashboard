@@ -21,15 +21,18 @@ DEFAULT_GFS_COORDINATES = (
 )
 
 
-def _bracket(coordinates, query):
-    ordered = sorted(coordinates)
-    for coordinate, index in ordered:
-        if math.isclose(coordinate, query, abs_tol=1e-9):
-            return [(index, 1.0)]
-    for (lower, lower_index), (upper, upper_index) in zip(ordered, ordered[1:]):
-        if lower < query < upper:
-            fraction = (query - lower) / (upper - lower)
-            return [(lower_index, 1 - fraction), (upper_index, fraction)]
+def _bracket(coordinates, query, *, descending=False):
+    """Keep an enclosing two-node stencil even when one weight is zero."""
+    ordered = sorted(coordinates, reverse=descending)
+    for (first, first_index), (second, second_index) in zip(ordered, ordered[1:]):
+        enclosed = second < query <= first if descending else first <= query < second
+        if enclosed:
+            fraction = (query - first) / (second - first)
+            return [(first_index, 1 - fraction), (second_index, fraction)]
+    # The end of partial coverage or a latitude pole clamps both corners to
+    # that boundary node. Full-world longitude has shifted geographic nodes.
+    if ordered and query == ordered[-1][0]:
+        return [(ordered[-1][1], 1.0), (ordered[-1][1], 0.0)]
     raise ValueError("reference coordinate outside grid coverage")
 
 
@@ -62,7 +65,7 @@ def sample_grid(descriptor_path: Path, longitude: float, latitude: float) -> dic
     shifts = (-360, 0, 360) if full_longitude else (0,)
     candidates = [(coordinate + shift, index) for shift in shifts for index, coordinate in enumerate(base_lons)]
     xs = _bracket(candidates, longitude)
-    ys = _bracket(lats, latitude)
+    ys = _bracket(lats, latitude, descending=grid["latitude_step"] < 0)
     arrays = {}
     for name, item in {**descriptor["components"], "mask": descriptor["mask"]}.items():
         path = confined(descriptor_path.parent, item["path"])
@@ -72,9 +75,10 @@ def sample_grid(descriptor_path: Path, longitude: float, latitude: float) -> dic
         if len(array) != width * height:
             raise ValueError("reference payload dimension mismatch")
         arrays[name] = array.reshape(height, width)
-    contributing = [(y, x, wy * wx) for y, wy in ys for x, wx in xs if wy * wx > 0]
-    masks = [int(arrays["mask"][y, x]) for y, x, _ in contributing]
+    stencil = [(y, x, wy * wx) for y, wy in ys for x, wx in xs]
+    masks = [int(arrays["mask"][y, x]) for y, x, _ in stencil]
     invalid = next((value for value in masks if value != 0), 0)
+    contributing = [(y, x, weight) for y, x, weight in stencil if weight > 0]
     values = {}
     for name, declaration in descriptor["components"].items():
         values[name] = None if invalid else sum(
