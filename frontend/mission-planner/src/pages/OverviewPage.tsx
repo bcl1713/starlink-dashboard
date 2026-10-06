@@ -831,6 +831,7 @@ export function OverviewPage() {
         className="overview-map-stage"
         data-flow={layout.flow}
         data-adsb-details-open={selectedAdsbContact !== null}
+        data-aviation-details-open={selectedWeather !== null}
       >
         {markerDebug && (
           <OverviewMarkerDebug

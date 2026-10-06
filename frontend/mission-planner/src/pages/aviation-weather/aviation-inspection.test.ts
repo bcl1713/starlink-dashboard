@@ -8,6 +8,36 @@ import { NOW, station, advisory, collection } from './fixtures';
 import type { AviationLayer } from '@/services/aviation-weather';
 
 const viewport = { width: 1000, height: 1000 };
+it('picks the production advisory interior at close zoom', () => {
+  const report = advisory();
+  report.geometry.coordinates = [
+    [
+      [-80, 34],
+      [-67, 34],
+      [-67, 46],
+      [-80, 46],
+      [-80, 34],
+    ],
+    [
+      [-76, 38],
+      [-72, 38],
+      [-72, 42],
+      [-76, 42],
+      [-76, 38],
+    ],
+  ];
+  const view = viewFor([report], 'sigmet');
+  const camera = cameraAt(36, -78);
+  camera.position.normalize().multiplyScalar(3);
+  camera.updateMatrixWorld();
+  try {
+    expect(
+      pickAviationFeatures(view, camera, { x: 500, y: 500 }, viewport)
+    ).toEqual([{ layer: 'sigmet', id: report.id }]);
+  } finally {
+    dispose(view);
+  }
+});
 it('includes the visible glyph footprint when close zoom makes it larger than the minimum tap target', () => {
   const taf = viewFor([station(true)], 'taf');
   const metar = viewFor([station()], 'metar');

@@ -243,9 +243,33 @@ async function aviationPoint(page: Page, latitude: number, longitude: number) {
         )
         .project(state.camera);
       const rect = state.gl.domElement.getBoundingClientRect();
+      const x = rect.left + ((point.x + 1) * rect.width) / 2;
+      const y = rect.top + ((1 - point.y) * rect.height) / 2;
+      const mesh = state.scene.getObjectByName(
+        'Native international SIGMET advisories'
+      );
+      state.raycaster.setFromCamera(
+        state.pointer.clone().set(point.x, point.y),
+        state.camera
+      );
+      const hits = mesh ? state.raycaster.intersectObject(mesh, false) : [];
+      console.info(
+        'Aviation geographic click ' +
+          JSON.stringify({
+            latitude,
+            longitude,
+            x,
+            y,
+            target: document.elementFromPoint(x, y)?.tagName,
+            hits: hits.map((hit) => ({
+              face: hit.faceIndex,
+              radius: hit.point.length(),
+            })),
+          })
+      );
       return {
-        x: rect.left + ((point.x + 1) * rect.width) / 2,
-        y: rect.top + ((1 - point.y) * rect.height) / 2,
+        x,
+        y,
       };
     },
     { latitude, longitude }
@@ -265,6 +289,10 @@ test('exact production SHA: native station forecasts and advisory topology coexi
   const errors: string[] = [],
     providerRequests: string[] = [];
   overview.on('pageerror', (error) => errors.push(error.message));
+  overview.on('console', (message) => {
+    if (message.text().startsWith('Aviation geographic click'))
+      console.log(message.text());
+  });
   overview.on('request', (r) => {
     if (/aviationweather\.gov|rainviewer\.com/.test(new URL(r.url()).hostname))
       providerRequests.push(r.url());
@@ -500,6 +528,29 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     await overview.screenshot({
       path: info.outputPath('aviation-desktop.png'),
     });
+    await overview.setViewportSize({ width: 1440, height: 1000 });
+    await overview
+      .getByRole('button', { name: 'Inspect weather reports' })
+      .click();
+    await expect(popup).toBeVisible();
+    expect(
+      await popup.evaluate((node) => {
+        const bounds = node.getBoundingClientRect();
+        return node.contains(
+          document.elementFromPoint(
+            bounds.x + bounds.width / 2,
+            bounds.bottom - 20
+          )
+        );
+      })
+    ).toBe(true);
+    await overview.screenshot({
+      path: info.outputPath('aviation-portable-inspection.png'),
+    });
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
+      .click();
+    await overview.setViewportSize({ width: 1920, height: 1080 });
     await overview
       .getByRole('button', { name: 'Enter fullscreen overview' })
       .click();

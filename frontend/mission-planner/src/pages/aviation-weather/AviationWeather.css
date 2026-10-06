@@ -80,12 +80,15 @@
   overflow-y: auto;
   padding: 16px;
   color: #e8eef5;
-  background: #101c2bf5;
+  background: #101c2b;
   border: 1px solid #8daecb;
   border-radius: 10px;
   box-shadow: 0 8px 36px #0009;
   overflow-wrap: anywhere;
   pointer-events: auto;
+}
+.overview-map-stage[data-aviation-details-open='true'] {
+  isolation: auto;
 }
 .aviation-details-header {
   display: flex;
