@@ -111,6 +111,10 @@ async function toggle(
 }
 
 async function frameSample(page: Page) {
+  await page.bringToFront();
+  await expect
+    .poll(() => page.evaluate(() => document.visibilityState))
+    .toBe('visible');
   return page.evaluate(
     () =>
       new Promise<number[]>((resolve) => {
@@ -193,6 +197,7 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       { steps: 10 }
     );
     await overview.mouse.up();
+    await overview.mouse.wheel(0, -900);
     const camera = await settledOverviewCamera(overview);
     const baselineFrames = frameStats(await frameSample(overview));
     const editing = await context.newPage();
