@@ -90,14 +90,14 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   if (await explore.isVisible()) await explore.click();
   const pixels = [];
   for (const [lat, lon, channels] of [
-    [0.05, 45, [0]],
-    [-0.05, 45, [1]],
+    [1, 45, [0]],
+    [-1, 45, [1]],
     [60, 45, [0]],
-    [66.4, 45, [0]],
-    [66.7, 45, [0, 2]],
-    [45, -0.05, [2]],
-    [45, 0.05, [0]],
-    [0.05, 179, [0, 1]],
+    [65, 45, [0]],
+    [68, 45, [0, 2]],
+    [45, -1, [2]],
+    [45, 1, [0]],
+    [1, 179, [0, 1]],
   ] as const) {
     for (const night of [false, true]) {
       const sample = await weatherPixel(overview, lat, lon, night);
