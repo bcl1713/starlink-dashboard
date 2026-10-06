@@ -98,3 +98,30 @@ export class Allocation {
     };
   }
 }
+
+/** Globally serialize generations; cancellation waits for old worker cleanup. */
+export class InstallQueue {
+  private tail: Promise<unknown> = Promise.resolve();
+  private current?: AbortController;
+  cancel() {
+    this.current?.abort();
+  }
+  async idle() {
+    await this.tail;
+  }
+  run<T>(work: (signal: AbortSignal) => Promise<T>): Promise<T> {
+    this.cancel();
+    const controller = new AbortController();
+    this.current = controller;
+    const timer = setTimeout(() => controller.abort(), 45000);
+    const result = this.tail
+      .catch(() => {})
+      .then(async () => {
+        controller.signal.throwIfAborted();
+        return work(controller.signal);
+      })
+      .finally(() => clearTimeout(timer));
+    this.tail = result.catch(() => {});
+    return result;
+  }
+}

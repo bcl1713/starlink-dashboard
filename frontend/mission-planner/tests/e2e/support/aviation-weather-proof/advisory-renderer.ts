@@ -45,8 +45,7 @@ export function advisoryMesh(features: Feature[], now: number) {
       triangle(ab, bc, ca, depth + 1);
       return;
     }
-    if (positions.length + 9 > 1_200_000)
-      throw Error('advisory geometry budget');
+    if (positions.length + 9 > 300_000) throw Error('advisory geometry budget');
     for (const p of [a, b, c])
       positions.push(...earthPoint(p.y, p.x, 2.024).toArray());
     triangles++;

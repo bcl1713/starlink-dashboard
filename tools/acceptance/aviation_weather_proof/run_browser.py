@@ -68,12 +68,13 @@ def execute(arguments: list[str]) -> int:
         (output/'journey-process.json').write_text(json.dumps({'pid':child.pid,'pgid':child.pid}))
         return child.wait(timeout=600)
     except BaseException as error:
+        cleanup['platform_cleanup_error']=getattr(error,'platform_cleanup_error','')
         retained = getattr(error, 'platform_artifacts', {})
         for name, content in retained.items():
             destination = output/'platform'/name
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(content)
-        (output/'browser-start-or-journey-failure.json').write_text(json.dumps({'error':str(error),'cleanup_error':getattr(error,'platform_cleanup_error','')}))
+        (output/'browser-start-or-journey-failure.json').write_text(json.dumps({'status':'environment_blocked' if session is None else 'failed','error':str(error),'cleanup_error':getattr(error,'platform_cleanup_error','')}))
         raise
     finally:
         stop_metrics.set()
@@ -98,7 +99,7 @@ def execute(arguments: list[str]) -> int:
                     cleanup['remaining'].append(child.pid)
             if session is not None:
                 session.close()
-            cleanup['status']='passed' if not cleanup['remaining'] and not cleanup['killed_descendants'] else 'failed'
+            cleanup['status']='passed' if not cleanup['remaining'] and not cleanup['killed_descendants'] and not cleanup.get('platform_cleanup_error') else 'failed'
         except BaseException as error:
             cleanup.update(status='failed',error=str(error))
             raise

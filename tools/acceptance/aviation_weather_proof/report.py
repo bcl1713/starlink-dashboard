@@ -49,11 +49,14 @@ def evaluate_proofs(evidence: Path) -> dict:
             assert 0<peak['gpu']<=16*1024**2 and 0<peak['decoded']<=32*1024**2 and 0<peak['encoded']<=16*1024**2,'GPU metrics missing/budget'
             assert snapshot['viewport']['width']>0 and snapshot['renderer']['version']
         assert j['metrics'],'missing GPU metrics'
+        processes=read('browser/process-metrics.json')
+        assert processes and any(p['rss_bytes']>0 and p['cpu_seconds']>=0 for row in processes for p in row['processes']),'missing CPU/RSS metrics'
         assert j['restored']['allocation']['current']=={'encoded':0,'decoded':0,'gpu':0},'owned allocation remains'
         assert all(r['allowed'] for r in read('browser/requests.json')),'browser provider request'
     def controls():
         j=read('browser/journey.json')
-        assert all(j['controls'].values()) and len(j['controls'])>=7,'synthetic controls missing or failed'
+        required=('seam','poles','invalid','failed_install_ownership','holes','expiry','cancelled','directional','asynchronous','advisory_dateline','asynchronous_ownership','camera_restored')
+        assert all(j['controls'].get(key) is True for key in required),'synthetic controls missing or failed'
         assert 'Coverage unverified' in j['advisory_label'] or 'Coverage incomplete' in j['advisory_label']
         assert '2026-10-06T12:07:27.898Z' in j['advisory_label']
         assert '2026-10-06T00:00:20.900Z' in j['satellite_label'] and '2026-10-06T00:09:52.800Z' in j['satellite_label']

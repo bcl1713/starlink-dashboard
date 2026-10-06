@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { RootState } from '@react-three/fiber';
 import {
   Allocation,
+  InstallQueue,
   decodePayload,
   labels,
   type Descriptor,
@@ -11,6 +12,7 @@ import { gridMesh, windBarbs, earthPoint } from './grid-renderer';
 import { advisoryMesh, type Feature } from './advisory-renderer';
 import { sampleGrid } from './sampling';
 const allocation = new Allocation();
+const queue = new InstallQueue();
 const win = window as unknown as {
   __overviewEvidenceRoots: { containerInfo?: { getState?: () => RootState } }[];
   aviationProof: unknown;
@@ -48,22 +50,55 @@ function look(latitude: number, longitude: number, radius = 5) {
   state().camera.updateMatrixWorld();
   state().invalidate();
 }
-async function install(url: string) {
-  const controller = new AbortController(),
-    deadline = setTimeout(() => controller.abort(), 45000);
+function install(url: string) {
+  return queue.run((signal) => performInstall(url, signal));
+}
+async function performInstall(url: string, signal: AbortSignal) {
   const objects: Owned[] = [],
     releases: (() => void)[] = [];
   let label: HTMLElement | undefined;
+  let advisoryLabel = '';
   try {
+    releases.push(allocation.reserve(1024 ** 2, 4 * 1024 ** 2, 0));
+    const boundedRead = async (
+      response: Response,
+      limit: number,
+      exact = true
+    ) => {
+      if (!response.body) throw Error('empty response');
+      const reader = response.body.getReader(),
+        bytes = new Uint8Array(limit);
+      let count = 0;
+      try {
+        while (true) {
+          const part = await reader.read();
+          if (part.done) break;
+          if (count + part.value.length > limit)
+            throw Error('payload length budget');
+          bytes.set(part.value, count);
+          count += part.value.length;
+        }
+      } finally {
+        try {
+          await reader.cancel();
+        } finally {
+          reader.releaseLock();
+        }
+      }
+      if (exact && count !== limit) throw Error('payload length mismatch');
+      return exact ? bytes.buffer : bytes.buffer.slice(0, count);
+    };
     const base = new URL(url, location.href);
     if (
       base.origin !== location.origin ||
       !base.pathname.startsWith('/api/overview-weather/aviation-proof-assets/')
     )
       throw Error('confined fixture URL required');
-    const response = await fetch(base, { signal: controller.signal });
+    const response = await fetch(base, { signal });
     if (!response.ok) throw Error('descriptor HTTP');
-    const text = await response.text();
+    const text = new TextDecoder().decode(
+      await boundedRead(response, 1024 ** 2, false)
+    );
     if (text.length > 1024 * 1024) throw Error('descriptor budget');
     const d = JSON.parse(text) as Descriptor;
     if (d.schema !== 'aviation-weather-v1') throw Error('schema');
@@ -71,20 +106,24 @@ async function install(url: string) {
       if (
         !p.path ||
         !/^[a-z][a-z0-9.-]*$/.test(p.path) ||
+        !Number.isSafeInteger(p.byte_size) ||
+        p.byte_size < 1 ||
         p.byte_size > 16 * 1024 ** 2
       )
         throw Error('payload path/budget');
       const r = await fetch(new URL(p.path, base), {
-        signal: controller.signal,
+        signal,
       });
       if (!r.ok) throw Error('payload HTTP');
-      const b = await r.arrayBuffer();
+      const b = await boundedRead(r, p.byte_size);
       return b;
     };
     let values: Int16Array | undefined, mask: Uint8Array | undefined;
     if (d.representation === 'latlon-grid-v1') {
       const g = d.grid;
       if (
+        !Number.isInteger(g.width) ||
+        !Number.isInteger(g.height) ||
         g.width < 1 ||
         g.width > 720 ||
         g.height < 1 ||
@@ -97,11 +136,17 @@ async function install(url: string) {
         throw Error('unsupported grid');
       const cells = g.width * g.height,
         entries = Object.entries(d.components);
-      if (entries.length > 3 || !d.components.t) throw Error('components');
+      if (
+        entries.length > 3 ||
+        !d.components.t ||
+        entries.some(([, p]) => p.dtype !== 'int16-le') ||
+        d.mask.dtype !== 'uint8'
+      )
+        throw Error('components');
       const encoded =
         entries.reduce((s, [, p]) => s + p.byte_size, 0) + d.mask.byte_size;
       releases.push(allocation.reserve(encoded, encoded * 2, 0));
-      const results = await Promise.all([
+      const settled = await Promise.allSettled([
         ...entries.map(
           async ([k, p]) =>
             [k, await decodePayload(await fetchPayload(p), p, cells)] as const
@@ -112,6 +157,10 @@ async function install(url: string) {
             await decodePayload(await fetchPayload(d.mask), d.mask, cells),
           ] as const)(),
       ]);
+      const results = settled.map((result) => {
+        if (result.status === 'rejected') throw result.reason;
+        return result.value;
+      });
       const arrays = Object.fromEntries(results);
       values = arrays.t as Int16Array;
       mask = arrays.mask as Uint8Array;
@@ -119,14 +168,14 @@ async function install(url: string) {
       // Reserve conservative geometry and packed texture bytes BEFORE constructors.
       const gridReserve = allocation.reserve(
         0,
-        cells * 4 + 3_000_000,
+        cells * 4 + 3_500_000,
         cells * 4 + 3_000_000
       );
       releases.push(gridReserve);
       const scalar = gridMesh(d, values, mask);
       objects.push(scalar);
       if (arrays.u && arrays.v) {
-        releases.push(allocation.reserve(0, 1_000_000, 1_000_000));
+        releases.push(allocation.reserve(0, 3_000_000, 1_000_000));
         objects.push(
           windBarbs(d, arrays.u as Int16Array, arrays.v as Int16Array, mask)
         );
@@ -134,7 +183,7 @@ async function install(url: string) {
     } else if (d.representation === 'advisory-v1') {
       const p = d.advisories!;
       releases.push(
-        allocation.reserve(p.byte_size, p.byte_size * 4 + 4_800_000, 4_800_000)
+        allocation.reserve(p.byte_size, p.byte_size * 4 + 3_600_000, 1_200_000)
       );
       const bytes = await fetchPayload(p);
       await decodePayload(bytes, { ...p, dtype: 'uint8' }, p.byte_size);
@@ -142,6 +191,17 @@ async function install(url: string) {
         features: Feature[];
       };
       if (collection.features.length > 500) throw Error('advisory count');
+      advisoryLabel = collection.features
+        .filter((f) => [0, 6].includes(f.properties.source_index ?? -1))
+        .map((f) => {
+          const v = f.properties.vertical as {
+            status: string;
+            base?: { kind: string; value: number };
+            top?: { kind: string; value: number };
+          };
+          return `Source record ${f.properties.source_index}: ${v.status === 'known' ? `${v.base?.kind} ${v.base?.value} → ${v.top?.kind} ${v.top?.value}` : 'vertical unknown'}`;
+        })
+        .join('; ');
       objects.push(
         advisoryMesh(
           collection.features,
@@ -149,6 +209,7 @@ async function install(url: string) {
         )
       );
     } else throw Error('representation');
+    signal.throwIfAborted();
     const s = state();
     const saved = installed?.saved ?? {
       position: s.camera.position.clone(),
@@ -161,7 +222,7 @@ async function install(url: string) {
     label.dataset.aviationProof = 'true';
     label.style.cssText =
       'position:fixed;z-index:9999;bottom:10px;left:12px;max-width:900px;background:#101829ee;color:white;font:12px sans-serif;padding:10px;pointer-events:none';
-    label.textContent = `DIAGNOSTIC • ${labels(d)} • ${(d.attribution ?? []).join('; ')}`;
+    label.textContent = `DIAGNOSTIC • ${labels(d)} • ${advisoryLabel} • ${(d.attribution ?? []).join('; ')}`;
     document.body.append(label);
     for (const object of objects) s.scene.add(object.mesh);
     installed = { d, values, mask, objects, releases, label, saved };
@@ -172,9 +233,12 @@ async function install(url: string) {
     for (const release of releases) release();
     label?.remove();
     throw error;
-  } finally {
-    clearTimeout(deadline);
   }
+}
+async function restore() {
+  queue.cancel();
+  await queue.idle();
+  dispose();
 }
 function dispose(restore = true) {
   night(false);
@@ -214,7 +278,9 @@ function snapshot() {
             )
           : 0,
     })),
+    savedView: installed?.saved.position.toArray(),
     camera: {
+      target: controls().getTarget().toArray(),
       position: s.camera.position.toArray(),
       projection: s.camera.projectionMatrix.toArray(),
     },
@@ -395,7 +461,7 @@ function night(enabled: boolean) {
 }
 win.aviationProof = {
   install,
-  dispose,
+  dispose: restore,
   sample,
   snapshot,
   look,

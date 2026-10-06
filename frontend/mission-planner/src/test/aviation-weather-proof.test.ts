@@ -163,3 +163,40 @@ it('triangle planes describe the actual tessellated mesh within the reserved geo
     owned.dispose();
   }
 });
+
+it('replacement waits for obsolete work cleanup and cancels stale generations', async () => {
+  const { InstallQueue } = await import(
+    '../../tests/e2e/support/aviation-weather-proof/model'
+  );
+  const queue = new InstallQueue();
+  let release!: () => void;
+  let started!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  let active = 0,
+    peak = 0;
+  const first = queue.run(async (signal) => {
+    active++;
+    peak = Math.max(peak, active);
+    started();
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    active--;
+    signal.throwIfAborted();
+    return 'stale';
+  });
+  await ready;
+  const rejected = expect(first).rejects.toThrow();
+  const last = queue.run(async () => {
+    active++;
+    peak = Math.max(peak, active);
+    active--;
+    return 'current';
+  });
+  release();
+  await rejected;
+  expect(await last).toBe('current');
+  expect(peak).toBe(1);
+});

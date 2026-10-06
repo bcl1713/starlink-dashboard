@@ -5,14 +5,19 @@ export async function installProof(
   page: Page,
   descriptorURL: string
 ): Promise<void> {
-  const built = buildSync({
-    entryPoints: [fileURLToPath(new URL('./runtime.ts', import.meta.url))],
-    bundle: true,
-    write: false,
-    format: 'iife',
-    define: { 'process.env.NODE_ENV': '"production"' },
-  });
-  await page.addScriptTag({ content: built.outputFiles[0].text });
+  const ready = await page.evaluate(() =>
+    Boolean((window as unknown as { aviationProof?: unknown }).aviationProof)
+  );
+  if (!ready) {
+    const built = buildSync({
+      entryPoints: [fileURLToPath(new URL('./runtime.ts', import.meta.url))],
+      bundle: true,
+      write: false,
+      format: 'iife',
+      define: { 'process.env.NODE_ENV': '"production"' },
+    });
+    await page.addScriptTag({ content: built.outputFiles[0].text });
+  }
   await page.evaluate(async (url) => {
     await (
       window as unknown as {
@@ -22,9 +27,9 @@ export async function installProof(
   }, descriptorURL);
 }
 export async function restoreProof(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    (
-      window as unknown as { aviationProof: { dispose: () => void } }
+  await page.evaluate(async () => {
+    await (
+      window as unknown as { aviationProof: { dispose: () => Promise<void> } }
     ).aviationProof.dispose();
   });
 }

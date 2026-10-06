@@ -121,3 +121,21 @@ metrics, failed masks, browser provider requests, missing cleanup or forced
 child termination. These are diagnostics; no final product acceptance, WIFS
 access, flight-level interpolation, worldwide feed completeness or global
 satellite seam coverage is claimed.
+
+The native SwiftShader run reports four raster subpixel bits. Direct interpolated
+mesh-point readback differed from the independent ideal camera-ray hit by up to
+about 7e-5 globe units; inverse-trig conversion of that vector agreed closely,
+ruling it out as the dominant error. The final shader reconstructs its sample
+point from `gl_FragCoord`, the original camera inverse projection, and flat plane
+coefficients for the actual deindexed triangle. The independent CPU oracle still
+uses its own mesh ray intersection; GPU geographic output never supplies oracle
+coordinates. Diagnostic 24-bit geographic/vector encodings have respective steps
+360/16777215 degrees longitude, 180/16777215 degrees latitude, and 6/16777215 globe
+units per Cartesian component. Quantity acceptance remains one 0.01 K step.
+
+Generation work is serialized globally, with four concurrent payload reads and
+an absolute 45-second deadline including queued time. Replacements abort obsolete
+work and wait for every payload to settle before releasing it. Response streams
+are bounded before decoding. Restoration cancels/drains pending work and restores
+the prior camera. Geometry reservations include temporary number arrays and
+float buffers, and advisory tessellation is capped at 100,000 vertices.
