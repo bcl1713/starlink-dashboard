@@ -8,7 +8,10 @@ const vertexShader = `
   varying vec3 vWeatherPosition;
   void main() {
     vWeatherPosition = position;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    // Match the base globe projection operation order so coplanar vertices
+    // have identical depth instead of matrix-product rounding interference.
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
   }
 `;
 const fragmentShader = `
