@@ -113,6 +113,7 @@ class SourceBundle:
     paths: tuple[Path, ...]
     hashes: tuple[str, ...]
     retrieved_at_ms: int
+    available_leads: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -9,7 +9,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
-
 from app.models.aviation_grid import GfsSelection, RangeRef, SourceBundle, SourceRef
 
 from .inventory import (
@@ -183,11 +182,11 @@ class GfsTransport:
                 run, tuple(objects), now + selection.horizon_hours * 3600000
             )
             if lead is not None:
-                selected = run, lead, objects[lead]
+                selected = run, lead, objects[lead], tuple(sorted(objects))
                 break
         if selected is None:
             raise ValueError("No compatible actual source object")
-        run, lead, key = selected
+        run, lead, key, leads = selected
         before = await self._head(key)
         index = await self._metadata(key + ".idx")
         if await self._head(key) != before:
@@ -204,7 +203,13 @@ class GfsTransport:
                 raise ValueError("Source replaced during range acquisition")
             (stage / "source.idx").write_bytes(index)
             return SourceBundle(
-                run, lead, ranges, tuple(paths), tuple(hashes), int(self.clock() * 1000)
+                run,
+                lead,
+                ranges,
+                tuple(paths),
+                tuple(hashes),
+                int(self.clock() * 1000),
+                leads,
             )
         except BaseException:
             for path in stage.iterdir():
