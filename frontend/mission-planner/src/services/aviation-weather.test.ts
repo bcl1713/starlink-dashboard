@@ -94,4 +94,26 @@ describe('aviation catalog admission before acquisition', () => {
       })
     ).toThrow();
   });
+  it('migrates old settings and accepts confirmed GFS selections', () => {
+    const old = { metar: true, taf: false, sigmet: false, revision: 4 };
+    expect(parseAviationSettings(old)).toMatchObject({
+      winds: false,
+      temperature: false,
+      gfs_selection: { pressure_pa: 50000, horizon_hours: 0 },
+    });
+    expect(
+      parseAviationSettings({
+        ...old,
+        winds: true,
+        temperature: true,
+        gfs_selection: { pressure_pa: 25000, horizon_hours: 6 },
+      }).winds
+    ).toBe(true);
+    expect(() =>
+      parseAviationSettings({
+        ...old,
+        gfs_selection: { pressure_pa: 80000, horizon_hours: 6 },
+      })
+    ).toThrow();
+  });
 });

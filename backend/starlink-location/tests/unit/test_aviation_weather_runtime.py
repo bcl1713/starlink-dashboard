@@ -95,6 +95,9 @@ async def test_settings_default_off_and_invalid_updates_do_not_acquire(tmp_path)
             "metar": False,
             "taf": False,
             "sigmet": False,
+            "winds": False,
+            "temperature": False,
+            "gfs_selection": {"pressure_pa": 50000, "horizon_hours": 0},
             "revision": 0,
         }
         for invalid in [
@@ -131,6 +134,9 @@ async def test_admitted_immutable_snapshot_and_disable_invalidate_payload(tmp_pa
             "metar": True,
             "taf": False,
             "sigmet": False,
+            "winds": False,
+            "temperature": False,
+            "gfs_selection": {"pressure_pa": 50000, "horizon_hours": 0},
             "revision": 1,
         }
         assert source.calls == []
