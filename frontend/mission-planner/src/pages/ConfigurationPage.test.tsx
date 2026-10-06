@@ -4,6 +4,7 @@ import {
   fireEvent,
   render as renderTesting,
   screen,
+  waitFor,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -81,6 +82,14 @@ vi.mock('@/hooks/api/useOverviewClockSettings', () => ({
 }));
 vi.mock('@/hooks/api/useUpdateOverviewClockSettings', () => ({
   useUpdateOverviewClockSettings: vi.fn(),
+}));
+vi.mock('@/services/overview-weather', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/overview-weather')>()),
+  overviewWeatherApi: {
+    getSettings: vi.fn().mockResolvedValue({ enabled: false, revision: 0 }),
+    updateSettings: vi.fn().mockResolvedValue({ enabled: true, revision: 1 }),
+    getFrame: vi.fn(),
+  },
 }));
 vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
   useOverviewLinkSettings: () => ({
@@ -326,4 +335,20 @@ it('keeps unsaved clock edits when navigating between configuration sections', (
   expect(
     (screen.getByLabelText('Clock 1 label') as HTMLInputElement).value
   ).toBe('Unsaved label');
+});
+
+it('keeps the independent weather control available when clock settings fail', async () => {
+  vi.mocked(useOverviewClockSettings).mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: true,
+  } as ReturnType<typeof useOverviewClockSettings>);
+  render(<ConfigurationPage />);
+  const control = await screen.findByRole('switch', {
+    name: 'Precipitation radar',
+  });
+  expect((control as HTMLInputElement).checked).toBe(false);
+  await waitFor(() =>
+    expect((control as HTMLInputElement).disabled).toBe(false)
+  );
 });

@@ -27,12 +27,23 @@ const queries = vi.hoisted(() => ({
   route: {} as Record<string, unknown>,
   pois: {} as Record<string, unknown>,
   links: {} as Record<string, unknown>,
+  weather: {
+    configuredEnabled: false,
+    visible: true,
+    state: 'off',
+    frameTimeMs: null,
+    ageMs: null,
+    atlas: null,
+  } as WeatherLayerView,
   adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
 // independently controlled API states. Scene rendering has browser coverage.
 vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
   useOverviewAdsbLayer: () => queries.adsb,
+}));
+vi.mock('@/hooks/useOverviewWeatherLayer', () => ({
+  useOverviewWeatherLayer: () => queries.weather,
 }));
 vi.mock('@react-three/fiber', () => ({ Canvas: () => null }));
 vi.mock('@react-three/drei', () => ({
@@ -76,11 +87,20 @@ vi.mock('@/hooks/api/useUpdateOverviewHistorySettings', () => ({
 vi.mock('@/hooks/api/useOverviewUpcomingPois', () => ({
   useOverviewUpcomingPois: () => queries.pois,
 }));
+import type { WeatherLayerView } from './weather/weather-state';
 import { OverviewPage } from './OverviewPage';
 import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
 import { projectAdsbContacts } from './adsb/overview-adsb-state';
 afterEach(cleanup);
 beforeEach(() => {
+  queries.weather = {
+    configuredEnabled: false,
+    visible: true,
+    state: 'off',
+    frameTimeMs: null,
+    ageMs: null,
+    atlas: null,
+  };
   queries.adsb.contacts = [];
   queries.links = {
     data: { starshield_link_enabled: true, x_band_link_enabled: true },
@@ -258,4 +278,22 @@ it('uses active contacts for the ADS-B legend and clears it on expiry or disable
   view.rerender(<OverviewPage />);
   expect(screen.queryByText('ADS-B aircraft')).toBeNull();
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it('keeps passive weather independent of core map failures and adds no controls', () => {
+  queries.weather = {
+    ...queries.weather,
+    configuredEnabled: true,
+    state: 'unavailable',
+  };
+  queries.status.error = new Error('core refresh failed');
+  render(<OverviewPage />);
+  expect(screen.getByLabelText('Weather status').textContent).toContain(
+    'Weather unavailable'
+  );
+  expect(
+    screen.getByRole('link', { name: 'RainViewer' }).getAttribute('href')
+  ).toBe('https://www.rainviewer.com/');
+  expect(screen.queryByRole('switch')).toBeNull();
+  expect(screen.getByLabelText('Globe legend')).not.toBeNull();
 });

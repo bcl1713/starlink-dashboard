@@ -1,3 +1,13 @@
+vi.mock('@/hooks/useOverviewWeatherLayer', () => ({
+  useOverviewWeatherLayer: () => ({
+    configuredEnabled: false,
+    visible: false,
+    state: 'off',
+    frameTimeMs: null,
+    ageMs: null,
+    atlas: null,
+  }),
+}));
 vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
   useOverviewAdsbLayer: () => ({
     contacts: [],
