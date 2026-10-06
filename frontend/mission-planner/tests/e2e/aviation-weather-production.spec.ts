@@ -238,6 +238,11 @@ test('exact production SHA: native station forecasts and advisory topology coexi
         timeout: 30000,
       })
       .toBeGreaterThan(0);
+    await expect
+      .poll(async () => (await weatherSnapshot(overview)).textures, {
+        timeout: 30000,
+      })
+      .toBeGreaterThanOrEqual(2);
     const baseline = await weatherSnapshot(overview),
       initialStatus = await (await request.get('/api/status')).json();
     expect(await sourceEvents()).toHaveLength(0);
