@@ -103,15 +103,83 @@
 }
 
 .globe-marker-label {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  width: max-content;
+  max-width: min(220px, calc(100vw - 32px));
   display: block;
-  transform: translate(-50%, 100%);
+  position: absolute;
+  visibility: hidden;
+  padding: 4px 8px;
+  border: 1px solid #64758c;
+  border-radius: 7px;
+  background: rgb(14 24 38 / 92%);
   color: #f8fafc;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   pointer-events: none;
   text-shadow: 0 1px 4px rgb(3 3 7 / 95%);
+}
+.overview-callout-wrapper {
+  pointer-events: none !important;
+}
+.overview-callout-wrapper:has(.overview-label-group[open]) {
+  z-index: 1 !important;
+}
+.overview-map-callout {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.overview-label-stick {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: #bac9db;
+  stroke-width: 1.25;
+}
+.overview-label-stick-shadow {
+  stroke: rgb(3 7 14 / 75%);
+  stroke-width: 3;
+}
+.overview-label-group {
+  display: none;
+  position: absolute;
+  color: #f8fafc;
+  font-size: 0.75rem;
+  pointer-events: auto;
+}
+.overview-label-group summary {
+  box-sizing: border-box;
+  width: 96px;
+  height: 28px;
+  padding: 4px 8px;
+  background: #0e1826;
+  border: 1px solid #64758c;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.overview-label-group ul {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 12px 8px 24px;
+  width: min(220px, calc(100vw - 24px));
+  max-height: 180px;
+  max-height: min(180px, calc(100dvh - 24px));
+  overflow: auto;
+  overflow-wrap: anywhere;
+  background: #0e1826;
+  border: 1px solid #64758c;
+  border-radius: 7px;
+}
+.overview-label-group:focus-within {
+  outline: 2px solid #b8dce7;
+  outline-offset: 3px;
 }
 .overview-top-overlays {
   position: absolute;
@@ -254,4 +322,8 @@
   background: #efb85b;
   width: 8px;
   height: 8px;
+}
+
+.overview-map-callout[data-label-in-view='false'] * {
+  visibility: hidden !important;
 }
