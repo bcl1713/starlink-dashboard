@@ -104,3 +104,12 @@ async def test_provider_advertises_opaque_path_and_rejects_timestamp_tile(tmp_pa
     )
     assert advertised.startswith(b"HTTP/1.1 200 ")
     assert advertised.split(b"\r\n\r\n", 1)[1].startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_detail_fixture_exposes_geographic_feature_absent_from_fallback():
+    path = ROOT / "tools/acceptance/overview-weather/provider_fixture.py"
+    spec = importlib.util.spec_from_file_location("weather_detail_landmarks", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.tile_png(2, 3, z=3, detail=True) != module.tile_png(2, 3, z=3)
+    assert module.tile_png(1, 1, z=2, detail=True) == module.tile_png(1, 1, z=2)

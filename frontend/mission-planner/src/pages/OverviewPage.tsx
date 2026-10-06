@@ -14,6 +14,7 @@ import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
 import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
 import { useOverviewWeatherLayer } from '@/hooks/useOverviewWeatherLayer';
+import { OverviewWeatherCameraObserver } from './weather/OverviewWeatherCameraObserver';
 import { OverviewWeatherLayer } from './weather/OverviewWeatherLayer';
 import { OverviewWeatherStatus } from './weather/OverviewWeatherStatus';
 import { OverviewAdsbLayer } from './adsb/OverviewAdsbLayer';
@@ -933,7 +934,16 @@ export function OverviewPage() {
             fade
             speed={reducedMotion ? 0 : 0.1}
           />
-          <OverviewWeatherLayer atlas={weather.atlas} />
+          <OverviewWeatherCameraObserver
+            capabilities={weather.detailContext?.manifest ?? null}
+            onDemand={weather.onDemand}
+          />
+          <OverviewWeatherLayer
+            atlas={weather.atlas}
+            context={weather.detailContext}
+            pairs={weather.detailPairs}
+            work={weather.work}
+          />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
               kind="countries"

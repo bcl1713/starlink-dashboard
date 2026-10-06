@@ -14,7 +14,8 @@ export async function installWeatherProbe(page: Page) {
       __weatherPixel?: (
         latitude: number,
         longitude: number,
-        night: boolean
+        night: boolean,
+        radius?: number
       ) => unknown;
     };
     const state = () => {
@@ -35,7 +36,23 @@ export async function installWeatherProbe(page: Page) {
       const radar = material?.uniforms.radarTexture.value as
         | CanvasTexture
         | undefined;
+      type Fiber = {
+        memoizedProps?: { work?: { snapshot: () => unknown }; atlas?: unknown };
+        child?: Fiber;
+        sibling?: Fiber;
+      };
+      const find = (node: Fiber | undefined): Fiber | undefined => {
+        if (!node) return;
+        if (node.memoizedProps?.work && node.memoizedProps.atlas) return node;
+        return find(node.child) ?? find(node.sibling);
+      };
+      const owner = (
+        target.__overviewEvidenceRoots as unknown as { current?: Fiber }[]
+      )
+        .map((root) => find(root.current))
+        .find(Boolean)?.memoizedProps?.work;
       return {
+        work: owner?.snapshot() ?? null,
         canvas:
           s.gl.domElement.dataset.weatherEvidence ??
           (s.gl.domElement.dataset.weatherEvidence = crypto.randomUUID()),
@@ -44,12 +61,27 @@ export async function installWeatherProbe(page: Page) {
         calls: s.gl.info.render.calls,
         radar: radar?.uuid ?? null,
         width: radar?.image.width ?? null,
+        detailSlots: [...(material?.uniforms.detailValid.value ?? [])],
+        detailFades: [...(material?.uniforms.detailFades.value ?? [])],
+        detailBounds: (material?.uniforms.detailBounds.value ?? []).map(
+          (value: { toArray(): number[] }) => value.toArray()
+        ),
+        opacity: material?.uniforms.radarOpacity.value,
+        weatherGPUBytes: [
+          'radarTexture',
+          'coverageTexture',
+          'detailRadar',
+          'detailCoverage',
+        ].reduce((sum, key) => {
+          const image = material?.uniforms[key].value?.image;
+          return sum + (image ? image.width * image.height * 4 : 0);
+        }, 0),
         depthTest: material?.depthTest,
         depthWrite: material?.depthWrite,
         renderOrder: mesh?.renderOrder,
       };
     };
-    target.__weatherPixel = (latitude, longitude, night) => {
+    target.__weatherPixel = (latitude, longitude, night, radius = 5) => {
       const s = state();
       const mesh = s.scene.getObjectByName(
         'Overview precipitation radar'
@@ -62,9 +94,9 @@ export async function installWeatherProbe(page: Page) {
         update: (delta: number) => void;
       };
       controls.setLookAt(
-        5 * Math.cos(lat) * Math.cos(lon),
-        5 * Math.sin(lat),
-        -5 * Math.cos(lat) * Math.sin(lon),
+        radius * Math.cos(lat) * Math.cos(lon),
+        radius * Math.sin(lat),
+        -radius * Math.cos(lat) * Math.sin(lon),
         0,
         0,
         0,
@@ -83,6 +115,58 @@ export async function installWeatherProbe(page: Page) {
           -2 * Math.cos(lat) * Math.sin(lon)
         )
         .project(s.camera);
+      // Recover the center pixel's geographic ray, including pixel rounding.
+      // A sub-texel seam check must know which side was actually rasterized.
+      const glContext = s.gl.getContext();
+      const pixelX = Math.floor(
+        (landmark.x / 2 + 0.5) * glContext.drawingBufferWidth
+      );
+      const pixelY = Math.floor(
+        (landmark.y / 2 + 0.5) * glContext.drawingBufferHeight
+      );
+      const ray = s.camera.position
+        .clone()
+        .set(
+          ((pixelX + 0.5) / glContext.drawingBufferWidth) * 2 - 1,
+          ((pixelY + 0.5) / glContext.drawingBufferHeight) * 2 - 1,
+          1
+        )
+        .unproject(s.camera)
+        .sub(s.camera.position)
+        .normalize();
+      // Intersect the actual tessellated sphere, rather than an ideal sphere:
+      // their small depth difference matters for sub-texel seam samples.
+      const positions = mesh.geometry.getAttribute('position');
+      const indices = mesh.geometry.getIndex()!;
+      let nearest = Infinity;
+      for (let i = 0; i < indices.count; i += 3) {
+        const a = s.camera.position
+          .clone()
+          .fromBufferAttribute(positions, indices.getX(i));
+        const b = s.camera.position
+          .clone()
+          .fromBufferAttribute(positions, indices.getX(i + 1));
+        const c = s.camera.position
+          .clone()
+          .fromBufferAttribute(positions, indices.getX(i + 2));
+        const edge1 = b.sub(a),
+          edge2 = c.sub(a);
+        const cross = ray.clone().cross(edge2);
+        const determinant = edge1.dot(cross);
+        if (Math.abs(determinant) < 1e-9) continue;
+        const offset = s.camera.position.clone().sub(a);
+        const u = offset.dot(cross) / determinant;
+        if (u < 0 || u > 1) continue;
+        const q = offset.cross(edge1);
+        const v = ray.dot(q) / determinant;
+        if (v < 0 || u + v > 1) continue;
+        const distance = edge2.dot(q) / determinant;
+        if (distance > 0) nearest = Math.min(nearest, distance);
+      }
+      if (!Number.isFinite(nearest))
+        throw new Error('Sample misses native weather geometry');
+      const point = s.camera.position.clone().addScaledVector(ray, nearest);
+      const sampleLongitude = (Math.atan2(-point.z, point.x) * 180) / Math.PI;
       const lights: Array<{ light: Light; intensity: number }> = [];
       if (night)
         s.scene.traverse((node) => {
@@ -119,6 +203,7 @@ export async function installWeatherProbe(page: Page) {
         latitude,
         longitude,
         night,
+        sampleLongitude,
         patchWithWeather: withWeather,
         patchWithoutWeather: withoutWeather,
         withWeather: withWeather.slice((6 * 12 + 6) * 4, (6 * 12 + 7) * 4),
@@ -155,6 +240,17 @@ export async function weatherSnapshot(page: Page) {
           calls: number;
           radar: string | null;
           width: number | null;
+          work: {
+            active: number;
+            detailActive: number;
+            decodedBytes: number;
+            peakDecodedBytes: number;
+          } | null;
+          detailSlots: number[];
+          detailFades: number[];
+          detailBounds: number[][];
+          opacity: number;
+          weatherGPUBytes: number;
           depthTest?: boolean;
           depthWrite?: boolean;
           renderOrder?: number;
@@ -167,16 +263,18 @@ export async function weatherPixel(
   page: Page,
   latitude: number,
   longitude: number,
-  night = false
+  night = false,
+  radius = 5
 ) {
   return page.evaluate(
-    ([lat, lon, dark]) =>
+    ([lat, lon, dark, distance]) =>
       (
         window as unknown as {
           __weatherPixel: (
             lat: number,
             lon: number,
-            night: boolean
+            night: boolean,
+            radius?: number
           ) => {
             withWeather: number[];
             withoutWeather: number[];
@@ -184,7 +282,12 @@ export async function weatherPixel(
             patchWithoutWeather: number[];
           };
         }
-      ).__weatherPixel(lat as number, lon as number, dark as boolean),
-    [latitude, longitude, night]
+      ).__weatherPixel(
+        lat as number,
+        lon as number,
+        dark as boolean,
+        distance as number
+      ),
+    [latitude, longitude, night, radius]
   );
 }

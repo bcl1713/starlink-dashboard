@@ -1,7 +1,6 @@
 """Admit eligible observed frames and expose only reconstructed same-origin tiles."""
 
 import asyncio
-import json
 import struct
 
 from app.models.overview_weather import WeatherManifest, WeatherSettings
@@ -9,11 +8,9 @@ from app.models.overview_weather import WeatherManifest, WeatherSettings
 from .acquisitions import WeatherAcquisitionPool
 from .clock import WeatherClock
 from .protocol import WeatherPayload, WeatherUnavailable
+from .rainviewer import RainViewerAdapter
 from .settings import WeatherSettingsStore
-from .transport import RADAR_PATH
 
-METADATA_URL = "https://api.rainviewer.com/public/weather-maps.json"
-TILE_HOST = "https://tilecache.rainviewer.com"
 DAY_MS = 86400000
 
 
@@ -33,45 +30,17 @@ def validate_png(body: bytes) -> None:
         raise ValueError("Invalid weather image")
 
 
-def observed_frames(body: bytes) -> dict[int, str]:
-    payload = json.loads(body)
-    if (
-        not isinstance(payload, dict)
-        or len(payload) > 16
-        or payload.get("host") != TILE_HOST
-    ):
-        raise ValueError("Invalid weather metadata")
-    radar = payload.get("radar")
-    if not isinstance(radar, dict) or len(radar) > 8:
-        raise ValueError("Invalid radar metadata")
-    past = radar.get("past")
-    if not isinstance(past, list) or len(past) > 32:
-        raise ValueError("Invalid observed frame list")
-    frames = {}
-    for entry in past:
-        if not isinstance(entry, dict) or len(entry) > 4:
-            raise ValueError("Invalid observed frame")
-        timestamp, path = entry.get("time"), entry.get("path")
-        if (
-            type(timestamp) is not int
-            or timestamp < 0
-            or not isinstance(path, str)
-            or not RADAR_PATH.fullmatch(path)
-            or (timestamp in frames and frames[timestamp] != path)
-        ):
-            raise ValueError("Invalid observed frame identity")
-        frames[timestamp] = path
-    return frames
-
-
 class WeatherService:
     def __init__(
         self,
         store: WeatherSettingsStore,
         pool: WeatherAcquisitionPool,
         clock: WeatherClock,
+        adapter: RainViewerAdapter | None = None,
     ):
         self.store, self.pool, self.clock = store, pool, clock
+        self.adapter = adapter or RainViewerAdapter()
+        self._product_id = self.adapter.normalized()["product_id"]
         self._revision = -1
         self._enabled = False
         self._closed = False
@@ -102,6 +71,12 @@ class WeatherService:
             self._coverage = None
             await self.pool.invalidate()
             raise WeatherUnavailable() from None
+        product_id = self.adapter.normalized()["product_id"]
+        if product_id != self._product_id:
+            self._product_id = product_id
+            self._frames.clear()
+            self._coverage = None
+            await self.pool.invalidate()
         await self.settings_changed(settings)
         return WeatherSettings(enabled=self._enabled, revision=self._revision)
 
@@ -117,31 +92,40 @@ class WeatherService:
             self._coverage = None
         frames, coverage = set(self._frames), self._coverage
         await self.pool.prune(
-            lambda key: key[0] == "metadata"
-            or (key[0] == "radar" and key[1] in frames)
-            or (key[0] == "coverage" and key[1] == coverage)
+            lambda key: key[0] == self._product_id
+            and (
+                key[1] == "metadata"
+                or (key[1] == "radar" and key[2] in frames)
+                or (key[1] == "coverage" and key[2] == coverage)
+            )
         )
 
     def _manifest(self, state: str, revision: int, frame: int | None = None):
         now = self.clock.utc_ms()
         if state != "ready":
             return WeatherManifest(
-                state=state, settings_revision=revision, generated_at_ms=now
+                state=state,
+                settings_revision=revision,
+                generated_at_ms=now,
+                **self.adapter.normalized(),
             )
         day = now // DAY_MS
         return WeatherManifest(
+            **self.adapter.normalized(),
             state="ready",
             settings_revision=revision,
             generated_at_ms=now,
             frame_time_ms=frame * 1000,
             coverage_token=day,
             coverage_expires_at_ms=(day + 1) * DAY_MS,
-            radar_tile_template=f"/api/overview-weather/radar/{frame}/{{z}}/{{x}}/{{y}}.png",
-            coverage_tile_template=f"/api/overview-weather/coverage/{day}/{{z}}/{{x}}/{{y}}.png",
+            radar_tile_template=f"/api/overview-weather/radar/{frame}/{{z}}/{{x}}/{{y}}.png?product_id={self._product_id}",
+            coverage_tile_template=f"/api/overview-weather/coverage/{day}/{{z}}/{{x}}/{{y}}.png?product_id={self._product_id}",
         )
 
     def _validate_metadata(self, body: bytes) -> None:
-        if not any(self._eligible(frame) for frame in observed_frames(body)):
+        if not any(
+            self._eligible(frame) for frame in self.adapter.observed_frames(body)
+        ):
             raise ValueError("No eligible observed weather frame")
 
     async def read_frame(self) -> WeatherManifest:
@@ -154,8 +138,8 @@ class WeatherService:
             if not self._enabled or revision != self._revision:
                 raise WeatherUnavailable()
             metadata = await self.pool.acquire(
-                ("metadata", 0, 0, 0, 0),
-                METADATA_URL,
+                (self._product_id, "metadata", 0, 0, 0, 0),
+                self.adapter.metadata_url,
                 131072,
                 "application/json",
                 300,
@@ -165,7 +149,7 @@ class WeatherService:
                 raise WeatherUnavailable()
             eligible = {
                 frame: path
-                for frame, path in observed_frames(metadata.body).items()
+                for frame, path in self.adapter.observed_frames(metadata.body).items()
                 if self._eligible(frame)
             }
             if not eligible:
@@ -189,16 +173,31 @@ class WeatherService:
 
     @staticmethod
     def _coordinates(z, x, y):
-        if z != 2 or not 0 <= x <= 3 or not 0 <= y <= 3:
+        if (
+            any(type(value) is not int for value in (z, x, y))
+            or not 2 <= z <= 7
+            or not 0 <= x < 2**z
+            or not 0 <= y < 2**z
+        ):
             raise WeatherTileError(400)
 
     async def _tile(
-        self, kind: str, token: int, z: int, x: int, y: int
+        self,
+        kind: str,
+        token: int,
+        z: int,
+        x: int,
+        y: int,
+        product_id: str | None = None,
     ) -> WeatherPayload:
         self._coordinates(z, x, y)
         settings = await self._settings()
         if not settings.enabled:
             raise WeatherTileError(409)
+        if product_id is not None and product_id != self._product_id:
+            raise WeatherTileError(404)
+        if z > self.adapter.max_zoom:
+            raise WeatherTileError(400)
         await self._prune()
         if not self._enabled:
             raise WeatherTileError(409)
@@ -207,25 +206,26 @@ class WeatherService:
         ):
             raise WeatherTileError(404)
         revision = self._revision
-        path = (
-            f"{self._frames[token]}/512/2/{x}/{y}/2/1_1.png"
-            if kind == "radar"
-            else f"/v2/coverage/0/512/2/{x}/{y}/0/0_0.png"
-        )
+        product = self._product_id
+        url = self.adapter.tile_url(kind, self._frames.get(token), z, x, y)
         ttl = (
             3600
             if kind == "radar"
             else max(0, ((token + 1) * DAY_MS - self.clock.utc_ms()) / 1000)
         )
         payload = await self.pool.acquire(
-            (kind, token, z, x, y),
-            TILE_HOST + path,
+            (product, kind, token, z, x, y),
+            url,
             2097152,
             "image/png",
             ttl,
             validate_png,
         )
-        if not self._enabled or revision != self._revision:
+        if (
+            not self._enabled
+            or revision != self._revision
+            or product != self._product_id
+        ):
             raise WeatherTileError(409)
         if (kind == "radar" and not self._eligible(token)) or (
             kind == "coverage" and token != self.clock.utc_ms() // DAY_MS
@@ -234,13 +234,15 @@ class WeatherService:
             raise WeatherTileError(404)
         return payload
 
-    async def radar_tile(self, frame: int, z: int, x: int, y: int) -> WeatherPayload:
-        return await self._tile("radar", frame, z, x, y)
+    async def radar_tile(
+        self, frame: int, z: int, x: int, y: int, product_id: str | None = None
+    ) -> WeatherPayload:
+        return await self._tile("radar", frame, z, x, y, product_id)
 
     async def coverage_tile(
-        self, coverage: int, z: int, x: int, y: int
+        self, coverage: int, z: int, x: int, y: int, product_id: str | None = None
     ) -> WeatherPayload:
-        return await self._tile("coverage", coverage, z, x, y)
+        return await self._tile("coverage", coverage, z, x, y, product_id)
 
     async def aclose(self) -> None:
         self._closed = True

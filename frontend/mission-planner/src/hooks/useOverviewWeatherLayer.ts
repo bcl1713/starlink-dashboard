@@ -47,11 +47,14 @@ function createWeatherBinding() {
       owned.setSettings(observation);
       const visibility = () => owned.setVisible(!document.hidden);
       const reconnect = () => owned.reconnect();
+      const disconnect = () => owned.disconnect();
       document.addEventListener('visibilitychange', visibility);
       window.addEventListener('online', reconnect);
+      window.addEventListener('offline', disconnect);
       return () => {
         document.removeEventListener('visibilitychange', visibility);
         window.removeEventListener('online', reconnect);
+        window.removeEventListener('offline', disconnect);
         unsubscribe();
         owned.dispose();
         controller = null;

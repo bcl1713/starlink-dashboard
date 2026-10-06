@@ -1,8 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { WeatherAtlasPair } from './weather-atlas';
 import { WeatherTextureOwner } from './weather-textures';
-import { MERCATOR_LIMIT } from './weather-projection';
+import { weatherFragmentShader } from './weather-shader';
+import { WeatherDetailTextureOwner } from './weather-detail-textures';
+import type { DetailContext, DetailPair } from './weather-detail';
+import { WeatherWork } from './weather-work';
 
 const vertexShader = `
   varying vec3 vWeatherPosition;
@@ -14,53 +18,83 @@ const vertexShader = `
     gl_Position = projectionMatrix * mvPosition;
   }
 `;
-const fragmentShader = `
-  uniform sampler2D radarTexture;
-  uniform sampler2D coverageTexture;
-  varying vec3 vWeatherPosition;
-  void main() {
-    vec3 p = normalize(vWeatherPosition);
-    float latitude = asin(clamp(p.y, -1.0, 1.0));
-    float longitude = atan(-p.z, p.x);
-    float absent = 1.0;
-    vec4 radar = vec4(0.0);
-    if (abs(latitude) <= ${MERCATOR_LIMIT}) {
-      vec2 uv = vec2(fract(longitude / 6.28318530718 + 0.5),
-        clamp(0.5 - log(tan(0.78539816339 + latitude / 2.0)) / 6.28318530718, 0.0, 1.0));
-      absent = texture2D(coverageTexture, uv).a;
-      radar = texture2D(radarTexture, uv) * (1.0 - absent);
-    }
-    float hatch = 1.0 - step(1.5, mod(gl_FragCoord.x + gl_FragCoord.y, 12.0));
-    float hatchAlpha = absent * hatch * 0.17;
-    float alpha = radar.a * 0.72 + hatchAlpha;
-    if (alpha <= 0.001) discard;
-    vec3 color = (radar.rgb * radar.a * 0.72 + vec3(0.42) * hatchAlpha) / alpha;
-    gl_FragColor = vec4(color, alpha);
-    #include <colorspace_fragment>
-  }
-`;
 const ignoreRaycast: THREE.Mesh['raycast'] = () => undefined;
 
 export function OverviewWeatherLayer({
   atlas,
+  context = null,
+  pairs = [],
+  work,
 }: {
   atlas: WeatherAtlasPair | null;
+  context?: DetailContext | null;
+  pairs?: readonly DetailPair[];
+  work?: WeatherWork | null;
 }) {
   const owner = useMemo(() => new WeatherTextureOwner(), []);
+  const detailOwner = useMemo(
+    () => new WeatherDetailTextureOwner(work ?? new WeatherWork()),
+    [work]
+  );
+  const previous = useRef<WeatherAtlasPair | null>(null);
   const material = useRef<THREE.ShaderMaterial>(null);
   const uniforms = useMemo(
-    () => ({ radarTexture: { value: null }, coverageTexture: { value: null } }),
+    () => ({
+      radarOpacity: { value: 0.4 },
+      radarTexture: { value: null as THREE.Texture | null },
+      coverageTexture: { value: null as THREE.Texture | null },
+      detailRadar: { value: null as THREE.Texture | null },
+      detailCoverage: { value: null as THREE.Texture | null },
+      detailBounds: {
+        value: Array.from({ length: 8 }, () => new THREE.Vector4()),
+      },
+      detailRects: {
+        value: Array.from({ length: 8 }, () => new THREE.Vector4()),
+      },
+      detailValid: { value: new Float32Array(8) },
+      detailFades: { value: new Float32Array(8) },
+    }),
     []
   );
   useLayoutEffect(() => {
+    if (previous.current !== atlas) {
+      detailOwner.dispose();
+      previous.current = atlas;
+    }
     const textures = owner.replace(atlas);
+    const detail = detailOwner.replace(
+      atlas ? context : null,
+      pairs,
+      performance.now()
+    );
+    const target = material.current?.uniforms;
+    if (target) {
+      target.detailRadar.value = detail?.radar ?? null;
+      target.detailCoverage.value = detail?.coverage ?? null;
+      if (detail) {
+        target.detailBounds.value = detail.bounds;
+        target.detailRects.value = detail.rects;
+        target.detailValid.value = detail.valid;
+        target.detailFades.value = detail.fades;
+      } else {
+        target.detailValid.value.fill(0);
+        target.detailFades.value.fill(0);
+      }
+    }
     if (material.current) {
       material.current.uniforms.radarTexture.value = textures?.radar ?? null;
       material.current.uniforms.coverageTexture.value =
         textures?.coverage ?? null;
     }
-  }, [owner, atlas]);
-  useEffect(() => () => owner.dispose(), [owner]);
+  }, [owner, detailOwner, atlas, context, pairs]);
+  useFrame(() => detailOwner.updateFades(performance.now()));
+  useEffect(
+    () => () => {
+      detailOwner.dispose();
+      owner.dispose();
+    },
+    [owner, detailOwner]
+  );
   if (!atlas) return null;
   return (
     <mesh
@@ -73,7 +107,7 @@ export function OverviewWeatherLayer({
         ref={material}
         uniforms={uniforms}
         vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
+        fragmentShader={weatherFragmentShader}
         transparent
         depthTest
         depthWrite={false}

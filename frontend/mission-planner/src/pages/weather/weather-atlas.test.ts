@@ -148,3 +148,21 @@ it('invokes the browser fetch capability with its global receiver', async () => 
   expect(fetcher).toHaveBeenCalledTimes(32);
   pair.dispose();
 });
+it('never reuses coverage from another product with identical day/time and releases decoded reservations', async () => {
+  const loader = makeLoader(
+    vi.fn<typeof fetch>().mockImplementation(async () => pngResponse())
+  );
+  const first = await loader.load(readyWeather(), new AbortController().signal);
+  const second = await loader.load(
+    { ...readyWeather(), product_id: 'b'.repeat(64), source: 'fixture-radar' },
+    new AbortController().signal
+  );
+  expect(second.coverage).not.toBe(first.coverage);
+  expect(loader.work.snapshot().peakDecodedBytes).toBeLessThanOrEqual(
+    96 * 1024 * 1024
+  );
+  first.dispose();
+  second.dispose();
+  loader.dispose();
+  expect(loader.work.snapshot().decodedBytes).toBe(0);
+});

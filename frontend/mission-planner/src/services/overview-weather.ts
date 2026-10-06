@@ -9,6 +9,21 @@ const settingsSchema = z.strictObject({
 const common = {
   settings_revision: integer,
   generated_at_ms: integer,
+  source: z.string().regex(/^[a-z0-9_-]{1,64}$/),
+  provenance: z.string().min(1).max(256),
+  product: z.literal('observed-precipitation'),
+  product_id: z.string().regex(/^[a-f0-9]{64}$/),
+  tile_schema: z.literal('xyz-rgba-pair-v1'),
+  coverage_encoding: z.literal('absence-rgba-v1'),
+  max_zoom: z.number().int().min(2).max(7),
+  attribution: z.strictObject({
+    label: z.string().min(1).max(256),
+    url: z
+      .string()
+      .url()
+      .max(2048)
+      .refine((value) => value.startsWith('https://')),
+  }),
   zoom: z.literal(2),
   tile_size: z.literal(512),
 };
@@ -32,9 +47,9 @@ const readySchema = z
       value.coverage_token === Math.floor(value.generated_at_ms / 86400000) &&
       value.coverage_expires_at_ms === (value.coverage_token + 1) * 86400000 &&
       value.radar_tile_template ===
-        `/api/overview-weather/radar/${frame}/{z}/{x}/{y}.png` &&
+        `/api/overview-weather/radar/${frame}/{z}/{x}/{y}.png?product_id=${value.product_id}` &&
       value.coverage_tile_template ===
-        `/api/overview-weather/coverage/${value.coverage_token}/{z}/{x}/{y}.png`
+        `/api/overview-weather/coverage/${value.coverage_token}/{z}/{x}/{y}.png?product_id=${value.product_id}`
     );
   }, 'Invalid admitted weather frame');
 const unavailableSchema = z.strictObject({
@@ -47,6 +62,10 @@ const unavailableSchema = z.strictObject({
   coverage_tile_template: z.null(),
 });
 const manifestSchema = z.union([readySchema, unavailableSchema]);
+export type WeatherCapabilities = Pick<
+  ReadyWeatherManifest,
+  'zoom' | 'max_zoom' | 'tile_size' | 'tile_schema' | 'coverage_encoding'
+>;
 export type WeatherSettings = z.infer<typeof settingsSchema>;
 export type WeatherManifest = z.infer<typeof manifestSchema>;
 export type ReadyWeatherManifest = z.infer<typeof readySchema>;

@@ -122,6 +122,47 @@ async def test_four_active_and_thirty_two_pending_unique_limit():
     assert all(w.close_calls == w.wait_closed_calls == 1 for w in streams.writers)
 
 
+@pytest.mark.parametrize("coarse_active", [0, 2])
+async def test_saturated_detail_keeps_coarse_admission_and_priority(coarse_active):
+    streams = WeatherStreams()
+    pool = pool_for(streams)
+    tasks = [
+        asyncio.create_task(acquire(pool, ("product", "radar", n, 2, 0, 0)))
+        for n in range(coarse_active)
+    ]
+    tasks += [
+        asyncio.create_task(acquire(pool, ("product", "radar", n, 7, 0, 0)))
+        for n in range(36)
+    ]
+    try:
+        for _ in range(100):
+            await asyncio.sleep(0)
+        before = len(streams.dials)
+        coarse = asyncio.create_task(
+            acquire(pool, ("product", "metadata", 99, 0, 0, 0))
+        )
+        tasks.append(coarse)
+        for _ in range(100):
+            await asyncio.sleep(0)
+        assert not coarse.done(), "detail saturation rejected coarse work"
+        assert pool.admission._pending <= 32
+        assert pool.admission._active <= 4
+        assert pool.admission._detail_active <= 2
+        if coarse_active:
+            tasks[0].cancel()
+            await asyncio.gather(tasks[0], return_exceptions=True)
+            for _ in range(100):
+                await asyncio.sleep(0)
+        assert len(streams.dials) == before + 1
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        await pool.aclose()
+    assert all(writer.close_calls == 1 for writer in streams.writers)
+    assert pool.admission._pending == 0
+
+
 @pytest.mark.parametrize("count,body", [(49, b"small"), (33, b"x" * 2097152)])
 async def test_png_cache_evicts_first_entry_at_count_or_byte_bound(count, body):
     streams = WeatherStreams(http_response(body))

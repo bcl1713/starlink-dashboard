@@ -40,3 +40,24 @@ it.each([
   vi.mocked(apiClient.get).mockResolvedValue({ data });
   await expect(overviewWeatherApi.getSettings()).rejects.toThrow();
 });
+it('accepts normalized alternate source capabilities and informational provenance', async () => {
+  const fixture = {
+    ...readyWeather(),
+    source: 'fixture-radar',
+    provenance: 'Alternate observed radar',
+    product: 'observed-precipitation',
+    product_id: 'b'.repeat(64),
+    tile_schema: 'xyz-rgba-pair-v1',
+    coverage_encoding: 'absence-rgba-v1',
+    max_zoom: 5,
+    attribution: { label: 'Fixture radar', url: 'https://example.com/radar' },
+    radar_tile_template:
+      '/api/overview-weather/radar/1791244200/{z}/{x}/{y}.png?product_id=' +
+      'b'.repeat(64),
+    coverage_tile_template:
+      '/api/overview-weather/coverage/20732/{z}/{x}/{y}.png?product_id=' +
+      'b'.repeat(64),
+  };
+  vi.mocked(apiClient.get).mockResolvedValue({ data: fixture });
+  expect((await overviewWeatherApi.getFrame()).source).toBe('fixture-radar');
+});

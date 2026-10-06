@@ -47,7 +47,7 @@ async def test_default_off_and_disable_never_read_provider_or_cached_tile(tmp_pa
     assert ready.frame_time_ms == 1791244200000
     assert (
         ready.radar_tile_template
-        == "/api/overview-weather/radar/1791244200/{z}/{x}/{y}.png"
+        == f"/api/overview-weather/radar/1791244200/{{z}}/{{x}}/{{y}}.png?product_id={ready.product_id}"
     )
     assert ready.coverage_token == 20732
     assert ready.coverage_expires_at_ms == 1791331200000
@@ -177,7 +177,7 @@ async def test_observed_opaque_path_serves_radar_under_local_timestamp(tmp_path,
         assert ready.state == "ready"
         assert ready.frame_time_ms == 1791244200000
         assert ready.radar_tile_template == (
-            "/api/overview-weather/radar/1791244200/{z}/{x}/{y}.png"
+            f"/api/overview-weather/radar/1791244200/{{z}}/{{x}}/{{y}}.png?product_id={ready.product_id}"
         )
         png = (
             b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR"

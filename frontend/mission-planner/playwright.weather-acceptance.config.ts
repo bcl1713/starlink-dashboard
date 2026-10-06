@@ -22,7 +22,10 @@ try {
 }
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'overview-weather-production.spec.ts',
+  testMatch:
+    process.env.WEATHER_ACCEPTANCE_MODE === 'comparison'
+      ? 'overview-weather-comparison.spec.ts'
+      : 'overview-weather-production.spec.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   workers: 1,
@@ -37,5 +40,13 @@ export default defineConfig({
     trace: 'retain-on-failure',
     viewport: { width: 1920, height: 1080 },
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+    },
+  ],
 });

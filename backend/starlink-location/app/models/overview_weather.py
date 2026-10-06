@@ -16,6 +16,12 @@ class WeatherSettingsUpdate(BaseModel):
     enabled: bool
 
 
+class WeatherAttribution(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+    label: str = Field(min_length=1, max_length=256)
+    url: str = Field(pattern=r"^https://[^\s]+$", max_length=2048)
+
+
 class WeatherManifest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     state: Literal["off", "ready", "unavailable"]
@@ -24,6 +30,14 @@ class WeatherManifest(BaseModel):
     frame_time_ms: int | None = Field(default=None, ge=0)
     coverage_token: int | None = Field(default=None, ge=0)
     coverage_expires_at_ms: int | None = Field(default=None, ge=0)
+    source: str = Field(pattern=r"^[a-z0-9_-]{1,64}$")
+    provenance: str = Field(min_length=1, max_length=256)
+    product: Literal["observed-precipitation"]
+    product_id: str = Field(pattern=r"^[a-f0-9]{64}$")
+    tile_schema: Literal["xyz-rgba-pair-v1"]
+    coverage_encoding: Literal["absence-rgba-v1"]
+    attribution: WeatherAttribution
+    max_zoom: int = Field(ge=2, le=7)
     zoom: Literal[2] = 2
     tile_size: Literal[512] = 512
     radar_tile_template: str | None = None

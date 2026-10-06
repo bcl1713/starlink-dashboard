@@ -13,6 +13,7 @@ export function OverviewWeatherStatus({
   weather: WeatherLayerView;
 }) {
   if (!weather.configuredEnabled) return null;
+  const attribution = weather.detailContext?.manifest.attribution;
   return (
     <section className="overview-weather-status" aria-label="Weather status">
       <p className="overview-weather-status__state" role="status">
@@ -39,16 +40,14 @@ export function OverviewWeatherStatus({
           No radar coverage
         </span>
       </p>
-      <p>
-        Weather data by{' '}
-        <a
-          href="https://www.rainviewer.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          RainViewer
-        </a>
-      </p>
+      {attribution && (
+        <p>
+          Weather data by{' '}
+          <a href={attribution.url} target="_blank" rel="noopener noreferrer">
+            {attribution.label}
+          </a>
+        </p>
+      )}
     </section>
   );
 }

@@ -1,3 +1,9 @@
+vi.mock('./weather/OverviewWeatherLayer', () => ({
+  OverviewWeatherLayer: () => null,
+}));
+vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
+  OverviewWeatherCameraObserver: () => null,
+}));
 vi.mock('@/hooks/useOverviewWeatherLayer', () => ({
   useOverviewWeatherLayer: () => ({
     configuredEnabled: false,
@@ -6,6 +12,10 @@ vi.mock('@/hooks/useOverviewWeatherLayer', () => ({
     frameTimeMs: null,
     ageMs: null,
     atlas: null,
+    detailContext: null,
+    detailPairs: [],
+    work: null,
+    onDemand: () => {},
   }),
 }));
 vi.mock('@/hooks/useOverviewAdsbLayer', () => ({

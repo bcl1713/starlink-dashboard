@@ -1,3 +1,6 @@
+import type { DetailContext, DetailPair } from './weather-detail';
+import type { DetailDemand } from './weather-detail-selection';
+import type { WeatherWork } from './weather-work';
 import type { WeatherAtlasPair } from './weather-atlas';
 
 export type BrowserWeatherClock = { nowMono(): number };
@@ -5,6 +8,10 @@ export const browserWeatherClock: BrowserWeatherClock = {
   nowMono: () => performance.now(),
 };
 export type WeatherLayerView = {
+  detailContext: DetailContext | null;
+  detailPairs: readonly DetailPair[];
+  work: WeatherWork | null;
+  onDemand: (demand: DetailDemand) => void;
   configuredEnabled: boolean;
   visible: boolean;
   state: 'off' | 'loading' | 'current' | 'stale' | 'unavailable';
@@ -13,6 +20,10 @@ export type WeatherLayerView = {
   atlas: WeatherAtlasPair | null;
 };
 export const emptyWeatherView: WeatherLayerView = {
+  detailContext: null,
+  detailPairs: [],
+  work: null,
+  onDemand: () => {},
   configuredEnabled: false,
   visible: false,
   state: 'off',

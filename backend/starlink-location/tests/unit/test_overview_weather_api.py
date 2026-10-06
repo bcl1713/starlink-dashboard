@@ -30,7 +30,7 @@ async def test_api_defaults_saves_errors_headers_and_legacy_404(tmp_path):
             ).status_code == 422
         assert (
             await client.get("/api/overview-weather/radar/1/2/0/0.png")
-        ).status_code == 409
+        ).status_code == 404
         assert streams.dials == []
         assert (
             await client.put("/api/overview-weather/settings", json={"enabled": True})
@@ -43,7 +43,7 @@ async def test_api_defaults_saves_errors_headers_and_legacy_404(tmp_path):
         ).status_code == 404
         assert (
             await client.get("/api/overview-weather/radar/1/3/0/0.png")
-        ).status_code == 400
+        ).status_code == 404
         assert (
             await client.get("/api/weather/radar/rainviewer/2/0/0.png")
         ).status_code == 404
