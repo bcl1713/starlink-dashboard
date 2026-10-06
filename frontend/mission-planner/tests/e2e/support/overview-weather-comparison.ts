@@ -47,6 +47,15 @@ export async function restoreComparison(page: Page): Promise<void> {
     if (!saved || saved.restored) return;
     saved.restored = true;
     saved.material.fragmentShader = saved.shader;
+    for (const name of [
+      'comparisonRadar',
+      'comparisonAbsence',
+      'comparisonBounds',
+      'comparisonRects',
+      'comparisonOpacity',
+    ]) {
+      delete saved.originalUniforms[name];
+    }
     saved.material.uniforms = saved.originalUniforms;
     saved.originals.forEach((texture, index) => {
       const canvas = texture.image as HTMLCanvasElement;
@@ -258,14 +267,13 @@ export async function installComparison(
         );
       }
       saved.detail.forEach((texture) => (texture.needsUpdate = true));
-      material.uniforms = {
-        ...saved.originalUniforms,
+      Object.assign(material.uniforms, {
         comparisonRadar: { value: saved.detail[0] },
         comparisonAbsence: { value: saved.detail[1] },
         comparisonBounds: { value: bounds },
         comparisonRects: { value: rects },
         comparisonOpacity: { value: input.opacity },
-      };
+      });
       material.fragmentShader =
         `
         uniform sampler2D comparisonRadar;

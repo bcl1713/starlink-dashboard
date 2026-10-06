@@ -16,7 +16,7 @@ main.PinnedWeatherTransport = transport
 app = main.app
 if os.environ.get("WEATHER_ACCEPTANCE_MODE") == "comparison":
     app.mount(
-        "/api/weather-comparison-assets",
+        "/api/overview-weather/comparison-assets",
         StaticFiles(directory="/capture"),
         name="comparison-captures",
     )

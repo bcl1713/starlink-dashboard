@@ -189,7 +189,10 @@ test('synthetic geographic detail, truthful masks, mixed frames and failed-insta
     installComparison(page, {
       ...capture,
       detailPairs: [
-        { ...pair, radarURL: '/api/weather-comparison-assets/missing.png' },
+        {
+          ...pair,
+          radarURL: '/api/overview-weather/comparison-assets/missing.png',
+        },
       ],
     })
   ).rejects.toThrow('404');
@@ -215,13 +218,13 @@ test('actual saved radar sources on identical native desktop, fullscreen and mob
         key,
         radarIdentity: pair.snapshot_identity,
         absenceIdentity: pair.snapshot_identity,
-        radarURL: `/api/weather-comparison-assets/${pair.radar_path}`,
-        absenceURL: `/api/weather-comparison-assets/${pair.absence_path}`,
+        radarURL: `/api/overview-weather/comparison-assets/${pair.radar_path}`,
+        absenceURL: `/api/overview-weather/comparison-assets/${pair.absence_path}`,
       }));
   const records = [];
   const requests: Array<{ url: string; status: number }> = [];
   page.on('response', (response) => {
-    if (response.url().includes('/weather-comparison-assets/'))
+    if (response.url().includes('/comparison-assets/'))
       requests.push({ url: response.url(), status: response.status() });
   });
   try {
