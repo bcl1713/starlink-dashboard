@@ -8,7 +8,7 @@ import {
   type RefObject,
 } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Html, Stars } from '@react-three/drei';
+import { Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
@@ -66,10 +66,8 @@ import { OverviewFullscreenControl } from './OverviewFullscreenControl';
 import { useOverviewUpcomingPois } from '@/hooks/api/useOverviewUpcomingPois';
 import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
 import { OverviewPoiMarker } from './OverviewPoiMarker';
-import {
-  layoutOverviewPoiLabels,
-  type PoiLabelLayout,
-} from './overview-poi-label-layout';
+import { OverviewMapLabel } from './OverviewMapLabel';
+import { OverviewLabelLayout } from './OverviewLabelLayout';
 import { OverviewArrivalPanel } from './OverviewArrivalPanel';
 import { deriveArrivalPanel } from './overview-arrival';
 import { OverviewMetricHistoryPanels } from './OverviewMetricHistoryPanels';
@@ -195,17 +193,18 @@ function GroundEntryPointMarker({
   return (
     <>
       <StarMarker coordinate={coordinate} color="#c084fc" size={0.13} />
-      <Html
-        occlude={[globeOccluder]}
+      <OverviewMapLabel
+        id="gep"
+        kind="gep"
+        text="GEP"
+        priority={1}
         position={globePosition(
           coordinate.latitude,
           coordinate.longitude,
           ROUTE_OVERLAY_RADIUS
         )}
-        zIndexRange={[0, 0]}
-      >
-        <span className="globe-marker-label">GEP</span>
-      </Html>
+        globeOccluder={globeOccluder}
+      />
     </>
   );
 }
@@ -222,9 +221,14 @@ function ConfiguredXBandSatelliteMarker({
   return (
     <>
       <StarMarker position={position} color="#FF6B6B" size={0.13} />
-      <Html occlude={[globeOccluder]} position={position} zIndexRange={[0, 0]}>
-        <span className="globe-marker-label">{satelliteId}</span>
-      </Html>
+      <OverviewMapLabel
+        id={`satellite:${satelliteId}`}
+        kind="satellite"
+        text={satelliteId}
+        position={position}
+        globeOccluder={globeOccluder}
+        priority={1}
+      />
     </>
   );
 }
@@ -294,13 +298,9 @@ export function OverviewPage() {
     mode: OverviewLayoutMode;
     active: boolean;
   }>({ mode: 'desktop', active: false });
-  const [poseRevision, setPoseRevision] = useState(0);
   const reducedMotion = usePrefersReducedMotion();
   const onManual = useCallback(() => setCameraIntent('manual'), []);
-  const onCameraSettled = useCallback(
-    () => setPoseRevision((value) => value + 1),
-    []
-  );
+  const onCameraSettled = useCallback(() => undefined, []);
   const [solarTime, setSolarTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -422,11 +422,6 @@ export function OverviewPage() {
       ),
     [upcomingPoisResponse?.pois, pacedRunning, missionNow]
   );
-  const [upcomingPoiLabelLayout, setUpcomingPoiLabelLayout] =
-    useState<PoiLabelLayout>({
-      offsets: {},
-      fallback: null,
-    });
   const {
     data: overviewClockSettings,
     isError: isOverviewClockSettingsError,
@@ -733,7 +728,7 @@ export function OverviewPage() {
       if (event.target instanceof Node && rail.contains(event.target)) return;
       if (
         event.target instanceof Element &&
-        event.target.closest('.overview-marker-debug')
+        event.target.closest('.overview-marker-debug,.overview-label-group')
       )
         return;
       if (event.ctrlKey || event.metaKey || !event.deltaY) return;
@@ -756,84 +751,6 @@ export function OverviewPage() {
     page.addEventListener('wheel', wheel, { passive: false });
     return () => page.removeEventListener('wheel', wheel);
   }, [layout.mode, exploring]);
-  useEffect(() => {
-    let attempts = 0;
-    let frame = 0;
-    const measure = () => {
-      const labels = upcomingPoiView.markers.flatMap((poi) => {
-        const element = document.querySelector<HTMLElement>(
-          `[data-poi-label="${poi.poi_id}"]`
-        );
-        if (!element) return [];
-
-        const bounds = element.getBoundingClientRect();
-        if (bounds.width === 0 || bounds.height === 0) return [];
-        const [offsetX, offsetY] = (element.dataset.poiLabelOffset ?? '0,0')
-          .split(',')
-          .map(Number);
-        return [
-          {
-            id: poi.poi_id,
-            bounds: {
-              x: bounds.x - offsetX,
-              y: bounds.y - offsetY,
-              width: bounds.width,
-              height: bounds.height,
-            },
-          },
-        ];
-      });
-
-      if (labels.length < upcomingPoiView.markers.length && attempts < 20) {
-        attempts += 1;
-        frame = window.requestAnimationFrame(measure);
-        return;
-      }
-
-      const stageBounds = stageRef.current
-        ?.querySelector('.overview-globe')
-        ?.getBoundingClientRect();
-      if (!stageBounds) return;
-      const reserved = [
-        ...(stageRef.current?.querySelectorAll<HTMLElement>(
-          '.overview-planned-satellite, .overview-arrival, .globe-legend, .overview-fullscreen-control, .overview-map-status, .overview-map-controls'
-        ) ?? []),
-      ].map((node) => {
-        const bounds = node.getBoundingClientRect();
-        return {
-          x: bounds.x - stageBounds.x,
-          y: bounds.y - stageBounds.y,
-          width: bounds.width,
-          height: bounds.height,
-        };
-      });
-      const nextLayout = layoutOverviewPoiLabels(
-        labels.map((label) => ({
-          ...label,
-          bounds: {
-            ...label.bounds,
-            x: label.bounds.x - stageBounds.x,
-            y: label.bounds.y - stageBounds.y,
-          },
-        })),
-        { width: stageBounds.width, height: stageBounds.height },
-        reserved
-      );
-      setUpcomingPoiLabelLayout((currentLayout) =>
-        JSON.stringify(currentLayout) === JSON.stringify(nextLayout)
-          ? currentLayout
-          : nextLayout
-      );
-    };
-    frame = window.requestAnimationFrame(measure);
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [
-    upcomingPoiLabelLayout,
-    upcomingPoiView.markers,
-    layout.revision,
-    poseRevision,
-  ]);
   return (
     <main
       ref={pageRef}
@@ -955,6 +872,7 @@ export function OverviewPage() {
           className="overview-globe"
           camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
         >
+          <OverviewLabelLayout />
           <color attach="background" args={['#030307']} />
           <ambientLight intensity={0.5} />
           <directionalLight position={sunPosition} intensity={5} />
@@ -1007,16 +925,6 @@ export function OverviewPage() {
                   new Date(missionNow)
                 )}
                 globeOccluder={globeOccluder}
-                labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
-                hideLabel={Boolean(
-                  upcomingPoiLabelLayout.fallback &&
-                    poi.poi_id !== upcomingPoiLabelLayout.fallback.anchorId
-                )}
-                fallbackLabel={
-                  upcomingPoiLabelLayout.fallback?.anchorId === poi.poi_id
-                    ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs`
-                    : undefined
-                }
               />
             ))}
             {groundEntryPoint && (

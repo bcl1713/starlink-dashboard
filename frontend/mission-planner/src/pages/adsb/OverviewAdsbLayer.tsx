@@ -8,7 +8,7 @@ import {
   type RefObject,
 } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { OverviewMapLabel } from '../OverviewMapLabel';
 import * as THREE from 'three';
 import {
   createStarMarkerChevronResources,
@@ -25,7 +25,6 @@ import {
   type AdsbMarkerBatch,
   type AdsbPointerGesture,
 } from './overview-adsb-marker-rendering';
-import { layoutAdsbLabels, type Bounds } from './overview-adsb-label-layout';
 import type { AdsbContactView } from './overview-adsb-state';
 import './OverviewAdsb.css';
 import {
@@ -70,11 +69,7 @@ export function OverviewAdsbLayer({
   );
   const gesture = useRef<AdsbPointerGesture | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previousOffsets = useRef<Record<string, readonly [number, number]>>({});
-  const [offsets, setOffsets] = useState<
-    Record<string, readonly [number, number]>
-  >({});
-  const [visible, setVisible] = useState<readonly string[]>([]);
+  const visible = useRef<readonly string[]>([]);
   const lastPose = useRef('');
   const markerResources = useRef<
     ReturnType<typeof createStarMarkerChevronResources>[]
@@ -197,50 +192,11 @@ export function OverviewAdsbLayer({
         )
       )
       .sort();
-    setVisible((old) => (old.join('|') === hexes.join('|') ? old : hexes));
-    onVisibleHexesChange(hexes);
-    const stage = gl.domElement.closest<HTMLElement>('.overview-map-stage');
-    if (!stage) return;
-    const origin = stage.getBoundingClientRect();
-    const bounds = (node: HTMLElement): Bounds => {
-      const b = node.getBoundingClientRect();
-      return {
-        x: b.x - origin.x,
-        y: b.y - origin.y,
-        width: b.width,
-        height: b.height,
-      };
-    };
-    const visibleSet = new Set(hexes);
-    const labels = [...stage.querySelectorAll<HTMLElement>('[data-adsb-label]')]
-      .filter((node) => visibleSet.has(node.dataset.adsbLabel!))
-      .map((node) => {
-        const id = node.dataset.adsbLabel!,
-          b = bounds(node),
-          old = previousOffsets.current[id] ?? [0, 0];
-        return { id, bounds: { ...b, x: b.x - old[0], y: b.y - old[1] } };
-      });
-    const reserved = [
-      ...stage.querySelectorAll<HTMLElement>(
-        '.overview-planned-satellite,.overview-arrival,.globe-legend,.overview-fullscreen-control,.overview-map-status,.overview-map-controls,[data-poi-label]'
-      ),
-    ]
-      .filter(
-        (node) =>
-          node.getBoundingClientRect().width > 0 &&
-          getComputedStyle(node).display !== 'none'
-      )
-      .map(bounds);
-    const next = layoutAdsbLabels(
-      labels,
-      { width: origin.width, height: origin.height },
-      reserved
-    );
-    previousOffsets.current = next;
-    setOffsets((old) =>
-      JSON.stringify(old) === JSON.stringify(next) ? old : next
-    );
-  }, [camera, gl, currentBatch, staleBatch, onVisibleHexesChange]);
+    if (visible.current.join('|') !== hexes.join('|')) {
+      visible.current = hexes;
+      onVisibleHexesChange(hexes);
+    }
+  }, [camera, currentBatch, staleBatch, onVisibleHexesChange]);
   const schedule = useCallback(() => {
     if (timer.current !== null) return;
     timer.current = setTimeout(() => {
@@ -279,38 +235,26 @@ export function OverviewAdsbLayer({
     event.stopPropagation();
     onSelect(batch.hexes[i]);
   };
-  const visibleSet = new Set(visible);
   return (
     <>
       <primitive object={group} dispose={null} onClick={click} />
       {contacts
         .filter((c) => c.included)
         .map((c) => (
-          <Html
+          <OverviewMapLabel
             key={c.hex}
+            id={`adsb:${c.hex}`}
+            kind="adsb"
+            hex={c.hex}
+            text={`${c.label}${c.freshness === 'stale' ? ' · ◷ Stale' : ''}`}
+            title={`${c.label} · ${c.hex}`}
             position={globePosition(
               c.latitude,
               c.longitude,
               ADSB_MARKER_RADIUS
             )}
-            occlude={[earthOccluder]}
-            zIndexRange={[0, 0]}
-            style={{ pointerEvents: 'none' }}
-            wrapperClass="adsb-label-wrapper"
-          >
-            <span
-              data-adsb-label={c.hex}
-              className="globe-marker-label adsb-map-label"
-              title={`${c.label} · ${c.hex}`}
-              style={{
-                visibility: visibleSet.has(c.hex) ? 'visible' : 'hidden',
-                transform: `translate(calc(-50% + ${offsets[c.hex]?.[0] ?? 0}px), calc(100% + ${offsets[c.hex]?.[1] ?? 0}px))`,
-              }}
-            >
-              {c.label}
-              {c.freshness === 'stale' ? ' · ◷ Stale' : ''}
-            </span>
-          </Html>
+            globeOccluder={earthOccluder}
+          />
         ))}
     </>
   );
