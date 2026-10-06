@@ -36,7 +36,9 @@ export class WeatherAtlasLoader {
   private fetcher: typeof fetch;
   private clock: BrowserWeatherClock;
   constructor(fetcher: typeof fetch, clock: BrowserWeatherClock) {
-    this.fetcher = fetcher;
+    // Browser fetch is a Window capability; invoking it as a loader method
+    // supplies an invalid receiver. Preserve its global receiver explicitly.
+    this.fetcher = fetcher.bind(globalThis);
     this.clock = clock;
   }
 

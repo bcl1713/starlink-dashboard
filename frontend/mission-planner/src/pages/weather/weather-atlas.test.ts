@@ -135,3 +135,16 @@ it('rejects a pre-aborted load without starting or leaking image work', async ()
   await Promise.resolve();
   expect(fetcher).not.toHaveBeenCalled();
 });
+
+it('invokes the browser fetch capability with its global receiver', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockImplementation(async function (
+    this: unknown
+  ) {
+    if (this !== globalThis) throw new TypeError('Illegal invocation');
+    return pngResponse();
+  });
+  const loader = makeLoader(fetcher);
+  const pair = await loader.load(readyWeather(), new AbortController().signal);
+  expect(fetcher).toHaveBeenCalledTimes(32);
+  pair.dispose();
+});
