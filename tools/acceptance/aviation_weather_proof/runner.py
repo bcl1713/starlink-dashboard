@@ -19,6 +19,14 @@ PROJECT='starlink-290-aviation-proof'
 IMAGE='sha256:da6d08532bcd1336d6f3d217859700c96b32efa31c47ac2b6b43b5d3d58bed9a'
 
 
+def prepare_fixture_mount(products: Path) -> None:
+    """Permit app UID traversal inside the read-only normalized-only bind mount."""
+    for path in (products, *products.rglob("*")):
+        if path.is_symlink():
+            raise ValueError("fixture mount cannot contain symlinks")
+        path.chmod(0o755 if path.is_dir() else 0o644)
+
+
 def run(candidate:str,captures:Path,profile:Path)->int:
     if not re.fullmatch('[0-9a-f]{40}',candidate):raise ValueError('clean 40-hex SHA required')
     if subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()!=candidate or subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],cwd=ROOT,text=True).strip():raise ValueError('candidate must be clean tracked HEAD')
@@ -75,6 +83,7 @@ def run(candidate:str,captures:Path,profile:Path)->int:
         (output/'control'/'control.json').write_text('{}')
         os.chmod(output/'control',0o777);os.chmod(output/'control'/'control.json',0o666)
         for name in ('gfs','isigmet','goes19-c13'):worker('normalize',name)
+        prepare_fixture_mount(output/'products')
         command(['docker','info','--format','{{.ServerVersion}} {{.Name}}'],'docker-runtime')
         command(compose+['config'],'compose',env=env)
         command(['timeout','--kill-after=10s','15m',*compose,'build'],'build',920,env)
