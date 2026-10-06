@@ -1,0 +1,6 @@
+**
+!tools/
+!tools/acceptance/
+!tools/acceptance/aviation_weather_proof/
+!tools/acceptance/aviation_weather_proof/**
+**/__pycache__/

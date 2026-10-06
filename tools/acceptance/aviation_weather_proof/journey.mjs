@@ -1,0 +1,426 @@
+/** Diagnostic overlays in the real Overview renderer, using provisioned CDP. */
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { resolve, dirname } from "node:path";
+import { writeFileSync } from "node:fs";
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const require = createRequire(
+  resolve(root, "frontend/mission-planner/package.json"),
+);
+const { chromium } = require("@playwright/test"),
+  { buildSync } = require("esbuild");
+const args = Object.fromEntries(
+  process.argv
+    .slice(2)
+    .reduce(
+      (rows, v, i, all) => (i % 2 ? rows : [...rows, [v.slice(2), all[i + 1]]]),
+      [],
+    ),
+);
+const output = args.artifacts,
+  requests = [],
+  errors = [];
+const save = (name, value) =>
+  writeFileSync(resolve(output, name), JSON.stringify(value, null, 2));
+const result = {
+  status: "failed",
+  native_overview: false,
+  samples: {},
+  metrics: [],
+  captures: [],
+  controls: {},
+};
+const browser = await chromium.connectOverCDP(args.session);
+let context;
+try {
+  context = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+    deviceScaleFactor: 1,
+  });
+  const request = context.request;
+  const waypointTime = (offset) =>
+    new Date(Date.now() + offset).toISOString().replace("T", " ").slice(0, 19) +
+    "Z";
+  const mission = "aviation-proof",
+    leg = "diagnostic-route";
+  const created = await request.post(`${args.origin}/api/v2/missions`, {
+    data: {
+      id: mission,
+      name: "Aviation proof route fixture",
+      legs: [
+        {
+          id: leg,
+          name: "Diagnostic route",
+          route_id: "aviation-proof-route",
+          transports: { initial_x_satellite_id: "X-1" },
+        },
+      ],
+    },
+  });
+  if (!created.ok())
+    throw Error(`seed mission ${created.status()} ${await created.text()}`);
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Aviation diagnostic route</name><Placemark><name>Diagnostic departure</name><description>Time Over Waypoint: ${waypointTime(-600000)}</description><Point><coordinates>-104,35,10000</coordinates></Point></Placemark><Placemark><name>Diagnostic arrival</name><description>Time Over Waypoint: ${waypointTime(1800000)}</description><Point><coordinates>-98,35,10000</coordinates></Point></Placemark><Placemark><name>Diagnostic route</name><LineString><coordinates>-104,35,10000 -102,35,10000 -100,35,10000 -98,35,10000</coordinates></LineString></Placemark></Document></kml>`;
+  const uploaded = await request.put(
+    `${args.origin}/api/v2/missions/${mission}/legs/${leg}/route`,
+    {
+      multipart: {
+        file: {
+          name: "aviation-proof.kml",
+          mimeType: "application/vnd.google-earth.kml+xml",
+          buffer: Buffer.from(kml),
+        },
+      },
+    },
+  );
+  if (!uploaded.ok())
+    throw Error(`seed route ${uploaded.status()} ${await uploaded.text()}`);
+  save("seeded-route.json", await uploaded.json());
+  const activated = await request.post(
+    `${args.origin}/api/v2/missions/${mission}/legs/${leg}/activate`,
+  );
+  if (!activated.ok())
+    throw Error(
+      `activate route ${activated.status()} ${await activated.text()}`,
+    );
+  const page = await context.newPage();
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.route("**/*", (route) => {
+    const url = new URL(route.request().url());
+    const allowed =
+      url.origin === args.origin || ["data:", "blob:"].includes(url.protocol);
+    requests.push({ url: url.href, allowed, method: route.request().method() });
+    return allowed ? route.continue() : route.abort();
+  });
+  const observerCode = buildSync({
+    entryPoints: [
+      resolve(
+        root,
+        "frontend/mission-planner/tests/e2e/support/overview-camera.ts",
+      ),
+    ],
+    bundle: true,
+    write: false,
+    platform: "node",
+    format: "cjs",
+    packages: "external",
+  }).outputFiles[0].text;
+  const observer = { exports: {} };
+  new Function("require", "module", "exports", observerCode)(
+    require,
+    observer,
+    observer.exports,
+  );
+  await observer.exports.observeOverviewCamera(page);
+  await page.goto(`${args.origin}/overview`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(
+    () =>
+      window.__overviewEvidenceRoots?.some(
+        (r) => r.containerInfo?.getState?.().gl.domElement.isConnected,
+      ),
+    null,
+    { timeout: 60000 },
+  );
+  const built = buildSync({
+    entryPoints: [
+      resolve(
+        root,
+        "frontend/mission-planner/tests/e2e/support/aviation-weather-proof/runtime.ts",
+      ),
+    ],
+    bundle: true,
+    write: false,
+    format: "iife",
+    define: { "process.env.NODE_ENV": '"production"' },
+  });
+  await page.addScriptTag({ content: built.outputFiles[0].text });
+  result.native_overview = true;
+  result.initial = await page.evaluate(() => window.aviationProof.snapshot());
+  const install = async (source, selectedId) => {
+    await page.evaluate(
+      ([source, selectedId]) =>
+        window.aviationProof.install(
+          `/api/overview-weather/aviation-proof-assets/${source}/descriptor.json`,
+          selectedId,
+        ),
+      [source, selectedId],
+    );
+    result.metrics.push(
+      await page.evaluate(() => window.aviationProof.snapshot()),
+    );
+  };
+  const capture = async (name, lat, lon, radius = 5) => {
+    await page.evaluate(
+      ([a, b, r]) => window.aviationProof.look(a, b, r),
+      [lat, lon, radius],
+    );
+    await page.waitForTimeout(150);
+    const path = `${name}.png`;
+    const legend = page.locator("[data-aviation-palette]");
+    let palette;
+    if (await legend.count()) {
+      const bounds = await legend.boundingBox(),
+        viewport = page.viewportSize();
+      const visible =
+        (await legend.isVisible()) &&
+        bounds &&
+        bounds.x >= 0 &&
+        bounds.y >= 0 &&
+        bounds.x + bounds.width <= viewport.width &&
+        bounds.y + bounds.height <= viewport.height;
+      const text = await legend.innerText();
+      if (
+        !visible ||
+        !["190 K", "250 K", "310 K", "40%", "Unavailable"].every((part) =>
+          text.includes(part),
+        )
+      )
+        throw Error("scalar legend hidden/incomplete");
+      palette = {
+        visible: true,
+        text,
+        declaration: JSON.parse(
+          await legend.getAttribute("data-aviation-palette"),
+        ),
+      };
+    }
+    await page.screenshot({ path: resolve(output, path) });
+    result.captures.push(path);
+    (result.views ??= []).push({
+      path,
+      palette,
+      ...(await page.evaluate(() => window.aviationProof.snapshot())),
+    });
+  };
+  await install("gfs");
+  const gfs = [
+    [0, -180],
+    [10, 179.5],
+    [-10, -179.5],
+    [89, 0],
+    [-89, 120],
+    [70, -60],
+    [-70, 30],
+    [50, -45],
+    [-35, 135],
+    [20, 30],
+  ];
+  result.samples.gfs = [];
+  for (const [lat, lon] of gfs)
+    result.samples.gfs.push(
+      await page.evaluate(
+        ([a, b]) => window.aviationProof.sample(a, b),
+        [lat, lon],
+      ),
+    );
+  for (const [name, lat, lon, r] of [
+    ["model-world", 20, -30, 7],
+    ["model-north-atlantic", 50, -40, 4],
+    ["model-antimeridian", 5, 180, 5],
+    ["model-polar", 85, 0, 5],
+    ["model-desktop", 35, -100, 5],
+  ])
+    await capture(name, lat, lon, r);
+  await page
+    .getByRole("button", { name: "Enter fullscreen overview", exact: true })
+    .click();
+  await capture("model-fullscreen", 35, -100);
+  await page.evaluate(() => document.exitFullscreen());
+  await page.setViewportSize({ width: 390, height: 844 });
+  await capture("model-mobile", 35, -100);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const advisoryResponse = await request.get(
+    `${args.origin}/api/overview-weather/aviation-proof-assets/isigmet/advisories.geojson`,
+  );
+  const selected = (await advisoryResponse.json()).features.find(
+    (f) =>
+      f.properties.issuer === "PHFO" &&
+      f.properties.fir_id === "KZAK" &&
+      f.properties.series_id === "VICTOR 6",
+  );
+  if (!selected) throw Error("pinned VICTOR 6 bulletin unavailable");
+  await install("isigmet", selected.id);
+  result.selected_advisory = await page.evaluate(() =>
+    window.aviationProof.snapshot(),
+  );
+  if (!(await page.locator("[data-aviation-proof]").isVisible()))
+    throw Error("advisory context hidden");
+  result.selected_advisory.visible = true;
+  result.advisory_label = await page
+    .locator("[data-aviation-proof]")
+    .innerText();
+  await capture("advisory-victor6", 15, 166, 4.5);
+  await capture("advisory-route-aircraft-station", 35, -100);
+  await capture("advisory-world", 10, 100, 7);
+  await install("goes19-c13");
+  result.satellite_label = await page
+    .locator("[data-aviation-proof]")
+    .innerText();
+  result.samples["goes19-c13"] = [];
+  for (const [lon, lat] of [
+    [-75, 0],
+    [-80, 10],
+    [-100, 20],
+    [-60, 30],
+    [-90, 40],
+    [-50, -10],
+    [-65, -25],
+    [-100, -30],
+    [-120, 5],
+    [-35, 15],
+  ])
+    result.samples["goes19-c13"].push(
+      await page.evaluate(
+        ([a, b]) => window.aviationProof.sample(a, b),
+        [lat, lon],
+      ),
+    );
+  for (const [name, lat, lon, r] of [
+    ["satellite-americas", 5, -75, 5],
+    ["satellite-atlantic-limb", 10, -25, 5],
+    ["satellite-night", 0, -75, 6],
+  ]) {
+    if (name === "satellite-night")
+      await page.evaluate(() => window.aviationProof.night(true));
+    await capture(name, lat, lon, r);
+    await page.evaluate(() => window.aviationProof.night(false));
+  }
+  await install("synthetic");
+  const regionalLabel = page.locator("[data-aviation-proof]");
+  const regionalText = await regionalLabel.innerText();
+  const regionalVisible = await regionalLabel.isVisible();
+  result.controls.asynchronous =
+    regionalVisible &&
+    regionalText.includes("SYNTHETIC regional interval control") &&
+    regionalText.includes(
+      "A: 1970-01-01T00:00:00.000Z – 1970-01-01T00:00:01.000Z",
+    ) &&
+    regionalText.includes(
+      "B: 1970-01-01T00:00:02.000Z – 1970-01-01T00:00:03.000Z",
+    );
+  await capture("synthetic-regional-intervals", 0, -75, 6);
+  result.synthetic_regions = {
+    synthetic: true,
+    visible: regionalVisible,
+    label: regionalText,
+    descriptor_url:
+      "/api/overview-weather/aviation-proof-assets/synthetic/descriptor.json",
+    capture: "synthetic-regional-intervals.png",
+  };
+  const regionalDescriptor = await (
+    await request.get(
+      `${args.origin}/api/overview-weather/aviation-proof-assets/synthetic/descriptor.json`,
+    )
+  ).json();
+  result.regional_samples = [];
+  for (const c of regionalDescriptor.synthetic_controls)
+    result.regional_samples.push({
+      name: c.name,
+      ...(await page.evaluate(
+        ([lat, lon]) => window.aviationProof.regionalSample(lat, lon),
+        [c.latitude, c.longitude],
+      )),
+    });
+  result.regional_seam = await page.evaluate(() =>
+    window.aviationProof.regionalSample(30, -0.25),
+  );
+  result.controls.regional_ownership = result.regional_samples.every(
+    (s, i) =>
+      s.region === ["B", "A", "A", "B", null][i] &&
+      s.mask === [0, 0, 0, 0, 3][i] &&
+      (i === 4
+        ? s.value === null
+        : Math.abs(s.value - [270, 250, 250, 270][i]) <= 0.01),
+  );
+  save("synthetic-regional-intervals.json", result.synthetic_regions);
+  if (!result.controls.asynchronous)
+    throw Error("synthetic regional intervals absent from visible overlay");
+  const controls = [];
+  for (const [lat, lon] of [
+    [0, 179.75],
+    [89.5, 0],
+    [-89.5, 0],
+    [0, 0],
+  ])
+    controls.push(
+      await page.evaluate(
+        ([a, b]) => window.aviationProof.sample(a, b),
+        [lat, lon],
+      ),
+    );
+  result.synthetic_samples = controls;
+  result.controls.seam =
+    controls[0].mask === 0 &&
+    Math.abs(controls[0].value - controls[0].cpu.value) <= 0.01;
+  result.controls.poles = controls
+    .slice(1, 3)
+    .every((s) => s.mask === 0 && Math.abs(s.value - s.cpu.value) <= 0.01);
+  result.controls.invalid =
+    controls[3].mask === 3 && controls[3].value === null;
+  const before = await page.evaluate(() => window.aviationProof.snapshot());
+  try {
+    await install("missing");
+  } catch {}
+  const after = await page.evaluate(() => window.aviationProof.snapshot());
+  result.controls.failed_install_ownership =
+    JSON.stringify(before.allocation.current) ===
+      JSON.stringify(after.allocation.current) && before.label === after.label;
+  // CPU geometry controls exercise the same native objects; GPU controls above
+  // remain separately labeled from these deterministic shape/direction controls.
+  const synthetic = buildSync({
+    entryPoints: [
+      resolve(
+        root,
+        "frontend/mission-planner/tests/e2e/support/aviation-weather-proof/synthetic-controls.ts",
+      ),
+    ],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "aviationSyntheticControls",
+  });
+  await page.addScriptTag({ content: synthetic.outputFiles[0].text });
+  Object.assign(
+    result.controls,
+    await page.evaluate(() =>
+      window.aviationSyntheticControls.geometryControls((bytes) =>
+        window.aviationProof.reserveControlGeometry(bytes),
+      ),
+    ),
+  );
+  const racing = await page.evaluate(async () => {
+    const first = window.aviationProof.install(
+      "/api/overview-weather/aviation-proof-assets/gfs/descriptor.json",
+    );
+    const last = window.aviationProof.install(
+      "/api/overview-weather/aviation-proof-assets/goes19-c13/descriptor.json",
+    );
+    const results = await Promise.allSettled([first, last]);
+    return {
+      states: results.map((r) => r.status),
+      snapshot: window.aviationProof.snapshot(),
+    };
+  });
+  result.controls.asynchronous_ownership =
+    racing.states[0] === "rejected" &&
+    racing.states[1] === "fulfilled" &&
+    racing.snapshot.label.includes("noaa-goes19");
+  result.race = racing;
+  await page.evaluate(() => window.aviationProof.dispose());
+  result.restored = await page.evaluate(() => window.aviationProof.snapshot());
+  result.controls.camera_restored = result.metrics[0].savedView.every(
+    (v, i) => Math.abs(v - result.restored.camera.position[i]) < 1e-5,
+  );
+  result.errors = errors;
+  result.status =
+    errors.length === 0 && Object.values(result.controls).every(Boolean)
+      ? "passed"
+      : "failed";
+} catch (error) {
+  result.error = String(error);
+  throw error;
+} finally {
+  save("journey.json", result);
+  save("requests.json", requests);
+  await context?.close();
+  await browser.close();
+}
