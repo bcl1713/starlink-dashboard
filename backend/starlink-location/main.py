@@ -35,6 +35,7 @@ from app.api import (
     status,
     ui,
     overview_weather,
+    aviation_weather,
 )
 from app.api.simulation_run import router as simulation_run_router
 from app.core.config import ConfigManager
@@ -69,6 +70,9 @@ from app.services.overview_history_settings import (
     resolve_overview_history_window_default,
 )
 from app.services.overview_link_settings import OverviewLinkSettingsStore
+from app.services.aviation_weather.runtime import AviationWeatherService
+from app.services.aviation_weather.settings import AviationSettingsStore
+from app.services.aviation_weather.transport import AwcTransport
 from app.services.overview_weather.acquisitions import WeatherAcquisitionPool
 from app.services.overview_weather.admission import WeatherAdmission
 from app.services.overview_weather.clock import WeatherClock
@@ -207,10 +211,30 @@ def initialize_overview_weather_runtime() -> None:
         store = WeatherSettingsStore(OVERVIEW_WEATHER_SETTINGS_PATH)
         app.state.overview_weather_settings_store = store
         clock = WeatherClock()
-        pool = WeatherAcquisitionPool(PinnedWeatherTransport(clock), WeatherAdmission(clock), clock)
+        pool = WeatherAcquisitionPool(
+            PinnedWeatherTransport(clock), WeatherAdmission(clock), clock
+        )
         app.state.overview_weather_service = WeatherService(store, pool, clock)
     except Exception:  # noqa: BLE001 - optional weather must not block core startup
-        logger.warning_json("Overview weather initialization unavailable", exc_info=True)
+        logger.warning_json(
+            "Overview weather initialization unavailable", exc_info=True
+        )
+
+
+def initialize_aviation_weather_runtime() -> None:
+    """Optional construction creates no provider work or normalization worker."""
+    try:
+        store = AviationSettingsStore(
+            OVERVIEW_WEATHER_SETTINGS_PATH.parent / "aviation-weather.json"
+        )
+        app.state.aviation_weather_settings_store = store
+        app.state.aviation_weather_service = AviationWeatherService(
+            store, AwcTransport()
+        )
+    except Exception:  # noqa: BLE001 - optional weather cannot block core startup
+        logger.warning_json(
+            "Aviation weather initialization unavailable", exc_info=True
+        )
 
 
 async def startup_event():
@@ -240,6 +264,7 @@ async def startup_event():
         initialize_orbital_catalog_runtime()
         initialize_overview_adsb_runtime()
         initialize_overview_weather_runtime()
+        initialize_aviation_weather_runtime()
         await app.state.overview_adsb_service.start()
 
         reconciliation = reconcile_active_legs_on_startup()
@@ -476,6 +501,11 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "aviation_weather_service"):
+            await app.state.aviation_weather_service.aclose()
+            del app.state.aviation_weather_service
+        if hasattr(app.state, "aviation_weather_settings_store"):
+            del app.state.aviation_weather_settings_store
         if hasattr(app.state, "overview_weather_service"):
             await app.state.overview_weather_service.aclose()
             del app.state.overview_weather_service
@@ -803,6 +833,7 @@ app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
 app.include_router(overview_weather.router, tags=["Overview Weather"])
+app.include_router(aviation_weather.router, tags=["Aviation Weather"])
 app.include_router(ui.router, tags=["UI"])
 
 

@@ -1,5 +1,18 @@
+vi.mock('@/hooks/useAviationWeather', () => ({
+  useAviationWeather: () => ({
+    now: 0,
+    layers: {
+      metar: { state: 'off' },
+      taf: { state: 'off' },
+      sigmet: { state: 'off' },
+    },
+  }),
+}));
 vi.mock('./weather/OverviewWeatherLayer', () => ({
   OverviewWeatherLayer: () => null,
+}));
+vi.mock('./aviation-weather/AviationLayer', () => ({
+  AviationLayer: () => null,
 }));
 vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
   OverviewWeatherCameraObserver: () => null,

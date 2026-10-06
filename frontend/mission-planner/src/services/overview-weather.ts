@@ -61,13 +61,13 @@ const unavailableSchema = z.strictObject({
   radar_tile_template: z.null(),
   coverage_tile_template: z.null(),
 });
-const manifestSchema = z.union([readySchema, unavailableSchema]);
+export const weatherManifestSchema = z.union([readySchema, unavailableSchema]);
 export type WeatherCapabilities = Pick<
   ReadyWeatherManifest,
   'zoom' | 'max_zoom' | 'tile_size' | 'tile_schema' | 'coverage_encoding'
 >;
 export type WeatherSettings = z.infer<typeof settingsSchema>;
-export type WeatherManifest = z.infer<typeof manifestSchema>;
+export type WeatherManifest = z.infer<typeof weatherManifestSchema>;
 export type ReadyWeatherManifest = z.infer<typeof readySchema>;
 export type WeatherSettingsObservation = {
   settings: WeatherSettings;
@@ -93,7 +93,7 @@ export const overviewWeatherApi = {
       '/api/overview-weather/frame',
       { signal }
     );
-    return manifestSchema.parse(data);
+    return weatherManifestSchema.parse(data);
   },
 };
 

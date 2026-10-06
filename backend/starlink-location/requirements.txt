@@ -25,6 +25,7 @@ openpyxl>=3.1.0
 matplotlib>=3.8.0
 adjustText>=1.0.0
 cartopy>=0.22.0
+shapely>=2.0,<3
 psutil>=5.9.0
 python-pptx>=0.6.21
 slowapi>=0.1.9

@@ -13,6 +13,15 @@ import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
 import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
+import { useAviationWeather } from '@/hooks/useAviationWeather';
+import { AviationStatus } from './aviation-weather/AviationStatus';
+import { AviationLayer } from './aviation-weather/AviationLayer';
+import { AviationDetails } from './aviation-weather/AviationDetails';
+import {
+  inspectionReports,
+  resolveAviationSelection,
+  type AviationSelection,
+} from './aviation-weather/aviation-inspection';
 import { useOverviewWeatherLayer } from '@/hooks/useOverviewWeatherLayer';
 import { OverviewWeatherCameraObserver } from './weather/OverviewWeatherCameraObserver';
 import { OverviewWeatherLayer } from './weather/OverviewWeatherLayer';
@@ -271,7 +280,31 @@ export function OverviewPage() {
   }, []);
   const adsb = useOverviewAdsbLayer();
   const weather = useOverviewWeatherLayer();
+  const aviation = useAviationWeather();
   const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
+  const [weatherCandidates, setWeatherCandidates] = useState<
+    readonly AviationSelection[]
+  >([]);
+  const [selectedWeather, setSelectedWeather] =
+    useState<AviationSelection | null>(null);
+  const weatherReturnFocus = useRef<HTMLElement | null>(null);
+  const closeWeather = useCallback(() => setSelectedWeather(null), []);
+  if (selectedWeather && !resolveAviationSelection(aviation, selectedWeather))
+    setSelectedWeather(null);
+  const inspectWeather = useCallback(
+    (candidates: readonly AviationSelection[]) => {
+      if (!candidates.length) return;
+      weatherReturnFocus.current =
+        document.activeElement instanceof HTMLElement &&
+        document.activeElement !== document.body
+          ? document.activeElement
+          : stageRef.current;
+      setWeatherCandidates(candidates);
+      setSelectedWeather(candidates[0]);
+      setSelectedAdsbHex(null);
+    },
+    []
+  );
   const [visibleAdsbHexes, setVisibleAdsbHexes] = useState<readonly string[]>(
     []
   );
@@ -280,6 +313,7 @@ export function OverviewPage() {
     adsb.contacts.find((c) => c.hex === selectedAdsbHex) ?? null;
   if (selectedAdsbHex && !selectedAdsbContact) setSelectedAdsbHex(null);
   const selectAdsb = useCallback((hex: string) => {
+    setSelectedWeather(null);
     adsbReturnFocus.current =
       document.activeElement instanceof HTMLElement &&
       document.activeElement !== document.body
@@ -797,6 +831,7 @@ export function OverviewPage() {
         className="overview-map-stage"
         data-flow={layout.flow}
         data-adsb-details-open={selectedAdsbContact !== null}
+        data-aviation-details-open={selectedWeather !== null}
       >
         {markerDebug && (
           <OverviewMarkerDebug
@@ -829,6 +864,14 @@ export function OverviewPage() {
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
             <OverviewWeatherStatus weather={weather} />
+            <AviationStatus
+              view={aviation}
+              onInspect={() =>
+                inspectWeather(
+                  inspectionReports(aviation).map((r) => r.selection)
+                )
+              }
+            />
             {(countryBoundaries.loading ||
               stateBoundaries.loading ||
               countryBoundaries.unavailable ||
@@ -899,6 +942,15 @@ export function OverviewPage() {
           returnFocusRef={adsbReturnFocus}
           portalContainer={stageNode}
         />
+        <AviationDetails
+          view={aviation}
+          candidates={weatherCandidates}
+          selection={selectedWeather}
+          onSelectionChange={setSelectedWeather}
+          onClose={closeWeather}
+          returnFocusRef={weatherReturnFocus}
+          portalContainer={stageNode}
+        />
         <Canvas
           className="overview-globe"
           camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
@@ -943,6 +995,11 @@ export function OverviewPage() {
             context={weather.detailContext}
             pairs={weather.detailPairs}
             work={weather.work}
+          />
+          <AviationLayer
+            view={aviation}
+            selection={selectedWeather}
+            onSelect={inspectWeather}
           />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer

@@ -26,6 +26,9 @@ returns Prometheus text format).
 
 ---
 
+See [Aviation weather API](aviation-weather.md) for optional METAR/SPECI, TAF
+and international SIGMET layers.
+
 ## Quick Navigation
 
 - **[Endpoints](./endpoints/README.md)** - Complete endpoint reference by
