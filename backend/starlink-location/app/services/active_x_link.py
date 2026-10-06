@@ -31,6 +31,9 @@ def empty_active_x_link(state: str | None = None) -> dict[str, Any]:
         "links": [],
         "total": 0,
         "satellite_id": None,
+        "manual_satellite_id": None,
+        "selection_source": "none",
+        "manual_selection_invalid": False,
         "pending_satellite_id": None,
         "handoff": empty_handoff_context(),
         "state": state,
@@ -46,15 +49,32 @@ def build_active_x_link(
     poi_manager: Any,
     state_filter: LinkState | None = None,
     paced_context: ActiveXContext | None = None,
+    manual_satellite_id: str | None = None,
 ) -> dict[str, Any]:
     """Build a two-point route from aircraft to active X-band satellite.
 
-    The active satellite is resolved from the active mission leg. X transitions
+    The active mission leg owns selection while active; otherwise use the saved
+    manual selection. X transitions
     are ordered by their projected progress along the active route, matching the
     mission timeline's route-projection semantics for live route-following use.
     The visual state is derived from the existing normal X-band forbidden
     relative-azimuth rule window (135°–225°).
     """
+    route = route_manager.get_active_route() if route_manager else None
+    active_leg = find_active_mission_leg(route)
+    manual_poi = (
+        _find_satellite_poi(poi_manager, manual_satellite_id)
+        if manual_satellite_id
+        else None
+    )
+    valid_manual = manual_poi is not None and (manual_poi.icon or "X") == "X"
+    selection = {
+        "manual_satellite_id": manual_satellite_id,
+        "selection_source": (
+            "mission" if active_leg else "manual" if valid_manual else "none"
+        ),
+        "manual_selection_invalid": bool(manual_satellite_id and not valid_manual),
+    }
     try:
         telemetry = coordinator.get_current_telemetry() if coordinator else None
     except (
@@ -71,24 +91,36 @@ def build_active_x_link(
         EOFError,
     ) as exc:  # pragma: no cover - defensive live-mode guard
         logger.debug("Active X link unavailable: telemetry missing: %s", exc)
-        return empty_active_x_link(state_filter)
+        telemetry = None
+
+    if active_leg is not None:
+        active_context = (
+            paced_context
+            if paced_context is not None
+            else (
+                resolve_active_x_context(active_leg, route, telemetry)
+                if telemetry is not None
+                # Complete telemetry loss must not undo a mission handoff by
+                # guessing its initial satellite. Keep the existing empty result.
+                else ActiveXContext(None, None, empty_handoff_context())
+            )
+        )
+    else:
+        active_context = ActiveXContext(
+            manual_satellite_id if valid_manual else None, None, empty_handoff_context()
+        )
+    satellite_id = active_context.current_satellite_id
+    empty = {**empty_active_x_link(state_filter), **selection}
+    if not satellite_id:
+        return empty
 
     if telemetry is None:
-        return empty_active_x_link(state_filter)
-
-    route = route_manager.get_active_route() if route_manager else None
-    active_leg = _find_active_mission_leg(route)
-    if active_leg is None:
-        return empty_active_x_link(state_filter)
-
-    active_context = (
-        paced_context
-        if paced_context is not None
-        else resolve_active_x_context(active_leg, route, telemetry)
-    )
-    satellite_id = active_context.current_satellite_id
-    if not satellite_id:
-        return empty_active_x_link(state_filter)
+        return {
+            **empty,
+            "satellite_id": satellite_id,
+            "pending_satellite_id": active_context.pending_satellite_id,
+            "handoff": active_context.handoff,
+        }
 
     satellite_ids = [satellite_id]
     if active_context.pending_satellite_id:
@@ -96,7 +128,7 @@ def build_active_x_link(
 
     links = _build_satellite_links(telemetry, poi_manager, satellite_ids)
     if not links:
-        return empty_active_x_link(state_filter)
+        return empty
 
     current_link = links[0]
     matching_links = [
@@ -104,7 +136,7 @@ def build_active_x_link(
     ]
     if state_filter is not None and not matching_links:
         return {
-            **empty_active_x_link(state_filter),
+            **empty,
             "satellite_id": satellite_id,
             "pending_satellite_id": active_context.pending_satellite_id,
             "handoff": active_context.handoff,
@@ -116,6 +148,7 @@ def build_active_x_link(
 
     coordinates = [point for link in matching_links for point in link["coordinates"]]
     common = {
+        **selection,
         "satellite_id": satellite_id,
         "pending_satellite_id": active_context.pending_satellite_id,
         "handoff": active_context.handoff,
@@ -132,7 +165,7 @@ def build_active_x_link(
     }
 
 
-def _find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | None:
+def find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | None:
     missions_dir = storage.MISSIONS_DIR
     if not missions_dir.exists():
         return None
