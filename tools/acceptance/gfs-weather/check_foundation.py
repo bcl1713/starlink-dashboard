@@ -48,7 +48,7 @@ def wait(operation, seconds=40):
 def run(check):
     output = check.output
     control_path = output / "control/control.json"
-    base = {"replay_utc_ms": 1791288447620, "frame": 1791288327}
+    base = json.loads(control_path.read_bytes())
 
     def control(**values):
         temporary = control_path.with_suffix(".new")

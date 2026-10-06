@@ -30,9 +30,12 @@ def control():
 
 def clock():
     global _anchor
-    epoch = control().get("replay_utc_ms")
+    values = control()
+    epoch = values.get("replay_utc_ms")
     if epoch is None:
         return time.time()
+    if "replay_monotonic" in values:
+        return epoch / 1000 + time.monotonic() - values["replay_monotonic"]
     if _anchor is None or _anchor[0] != epoch:
         _anchor = epoch, time.monotonic()
     return epoch / 1000 + time.monotonic() - _anchor[1]

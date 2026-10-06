@@ -385,7 +385,13 @@ class Runner:
         )
         assert not any(self.inventory().values())
         (self.output / "control/control.json").write_text(
-            json.dumps({"replay_utc_ms": 1791288447620, "frame": 1791288327})
+            json.dumps(
+                {
+                    "replay_utc_ms": 1791288447620,
+                    "frame": 1791288327,
+                    "replay_monotonic": time.monotonic(),
+                }
+            )
         )
         (self.output / "control/control.json").chmod(0o666)
         # New clock authorities; production rollback guards remain active.
