@@ -34,6 +34,21 @@ def test_owned_runner_preserves_child_failure(tmp_path):
     assert (tmp_path / "process-cleanup.json").exists()
 
 
+def test_timeout_allows_owned_cleanup_handler_to_finish(tmp_path):
+    marker = tmp_path / "graceful-cleanup.txt"
+    code = f"""import signal,time
+from pathlib import Path
+def finish(number,frame):
+    time.sleep(2.5)
+    Path({str(marker)!r}).write_text("released")
+    raise SystemExit(0)
+signal.signal(signal.SIGTERM,finish)
+time.sleep(60)
+"""
+    assert run_owned([sys.executable, "-c", code], 0.2, tmp_path) == 124
+    assert marker.read_text() == "released"
+
+
 def test_cleanup_failure_is_nonzero(tmp_path, monkeypatch):
     from acceptance.weather_detail_comparison import owned
 

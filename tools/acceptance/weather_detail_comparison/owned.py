@@ -27,7 +27,7 @@ def terminate_group(child):
         except ProcessLookupError:
             return False
 
-    for sig, grace in ((signal.SIGTERM, 2), (signal.SIGKILL, 2)):
+    for sig, grace in ((signal.SIGTERM, 12), (signal.SIGKILL, 2)):
         if not alive():
             return True
         try:
