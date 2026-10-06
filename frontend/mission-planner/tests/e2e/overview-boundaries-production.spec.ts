@@ -413,7 +413,9 @@ test('fixture operational overlays remain readable with real bundled borders', a
   fixture.setContacts([
     freshContact({ latitude: 38, longitude: -90, callsign: 'BORDER-TEST' }),
   ]);
-  fixture.setSettings(adsbSettings({ enabled: true }));
+  fixture.setSettings(
+    adsbSettings({ enabled: true, include_hexes: ['00AB12'] })
+  );
   await context.route('**/api/overview-links/settings', (route) =>
     route.continue()
   );
