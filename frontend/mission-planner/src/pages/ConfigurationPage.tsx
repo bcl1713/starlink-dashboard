@@ -23,6 +23,7 @@ import { GPSControlCard } from '../components/gps/GPSControlCard';
 import { useUpdateOverviewClockSettings } from '@/hooks/api/useUpdateOverviewClockSettings';
 import { OperationalClockSettingsForm } from './OperationalClockSettingsForm';
 import { ConfigurationSection } from './ConfigurationSection';
+import { AviationSettingsCard } from './aviation-weather/AviationSettingsCard';
 import { OverviewWeatherSettingsCard } from './weather/OverviewWeatherSettingsCard';
 
 const sections = [
@@ -122,6 +123,7 @@ export function ConfigurationPage() {
             </ConfigurationSection>
             <OverviewBoundarySettingsCard />
             <OverviewWeatherSettingsCard />
+            <AviationSettingsCard />
             {isLoading ? (
               <ConfigurationSection title="Operational clocks">
                 <p role="status">Loading operational clocks...</p>

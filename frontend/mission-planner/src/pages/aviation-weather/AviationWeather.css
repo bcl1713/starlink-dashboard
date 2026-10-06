@@ -1,0 +1,33 @@
+.aviation-weather-status {
+  max-height: min(36vh, 21rem);
+  overflow-y: auto;
+  pointer-events: auto;
+  overflow-wrap: anywhere;
+}
+.aviation-product-status + .aviation-product-status {
+  border-top: var(--overview-border);
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+}
+.aviation-weather-status ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0;
+}
+.aviation-weather-status li + li {
+  margin-top: 0.3rem;
+}
+.aviation-weather-status li ul {
+  padding-left: 0.4rem;
+  border-left: 1px solid #64748b;
+}
+.aviation-bulletin {
+  font-family: monospace;
+  color: #b8c5d4;
+}
+@media (max-width: 600px) {
+  .aviation-weather-status {
+    max-height: 25vh;
+    font-size: 0.62rem;
+  }
+}

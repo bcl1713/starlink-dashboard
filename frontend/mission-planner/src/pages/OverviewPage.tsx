@@ -13,6 +13,9 @@ import * as THREE from 'three';
 import './OverviewPage.css';
 import './OverviewOverlayLayout.css';
 import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
+import { useAviationWeather } from '@/hooks/useAviationWeather';
+import { AviationStatus } from './aviation-weather/AviationStatus';
+import { AviationLayer } from './aviation-weather/AviationLayer';
 import { useOverviewWeatherLayer } from '@/hooks/useOverviewWeatherLayer';
 import { OverviewWeatherCameraObserver } from './weather/OverviewWeatherCameraObserver';
 import { OverviewWeatherLayer } from './weather/OverviewWeatherLayer';
@@ -271,6 +274,7 @@ export function OverviewPage() {
   }, []);
   const adsb = useOverviewAdsbLayer();
   const weather = useOverviewWeatherLayer();
+  const aviation = useAviationWeather();
   const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
   const [visibleAdsbHexes, setVisibleAdsbHexes] = useState<readonly string[]>(
     []
@@ -829,6 +833,7 @@ export function OverviewPage() {
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
             <OverviewWeatherStatus weather={weather} />
+            <AviationStatus view={aviation} />
             {(countryBoundaries.loading ||
               stateBoundaries.loading ||
               countryBoundaries.unavailable ||
@@ -944,6 +949,7 @@ export function OverviewPage() {
             pairs={weather.detailPairs}
             work={weather.work}
           />
+          <AviationLayer view={aviation} />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
               kind="countries"

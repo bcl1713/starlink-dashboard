@@ -1,0 +1,5 @@
+services:
+  starlink-location:
+    volumes:
+      - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/aviation-weather:/acceptance:ro
+      - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/overview-weather:/radar-acceptance:ro
