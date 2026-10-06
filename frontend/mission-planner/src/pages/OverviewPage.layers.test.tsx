@@ -1,3 +1,6 @@
+vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
+  OverviewWeatherCameraObserver: () => null,
+}));
 /** @vitest-environment jsdom */
 import {
   cleanup,
@@ -34,6 +37,10 @@ const queries = vi.hoisted(() => ({
     frameTimeMs: null,
     ageMs: null,
     atlas: null,
+    detailContext: null,
+    detailPairs: [],
+    work: null,
+    onDemand: () => {},
   } as WeatherLayerView,
   adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
 }));
@@ -100,6 +107,10 @@ beforeEach(() => {
     frameTimeMs: null,
     ageMs: null,
     atlas: null,
+    detailContext: null,
+    detailPairs: [],
+    work: null,
+    onDemand: () => {},
   };
   queries.adsb.contacts = [];
   queries.links = {
@@ -291,9 +302,7 @@ it('keeps passive weather independent of core map failures and adds no controls'
   expect(screen.getByLabelText('Weather status').textContent).toContain(
     'Weather unavailable'
   );
-  expect(
-    screen.getByRole('link', { name: 'RainViewer' }).getAttribute('href')
-  ).toBe('https://www.rainviewer.com/');
+  expect(screen.queryByRole('link', { name: 'RainViewer' })).toBeNull();
   expect(screen.queryByRole('switch')).toBeNull();
   expect(screen.getByLabelText('Globe legend')).not.toBeNull();
 });

@@ -157,3 +157,33 @@ it('checks again 300 seconds after receiving a manifest, beyond provider cache T
   await vi.advanceTimersByTimeAsync(1000);
   expect(h.api.getFrame).toHaveBeenCalledTimes(2);
 });
+it('reloads source/product changes with identical frame/XYZ but metadata-only changes keep tiles', async () => {
+  const h = harness();
+  h.observe();
+  await vi.advanceTimersByTimeAsync(0);
+  h.api.getFrame.mockResolvedValue({
+    ...readyWeather(),
+    provenance: 'RainViewer',
+  });
+  h.controller.reconnect();
+  h.observe();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(h.loader.load).toHaveBeenCalledTimes(1);
+  expect(h.controller.snapshot().detailContext?.manifest.provenance).toBe(
+    'RainViewer'
+  );
+  h.api.getFrame.mockResolvedValue({
+    ...readyWeather(),
+    source: 'fixture-radar',
+    product_id: 'b'.repeat(64),
+    max_zoom: 5,
+  });
+  h.controller.reconnect();
+  h.observe();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(h.loader.load).toHaveBeenCalledTimes(2);
+  expect(h.controller.snapshot().detailContext?.manifest.source).toBe(
+    'fixture-radar'
+  );
+  expect(h.controller.snapshot().ageMs).toBe(600000);
+});

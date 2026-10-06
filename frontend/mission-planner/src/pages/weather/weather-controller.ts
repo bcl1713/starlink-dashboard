@@ -3,6 +3,8 @@ import type {
   WeatherSettingsObservation,
   ReadyWeatherManifest,
 } from '@/services/overview-weather';
+import { WeatherDetailOwner, manifestResourceIdentity } from './weather-detail';
+import type { DetailDemand } from './weather-detail-selection';
 import { WeatherAtlasLoader, type WeatherAtlasPair } from './weather-atlas';
 import {
   abortable,
@@ -19,6 +21,10 @@ export class WeatherController {
   private active = false;
   private minimumFresh = -Infinity;
   private atlas: WeatherAtlasPair | null = null;
+  private displayed: ReadyWeatherManifest | null = null;
+  private displayGeneration = 0;
+  readonly detail: WeatherDetailOwner;
+  private unsubscribeDetail: () => void;
   private anchor: { utc: number; mono: number } | null = null;
   private failed = false;
   private closed = false;
@@ -40,6 +46,8 @@ export class WeatherController {
     this.api = api;
     this.loader = loader;
     this.clock = clock;
+    this.detail = new WeatherDetailOwner(fetch, clock, loader.work);
+    this.unsubscribeDetail = this.detail.subscribe(() => this.emit());
   }
 
   snapshot = () => this.view;
@@ -63,6 +71,9 @@ export class WeatherController {
   private discardAtlas() {
     this.atlas?.dispose();
     this.atlas = null;
+    this.displayed = null;
+    this.displayGeneration++;
+    this.detail.setContext(null);
   }
 
   setSettings(observation: WeatherSettingsObservation | undefined) {
@@ -97,6 +108,16 @@ export class WeatherController {
       this.active = false;
     }
     this.updateActivity();
+  }
+  setDetailDemand = (demand: DetailDemand) => {
+    if (this.active) this.detail.setDemand(demand);
+  };
+  disconnect() {
+    this.minimumFresh = Infinity;
+    this.cancelPending();
+    this.active = false;
+    this.emit();
+    this.schedule();
   }
   reconnect() {
     if (this.closed || !this.documentVisible) return;
@@ -178,9 +199,12 @@ export class WeatherController {
       )
         throw new Error('Weather expired');
       if (
-        this.atlas?.frameTimeMs === manifest.frame_time_ms &&
-        this.atlas.coverageToken === manifest.coverage_token
+        this.atlas &&
+        this.displayed &&
+        manifestResourceIdentity(this.displayed) ===
+          manifestResourceIdentity(manifest)
       ) {
+        this.displayed = manifest;
         this.failed = false;
         return;
       }
@@ -205,6 +229,7 @@ export class WeatherController {
       }
       this.discardAtlas();
       this.atlas = pair;
+      this.displayed = manifest;
       this.failed = false;
     } catch {
       if (current()) this.failed = true;
@@ -238,7 +263,20 @@ export class WeatherController {
         'unavailable'
         ? this.atlas
         : null;
+    const detailContext =
+      atlas && this.displayed
+        ? {
+            generation: this.displayGeneration,
+            settingsRevision: this.displayed.settings_revision,
+            manifest: this.displayed,
+          }
+        : null;
+    this.detail.setContext(detailContext);
     this.view = {
+      detailContext,
+      detailPairs: this.detail.snapshot(),
+      work: this.loader.work,
+      onDemand: this.setDetailDemand,
       configuredEnabled: this.configured,
       visible: !!atlas,
       atlas,
@@ -294,7 +332,9 @@ export class WeatherController {
     this.closed = true;
     this.active = false;
     this.cancelPending();
+    this.unsubscribeDetail();
     this.discardAtlas();
+    this.detail.dispose();
     this.loader.dispose();
     clearTimeout(this.timer);
     this.listeners.clear();
