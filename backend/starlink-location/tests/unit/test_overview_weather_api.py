@@ -1,7 +1,7 @@
 import httpx
+from app.api import overview_weather
 from fastapi import FastAPI
 
-from app.api import overview_weather
 from tests.fixtures.weather_streams import WeatherStreams, http_response
 from tests.unit.test_overview_weather_service import metadata, service_for
 
@@ -30,7 +30,7 @@ async def test_api_defaults_saves_errors_headers_and_legacy_404(tmp_path):
             ).status_code == 422
         assert (
             await client.get("/api/overview-weather/radar/1/2/0/0.png")
-        ).status_code == 409
+        ).status_code == 404
         assert streams.dials == []
         assert (
             await client.put("/api/overview-weather/settings", json={"enabled": True})
@@ -43,7 +43,7 @@ async def test_api_defaults_saves_errors_headers_and_legacy_404(tmp_path):
         ).status_code == 404
         assert (
             await client.get("/api/overview-weather/radar/1/3/0/0.png")
-        ).status_code == 400
+        ).status_code == 404
         assert (
             await client.get("/api/weather/radar/rainviewer/2/0/0.png")
         ).status_code == 404
@@ -57,9 +57,8 @@ async def test_api_defaults_saves_errors_headers_and_legacy_404(tmp_path):
 def test_optional_weather_initialization_failure_keeps_core_api(tmp_path, monkeypatch):
     from unittest.mock import Mock
 
-    from fastapi.testclient import TestClient
-
     import main
+    from fastapi.testclient import TestClient
 
     monkeypatch.setattr(
         main, "OVERVIEW_WEATHER_SETTINGS_PATH", tmp_path / "settings.json"

@@ -1,5 +1,7 @@
 """Same-origin buffered weather routes; provider details never become API errors."""
 
+import re
+
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.models.overview_weather import WeatherSettingsUpdate
@@ -74,9 +76,15 @@ async def get_frame(request: Request, response: Response):
 
 
 @router.get("/radar/{frame}/{z}/{x}/{y}.png")
-async def get_radar(frame: int, z: int, x: int, y: int, request: Request):
+async def get_radar(
+    frame: str, z: str, x: str, y: str, request: Request, product_id: str | None = None
+):
+    frame, z, x, y = canonical_coordinates(frame, z, x, y)
     runtime = service(request)
-    payload = await guarded(request, lambda: runtime.radar_tile(frame, z, x, y))
+    require_product(product_id)
+    payload = await guarded(
+        request, lambda: runtime.radar_tile(frame, z, x, y, product_id)
+    )
     if isinstance(payload, Response):
         return payload
     return Response(
@@ -89,9 +97,20 @@ async def get_radar(frame: int, z: int, x: int, y: int, request: Request):
 
 
 @router.get("/coverage/{coverage}/{z}/{x}/{y}.png")
-async def get_coverage(coverage: int, z: int, x: int, y: int, request: Request):
+async def get_coverage(
+    coverage: str,
+    z: str,
+    x: str,
+    y: str,
+    request: Request,
+    product_id: str | None = None,
+):
+    coverage, z, x, y = canonical_coordinates(coverage, z, x, y)
     runtime = service(request)
-    payload = await guarded(request, lambda: runtime.coverage_tile(coverage, z, x, y))
+    require_product(product_id)
+    payload = await guarded(
+        request, lambda: runtime.coverage_tile(coverage, z, x, y, product_id)
+    )
     if isinstance(payload, Response):
         return payload
     seconds = max(
@@ -104,3 +123,23 @@ async def get_coverage(coverage: int, z: int, x: int, y: int, request: Request):
             "Cache-Control": f"private, max-age={seconds}, must-revalidate",
         },
     )
+
+
+def canonical_coordinates(token, z, x, y):
+    if any(
+        not re.fullmatch(r"0|[1-9][0-9]{0,15}", value) for value in (token, z, x, y)
+    ):
+        raise HTTPException(400, "Invalid weather coordinates")
+    values = tuple(map(int, (token, z, x, y)))
+    try:
+        from app.services.overview_weather.service import WeatherService
+
+        WeatherService._coordinates(*values[1:])
+    except WeatherTileError:
+        raise HTTPException(400, "Invalid weather coordinates") from None
+    return values
+
+
+def require_product(product_id):
+    if product_id is None or not re.fullmatch(r"[a-f0-9]{64}", product_id):
+        raise HTTPException(404, "Weather product unavailable")

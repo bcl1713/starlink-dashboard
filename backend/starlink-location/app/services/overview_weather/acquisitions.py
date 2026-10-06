@@ -10,7 +10,7 @@ from .clock import WeatherClock
 from .protocol import WeatherPayload, WeatherUnavailable
 from .transport import PinnedWeatherTransport
 
-Key = tuple[str, int, int, int, int]
+Key = tuple[str, str, int, int, int, int]
 
 
 @dataclass
@@ -97,13 +97,14 @@ class WeatherAcquisitionPool:
         self, key, url, max_bytes, expected_type, ttl, validate, generation, deadline
     ):
         try:
-            async with self.admission.admit(deadline):
+            detail = key[-3] > 2
+            async with self.admission.admit(deadline, detail=detail):
                 payload = await self.transport.fetch(
                     url,
                     max_bytes,
                     expected_type,
                     deadline,
-                    before_attempt=self.admission.take_attempt,
+                    before_attempt=lambda: self.admission.take_attempt(detail=detail),
                 )
             validate(payload.body)
             if generation != self._generation or self._closed:
@@ -128,7 +129,7 @@ class WeatherAcquisitionPool:
             return [
                 (key, value)
                 for key, value in self._cache.items()
-                if key[0] != "metadata"
+                if key[-5] != "metadata"
             ]
 
         entries = png_entries()

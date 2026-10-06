@@ -2,7 +2,6 @@
 
 import asyncio
 import ipaddress
-import re
 import ssl
 from collections.abc import Awaitable, Callable
 from urllib.parse import urlsplit
@@ -12,17 +11,13 @@ import dns.exception
 
 from .clock import WeatherClock
 from .protocol import WeatherPayload, WeatherUnavailable, exchange_http, remaining
+from .rainviewer import valid_tile_path
 
 Resolver = Callable[[str, float], Awaitable[list[str]]]
 TlsOpener = Callable[
     [str, str, ssl.SSLContext, float],
     Awaitable[tuple[asyncio.StreamReader, asyncio.StreamWriter]],
 ]
-RADAR_PATH = re.compile(r"/v2/radar/[A-Za-z0-9_-]{1,128}")
-TILE_PATH = re.compile(
-    rf"(?:{RADAR_PATH.pattern}/512/2/[0-3]/[0-3]/2/1_1"
-    r"|/v2/coverage/0/512/2/[0-3]/[0-3]/0/0_0)\.png"
-)
 
 
 async def resolve_public(host: str, timeout: float) -> list[str]:
@@ -76,7 +71,7 @@ class PinnedWeatherTransport:
             )
             or (
                 parsed.netloc == "tilecache.rainviewer.com"
-                and not TILE_PATH.fullmatch(parsed.path)
+                and not valid_tile_path(parsed.path)
             )
             or parsed.netloc not in {"api.rainviewer.com", "tilecache.rainviewer.com"}
         ):
