@@ -15,6 +15,7 @@ from acceptance.weather_detail_comparison.capture import (
     opera_objects,
     rainviewer_frame,
 )
+from acceptance.weather_detail_comparison.capture_detail import plan_comparisons
 from acceptance.weather_detail_comparison.model import (
     CaptureSet,
     Snapshot,
@@ -179,3 +180,67 @@ def test_decompression_is_bounded_and_atomic(tmp_path):
         decompress(archive, tmp_path / "decoded", limit=100)
     assert not (tmp_path / "decoded").exists()
     assert not list(tmp_path.glob("*.partial"))
+
+
+def test_regional_comparison_uses_matching_observed_frame(tmp_path):
+    raw = snapshot(tmp_path)
+    metadata_path = tmp_path / "rainviewer.json"
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "host": "https://tilecache.rainviewer.com",
+                "radar": {"past": [{"time": 1791253200, "path": "/v2/radar/opaque"}]},
+            }
+        )
+    )
+    rv = Snapshot(
+        "rainviewer",
+        "radar",
+        1791253200,
+        1791253260,
+        "provider RGBA",
+        "EPSG:3857",
+        "https://api.rainviewer.com/public/weather-maps.json",
+        "test",
+        "RainViewer",
+        metadata_path,
+        hashlib.sha256(metadata_path.read_bytes()).hexdigest(),
+    )
+    captures = CaptureSet(
+        tmp_path,
+        (rv, raw),
+        {},
+        {
+            "regions": {
+                "mrms": {"latitude": 40, "longitude": -100, "rain_fraction": 0.8}
+            }
+        },
+    )
+    planned = plan_comparisons(captures)
+    assert planned.metadata["comparisons"][0]["delta_seconds"] == 0
+    assert planned.metadata["comparisons"][0]["rainviewer_identity"] == rv.identity
+
+
+def test_regional_comparison_refuses_unmatched_time(tmp_path):
+    from dataclasses import replace
+
+    raw = snapshot(tmp_path)
+    metadata_path = tmp_path / "rainviewer.json"
+    metadata_path.write_text(
+        json.dumps({"radar": {"past": [{"time": 1791252000, "path": "/v2/radar/old"}]}})
+    )
+    rv = replace(
+        raw,
+        source="rainviewer",
+        product="radar",
+        local_path=metadata_path,
+        sha256=hashlib.sha256(metadata_path.read_bytes()).hexdigest(),
+    )
+    captures = CaptureSet(
+        tmp_path,
+        (raw, rv),
+        {},
+        {"regions": {"mrms": {"latitude": 40, "longitude": -100}}},
+    )
+    with pytest.raises(ValueError, match="five minutes"):
+        plan_comparisons(captures)
