@@ -10,9 +10,10 @@ current application request and browser GPU limits.
 
 The user explicitly invited different providers and maps generated from raw
 data, and confirmed that international coverage matters. This assessment uses
-primary provider documentation checked on 2026-10-06. It is a documented
-comparison, not a completed image-quality or throughput benchmark. No accounts,
-subscriptions, ingest services or replacement integrations have been created.
+primary provider documentation checked on 2026-10-06 and a completed bounded
+[actual-source comparison](2026-10-06-weather-source-comparison-results.md). The
+comparison is offline research on the native globe; production refinement is not
+implemented. No subscriptions or ingest services have been created.
 
 The user subsequently chose to avoid ongoing API fees and prefer free or
 self-hosted sources. Paid managed providers below are comparison references;
@@ -32,19 +33,23 @@ this comparison or issue acceptance. Missing radar coverage continues to be
 shown as missing observations, pending a separate design for clearly labeled
 satellite or model fallbacks.
 
-Compare the existing free RainViewer path against locally generated tiles from
-MRMS and OPERA composites before finalizing the source. Begin with one or two
-immutable snapshots per region, observed precipitation only, no history,
-nowcasts or global models. Measure actual detail, input/download size, decode
-and tile-generation time, peak server RAM and browser requests. This is a
-bounded comparison, not authorization to deploy a worldwide ingest service.
+Retain RainViewer for issue 288. The completed comparison rendered 80 views from
+immutable RainViewer, MRMS and OPERA observations on the same native globe.
+Actual higher-zoom RainViewer tiles visibly sharpen regional storm edges; raw
+regional generation did not establish enough benefit to justify a new ingest
+service and cannot replace the required international coverage. Keep backend
+normalization and a small browser contract for later source changes.
 
-Retain RainViewer as the working source and international baseline during that
-comparison. MRMS plus OPERA alone cannot replace all existing coverage. If local
-generation wins, a separate design must specify the remaining observed regional
-feeds or a frame-consistent RainViewer fallback. Keep source adaptation on the
-backend and the browser rendering contract small; do not build a general
-multi-provider platform.
+Use radar opacity 0.40 as the production candidate, retaining independent
+coverage hatching. The comparison includes terrain, GEPs and dashboard labels,
+but not populated aircraft, routes or POIs. Final opacity selection therefore
+requires production acceptance with those overlays present.
+
+MRMS and OPERA generation was feasible under one CPU and 2 GiB: the combined
+process peaked at 610.5 MiB while generating 40 paired tiles per raw source.
+This is a research measurement, not an approved continuous-ingest resource
+budget or a per-source RAM comparison. See the results for timings, bytes,
+immutable identities, limitations and retained evidence.
 
 LibreWXR is useful prior work to inspect, but the pinned revision's deployment
 defaults are substantially larger than this dashboard's minimum hardware and its
@@ -250,11 +255,12 @@ Under the user's no-fee decision, only the self-hosted-resource branch of that
 last check applies. RainViewer's existing free-service suitability also remains
 part of deployment review; no paid plan is the proposed fallback.
 
-Maintain the current implementation while evaluating. Provider selection remains
-provisional until this evidence is available. The camera-driven loader remains
-necessary for efficient globe delivery whichever source is chosen; source
-selection can additionally change tile size, payload encoding, masks and the
-maximum meaningful zoom.
+Keep the current implementation until the camera-driven production plan passes
+acceptance. Source selection for this increment is RainViewer; the remaining
+checks below apply before shipping production refinement. The camera-driven
+loader remains necessary for efficient globe delivery whichever source is
+chosen; source selection can additionally change tile size, payload encoding,
+masks and the maximum meaningful zoom.
 
 [issue]: https://github.com/bcl1713/starlink-dashboard/issues/288
 [aviation-direction]:
