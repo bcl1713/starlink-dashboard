@@ -178,12 +178,18 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   await overview
     .getByRole('button', { name: 'Enter fullscreen overview' })
     .click();
-  await expect(
-    overview.getByRole('button', { name: 'Exit fullscreen overview' })
-  ).toBeVisible();
-  await overview
-    .getByRole('button', { name: 'Exit fullscreen overview' })
-    .click();
+  await expect
+    .poll(() => overview.evaluate(() => !!document.fullscreenElement))
+    .toBe(true);
+  await expect(overview.getByLabel('Weather status')).toBeVisible();
+  expect((await weatherSnapshot(overview)).canvas).toBe(initial.canvas);
+  await overview.screenshot({
+    path: info.outputPath('weather-fullscreen.png'),
+  });
+  await overview.evaluate(() => document.exitFullscreen());
+  await expect
+    .poll(() => overview.evaluate(() => !!document.fullscreenElement))
+    .toBe(false);
   await overview.setViewportSize({ width: 390, height: 844 });
   await expect(overview.getByLabel('Weather status')).toBeVisible();
   await overview.screenshot({ path: info.outputPath('weather-mobile.png') });
