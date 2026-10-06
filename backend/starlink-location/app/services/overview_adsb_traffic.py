@@ -80,6 +80,8 @@ class AdsbTrafficService:
             else:
                 self._prune(settings)
             keys = self._source_keys(self._acquisition_settings(settings))
+            if any(key.startswith("hex:") for key in keys):
+                keys.add("included")
             now = self._monotonic()
             for mapping in (self._sources, self._failures, self._retry):
                 for key in list(mapping):
@@ -201,24 +203,28 @@ class AdsbTrafficService:
             except TimeoutError:
                 pass
 
-    async def _fetch_source(self, key: str, generation: int) -> None:
+    async def _fetch_sources(self, keys: list[str], generation: int) -> bool:
+        # Included lookup failures belong to the shared batch, independent of
+        # list membership. Settings edits must not bypass a provider deadline.
+        military = keys == ["military"]
+        key = "military" if military else "included"
+        hex_codes = [source[4:] for source in keys] if not military else []
         if generation != self._generation or self._monotonic() < self._retry.get(
             key, 0
         ):
-            return
+            return False
         self._attempts += 1
-        previous = self._sources.get(key, AdsbSourceStatus(key=key))
         try:
             result = await (
                 self._provider.fetch_military()
-                if key == "military"
-                else self._provider.fetch_hex(key[4:])
+                if military
+                else self._provider.fetch_hexes(hex_codes)
             )
         except asyncio.CancelledError:
             raise
         except AdsbProviderError as error:
             if generation != self._generation:
-                return
+                return False
             failures = self._failures.get(key, 0) + 1
             self._failures[key] = failures
             delay = min(15 * 2 ** min(failures - 1, 5), 300)
@@ -228,26 +234,37 @@ class AdsbTrafficService:
             ):
                 delay = max(delay, error.retry_after_seconds)
             self._retry[key] = self._monotonic() + delay
-            self._sources[key] = AdsbSourceStatus(
-                key=key,
-                last_success_at_ms=previous.last_success_at_ms,
-                error="Provider acquisition failed",
-                retry_at_ms=(self._time() + delay) * 1000,
-            )
-            return
+            for source_key in keys:
+                # Keep attempted source status through settings round trips,
+                # while the shared key remains the acquisition gate.
+                self._retry[source_key] = self._retry[key]
+                previous = self._sources.get(
+                    source_key, AdsbSourceStatus(key=source_key)
+                )
+                self._sources[source_key] = AdsbSourceStatus(
+                    key=source_key,
+                    last_success_at_ms=previous.last_success_at_ms,
+                    error="Provider acquisition failed",
+                    retry_at_ms=(self._time() + delay) * 1000,
+                )
+            return False
         try:
             self._sync_settings()
         except (OSError, ValueError, TypeError):
-            return
+            return False
         if generation != self._generation:
-            return
-        self._failures.pop(key, None)
-        self._retry.pop(key, None)
-        self._sources[key] = AdsbSourceStatus(
-            key=key, last_success_at_ms=result.acquired_at_ms
-        )
+            return False
+        if military:
+            self._failures.pop(key, None)
+            self._retry.pop(key, None)
+        for source_key in keys:
+            self._retry.pop(source_key, None)
+            self._sources[source_key] = AdsbSourceStatus(
+                key=source_key, last_success_at_ms=result.acquired_at_ms
+            )
+        requested = set(hex_codes)
         for contact in result.contacts:
-            if key != "military" and contact.hex != key[4:]:
+            if not military and contact.hex not in requested:
                 continue
             previous_contact = self._contacts.get(contact.hex)
             if previous_contact is None or (
@@ -258,6 +275,7 @@ class AdsbTrafficService:
                 previous_contact.acquired_at_ms,
             ):
                 self._contacts[contact.hex] = contact
+        return True
 
     async def _acquire(self, settings: AdsbSettings, generation: int) -> None:
         async with self._lock:
@@ -266,15 +284,9 @@ class AdsbTrafficService:
             started, attempts = self._monotonic(), self._attempts
             try:
                 if settings.mode == "military_and_included":
-                    await self._fetch_source("military", generation)
+                    await self._fetch_sources(["military"], generation)
                 if generation != self._generation:
                     return
-                semaphore = asyncio.Semaphore(4)
-
-                async def fetch_hex(hex_code: str) -> None:
-                    async with semaphore:
-                        await self._fetch_source(f"hex:{hex_code}", generation)
-
                 pending = []
                 for hex_code in settings.include_hexes:
                     if hex_code in settings.exclude_hexes:
@@ -296,8 +308,21 @@ class AdsbTrafficService:
                         and contact.acquired_at_ms == source.last_success_at_ms
                     )
                     if not supplied_current:
-                        pending.append(fetch_hex(hex_code))
-                await asyncio.gather(*pending)
+                        pending.append(f"hex:{hex_code}")
+                # One request for ordinary lists. Sequential minimum chunking
+                # respects readsb's documented cap and stops on batch failure.
+                limit = AdsbLolProvider.HEX_BATCH_LIMIT
+                for offset in range(0, len(pending), limit):
+                    if not await self._fetch_sources(
+                        pending[offset : offset + limit], generation
+                    ):
+                        break
+                else:
+                    if pending:
+                        # Earlier successful chunks cannot reset backoff for a
+                        # later failing chunk. Recover only after the full batch.
+                        self._failures.pop("included", None)
+                        self._retry.pop("included", None)
                 if generation == self._generation:
                     self._prune(settings)
             finally:

@@ -243,6 +243,13 @@ seconds and expire at 120 seconds even through failures or repeated payloads.
 Browser receipt never renews a position. Live contacts start empty after backend
 restart.
 
+Explicitly included aircraft use one comma-separated provider lookup per shared
+acquisition cycle (up to the documented 1,000-code limit, then sequential
+chunks). Included batches share backoff and never fall back to individual
+requests. See
+[provider acquisition](../development/adsb-provider-acquisition.md) for the
+verified contract and operator guidance.
+
 Aircraft data: [adsb.lol](https://adsb.lol/),
 [ODbL license](https://opendatacommons.org/licenses/odbl/1-0/). Review provider
 usage before broad enablement. See the

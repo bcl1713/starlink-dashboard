@@ -4,14 +4,13 @@ import asyncio
 import time
 
 import httpx
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 import main
 from app.api import overview_adsb
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.overview_adsb_traffic import AdsbTrafficService
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 
 def test_normal_lifespan_persists_settings_but_not_contacts(monkeypatch, tmp_path):
@@ -100,9 +99,11 @@ async def test_global_workload_and_many_clients_share_one_acquisition(tmp_path):
                 )
             assert all(len(r.json()["contacts"]) == 2000 for r in replies)
             assert len({c["hex"] for c in replies[0].json()["contacts"]}) == 2000
-            assert requests == ["/v2/mil"] + [
-                f"/v2/hex/{i:06X}" for i in range(0, 50, 3)
-            ] + ["/v2/hex/ABCDEF"]
+            assert requests == [
+                "/v2/mil",
+                "/v2/hex/"
+                + ",".join([f"{i:06X}" for i in range(0, 50, 3)] + ["ABCDEF"]),
+            ]
             sources = {s["key"]: s for s in replies[0].json()["sources"]}
             assert sources["military"]["error"] is None
             assert sources["hex:ABCDEF"]["error"]

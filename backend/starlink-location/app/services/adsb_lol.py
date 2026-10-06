@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 
 import httpx
-
 from app.models.overview_adsb import AdsbAltitude, AdsbContact
 
 
@@ -102,6 +101,9 @@ class AdsbProviderError(Exception):
 
 
 class AdsbLolProvider:
+    # readsb's documented find_hex limit; larger acquisitions are chunked.
+    HEX_BATCH_LIMIT = 1000
+
     def __init__(
         self, client: httpx.AsyncClient, time_source: Callable[[], float] = time.time
     ) -> None:
@@ -112,9 +114,18 @@ class AdsbLolProvider:
         return await self._fetch("/v2/mil", True)
 
     async def fetch_hex(self, hex_code: str) -> AdsbProviderResult:
-        if re.fullmatch(r"[0-9A-F]{6}", hex_code) is None:
+        return await self.fetch_hexes([hex_code])
+
+    async def fetch_hexes(self, hex_codes: list[str]) -> AdsbProviderResult:
+        if any(re.fullmatch(r"[0-9A-F]{6}", code) is None for code in hex_codes):
             raise AdsbProviderError("Invalid ICAO hex")
-        return await self._fetch(f"/v2/hex/{hex_code}", False)
+        codes = list(dict.fromkeys(hex_codes))
+        if len(codes) > self.HEX_BATCH_LIMIT:
+            raise AdsbProviderError("ICAO hex batch exceeds provider limit")
+        if not codes:
+            return AdsbProviderResult([], self._time() * 1000)
+        # httpx preserves these escapes; a raw comma would remain unencoded.
+        return await self._fetch("/v2/hex/" + "%2C".join(codes), False)
 
     async def _fetch(self, path: str, military: bool) -> AdsbProviderResult:
         try:

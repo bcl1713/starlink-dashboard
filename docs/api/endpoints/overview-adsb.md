@@ -87,15 +87,31 @@ returns 503. Disabled returns empty contacts/sources. Restart preserves settings
 but starts with no live contacts or source cache.
 
 Outbound provider requests identify `starlink-dashboard` and its public project
-issue URL in the User-Agent header, satisfying the provider's contact requirement.
+issue URL in the User-Agent header, satisfying the provider's contact
+requirement.
 
-The application owns one 15-second acquisition cycle, with at most four
-individual requests at once. Current included contacts supplied by the current
-military response avoid an individual request; others use the hex endpoint.
-Per-source failures back off 15/30/60/120/240/300 seconds, respecting a longer
-Retry-After. Unexpired retry deadlines survive disable/re-enable, mode changes
-and removing/reintroducing a source. Sources recover independently. Browser
+The application owns one 15-second acquisition cycle. It collects normalized,
+deduplicated eligible included codes into one provider hex lookup, separated
+with `%2C` (for example `/v2/hex/00AB12%2C000002`, never `%252C`). An empty
+eligible list makes no included lookup. Current included contacts supplied by
+the current military response avoid the lookup; cached contacts omitted from
+that response do not. Included-only mode does not acquire the military feed
+unless the existing catalog demand lease is active.
+
+The documented underlying readsb lookup limit is 1,000 codes. Larger eligible
+lists use the minimum number of sequential chunks of at most 1,000 codes. A
+failed chunk stops the remaining chunks; no per-aircraft fallback occurs.
+Military and included acquisition recover independently. All included lookups
+share one failure count and retry deadline, including across changed chunk
+boundaries or list membership. Failures back off 15/30/60/120/240/300 seconds,
+respecting a longer Retry-After. Unexpired retry deadlines survive
+disable/re-enable, mode changes and removing/reintroducing codes. A successful
+batch updates the attempted `hex:HHHHHH` source statuses, even for missing
+contacts, but only returned valid positions update the contact cache. Browser
 reads never multiply these acquisitions.
+
+The verified provider contract and rate/size qualifications are recorded in
+[ADS-B provider acquisition](../../development/adsb-provider-acquisition.md).
 
 Position observation time is provider response `now` minus `seen_pos`, using
 `lastPosition`'s own age when appropriate. Message/receiver age is not
