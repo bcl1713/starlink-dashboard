@@ -5,10 +5,11 @@ import os
 import tempfile
 from pathlib import Path
 
-from app.models.aviation_grid import GfsSelection
-from app.models.aviation_weather import Contract
 from filelock import FileLock
 from pydantic import Field
+
+from app.models.aviation_grid import GfsSelection
+from app.models.aviation_weather import Contract
 
 
 class AviationSettings(Contract):
