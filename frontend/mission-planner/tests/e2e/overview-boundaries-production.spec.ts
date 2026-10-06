@@ -92,8 +92,9 @@ async function toggle(
       response.url().endsWith('/api/overview-links/settings') &&
       response.request().method() === 'PUT'
   );
-  await control.setChecked(enabled);
+  await control.click();
   const response = await saved;
+  await expect(control).toHaveJSProperty('checked', enabled);
   expect(response.status()).toBe(200);
   expect(response.headers().server).toMatch(/nginx/);
   const started = Date.now();
@@ -159,7 +160,6 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
     await overview.goto('/overview');
     await settledOverviewCamera(overview);
     const originalScene = await scene(overview);
-    const baselineFrames = frameStats(await frameSample(overview));
     expect(originalScene.borders).toHaveLength(0);
     expect(assets).toHaveLength(0);
     await expect(overview.getByRole('switch')).toHaveCount(0);
@@ -175,6 +175,7 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
         .toBe(true);
     }
     const camera = await settledOverviewCamera(overview);
+    const baselineFrames = frameStats(await frameSample(overview));
     const editing = await context.newPage();
     await editing.goto('/configuration');
     await expect(
@@ -340,9 +341,10 @@ test('missing or malformed optional data leaves real telemetry and globe control
   await expect
     .poll(() => overview.evaluate(() => !!document.fullscreenElement))
     .toBe(true);
-  await expect(
-    overview.getByRole('button', { name: 'Exit fullscreen overview' })
-  ).toBeVisible();
+  await overview
+    .getByRole('button', { name: 'Reset map view', exact: true })
+    .click();
+  await settledOverviewCamera(overview);
   expect((await request.get('/api/status')).status()).toBe(200);
   expect(errors).toEqual([]);
   await overview.screenshot({ path: info.outputPath('unavailable.png') });

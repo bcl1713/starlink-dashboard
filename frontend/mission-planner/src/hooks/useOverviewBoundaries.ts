@@ -19,8 +19,10 @@ export function useOverviewBoundaries(kind: BoundaryKind, enabled: boolean) {
       if (
         !response.ok ||
         Number(response.headers.get('content-length')) > MAX_BOUNDARY_BYTES
-      )
+      ) {
+        await response.body?.cancel().catch(() => {});
         throw new Error('Boundary data unavailable');
+      }
       if (!response.body) throw new Error('Boundary data unavailable');
       const reader = response.body.getReader();
       const decoder = new TextDecoder();

@@ -105,3 +105,33 @@ it('stops an oversized stream without waiting for its end or Content-Length', as
   expect(result.current.data).toBeUndefined();
   client.clear();
 });
+
+it.each([404, 200])(
+  'cancels rejected response bodies before buffering (HTTP %s)',
+  async (status) => {
+    let cancelled = false;
+    const stream = new ReadableStream<Uint8Array>({
+      cancel() {
+        cancelled = true;
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(stream, {
+            status,
+            headers: status === 200 ? { 'content-length': '4000001' } : {},
+          })
+      )
+    );
+    const { wrapper, client } = setup();
+    const { result } = renderHook(
+      () => useOverviewBoundaries('countries', true),
+      { wrapper }
+    );
+    await waitFor(() => expect(result.current.unavailable).toBe(true));
+    expect(cancelled).toBe(true);
+    client.clear();
+  }
+);
