@@ -278,5 +278,7 @@ def test_smoke_rejects_missing_worker_heartbeat(tmp_path: Path):
     assert result.returncode != 0
     probes = [c for c in calls if "exec" in c and any("GfsMailbox" in arg for arg in c)]
     assert probes
+    for probe in probes:
+        assert probe[probe.index("--user") + 1] == "1000:1000"
     assert len(probes) <= 15
     assert any("down" in c and "--volumes" in c for c in calls)

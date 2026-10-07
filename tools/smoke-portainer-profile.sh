@@ -93,7 +93,7 @@ probe http://mission-planner/api/v2/missions
 probe_worker() {
   for _ in $(seq 1 15); do
     if docker compose --project-name "$project" --file "$compose_file" \
-      exec -T starlink-location python -c \
+      exec -T --user 1000:1000 starlink-location python -c \
       'import time; from pathlib import Path; from app.services.aviation_weather.gfs.ipc import GfsMailbox; assert GfsMailbox(Path("/app/data/gfs-mailbox"), None).healthy(int(time.time() * 1000))'; then
       return 0
     fi
