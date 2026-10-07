@@ -113,6 +113,8 @@ class RouteETACalculator:
         self,
         poi_lat: float,
         poi_lon: float,
+        *,
+        route_segment_index: int | None = None,
     ) -> dict:
         """
         Project a POI onto the route path.
@@ -123,6 +125,8 @@ class RouteETACalculator:
         Args:
             poi_lat: POI latitude
             poi_lon: POI longitude
+            route_segment_index: Known route segment for a scheduled cue; when
+                supplied, projection uses this visit to a repeated location.
 
         Returns:
             Dictionary with:
@@ -146,6 +150,11 @@ class RouteETACalculator:
         best_waypoint_index = 0
         best_distance = float("inf")
         best_distance_along_route = 0.0
+        if (
+            route_segment_index is not None
+            and not 0 <= route_segment_index < len(self.route.points) - 1
+        ):
+            raise ValueError("Route segment index is outside the route")
 
         # Find closest point on route path by checking all segments
         distance_along_route = 0.0
@@ -165,7 +174,9 @@ class RouteETACalculator:
             )
 
             # Check if this is the closest projection so far
-            if dist_to_segment < best_distance:
+            if (
+                route_segment_index is None and dist_to_segment < best_distance
+            ) or i == route_segment_index:
                 best_distance = dist_to_segment
                 best_proj_lat = proj_lat
                 best_proj_lon = proj_lon

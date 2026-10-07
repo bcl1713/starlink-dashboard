@@ -176,7 +176,7 @@ def prepare_mission_timeline(
         coverage_enabled=resolved_sampler is not None,
     )
     apply_ka_events(rule_engine, coverage_result)
-    apply_x_azimuth_events(
+    warning_boundaries = apply_x_azimuth_events(
         rule_engine,
         mission,
         route,
@@ -197,6 +197,7 @@ def prepare_mission_timeline(
         transition_schedule=transition_schedule,
         coverage=coverage_result,
         parent_mission_id=parent_mission_id,
+        warning_boundaries=warning_boundaries,
     )
 
     apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
@@ -289,5 +290,8 @@ def publish_mission_pois(
     )
     for poi in artifacts.generated_pois:
         poi_manager.create_poi(
-            poi, active_route=artifacts.route, generated_source="mission-timeline"
+            poi,
+            active_route=artifacts.route,
+            generated_source="mission-timeline",
+            route_segment_index=poi._route_segment_index,
         )
