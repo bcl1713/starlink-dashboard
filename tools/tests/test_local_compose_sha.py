@@ -1,4 +1,4 @@
-"""Ordinary local Compose builds bind both images to the checked-out commit."""
+"""Ordinary local Compose builds bind all images to the checked-out commit."""
 
 import json
 import os
@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SERVICES = ("starlink-location", "mission-planner")
+SERVICES = ("starlink-location", "mission-planner", "gfs-worker")
 
 
 def _compose_config(tmp_path: Path, sha: str) -> dict:
@@ -127,3 +127,94 @@ def test_wrapper_propagates_compose_error(tmp_path: Path) -> None:
     )
     assert result.returncode == 37
     assert capture.read_text().splitlines()[-2:] == ["compose", "config"]
+
+
+def _wrapper_checkout(tmp_path: Path) -> Path:
+    shutil.copytree(ROOT / "scripts", tmp_path / "scripts")
+    for name in ("docker-compose.yml", "docker-compose.gfs.yml"):
+        shutil.copy(ROOT / name, tmp_path / name)
+    shutil.copy(ROOT / ".env.example", tmp_path / ".env")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "--allow-empty",
+            "-qm",
+            "test",
+        ],
+        cwd=tmp_path,
+        check=True,
+    )
+    return tmp_path / "scripts/compose.sh"
+
+
+def _wrapper_config(wrapper: Path, *args: str) -> dict:
+    env = {k: v for k, v in os.environ.items() if not k.startswith("COMPOSE_")}
+    result = subprocess.run(
+        [str(wrapper), *args, "config", "--format", "json"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return json.loads(result.stdout)
+
+
+def test_default_stack_has_worker_without_profile_and_shared_mounts(tmp_path: Path):
+    services = _wrapper_config(_wrapper_checkout(tmp_path))["services"]
+    worker = services["gfs-worker"]
+    assert not worker.get("profiles")
+    assert worker["cpus"] == 1.0 and int(worker["mem_limit"]) == 1024**3
+    assert "ports" not in worker
+    api_mounts = {v["target"]: v for v in services["starlink-location"]["volumes"]}
+    worker_mounts = {v["target"]: v for v in worker["volumes"]}
+    assert api_mounts["/app/data/gfs"]["read_only"]
+    for path in ("/app/data/gfs", "/app/data/gfs-mailbox", "/app/data/settings"):
+        assert api_mounts[path]["source"] == worker_mounts[path]["source"]
+    assert worker_mounts["/app/data/settings"]["read_only"]
+    # The worker must see the same persisted settings and IPC as the API.
+    assert (
+        worker["environment"]["AVIATION_SETTINGS_PATH"]
+        == "/app/data/settings/aviation-weather.json"
+    )
+
+
+def test_default_stack_keeps_native_local_overrides(tmp_path: Path):
+    wrapper = _wrapper_checkout(tmp_path)
+    (tmp_path / "docker-compose.override.yml").write_text(
+        'services:\n  starlink-location:\n    environment:\n      LOCAL_OVERRIDE: "preserved"\n'
+    )
+    services = _wrapper_config(wrapper)["services"]
+    assert services["starlink-location"]["environment"]["LOCAL_OVERRIDE"] == "preserved"
+    assert "gfs-worker" in services
+
+
+def test_dotenv_can_select_custom_stack(tmp_path: Path):
+    wrapper = _wrapper_checkout(tmp_path)
+    (tmp_path / "custom.yml").write_text(
+        "services:\n  custom:\n    image: alpine:3.20\n"
+    )
+    (tmp_path / ".env").write_text("COMPOSE_FILE=custom.yml\n")
+    assert set(_wrapper_config(wrapper)["services"]) == {"custom"}
+
+
+def test_existing_explicit_gfs_overlay_command_still_works(tmp_path: Path):
+    services = _wrapper_config(
+        _wrapper_checkout(tmp_path),
+        "-f",
+        "docker-compose.yml",
+        "-f",
+        "docker-compose.gfs.yml",
+        "--profile",
+        "gfs",
+    )["services"]
+    assert "gfs-worker" in services
+    for name in ("gfs-worker", "starlink-location"):
+        targets = [v["target"] for v in services[name]["volumes"]]
+        assert targets.count("/app/data/gfs") == 1
+        assert targets.count("/app/data/gfs-mailbox") == 1

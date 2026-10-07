@@ -1,37 +1,5 @@
-# Optional scientific worker; API only exchanges small control records and bytes.
+# Compatibility for existing explicit GFS overlay/profile startup commands.
+# The ordinary stack now includes the worker without a profile.
 services:
-  starlink-location:
-    environment:
-      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
-      GFS_ARTIFACT_PATH: /app/data/gfs
-    volumes:
-      - gfs_products:/app/data/gfs:ro
-      - gfs_mailbox:/app/data/gfs-mailbox
-
   gfs-worker:
     profiles: [gfs]
-    build:
-      context: ./backend/starlink-location
-      dockerfile: Dockerfile.gfs
-      args:
-        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
-    user: "1000:1000"
-    cpus: 1.0
-    mem_limit: 1g
-    init: true
-    stop_grace_period: 15s
-    restart: unless-stopped
-    environment:
-      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
-      GFS_ARTIFACT_PATH: /app/data/gfs
-      AVIATION_SETTINGS_PATH: /app/data/settings/aviation-weather.json
-    volumes:
-      - gfs_products:/app/data/gfs
-      - gfs_mailbox:/app/data/gfs-mailbox
-      - ./data/settings:/app/data/settings:ro
-    networks:
-      - starlink-net
-
-volumes:
-  gfs_products:
-  gfs_mailbox:

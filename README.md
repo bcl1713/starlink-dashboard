@@ -61,9 +61,13 @@ open http://localhost:5173                # Mission Planner
 After `git pull`, use `./scripts/compose.sh up -d --build --remove-orphans`
 again. This removes the retired Grafana container from an existing local stack.
 Its old data volume is retained; remove it separately only if its data is no
-longer needed. The wrapper passes the full checked-out HEAD SHA to both image
-builds. A dirty worktree is not an exact acceptance candidate; use a clean
-commit for acceptance.
+longer needed. Ordinary wrapper commands include the NOAA GFS worker, so
+`./scripts/compose.sh build` followed by `./scripts/compose.sh up -d` also
+starts model weather support. Winds and temperature remain disabled until
+enabled in Configuration. Local Compose overrides and custom file selection
+continue to work normally. The wrapper passes the full checked-out HEAD SHA
+to all three image builds. A dirty worktree is not an exact acceptance
+candidate; use a clean commit for acceptance.
 
 ---
 

@@ -188,9 +188,12 @@ isolated exact-SHA production-image verification, the Nginx proxy path, required
 CI, or rendered-browser evidence.
 
 After `git pull`, run `./scripts/compose.sh up -d --build` for the ordinary
-stack. The wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out HEAD
-before forwarding Compose flags. Raw `docker compose build` requires an explicit
-SHA, for example:
+stack, including the NOAA GFS worker from the base Compose configuration.
+The wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out HEAD before
+forwarding Compose flags. Local overrides and custom file selection retain
+Docker's normal behavior. The targeted development backend command above still
+starts only `starlink-location`; a full-stack `up` also starts GFS.
+Raw `docker compose build` requires an explicit SHA, for example:
 
 ```bash
 ACCEPTANCE_CANDIDATE_SHA=$(git rev-parse HEAD) docker compose build
