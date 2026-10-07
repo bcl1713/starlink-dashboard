@@ -1,9 +1,9 @@
 # Responsive Overview Layout
 
 Overview renders one clock group, one Three.js Canvas, one
-arrival/planning/legend group and five uPlot instances. Layout changes move the
-same DOM tree. Shared queries and source derivation remain unchanged; no mobile
-copies or extra polling are introduced.
+arrival/planning/legend group and up to five uPlot instances. Layout changes
+move the same DOM tree. Shared queries and source derivation remain unchanged;
+no mobile copies or extra polling are introduced.
 
 ## Available space and scrolling
 
@@ -15,7 +15,7 @@ is exposed through `data-layout` for CSS and browser verification.
 - Desktop requires at least `max(1500px, 93.75rem)` width and
   `max(1012px, 63.25rem)` height. Its five-card rail remains 440px wide.
   Measured panel overflow, overlap, or insufficient clear map height selects
-  stacked page flow, latched until viewport/root changes.
+  stacked page flow, latched until viewport/root or saved visibility changes.
 - Landscape requires at least 800px usable width, a readable 210–240px rail,
   560px map width, 220px stage height and 120px height clear of arrival content.
   Readability minima scale upward with enlarged root text. Very tall viewports
@@ -24,8 +24,9 @@ is exposed through `data-layout` for CSS and browser verification.
   cards have no nested scroller. In landscape, only the metrics rail scrolls.
 - When overlays cannot fit, panels move below a 360px renderer. Expanded legend,
   root font over 20px or measured oversized content triggers this escape. Within
-  a settled viewport, the flow decision stays stable until a resize/root change;
-  loading-induced decisions reset when initial queries settle.
+  a settled viewport, the flow decision stays stable until a resize/root or
+  visibility change; loading-induced decisions reset when initial queries
+  settle.
 
 Semantic content keys exclude changing observation timestamps/countdowns.
 Observed size changes still update the reserved rectangle. This avoids feedback
@@ -33,6 +34,30 @@ between reflowed panel height and the decision to reflow it. Safe-area insets
 and `dvh` are used with a `vh` fallback. Actual CSS dimensions select layout;
 system scaling, browser zoom and DPR are recorded separately in acceptance
 evidence.
+
+## Visibility and configuration
+
+Configuration keeps the existing tab and card style, with settings grouped by
+purpose. Overview contains panel visibility, shared history, camera behavior,
+route/POI layers, borders and clock definitions. Network Traffic contains link
+layers, configured satellite/GEP markers, satellite selection and individual
+metric panels. Aircraft Traffic contains the own-aircraft marker and flown trail
+alongside ADS-B selection. Weather contains radar, station reports, advisories
+and GFS layers. Displays, Terminal Controls and Diagnostics retain their roles.
+
+Shared visibility is saved through `/api/overview-links/settings` and reaches
+open Overview displays through the existing refresh cadence. Additive panel and
+core-layer preferences default on; older saved files preserve their existing
+appearance. Each graph can be hidden independently, and hiding all graphs
+removes the rail. Hidden clocks, arrival information and metrics release their
+layout space. Visibility changes recheck panel fit without waiting for a
+viewport resize. Layer switches hide their markers, labels and legend keys while
+keeping source data available for camera behavior and other independent layers.
+
+The Overview display identity is a small footer below the legend, visible even
+when its compact disclosure is closed. With the legend hidden, the same quiet
+identity remains below the map controls so Configuration can still identify the
+display. Fullscreen and camera controls stay reachable.
 
 ## Camera and input
 
