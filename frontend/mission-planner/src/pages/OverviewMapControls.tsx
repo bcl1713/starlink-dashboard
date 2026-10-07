@@ -51,6 +51,7 @@ export function OverviewMapControls({
       <button type="button" onClick={onReset}>
         Reset map view
       </button>
+      {intent === 'overview' && <p role="status">Route overview</p>}
       {intent === 'follow' && (
         <p role="status" id="overview-follow-status">
           {followUnavailable

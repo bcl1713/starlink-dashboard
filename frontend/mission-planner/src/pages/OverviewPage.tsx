@@ -768,10 +768,10 @@ export function OverviewPage() {
     [layout.mode]
   );
   const onReset = useCallback(() => {
-    setCameraIntent(followPreference ? 'follow' : 'automatic');
+    setCameraIntent('overview');
     setResetRevision((value) => value + 1);
     setExploration({ mode: layout.mode, active: false });
-  }, [layout.mode, followPreference]);
+  }, [layout.mode]);
   const displayHost = useOverviewDisplayHost(onReset);
   const followUnavailable = statusError
     ? 'Status refresh unavailable'

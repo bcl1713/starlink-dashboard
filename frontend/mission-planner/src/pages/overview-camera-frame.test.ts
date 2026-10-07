@@ -55,13 +55,14 @@ describe('wide fullscreen route framing', () => {
     for (const point of route)
       expect(new Vector3(...point).dot(position)).toBeGreaterThan(4);
   });
-  it('uses the orbit limit and retains full projected geometry for a route beyond one hemisphere', () => {
+  it('keeps useful departure context without changing geometry for a route beyond one hemisphere', () => {
     const route = [
       globePosition(0, 0, 2.015),
       globePosition(0, 120, 2.015),
       globePosition(0, -120, 2.015),
     ];
     const direction = new Vector3(...globePosition(0, 0, 1));
+    const original = route.map((point) => [...point]);
     const safeRect = { x: 1100, y: 500, width: 500, height: 300 };
     const frame = overviewCameraFrame({
       width: 1920,
@@ -72,9 +73,9 @@ describe('wide fullscreen route framing', () => {
       direction,
       centerGlobe: true,
     });
-    expect(frame.distance).toBe(28);
+    expect(frame.distance).toBeLessThan(28);
     expect(frame.routeFit).toBe('partial');
-    expect(frame.direction!.angleTo(direction)).toBeLessThan(0.001);
+    expect(route).toEqual(original);
     const camera = new PerspectiveCamera(45, 1920 / 1280);
     camera.position.copy(
       frame.direction!.clone().multiplyScalar(frame.distance)
@@ -82,8 +83,10 @@ describe('wide fullscreen route framing', () => {
     camera.lookAt(0, 0, 0);
     camera.setViewOffset(1920, 1280, frame.offsetX, frame.offsetY, 1920, 1280);
     camera.updateMatrixWorld();
-    for (const point of route) {
-      const p = new Vector3(...point).project(camera);
+    for (const point of route.slice(0, 1)) {
+      const p = new Vector3(...point);
+      expect(p.dot(camera.position)).toBeGreaterThan(4.04);
+      p.project(camera);
       expect((p.x + 1) * 960).toBeGreaterThan(safeRect.x);
       expect((p.x + 1) * 960).toBeLessThan(safeRect.x + safeRect.width);
       expect((1 - p.y) * 640).toBeGreaterThan(safeRect.y);

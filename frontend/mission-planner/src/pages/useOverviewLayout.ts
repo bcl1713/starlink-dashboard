@@ -179,6 +179,24 @@ export function useOverviewLayout(
                 stageHeight - (flow ? 24 : overlayHeight + 24)
               ),
             };
+      if (mode === 'landscape') {
+        // Compact controls share the satellite's upper band, extending left
+        // into the opening that the satellite width alone would reserve.
+        const controls = page
+          .querySelector('.overview-map-controls')
+          ?.getBoundingClientRect();
+        if (controls && controls.width > 0)
+          safeRect.width = Math.max(
+            1,
+            Math.min(
+              safeRect.width,
+              controls.left -
+                stage.getBoundingClientRect().left -
+                safeRect.x -
+                20
+            )
+          );
+      }
       if (mode === 'desktop' && fullscreen) {
         const stageBounds = stage.getBoundingClientRect();
         const metrics = page

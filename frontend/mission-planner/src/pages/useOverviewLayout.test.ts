@@ -8,6 +8,45 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+it('keeps the landscape camera opening left of the map buttons as well as the satellite panel', () => {
+  document.body.innerHTML =
+    '<div><main data-layout="landscape"><div class="overview-map-stage"><div class="overview-map-controls"></div><div class="overview-arrival"></div></div></main></div>';
+  const host = document.body.firstElementChild as HTMLElement;
+  const page = host.firstElementChild as HTMLElement;
+  const stage = page.firstElementChild as HTMLDivElement;
+  Object.defineProperties(host, {
+    clientWidth: { value: 1024 },
+    clientHeight: { value: 550 },
+    offsetWidth: { value: 1024 },
+    offsetHeight: { value: 550 },
+  });
+  Object.defineProperties(stage, {
+    clientWidth: { value: 756 },
+    clientHeight: { value: 440 },
+  });
+  vi.spyOn(stage, 'getBoundingClientRect').mockReturnValue(
+    new DOMRect(12, 100, 756, 440)
+  );
+  vi.spyOn(
+    page.querySelector('.overview-map-controls')!,
+    'getBoundingClientRect'
+  ).mockReturnValue(new DOMRect(432, 112, 160, 80));
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  );
+  const { result } = renderHook(() =>
+    useOverviewLayout({ current: page }, { current: stage }, 'loaded', true)
+  );
+  expect(result.current.mode).toBe('landscape');
+  expect(
+    result.current.safeRect.x + result.current.safeRect.width
+  ).toBeLessThanOrEqual(400);
+});
+
 it('retains the flow fallback when its scrollbar changes content width, then resets on frame resize', () => {
   document.body.innerHTML =
     '<div><main data-layout="stacked"><div class="overview-map-stage"><div class="overview-right-overlays"></div><div class="overview-arrival"></div></div></main></div>';
