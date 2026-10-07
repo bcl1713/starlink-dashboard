@@ -45,7 +45,7 @@ describe('overviewLinkSettingsApi', () => {
     'reads a confirmed pair %j without replacing false',
     async (pair) => {
       vi.mocked(apiClient.get).mockResolvedValue({ data: pair });
-      await expect(overviewLinkSettingsApi.get()).resolves.toEqual(pair);
+      await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject(pair);
       expect(apiClient.get).toHaveBeenCalledWith(
         '/api/overview-links/settings',
         {
@@ -72,9 +72,9 @@ describe('overviewLinkSettingsApi', () => {
     'sends only supplied fields and receives the full pair',
     async (changes, pair) => {
       vi.mocked(apiClient.put).mockResolvedValue({ data: pair });
-      await expect(overviewLinkSettingsApi.update(changes)).resolves.toEqual(
-        pair
-      );
+      await expect(
+        overviewLinkSettingsApi.update(changes)
+      ).resolves.toMatchObject(pair);
       expect(apiClient.put).toHaveBeenCalledWith(
         '/api/overview-links/settings',
         changes
@@ -129,7 +129,7 @@ it.each([undefined, null, 'true', 1])(
 it('retains a confirmed disabled aircraft history layer', async () => {
   const settings = { ...pairs[0], aircraft_history_enabled: false };
   vi.mocked(apiClient.get).mockResolvedValue({ data: settings });
-  await expect(overviewLinkSettingsApi.get()).resolves.toEqual(settings);
+  await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject(settings);
 });
 
 it('defaults aircraft history on for an older server response', async () => {
@@ -187,5 +187,32 @@ it.each(['country_borders_enabled', 'state_borders_enabled'])(
       data: { ...pairs[0], [field]: 'true' },
     });
     await expect(overviewLinkSettingsApi.get()).rejects.toThrow();
+  }
+);
+
+it('defaults new visibility fields on while preserving confirmed hidden panels', async () => {
+  vi.mocked(apiClient.get).mockResolvedValue({
+    data: {
+      ...pairs[0],
+      arrival_panel_enabled: false,
+      latency_panel_enabled: false,
+    },
+  });
+  await expect(overviewLinkSettingsApi.get()).resolves.toMatchObject({
+    operational_clocks_enabled: true,
+    aircraft_marker_enabled: true,
+    arrival_panel_enabled: false,
+    latency_panel_enabled: false,
+  });
+});
+it.each([null, 'false', 0])(
+  'rejects malformed panel preferences %j',
+  async (value) => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { ...pairs[0], arrival_panel_enabled: value },
+    });
+    await expect(overviewLinkSettingsApi.get()).rejects.toThrow(
+      'Invalid overview link settings'
+    );
   }
 );

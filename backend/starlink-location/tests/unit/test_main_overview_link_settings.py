@@ -34,6 +34,21 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        "operational_clocks_enabled": True,
+        "arrival_panel_enabled": True,
+        "planned_satellite_panel_enabled": True,
+        "map_status_enabled": True,
+        "legend_enabled": True,
+        "latency_panel_enabled": True,
+        "downlink_panel_enabled": True,
+        "uplink_panel_enabled": True,
+        "packet_loss_panel_enabled": True,
+        "obstruction_panel_enabled": True,
+        "aircraft_marker_enabled": True,
+        "planned_route_enabled": True,
+        "poi_markers_enabled": True,
+        "ground_entry_point_enabled": True,
+        "configured_satellites_enabled": True,
     }
     with TestClient(main.app) as client:
         assert client.get(URL).json() == {
@@ -43,6 +58,21 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
             "aircraft_history_enabled": True,
             "country_borders_enabled": False,
             "state_borders_enabled": False,
+            "operational_clocks_enabled": True,
+            "arrival_panel_enabled": True,
+            "planned_satellite_panel_enabled": True,
+            "map_status_enabled": True,
+            "legend_enabled": True,
+            "latency_panel_enabled": True,
+            "downlink_panel_enabled": True,
+            "uplink_panel_enabled": True,
+            "packet_loss_panel_enabled": True,
+            "obstruction_panel_enabled": True,
+            "aircraft_marker_enabled": True,
+            "planned_route_enabled": True,
+            "poi_markers_enabled": True,
+            "ground_entry_point_enabled": True,
+            "configured_satellites_enabled": True,
         }
         assert (
             main.app.state.overview_link_settings_store

@@ -1,3 +1,4 @@
+import type { OverviewVisibilityField } from '../services/overview-link-settings';
 import type {
   OverviewHistoryBundle,
   OverviewHistorySample,
@@ -5,6 +6,7 @@ import type {
 
 export interface OverviewMetricGraphDescriptor {
   id: string;
+  visibilityField?: OverviewVisibilityField;
   metric: string;
   label: string;
   displayLabel?: string;
@@ -15,6 +17,7 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
   [
     {
       id: 'latency',
+      visibilityField: 'latency_panel_enabled',
       metric: 'starlink_network_latency_ms_current',
       label: 'Network latency',
       displayLabel: 'Latency',
@@ -22,6 +25,7 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
     },
     {
       id: 'downlink',
+      visibilityField: 'downlink_panel_enabled',
       metric: 'starlink_network_throughput_down_mbps_current',
       label: 'Downlink throughput',
       displayLabel: 'Downlink',
@@ -29,6 +33,7 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
     },
     {
       id: 'uplink',
+      visibilityField: 'uplink_panel_enabled',
       metric: 'starlink_network_throughput_up_mbps_current',
       label: 'Uplink throughput',
       displayLabel: 'Uplink',
@@ -36,12 +41,14 @@ export const OVERVIEW_METRIC_GRAPHS: readonly OverviewMetricGraphDescriptor[] =
     },
     {
       id: 'packet-loss',
+      visibilityField: 'packet_loss_panel_enabled',
       metric: 'starlink_network_packet_loss_percent',
       label: 'Packet loss',
       unit: '%',
     },
     {
       id: 'obstruction',
+      visibilityField: 'obstruction_panel_enabled',
       metric: 'starlink_dish_obstruction_percent',
       label: 'Dish obstruction',
       displayLabel: 'Obstruction',

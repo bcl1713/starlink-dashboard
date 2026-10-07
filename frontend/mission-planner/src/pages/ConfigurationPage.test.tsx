@@ -355,6 +355,7 @@ it('keeps the independent weather control available when clock settings fail', a
     isError: true,
   } as ReturnType<typeof useOverviewClockSettings>);
   render(<ConfigurationPage />);
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Weather' }));
   const control = await screen.findByRole('switch', {
     name: 'Precipitation radar',
   });
@@ -362,4 +363,35 @@ it('keeps the independent weather control available when clock settings fail', a
   await waitFor(() =>
     expect((control as HTMLInputElement).disabled).toBe(false)
   );
+});
+
+it('groups weather and aircraft controls by purpose while keeping network settings focused', async () => {
+  mockLoadedClockSettings();
+  vi.mocked(useUpdateOverviewClockSettings).mockReturnValue({
+    mutate: vi.fn(),
+  } as never);
+  render(<ConfigurationPage />);
+  expect(
+    screen.getByRole('switch', { name: 'Operational clocks panel' })
+  ).not.toBeNull();
+  expect(
+    screen.queryByRole('switch', { name: 'Precipitation radar' })
+  ).toBeNull();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Network Traffic' }));
+  expect(
+    screen.getByRole('switch', { name: 'Starshield data link' })
+  ).not.toBeNull();
+  expect(screen.queryByRole('switch', { name: 'Aircraft history' })).toBeNull();
+  expect(
+    screen.getByRole('switch', { name: 'Network latency panel' })
+  ).not.toBeNull();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Aircraft Traffic' }));
+  expect(
+    screen.getByRole('switch', { name: 'Aircraft history' })
+  ).not.toBeNull();
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Weather' }));
+  expect(
+    await screen.findByRole('switch', { name: 'Precipitation radar' })
+  ).not.toBeNull();
+  expect(screen.getByRole('switch', { name: 'GFS winds' })).not.toBeNull();
 });

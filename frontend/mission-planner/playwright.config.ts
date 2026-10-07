@@ -9,6 +9,7 @@ export default defineConfig({
     '**/overview-weather-production.spec.ts',
     '**/overview-weather-comparison.spec.ts',
     '**/overview-window-production.spec.ts',
+    '**/overview-ui-cleanup-production.spec.ts',
     '**/overview-boundaries-production.spec.ts',
     '**/overview-aircraft-history-production.spec.ts',
     '**/simulation-run-production.spec.ts',

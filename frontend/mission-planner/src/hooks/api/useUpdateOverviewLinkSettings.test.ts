@@ -76,7 +76,7 @@ describe('useUpdateOverviewLinkSettings', () => {
       );
       await waitFor(() => expect(apiClient.put).toHaveBeenCalledTimes(1));
       expect(signal?.aborted).toBe(true);
-      expect(client.getQueryData(key)).toEqual(original);
+      expect(client.getQueryData(key)).toMatchObject(original);
       if (unmountBeforeSave) {
         editor.unmount();
         viewer.unmount();
@@ -85,20 +85,22 @@ describe('useUpdateOverviewLinkSettings', () => {
         put.resolve({ data: saved });
       });
       // The PUT pair must be visible before the invalidation GET completes.
-      expect(client.getQueryData(key)).toEqual(saved);
+      expect(client.getQueryData(key)).toMatchObject(saved);
       if (!unmountBeforeSave) {
-        await waitFor(() => expect(viewer.result.current.data).toEqual(saved));
-        expect(editor.result.current.query.data).toEqual(saved);
+        await waitFor(() =>
+          expect(viewer.result.current.data).toMatchObject(saved)
+        );
+        expect(editor.result.current.query.data).toMatchObject(saved);
       }
       // Simulate a transport that ignores abort and completes anyway.
       await act(async () => {
         stale.resolve({ data: original });
       });
-      expect(client.getQueryData(key)).toEqual(saved);
+      expect(client.getQueryData(key)).toMatchObject(saved);
       await act(async () => {
         fresh.resolve({ data: saved });
       });
-      expect(client.getQueryData(key)).toEqual(saved);
+      expect(client.getQueryData(key)).toMatchObject(saved);
     }
   );
 
@@ -121,11 +123,13 @@ describe('useUpdateOverviewLinkSettings', () => {
       put.resolve({ data: saved });
     });
     expect(signal?.aborted).toBe(true);
-    expect(client.getQueryData(key)).toEqual(saved);
+    expect(client.getQueryData(key)).toMatchObject(saved);
     await act(async () => {
       stale.resolve({ data: original });
     });
-    await waitFor(() => expect(viewer.result.current.data).toEqual(saved));
+    await waitFor(() =>
+      expect(viewer.result.current.data).toMatchObject(saved)
+    );
     await act(async () => {
       fresh.resolve({ data: saved });
     });
@@ -144,7 +148,7 @@ describe('useUpdateOverviewLinkSettings', () => {
       const { result } = renderHook(useUpdateOverviewLinkSettings, { wrapper });
       act(() => result.current.mutate({ x_band_link_enabled: false }));
       await waitFor(() => expect(result.current.isError).toBe(true));
-      expect(client.getQueryData(key)).toEqual(saved);
+      expect(client.getQueryData(key)).toMatchObject(saved);
       expect(apiClient.get).not.toHaveBeenCalled();
       const bothOff = {
         starshield_link_enabled: false,
@@ -159,7 +163,7 @@ describe('useUpdateOverviewLinkSettings', () => {
         await result.current.mutateAsync({ x_band_link_enabled: false });
       });
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
-      expect(client.getQueryData(key)).toEqual(bothOff);
+      expect(client.getQueryData(key)).toMatchObject(bothOff);
     }
   );
 
@@ -221,7 +225,7 @@ describe('useUpdateOverviewLinkSettings', () => {
     await act(async () => {
       firstRefetch.resolve({ data: saved });
     });
-    expect(viewer.result.current.data).toEqual({
+    expect(viewer.result.current.data).toMatchObject({
       starshield_link_enabled: false,
       x_band_link_enabled: false,
       orbital_traffic_enabled: false,

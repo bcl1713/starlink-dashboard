@@ -6,6 +6,7 @@ import {
   Monitor,
   Plane,
   Satellite,
+  CloudSun,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OverviewBoundarySettingsCard } from './OverviewBoundarySettingsCard';
@@ -32,19 +33,28 @@ const sections = [
     label: 'Overview',
     icon: Globe2,
     description:
-      'History, camera behavior, geographic layers, weather and operational clocks.',
+      'Information panels, camera behavior, mission layers and operational clocks.',
   },
   {
     value: 'traffic',
     label: 'Network Traffic',
     icon: Radio,
-    description: 'Map layers and network traffic paths shown on Overview.',
+    description:
+      'Network links, satellite markers and metric panels shown on Overview.',
   },
   {
     value: 'aircraft',
     label: 'Aircraft Traffic',
     icon: Plane,
-    description: 'Browse worldwide aircraft and manage the Overview selection.',
+    description:
+      'Own aircraft trail and markers, plus worldwide ADS-B traffic selection.',
+  },
+  {
+    value: 'weather',
+    label: 'Weather',
+    icon: CloudSun,
+    description:
+      'Precipitation radar, aviation reports, hazards and flight-level forecasts.',
   },
   {
     value: 'display',
@@ -121,9 +131,9 @@ export function ConfigurationPage() {
                 <OverviewCameraSettingsCard embedded />
               </div>
             </ConfigurationSection>
+            <OverviewLinkSettingsCard group="panels" />
+            <OverviewLinkSettingsCard group="map" />
             <OverviewBoundarySettingsCard />
-            <OverviewWeatherSettingsCard />
-            <AviationSettingsCard />
             {isLoading ? (
               <ConfigurationSection title="Operational clocks">
                 <p role="status">Loading operational clocks...</p>
@@ -153,6 +163,7 @@ export function ConfigurationPage() {
           >
             <OverviewLinkSettingsCard />
             <ManualXBandSelectionCard />
+            <OverviewLinkSettingsCard group="metrics" />
           </TabsContent>
           <TabsContent
             value="aircraft"
@@ -160,7 +171,17 @@ export function ConfigurationPage() {
             hidden={section !== 'aircraft'}
             className={panelClass}
           >
+            <OverviewLinkSettingsCard group="aircraft" />
             <OverviewAdsbSettingsCard active={section === 'aircraft'} />
+          </TabsContent>
+          <TabsContent
+            value="weather"
+            forceMount
+            hidden={section !== 'weather'}
+            className={panelClass}
+          >
+            <OverviewWeatherSettingsCard />
+            <AviationSettingsCard />
           </TabsContent>
           <TabsContent
             value="display"

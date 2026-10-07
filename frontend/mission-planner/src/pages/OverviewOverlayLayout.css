@@ -326,7 +326,10 @@
 }
 .overview-page[data-layout='desktop'] .overview-metric-history-panels {
   height: 100%;
-  grid-template-rows: auto repeat(5, minmax(0, 1fr));
+  grid-template-rows: auto repeat(
+      var(--overview-metric-count, 5),
+      minmax(0, 1fr)
+    );
 }
 .overview-page[data-layout='desktop'] .overview-metric-history-panels__header {
   font-size: 16px;
@@ -547,4 +550,22 @@
 
 .overview-page[data-layout='landscape'][data-paced-running='true'] {
   grid-template-columns: minmax(0, 1fr);
+}
+
+/* Hidden panels release their space without moving the map controls. */
+.overview-page[data-layout='desktop'][data-clocks-visible='false']
+  :is(.overview-metrics-overlays, .overview-right-overlays) {
+  top: 20px;
+}
+.overview-page[data-layout='desktop'][data-metrics-visible='false']
+  .overview-arrival-overlays {
+  left: 20px;
+}
+.overview-page[data-layout='landscape'][data-metrics-visible='false'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.overview-page[data-layout='landscape'][data-clocks-visible='false']:not(
+    [data-paced-running='true']
+  ) {
+  grid-template-rows: minmax(0, 1fr);
 }

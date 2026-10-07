@@ -517,3 +517,43 @@ describe('OverviewMetricHistoryPanels', () => {
     expect(screen.getByText('LAST 1 MIN')).toBeTruthy();
   });
 });
+
+it('hides individual graphs and removes the group when all graphs are disabled', () => {
+  const props = {
+    history: bundle(),
+    error: false,
+    status: statusFixture(),
+    statusError: false,
+    selectedWindowSeconds: 300,
+    nowMs: 105000,
+  };
+  const view = render(
+    <OverviewMetricHistoryPanels
+      {...props}
+      settings={{ latency_panel_enabled: false }}
+    />
+  );
+  expect(
+    view.container.querySelector('[data-metric-panel="latency"]')
+  ).toBeNull();
+  expect(view.container.querySelectorAll('[data-metric-panel]')).toHaveLength(
+    4
+  );
+  view.rerender(
+    <OverviewMetricHistoryPanels
+      {...props}
+      settings={{
+        latency_panel_enabled: false,
+        downlink_panel_enabled: false,
+        uplink_panel_enabled: false,
+        packet_loss_panel_enabled: false,
+        obstruction_panel_enabled: false,
+      }}
+    />
+  );
+  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
+  view.rerender(<OverviewMetricHistoryPanels {...props} settings={{}} />);
+  expect(view.container.querySelectorAll('[data-metric-panel]')).toHaveLength(
+    5
+  );
+});

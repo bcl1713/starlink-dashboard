@@ -72,7 +72,7 @@ describe('useOverviewLinkSettings', () => {
   it('retains confirmed false on refresh failure and recovers to another viewer’s pair', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: confirmed });
     const { result } = renderHook(useOverviewLinkSettings, { wrapper });
-    await waitFor(() => expect(result.current.data).toEqual(confirmed));
+    await waitFor(() => expect(result.current.data).toMatchObject(confirmed));
     // Subscribe to errors before a same-data refresh changes only query status.
     expect(result.current.isError).toBe(false);
     vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('refresh failed'));
@@ -80,7 +80,7 @@ describe('useOverviewLinkSettings', () => {
       await result.current.refetch();
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(result.current.data).toEqual(confirmed);
+    expect(result.current.data).toMatchObject(confirmed);
     const changed = {
       starshield_link_enabled: false,
       x_band_link_enabled: false,
@@ -93,7 +93,7 @@ describe('useOverviewLinkSettings', () => {
     await act(async () => {
       await result.current.refetch();
     });
-    await waitFor(() => expect(result.current.data).toEqual(changed));
+    await waitFor(() => expect(result.current.data).toMatchObject(changed));
     expect(result.current.isError).toBe(false);
   });
 
@@ -104,7 +104,7 @@ describe('useOverviewLinkSettings', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
-    expect(result.current.data).toEqual(confirmed);
+    expect(result.current.data).toMatchObject(confirmed);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4999);
     });
@@ -128,7 +128,7 @@ describe('useOverviewLinkSettings', () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(apiClient.get).toHaveBeenCalledTimes(3);
-    expect(result.current.data).toEqual(changed);
+    expect(result.current.data).toMatchObject(changed);
   });
   it('live Overview keeps reading link settings while unfocused', async () => {
     vi.useFakeTimers();
@@ -153,7 +153,7 @@ describe('useOverviewLinkSettings', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5001);
     });
-    expect(result.current.data).toEqual(changed);
+    expect(result.current.data).toMatchObject(changed);
     expect(apiClient.get).toHaveBeenCalledTimes(2);
     unmount();
     await act(async () => {

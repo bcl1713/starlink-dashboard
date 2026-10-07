@@ -4,6 +4,7 @@ import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 
 interface OverviewMapLegendProps {
   children?: ReactNode;
+  displayLabel?: string | null;
   collapsible?: boolean;
   countries?: boolean;
   subdivisions?: boolean;
@@ -21,6 +22,7 @@ interface OverviewMapLegendProps {
 /** Layer samples use the scene's draw guards, including retained geometry. */
 export function OverviewMapLegend({
   children,
+  displayLabel,
   collapsible = false,
   countries = false,
   subdivisions = false,
@@ -139,6 +141,14 @@ export function OverviewMapLegend({
         </ul>
         {children}
       </div>
+      {displayLabel && (
+        <p
+          className="overview-display-label"
+          aria-label="Overview display identity"
+        >
+          {displayLabel}
+        </p>
+      )}
     </aside>
   );
 }

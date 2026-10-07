@@ -20,6 +20,21 @@ class OverviewLinkSettingsUpdate(BaseModel):
     aircraft_history_enabled: StrictBool | None = None
     country_borders_enabled: StrictBool | None = None
     state_borders_enabled: StrictBool | None = None
+    operational_clocks_enabled: StrictBool | None = None
+    arrival_panel_enabled: StrictBool | None = None
+    planned_satellite_panel_enabled: StrictBool | None = None
+    map_status_enabled: StrictBool | None = None
+    legend_enabled: StrictBool | None = None
+    latency_panel_enabled: StrictBool | None = None
+    downlink_panel_enabled: StrictBool | None = None
+    uplink_panel_enabled: StrictBool | None = None
+    packet_loss_panel_enabled: StrictBool | None = None
+    obstruction_panel_enabled: StrictBool | None = None
+    aircraft_marker_enabled: StrictBool | None = None
+    planned_route_enabled: StrictBool | None = None
+    poi_markers_enabled: StrictBool | None = None
+    ground_entry_point_enabled: StrictBool | None = None
+    configured_satellites_enabled: StrictBool | None = None
 
     @model_validator(mode="after")
     def validate_supplied_fields(self) -> Self:

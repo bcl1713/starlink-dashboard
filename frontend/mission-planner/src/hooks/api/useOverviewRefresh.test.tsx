@@ -280,7 +280,7 @@ describe('Overview saved-state refresh', () => {
       ).toBe('error');
       expect(result.current.data).toEqual(confirmed);
       await tick(5001);
-      expect(result.current.data).toEqual(payload(endpoint));
+      expect(result.current.data).toMatchObject(payload(endpoint) as object);
       expect(result.current.data).not.toEqual(confirmed);
       expect(focusManager.isFocused()).toBe(false);
     }

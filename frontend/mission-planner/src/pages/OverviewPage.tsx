@@ -95,6 +95,7 @@ import { useOrbitalTraffic } from '@/hooks/useOrbitalTraffic';
 import { OrbitalSprites } from './orbital/OrbitalSprites';
 import { chooseTrafficPath } from './orbital/traffic-path';
 import { sceneToEcefKm } from './orbital/coordinates';
+import { OVERVIEW_METRIC_GRAPHS } from './overview-metric-history';
 import { OverviewMapLegend } from './OverviewMapLegend';
 import { OverviewMapStatus } from './OverviewMapStatus';
 import { useOverviewLayout } from './useOverviewLayout';
@@ -484,6 +485,21 @@ export function OverviewPage() {
   // Link activity stops on the first failed attempt and resumes on success.
   const statusRequestFailed = Boolean(statusError) || statusFailureCount > 0;
   const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
+  const showClocks = overviewLinkSettings?.operational_clocks_enabled !== false;
+  const showArrival = overviewLinkSettings?.arrival_panel_enabled !== false;
+  const showPlannedSatellite =
+    overviewLinkSettings?.planned_satellite_panel_enabled !== false;
+  const showMapStatus = overviewLinkSettings?.map_status_enabled !== false;
+  const showLegend = overviewLinkSettings?.legend_enabled !== false;
+  const showRoute =
+    overviewLinkSettings?.planned_route_enabled !== false && hasRenderableRoute;
+  const showPois = overviewLinkSettings?.poi_markers_enabled !== false;
+  const showConfiguredSatellites =
+    overviewLinkSettings?.configured_satellites_enabled !== false;
+  const showMetricPanels = OVERVIEW_METRIC_GRAPHS.some(
+    ({ visibilityField }) =>
+      !visibilityField || overviewLinkSettings?.[visibilityField] !== false
+  );
   const countryBoundaries = useOverviewBoundaries(
     'countries',
     overviewLinkSettings?.country_borders_enabled ?? false
@@ -527,6 +543,12 @@ export function OverviewPage() {
   const aircraftPosition = projectAircraftPosition(displayStatus ?? {});
   const aircraftScenePosition = projectAircraftScenePosition(displayStatus);
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
+  const showAircraft =
+    overviewLinkSettings?.aircraft_marker_enabled !== false &&
+    Boolean(aircraftPosition);
+  const showGroundEntryPoint =
+    overviewLinkSettings?.ground_entry_point_enabled !== false &&
+    Boolean(groundEntryPoint);
   const aircraftLatitude = aircraftScenePosition?.latitude;
   const aircraftLongitude = aircraftScenePosition?.longitude;
   const aircraftAltitudeFeet = aircraftScenePosition?.altitudeFeet;
@@ -746,6 +768,7 @@ export function OverviewPage() {
     plannedSatelliteState,
     mapMessages,
     pacedRunning,
+    overviewLinkSettings,
   ]);
   const contentReady =
     !isLoading &&
@@ -755,7 +778,13 @@ export function OverviewPage() {
     !isLoadingSatellites &&
     !isLoadingActiveXLink &&
     !isLoadingUpcomingPois;
-  const layout = useOverviewLayout(pageRef, stageRef, contentKey, contentReady);
+  const layout = useOverviewLayout(
+    pageRef,
+    stageRef,
+    contentKey,
+    contentReady,
+    JSON.stringify(overviewLinkSettings)
+  );
   const exploring = exploration.mode === layout.mode && exploration.active;
   if (exploration.mode !== layout.mode) {
     setExploration({ mode: layout.mode, active: false });
@@ -820,24 +849,30 @@ export function OverviewPage() {
       data-layout={layout.mode}
       data-map-exploring={exploring}
       data-paced-running={pacedRunning}
+      data-clocks-visible={showClocks}
+      data-metrics-visible={showMetricPanels && !pacedRunning}
     >
-      <div className="overview-top-overlays">
-        <OverviewClockPanel
-          clocks={overviewClockSettings?.clocks}
-          currentTime={missionNow}
-          isError={isOverviewClockSettingsError}
-          isLoading={isLoadingOverviewClockSettings}
-        />
-        {pacedRunning && (
-          <p
-            className="overview-clock-simulation-label"
-            aria-label="Simulation clock"
-          >
-            SIMULATED TIME
-            {simulationClock.stale ? ' · Refresh unavailable' : ''}
-          </p>
-        )}
-      </div>
+      {(showClocks || pacedRunning) && (
+        <div className="overview-top-overlays">
+          {showClocks && (
+            <OverviewClockPanel
+              clocks={overviewClockSettings?.clocks}
+              currentTime={missionNow}
+              isError={isOverviewClockSettingsError}
+              isLoading={isLoadingOverviewClockSettings}
+            />
+          )}
+          {pacedRunning && (
+            <p
+              className="overview-clock-simulation-label"
+              aria-label="Simulation clock"
+            >
+              SIMULATED TIME
+              {simulationClock.stale ? ' · Refresh unavailable' : ''}
+            </p>
+          )}
+        </div>
+      )}
       <div
         ref={captureStage}
         tabIndex={-1}
@@ -853,9 +888,11 @@ export function OverviewPage() {
           />
         )}
         <div className="overview-right-overlays">
-          <div className="overview-satellite-overlays">
-            <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
-          </div>
+          {showPlannedSatellite && (
+            <div className="overview-satellite-overlays">
+              <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
+            </div>
+          )}
           <OverviewMapControls
             exploring={exploring}
             intent={cameraIntent}
@@ -864,75 +901,90 @@ export function OverviewPage() {
             onReset={onReset}
           />
           <div className="overview-display-controls">
-            {displayHost.label && (
-              <span
-                className="overview-display-label"
-                aria-label="Overview display identity"
-              >
-                {displayHost.label}
-              </span>
-            )}
             <OverviewFullscreenControl />
           </div>
           <div className="overview-map-overlays">
-            <OverviewMapStatus messages={mapMessages} />
-            <OverviewWeatherStatus weather={weather} />
-            <AviationStatus
-              view={aviation}
-              onInspect={() =>
-                inspectWeather(
-                  inspectionReports(aviation).map((r) => r.selection)
-                )
-              }
-            />
-            {(countryBoundaries.loading ||
-              stateBoundaries.loading ||
-              countryBoundaries.unavailable ||
-              stateBoundaries.unavailable) && (
-              <p className="overview-boundary-status" role="status">
-                {countryBoundaries.loading && 'Country borders loading. '}
-                {stateBoundaries.loading && 'State/province borders loading. '}
-                {countryBoundaries.unavailable &&
-                  'Country borders unavailable. '}
-                {stateBoundaries.unavailable &&
-                  'State/province borders unavailable. '}
-              </p>
+            {showMapStatus && (
+              <>
+                <OverviewMapStatus messages={mapMessages} />
+                <OverviewWeatherStatus weather={weather} />
+                <AviationStatus
+                  view={aviation}
+                  onInspect={() =>
+                    inspectWeather(
+                      inspectionReports(aviation).map((r) => r.selection)
+                    )
+                  }
+                />
+                {(countryBoundaries.loading ||
+                  stateBoundaries.loading ||
+                  countryBoundaries.unavailable ||
+                  stateBoundaries.unavailable) && (
+                  <p className="overview-boundary-status" role="status">
+                    {countryBoundaries.loading && 'Country borders loading. '}
+                    {stateBoundaries.loading &&
+                      'State/province borders loading. '}
+                    {countryBoundaries.unavailable &&
+                      'Country borders unavailable. '}
+                    {stateBoundaries.unavailable &&
+                      'State/province borders unavailable. '}
+                  </p>
+                )}
+              </>
             )}
-            <OverviewMapLegend
-              countries={Boolean(countryBoundaries.data)}
-              subdivisions={Boolean(stateBoundaries.data)}
-              collapsible={layout.mode !== 'desktop'}
-              aircraft={Boolean(aircraftPosition)}
-              route={hasRenderableRoute}
-              history={showAircraftHistory}
-              groundEntryPoint={Boolean(groundEntryPoint)}
-              satellites={showSprites}
-              adsb={adsb.contacts.length > 0}
-              trafficPath={linkState.starshieldVisible}
-              plannedLink={linkState.xBandVisible}
-              linkState={activeXLink?.state ?? null}
-            >
-              <GfsStatus view={gfs} />
-            </OverviewMapLegend>
+            {showLegend ? (
+              <OverviewMapLegend
+                displayLabel={displayHost.label}
+                countries={Boolean(countryBoundaries.data)}
+                subdivisions={Boolean(stateBoundaries.data)}
+                collapsible={layout.mode !== 'desktop'}
+                aircraft={showAircraft}
+                route={showRoute}
+                history={showAircraftHistory}
+                groundEntryPoint={showGroundEntryPoint}
+                satellites={showSprites}
+                adsb={adsb.contacts.length > 0}
+                trafficPath={linkState.starshieldVisible}
+                plannedLink={linkState.xBandVisible}
+                linkState={activeXLink?.state ?? null}
+              >
+                <GfsStatus view={gfs} />
+              </OverviewMapLegend>
+            ) : (
+              displayHost.label && (
+                <span
+                  className="overview-display-label"
+                  aria-label="Overview display identity"
+                >
+                  {displayHost.label}
+                </span>
+              )
+            )}
           </div>
         </div>
-        <div className="overview-arrival-overlays">
-          <OverviewArrivalPanel state={arrivalState} />
+        {showArrival && (
+          <div className="overview-arrival-overlays">
+            <OverviewArrivalPanel state={arrivalState} />
+          </div>
+        )}
+        {showPois && (
           <ul className="overview-visually-hidden" aria-label="Map POIs">
             {upcomingPoiView.markers.map((poi) => (
               <li key={poi.poi_id}>{poi.name}</li>
             ))}
           </ul>
-        </div>
-        <ul
-          className="overview-visually-hidden"
-          aria-label="Configured map satellites"
-        >
-          {configuredXBandSatellites.map((satellite) => (
-            <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
-          ))}
-        </ul>
-        {groundEntryPoint && (
+        )}
+        {showConfiguredSatellites && (
+          <ul
+            className="overview-visually-hidden"
+            aria-label="Configured map satellites"
+          >
+            {configuredXBandSatellites.map((satellite) => (
+              <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
+            ))}
+          </ul>
+        )}
+        {showGroundEntryPoint && groundEntryPoint && (
           <p className="overview-visually-hidden">
             GEP · Ground entry point at {groundEntryPoint.latitude}°,{' '}
             {groundEntryPoint.longitude}°
@@ -978,7 +1030,7 @@ export function OverviewPage() {
         >
           <OverviewLabelLayout
             paths={[
-              routePoints,
+              ...(showRoute ? [routePoints] : []),
               ...(linkState.starshieldVisible ? [trafficPoints] : []),
               ...(linkState.xBandVisible && activeConfiguredXBandLink
                 ? [activeConfiguredXBandLink.points]
@@ -1049,7 +1101,7 @@ export function OverviewPage() {
               <CityLitGlobe sunPosition={sunPosition} />
             </group>
             <Atmosphere />
-            {hasRenderableRoute && (
+            {showRoute && (
               <AnimatedFlowLine
                 points={routePoints}
                 forward={routeFlow.forward}
@@ -1057,18 +1109,19 @@ export function OverviewPage() {
                 depthWrite={false}
               />
             )}
-            {upcomingPoiView.markers.map((poi) => (
-              <OverviewPoiMarker
-                key={poi.poi_id}
-                poi={poi}
-                color={urgencyColor(
-                  poi.estimated_arrival_time,
-                  new Date(missionNow)
-                )}
-                globeOccluder={globeOccluder}
-              />
-            ))}
-            {groundEntryPoint && (
+            {showPois &&
+              upcomingPoiView.markers.map((poi) => (
+                <OverviewPoiMarker
+                  key={poi.poi_id}
+                  poi={poi}
+                  color={urgencyColor(
+                    poi.estimated_arrival_time,
+                    new Date(missionNow)
+                  )}
+                  globeOccluder={globeOccluder}
+                />
+              ))}
+            {showGroundEntryPoint && groundEntryPoint && (
               <GroundEntryPointMarker
                 coordinate={groundEntryPoint}
                 globeOccluder={globeOccluder}
@@ -1108,14 +1161,15 @@ export function OverviewPage() {
                 depthWrite={false}
               />
             )}
-            {configuredXBandSatellites.map((satellite) => (
-              <ConfiguredXBandSatelliteMarker
-                key={`${satellite.satelliteId}-${satellite.longitude}`}
-                satelliteId={satellite.satelliteId}
-                position={satellite.position}
-                globeOccluder={globeOccluder}
-              />
-            ))}
+            {showConfiguredSatellites &&
+              configuredXBandSatellites.map((satellite) => (
+                <ConfiguredXBandSatelliteMarker
+                  key={`${satellite.satelliteId}-${satellite.longitude}`}
+                  satelliteId={satellite.satelliteId}
+                  position={satellite.position}
+                  globeOccluder={globeOccluder}
+                />
+              ))}
             {showAircraftHistory && (
               <AnimatedFlowLine
                 points={aircraftHistoryPoints}
@@ -1125,7 +1179,7 @@ export function OverviewPage() {
                 core={AIRCRAFT_HISTORY_LINE.core}
               />
             )}
-            {aircraftPosition && (
+            {showAircraft && aircraftPosition && (
               <AircraftMarker
                 coordinate={aircraftPosition}
                 position={aircraftScenePosition?.position ?? null}
@@ -1159,9 +1213,10 @@ export function OverviewPage() {
           />
         </Canvas>
       </div>
-      {!pacedRunning && (
+      {!pacedRunning && showMetricPanels && (
         <div className="overview-metrics-overlays">
           <OverviewMetricHistoryPanels
+            settings={overviewLinkSettings}
             status={status}
             statusError={Boolean(statusError)}
             history={overviewHistory}
