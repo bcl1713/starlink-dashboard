@@ -477,6 +477,60 @@ describe('OverviewMetricHistoryPanel', () => {
     expect(plot.create).toHaveBeenCalledTimes(1);
     expect(plot.setData).not.toHaveBeenCalled();
   });
+  it.each(['before visibility', 'after visibility', 'without visibility'])(
+    'reanchors fresh history after a long sleep arriving %s',
+    (arrival) => {
+      const view = render(panel());
+      act(() => vi.advanceTimersByTime(2_000));
+      const surface = view.container.querySelector(
+        '.overview-metric-history__surface'
+      ) as HTMLElement;
+      const visibility = (hidden: boolean) => {
+        Object.defineProperty(document, 'hidden', {
+          configurable: true,
+          value: hidden,
+        });
+        act(() => document.dispatchEvent(new Event('visibilitychange')));
+      };
+      if (arrival !== 'without visibility') visibility(true);
+      act(() => vi.advanceTimersByTime(1_200_000));
+      if (arrival === 'after visibility') visibility(false);
+      view.rerender(panel(bundle(1322), false, 1_322_000));
+      if (arrival === 'before visibility') visibility(false);
+      const offset = Number(
+        committedTransform(surface).match(/translate3d\(([-\d.]+)px/)?.[1]
+      );
+      expect(Math.abs(offset)).toBeLessThanOrEqual(100);
+      expect(transitionSeconds(surface)).toBeLessThanOrEqual(7.5);
+      expect(plot.create).toHaveBeenCalledTimes(1);
+      expect(plot.setData.mock.calls.at(-1)![0][0].at(-1)).toBe(1322);
+      expect(screen.queryByRole('status')).toBeNull();
+    }
+  );
+  it('catches up a small delayed rebase within the next overscan interval', () => {
+    const view = render(panel());
+    act(() => vi.advanceTimersByTime(8_000));
+    view.rerender(panel(bundle(128), false, 128_000));
+    const surface = view.container.querySelector(
+      '.overview-metric-history__surface'
+    ) as HTMLElement;
+    // Preserve the half-second correction, but do not carry its delay forever.
+    expect(committedTransform(surface)).toContain(
+      'translate3d(6.666666666666667px'
+    );
+    expect(transitionSeconds(surface)).toBeLessThanOrEqual(7.5);
+  });
+  it('keeps UTC ticks on the accelerated catch-up edge', () => {
+    const view = render(panel());
+    act(() => vi.advanceTimersByTime(5_000));
+    view.rerender(panel(bundle(130), false, 130_000));
+    act(() => vi.advanceTimersByTime(3_000));
+    expect(
+      view.container.querySelector(
+        '.overview-metric-history__time-axis span:last-child'
+      )?.textContent
+    ).toBe('00:02:02 UTC');
+  });
   it('marks an initial failed fetch unavailable without claiming last-known data', () => {
     const view = render(panel(null, true));
     expect(screen.getByRole('status').textContent).toBe('History unavailable');

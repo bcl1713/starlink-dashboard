@@ -138,6 +138,7 @@ export function OverviewMetricHistoryPanel({
     windowSeconds: selectedWindowSeconds,
     end: validHistory?.end_timestamp_seconds,
     startedMs: monotonicMs,
+    rate: 1,
     initialElapsed: validHistory
       ? Math.min(
           BUFFER_SECONDS,
@@ -150,6 +151,7 @@ export function OverviewMetricHistoryPanel({
       windowSeconds: selectedWindowSeconds,
       end: validHistory?.end_timestamp_seconds,
       startedMs: monotonicMs,
+      rate: 1,
       initialElapsed: validHistory
         ? Math.min(
             BUFFER_SECONDS,
@@ -163,20 +165,34 @@ export function OverviewMetricHistoryPanel({
       windowSeconds: selectedWindowSeconds,
       end: validHistory.end_timestamp_seconds,
       startedMs: monotonicMs,
+      rate: 1,
       initialElapsed:
         Math.min(
           BUFFER_SECONDS,
           previous.initialElapsed +
-            Math.max(0, monotonicMs - previous.startedMs) / 1000
+            (Math.max(0, monotonicMs - previous.startedMs) / 1000) *
+              previous.rate
         ) +
         (previous.end ?? validHistory.end_timestamp_seconds) -
         validHistory.end_timestamp_seconds,
     };
+    // A suspended tab or repeated compositor delays can leave the carried edge
+    // outside the new raster. Fresh data must recover locally, not animate an
+    // unbounded positive translation back from an obsolete time origin.
+    if (scroll.current.initialElapsed < -BUFFER_SECONDS)
+      scroll.current.initialElapsed = Math.max(
+        0,
+        Math.min(
+          BUFFER_SECONDS,
+          currentSeconds - validHistory.end_timestamp_seconds
+        )
+      );
   }
   const scrollElapsed = Math.min(
     BUFFER_SECONDS,
     scroll.current.initialElapsed +
-      Math.max(0, monotonicMs - scroll.current.startedMs) / 1000
+      (Math.max(0, monotonicMs - scroll.current.startedMs) / 1000) *
+        scroll.current.rate
   );
   const elapsed = validHistory
     ? currentSeconds - validHistory.end_timestamp_seconds
@@ -197,7 +213,8 @@ export function OverviewMetricHistoryPanel({
     BUFFER_SECONDS,
     frozen.current?.elapsed ??
       scroll.current.initialElapsed +
-        Math.max(0, monotonicMs - scroll.current.startedMs) / 1000
+        (Math.max(0, monotonicMs - scroll.current.startedMs) / 1000) *
+          scroll.current.rate
   );
   // The bundle can be current while this metric's last real sample is old.
   // Projected times end in a real observed/rollup sample, never a gap marker.
@@ -314,7 +331,14 @@ export function OverviewMetricHistoryPanel({
             overscanWidth;
       }
     }
-    const committedElapsed = -(offset / width) * windowSeconds;
+    let committedElapsed = -(offset / width) * windowSeconds;
+    if (
+      committedElapsed < -BUFFER_SECONDS ||
+      committedElapsed > BUFFER_SECONDS
+    ) {
+      committedElapsed = Math.max(0, Math.min(BUFFER_SECONDS, elapsed));
+      offset = -(committedElapsed / windowSeconds) * width;
+    }
     scroll.current.initialElapsed = committedElapsed;
     scroll.current.startedMs = performance.now();
     if (frozen.current) frozen.current.elapsed = committedElapsed;
@@ -348,7 +372,14 @@ export function OverviewMetricHistoryPanel({
     plot.current.setScale('y', yRange);
     // Flush the rebase before changing the transition endpoint.
     node.getBoundingClientRect();
-    const remaining = Math.max(0, BUFFER_SECONDS - committedElapsed);
+    // Small compensation stays continuous, but catches up within one buffer
+    // interval instead of carrying every transition-start delay indefinitely.
+    const remaining = Math.max(
+      0,
+      BUFFER_SECONDS - Math.max(0, committedElapsed)
+    );
+    scroll.current.rate =
+      remaining > 0 ? (BUFFER_SECONDS - committedElapsed) / remaining : 1;
     if (!hidden && !error && !reducedMotion && remaining > 0) {
       node.style.transition = `transform ${remaining}s linear`;
       node.style.transform = `translate3d(${motionOffsetPixels({ elapsedSeconds: BUFFER_SECONDS, widthPixels: width, windowSeconds, bufferSeconds: BUFFER_SECONDS })}px, 0, 0)`;
