@@ -3,7 +3,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHECKER_PATH = REPO_ROOT / "tools" / "check_publish_ghcr_workflow.py"
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "publish-ghcr.yml"
@@ -35,6 +34,40 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
+    def test_gfs_worker_is_published_and_missing_worker_is_rejected(self) -> None:
+        checker = load_checker_module()
+        entries = checker.workflow_entries(WORKFLOW_PATH)
+        worker = next((e for e in entries if e["image"].endswith("/gfs-worker")), None)
+        self.assertEqual(
+            worker,
+            {
+                "image": "ghcr.io/${{ github.repository }}/gfs-worker",
+                "context": "./backend/starlink-location",
+                "file": "./backend/starlink-location/Dockerfile.gfs",
+            },
+        )
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        row = """          - image: ghcr.io/${{ github.repository }}/gfs-worker
+            context: ./backend/starlink-location
+            file: ./backend/starlink-location/Dockerfile.gfs
+"""
+        self.assertIn(
+            "missing publish matrix images: gfs-worker",
+            self.validate_workflow_text(text.replace(row, "")),
+        )
+
+    def test_inventory_cannot_silently_omit_worker_package(self) -> None:
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertIn(
+            "for package in starlink-location mission-planner prometheus gfs-worker; do",
+            text,
+        )
+        mutated = text.replace("prometheus gfs-worker; do", "prometheus; do")
+        self.assertIn(
+            "GHCR inventory must query complete user package versions",
+            self.validate_workflow_text(mutated),
+        )
+
     def test_rejects_missing_candidate_sha_build_argument(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated_workflow = workflow_text.replace(
@@ -64,8 +97,7 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             "            type=ref,event=tag\n",
             "          tags: |\n"
             "            type=sha,format=long,prefix=sha-\n"
-            "            type=ref,event=tag\n"
-            + candidate_sha_build_arg,
+            "            type=ref,event=tag\n" + candidate_sha_build_arg,
         )
 
         errors = self.validate_workflow_text(mutated_workflow)
@@ -135,7 +167,7 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         errors = self.validate_workflow_text(workflow_text + duplicate_entry)
 
-        self.assertIn("publish matrix must contain exactly 3 entries, got 4", errors)
+        self.assertIn("publish matrix must contain exactly 4 entries, got 5", errors)
         self.assertIn("duplicate publish matrix images: starlink-location", errors)
 
     def test_rejects_missing_expected_publish_matrix_row(self) -> None:
@@ -145,9 +177,11 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             file: ./deployment/prometheus/Dockerfile
 """
 
-        errors = self.validate_workflow_text(workflow_text.replace(prometheus_entry, ""))
+        errors = self.validate_workflow_text(
+            workflow_text.replace(prometheus_entry, "")
+        )
 
-        self.assertIn("publish matrix must contain exactly 3 entries, got 2", errors)
+        self.assertIn("publish matrix must contain exactly 4 entries, got 3", errors)
         self.assertIn("missing publish matrix images: prometheus", errors)
 
     def test_rejects_retention_without_publish_dependency(self) -> None:
@@ -213,13 +247,15 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             errors,
         )
 
-    def test_rejects_artifact_deletion_that_is_not_exact_selected_id_endpoint(self) -> None:
+    def test_rejects_artifact_deletion_that_is_not_exact_selected_id_endpoint(
+        self,
+    ) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         errors = self.validate_workflow_text(
             workflow_text.replace(
-                "gh api --method DELETE \"repos/${{ github.repository }}/actions/artifacts/$artifact_id\"",
-                "gh api --method DELETE \"repos/${{ github.repository }}/actions/artifacts\"",
+                'gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"',
+                'gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts"',
             )
         )
 
@@ -249,7 +285,7 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             workflow_text.replace(
                 "          set -euo pipefail\n          for package",
                 "          set -euo pipefail\n"
-                "          gh api --method DELETE \"orgs/${{ github.repository_owner }}/packages/container/example/versions/1\"\n"
+                '          gh api --method DELETE "orgs/${{ github.repository_owner }}/packages/container/example/versions/1"\n'
                 "          for package",
             )
         )
@@ -429,7 +465,9 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("retention job must upload the selected artifact plan", errors)
 
-    def test_accepts_node24_retention_upload_with_exact_default_archive_contract(self) -> None:
+    def test_accepts_node24_retention_upload_with_exact_default_archive_contract(
+        self,
+    ) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         self.assertIn("uses: actions/upload-artifact@v7", workflow_text)
         self.assertEqual(self.validate_workflow_text(workflow_text), [])
@@ -453,7 +491,10 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             ("name: publish-retention-plan-${{ github.run_id }}", "name: other-plan"),
             ("path: retention/artifact-plan.json", "path: retention/other.json"),
             ("if-no-files-found: error", "if-no-files-found: warn"),
-            ("if-no-files-found: error", "archive: false\n          if-no-files-found: error"),
+            (
+                "if-no-files-found: error",
+                "archive: false\n          if-no-files-found: error",
+            ),
         ):
             with self.subTest(original=original, replacement=replacement):
                 mutated = workflow_text.replace(original, replacement)
@@ -472,7 +513,9 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("retention job must upload the selected artifact plan", errors)
 
-    def test_rejects_equivalently_disabled_upload_step_with_inline_comment(self) -> None:
+    def test_rejects_equivalently_disabled_upload_step_with_inline_comment(
+        self,
+    ) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated_workflow = workflow_text.replace(
             "      - name: Upload retention plan\n        uses:",

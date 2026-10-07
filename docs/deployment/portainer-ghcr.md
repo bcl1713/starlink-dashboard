@@ -26,8 +26,8 @@ The Portainer template has these invariants:
 - Select all application and monitoring images with the one immutable
   `STARLINK_IMAGE_TAG` value. Use a reviewed SHA-derived tag or versioned
   release tag, never a mutable tag such as `latest`.
-- The backend and Mission Planner use their GHCR application images. Prometheus
-  also uses a GHCR image built for this profile.
+- The backend, Mission Planner, GFS worker and Prometheus use GHCR images from
+  the same immutable selection.
 - Prometheus rules/configuration are baked into its monitoring image. The
   Portainer template must not mount repository-relative `monitoring/` paths.
 - The template joins the pre-existing external `proxy` network without creating
@@ -72,6 +72,38 @@ selection takes precedence and is stored under
 `STARLINK_APP_DATA_PATH/settings/overview-history.json`. This display/query
 window is independent of Prometheus database retention (`PROMETHEUS_RETENTION`).
 
+## NOAA GFS Weather
+
+Both `deployment/portainer-ghcr-compose.yml` and the Forge variant
+`deployment/portainer-forge-dev-compose.yml` include the private `gfs-worker`
+service. Select a tag that provides all four images: backend, Mission Planner,
+Prometheus and GFS worker. The publishing workflow builds the worker from
+`backend/starlink-location/Dockerfile.gfs` and inventories its GHCR versions
+alongside the other packages.
+
+No additional host-path key is required. The worker reads aviation settings
+from the existing `STARLINK_APP_DATA_PATH/settings` directory through a
+read-only mount. Project-scoped `gfs_products` and `gfs_mailbox` named volumes
+share normalized products and control records with the API; the API mounts
+products read-only. Retain these volumes across redeployments and restarts:
+they also preserve request quotas and product admission clocks. Keep the stack
+project identity stable and do not use `down --volumes` for a retained
+installation.
+
+The worker has no published port or proxy alias and joins only the private
+application network. It retains one CPU and a 1 GiB memory limit, an init
+process and a fifteen-second shutdown grace period. Its restart policy matches
+the on-demand stack. Winds and temperature remain default off in Configuration;
+without active model demand, the worker performs no NOAA acquisition.
+
+For non-live verification, confirm all four services start, then enable winds
+and temperature in Configuration and select FL300 with a +3 h horizon. Keep
+Overview visible while acquisition completes. Its same-origin aviation catalog
+should admit both products, and the expanded NOAA GFS status should show the
+actual model run and valid time. Confirm settings and model availability survive
+a stack restart using the same project and persisted data. Missing or failed
+model data remains unknown weather; core dashboard health remains independent.
+
 ## Overview Data Link Persistence
 
 The independent Configuration switches **Starshield data link** and **X-band
@@ -111,7 +143,8 @@ Before an authorized non-live update:
 2. Record the current immutable tag and the intended replacement in the approved
    change record. The current tag is the rollback selection.
 3. Verify that the selected GHCR images correspond to the reviewed source
-   revision and include the backend, Mission Planner, and Prometheus images.
+   revision and include the backend, Mission Planner, Prometheus and GFS worker
+   images.
 4. Verify the Git-stack template uses the three required host-path keys, the
    external `proxy` network, stable aliases, and no repository-relative
    monitoring mounts.
@@ -163,11 +196,15 @@ repository.
 ## Rollback
 
 If an authorized non-live update fails, set `STARLINK_IMAGE_TAG` back to the
-recorded prior immutable selection and use the same Git-stack update flow:
+recorded prior immutable selection and use the matching Git-stack template
+revision. Tags published before GFS worker support have only three images;
+rollback to those tags requires their earlier template without the worker
+service. Retain the GFS volumes so a later update can reuse them. Use the same
+Git-stack update flow:
 
 - keep image pulling enabled so the known-good selection can be retrieved
 - keep image pruning disabled so rollback images remain available
-- preserve all three persistence categories and their existing host paths
+- preserve all three host-path categories and the GFS named volumes
 - preserve the external `proxy` network, aliases, and same-origin routing
 
 Do not roll back by using `latest`, recreating persistent storage, replacing

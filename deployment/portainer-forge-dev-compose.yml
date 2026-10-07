@@ -14,6 +14,8 @@ services:
       SIMULATION_MODE: ${SIMULATION_MODE:-true}
       STARLINK_DISH_HOST: ${STARLINK_DISH_HOST:-192.168.100.1}
       STARLINK_DISH_PORT: ${STARLINK_DISH_PORT:-9200}
+      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
+      GFS_ARTIFACT_PATH: /app/data/gfs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -27,6 +29,40 @@ services:
       - type: bind
         source: ${STARLINK_ROUTE_DATA_PATH:?Set the persistent route data host path}
         target: /data
+      - type: volume
+        source: gfs_products
+        target: /app/data/gfs
+        read_only: true
+      - type: volume
+        source: gfs_mailbox
+        target: /app/data/gfs-mailbox
+    networks:
+      starlink-net: {}
+
+  # Private scientific worker; idle while model weather is disabled.
+  gfs-worker:
+    image: ghcr.io/bcl1713/starlink-dashboard/gfs-worker:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    restart: "no"
+    user: "1000:1000"
+    cpus: 1.0
+    mem_limit: 1g
+    init: true
+    stop_grace_period: 15s
+    environment:
+      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
+      GFS_ARTIFACT_PATH: /app/data/gfs
+      AVIATION_SETTINGS_PATH: /app/data/settings/aviation-weather.json
+    volumes:
+      - type: volume
+        source: gfs_products
+        target: /app/data/gfs
+      - type: volume
+        source: gfs_mailbox
+        target: /app/data/gfs-mailbox
+      - type: bind
+        source: ${STARLINK_APP_DATA_PATH:?Set the persistent application data host path}/settings
+        target: /app/data/settings
+        read_only: true
     networks:
       starlink-net: {}
 
@@ -62,3 +98,7 @@ services:
 networks:
   starlink-net:
     driver: bridge
+
+volumes:
+  gfs_products:
+  gfs_mailbox:
