@@ -284,6 +284,12 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await ready(overview, 'pressure', 6);
     await ready(other, 'pressure', 6);
     const first = await remember();
+    await expect(
+      overview.getByLabel('Flight-level atmosphere status')
+    ).toContainText('Requested 500 hPa · Current horizon');
+    await expect(
+      overview.getByLabel('Flight-level atmosphere status')
+    ).toContainText('Numerical-model forecast');
     expect(first.bulletins).toEqual([true, true, true]);
     expect(first.barbs).toBeGreaterThan(0);
     expect(first.barbs).toBeLessThanOrEqual(2000);
@@ -390,6 +396,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await ready(overview, 'flight-level', 9);
     await ready(other, 'flight-level', 9);
     await remember();
+    await expect(
+      overview.getByLabel('Flight-level atmosphere status')
+    ).toContainText('Requested FL390 · +3 h');
     evidence.native_samples = true;
     evidence.configuration = true;
     await overview.screenshot({ path: info.outputPath('gfs-desktop.png') });
@@ -525,6 +534,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await expect(
       overview.getByLabel('Flight-level atmosphere status')
     ).toContainText('Unavailable', { timeout: 180000 });
+    await expect(
+      overview.getByLabel('Flight-level atmosphere status')
+    ).toContainText('Requested 500 hPa · +3 h');
     expect((await request.get('/api/status')).ok()).toBe(true);
     await expect(overview.getByLabel('Globe legend')).toBeVisible();
     await patchControl({ gfs_mismatch: false });

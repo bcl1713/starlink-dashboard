@@ -94,11 +94,13 @@ See the [weather endpoint reference](../api/endpoints/overview-weather.md) and
 [production acceptance runner](../../tools/acceptance/overview-weather/README.md).
 
 Configuration → Aviation weather → Flight-level atmosphere enables NOAA GFS
-winds and air temperature, sharing one pressure or interpolated flight level
-and forecast horizon across displays. Surface is explicitly unsupported. The
+winds and air temperature, sharing one pressure or interpolated flight level and
+forecast horizon across displays. Surface is explicitly unsupported. The
 Overview context is passive: expand it for actual run/valid UTC, level and
-legends. Stale products keep their original deadline; expired products disappear
-even if subsequent catalog requests fail.
+legends. Confirmed requested level/horizon remains visible while loading or
+unavailable, separately from actual run/valid UTC and modeled analysis or
+numerical-model forecast. Stale products keep their original deadline; expired
+products disappear even if subsequent catalog requests fail.
 
 Temperature uses the native globe's nearest-filtered signed packed texture,
 manual conservative bilinear sampling and a fixed −80 to +40 °C palette with
@@ -110,6 +112,7 @@ The temperature surface renders below radar hatching; model glyphs render below
 bulletin and operational markers and do not intercept report picking.
 
 Model assets remain optional. Missing data or admission failures mean unknown
-weather and preserve core globe, telemetry and planning controls. Shared settings
-confirm saves only after the server responds and refresh on visible displays
-every five seconds; model catalogs refresh each minute while visible and online.
+weather and preserve core globe, telemetry and planning controls. Shared
+settings confirm saves only after the server responds and refresh on visible
+displays every five seconds; model catalogs refresh each minute while visible
+and online.

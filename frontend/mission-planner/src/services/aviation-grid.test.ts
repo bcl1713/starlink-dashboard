@@ -4,9 +4,122 @@ import { WeatherBudget } from '@/pages/aviation-weather/weather-budget';
 import { digest, gridFixture } from '@/test/gfs-grid';
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 describe('immutable normalized grid admission', () => {
+  it('rejects an overdue shared owner while a younger sibling retains the physical allocation', async () => {
+    vi.useFakeTimers();
+    let mono = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => mono);
+    const wind = gridFixture(),
+      temperature = gridFixture('b'.repeat(64), 'air-temperature'),
+      budget = new WeatherBudget();
+    let complete!: (response: Response) => void, sharedSignal!: AbortSignal;
+    vi.stubGlobal('fetch', (path: string, options: RequestInit) => {
+      if (path.endsWith('u.bin')) {
+        sharedSignal = options.signal!;
+        return new Promise<Response>((resolve) => {
+          complete = resolve;
+        });
+      }
+      return Promise.resolve(
+        (path.includes('b'.repeat(64)) ? temperature : wind).response(path)
+      );
+    });
+    let admitted = false;
+    const first = fetchGrid(
+      wind.product,
+      new AbortController().signal,
+      budget
+    ).then(
+      (lease) => {
+        admitted = true;
+        lease.release();
+      },
+      () => {}
+    );
+    for (let i = 0; i < 100; i++) await Promise.resolve();
+    mono = 10000;
+    const second = fetchGrid(
+      temperature.product,
+      new AbortController().signal,
+      budget
+    );
+    for (let i = 0; i < 100; i++) await Promise.resolve();
+    mono = 46000;
+    complete(wind.response(wind.descriptor.buffers.u.path));
+    await first;
+    const lease = await second;
+    expect(admitted).toBe(false);
+    expect(sharedSignal.aborted).toBe(false);
+    expect(lease.u[0]).toBe(-1234);
+    lease.release();
+    expect(budget.snapshot()).toMatchObject({
+      encoded: 0,
+      decoded: 0,
+      gpu: 0,
+      slots: 0,
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it.each(['descriptor', 'component', 'queue'])(
+    'rejects an overdue %s without waiting for timer delivery and releases all ownership',
+    async (phase) => {
+      vi.useFakeTimers();
+      let mono = 0;
+      vi.spyOn(performance, 'now').mockImplementation(() => mono);
+      const fixture = gridFixture(),
+        budget = new WeatherBudget();
+      let complete = () => {};
+      const held =
+        phase === 'queue'
+          ? Array.from(
+              { length: 4 },
+              () => budget.tryAcquire(new AbortController().signal)!
+            )
+          : [];
+      const fetcher = vi.fn((path: string) => {
+        if (path.endsWith(phase === 'descriptor' ? 'grid.json' : 'u.bin'))
+          return new Promise<Response>((resolve) => {
+            complete = () => resolve(fixture.response(path));
+          });
+        return Promise.resolve(fixture.response(path));
+      });
+      vi.stubGlobal('fetch', fetcher);
+      const result = fetchGrid(
+        fixture.product,
+        new AbortController().signal,
+        budget
+      );
+      let admitted = false;
+      const settled = result.then(
+        (lease) => {
+          admitted = true;
+          lease.release();
+        },
+        () => {}
+      );
+      for (let i = 0; i < 100; i++) await Promise.resolve();
+      mono = 46000;
+      complete();
+      held.forEach((release) => release());
+      for (let i = 0; i < 100; i++) await Promise.resolve();
+      if (phase === 'queue') complete();
+      await settled;
+      expect(admitted).toBe(false);
+      if (phase === 'queue') expect(fetcher).not.toHaveBeenCalled();
+      else
+        expect(fetcher).toHaveBeenCalledTimes(phase === 'descriptor' ? 1 : 2);
+      expect(budget.snapshot()).toMatchObject({
+        encoded: 0,
+        decoded: 0,
+        gpu: 0,
+        slots: 0,
+      });
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  );
   it.each([
     'path',
     'identity',

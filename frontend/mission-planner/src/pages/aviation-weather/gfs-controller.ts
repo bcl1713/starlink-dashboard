@@ -5,6 +5,7 @@ import {
   type ResolvedAviationSettings,
   type AviationCatalog,
   type AviationProduct,
+  type GfsSelection,
 } from '@/services/aviation-weather';
 import { fetchGrid, type GridLease } from '@/services/aviation-grid';
 import {
@@ -26,6 +27,7 @@ export type GfsView = {
   now: number;
   state: 'off' | 'loading' | 'current' | 'stale' | 'unavailable';
   products: GfsProducts;
+  selection?: GfsSelection;
   drawing?: GfsDrawing;
   grid?: GridLease;
 };
@@ -175,6 +177,7 @@ export class GfsController {
     const record = this.record;
     this.view = {
       now,
+      selection: this.settings?.gfs_selection,
       state: !this.enabled()
         ? 'off'
         : record
@@ -211,22 +214,29 @@ export class GfsController {
       revision = this.settings!.revision,
       owner = new AbortController(),
       started = performance.now();
+    let expiry = Infinity;
     this.cycle = owner;
     this.deadline = setTimeout(
       () => owner.abort(new DOMException('Weather deadline', 'TimeoutError')),
       45000
     );
     this.publish();
-    const current = () =>
-      this.runnable() &&
-      this.generation === generation &&
-      this.settings!.revision === revision &&
-      !owner.signal.aborted;
+    const current = () => {
+      if (performance.now() >= started + 45000 || this.utc() >= expiry)
+        owner.abort(new DOMException('Weather deadline', 'TimeoutError'));
+      return (
+        this.runnable() &&
+        this.generation === generation &&
+        this.settings!.revision === revision &&
+        !owner.signal.aborted
+      );
+    };
     let slot: (() => void) | undefined;
     const leases: GridLease[] = [];
     let candidate: GfsDrawing | undefined;
     try {
       slot = await this.budget.acquire(owner.signal);
+      if (!current()) throw Error('Expired model generation');
       const catalog = await abortable(
         this.api.getCatalog(owner.signal),
         owner.signal
@@ -259,7 +269,7 @@ export class GfsController {
         products[name] = product;
       }
       clearTimeout(this.deadline);
-      const expiry = Math.min(
+      expiry = Math.min(
         ...Object.values(products).map((p) =>
           Math.min(
             p.expires_at_ms!,
@@ -269,6 +279,7 @@ export class GfsController {
           )
         )
       );
+      if (!current()) throw Error('Expired model target');
       this.deadline = setTimeout(
         () => owner.abort(new DOMException('Model expired', 'TimeoutError')),
         Math.max(

@@ -123,8 +123,10 @@ export async function boundedWeatherBytes(
   signal: AbortSignal,
   budget: WeatherBudget,
   fetcher: WeatherFetcher = fetch,
-  factor = 4
+  factor = 4,
+  assertCurrent = () => signal.throwIfAborted()
 ) {
+  assertCurrent();
   const reservation = budget.reserve(weatherKey('transfer'), {
     encoded: 0,
     decoded: limit * factor,
@@ -142,7 +144,7 @@ export async function boundedWeatherBytes(
       }),
       signal
     );
-    signal.throwIfAborted();
+    assertCurrent();
     const length = response.headers.get('Content-Length');
     if (
       !response.ok ||
@@ -159,12 +161,13 @@ export async function boundedWeatherBytes(
     let size = 0;
     while (true) {
       const { done, value } = await abortable(reader.read(), signal);
+      assertCurrent();
       if (done) break;
       size += value.byteLength;
       if (size > limit) throw Error('Weather stream byte budget');
       parts.push(value);
     }
-    signal.throwIfAborted();
+    assertCurrent();
     if (exact && size !== limit) throw Error('Weather exact bytes');
     const bytes = new Uint8Array(size);
     let offset = 0;
@@ -189,6 +192,7 @@ type Component = {
   promise: Promise<Int16Array | Uint8Array>;
   controller: AbortController;
   owners: number;
+  checks: Set<() => void>;
   ready: boolean;
   allocation: Reservation;
 };
@@ -197,8 +201,10 @@ async function component(
   descriptor: GridDescriptor,
   name: 'u' | 'v' | 't' | 'mask',
   signal: AbortSignal,
-  budget: WeatherBudget
+  budget: WeatherBudget,
+  assertCurrent: () => void
 ) {
+  assertCurrent();
   const buffer = descriptor.buffers[name];
   const quantization =
     name === 'mask'
@@ -231,12 +237,29 @@ async function component(
     entry = {
       controller,
       owners: 0,
+      checks: new Set(),
       ready: false,
       allocation,
       promise: Promise.resolve(new Uint8Array()),
     };
     const owned = entry;
-    entry.promise = (async () => {
+    const checkOwners = () => {
+      let live = false;
+      for (const check of owned.checks) {
+        try {
+          check();
+          live = true;
+        } catch {
+          /* An overdue sibling cannot invalidate a current owner. */
+        }
+      }
+      if (!live)
+        controller.abort(
+          new DOMException('No current grid owners', 'AbortError')
+        );
+      controller.signal.throwIfAborted();
+    };
+    entry.promise = Promise.resolve().then(async () => {
       let transfer: Awaited<ReturnType<typeof boundedWeatherBytes>> | undefined;
       try {
         transfer = await boundedWeatherBytes(
@@ -247,11 +270,13 @@ async function component(
           controller.signal,
           budget,
           fetch,
-          2
+          2,
+          checkOwners
         );
-        controller.signal.throwIfAborted();
+        checkOwners();
         if (weatherDigest(transfer.bytes) !== buffer.sha256)
           throw Error('Grid component hash');
+        checkOwners();
         const data =
           name === 'mask'
             ? new Uint8Array(transfer.bytes.length)
@@ -269,6 +294,7 @@ async function component(
           for (let i = 0; i < data.length; i++)
             data[i] = view.getInt16(i * 2, true);
         }
+        checkOwners();
         owned.ready = true;
         return data;
       } catch (error) {
@@ -278,14 +304,17 @@ async function component(
       } finally {
         transfer?.release();
       }
-    })();
+    });
     cache.set(key, entry);
   }
   entry.owners++;
+  const check = () => assertCurrent();
+  entry.checks.add(check);
   let owned = true;
   const release = () => {
     if (!owned) return;
     owned = false;
+    entry!.checks.delete(check);
     if (--entry!.owners === 0) {
       if (cache!.get(key) === entry) cache!.delete(key);
       if (!entry!.ready) entry!.controller.abort();
@@ -293,7 +322,9 @@ async function component(
     }
   };
   try {
-    return { data: await abortable(entry.promise, signal), release };
+    const data = await abortable(entry.promise, signal);
+    assertCurrent();
+    return { data, release };
   } catch (error) {
     release();
     throw error;
@@ -316,7 +347,13 @@ export async function fetchGrid(
   )
     throw Error('Invalid immutable model envelope');
   const owner = new AbortController(),
-    abort = () => owner.abort(signal.reason);
+    abort = () => owner.abort(signal.reason),
+    deadline = performance.now() + 45000;
+  const assertCurrent = () => {
+    if (performance.now() >= deadline)
+      owner.abort(new DOMException('Weather deadline', 'TimeoutError'));
+    owner.signal.throwIfAborted();
+  };
   signal.addEventListener('abort', abort, { once: true });
   if (signal.aborted) abort();
   const timer = setTimeout(
@@ -328,16 +365,22 @@ export async function fetchGrid(
   let transfer: Awaited<ReturnType<typeof boundedWeatherBytes>> | undefined;
   try {
     slot = await budget.acquire(owner.signal);
+    assertCurrent();
     transfer = await boundedWeatherBytes(
       p.path,
       p.content_type,
       Math.min(1024 ** 2, p.encoded_bytes),
       false,
       owner.signal,
-      budget
+      budget,
+      fetch,
+      4,
+      assertCurrent
     );
+    assertCurrent();
     if (weatherDigest(transfer.bytes) !== p.sha256)
       throw Error('Grid descriptor hash');
+    assertCurrent();
     metadata = budget.reserve(weatherKey('grid-descriptor'), {
       encoded: transfer.bytes.length,
       decoded: transfer.bytes.length * 4,
@@ -348,6 +391,7 @@ export async function fetchGrid(
         new TextDecoder('utf-8', { fatal: true }).decode(transfer.bytes)
       )
     );
+    assertCurrent();
     if (
       descriptor.instance_id !== product.instance_id ||
       descriptor.product_id !== product.product_id ||
@@ -368,8 +412,10 @@ export async function fetchGrid(
     transfer.release();
     transfer = undefined;
     for (const name of ['u', 'v', 't', 'mask'] as const)
-      components.push(await component(descriptor, name, owner.signal, budget));
-    owner.signal.throwIfAborted();
+      components.push(
+        await component(descriptor, name, owner.signal, budget, assertCurrent)
+      );
+    assertCurrent();
     let owned = true;
     return {
       descriptor,

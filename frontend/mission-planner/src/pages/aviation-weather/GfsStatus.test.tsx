@@ -5,6 +5,58 @@ import { GfsStatus } from './GfsStatus';
 import { gridFixture, GRID_RUN } from '@/test/gfs-grid';
 import { emptyGfsView } from './gfs-controller';
 afterEach(cleanup);
+it.each(['loading', 'unavailable'] as const)(
+  'shows confirmed requested context when %s without fabricating admitted times',
+  (state) => {
+    const r = render(
+      <GfsStatus
+        view={{
+          ...emptyGfsView,
+          state,
+          selection: {
+            vertical: { kind: 'flight-level', flight_level: 390 },
+            horizon_hours: 12,
+          },
+        }}
+      />
+    );
+    expect(r.container.textContent).toContain('Requested FL390');
+    expect(r.container.textContent).toContain('+12 h');
+    expect(r.container.textContent).not.toContain('Run ');
+    expect(r.container.textContent).not.toContain('Valid ');
+  }
+);
+it.each([0, 6])(
+  'distinguishes requested Current from run-relative F%03i and model time kind',
+  (lead) => {
+    const p = gridFixture().product;
+    p.lead_seconds = lead * 3600;
+    p.valid_at_ms = GRID_RUN + p.lead_seconds * 1000;
+    p.time_kind = lead ? 'forecast' : 'analysis';
+    const r = render(
+      <GfsStatus
+        view={{
+          state: 'current',
+          now: GRID_RUN,
+          selection: {
+            vertical: { kind: 'pressure', pressure_pa: 50000 },
+            horizon_hours: 0,
+          },
+          products: { winds: p },
+        }}
+      />
+    );
+    expect(r.container.textContent).toContain(
+      'Requested 500 hPa · Current horizon'
+    );
+    expect(r.container.textContent).toContain(
+      lead ? 'Numerical-model forecast' : 'Modeled analysis'
+    );
+    expect(r.container.textContent).toContain(
+      `F${String(lead).padStart(3, '0')}`
+    );
+  }
+);
 it('shows passive source, UTC run and valid, level and unit legends without Overview selection controls', () => {
   const p = gridFixture().product;
   const r = render(

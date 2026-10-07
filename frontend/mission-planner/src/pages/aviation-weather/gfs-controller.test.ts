@@ -80,9 +80,113 @@ function runtime() {
   };
 }
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 describe('model generation and monotonic expiry', () => {
+  it('rejects a grid after the target crosses the 48-hour run window even with delayed timers', async () => {
+    fakeClock();
+    let mono = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => mono);
+    const r = runtime();
+    r.catalog.generated_at_ms = GRID_RUN - 1000;
+    let complete!: (lease: GridLease) => void;
+    r.load.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+    );
+    r.controller.setSettings({
+      ...settings,
+      gfs_selection: { ...settings.gfs_selection!, horizon_hours: 48 },
+    });
+    r.controller.start();
+    await flush();
+    mono = 2000;
+    complete(r.lease);
+    await flush();
+    expect(r.draw).not.toHaveBeenCalled();
+    expect(r.release).toHaveBeenCalledTimes(1);
+    expect(r.controller.getSnapshot().drawing).toBeUndefined();
+    r.controller.stop();
+    expect(r.budget.snapshot().slots).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it.each(['catalog', 'grid', 'drawing', 'queue'])(
+    'rejects an overdue %s completion even before timeout callbacks run',
+    async (phase) => {
+      fakeClock();
+      let mono = 0;
+      vi.spyOn(performance, 'now').mockImplementation(() => mono);
+      const r = runtime();
+      let complete = () => {};
+      const held =
+        phase === 'queue'
+          ? Array.from(
+              { length: 4 },
+              () => r.budget.tryAcquire(new AbortController().signal)!
+            )
+          : [];
+      if (phase === 'catalog')
+        r.api.getCatalog.mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              complete = () => resolve(r.catalog);
+            })
+        );
+      if (phase === 'grid')
+        r.load.mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              complete = () => resolve(r.lease);
+            })
+        );
+      if (phase === 'drawing')
+        r.draw.mockImplementation(() => {
+          mono = 46000;
+          return {
+            object: new THREE.Group(),
+            bytes: { decoded: 0, gpu: 0 },
+            dispose: r.dispose,
+          };
+        });
+      r.controller.setSettings(settings);
+      r.controller.start();
+      await flush();
+      if (phase !== 'drawing') mono = 46000;
+      complete();
+      held.forEach((release) => release());
+      await flush();
+      expect(r.controller.getSnapshot().drawing).toBeUndefined();
+      expect(r.controller.getSnapshot().state).toBe('unavailable');
+      if (phase === 'drawing') expect(r.dispose).toHaveBeenCalledTimes(1);
+      else expect(r.draw).not.toHaveBeenCalled();
+      if (phase === 'grid' || phase === 'drawing')
+        expect(r.release).toHaveBeenCalledTimes(1);
+      if (phase === 'queue') expect(r.api.getCatalog).not.toHaveBeenCalled();
+      r.controller.stop();
+      expect(r.budget.snapshot().slots).toBe(0);
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  );
+  it('keeps the confirmed requested level and horizon while the model is unavailable', async () => {
+    fakeClock();
+    const r = runtime();
+    r.api.getCatalog.mockRejectedValue(Error('unavailable'));
+    const selection = {
+      vertical: { kind: 'flight-level' as const, flight_level: 390 as const },
+      horizon_hours: 12 as const,
+    };
+    r.controller.setSettings({ ...settings, gfs_selection: selection });
+    r.controller.start();
+    await flush();
+    expect(r.controller.getSnapshot()).toMatchObject({
+      state: 'unavailable',
+      selection,
+    });
+    r.controller.stop();
+  });
   it('removes a retained model on original expiry despite all later polls failing', async () => {
     fakeClock();
     const r = runtime();

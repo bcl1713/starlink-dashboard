@@ -12,6 +12,14 @@ export function GfsStatus({ view }: { view: GfsView }) {
       : vertical?.kind === 'flight-level'
         ? `FL${String(vertical.flight_level).padStart(3, '0')} · ${vertical.derivation === 'native' ? 'native' : 'ISA / log-pressure interpolation'}`
         : '';
+  const requested = view.selection?.vertical;
+  const requestedLevel =
+    requested?.kind === 'pressure'
+      ? `${requested.pressure_pa / 100} hPa`
+      : requested?.kind === 'flight-level'
+        ? `FL${String(requested.flight_level).padStart(3, '0')}`
+        : '';
+  const horizon = view.selection?.horizon_hours;
   return (
     <details className="gfs-status" aria-label="Flight-level atmosphere status">
       <summary>
@@ -23,10 +31,17 @@ export function GfsStatus({ view }: { view: GfsView }) {
             : view.state === 'loading'
               ? 'Loading'
               : 'Unavailable'}
-        {level && ` · ${level}`}
+        {requestedLevel
+          ? ` · Requested ${requestedLevel} · ${horizon === 0 ? 'Current horizon' : `+${horizon} h`}`
+          : level && ` · ${level}`}
       </summary>
       {product && (
         <p>
+          {product.lead_seconds === 0
+            ? 'Modeled analysis'
+            : 'Numerical-model forecast'}{' '}
+          · {level}
+          <br />
           Run {utc(product.run_at_ms!)}
           <br />
           Valid {utc(product.valid_at_ms!)} · F
