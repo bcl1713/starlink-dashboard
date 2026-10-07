@@ -102,51 +102,26 @@ away. Standard SOF-only/no-extra-window copy is exactly: “No communications
 degradation or additional coordination windows identified for this leg”. Never
 use that copy when unresolved data or limitations exist.
 
-## Map feasibility and production architecture for Task 3
+## Renderer feasibility: Task 3A
 
-Planning inspection establishes reusable components and missing integration; it
-does not establish working headless rendering. Complete this gate first:
+Follow the required
+[gate details](2026-10-07-customer-mission-briefing-renderer-feasibility.md) for
+route-only inputs, files, F08-map timing proof and pass/no-go report. Task 2
+requires that report to pass before production integration in Task 3B.
 
-1. Build a dedicated local export entry with `CityLitGlobe`, `GlobeRouteRibbon`,
-   `globe-route-projection.ts`, `overview-camera-frame.ts`,
-   `overview-route-hemisphere.ts`, and `solar-position.ts::sunLightPosition`.
-   Reuse `/earth-day-hi.jpg` and `/city-lights-mask.png`. Extract pure camera
-   framing as needed; do not mount OverviewPage or its interactive controller,
-   subscriptions, Date.now clock, aircraft, traffic, weather or dashboard UI.
-2. Run from a production-compatible, non-root image with a packaged browser.
-   Produce 1920 x 1080 PNG at fixed pixel ratio 1; planned reference time is
-   effective leg takeoff. Wait for decoded textures, compiled shaders, settled
-   camera, projected labels and completed deterministic render, not a sleep.
-   Report readiness errors explicitly. Two identical inputs in the same runtime
-   produce identical geometry/framing and decoded pixels; record PNG hashes.
-3. Prove short, polar and dateline routes, then a route without a containing
-   hemisphere. Split its ordered geometry into consecutive fitting views with
-   shared endpoints; depth-test against globe. No through-planet visibility
-   hack. All route pieces/markers fit with crop padding and neutral styling.
-   Label lighting “Planned-time illustration” with reference timestamp.
-4. Preserve runtime/asset versions, timing, readiness log and PNGs. Failed
-   startup/texture/context loss and slow rendering must also prove fallback and
-   cleanup. If packaging or framing fails, repair it before trial integration;
-   repeated fallback is not evidence of successful overview rendering.
+## Production map integration: Task 3B
 
-**Create frontend files:** `mission-export.html`,
-`vite.mission-export.config.ts`, `src/mission-export/main.tsx`, `scene.tsx`,
-`protocol.ts`, `framing.ts`, and `render.mjs`. Build script
-`build:mission-export` uses that separate Vite entry; output is
-`dist-mission-export/`. Add that directory to root `.gitignore`. Add
-`src/mission-export/framing.test.ts` and `tests/e2e/mission-export-map.spec.ts`
-with a dedicated Playwright config.
-
-`protocol.ts` defines `MissionMapInput`: schema version, leg ID, effective route
-points/times, reference UTC, neutral numbered markers and framing version. Scene
-reports a ready/error result with input digest and framing. The Python wrapper
-passes JSON via private stdin/file, launches request-owned Node child
-`render.mjs` and receives PNGs/status. Node uses the locked Playwright core and
-packaged Chromium, a private loopback static listener serving only bundled scene
-assets, and a fresh browser/context. No request to the live dashboard or
-external screenshot service. Close listener/context/browser, terminate/reap
-process group on timeout, and delete private payload/PNG paths on
-success/failure/cancellation.
+Task 3B depends on Task 2 and a passing 3A report. LegMapResult holds leg ID,
+ordered PNG views, label, status and safe warnings. Create backend
+`app/mission/exporter/trial_maps.py`; consume final window IDs/marker
+projection. `protocol.ts` defines `MissionMapInput`: schema version, leg ID,
+effective route points/times, reference UTC, neutral numbered markers and
+framing version. Scene reports ready/error with digest/framing. Python passes
+private JSON to proven Node `render.mjs`; one request-owned browser serves all
+leg/view inputs with fresh contexts and a private loopback asset listener. Use
+locked Playwright core and packaged Chromium; no live dashboard or external
+screenshot service. Close listener/contexts/browser, terminate/reap on timeout
+and remove temporary files.
 
 **Production packaging:** Keep backend Dockerfile location but change only the
 backend build context to repository root in `docker-compose.yml` and the backend
@@ -160,7 +135,8 @@ Keep Python runtime, health checks, labels and Nginx route unchanged. Add root
 `.worktrees`, data, evidence, env/credentials and dependency caches. Review
 image size/build duration and all existing COPY paths. GFS keeps its current
 context. Do not broaden acceptance authority or add build fields its parser
-rejects.
+rejects. Repeat F08-map in the final production image with final markers after
+Task 3B; 3A timings alone do not prove production integration.
 
 Request cache key includes effective route geometry/timing, adjusted departure,
 leg identity, reference UTC, trial availability/markers, asset and renderer

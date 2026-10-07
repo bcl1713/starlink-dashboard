@@ -7,11 +7,9 @@
 **Goal:** Add an automatic customer trial deck to the normal mission ZIP while
 preserving the established deck and direct single-leg PowerPoint download.
 
-**Architecture:** Capture committed inputs once, prepare each leg once without
-publication, and freeze a shared export snapshot. Feed existing legacy builders
-and a separate trial projection/builder from that snapshot. Generate
-synchronous, request-owned maps with a bounded browser stage and explicit
-fallback.
+**Architecture:** Freeze one export snapshot from read-only leg preparation.
+Feed legacy and trial builders from it; generate synchronous, request-owned maps
+with a bounded browser stage and explicit fallback.
 
 **Tech Stack:** Python 3.11, Pydantic, python-pptx, zoneinfo; React Three Fiber,
 Three.js, Vite and locked Playwright.
@@ -27,8 +25,7 @@ before execution. The companion is part of this plan.
 **Baseline:** Latest fetched `origin/dev`, full SHA
 `d77efd81c06e66755afd89ac55f31652bca297ce`, the merge of
 [PR #307](https://github.com/bcl1713/starlink-dashboard/pull/307). Final merged
-spec text takes precedence over earlier discussion. This plan adds no
-application code; generated deck evidence below is future implementation work.
+spec text is authoritative. Order: 1 → 3A → 2 → 3B → 4 → 5 → 6.
 
 ## Global Constraints
 
@@ -77,7 +74,7 @@ application code; generated deck evidence below is future implementation work.
 3. Short flights and simultaneous boundaries must retain both SOF labels and
    brief outages without overlapping table rows (Task 2).
 4. Failed browser startup/textures, missing route, and large multi-leg exports
-   must honor the shared deadline and clean up resources (Tasks 3 and 5).
+   must honor the shared deadline and clean up resources (Tasks 3A, 3B and 5).
 5. Long customer text and many windows must remain readable after actual PPTX
    rendering, with every essential fact on primary pages (Tasks 4 and 6).
 
@@ -135,12 +132,23 @@ returns private model copies and read-only manager views for legacy consumers.
       unchanged source models, one shared snapshot, legacy content/layout
       equivalent ignoring only listed volatile metadata. Commit Task 1.
 
+## Task 3A: Renderer feasibility gate
+
+**Dependencies:** Task 1 only. **Files/output:** Companion gate details/report.
+
+- [ ] Build the standalone packaged non-root renderer and run companion framing,
+      readiness, fallback and cleanup checks, plus the F08-map mission timing
+      proof. Capture cold startup, warm per-view cost and PNG/runtime evidence.
+- [ ] Require every primary map/view within 50 seconds of one shared 60-second
+      stage in three cold runs. Failure stops Task 2/3B/4 until strategy
+      revision and a passing rerun. Commit Task 3A proof/evidence before
+      proceeding.
+
 ## Task 2: Resolve trial intervals, clocks and coordination rows
 
-**Dependencies:** Task 1 and map feasibility. **Files:** Create
-projection/clocks; add `tests/unit/test_trial_projection.py`,
-`test_trial_clocks.py` and fixtures. Reference reducer/rules/AR files; do not
-alter their domain calculations.
+**Dependencies:** Task 1 + passed Task 3A. **Files:** Create projection/clocks;
+add `tests/unit/test_trial_projection.py`, `test_trial_clocks.py` and fixtures.
+Reference reducer/rules/AR files; do not alter their domain calculations.
 
 **Interfaces:** `project_trial_leg(leg: LegSnapshot) -> TrialLeg`;
 
@@ -184,37 +192,29 @@ and known remaining transports.
       re-export guidance explain shifted absolute conditions.
 - [ ] Rerun tests; expect PASS for every fixture assertion. Commit Task 2.
 
-## Task 3: Prove and package deterministic overview maps
+## Task 3B: Integrate production maps
 
-**Dependencies:** Task 1; map IDs depend on Task 2. **Files/interfaces:** Use
-companion architecture and file list. Produce
+**Dependencies:** Tasks 2 and 3A. **Files:** Companion Task 3B file list.
 
 ```python
 render_trial_maps(snapshot: ExportSnapshot, legs: tuple[TrialLeg, ...], budget_seconds: float = 60.0) -> tuple[LegMapResult, ...]
 ```
 
-Each result has leg ID, ordered PNG views, label, status and safe warnings.
-
-- [ ] Run the companion feasibility gate before Task 2 implementation: packaged
-      non-root runtime, local assets, fixed camera/reference time, real WebGL
-      readiness and one short/dateline/polar/multi-view route. Preserve PNGs,
-      timings and runtime identity; fallback-only runtime fails this gate.
-- [ ] Add `test_trial_map_deadline_fallback_and_cleanup`,
-      `test_trial_map_key_effective_inputs` and renderer readiness/framing
-      tests. Fail textures, startup, context loss and timeout; assert labeled
-      fallback, no blank slide and no surviving owned processes/temp images.
-- [ ] Implement the dedicated scene and child renderer as specified in the
-      companion. Use snapshot-only inputs and one monotonic stage deadline;
-      cache within the request by full content key. Use labeled neutral static
-      route fallback; if no route/image is possible, use a visible explanatory
-      route-data card. Trial fallbacks must also use neutral styling.
-- [ ] Run bounded renderer tests and image builds. Expect real maps and fallback
-      cases to pass, no runtime network dependency, and verified cleanup. Commit
-      Task 3; record measured feasibility before Task 4 integration.
+- [ ] Add `test_trial_map_deadline_fallback_and_cleanup` and
+      `test_trial_map_key_effective_inputs`; fail startup, textures/context and
+      timeout. Assert labeled fallback, no blank slide and zero resource leaks.
+- [ ] Integrate the proven scene/child renderer with Python snapshot inputs,
+      final Task 2 IDs/markers, full cache keys and one monotonic stage
+      deadline. Package the production runtime after 3A passes. Use neutral
+      static fallback or explanatory route-data card; preserve legacy rendering
+      defaults.
+- [ ] Run bounded renderer tests and production image builds; repeat
+      whole-mission timing proof after integration. Expect maps/fallback cases
+      to pass, offline runtime and verified cleanup. Commit Task 3B.
 
 ## Task 4: Build editable, paginated customer slides
 
-**Dependencies:** Tasks 2 and 3. **Files:** Create trial layout/PPTX modules;
+**Dependencies:** Tasks 2 and 3B. **Files:** Create trial layout/PPTX modules;
 add `tests/unit/test_trial_pptx.py`. Reuse APO Patch.jpg without editing it.
 
 **Interface:**
@@ -247,7 +247,7 @@ Returns a validated deck or raises `TrialGenerationError`.
 
 ## Task 5: Add flag, isolated ZIP inclusion and visible warnings
 
-**Dependencies:** Tasks 1–4. **Files:** Modify package
+**Dependencies:** Tasks 1, 2, 3B, 4. **Files:** Modify package
 `__main__.py`/`__init__.py`, `app/models/config.py`, `config.yaml`,
 `app/mission/routes_v2.py`, backend `main.py` CORS exposure, frontend
 `src/services/export-import.ts`, `src/types/export.ts`,
