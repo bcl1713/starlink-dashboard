@@ -314,17 +314,6 @@ class Runner:
             ["tar", "-xf", str(self.source / "source.tar"), "-C", str(self.source)]
         )
         (self.source / "source.tar").unlink()
-        self.record(
-            "browser-test-source.json",
-            {
-                "sha": self.sha,
-                **bind_browser_source(
-                    self.source / "frontend/mission-planner",
-                    self.root / "frontend/mission-planner",
-                    self.mode,
-                ),
-            },
-        )
         capture, control = self.output / "capture", self.output / "control"
         capture.mkdir()
         control.mkdir(mode=0o777)
@@ -404,6 +393,19 @@ class Runner:
             },
         )
 
+    def bind_browser(self):
+        self.record(
+            "browser-test-source.json",
+            {
+                "sha": self.sha,
+                **bind_browser_source(
+                    self.source / "frontend/mission-planner",
+                    self.root / "frontend/mission-planner",
+                    self.mode,
+                ),
+            },
+        )
+
     def execute(self):
         self.prepare()
         config = self.command(
@@ -442,6 +444,7 @@ class Runner:
             seconds=300,
             name="start.log",
         )
+        self.bind_browser()
         self.command(
             [
                 "npx",
