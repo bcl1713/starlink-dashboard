@@ -186,7 +186,9 @@ test('original observation age survives failures, repeated replies and foregroun
   await expect(label).toBeVisible();
   await expect(label).not.toContainText('Stale');
   await page.goto('/configuration');
-  await page.getByRole('tab', { name: 'Aircraft Traffic', exact: true }).click();
+  await page
+    .getByRole('tab', { name: 'Aircraft Traffic', exact: true })
+    .click();
   await expect(page.getByLabel('Included ICAO hexes')).toHaveValue('00AB12');
 });
 
@@ -420,7 +422,7 @@ test('telemetry heading, matching globe labels and visible chevron glow', async 
   await page.screenshot({ path: info.outputPath('heading-labels-glow.png') });
 });
 
-test('own aircraft stays above crossing overlays and coincident traffic does not amplify glow', async ({
+test('own aircraft stays above crossing overlays and coincident fresh traffic does not amplify glow', async ({
   context,
 }, info) => {
   const fixture = await installAdsbFixture(context, true);
@@ -437,6 +439,9 @@ test('own aircraft stays above crossing overlays and coincident traffic does not
   );
   fixture.setSettings(adsbSettings({ include_hexes: ['000000'] }));
   const page = await context.newPage();
+  // Measure coincident fresh glyphs, even if cloud globe/camera startup exceeds
+  // the stale threshold. The separate observation-age test covers that change.
+  await page.clock.setFixedTime(Date.now());
   await page.setViewportSize({ width: 1440, height: 900 });
   await observeAdsbScene(page);
   await page.goto('/overview');

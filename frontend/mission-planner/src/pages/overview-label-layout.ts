@@ -18,6 +18,12 @@ export interface LabelLeader {
   start: LabelPoint;
   end: LabelPoint;
 }
+export interface OverviewLabelGeometry {
+  /** Full rendered own-aircraft bounds, already expanded by its visibility margin. */
+  aircraft: readonly LabelBounds[];
+  markers?: readonly LabelBounds[];
+  paths?: readonly LabelLeader[];
+}
 export interface LabelPlacement {
   bounds: LabelBounds;
   leader: LabelLeader | null;
@@ -47,12 +53,16 @@ const GROUP_WIDTH = 96;
 const GROUP_HEIGHT = 28;
 const NEIGHBOR_DISTANCE = 96;
 
-function overlaps(a: LabelBounds, b: LabelBounds): boolean {
+export function labelBoundsOverlap(
+  a: LabelBounds,
+  b: LabelBounds,
+  gap = GAP
+): boolean {
   return (
-    a.x < b.x + b.width + GAP &&
-    a.x + a.width + GAP > b.x &&
-    a.y < b.y + b.height + GAP &&
-    a.y + a.height + GAP > b.y
+    a.x < b.x + b.width + gap &&
+    a.x + a.width + gap > b.x &&
+    a.y < b.y + b.height + gap &&
+    a.y + a.height + gap > b.y
   );
 }
 function inside(b: LabelBounds, v: Viewport): boolean {
@@ -107,22 +117,25 @@ function intersects(a: LabelLeader, b: LabelLeader): boolean {
     cross(b.start, b.end, a.start) * cross(b.start, b.end, a.end) < -0.01
   );
 }
-function throughBox(line: LabelLeader, box: LabelBounds): boolean {
-  const within = (p: LabelPoint) =>
-    p.x > box.x &&
-    p.x < box.x + box.width &&
-    p.y > box.y &&
-    p.y < box.y + box.height;
-  if (within(line.start) || within(line.end)) return true;
-  const corners = [
-    { x: box.x, y: box.y },
-    { x: box.x + box.width, y: box.y },
-    { x: box.x + box.width, y: box.y + box.height },
-    { x: box.x, y: box.y + box.height },
-  ];
-  return corners.some((p, i) =>
-    intersects(line, { start: p, end: corners[(i + 1) % 4] })
-  );
+export function throughBox(line: LabelLeader, box: LabelBounds): boolean {
+  let low = 0,
+    high = 1;
+  for (const axis of ['x', 'y'] as const) {
+    const start = line.start[axis],
+      delta = line.end[axis] - start;
+    const min = box[axis],
+      max = min + (axis === 'x' ? box.width : box.height);
+    if (Math.abs(delta) < 1e-9) {
+      if (start < min || start > max) return false;
+    } else {
+      const a = (min - start) / delta,
+        b = (max - start) / delta;
+      low = Math.max(low, Math.min(a, b));
+      high = Math.min(high, Math.max(a, b));
+      if (low > high) return false;
+    }
+  }
+  return true;
 }
 function candidates(
   label: ProjectedOverviewLabel,
@@ -172,7 +185,8 @@ export function layoutOverviewLabels(
   labels: ProjectedOverviewLabel[],
   viewport: Viewport,
   reserved: readonly LabelBounds[] = [],
-  previous: Record<string, OverviewLabelOffset> = {}
+  previous: Record<string, OverviewLabelOffset> = {},
+  geometry: OverviewLabelGeometry = { aircraft: [] }
 ): OverviewLabelLayoutResult {
   const ordered = [...labels].sort(
     (a, b) =>
@@ -182,9 +196,57 @@ export function layoutOverviewLabels(
       a.id.localeCompare(b.id)
   );
   const entries: Entry[] = [];
+  const aircraftSafe = (box: LabelBounds) =>
+    inside(box, viewport) &&
+    !geometry.aircraft.some((b) => labelBoundsOverlap(box, b));
+  // Relax soft collisions only after trying clean placements. The own-aircraft
+  // exclusion is never relaxed, including ADS-B and compact group fallbacks.
+  const fallback = (label: ProjectedOverviewLabel): LabelPlacement | null => {
+    const options = candidates(
+      { ...label, retainIdentity: true },
+      ordered
+    ).filter(aircraftSafe);
+    const blockers = [
+      ...reserved,
+      ...(geometry.markers ?? []),
+      ...entries.map((e) => e.placement.bounds),
+    ];
+    const score = (box: LabelBounds) =>
+      blockers.reduce(
+        (sum, b) =>
+          sum +
+          Math.max(
+            0,
+            Math.min(box.x + box.width, b.x + b.width) - Math.max(box.x, b.x)
+          ) *
+            Math.max(
+              0,
+              Math.min(box.y + box.height, b.y + b.height) -
+                Math.max(box.y, b.y)
+            ),
+        0
+      ) +
+      (geometry.paths ?? []).filter((line) => throughBox(line, box)).length *
+        box.width;
+    let box: LabelBounds | undefined,
+      best = Infinity;
+    for (const option of options) {
+      const occupied = score(option);
+      if (occupied < best) {
+        box = option;
+        best = occupied;
+      }
+      if (occupied === 0) break;
+    }
+    return box
+      ? { bounds: box, leader: calloutLeader(label.bounds, box) }
+      : null;
+  };
   const place = (
     label: ProjectedOverviewLabel,
-    prev?: OverviewLabelOffset
+    prev?: OverviewLabelOffset,
+    avoidPaths = true,
+    avoidMarkers = true
   ): LabelPlacement | null => {
     const options = candidates(label, ordered, prev);
     const previousBox = prev ? options.shift() : undefined;
@@ -198,11 +260,16 @@ export function layoutOverviewLabels(
       }));
     const blockers = [
       ...reserved,
+      ...geometry.aircraft,
+      ...(avoidMarkers ? (geometry.markers ?? []) : []),
       ...anchors,
       ...entries.map((e) => e.placement.bounds),
     ];
     const rectangleValid = (box: LabelBounds) =>
-      inside(box, viewport) && !blockers.some((b) => overlaps(box, b));
+      inside(box, viewport) &&
+      !blockers.some((b) => labelBoundsOverlap(box, b)) &&
+      (!avoidPaths ||
+        !(geometry.paths ?? []).some((line) => throughBox(line, box)));
     const valid = (box: LabelBounds) => {
       if (!rectangleValid(box)) return false;
       const leader = calloutLeader(label.bounds, box);
@@ -269,45 +336,18 @@ export function layoutOverviewLabels(
       : null;
   };
   for (const source of ordered) {
-    const placement = place(source, previous[source.id]);
+    const placement =
+      place(source, previous[source.id]) ??
+      place(source, previous[source.id], false) ??
+      place(source, previous[source.id], false, false);
     if (placement) {
       entries.push({ label: source, ids: [source.id], placement });
       continue;
     }
     if (source.retainIdentity) {
-      // An exceptionally crowded traffic view keeps every identity. Prefer an
-      // in-viewport bubble with the least occupied area if a clean pack is impossible.
-      const options = candidates(source, ordered).filter((box) =>
-        inside(box, viewport)
-      );
-      const area = (a: LabelBounds, b: LabelBounds) =>
-        Math.max(
-          0,
-          Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)
-        ) *
-        Math.max(
-          0,
-          Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y)
-        );
-      const blockers = [...reserved, ...entries.map((e) => e.placement.bounds)];
-      let box = options[0] ?? { ...source.bounds, x: GAP, y: GAP };
-      let bestArea = Infinity;
-      for (const option of options) {
-        const score = blockers.reduce(
-          (sum, blocker) => sum + area(option, blocker),
-          0
-        );
-        if (score < bestArea) {
-          box = option;
-          bestArea = score;
-        }
-        if (score === 0) break;
-      }
-      entries.push({
-        label: source,
-        ids: [source.id],
-        placement: { bounds: box, leader: calloutLeader(source.bounds, box) },
-      });
+      const safe = fallback(source);
+      if (safe)
+        entries.push({ label: source, ids: [source.id], placement: safe });
       continue;
     }
     const nearby = entries.filter(
@@ -325,33 +365,9 @@ export function layoutOverviewLabels(
       ...anchor,
       bounds: { ...anchor.bounds, width: GROUP_WIDTH, height: GROUP_HEIGHT },
     };
-    const grouped = place(group);
+    const grouped = place(group) ?? fallback(group);
     if (grouped)
       entries.push({ label: group, ids, placement: grouped, grouped: true });
-    else {
-      // Reserve a compact disclosure even in a fully constrained viewport.
-      // Never turn one crowded area into a global removal of map labels.
-      const box = {
-        ...group.bounds,
-        x: Math.max(
-          GAP,
-          Math.min(group.bounds.x, viewport.width - GROUP_WIDTH - GAP)
-        ),
-        y: Math.max(
-          GAP,
-          Math.min(
-            group.bounds.y + MARKER_GAP,
-            viewport.height - GROUP_HEIGHT - GAP
-          )
-        ),
-      };
-      entries.push({
-        label: group,
-        ids,
-        placement: { bounds: box, leader: calloutLeader(group.bounds, box) },
-        grouped: true,
-      });
-    }
   }
   const result: OverviewLabelLayoutResult = {
     offsets: {},

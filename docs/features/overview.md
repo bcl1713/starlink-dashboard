@@ -3,7 +3,8 @@
 **Related:** [Main README](../../README.md) | [Setup Guide](../setup/README.md)
 
 Shared displays: [controls](system.md#overview-windows-and-display-controls),
-[paced replay](../api/endpoints/simulation-run.md), [weather](overview-weather.md).
+[paced replay](../api/endpoints/simulation-run.md),
+[weather](overview-weather.md).
 
 ## Feature Categories
 
@@ -80,10 +81,10 @@ scheduled departure counts past its target. In constrained panels, long
 countdowns wrap at word boundaries while preserving enlarged text, centered
 alignment and the AGO suffix.
 
-See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md) for
-timing provenance and independent map retention. A route-only active route is
-not an active Mission V2 leg and may report `no_active_mission`. Map POI names
-remain accessible even when overlapping globe labels are visually suppressed.
+The [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
+explains timing provenance and map retention. A route-only active route is not
+an active Mission V2 leg (`no_active_mission`). See
+[map labels](overview-labels.md) for aircraft protection and accessible names.
 
 ### 5. Overview Metric History
 
@@ -245,7 +246,8 @@ translation while truthful source updates, gaps and time bounds still update.
 The globe's geometry and natural lighting are retained; a route spanning its far
 side can remain occluded by Earth.
 
-See [responsive layout architecture](../architecture/overview-responsive-layout.md)
+See
+[responsive layout architecture](../architecture/overview-responsive-layout.md)
 for measured thresholds, scroll ownership and framing limits.
 
 See the [Overview History API](../api/endpoints/overview-history.md) for raw and
@@ -293,5 +295,5 @@ The deployment laptop still requires hardware validation.
 ## Related Documentation
 
 See [optional boundaries](overview-boundaries.md), [setup](../setup/README.md),
-[API reference](../api/README.md), [troubleshooting](../troubleshooting/README.md)
-and [README](../../README.md).
+[API reference](../api/README.md),
+[troubleshooting](../troubleshooting/README.md) and [README](../../README.md).

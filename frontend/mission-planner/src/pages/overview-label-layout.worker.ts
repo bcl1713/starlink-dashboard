@@ -4,6 +4,7 @@ import {
   type OverviewLabelLayoutResult,
   type OverviewLabelOffset,
   type ProjectedOverviewLabel,
+  type OverviewLabelGeometry,
 } from './overview-label-layout';
 
 export interface LabelLayoutRequest {
@@ -12,6 +13,7 @@ export interface LabelLayoutRequest {
   viewport: { width: number; height: number };
   reserved: LabelBounds[];
   previous: Record<string, OverviewLabelOffset>;
+  geometry?: OverviewLabelGeometry;
 }
 export interface LabelLayoutResponse {
   revision: number;
@@ -25,7 +27,8 @@ self.onmessage = ({ data }: MessageEvent<LabelLayoutRequest>) => {
       data.labels,
       data.viewport,
       data.reserved,
-      data.previous
+      data.previous,
+      data.geometry
     ),
   };
   self.postMessage(response);

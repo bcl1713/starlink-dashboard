@@ -181,6 +181,7 @@ function AircraftMarker({
       color="#72b7ff"
       size={0.15}
       shape="chevron"
+      ownAircraft
       headingDegrees={headingDegrees}
       chevronSettings={chevronSettings}
       renderOrder={1000}
@@ -191,6 +192,7 @@ function AircraftMarker({
       color="#72b7ff"
       size={0.15}
       shape="chevron"
+      ownAircraft
       headingDegrees={headingDegrees}
       chevronSettings={chevronSettings}
       renderOrder={1000}
@@ -917,6 +919,12 @@ export function OverviewPage() {
             <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
           ))}
         </ul>
+        {groundEntryPoint && (
+          <p className="overview-visually-hidden">
+            GEP · Ground entry point at {groundEntryPoint.latitude}°,{' '}
+            {groundEntryPoint.longitude}°
+          </p>
+        )}
         <ul
           className="adsb-keyboard-contacts"
           aria-label="Visible ADS-B aircraft"
@@ -955,7 +963,16 @@ export function OverviewPage() {
           className="overview-globe"
           camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
         >
-          <OverviewLabelLayout />
+          <OverviewLabelLayout
+            paths={[
+              routePoints,
+              ...(linkState.starshieldVisible ? [trafficPoints] : []),
+              ...(linkState.xBandVisible && activeConfiguredXBandLink
+                ? [activeConfiguredXBandLink.points]
+                : []),
+              ...(showAircraftHistory ? [aircraftHistoryPoints] : []),
+            ]}
+          />
           <color attach="background" args={['#030307']} />
           <ambientLight intensity={0.5} />
           <directionalLight position={sunPosition} intensity={5} />

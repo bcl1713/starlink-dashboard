@@ -233,3 +233,169 @@ it('revalidates an ADS-B previous stick when another marker moves into its path'
   expect(result.offsets.b).toBeDefined();
   expect(result.groups).toEqual([]);
 });
+
+it('keeps every label kind clear of the full aircraft footprint during movement and text growth', () => {
+  let previous = {};
+  for (const [width, height] of [
+    [1920, 1080],
+    [390, 844],
+    [844, 390],
+  ]) {
+    for (let frame = 0; frame < 30; frame++) {
+      const aircraft = {
+        x: width / 2 + frame - 45,
+        y: height / 2 - 30,
+        width: 90,
+        height: 60,
+      };
+      const labels = ['adsb', 'poi', 'gep', 'satellite', 'own'].map(
+        (kind, i) => ({
+          id: kind,
+          retainIdentity: kind === 'adsb',
+          bounds: {
+            x: width / 2 + i,
+            y: height / 2,
+            width: frame % 2 ? 220 : 100,
+            height: frame % 2 ? 56 : 28,
+          },
+        })
+      );
+      const result = layoutOverviewLabels(
+        labels,
+        { width, height },
+        [],
+        previous,
+        { aircraft: [aircraft] }
+      );
+      for (const placement of Object.values(result.placements))
+        expect(overlaps(placement.bounds, aircraft)).toBe(false);
+      previous = result.offsets;
+    }
+  }
+});
+
+it.each([true, false])(
+  'suppresses an impossible label rather than putting its fallback over the aircraft (retain=%s)',
+  (retainIdentity) => {
+    const result = layoutOverviewLabels(
+      [
+        {
+          id: 'crowded',
+          retainIdentity,
+          bounds: { x: 80, y: 80, width: 150, height: 28 },
+        },
+      ],
+      { width: 220, height: 160 },
+      [],
+      {},
+      { aircraft: [{ x: 0, y: 0, width: 220, height: 160 }] }
+    );
+    expect(result.placements).toEqual({});
+    expect(result.groups).toEqual([]);
+  }
+);
+
+it('prefers a placement clear of a displayed route and a POI halo', () => {
+  const result = layoutOverviewLabels(
+    [
+      {
+        id: 'traffic',
+        retainIdentity: true,
+        bounds: { x: 300, y: 200, width: 150, height: 28 },
+      },
+    ],
+    { width: 700, height: 500 },
+    [],
+    {},
+    {
+      aircraft: [],
+      markers: [{ x: 310, y: 180, width: 40, height: 40 }],
+      paths: [{ start: { x: 330, y: 50 }, end: { x: 330, y: 400 } }],
+    }
+  );
+  const box = result.placements.traffic.bounds;
+  expect(box.x + box.width).toBeLessThan(310);
+});
+
+it('keeps feasible POI identities individual when only soft route paths obstruct them', () => {
+  const labels = [
+    { id: 'enter', bounds: { x: 348, y: 260, width: 112, height: 28 } },
+    { id: 'exit', bounds: { x: 352, y: 261, width: 100, height: 28 } },
+  ];
+  const aircraft = { x: 320, y: 340, width: 70, height: 60 };
+  const result = layoutOverviewLabels(
+    labels,
+    { width: 704, height: 500 },
+    [],
+    {},
+    {
+      aircraft: [aircraft],
+      paths: Array.from({ length: 100 }, (_, i) => ({
+        start: { x: 0, y: i * 5 },
+        end: { x: 704, y: i * 5 },
+      })),
+    }
+  );
+  expect(result.groups).toEqual([]);
+  expect(Object.keys(result.offsets).sort()).toEqual(['enter', 'exit']);
+  const boxes = Object.values(result.placements).map((p) => p.bounds);
+  expect(overlaps(boxes[0], boxes[1])).toBe(false);
+  for (const box of boxes) expect(overlaps(box, aircraft)).toBe(false);
+});
+
+it('keeps Enter and Exit individual in the production 704px marker-clearance conflict', () => {
+  // Projected inputs captured from the exact production browser regression.
+  const labels: ProjectedOverviewLabel[] = (
+    [
+      ['adsb:00AB12', 289.58, 211.07, 76.91, 0, true],
+      ['poi:departure', 474.0, 201.64, 63.62, 2, false],
+      ['poi:commka-exit', 230.35, 192.53, 117.98, 2, false],
+      ['poi:commka-enter', 222.37, 191.11, 129.69, 2, false],
+      ['poi:arrival', 112.74, 33.1, 56.98, 2, false],
+      ['gep', 336.21, 283.81, 47.73, 1, false],
+    ] as const
+  ).map(([id, x, y, width, priority, retainIdentity]) => ({
+    id,
+    bounds: { x, y, width, height: 28 },
+    priority,
+    retainIdentity,
+  }));
+  const reserved = [
+    [0, -133.56, 680, 121.56],
+    [508, 12, 160, 73.17],
+    [508, 93.17, 160, 44],
+    [12, 93.17, 143.83, 37],
+    [12, 138.17, 44, 44],
+    [12, 12, 90, 46],
+    [12, 315.7, 656, 52.3],
+    [0, 392, 680, 328.08],
+  ].map(([x, y, width, height]) => ({ x, y, width, height }));
+  const aircraft = { x: 320.56, y: 258.76, width: 61, height: 61 };
+  const result = layoutOverviewLabels(
+    labels,
+    { width: 680, height: 380 },
+    reserved,
+    {},
+    {
+      aircraft: [aircraft],
+      markers: labels.map((l) => {
+        const radius = l.retainIdentity ? 21.22 : 17;
+        return {
+          x: l.bounds.x - radius,
+          y: l.bounds.y - radius,
+          width: radius * 2,
+          height: radius * 2,
+        };
+      }),
+    }
+  );
+  expect(result.groups).toEqual([]);
+  expect(Object.keys(result.offsets)).toHaveLength(6);
+  const boxes = Object.values(result.placements).map((p) => p.bounds);
+  for (const [i, box] of boxes.entries()) {
+    expect(overlaps(box, aircraft)).toBe(false);
+    for (const other of boxes.slice(i + 1))
+      expect(overlaps(box, other)).toBe(false);
+    for (const panel of reserved) expect(overlaps(box, panel)).toBe(false);
+  }
+});
