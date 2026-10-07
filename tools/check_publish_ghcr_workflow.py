@@ -19,6 +19,10 @@ EXPECTED_IMAGES = {
         "./frontend/mission-planner/Dockerfile",
     ),
     "prometheus": (".", "./deployment/prometheus/Dockerfile"),
+    "gfs-worker": (
+        "./backend/starlink-location",
+        "./backend/starlink-location/Dockerfile.gfs",
+    ),
 }
 IMAGE_PATTERN = re.compile(r"^\s*-\s*image:\s*(?P<image>.+?)\s*$")
 FIELD_PATTERN = re.compile(r"^\s+(?P<field>context|file):\s*(?P<value>\S+)\s*$")
@@ -384,7 +388,7 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
         ]
     expected_commands = [
         "set -euo pipefail",
-        "for package in starlink-location mission-planner prometheus; do",
+        "for package in starlink-location mission-planner prometheus gfs-worker; do",
         expected_ghcr_query,
         (
             "jq '{versions: flatten, pagination: {complete: true}}'"
