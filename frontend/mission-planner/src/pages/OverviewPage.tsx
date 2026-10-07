@@ -954,7 +954,7 @@ export function OverviewPage() {
           onSelectionChange={setSelectedWeather}
           onClose={closeWeather}
           returnFocusRef={weatherReturnFocus}
-          portalContainer={stageNode}
+          portalContainer={document.body}
         />
         <Canvas
           className="overview-globe"

@@ -397,6 +397,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .getByRole('button', { name: 'Inspect weather reports' })
       .click();
     await expect(overview.getByRole('dialog')).toBeVisible();
+    await expect(overview.getByRole('dialog')).toBeInViewport({ ratio: 1 });
     await overview.screenshot({
       path: info.outputPath('gfs-report-chooser.png'),
     });
@@ -423,6 +424,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .getByRole('button', { name: 'Inspect weather reports' })
       .click();
     await expect(overview.getByRole('dialog')).toBeVisible();
+    await expect(overview.getByRole('dialog')).toBeInViewport({ ratio: 1 });
     expect(
       await overview
         .getByRole('dialog')
@@ -448,6 +450,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .getByRole('button', { name: 'Inspect weather reports' })
       .click();
     await expect(overview.getByRole('dialog')).toBeVisible();
+    await expect(overview.getByRole('dialog')).toBeInViewport({ ratio: 1 });
     await overview.screenshot({
       path: info.outputPath('gfs-mobile-reports.png'),
     });

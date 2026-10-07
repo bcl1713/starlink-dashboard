@@ -178,6 +178,9 @@ describe('Overview layer and exception integration', () => {
     );
     const popup = screen.getByRole('dialog');
     expect(popup.textContent).toContain('TEST METAR observation');
+    // Overview's size container establishes a fixed-position containing block.
+    // A report must escape that scrolling layout to remain in the viewport.
+    expect(popup.closest('.overview-page')).toBeNull();
     expect(
       screen.getByLabelText('Aviation weather status').textContent
     ).not.toContain('TEST report');
