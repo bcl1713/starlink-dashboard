@@ -39,22 +39,24 @@ Satellite catalog editing remains in Satellite Manager.
 
 ### Shared data link visibility
 
-**Configuration → Network Traffic → Overview layers** contains independent
+**Configuration → Network Traffic → Network map layers** contains independent
 **Starshield data link** and **X-band data link** switches. Both default to
 `true`. The **Orbital traffic view** switch restores the optional Starlink
 constellation and inferred aircraft-to-PoP path; it defaults to `false`.
-**Aircraft history** shows the flown track and defaults to `true`. Hiding it
-also removes the **Track history** legend entry; history collection, the
-selected window and network graphs continue to operate. The switches use
-`GET /api/overview-links/settings` and partial
-`PUT /api/overview-links/settings` updates with strict boolean fields
+**Configuration → Aircraft Traffic → Own aircraft → Aircraft history** shows the
+flown track and defaults to `true`. Hiding it also removes the **Track history**
+legend entry; history collection, the selected window and network graphs
+continue to operate. The switches use `GET /api/overview-links/settings` and
+partial `PUT /api/overview-links/settings` updates with strict boolean fields
 `starshield_link_enabled`, `x_band_link_enabled`, `orbital_traffic_enabled` and
-`aircraft_history_enabled`. A save returns all four fields; changing one
-preserves the others, including concurrent disjoint edits. Orbital visualization
-requires the Starshield data link to be enabled and falls back to the direct arc
-when no usable orbital route exists. See the
-[orbital view checks](../testing/orbital-traffic-experiment.md) for provider,
-rendering and resource behavior.
+`aircraft_history_enabled`, plus independent border, marker and panel
+preferences. **Overview** contains general panel and mission-layer switches;
+**Network Traffic** contains individual network graph switches. The API returns
+all 21 confirmed boolean fields; changing one preserves the others, including
+concurrent disjoint edits. Orbital visualization requires the Starshield data
+link to be enabled and falls back to the direct arc when no usable orbital route
+exists. See the [orbital view checks](../testing/orbital-traffic-experiment.md)
+for provider, rendering and resource behavior.
 
 Settings persist atomically at `data/settings/overview-links.json`, survive
 backend restarts and synchronize mounted Overview windows through five-second

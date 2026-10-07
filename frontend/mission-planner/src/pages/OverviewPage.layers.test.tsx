@@ -363,3 +363,62 @@ it('keeps passive weather independent of core map failures and adds no controls'
   expect(screen.queryByRole('switch')).toBeNull();
   expect(screen.getByLabelText('Globe legend')).not.toBeNull();
 });
+
+it.each([
+  ['operational_clocks_enabled', 'Operational clocks'],
+  ['arrival_panel_enabled', 'Departure and arrival'],
+  ['planned_satellite_panel_enabled', 'Planned satellite'],
+  ['map_status_enabled', 'Map status'],
+  ['legend_enabled', 'Globe legend'],
+])(
+  'hides and restores %s independently of the other panels',
+  (field, label) => {
+    const view = render(<OverviewPage />);
+    expect(screen.getAllByLabelText(label).length).toBeGreaterThan(0);
+    queries.links = {
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        [field]: false,
+      },
+    };
+    view.rerender(<OverviewPage />);
+    expect(screen.queryAllByLabelText(label)).toHaveLength(0);
+    expect(
+      screen.getByRole('button', { name: 'Enter fullscreen overview' })
+    ).not.toBeNull();
+    queries.links = {
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        [field]: true,
+      },
+    };
+    view.rerender(<OverviewPage />);
+    expect(screen.getAllByLabelText(label).length).toBeGreaterThan(0);
+  }
+);
+
+it.each([
+  ['aircraft_marker_enabled', 'Aircraft'],
+  ['ground_entry_point_enabled', 'Ground entry point'],
+])(
+  'removes the hidden %s layer from the legend without removing links',
+  (field, label) => {
+    queries.links = {
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        [field]: false,
+      },
+    };
+    render(<OverviewPage />);
+    expect(
+      within(screen.getByLabelText('Globe legend')).queryByText(label, {
+        exact: true,
+      })
+    ).toBeNull();
+    expect(screen.getByText('Traffic path')).not.toBeNull();
+    expect(screen.getByText('Planned satellite link')).not.toBeNull();
+  }
+);

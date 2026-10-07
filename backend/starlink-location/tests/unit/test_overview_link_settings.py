@@ -13,6 +13,24 @@ from app.services.overview_link_settings import (
     OverviewLinkSettingsStore,
 )
 
+VISIBLE_DEFAULTS = {
+    "operational_clocks_enabled": True,
+    "arrival_panel_enabled": True,
+    "planned_satellite_panel_enabled": True,
+    "map_status_enabled": True,
+    "legend_enabled": True,
+    "latency_panel_enabled": True,
+    "downlink_panel_enabled": True,
+    "uplink_panel_enabled": True,
+    "packet_loss_panel_enabled": True,
+    "obstruction_panel_enabled": True,
+    "aircraft_marker_enabled": True,
+    "planned_route_enabled": True,
+    "poi_markers_enabled": True,
+    "ground_entry_point_enabled": True,
+    "configured_satellites_enabled": True,
+}
+
 
 def test_missing_file_returns_immutable_enabled_defaults(tmp_path):
     store = OverviewLinkSettingsStore(tmp_path / "nested/settings/overview-links.json")
@@ -58,6 +76,7 @@ def test_all_pairs_survive_store_recreation(tmp_path, starshield, x_band):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         starshield, x_band
@@ -226,6 +245,7 @@ def test_future_fields_survive_reads_partial_saves_and_restart(tmp_path, future_
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
         "future_preference": future_value,
     }
     path.write_text(json.dumps(payload))
@@ -277,6 +297,7 @@ def test_rollback_and_reupgrade_preserve_enabled_orbital_preference(
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     assert OverviewLinkSettingsStore(path).get() == OverviewLinkSettings(
         False, False, True

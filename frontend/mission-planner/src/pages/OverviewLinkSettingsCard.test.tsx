@@ -27,12 +27,12 @@ const switches = () => [
   screen.getByRole('switch', { name: 'Starshield data link' }),
   screen.getByRole('switch', { name: 'X-band data link' }),
   screen.getByRole('switch', { name: 'Orbital traffic view' }),
-  screen.getByRole('switch', { name: 'Aircraft history' }),
+  screen.getByRole('switch', { name: 'Configured satellite markers' }),
 ];
-function renderCard() {
+function renderCard(group?: 'aircraft') {
   return render(
     <QueryClientProvider client={client}>
-      <OverviewLinkSettingsCard />
+      <OverviewLinkSettingsCard group={group} />
     </QueryClientProvider>
   );
 }
@@ -249,7 +249,7 @@ it('saves only the aircraft history preference and confirms its switch', async (
     saved = { ...saved, ...(changes as object) };
     return { data: saved };
   });
-  renderCard();
+  renderCard('aircraft');
   const control = screen.getByRole('switch', { name: 'Aircraft history' });
   await waitFor(() => expect(control).toBeEnabled());
   expect(control).toBeChecked();

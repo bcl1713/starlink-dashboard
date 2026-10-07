@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import type { OverviewLinkSettings } from '../services/overview-link-settings';
+import { useState, type CSSProperties } from 'react';
 import type { OverviewHistoryBundle } from '../services/overview-history';
 import type { StatusResponse } from '../services/status';
 import { OVERVIEW_METRIC_GRAPHS } from './overview-metric-history';
@@ -10,6 +11,7 @@ import { OverviewMetricHistoryPanel } from './OverviewMetricHistoryPanel';
 import { statusObservationAgeMs } from './status-freshness';
 
 interface Props {
+  settings?: Partial<OverviewLinkSettings>;
   history: OverviewHistoryBundle | undefined;
   error: boolean;
   status: StatusResponse | undefined;
@@ -26,6 +28,7 @@ export function OverviewMetricHistoryPanels({
   statusError,
   selectedWindowSeconds,
   nowMs,
+  settings,
 }: Props) {
   const [acceptedStatus, setAcceptedStatus] = useState<StatusResponse>();
   const timestamp = status ? Date.parse(status.timestamp) : NaN;
@@ -57,10 +60,19 @@ export function OverviewMetricHistoryPanels({
     windowSeconds % 60 === 0
       ? `${windowSeconds / 60} MIN`
       : `${windowSeconds} SEC`;
+  const visibleGraphs = OVERVIEW_METRIC_GRAPHS.filter(
+    (descriptor) =>
+      !descriptor.visibilityField ||
+      settings?.[descriptor.visibilityField] !== false
+  );
+  if (!visibleGraphs.length) return null;
   return (
     <section
       className="overview-metric-history-panels"
       aria-label="Overview metric history"
+      style={
+        { '--overview-metric-count': visibleGraphs.length } as CSSProperties
+      }
     >
       <header
         className="overview-metric-history-panels__header"
@@ -125,7 +137,7 @@ export function OverviewMetricHistoryPanels({
           </li>
         </ul>
       </header>
-      {OVERVIEW_METRIC_GRAPHS.map((descriptor, index) => (
+      {visibleGraphs.map((descriptor) => (
         <div data-metric-panel={descriptor.id} key={descriptor.id}>
           <OverviewMetricHistoryPanel
             descriptor={descriptor}
@@ -133,7 +145,7 @@ export function OverviewMetricHistoryPanels({
             error={error}
             selectedWindowSeconds={windowSeconds}
             nowMs={nowMs}
-            readout={readouts[index]}
+            readout={readouts[OVERVIEW_METRIC_GRAPHS.indexOf(descriptor)]}
           />
         </div>
       ))}

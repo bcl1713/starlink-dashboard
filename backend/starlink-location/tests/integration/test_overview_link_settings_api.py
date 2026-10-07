@@ -7,6 +7,24 @@ from fastapi.testclient import TestClient
 from app.api import overview_link_settings
 from app.services.overview_link_settings import OverviewLinkSettingsStore
 
+VISIBLE_DEFAULTS = {
+    "operational_clocks_enabled": True,
+    "arrival_panel_enabled": True,
+    "planned_satellite_panel_enabled": True,
+    "map_status_enabled": True,
+    "legend_enabled": True,
+    "latency_panel_enabled": True,
+    "downlink_panel_enabled": True,
+    "uplink_panel_enabled": True,
+    "packet_loss_panel_enabled": True,
+    "obstruction_panel_enabled": True,
+    "aircraft_marker_enabled": True,
+    "planned_route_enabled": True,
+    "poi_markers_enabled": True,
+    "ground_entry_point_enabled": True,
+    "configured_satellites_enabled": True,
+}
+
 URL = "/api/overview-links/settings"
 
 
@@ -31,6 +49,7 @@ def test_get_returns_default_full_pair(client):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
 
 
@@ -44,6 +63,7 @@ def test_put_returns_and_persists_all_pairs(client, starshield, x_band):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     response = client.put(URL, json=payload)
     assert response.status_code == 200
@@ -60,6 +80,7 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     second = client.put(URL, json={"x_band_link_enabled": False})
     assert second.status_code == 200
@@ -70,6 +91,7 @@ def test_partial_put_preserves_other_viewers_saved_switch(client):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
 
 
@@ -101,6 +123,7 @@ def test_invalid_updates_return_422_and_preserve_last_confirmed_pair(client, pay
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     assert client.put(URL, json=saved).status_code == 200
     response = client.put(URL, json=payload)
@@ -143,6 +166,7 @@ def test_failed_write_returns_503_and_keeps_last_confirmed_pair(client, monkeypa
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     assert client.put(URL, json=saved).status_code == 200
 
@@ -170,6 +194,7 @@ def test_orbital_partial_updates_and_interleaved_viewers(client):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     assert client.put(URL, json={"x_band_link_enabled": False}).json() == {
         "starshield_link_enabled": False,
@@ -178,6 +203,7 @@ def test_orbital_partial_updates_and_interleaved_viewers(client):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
 
 
@@ -197,6 +223,7 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
         "future_preference": {"display": "constellation"},
     }
     path.write_text(json.dumps(saved))
@@ -209,6 +236,7 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     response = client.put(URL, json={"x_band_link_enabled": False})
     assert response.status_code == 200
@@ -219,6 +247,7 @@ def test_forward_compatible_saved_settings_remain_editable(client, tmp_path):
         "aircraft_history_enabled": True,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     assert json.loads(path.read_text()) == {**saved, "x_band_link_enabled": False}
     assert client.put(URL, json={"future_preference": False}).status_code == 422
@@ -236,6 +265,7 @@ def test_aircraft_history_partial_update_preserves_other_layers(client):
         "aircraft_history_enabled": False,
         "country_borders_enabled": False,
         "state_borders_enabled": False,
+        **VISIBLE_DEFAULTS,
     }
     client.put(URL, json={"orbital_traffic_enabled": True})
     assert client.get(URL).json()["aircraft_history_enabled"] is False
@@ -273,6 +303,49 @@ def test_boundary_layers_default_off_and_merge_independently(client, tmp_path):
 @pytest.mark.parametrize("field", ["country_borders_enabled", "state_borders_enabled"])
 @pytest.mark.parametrize("value", [None, "true", 1, []])
 def test_boundary_layers_require_boolean_confirmation(client, field, value):
+    before = client.get(URL).json()
+    assert client.put(URL, json={field: value}).status_code == 422
+    assert client.get(URL).json() == before
+
+
+VISIBILITY_FIELDS = [
+    "operational_clocks_enabled",
+    "arrival_panel_enabled",
+    "planned_satellite_panel_enabled",
+    "map_status_enabled",
+    "legend_enabled",
+    "latency_panel_enabled",
+    "downlink_panel_enabled",
+    "uplink_panel_enabled",
+    "packet_loss_panel_enabled",
+    "obstruction_panel_enabled",
+    "aircraft_marker_enabled",
+    "planned_route_enabled",
+    "poi_markers_enabled",
+    "ground_entry_point_enabled",
+    "configured_satellites_enabled",
+]
+
+
+@pytest.mark.parametrize("field", VISIBILITY_FIELDS)
+def test_visibility_preferences_default_visible_and_survive_restart(
+    client, tmp_path, field
+):
+    before = client.get(URL).json()
+    assert before[field] is True
+    response = client.put(URL, json={field: False})
+    assert response.status_code == 200
+    assert response.json() == {**before, field: False}
+    overview_link_settings.set_overview_link_settings_store(
+        OverviewLinkSettingsStore(tmp_path / "overview-links.json")
+    )
+    assert client.get(URL).json() == {**before, field: False}
+    assert client.put(URL, json={field: True}).json() == before
+
+
+@pytest.mark.parametrize("field", VISIBILITY_FIELDS)
+@pytest.mark.parametrize("value", [None, "false", 0])
+def test_visibility_updates_require_boolean_confirmation(client, field, value):
     before = client.get(URL).json()
     assert client.put(URL, json={field: value}).status_code == 422
     assert client.get(URL).json() == before

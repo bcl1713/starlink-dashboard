@@ -1,6 +1,28 @@
 import apiClient from './api-client';
 
-export interface OverviewLinkSettings {
+// Additive preferences preserve the existing layout on older installations.
+export const OVERVIEW_VISIBILITY_DEFAULTS = {
+  operational_clocks_enabled: true,
+  arrival_panel_enabled: true,
+  planned_satellite_panel_enabled: true,
+  map_status_enabled: true,
+  legend_enabled: true,
+  latency_panel_enabled: true,
+  downlink_panel_enabled: true,
+  uplink_panel_enabled: true,
+  packet_loss_panel_enabled: true,
+  obstruction_panel_enabled: true,
+  aircraft_marker_enabled: true,
+  planned_route_enabled: true,
+  poi_markers_enabled: true,
+  ground_entry_point_enabled: true,
+  configured_satellites_enabled: true,
+} as const;
+
+export type OverviewVisibilityField = keyof typeof OVERVIEW_VISIBILITY_DEFAULTS;
+
+export interface OverviewLinkSettings
+  extends Partial<Record<OverviewVisibilityField, boolean>> {
   starshield_link_enabled: boolean;
   x_band_link_enabled: boolean;
   orbital_traffic_enabled: boolean;
@@ -25,12 +47,21 @@ function confirmedSettings(data: unknown): OverviewLinkSettings {
       typeof data.aircraft_history_enabled !== 'boolean') ||
     ('country_borders_enabled' in data &&
       typeof data.country_borders_enabled !== 'boolean') ||
+    Object.keys(OVERVIEW_VISIBILITY_DEFAULTS).some(
+      (field) => field in data && typeof Reflect.get(data, field) !== 'boolean'
+    ) ||
     ('state_borders_enabled' in data &&
       typeof data.state_borders_enabled !== 'boolean')
   ) {
     throw new Error('Invalid overview link settings');
   }
   return {
+    ...Object.fromEntries(
+      Object.keys(OVERVIEW_VISIBILITY_DEFAULTS).map((field) => [
+        field,
+        field in data ? Reflect.get(data, field) : true,
+      ])
+    ),
     starshield_link_enabled: data.starshield_link_enabled,
     x_band_link_enabled: data.x_band_link_enabled,
     orbital_traffic_enabled: data.orbital_traffic_enabled,

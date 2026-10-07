@@ -9,7 +9,7 @@ from filelock import FileLock
 
 @dataclass(frozen=True)
 class OverviewLinkSettings:
-    """Shared visibility preferences for Overview map layers."""
+    """Shared visibility preferences for Overview panels and map layers."""
 
     starshield_link_enabled: bool = True
     x_band_link_enabled: bool = True
@@ -17,6 +17,21 @@ class OverviewLinkSettings:
     aircraft_history_enabled: bool = True
     country_borders_enabled: bool = False
     state_borders_enabled: bool = False
+    operational_clocks_enabled: bool = True
+    arrival_panel_enabled: bool = True
+    planned_satellite_panel_enabled: bool = True
+    map_status_enabled: bool = True
+    legend_enabled: bool = True
+    latency_panel_enabled: bool = True
+    downlink_panel_enabled: bool = True
+    uplink_panel_enabled: bool = True
+    packet_loss_panel_enabled: bool = True
+    obstruction_panel_enabled: bool = True
+    aircraft_marker_enabled: bool = True
+    planned_route_enabled: bool = True
+    poi_markers_enabled: bool = True
+    ground_entry_point_enabled: bool = True
+    configured_satellites_enabled: bool = True
 
 
 _SETTING_FIELDS = frozenset(OverviewLinkSettings.__dataclass_fields__)

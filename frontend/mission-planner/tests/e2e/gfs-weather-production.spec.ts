@@ -271,6 +271,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
   };
   try {
     await config.goto('/configuration');
+    await config.getByRole('tab', { name: 'Weather', exact: true }).click();
     await overview.goto('/overview');
     await other.goto('/overview');
     for (const name of [

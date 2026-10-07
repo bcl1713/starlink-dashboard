@@ -1,9 +1,9 @@
 # Overview precipitation radar
 
-Enable **Configuration → Overview → Weather → Precipitation radar** to show
-current precipitation on the native globe. It is off by default. The saved
-setting applies to every Overview display; visible windows read it every five
-seconds. No weather control or manual refresh is needed on Overview.
+Enable **Configuration → Weather → Precipitation radar** to show current
+precipitation on the native globe. It is off by default. The saved setting
+applies to every Overview display; visible windows read it every five seconds.
+No weather control or manual refresh is needed on Overview.
 
 Overview shows a passive weather status, the observed frame's UTC time and age,
 a precipitation legend, and linked attribution for the displayed source.
@@ -93,10 +93,10 @@ browser never contacts RainViewer directly.
 See the [weather endpoint reference](../api/endpoints/overview-weather.md) and
 [production acceptance runner](../../tools/acceptance/overview-weather/README.md).
 
-Configuration → Aviation weather → Flight-level atmosphere enables NOAA GFS
-winds and air temperature, sharing one pressure or interpolated flight level and
-forecast horizon across displays. Surface is explicitly unsupported. The
-Overview context is passive: expand it for actual run/valid UTC, level and
+Configuration → Weather → Aviation weather → Flight-level atmosphere enables
+NOAA GFS winds and air temperature, sharing one pressure or interpolated flight
+level and forecast horizon across displays. Surface is explicitly unsupported.
+The Overview context is passive: expand it for actual run/valid UTC, level and
 legends. Confirmed requested level/horizon remains visible while loading or
 unavailable, separately from actual run/valid UTC and modeled analysis or
 numerical-model forecast. Stale products keep their original deadline; expired

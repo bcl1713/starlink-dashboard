@@ -198,3 +198,56 @@ it('remeasures growing display feedback and moves oversized controls into flow w
   unmount();
   expect(observed.size).toBe(0);
 });
+
+it('releases an overflow fallback when panels are hidden at the same viewport size', () => {
+  document.body.innerHTML =
+    '<div><main data-layout="landscape"><div class="overview-map-stage"><div class="overview-right-overlays"></div><div class="overview-arrival"></div></div></main></div>';
+  const host = document.body.firstElementChild as HTMLElement;
+  const page = host.firstElementChild as HTMLElement;
+  const stage = page.firstElementChild as HTMLDivElement;
+  Object.defineProperties(host, {
+    clientWidth: { value: 1024 },
+    clientHeight: { value: 550 },
+    offsetWidth: { value: 1024 },
+    offsetHeight: { value: 550 },
+  });
+  Object.defineProperties(stage, {
+    clientWidth: { value: 756 },
+    clientHeight: { value: 440 },
+  });
+  let rightHeight = 500;
+  vi.spyOn(
+    page.querySelector('.overview-right-overlays')!,
+    'getBoundingClientRect'
+  ).mockImplementation(() => new DOMRect(0, 0, 160, rightHeight));
+  vi.spyOn(
+    page.querySelector('.overview-arrival')!,
+    'getBoundingClientRect'
+  ).mockReturnValue(new DOMRect(0, 0, 600, 80));
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  );
+  const { result, rerender, unmount } = renderHook(
+    ({ visibility }) =>
+      useOverviewLayout(
+        { current: page },
+        { current: stage },
+        'loaded',
+        true,
+        visibility
+      ),
+    { initialProps: { visibility: 'panels-visible' } }
+  );
+  expect(result.current.mode).toBe('stacked');
+  expect(result.current.flow).toBe(true);
+  page.dataset.layout = 'stacked';
+  rightHeight = 80;
+  rerender({ visibility: 'panels-hidden' });
+  expect(result.current.mode).toBe('landscape');
+  expect(result.current.flow).toBe(false);
+  unmount();
+});

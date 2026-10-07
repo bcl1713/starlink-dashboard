@@ -17,10 +17,16 @@ export function useOverviewLayout(
   pageRef: RefObject<HTMLElement | null>,
   stageRef: RefObject<HTMLDivElement | null>,
   contentKey: string,
-  contentReady: boolean
+  contentReady: boolean,
+  visibilityKey = ''
 ): Layout {
   const fullscreen = useDocumentFullscreen();
-  const flowLatch = useRef({ geometry: '', required: false, ready: false });
+  const flowLatch = useRef({
+    geometry: '',
+    visibility: '',
+    required: false,
+    ready: false,
+  });
   const [layout, setLayout] = useState<Layout>({
     mode: 'desktop',
     flow: false,
@@ -49,9 +55,15 @@ export function useOverviewLayout(
       const geometry = `${host.offsetWidth}/${host.offsetHeight}/${rootFontSize}`;
       if (
         geometry !== flowLatch.current.geometry ||
+        visibilityKey !== flowLatch.current.visibility ||
         (contentReady && !flowLatch.current.ready)
       ) {
-        flowLatch.current = { geometry, required: false, ready: contentReady };
+        flowLatch.current = {
+          geometry,
+          visibility: visibilityKey,
+          required: false,
+          ready: contentReady,
+        };
       }
       flowLatch.current.ready = contentReady;
       if (input !== previousInput) {
@@ -65,8 +77,8 @@ export function useOverviewLayout(
           .querySelector<HTMLElement>('.operational-clock')
           ?.getBoundingClientRect().height ??
         clock?.getBoundingClientRect().height ??
-        56;
-      const overlayHeight = arrival?.getBoundingClientRect().height ?? 90;
+        (clock ? 56 : 0);
+      const overlayHeight = arrival?.getBoundingClientRect().height ?? 0;
       const candidate = resolveOverviewLayout({
         width,
         height,
@@ -166,9 +178,12 @@ export function useOverviewLayout(
         mode === 'desktop'
           ? {
               x: leftWidth,
-              y: 136,
+              y: clock ? 136 : 20,
               width: Math.max(1, stageWidth - leftWidth - 360),
-              height: Math.max(1, stageHeight - overlayHeight - 156),
+              height: Math.max(
+                1,
+                stageHeight - overlayHeight - (clock ? 156 : 40)
+              ),
             }
           : {
               x: 12,
@@ -215,7 +230,7 @@ export function useOverviewLayout(
         const x = (metrics?.right ?? stageBounds.left) - stageBounds.left + 20;
         const y =
           Math.max(
-            clock?.getBoundingClientRect().bottom ?? stageBounds.top + 116,
+            clock?.getBoundingClientRect().bottom ?? stageBounds.top,
             ...upper.map((box) => box.bottom)
           ) -
           stageBounds.top +
@@ -276,7 +291,7 @@ export function useOverviewLayout(
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', schedule);
     };
-  }, [pageRef, stageRef, contentKey, contentReady, fullscreen]);
+  }, [pageRef, stageRef, contentKey, contentReady, fullscreen, visibilityKey]);
   return layout;
 }
 function clockNode(page: HTMLElement) {

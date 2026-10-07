@@ -48,9 +48,13 @@ async function displayBounds(page: Page) {
       const node = document.querySelector<HTMLElement>(selector);
       if (!node) continue;
       const rect = node.getBoundingClientRect();
-      const container = panels.find(
-        (panel) => panel.selector === '.overview-display-controls'
-      )!.rect;
+      const container = node
+        .closest(
+          selector === '.overview-display-label'
+            ? '.globe-legend, .overview-map-overlays'
+            : '.overview-display-controls'
+        )!
+        .getBoundingClientRect();
       const range = document.createRange();
       range.selectNodeContents(node);
       const text = range.getBoundingClientRect();
@@ -66,7 +70,7 @@ async function displayBounds(page: Page) {
         rect.top < container.top - 1 ||
         rect.bottom > container.bottom + 1
       )
-        issues.push(`${selector} text is clipped or exceeds display controls`);
+        issues.push(`${selector} text is clipped or exceeds its panel`);
     }
     return {
       layout: document

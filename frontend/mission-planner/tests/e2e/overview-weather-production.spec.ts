@@ -61,7 +61,7 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
   await expect(overview.getByLabel('Weather status')).toHaveCount(0);
   const config = await context.newPage();
   await config.goto('/configuration');
-  await config.getByRole('tab', { name: 'Overview', exact: true }).click();
+  await config.getByRole('tab', { name: 'Weather', exact: true }).click();
   const toggle = config.getByRole('switch', { name: 'Precipitation radar' });
   await expect(toggle).not.toBeChecked();
   expect((await events()).length).toBe(0);
@@ -166,11 +166,13 @@ test('exact production SHA: passive shared weather, pixels, real five-minute ref
     .getByRole('button', { name: 'Reset map view', exact: true })
     .click();
   await settledOverviewCamera(overview);
+  await config.getByRole('tab', { name: 'Overview', exact: true }).click();
   const follow = config.getByRole('switch', {
     name: 'Follow aircraft on Overview',
   });
   await follow.click();
   await expect(follow).toBeChecked();
+  await config.getByRole('tab', { name: 'Weather', exact: true }).click();
   await expect(
     overview.getByText('Following aircraft', { exact: true })
   ).toBeVisible();

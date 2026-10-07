@@ -2,10 +2,9 @@
 
 Phase 1 of issue 290 provides METAR/SPECI observations, TAF terminal forecasts
 and international SIGMET advisories. Enable each layer in **Configuration →
-Overview → Aviation weather**. All three start disabled. Overview displays
-native station symbols, forecast diamonds, advisory polygons and passive UTC
-status. Precipitation radar retains its existing settings and acquisition
-service.
+Weather → Aviation weather**. All three start disabled. Overview displays native
+station symbols, forecast diamonds, advisory polygons and passive UTC status.
+Precipitation radar retains its existing settings and acquisition service.
 
 ## Endpoints
 
@@ -126,8 +125,8 @@ The base Compose configuration includes the worker, so ordinary `build`, `up`,
 `logs` and `down` commands manage it with the rest of the app. Local Compose
 overrides and custom file selection retain Docker's normal behavior. Existing
 commands using `-f docker-compose.yml -f docker-compose.gfs.yml --profile gfs`
-remain supported. Winds and temperature still default off in Configuration;
-an idle worker performs no ingest.
+remain supported. Winds and temperature still default off in Configuration; an
+idle worker performs no ingest.
 
 The worker shares one CPU and 1 GiB across its owner and disposable decoder;
 scientific dependencies stay in its image. API mounts artifacts read-only and
@@ -146,19 +145,26 @@ obsolete, damaged and private-lineage paths have no accessible payload.
 Phase 2 Configuration uses one tagged `gfs_selection` for both model layers:
 
 ```json
-{"winds":true,"temperature":true,"gfs_selection":{"vertical":{"kind":"flight-level","flight_level":390},"horizon_hours":3}}
+{
+  "winds": true,
+  "temperature": true,
+  "gfs_selection": {
+    "vertical": { "kind": "flight-level", "flight_level": 390 },
+    "horizon_hours": 3
+  }
+}
 ```
 
 Native pressure choices are 85000, 50000, 30000, 25000 and 20000 Pa. Flight
 levels are 50, 100, 180, 240, 300, 340, 390 and 450; horizons are UTC now plus
-0, 3, 6, 9, 12, 18, 24, 36 and 48 hours. Legacy pressure selections migrate
-on read. The actual available source lead is selected deterministically;
-Overview displays its run, lead and valid UTC, rather than implying the target
-horizon is an exact available forecast.
+0, 3, 6, 9, 12, 18, 24, 36 and 48 hours. Legacy pressure selections migrate on
+read. The actual available source lead is selected deterministically; Overview
+displays its run, lead and valid UTC, rather than implying the target horizon is
+an exact available forecast.
 
 Flight levels use two-segment ISA pressure altitude and the two distinct nearest
-complete actual U/V/T pressure brackets. U/V/T interpolate in log pressure;
-no extrapolation or imaginary source level is admitted. Descriptors carry
+complete actual U/V/T pressure brackets. U/V/T interpolate in log pressure; no
+extrapolation or imaginary source level is admitted. Descriptors carry
 `reference: pressure-altitude-1013.25hpa`, `derivation: isa-log-pressure-v1` and
 ordered `source_pressures_pa`. Both brackets and surface pressure participate in
 conservative validity. The source GRIB instance/version lineage remains private.
@@ -166,8 +172,8 @@ conservative validity. The source GRIB instance/version lineage remains private.
 Browser admission verifies descriptor/component hashes, lengths, endian types,
 physical quantization, geometry, time and selection. Equal immutable components
 share owners only when their physical meaning agrees. All optional bulletin,
-model and highlight owners share four operation slots and 16 MiB encoded /
-32 MiB decoded / 16 MiB GPU allowances, including conversion and simultaneous
+model and highlight owners share four operation slots and 16 MiB encoded / 32
+MiB decoded / 16 MiB GPU allowances, including conversion and simultaneous
 old/candidate generations. Model envelopes declare conservative 12 MiB decoded
 and 4 MiB GPU bounds. Admission failure removes or retains only an otherwise
 compatible, originally unexpired product; it never renews expiry. Visibility,
