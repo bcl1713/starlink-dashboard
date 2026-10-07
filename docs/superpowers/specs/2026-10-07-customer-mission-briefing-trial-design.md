@@ -1,9 +1,8 @@
 # Draft customer mission briefing trial design
 
-Add a second, automatically generated PowerPoint to mission exports so customers
-can understand expected connectivity before departure. Customers usually read
-the deck independently and later attend a live briefing. The existing deck
-remains the established output while the customer briefing deck is evaluated.
+Add an automatic second PowerPoint for a recurring customer who reads it before
+a live brief. For each leg, show communications and coordination restrictions,
+their causes, and remaining capability. Evaluate it alongside the existing deck.
 
 This is a design for review, not an implementation or a replacement decision.
 
@@ -12,245 +11,291 @@ This is a design for review, not an implementation or a replacement decision.
 - One export action produces the existing deck and an additional trial deck.
 - Generation uses mission data, fixed rules, and templates without AI services,
   manual authoring, or an operator arranging slide content.
-- Eastern time is the primary reference because customers schedule in that
-  timezone. Zulu and takeoff-relative times remain readable supporting
-references.
-- Individual outages do not imply a mission connectivity failure. Two transports
-  out means reduced redundancy; all three out means loss of connectivity.
-- Maps use the visual language of the new overview globe where feasible.
-- The trial can be compared with the existing slides before any adoption
-  decision.
+- Each leg has its own takeoff-to-landing timeline and T-zero. Ground time
+  between legs is excluded, even when it spans several days.
+- Overall communications posture is the dominant visual; individual transports
+  explain why posture changes using consistent Up and Down treatments.
+- A separate row shows SOF and AR coordination restrictions without implying a
+  transport outage.
+- Eastern time is the customer clock. Every event has explicit Eastern start and
+  end times; Zulu and takeoff-relative times are secondary references.
+- Use APO organizational branding and overview-style route maps where feasible.
+- Compare the trial with the existing slides before any replacement decision.
 
 ## Existing integration points
 
-The shared slide builder lives in
-`backend/starlink-location/app/mission/exporter/pptx_builder.py`. Single-leg
-PowerPoint generation is in the exporter entry point. Combined decks and ZIP
-assembly are in `backend/starlink-location/app/mission/package/__main__.py`.
-The package already includes `exports/mission/mission-slides.pptx` and per-leg
-`slides.pptx` files, with their paths recorded in the export manifest.
+Single-leg decks use the exporter entry point and shared `pptx_builder.py`.
+Combined decks and ZIP assembly are in
+`backend/starlink-location/app/mission/package/__main__.py`. The package lists
+`exports/mission/mission-slides.pptx` and per-leg `slides.pptx` in its manifest.
 
-The overview renders a textured globe and route using React Three Fiber and
-Three.js. Relevant components include `CityLitGlobe`, `GlobeRouteRibbon`, and
-`OverviewMapController`. The current exported map uses a separate static
-renderer.
+The overview uses React Three Fiber and Three.js through `CityLitGlobe`,
+`GlobeRouteRibbon`, and `OverviewMapController`; exported maps currently use a
+separate static renderer. `TransportState` distinguishes available, degraded,
+and offline, while legacy status groups two affected transports as critical.
+Derive trial posture independently without changing models or legacy output.
 
-`TransportState` distinguishes available, degraded, and offline. Existing
-`TimelineStatus` and slide styling classify two or more affected transports as
-critical. The trial must derive its own customer-facing presentation from the
-individual transport states without changing the model or legacy output.
+The rule engine already creates 15-minute post-takeoff and pre-landing SOF
+windows. AR uses resolved plan timing and overrides. Safety context is separate
+from transport availability; normalized call-posture labels must not determine
+the trial's transport-count posture.
 
 ## Trial export contract
 
-When the trial is enabled, the ordinary mission ZIP gains
-`exports/mission/mission-customer-briefing-trial.pptx`. Its cover says
-"Customer briefing — Trial" and the manifest lists the additional file.
-Existing filenames, legacy slides, CSVs, route files, and import behavior remain
-unchanged. The direct single-leg PowerPoint download remains the legacy deck in
-this first trial; generating separate trial files for every leg is out of scope.
+The normal ZIP gains `exports/mission/mission-customer-briefing-trial.pptx`,
+labeled "Customer briefing — Trial" and listed in the manifest. Preserve legacy
+slides, filenames, CSVs, routes, and imports. Direct single-leg PowerPoint
+downloads remain legacy; separate trial files for each leg are out of scope.
 
-An export feature flag controls the addition. The deployed trial is enabled for
-evaluation; disabling the flag restores the original package contents without a
-data migration. No new export choices or manual steps are required for
-customers.
+A feature flag enables the deployed trial for evaluation. Disabling it restores
+the original file set without migration. Customers need no extra export steps.
 
-Resolve one immutable export snapshot containing mission metadata, ordered legs,
-adjusted routes, and their timelines. Both deck builders consume that snapshot
-so their planned departures, revisions, and time windows match. Preserve the
-existing rebuild and cache fallback behavior; visibly label cached or incomplete
-information in the trial deck rather than presenting it as a fresh prediction.
-Export generation must not write back to mission or timeline storage.
+[Phase two](2026-10-07-mission-slide-background-generation-design.md) moves
+generation to interruptible save-triggered workers; ready exports assemble
+caches.
 
-Trial-generation failure must not prevent delivery of the existing package.
-Omit an incomplete trial file and provide a concise export warning through the
+Both builders consume one immutable snapshot of metadata, ordered legs, adjusted
+routes, and timelines, ensuring matching departures and revisions. Preserve
+rebuild and cache fallback behavior; label cached or incomplete trial data
+explicitly. Export must not write back to mission or timeline storage.
+
+Trial-generation failure must not prevent delivery of the existing package. Omit
+an incomplete trial file and provide a concise export warning through the
 manifest and export result. A map-only failure uses the existing static map,
 with a small fallback label, while the rest of the trial deck remains usable.
 Never leave an empty map slide or silently report successful trial generation.
 
 ## Slide structure
 
-### Mission at a glance
+### Optional mission leg index
 
-Open with mission name, planned departure and arrival in Eastern time, ordered
-legs, and a large route image. Fixed sentences summarize predicted availability
-and key-window durations. For example, a summary can state that connectivity is
-predicted throughout the flight with a period of reduced redundancy. Only make
-that statement when all intervals have known data and support it.
+An optional opening page lists the mission and ordered legs with ET departures
+and arrivals. It is a small navigation aid, without a large map, generic
+customer introduction, inter-leg ground time, or a mission-spanning
+communications axis.
 
-Include a compact explanation of the three transports and the availability
-legend. Explain that one transport interruption can leave two alternatives.
-Describe predictions as expected conditions, not a guarantee of delivered
-bandwidth or suitability for every customer activity.
+### Primary briefing for each leg
 
-### Connectivity through each leg
+The header shows Leg N of M, origin to destination, departure ET, arrival ET,
+and flight time. Missing locations use route or leg names with a missing-data
+note. Each leg covers takeoff through landing with its own T-zero.
 
-Use three aligned horizontal transport lanes and a combined strip above them.
-Display existing names with band references: X-Band, CommKa (Ka), and
-StarShield (Ku). Keep that order consistent throughout the deck.
+Place a small route/context map alongside the main content. The largest visual
+is the communications timeline, with these rows in order:
 
-Use Eastern time for the main axis. Place Zulu and T-plus references on aligned
-supporting rows at the same time anchors. Bars are proportional to duration.
-Show takeoff, landing, and relevant existing mission events without crowding.
-Clearly differentiate degraded performance from offline intervals using labels
-and patterns as well as color.
+1. Overall communications posture.
+2. Commercial Ka.
+3. Starshield.
+4. X-Band MILSATCOM.
+5. SOF / AR restrictions.
 
-Long legs divide into consecutive panels with repeated legends, leg names, time
-ranges, and page numbers. An interval that crosses a panel boundary carries a
-continuation mark. Short events use numbered callouts linked to detailed cards;
-minimum visual bar width must not misrepresent their duration.
+The overall posture row is at least twice the height of an individual transport
+lane and has the strongest labels and contrast. Only this row uses the green,
+amber, orange, and red posture scale. Transport lanes use the same neutral Up
+treatment and hatched Down treatment, with explicit state text and no individual
+red outage blocks. The restriction row uses its own neutral pattern and SOF or
+AR labels, not a transport-risk color.
 
-### Windows that matter
+Eastern time is the main axis. Zulu and T-plus references are smaller and
+aligned to the same anchors. Bars are proportional to duration. A numbered
+callout connects a short event to its table entry without exaggerating its
+duration. Repeated legends explain posture, transport state, and restrictions.
 
-Generate chronological cards for reduced-redundancy windows, connectivity-loss
-windows, and periods with uncertain availability. Each card includes prominent
-Eastern start and end times, smaller Zulu and T-plus times, duration, the
-transports affected, those remaining, and concise source-backed reasons.
+A primary ET event/coordination table sits beneath or beside the timeline. If
+the overview and table do not fit readably on one slide, use adjacent slides
+with matching window numbers and repeated leg headers. Long legs divide into
+consecutive time panels; never join multiple legs into one continuous axis.
+Repeat time ranges, legends, leg identity, and page numbers, and mark intervals
+that continue across panels. Paginate rather than shrink text or timeline rows.
 
-Use shared window numbers on the strip, cards, and map where coordinates exist.
-Group cards by leg, with at most three per slide. Add pages rather than
-shrinking
-the type. A leg with no qualifying windows receives an explicit statement to
-that effect, not an unexplained missing section.
+### Primary event and coordination table
 
-Use fixed wording and a maintained reason-label dictionary. Preserve unusual
-source explanations in the appendix rather than inventing an explanation or an
-operator action. Existing advisories remain distinct from connectivity loss.
+For every leg, show a compact chronological table with these columns:
+
+- Start (ET).
+- End (ET).
+- Event / impact.
+- Communications remaining.
+- Overall posture / customer implication.
+
+Include both SOF windows, the full resolved AR periods, transport outages, and
+synthesized overlap windows when overlapping conditions materially change
+posture. A single outage remains visible in this table even when two transports
+are still Up. Display each restriction's start and end explicitly in ET rather
+than requiring the customer to infer them from axis ticks. Zulu and T-plus
+equivalents are smaller secondary references.
+
+Explain source-backed causes, name usable transports, and distinguish reduced
+redundancy, elevated risk, unavailability, and activity restrictions. A
+restriction-only row identifies unchanged posture and required coordination. Do
+not infer a shutdown or invent an operator instruction from a safety label.
+
+Use fixed wording and a reason-label dictionary; unknown reasons retain concise
+source explanations. Promote handoffs and internal transitions only for posture
+or coordination changes; other detail belongs in the appendix. Order by start,
+end, then stable event identity. Continuations repeat columns and leg data.
+
+Window numbers link the timeline, table, and map when coordinates exist.
+Optional detail cards supplement the primary table for complex events.
 
 ### Reference appendix
 
-Retain a paginated timeline reference with transport states, all three clocks,
-reasons, and relevant existing advisories. Preserve important AAR and transition
-events even when their transport combination does not generate a key card.
-The customer should not need this appendix to understand the main briefing.
+Keep paginated source timeline states, all three clocks, reasons, advisories,
+and lower-level transition details for the later live briefing. Essential SOF,
+AR, and outage information must already be present in the primary leg pages.
 
-## Availability semantics
+## Communications posture and transport display
 
-Compute presentation intervals from the individual transport states and event
-boundaries, not from the existing aggregate critical label. With all states
-known and restricted to available or offline, the customer labels are:
+Derive posture from independently classified transport availability, not from
+the existing aggregate critical label or normalized call-posture wording. For
+intervals with a known Up or Down classification for all three transports:
 
-- Three available: "All three available", calm green or neutral styling.
-- Two available: "Two available", calm styling and no failure label.
-- One available: "One remaining — reduced redundancy", amber styling.
-- All three offline: "No connectivity predicted", red styling.
+- Three Up: "Nominal", green.
+- Two Up: "Degraded", amber; two transports remain and this is not an outage.
+- One Up: "Limited / elevated risk", orange.
+- Zero Up: "Communications unavailable", red.
 
-Degraded does not automatically mean offline. Show it explicitly in its lane.
-Where degradation is present, the combined strip says how many transports are
-fully available and notes degradation. Zero fully available transports with a
-degraded transport must not be labeled no connectivity. Missing or unsupported
-states display "Availability uncertain" and are never counted as available.
+Posture is a prediction, not a throughput guarantee. Labels supplement colors.
 
-At implementation design review, audit the timeline's reason codes against their
-actual availability meaning. A reason-specific classification may identify a
-degraded interval as unavailable only when an existing documented rule supports
-it. Absent that evidence, keep the conservative degraded label. Do not silently
-change existing mission calculations to accommodate the new presentation.
+Available maps to Up and offline maps to Down. Degraded does not automatically
+mean either. Before implementation, document reason-specific presentation rules
+against the existing source events and availability semantics. For example, the
+reducer represents a Ka coverage gap as degraded even though its cause is no
+coverage; classification must consider that cause rather than the enum alone.
+Use Down only for a supported unavailability rule, and Up with an asterisk only
+when a supported rule establishes remaining usability. Explain the limitation in
+the primary event table without introducing another prominent lane color. Do not
+change the mission model or legacy calculations.
 
-Cards cover intervals with at most one fully available transport or uncertain
-data; their titles distinguish reduced redundancy, degraded conditions, and
-confirmed predicted outage. Adjacent intervals merge only when the transport
-states, customer label, reasons, and advisory context match. Do not merge across
-leg boundaries or hide a brief complete outage inside a longer amber window.
-Use half-open intervals so touching outages do not become a false overlap.
+An unclassifiable degraded or missing state uses a neutral hatched "?" marker
+with a linked explanation. It is neither Up nor Down. The overall row shows
+"Posture uncertain", known usable transports, and the unresolved limitation; do
+not display a definitive count-based posture or an all-unavailable claim.
+"Communications unavailable" requires all three independently classified Down.
 
-Summaries accumulate durations from those intervals, excluding inter-leg ground
-gaps from in-flight totals. Incomplete intervals do not contribute to an
-unqualified all-flight connectivity claim. Unknown durations are reported
-separately.
+Split intervals at transport-state, restriction, and material event boundaries.
+Merge adjacent display intervals only when classification, posture, causes, and
+coordination context match. Never merge across leg boundaries or hide a brief
+complete outage inside a longer limited window. Half-open intervals prevent
+touching outage boundaries from creating a false overlap.
+
+Summaries exclude ground time; uncertainty prevents blanket availability claims.
+
+## SOF and AR coordination restrictions
+
+Each leg automatically includes the existing SOF blocks from takeoff to takeoff
+plus 15 minutes, and from landing minus 15 minutes to landing. Resolve them from
+the leg's adjusted departure and arrival; reuse existing rule configuration
+rather than introducing a separate buffer setting. Clamp windows to the flight
+interval. On a flight shorter than 30 minutes, preserve both SOF labels where
+they overlap without double-counting restricted duration.
+
+Show the full resolved AR period as an activity-restricted coordination window,
+not only its start/end markers or periods with X-band conflicts. Use current
+waypoint timing, AR overrides, and applicable resolved manual AR windows from
+the same export snapshot. Missing AR timing is an explicit unresolved
+restriction in the event table, not a fabricated interval.
+
+SOF and AR appear in the dedicated restriction row and the primary event table.
+They must not lower the transport Up count unless independent mission data
+establishes transport unavailability. When an outage overlaps a restriction,
+show both: the transport lanes and posture reflect availability, while the
+restriction row reflects coordination. Preserve overlapping restriction labels
+and event entries so the customer can see their separate causes.
 
 ## Clock behavior and departure changes
 
-Use `America/New_York` for Eastern conversion, with the correct EST or EDT label
-for each timestamp. Zulu derives from UTC. Include calendar dates at midnight
-crossings and distinguish repeated Eastern times at daylight-saving transitions.
-T-plus derives from the adjusted planned takeoff of that leg, not from export
-time or from the start of a pre-departure timeline segment. Supporting negative
-offsets use a clear T-minus label. Every leg establishes its own T-zero.
+Convert ET using `America/New_York` with date-correct EST/EDT; derive Zulu from
+UTC. Include dates across midnight and distinguish repeated daylight-saving
+times. Derive T-plus from that leg's adjusted takeoff, not export time or the
+first timeline segment. Primary panels cover takeoff through landing; any
+pre-departure appendix reference uses T-minus. Each leg has its own T-zero.
 
-State the planned departure basis on each leg section. A printed deck's Eastern
-and Zulu times remain tied to that plan; its relative times provide a reference
-when departure changes. Do not claim that availability predictions stay valid
-for every departure shift: absolute outage windows and time-dependent conditions
-can change relative to the aircraft. Re-export remains necessary when the
-underlying mission assumptions or predictions change.
+Label each leg's planned departure basis. Printed ET and Zulu times stay tied to
+that plan, while relative times aid rescheduling. Absolute outages and
+time-dependent conditions may change relative to the aircraft after a departure
+shift; re-export when underlying assumptions or predictions change.
 
 ## Overview style maps
 
-Create a dedicated export scene that shares globe textures, route geometry, and
-visual styling with the overview, without capturing dashboard controls, live
-aircraft state, or unrelated operational overlays. It renders the export
-snapshot
-at a fixed resolution and planned reference time with animation disabled.
+A dedicated export scene shares the overview's globe textures, route geometry,
+and styling. Render the immutable export snapshot at a fixed resolution and
+planned reference time, without animation, live aircraft data, dashboard
+controls, or unrelated overlays. No AI or manual browser interaction is needed.
 
-The export service requests images from a bounded renderer using the project's
-packaged browser runtime. The renderer uses local bundled assets, waits for
-textures and scene readiness, sets a reproducible camera, and returns a PNG.
-No AI, external screenshot service, or manual browser interaction is involved.
-This integration is a proposed approach; renderer feasibility must be verified
-before committing to it for the trial implementation.
+Use the project's packaged browser runtime and local bundled assets. Wait for
+scene readiness, set a reproducible camera, and return high-resolution PNGs.
+Verify renderer feasibility before trial implementation; do not depend on an
+external screenshot service.
 
-Produce a high-resolution image suitable for a widescreen slide. Use the globe
-for geographic context and closer route views for detailed windows. Long routes
-that cannot fit on one visible hemisphere use multiple views; never draw an
-occluded route through the planet or imply it is fully visible. Fit labels and
-key-window markers to the slide crop, including dateline and polar routes.
-
-Map condition colors follow the trial's availability rules, not legacy critical
-colors. Keep reference lighting labeled as a planned-time illustration; it does
-not imply simultaneous lighting at every point along a multi-hour flight.
+Keep maps small on primary leg pages. Long routes need multiple views when they
+cannot fit on one visible hemisphere. Never show an occluded route through the
+planet. Fit labels and event markers within the crop, including polar and
+dateline routes. Keep the context route neutral; transport-specific map colors
+must not create a second risk scale. Any optional overall-posture overlay uses
+the main row's semantics and a clear legend. Label reference lighting as a
+planned-time illustration, not lighting at all points throughout the flight.
 
 Cache keys include effective route geometry, adjusted departure, leg identity,
 reference time, availability data, renderer version, and framing. Bound the
-entire extra rendering stage to 60 seconds by default; on timeout use available
-fallback maps and stop the task-owned renderer. Adjust that limit only after
-representative performance measurements. Clean up browser processes and
-temporary
-images on success, failure, and cancellation.
+whole extra rendering stage to 60 seconds by default, then use labeled legacy
+map fallbacks. Change that limit only after representative measurements. Clean
+up task-owned browser processes and temporary images on every exit path.
 
 ## Presentation rules
 
-Use widescreen slides, generous whitespace, restrained branding, and consistent
-alignment. Keep main body text at least 18 points and primary time and window
-labels at least 20 points. Supporting clock labels and appendix text stay at
-least 14 points. If content does not fit, paginate rather than reduce the font.
-Metadata footers can be smaller, but must not carry essential information.
+Use the existing organizational mark at
+`backend/starlink-location/app/mission/assets/APO Patch.jpg`. Preserve its
+aspect ratio and use restrained APO branding. Starshield names a transport only;
+it must not appear as a deck masthead, organizational mark, or tagline.
 
-Keep most content on light backgrounds for independent reading and printing.
-Use the darker globe treatment where it aids the map. Color is supplementary:
-state text, patterns, and legends communicate availability in grayscale too.
-Text and tables remain editable PowerPoint objects; maps are embedded images.
-Generated decks open offline with all required visual assets included.
+Use widescreen slides, whitespace, and consistent alignment. Keep main body text
+at least 18 points and primary time and window labels at least 20 points.
+Supporting clock labels and appendix text stay at least 14 points. If content
+does not fit, paginate rather than reduce the font. Metadata footers can be
+smaller, but must not carry essential information.
+
+Use light backgrounds for reading and printing, and dark globe styling only
+where it aids the map. Labels, patterns, and legends work in grayscale. Text and
+tables remain editable PowerPoint objects; embedded maps and other assets allow
+offline opening.
 
 ## Verification and evaluation
 
-Use synthetic fixtures plus existing suitable mission fixtures. Verify:
+Use synthetic fixtures plus suitable existing missions. Verify:
 
-1. The normal export includes both decks and correct manifest entries; disabling
-   the trial returns the original file set. Legacy slide structure, text, and
-   styles stay unchanged, ignoring volatile document metadata in comparisons.
-2. Single and multi-leg decks use the same snapshot as legacy exports, including
-   adjusted departures, route splices, cached fallback, and source revisions.
-3. Separate outages remain calm; real two-transport overlaps create amber
-windows;
-   three offline transports create red windows. Touching boundaries do not
-   overlap. Degraded and missing states never create false no-connectivity
-claims.
-4. Cards, maps, strip labels, and summary durations agree. No short outage or
-   significant advisory disappears through grouping, clipping, or pagination.
-5. Eastern, Zulu, and relative times agree across midnight, daylight-saving
-   transitions, adjusted departures, pre-departure periods, and multiple legs.
-6. Maps render without manual input and fit short, long, dateline, and polar
-   routes. Missing textures, unavailable rendering, and timeouts use fallback
-   maps and leave no task-owned runtime resources alive.
-7. Missing routes or timelines produce explicit incomplete-data labels. Trial
-   failure still yields the original export and a visible warning.
-8. Render representative decks for visual inspection: dense events, long names,
-   long explanations, and many legs remain readable without overlap. Check
-   offline opening, editable text, grayscale reading, and the font minima.
+1. One export includes both decks and manifest entries; disabling the trial
+   restores the legacy file set. Compare legacy structure, text, and styling,
+   ignoring volatile document metadata.
+2. Both builders share the snapshot, adjusted departures, splices, cached
+   fallback, and revisions. Days-long ground gaps never join leg timelines; each
+   leg starts at its own T-zero.
+3. Known Up counts map to Nominal, Degraded, Limited / elevated risk, and
+   Communications unavailable. Touching boundaries do not overlap, and brief
+   complete outages remain visible.
+4. Lanes share neutral Up/Down styling. Degraded mappings retain explanations;
+   ambiguous or missing data is uncertain, never falsely all-unavailable.
+5. Every leg shows both 15-minute SOF windows and full resolved AR periods in
+   the restriction row and ET table. Restriction-only fixtures keep Nominal
+   posture and available transports. Test short flights and overlapping SOF, AR,
+   and outages without losing separate causes.
+6. The primary table includes single outages, material overlaps, restrictions,
+   causes, remaining transports, and implications, with explicit ET start/end
+   times. Internal events appear prominently only for posture or coordination.
+7. Check ET, Zulu, and relative times across midnight, DST, adjusted departures,
+   AR overrides, and multiple legs. Dates and EST/EDT disambiguate times.
+8. Maps automatically fit short, long, polar, and dateline routes. Failed
+   textures, rendering, or timeouts use labeled fallbacks and clean up
+   resources.
+9. Missing routes, timelines, and restriction timing are explicit. Trial failure
+   still delivers the original export and a visible warning.
+10. Render dense events, long text, and many legs. Check posture-row height,
+    legibility, pagination, APO branding, transport-only Starshield naming,
+    offline opening, editable text, grayscale use, and font minima.
 
-Compare the existing and trial decks for the same mission with the user before
-promotion. A reader unfamiliar with the mission should be able to identify
-departure, arrival, reduced-redundancy periods, complete outages, and the
-remaining transports without a live explanation. Record readability feedback
-and export timings. Replacing the established deck requires a separate explicit
-user decision; this specification authorizes only the parallel trial design.
+Compare both decks with the recurring customer before promotion. Within a few
+seconds of scanning any leg, the customer should identify reduced redundancy,
+communications unavailability, remaining transports, and SOF/AR restrictions.
+Ask the customer to locate those windows on representative pages and record
+readability feedback and export timings. Replacing the established deck requires
+a separate explicit user decision; this spec covers the parallel trial.
