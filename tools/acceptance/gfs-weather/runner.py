@@ -393,6 +393,41 @@ class Runner:
             },
         )
 
+    def prepare_presentation_clock(self):
+        epoch = 1791266400000
+        self.command(
+            [
+                "python3",
+                "-c",
+                "import sys; from pathlib import Path; from runpy import run_path; run_path(sys.argv[1])['generate'](Path(sys.argv[2]),int(sys.argv[3]))",
+                str(
+                    self.source
+                    / "tools/acceptance/aviation-weather/generate_fixtures.py"
+                ),
+                str(self.output / "capture"),
+                str(epoch),
+            ],
+            name="replay-bulletins.log",
+        )
+        (self.output / "control/control.json").write_text(
+            json.dumps(
+                {
+                    "replay_utc_ms": epoch,
+                    "frame": epoch // 1000 - 120,
+                    "replay_monotonic": time.monotonic(),
+                    "gfs_presentation": True,
+                }
+            )
+        )
+        (self.output / "control/control.json").chmod(0o666)
+        self.record(
+            "presentation-clock.json",
+            {
+                "epoch_ms": epoch,
+                "label": "historical GFS source replay; synthetic bulletin/radar source timestamps aligned to the same replay clock",
+            },
+        )
+
     def bind_browser(self):
         self.record(
             "browser-test-source.json",
@@ -514,17 +549,7 @@ class Runner:
                 name="foundation-phase-cleanup.log",
             )
             assert not any(self.inventory().values())
-            (self.output / "control/control.json").write_text(
-                json.dumps(
-                    {
-                        "replay_utc_ms": 1791266400000,
-                        "frame": 1791266280,
-                        "replay_monotonic": time.monotonic(),
-                        "gfs_presentation": True,
-                    }
-                )
-            )
-            (self.output / "control/control.json").chmod(0o666)
+            self.prepare_presentation_clock()
             self.command(
                 [
                     *self.compose,

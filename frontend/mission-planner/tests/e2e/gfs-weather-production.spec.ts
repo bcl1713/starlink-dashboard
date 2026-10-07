@@ -36,6 +36,11 @@ async function snapshot(page: Page) {
     const lines = state.scene.getObjectByName('GFS wind FROM barbs') as Mesh;
     return {
       present: true,
+      bulletins: [
+        'Native METAR / SPECI observations',
+        'Native TAF terminal forecasts',
+        'Native international SIGMET advisories',
+      ].map((name) => !!state.scene.getObjectByName(name)),
       calls: state.gl.info.render.calls,
       vertical: g.grid.descriptor.vertical,
       lead: g.grid.descriptor.lead_seconds,
@@ -279,6 +284,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await ready(overview, 'pressure', 6);
     await ready(other, 'pressure', 6);
     const first = await remember();
+    expect(first.bulletins).toEqual([true, true, true]);
     expect(first.barbs).toBeGreaterThan(0);
     expect(first.barbs).toBeLessThanOrEqual(2000);
     expect((await weatherSnapshot(overview)).radar).not.toBeNull();
@@ -397,7 +403,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     const report = overview.getByLabel('Weather report', { exact: true });
     if (await report.count()) {
       await report.first().click();
-      await expect(overview.getByRole('dialog')).toContainText('TEST');
+      await expect(overview.getByRole('dialog')).toContainText(
+        /METAR|TAF|SIGMET/
+      );
     }
     await overview
       .getByRole('button', { name: 'Close weather report' })

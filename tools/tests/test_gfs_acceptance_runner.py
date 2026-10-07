@@ -261,3 +261,35 @@ def test_browser_source_uses_candidate_definitions_and_requires_identical_lock(
     (installed / "package-lock.json").write_bytes(b"different dependency versions")
     with pytest.raises(ValueError, match="candidate lock"):
         module.bind_browser_source(archived, installed, "presentation")
+
+
+def test_presentation_bulletins_use_the_same_historical_clock(tmp_path):
+    import gzip
+    import json
+    import subprocess
+    import xml.etree.ElementTree as ET
+    from datetime import datetime
+
+    module = runner()
+    owner = module.Runner.__new__(module.Runner)
+    owner.source = ROOT
+    owner.output = tmp_path
+    (tmp_path / "capture").mkdir()
+    (tmp_path / "control").mkdir()
+    owner.command = lambda argv, **kwargs: subprocess.run(argv, check=True, timeout=10)
+    owner.prepare_presentation_clock()
+    clock = json.loads((tmp_path / "control/control.json").read_bytes())
+    xml = ET.fromstring(
+        gzip.decompress((tmp_path / "capture/metars.xml.gz").read_bytes())
+    )
+    for observation in xml.findall(".//observation_time"):
+        stamp = int(
+            datetime.fromisoformat(observation.text.replace("Z", "+00:00")).timestamp()
+            * 1000
+        )
+        assert stamp == clock["replay_utc_ms"] - 600000
+    assert clock["gfs_presentation"] is True
+    assert (
+        json.loads((tmp_path / "presentation-clock.json").read_bytes())["epoch_ms"]
+        == clock["replay_utc_ms"]
+    )
