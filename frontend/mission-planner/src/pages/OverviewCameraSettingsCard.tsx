@@ -18,8 +18,9 @@ export function OverviewCameraSettingsCard({
         <span>
           Follow aircraft on Overview
           <span className="mt-1 block max-w-xl text-sm font-normal text-muted-foreground">
-            Follow fresh positions. Manual exploration pauses following;
-            recenter to resume. Saved in this browser, off by default.
+            Follow fresh positions when opening Overview. Manual exploration
+            pauses following; Reset map view resumes the route overview. Saved
+            in this browser, off by default.
           </span>
         </span>
         <Switch

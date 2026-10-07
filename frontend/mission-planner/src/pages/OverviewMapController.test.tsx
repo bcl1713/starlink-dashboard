@@ -93,6 +93,132 @@ function setup() {
   };
   return { camera, props };
 }
+
+it('route overview preserves nearby polls and reframes when the aircraft leaves useful context', () => {
+  const { camera, props } = setup();
+  const route = Array.from({ length: 65 }, (_, i) =>
+    globePosition(0, i * 5, 2.015)
+  );
+  const overview = {
+    ...props,
+    intent: 'overview' as const,
+    reducedMotion: true,
+    route,
+    aircraft: { latitude: 0, longitude: 90 },
+  };
+  const view = render(<OverviewMapController {...overview} />);
+  const initial = camera.position.clone();
+  view.rerender(
+    <OverviewMapController
+      {...overview}
+      aircraft={{ latitude: 0, longitude: 91 }}
+    />
+  );
+  expect(camera.position.distanceTo(initial)).toBeLessThan(0.001);
+  view.rerender(
+    <OverviewMapController
+      {...overview}
+      aircraft={{ latitude: 0, longitude: 235 }}
+    />
+  );
+  expect(camera.position.distanceTo(initial)).toBeGreaterThan(1);
+  const p = new Vector3(...globePosition(0, 235, 2.04));
+  expect(p.dot(camera.position)).toBeGreaterThan(4.5);
+  camera.updateMatrixWorld();
+  p.project(camera);
+  expect((p.x + 1) * 195).toBeGreaterThan(28);
+  expect((p.x + 1) * 195).toBeLessThan(166);
+});
+
+it('refreshes automatic framing when a different usable leg replaces the route', () => {
+  const { camera, props } = setup();
+  const first = [globePosition(0, 20, 2.015), globePosition(10, 30, 2.015)];
+  const second = [globePosition(0, 150, 2.015), globePosition(10, 160, 2.015)];
+  const view = render(
+    <OverviewMapController {...props} reducedMotion route={first} />
+  );
+  const initial = camera.position.clone();
+  view.rerender(
+    <OverviewMapController {...props} reducedMotion route={second} />
+  );
+  expect(camera.position.distanceTo(initial)).toBeGreaterThan(1);
+  for (const point of second)
+    expect(new Vector3(...point).dot(camera.position)).toBeGreaterThan(4);
+});
+
+it('pauses route overview for stale positions and manual exploration until reset', () => {
+  const { camera, props } = setup();
+  const route = Array.from({ length: 65 }, (_, i) =>
+    globePosition(0, i * 5, 2.015)
+  );
+  const overview = {
+    ...props,
+    intent: 'overview' as const,
+    reducedMotion: true,
+    route,
+    aircraft: { latitude: 0, longitude: 90 },
+  };
+  const view = render(<OverviewMapController {...overview} />);
+  const initial = camera.position.clone();
+  const moved = { latitude: 0, longitude: 235 };
+  view.rerender(
+    <OverviewMapController
+      {...overview}
+      followAvailable={false}
+      aircraft={moved}
+    />
+  );
+  expect(camera.position.distanceTo(initial)).toBeLessThan(0.001);
+  view.rerender(
+    <OverviewMapController {...overview} intent="manual" aircraft={moved} />
+  );
+  view.rerender(
+    <OverviewMapController
+      {...overview}
+      intent="manual"
+      aircraft={moved}
+      route={route.slice(20)}
+    />
+  );
+  expect(camera.position.distanceTo(initial)).toBeLessThan(0.001);
+  view.rerender(
+    <OverviewMapController {...overview} aircraft={moved} resetRevision={1} />
+  );
+  expect(camera.position.distanceTo(initial)).toBeGreaterThan(1);
+});
+
+it('reframes an aircraft behind a panel after a resize below the layout threshold', () => {
+  const { camera, props } = setup();
+  const route = [
+    [65, 43],
+    [70, 73],
+    [75, 103],
+    [80, 133],
+    [86, 163],
+  ].map(([latitude, longitude]) => globePosition(latitude, longitude, 2.015));
+  const overview = {
+    ...props,
+    intent: 'overview' as const,
+    reducedMotion: true,
+    route,
+    aircraft: { latitude: 77, longitude: 43 },
+  };
+  const view = render(<OverviewMapController {...overview} />);
+  const before = camera.position.clone();
+  scene.state.size = { width: 343, height: 333 };
+  camera.aspect = 343 / 333;
+  view.rerender(
+    <OverviewMapController
+      {...overview}
+      aircraft={{ latitude: 50.8, longitude: 87.7 }}
+    />
+  );
+  expect(camera.position.distanceTo(before)).toBeGreaterThan(0.1);
+  camera.updateMatrixWorld();
+  const point = new Vector3(...globePosition(50.8, 87.7, 2.04)).project(camera);
+  expect(((point.x + 1) * 343) / 2).toBeLessThan(173.5);
+  expect(((1 - point.y) * 333) / 2).toBeLessThan(248.5);
+});
 it('frames the full dateline route on load, fullscreen transitions and repeated resets after exploration', () => {
   const { camera, props } = setup();
   const width = 1920,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { CameraControls, CameraControlsImpl } from '@react-three/drei';
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -9,7 +9,9 @@ import {
   overviewCameraFrame,
   overviewInitialDirection,
   type OverviewCameraIntent,
+  type CameraFrame,
 } from './overview-camera-frame';
+import { overviewAircraftInFrame } from './overview-route-frame';
 import type {
   OverviewLayoutMode,
   OverviewSafeRect,
@@ -56,7 +58,8 @@ export function OverviewMapController({
     safeRect: OverviewSafeRect;
     intent: OverviewCameraIntent;
     resetRevision: number;
-    routeFramed: boolean;
+    routeKey: string;
+    frame: CameraFrame;
     centerGlobe: boolean;
     latitude?: number;
     longitude?: number;
@@ -81,6 +84,10 @@ export function OverviewMapController({
   const enabled = mode === 'desktop' || exploring;
   const latitude = aircraft?.latitude,
     longitude = aircraft?.longitude;
+  const routeKey = useMemo(
+    () => route.map((point) => point.join(',')).join(';'),
+    [route]
+  );
   useEffect(() => {
     if (
       !(camera instanceof PerspectiveCamera) ||
@@ -111,7 +118,32 @@ export function OverviewMapController({
       scaleProjection();
       return;
     }
-    if (!initialReady && intent === 'automatic') return;
+    if (!initialReady && (intent === 'automatic' || intent === 'overview'))
+      return;
+    const coordinate =
+      latitude !== undefined &&
+      longitude !== undefined &&
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude)
+        ? { latitude, longitude }
+        : null;
+    const aircraftEscaped =
+      intent === 'overview' &&
+      followAvailable &&
+      coordinate &&
+      previous &&
+      !overviewAircraftInFrame({
+        width: size.width,
+        height: size.height,
+        fov: camera.fov,
+        safeRect,
+        aircraft: coordinate,
+        frame: {
+          ...previous.frame,
+          offsetX: (previous.frame.offsetX * size.width) / previous.width,
+          offsetY: (previous.frame.offsetY * size.height) / previous.height,
+        },
+      });
     const meaningful =
       !previous ||
       previous.intent !== intent ||
@@ -119,7 +151,8 @@ export function OverviewMapController({
       previous.resetRevision !== resetRevision ||
       previous.mode !== mode ||
       previous.centerGlobe !== centerGlobe ||
-      (!previous.routeFramed && route.length > 0) ||
+      previous.routeKey !== routeKey ||
+      aircraftEscaped ||
       Math.abs(previous.width - size.width) >= 48 ||
       Math.abs(previous.height - size.height) >= 48 ||
       Math.abs(previous.safeRect.width - safeRect.width) >= 48 ||
@@ -127,6 +160,7 @@ export function OverviewMapController({
     if (
       !meaningful &&
       (intent === 'automatic' ||
+        intent === 'overview' ||
         (previous?.latitude === latitude &&
           previous?.longitude === longitude &&
           previous?.followAvailable === followAvailable &&
@@ -135,10 +169,6 @@ export function OverviewMapController({
       scaleProjection();
       return;
     }
-    const coordinate =
-      latitude !== undefined && longitude !== undefined
-        ? { latitude, longitude }
-        : null;
     const direction =
       intent === 'follow' && followAvailable && coordinate
         ? new Vector3(
@@ -154,9 +184,12 @@ export function OverviewMapController({
       height: size.height,
       fov: camera.fov,
       safeRect,
-      route: intent === 'automatic' ? route : undefined,
+      route:
+        intent === 'automatic' || intent === 'overview' ? route : undefined,
+      aircraft: intent === 'overview' && followAvailable ? coordinate : null,
       direction,
-      centerGlobe,
+      centerGlobe:
+        intent === 'overview' && route.length < 2 ? false : centerGlobe,
       followAircraft: intent === 'follow',
     });
     const position = (frame.direction ?? direction)
@@ -199,7 +232,8 @@ export function OverviewMapController({
       safeRect,
       intent,
       resetRevision,
-      routeFramed: route.length > 0,
+      routeKey,
+      frame,
       centerGlobe,
       latitude,
       longitude,
@@ -218,6 +252,7 @@ export function OverviewMapController({
     latitude,
     longitude,
     route,
+    routeKey,
     reducedMotion,
     initialReady,
     resetRevision,
