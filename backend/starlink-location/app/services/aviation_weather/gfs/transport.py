@@ -14,6 +14,7 @@ from app.models.aviation_grid import GfsSelection, RangeRef, SourceBundle, Sourc
 
 from .inventory import (
     MAX_METADATA,
+    available_pressures,
     discover_runs,
     listing,
     listing_values,
@@ -21,6 +22,7 @@ from .inventory import (
     select_time,
 )
 from .quota import GfsQuota
+from .vertical import source_pressures
 
 BASE = "https://noaa-gfs-bdp-pds.s3.amazonaws.com/"
 EXCHANGE_SECONDS = 30
@@ -192,7 +194,13 @@ class GfsTransport:
         index = await self._metadata(key + ".idx")
         if await self._head(key) != before:
             raise ValueError("Source replaced during inventory read")
-        ranges = select_ranges(index, before, run, lead, (selection.pressure_pa,))
+        ranges = select_ranges(
+            index,
+            before,
+            run,
+            lead,
+            source_pressures(selection, available_pressures(index)),
+        )
         stage.mkdir(parents=True, exist_ok=False)
         paths, hashes = [], []
         try:

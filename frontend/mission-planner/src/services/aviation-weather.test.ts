@@ -99,7 +99,10 @@ describe('aviation catalog admission before acquisition', () => {
     expect(parseAviationSettings(old)).toMatchObject({
       winds: false,
       temperature: false,
-      gfs_selection: { pressure_pa: 50000, horizon_hours: 0 },
+      gfs_selection: {
+        vertical: { kind: 'pressure', pressure_pa: 50000 },
+        horizon_hours: 0,
+      },
     });
     expect(
       parseAviationSettings({
@@ -115,5 +118,43 @@ describe('aviation catalog admission before acquisition', () => {
         gfs_selection: { pressure_pa: 80000, horizon_hours: 6 },
       })
     ).toThrow();
+  });
+  it('admits tagged pressure/flight levels and migrates saved pressure', () => {
+    const base = { metar: false, taf: false, sigmet: false, revision: 2 };
+    expect(
+      parseAviationSettings({
+        ...base,
+        gfs_selection: {
+          pressure_pa: 25000,
+          horizon_hours: 6,
+        },
+      }).gfs_selection
+    ).toEqual({
+      vertical: { kind: 'pressure', pressure_pa: 25000 },
+      horizon_hours: 6,
+    });
+    for (const flight_level of [50, 100, 180, 240, 300, 340, 390, 450]) {
+      const gfs_selection = {
+        vertical: { kind: 'flight-level', flight_level },
+        horizon_hours: 48,
+      };
+      expect(
+        parseAviationSettings({ ...base, gfs_selection }).gfs_selection
+      ).toEqual(gfs_selection);
+    }
+    for (const vertical of [
+      { kind: 'surface' },
+      { kind: 'flight-level', flight_level: 350 },
+      { kind: 'flight-level', flight_level: true },
+      { kind: 'pressure', pressure_pa: 80000 },
+      { kind: 'flight-level', flight_level: 390, pressure_pa: 20000 },
+    ]) {
+      expect(() =>
+        parseAviationSettings({
+          ...base,
+          gfs_selection: { vertical, horizon_hours: 0 },
+        })
+      ).toThrow();
+    }
   });
 });

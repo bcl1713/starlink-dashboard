@@ -14,7 +14,7 @@ const attribution = z.strictObject({
     .max(2048)
     .regex(/^https:\/\/[^\s]+$/),
 });
-const verticalSchema = z.union([
+export const verticalSchema = z.union([
   z.strictObject({ kind: z.literal('surface') }),
   z.strictObject({ kind: z.literal('not-applicable') }),
   z.strictObject({
@@ -93,7 +93,7 @@ const componentSchema = z
     offset: finite,
   })
   .refine((v) => v.unit === (v.quantity.startsWith('wind-') ? 'm/s' : 'K'));
-const gridSchema = z
+export const gridSchema = z
   .strictObject({
     width: integer.min(2).max(720),
     height: integer.min(2).max(361),
@@ -327,44 +327,87 @@ const catalogSchema = z
       new Set(c.products.map((p) => p.layer_id)).size === c.products.length &&
       c.products.every((p) => p.generated_at_ms === c.generated_at_ms)
   );
+const pressureSelectionSchema = z.union([
+  z.literal(85000),
+  z.literal(50000),
+  z.literal(30000),
+  z.literal(25000),
+  z.literal(20000),
+]);
+const horizonSchema = z.union([
+  z.literal(0),
+  z.literal(3),
+  z.literal(6),
+  z.literal(9),
+  z.literal(12),
+  z.literal(18),
+  z.literal(24),
+  z.literal(36),
+  z.literal(48),
+]);
+const selectionVerticalSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('pressure'),
+    pressure_pa: pressureSelectionSchema,
+  }),
+  z.strictObject({
+    kind: z.literal('flight-level'),
+    flight_level: z.union([
+      z.literal(50),
+      z.literal(100),
+      z.literal(180),
+      z.literal(240),
+      z.literal(300),
+      z.literal(340),
+      z.literal(390),
+      z.literal(450),
+    ]),
+  }),
+]);
+export const gfsSelectionSchema = z.union([
+  z.strictObject({
+    vertical: selectionVerticalSchema,
+    horizon_hours: horizonSchema,
+  }),
+  z
+    .strictObject({
+      pressure_pa: pressureSelectionSchema,
+      horizon_hours: horizonSchema,
+    })
+    .transform(({ pressure_pa, horizon_hours }) => ({
+      vertical: { kind: 'pressure' as const, pressure_pa },
+      horizon_hours,
+    })),
+]);
+export type GfsSelection = z.output<typeof gfsSelectionSchema>;
 const settingsSchema = z.strictObject({
   metar: z.boolean(),
   taf: z.boolean(),
   sigmet: z.boolean(),
   winds: z.boolean().default(false),
   temperature: z.boolean().default(false),
-  gfs_selection: z
-    .strictObject({
-      pressure_pa: z.union([
-        z.literal(85000),
-        z.literal(50000),
-        z.literal(30000),
-        z.literal(25000),
-        z.literal(20000),
-      ]),
-      horizon_hours: z.union([
-        z.literal(0),
-        z.literal(3),
-        z.literal(6),
-        z.literal(9),
-        z.literal(12),
-        z.literal(18),
-        z.literal(24),
-        z.literal(36),
-        z.literal(48),
-      ]),
-    })
-    .default({ pressure_pa: 50000, horizon_hours: 0 }),
+  gfs_selection: gfsSelectionSchema.default({
+    vertical: { kind: 'pressure', pressure_pa: 50000 },
+    horizon_hours: 0,
+  }),
   revision: integer,
 });
 export type AviationCatalog = z.infer<typeof catalogSchema>;
 export type AviationProduct = z.infer<typeof weatherProductSchema>;
 export type AviationSettings = z.input<typeof settingsSchema>;
+export type ResolvedAviationSettings = z.output<typeof settingsSchema>;
 export type AviationLayer = 'metar' | 'taf' | 'sigmet';
+export type AviationSettingsChanges = Partial<
+  Pick<
+    ResolvedAviationSettings,
+    AviationLayer | 'winds' | 'temperature' | 'gfs_selection'
+  >
+>;
 export const parseAviationCatalog = (data: unknown): AviationCatalog =>
   catalogSchema.parse(data);
-export const parseAviationSettings = (data: unknown): AviationSettings =>
-  settingsSchema.parse(data);
+export const parseAviationSettings = (
+  data: unknown
+): ResolvedAviationSettings => settingsSchema.parse(data);
 export const aviationWeatherApi = {
   async getSettings(signal?: AbortSignal) {
     const { data } = await apiClient.get<unknown>(
@@ -373,9 +416,7 @@ export const aviationWeatherApi = {
     );
     return parseAviationSettings(data);
   },
-  async updateSettings(
-    changes: Partial<Pick<AviationSettings, AviationLayer>>
-  ) {
+  async updateSettings(changes: AviationSettingsChanges) {
     const { data } = await apiClient.put<unknown>(
       '/api/aviation-weather/v1/settings',
       changes

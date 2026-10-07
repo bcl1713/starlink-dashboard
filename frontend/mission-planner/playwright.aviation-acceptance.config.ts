@@ -17,7 +17,10 @@ if (!executablePath)
   throw new Error('A provisioned browser executable is required');
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'aviation-weather-production.spec.ts',
+  testMatch: [
+    'aviation-weather-production.spec.ts',
+    'gfs-weather-production.spec.ts',
+  ],
   workers: 1,
   retries: 0,
   timeout: 180000,

@@ -135,3 +135,33 @@ If acknowledgement is missing, the API returns sanitized 503 while the disabled
 save remains committed. Immutable response leases prevent retention from
 deleting an open buffer, and release on disconnect. Unknown, disabled, expired,
 obsolete, damaged and private-lineage paths have no accessible payload.
+
+Phase 2 Configuration uses one tagged `gfs_selection` for both model layers:
+
+```json
+{"winds":true,"temperature":true,"gfs_selection":{"vertical":{"kind":"flight-level","flight_level":390},"horizon_hours":3}}
+```
+
+Native pressure choices are 85000, 50000, 30000, 25000 and 20000 Pa. Flight
+levels are 50, 100, 180, 240, 300, 340, 390 and 450; horizons are UTC now plus
+0, 3, 6, 9, 12, 18, 24, 36 and 48 hours. Legacy pressure selections migrate
+on read. The actual available source lead is selected deterministically;
+Overview displays its run, lead and valid UTC, rather than implying the target
+horizon is an exact available forecast.
+
+Flight levels use two-segment ISA pressure altitude and the two distinct nearest
+complete actual U/V/T pressure brackets. U/V/T interpolate in log pressure;
+no extrapolation or imaginary source level is admitted. Descriptors carry
+`reference: pressure-altitude-1013.25hpa`, `derivation: isa-log-pressure-v1` and
+ordered `source_pressures_pa`. Both brackets and surface pressure participate in
+conservative validity. The source GRIB instance/version lineage remains private.
+
+Browser admission verifies descriptor/component hashes, lengths, endian types,
+physical quantization, geometry, time and selection. Equal immutable components
+share owners only when their physical meaning agrees. All optional bulletin,
+model and highlight owners share four operation slots and 16 MiB encoded /
+32 MiB decoded / 16 MiB GPU allowances, including conversion and simultaneous
+old/candidate generations. Model envelopes declare conservative 12 MiB decoded
+and 4 MiB GPU bounds. Admission failure removes or retains only an otherwise
+compatible, originally unexpired product; it never renews expiry. Visibility,
+offline, disable, superseding selection and the 45 second deadline cancel work.

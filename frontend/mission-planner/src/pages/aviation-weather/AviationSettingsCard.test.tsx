@@ -18,7 +18,18 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 it('offers independent default-off switches and confirms server changes in shared cache', async () => {
-  const initial = { metar: false, taf: false, sigmet: false, revision: 1 };
+  const initial = {
+    metar: false,
+    taf: false,
+    sigmet: false,
+    winds: false,
+    temperature: false,
+    gfs_selection: {
+      vertical: { kind: 'pressure' as const, pressure_pa: 50000 as const },
+      horizon_hours: 0 as const,
+    },
+    revision: 1,
+  };
   vi.mocked(aviationWeatherApi.getSettings).mockResolvedValue(initial);
   let resolve: (v: typeof initial) => void = () => {};
   vi.mocked(aviationWeatherApi.updateSettings).mockImplementation(
@@ -42,7 +53,7 @@ it('offers independent default-off switches and confirms server changes in share
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  expect(screen.getAllByRole('switch')).toHaveLength(3);
+  expect(screen.getAllByRole('switch')).toHaveLength(5);
   fireEvent.click(
     screen.getByRole('switch', { name: 'METAR / SPECI observations' })
   );
@@ -58,6 +69,26 @@ it('offers independent default-off switches and confirms server changes in share
       ...initial,
       metar: true,
       revision: 2,
+    })
+  );
+  expect(
+    screen.getByRole('combobox', { name: 'Atmosphere level' })
+  ).toBeTruthy();
+  expect(
+    screen
+      .getByRole('option', { name: 'Surface · unsupported' })
+      .hasAttribute('disabled')
+  ).toBe(true);
+  await screen.findByText('Aviation weather settings saved');
+  fireEvent.change(screen.getByRole('combobox', { name: 'Atmosphere level' }), {
+    target: { value: 'fl:390' },
+  });
+  await waitFor(() =>
+    expect(aviationWeatherApi.updateSettings).toHaveBeenCalledWith({
+      gfs_selection: {
+        vertical: { kind: 'flight-level', flight_level: 390 },
+        horizon_hours: 0,
+      },
     })
   );
   expect(aviationWeatherApi.updateSettings).toHaveBeenCalledWith({
@@ -79,5 +110,54 @@ it('keeps unavailable optional settings visibly off without throwing', async () 
   expect(
     screen.getAllByRole('switch').every((s) => s.hasAttribute('disabled'))
   ).toBe(true);
+  client.clear();
+});
+
+it('keeps the confirmed selection after a failed model save', async () => {
+  const initial = {
+    metar: false,
+    taf: false,
+    sigmet: false,
+    winds: false,
+    temperature: false,
+    gfs_selection: {
+      vertical: { kind: 'pressure' as const, pressure_pa: 50000 as const },
+      horizon_hours: 0 as const,
+    },
+    revision: 4,
+  };
+  vi.mocked(aviationWeatherApi.getSettings).mockResolvedValue(initial);
+  vi.mocked(aviationWeatherApi.updateSettings).mockRejectedValue(
+    new Error('worker unavailable')
+  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <AviationSettingsCard />
+    </QueryClientProvider>
+  );
+  await waitFor(() =>
+    expect(
+      screen
+        .getByRole('combobox', { name: 'Atmosphere level' })
+        .closest('fieldset')!.disabled
+    ).toBe(false)
+  );
+  fireEvent.change(screen.getByRole('combobox', { name: 'Atmosphere level' }), {
+    target: { value: 'fl:450' },
+  });
+  await screen.findByText('Aviation weather settings could not be saved');
+  expect(client.getQueryData(['aviation-weather', 'settings'])).toEqual(
+    initial
+  );
+  expect(
+    (
+      screen.getByRole('combobox', {
+        name: 'Atmosphere level',
+      }) as HTMLSelectElement
+    ).value
+  ).toBe('pressure:50000');
   client.clear();
 });

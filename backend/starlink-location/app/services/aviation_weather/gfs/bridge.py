@@ -39,10 +39,14 @@ def _envelope(kind, settings, now_ms, descriptor=None, body=None):
         "time_kind": "forecast",
         "method_kind": "numerical-model",
         "validity_kind": "instant",
-        "vertical": {
-            "kind": "pressure",
-            "pressure_pa": float(settings.gfs_selection.pressure_pa),
-        },
+        "vertical": (
+            {
+                "kind": "pressure",
+                "pressure_pa": float(settings.gfs_selection.pressure_pa),
+            }
+            if settings.gfs_selection.vertical.kind == "pressure"
+            else {"kind": "not-applicable"}
+        ),
         "generated_at_ms": now_ms,
         "product_id": hashlib.sha256(
             canonical(
@@ -86,10 +90,14 @@ def _envelope(kind, settings, now_ms, descriptor=None, body=None):
             "content_type": "application/json",
             "encoded_bytes": len(body)
             + sum(buffer.byte_length for buffer in descriptor.buffers.values()),
-            "decoded_bytes": 5 * 1024**2,
-            "gpu_bytes": 2 * 1024**2,
+            "decoded_bytes": 12 * 1024**2,
+            "gpu_bytes": 4 * 1024**2,
         },
     )
+    if descriptor.vertical.kind == "flight-level":
+        base["provenance"] = (
+            "NOAA NCEP GFS; dashboard ISA pressure-altitude and log-pressure U/V/T interpolation, regular-grid resampling and conservative terrain masking"
+        )
     return WeatherProduct(**base)
 
 

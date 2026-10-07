@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   aviationWeatherApi,
-  type AviationLayer,
+  type AviationSettingsChanges,
   type AviationSettings,
 } from '@/services/aviation-weather';
 export const aviationSettingsKey = ['aviation-weather', 'settings'];
@@ -52,7 +52,7 @@ export function useAviationSettings() {
 export function useSaveAviationSettings() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (changes: Partial<Pick<AviationSettings, AviationLayer>>) =>
+    mutationFn: (changes: AviationSettingsChanges) =>
       aviationWeatherApi.updateSettings(changes),
     onSuccess: (next) => {
       client.setQueryData<AviationSettings>(aviationSettingsKey, (previous) =>

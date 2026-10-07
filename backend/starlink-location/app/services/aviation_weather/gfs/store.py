@@ -13,6 +13,8 @@ from pathlib import Path
 
 from app.models.aviation_grid import GfsSelection, GridCandidate, GridDescriptor
 
+from .vertical import matches_selection
+
 STAGING_BYTES = 1024**3
 PUBLISHED_BYTES = 5 * 1024**3 // 2
 RESERVE_BYTES = 512 * 1024**2
@@ -169,7 +171,8 @@ class GfsProductStore:
             if (
                 settings.revision != revision
                 or not (settings.winds or settings.temperature)
-                or admission["selection"] != settings.gfs_selection.model_dump()
+                or GfsSelection.model_validate(admission["selection"])
+                != settings.gfs_selection
                 or not admission["target_from_ms"]
                 <= target
                 <= admission["target_to_ms"]
@@ -177,8 +180,9 @@ class GfsProductStore:
                 or now >= candidate.descriptor.run_at_ms + 18 * 3600000
                 or candidate.descriptor.generated_at_ms
                 >= candidate.descriptor.run_at_ms + 18 * 3600000
-                or settings.gfs_selection.pressure_pa
-                != candidate.descriptor.vertical.pressure_pa
+                or not matches_selection(
+                    settings.gfs_selection, candidate.descriptor.vertical
+                )
             ):
                 raise ValueError("Scientific candidate belongs to obsolete settings")
             if size > STAGING_BYTES or occupied(self.root / "staging") > STAGING_BYTES:
@@ -247,7 +251,7 @@ class GfsProductStore:
     ) -> tuple[GridDescriptor, ...]:
         try:
             pointer = read_json(self.root / "current.json")
-            if pointer["selection"] != selection.model_dump():
+            if GfsSelection.model_validate(pointer["selection"]) != selection:
                 return ()
             target = now_ms + selection.horizon_hours * 3600000
             if not pointer["target_from_ms"] <= target <= pointer["target_to_ms"]:

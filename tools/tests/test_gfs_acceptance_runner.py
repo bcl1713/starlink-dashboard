@@ -173,3 +173,123 @@ def test_port_check_rejects_live_listener_and_accepts_closed_time_wait():
             accepted.close()
             assert client.recv(1) == b""
     assert module.ports_available((port,))
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "native_samples",
+        "configuration",
+        "lifecycle",
+        "combined_viewports",
+        "browser_metrics",
+    ],
+)
+def test_presentation_missing_native_controls_or_browser_measurements_prevents_pass(
+    missing,
+):
+    module = runner()
+    evidence = complete_evidence(module)
+    evidence.update(
+        {
+            key: True
+            for key in [
+                "native_samples",
+                "configuration",
+                "lifecycle",
+                "combined_viewports",
+            ]
+        }
+    )
+    evidence["browser_metrics"] = {
+        "encoded_peak": 1,
+        "decoded_peak": 1,
+        "gpu_peak": 1,
+        "slot_peak": 1,
+    }
+    evidence.pop(missing)
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")
+
+
+@pytest.mark.parametrize(
+    "metric", ["encoded_peak", "decoded_peak", "gpu_peak", "slot_peak"]
+)
+def test_presentation_over_budget_prevents_pass(metric):
+    module = runner()
+    evidence = complete_evidence(module)
+    evidence.update(
+        {
+            key: True
+            for key in [
+                "native_samples",
+                "configuration",
+                "lifecycle",
+                "combined_viewports",
+            ]
+        }
+    )
+    evidence["browser_metrics"] = {
+        key: 1 for key in ["encoded_peak", "decoded_peak", "gpu_peak", "slot_peak"]
+    }
+    evidence["browser_metrics"][metric] = 100 * 1024**2
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")
+
+
+def test_browser_source_uses_candidate_definitions_and_requires_identical_lock(
+    tmp_path,
+):
+    module = runner()
+    archived = tmp_path / "candidate"
+    installed = tmp_path / "installed"
+    for root in (archived, installed):
+        (root / "tests/e2e").mkdir(parents=True)
+        (root / "package-lock.json").write_bytes(b"pinned dependencies")
+    (installed / "node_modules").mkdir()
+    (archived / "tests/e2e/gfs-weather-production.spec.ts").write_bytes(
+        b"candidate test"
+    )
+    (installed / "tests/e2e/gfs-weather-production.spec.ts").write_bytes(
+        b"edited checkout test"
+    )
+    proof = module.bind_browser_source(archived, installed, "presentation")
+    import hashlib
+
+    assert proof["test_sha256"] == hashlib.sha256(b"candidate test").hexdigest()
+    assert (archived / "node_modules").resolve() == installed / "node_modules"
+    (installed / "package-lock.json").write_bytes(b"different dependency versions")
+    with pytest.raises(ValueError, match="candidate lock"):
+        module.bind_browser_source(archived, installed, "presentation")
+
+
+def test_presentation_bulletins_use_the_same_historical_clock(tmp_path):
+    import gzip
+    import json
+    import subprocess
+    import xml.etree.ElementTree as ET
+    from datetime import datetime
+
+    module = runner()
+    owner = module.Runner.__new__(module.Runner)
+    owner.source = ROOT
+    owner.output = tmp_path
+    (tmp_path / "capture").mkdir()
+    (tmp_path / "control").mkdir()
+    owner.command = lambda argv, **kwargs: subprocess.run(argv, check=True, timeout=10)
+    owner.prepare_presentation_clock()
+    clock = json.loads((tmp_path / "control/control.json").read_bytes())
+    xml = ET.fromstring(
+        gzip.decompress((tmp_path / "capture/metars.xml.gz").read_bytes())
+    )
+    for observation in xml.findall(".//observation_time"):
+        stamp = int(
+            datetime.fromisoformat(observation.text.replace("Z", "+00:00")).timestamp()
+            * 1000
+        )
+        assert stamp == clock["replay_utc_ms"] - 600000
+    assert clock["gfs_presentation"] is True
+    assert (
+        json.loads((tmp_path / "presentation-clock.json").read_bytes())["epoch_ms"]
+        == clock["replay_utc_ms"]
+    )

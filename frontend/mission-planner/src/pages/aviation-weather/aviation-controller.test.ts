@@ -10,6 +10,7 @@ import type {
   AviationSettings,
 } from '@/services/aviation-weather';
 import { NOW, station, collection } from './fixtures';
+import { WeatherBudget } from './weather-budget';
 const settings: AviationSettings = {
   metar: true,
   taf: false,
@@ -458,4 +459,51 @@ it('still verifies SHA256 on HTTP when browser SubtleCrypto is absent', async ()
         })
     )
   ).rejects.toThrow(/digest/);
+});
+
+it('shares the optional decoded allowance with GFS and highlights before fetching', async () => {
+  const budget = new WeatherBudget();
+  const occupied = budget.reserve('GFS-and-highlight', {
+    encoded: 0,
+    decoded: 32 * 1024 ** 2,
+    gpu: 0,
+  });
+  const { product, bytes } = await payload();
+  const fetcher = vi.fn(
+    async () =>
+      new Response(bytes, {
+        headers: { 'Content-Type': 'application/geo+json' },
+      })
+  );
+  const controller = new AviationController(
+    {
+      getCatalog: async () => ({
+        schema: 'aviation-weather-v1',
+        generated_at_ms: NOW,
+        settings_revision: 1,
+        products: [product],
+      }),
+    },
+    fetcher,
+    budget
+  );
+  try {
+    controller.start();
+    controller.setSettings(settings);
+    await vi.waitFor(() =>
+      expect(controller.snapshot().layers.metar.state).not.toBe('loading')
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(controller.snapshot().layers.metar.state).toBe('unavailable');
+  } finally {
+    controller.dispose();
+    occupied.release();
+  }
+  await Promise.resolve();
+  expect(budget.snapshot()).toMatchObject({
+    encoded: 0,
+    decoded: 0,
+    gpu: 0,
+    slots: 0,
+  });
 });

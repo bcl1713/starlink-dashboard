@@ -2,19 +2,27 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from app.models.aviation_weather import Contract, Grid, Hash, Pressure, Time
+from app.models.aviation_weather import (
+    Contract,
+    FlightLevel,
+    Grid,
+    Hash,
+    Pressure,
+    Time,
+)
 
 PRESSURES = (85000, 50000, 30000, 25000, 20000)
 HORIZONS = (0, 3, 6, 9, 12, 18, 24, 36, 48)
+FLIGHT_LEVELS = (50, 100, 180, 240, 300, 340, 390, 450)
 
 
-class GfsSelection(Contract):
+class PressureSelection(Contract):
+    kind: Literal["pressure"] = "pressure"
     pressure_pa: int = 50000
-    horizon_hours: int = 0
 
     @field_validator("pressure_pa")
     @classmethod
@@ -22,6 +30,46 @@ class GfsSelection(Contract):
         if value not in PRESSURES:
             raise ValueError("Unsupported GFS pressure selection")
         return value
+
+
+class FlightLevelSelection(Contract):
+    kind: Literal["flight-level"]
+    flight_level: int
+
+    @field_validator("flight_level")
+    @classmethod
+    def level(cls, value):
+        if value not in FLIGHT_LEVELS:
+            raise ValueError("Unsupported GFS flight level")
+        return value
+
+
+class GfsSelection(Contract):
+    vertical: Annotated[
+        PressureSelection | FlightLevelSelection, Field(discriminator="kind")
+    ] = Field(default_factory=PressureSelection)
+    horizon_hours: int = 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def legacy_pressure(cls, value):
+        if (
+            isinstance(value, dict)
+            and "pressure_pa" in value
+            and "vertical" not in value
+        ):
+            value = dict(value)
+            value["vertical"] = {
+                "kind": "pressure",
+                "pressure_pa": value.pop("pressure_pa"),
+            }
+        return value
+
+    @property
+    def pressure_pa(self):
+        # Compatibility for foundation pressure-only callers. FL consumers use
+        # the tagged vertical and explicit ISA conversion instead.
+        return self.vertical.pressure_pa
 
     @field_validator("horizon_hours")
     @classmethod
@@ -52,12 +100,22 @@ class GridDescriptor(Contract):
     valid_at_ms: Time
     retrieved_at_ms: Time
     generated_at_ms: Time
-    vertical: Pressure
+    vertical: Annotated[Pressure | FlightLevel, Field(discriminator="kind")]
     grid: Grid
     buffers: dict[str, GridBuffer]
 
     @model_validator(mode="after")
     def coherent(self) -> Self:
+        if isinstance(self.vertical, FlightLevel):
+            from app.services.aviation_weather.gfs.vertical import flight_level_pressure
+
+            target = flight_level_pressure(self.vertical.flight_level)
+            if self.vertical.derivation != "isa-log-pressure-v1" or not (
+                self.vertical.source_pressures_pa[0]
+                < target
+                < self.vertical.source_pressures_pa[1]
+            ):
+                raise ValueError("GFS flight levels require actual ISA brackets")
         if (
             self.valid_at_ms != self.run_at_ms + 1000 * self.lead_seconds
             or self.lead_seconds // 3600 not in HORIZONS
