@@ -160,6 +160,21 @@ async function samples(
             error: Math.abs(gpu - expected) * 0.01,
           };
         }
+        if (contributors.some(([i, w]) => w > 0 && grid.mask[i])) {
+          material.uniforms.diagnostic.value = 0;
+          state.gl.render(state.scene, state.camera);
+          const withMask = new Uint8Array(4);
+          gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, withMask);
+          mesh.visible = false;
+          state.gl.render(state.scene, state.camera);
+          const without = new Uint8Array(4);
+          gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, without);
+          mesh.visible = true;
+          material.uniforms.diagnostic.value = 1;
+          result.maskedTransparent = withMask.every(
+            (value, i) => value === without[i]
+          );
+        }
         const node =
           Math.round((90 - geo.latitude) * 2) * 720 +
           (Math.round((geo.longitude + 180) * 2) % 720);
@@ -263,7 +278,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     }
     await ready(overview, 'pressure', 6);
     await ready(other, 'pressure', 6);
-    expect((await remember()).barbs).toBeLessThanOrEqual(2000);
+    const first = await remember();
+    expect(first.barbs).toBeGreaterThan(0);
+    expect(first.barbs).toBeLessThanOrEqual(2000);
     expect((await weatherSnapshot(overview)).radar).not.toBeNull();
     for (const [kind, lead] of [
       ['pressure', 6],
@@ -314,6 +331,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       native.forEach((actual, i) => {
         const node = actual.node as Record<string, number>;
         expect(node.mask).toBe(reference[i].mask);
+        if (node.mask) expect(actual.maskedTransparent).toBe(true);
         if (!node.mask)
           for (const n of ['u', 'v', 't'])
             expect(

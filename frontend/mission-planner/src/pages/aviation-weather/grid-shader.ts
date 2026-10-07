@@ -8,7 +8,7 @@ uniform int diagnostic; flat varying vec4 facePlane;
 uniform mat4 inverseProjection; uniform mat4 cameraWorld; uniform vec3 eye; uniform vec2 framebuffer;
 vec3 fragmentPoint(){vec2 ndc=gl_FragCoord.xy/framebuffer*2.0-1.0;vec4 view=inverseProjection*vec4(ndc,1.0,1.0);vec3 farPoint=(cameraWorld*vec4(view.xyz/view.w,1.0)).xyz;vec3 ray=farPoint-eye;return eye+ray*((facePlane.w-dot(facePlane.xyz,eye))/dot(facePlane.xyz,ray));}
 vec2 node(vec2 p){vec4 c=texture2D(packedGrid,(p+0.5)/size);float q=floor(c.r*255.0+0.5)+256.0*floor(c.g*255.0+0.5);return vec2(q>=32768.0?q-65536.0:q,floor(c.b*255.0+0.5));}
-vec2 sampleValue(){vec3 p=normalize(fragmentPoint());float lon=degrees(atan(-p.z,p.x)),lat=degrees(asin(clamp(p.y,-1.0,1.0)));
+vec2 sampleValue(){vec3 p=fragmentPoint();float lon=degrees(atan(-p.z,p.x)),lat=degrees(atan(p.y,length(p.xz)));
 vec2 q=vec2(mod(lon+180.0,360.0)*2.0,clamp((90.0-lat)*2.0,0.0,360.0));
 vec2 lo=floor(q),hi=vec2(mod(lo.x+1.0,size.x),min(lo.y+1.0,size.y-1.0)),f=fract(q);
 vec2 a=node(lo),b=node(vec2(hi.x,lo.y)),c=node(vec2(lo.x,hi.y)),d=node(hi);
