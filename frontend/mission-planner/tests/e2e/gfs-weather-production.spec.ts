@@ -38,6 +38,7 @@ async function snapshot(page: Page) {
     const lines = state.scene.getObjectByName('GFS wind FROM barbs') as Mesh;
     return {
       present: true,
+      temperature: !!state.scene.getObjectByName('GFS temperature'),
       bulletins: [
         'Native METAR / SPECI observations',
         'Native TAF terminal forecasts',
@@ -52,7 +53,7 @@ async function snapshot(page: Page) {
       barbs: g.barbSamples.length / 9,
       firstSample: Array.from(g.barbSamples.slice(0, 9)),
       firstShaft: Array.from(
-        lines.geometry.getAttribute('position').array.slice(0, 6)
+        lines?.geometry.getAttribute('position').array.slice(0, 6) ?? []
       ),
     };
   });
@@ -260,7 +261,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .poll(
         async () => {
           const v = await snapshot(page);
-          return v?.present ? `${v.vertical.kind}:${v.lead}` : '';
+          return v?.present && v.temperature && v.barbs > 0
+            ? `${v.vertical.kind}:${v.lead}`
+            : '';
         },
         { timeout: 180000 }
       )
