@@ -14,8 +14,8 @@ or replacing the established export. It is a design for review, not code.
 
 A successful leg save returns promptly after committing mission data and
 recording a generation request. It does not wait for rendering. Show a concise
-slide status near the export action: Preparing slides, Ready, or Needs retry.
-A second save supersedes unfinished work for that leg automatically.
+slide status near the export action: Preparing slides, Ready, or Needs retry. A
+second save supersedes unfinished work for that leg automatically.
 
 When all required artifacts are current, Export assembles the normal ZIP and
 both mission decks from cached per-leg content. The customer performs the same
@@ -23,8 +23,8 @@ export action and does not manage workers, revisions, or artifact files.
 
 If required legacy slides are not ready, Export starts asynchronous preparation
 and shows progress rather than serving stale slides or running heavy work in the
-request. The download becomes available when the current artifacts are ready.
-If the mission changes while preparation is pending, restart preparation against
+request. The download becomes available when the current artifacts are ready. If
+the mission changes while preparation is pending, restart preparation against
 the latest saved snapshot and update progress. Unsaved edits are not exported.
 
 If legacy generation fails, explain which leg needs retry and keep other ready
@@ -59,16 +59,16 @@ them against committed data; do not rely only on a leg's updated timestamp.
 
 Reordering or adding/removing legs invalidates the mission composition and any
 leg artifact with order-dependent content. Keep Leg N of M headers as assembly
-fields where possible so ordering alone does not rerender maps. Deletion
-cancels that leg's work and prevents a late result from recreating its cache.
+fields where possible so ordering alone does not rerender maps. Deletion cancels
+that leg's work and prevents a late result from recreating its cache.
 
 ## Durable scheduling and restart behavior
 
-Persist desired generation state in a dedicated slide-cache store, separate
-from mission import/export data. A request records leg identity, input
-fingerprint, immutable input snapshot, generation token, and state. States are
-queued, running, ready, failed, superseded, or deleted. Persist safe error
-summaries separately from worker diagnostics.
+Persist desired generation state in a dedicated slide-cache store, separate from
+mission import/export data. A request records leg identity, input fingerprint,
+immutable input snapshot, generation token, and state. States are queued,
+running, ready, failed, superseded, or deleted. Persist safe error summaries
+separately from worker diagnostics.
 
 Use atomic writes and per-leg locking for request updates. Enqueue idempotently:
 the same desired fingerprint reuses ready artifacts or existing work. A newer
@@ -84,9 +84,9 @@ expired running leases. Browser sessions do not own job lifetime.
 
 Run heavy timeline, map, and deck work in a cancellable child process. New saves
 request cooperative cancellation, then terminate and reap only that obsolete
-job's process group and browser descendants after a bounded grace period.
-Do not leave stale work consuming the worker slot. Requeue only the newest
-desired generation. Cancellation of one leg must not interrupt another leg.
+job's process group and browser descendants after a bounded grace period. Do not
+leave stale work consuming the worker slot. Requeue only the newest desired
+generation. Cancellation of one leg must not interrupt another leg.
 
 Use explicit job time limits and clean up temporary outputs and owned processes
 on success, failure, cancellation, and service restart. Render time limits and
@@ -103,19 +103,20 @@ Exclude volatile bookkeeping timestamps that do not affect content.
 
 Generate legacy and trial per-leg slide content, maps, and a provenance manifest
 in a job-owned staging directory. The manifest records the input fingerprint,
-generation token, source revisions, template versions, deck status, and warnings.
-Validate completed PowerPoint files before publication.
+generation token, source revisions, template versions, deck status, and
+warnings. Validate completed PowerPoint files before publication.
 
 Before publishing, acquire the per-leg lock and compare the job token and
 fingerprint to the current desired record. Publish by atomic promotion only if
 both still match and the leg still exists. A cancelled job that finishes late
-cannot replace newer artifacts. Readers never see partially written files.
-A trial-only failure can publish valid legacy content with a failed trial status.
+cannot replace newer artifacts. Readers never see partially written files. A
+trial-only failure can publish valid legacy content with a failed trial status.
 
 Store assembly-ready PowerPoint fragments with their embedded assets and slide
-relationships. Mission titles, leg index, ordering, and headers are filled during
-composition. Composition must preserve editable text, images, relationships,
-and styles; simple ZIP concatenation of PowerPoint files is not sufficient.
+relationships. Mission titles, leg index, ordering, and headers are filled
+during composition. Composition must preserve editable text, images,
+relationships, and styles; simple ZIP concatenation of PowerPoint files is not
+sufficient.
 
 Retain the current ready artifact and one previous ready artifact for diagnosis,
 plus artifacts leased by an active export. Previous revisions are never default
@@ -135,10 +136,10 @@ snapshot. Pending preparation follows the latest saved mission instead, with
 clear progress. Each delivered package has one internally consistent snapshot
 and provenance; never mix old and new revisions across decks or legs.
 
-Trial enabled means include the trial deck when all required trial fragments
-are ready. If a trial fragment has failed, deliver the legacy package with the
-trial warning; do not claim that a partial trial is complete. Changing the
-feature flag affects inclusion, not legacy artifacts or mission data.
+Trial enabled means include the trial deck when all required trial fragments are
+ready. If a trial fragment has failed, deliver the legacy package with the trial
+warning; do not claim that a partial trial is complete. Changing the feature
+flag affects inclusion, not legacy artifacts or mission data.
 
 First use, deployment/template upgrades, and recovered missing cache entries
 queue background backfill. They may show preparation progress, but must never
@@ -152,8 +153,8 @@ than claiming all export processing has disappeared.
 
 Verify the following with deterministic fixtures and production-path controls:
 
-1. Creation and successful saves enqueue work promptly; failed saves and
-   unsaved edits do not. Duplicate requests do not duplicate generation.
+1. Creation and successful saves enqueue work promptly; failed saves and unsaved
+   edits do not. Duplicate requests do not duplicate generation.
 2. A save during rendering cancels and reaps the obsolete job, runs the latest
    revision, and cannot publish an older result afterward.
 3. Deletion during work prevents resurrection; changes to referenced routes,
