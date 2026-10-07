@@ -1,11 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { adsbSettings } from '../../src/test/adsb-fixtures';
-import {
-  adsbScene,
-  freshContact,
-  installAdsbFixture,
-} from './support/adsb-fixture';
+import { freshContact, installAdsbFixture } from './support/adsb-fixture';
 import {
   observeOverviewCamera,
   settledOverviewCamera,
@@ -119,6 +115,49 @@ async function monitorFrames(page: Page) {
   });
 }
 
+async function trafficHitPoint(page: Page, hex: string) {
+  return page.evaluate((hex) => {
+    const state = window.__overviewEvidenceRoots
+      ?.find(
+        (root) =>
+          root.containerInfo?.getState &&
+          document.contains(root.containerInfo.getState().gl.domElement)
+      )
+      ?.containerInfo?.getState?.();
+    if (!state) throw new Error('No renderer');
+    const viewport = state.gl.domElement.getBoundingClientRect();
+    const points: Array<{ x: number; y: number }> = [];
+    state.scene.traverse((node) => {
+      const mesh = node as import('three').InstancedMesh;
+      const batch = mesh.userData.adsbBatch as { hexes: string[] } | undefined;
+      const instance = batch?.hexes.indexOf(hex) ?? -1;
+      if (!mesh.isInstancedMesh || instance < 0) return;
+      const matrix = mesh.matrixWorld.clone();
+      mesh.getMatrixAt(instance, matrix);
+      const vertices = mesh.geometry.getAttribute('position');
+      const indices = mesh.geometry.index;
+      const center = mesh.position.clone().set(0, 0, 0);
+      // The centroid of an actual rendered body triangle is inside the hit target.
+      for (let i = 0; i < 3; i++) {
+        const vertex = indices?.getX(i) ?? i;
+        center.x += vertices.getX(vertex) / 3;
+        center.y += vertices.getY(vertex) / 3;
+        center.z += vertices.getZ(vertex) / 3;
+      }
+      center
+        .applyMatrix4(matrix)
+        .applyMatrix4(mesh.matrixWorld)
+        .project(state.camera);
+      points.push({
+        x: viewport.x + ((center.x + 1) * viewport.width) / 2,
+        y: viewport.y + ((1 - center.y) * viewport.height) / 2,
+      });
+    });
+    if (!points[0]) throw new Error(`No rendered traffic triangle for ${hex}`);
+    return points[0];
+  }, hex);
+}
+
 for (const viewport of [
   { width: 1920, height: 1080 },
   { width: 390, height: 844 },
@@ -229,7 +268,8 @@ for (const viewport of [
     await expect(popup).toContainText('KADW');
     if (viewport.width === 1920) await expect(popup).toBeVisible();
     if (await popup.isVisible())
-      expect((await popup.boundingBox())!.height).toBeLessThanOrEqual(180);
+      // CSS transforms can add floating-point noise below one thousandth pixel.
+      expect((await popup.boundingBox())!.height).toBeLessThanOrEqual(180.001);
     if (viewport.width !== 1920)
       await page
         .getByRole('button', { name: 'Explore map', exact: true })
@@ -387,9 +427,29 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Reset map view' }).click();
     await settledOverviewCamera(page);
     // Marker selection and its accessible identity survive label movement.
-    const point = (await adsbScene(page)).batches
-      .flatMap((b) => b.points)
-      .find((p) => p.hex === '00AB12')!;
+    let point = await trafficHitPoint(page, '00AB12');
+    let stable = 0;
+    // Camera position can settle before the responsive projection offset does.
+    await expect
+      .poll(
+        async () => {
+          const next = await trafficHitPoint(page, '00AB12');
+          stable =
+            Math.hypot(next.x - point.x, next.y - point.y) < 0.2
+              ? stable + 1
+              : 0;
+          point = next;
+          return stable;
+        },
+        { timeout: 30_000, intervals: [200] }
+      )
+      .toBeGreaterThanOrEqual(3);
+    expect(
+      await page.evaluate(
+        ({ x, y }) => document.elementFromPoint(x, y)?.tagName,
+        point
+      )
+    ).toBe('CANVAS');
     await page.mouse.click(point.x, point.y);
     await expect(page.getByRole('dialog')).toBeVisible();
     // Coincident contacts share a hit target; either identity can be picked.
