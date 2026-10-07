@@ -39,6 +39,14 @@ class EventType(str, Enum):
     MANUAL_AAR_TRACK_END = "manual_aar_track_end"
 
 
+class XConstraint(str, Enum):
+    """Stable identities for independently active sampled X constraints."""
+
+    AFT_CONE = "x_aft_cone"
+    ELEVATION = "x_elevation"
+    AR_CONE = "x_ar_cone"
+
+
 @dataclass
 class MissionEvent:
     """Represents an event affecting transport availability during mission."""

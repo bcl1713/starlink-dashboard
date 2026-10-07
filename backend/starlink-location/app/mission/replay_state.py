@@ -129,7 +129,7 @@ def apply_event_conditions(
         return deactivate("degraded", key)
 
     if event.event_type == EventType.X_AZIMUTH_VIOLATION:
-        key = "x_azimuth"
+        key = event.metadata.get("constraint", "x_azimuth")
         if event.severity in ("warning", "critical"):
             return activate("degraded", key, reason or "X azimuth conflict")
         return deactivate("degraded", key)

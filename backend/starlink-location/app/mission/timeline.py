@@ -84,6 +84,12 @@ def build_timeline_segments(
             "impacted_count": len(impacted),
         }
 
+        metadata["transport_constraints"] = {
+            interval.transport.value: list(interval.constraints)
+            for interval in (x_interval, ka_interval, ku_interval)
+            if interval is not None and interval.constraints is not None
+        }
+
         segment = TimelineSegment(
             id=f"{mission_id}-segment-{len(segments) + 1:03d}",
             start_time=start,

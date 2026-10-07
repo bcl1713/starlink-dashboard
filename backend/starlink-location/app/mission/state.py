@@ -30,6 +30,7 @@ class TransportInterval:
     start: datetime
     end: datetime | None = None
     reasons: list[str] = field(default_factory=list)
+    constraints: list[str] | None = None
 
 
 def generate_transport_intervals(
@@ -67,6 +68,7 @@ def generate_transport_intervals(
     intervals: dict[Transport, list[TransportInterval]] = {}
     current_state: dict[Transport, TransportState] = {}
     current_reasons: dict[Transport, list[str]] = {}
+    current_constraints: dict[Transport, list[str]] = {}
 
     for transport in transports:
         intervals[transport] = [
@@ -75,10 +77,12 @@ def generate_transport_intervals(
                 state=TransportState.AVAILABLE,
                 start=mission_start,
                 reasons=[],
+                constraints=[],
             )
         ]
         current_state[transport] = TransportState.AVAILABLE
         current_reasons[transport] = []
+        current_constraints[transport] = []
 
     sorted_events = sorted(events)
 
@@ -96,9 +100,15 @@ def generate_transport_intervals(
             continue
 
         new_state, reasons = _derive_state(active_conditions[transport])
+        constraints = sorted(
+            key
+            for bucket in ("degraded", "offline")
+            for key in active_conditions[transport][bucket]
+        )
         if (
             new_state == current_state[transport]
             and reasons == current_reasons[transport]
+            and constraints == current_constraints[transport]
         ):
             # State and rationale unchanged even though event fired.
             continue
@@ -110,11 +120,13 @@ def generate_transport_intervals(
                 state=new_state,
                 start=effective_time,
                 reasons=reasons,
+                constraints=constraints,
             )
         )
 
         current_state[transport] = new_state
         current_reasons[transport] = reasons
+        current_constraints[transport] = constraints
 
     for transport in transports:
         if intervals[transport]:
