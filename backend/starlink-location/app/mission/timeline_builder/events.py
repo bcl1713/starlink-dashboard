@@ -27,7 +27,7 @@ from app.mission.timeline_builder.warnings import XBandWarningBoundary
 from app.models.route import ParsedRoute
 from app.satellites.catalog import get_satellite_catalog
 from app.satellites.geometry import is_in_azimuth_range
-from app.satellites.rules import EventType, MissionEvent, RuleEngine
+from app.satellites.rules import EventType, MissionEvent, RuleEngine, XConstraint
 from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ def apply_x_azimuth_events(
 
     schedule_idx = 0
     current_satellite = assignments[0][1]
-    violation_active = False
+    active_violations: dict[XConstraint, str] = {}
     warning_active = False
     warning_boundaries: list[XBandWarningBoundary] = []
     manual_ar_events = sorted(
@@ -172,7 +172,7 @@ def apply_x_azimuth_events(
             if sample.altitude is not None
             else DEFAULT_CRUISE_ALTITUDE_M
         )
-        aft_violation, relative_azimuth, debug = rule_engine.evaluate_x_azimuth_window(
+        _, relative_azimuth, debug = rule_engine.evaluate_x_azimuth_window(
             aircraft_lat=sample.latitude,
             aircraft_lon=sample.longitude,
             aircraft_alt=altitude,
@@ -188,17 +188,11 @@ def apply_x_azimuth_events(
             rule_engine.config.normal_azimuth_min,
             rule_engine.config.normal_azimuth_max,
         )
-        forward_violation = False
-        if in_aar_window:
-            forward_violation, _, _ = rule_engine.evaluate_x_azimuth_window(
-                aircraft_lat=sample.latitude,
-                aircraft_lon=sample.longitude,
-                aircraft_alt=altitude,
-                satellite_lon=satellite_longitude,
-                timestamp=sample.timestamp,
-                heading_deg=sample.heading,
-                is_aar_mode=True,
-            )
+        forward_violation = in_aar_window and is_in_azimuth_range(
+            relative_azimuth,
+            rule_engine.config.aar_azimuth_min,
+            rule_engine.config.aar_azimuth_max,
+        )
 
         violation_reason = debug.get("violation_reason")
         is_elevation_blocked = violation_reason == "elevation"
@@ -240,25 +234,54 @@ def apply_x_azimuth_events(
             }
         )
 
-        is_violation = forward_violation or aft_violation
-        if is_violation and not violation_active:
-            if is_elevation_blocked:
-                reason = _format_elevation_reason(
-                    current_satellite,
-                    float(debug.get("elevation_degrees", 0.0)),
-                    float(debug.get("min_elevation_degrees", 0.0)),
-                    debug_metadata=debug,
+        constraints: dict[XConstraint, str] = {}
+        if interference_warning:
+            constraints[XConstraint.AFT_CONE] = _format_azimuth_reason(
+                current_satellite,
+                False,
+                True,
+                relative_azimuth,
+                False,
+                debug_metadata=debug,
+            )
+        if is_elevation_blocked:
+            constraints[XConstraint.ELEVATION] = _format_elevation_reason(
+                current_satellite,
+                float(debug.get("elevation_degrees", 0.0)),
+                rule_engine.config.elevation_min_degrees,
+                debug_metadata=debug,
+            )
+        if forward_violation:
+            constraints[XConstraint.AR_CONE] = _format_azimuth_reason(
+                current_satellite,
+                True,
+                False,
+                relative_azimuth,
+                True,
+                debug_metadata=debug,
+            )
+
+        for constraint, previous_satellite in list(active_violations.items()):
+            if constraint not in constraints:
+                rule_engine.events.append(
+                    MissionEvent(
+                        timestamp=sample.timestamp,
+                        event_type=EventType.X_AZIMUTH_VIOLATION,
+                        transport=Transport.X,
+                        affected_transport=Transport.X,
+                        severity="info",
+                        reason=f"X constraint clear ({constraint.value})",
+                        satellite_id=previous_satellite,
+                        metadata={"constraint": constraint.value},
+                    )
                 )
-            else:
-                reason = _format_azimuth_reason(
-                    current_satellite,
-                    forward_violation,
-                    aft_violation,
-                    relative_azimuth,
-                    in_aar_window,
-                    debug_metadata=debug,
-                )
+                del active_violations[constraint]
+
+        for constraint, reason in constraints.items():
+            if active_violations.get(constraint) == current_satellite:
+                continue
             metadata: dict[str, float | bool | str | None] = {
+                "constraint": constraint.value,
                 "relative_azimuth_degrees": round(relative_azimuth, 1),
                 "absolute_azimuth_degrees": round(
                     float(debug.get("absolute_azimuth_degrees", relative_azimuth)), 1
@@ -296,22 +319,9 @@ def apply_x_azimuth_events(
                     metadata=metadata,
                 )
             )
-            violation_active = True
-        elif not is_violation and violation_active:
-            rule_engine.events.append(
-                MissionEvent(
-                    timestamp=sample.timestamp,
-                    event_type=EventType.X_AZIMUTH_VIOLATION,
-                    transport=Transport.X,
-                    affected_transport=Transport.X,
-                    severity="info",
-                    reason="X azimuth clear",
-                    satellite_id=current_satellite,
-                )
-            )
-            violation_active = False
+            active_violations[constraint] = current_satellite
 
-    if violation_active:
+    for constraint, satellite_id in active_violations.items():
         rule_engine.events.append(
             MissionEvent(
                 timestamp=mission_end,
@@ -319,8 +329,9 @@ def apply_x_azimuth_events(
                 transport=Transport.X,
                 affected_transport=Transport.X,
                 severity="info",
-                reason="X azimuth clear",
-                satellite_id=current_satellite,
+                reason=f"X constraint clear ({constraint.value})",
+                satellite_id=satellite_id,
+                metadata={"constraint": constraint.value},
             )
         )
 

@@ -19,6 +19,7 @@ from app.mission.models import (
     Transport,
     TransportState,
 )
+from app.satellites.rules import XConstraint
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,7 @@ class AvailabilityDecision:
     source_segment_ids: tuple[str, ...]
     boundary_markers: tuple[str, ...]
     operational_markers: tuple[str, ...]
+    transport_constraints: dict[str, list[str]]
 
 
 _STATE_PRIORITY = {
@@ -216,13 +218,55 @@ def _decide_availability(
         key=lambda status: _STATUS_PRIORITY.get(status, 0),
     )
 
-    has_ku_x_conflict = _has_ku_x_conflict(source_reasons)
+    transport_constraints: dict[str, list[str]] = {}
+    for segment in segments:
+        for transport, constraints in (
+            (segment.metadata or {}).get("transport_constraints", {}).items()
+        ):
+            transport_constraints[transport] = sorted(
+                set(transport_constraints.get(transport, []) + constraints)
+            )
+    # Retain known identities when a legacy X contributor overlaps. The legacy
+    # key requires reason fallback; it must never replace a known hard constraint.
+    if any(
+        segment.x_state != TransportState.AVAILABLE
+        and Transport.X.value
+        not in (segment.metadata or {}).get("transport_constraints", {})
+        for segment in segments
+    ):
+        transport_constraints[Transport.X.value] = sorted(
+            set(transport_constraints.get(Transport.X.value, []) + ["x_azimuth"])
+        )
+    has_ku_x_conflict = XConstraint.AFT_CONE.value in transport_constraints.get(
+        Transport.X.value, []
+    ) or _has_ku_x_conflict(source_reasons)
     if (
         has_ku_x_conflict
         and x_state == TransportState.DEGRADED
-        and not _has_actual_x_degradation(source_reasons, in_sof)
+        and not any(
+            _segment_has_actual_x_degradation(segment, in_sof) for segment in segments
+        )
     ):
         x_state = TransportState.AVAILABLE
+        # Raw assembly counts the advisory as a second impacted transport. Remove
+        # that contribution without discarding independent critical source rows.
+        source_status = max(
+            (
+                (
+                    TimelineStatus.DEGRADED
+                    if segment.status == TimelineStatus.CRITICAL
+                    and segment.x_state == TransportState.DEGRADED
+                    and sum(
+                        state != TransportState.AVAILABLE
+                        for state in (segment.ka_state, segment.ku_state)
+                    )
+                    == 1
+                    else segment.status
+                )
+                for segment in segments
+            ),
+            key=lambda status: _STATUS_PRIORITY.get(status, 0),
+        )
 
     if (
         has_ku_x_conflict
@@ -305,6 +349,7 @@ def _decide_availability(
         source_segment_ids=source_segment_ids,
         boundary_markers=boundary_markers,
         operational_markers=operational_markers,
+        transport_constraints=transport_constraints,
     )
 
 
@@ -336,6 +381,7 @@ def _build_segment(
         "source_segment_ids": list(decision.source_segment_ids),
         "boundary_markers": list(decision.boundary_markers),
         "operational_markers": list(decision.operational_markers),
+        "transport_constraints": decision.transport_constraints,
     }
     return TimelineSegment(
         id=f"{mission_id}-availability-{index:03d}",
@@ -365,6 +411,8 @@ def _can_merge(left: TimelineSegment, right: TimelineSegment) -> bool:
         and left_meta.get("primary_reason") == right_meta.get("primary_reason")
         and left_meta.get("availability_label") == right_meta.get("availability_label")
         and left_meta.get("systems_affected") == right_meta.get("systems_affected")
+        and left_meta.get("transport_constraints")
+        == right_meta.get("transport_constraints")
         and left_meta.get("notes") == right_meta.get("notes")
         and left_meta.get("boundary_markers") == right_meta.get("boundary_markers")
         and left_meta.get("operational_markers")
@@ -492,8 +540,6 @@ def _is_satellite_swap_reason(reason: str | None) -> bool:
             "satellite swap",
             "transition",
             "coverage swap",
-            "coverage lost",
-            "coverage exit",
         )
     )
 
@@ -510,16 +556,42 @@ def _has_ku_x_conflict(reasons: tuple[str, ...]) -> bool:
     return False
 
 
+def _segment_has_actual_x_degradation(segment: TimelineSegment, in_aar: bool) -> bool:
+    if segment.x_state == TransportState.AVAILABLE:
+        return False
+    constraints = (segment.metadata or {}).get("transport_constraints", {})
+    if Transport.X.value in constraints:
+        keys = constraints[Transport.X.value]
+        if any(key not in (XConstraint.AFT_CONE.value, "x_azimuth") for key in keys):
+            return True
+        if "x_azimuth" not in keys:
+            return False
+    # Older timelines have no typed constraint identities. Keep compatibility
+    # with emitted restriction reasons until they are recomputed.
+    return _has_actual_x_degradation(tuple(_segment_source_reasons(segment)), in_aar)
+
+
 def _has_actual_x_degradation(reasons: tuple[str, ...], in_aar: bool) -> bool:
     for reason in reasons:
         if _has_ku_x_conflict((reason,)):
             continue
+        normalized = reason.lower().replace("-", " ").replace("/", " ")
+        if normalized.startswith(("ka ", "ku ")):
+            continue
         if _is_satellite_swap_reason(reason):
             return True
-        normalized = reason.lower().replace("-", " ").replace("/", " ")
         if any(
             marker in normalized
-            for marker in ("x band", "xband", "x transition", "x azimuth")
+            for marker in (
+                "x band",
+                "xband",
+                "x transition",
+                "x azimuth",
+                "x line of sight blocked",
+                "manual ar track",
+                "x aar",
+                "x coverage",
+            )
         ):
             return True
         if in_aar and "x" in normalized and "aar" in normalized:
