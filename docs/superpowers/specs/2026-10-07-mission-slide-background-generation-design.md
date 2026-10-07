@@ -5,10 +5,12 @@ When a newer change arrives, interrupt obsolete generation and restart from the
 latest committed inputs. Ready mission exports assemble current slide artifacts
 instead of building timelines, rendering maps, or generating slides on demand.
 
-This is phase two of the parallel customer briefing trial. The first phase
-validates the new presentation alongside the existing deck. This follow-up
-changes generation timing for both decks without changing legacy slide content
-or replacing the established export. It is a design for review, not code.
+This is phase two of the parallel customer briefing trial. Do not begin its
+implementation until the user has reviewed representative phase-one decks and
+accepted their presentation layout and semantics. Planning this follow-up does
+not bypass that gate. It changes generation timing for both decks without
+changing legacy content or replacing the established export. This is design,
+not code.
 
 ## User flow
 
