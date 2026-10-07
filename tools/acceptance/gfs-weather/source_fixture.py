@@ -48,16 +48,34 @@ def event(value):
 
 class SourceFixture:
     def __init__(self):
-        manifest = json.loads((CAPTURE / "manifest.json").read_bytes())
-        self.ranges = {}
+        capture = (
+            Path("/capture/gfs-presentation")
+            if control().get("gfs_presentation")
+            else CAPTURE
+        )
+        manifest = json.loads((capture / "manifest.json").read_bytes())
+        self.runs = {}
+        if "runs" in manifest:
+            for run in manifest["runs"]:
+                index = (capture / run["index"]).read_bytes()
+                if hashlib.sha256(index).hexdigest() != run["index_sha256"]:
+                    raise ValueError("Pinned index drift")
+                self.runs[run["key"]] = {**run, "index_bytes": index, "ranges": {}}
+        else:
+            self.runs[KEY] = {
+                "etag": ETAG,
+                "size": SIZE,
+                "index_bytes": (capture / "source.idx").read_bytes(),
+                "ranges": {},
+            }
         for item in manifest["objects"]:
-            body = (CAPTURE / item["filename"]).read_bytes()
+            body = (capture / item["filename"]).read_bytes()
             if hashlib.sha256(body).hexdigest() != item["sha256"]:
                 raise ValueError("Pinned source drift")
             if item.get("range"):
-                self.ranges[f"bytes={item['range'][0]}-{item['range'][1]}"] = body
-            else:
-                self.index = body
+                self.runs[item.get("key", KEY)]["ranges"][
+                    f"bytes={item['range'][0]}-{item['range'][1]}"
+                ] = body
 
     def __call__(self, request):
         assert request.url.host == "noaa-gfs-bdp-pds.s3.amazonaws.com"
@@ -73,27 +91,33 @@ class SourceFixture:
             elif prefix.startswith("gfs.20261006/00/atmos/"):
                 entries = "".join(
                     f"<Contents><Key>{name}</Key></Contents>"
-                    for name in (KEY, KEY + ".idx")
+                    for name in [
+                        name
+                        for source in self.runs
+                        for name in (source, source + ".idx")
+                    ]
                 )
             body = (
                 "<ListBucketResult><IsTruncated>false</IsTruncated>"
                 + entries
                 + "</ListBucketResult>"
             ).encode()
-        elif key == KEY and request.method == "HEAD":
-            headers = {"ETag": ETAG, "Content-Length": str(SIZE)}
-        elif key == KEY + ".idx":
-            body = self.index
-        elif key == KEY:
+        elif key in self.runs and request.method == "HEAD":
+            run = self.runs[key]
+            headers = {"ETag": run["etag"], "Content-Length": str(run["size"])}
+        elif key.endswith(".idx") and key[:-4] in self.runs:
+            body = self.runs[key[:-4]]["index_bytes"]
+        elif key in self.runs:
+            run = self.runs[key]
             byte_range = request.headers["range"]
-            assert request.headers["if-match"] == ETAG
-            body = self.ranges[byte_range]
+            assert request.headers["if-match"] == run["etag"]
+            body = run["ranges"][byte_range]
             status = 206
             headers = {
-                "ETag": (
-                    '"different-version"' if control().get("gfs_mismatch") else ETAG
-                ),
-                "Content-Range": f"{byte_range.replace('=', ' ')}/{SIZE}",
+                "ETag": '"different-version"'
+                if control().get("gfs_mismatch")
+                else run["etag"],
+                "Content-Range": f"{byte_range.replace('=', ' ')}/{run['size']}",
                 "Content-Length": str(len(body)),
             }
         else:

@@ -275,6 +275,18 @@ export function createGridDrawing(
       add(lines, false);
       add(flags, true);
     }
+    object.userData.gfs = {
+      grid: {
+        descriptor: lease.descriptor,
+        u: lease.u,
+        v: lease.v,
+        t: lease.t,
+        mask: lease.mask,
+      },
+      barbSamples,
+      bytes,
+      budget: () => budget.snapshot(),
+    };
     temporary.release();
     temporary = undefined;
     let owned = true;
@@ -287,6 +299,7 @@ export function createGridDrawing(
         if (!owned) return;
         owned = false;
         object.clear();
+        object.userData = {};
         resources.forEach((dispose) => dispose());
         retained?.release();
       },

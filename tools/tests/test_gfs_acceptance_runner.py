@@ -173,3 +173,65 @@ def test_port_check_rejects_live_listener_and_accepts_closed_time_wait():
             accepted.close()
             assert client.recv(1) == b""
     assert module.ports_available((port,))
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "native_samples",
+        "configuration",
+        "lifecycle",
+        "combined_viewports",
+        "browser_metrics",
+    ],
+)
+def test_presentation_missing_native_controls_or_browser_measurements_prevents_pass(
+    missing,
+):
+    module = runner()
+    evidence = complete_evidence(module)
+    evidence.update(
+        {
+            key: True
+            for key in [
+                "native_samples",
+                "configuration",
+                "lifecycle",
+                "combined_viewports",
+            ]
+        }
+    )
+    evidence["browser_metrics"] = {
+        "encoded_peak": 1,
+        "decoded_peak": 1,
+        "gpu_peak": 1,
+        "slot_peak": 1,
+    }
+    evidence.pop(missing)
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")
+
+
+@pytest.mark.parametrize(
+    "metric", ["encoded_peak", "decoded_peak", "gpu_peak", "slot_peak"]
+)
+def test_presentation_over_budget_prevents_pass(metric):
+    module = runner()
+    evidence = complete_evidence(module)
+    evidence.update(
+        {
+            key: True
+            for key in [
+                "native_samples",
+                "configuration",
+                "lifecycle",
+                "combined_viewports",
+            ]
+        }
+    )
+    evidence["browser_metrics"] = {
+        key: 1 for key in ["encoded_peak", "decoded_peak", "gpu_peak", "slot_peak"]
+    }
+    evidence["browser_metrics"][metric] = 100 * 1024**2
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")
