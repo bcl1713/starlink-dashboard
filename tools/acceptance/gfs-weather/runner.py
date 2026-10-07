@@ -55,6 +55,24 @@ SOURCE_HASHES = {
 }
 
 
+def bind_browser_source(candidate, installed, mode):
+    lock = (candidate / "package-lock.json").read_bytes()
+    if lock != (installed / "package-lock.json").read_bytes():
+        raise ValueError("Provisioned browser dependencies differ from candidate lock")
+    (candidate / "node_modules").symlink_to(
+        installed / "node_modules", target_is_directory=True
+    )
+    return {
+        "source": str(candidate),
+        "package_lock_sha256": hashlib.sha256(lock).hexdigest(),
+        "test_sha256": hashlib.sha256(
+            (candidate / "tests/e2e/gfs-weather-production.spec.ts").read_bytes()
+        ).hexdigest()
+        if mode == "presentation"
+        else None,
+    }
+
+
 def preflight(sha, browser, head, dirty, mode="foundation"):
     validate_candidate_inputs(sha, mode)
     if mode not in ("foundation", "presentation"):
@@ -296,6 +314,17 @@ class Runner:
             ["tar", "-xf", str(self.source / "source.tar"), "-C", str(self.source)]
         )
         (self.source / "source.tar").unlink()
+        self.record(
+            "browser-test-source.json",
+            {
+                "sha": self.sha,
+                **bind_browser_source(
+                    self.source / "frontend/mission-planner",
+                    self.root / "frontend/mission-planner",
+                    self.mode,
+                ),
+            },
+        )
         capture, control = self.output / "capture", self.output / "control"
         capture.mkdir()
         control.mkdir(mode=0o777)
@@ -422,7 +451,7 @@ class Runner:
                 "playwright.aviation-acceptance.config.ts",
                 "aviation-weather-production.spec.ts",
             ],
-            cwd=self.root / "frontend/mission-planner",
+            cwd=self.source / "frontend/mission-planner",
             seconds=600,
             name="browser.log",
         )
@@ -518,7 +547,7 @@ class Runner:
                     "playwright.aviation-acceptance.config.ts",
                     "gfs-weather-production.spec.ts",
                 ],
-                cwd=self.root / "frontend/mission-planner",
+                cwd=self.source / "frontend/mission-planner",
                 seconds=900,
                 name="presentation-browser.log",
             )

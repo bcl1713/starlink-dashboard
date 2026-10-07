@@ -235,3 +235,29 @@ def test_presentation_over_budget_prevents_pass(metric):
     evidence["browser_metrics"][metric] = 100 * 1024**2
     with pytest.raises(ValueError, match="presentation"):
         module.require_pass(evidence, "presentation")
+
+
+def test_browser_source_uses_candidate_definitions_and_requires_identical_lock(
+    tmp_path,
+):
+    module = runner()
+    archived = tmp_path / "candidate"
+    installed = tmp_path / "installed"
+    for root in (archived, installed):
+        (root / "tests/e2e").mkdir(parents=True)
+        (root / "package-lock.json").write_bytes(b"pinned dependencies")
+    (installed / "node_modules").mkdir()
+    (archived / "tests/e2e/gfs-weather-production.spec.ts").write_bytes(
+        b"candidate test"
+    )
+    (installed / "tests/e2e/gfs-weather-production.spec.ts").write_bytes(
+        b"edited checkout test"
+    )
+    proof = module.bind_browser_source(archived, installed, "presentation")
+    import hashlib
+
+    assert proof["test_sha256"] == hashlib.sha256(b"candidate test").hexdigest()
+    assert (archived / "node_modules").resolve() == installed / "node_modules"
+    (installed / "package-lock.json").write_bytes(b"different dependency versions")
+    with pytest.raises(ValueError, match="candidate lock"):
+        module.bind_browser_source(archived, installed, "presentation")

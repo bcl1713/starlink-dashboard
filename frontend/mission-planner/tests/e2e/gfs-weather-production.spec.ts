@@ -269,7 +269,12 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       ['pressure', 6],
       ['flight-level', 6],
       ['flight-level', 9],
+      ['pressure-850', 9],
     ] as const) {
+      if (kind === 'pressure-850')
+        await config
+          .getByRole('combobox', { name: 'Atmosphere level' })
+          .selectOption('pressure:85000');
       if (kind === 'flight-level') {
         if (lead === 6)
           await config
@@ -283,12 +288,16 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
           config.getByText('Aviation weather settings saved', { exact: true })
         ).toBeVisible();
       }
-      await ready(overview, kind, lead);
-      await ready(other, kind, lead);
+      await ready(overview, kind === 'pressure-850' ? 'pressure' : kind, lead);
+      await ready(other, kind === 'pressure-850' ? 'pressure' : kind, lead);
       const current = await remember();
       expect(current.valid).toBe(
         Date.parse('2026-10-06T00:00:00Z') + lead * 3600000
       );
+      if (kind === 'pressure-850')
+        await config
+          .getByRole('combobox', { name: 'Atmosphere level' })
+          .selectOption('pressure:85000');
       if (kind === 'flight-level') {
         expect(current.vertical.source_pressures_pa).toEqual([15000, 20000]);
         expect(current.vertical.derivation).toBe('isa-log-pressure-v1');
@@ -340,6 +349,15 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
         ).toBeCloseTo(-s[5] / speed, 4);
       }
     }
+    expect(
+      oracles.some((o) => o.vertical === 'pressure-850' && o.mask === 1)
+    ).toBe(true);
+    await config
+      .getByRole('combobox', { name: 'Atmosphere level' })
+      .selectOption('fl:390');
+    await ready(overview, 'flight-level', 9);
+    await ready(other, 'flight-level', 9);
+    await remember();
     evidence.native_samples = true;
     evidence.configuration = true;
     await overview.screenshot({ path: info.outputPath('gfs-desktop.png') });

@@ -18,7 +18,8 @@ replay time are fixtures. Captured 2026-10-06 00Z F006/F009 GRIB ranges and hash
 are pinned in `tools/acceptance/gfs-weather/presentation-source.json`; FL390 uses
 the actual complete 150/200 hPa brackets. Independent source values compare to
 admitted CPU arrays and native packed-shader U/V/T readback, including seam,
-poles and terrain. Browser controls cover Configuration propagation between
+poles and a real 850 hPa surface below Antarctic terrain. Browser controls cover
+Configuration propagation between
 independent contexts, horizon changes, combined radar/bulletin views and original
 expiry despite failed polling. All pass controls, resource measurements and
 empty cleanup inventory are required before PASS is written.
