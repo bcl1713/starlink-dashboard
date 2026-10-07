@@ -667,7 +667,7 @@ def main():
     )
     preflight(sys.argv[1], Path(sys.argv[2]), head, dirty, sys.argv[3])
     runner = Runner(root, sys.argv[1], Path(sys.argv[2]), sys.argv[3])
-    print(f"Foundation evidence: {runner.output}", flush=True)
+    print(f"GFS {runner.mode} evidence: {runner.output}", flush=True)
 
     def interrupted(signum, frame):
         raise KeyboardInterrupt(f"signal {signum}")
@@ -701,7 +701,7 @@ def main():
             ).encode()
         },
     )
-    print(f"Foundation PASS: {runner.output}", flush=True)
+    print(f"GFS {runner.mode} PASS: {runner.output}", flush=True)
 
 
 if __name__ == "__main__":

@@ -312,9 +312,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
         Date.parse('2026-10-06T00:00:00Z') + lead * 3600000
       );
       if (kind === 'pressure-850')
-        await config
-          .getByRole('combobox', { name: 'Atmosphere level' })
-          .selectOption('pressure:85000');
+        expect(current.vertical.pressure_pa).toBe(85000);
       if (kind === 'flight-level') {
         expect(current.vertical.source_pressures_pa).toEqual([15000, 20000]);
         expect(current.vertical.derivation).toBe('isa-log-pressure-v1');
@@ -411,6 +409,13 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await overview.evaluate(() => document.exitFullscreen());
     await overview.setViewportSize({ width: 390, height: 844 });
     await ready(overview, 'flight-level', 9);
+    await overview
+      .getByLabel('Flight-level atmosphere status')
+      .locator('summary')
+      .click();
+    await expect(
+      overview.getByLabel('Flight-level atmosphere status')
+    ).toContainText('Run 2026-10-06 00:00 UTC');
     await overview.screenshot({ path: info.outputPath('gfs-mobile.png') });
     await expect(overview.getByLabel('Globe legend')).toBeVisible();
     await overview
