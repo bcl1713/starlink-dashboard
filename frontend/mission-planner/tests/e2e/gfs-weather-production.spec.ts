@@ -31,7 +31,9 @@ async function snapshot(page: Page) {
       ?.containerInfo?.getState?.();
     const object = state?.scene.getObjectByName('Native GFS atmosphere');
     if (!state) return null;
-    if (!object) return { present: false, calls: state.gl.info.render.calls };
+    // Disposal clears the native children/data before React detaches the group.
+    if (!object?.userData.gfs)
+      return { present: false, calls: state.gl.info.render.calls };
     const g = object.userData.gfs;
     const lines = state.scene.getObjectByName('GFS wind FROM barbs') as Mesh;
     return {
