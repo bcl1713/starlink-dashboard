@@ -323,6 +323,7 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     expect(await sourceEvents()).toHaveLength(0);
     await expect(overview.getByLabel('Aviation weather status')).toHaveCount(0);
     await config.goto('/configuration');
+    await config.getByRole('tab', { name: 'Weather', exact: true }).click();
     for (const name of switches) {
       const toggle = config.getByRole('switch', { name, exact: true });
       await expect(toggle).toBeEnabled();

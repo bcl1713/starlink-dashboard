@@ -81,14 +81,13 @@ Prometheus and GFS worker. The publishing workflow builds the worker from
 `backend/starlink-location/Dockerfile.gfs` and inventories its GHCR versions
 alongside the other packages.
 
-No additional host-path key is required. The worker reads aviation settings
-from the existing `STARLINK_APP_DATA_PATH/settings` directory through a
-read-only mount. Project-scoped `gfs_products` and `gfs_mailbox` named volumes
-share normalized products and control records with the API; the API mounts
-products read-only. Retain these volumes across redeployments and restarts:
-they also preserve request quotas and product admission clocks. Keep the stack
-project identity stable and do not use `down --volumes` for a retained
-installation.
+No additional host-path key is required. The worker reads aviation settings from
+the existing `STARLINK_APP_DATA_PATH/settings` directory through a read-only
+mount. Project-scoped `gfs_products` and `gfs_mailbox` named volumes share
+normalized products and control records with the API; the API mounts products
+read-only. Retain these volumes across redeployments and restarts: they also
+preserve request quotas and product admission clocks. Keep the stack project
+identity stable and do not use `down --volumes` for a retained installation.
 
 The worker has no published port or proxy alias and joins only the private
 application network. It retains one CPU and a 1 GiB memory limit, an init
@@ -108,7 +107,7 @@ model data remains unknown weather; core dashboard health remains independent.
 
 The independent Configuration switches **Starshield data link** and **X-band
 data link** default to enabled. **Orbital traffic view** defaults to disabled.
-The backend persists all four preferences under
+The backend persists shared panel and map-layer preferences under
 `STARLINK_APP_DATA_PATH/settings/overview-links.json`; the existing
 application-data mount supplies persistence, with no additional volume or
 bootstrap environment variable. Preserve this category during updates/rollback
@@ -118,7 +117,7 @@ The **Aircraft history** switch defaults to `true` and controls the flown track
 and its legend entry without disabling history collection or network graphs.
 Existing saved files missing `aircraft_history_enabled` default to enabled.
 
-Same-origin `GET /api/overview-links/settings` returns all four boolean fields;
+Same-origin `GET /api/overview-links/settings` returns all 21 boolean fields;
 partial `PUT` merges only supplied fields. Missing saved fields use defaults;
 unfamiliar saved fields survive reads and partial saves, preserving preferences
 across compatible schema upgrades and future rollbacks. A deployed version must

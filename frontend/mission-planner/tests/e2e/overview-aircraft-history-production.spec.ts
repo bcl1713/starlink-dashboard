@@ -73,7 +73,9 @@ test('saved aircraft history visibility reaches an open Overview through product
 
   const configuration = await context.newPage();
   await configuration.goto('/configuration');
-  await configuration.getByRole('tab', { name: 'Network Traffic' }).click();
+  await configuration
+    .getByRole('tab', { name: 'Aircraft Traffic', exact: true })
+    .click();
   const toggle = configuration.getByRole('switch', {
     name: 'Aircraft history',
     exact: true,

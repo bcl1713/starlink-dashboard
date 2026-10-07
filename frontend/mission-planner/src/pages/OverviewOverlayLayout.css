@@ -77,7 +77,20 @@
   display: grid;
   grid-template-columns: repeat(
     auto-fit,
-    minmax(min(100%, max(170px, 10.625rem)), 1fr)
+    minmax(
+      min(
+        100%,
+        max(
+          170px,
+          10.625rem,
+          calc(
+            (100% - (var(--overview-metric-count, 5) - 1) * 8px) /
+              var(--overview-metric-count, 5)
+          )
+        )
+      ),
+      1fr
+    )
   );
   gap: 8px;
   min-width: 0;

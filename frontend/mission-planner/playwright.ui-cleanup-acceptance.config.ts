@@ -3,7 +3,10 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   ...windowAcceptance,
-  testMatch: 'overview-ui-cleanup-production.spec.ts',
+  testMatch: [
+    'overview-ui-cleanup-production.spec.ts',
+    'overview-window-compact.spec.ts',
+  ],
   timeout: 240_000,
   use: {
     ...windowAcceptance.use,

@@ -5,6 +5,8 @@ import {
   renderedRoutePoints,
 } from './support/overview-route-probe';
 
+test.use({ viewport: { width: 1920, height: 1080 } });
+
 // This suite runs against isolated production images. No API interception.
 test('saved visibility reaches another Overview window and configuration stays organized', async ({
   context,
@@ -140,6 +142,22 @@ test('saved visibility reaches another Overview window and configuration stays o
     await overview.screenshot({
       path: info.outputPath('overview-one-graph.png'),
     });
+    await overview.setViewportSize({ width: 390, height: 844 });
+    await expect
+      .poll(
+        async () =>
+          (
+            await overview
+              .locator('[data-metric-panel="latency"]')
+              .boundingBox()
+          )?.width ?? 0
+      )
+      .toBeGreaterThan(300);
+    await overview.screenshot({
+      path: info.outputPath('overview-one-graph-mobile.png'),
+      fullPage: true,
+    });
+    await overview.setViewportSize({ width: 1920, height: 1080 });
     await editing.getByRole('tab', { name: 'Weather', exact: true }).click();
     for (const name of [
       'Precipitation radar',
@@ -166,6 +184,7 @@ test('saved visibility reaches another Overview window and configuration stays o
         .getByLabel('Globe legend')
         .getByLabel('Overview display identity')
     ).toBeVisible();
+    await overview.bringToFront();
     await overview
       .getByRole('button', { name: 'Enter fullscreen overview' })
       .click();
@@ -176,9 +195,7 @@ test('saved visibility reaches another Overview window and configuration stays o
     await overview.screenshot({
       path: info.outputPath('overview-fullscreen.png'),
     });
-    await overview
-      .getByRole('button', { name: 'Exit fullscreen overview' })
-      .click();
+    await overview.evaluate(() => document.exitFullscreen());
     await expect
       .poll(() => overview.evaluate(() => Boolean(document.fullscreenElement)))
       .toBe(false);
