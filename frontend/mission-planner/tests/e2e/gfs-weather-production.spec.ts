@@ -207,7 +207,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
   context,
   request,
 }, info) => {
-  test.setTimeout(900000);
+  test.setTimeout(1200000);
   const output = process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR!;
   const oracles = JSON.parse(
     await readFile(output + '/capture/gfs-presentation/oracles.json', 'utf8')
@@ -403,8 +403,26 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .getByRole('button', { name: 'Close weather report' })
       .click();
     await overview
-      .locator('.overview-globe')
-      .evaluate((element) => element.requestFullscreen());
+      .getByRole('button', { name: 'Enter fullscreen overview' })
+      .click();
+    await expect
+      .poll(() => overview.evaluate(() => !!document.fullscreenElement))
+      .toBe(true);
+    await expect(
+      overview.getByLabel('Flight-level atmosphere status')
+    ).toBeVisible();
+    await overview
+      .getByRole('button', { name: 'Inspect weather reports' })
+      .click();
+    await expect(overview.getByRole('dialog')).toBeVisible();
+    expect(
+      await overview
+        .getByRole('dialog')
+        .evaluate((node) => !!document.fullscreenElement?.contains(node))
+    ).toBe(true);
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
+      .click();
     await overview.screenshot({ path: info.outputPath('gfs-fullscreen.png') });
     await overview.evaluate(() => document.exitFullscreen());
     await overview.setViewportSize({ width: 390, height: 844 });

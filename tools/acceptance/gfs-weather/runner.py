@@ -551,7 +551,7 @@ class Runner:
                     "gfs-weather-production.spec.ts",
                 ],
                 cwd=self.source / "frontend/mission-planner",
-                seconds=900,
+                seconds=1260,
                 name="presentation-browser.log",
             )
             browser = json.loads((self.output / "presentation.json").read_bytes())
