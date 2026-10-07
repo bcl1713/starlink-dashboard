@@ -61,3 +61,6 @@ frontend/mission-planner/dist/
 
 # Isolated feature worktrees
 .worktrees/
+
+# Standalone customer briefing renderer
+frontend/mission-planner/dist-mission-export/

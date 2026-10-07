@@ -86,3 +86,69 @@ Only a passing RendererFeasibilityReport releases Task 2. Task 3B then consumes
 its final IDs and adopts the proven scene/runner in production packaging. Retest
 F08-map with the final image/markers after integration. No phase-two worker
 system or legacy replacement is authorized by this proof.
+
+## Implemented gate reproduction
+
+Task 3A provides a standalone scene and disposable image; deployed backend,
+Compose and workflows remain unchanged. The fixture has five ordered primary
+views: one short, one polar/dateline, and three consecutive views for a complete
+circumnavigation. Empty route-only markers drive timing; synthetic numbers are
+used only in separate framing/pixel checks. The scene uses radius-two Earth,
+depth-tested neutral ribbons, fixed planned takeoff lighting, and a 75-degree
+interior cap before applying the shared overview camera fitter. Labels are
+projected inside padding and checked for collisions. Readiness requires decoded
+textures, linked shaders, the final camera, projected labels and completed
+demand frames; no readiness sleep or live dashboard is involved.
+
+Build separately from repository root, retaining normal proxy/CA configuration:
+
+```bash
+timeout --kill-after=10s 45m docker build \
+  --build-arg RENDERER_CANDIDATE_SHA="$(git rev-parse HEAD)" \
+  -f tools/acceptance/customer-briefing/Dockerfile.renderer-feasibility \
+  -t starlink-customer-briefing-task3a:local .
+timeout --kill-after=10s 10m node \
+  tools/acceptance/customer-briefing/map_feasibility.mjs
+```
+
+If the executor requires its public session CA for networked build steps, add
+`--secret id=proxy_ca,src="$CODEX_PROXY_CERT"` to the build. The
+Dockerfile-specific ignore file admits only renderer inputs; it excludes
+credentials, data, worktrees, dependency caches and evidence. No root
+`.dockerignore` is added.
+
+The runner requires an image labeled with the checked-out full SHA, runs its
+packaged browser contract checks offline, then creates three fresh non-root
+containers with one browser per whole mission, four CPUs and 4 GiB. Each request
+has one monotonic 60-second outer deadline, including container/Node/browser
+startup, local assets, every primary view, collection and cleanup. The child
+reserves time for cleanup inside that deadline. Browser failures return a
+labeled fallback decision with no partial primary images. Actual legacy/static
+fallback assembly remains Task 3B. A fallback in any timing run is a no-go.
+
+Set `MISSION_MAP_IMAGE` to select the disposable image and
+`MISSION_MAP_EVIDENCE` to select a private evidence directory. The default is
+the phase-one plan workspace's `evidence/task-3a/`. The retained report contains
+image, hardware, locked browser/library and OS package identity, source/asset
+digests, per-view and whole-stage timings, expected/actual view IDs,
+PNG/decoded-pixel hashes, and browser failure/cleanup results. Matching source
+digests prevent a stale built scene from passing against current files.
+Identical inputs in one runtime must produce identical framing and decoded
+pixels; cross-platform pixel identity is not asserted.
+
+Useful focused checks, each bounded by `timeout --kill-after=10s 10m`, are
+`npm run test:unit -- src/mission-export/framing.test.ts` and
+`npx playwright test --config playwright.mission-export.config.ts` from the
+frontend, plus `node --test tools/tests/test_map_feasibility.mjs` from root. The
+Playwright checks require `npm run build:mission-export` and the locked
+packaged/provisioned browser. The gate runs these real browser checks inside its
+image, retaining identical-input PNGs and startup, texture, context-loss and
+shared-deadline failure evidence. Containers use `--init`, private loopback
+listeners, no published ports, no network and no volumes. Ownership is recorded
+before launch; every exit removes the owned containers. Host process/container
+verification is still required before checkpoint handoff.
+
+This proof releases Task 2 only. Task 3B must repeat the whole-mission gate in
+the final production image with final interval markers. Exact-head CI, actual
+ZIP/PPTX rendering, customer layout/semantics acceptance and the later review
+remain separate gates.

@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+# Disposable gate image only. Both builders and Python runtime use Debian 13.
+FROM node:22.22.2-trixie-slim AS renderer-build
+WORKDIR /renderer/frontend/mission-planner
+COPY frontend/mission-planner/package.json frontend/mission-planner/package-lock.json ./
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    npm ci --strict-ssl=true --no-audit --no-fund
+COPY frontend/mission-planner/ ./
+RUN npm run build:mission-export
+
+# Same OS ABI and app UID as the proposed backend runtime, with locked Chromium.
+FROM python:3.11-slim-trixie
+COPY --from=renderer-build /usr/local/bin/node /usr/local/bin/node
+COPY --from=renderer-build /renderer/frontend/mission-planner/node_modules/playwright /renderer/frontend/mission-planner/node_modules/playwright
+COPY --from=renderer-build /renderer/frontend/mission-planner/node_modules/playwright-core /renderer/frontend/mission-planner/node_modules/playwright-core
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/mission-map-browsers
+WORKDIR /renderer/frontend/mission-planner
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    node node_modules/playwright/cli.js install --with-deps chromium --only-shell && \
+    dpkg-query -W > /opt/mission-map-os-packages.txt && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -m -u 1000 appuser && mkdir -p /evidence && chown appuser:appuser /evidence
+COPY --from=renderer-build /renderer /renderer
+COPY backend/starlink-location/tests/fixtures/customer_briefing/f08_map_inputs.json /renderer/backend/starlink-location/tests/fixtures/customer_briefing/f08_map_inputs.json
+ARG RENDERER_CANDIDATE_SHA
+RUN test -n "$RENDERER_CANDIDATE_SHA"
+LABEL org.opencontainers.image.revision=$RENDERER_CANDIDATE_SHA
+USER appuser
+ENTRYPOINT ["node", "src/mission-export/render.mjs"]
+CMD ["/renderer/backend/starlink-location/tests/fixtures/customer_briefing/f08_map_inputs.json", "/evidence", "/renderer/frontend/mission-planner/dist-mission-export"]

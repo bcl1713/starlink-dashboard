@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test:unit": "NODE_ENV=test vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:mission-export": "vite build --config vite.mission-export.config.ts"
   },
   "engines": {
     "node": "^22.22.2"
