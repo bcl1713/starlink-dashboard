@@ -20,7 +20,6 @@ This is a design for review, not an implementation or a replacement decision.
 - Eastern time is the customer clock. Every event has explicit Eastern start and
   end times; Zulu and takeoff-relative times are secondary references.
 - Use APO organizational branding and overview-style route maps where feasible.
-- Compare the trial with the existing slides before any replacement decision.
 
 ## Existing integration points
 
@@ -51,27 +50,22 @@ A feature flag enables the deployed trial for evaluation. Disabling it restores
 the original file set without migration. Customers need no extra export steps.
 
 [Phase two](2026-10-07-mission-slide-background-generation-design.md)
-generates slides on save and assembles caches on export.
+After deck validation, it generates on save and assembles caches on export.
 
-Both builders consume one immutable snapshot of metadata, ordered legs, adjusted
-routes, and timelines, ensuring matching departures and revisions. Preserve
-rebuild and cache fallback behavior; label cached or incomplete trial data
-explicitly. Export must not write back to mission or timeline storage.
+Both builders share immutable metadata, ordered legs, routes, and timelines.
+Preserve rebuild/cache behavior and label incomplete trial data. Export never
+writes back to mission or timeline storage.
 
-Trial-generation failure must not prevent delivery of the existing package. Omit
-an incomplete trial file and provide a concise export warning through the
-manifest and export result. A map-only failure uses the existing static map,
-with a small fallback label, while the rest of the trial deck remains usable.
-Never leave an empty map slide or silently report successful trial generation.
+Trial failure preserves the legacy package, omits incomplete trial files, and
+reports a warning in the manifest and export result. Map-only failure uses a
+labeled legacy map. Never deliver an empty map or falsely report trial success.
 
 ## Slide structure
 
 ### Optional mission leg index
 
-An optional opening page lists the mission and ordered legs with ET departures
-and arrivals. It is a small navigation aid, without a large map, generic
-customer introduction, inter-leg ground time, or a mission-spanning
-communications axis.
+An optional small index lists legs and ET departures/arrivals. Omit a large map,
+generic introduction, ground time, and a mission-spanning communications axis.
 
 ### Primary briefing for each leg
 
@@ -88,24 +82,20 @@ is the communications timeline, with these rows in order:
 4. X-Band MILSATCOM.
 5. SOF / AR restrictions.
 
-The overall posture row is at least twice the height of an individual transport
-lane and has the strongest labels and contrast. Only this row uses the green,
-amber, orange, and red posture scale. Transport lanes use the same neutral Up
-treatment and hatched Down treatment, with explicit state text and no individual
-red outage blocks. The restriction row uses its own neutral pattern and SOF or
-AR labels, not a transport-risk color.
+The overall posture row is at least twice a transport lane's height and uses the
+strongest labels and contrast. Green/amber/orange/red risk colors appear only
+here. All transport lanes share plain neutral Up and hatched Down treatments;
+restrictions use a separate neutral pattern with SOF/AR labels.
 
 Eastern time is the main axis. Zulu and T-plus references are smaller and
 aligned to the same anchors. Bars are proportional to duration. A numbered
 callout connects a short event to its table entry without exaggerating its
 duration. Repeated legends explain posture, transport state, and restrictions.
 
-A primary ET event/coordination table sits beneath or beside the timeline. If
-the overview and table do not fit readably on one slide, use adjacent slides
-with matching window numbers and repeated leg headers. Long legs divide into
-consecutive time panels; never join multiple legs into one continuous axis.
-Repeat time ranges, legends, leg identity, and page numbers, and mark intervals
-that continue across panels. Paginate rather than shrink text or timeline rows.
+Place the primary ET table beneath or beside the timeline; use adjacent slides
+if needed. Divide long legs into consecutive panels with shared window numbers,
+repeated headers, legends, time ranges, and continuation marks. Never join legs.
+Paginate rather than shrink text or timeline rows.
 
 ### Primary event and coordination table
 
@@ -117,22 +107,31 @@ For every leg, show a compact chronological table with these columns:
 - Communications remaining.
 - Overall posture / customer implication.
 
-Include both SOF windows, the full resolved AR periods, transport outages, and
-synthesized overlap windows when overlapping conditions materially change
-posture. A single outage remains visible in this table even when two transports
-are still Up. Display each restriction's start and end explicitly in ET rather
-than requiring the customer to infer them from axis ticks. Zulu and T-plus
-equivalents are smaller secondary references.
+Build one chronological, non-overlapping partition of the flight into customer
+coordination windows. Split at changes in transport usability, overall posture,
+active SOF/AR restrictions, or material customer-facing causes. Each window has
+one row aggregating every active cause and source event identity. Include quiet
+Nominal intervals so rows cover takeoff through landing without gaps.
+
+Source outages and synthesized overlaps are inputs to that partition, not
+additional overlapping table rows. Retain unsplit source records in the
+appendix. For a Ka outage 04:10-08:15 ET and X outage 05:30-07:00 ET, show three
+rows: 04:10-05:30 Ka down / Degraded; 05:30-07:00 Ka + X down / Limited; and
+07:00-08:15 Ka down / Degraded. Name the remaining transports in each row.
+
+The table and overall-posture bar use the same window boundaries and
+identifiers. Both SOF windows, full AR periods, and single outages remain
+visible, with every start/end explicit in ET. Zulu and T-plus are smaller
+secondary references.
 
 Explain source-backed causes, name usable transports, and distinguish reduced
 redundancy, elevated risk, unavailability, and activity restrictions. A
 restriction-only row identifies unchanged posture and required coordination. Do
 not infer a shutdown or invent an operator instruction from a safety label.
 
-Use fixed wording and a reason-label dictionary; unknown reasons retain concise
-source explanations. Promote handoffs and internal transitions only for posture
-or coordination changes; other detail belongs in the appendix. Order by start,
-end, then stable event identity. Continuations repeat columns and leg data.
+Use fixed wording and source-backed reason labels. Promote internal transitions
+only for posture or coordination changes; other detail stays in the appendix.
+Continuations repeat columns and leg data without duplicating time windows.
 
 Window numbers link the timeline, table, and map when coordinates exist.
 Optional detail cards supplement the primary table for complex events.
@@ -161,10 +160,10 @@ mean either. Before implementation, document reason-specific presentation rules
 against the existing source events and availability semantics. For example, the
 reducer represents a Ka coverage gap as degraded even though its cause is no
 coverage; classification must consider that cause rather than the enum alone.
-Use Down only for a supported unavailability rule, and Up with an asterisk only
-when a supported rule establishes remaining usability. Explain the limitation in
-the primary event table without introducing another prominent lane color. Do not
-change the mission model or legacy calculations.
+Use plain Down for supported unavailability and plain Up for supported
+usability. Put degraded limitations only in event-table text: no asterisk, extra
+lane style, or risk color. Reserve "?" for genuinely indeterminate usability.
+Keep the mission model and legacy calculations unchanged.
 
 An unclassifiable degraded or missing state uses a neutral hatched "?" marker
 with a linked explanation. It is neither Up nor Down. The overall row shows
@@ -192,15 +191,15 @@ they overlap without double-counting restricted duration.
 Show the full resolved AR period as an activity-restricted coordination window,
 not only its start/end markers or periods with X-band conflicts. Use current
 waypoint timing, AR overrides, and applicable resolved manual AR windows from
-the same export snapshot. Missing AR timing is an explicit unresolved
-restriction in the event table, not a fabricated interval.
+the same snapshot. Missing AR timing is a clearly labeled note above the table,
+not a fabricated or overlapping timed row.
 
 SOF and AR appear in the dedicated restriction row and the primary event table.
 They must not lower the transport Up count unless independent mission data
 establishes transport unavailability. When an outage overlaps a restriction,
 show both: the transport lanes and posture reflect availability, while the
-restriction row reflects coordination. Preserve overlapping restriction labels
-and event entries so the customer can see their separate causes.
+restriction row reflects coordination. Aggregate overlapping restriction labels
+and outage causes within each coordination-window row.
 
 ## Clock behavior and departure changes
 
@@ -230,10 +229,9 @@ external screenshot service.
 Keep maps small on primary leg pages. Long routes need multiple views when they
 cannot fit on one visible hemisphere. Never show an occluded route through the
 planet. Fit labels and event markers within the crop, including polar and
-dateline routes. Keep the context route neutral; transport-specific map colors
-must not create a second risk scale. Any optional overall-posture overlay uses
-the main row's semantics and a clear legend. Label reference lighting as a
-planned-time illustration, not lighting at all points throughout the flight.
+dateline routes. Use neutral routes and numbered event markers; risk colors stay
+on the main posture row. Label lighting as a planned-time illustration, not
+lighting at every point throughout the flight.
 
 Cache keys include effective route geometry, adjusted departure, leg identity,
 reference time, availability data, renderer version, and framing. Bound the
@@ -272,15 +270,17 @@ Use synthetic fixtures plus suitable existing missions. Verify:
 3. Known Up counts map to Nominal, Degraded, Limited / elevated risk, and
    Communications unavailable. Touching boundaries do not overlap, and brief
    complete outages remain visible.
-4. Lanes share neutral Up/Down styling. Degraded mappings retain explanations;
-   ambiguous or missing data is uncertain, never falsely all-unavailable.
+4. Usable degraded states render plain Up, unavailable ones Down, and genuinely
+   indeterminate ones "?". Limitations stay in table text; no lane asterisk or
+   extra risk style. Uncertainty never becomes falsely all-unavailable.
 5. Every leg shows both 15-minute SOF windows and full resolved AR periods in
    the restriction row and ET table. Restriction-only fixtures keep Nominal
    posture and available transports. Test short flights and overlapping SOF, AR,
    and outages without losing separate causes.
-6. The primary table includes single outages, material overlaps, restrictions,
-   causes, remaining transports, and implications, with explicit ET start/end
-   times. Internal events appear prominently only for posture or coordination.
+6. Table windows partition each leg without overlaps or gaps and align with the
+   posture bar. Test nested Ka/X outages, SOF/AR overlaps, and touching
+   boundaries. Rows aggregate causes and source identities; unsplit records stay
+   in the appendix. Remaining capability and ET start/end times are unambiguous.
 7. Check ET, Zulu, and relative times across midnight, DST, adjusted departures,
    AR overrides, and multiple legs. Dates and EST/EDT disambiguate times.
 8. Maps automatically fit short, long, polar, and dateline routes. Failed
