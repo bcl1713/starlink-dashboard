@@ -98,9 +98,11 @@ leg-specific incomplete-data page, never an apparently quiet Nominal leg.
 Primary table columns: Start (ET), End (ET), Event / impact, Communications
 remaining, Overall posture / customer implication. Primary clocks include
 seconds when needed to preserve exact endpoints; do not round a brief outage
-away. Standard SOF-only/no-extra-window copy is exactly: “No communications
-degradation or additional coordination windows identified for this leg”. Never
-use that copy when unresolved data or limitations exist.
+away. For standard SOF-only legs, use the
+[PR #308 wording clarification](https://github.com/bcl1713/starlink-dashboard/pull/308#issuecomment-6044917384):
+“No communications degradation or coordination windows beyond standard SOF
+restrictions identified for this leg.” Both standard SOF rows remain visible.
+Never use that copy when unresolved data or limitations exist.
 
 ## Renderer feasibility: Task 3A
 
