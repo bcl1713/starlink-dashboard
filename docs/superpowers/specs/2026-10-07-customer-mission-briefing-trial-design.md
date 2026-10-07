@@ -99,42 +99,39 @@ Paginate rather than shrink text or timeline rows.
 
 ### Primary event and coordination table
 
-For every leg, show a compact chronological table with these columns:
+For each leg, use these columns: Start (ET), End (ET), Event / impact,
+Communications remaining, and Overall posture / customer implication.
 
-- Start (ET).
-- End (ET).
-- Event / impact.
-- Communications remaining.
-- Overall posture / customer implication.
+Maintain a complete, non-overlapping interval partition from takeoff to landing
+for the posture bar, transport lanes, and restriction row. Split at changes in
+usability, posture, active restrictions, or material customer-facing causes.
+Quiet Nominal intervals remain in that model and the full-flight graphics.
 
-Build one chronological, non-overlapping partition of the flight into customer
-coordination windows. Split at changes in transport usability, overall posture,
-active SOF/AR restrictions, or material customer-facing causes. Each window has
-one row aggregating every active cause and source event identity. Include quiet
-Nominal intervals so rows cover takeoff through landing without gaps.
+The primary table is a filtered projection of those intervals. Include SOF, AR,
+any transport Down, Limited/unavailable posture, uncertain usability, and other
+material coordination events or usability limitations. Omit fully Nominal
+intervals with no restriction or relevant event. Every displayed row retains its
+exact interval boundaries and ID; do not merge across omitted intervals or
+renumber the table independently of the graphics.
 
-Source outages and synthesized overlaps are inputs to that partition, not
-additional overlapping table rows. Retain unsplit source records in the
-appendix. For a Ka outage 04:10-08:15 ET and X outage 05:30-07:00 ET, show three
-rows: 04:10-05:30 Ka down / Degraded; 05:30-07:00 Ka + X down / Limited; and
-07:00-08:15 Ka down / Degraded. Name the remaining transports in each row.
+Each row aggregates active causes and source identities. Source outages and
+synthesized overlaps never become extra overlapping rows; preserve unsplit
+source records in the appendix. For Ka down 04:10-08:15 ET and X down
+05:30-07:00 ET, show 04:10-05:30 Ka / Degraded, 05:30-07:00 Ka + X / Limited,
+and 07:00-08:15 Ka / Degraded, naming remaining transports in each row.
 
-The table and overall-posture bar use the same window boundaries and
-identifiers. Both SOF windows, full AR periods, and single outages remain
-visible, with every start/end explicit in ET. Zulu and T-plus are smaller
-secondary references.
+Both standard SOF blocks remain visible even if transport posture is Nominal;
+show full AR periods and explicit ET starts/ends, with Zulu and T-plus
+secondary. If only standard SOF applies, say "No communications degradation or
+additional coordination windows identified for this leg" alongside the SOF rows.
+If no relevant windows apply, show that statement instead of quiet Nominal table
+rows.
 
-Explain source-backed causes, name usable transports, and distinguish reduced
-redundancy, elevated risk, unavailability, and activity restrictions. A
-restriction-only row identifies unchanged posture and required coordination. Do
-not infer a shutdown or invent an operator instruction from a safety label.
-
-Use fixed wording and source-backed reason labels. Promote internal transitions
-only for posture or coordination changes; other detail stays in the appendix.
-Continuations repeat columns and leg data without duplicating time windows.
-
-Window numbers link the timeline, table, and map when coordinates exist.
-Optional detail cards supplement the primary table for complex events.
+Use fixed source-backed wording, explain causes and remaining capability, and
+keep restrictions distinct from outages. Never invent shutdown instructions.
+Promote internal events only for posture or coordination changes; otherwise
+retain them in the appendix. Continuations repeat columns and leg data. Window
+IDs link table rows, graphics, and maps; optional cards expand detail.
 
 ### Reference appendix
 
@@ -277,10 +274,11 @@ Use synthetic fixtures plus suitable existing missions. Verify:
    the restriction row and ET table. Restriction-only fixtures keep Nominal
    posture and available transports. Test short flights and overlapping SOF, AR,
    and outages without losing separate causes.
-6. Table windows partition each leg without overlaps or gaps and align with the
-   posture bar. Test nested Ka/X outages, SOF/AR overlaps, and touching
-   boundaries. Rows aggregate causes and source identities; unsplit records stay
-   in the appendix. Remaining capability and ET start/end times are unambiguous.
+6. Graphics cover the full leg without gaps; table rows are a non-overlapping
+   filtered projection with exact interval boundaries/IDs. Test long quiet legs,
+   standard SOF, nested Ka/X outages, AR overlaps, and uncertain usability.
+   Omit quiet rows without losing relevant windows, causes, or remaining
+   capability. Unsplit source records stay in the appendix.
 7. Check ET, Zulu, and relative times across midnight, DST, adjusted departures,
    AR overrides, and multiple legs. Dates and EST/EDT disambiguate times.
 8. Maps automatically fit short, long, polar, and dateline routes. Failed
