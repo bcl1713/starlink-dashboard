@@ -23,8 +23,10 @@ from app.mission.timeline_builder.utils import (
     DEFAULT_CRUISE_ALTITUDE_M,
     nearest_waypoint_name,
 )
+from app.mission.timeline_builder.warnings import XBandWarningBoundary
 from app.models.route import ParsedRoute
 from app.satellites.catalog import get_satellite_catalog
+from app.satellites.geometry import is_in_azimuth_range
 from app.satellites.rules import EventType, MissionEvent, RuleEngine
 from app.services.poi_manager import POIManager
 
@@ -109,13 +111,13 @@ def apply_x_azimuth_events(
     poi_manager: POIManager | None,
     mission_start: datetime,
     mission_end: datetime,
-) -> None:
-    """Apply X-band azimuth violation events."""
+) -> list[XBandWarningBoundary]:
+    """Apply X constraints and return combined shutdown/turn-on boundaries."""
     if not mission.transports.initial_x_satellite_id:
-        return
+        return []
 
     if not samples:
-        return
+        return []
 
     assignments = transition_schedule or []
     if not assignments:
@@ -125,8 +127,29 @@ def apply_x_azimuth_events(
     schedule_idx = 0
     current_satellite = assignments[0][1]
     violation_active = False
+    warning_active = False
+    warning_boundaries: list[XBandWarningBoundary] = []
+    manual_ar_events = sorted(
+        event
+        for event in rule_engine.events
+        if event.event_type
+        in {EventType.MANUAL_AAR_TRACK_START, EventType.MANUAL_AAR_TRACK_END}
+    )
+    manual_ar_index = 0
+    active_manual_ar: dict[str, str] = {}
 
     for sample in samples:
+        while (
+            manual_ar_index < len(manual_ar_events)
+            and manual_ar_events[manual_ar_index].timestamp <= sample.timestamp
+        ):
+            event = manual_ar_events[manual_ar_index]
+            track_id = event.metadata["track_id"]
+            if event.event_type == EventType.MANUAL_AAR_TRACK_START:
+                active_manual_ar[track_id] = event.reason
+            else:
+                active_manual_ar.pop(track_id, None)
+            manual_ar_index += 1
         if sample.heading is None:
             continue
         in_aar_window = _falls_within_window(sample.timestamp, aar_windows)
@@ -158,6 +181,13 @@ def apply_x_azimuth_events(
             heading_deg=sample.heading,
             is_aar_mode=False,
         )
+        # Interference matches the map link's azimuth-only warning. Combine it
+        # with elevation and AR to avoid a turn-on cue while another warning holds.
+        interference_warning = is_in_azimuth_range(
+            relative_azimuth,
+            rule_engine.config.normal_azimuth_min,
+            rule_engine.config.normal_azimuth_max,
+        )
         forward_violation = False
         if in_aar_window:
             forward_violation, _, _ = rule_engine.evaluate_x_azimuth_window(
@@ -172,6 +202,31 @@ def apply_x_azimuth_events(
 
         violation_reason = debug.get("violation_reason")
         is_elevation_blocked = violation_reason == "elevation"
+        warning_reasons: list[str] = []
+        warning_reasons.extend(active_manual_ar.values())
+        if interference_warning:
+            warning_reasons.append("Starlink interference")
+        if is_elevation_blocked:
+            warning_reasons.append(
+                f"Elevation below {rule_engine.config.elevation_min_degrees:g}°"
+            )
+        if in_aar_window and is_in_azimuth_range(
+            relative_azimuth,
+            rule_engine.config.aar_azimuth_min,
+            rule_engine.config.aar_azimuth_max,
+        ):
+            warning_reasons.append("AR forward-sector conflict")
+        warning = bool(warning_reasons)
+        if warning != warning_active:
+            warning_boundaries.append(
+                XBandWarningBoundary(
+                    sample=sample,
+                    satellite_id=current_satellite,
+                    warning=warning,
+                    reasons=tuple(warning_reasons),
+                )
+            )
+            warning_active = warning
 
         nearest_wp = nearest_waypoint_name(route, sample.latitude, sample.longitude)
         debug.update(
@@ -268,6 +323,9 @@ def apply_x_azimuth_events(
                 satellite_id=current_satellite,
             )
         )
+
+    # Ending the mission does not imply the geometry cleared the warning.
+    return warning_boundaries
 
 
 def apply_manual_outages(

@@ -5,6 +5,7 @@
 # that are tightly coupled. Separation would split single responsibility across
 # multiple modules with reduced cohesion. Deferred to v0.4.0.
 
+import hashlib
 import json
 import logging
 import re
@@ -18,6 +19,14 @@ from filelock import FileLock
 from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
 
 logger = logging.getLogger(__name__)
+
+
+def _route_geometry_hash(route) -> str:
+    """Identify the projection geometry independently of route ID and timing."""
+    coordinates = [(point.latitude, point.longitude) for point in route.points]
+    return hashlib.sha256(
+        json.dumps(coordinates, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 class POIManager:
@@ -162,7 +171,15 @@ class POIManager:
                     poi_dict = poi.model_dump()
                     if poi.generated_source is not None:
                         poi_dict["generated_source"] = poi.generated_source
+                    if poi.planned_route_segment_index is not None:
+                        poi_dict["planned_route_segment_index"] = (
+                            poi.planned_route_segment_index
+                        )
                     # Convert datetime to ISO format for JSON serialization
+                    if poi.planned_route_geometry_hash is not None:
+                        poi_dict["planned_route_geometry_hash"] = (
+                            poi.planned_route_geometry_hash
+                        )
                     if isinstance(poi_dict.get("created_at"), datetime):
                         poi_dict["created_at"] = poi_dict["created_at"].isoformat()
                     if isinstance(poi_dict.get("updated_at"), datetime):
@@ -336,6 +353,7 @@ class POIManager:
         active_route=None,
         *,
         generated_source: GeneratedPoiSource | None = None,
+        route_segment_index: int | None = None,
     ) -> POI:
         """
         Create a new POI.
@@ -381,7 +399,17 @@ class POIManager:
             mission_id=poi_create.mission_id,
             kind=poi_create.kind,
             generated_source=generated_source,
+            planned_route_segment_index=(
+                route_segment_index if generated_source == "mission-timeline" else None
+            ),
             expected_arrival_time=poi_create.expected_arrival_time,
+            planned_route_geometry_hash=(
+                _route_geometry_hash(active_route)
+                if active_route
+                and route_segment_index is not None
+                and generated_source == "mission-timeline"
+                else None
+            ),
             created_at=now,
             updated_at=now,
         )
@@ -393,7 +421,7 @@ class POIManager:
 
                 calculator = RouteETACalculator(active_route)
                 projection = calculator.project_poi_to_route(
-                    poi.latitude, poi.longitude
+                    poi.latitude, poi.longitude, route_segment_index=route_segment_index
                 )
 
                 poi.projected_latitude = projection["projected_lat"]
@@ -749,11 +777,22 @@ class POIManager:
             return 0
 
         projected_count = 0
+        route_geometry_hash = _route_geometry_hash(route)
 
         for poi_id, poi in list(self._pois.items()):
             try:
+                # Generated warning cues know which visit to a repeated location
+                # they represent. Keep that segment when reactivating their route.
+                route_segment_index = (
+                    poi.planned_route_segment_index
+                    if poi.generated_source == "mission-timeline"
+                    and poi.kind in {"x_band_warning_start", "x_band_warning_end"}
+                    and poi.route_id == Path(route.metadata.file_path).stem
+                    and poi.planned_route_geometry_hash == route_geometry_hash
+                    else None
+                )
                 projection = calculator.project_poi_to_route(
-                    poi.latitude, poi.longitude
+                    poi.latitude, poi.longitude, route_segment_index=route_segment_index
                 )
 
                 # Update POI with projection data

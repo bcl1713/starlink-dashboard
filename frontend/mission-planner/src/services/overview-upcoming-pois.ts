@@ -7,6 +7,8 @@ export type OverviewPoiKind =
   | 'aar_start'
   | 'aar_end'
   | 'x_band_transition'
+  | 'x_band_warning_start'
+  | 'x_band_warning_end'
   | 'ka_coverage_exit'
   | 'ka_coverage_entry'
   | 'ka_transition';

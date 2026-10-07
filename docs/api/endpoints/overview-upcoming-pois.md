@@ -59,8 +59,27 @@ Each POI has a stable `poi_id`, imported/generated `name`, `kind`, coordinates,
 route progress when calculable, timing fields, `flight_phase`, and independent
 `upcoming` (route eligibility) and `map_retained` (map visibility) flags.
 Generated kinds are `departure`, `arrival`, `aar_start`, `aar_end`,
-`x_band_transition`, `ka_coverage_exit`, `ka_coverage_entry`, and
-`ka_transition`.
+`x_band_transition`, `x_band_warning_start`, `x_band_warning_end`,
+`ka_coverage_exit`, `ka_coverage_entry`, and `ka_transition`.
+
+`x_band_warning_start` is labelled **X-Band Shut Down** and `x_band_warning_end`
+is labelled **X-Band Turn On**. These planned cues combine Starlink interference
+(the normal aft azimuth sector), elevation below the planning minimum,
+AR/refueling forward-sector conflicts, and manual AR track warning intervals
+(including selected route diversions). A shutdown cue appears when any warning
+begins; a turn-on cue appears only after all warning conditions clear. Changing
+warning causes or swapping between satellites that remain in warning does not
+create an extra turn-on cue. Descriptions identify the planned satellite and the
+warning causes at shutdown.
+
+Cue positions and scheduled times use the effective route, including departure
+adjustments and selected route diversions, at the existing one-minute sampling
+cadence. Missing headings or satellite geometry do not establish a clear state.
+A warning still active at arrival does not produce a fabricated turn-on cue.
+Regenerating the mission timeline replaces its generated cues and preserves
+manually managed POIs. Cues retain their sampled route segment so repeated
+visits to the same coordinates remain separate upcoming events. Existing
+missions gain these cues when their timelines are regenerated.
 
 ### Timing provenance
 
@@ -77,18 +96,17 @@ override them. Legacy named waypoints without stored projection geometry are
 projected into that same calculation. A progress value alone on a legacy record
 does not replace destination geometry. POI kind affects display and lifecycle,
 not ETA mathematics. Current speed is blended only on the current route portion
-and planned segment speeds apply afterward. The remaining current portion
-starts at the aircraft's
-projected position within its segment, so every destination ETA decreases as
-the aircraft approaches instead of restarting from the nearest waypoint.
-There is no direct-coordinate ETA fallback when
-projection, route geometry, travel direction, or telemetry is unsafe or
-unavailable. `estimated_arrival_time` is `calculated_at + eta_seconds`; it
-drives the live urgency cue and table ordering when present. It is a route-aware
-model estimate, not telemetry and not a promised schedule. When the estimate
-cannot be calculated, timing is null and the UI displays `ETA unavailable`
-rather than inventing an ETA. Ordinary estimates display as UTC time alone;
-anticipated times retain an explicit `anticipated` label.
+and planned segment speeds apply afterward. The remaining current portion starts
+at the aircraft's projected position within its segment, so every destination
+ETA decreases as the aircraft approaches instead of restarting from the nearest
+waypoint. There is no direct-coordinate ETA fallback when projection, route
+geometry, travel direction, or telemetry is unsafe or unavailable.
+`estimated_arrival_time` is `calculated_at + eta_seconds`; it drives the live
+urgency cue and table ordering when present. It is a route-aware model estimate,
+not telemetry and not a promised schedule. When the estimate cannot be
+calculated, timing is null and the UI displays `ETA unavailable` rather than
+inventing an ETA. Ordinary estimates display as UTC time alone; anticipated
+times retain an explicit `anticipated` label.
 
 ### Position and flight provenance
 
@@ -115,17 +133,18 @@ eligibility; invalid position cannot establish progress. The frontend rechecks
 age between polls and suppresses timing on failed/expired refreshes.
 Predeparture schedule timing does not depend on position freshness.
 
-In-flight timing also requires an independently fresh, verified speed observation.
-The live GPS tracker needs two verified samples with at least 0.1 seconds of
-elapsed coverage. Startup, GPS loss and RPC failures reset that coverage; the
-first recovered position retains map context but cannot enable timing using a
-placeholder zero. Genuine measured stationary zero remains usable. Speed
-provenance is internal telemetry metadata; it does not change `/api/status`.
+In-flight timing also requires an independently fresh, verified speed
+observation. The live GPS tracker needs two verified samples with at least 0.1
+seconds of elapsed coverage. Startup, GPS loss and RPC failures reset that
+coverage; the first recovered position retains map context but cannot enable
+timing using a placeholder zero. Genuine measured stationary zero remains
+usable. Speed provenance is internal telemetry metadata; it does not change
+`/api/status`.
 
-`current_route_progress` is the continuous route progress derived from that
-same position projected onto the route, or null when unknown. It does not snap
-to the nearest waypoint. A destination is labeled passed only when progress
-establishes it; an unknown eligibility state is not evidence of passage.
+`current_route_progress` is the continuous route progress derived from that same
+position projected onto the route, or null when unknown. It does not snap to the
+nearest waypoint. A destination is labeled passed only when progress establishes
+it; an unknown eligibility state is not evidence of passage.
 
 ### Panel and map lifecycle
 

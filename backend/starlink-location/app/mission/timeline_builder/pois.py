@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections.abc import Sequence
 from datetime import datetime
 
 from app.mission.models import MissionLeg
 from app.mission.timeline_builder.aar import ResolvedAARWindow
+from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.mission.timeline_builder.coverage import CoverageAnalysisResult
 from app.mission.timeline_builder.utils import find_waypoint_coordinates
+from app.mission.timeline_builder.warnings import XBandWarningBoundary
 from app.models.poi import MissionPoiKind
 from app.models.route import ParsedRoute, RoutePoint, RouteWaypoint
 from app.services.poi_manager import POICreate, POIManager
@@ -20,6 +23,8 @@ MISSION_POI_KINDS: set[MissionPoiKind] = {
     "aar_start",
     "aar_end",
     "x_band_transition",
+    "x_band_warning_start",
+    "x_band_warning_end",
     "ka_coverage_exit",
     "ka_coverage_entry",
     "ka_transition",
@@ -37,6 +42,7 @@ def sync_mission_pois(
     transition_schedule: Sequence[tuple[datetime, str, str | None]],
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
+    warning_boundaries: Sequence[XBandWarningBoundary] = (),
 ) -> None:
     """Replace generated mission POIs while preserving manually managed POIs."""
     generated = construct_mission_pois(
@@ -48,6 +54,7 @@ def sync_mission_pois(
         transition_schedule=transition_schedule,
         coverage=coverage,
         parent_mission_id=parent_mission_id,
+        warning_boundaries=warning_boundaries,
     )
     if not mission.route_id:
         return
@@ -59,7 +66,10 @@ def sync_mission_pois(
     )
     for poi in generated:
         poi_manager.create_poi(
-            poi, active_route=route, generated_source="mission-timeline"
+            poi,
+            active_route=route,
+            generated_source="mission-timeline",
+            route_segment_index=poi._route_segment_index,
         )
 
 
@@ -73,6 +83,7 @@ def construct_mission_pois(
     transition_schedule: Sequence[tuple[datetime, str, str | None]],
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
+    warning_boundaries: Sequence[XBandWarningBoundary] = (),
 ) -> tuple[POICreate, ...]:
     """Construct generated POIs without touching stores or files."""
     effective_mission_id = parent_mission_id or mission.id
@@ -89,6 +100,7 @@ def construct_mission_pois(
         kind: MissionPoiKind,
         expected_arrival_time: datetime,
         description: str | None = None,
+        route_segment_index: int | None = None,
     ) -> None:
         generated.append(
             POICreate(
@@ -104,6 +116,7 @@ def construct_mission_pois(
                 expected_arrival_time=expected_arrival_time,
             ),
         )
+        generated[-1]._route_segment_index = route_segment_index
 
     departure = _endpoint(route, "departure", route.points[0], "Departure")
     arrival = _endpoint(route, "arrival", route.points[-1], "Arrival")
@@ -127,6 +140,38 @@ def construct_mission_pois(
     _create_aar_pois(create, mission, route, aar_windows)
     _create_x_transition_pois(create, mission, transition_schedule)
     _create_ka_pois(create, coverage)
+    projector = (
+        RouteTemporalProjector(route, mission_start, mission_end)
+        if warning_boundaries
+        else None
+    )
+    for boundary in warning_boundaries:
+        create(
+            name="X-Band Shut Down" if boundary.warning else "X-Band Turn On",
+            latitude=boundary.sample.latitude,
+            longitude=boundary.sample.longitude,
+            icon="satellite",
+            kind=("x_band_warning_start" if boundary.warning else "x_band_warning_end"),
+            expected_arrival_time=boundary.sample.timestamp,
+            route_segment_index=max(
+                0,
+                min(
+                    bisect_left(
+                        projector.cumulative_distances, boundary.sample.distance_meters
+                    )
+                    - 1,
+                    len(route.points) - 2,
+                ),
+            ),
+            description=(
+                f"Planned satellite {boundary.satellite_id}: "
+                + (
+                    "; ".join(boundary.reasons)
+                    if boundary.warning
+                    else "Starlink interference, elevation and AR warnings clear"
+                )
+            ),
+        )
     return tuple(generated)
 
 

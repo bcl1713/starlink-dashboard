@@ -7,7 +7,7 @@
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator
 
 MissionPoiKind = Literal[
     "departure",
@@ -15,6 +15,8 @@ MissionPoiKind = Literal[
     "aar_start",
     "aar_end",
     "x_band_transition",
+    "x_band_warning_start",
+    "x_band_warning_end",
     "ka_coverage_exit",
     "ka_coverage_entry",
     "ka_transition",
@@ -49,6 +51,16 @@ class POI(BaseModel):
         default=None,
         exclude=True,
         description="Internal provenance for server-generated mission POIs",
+    )
+    planned_route_segment_index: int | None = Field(
+        default=None,
+        exclude=True,
+        description="Internal canonical route visit for a generated planned cue",
+    )
+    planned_route_geometry_hash: str | None = Field(
+        default=None,
+        exclude=True,
+        description="Internal geometry identity for the planned route segment",
     )
     expected_arrival_time: datetime | None = Field(
         default=None, description="Scheduled timeline time for this POI"
@@ -99,6 +111,10 @@ class POI(BaseModel):
 
 class POICreate(BaseModel):
     """Request model for creating a new POI."""
+
+    # Prepared mission cues retain their sampled route segment internally.
+    # This is neither an API input nor a serialized field.
+    _route_segment_index: int | None = PrivateAttr(default=None)
 
     name: str = Field(..., description="Name of the POI", min_length=1)
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
