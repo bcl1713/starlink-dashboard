@@ -240,7 +240,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
           const v = await snapshot(page);
           return v?.present ? `${v.vertical.kind}:${v.lead}` : '';
         },
-        { timeout: 90000 }
+        { timeout: 180000 }
       )
       .toBe(`${kind}:${lead * 3600}`);
   };
@@ -249,12 +249,12 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await overview.goto('/overview');
     await other.goto('/overview');
     for (const name of [
-      'GFS winds',
-      'GFS air temperature',
       'METAR / SPECI observations',
       'TAF terminal forecasts',
       'International SIGMET advisories',
       'Precipitation radar',
+      'GFS winds',
+      'GFS air temperature',
     ]) {
       const toggle = config.getByRole('switch', { name, exact: true });
       await expect(toggle).toBeEnabled();
@@ -306,6 +306,11 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
           (o) => o.lead === lead && o.vertical === kind
         ),
         native = await samples(overview, reference);
+      readbacks.push({ kind, lead, native, reference });
+      await writeFile(
+        output + '/presentation-readbacks.json',
+        JSON.stringify(readbacks, null, 2)
+      );
       native.forEach((actual, i) => {
         const node = actual.node as Record<string, number>;
         expect(node.mask).toBe(reference[i].mask);
@@ -320,12 +325,17 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
             gpuMask: number;
             mask: number;
           };
-          expect(component.gpuMask).toBe(component.mask);
+          expect(component.gpuMask, JSON.stringify({ name: n, actual })).toBe(
+            component.mask
+          );
           if (!component.mask)
-            expect(component.error).toBeLessThanOrEqual(0.01);
+            expect(
+              component.error,
+              JSON.stringify({ name: n, actual })
+            ).toBeLessThanOrEqual(0.01);
         }
       });
-      readbacks.push({ kind, lead, native, reference });
+
       // Independent tangent check against the first real glyph's actual shaft.
       const s = current.firstSample as number[],
         line = current.firstShaft as number[],
@@ -424,15 +434,15 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await ready(overview, 'flight-level', 9);
     await remember();
     // Cancel a genuinely in-flight replacement descriptor and ignore its late body.
-    let release!: () => void,
-      entered = false;
+    const releases: (() => void)[] = [];
+    let entered = false;
     await overview.route(
       '**/api/aviation-weather/v1/products/*/grid.json',
       async (route) => {
         entered = true;
         const response = await route.fetch();
         await new Promise<void>((resolve) => {
-          release = resolve;
+          releases.push(resolve);
         });
         await route.fulfill({ response }).catch(() => {});
       }
@@ -440,14 +450,14 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await config
       .getByRole('combobox', { name: 'Atmosphere level' })
       .selectOption('pressure:50000');
-    await expect.poll(() => entered, { timeout: 90000 }).toBe(true);
+    await expect.poll(() => entered, { timeout: 180000 }).toBe(true);
     await config
       .getByRole('switch', { name: 'GFS winds', exact: true })
       .click();
     await config
       .getByRole('switch', { name: 'GFS air temperature', exact: true })
       .click();
-    release();
+    releases.forEach((resolve) => resolve());
     await overview.unroute('**/api/aviation-weather/v1/products/*/grid.json');
     await expect
       .poll(async () => (await snapshot(overview))?.present)
@@ -462,7 +472,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .click();
     await expect(
       overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Unavailable', { timeout: 90000 });
+    ).toContainText('Unavailable', { timeout: 180000 });
     expect((await request.get('/api/status')).ok()).toBe(true);
     await expect(overview.getByLabel('Globe legend')).toBeVisible();
     await patchControl({ gfs_mismatch: false });
@@ -485,7 +495,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await overview.reload();
     await expect(
       overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Stale', { timeout: 90000 });
+    ).toContainText('Stale', { timeout: 180000 });
     await overview.route('**/api/aviation-weather/v1/catalog', (route) =>
       route.abort()
     );

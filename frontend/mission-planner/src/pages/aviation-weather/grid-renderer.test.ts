@@ -74,3 +74,26 @@ it('represents every maximum-range wind pennant within the native allowance', ()
   expect(flags.geometry.getAttribute('position').count).toBe(2000 * 18 * 3);
   d.dispose();
 });
+it('renders only the outward-facing atmospheric surface and has coherent triangle winding', () => {
+  const d = createGridDrawing(
+    lease(),
+    { winds: false, temperature: true },
+    new WeatherBudget()
+  );
+  const mesh = d.object.getObjectByName('GFS temperature') as THREE.Mesh<
+    THREE.BufferGeometry,
+    THREE.ShaderMaterial
+  >;
+  const positions = mesh.geometry.getAttribute('position');
+  const a = new THREE.Vector3(),
+    b = new THREE.Vector3(),
+    c = new THREE.Vector3();
+  for (let i = 0; i < positions.count; i += 3) {
+    a.fromBufferAttribute(positions, i);
+    b.fromBufferAttribute(positions, i + 1);
+    c.fromBufferAttribute(positions, i + 2);
+    expect(b.sub(a).cross(c.sub(a)).dot(a)).toBeGreaterThan(0);
+  }
+  expect(mesh.material.side).toBe(THREE.FrontSide);
+  d.dispose();
+});

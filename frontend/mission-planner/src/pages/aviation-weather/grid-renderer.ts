@@ -165,7 +165,7 @@ export function createGridDrawing(
         transparent: true,
         depthWrite: false,
         toneMapped: false,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
       });
       resources.push(() => material.dispose());
       const mesh = new THREE.Mesh(geometry, material);
