@@ -86,3 +86,19 @@ probe http://starlink-location:8000/health
 probe http://prometheus:9090/-/ready
 probe http://mission-planner/
 probe http://mission-planner/api/v2/missions
+
+# API health remains usable when optional weather is unavailable. Verify the
+# private worker's held owner lock and fresh heartbeat separately, without
+# requiring NOAA access or exposing a worker port.
+probe_worker() {
+  for _ in $(seq 1 15); do
+    if docker compose --project-name "$project" --file "$compose_file" \
+      exec -T starlink-location python -c \
+      'import time; from pathlib import Path; from app.services.aviation_weather.gfs.ipc import GfsMailbox; assert GfsMailbox(Path("/app/data/gfs-mailbox"), None).healthy(int(time.time() * 1000))'; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+probe_worker

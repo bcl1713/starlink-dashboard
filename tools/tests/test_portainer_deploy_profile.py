@@ -13,7 +13,7 @@ SMOKE_SCRIPT_PATH = REPO_ROOT / "tools" / "smoke-portainer-profile.sh"
 
 
 def run_smoke_with_command_doubles(
-    tmp_path: Path, sha: str
+    tmp_path: Path, sha: str, *, worker_status: int = 0
 ) -> tuple[subprocess.CompletedProcess[str], list[list[str]]]:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -32,10 +32,15 @@ def run_smoke_with_command_doubles(
         "#!/usr/bin/env python3\n"
         "import json, os, sys\n"
         "with open(os.environ['SMOKE_DOCKER_LOG'], 'a', encoding='utf-8') as log:\n"
-        "    log.write(json.dumps(sys.argv[1:]) + '\\n')\n",
+        "    log.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        "if 'exec' in sys.argv and any('GfsMailbox' in arg for arg in sys.argv):\n"
+        "    sys.exit(int(os.environ.get('SMOKE_WORKER_STATUS', '0')))\n",
         encoding="utf-8",
     )
     docker.chmod(0o755)
+    sleep = bin_dir / "sleep"
+    sleep.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    sleep.chmod(0o755)
     log_path = tmp_path / "docker.jsonl"
     result = subprocess.run(
         ["bash", str(SMOKE_SCRIPT_PATH)],
@@ -47,6 +52,7 @@ def run_smoke_with_command_doubles(
             "SMOKE_REPO_ROOT": str(REPO_ROOT),
             "SMOKE_GIT_SHA": sha,
             "SMOKE_DOCKER_LOG": str(log_path),
+            "SMOKE_WORKER_STATUS": str(worker_status),
         },
         capture_output=True,
         text=True,
@@ -265,3 +271,12 @@ def test_smoke_builds_worker_and_removes_its_disposable_volumes(tmp_path: Path):
     )
     teardown = next(c for c in calls if c[0] == "compose" and "down" in c)
     assert "--volumes" in teardown
+
+
+def test_smoke_rejects_missing_worker_heartbeat(tmp_path: Path):
+    result, calls = run_smoke_with_command_doubles(tmp_path, "a" * 40, worker_status=1)
+    assert result.returncode != 0
+    probes = [c for c in calls if "exec" in c and any("GfsMailbox" in arg for arg in c)]
+    assert probes
+    assert len(probes) <= 15
+    assert any("down" in c and "--volumes" in c for c in calls)
