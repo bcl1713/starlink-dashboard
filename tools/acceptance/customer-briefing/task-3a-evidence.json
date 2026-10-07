@@ -1,0 +1,1692 @@
+{
+  "schema": "RendererFeasibilityReport/v1",
+  "status": "pass",
+  "reasons": [],
+  "dependenciesReleased": ["Task 2"],
+  "blockedOnFailure": ["Task 2", "Task 3B", "Task 4"],
+  "sourceRevision": "d7e407b4f5dfdcb280760d38b827750893bd88fb",
+  "fixture": "F08-map",
+  "fixtureDigest": "ac124c06e8e761eb7ff98b230c716d8b928fd003f476786fd2c0fdfa74bc0669",
+  "expectedViewIds": [
+    "f08-short/view-1",
+    "f08-polar-dateline/view-1",
+    "f08-spanning/view-1",
+    "f08-spanning/view-2",
+    "f08-spanning/view-3"
+  ],
+  "runtimeInputs": {
+    "frontend/mission-planner/package-lock.json": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+    "tools/acceptance/customer-briefing/Dockerfile.renderer-feasibility": "fe02d0c4f339e45f8d6768e24668582e27907882e76bbda850bca6c687c98aba",
+    "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+    "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+    "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+    "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+    "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99",
+    "frontend/mission-planner/public/earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+    "frontend/mission-planner/public/city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f"
+  },
+  "image": {
+    "id": "sha256:f1c73b5a6890ff91357b7269f9c5f41a5ed6efca15be26b426d9161720d40217",
+    "digests": [
+      "starlink-customer-briefing-task3a@sha256:f1c73b5a6890ff91357b7269f9c5f41a5ed6efca15be26b426d9161720d40217"
+    ],
+    "user": "appuser",
+    "sizeBytes": 1885352154
+  },
+  "hardware": {
+    "host": "forge",
+    "platform": "linux",
+    "architecture": "x64",
+    "kernel": "7.0.0-34-generic",
+    "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+    "logicalCpus": 20,
+    "totalMemoryBytes": 65915523072,
+    "containerCpus": 4,
+    "containerMemoryBytes": 4294967296,
+    "rendering": "CPU ANGLE SwiftShader; no GPU assumed",
+    "qualification": "Managed deployment host and representative constrained container allocation; final production image must repeat gate in Task 3B."
+  },
+  "limits": {
+    "sharedStageSeconds": 60,
+    "screeningSeconds": 50,
+    "coldProcesses": true,
+    "requestCacheHits": 0,
+    "includes": [
+      "container/Node/browser startup",
+      "asset decoding",
+      "shader compilation",
+      "camera/labels",
+      "every required primary PNG",
+      "collection",
+      "browser/listener/container cleanup"
+    ]
+  },
+  "browserChecks": {
+    "status": "passed",
+    "views": [],
+    "cleanup": {
+      "listenerClosed": true,
+      "browserExited": true,
+      "contextsClosed": true,
+      "errors": []
+    },
+    "elapsedSeconds": 11.177830979,
+    "marginSeconds": 48.822169021,
+    "exitCode": 0,
+    "cleanupVerified": true,
+    "container": {
+      "name": "mission-map-3a-425c47cb10cd-packaged-browser-checks",
+      "removed": true,
+      "purpose": "packaged-browser-checks",
+      "privateVolumes": [],
+      "hostPorts": [],
+      "id": "121acf3b28279f51bfd1cd33a168d1c10cb3827722772938aa11b024624c4592"
+    },
+    "contracts": {
+      "identical": {
+        "status": "primary",
+        "startupSeconds": 0.117651296,
+        "elapsedSeconds": 7.694462647,
+        "marginSeconds": 52.305537353,
+        "views": [
+          {
+            "id": "f08-short/view-1",
+            "inputDigest": "7bd460ada9e9f12cc83d68646b680879bc45fd4cf21991b711c2e1d1e2cfb446",
+            "path": "/tmp/mission-map-pixels-FoG8TI/0-f08-short-view-1.png",
+            "pngHash": "2115b53aae925e40eef736ca5f831272ea21f5a2b98e877dedf99dd7458882a2",
+            "width": 1920,
+            "height": 1080,
+            "pixelHash": "8f202ebb2084d4bace137934fd19fdb76e4b729642b0f1c18cb8ea7c5904dfdd",
+            "sampledColors": 966,
+            "readiness": {
+              "status": "ready",
+              "digest": "7bd460ada9e9f12cc83d68646b680879bc45fd4cf21991b711c2e1d1e2cfb446",
+              "viewId": "f08-short/view-1",
+              "framing": {
+                "direction": [
+                  0.19048441550258638, 0.6402374830338654, 0.7441852274596016
+                ],
+                "distance": 3.0200014901161194,
+                "offsetX": 1.9326762412674725e-12,
+                "offsetY": 11.999999999998977,
+                "startIndex": 0,
+                "endIndex": 32
+              },
+              "labels": [
+                {
+                  "text": "Start",
+                  "x": 881.3463104696186,
+                  "y": 531.0401177226624
+                },
+                {
+                  "text": "End",
+                  "x": 1038.653689530381,
+                  "y": 436.95988227733744
+                },
+                {
+                  "text": "1",
+                  "x": 881.3463104696186,
+                  "y": 619.0401177226624
+                },
+                {
+                  "text": "2",
+                  "x": 1038.653689530381,
+                  "y": 524.9598822773374
+                }
+              ],
+              "stages": [
+                "textures-decoded",
+                "shaders-compiled",
+                "camera-settled",
+                "labels-projected",
+                "render-complete"
+              ]
+            },
+            "seconds": 3.5682442739999995
+          },
+          {
+            "id": "f08-short/view-1",
+            "inputDigest": "7bd460ada9e9f12cc83d68646b680879bc45fd4cf21991b711c2e1d1e2cfb446",
+            "path": "/tmp/mission-map-pixels-FoG8TI/1-f08-short-view-1.png",
+            "pngHash": "2115b53aae925e40eef736ca5f831272ea21f5a2b98e877dedf99dd7458882a2",
+            "width": 1920,
+            "height": 1080,
+            "pixelHash": "8f202ebb2084d4bace137934fd19fdb76e4b729642b0f1c18cb8ea7c5904dfdd",
+            "sampledColors": 966,
+            "readiness": {
+              "status": "ready",
+              "digest": "7bd460ada9e9f12cc83d68646b680879bc45fd4cf21991b711c2e1d1e2cfb446",
+              "viewId": "f08-short/view-1",
+              "framing": {
+                "direction": [
+                  0.19048441550258638, 0.6402374830338654, 0.7441852274596016
+                ],
+                "distance": 3.0200014901161194,
+                "offsetX": 1.9326762412674725e-12,
+                "offsetY": 11.999999999998977,
+                "startIndex": 0,
+                "endIndex": 32
+              },
+              "labels": [
+                {
+                  "text": "Start",
+                  "x": 881.3463104696186,
+                  "y": 531.0401177226624
+                },
+                {
+                  "text": "End",
+                  "x": 1038.653689530381,
+                  "y": 436.95988227733744
+                },
+                {
+                  "text": "1",
+                  "x": 881.3463104696186,
+                  "y": 619.0401177226624
+                },
+                {
+                  "text": "2",
+                  "x": 1038.653689530381,
+                  "y": 524.9598822773374
+                }
+              ],
+              "stages": [
+                "textures-decoded",
+                "shaders-compiled",
+                "camera-settled",
+                "labels-projected",
+                "render-complete"
+              ]
+            },
+            "seconds": 3.6961842500000004
+          }
+        ],
+        "readinessLog": [
+          {
+            "type": "warning",
+            "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+          },
+          {
+            "type": "warning",
+            "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+          },
+          {
+            "type": "warning",
+            "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+          },
+          {
+            "type": "warning",
+            "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+          }
+        ],
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        },
+        "ownership": {
+          "pid": 18,
+          "pgid": 6,
+          "browserPid": 30,
+          "listener": {
+            "address": "127.0.0.1",
+            "port": 43343
+          },
+          "contexts": 2,
+          "temporaryPaths": [
+            "/tmp/mission-map-pixels-FoG8TI",
+            "/tmp/mission-map-pixels-FoG8TI/browser-temp"
+          ],
+          "browserCommand": [
+            "packaged-chromium-headless-shell",
+            "--use-angle=swiftshader"
+          ],
+          "compose": null,
+          "volumes": [],
+          "browserPgid": 30,
+          "cleanup": {
+            "listenerClosed": true,
+            "browserExited": true,
+            "contextsClosed": true,
+            "errors": []
+          }
+        },
+        "runtime": {
+          "versions": {
+            "react": "19.2.0",
+            "three": "0.185.1",
+            "@react-three/fiber": "9.7.0",
+            "playwright-core": "1.63.0"
+          },
+          "sourceDigests": {
+            "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+            "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+            "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+            "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+            "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+          },
+          "assetDigests": {
+            "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+            "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+            "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+          },
+          "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+          "browserRevision": {
+            "name": "chromium-headless-shell",
+            "revision": "1243",
+            "installByDefault": true,
+            "browserVersion": "153.0.8010.12",
+            "title": "Chrome Headless Shell"
+          },
+          "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+          "node": "v22.22.2",
+          "uid": 1000,
+          "browser": "153.0.8010.12",
+          "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+        }
+      },
+      "startup": {
+        "status": "fallback",
+        "fallbackLabel": "Overview map unavailable \u2014 static route fallback",
+        "error": "Error: Failed to launch chromium because executable doesn't exist at /nonexistent/mission-map-chromium Failed to launch browser.",
+        "elapsedSeconds": 0.001918698999999833,
+        "marginSeconds": 59.998081301,
+        "views": [],
+        "readinessLog": [],
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        },
+        "ownership": {
+          "pid": 18,
+          "pgid": 6,
+          "browserPid": null,
+          "listener": {
+            "address": "127.0.0.1",
+            "port": 44233
+          },
+          "contexts": 0,
+          "temporaryPaths": [
+            "/tmp/mission-map-startup-CvfAvm",
+            "/tmp/mission-map-startup-CvfAvm/browser-temp"
+          ],
+          "browserCommand": [
+            "packaged-chromium-headless-shell",
+            "--use-angle=swiftshader"
+          ],
+          "compose": null,
+          "volumes": [],
+          "cleanup": {
+            "listenerClosed": true,
+            "browserExited": true,
+            "contextsClosed": true,
+            "errors": []
+          }
+        },
+        "runtime": {
+          "versions": {
+            "react": "19.2.0",
+            "three": "0.185.1",
+            "@react-three/fiber": "9.7.0",
+            "playwright-core": "1.63.0"
+          },
+          "sourceDigests": {
+            "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+            "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+            "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+            "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+            "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+          },
+          "assetDigests": {
+            "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+            "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+            "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+          },
+          "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+          "browserRevision": {
+            "name": "chromium-headless-shell",
+            "revision": "1243",
+            "installByDefault": true,
+            "browserVersion": "153.0.8010.12",
+            "title": "Chrome Headless Shell"
+          },
+          "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+          "node": "v22.22.2",
+          "uid": 1000,
+          "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+        }
+      },
+      "texture": {
+        "status": "fallback",
+        "fallbackLabel": "Overview map unavailable \u2014 static route fallback",
+        "error": "Error: Scene/texture error: Could not load /city-lights-mask.png: undefined",
+        "startupSeconds": 0.03738626699999986,
+        "elapsedSeconds": 0.6008842299999997,
+        "marginSeconds": 59.39911577,
+        "views": [],
+        "readinessLog": [
+          {
+            "type": "warning",
+            "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FAILED"
+          },
+          {
+            "type": "error",
+            "text": "Error: Could not load /city-lights-mask.png: undefined\n    at http://127.0.0.1:41167/assets/mission-export-BfnuwerS.js:4116:85409\n    at HTMLImageElement.g (http://127.0.0.1:41167/assets/mission-export-BfnuwerS.js:13:37038)"
+          }
+        ],
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        },
+        "ownership": {
+          "pid": 18,
+          "pgid": 6,
+          "browserPid": 141,
+          "listener": {
+            "address": "127.0.0.1",
+            "port": 41167
+          },
+          "contexts": 1,
+          "temporaryPaths": [
+            "/tmp/mission-map-texture-JFZOjD",
+            "/tmp/mission-map-texture-JFZOjD/browser-temp"
+          ],
+          "browserCommand": [
+            "packaged-chromium-headless-shell",
+            "--use-angle=swiftshader"
+          ],
+          "compose": null,
+          "volumes": [],
+          "browserPgid": 141,
+          "cleanup": {
+            "listenerClosed": true,
+            "browserExited": true,
+            "contextsClosed": true,
+            "errors": []
+          }
+        },
+        "runtime": {
+          "versions": {
+            "react": "19.2.0",
+            "three": "0.185.1",
+            "@react-three/fiber": "9.7.0",
+            "playwright-core": "1.63.0"
+          },
+          "sourceDigests": {
+            "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+            "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+            "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+            "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+            "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+          },
+          "assetDigests": {
+            "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+            "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+            "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+          },
+          "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+          "browserRevision": {
+            "name": "chromium-headless-shell",
+            "revision": "1243",
+            "installByDefault": true,
+            "browserVersion": "153.0.8010.12",
+            "title": "Chrome Headless Shell"
+          },
+          "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+          "node": "v22.22.2",
+          "uid": 1000,
+          "browser": "153.0.8010.12",
+          "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+        }
+      },
+      "context-loss": {
+        "status": "fallback",
+        "fallbackLabel": "Overview map unavailable \u2014 static route fallback",
+        "error": "Error: WebGL context lost",
+        "startupSeconds": 0.038083717999999864,
+        "elapsedSeconds": 0.25853948200000015,
+        "marginSeconds": 59.741460518,
+        "views": [],
+        "readinessLog": [
+          {
+            "type": "warning",
+            "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+          }
+        ],
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        },
+        "ownership": {
+          "pid": 18,
+          "pgid": 6,
+          "browserPid": 214,
+          "listener": {
+            "address": "127.0.0.1",
+            "port": 36117
+          },
+          "contexts": 1,
+          "temporaryPaths": [
+            "/tmp/mission-map-context-loss-jmcfol",
+            "/tmp/mission-map-context-loss-jmcfol/browser-temp"
+          ],
+          "browserCommand": [
+            "packaged-chromium-headless-shell",
+            "--use-angle=swiftshader"
+          ],
+          "compose": null,
+          "volumes": [],
+          "browserPgid": 214,
+          "cleanup": {
+            "listenerClosed": true,
+            "browserExited": true,
+            "contextsClosed": true,
+            "errors": []
+          }
+        },
+        "runtime": {
+          "versions": {
+            "react": "19.2.0",
+            "three": "0.185.1",
+            "@react-three/fiber": "9.7.0",
+            "playwright-core": "1.63.0"
+          },
+          "sourceDigests": {
+            "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+            "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+            "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+            "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+            "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+          },
+          "assetDigests": {
+            "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+            "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+            "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+          },
+          "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+          "browserRevision": {
+            "name": "chromium-headless-shell",
+            "revision": "1243",
+            "installByDefault": true,
+            "browserVersion": "153.0.8010.12",
+            "title": "Chrome Headless Shell"
+          },
+          "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+          "node": "v22.22.2",
+          "uid": 1000,
+          "browser": "153.0.8010.12",
+          "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+        }
+      },
+      "slow": {
+        "status": "fallback",
+        "fallbackLabel": "Overview map unavailable \u2014 static route fallback",
+        "error": "Shared renderer deadline exceeded",
+        "startupSeconds": 0.038618505000000365,
+        "elapsedSeconds": 1.0165198679999994,
+        "marginSeconds": 58.983480132000004,
+        "views": [],
+        "readinessLog": [
+          {
+            "type": "warning",
+            "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+          }
+        ],
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        },
+        "ownership": {
+          "pid": 18,
+          "pgid": 6,
+          "browserPid": 284,
+          "listener": {
+            "address": "127.0.0.1",
+            "port": 35389
+          },
+          "contexts": 1,
+          "temporaryPaths": [
+            "/tmp/mission-map-slow-UKt4Np",
+            "/tmp/mission-map-slow-UKt4Np/browser-temp"
+          ],
+          "browserCommand": [
+            "packaged-chromium-headless-shell",
+            "--use-angle=swiftshader"
+          ],
+          "compose": null,
+          "volumes": [],
+          "browserPgid": 284,
+          "cleanup": {
+            "listenerClosed": true,
+            "browserExited": true,
+            "contextsClosed": true,
+            "errors": []
+          }
+        },
+        "runtime": {
+          "versions": {
+            "react": "19.2.0",
+            "three": "0.185.1",
+            "@react-three/fiber": "9.7.0",
+            "playwright-core": "1.63.0"
+          },
+          "sourceDigests": {
+            "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+            "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+            "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+            "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+            "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+          },
+          "assetDigests": {
+            "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+            "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+            "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+          },
+          "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+          "browserRevision": {
+            "name": "chromium-headless-shell",
+            "revision": "1243",
+            "installByDefault": true,
+            "browserVersion": "153.0.8010.12",
+            "title": "Chrome Headless Shell"
+          },
+          "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+          "node": "v22.22.2",
+          "uid": 1000,
+          "browser": "153.0.8010.12",
+          "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+        }
+      }
+    }
+  },
+  "runs": [
+    {
+      "status": "primary",
+      "startupSeconds": 0.11806165700000003,
+      "elapsedSeconds": 17.956469113,
+      "marginSeconds": 42.043530887,
+      "views": [
+        {
+          "id": "f08-short/view-1",
+          "inputDigest": "fa4ef917dabf1058508311cdceafe53083602cf0854b6b9e7dabbb54c006d419",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-1/0-f08-short-view-1.png",
+          "pngHash": "cc7e674f1f701fe4dee47cb9845fefead640d1636e1c76216184a9f5a2bdcf4e",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "6deff7cb20644fd9aa26f52bd01dc65b030e84395a3b1c0d6e29c75cad3b0fb9",
+          "sampledColors": 980,
+          "readiness": {
+            "status": "ready",
+            "digest": "fa4ef917dabf1058508311cdceafe53083602cf0854b6b9e7dabbb54c006d419",
+            "viewId": "f08-short/view-1",
+            "framing": {
+              "direction": [
+                0.19048441550258638, 0.6402374830338654, 0.7441852274596016
+              ],
+              "distance": 3.0200014901161194,
+              "offsetX": 1.9326762412674725e-12,
+              "offsetY": 11.999999999998977,
+              "startIndex": 0,
+              "endIndex": 32
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 881.3463104696186,
+                "y": 531.0401177226624
+              },
+              {
+                "text": "End",
+                "x": 1038.653689530381,
+                "y": 436.95988227733744
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.517545387
+        },
+        {
+          "id": "f08-polar-dateline/view-1",
+          "inputDigest": "5e0682905a849db8807a203b6d1dd12919b6ef40ce2bd454f14ecae22f8625d8",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-1/1-f08-polar-dateline-view-1.png",
+          "pngHash": "d8dfd7ed0179bc50ea3893989c64de4bc37d85f823d592d749535efaf43396d8",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "a1431afd7b0f4cfbdf5b7c397a5d6d3f3909984c40f463bd83fe17f39c3d1333",
+          "sampledColors": 7881,
+          "readiness": {
+            "status": "ready",
+            "digest": "5e0682905a849db8807a203b6d1dd12919b6ef40ce2bd454f14ecae22f8625d8",
+            "viewId": "f08-polar-dateline/view-1",
+            "framing": {
+              "direction": [
+                -0.3009386043580776, 0.9536074585845175, 0.00829284866557719
+              ],
+              "distance": 3.5819749426841736,
+              "offsetX": 31.01014507984189,
+              "offsetY": -70.19360700474255,
+              "startIndex": 0,
+              "endIndex": 64
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 608.5559839422052,
+                "y": 801.02328774444
+              },
+              {
+                "text": "End",
+                "x": 1310.6677139289238,
+                "y": 455.98990212732417
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 4.020714728
+        },
+        {
+          "id": "f08-spanning/view-1",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-1/2-f08-spanning-view-1.png",
+          "pngHash": "453f3e79ac9a9f0a97019b3140ea1a87751f3f91533a1913fa63574f41c98100",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "7e2bedf35e819f80a54b171fbf438fefd21b55e3a2b5d92ad26fdeb70e48513d",
+          "sampledColors": 6052,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-1",
+            "framing": {
+              "direction": [0.2667127574748991, 0, -0.9637760657954396],
+              "distance": 7.500189824788652,
+              "offsetX": 0,
+              "offsetY": 12,
+              "startIndex": 0,
+              "endIndex": 53
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 520.2480118990095,
+                "y": 484
+              },
+              {
+                "text": "Continues",
+                "x": 1399.7519881009907,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.1170457779999996
+        },
+        {
+          "id": "f08-spanning/view-2",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-1/2-f08-spanning-view-2.png",
+          "pngHash": "4123523eaff09b4fa10d9eebd12f7c1b02258d6255d27fcdba710966765dab61",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "41988b12f6682834f4a797817e5179c4748284205a0263b0e7a08dcac159245e",
+          "sampledColors": 469,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-2",
+            "framing": {
+              "direction": [-0.7242470829514666, 0, 0.6895405447370672],
+              "distance": 7.50018982478864,
+              "offsetX": 0,
+              "offsetY": 12,
+              "startIndex": 53,
+              "endIndex": 106
+            },
+            "labels": [
+              {
+                "text": "Continues",
+                "x": 520.2480118990082,
+                "y": 484
+              },
+              {
+                "text": "Continues",
+                "x": 1399.7519881009912,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 2.6618273309999987
+        },
+        {
+          "id": "f08-spanning/view-3",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-1/2-f08-spanning-view-3.png",
+          "pngHash": "94673abe7159682a213f791efbb5fe9a1ce21bf6e06cc288dbb2162172a19d07",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "21c601580776fac6cf72f360a89ee0470857b7863616b4e2c6b1eaa9b6525167",
+          "sampledColors": 6123,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-3",
+            "framing": {
+              "direction": [0.8577286100002721, 0, 0.5141027441932217],
+              "distance": 3.899773497581482,
+              "offsetX": -2.2737367544323206e-13,
+              "offsetY": 12,
+              "startIndex": 106,
+              "endIndex": 128
+            },
+            "labels": [
+              {
+                "text": "Continues",
+                "x": 205.14102076809985,
+                "y": 484
+              },
+              {
+                "text": "End",
+                "x": 1714.8589792319008,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.4452505740000015
+        }
+      ],
+      "readinessLog": [
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "log",
+          "text": "THREE.WebGLRenderer: Context Lost."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "log",
+          "text": "THREE.WebGLRenderer: Context Lost."
+        }
+      ],
+      "cleanup": {
+        "listenerClosed": true,
+        "browserExited": true,
+        "contextsClosed": true,
+        "errors": []
+      },
+      "ownership": {
+        "pid": 7,
+        "pgid": 7,
+        "browserPid": 19,
+        "listener": {
+          "address": "127.0.0.1",
+          "port": 44143
+        },
+        "contexts": 3,
+        "temporaryPaths": ["/evidence", "/evidence/browser-temp"],
+        "browserCommand": [
+          "packaged-chromium-headless-shell",
+          "--use-angle=swiftshader"
+        ],
+        "compose": null,
+        "volumes": [],
+        "browserPgid": 19,
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        }
+      },
+      "runtime": {
+        "versions": {
+          "react": "19.2.0",
+          "three": "0.185.1",
+          "@react-three/fiber": "9.7.0",
+          "playwright-core": "1.63.0"
+        },
+        "sourceDigests": {
+          "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+          "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+          "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+          "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+          "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+        },
+        "assetDigests": {
+          "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+          "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+          "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+        },
+        "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+        "browserRevision": {
+          "name": "chromium-headless-shell",
+          "revision": "1243",
+          "installByDefault": true,
+          "browserVersion": "153.0.8010.12",
+          "title": "Chrome Headless Shell"
+        },
+        "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+        "node": "v22.22.2",
+        "uid": 1000,
+        "browser": "153.0.8010.12",
+        "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+      },
+      "rendererElapsedSeconds": 17.334502930000003,
+      "entrySeconds": 0.42643368399999965,
+      "coldStartupSeconds": 0.5444953409999996,
+      "exitCode": 0,
+      "cleanupVerified": true,
+      "container": {
+        "name": "mission-map-3a-425c47cb10cd-cold-1",
+        "removed": true,
+        "purpose": "cold-1",
+        "privateVolumes": [],
+        "hostPorts": [],
+        "id": "9a2a81413436b938cfeec848e27c93ce92008f1bca258d20cd99a80b93f21135"
+      }
+    },
+    {
+      "status": "primary",
+      "startupSeconds": 0.116759797,
+      "elapsedSeconds": 17.76182637,
+      "marginSeconds": 42.23817363,
+      "views": [
+        {
+          "id": "f08-short/view-1",
+          "inputDigest": "fa4ef917dabf1058508311cdceafe53083602cf0854b6b9e7dabbb54c006d419",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-2/0-f08-short-view-1.png",
+          "pngHash": "cc7e674f1f701fe4dee47cb9845fefead640d1636e1c76216184a9f5a2bdcf4e",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "6deff7cb20644fd9aa26f52bd01dc65b030e84395a3b1c0d6e29c75cad3b0fb9",
+          "sampledColors": 980,
+          "readiness": {
+            "status": "ready",
+            "digest": "fa4ef917dabf1058508311cdceafe53083602cf0854b6b9e7dabbb54c006d419",
+            "viewId": "f08-short/view-1",
+            "framing": {
+              "direction": [
+                0.19048441550258638, 0.6402374830338654, 0.7441852274596016
+              ],
+              "distance": 3.0200014901161194,
+              "offsetX": 1.9326762412674725e-12,
+              "offsetY": 11.999999999998977,
+              "startIndex": 0,
+              "endIndex": 32
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 881.3463104696186,
+                "y": 531.0401177226624
+              },
+              {
+                "text": "End",
+                "x": 1038.653689530381,
+                "y": 436.95988227733744
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.8446946450000006
+        },
+        {
+          "id": "f08-polar-dateline/view-1",
+          "inputDigest": "5e0682905a849db8807a203b6d1dd12919b6ef40ce2bd454f14ecae22f8625d8",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-2/1-f08-polar-dateline-view-1.png",
+          "pngHash": "d8dfd7ed0179bc50ea3893989c64de4bc37d85f823d592d749535efaf43396d8",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "a1431afd7b0f4cfbdf5b7c397a5d6d3f3909984c40f463bd83fe17f39c3d1333",
+          "sampledColors": 7881,
+          "readiness": {
+            "status": "ready",
+            "digest": "5e0682905a849db8807a203b6d1dd12919b6ef40ce2bd454f14ecae22f8625d8",
+            "viewId": "f08-polar-dateline/view-1",
+            "framing": {
+              "direction": [
+                -0.3009386043580776, 0.9536074585845175, 0.00829284866557719
+              ],
+              "distance": 3.5819749426841736,
+              "offsetX": 31.01014507984189,
+              "offsetY": -70.19360700474255,
+              "startIndex": 0,
+              "endIndex": 64
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 608.5559839422052,
+                "y": 801.02328774444
+              },
+              {
+                "text": "End",
+                "x": 1310.6677139289238,
+                "y": 455.98990212732417
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.884962712999999
+        },
+        {
+          "id": "f08-spanning/view-1",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-2/2-f08-spanning-view-1.png",
+          "pngHash": "453f3e79ac9a9f0a97019b3140ea1a87751f3f91533a1913fa63574f41c98100",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "7e2bedf35e819f80a54b171fbf438fefd21b55e3a2b5d92ad26fdeb70e48513d",
+          "sampledColors": 6052,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-1",
+            "framing": {
+              "direction": [0.2667127574748991, 0, -0.9637760657954396],
+              "distance": 7.500189824788652,
+              "offsetX": 0,
+              "offsetY": 12,
+              "startIndex": 0,
+              "endIndex": 53
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 520.2480118990095,
+                "y": 484
+              },
+              {
+                "text": "Continues",
+                "x": 1399.7519881009907,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.283117599000001
+        },
+        {
+          "id": "f08-spanning/view-2",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-2/2-f08-spanning-view-2.png",
+          "pngHash": "4123523eaff09b4fa10d9eebd12f7c1b02258d6255d27fcdba710966765dab61",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "41988b12f6682834f4a797817e5179c4748284205a0263b0e7a08dcac159245e",
+          "sampledColors": 469,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-2",
+            "framing": {
+              "direction": [-0.7242470829514666, 0, 0.6895405447370672],
+              "distance": 7.50018982478864,
+              "offsetX": 0,
+              "offsetY": 12,
+              "startIndex": 53,
+              "endIndex": 106
+            },
+            "labels": [
+              {
+                "text": "Continues",
+                "x": 520.2480118990082,
+                "y": 484
+              },
+              {
+                "text": "Continues",
+                "x": 1399.7519881009912,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 2.587452819
+        },
+        {
+          "id": "f08-spanning/view-3",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-2/2-f08-spanning-view-3.png",
+          "pngHash": "94673abe7159682a213f791efbb5fe9a1ce21bf6e06cc288dbb2162172a19d07",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "21c601580776fac6cf72f360a89ee0470857b7863616b4e2c6b1eaa9b6525167",
+          "sampledColors": 6123,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-3",
+            "framing": {
+              "direction": [0.8577286100002721, 0, 0.5141027441932217],
+              "distance": 3.899773497581482,
+              "offsetX": -2.2737367544323206e-13,
+              "offsetY": 12,
+              "startIndex": 106,
+              "endIndex": 128
+            },
+            "labels": [
+              {
+                "text": "Continues",
+                "x": 205.14102076809985,
+                "y": 484
+              },
+              {
+                "text": "End",
+                "x": 1714.8589792319008,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.0103629660000024
+        }
+      ],
+      "readinessLog": [
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "log",
+          "text": "THREE.WebGLRenderer: Context Lost."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "log",
+          "text": "THREE.WebGLRenderer: Context Lost."
+        }
+      ],
+      "cleanup": {
+        "listenerClosed": true,
+        "browserExited": true,
+        "contextsClosed": true,
+        "errors": []
+      },
+      "ownership": {
+        "pid": 7,
+        "pgid": 7,
+        "browserPid": 19,
+        "listener": {
+          "address": "127.0.0.1",
+          "port": 45713
+        },
+        "contexts": 3,
+        "temporaryPaths": ["/evidence", "/evidence/browser-temp"],
+        "browserCommand": [
+          "packaged-chromium-headless-shell",
+          "--use-angle=swiftshader"
+        ],
+        "compose": null,
+        "volumes": [],
+        "browserPgid": 19,
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        }
+      },
+      "runtime": {
+        "versions": {
+          "react": "19.2.0",
+          "three": "0.185.1",
+          "@react-three/fiber": "9.7.0",
+          "playwright-core": "1.63.0"
+        },
+        "sourceDigests": {
+          "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+          "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+          "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+          "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+          "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+        },
+        "assetDigests": {
+          "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+          "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+          "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+        },
+        "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+        "browserRevision": {
+          "name": "chromium-headless-shell",
+          "revision": "1243",
+          "installByDefault": true,
+          "browserVersion": "153.0.8010.12",
+          "title": "Chrome Headless Shell"
+        },
+        "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+        "node": "v22.22.2",
+        "uid": 1000,
+        "browser": "153.0.8010.12",
+        "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+      },
+      "rendererElapsedSeconds": 17.163130136,
+      "entrySeconds": 0.41884882199999995,
+      "coldStartupSeconds": 0.535608619,
+      "exitCode": 0,
+      "cleanupVerified": true,
+      "container": {
+        "name": "mission-map-3a-425c47cb10cd-cold-2",
+        "removed": true,
+        "purpose": "cold-2",
+        "privateVolumes": [],
+        "hostPorts": [],
+        "id": "244d6b11c3bb9fdc3a0df214fe6ad515e92b90743ae67df81556ca6650c9dacc"
+      }
+    },
+    {
+      "status": "primary",
+      "startupSeconds": 0.11723724399999998,
+      "elapsedSeconds": 18.088971814000004,
+      "marginSeconds": 41.911028185999996,
+      "views": [
+        {
+          "id": "f08-short/view-1",
+          "inputDigest": "fa4ef917dabf1058508311cdceafe53083602cf0854b6b9e7dabbb54c006d419",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-3/0-f08-short-view-1.png",
+          "pngHash": "cc7e674f1f701fe4dee47cb9845fefead640d1636e1c76216184a9f5a2bdcf4e",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "6deff7cb20644fd9aa26f52bd01dc65b030e84395a3b1c0d6e29c75cad3b0fb9",
+          "sampledColors": 980,
+          "readiness": {
+            "status": "ready",
+            "digest": "fa4ef917dabf1058508311cdceafe53083602cf0854b6b9e7dabbb54c006d419",
+            "viewId": "f08-short/view-1",
+            "framing": {
+              "direction": [
+                0.19048441550258638, 0.6402374830338654, 0.7441852274596016
+              ],
+              "distance": 3.0200014901161194,
+              "offsetX": 1.9326762412674725e-12,
+              "offsetY": 11.999999999998977,
+              "startIndex": 0,
+              "endIndex": 32
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 881.3463104696186,
+                "y": 531.0401177226624
+              },
+              {
+                "text": "End",
+                "x": 1038.653689530381,
+                "y": 436.95988227733744
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.518682683
+        },
+        {
+          "id": "f08-polar-dateline/view-1",
+          "inputDigest": "5e0682905a849db8807a203b6d1dd12919b6ef40ce2bd454f14ecae22f8625d8",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-3/1-f08-polar-dateline-view-1.png",
+          "pngHash": "d8dfd7ed0179bc50ea3893989c64de4bc37d85f823d592d749535efaf43396d8",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "a1431afd7b0f4cfbdf5b7c397a5d6d3f3909984c40f463bd83fe17f39c3d1333",
+          "sampledColors": 7881,
+          "readiness": {
+            "status": "ready",
+            "digest": "5e0682905a849db8807a203b6d1dd12919b6ef40ce2bd454f14ecae22f8625d8",
+            "viewId": "f08-polar-dateline/view-1",
+            "framing": {
+              "direction": [
+                -0.3009386043580776, 0.9536074585845175, 0.00829284866557719
+              ],
+              "distance": 3.5819749426841736,
+              "offsetX": 31.01014507984189,
+              "offsetY": -70.19360700474255,
+              "startIndex": 0,
+              "endIndex": 64
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 608.5559839422052,
+                "y": 801.02328774444
+              },
+              {
+                "text": "End",
+                "x": 1310.6677139289238,
+                "y": 455.98990212732417
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.945390167
+        },
+        {
+          "id": "f08-spanning/view-1",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-3/2-f08-spanning-view-1.png",
+          "pngHash": "453f3e79ac9a9f0a97019b3140ea1a87751f3f91533a1913fa63574f41c98100",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "7e2bedf35e819f80a54b171fbf438fefd21b55e3a2b5d92ad26fdeb70e48513d",
+          "sampledColors": 6052,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-1",
+            "framing": {
+              "direction": [0.2667127574748991, 0, -0.9637760657954396],
+              "distance": 7.500189824788652,
+              "offsetX": 0,
+              "offsetY": 12,
+              "startIndex": 0,
+              "endIndex": 53
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "x": 520.2480118990095,
+                "y": 484
+              },
+              {
+                "text": "Continues",
+                "x": 1399.7519881009907,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.147959664
+        },
+        {
+          "id": "f08-spanning/view-2",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-3/2-f08-spanning-view-2.png",
+          "pngHash": "4123523eaff09b4fa10d9eebd12f7c1b02258d6255d27fcdba710966765dab61",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "41988b12f6682834f4a797817e5179c4748284205a0263b0e7a08dcac159245e",
+          "sampledColors": 469,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-2",
+            "framing": {
+              "direction": [-0.7242470829514666, 0, 0.6895405447370672],
+              "distance": 7.50018982478864,
+              "offsetX": 0,
+              "offsetY": 12,
+              "startIndex": 53,
+              "endIndex": 106
+            },
+            "labels": [
+              {
+                "text": "Continues",
+                "x": 520.2480118990082,
+                "y": 484
+              },
+              {
+                "text": "Continues",
+                "x": 1399.7519881009912,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 2.875264859000001
+        },
+        {
+          "id": "f08-spanning/view-3",
+          "inputDigest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+          "path": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final/cold-3/2-f08-spanning-view-3.png",
+          "pngHash": "94673abe7159682a213f791efbb5fe9a1ce21bf6e06cc288dbb2162172a19d07",
+          "width": 1920,
+          "height": 1080,
+          "pixelHash": "21c601580776fac6cf72f360a89ee0470857b7863616b4e2c6b1eaa9b6525167",
+          "sampledColors": 6123,
+          "readiness": {
+            "status": "ready",
+            "digest": "00183d8e34603dd82a717856544f9d2960553866379b1274968246e7df4d32e2",
+            "viewId": "f08-spanning/view-3",
+            "framing": {
+              "direction": [0.8577286100002721, 0, 0.5141027441932217],
+              "distance": 3.899773497581482,
+              "offsetX": -2.2737367544323206e-13,
+              "offsetY": 12,
+              "startIndex": 106,
+              "endIndex": 128
+            },
+            "labels": [
+              {
+                "text": "Continues",
+                "x": 205.14102076809985,
+                "y": 484
+              },
+              {
+                "text": "End",
+                "x": 1714.8589792319008,
+                "y": 484
+              }
+            ],
+            "stages": [
+              "textures-decoded",
+              "shaders-compiled",
+              "camera-settled",
+              "labels-projected",
+              "render-complete"
+            ]
+          },
+          "seconds": 3.420803378999999
+        }
+      ],
+      "readinessLog": [
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "log",
+          "text": "THREE.WebGLRenderer: Context Lost."
+        },
+        {
+          "type": "warning",
+          "text": "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."
+        },
+        {
+          "type": "log",
+          "text": "THREE.WebGLRenderer: Context Lost."
+        }
+      ],
+      "cleanup": {
+        "listenerClosed": true,
+        "browserExited": true,
+        "contextsClosed": true,
+        "errors": []
+      },
+      "ownership": {
+        "pid": 7,
+        "pgid": 7,
+        "browserPid": 19,
+        "listener": {
+          "address": "127.0.0.1",
+          "port": 41465
+        },
+        "contexts": 3,
+        "temporaryPaths": ["/evidence", "/evidence/browser-temp"],
+        "browserCommand": [
+          "packaged-chromium-headless-shell",
+          "--use-angle=swiftshader"
+        ],
+        "compose": null,
+        "volumes": [],
+        "browserPgid": 19,
+        "cleanup": {
+          "listenerClosed": true,
+          "browserExited": true,
+          "contextsClosed": true,
+          "errors": []
+        }
+      },
+      "runtime": {
+        "versions": {
+          "react": "19.2.0",
+          "three": "0.185.1",
+          "@react-three/fiber": "9.7.0",
+          "playwright-core": "1.63.0"
+        },
+        "sourceDigests": {
+          "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30",
+          "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+          "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+          "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+          "frontend/mission-planner/src/mission-export/render.mjs": "5eb110439eaa95d176a3fc7a11134c5aa059e57bca9984691dd91d5c28e7bc99"
+        },
+        "assetDigests": {
+          "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+          "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+          "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3"
+        },
+        "osRelease": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+        "browserRevision": {
+          "name": "chromium-headless-shell",
+          "revision": "1243",
+          "installByDefault": true,
+          "browserVersion": "153.0.8010.12",
+          "title": "Chrome Headless Shell"
+        },
+        "osPackages": "adduser\t3.152\napt\t3.0.3\nat-spi2-common\t2.56.2-1+deb13u2\nbase-files\t13.8+deb13u7\nbase-passwd\t3.6.7\nbash\t5.2.37-2+b10\nbsdutils\t1:2.41.5-0+deb13u1\nca-certificates\t20250419\ncoreutils\t9.7-3\ndash\t0.5.12-12\ndebconf\t1.5.91\ndebian-archive-keyring\t2025.1\ndebianutils\t5.23.2\ndiffutils\t1:3.10-4\ndpkg\t1.22.22\nfindutils\t4.10.0-3\nfontconfig\t2.15.0-2.3\nfontconfig-config\t2.15.0-2.3\nfonts-freefont-ttf\t20211204+svn4273-2\nfonts-ipafont-gothic\t00303-23\nfonts-liberation\t1:2.1.5-3\nfonts-noto-color-emoji\t2.051-0+deb13u1\nfonts-tlwg-loma-otf\t1:0.7.3-1\nfonts-unifont\t1:15.1.01-1\nfonts-wqy-zenhei\t0.9.45-8\ngcc-14-base:amd64\t14.2.0-19\ngrep\t3.11-4\ngzip\t1.13-1+deb13u1\nhostname\t3.25\ninit-system-helpers\t1.69~deb13u1\nlibacl1:amd64\t2.3.2-2+b1\nlibapt-pkg7.0:amd64\t3.0.3\nlibasound2-data\t1.2.14-1+deb13u1\nlibasound2t64:amd64\t1.2.14-1+deb13u1\nlibatk-bridge2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatk1.0-0t64:amd64\t2.56.2-1+deb13u2\nlibatomic1:amd64\t14.2.0-19\nlibatspi2.0-0t64:amd64\t2.56.2-1+deb13u2\nlibattr1:amd64\t1:2.5.2-3\nlibaudit-common\t1:4.0.2-2+deb13u1\nlibaudit1:amd64\t1:4.0.2-2+deb13u1\nlibavahi-client3:amd64\t0.8-16\nlibavahi-common-data:amd64\t0.8-16\nlibavahi-common3:amd64\t0.8-16\nlibblkid1:amd64\t2.41.5-0+deb13u1\nlibbrotli1:amd64\t1.1.0-2+b7\nlibbsd0:amd64\t0.12.2-2\nlibbz2-1.0:amd64\t1.0.8-6\nlibc-bin\t2.41-12+deb13u4\nlibc6:amd64\t2.41-12+deb13u4\nlibcairo2:amd64\t1.18.4-1+b1\nlibcap-ng0:amd64\t0.8.5-4+b1\nlibcap2:amd64\t1:2.75-10+deb13u1+b3\nlibcom-err2:amd64\t1.47.2-3+b12\nlibcrypt1:amd64\t1:4.4.38-1\nlibcups2t64:amd64\t2.4.10-3+deb13u2\nlibdatrie1:amd64\t0.2.13-3+b1\nlibdb5.3t64:amd64\t5.3.28+dfsg2-9\nlibdbus-1-3:amd64\t1.16.2-2\nlibdebconfclient0:amd64\t0.280\nlibdrm-amdgpu1:amd64\t2.4.124-2\nlibdrm-common\t2.4.124-2\nlibdrm-intel1:amd64\t2.4.124-2\nlibdrm2:amd64\t2.4.124-2\nlibedit2:amd64\t3.1-20250104-1\nlibelf1t64:amd64\t0.192-4\nlibexpat1:amd64\t2.8.3-1~deb13u1\nlibffi8:amd64\t3.4.8-2\nlibfontconfig1:amd64\t2.15.0-2.3\nlibfontenc1:amd64\t1:1.1.8-1+b2\nlibfreetype6:amd64\t2.13.3+dfsg-1+deb13u1\nlibfribidi0:amd64\t1.0.16-1\nlibgbm1:amd64\t25.0.7-2+deb13u1\nlibgcc-s1:amd64\t14.2.0-19\nlibgdbm6t64:amd64\t1.24-2\nlibgl1:amd64\t1.7.0-1+b2\nlibgl1-mesa-dri:amd64\t25.0.7-2+deb13u1\nlibglib2.0-0t64:amd64\t2.84.4-3~deb13u5\nlibglvnd0:amd64\t1.7.0-1+b2\nlibglx-mesa0:amd64\t25.0.7-2+deb13u1\nlibglx0:amd64\t1.7.0-1+b2\nlibgmp10:amd64\t2:6.3.0+dfsg-3\nlibgnutls30t64:amd64\t3.8.9-3+deb13u4\nlibgraphite2-3:amd64\t1.3.14-2+deb13u1\nlibgssapi-krb5-2:amd64\t1.21.3-5+deb13u1\nlibharfbuzz0b:amd64\t10.2.0-1+deb13u1\nlibhogweed6t64:amd64\t3.10.1-1\nlibice6:amd64\t2:1.1.1-1\nlibidn2-0:amd64\t2.3.8-2\nlibk5crypto3:amd64\t1.21.3-5+deb13u1\nlibkeyutils1:amd64\t1.6.3-6\nlibkrb5-3:amd64\t1.21.3-5+deb13u1\nlibkrb5support0:amd64\t1.21.3-5+deb13u1\nliblastlog2-2:amd64\t2.41.5-0+deb13u1\nlibllvm19:amd64\t1:19.1.7-3+b1\nliblz4-1:amd64\t1.10.0-4\nliblzma5:amd64\t5.8.1-1+deb13u1\nlibmd0:amd64\t1.1.0-2+b1\nlibmount1:amd64\t2.41.5-0+deb13u1\nlibncursesw6:amd64\t6.5+20250216-2\nlibnettle8t64:amd64\t3.10.1-1\nlibnspr4:amd64\t2:4.36-1\nlibnss3:amd64\t2:3.110-1+deb13u4\nlibp11-kit0:amd64\t0.25.5-3\nlibpam-modules:amd64\t1.7.0-5\nlibpam-modules-bin\t1.7.0-5\nlibpam-runtime\t1.7.0-5\nlibpam0g:amd64\t1.7.0-5\nlibpango-1.0-0:amd64\t1.56.3-1\nlibpciaccess0:amd64\t0.17-3+b3\nlibpcre2-8-0:amd64\t10.46-1~deb13u3\nlibpixman-1-0:amd64\t0.44.0-3\nlibpng16-16t64:amd64\t1.6.48-1+deb13u6\nlibreadline8t64:amd64\t8.2-6\nlibseccomp2:amd64\t2.6.0-2\nlibselinux1:amd64\t3.8.1-1\nlibsemanage-common\t3.8.1-1\nlibsemanage2:amd64\t3.8.1-1\nlibsensors-config\t1:3.6.2-2\nlibsensors5:amd64\t1:3.6.2-2\nlibsepol2:amd64\t3.8.1-1\nlibsm6:amd64\t2:1.2.6-1\nlibsmartcols1:amd64\t2.41.5-0+deb13u1\nlibsqlite3-0:amd64\t3.46.1-7+deb13u2\nlibssl3t64:amd64\t3.5.7-1~deb13u3\nlibstdc++6:amd64\t14.2.0-19\nlibsystemd0:amd64\t257.13-1~deb13u1\nlibtasn1-6:amd64\t4.20.0-2+deb13u1\nlibthai-data\t0.1.29-2\nlibthai0:amd64\t0.1.29-2+b1\nlibtinfo6:amd64\t6.5+20250216-2\nlibudev1:amd64\t257.13-1~deb13u1\nlibunistring5:amd64\t1.3-2\nlibunwind8:amd64\t1.8.1-0.1\nlibuuid1:amd64\t2.41.5-0+deb13u1\nlibvulkan1:amd64\t1.4.309.0-1\nlibwayland-server0:amd64\t1.23.1-3\nlibx11-6:amd64\t2:1.8.12-1\nlibx11-data\t2:1.8.12-1\nlibx11-xcb1:amd64\t2:1.8.12-1\nlibxau6:amd64\t1:1.0.11-1\nlibxaw7:amd64\t2:1.0.16-1\nlibxcb-dri3-0:amd64\t1.17.0-2+b1\nlibxcb-glx0:amd64\t1.17.0-2+b1\nlibxcb-present0:amd64\t1.17.0-2+b1\nlibxcb-randr0:amd64\t1.17.0-2+b1\nlibxcb-render0:amd64\t1.17.0-2+b1\nlibxcb-shm0:amd64\t1.17.0-2+b1\nlibxcb-sync1:amd64\t1.17.0-2+b1\nlibxcb-xfixes0:amd64\t1.17.0-2+b1\nlibxcb1:amd64\t1.17.0-2+b1\nlibxcomposite1:amd64\t1:0.4.6-1\nlibxdamage1:amd64\t1:1.1.6-1+b2\nlibxdmcp6:amd64\t1:1.1.5-1\nlibxext6:amd64\t2:1.3.4-1+b3\nlibxfixes3:amd64\t1:6.0.0-2+b4\nlibxfont2:amd64\t1:2.0.6-1+deb13u1\nlibxi6:amd64\t2:1.8.2-1\nlibxkbcommon0:amd64\t1.7.0-2\nlibxkbfile1:amd64\t1:1.1.0-1+b4\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nlibxmu6:amd64\t2:1.1.3-3+b4\nlibxpm4:amd64\t1:3.5.17-1+deb13u1\nlibxrandr2:amd64\t2:1.5.4-1+b3\nlibxrender1:amd64\t1:0.9.12-1\nlibxshmfence1:amd64\t1.3.3-1\nlibxt6t64:amd64\t1:1.2.1-1.2+b2\nlibxxf86vm1:amd64\t1:1.1.4-1+b4\nlibxxhash0:amd64\t0.8.3-2\nlibz3-4:amd64\t4.13.3-1\nlibzstd1:amd64\t1.5.7+dfsg-1\nlogin\t1:4.16.0-2+really2.41.5-0+deb13u1\nlogin.defs\t1:4.17.4-2\nmawk\t1.3.4.20250131-1\nmesa-libgallium:amd64\t25.0.7-2+deb13u1\nmount\t2.41.5-0+deb13u1\nncurses-base\t6.5+20250216-2\nncurses-bin\t6.5+20250216-2\nnetbase\t6.5\nopenssl\t3.5.7-1~deb13u3\nopenssl-provider-legacy\t3.5.7-1~deb13u3\npasswd\t1:4.17.4-2\nperl-base\t5.40.1-6+deb13u1\nreadline-common\t8.2-6\nsed\t4.9-2+deb13u1\nsqv\t1.3.0-3+b2\nsysvinit-utils\t3.14-4\ntar\t1.35+dfsg-3.1\ntzdata\t2026c-0+deb13u1\nutil-linux\t2.41.5-0+deb13u1\nx11-common\t1:7.7+24+deb13u1\nx11-xkb-utils\t7.7+9\nxfonts-encodings\t1:1.0.4-2.2\nxfonts-scalable\t1:1.0.3-1.3\nxfonts-utils\t1:7.7+7\nxkb-data\t2.42-1\nxserver-common\t2:21.1.16-1.3+deb13u4\nxvfb\t2:21.1.16-1.3+deb13u4\nzlib1g:amd64\t1:1.3.dfsg+really1.3.1-1+b1\n",
+        "node": "v22.22.2",
+        "uid": 1000,
+        "browser": "153.0.8010.12",
+        "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1"
+      },
+      "rendererElapsedSeconds": 17.469009720000003,
+      "entrySeconds": 0.4239450219999999,
+      "coldStartupSeconds": 0.5411822659999999,
+      "exitCode": 0,
+      "cleanupVerified": true,
+      "container": {
+        "name": "mission-map-3a-425c47cb10cd-cold-3",
+        "removed": true,
+        "purpose": "cold-3",
+        "privateVolumes": [],
+        "hostPorts": [],
+        "id": "7865ce03d75d2dc1e0fcc8bad8e10371223fc81824270633539e483784e14aeb"
+      }
+    }
+  ],
+  "cleanup": {
+    "containersGone": true,
+    "privateVolumes": [],
+    "networks": [],
+    "hostListeners": [],
+    "retainedEvidence": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3a-final",
+    "ownedContainerNames": [
+      "mission-map-3a-425c47cb10cd-packaged-browser-checks",
+      "mission-map-3a-425c47cb10cd-cold-1",
+      "mission-map-3a-425c47cb10cd-cold-2",
+      "mission-map-3a-425c47cb10cd-cold-3"
+    ]
+  },
+  "rawReportSha256": "a387be59e71e1c916180e38d3706eb467ad5c1a5a3e67c08940ad57f3ce4965a",
+  "verification": {
+    "framing": "6 passed; route/visibility/crop/order/markers/validation",
+    "packagedBrowser": "5 passed; identical decoded pixels/framing; startup/texture/context-loss/shared-deadline fallback and cleanup",
+    "frontendSuite": "177 files, 1353 tests passed in 22.06 seconds using Node 22.22.2",
+    "applicationBuild": "npm run build passed; existing satellite.js externalization and large-bundle warnings retained in log",
+    "standaloneBuild": "build:mission-export passed in disposable image; large-bundle warning",
+    "typesAndLint": "TypeScript, focused ESLint, formatting and diff checks passed",
+    "frontendOnlyBuildContext": "RED missing backend JSON module; GREEN after test-runtime fixture read. Six framing tests rerun green; renderer source and timing inputs unchanged.",
+    "noGoReducer": "Missing views, >50 seconds, fallback, invalid hashes, incomplete cleanup and fewer than three cold runs rejected",
+    "productionPackaging": "No deployed Dockerfile, Compose or workflow changes; no export/legacy behavior change",
+    "deferred": "Final production image/marker repeat in Task 3B; exact-head CI, ZIP/PPTX rendered acceptance and whole-branch review later; customer acceptance required before phase two"
+  },
+  "visualInspection": "Short, polar/dateline and all three spanning views: neutral visible routes and labels inside crop; no occlusion hack. Planned reference timestamp shown. This is renderer proof, not slide-layout acceptance.",
+  "fallbackScope": "Labeled fallback decision and zero partial primary PNGs. Actual legacy/static fallback integration is Task 3B.",
+  "checkpointCleanup": {
+    "status": "pass",
+    "hostProcessGroupsChecked": 92,
+    "hostProcessSurvivors": [],
+    "hostChromiumSurvivors": [],
+    "rendererContainersChecked": 8,
+    "additionalStoppedToolingContainer": "mission-map-task3a-node-tooling; separately verified absent",
+    "taskNetworks": 0,
+    "disposableVolumes": 0,
+    "temporaryPathsAbsent": true,
+    "taskImageTagsRemoved": true,
+    "evidenceAndOpenPrWorktreeRetained": true
+  }
+}

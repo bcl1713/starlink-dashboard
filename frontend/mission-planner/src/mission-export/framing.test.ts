@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
-import fixture from '../../../../backend/starlink-location/tests/fixtures/customer_briefing/f08_map_inputs.json';
+import { readFileSync } from 'node:fs';
+import type { MissionMapInput } from './protocol';
+// Read at test runtime: the existing frontend-only production build must not
+// resolve backend fixtures while type-checking this test module.
+const fixture: { legs: MissionMapInput[]; expectedViewIds: string[] } =
+  JSON.parse(
+    readFileSync(
+      new URL(
+        '../../../../backend/starlink-location/tests/fixtures/customer_briefing/f08_map_inputs.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
 import { frameMissionRoute, applyCameraFrame } from './framing';
 import { validateMapInput } from './protocol';
 
