@@ -50,9 +50,8 @@ downloads remain legacy; separate trial files for each leg are out of scope.
 A feature flag enables the deployed trial for evaluation. Disabling it restores
 the original file set without migration. Customers need no extra export steps.
 
-[Phase two](2026-10-07-mission-slide-background-generation-design.md) moves
-generation to interruptible save-triggered workers; ready exports assemble
-caches.
+[Phase two](2026-10-07-mission-slide-background-generation-design.md)
+generates slides on save and assembles caches on export.
 
 Both builders consume one immutable snapshot of metadata, ordered legs, adjusted
 routes, and timelines, ensuring matching departures and revisions. Preserve
