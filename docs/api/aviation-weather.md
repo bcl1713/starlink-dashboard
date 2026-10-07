@@ -116,11 +116,18 @@ contributor stays unknown. A true zero wind remains valid. Each complete binary
 generation is 1,819,440 bytes; envelope allocation bounds include its
 descriptor.
 
-Install the optional worker with the GFS Compose overlay and profile:
+Ordinary startup through the Compose wrapper includes the GFS worker:
 
 ```bash
-scripts/compose.sh -f docker-compose.yml -f docker-compose.gfs.yml --profile gfs up -d --build
+./scripts/compose.sh up -d --build
 ```
+
+The base Compose configuration includes the worker, so ordinary `build`, `up`,
+`logs` and `down` commands manage it with the rest of the app. Local Compose
+overrides and custom file selection retain Docker's normal behavior. Existing
+commands using `-f docker-compose.yml -f docker-compose.gfs.yml --profile gfs`
+remain supported. Winds and temperature still default off in Configuration;
+an idle worker performs no ingest.
 
 The worker shares one CPU and 1 GiB across its owner and disposable decoder;
 scientific dependencies stay in its image. API mounts artifacts read-only and

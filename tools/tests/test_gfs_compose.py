@@ -1,4 +1,4 @@
-"""Scientific runtime is opt-in, bounded and never mounted writable by API."""
+"""Default scientific runtime is bounded and never mounted writable by API."""
 
 from pathlib import Path
 
@@ -8,15 +8,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_worker_profile_has_aggregate_cpu_memory_limit_and_no_public_port():
-    overlay = yaml.safe_load((ROOT / "docker-compose.gfs.yml").read_text())
-    worker = overlay["services"]["gfs-worker"]
-    assert worker["profiles"] == ["gfs"]
+    stack = yaml.safe_load((ROOT / "docker-compose.yml").read_text())
+    worker = stack["services"]["gfs-worker"]
+    assert not worker.get("profiles")
     assert worker["cpus"] == 1.0
     assert worker["mem_limit"] == "1g"
     assert "ports" not in worker
     assert worker["user"] == "1000:1000"
     assert "./data/settings:/app/data/settings:ro" in worker["volumes"]
-    api = overlay["services"]["starlink-location"]
+    api = stack["services"]["starlink-location"]
     assert "gfs_products:/app/data/gfs:ro" in api["volumes"]
     assert "gfs_mailbox:/app/data/gfs-mailbox" in api["volumes"]
 
