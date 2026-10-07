@@ -1,0 +1,108 @@
+{
+  "status": "pass",
+  "comparisons": [
+    {
+      "fixture": "adjusted.zip",
+      "baseline_sha256": "9a29c85a8bef56211eff76e9e65f6bc6949ef0a1ae2b8da109474495f9ee3e9c",
+      "candidate_sha256": "3756d692793fafcd6eba7b914eb53850ef991baa8b939aaf2ccd1cfcc04600b5",
+      "entry_count": 14
+    },
+    {
+      "fixture": "cached-missing.zip",
+      "baseline_sha256": "384bb5769003628779fb80b49552d02e264e78eade9276272f3580abe2fc89ed",
+      "candidate_sha256": "605c10b6a68776584b4e5d2f5333ff299514569e614dc0fc996eda34c2dbf55f",
+      "entry_count": 10
+    },
+    {
+      "fixture": "direct-single-leg.pptx",
+      "baseline_sha256": "c6d4832e7a7b65de39a3bd0b698a89276d99a45ac91ed17cf2990eb311590246",
+      "candidate_sha256": "29892dcb107580e0aa264b2c2dcb05feabf9f9c4a311e5515b0d1b285c220c43",
+      "entry_count": 44
+    },
+    {
+      "fixture": "splice.zip",
+      "baseline_sha256": "2ce8c35c1408a9ce57c6a3ca3d675a7906439fe4f0891d90e7e9948ab0ead272",
+      "candidate_sha256": "4a289130c60104e0536349b1beb25e8c21f6cbba79c6096b683ec80bcd36ac1f",
+      "entry_count": 14
+    }
+  ],
+  "differences": [],
+  "ignored": [
+    "ZIP entry timestamps",
+    "PPTX core creation/modification properties"
+  ],
+  "clock": "2026-10-07T08:00:00+00:00",
+  "renderer_controls": {
+    "numpy_seed_per_map": 1713,
+    "adjustText_iter_lim": 1000,
+    "adjustText_time_lim": null
+  },
+  "checks": [
+    "ZIP paths",
+    "source JSON/KML/POIs",
+    "CSV bytes",
+    "all PPTX XML, geometry, palette, styles, relationships and media bytes"
+  ],
+  "task": "1: Capture once and preserve legacy exports",
+  "baseline_source_sha": "86ecafb420c3790df4c98e43bb11a1c5a36fbba3",
+  "repository": "bcl1713/starlink-dashboard",
+  "branch": "feat/customer-mission-briefing-phase-one",
+  "scope": [
+    "Immutable JSON-byte export snapshot and content digests",
+    "Short active-leg then parent capture locks, one retry on changed/unavailable inputs",
+    "One read-only preparation per leg; original cached timestamps and missing-data provenance",
+    "Copied effective routes, canonical event records, resolved SOF/AR identity and UTC bounds",
+    "Private legacy model/manager views, explicit parent metadata and captured CSV ground entry",
+    "Captured default GeoJSON/KMZ/catalog/configuration, without publication or storage writes",
+    "Leg-specific request map cache; generated markers replaced privately only after rebuild",
+    "Unchanged legacy ZIP filenames and direct single-leg PowerPoint"
+  ],
+  "intentional_consistency_fixes": [
+    "Legacy package outputs no longer mix parent/leg/route/POI revisions or normalize shared builder inputs.",
+    "Same-route legs have separate cached maps, keyed by snapshot fingerprint plus leg identity.",
+    "Map overlays use prepared markers without publishing them; exported POIs remain committed source records, and cached fallback keeps committed markers."
+  ],
+  "regression_results": {
+    "backend": {
+      "command": "timeout --kill-after=10s 30m ./tools/verify backend",
+      "passed": 2259,
+      "skipped": 20,
+      "warnings": 6,
+      "elapsed_seconds": 142.25,
+      "exit_code": 0
+    },
+    "ruff": {
+      "command": "timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt ruff check app tests ../../tools/acceptance/customer-briefing/compare_legacy.py",
+      "result": "All checks passed",
+      "exit_code": 0
+    },
+    "black": {
+      "command": "timeout --kill-after=10s 10m uv run --with-requirements backend/starlink-location/requirements-dev.txt black --check backend/starlink-location/app backend/starlink-location/tests tools/acceptance/customer-briefing/compare_legacy.py",
+      "result": "393 files unchanged",
+      "exit_code": 0
+    },
+    "diff": {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  },
+  "evidence_workspace": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/",
+  "limitations": [
+    "Regression comparison seeds NumPy and pins adjustText iteration work in the harness only, because legacy label placement otherwise varies even on the unchanged direct path. No images are ignored.",
+    "Production image, browser renderer, rendered PowerPoint acceptance and exact-head CI are later phase-one gates; this checkpoint does not claim those results.",
+    "Trial flag/deck/projection/map renderer/workers are not implemented in Task 1. Phase two remains gated by explicit customer/user acceptance."
+  ],
+  "next_task": "3A: Renderer feasibility gate; dependency Task 1 only",
+  "source_file_sha256": {
+    "backend/starlink-location/app/mission/exporter/snapshot.py": "683fb9bbcd90b20952fe947535499b6089d986ffc2a590236a0b055a1f2dc851",
+    "backend/starlink-location/app/mission/exporter/snapshot_inputs.py": "7e0d8a5f62235c69d079c5980b65ffc5f0d0921b698accccdeeef0c14e0ec0e7",
+    "backend/starlink-location/app/mission/exporter/snapshot_views.py": "95342c51597ce919848f5ab0a29d5d9a864e7c1f6d6f381f39ae64b339d7f3ad",
+    "backend/starlink-location/app/mission/exporter/__main__.py": "f20377ea56244758d8bb3c5182ace52dcd6476e917b835107258be48070f1f64",
+    "backend/starlink-location/app/mission/exporter/pptx_builder.py": "7f8cd84d31ee0dd1c285ec6bed698eb5a2704f932c553ad39eb1989b75481a5e",
+    "backend/starlink-location/app/mission/package/__main__.py": "10aeadd2e256b1c1e7c0659df3e4c958afaced05b52d0963fc1864bb4fd57064",
+    "backend/starlink-location/app/mission/timeline_preparation.py": "83e5771126a1988c0a9aaa18ad13018739ddd7cf63a7f849b69eb61ef38ee30d",
+    "backend/starlink-location/app/mission/timeline_builder/events.py": "57a1a88c31c82aace55d0a991ee095a971bc4c3521ee11c83b0a63bd79cdf4a3",
+    "backend/starlink-location/app/satellites/catalog.py": "5a5f14952fe9e2ed2f5aafbbc2bc2556fc14bec56ba747054f7cb9c18b6702f1",
+    "backend/starlink-location/app/satellites/coverage.py": "064f8e20e52c7d049b7041097f5da6f5f0a1bbe6ad934bf4773a68b4e974903d"
+  }
+}

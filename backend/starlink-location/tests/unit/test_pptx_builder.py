@@ -49,6 +49,32 @@ def test_title_slide_cover_metadata_prefers_mission_revision_fields():
     assert _cover_metadata_line(mission, leg_count=1) == "1 Leg | Mission 26-07 | Rev 5"
 
 
+def test_explicit_parent_metadata_never_reloads_storage():
+    parent = Mission(
+        id="parent",
+        name="Captured parent",
+        description="Brief",
+        metadata={"revision": "3"},
+    )
+    leg = MissionLeg(
+        id="leg",
+        name="Leg",
+        route_id="route",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    with patch(
+        "app.mission.storage.load_mission_v2", side_effect=AssertionError("reread")
+    ):
+        assert (
+            _get_footer_metadata(leg, "parent", parent_mission=parent)
+            == "Captured parent | Brief"
+        )
+        assert (
+            _cover_metadata_line(leg, 1, "parent", parent_mission=parent)
+            == "1 Leg | Rev 3"
+        )
+
+
 class TestGetFooterMetadata:
     """Test footer metadata resolution for PPTX slides."""
 

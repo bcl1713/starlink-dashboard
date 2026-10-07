@@ -25,7 +25,7 @@ from app.mission.timeline_builder.utils import (
 )
 from app.mission.timeline_builder.warnings import XBandWarningBoundary
 from app.models.route import ParsedRoute
-from app.satellites.catalog import get_satellite_catalog
+from app.satellites.catalog import SatelliteCatalog, get_satellite_catalog
 from app.satellites.geometry import is_in_azimuth_range
 from app.satellites.rules import EventType, MissionEvent, RuleEngine
 from app.services.poi_manager import POIManager
@@ -111,6 +111,8 @@ def apply_x_azimuth_events(
     poi_manager: POIManager | None,
     mission_start: datetime,
     mission_end: datetime,
+    *,
+    satellite_catalog: SatelliteCatalog | None = None,
 ) -> list[XBandWarningBoundary]:
     """Apply X constraints and return combined shutdown/turn-on boundaries."""
     if not mission.transports.initial_x_satellite_id:
@@ -162,7 +164,7 @@ def apply_x_azimuth_events(
             current_satellite = assignments[schedule_idx][1]
 
         satellite_longitude = _resolve_satellite_longitude(
-            current_satellite, poi_manager
+            current_satellite, poi_manager, satellite_catalog
         )
         if satellite_longitude is None:
             continue
@@ -432,10 +434,14 @@ def _format_elevation_reason(
 
 
 def _resolve_satellite_longitude(
-    satellite_id: str, poi_manager: POIManager | None
+    satellite_id: str,
+    poi_manager: POIManager | None,
+    satellite_catalog: SatelliteCatalog | None = None,
 ) -> float | None:
     """Resolve satellite longitude from catalog or POI manager."""
-    catalog = get_satellite_catalog()
+    catalog = (
+        satellite_catalog if satellite_catalog is not None else get_satellite_catalog()
+    )
     sat = catalog.get_satellite(satellite_id)
     if sat and sat.longitude is not None:
         return sat.longitude

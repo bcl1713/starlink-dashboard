@@ -53,8 +53,8 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
 
     with (
         patch(
-            "app.mission.package.__main__.build_mission_timeline",
-            return_value=(rebuilt_timeline, MagicMock()),
+            "app.mission.package.__main__.prepare_mission_timeline",
+            return_value=MagicMock(timeline=rebuilt_timeline),
         ) as mock_build,
         patch("app.mission.storage.save_mission_timeline") as mock_save,
         patch(

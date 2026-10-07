@@ -69,12 +69,14 @@ def test_generate_mission_combined_csv_continues_after_leg_error(
     assert mock_load_timeline.call_count == 2
 
 
-@patch("app.mission.package.__main__.load_mission_v2")
+@patch("app.mission.storage.load_mission_v2")
 def test_export_mission_package_returns_file_object(mock_load_mission, mock_mission):
     # Setup
     mock_load_mission.return_value = mock_mission
     mock_route_manager = MagicMock()
     mock_poi_manager = MagicMock()
+    mock_route_manager.get_route.return_value = None
+    mock_poi_manager.list_pois.return_value = []
 
     # Execute
     # This will actually create a temp file and zip it, so we test the real logic mostly
@@ -103,7 +105,14 @@ def test_export_mission_package_returns_file_object(mock_load_mission, mock_miss
         zip_file.close()
 
 
-@patch("app.mission.package.__main__.load_mission_v2")
+def test_missing_mission_keeps_package_error_contract(isolate_mission_storage):
+    from app.mission.package.__main__ import ExportPackageError
+
+    with pytest.raises(ExportPackageError, match="Mission absent not found"):
+        export_mission_package("absent", None, None)
+
+
+@patch("app.mission.storage.load_mission_v2")
 @patch("app.mission.package.__main__.generate_mission_combined_pptx")
 @patch("app.mission.package.__main__.generate_mission_combined_csv")
 def test_export_mission_package_uses_temp_files_for_mission_exports(
@@ -112,6 +121,8 @@ def test_export_mission_package_uses_temp_files_for_mission_exports(
     mock_load_mission.return_value = mock_mission
     mock_route_manager = MagicMock()
     mock_poi_manager = MagicMock()
+    mock_route_manager.get_route.return_value = None
+    mock_poi_manager.list_pois.return_value = []
 
     def csv_side_effect(mission, output_path=None, **kwargs):
         if output_path:

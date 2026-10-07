@@ -23,6 +23,9 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
+if TYPE_CHECKING:
+    from app.mission.exporter.snapshot import ExportSnapshot
+
 from app.mission.exporter.formatting import mission_start_timestamp
 from app.mission.exporter.pptx_styling import (
     STATUS_CRITICAL,
@@ -53,6 +56,7 @@ logger = logging.getLogger(__name__)
 def _get_footer_metadata(
     mission: Mission | MissionLeg | None,
     parent_mission_id: str | None,
+    parent_mission: Mission | None = None,
 ) -> str:
     """Resolve footer metadata from parent mission or leg.
 
@@ -72,6 +76,9 @@ def _get_footer_metadata(
     """
     if mission is None:
         return ""
+
+    if parent_mission is not None:
+        return _get_footer_metadata(parent_mission, None)
 
     # Try to load parent mission first
     if parent_mission_id:
@@ -109,6 +116,8 @@ def add_mission_slides_to_presentation(
     poi_manager: POIManager | None = None,
     logo_path: Path | None = None,
     map_cache: dict[str, bytes] | None = None,
+    parent_mission: Mission | None = None,
+    snapshot: ExportSnapshot | None = None,
 ) -> None:
     """Add mission slides (route map and timeline tables) to an existing presentation.
 
@@ -135,6 +144,8 @@ def add_mission_slides_to_presentation(
         timeline=timeline,
         mission=mission,
         parent_mission_id=parent_mission_id,
+        parent_mission=parent_mission,
+        snapshot=snapshot,
         route_manager=route_manager,
         poi_manager=poi_manager,
         logo_path=logo_path,
@@ -148,6 +159,8 @@ def add_mission_slides_to_presentation(
         timeline=timeline,
         mission=mission,
         parent_mission_id=parent_mission_id,
+        parent_mission=parent_mission,
+        snapshot=snapshot,
         logo_path=logo_path,
     )
 
@@ -162,6 +175,8 @@ def add_route_map_slide(
     logo_path: Path | None,
     map_cache: dict[str, bytes] | None,
     _generate_route_map,  # Injected to avoid circular import
+    parent_mission: Mission | None = None,
+    snapshot: ExportSnapshot | None = None,
 ) -> None:
     """Add route map slide to presentation.
 
@@ -195,7 +210,7 @@ def add_route_map_slide(
     add_slide_title(slide_map, f"{leg_name} - Route Map", top=0.2)
 
     # Get footer metadata using helper
-    footer_metadata = _get_footer_metadata(mission, parent_mission_id)
+    footer_metadata = _get_footer_metadata(mission, parent_mission_id, parent_mission)
     if not footer_metadata:
         # Fallback if mission is None
         footer_metadata = timeline.mission_leg_id if timeline else "Organization"
@@ -208,6 +223,8 @@ def add_route_map_slide(
         if route_id and adjusted_departure
         else route_id
     )
+    if snapshot is not None and mission is not None:
+        map_cache_key = f"{snapshot.fingerprint}|{mission.id}"
     map_image_bytes = None
 
     # Check cache first
@@ -298,6 +315,8 @@ def add_timeline_table_slides(
     mission: Mission | MissionLeg | None,
     parent_mission_id: str | None,
     logo_path: Path | None,
+    parent_mission: Mission | None = None,
+    snapshot: ExportSnapshot | None = None,
 ) -> None:
     """Add paginated timeline table slides to presentation.
 
@@ -314,7 +333,7 @@ def add_timeline_table_slides(
     # Import here to avoid circular dependency
     from app.mission.exporter import _segment_rows
 
-    timeline_df = _segment_rows(timeline, mission)
+    timeline_df = _segment_rows(timeline, mission, snapshot)
 
     if timeline_df.empty:
         return
@@ -344,7 +363,7 @@ def add_timeline_table_slides(
         leg_name = timeline.mission_leg_id if timeline else "Mission"
 
     # Get footer metadata using helper
-    footer_metadata = _get_footer_metadata(mission, parent_mission_id)
+    footer_metadata = _get_footer_metadata(mission, parent_mission_id, parent_mission)
     if not footer_metadata:
         # Fallback if mission is None
         footer_metadata = timeline.mission_leg_id if timeline else "Organization"

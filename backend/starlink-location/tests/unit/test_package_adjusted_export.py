@@ -147,8 +147,8 @@ def test_combined_csv_rebuilds_adjusted_leg_timeline_instead_of_cached_stale_tim
             return_value=stale_timeline,
         ),
         patch(
-            "app.mission.package.__main__.build_mission_timeline",
-            return_value=(adjusted_timeline, MagicMock()),
+            "app.mission.package.__main__.prepare_mission_timeline",
+            return_value=MagicMock(timeline=adjusted_timeline),
         ) as mock_build,
         patch(
             "app.mission.package.__main__.save_mission_timeline", create=True
@@ -197,6 +197,44 @@ def test_route_time_shift_applies_uniform_delta_to_every_timed_route_point():
     ]
     assert route.timing_profile.departure_time == original_takeoff
     assert route.points[0].expected_arrival_time == original_takeoff
+
+
+def test_standalone_combined_export_discovers_default_coverage_read_only(
+    tmp_path, monkeypatch
+):
+    from app.mission.timeline_preparation import prepare_mission_timeline
+    from app.services.poi_manager import POIManager
+
+    start = datetime(2026, 10, 7, 8, tzinfo=timezone.utc)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("app.mission.timeline_service._COVERAGE_SAMPLER", None)
+    routes = MagicMock()
+    routes.get_route.return_value = _timed_route(start)
+    pois = POIManager(tmp_path / "pois.json")
+    before = pois.pois_file.read_bytes()
+    mission = Mission(
+        id="read-only",
+        name="Read-only",
+        legs=[
+            MissionLeg(
+                id="leg-adjusted",
+                name="Leg",
+                route_id="route",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    with patch(
+        "app.mission.package.__main__.prepare_mission_timeline",
+        wraps=prepare_mission_timeline,
+    ) as prepare:
+        csv = generate_mission_combined_csv(
+            mission, route_manager=routes, poi_manager=pois
+        )
+    assert b"2026-10-07T08:00:00+00:00" in csv
+    assert prepare.call_args.kwargs["coverage_sampler"].coverage_data["features"]
+    assert pois.pois_file.read_bytes() == before
+    assert not (tmp_path / "data/sat_coverage").exists()
 
 
 def test_adjusted_takeoff_delta_shifts_transition_aar_and_landing_times():

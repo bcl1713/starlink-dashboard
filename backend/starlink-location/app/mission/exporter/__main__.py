@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 import cartopy.crs as ccrs
@@ -72,6 +73,10 @@ from app.services.ground_entry_point import (
     GroundEntryPoint,
     get_cached_ground_entry_point,
 )
+
+if TYPE_CHECKING:
+    from app.mission.exporter.snapshot import ExportSnapshot
+
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
@@ -1353,12 +1358,18 @@ def _compact_reason_label(segment: TimelineSegment) -> str:
 def _segment_rows(
     timeline: MissionLegTimeline,
     mission: Mission | None,
+    snapshot: ExportSnapshot | None = None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
     export_timeline = timeline.model_copy(deep=True)
     normalize_call_availability_timeline(export_timeline)
     mission_start = mission_start_timestamp(export_timeline)
-    ground_entry_point = get_cached_ground_entry_point()
+    if snapshot is not None:
+        from app.mission.exporter.snapshot_views import SnapshotViews
+
+        ground_entry_point = SnapshotViews(snapshot).ground_entry_point()
+    else:
+        ground_entry_point = get_cached_ground_entry_point()
     ground_entry_values = _ground_entry_export_values(ground_entry_point)
     rows: list[tuple[datetime, int, dict]] = []
 
@@ -1578,6 +1589,7 @@ def _cover_metadata_line(
     mission: Mission | MissionLeg | None,
     leg_count: int,
     parent_mission_id: str | None = None,
+    parent_mission: Mission | None = None,
 ) -> str:
     """Build title-slide metadata without stale description/revision mismatches."""
 
@@ -1585,8 +1597,8 @@ def _cover_metadata_line(
     if mission is None:
         return leg_label
 
-    metadata_source: Mission | MissionLeg | None = mission
-    if parent_mission_id and not hasattr(mission, "legs"):
+    metadata_source: Mission | MissionLeg | None = parent_mission or mission
+    if parent_mission is None and parent_mission_id and not hasattr(mission, "legs"):
         try:
             from app.mission.storage import load_mission_v2
 
@@ -1630,11 +1642,13 @@ def _cover_metadata_line(
 
 
 def generate_csv_export(
-    timeline: MissionLegTimeline, mission: Mission | None = None
+    timeline: MissionLegTimeline,
+    mission: Mission | None = None,
+    snapshot: ExportSnapshot | None = None,
 ) -> bytes:
     """Return CSV bytes for the mission timeline."""
     csv_buffer = io.StringIO()
-    df = _segment_rows(timeline, mission)
+    df = _segment_rows(timeline, mission, snapshot)
     df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue().encode("utf-8")
 
@@ -1646,6 +1660,7 @@ def generate_pptx_export(
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
     map_cache: dict[str, bytes] | None = None,
+    snapshot: ExportSnapshot | None = None,
 ) -> bytes:
     """Generate a PowerPoint presentation with map and timeline table.
 
@@ -1657,6 +1672,18 @@ def generate_pptx_export(
             will check cache before generating maps and store newly generated maps.
     """
     from app.mission.exporter.pptx_styling import TEXT_BLACK
+
+    parent_mission = None
+    if snapshot is not None:
+        from app.mission.exporter.snapshot_views import SnapshotViews
+
+        views = SnapshotViews(snapshot)
+        parent_mission = views.mission()
+        if mission is not None:
+            mission = views.leg(mission.id)
+            timeline = views.timeline(mission.id)
+            route_manager = views.route_manager
+            poi_manager = views.map_poi_manager(mission.id)
 
     # Logo path
     logo_path = Path(__file__).parent.with_name("assets").joinpath("logo.png")
@@ -1716,7 +1743,9 @@ def generate_pptx_export(
         Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
     )
     info_frame = info_box.text_frame
-    info_frame.text = _cover_metadata_line(mission, leg_count, parent_mission_id)
+    info_frame.text = _cover_metadata_line(
+        mission, leg_count, parent_mission_id, parent_mission
+    )
 
     info_paragraph = info_frame.paragraphs[0]
     info_paragraph.alignment = PP_ALIGN.CENTER
@@ -1731,6 +1760,8 @@ def generate_pptx_export(
         mission=mission,
         timeline=timeline,
         parent_mission_id=parent_mission_id,
+        parent_mission=parent_mission,
+        snapshot=snapshot,
         route_manager=route_manager,
         poi_manager=poi_manager,
         logo_path=logo_path,
@@ -1778,6 +1809,7 @@ def generate_timeline_export(
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
     map_cache: dict[str, bytes] | None = None,
+    snapshot: ExportSnapshot | None = None,
 ) -> ExportArtifact:
     """Generate the requested export artifact (CSV or PPTX only).
 
@@ -1785,8 +1817,14 @@ def generate_timeline_export(
         map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
             will check cache before generating maps and store newly generated maps.
     """
+    if snapshot is not None and mission is not None:
+        from app.mission.exporter.snapshot_views import SnapshotViews
+
+        views = SnapshotViews(snapshot)
+        mission = views.leg(mission.id)
+        timeline = views.timeline(mission.id)
     if export_format is TimelineExportFormat.CSV:
-        content = generate_csv_export(timeline, mission)
+        content = generate_csv_export(timeline, mission, snapshot)
         return ExportArtifact(content=content, media_type="text/csv", extension="csv")
     if export_format is TimelineExportFormat.PPTX:
         content = generate_pptx_export(
@@ -1796,6 +1834,7 @@ def generate_timeline_export(
             route_manager=route_manager,
             poi_manager=poi_manager,
             map_cache=map_cache,
+            snapshot=snapshot,
         )
         return ExportArtifact(
             content=content,
