@@ -1,8 +1,9 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { satcomLineStyle } from './satcom-link-style';
 import { TRAFFIC_PATH_STYLE } from './overview-traffic-style';
 
 interface OverviewMapLegendProps {
+  children?: ReactNode;
   collapsible?: boolean;
   countries?: boolean;
   subdivisions?: boolean;
@@ -19,6 +20,7 @@ interface OverviewMapLegendProps {
 
 /** Layer samples use the scene's draw guards, including retained geometry. */
 export function OverviewMapLegend({
+  children,
   collapsible = false,
   countries = false,
   subdivisions = false,
@@ -114,30 +116,29 @@ export function OverviewMapLegend({
           Natural Earth · dashed: disputed/uncertain
         </p>
       )}
-      <ul
-        id={listId}
-        className="globe-legend__items"
-        hidden={collapsible && !expanded}
-      >
-        {entries
-          .filter((entry) => entry.visible)
-          .map((entry) => (
-            <li key={entry.label}>
-              <span
-                className={entry.sample}
-                aria-hidden="true"
-                style={
-                  entry.label === 'Planned satellite link'
-                    ? { background: satcomLineStyle(linkState).core.color }
-                    : entry.label === 'Traffic path'
-                      ? { background: TRAFFIC_PATH_STYLE.core.color }
-                      : undefined
-                }
-              />
-              <span>{entry.label}</span>
-            </li>
-          ))}
-      </ul>
+      <div id={listId} hidden={collapsible && !expanded}>
+        <ul className="globe-legend__items">
+          {entries
+            .filter((entry) => entry.visible)
+            .map((entry) => (
+              <li key={entry.label}>
+                <span
+                  className={entry.sample}
+                  aria-hidden="true"
+                  style={
+                    entry.label === 'Planned satellite link'
+                      ? { background: satcomLineStyle(linkState).core.color }
+                      : entry.label === 'Traffic path'
+                        ? { background: TRAFFIC_PATH_STYLE.core.color }
+                        : undefined
+                  }
+                />
+                <span>{entry.label}</span>
+              </li>
+            ))}
+        </ul>
+        {children}
+      </div>
     </aside>
   );
 }

@@ -9,6 +9,8 @@ import {
 } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { OverviewMapLegend } from './OverviewMapLegend';
+import { GfsStatus } from './aviation-weather/GfsStatus';
+import { gridFixture, GRID_RUN } from '@/test/gfs-grid';
 afterEach(cleanup);
 const all = {
   aircraft: true,
@@ -68,16 +70,29 @@ describe('rendered map layers', () => {
 
 // Catches disclosure that hides state or loses dismissal focus.
 it('discloses one list and restores focus on Escape', () => {
-  render(<OverviewMapLegend {...all} collapsible />);
+  render(
+    <OverviewMapLegend {...all} collapsible>
+      <GfsStatus
+        view={{
+          state: 'current',
+          now: GRID_RUN,
+          products: { winds: gridFixture().product },
+        }}
+      />
+    </OverviewMapLegend>
+  );
   const toggle = screen.getByRole('button', { name: 'Legend' });
   expect(toggle).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('list')).toBeNull();
+  expect(screen.getByLabelText('Atmosphere legend')).not.toBeVisible();
   fireEvent.click(toggle);
   expect(toggle).toHaveAttribute('aria-expanded', 'true');
   expect(screen.getAllByRole('listitem')).toHaveLength(6);
+  expect(screen.getByLabelText('Atmosphere legend')).toBeVisible();
   fireEvent.keyDown(screen.getByRole('list'), { key: 'Escape' });
   expect(toggle).toHaveFocus();
   expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByLabelText('Atmosphere legend')).not.toBeVisible();
 });
 
 it('uses the scene violet sample independently of an X-band warning', () => {

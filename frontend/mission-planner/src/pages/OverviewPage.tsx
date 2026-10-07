@@ -694,6 +694,13 @@ export function OverviewPage() {
   );
 
   const mapMessages = [
+    gfs.state === 'stale'
+      ? 'GFS stale'
+      : gfs.state === 'unavailable'
+        ? 'GFS unavailable'
+        : gfs.state === 'loading'
+          ? 'GFS loading…'
+          : null,
     routeStatus,
     statusError
       ? 'Status refresh unavailable'
@@ -870,7 +877,6 @@ export function OverviewPage() {
           <div className="overview-map-overlays">
             <OverviewMapStatus messages={mapMessages} />
             <OverviewWeatherStatus weather={weather} />
-            <GfsStatus view={gfs} />
             <AviationStatus
               view={aviation}
               onInspect={() =>
@@ -905,7 +911,9 @@ export function OverviewPage() {
               trafficPath={linkState.starshieldVisible}
               plannedLink={linkState.xBandVisible}
               linkState={activeXLink?.state ?? null}
-            />
+            >
+              <GfsStatus view={gfs} />
+            </OverviewMapLegend>
           </div>
         </div>
         <div className="overview-arrival-overlays">

@@ -149,12 +149,13 @@ beforeEach(() => {
   queries.pois = { data: { state: 'no_generated_pois', pois: [] } };
 });
 describe('Overview layer and exception integration', () => {
-  it('shows passive unavailable atmosphere status alongside core controls without adding model selectors', () => {
+  it('keeps unavailable atmosphere notices outside the legend without adding model selectors', () => {
     queries.gfs = { now: 0, state: 'unavailable', products: {} };
     render(<OverviewPage />);
-    expect(
-      screen.getByLabelText('Flight-level atmosphere status').textContent
-    ).toContain('Unavailable');
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'GFS unavailable'
+    );
+    expect(screen.queryByLabelText('Atmosphere legend')).toBeNull();
     expect(
       screen.queryByRole('combobox', { name: 'Atmosphere level' })
     ).toBeNull();
