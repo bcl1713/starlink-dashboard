@@ -20,6 +20,8 @@ async function monitorFrames(page: Page) {
   await page.evaluate(() => {
     const evidence = {
       frames: 0,
+      fullscreenFrames: 0,
+      enlargedTextFrames: 0,
       visibleLabels: 0,
       violations: [] as unknown[],
       poses: new Set<string>(),
@@ -64,9 +66,16 @@ async function monitorFrames(page: Page) {
           protectedBox.right > viewport.x &&
           protectedBox.left < viewport.right &&
           protectedBox.bottom > viewport.y &&
-          protectedBox.top < viewport.bottom
+          protectedBox.top < viewport.bottom &&
+          protectedBox.right > 0 &&
+          protectedBox.left < innerWidth &&
+          protectedBox.bottom > 0 &&
+          protectedBox.top < innerHeight
         ) {
           evidence.frames++;
+          if (document.fullscreenElement) evidence.fullscreenFrames++;
+          if (document.documentElement.style.fontSize === '32px')
+            evidence.enlargedTextFrames++;
           evidence.poses.add(
             state.camera.position
               .toArray()
@@ -281,13 +290,26 @@ for (const viewport of [
       await expect
         .poll(() => page.evaluate(() => !!document.fullscreenElement))
         .toBe(true);
-      await page.waitForTimeout(1000);
+      await page.getByRole('button', { name: 'Reset map view' }).click();
+      await settledOverviewCamera(page);
+      await expect
+        .poll(
+          () =>
+            page.evaluate(
+              () =>
+                (
+                  window as unknown as {
+                    __labelOcclusionEvidence: { fullscreenFrames: number };
+                  }
+                ).__labelOcclusionEvidence.fullscreenFrames
+            ),
+          { timeout: 20_000 }
+        )
+        .toBeGreaterThan(5);
       await page.screenshot({
         path: info.outputPath('own-aircraft-fullscreen.png'),
       });
-      await page
-        .getByRole('button', { name: 'Exit fullscreen overview' })
-        .click();
+      await page.evaluate(() => document.exitFullscreen());
       await expect
         .poll(() => page.evaluate(() => !!document.fullscreenElement))
         .toBe(false);
@@ -295,7 +317,23 @@ for (const viewport of [
     await page.evaluate(() => {
       document.documentElement.style.fontSize = '32px';
     });
-    await page.waitForTimeout(1500);
+    await page.locator('.overview-map-stage').scrollIntoViewIfNeeded();
+    await page.getByRole('button', { name: 'Reset map view' }).click();
+    await settledOverviewCamera(page);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              (
+                window as unknown as {
+                  __labelOcclusionEvidence: { enlargedTextFrames: number };
+                }
+              ).__labelOcclusionEvidence.enlargedTextFrames
+          ),
+        { timeout: 20_000 }
+      )
+      .toBeGreaterThan(5);
     await page.screenshot({
       path: info.outputPath('own-aircraft-enlarged-text.png'),
     });
@@ -304,6 +342,8 @@ for (const viewport of [
         window as unknown as {
           __labelOcclusionEvidence: {
             frames: number;
+            fullscreenFrames: number;
+            enlargedTextFrames: number;
             visibleLabels: number;
             violations: unknown[];
             poses: Set<string>;
@@ -313,6 +353,8 @@ for (const viewport of [
       ).__labelOcclusionEvidence;
       return {
         frames: e.frames,
+        fullscreenFrames: e.fullscreenFrames,
+        enlargedTextFrames: e.enlargedTextFrames,
         visibleLabels: e.visibleLabels,
         violations: e.violations,
         cameraPoses: e.poses.size,
@@ -326,6 +368,9 @@ for (const viewport of [
       contentType: 'application/json',
     });
     expect(evidence.frames).toBeGreaterThan(50);
+    if (viewport.width === 1920)
+      expect(evidence.fullscreenFrames).toBeGreaterThan(5);
+    expect(evidence.enlargedTextFrames).toBeGreaterThan(5);
     expect(evidence.visibleLabels).toBeGreaterThan(50);
     expect(evidence.cameraPoses).toBeGreaterThan(5);
     expect(evidence.aircraftPositions).toBeGreaterThan(1);
