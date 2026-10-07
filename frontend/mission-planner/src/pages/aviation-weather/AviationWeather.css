@@ -144,9 +144,49 @@
   outline-offset: 2px;
 }
 
-.gfs-status { max-width: 22rem; padding: .4rem .65rem; border-radius: .5rem; color: var(--foreground); background: color-mix(in srgb, var(--background) 90%, transparent); font-size: .75rem; }
-.gfs-status summary { cursor: pointer; min-height: 1.5rem; }
-.gfs-status p { margin: .4rem 0; }
-.gfs-temperature-legend { height: .6rem; background: linear-gradient(to right, #3d26b8, #33bfde, #f04024); }
-.gfs-legend-labels { display: flex; justify-content: space-between; }
-@media (max-width: 600px) { .gfs-status { max-width: min(18rem, 80vw); } .gfs-status[open] { max-height: 24dvh; overflow-y: auto; } }
+.gfs-legend {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: var(--overview-border);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.gfs-legend p {
+  margin: 0;
+}
+.gfs-legend__context {
+  color: var(--overview-secondary);
+}
+.gfs-legend .gfs-legend__wind {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.gfs-legend__wind svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.gfs-legend__temperature {
+  margin-top: 0.5rem;
+}
+.gfs-temperature-legend {
+  height: 0.75rem;
+  margin-top: 0.25rem;
+  background: linear-gradient(to right, #3d26b8, #33bfde, #f04024);
+}
+.gfs-legend-labels {
+  display: flex;
+  justify-content: space-between;
+}
+.globe-legend:has(.globe-legend__toggle) .gfs-legend {
+  margin: 0.5rem;
+  padding-top: 0.5rem;
+}
+.overview-page[data-layout='desktop'] .gfs-legend {
+  font-size: 18px;
+  line-height: 24px;
+}

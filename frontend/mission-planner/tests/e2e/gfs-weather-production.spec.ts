@@ -289,12 +289,15 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await ready(overview, 'pressure', 6);
     await ready(other, 'pressure', 6);
     const first = await remember();
+    await expect(overview.getByLabel('Atmosphere legend')).toContainText(
+      '500 hPa · Now'
+    );
     await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Requested 500 hPa · Current horizon');
+      overview.getByLabel('Globe legend').getByLabel('Atmosphere legend')
+    ).toBeVisible();
     await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Numerical-model forecast');
+      overview.getByLabel('Atmosphere legend').locator('time, details')
+    ).toHaveCount(0);
     expect(first.bulletins).toEqual([true, true, true]);
     expect(first.barbs).toBeGreaterThan(0);
     expect(first.barbs).toBeLessThanOrEqual(2000);
@@ -401,9 +404,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await ready(overview, 'flight-level', 9);
     await ready(other, 'flight-level', 9);
     await remember();
-    await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Requested FL390 · +3 h');
+    await expect(overview.getByLabel('Atmosphere legend')).toContainText(
+      'FL390 · +3 h'
+    );
     evidence.native_samples = true;
     evidence.configuration = true;
     await overview.screenshot({ path: info.outputPath('gfs-desktop.png') });
@@ -431,9 +434,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await expect
       .poll(() => overview.evaluate(() => !!document.fullscreenElement))
       .toBe(true);
-    await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toBeVisible();
+    await expect(overview.getByLabel('Atmosphere legend')).toBeVisible();
     await overview
       .getByRole('button', { name: 'Inspect weather reports' })
       .click();
@@ -451,13 +452,10 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await overview.evaluate(() => document.exitFullscreen());
     await overview.setViewportSize({ width: 390, height: 844 });
     await ready(overview, 'flight-level', 9);
-    await overview
-      .getByLabel('Flight-level atmosphere status')
-      .locator('summary')
-      .click();
+    await overview.getByRole('button', { name: 'Legend', exact: true }).click();
     await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Run 2026-10-06 00:00 UTC');
+      overview.getByLabel('Globe legend').getByLabel('Atmosphere legend')
+    ).toBeVisible();
     await overview.screenshot({ path: info.outputPath('gfs-mobile.png') });
     await expect(overview.getByLabel('Globe legend')).toBeVisible();
     await overview
@@ -536,12 +534,11 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await config
       .getByRole('switch', { name: 'GFS air temperature', exact: true })
       .click();
-    await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Unavailable', { timeout: 180000 });
-    await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Requested 500 hPa · +3 h');
+    await expect(overview.getByLabel('Map status')).toContainText(
+      'GFS unavailable',
+      { timeout: 180000 }
+    );
+    await expect(overview.getByLabel('Atmosphere legend')).toHaveCount(0);
     expect((await request.get('/api/status')).ok()).toBe(true);
     await expect(overview.getByLabel('Globe legend')).toBeVisible();
     await patchControl({ gfs_mismatch: false });
@@ -562,9 +559,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     // Host/container monotonic authority is supplied by the runner control file;
     // advancing UTC must not be offset by a browser's unrelated monotonic epoch.
     await overview.reload();
-    await expect(
-      overview.getByLabel('Flight-level atmosphere status')
-    ).toContainText('Stale', { timeout: 180000 });
+    await expect(overview.getByLabel('Map status')).toContainText('GFS stale', {
+      timeout: 180000,
+    });
     await overview.route('**/api/aviation-weather/v1/catalog', (route) =>
       route.abort()
     );
