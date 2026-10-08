@@ -267,7 +267,8 @@ def generate(root: Path):
     }
     if (
         inspection["text"].count("X-Band planning incomplete") != 1
-        or "No transport confirmed available" not in inspection["text"]
+        or "No transport confirmed available"
+        not in " ".join(word["text"] for word in inspection["words"])
     ):
         raise ValueError("Incomplete-X customer content missing")
     captured, trial, view = fixtures["composition-incomplete-x"]
