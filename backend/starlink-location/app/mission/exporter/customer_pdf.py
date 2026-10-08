@@ -196,6 +196,12 @@ def verify_customer_pdf(
 
 
 def main():
+    def interrupted(signum, _frame):
+        # Unwind active Poppler command cleanup before the request owner reaps us.
+        raise SystemExit(128 + signum)
+
+    signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGINT, interrupted)
     parser = argparse.ArgumentParser()
     parser.add_argument("pdf", type=Path)
     parser.add_argument("expectations", type=Path)

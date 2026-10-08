@@ -7,6 +7,8 @@ import { openRenderOwner, ownedPath } from './render-owner.mjs';
 import { renderMapInContext } from './map-stage.mjs';
 import { composeBriefing } from './briefing/document.mjs';
 import { buildPdfExpectations } from './briefing/pdf-expectations.mjs';
+import { renderMissionBriefing } from './mission-briefing-render.mjs';
+export { renderMissionBriefing };
 
 const hash = (v) => createHash('sha256').update(v).digest('hex');
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -478,7 +480,9 @@ if (
           pdfReserveMs: Math.floor(budgetMs * 0.5),
           cleanupReserveMs: Math.floor(budgetMs * 0.1),
         };
-  const report = await renderBriefing({
+  const report = await (
+    payload.schemaVersion === 2 ? renderMissionBriefing : renderBriefing
+  )({
     payload,
     outputRoot,
     assetRoot,

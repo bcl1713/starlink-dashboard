@@ -184,6 +184,7 @@ def run_checkpoint(
     runtime_tests: bool = False,
     image_tag=None,
     build_only=False,
+    mission_tests=False,
 ):
     def git(*args):
         return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
@@ -203,6 +204,7 @@ def run_checkpoint(
         **os.environ,
         "CHECKPOINT_IMAGE": image,
         "CHECKPOINT_RUNTIME_TESTS": "1" if runtime_tests else "0",
+        "CHECKPOINT_MISSION_TESTS": "1" if mission_tests else "0",
     }
     owner.compose_env = env
     started_container = False
@@ -305,6 +307,10 @@ def run_checkpoint(
             staged = pending / (name + "-staging")
             shutil.copytree(source, staged)
             publish_checkpoint(staged, pending / name, evidence)
+        if mission_tests:
+            if generated.get("missions", {}).get("checksPassed") is not True:
+                raise ValueError("Mission qualification missing")
+            shutil.copytree(raw / "missions" / "delivered", pending / "missions")
         summary["cleanup"] = publish_after_cleanup(
             owner, pending, root / "deliverables"
         )
@@ -351,6 +357,7 @@ if __name__ == "__main__":
     parser.add_argument("--runtime-tests", action="store_true")
     parser.add_argument("--image-tag")
     parser.add_argument("--build-only", action="store_true")
+    parser.add_argument("--mission-tests", action="store_true")
     args = parser.parse_args()
     print(
         json.dumps(
@@ -360,6 +367,7 @@ if __name__ == "__main__":
                 args.runtime_tests,
                 args.image_tag,
                 args.build_only,
+                args.mission_tests,
             ),
             indent=2,
         )

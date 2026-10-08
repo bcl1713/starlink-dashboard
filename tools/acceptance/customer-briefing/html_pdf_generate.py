@@ -9,6 +9,9 @@ import sys
 from hashlib import sha256
 from pathlib import Path
 
+from html_pdf_checkpoint import publish_checkpoint
+from html_pdf_inspect import inspect_pdf, normalized_pdf_hash
+
 from app.mission.exporter.customer_document import build_customer_document
 from app.mission.exporter.customer_evidence import build_customer_evidence
 from app.mission.exporter.customer_pdf import verify_customer_pdf
@@ -16,8 +19,6 @@ from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
 from app.mission.exporter.trial_projection import project_trial_leg
-from html_pdf_checkpoint import publish_checkpoint
-from html_pdf_inspect import inspect_pdf, normalized_pdf_hash
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 FRONTEND = Path("/renderer/frontend/mission-planner")
@@ -348,6 +349,10 @@ def generate(root: Path):
         },
         "runtimeTests": os.environ.get("CHECKPOINT_RUNTIME_TESTS") == "1",
     }
+    if os.environ.get("CHECKPOINT_MISSION_TESTS") == "1":
+        from html_pdf_mission_generate import generate_missions
+
+        summary["missions"] = generate_missions(root, run)
     (root / "generation-report.json").write_text(json.dumps(summary, indent=2))
     return summary
 
