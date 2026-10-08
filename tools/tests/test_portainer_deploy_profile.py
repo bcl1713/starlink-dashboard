@@ -76,11 +76,19 @@ def test_portainer_smoke_passes_checked_out_sha_to_product_builds(
     assert result.returncode == 0, result.stderr
     builds = [call for call in calls if call[0] == "build"]
     assert len(builds) == 4
+    worker = next(call for call in builds if "Dockerfile.gfs" in " ".join(call))
+    assert worker[-1] == str(REPO_ROOT / "backend/starlink-location")
+    assert worker.count("--file") == 1
     for product in ("backend/starlink-location", "frontend/mission-planner"):
         build = next(
             call
             for call in builds
-            if call[-1] == str(REPO_ROOT / product)
+            if call[-1]
+            == str(
+                REPO_ROOT
+                if product == "backend/starlink-location"
+                else REPO_ROOT / product
+            )
             and (
                 "--file" not in call
                 or not call[call.index("--file") + 1].endswith("Dockerfile.gfs")
@@ -159,7 +167,8 @@ def test_portainer_profile_uses_required_host_paths_and_packaged_monitoring_imag
 def test_local_developer_compose_contract_remains_separate() -> None:
     local_compose = LOCAL_COMPOSE_PATH.read_text(encoding="utf-8")
 
-    assert "context: ./backend/starlink-location/" in local_compose
+    assert "context: ." in local_compose
+    assert "dockerfile: backend/starlink-location/Dockerfile" in local_compose
     assert "env_file: .env" in local_compose
     assert "container_name: starlink-location" in local_compose
 

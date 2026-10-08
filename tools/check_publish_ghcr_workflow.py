@@ -11,7 +11,7 @@ from pathlib import Path
 
 EXPECTED_IMAGES = {
     "starlink-location": (
-        "./backend/starlink-location",
+        ".",
         "./backend/starlink-location/Dockerfile",
     ),
     "mission-planner": (

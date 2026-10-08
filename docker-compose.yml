@@ -1,7 +1,8 @@
 services:
   starlink-location:
     build:
-      context: ./backend/starlink-location/
+      context: .
+      dockerfile: backend/starlink-location/Dockerfile
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
     container_name: starlink-location

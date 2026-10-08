@@ -18,6 +18,24 @@ def load_checker_module():
 
 
 class PublishGhcrWorkflowContractTests(unittest.TestCase):
+    def test_backend_renderer_build_accepts_root_and_rejects_old_context(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        root = text.replace(
+            "context: ./backend/starlink-location\n            file: ./backend/starlink-location/Dockerfile\n",
+            "context: .\n            file: ./backend/starlink-location/Dockerfile\n",
+        )
+        self.assertEqual(self.validate_workflow_text(root), [])
+        old = root.replace(
+            "context: .\n            file: ./backend/starlink-location/Dockerfile\n",
+            "context: ./backend/starlink-location\n            file: ./backend/starlink-location/Dockerfile\n",
+        )
+        self.assertTrue(
+            any(
+                "starlink-location context" in error
+                for error in self.validate_workflow_text(old)
+            )
+        )
+
     def validate_workflow_text(self, workflow_text: str) -> list[str]:
         checker = load_checker_module()
         with tempfile.TemporaryDirectory() as temporary_directory:

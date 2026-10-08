@@ -25,6 +25,7 @@ export async function renderStage({
   const started = performance.now();
   const deadline = started + budgetSeconds * 1000;
   const remaining = () => {
+    if (error === 'Renderer terminated') throw new Error(error);
     const ms = deadline - performance.now();
     if (ms <= 0) throw new Error('Shared renderer deadline exceeded');
     return Math.max(1, Math.floor(ms));
@@ -51,6 +52,7 @@ export async function renderStage({
     writeFile(ownershipPath, JSON.stringify(ownership, null, 2));
   await recordOwnership();
   const views = [];
+  const plannedViewIds = [];
   const readinessLog = [];
   let server, browserServer, browser, context;
   let error;
@@ -64,6 +66,7 @@ export async function renderStage({
   const stop = () => {
     error = 'Renderer terminated';
     void context?.close().catch(() => {});
+    void browserServer?.kill().catch(() => {});
   };
   // Reserve one second for cleanup within this request's shared budget.
   const watchdog = setTimeout(
@@ -76,6 +79,10 @@ export async function renderStage({
   );
   process.once('SIGTERM', stop);
   process.once('SIGINT', stop);
+  if (process.env.MISSION_MAP_PARENT_PIPE === '1') {
+    process.stdin.once('end', stop);
+    process.stdin.resume();
+  }
   try {
     server = createServer(async (request, response) => {
       try {
@@ -171,6 +178,7 @@ export async function renderStage({
         (raw) => window.missionMap.plan(raw),
         input
       );
+      plannedViewIds.push(...plan.map((view) => view.id));
       for (let viewIndex = 0; viewIndex < plan.length; viewIndex++) {
         const viewStarted = performance.now();
         await page.evaluate(
@@ -268,6 +276,8 @@ export async function renderStage({
   } finally {
     process.removeListener('SIGTERM', stop);
     process.removeListener('SIGINT', stop);
+    process.stdin.removeListener('end', stop);
+    process.stdin.pause();
     try {
       await context?.close();
       cleanup.contextsClosed = true;
@@ -352,6 +362,8 @@ export async function renderStage({
       await readFile(path.join(assetRoot, 'assets', name))
     );
   const report = {
+    inputs: legs,
+    plannedViewIds,
     status: error ? 'fallback' : 'primary',
     fallbackLabel: error
       ? 'Overview map unavailable — static route fallback'

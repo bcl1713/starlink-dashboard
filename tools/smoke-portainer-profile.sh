@@ -53,7 +53,7 @@ docker network create "$network" >/dev/null
 
 docker build --build-arg "ACCEPTANCE_CANDIDATE_SHA=${candidate_sha}" \
   --tag "ghcr.io/bcl1713/starlink-dashboard/starlink-location:${image_tag}" \
-  "$repo_root/backend/starlink-location"
+  --file "$repo_root/backend/starlink-location/Dockerfile" "$repo_root"
 docker build --build-arg "ACCEPTANCE_CANDIDATE_SHA=${candidate_sha}" \
   --tag "ghcr.io/bcl1713/starlink-dashboard/mission-planner:${image_tag}" \
   "$repo_root/frontend/mission-planner"

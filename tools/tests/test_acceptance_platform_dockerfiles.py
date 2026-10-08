@@ -21,10 +21,10 @@ def _stages(source: str) -> list[list[str]]:
 def test_backend_dockerfile_consumes_candidate_in_app_source_stage() -> None:
     stages = _stages(BACKEND_DOCKERFILE.read_text(encoding="utf-8"))
     app_copies = (
-        "COPY --chown=appuser:appuser main.py .",
-        "COPY --chown=appuser:appuser config.yaml .",
-        "COPY --chown=appuser:appuser app/ ./app/",
-        "COPY --chown=appuser:appuser tests/ ./tests/",
+        "COPY --chown=appuser:appuser backend/starlink-location/main.py .",
+        "COPY --chown=appuser:appuser backend/starlink-location/config.yaml .",
+        "COPY --chown=appuser:appuser backend/starlink-location/app/ ./app/",
+        "COPY --chown=appuser:appuser backend/starlink-location/tests/ ./tests/",
     )
     app_stage = next(stage for stage in stages if all(copy in stage for copy in app_copies))
 
@@ -34,16 +34,17 @@ def test_backend_dockerfile_consumes_candidate_in_app_source_stage() -> None:
     assert candidate_arg < candidate_run < min(app_stage.index(copy) for copy in app_copies)
 
 
-def test_candidate_is_not_persisted_in_dockerfile_runtime_metadata() -> None:
+def test_candidate_only_persists_as_revision_label() -> None:
     for dockerfile in (BACKEND_DOCKERFILE, FRONTEND_DOCKERFILE):
         source = dockerfile.read_text(encoding="utf-8")
         candidate_lines = [line for line in source.splitlines() if CANDIDATE in line]
-        assert candidate_lines == [
+        assert set(candidate_lines) == {
             f"ARG {CANDIDATE}",
             f'RUN test -n "${CANDIDATE}"',
-        ]
+            f"LABEL org.opencontainers.image.revision=${CANDIDATE}",
+        }
         assert not any(
-            line.startswith(("ENV ", "LABEL ")) and CANDIDATE in line
+            line.startswith("ENV ") and CANDIDATE in line
             for line in source.splitlines()
         )
 

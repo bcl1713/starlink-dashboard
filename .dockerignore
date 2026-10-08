@@ -1,56 +1,33 @@
-# Git and version control
-.git
-.gitignore
-.github
-
-# Node.js
-frontend/mission-planner/node_modules/
-frontend/mission-planner/dist/
-frontend/mission-planner/.next/
-
-# Python
-backend/starlink-location/.venv/
-backend/starlink-location/__pycache__/
-backend/starlink-location/*.pyc
-backend/starlink-location/*.pyo
-backend/starlink-location/*.pyd
-backend/starlink-location/build/
-backend/starlink-location/dist/
-backend/starlink-location/*.egg-info/
-backend/starlink-location/.pytest_cache/
-
-# IDE and editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Environment variables and secrets
-.env
-.env.local
-.env.*.local
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS files
-Thumbs.db
-.DS_Store
-
-# Development files
-*.tmp
-*.bak
-
-# Test coverage
-coverage/
-.coverage
-.nyc_output/
-
-# Temporary files
-/tmp/
-/temp/
+# Only explicit root-context build inputs are sent to Docker.
+**
+!backend/
+!backend/starlink-location/
+!backend/starlink-location/requirements.txt
+!backend/starlink-location/main.py
+!backend/starlink-location/config.yaml
+!backend/starlink-location/entrypoint.sh
+!backend/starlink-location/app/
+!backend/starlink-location/app/**
+!backend/starlink-location/tests/
+!backend/starlink-location/tests/**
+!frontend/
+!frontend/mission-planner/
+!frontend/mission-planner/package.json
+!frontend/mission-planner/package-lock.json
+!frontend/mission-planner/mission-export.html
+!frontend/mission-planner/vite.mission-export.config.ts
+!frontend/mission-planner/src/
+!frontend/mission-planner/src/**
+!frontend/mission-planner/public/
+!frontend/mission-planner/public/earth-day-hi.jpg
+!frontend/mission-planner/public/city-lights-mask.png
+!deployment/
+!deployment/prometheus/
+!deployment/prometheus/**
+!monitoring/
+!monitoring/prometheus/
+!monitoring/prometheus/**
+**/__pycache__/**
+**/*.pyc
+**/.env*
+**/node_modules/**
