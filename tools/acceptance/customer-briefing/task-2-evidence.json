@@ -1,0 +1,190 @@
+{
+  "task": "2",
+  "status": "pass",
+  "base_sha": "4e31b4562e4a0ca3c4b25e6899a267404f922c75",
+  "scope": "Trial projection and clocks only; no map/slide/package integration.",
+  "source_files_sha256": {
+    "backend/starlink-location/app/mission/exporter/snapshot.py": "37592b74f04a5e130f99d14b6c66b80e87ae921cb750df94186a2b8d80b32c05",
+    "backend/starlink-location/app/mission/exporter/trial_clocks.py": "f4abffcc9c3e8fa0253d1eb0471edae69b043425f51bb4b6d95c36ccd0b30637",
+    "backend/starlink-location/app/mission/exporter/trial_projection.py": "3ffa42f536cf3dbd339dd236cb4c997a75e27e3a5c255a0df73b998623ff97bd",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f01.json": "5c7d7d592b626c506f4e5169f0c0b0459f0ba7587c2699045222c2e6c2526858",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f02.json": "329b23596390cac0f4fddcc226fe994c1870206b61ff7150efdc71cd766098a2",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f02_ar.json": "406916636e3de849f49b134b2de04f4e2e702ba480e76cbea213a48fc94a5549",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f03.json": "90d8cbc27551d9d9ce6b1f97b4fd5a12714fa58abebfa0572d13bd6b0d920ff9",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f04.json": "8f718e80b5ea25c76b038ce207a708dc8478e5f0dfc932d4a73207c4ce5b4842",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f05.json": "2b02c8be2409388832c79be95569cb6cca51bdf9ead16fb60ac8c631129b384b",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f06.json": "9fff9da2990dd41603ca1f7872db67f3036d7420896a3ae335481dd22dcac59b",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f07.json": "72606f16ac5517edc2de68a9429896660a5656d1f9ad147da47d4836bf6a9616",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f08.json": "8771a7ee150cea23475a00593c6b4651125771bf9dd3e87f43b8a6af1c9f4af0",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f10.json": "45fb20aad0a6228816d02ba14063f6d7dd7d0761e4de38afff54a4ce863e886c",
+    "backend/starlink-location/tests/unit/customer_briefing_fixtures.py": "a369a2731a7b350381de9dc65be341457b68ed13f559ab7c485630e587c3111c",
+    "backend/starlink-location/tests/unit/test_trial_clocks.py": "c57c2d39c9132c512ecbf21427c4ce545f988e70775c557824cb51d1068da9f0",
+    "backend/starlink-location/tests/unit/test_trial_projection.py": "849e51c44b8f9125601596f51f5887f5150b07ae9254d405130976ede3c1cbb1"
+  },
+  "checks": [
+    {
+      "name": "task2-red",
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "uv",
+        "run",
+        "--with-requirements",
+        "requirements.txt",
+        "pytest",
+        "tests/unit/test_trial_projection.py",
+        "tests/unit/test_trial_clocks.py",
+        "--basetemp",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/customer-mission-briefing-phase-one/.superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task2-red-temp",
+        "-q"
+      ],
+      "exit_code": 1,
+      "process_group_gone": true,
+      "log_sha256": "22f460f0e42a5b7eb74fc7040dd776b9692ecb5aa8186cf5577f0d5dc42c42e8",
+      "last_line": "============================== 42 failed in 0.41s =============================="
+    },
+    {
+      "name": "task2-focused-final",
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "uv",
+        "run",
+        "--with-requirements",
+        "requirements.txt",
+        "pytest",
+        "tests/unit/test_trial_projection.py",
+        "tests/unit/test_trial_clocks.py",
+        "tests/unit/test_export_snapshot.py",
+        "--basetemp",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/customer-mission-briefing-phase-one/.superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task2-focused-final-temp",
+        "-q"
+      ],
+      "exit_code": 0,
+      "process_group_gone": true,
+      "log_sha256": "02f235c6a6200be041a9ea83ba774818d1eb0cb781bfb3aef36ecc6c217a3a7d",
+      "last_line": "======================== 74 passed, 4 warnings in 4.35s ========================"
+    },
+    {
+      "name": "task2-backend-verified",
+      "command": [
+        "env",
+        "PYTEST_ADDOPTS=--basetemp=/home/oracle-worker/Work/starlink-dashboard/.worktrees/customer-mission-briefing-phase-one/.superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task2-backend-verified-temp",
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "./tools/verify",
+        "backend"
+      ],
+      "exit_code": 0,
+      "process_group_gone": true,
+      "log_sha256": "b74bb5835ee252c784646eb9bf94ebd2adb084aee4258e61a1c4f867e82e0a3e",
+      "last_line": "=========== 2310 passed, 20 skipped, 6 warnings in 140.51s (0:02:20) ==========="
+    },
+    {
+      "name": "task2-ruff-complete",
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "uv",
+        "run",
+        "--with-requirements",
+        "requirements-dev.txt",
+        "ruff",
+        "check",
+        "app",
+        "tests"
+      ],
+      "exit_code": 0,
+      "process_group_gone": true,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "last_line": "All checks passed!"
+    },
+    {
+      "name": "task2-black-complete",
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "uv",
+        "run",
+        "--with-requirements",
+        "requirements-dev.txt",
+        "black",
+        "--check",
+        "app",
+        "tests"
+      ],
+      "exit_code": 0,
+      "process_group_gone": true,
+      "log_sha256": "cd864233cdd5781db271487471dc8ff125ec05b83fb92d9608bfea80f20d323c",
+      "last_line": "397 files would be left unchanged."
+    }
+  ],
+  "fixtures": [
+    "F01",
+    "F02",
+    "F02 with nested AR",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07",
+    "F08 (reuses preserved F08-map routes)",
+    "F10"
+  ],
+  "coverage": [
+    "Reason-specific Up/Down/? and independent unavailability precedence",
+    "Half-open contiguous full-flight partition, simultaneous endpoints, 30-second complete outage",
+    "Stable leg-local IDs assigned before exact-object filtering",
+    "Unsplit saved/generated source identity, metadata and revision/digest",
+    "Configured SOF including overlapping short flights and current cache-fallback bounds",
+    "Full resolved AR, T+ and absolute overrides, manual/splice applicability, untimed missing timing notes",
+    "Unchanged cache producer reasons; stale/ambiguous/uncovered evidence is uncertain",
+    "Dated America/New_York EST/EDT, Zulu, per-leg T-zero, T-minus and exact seconds"
+  ],
+  "rulings": [
+    {
+      "decision": "Export-only availability-basis records and saved transition identity in immutable snapshots",
+      "reason": "Legacy reducer defaults cannot prove coverage/geometry prerequisites",
+      "cost_if_wrong": "Overly conservative uncertainty or false availability; real capture tests cover missing inputs"
+    },
+    {
+      "decision": "Current configured SOF survives cached/missing prediction fallback when flight bounds exist",
+      "reason": "SOF is independent of transport prediction rebuilding",
+      "cost_if_wrong": "Incorrect restriction timing; adjusted departure and nondefault buffers tested"
+    },
+    {
+      "decision": "Task 2 only; retain evidence/worktree and defer whole-branch review until Task 6",
+      "reason": "Explicit checkpoint rules",
+      "cost_if_wrong": "Integration remains unreviewed until Task 6"
+    }
+  ],
+  "cleanup": {
+    "host_process_groups_checked": 91,
+    "survivors": [],
+    "listeners": [],
+    "containers": [],
+    "networks": [],
+    "volumes": [],
+    "private_roots_removed": 17
+  },
+  "verification_incident": {
+    "test": "test_no_acknowledged_obsolete_decoder_survives[parent-death]",
+    "failed_run": "task2-backend-final.log",
+    "failed_run_sha256": "28b3aecb76b029a6cbf5bdbf93e33d753fc46a0ff6a9ec36ea76e64286581d69",
+    "investigation": "Existing test asserts empty staging immediately after publication inside the staging context; cleanup completes afterward. Post-failure staging empty; zero live workers. No GFS changes.",
+    "isolated_rerun": 0,
+    "isolated_log_sha256": "a3da47d3e934e7f8424392d80dd18a2b88bdb3606be4da16789ab5a071fd54f7"
+  },
+  "preserved_task_3a_evidence_sha256": "d2234f314192c30c7ed4dd715ef068478a58d16abdd97e156aac3665410d5d1d",
+  "outstanding": [
+    "Task 3B: repeat timing with final production image and final markers; shared deadline stays 60 seconds",
+    "Tasks 4-6, whole-branch review, exact-head CI and production/rendered acceptance",
+    "Explicit customer/user trial layout and semantics acceptance before phase two",
+    "Separate explicit decision before legacy replacement"
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "fixture": "F06",
+  "mission": {
+    "id": "f06-mission",
+    "name": "F06",
+    "created_at": "2026-10-07T08:00:00Z",
+    "updated_at": "2026-10-07T08:00:00Z",
+    "legs": [
+      {
+        "id": "f06",
+        "name": "F06",
+        "route_id": "shared-route",
+        "adjusted_departure_time": "2026-10-07T08:00:00Z",
+        "created_at": "2026-10-07T08:00:00Z",
+        "updated_at": "2026-10-07T08:00:00Z",
+        "transports": {
+          "initial_x_satellite_id": "X-fixture",
+          "ka_outages": [],
+          "ku_overrides": [
+            {
+              "id": "ku-uncertain",
+              "start_time": "2026-10-07T08:40:00Z",
+              "duration_seconds": 1200.0,
+              "reason": "Ku failure"
+            }
+          ],
+          "aar_windows": [],
+          "manual_aar_tracks": [],
+          "x_transitions": []
+        }
+      }
+    ]
+  },
+  "route": {
+    "metadata": {
+      "name": "Synthetic route",
+      "file_path": "fixture.kml",
+      "point_count": 2
+    },
+    "points": [
+      {
+        "latitude": 0,
+        "longitude": 0,
+        "sequence": 0,
+        "expected_arrival_time": "2026-10-07T08:00:00Z"
+      },
+      {
+        "latitude": 1,
+        "longitude": 0,
+        "sequence": 1,
+        "expected_arrival_time": "2026-10-07T10:00:00Z"
+      }
+    ],
+    "waypoints": [],
+    "timing_profile": {
+      "departure_time": "2026-10-07T08:00:00Z",
+      "arrival_time": "2026-10-07T10:00:00Z",
+      "has_timing_data": true
+    }
+  },
+  "timeline": {
+    "mission_leg_id": "f06",
+    "created_at": "2026-10-07T10:00:00Z",
+    "segments": [
+      {
+        "id": "F06-normalized",
+        "start_time": "2026-10-07T08:00:00Z",
+        "end_time": "2026-10-07T10:00:00Z",
+        "status": "critical",
+        "x_state": "available",
+        "ka_state": "available",
+        "ku_state": "available",
+        "reasons": [],
+        "metadata": {
+          "call_posture": "Unavailable"
+        }
+      }
+    ],
+    "advisories": [],
+    "coverage_events": []
+  },
+  "source_records": [
+    {
+      "source_id": "F06-basis-Ka",
+      "source_type": "availability_basis",
+      "transport": "Ka",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T10:00:00Z",
+      "state": "available",
+      "reason": "",
+      "metadata": {
+        "prerequisites_available": true
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F06-basis-Ku",
+      "source_type": "availability_basis",
+      "transport": "Ku",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T10:00:00Z",
+      "state": "available",
+      "reason": "",
+      "metadata": {
+        "prerequisites_available": true
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F06-basis-X",
+      "source_type": "availability_basis",
+      "transport": "X",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T10:00:00Z",
+      "state": "available",
+      "reason": "",
+      "metadata": {
+        "prerequisites_available": true
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "timestamp": "2026-10-07T08:20:00Z",
+      "event_type": "x_azimuth_violation",
+      "transport": "X",
+      "affected_transport": "X",
+      "severity": "warning",
+      "reason": "X-Ku Conflict az=180\u00b0 el=35\u00b0",
+      "satellite_id": null,
+      "metadata": {
+        "line_of_sight_blocked": false,
+        "elevation_below_min": false
+      }
+    },
+    {
+      "timestamp": "2026-10-07T08:40:00Z",
+      "event_type": "x_transition_start",
+      "transport": "X",
+      "affected_transport": "X",
+      "severity": "warning",
+      "reason": "X transition",
+      "satellite_id": "X-2",
+      "metadata": {
+        "transition_id": "transition-saved"
+      }
+    },
+    {
+      "timestamp": "2026-10-07T09:10:00Z",
+      "event_type": "x_transition_end",
+      "transport": "X",
+      "affected_transport": "X",
+      "severity": "info",
+      "reason": "X transition complete",
+      "satellite_id": "X-2",
+      "metadata": {
+        "transition_id": "transition-saved"
+      }
+    },
+    {
+      "timestamp": "2026-10-07T09:20:00Z",
+      "event_type": "x_azimuth_violation",
+      "transport": "X",
+      "affected_transport": "X",
+      "severity": "info",
+      "reason": "X azimuth clear",
+      "satellite_id": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2026-10-07T08:30:00Z",
+      "event_type": "ka_coverage_exit",
+      "transport": "Ka",
+      "affected_transport": "Ka",
+      "severity": "warning",
+      "reason": "Ka coverage lost",
+      "satellite_id": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2026-10-07T09:30:00Z",
+      "event_type": "ka_coverage_entry",
+      "transport": "Ka",
+      "affected_transport": "Ka",
+      "severity": "info",
+      "reason": "Ka coverage restored",
+      "satellite_id": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2026-10-07T08:40:00Z",
+      "event_type": "ku_outage_start",
+      "transport": "Ku",
+      "affected_transport": "Ku",
+      "severity": "critical",
+      "reason": "Ku failure",
+      "satellite_id": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2026-10-07T09:00:00Z",
+      "event_type": "ku_outage_end",
+      "transport": "Ku",
+      "affected_transport": "Ku",
+      "severity": "info",
+      "reason": "Ku failure",
+      "satellite_id": null,
+      "metadata": {}
+    }
+  ],
+  "resolved_restrictions": [
+    {
+      "source_id": "sof-takeoff",
+      "kind": "sof",
+      "label": "Safety-of-Flight (takeoff)",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T08:15:00Z"
+    },
+    {
+      "source_id": "sof-landing",
+      "kind": "sof",
+      "label": "Safety-of-Flight (landing)",
+      "start_time": "2026-10-07T09:45:00Z",
+      "end_time": "2026-10-07T10:00:00Z"
+    }
+  ],
+  "utc_bounds": [
+    "2026-10-07T08:00:00Z",
+    "2026-10-07T10:00:00Z"
+  ],
+  "preparation_origin": "rebuilt",
+  "warnings": [],
+  "expected": {}
+}

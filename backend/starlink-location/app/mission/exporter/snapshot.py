@@ -6,6 +6,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+from itertools import pairwise
 from typing import Literal
 
 from app.mission.derived_route import (
@@ -66,9 +67,99 @@ class ExportSnapshot:
     warnings: tuple[str, ...]
 
 
-def _restrictions(leg, artifacts, config: ConstraintConfig) -> tuple[bytes, ...]:
+def _availability_basis(
+    artifacts, sampler, catalog, pois, sources
+) -> tuple[bytes, ...]:
+    """Capture prerequisite facts omitted by the legacy default-state reducer.
+
+    These export-only records do not change prepared events, timeline segments
+    or any legacy consumer. Missing geometry/coverage must remain detectable by
+    a pure LegSnapshot consumer after live managers have changed.
+    """
     start, end = artifacts.projector.start_time, artifacts.projector.end_time
-    records = [
+    revision = sha256(
+        canonical_json([(source.name, source.digest) for source in sources])
+    ).hexdigest()
+    records = []
+
+    def record(transport, a, b, available, **metadata):
+        raw = {
+            "source_type": "availability_basis",
+            "transport": transport,
+            "start_time": a,
+            "end_time": b,
+            "state": "available",
+            "metadata": {"prerequisites_available": available, **metadata},
+            "source_revision": revision,
+        }
+        raw["source_id"] = (
+            "derived:availability-basis:" + sha256(canonical_json(raw)).hexdigest()[:20]
+        )
+        records.append(canonical_json(raw))
+
+    record(
+        "Ka",
+        start,
+        end,
+        sampler is not None and bool(artifacts.timeline.coverage_events),
+    )
+    # Ku is normally always-on in the domain model, subject to saved overrides.
+    record("Ku", start, end, True)
+    points = artifacts.route.points
+    heading_available = any(
+        (a.latitude, a.longitude) != (b.latitude, b.longitude)
+        for a, b in pairwise(points)
+    )
+    assignments = artifacts.x_assignments or ((start, "", None),)
+    for index, (a, satellite_id, transition_id) in enumerate(assignments):
+        b = assignments[index + 1][0] if index + 1 < len(assignments) else end
+        if max(a, start) >= min(b, end):
+            continue
+        satellite = catalog.get_satellite(satellite_id)
+        longitude = satellite.longitude if satellite else None
+        if longitude is None:
+            poi = pois.find_global_poi_by_name(satellite_id)
+            longitude = poi.longitude if poi else None
+        record(
+            "X",
+            max(a, start),
+            min(b, end),
+            bool(satellite_id) and longitude is not None and heading_available,
+            satellite_id=satellite_id,
+            transition_id=transition_id,
+            heading_available=heading_available,
+        )
+    return tuple(records)
+
+
+def _event_sources(artifacts, config: ConstraintConfig) -> tuple[bytes, ...]:
+    """Restore saved transition identity omitted by the legacy event producer."""
+    records = []
+    buffer = timedelta(minutes=config.transition_buffer_minutes)
+    for event in artifacts.events:
+        raw = asdict(event)
+        if event.event_type in {
+            EventType.X_TRANSITION_START,
+            EventType.X_TRANSITION_END,
+        }:
+            midpoint = event.timestamp + (
+                buffer if event.event_type == EventType.X_TRANSITION_START else -buffer
+            )
+            identities = [
+                identity
+                for timestamp, satellite, identity in artifacts.x_assignments
+                if identity
+                and timestamp == midpoint
+                and satellite == event.satellite_id
+            ]
+            if len(identities) == 1:
+                raw["metadata"]["transition_id"] = identities[0]
+        records.append(canonical_json(raw))
+    return tuple(records)
+
+
+def _sof_records(start, end, config: ConstraintConfig) -> list[dict]:
+    return [
         {
             "source_id": "sof-takeoff",
             "kind": "sof",
@@ -88,6 +179,11 @@ def _restrictions(leg, artifacts, config: ConstraintConfig) -> tuple[bytes, ...]
             "end_time": end,
         },
     ]
+
+
+def _restrictions(leg, artifacts, config: ConstraintConfig) -> tuple[bytes, ...]:
+    start, end = artifacts.projector.start_time, artifacts.projector.end_time
+    records = _sof_records(start, end, config)
     resolved = {
         w.name: w
         for w in resolve_aar_windows(leg, artifacts.route, artifacts.projector)
@@ -165,7 +261,8 @@ def capture_export_snapshot(
                 artifacts.projector.start_time.astimezone(timezone.utc),
                 artifacts.projector.end_time.astimezone(timezone.utc),
             )
-            events = tuple(canonical_json(asdict(event)) for event in artifacts.events)
+            events = _event_sources(artifacts, config)
+            events += _availability_basis(artifacts, sampler, catalog, pois, sources)
             restrictions = _restrictions(leg, artifacts, config)
             # The map only reads names/coordinates; prepared markers need no
             # publication, persistent IDs, or storage-side projection.
@@ -243,8 +340,12 @@ def capture_export_snapshot(
                     )
                 except (ValueError, RuntimeError):
                     effective_route = None
+            if bounds:
+                restrictions = tuple(
+                    canonical_json(r) for r in _sof_records(*bounds, config)
+                )
             notes.append(
-                f"Leg {leg.id}: canonical events and resolved restrictions unavailable."
+                f"Leg {leg.id}: canonical events and resolved AR restrictions unavailable."
             )
         if effective_route is None:
             notes.append(f"Leg {leg.id}: effective route data missing.")
