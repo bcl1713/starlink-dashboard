@@ -24,7 +24,10 @@ All exact
 [global constraints, file interfaces, ownership rules and commands](2026-10-08-customer-briefing-composition-redesign.md)
 from the checkpoint plan apply here. In particular: trial default-off, PR #309
 draft, no merge/rebase, maximum three pages per leg, fewer than fifteen for the
-five-leg mission, unchanged canonical unknown states, and atomic artifact pair.
+five-leg mission (five pages is valid; six-to-twelve is never a minimum),
+matched packaged measurement/PPTX/reader fonts, unchanged canonical unknown
+states, and atomic artifact pair. The linked plan review clarifies the earlier
+spec slide-count target; it does not authorize filler pages.
 
 ## Review Focus
 
@@ -86,13 +89,16 @@ cause; they do not return a truncated deck.
 
 - [ ] Write `test_normal_leg_is_not_split_by_internal_interval_count`,
       `test_dense_leg_has_at_most_three_pages_and_rows_once`, and
-      `test_five_leg_budget_is_strictly_less_than_fifteen`. The primary contains
-      full-leg summary and table; continuation retains leg/time context with
-      remaining rows once. Timeline splitting is permitted only after measured
-      full-leg readability fails and yields consecutive explicitly ranged
-      panels. Target six-to-twelve slides without adding filler to a
-      five-primary-page mission. Default to no index; an index is never needed
-      for these fixtures.
+      `test_five_leg_budget_is_strictly_less_than_fifteen`, and
+      `test_five_normal_legs_produce_exactly_five_slides_without_index`. The
+      primary contains full-leg summary and table; continuation retains leg/time
+      context with remaining rows once. Timeline splitting is permitted only
+      after measured full-leg readability fails and yields consecutive
+      explicitly ranged panels. Normal expectation is one page per leg: five
+      readable primary pages pass. Six-to-twelve is an observed/likely range
+      only with useful index or legitimate continuation pages. Never add either
+      to hit a range. Default to no index; an index is unnecessary for the
+      five-normal-leg test.
 - [ ] Write `test_incomplete_leg_has_one_concise_primary_notice` and
       `test_long_labels_or_material_content_over_budget_fail_atomically`:
       missing timing/endpoints/map cannot add diagnostic pages. Arbitrary raw
@@ -101,8 +107,9 @@ cause; they do not return a truncated deck.
       before rendering and preserve mission leg order.
 - [ ] Run RED. Add measured row packing at 14–16 pt and continuation planning;
       keep approved primary geometry where it fits. Make validators enforce
-      role-specific fonts, leg/mission budgets, plan coverage, and native
-      objects. Run all customer/canonical/deck tests GREEN; commit
+      role-specific fonts with the same packaged metrics used in rendering,
+      leg/mission budgets, plan coverage, and native objects. Run all
+      customer/canonical/deck tests GREEN; commit
       `feat: bound customer briefing pages without losing material windows`.
 
 ## Task 5: Separate exact evidence and atomic optional artifact pair
