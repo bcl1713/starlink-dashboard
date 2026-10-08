@@ -337,12 +337,6 @@ export async function renderBriefing({
           mapCount: document.querySelectorAll('.map-card').length,
         };
       });
-      if (payload.rows.every((r) => r.displayCells)) {
-        report.fit.pdfExpectations = buildPdfExpectations(
-          payload,
-          report.fit.pdfMeasured
-        );
-      }
       if (
         report.fit.overflow.length ||
         report.fit.labelOverlaps.length ||
@@ -356,6 +350,12 @@ export async function renderBriefing({
           timeout: budget.workRemainingMs(),
         });
         throw error('fit', 'Page fit failed');
+      }
+      if (payload.rows.every((r) => r.displayCells)) {
+        report.fit.pdfExpectations = buildPdfExpectations(
+          payload,
+          report.fit.pdfMeasured
+        );
       }
       const png = await page.locator('.briefing-page').screenshot({
         type: 'png',
