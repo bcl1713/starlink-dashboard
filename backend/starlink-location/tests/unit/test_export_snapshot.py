@@ -8,8 +8,6 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 
 import pytest
-from pptx import Presentation
-
 from app.mission import storage, timeline_preparation
 from app.mission.models import (
     AARWindow,
@@ -26,6 +24,7 @@ from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTiming
 from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from pptx import Presentation
 
 BASE = datetime(2026, 10, 7, 8, tzinfo=timezone.utc)
 
@@ -675,3 +674,68 @@ def test_source_archive_distinguishes_empty_kml_from_missing_file(
         assert ("routes/r.kml" in archive.namelist()) is (content is not None)
         if content is not None:
             assert archive.read("routes/r.kml") == b""
+
+
+@pytest.mark.parametrize("blocked_first", [False, True])
+def test_export_captures_material_x_changes_without_changing_legacy_events(
+    export_inputs, monkeypatch, blocked_first
+):
+    from app.mission.exporter.snapshot import capture_export_snapshot
+    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.models import KaOutage, KuOutageOverride
+    from app.satellites.rules import EventType, RuleEngine
+
+    mission, routes, pois, catalog = export_inputs
+    mission.legs[0].transports.aar_windows = []
+    mission.legs[0].transports.ka_outages = [
+        KaOutage(id="ka", start_time=BASE, duration_seconds=3600)
+    ]
+    mission.legs[0].transports.ku_overrides = [
+        KuOutageOverride(id="ku", start_time=BASE, duration_seconds=3600)
+    ]
+    storage.save_mission_v2(mission)
+
+    def geometry(self, *, timestamp, **kwargs):
+        blocked = (timestamp < BASE + timedelta(minutes=30)) == blocked_first
+        return (
+            True,
+            180.0,
+            {
+                "violation_reason": "elevation" if blocked else "azimuth",
+                "elevation_degrees": 0.0 if blocked else 35.0,
+                "min_elevation_degrees": 10.0,
+                "elevation_below_min": blocked,
+            },
+        )
+
+    monkeypatch.setattr(RuleEngine, "evaluate_x_azimuth_window", geometry)
+    legacy = timeline_preparation.prepare_mission_timeline(
+        mission.legs[0], routes, pois, satellite_catalog=catalog
+    )
+    snap = capture_export_snapshot("m", routes, pois)
+    rebuilt = json.loads(snap.legs[0].timeline_json)
+    assert (
+        rebuilt["segments"] == json.loads(legacy.timeline.model_dump_json())["segments"]
+    )
+    assert [
+        e.timestamp
+        for e in legacy.events
+        if e.event_type == EventType.X_AZIMUTH_VIOLATION
+    ] == [BASE + timedelta(minutes=1), BASE + timedelta(hours=1)]
+    trial = project_trial_leg(snap.legs[0])
+    a = next(
+        i
+        for i in trial.intervals
+        if i.start_time <= BASE + timedelta(minutes=20) < i.end_time
+    )
+    b = next(
+        i
+        for i in trial.intervals
+        if i.start_time <= BASE + timedelta(minutes=40) < i.end_time
+    )
+    assert [a.decisions[2].value, b.decisions[2].value] == (
+        ["Down", "Up"] if blocked_first else ["Up", "Down"]
+    )
+    blocked = a if blocked_first else b
+    assert blocked.remaining_transports == ()
+    assert blocked.posture == "Communications unavailable"

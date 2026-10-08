@@ -63,6 +63,7 @@ class TimelineArtifacts:
     summary: TimelineSummary
     generated_pois: tuple[POICreate, ...]
     x_assignments: tuple[tuple[datetime, str, str | None], ...] = ()
+    export_x_conditions: tuple[MissionEvent, ...] | None = None
 
 
 def prepare_mission_timeline(
@@ -73,6 +74,7 @@ def prepare_mission_timeline(
     parent_mission_id: str | None = None,
     include_samples: bool = False,
     *,
+    capture_x_conditions: bool = False,
     normalize_for_simulation: bool = False,
     discover_coverage: bool = True,
     satellite_catalog: SatelliteCatalog | None = None,
@@ -181,6 +183,7 @@ def prepare_mission_timeline(
         coverage_enabled=resolved_sampler is not None,
     )
     apply_ka_events(rule_engine, coverage_result)
+    export_x_conditions = [] if capture_x_conditions else None
     warning_boundaries = apply_x_azimuth_events(
         rule_engine,
         mission,
@@ -192,6 +195,7 @@ def prepare_mission_timeline(
         mission_start,
         mission_end,
         satellite_catalog=satellite_catalog,
+        condition_events=export_x_conditions,
     )
 
     generated_pois = construct_mission_pois(
@@ -274,6 +278,7 @@ def prepare_mission_timeline(
         summary,
         generated_pois,
         tuple(transition_schedule),
+        tuple(export_x_conditions) if export_x_conditions is not None else None,
     )
 
 

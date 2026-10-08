@@ -136,7 +136,16 @@ def _event_sources(artifacts, config: ConstraintConfig) -> tuple[bytes, ...]:
     """Restore saved transition identity omitted by the legacy event producer."""
     records = []
     buffer = timedelta(minutes=config.transition_buffer_minutes)
-    for event in artifacts.events:
+    x_conditions = getattr(artifacts, "export_x_conditions", None)
+    events = (
+        artifacts.events
+        if x_conditions is None
+        else tuple(
+            e for e in artifacts.events if e.event_type != EventType.X_AZIMUTH_VIOLATION
+        )
+        + x_conditions
+    )
+    for event in events:
         raw = asdict(event)
         if event.event_type in {
             EventType.X_TRANSITION_START,
@@ -253,6 +262,7 @@ def capture_export_snapshot(
                 coverage_sampler=sampler,
                 parent_mission_id=mission.id,
                 discover_coverage=False,
+                capture_x_conditions=True,
                 satellite_catalog=catalog,
                 constraint_config=config,
             )

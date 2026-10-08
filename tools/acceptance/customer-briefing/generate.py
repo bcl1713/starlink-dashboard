@@ -12,6 +12,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tarfile
 import time
 from pathlib import Path
 
@@ -127,6 +128,56 @@ class Owner:
         child.wait(timeout=5)
 
 
+def copy_probe(owner, compose, env, name, item, destination):
+    """Stream owned artifacts through exec; rootless daemon cp can reject RO binds."""
+    owner.run(
+        name,
+        [
+            *compose,
+            "exec",
+            "-T",
+            "starlink-location",
+            "timeout",
+            "--kill-after=10s",
+            "60s",
+            "tar",
+            "-C",
+            "/probe",
+            "-cf",
+            "-",
+            item,
+        ],
+        env=env,
+        seconds=80,
+    )
+    destination = Path(destination)
+    with tarfile.open(owner.evidence / (name + ".log")) as archive:
+        members = archive.getmembers()
+        for member in members:
+            parts = Path(member.name).parts
+            if (
+                not parts
+                or parts[0] != item
+                or ".." in parts
+                or Path(member.name).is_absolute()
+                or not (member.isdir() or member.isfile())
+            ):
+                raise ValueError("unsafe container evidence archive")
+        for member in members:
+            relative = Path(*Path(member.name).parts[1:])
+            target = (
+                destination / relative
+                if len(Path(member.name).parts) > 1
+                else destination
+            )
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.extractfile(member) as content:
+                    target.write_bytes(content.read())
+
+
 def fixture_cases(root):
     import copy
 
@@ -179,13 +230,12 @@ def canonical_decks(root, output):
     from unittest.mock import patch
 
     sys.path.insert(0, str(root / "backend/starlink-location"))
-    from inspect_pptx import inspect
-
     from app.core.config import ConfigManager
     from app.mission.exporter.snapshot import ExportSnapshot
     from app.mission.exporter.snapshot_inputs import SourcePayload, canonical_json
     from app.mission.exporter.trial_projection import project_trial_leg
     from app.mission.package import __main__ as package
+    from inspect_pptx import inspect
     from tests.unit.customer_briefing_fixtures import snapshot
 
     output.mkdir(parents=True, exist_ok=True)
@@ -431,15 +481,39 @@ def api_exports(base, imports, output, status):
                 exported = json.loads(archive.read(f'legs/{leg["id"]}.json'))
                 assert source_transport_equal(
                     exported["transports"],
-                    json.loads(before)["legs"][entry["mission"]["legs"].index(leg)][
-                        "transports"
-                    ],
+                    next(
+                        item["transports"]
+                        for item in json.loads(before)["legs"]
+                        if item["id"] == leg["id"]
+                    ),
                 ), "saved transport model changed during export"
                 path = f'routes/{leg["route_id"]}.kml'
                 if path in source.namelist():
                     assert archive.read(path) == source.read(path)
                 pois = json.loads(archive.read(f'pois/{leg["id"]}-pois.json'))["pois"]
-                assert any(p["name"] == "Synthetic retained source POI" for p in pois)
+                source_pois_path = f'pois/{leg["id"]}-pois.json'
+                expected_pois = (
+                    json.loads(source.read(source_pois_path)).get("pois", [])
+                    if source_pois_path in source.namelist()
+                    else []
+                )
+                for expected in expected_pois:
+                    # Normal import allocates persistent IDs and timestamps.
+                    # Saved labels, coordinates and categories remain source facts.
+                    assert any(
+                        all(
+                            p.get(k) == expected.get(k)
+                            for k in ("name", "latitude", "longitude", "category")
+                        )
+                        for p in pois
+                    ), "source POI changed or missing"
+                sentinel = entry.get(
+                    "required_poi_name", "Synthetic retained source POI"
+                )
+                if sentinel:
+                    assert any(
+                        p["name"] == sentinel for p in pois
+                    ), "synthetic source POI missing"
             for path, label in (
                 ("exports/mission/mission-slides.pptx", "legacy"),
                 (trial, "trial"),
@@ -745,16 +819,8 @@ def production(args):
             env=env,
             seconds=620,
         )
-        owner.run(
-            "canonical-copy",
-            [
-                *compose,
-                "cp",
-                "starlink-location:/probe/canonical",
-                str(evidence / "canonical"),
-            ],
-            env=env,
-            seconds=120,
+        copy_probe(
+            owner, compose, env, "canonical-copy", "canonical", evidence / "canonical"
         )
         owner.run(
             "direct-legacy",
@@ -772,17 +838,7 @@ def production(args):
             env=env,
             seconds=200,
         )
-        owner.run(
-            "direct-copy",
-            [
-                *compose,
-                "cp",
-                "starlink-location:/probe/direct",
-                str(evidence / "direct"),
-            ],
-            env=env,
-            seconds=60,
-        )
+        copy_probe(owner, compose, env, "direct-copy", "direct", evidence / "direct")
         env["BRIEFING_ENABLED"] = "false"
         owner.run(
             "disable",
@@ -856,16 +912,8 @@ def production(args):
                     status,
                 )
         report["faults"] = faults
-        owner.run(
-            "probe-copy",
-            [
-                *compose,
-                "cp",
-                "starlink-location:/probe/stages.jsonl",
-                str(evidence / "stages.jsonl"),
-            ],
-            env=env,
-            seconds=60,
+        copy_probe(
+            owner, compose, env, "probe-copy", "stages.jsonl", evidence / "stages.jsonl"
         )
         stages = [
             json.loads(line)
@@ -885,6 +933,20 @@ def production(args):
             {"leg_id": m["leg_id"], "views": m["views"]} for m in primary
         ]
         # Render representative paired extracts, retaining every remaining deck for inspection.
+        owner.run(
+            "container-logs-final",
+            [*compose, "logs", "--no-color"],
+            env=env,
+            seconds=30,
+        )
+        owner.run(
+            "api-stop",
+            [*compose, "down", "--volumes", "--remove-orphans"],
+            env=env,
+            seconds=120,
+        )
+        started = False
+
         review = evidence / "review"
         review.mkdir()
         for basis, names in (
@@ -1005,19 +1067,23 @@ def production(args):
                 return None
 
         if started:
-            attempt(
-                lambda: owner.run(
-                    "probe-copy-on-exit",
-                    [
-                        *compose,
-                        "cp",
-                        "starlink-location:/probe/stages.jsonl",
-                        str(evidence / "stages-on-exit.jsonl"),
-                    ],
-                    env=env,
-                    seconds=30,
-                )
-            )
+            if not (evidence / "stages.jsonl").exists():
+                try:
+                    copy_probe(
+                        owner,
+                        compose,
+                        env,
+                        "probe-copy-on-exit",
+                        "stages.jsonl",
+                        evidence / "stages-on-exit.jsonl",
+                    )
+                except (
+                    OSError,
+                    ValueError,
+                    tarfile.TarError,
+                    subprocess.SubprocessError,
+                ) as exc:
+                    report.setdefault("evidence_errors", []).append(str(exc))
             attempt(
                 lambda: owner.run(
                     "container-logs",
@@ -1026,6 +1092,7 @@ def production(args):
                     seconds=30,
                 )
             )
+        if claimed_project:
             attempt(
                 lambda: owner.run(
                     "render-presence",
@@ -1047,6 +1114,7 @@ def production(args):
                         "render-remove", ["docker", "rm", render_name], seconds=30
                     )
                 )
+        if started:
             attempt(
                 lambda: owner.run(
                     "down",

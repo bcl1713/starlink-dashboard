@@ -12,16 +12,23 @@ def anonymous(value, prefix):
     return prefix + "-" + hashlib.sha256(value.encode()).hexdigest()[:12]
 
 
-def clean(value, key=""):
+PUBLIC_SATELLITES = {"X-1", "AOR", "POR", "IOR", "Ku-Leo"}
+
+
+def clean(value, key="", satellite_names=frozenset()):
     if isinstance(value, dict):
         return {
-            k: clean(v, k)
+            k: clean(v, k, satellite_names)
             for k, v in value.items()
             if k not in ("metadata", "notes", "advisories", "description", "remarks")
         }
     if isinstance(value, list):
-        return [clean(v, key) for v in value]
+        return [clean(v, key, satellite_names) for v in value]
     if isinstance(value, str):
+        if key in ("initial_x_satellite_id", "target_satellite_id", "satellite_id") or (
+            key == "name" and value in satellite_names
+        ):
+            return value if value in PUBLIC_SATELLITES else anonymous(value, "Label")
         if key == "id" or key.endswith("_id"):
             return anonymous(value, "anon")
         if key == "name" or key.endswith("_name"):
@@ -33,7 +40,15 @@ def clean(value, key=""):
 
 def anonymize(source, output):
     with zipfile.ZipFile(source) as original, zipfile.ZipFile(output, "w") as result:
-        mission = clean(json.loads(original.read("mission.json")))
+        satellites = (
+            json.loads(original.read("pois/satellites.json"))
+            if "pois/satellites.json" in original.namelist()
+            else {}
+        )
+        satellite_names = frozenset(p["name"] for p in satellites.get("pois", []))
+        mission = clean(
+            json.loads(original.read("mission.json")), satellite_names=satellite_names
+        )
         mission["name"] = "Anonymized existing mission"
         result.writestr("mission.json", json.dumps(mission))
         for leg in mission["legs"]:
@@ -66,7 +81,15 @@ def anonymize(source, output):
                 else:
                     continue
                 result.writestr(
-                    target, json.dumps(clean(json.loads(original.read(path))))
+                    target,
+                    json.dumps(
+                        clean(
+                            json.loads(original.read(path)),
+                            satellite_names=(
+                                satellite_names if stem == "satellites" else frozenset()
+                            ),
+                        )
+                    ),
                 )
     return {
         "source_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
@@ -74,6 +97,6 @@ def anonymize(source, output):
         "mission_id": mission["id"],
         "legs": len(mission["legs"]),
         "selection": "Existing local five-leg package exercises real saved source configuration, long routes and dense coordination",
-        "anonymization": "Mission/leg/route/POI identities and human labels/text replaced; KML descriptions retain only timing; optional free-text metadata removed",
+        "anonymization": "Mission/leg/route/POI identities and human labels/text replaced; public satellite IDs retained and custom satellite references consistently remapped; KML descriptions retain only timing; optional free-text metadata removed",
         "geometry": "retained locally; no customer data committed",
     }

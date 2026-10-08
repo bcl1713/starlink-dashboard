@@ -412,3 +412,190 @@ def test_port_check_accepts_time_wait_and_rejects_live_listener():
             peer.close()
     # The listener is gone; a closed accepted connection is not a live resource.
     runner.port_free(port)
+
+
+@pytest.mark.parametrize("reordered", [False, True])
+@pytest.mark.parametrize("alter_poi", [False, True])
+def test_existing_exports_preserve_actual_pois_and_match_legs_by_identity(
+    tmp_path, monkeypatch, alter_poi, reordered
+):
+    import io
+    import zipfile
+
+    from pptx import Presentation
+
+    runner = load()
+    monkeypatch.syspath_prepend(str(RUNNER.parent))
+    legs = [
+        {
+            "id": str(i),
+            "route_id": "r" + str(i),
+            "transports": {"initial_x_satellite_id": "X-" + str(i)},
+        }
+        for i in (1, 2)
+    ]
+    original = tmp_path / "source.zip"
+    deck = io.BytesIO()
+    presentation = Presentation()
+    presentation.slides.add_slide(presentation.slide_layouts[6])
+    presentation.save(deck)
+    exported = io.BytesIO()
+    with zipfile.ZipFile(original, "w") as source, zipfile.ZipFile(
+        exported, "w"
+    ) as result:
+        result.writestr("manifest.json", "{}")
+        result.writestr("exports/mission/mission-slides.pptx", deck.getvalue())
+        for leg in legs:
+            result.writestr(f'legs/{leg["id"]}.json', json.dumps(leg))
+            poi = {
+                "name": "Anonymized marker",
+                "latitude": 1.0,
+                "longitude": 2.0,
+                "category": "mission-event",
+            }
+            path = f'pois/{leg["id"]}-pois.json'
+            source.writestr(path, json.dumps({"pois": [poi]}))
+            result.writestr(
+                path,
+                json.dumps({"pois": [{**poi, "longitude": 3.0 if alter_poi else 2.0}]}),
+            )
+    before = json.dumps({"legs": list(reversed(legs)) if reordered else legs}).encode()
+
+    def response(base, path, **kwargs):
+        if path.endswith("/export"):
+            return exported.getvalue(), {
+                "X-Mission-Export-Trial-Status": "disabled",
+                "X-Mission-Export-Warnings": "[]",
+            }
+        return before, {}
+
+    monkeypatch.setattr(runner, "http", response)
+    args = (
+        "http://private",
+        {
+            "EXISTING": {
+                "mission_id": "m",
+                "mission": {"legs": legs},
+                "archive": str(original),
+                "required_poi_name": None,
+            }
+        },
+        tmp_path / "outputs",
+        "disabled",
+    )
+    if alter_poi:
+        with pytest.raises(AssertionError, match="POI"):
+            runner.api_exports(*args)
+    else:
+        assert runner.api_exports(*args)["EXISTING"]["source_preservation"] == "pass"
+
+
+def test_anonymization_keeps_satellite_lookup_targets_consistent(tmp_path):
+    import zipfile
+
+    spec = importlib.util.spec_from_file_location(
+        "anonymize", RUNNER.parent / "anonymize_package.py"
+    )
+    helper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(helper)
+    source, output = tmp_path / "source.zip", tmp_path / "out.zip"
+    with zipfile.ZipFile(source, "w") as z:
+        z.writestr(
+            "mission.json",
+            json.dumps(
+                {
+                    "id": "m",
+                    "legs": [
+                        {
+                            "id": "l",
+                            "transports": {
+                                "initial_x_satellite_id": "X-1",
+                                "x_transitions": [
+                                    {"target_satellite_id": "Private Satellite"}
+                                ],
+                            },
+                        }
+                    ],
+                }
+            ),
+        )
+        z.writestr(
+            "pois/satellites.json",
+            json.dumps(
+                {
+                    "pois": [
+                        {"id": "p1", "name": "X-1", "longitude": 12},
+                        {"id": "p2", "name": "Private Satellite", "longitude": 34},
+                    ]
+                }
+            ),
+        )
+    helper.anonymize(source, output)
+    with zipfile.ZipFile(output) as z:
+        transports = json.loads(z.read("mission.json"))["legs"][0]["transports"]
+        pois = {
+            p["name"]: p["longitude"]
+            for p in json.loads(z.read("pois/satellites.json"))["pois"]
+        }
+    assert transports["initial_x_satellite_id"] == "X-1"
+    assert pois[transports["initial_x_satellite_id"]] == 12
+    assert pois[transports["x_transitions"][0]["target_satellite_id"]] == 34
+    assert "Private Satellite" not in pois
+
+
+def test_nginx_export_timeout_is_scoped_and_exceeds_trial_and_legacy_budget():
+    import re
+
+    config = (ROOT / "frontend/mission-planner/nginx.conf").read_text()
+    blocks = re.findall(r"location\s+([^{}]+)\{([^{}]+)\}", config)
+    export = [(location, body) for location, body in blocks if "/export" in location]
+    assert len(export) == 1
+    location, body = export[0]
+    assert re.search(r"/api/v2/missions/.+/export", location)
+    assert "proxy_pass http://starlink-location:8000;" in body
+    seconds = int(re.search(r"proxy_read_timeout (\d+)s;", body).group(1))
+    assert seconds >= 180
+    assert all(
+        "proxy_read_timeout" not in body
+        for location, body in blocks
+        if "/export" not in location
+    )
+
+
+@pytest.mark.parametrize("unsafe", [False, True])
+def test_container_evidence_stream_copies_real_archive_without_daemon_cp(
+    tmp_path, monkeypatch, unsafe
+):
+    import io
+    import tarfile
+
+    runner = load()
+    owner = runner.Owner(tmp_path / "evidence")
+
+    def streamed(self, name, command, **kwargs):
+        assert "exec" in command and "cp" not in command
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            info = tarfile.TarInfo("../escape" if unsafe else "canonical/trial.pptx")
+            value = b"retained offline deck"
+            info.size = len(value)
+            archive.addfile(info, io.BytesIO(value))
+        (self.evidence / (name + ".log")).write_bytes(buffer.getvalue())
+
+    monkeypatch.setattr(runner.Owner, "run", streamed)
+    if unsafe:
+        with pytest.raises(ValueError, match="unsafe"):
+            runner.copy_probe(
+                owner,
+                ["docker", "compose"],
+                {},
+                "copy",
+                "canonical",
+                tmp_path / "output",
+            )
+        assert not (tmp_path / "escape").exists()
+    else:
+        runner.copy_probe(
+            owner, ["docker", "compose"], {}, "copy", "canonical", tmp_path / "output"
+        )
+        assert (tmp_path / "output/trial.pptx").read_bytes() == b"retained offline deck"

@@ -113,8 +113,14 @@ def apply_x_azimuth_events(
     mission_end: datetime,
     *,
     satellite_catalog: SatelliteCatalog | None = None,
+    condition_events: list[MissionEvent] | None = None,
 ) -> list[XBandWarningBoundary]:
-    """Apply X constraints and return combined shutdown/turn-on boundaries."""
+    """Apply legacy X constraints and return shutdown/turn-on boundaries.
+
+    An optional export-only collector records changes in the material geometry
+    condition while a legacy warning remains active. It never alters the events
+    consumed by saved timelines or legacy exports.
+    """
     if not mission.transports.initial_x_satellite_id:
         return []
 
@@ -129,6 +135,7 @@ def apply_x_azimuth_events(
     schedule_idx = 0
     current_satellite = assignments[0][1]
     violation_active = False
+    previous_condition = None
     warning_active = False
     warning_boundaries: list[XBandWarningBoundary] = []
     manual_ar_events = sorted(
@@ -243,7 +250,21 @@ def apply_x_azimuth_events(
         )
 
         is_violation = forward_violation or aft_violation
-        if is_violation and not violation_active:
+        condition = (
+            (
+                current_satellite,
+                forward_violation,
+                aft_violation,
+                is_elevation_blocked,
+                bool(debug.get("elevation_below_min", False)),
+            )
+            if is_violation
+            else None
+        )
+        condition_changed = condition != previous_condition
+        if is_violation and (
+            not violation_active or (condition_events is not None and condition_changed)
+        ):
             if is_elevation_blocked:
                 reason = _format_elevation_reason(
                     current_satellite,
@@ -286,18 +307,20 @@ def apply_x_azimuth_events(
                     "nearest_waypoint_name": nearest_wp,
                 }
             )
-            rule_engine.events.append(
-                MissionEvent(
-                    timestamp=sample.timestamp,
-                    event_type=EventType.X_AZIMUTH_VIOLATION,
-                    transport=Transport.X,
-                    affected_transport=Transport.X,
-                    severity="warning",
-                    reason=reason,
-                    satellite_id=current_satellite,
-                    metadata=metadata,
-                )
+            event = MissionEvent(
+                timestamp=sample.timestamp,
+                event_type=EventType.X_AZIMUTH_VIOLATION,
+                transport=Transport.X,
+                affected_transport=Transport.X,
+                severity="warning",
+                reason=reason,
+                satellite_id=current_satellite,
+                metadata=metadata,
             )
+            if not violation_active:
+                rule_engine.events.append(event)
+            if condition_events is not None and condition_changed:
+                condition_events.append(event)
             violation_active = True
         elif not is_violation and violation_active:
             rule_engine.events.append(
@@ -311,7 +334,10 @@ def apply_x_azimuth_events(
                     satellite_id=current_satellite,
                 )
             )
+            if condition_events is not None:
+                condition_events.append(rule_engine.events[-1])
             violation_active = False
+        previous_condition = condition
 
     if violation_active:
         rule_engine.events.append(
@@ -325,6 +351,9 @@ def apply_x_azimuth_events(
                 satellite_id=current_satellite,
             )
         )
+
+        if condition_events is not None:
+            condition_events.append(rule_engine.events[-1])
 
     # Ending the mission does not imply the geometry cleared the warning.
     return warning_boundaries
