@@ -94,17 +94,34 @@ export async function openRenderOwner({
     browser: null,
     origin: null,
     ownership,
-    async newContext(options) {
-      budget.workRemainingMs();
-      const context = await within(
-        browser.newContext(options),
-        budget.workRemainingMs()
-      );
-      contexts.add(context);
-      ownership.contexts.push(ownership.contexts.length + 1);
-      context.once('close', () => contexts.delete(context));
-      await persist();
-      return context;
+    async newContext(options, { remainingMs = budget.workRemainingMs } = {}) {
+      remainingMs();
+      let abandoned = false;
+      let acquisition = browser.newContext(options);
+      if (fault === 'map-context-late' && options.viewport.width === 1920) {
+        const delay = budget.mapRemainingMs() + 50;
+        acquisition = acquisition.then(
+          (context) =>
+            new Promise((resolve) => {
+              setTimeout(() => resolve(context), delay);
+            })
+        );
+      }
+      const pending = acquisition.then((context) => {
+        contexts.add(context);
+        ownership.contexts.push(ownership.contexts.length + 1);
+        context.once('close', () => contexts.delete(context));
+        if (abandoned || closing) void context.close().catch(() => {});
+        return context;
+      });
+      try {
+        const context = await within(pending, remainingMs());
+        await persist();
+        return context;
+      } catch (error) {
+        abandoned = true;
+        throw error;
+      }
     },
     close() {
       if (closing) return closing;

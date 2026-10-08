@@ -265,10 +265,9 @@ def generate(root: Path):
     report["pdfValidation"] = {
         k: inspection[k] for k in ("verified", "pageCount", "pageSizePt")
     }
-    if (
-        inspection["text"].count("X-Band planning incomplete") != 1
-        or "No transport confirmed available"
-        not in " ".join(word["text"] for word in inspection["words"])
+    if inspection["text"].count("X-Band planning incomplete") != 1 or any(
+        phrase not in " ".join(word["text"] for word in inspection["words"])
+        for phrase in ("No transport confirmed available", "1 confirmed", "0 confirmed")
     ):
         raise ValueError("Incomplete-X customer content missing")
     captured, trial, view = fixtures["composition-incomplete-x"]

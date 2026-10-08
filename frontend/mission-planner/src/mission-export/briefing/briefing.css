@@ -245,6 +245,7 @@ footer {
   color: #526678;
 }
 
-.uncertain-timeline {
-  height: 194px;
+.confirmed-callout {
+  font-size: 14pt;
+  font-weight: 700;
 }

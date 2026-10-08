@@ -66,3 +66,25 @@ test('unknown has neutral confirmed capability', async () => {
   assert.doesNotMatch(svg, /fill="#b72e36"/);
   assert.match(svg, />\?<\/text>/);
 });
+
+test('narrow incomplete intervals expose one and zero confirmed without definitive color', async () => {
+  const p = structuredClone(payload);
+  const at = (h, m) => `2026-10-25T${h}:${m}:00Z`;
+  p.intervals = [
+    [at('14', '00'), at('16', '00'), ['Up', 'Up', '?']],
+    [at('16', '00'), at('16', '15'), ['Down', 'Up', '?']],
+    [at('16', '15'), at('16', '45'), ['Down', 'Down', '?']],
+    [at('16', '45'), at('17', '00'), ['Down', 'Up', '?']],
+    [at('17', '00'), at('22', '00'), ['Up', 'Up', '?']],
+  ].map(([startUtc, endUtc, decisions]) => ({
+    startUtc,
+    endUtc,
+    decisions,
+    posture: 'Posture uncertain',
+    restrictionLabels: [],
+  }));
+  const svg = (await renderer())(p);
+  assert.equal((svg.match(/>1 confirmed<\/text>/g) || []).length, 2);
+  assert.match(svg, />0 confirmed<\/text>/);
+  assert.doesNotMatch(svg, /fill="#b72e36"/);
+});

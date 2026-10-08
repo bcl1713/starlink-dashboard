@@ -94,3 +94,44 @@ def test_checkpoint_signal_cleans_owned_resources(tmp_path):
     assert any("down" in c and "--volumes" in c for c in calls)
     assert owner.ownership["cleanup"]["children_reaped"]
     assert owner.ownership["cleanup"]["compose_removed"]
+
+
+def test_outer_cleanup_failure_leaves_both_examples_unpublished(tmp_path):
+    mod = module()
+    pending = tmp_path / "deliverables-staging"
+    pending.mkdir()
+    for name in ("fully-assessed", "incomplete-x"):
+        source, evidence = staging(pending)
+        mod.publish_checkpoint(source, pending / name, evidence)
+
+    class FailedOwner:
+        def close(self):
+            raise RuntimeError("Owned Docker resources remain")
+
+    destination = tmp_path / "deliverables"
+    with pytest.raises(RuntimeError, match="Owned Docker resources remain"):
+        mod.publish_after_cleanup(FailedOwner(), pending, destination)
+    assert not destination.exists()
+    assert sorted(p.name for p in pending.iterdir()) == [
+        "fully-assessed",
+        "incomplete-x",
+    ]
+
+
+def test_outer_cleanup_precedes_atomic_pair_publication(tmp_path):
+    mod = module()
+    pending = tmp_path / "deliverables-staging"
+    pending.mkdir()
+    destination = tmp_path / "deliverables"
+
+    class CleanOwner:
+        def close(self):
+            assert pending.exists() and not destination.exists()
+            return {
+                "children_reaped": True,
+                "compose_removed": True,
+                "remaining": {"containers": "", "networks": "", "volumes": ""},
+            }
+
+    mod.publish_after_cleanup(CleanOwner(), pending, destination)
+    assert destination.exists() and not pending.exists()

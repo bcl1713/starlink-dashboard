@@ -56,6 +56,18 @@ def publish_checkpoint(staging: Path, destination: Path, evidence: bytes) -> Non
     staging.rename(destination)
 
 
+def publish_after_cleanup(owner, staging: Path, destination: Path) -> dict:
+    cleanup = owner.close()
+    if (
+        not cleanup.get("children_reaped")
+        or not cleanup.get("compose_removed")
+        or any(cleanup.get("remaining", {}).values())
+    ):
+        raise RuntimeError("Owned runtime cleanup did not qualify publication")
+    staging.rename(destination)
+    return cleanup
+
+
 class CheckpointOwner:
     def __init__(self, project, evidence_root, command=None):
         self.project = project
@@ -293,7 +305,9 @@ def run_checkpoint(
             staged = pending / (name + "-staging")
             shutil.copytree(source, staged)
             publish_checkpoint(staged, pending / name, evidence)
-        pending.rename(root / "deliverables")
+        summary["cleanup"] = publish_after_cleanup(
+            owner, pending, root / "deliverables"
+        )
         summary.update(
             checksPassed=True, publication="deliverables", generation=generated
         )
