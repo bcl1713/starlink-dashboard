@@ -1,0 +1,344 @@
+{
+  "schema": "ProductionMapIntegrationReport/v1",
+  "status": "pass",
+  "reasons": [],
+  "sourceRevision": "11b1513ea0a4033702b4b94e55e41bfa7fed1eea",
+  "image": {
+    "id": "sha256:9d06872722bcb3d014882f65bd1743b8a768f51bdab2d50f533d2ca645ae464c",
+    "sizeBytes": 2165241900,
+    "revision": "11b1513ea0a4033702b4b94e55e41bfa7fed1eea"
+  },
+  "hardware": {
+    "host": "forge",
+    "kernel": "7.0.0-34-generic",
+    "architecture": "x86_64",
+    "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+    "docker": "20 CPUs; 65915523072 bytes; 29.8.1; overlayfs\n",
+    "containerCpus": 4,
+    "containerMemoryBytes": 4294967296,
+    "rendering": "CPU ANGLE SwiftShader"
+  },
+  "limits": {
+    "sharedStageSeconds": 60,
+    "screeningSeconds": 50,
+    "coldRuns": 3,
+    "requestCacheHits": 0,
+    "includes": [
+      "container/Python/Node/browser startup",
+      "final interval projection/markers",
+      "all primary views",
+      "PNG collection",
+      "browser/listener/request-temp/container cleanup"
+    ]
+  },
+  "runtimeInputs": {
+    "backend/starlink-location/Dockerfile": "fdddf9a78390dffb5965ae3b32d1dc5640289c072285387753c348f238d8aff9",
+    "backend/starlink-location/app/mission/exporter/trial_maps.py": "797994499d4d8e911ef871abfebd65f747500b3b5c7699f725e7ae98b869cf09",
+    "backend/starlink-location/app/mission/exporter/trial_projection.py": "3ffa42f536cf3dbd339dd236cb4c997a75e27e3a5c255a0df73b998623ff97bd",
+    "backend/starlink-location/tests/fixtures/customer_briefing/f08.json": "8771a7ee150cea23475a00593c6b4651125771bf9dd3e87f43b8a6af1c9f4af0",
+    "frontend/mission-planner/package-lock.json": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+    "frontend/mission-planner/src/mission-export/render.mjs": "1d9aa4aa4f64140c69b7a8ed38438fbc3f6e6292e64b31b99322c9fc7824dda0",
+    "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+    "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+    "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+    "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30"
+  },
+  "cleanup": {
+    "containersGone": true,
+    "volumes": [],
+    "networks": [],
+    "hostListeners": []
+  },
+  "fixture": "F08-map with final Task 2 intervals/markers from f08.json",
+  "runtime": {
+    "versions": {
+      "@react-three/fiber": "9.7.0",
+      "playwright-core": "1.63.0",
+      "react": "19.2.0",
+      "three": "0.185.1"
+    },
+    "node": "v22.22.2",
+    "uid": 1000,
+    "browser": "153.0.8010.12",
+    "browserRevision": {
+      "browserVersion": "153.0.8010.12",
+      "installByDefault": true,
+      "name": "chromium-headless-shell",
+      "revision": "1243",
+      "title": "Chrome Headless Shell"
+    },
+    "rendering": "ANGLE SwiftShader; fixed 1920x1080 DPR 1",
+    "assetDigests": {
+      "assets/mission-export-BfnuwerS.js": "3d8f429c33967f4d9a2169fb909586df816fe8871e3af9d3cdcebe8c435f9bc3",
+      "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+      "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3"
+    }
+  },
+  "finalMarkers": [
+    [
+      {
+        "id": "f08-short-window-001",
+        "label": "1",
+        "start": "2026-10-07T08:00:00Z"
+      },
+      {
+        "id": "f08-short-window-003",
+        "label": "3",
+        "start": "2026-10-07T08:20:00Z"
+      },
+      {
+        "id": "f08-short-window-005",
+        "label": "5",
+        "start": "2026-10-07T08:45:00Z"
+      }
+    ],
+    [
+      {
+        "id": "f08-polar-dateline-window-001",
+        "label": "1",
+        "start": "2026-10-10T08:00:00Z"
+      },
+      {
+        "id": "f08-polar-dateline-window-003",
+        "label": "3",
+        "start": "2026-10-10T08:20:00Z"
+      },
+      {
+        "id": "f08-polar-dateline-window-005",
+        "label": "5",
+        "start": "2026-10-10T11:45:00Z"
+      }
+    ],
+    [
+      {
+        "id": "f08-spanning-window-001",
+        "label": "1",
+        "start": "2026-10-13T08:00:00Z"
+      },
+      {
+        "id": "f08-spanning-window-003",
+        "label": "3",
+        "start": "2026-10-13T08:20:00Z"
+      },
+      {
+        "id": "f08-spanning-window-005",
+        "label": "5",
+        "start": "2026-10-13T23:45:00Z"
+      }
+    ]
+  ],
+  "runs": [
+    {
+      "name": "cold-1",
+      "status": "primary",
+      "elapsedSeconds": 20.24837213102728,
+      "marginSeconds": 39.75162786897272,
+      "pythonStageSeconds": 18.209181844023988,
+      "cleanupVerified": true,
+      "uid": 1000,
+      "views": [
+        {
+          "id": "f08-short/view-1",
+          "pngHash": "b5d75f188bdd18e17be7b2fdfadf24d9b302b2d516ec22934e231b9970f8c9eb",
+          "pixelHash": "b506222519b072f9f68734270e42e7850518f731f31c11a0da65c32ae18c8d1c"
+        },
+        {
+          "id": "f08-polar-dateline/view-1",
+          "pngHash": "333dd8238ecda399c7271250a0770d4468962514540675a46826dd47f0201703",
+          "pixelHash": "28d499c988f22b1855e7d571cc74d588f897e1beef2700b1cc032110add4afdd"
+        },
+        {
+          "id": "f08-spanning/view-1",
+          "pngHash": "e5f493a335fcf8be6ee93e9a496b067d83cb091c6f4c4520e0c03723a78b18b0",
+          "pixelHash": "1325150c8fc455238b63fff93b5c748f16f3ba601cce8422141e23e87c8d22cb"
+        },
+        {
+          "id": "f08-spanning/view-2",
+          "pngHash": "e49296041806a5671ba502d605265824095287fe795622e7e7d0f54317e68a2f",
+          "pixelHash": "2d3a7f6863fab0cb349cd343840c49a3070db105c06e35629aef2bd36548a9f7"
+        },
+        {
+          "id": "f08-spanning/view-3",
+          "pngHash": "33660f363d6d4f4a3b5098bdbebc10fc776bbc8262b699ce5ecbb8ce88464eb5",
+          "pixelHash": "70083355b2afe99d99bd43fda132e8cc058b6f4e7ff40f1283a977ebd9d5dbfa"
+        }
+      ]
+    },
+    {
+      "name": "cold-2",
+      "status": "primary",
+      "elapsedSeconds": 20.778348565101624,
+      "marginSeconds": 39.22165143489838,
+      "pythonStageSeconds": 18.75210812909063,
+      "cleanupVerified": true,
+      "uid": 1000,
+      "views": [
+        {
+          "id": "f08-short/view-1",
+          "pngHash": "b5d75f188bdd18e17be7b2fdfadf24d9b302b2d516ec22934e231b9970f8c9eb",
+          "pixelHash": "b506222519b072f9f68734270e42e7850518f731f31c11a0da65c32ae18c8d1c"
+        },
+        {
+          "id": "f08-polar-dateline/view-1",
+          "pngHash": "333dd8238ecda399c7271250a0770d4468962514540675a46826dd47f0201703",
+          "pixelHash": "28d499c988f22b1855e7d571cc74d588f897e1beef2700b1cc032110add4afdd"
+        },
+        {
+          "id": "f08-spanning/view-1",
+          "pngHash": "e5f493a335fcf8be6ee93e9a496b067d83cb091c6f4c4520e0c03723a78b18b0",
+          "pixelHash": "1325150c8fc455238b63fff93b5c748f16f3ba601cce8422141e23e87c8d22cb"
+        },
+        {
+          "id": "f08-spanning/view-2",
+          "pngHash": "e49296041806a5671ba502d605265824095287fe795622e7e7d0f54317e68a2f",
+          "pixelHash": "2d3a7f6863fab0cb349cd343840c49a3070db105c06e35629aef2bd36548a9f7"
+        },
+        {
+          "id": "f08-spanning/view-3",
+          "pngHash": "33660f363d6d4f4a3b5098bdbebc10fc776bbc8262b699ce5ecbb8ce88464eb5",
+          "pixelHash": "70083355b2afe99d99bd43fda132e8cc058b6f4e7ff40f1283a977ebd9d5dbfa"
+        }
+      ]
+    },
+    {
+      "name": "cold-3",
+      "status": "primary",
+      "elapsedSeconds": 20.590243651997298,
+      "marginSeconds": 39.4097563480027,
+      "pythonStageSeconds": 18.600136092980392,
+      "cleanupVerified": true,
+      "uid": 1000,
+      "views": [
+        {
+          "id": "f08-short/view-1",
+          "pngHash": "b5d75f188bdd18e17be7b2fdfadf24d9b302b2d516ec22934e231b9970f8c9eb",
+          "pixelHash": "b506222519b072f9f68734270e42e7850518f731f31c11a0da65c32ae18c8d1c"
+        },
+        {
+          "id": "f08-polar-dateline/view-1",
+          "pngHash": "333dd8238ecda399c7271250a0770d4468962514540675a46826dd47f0201703",
+          "pixelHash": "28d499c988f22b1855e7d571cc74d588f897e1beef2700b1cc032110add4afdd"
+        },
+        {
+          "id": "f08-spanning/view-1",
+          "pngHash": "e5f493a335fcf8be6ee93e9a496b067d83cb091c6f4c4520e0c03723a78b18b0",
+          "pixelHash": "1325150c8fc455238b63fff93b5c748f16f3ba601cce8422141e23e87c8d22cb"
+        },
+        {
+          "id": "f08-spanning/view-2",
+          "pngHash": "e49296041806a5671ba502d605265824095287fe795622e7e7d0f54317e68a2f",
+          "pixelHash": "2d3a7f6863fab0cb349cd343840c49a3070db105c06e35629aef2bd36548a9f7"
+        },
+        {
+          "id": "f08-spanning/view-3",
+          "pngHash": "33660f363d6d4f4a3b5098bdbebc10fc776bbc8262b699ce5ecbb8ce88464eb5",
+          "pixelHash": "70083355b2afe99d99bd43fda132e8cc058b6f4e7ff40f1283a977ebd9d5dbfa"
+        }
+      ]
+    }
+  ],
+  "faults": [
+    {
+      "name": "fault-parent-death",
+      "status": "terminated",
+      "elapsedSeconds": 3.9098575139651075,
+      "cleanupVerified": true,
+      "parentDeathVerified": true,
+      "fallbackLabels": []
+    },
+    {
+      "name": "fault-startup",
+      "status": "fallback",
+      "elapsedSeconds": 4.155881893006153,
+      "cleanupVerified": true,
+      "parentDeathVerified": null,
+      "fallbackLabels": [
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback"
+      ]
+    },
+    {
+      "name": "fault-texture",
+      "status": "fallback",
+      "elapsedSeconds": 4.924321084050462,
+      "cleanupVerified": true,
+      "parentDeathVerified": null,
+      "fallbackLabels": [
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback"
+      ]
+    },
+    {
+      "name": "fault-context-loss",
+      "status": "fallback",
+      "elapsedSeconds": 4.507265057065524,
+      "cleanupVerified": true,
+      "parentDeathVerified": null,
+      "fallbackLabels": [
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback"
+      ]
+    },
+    {
+      "name": "fault-slow",
+      "status": "fallback",
+      "elapsedSeconds": 5.500278480001725,
+      "cleanupVerified": true,
+      "parentDeathVerified": null,
+      "fallbackLabels": [
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback",
+        "Overview map unavailable \u2014 static route fallback"
+      ]
+    }
+  ],
+  "verification": {
+    "backend": {
+      "passed": 2322,
+      "skipped": 20
+    },
+    "frontend": {
+      "passed": 1353,
+      "files": 177,
+      "build": "pass"
+    },
+    "tools": {
+      "passed": 2072,
+      "skipped": 2,
+      "subtests": 9
+    },
+    "focused": {
+      "passed": 86
+    },
+    "ruff": "pass",
+    "black": "401 unchanged",
+    "eslint": "pass",
+    "prettier": "pass",
+    "diffCheck": "pass"
+  },
+  "evidence": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task-3b-final",
+  "scope": "Task 3B checkpoint only; Task 4 not started. Whole-branch review and final deck/API acceptance remain for Task 6.",
+  "hostAudit": {
+    "groupsChecked": 211,
+    "liveSurvivors": 0,
+    "ownedListeners": 0,
+    "containersChecked": 17,
+    "hostChromeProcesses": 0,
+    "temporaryPathsAbsent": true,
+    "imagesRemoved": 1
+  },
+  "build": {
+    "noCache": true,
+    "wallSecondsApprox": 62,
+    "wallLimitSeconds": 2700,
+    "killGraceSeconds": 10,
+    "context": ".",
+    "dockerfile": "backend/starlink-location/Dockerfile",
+    "log": "evidence/task3b-build-final-correct.log"
+  },
+  "qualification": "Valid for the recorded hardware/runtime and final markers; repeat three cold production-image whole-mission runs after hardware or runtime changes.",
+  "coldViewHashesIdentical": true
+}
