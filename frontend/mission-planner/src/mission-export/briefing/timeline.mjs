@@ -179,14 +179,15 @@ export function renderTimeline(payload) {
   for (let h = 0; h <= 8; h++) {
     const t = tickTimes[h];
     const px = 280 + (960 * h) / 8;
-    out +=
-      `<path d="M${px} 224v5" stroke="#83909e"/>` +
-      text(
-        px,
-        244,
-        et.format(t),
-        `text-anchor="${h === 0 ? 'start' : h === 8 ? 'end' : 'middle'}" class="axis"`
-      );
+    out += `<path d="M${px} 224v5" stroke="#83909e"/>`;
+    // Keep every exact tick, with room for both seconds and offset identity.
+    if (showZone && seconds && h % 2) continue;
+    out += text(
+      px,
+      244,
+      et.format(t),
+      `text-anchor="${h === 0 ? 'start' : h === 8 ? 'end' : 'middle'}" class="axis" data-svg-label`
+    );
   }
   return out + '</svg>';
 }

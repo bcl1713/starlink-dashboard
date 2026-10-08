@@ -111,11 +111,11 @@ def assert_scenario(case, report):
     base = datetime(2026, 10, 25, 14, tzinfo=timezone.utc)
     if case == "midnight":
         base += timedelta(hours=60)
-    if case == "dst":
+    if case in {"dst", "short-dst"}:
         base = datetime(2026, 11, 1, 5, tzinfo=timezone.utc)
     if case == "adjusted":
         base += timedelta(hours=2)
-    duration = timedelta(minutes=10 if case == "short" else 240)
+    duration = timedelta(minutes=10 if case in {"short", "short-dst"} else 240)
 
     def instant(value):
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -201,8 +201,8 @@ def assert_scenario(case, report):
                 )
             ):
                 raise ValueError("Brief total outage lost second-precision clocks")
-        if case in {"short", "ar-sof"}:
-            if case == "short" and not all(
+        if case in {"short", "short-dst", "ar-sof"}:
+            if case in {"short", "short-dst"} and not all(
                 any(r["kind"] == "sof" for r in item["restrictions"])
                 for item in intervals
             ):
@@ -218,7 +218,7 @@ def assert_scenario(case, report):
                 )
             ):
                 raise ValueError("Full-flight AR/SOF overlap was lost")
-        if case == "dst" and not any(
+        if case in {"dst", "short-dst"} and not any(
             "EDT" in row["clock"]["start"] or "EST" in row["clock"]["end"]
             for row in leg["customerRows"]
         ):

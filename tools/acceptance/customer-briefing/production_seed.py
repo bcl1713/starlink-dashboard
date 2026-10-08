@@ -54,6 +54,10 @@ def seed_missions(api, root):
         "short": {"minutes": 10},
         "midnight": {"start": BASE + timedelta(hours=60)},
         "dst": {"start": datetime(2026, 11, 1, 5, tzinfo=timezone.utc)},
+        "short-dst": {
+            "start": datetime(2026, 11, 1, 5, tzinfo=timezone.utc),
+            "duration": timedelta(minutes=10),
+        },
         "subminute": {"subminute": True},
         "uncertain-subminute": {"subminute": True, "uncertain": True},
         "nested-outage": {"nested": True},
