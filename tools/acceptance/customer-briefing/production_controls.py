@@ -625,13 +625,18 @@ def qualify(owner):
             assert_scenario(case, report)
         return report
 
-    original_pois = backend_python(
-        "import base64; from pathlib import Path; print(base64.b64encode(Path('/data/pois.json').read_bytes()).decode())"
-    ).splitlines()[-1]
+    original_pois = "/tmp/briefing-original-pois.json"
+    owner.ownership["backendTemporaryPaths"] = [original_pois]
+    owner.persist()
+    backend_python(
+        "import shutil,sys; shutil.copyfile('/data/pois.json',sys.argv[1])",
+        original_pois,
+    )
     download("normal", "disabled", "normal-disabled")
     browser_reports = [browser("normal", "disabled")]
     backend_python(
-        "import base64,sys; from pathlib import Path; Path('/data/pois.json').write_bytes(base64.b64decode(sys.argv[1]))",
+        "import shutil,sys; from pathlib import Path; "
+        "shutil.copyfile(sys.argv[1],'/data/pois.json'); Path(sys.argv[1]).unlink()",
         original_pois,
     )
     owner.env["BRIEFING_ENABLED"] = "true"
