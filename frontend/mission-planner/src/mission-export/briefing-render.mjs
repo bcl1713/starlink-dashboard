@@ -312,6 +312,14 @@ export async function renderBriefing({
           tableBodyBoundsPx: tableRows.length
             ? localBox(document.querySelector('tbody'))
             : null,
+          tableInspectionBoundsPx: tableRows.length
+            ? [
+                localBox(document.querySelector('tbody'))[0],
+                localBox(document.querySelector('tbody'))[1],
+                localBox(document.querySelector('tbody'))[2],
+                localBox(document.querySelector('footer'))[1],
+              ]
+            : null,
           rows: tableRows.map((r) => ({
             id: r.dataset.rowId,
             cellBoundsPx: [...r.cells].map(localBox),

@@ -16,6 +16,9 @@ export function buildPdfExpectations(payload, measured) {
         tableBodyBoundsPt: measured.tableBodyBoundsPx
           ? pt(measured.tableBodyBoundsPx)
           : null,
+        tableInspectionBoundsPt: measured.tableInspectionBoundsPx
+          ? pt(measured.tableInspectionBoundsPx)
+          : null,
       },
     ],
     rows: payload.rows.map((r, i) => {

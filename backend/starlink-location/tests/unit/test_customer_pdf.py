@@ -133,6 +133,20 @@ def test_repeated_text_still_requires_each_assigned_row():
         verifier().verify_pdf_layout(xml(), expected, FONTS)
 
 
+def test_duplicate_appended_below_measured_body_is_rejected():
+    expected = expectations()
+    expected["pages"][0]["tableInspectionBoundsPt"] = [10, 40, 950, 300]
+    tree = ET.fromstring(xml())
+    extra = deepcopy(tree.find(".//word"))
+    extra.set("yMin", "200")
+    extra.set("yMax", "212")
+    tree.find(".//line").append(extra)
+    with pytest.raises(ValueError, match="unassigned"):
+        verifier().verify_pdf_layout(
+            ET.tostring(tree, encoding="unicode"), expected, FONTS
+        )
+
+
 def test_wrapped_cells_use_geometric_reading_order_and_nfc():
     expected = expectations()
     expected["rows"][0]["displayCells"][1] = "Café coordination"

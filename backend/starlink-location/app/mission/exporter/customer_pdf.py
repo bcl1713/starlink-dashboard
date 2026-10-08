@@ -135,7 +135,12 @@ def verify_pdf_layout(layout_xml: str, expectations: dict, fonts: str) -> dict:
                 "inBounds": True,
             }
         )
-    for number, box in tables.items():
+    inspection = {
+        p["page"]: rectangle(p.get("tableInspectionBoundsPt") or p["tableBodyBoundsPt"])
+        for p in expectations["pages"]
+        if p.get("tableBodyBoundsPt") is not None
+    }
+    for number, box in inspection.items():
         for index, (_, bounds) in enumerate(page_words[number]):
             if contains(box, bounds) and (number, index) not in used:
                 raise ValueError("PDF has unassigned coordination text")
