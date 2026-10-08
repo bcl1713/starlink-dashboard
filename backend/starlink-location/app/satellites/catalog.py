@@ -118,6 +118,8 @@ _catalog: SatelliteCatalog | None = None
 def load_satellite_catalog(
     data_dir: Path = Path("data/satellites"),
     sat_coverage_dir: Path = Path("data/sat_coverage"),
+    *,
+    read_only: bool = False,
 ) -> SatelliteCatalog:
     """Load satellite catalog from data files.
 
@@ -136,8 +138,9 @@ def load_satellite_catalog(
     global _catalog
 
     # Create directories if needed
-    data_dir.mkdir(parents=True, exist_ok=True)
-    sat_coverage_dir.mkdir(parents=True, exist_ok=True)
+    if not read_only:
+        data_dir.mkdir(parents=True, exist_ok=True)
+        sat_coverage_dir.mkdir(parents=True, exist_ok=True)
 
     catalog = SatelliteCatalog()
 
@@ -152,14 +155,17 @@ def load_satellite_catalog(
     else:
         logger.info("No custom catalog.yaml found; using default satellites only")
 
-    _catalog = catalog
+    if not read_only:
+        _catalog = catalog
     return catalog
 
 
-def get_satellite_catalog() -> SatelliteCatalog:
+def get_satellite_catalog(*, read_only: bool = False) -> SatelliteCatalog:
     """Get the global catalog instance (initialize if needed)."""
     global _catalog
     if _catalog is None:
+        if read_only:
+            return load_satellite_catalog(read_only=True)
         _catalog = load_satellite_catalog()
     return _catalog
 

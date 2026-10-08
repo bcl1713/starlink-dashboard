@@ -44,9 +44,9 @@ from app.mission.timeline_builder.stats import (
 )
 from app.models.poi import POICreate
 from app.models.route import ParsedRoute
-from app.satellites.catalog import get_satellite_catalog
+from app.satellites.catalog import SatelliteCatalog, get_satellite_catalog
 from app.satellites.coverage import CoverageSampler
-from app.satellites.rules import MissionEvent, RuleEngine
+from app.satellites.rules import ConstraintConfig, MissionEvent, RuleEngine
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.run_route import normalize_timed_route
@@ -63,6 +63,7 @@ class TimelineArtifacts:
     summary: TimelineSummary
     generated_pois: tuple[POICreate, ...]
     x_assignments: tuple[tuple[datetime, str, str | None], ...] = ()
+    export_x_conditions: tuple[MissionEvent, ...] | None = None
 
 
 def prepare_mission_timeline(
@@ -73,7 +74,11 @@ def prepare_mission_timeline(
     parent_mission_id: str | None = None,
     include_samples: bool = False,
     *,
+    capture_x_conditions: bool = False,
     normalize_for_simulation: bool = False,
+    discover_coverage: bool = True,
+    satellite_catalog: SatelliteCatalog | None = None,
+    constraint_config: ConstraintConfig | None = None,
 ) -> TimelineArtifacts:
     """Prepare effective geometry, canonical events and POIs without publishing."""
 
@@ -121,7 +126,9 @@ def prepare_mission_timeline(
 
     coverage_path = Path("data/sat_coverage/commka.geojson")
     resolved_sampler = coverage_sampler or (
-        CoverageSampler(coverage_path) if coverage_path.exists() else None
+        CoverageSampler(coverage_path)
+        if discover_coverage and coverage_path.exists()
+        else None
     )
 
     build_start = time.perf_counter()
@@ -146,7 +153,7 @@ def prepare_mission_timeline(
             len(samples),
         )
 
-    rule_engine = RuleEngine()
+    rule_engine = RuleEngine(constraint_config)
     rule_engine.add_takeoff_landing_buffers(mission_start, mission_end)
 
     aar_windows = resolve_aar_windows(mission, route, projector)
@@ -176,6 +183,7 @@ def prepare_mission_timeline(
         coverage_enabled=resolved_sampler is not None,
     )
     apply_ka_events(rule_engine, coverage_result)
+    export_x_conditions = [] if capture_x_conditions else None
     warning_boundaries = apply_x_azimuth_events(
         rule_engine,
         mission,
@@ -186,6 +194,8 @@ def prepare_mission_timeline(
         poi_manager,
         mission_start,
         mission_end,
+        satellite_catalog=satellite_catalog,
+        condition_events=export_x_conditions,
     )
 
     generated_pois = construct_mission_pois(
@@ -268,6 +278,7 @@ def prepare_mission_timeline(
         summary,
         generated_pois,
         tuple(transition_schedule),
+        tuple(export_x_conditions) if export_x_conditions is not None else None,
     )
 
 
