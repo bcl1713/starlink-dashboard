@@ -40,7 +40,10 @@ test('a fitting mission primary preserves the accepted checkpoint page', async (
   const withMap = { ...assets, mapDataUrl: 'data:image/png;base64,AA==' };
   assert.equal(
     compose(payload, withMap, {
-      kind: 'primary', legPage: 1, legPageCount: 1, continued: false,
+      kind: 'primary',
+      legPage: 1,
+      legPageCount: 1,
+      continued: false,
     }),
     compose(payload, withMap)
   );
@@ -140,7 +143,8 @@ test('mission continuation repeats identity clocks and caveat without map or tim
   for (const text of ['Assessment incomplete', 'not a throughput guarantee'])
     assert.equal(html.split(text).length - 1, 2, text);
   assert.equal(
-    (html.match(/<td class="et" data-fit>≈ 01:30 EDT–01:30 EST<\/td>/g) || []).length,
+    (html.match(/<td class="et" data-fit>≈ 01:30 EDT–01:30 EST<\/td>/g) || [])
+      .length,
     2
   );
   assert.match(html, /Page 2 of 2/);

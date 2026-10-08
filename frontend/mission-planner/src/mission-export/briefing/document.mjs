@@ -39,9 +39,10 @@ export function composeBriefing(
       return `<tr data-row-id="${e(r.id)}" data-fit><td class="et" data-fit>${e(cells[0])}</td><td data-fit>${e(cells[1])}</td><td class="remaining-cell" data-fit>${e(cells[2])}</td><td class="posture-cell" data-fit>${e(cells[3])}</td></tr>`;
     })
     .join('');
-  const pageCopy = page && (page.kind === 'continuation' || page.continued)
-    ? `<p class="page-copy" data-fit>${page.kind === 'continuation' ? 'Coordination windows continued · ' : ''}Page ${page.legPage} of ${page.legPageCount}${payload.rows.length ? ` · Windows ${e(payload.rows[0].displayCells[0])} through ${e(payload.rows.at(-1).displayCells[0])}` : ''}${page.continued ? ' · continues on next page' : ''}</p>`
-    : '';
+  const pageCopy =
+    page && (page.kind === 'continuation' || page.continued)
+      ? `<p class="page-copy" data-fit>${page.kind === 'continuation' ? 'Coordination windows continued · ' : ''}Page ${page.legPage} of ${page.legPageCount}${payload.rows.length ? ` · Windows ${e(payload.rows[0].displayCells[0])} through ${e(payload.rows.at(-1).displayCells[0])}` : ''}${page.continued ? ' · continues on next page' : ''}</p>`
+      : '';
   const map =
     mapDataUrl && page?.kind !== 'continuation'
       ? `<aside class="map-card" data-fit><img src="${dataAsset(mapDataUrl, 'image/')}" alt="Mission route between departure and arrival airports" data-fit></aside>`
