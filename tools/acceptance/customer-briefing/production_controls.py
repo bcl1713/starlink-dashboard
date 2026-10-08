@@ -6,6 +6,7 @@ import json
 import time
 import zipfile
 from hashlib import sha256
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
@@ -71,6 +72,130 @@ def compare_legacy(disabled, enabled):
     }
 
 
+def assert_scenario(case, report):
+    """Required behavior comes from fixture inputs, not renderer self-consistency."""
+    if case == "over-budget":
+        if report.get("warning") != "page-budget":
+            raise ValueError("Over-budget input must reach page-budget omission")
+        return
+    if case == "cached-missing-route":
+        if report.get("warning") != "data":
+            raise ValueError("Missing route must retain legacy with data omission")
+        return
+    count = {"two-page": 2, "three-page": 3, "five-leg": 5}.get(case)
+    if count is not None and report.get("pageCount") != count:
+        raise ValueError(
+            f"Wrong actual page count for {case}: {report.get('pageCount')}"
+        )
+    evidence = report["evidence"]
+    legs = evidence["legs"]
+    if len(legs) != (5 if case == "five-leg" else 1):
+        raise ValueError("Wrong number of captured legs")
+    maps = evidence["render"]["maps"]
+    if case == "missing-map":
+        if not any(
+            value["status"] == "unavailable" and value["warnings"]
+            for value in maps.values()
+        ):
+            raise ValueError("Missing-map input did not exercise a reasoned fallback")
+    elif any(value["status"] != "primary" for value in maps.values()):
+        raise ValueError(
+            "Representative supported route did not retain useful maps: " + case
+        )
+    if case == "five-leg" and (
+        [page["legId"] for page in evidence["pages"]] != [leg["legId"] for leg in legs]
+        or any(page["kind"] != "primary" for page in evidence["pages"])
+    ):
+        raise ValueError("Five-leg page ownership/order differs from submitted inputs")
+    base = datetime(2026, 10, 25, 14, tzinfo=timezone.utc)
+    if case == "midnight":
+        base += timedelta(hours=60)
+    if case == "dst":
+        base = datetime(2026, 11, 1, 5, tzinfo=timezone.utc)
+    if case == "adjusted":
+        base += timedelta(hours=2)
+    duration = timedelta(minutes=10 if case == "short" else 240)
+
+    def instant(value):
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+    for number, leg in enumerate(legs):
+        canonical = leg["canonical"]
+        bounds = list(map(instant, canonical["utcBounds"]))
+        expected_start = base + timedelta(days=number)
+        if bounds[0] != expected_start or (
+            case != "spliced" and bounds[1] != expected_start + duration
+        ):
+            raise ValueError(
+                "Exact flight bounds changed from submitted UTC inputs: " + case
+            )
+        intervals = canonical["intervals"]
+        if (
+            not intervals
+            or instant(intervals[0]["startUtc"]) != bounds[0]
+            or instant(intervals[-1]["endUtc"]) != bounds[1]
+        ):
+            raise ValueError("Canonical interval coverage lost flight endpoints")
+        if any(a["endUtc"] != b["startUtc"] for a, b in zip(intervals, intervals[1:])):
+            raise ValueError("Canonical intervals have gaps or overlap")
+        if case == "incomplete-x" and any(
+            item["decisions"][2]["value"] != "?" for item in intervals
+        ):
+            raise ValueError("Unspecified X-Band was promoted to certainty")
+        if case in {"subminute", "nested-outage"}:
+            down = [
+                item
+                for item in intervals
+                if all(d["value"] == "Down" for d in item["decisions"])
+            ]
+            a = base + timedelta(minutes=60, seconds=3)
+            b = base + timedelta(
+                minutes=60, seconds=7 if case == "nested-outage" else 5
+            )
+            if (
+                not down
+                or instant(down[0]["startUtc"]) != a
+                or instant(down[-1]["endUtc"]) != b
+            ):
+                raise ValueError(
+                    "Brief total outage changed exact configured intersection"
+                )
+            if not any(
+                row["clock"]["start"].count(":") == 2
+                and row["clock"]["end"].count(":") == 2
+                for row in leg["customerRows"]
+                if "All transports unavailable" in row["impact"]
+            ):
+                raise ValueError("Brief total outage lost second-precision clocks")
+        if case in {"short", "ar-sof"}:
+            if case == "short" and not all(
+                any(r["kind"] == "sof" for r in item["restrictions"])
+                for item in intervals
+            ):
+                raise ValueError("Short-flight SOF did not cover the entire flight")
+            if case == "ar-sof" and (
+                not all(
+                    any(r["kind"] == "ar" for r in item["restrictions"])
+                    for item in intervals
+                )
+                or not any(
+                    {r["kind"] for r in item["restrictions"]} >= {"sof", "ar"}
+                    for item in intervals
+                )
+            ):
+                raise ValueError("Full-flight AR/SOF overlap was lost")
+        if case == "dst" and not any(
+            "EDT" in row["clock"]["start"] or "EST" in row["clock"]["end"]
+            for row in leg["customerRows"]
+        ):
+            raise ValueError("DST fold lost explicit offset identity")
+        if case == "midnight" and not any(
+            "Oct" in row["clock"]["start"] or "Oct" in row["clock"]["end"]
+            for row in leg["customerRows"]
+        ):
+            raise ValueError("Midnight rows lost date disambiguation")
+
+
 def inspect_download(content, headers, expected_status):
     headers = {key.lower(): value for key, value in headers.items()}
     status = headers.get("x-customer-briefing-status")
@@ -94,9 +219,10 @@ def inspect_download(content, headers, expected_status):
         included = PDF in names and EVIDENCE in names
         if any(name in names for name in (PDF, EVIDENCE)) != included:
             raise ValueError("Partial optional artifact pair")
-        if (
-            included != (status == "included")
-            or any(name in listed for name in (PDF, EVIDENCE)) != included
+        if included != (status == "included") or any(
+            listed.count(name) != (1 if included else 0)
+            or structure["mission_exports"].count(name) != (1 if included else 0)
+            for name in (PDF, EVIDENCE)
         ):
             raise ValueError("Optional artifact/manifest/status mismatch")
         if not any(name.endswith(".pptx") for name in names):
@@ -217,6 +343,26 @@ def qualify(owner):
     owner.compose("up", "-d", "--wait", "--wait-timeout", "150", timeout=180)
     api = ProductionApi(owner)
     fixtures = seed_missions(api, owner.root)
+    for category in ("landmark", "satellite"):
+        api.request(
+            "POST",
+            "/api/pois/",
+            data={
+                "name": "Synthetic acceptance " + category,
+                "latitude": 35 if category == "landmark" else 0,
+                "longitude": -102,
+                "category": category,
+                "description": "Identifiable synthetic roundtrip acceptance POI",
+                "mission_id": (
+                    fixtures["normal"]["id"] if category == "landmark" else None
+                ),
+                "route_id": (
+                    fixtures["normal"]["legs"][0]["route_id"]
+                    if category == "landmark"
+                    else None
+                ),
+            },
+        )
     reports = []
     tools = (
         Path(owner.env["BRIEFING_SOURCE_ROOT"]) / "tools/acceptance/customer-briefing"
@@ -242,10 +388,23 @@ def qualify(owner):
     audit_code = (tools / "production_runtime_audit.py").read_text()
     audit_reports = []
 
-    def audit(label, baseline=None):
+    def audit(label, baseline=None, legacy_disabled=False):
         result = json.loads(backend_python(audit_code).splitlines()[-1])
-        if baseline is not None and result["sourceHashes"] != baseline["sourceHashes"]:
-            raise ValueError("Export changed persisted inputs: " + label)
+        if baseline is not None:
+            changed = sorted(
+                name
+                for name in result["sourceHashes"].keys()
+                | baseline["sourceHashes"].keys()
+                if result["sourceHashes"].get(name)
+                != baseline["sourceHashes"].get(name)
+            )
+            result["changedSources"] = changed
+            # The unmodified disabled legacy path republishes generated POIs.
+            # Record that behavior; snapshot-fed enabled exports must change nothing.
+            if changed and (not legacy_disabled or changed != ["/data/pois.json"]):
+                raise ValueError(
+                    "Export changed persisted inputs: " + label + ": " + str(changed)
+                )
         result["label"] = label
         audit_reports.append(result)
         (owner.root / "runtime-audits.json").write_text(
@@ -282,7 +441,7 @@ def qualify(owner):
         content = (destination / "download.zip").read_bytes()
         headers = result["requests"][0]["headers"]
         inspect_download(content, headers, status)
-        audit("after-browser-" + case + "-" + status, baseline)
+        audit("after-browser-" + case + "-" + status, baseline, status == "disabled")
         return result
 
     def pdf_inspection(destination, label):
@@ -348,11 +507,20 @@ def qualify(owner):
         (owner.root / "production-downloads.json").write_text(
             json.dumps(reports, indent=2)
         )
-        audit("after-download-" + label, baseline)
+        audit("after-download-" + label, baseline, status == "disabled")
+        if status != "disabled" and not label.startswith("fault-"):
+            assert_scenario(case, report)
         return report
 
+    original_pois = backend_python(
+        "import base64; from pathlib import Path; print(base64.b64encode(Path('/data/pois.json').read_bytes()).decode())"
+    ).splitlines()[-1]
     download("normal", "disabled", "normal-disabled")
     browser_reports = [browser("normal", "disabled")]
+    backend_python(
+        "import base64,sys; from pathlib import Path; Path('/data/pois.json').write_bytes(base64.b64decode(sys.argv[1]))",
+        original_pois,
+    )
     owner.env["BRIEFING_ENABLED"] = "true"
     owner.compose(
         "up",
@@ -369,25 +537,33 @@ def qualify(owner):
     owner.compose(
         "up", "-d", "--force-recreate", "--no-deps", "mission-planner", timeout=60
     )
-    observer = "/tmp/briefing-production-observer.py"
-    copy_to_backend(tools / "production_observer.py", observer)
-    owner.ownership["observer"] = {
-        "service": "starlink-location",
-        "script": observer,
-        "output": "/tmp/briefing-production-observations",
-    }
-    owner.persist()
-    owner.compose(
-        "exec",
-        "-d",
-        "-T",
-        "--user",
-        "appuser",
-        "starlink-location",
-        "python",
-        observer,
-        timeout=30,
-    )
+    observer_count = 0
+
+    def start_observer():
+        nonlocal observer_count
+        observer_count += 1
+        observer = "/tmp/briefing-production-observer.py"
+        copy_to_backend(tools / "production_observer.py", observer)
+        owner.ownership["observer"] = {
+            "service": "starlink-location",
+            "script": observer,
+            "output": "/tmp/briefing-production-observations",
+            "evidenceName": "runtime-observations-" + str(observer_count),
+        }
+        owner.persist()
+        owner.compose(
+            "exec",
+            "-d",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            observer,
+            timeout=30,
+        )
+
+    start_observer()
     # Supported storage cases retain the real saved inputs and cached predictions.
     backend_python(
         "from app.mission.storage import delete_mission_timeline; "
@@ -480,6 +656,7 @@ def qualify(owner):
     ]
 
     def restart_fault(render="", application=""):
+        owner.finish_observer()
         owner.env.update(BRIEFING_RENDER_FAULT=render, BRIEFING_APP_FAULT=application)
         owner.compose(
             "up",
@@ -495,10 +672,10 @@ def qualify(owner):
         owner.compose(
             "up", "-d", "--force-recreate", "--no-deps", "mission-planner", timeout=60
         )
+        start_observer()
 
     # The observer belongs to this backend instance; preserve it before restart.
     # Application/proxy logs and each request's private owner remain audit evidence.
-    owner.finish_observer()
     fault_reports = []
     for fault in ("pdf", "evidence", "publication"):
         restart_fault(application=fault)
@@ -511,21 +688,72 @@ def qualify(owner):
 
     imported = []
     for label in ("normal-disabled", "normal"):
+        owner.finish_observer()
+        owner.compose("stop", "starlink-location", timeout=40)
+        owner.compose(
+            "run",
+            "--rm",
+            "--no-deps",
+            "starlink-location",
+            "python",
+            "-c",
+            "import shutil; from pathlib import Path; "
+            "[shutil.rmtree(p,ignore_errors=True) for p in ('data/missions','/data/routes')]; "
+            "Path('/data/pois.json').unlink(missing_ok=True)",
+            timeout=30,
+        )
+        restart_fault()
         content = (owner.root / "downloads" / label / "download.zip").read_bytes()
         response, _, _ = api.request(
             "POST", "/api/v2/missions/import", multipart=(label + ".zip", content)
         )
         result = json.loads(response)
-        if result.get("success") is not True:
+        if result.get("success") is not True or result.get("warnings"):
             raise ValueError("Real ZIP import failed: " + response.decode())
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
             expected = json.loads(archive.read("mission.json"))
             actual, _, _ = api.request("GET", "/api/v2/missions/" + expected["id"])
             actual = json.loads(actual)
-            if actual["id"] != expected["id"] or [
-                leg["route_id"] for leg in actual["legs"]
-            ] != [leg["route_id"] for leg in expected["legs"]]:
-                raise ValueError("ZIP import changed original route ownership")
+            if actual != expected:
+                raise ValueError("ZIP import changed original mission/leg content")
+            expected_pois = [
+                poi
+                for name in archive.namelist()
+                if name.startswith("pois/") and name.endswith(".json")
+                for poi in json.loads(archive.read(name))["pois"]
+                if poi["description"]
+                == "Identifiable synthetic roundtrip acceptance POI"
+            ]
+            poi_response, _, _ = api.request("GET", "/api/pois/?active_only=false")
+            actual_pois = json.loads(poi_response)["pois"]
+
+            # Legacy POI create/import assigns fresh creation/update clocks.
+            # Ownership, location, type and every other stored content field must match.
+            def poi_content(poi):
+                return {
+                    key: value
+                    for key, value in poi.items()
+                    if key not in {"created_at", "updated_at", "active"}
+                }
+
+            actual_by_id = {poi["id"]: poi for poi in actual_pois}
+            if (
+                len(expected_pois) != 2
+                or result["satellites_imported"] < 1
+                or result["pois_imported"] < 1
+            ):
+                raise ValueError(
+                    "Nonempty identifiable POI import control was not exercised"
+                )
+            for poi in expected_pois:
+                imported_poi = actual_by_id.get(poi["id"], {})
+                if any(
+                    imported_poi.get(key) != value
+                    for key, value in poi_content(poi).items()
+                ):
+                    raise ValueError(
+                        "ZIP import changed identifiable user/satellite POI content"
+                    )
             source_proof = json.loads(
                 backend_python(
                     "import json,sys; from pathlib import Path; from hashlib import sha256; "
@@ -550,6 +778,8 @@ def qualify(owner):
                 "response": result,
                 "actualMission": actual,
                 "originalRouteHashes": source_proof,
+                "identifiablePois": expected_pois,
+                "poiImportClockExclusions": ["created_at", "updated_at"],
             }
         )
     (owner.root / "roundtrip-imports.json").write_text(json.dumps(imported, indent=2))

@@ -93,6 +93,19 @@ def test_surviving_resource_blocks_cleanup_success_and_preserves_context(tmp_pat
     ]
 
 
+def test_surviving_resource_cannot_leave_a_passing_summary(tmp_path):
+    owner = module().ProductionOwner("briefing-private-test", tmp_path)
+    owner.execute = lambda command, **kwargs: (
+        "owned-container\n" if "ps" in command else ""
+    )
+    summary = {"checksPassed": True}
+    with pytest.raises(RuntimeError, match="remain"):
+        owner.finalize_summary(summary)
+    assert summary["checksPassed"] is False
+    assert summary["cleanup"]["remaining"]["containers"] == "owned-container"
+    assert "remain" in summary["cleanupError"]
+
+
 def controls():
     entry = ROOT / "tools/acceptance/customer-briefing/production_controls.py"
     assert entry.exists(), "production ZIP inspection is missing"
@@ -150,8 +163,11 @@ def download_fixture(damage=None):
     }
     if damage == "hash":
         entries[pdf_path] += b"changed"
-    if damage == "manifest":
+    if damage in {"manifest", "manifest-consistent"}:
         manifest["file_structure"]["mission_exports"].remove(pdf_path)
+        if damage == "manifest-consistent":
+            manifest["statistics"]["total_files"] -= 1
+            manifest["statistics"]["mission_export_files"] -= 1
     if damage == "statistics":
         manifest["statistics"]["total_files"] -= 1
     if damage == "diagnostics":
@@ -173,7 +189,15 @@ def test_actual_download_pair_manifest_hashes_and_diagnostics_are_consistent():
 
 
 @pytest.mark.parametrize(
-    "damage", ["half-pair", "hash", "manifest", "statistics", "diagnostics"]
+    "damage",
+    [
+        "half-pair",
+        "hash",
+        "manifest",
+        "manifest-consistent",
+        "statistics",
+        "diagnostics",
+    ],
 )
 def test_download_inspection_rejects_partial_or_unqualified_pair(damage):
     with pytest.raises(ValueError):
@@ -264,4 +288,20 @@ def test_production_legacy_comparison_rejects_changed_presentation_member():
     with pytest.raises(ValueError, match="Legacy content differs"):
         controls().compare_legacy(
             legacy_fixture("first"), legacy_fixture("second", True)
+        )
+
+
+@pytest.mark.parametrize(
+    "case,count", [("two-page", 2), ("three-page", 3), ("five-leg", 5)]
+)
+def test_named_page_control_rejects_different_actual_page_count(case, count):
+    report = {"status": "included", "pageCount": count - 1, "evidence": {}}
+    with pytest.raises(ValueError, match="page count"):
+        controls().assert_scenario(case, report)
+
+
+def test_over_budget_control_requires_the_page_budget_boundary():
+    with pytest.raises(ValueError, match="page-budget"):
+        controls().assert_scenario(
+            "over-budget", {"status": "omitted", "warning": "runtime"}
         )

@@ -129,9 +129,16 @@ export async function renderMissionBriefing(
       deadline = true;
       void owner?.close();
     }, budget.workRemainingMs());
-    owner = await stage('startup', () =>
-      openOwner({ assetRoot, outputRoot, ownershipPath, budget, fault })
-    );
+    await stage('startup', async () => {
+      owner = await openOwner({
+        assetRoot,
+        outputRoot,
+        ownershipPath,
+        budget,
+        fault,
+      });
+      return owner;
+    });
     report.launchCount = 1;
     report.browserIdentity = owner.browserIdentity;
     check();

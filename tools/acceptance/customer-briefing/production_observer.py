@@ -6,6 +6,8 @@ import signal
 import time
 from pathlib import Path
 
+import psutil
+
 destination = Path("/tmp/briefing-production-observations")
 destination.mkdir(exist_ok=True)
 running = True
@@ -43,6 +45,27 @@ while running:
                 target = destination / root.name
                 target.mkdir(exist_ok=True)
                 (target / name).write_text(json.dumps(data, indent=2))
+                if name == "stage-progress.json":
+                    identities = []
+                    try:
+                        process = psutil.Process(data["pid"])
+                        identities = [
+                            {"pid": p.pid, "rssBytes": p.memory_info().rss}
+                            for p in [process, *process.children(recursive=True)]
+                        ]
+                    except psutil.Error:
+                        pass
+                    with (target / "stage-history.jsonl").open("a") as history:
+                        history.write(
+                            json.dumps(
+                                {
+                                    "observedAt": time.time(),
+                                    "stage": data,
+                                    "processMemory": identities,
+                                }
+                            )
+                            + "\n"
+                        )
                 seen[str(source)] = content
             except (OSError, ValueError):
                 continue

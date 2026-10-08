@@ -160,7 +160,7 @@ if not stopped:raise SystemExit(1)
 """,
             timeout=10,
         )
-        observations = self.root / "runtime-observations"
+        observations = self.root / observer.get("evidenceName", "runtime-observations")
         observations.mkdir()
         self.compose(
             "cp",
@@ -168,8 +168,19 @@ if not stopped:raise SystemExit(1)
             str(observations),
             timeout=30,
         )
-        self.ownership["completedObserver"] = self.ownership.pop("observer")
+        self.ownership.setdefault("completedObservers", []).append(
+            self.ownership.pop("observer")
+        )
         self.persist()
+
+    def finalize_summary(self, summary):
+        try:
+            summary["cleanup"] = self.close()
+        except BaseException as error:
+            summary["checksPassed"] = False
+            summary["cleanup"] = self.ownership["cleanup"]
+            summary["cleanupError"] = str(error)
+            raise
 
     def close(self):
         if self.closed:
@@ -364,7 +375,7 @@ def run_production(candidate_sha, evidence_root, images_only=False):
                 except (RuntimeError, OSError, ValueError, TimeoutError) as error:
                     summary["observerError"] = str(error)
                     summary["checksPassed"] = False
-            summary["cleanup"] = owner.close()
+            owner.finalize_summary(summary)
         finally:
             for number, handler in previous.items():
                 signal.signal(number, handler)

@@ -62,6 +62,11 @@ async function scenario(fault = null) {
       await observe('startup');
       seen.push(actual);
       launches++;
+      if (fault === 'startup-journal-failure') {
+        const journal = path.join(outputRoot, 'stage-progress.json');
+        await rm(journal);
+        await mkdir(journal);
+      }
       return owner;
     },
     mapStage: async ({ budget: actual, input }) => {
@@ -160,6 +165,14 @@ test('private phase evidence identifies actual active work before observation or
 });
 test('failed private journal writes cannot prevent request owner cleanup', async () => {
   const s = await scenario('journal-failure');
+  assert.equal(s.closes, 1);
+  assert.equal(s.report.cleanup.success, true);
+  assert.equal(s.report.status, 'failed');
+  assert.equal(s.pdf, null);
+});
+test('a post-acquisition journal failure still closes the acquired owner', async () => {
+  const s = await scenario('startup-journal-failure');
+  assert.equal(s.launches, 1);
   assert.equal(s.closes, 1);
   assert.equal(s.report.cleanup.success, true);
   assert.equal(s.report.status, 'failed');
