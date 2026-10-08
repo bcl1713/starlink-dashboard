@@ -1,10 +1,13 @@
 """Production acceptance must own and reap every command, including failed runs."""
 
 import importlib.util
+import io
 import json
 import os
 import signal
 import sys
+import zipfile
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -88,3 +91,94 @@ def test_surviving_resource_blocks_cleanup_success_and_preserves_context(tmp_pat
     assert not json.loads((tmp_path / "ownership.json").read_text())["cleanup"][
         "composeRemoved"
     ]
+
+
+def controls():
+    entry = ROOT / "tools/acceptance/customer-briefing/production_controls.py"
+    assert entry.exists(), "production ZIP inspection is missing"
+    spec = importlib.util.spec_from_file_location("briefing_controls", entry)
+    value = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(value)
+    return value
+
+
+def download_fixture(damage=None):
+    pdf = b"%PDF-qualified-independent-inspection-follows"
+    pdf_path = "exports/mission/mission-customer-briefing-trial.pdf"
+    evidence_path = "exports/mission/mission-customer-briefing-evidence.json"
+    evidence = {
+        "schemaVersion": 2,
+        "missionId": "m",
+        "snapshotFingerprint": "a" * 64,
+        "legs": [
+            {
+                "legId": "l",
+                "mapInputDiagnostics": ["captured reason"],
+                "customerRows": [],
+            }
+        ],
+        "pages": [{"page": 1, "legId": "l", "rowIds": []}],
+        "render": {
+            "status": "success",
+            "totalMs": 1234,
+            "launchCount": 1,
+            "sharedBrowser": True,
+            "cleanup": {"success": True},
+            "maps": {"l": {"inputDiagnostics": ["captured reason"]}},
+            "pdfValidation": {"verified": True, "rows": [], "pageCount": 1},
+            "artifactHashes": {"pdfPath": sha256(pdf).hexdigest()},
+        },
+    }
+    entries = {
+        "mission.json": b'{"id":"m"}',
+        "exports/mission/mission-slides.pptx": b"legacy",
+    }
+    entries[pdf_path] = pdf
+    if damage != "half-pair":
+        entries[evidence_path] = json.dumps(evidence).encode()
+    manifest = {
+        "version": "2.0",
+        "mission_id": "m",
+        "file_structure": {
+            "mission_data": ["mission.json"],
+            "mission_exports": list(entries)[1:],
+        },
+        "statistics": {
+            "total_files": len(entries),
+            "mission_export_files": len(entries) - 1,
+        },
+    }
+    if damage == "hash":
+        entries[pdf_path] += b"changed"
+    if damage == "manifest":
+        manifest["file_structure"]["mission_exports"].remove(pdf_path)
+    if damage == "statistics":
+        manifest["statistics"]["total_files"] -= 1
+    if damage == "diagnostics":
+        evidence["render"]["maps"]["l"]["inputDiagnostics"] = []
+        entries[evidence_path] = json.dumps(evidence).encode()
+    entries["manifest.json"] = json.dumps(manifest).encode()
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        for name, content in entries.items():
+            archive.writestr(name, content)
+    return stream.getvalue()
+
+
+def test_actual_download_pair_manifest_hashes_and_diagnostics_are_consistent():
+    report = controls().inspect_download(
+        download_fixture(), {"X-Customer-Briefing-Status": "included"}, "included"
+    )
+    assert report["status"] == "included" and report["pageCount"] == 1
+
+
+@pytest.mark.parametrize(
+    "damage", ["half-pair", "hash", "manifest", "statistics", "diagnostics"]
+)
+def test_download_inspection_rejects_partial_or_unqualified_pair(damage):
+    with pytest.raises(ValueError):
+        controls().inspect_download(
+            download_fixture(damage),
+            {"X-Customer-Briefing-Status": "included"},
+            "included",
+        )

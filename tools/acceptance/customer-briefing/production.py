@@ -7,6 +7,7 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
 import tarfile
 import time
 from pathlib import Path
@@ -27,6 +28,7 @@ class ProductionOwner:
         self.closed = False
         self.cleaning = False
         self.env = dict(os.environ)
+        self.compose_file = COMPOSE
         self.ownership = {
             "pid": os.getpid(),
             "pgid": os.getpgrp(),
@@ -113,7 +115,15 @@ class ProductionOwner:
 
     def compose(self, *arguments, timeout=120):
         return self.execute(
-            ["docker", "compose", "-p", self.project, "-f", str(COMPOSE), *arguments],
+            [
+                "docker",
+                "compose",
+                "-p",
+                self.project,
+                "-f",
+                str(self.compose_file),
+                *arguments,
+            ],
             timeout=timeout,
         )
 
@@ -224,6 +234,12 @@ def run_production(candidate_sha, evidence_root, images_only=False):
         context.mkdir()
         with tarfile.open(archive) as source:
             source.extractall(context, filter="data")
+        self_compose = (
+            context / "tools/acceptance/customer-briefing/compose.production.yml"
+        )
+        owner.compose_file = self_compose
+        owner.ownership["composeFile"] = str(self_compose)
+        owner.persist()
         for name, dockerfile, build_context in (
             ("backend", "backend/starlink-location/Dockerfile", context),
             (
@@ -284,6 +300,7 @@ def run_production(candidate_sha, evidence_root, images_only=False):
             ).splitlines()[-1]
         )
         if not images_only:
+            sys.path.insert(0, str(context / "tools/acceptance/customer-briefing"))
             from production_controls import qualify
 
             summary["production"] = qualify(owner)
