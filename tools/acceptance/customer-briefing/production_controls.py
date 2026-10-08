@@ -331,6 +331,7 @@ class ProductionApi:
         self.origin = f"http://127.0.0.1:{owner.env['BRIEFING_PORT']}"
         # Only loopback requests bypass proxies; external build/source access does not.
         self.opener = build_opener(ProxyHandler({}))
+        self.failures = 0
 
     def request(self, method, path, *, data=None, multipart=None, timeout=95):
         headers = {}
@@ -366,6 +367,22 @@ class ProductionApi:
             except HTTPError as error:
                 if error.code != 429 or attempt == 2:
                     detail = error.read().decode(errors="replace")
+                    self.failures += 1
+                    (
+                        self.owner.root / f"http-error-{self.failures:03d}.json"
+                    ).write_text(
+                        json.dumps(
+                            {
+                                "method": method,
+                                "path": path,
+                                "status": error.code,
+                                "proxyTotalSeconds": time.monotonic() - started,
+                                "headers": dict(error.headers),
+                                "body": detail,
+                            },
+                            indent=2,
+                        )
+                    )
                     raise RuntimeError(
                         f"{method} {path}: HTTP {error.code}: {detail}"
                     ) from error

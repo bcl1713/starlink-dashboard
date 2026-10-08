@@ -87,6 +87,19 @@ test('short-flight overlapping SOF keeps its full-width label inside the exact r
   assert.match(label[2], /text-anchor="middle"/);
   assert.match(svg, /data-restriction width="960"/);
 });
+test('fall-back axis distinguishes repeated Eastern clock hours without changing geometry', async () => {
+  const p = structuredClone(payload);
+  p.flight = {
+    startUtc: '2026-11-01T05:00:00Z',
+    endUtc: '2026-11-01T09:00:00Z',
+  };
+  p.intervals = [{ ...p.intervals[0], ...p.flight, restrictionLabels: [] }];
+  const svg = (await renderer())(p);
+  assert.match(svg, />01:00 EDT<\/text>/);
+  assert.match(svg, />01:00 EST<\/text>/);
+  assert.equal((svg.match(/class="axis"/g) || []).length, 9);
+  assert.match(svg, /data-posture="Nominal"[^>]*width="960"/);
+});
 
 test('narrow incomplete intervals expose one and zero confirmed without definitive color', async () => {
   const p = structuredClone(payload);

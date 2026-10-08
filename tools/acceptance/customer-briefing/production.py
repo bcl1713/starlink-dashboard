@@ -265,6 +265,11 @@ def run_production(candidate_sha, evidence_root, images_only=False):
         BRIEFING_ENABLED="false",
         BRIEFING_SOURCE_ROOT=str(owner.root / "candidate-source"),
     )
+    owner.ownership["loopbackListener"] = {
+        "address": "127.0.0.1",
+        "port": int(owner.env["BRIEFING_PORT"]),
+    }
+    owner.persist()
     summary = {
         "candidateSha": candidate_sha,
         "checksPassed": False,

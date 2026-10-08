@@ -142,11 +142,33 @@ export function renderTimeline(payload) {
       `text-anchor="${inside ? 'middle' : a < 700 ? 'start' : 'end'}" class="restriction-label" data-svg-label`
     );
   }
+  const localDateClock = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+  const zones = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    timeZoneName: 'short',
+  });
+  const zone = (t) =>
+    zones.formatToParts(t).find((part) => part.type === 'timeZoneName').value;
+  const repeated = (t) =>
+    [-3600000, 3600000].some(
+      (delta) => localDateClock.format(t) === localDateClock.format(t + delta)
+    );
+  const showZone =
+    zone(start) !== zone(end) || repeated(start) || repeated(end);
   const et = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
+    ...(showZone ? { timeZoneName: 'short' } : {}),
   });
   for (let h = 0; h <= 8; h++) {
     const t = start + ((end - start) * h) / 8;
