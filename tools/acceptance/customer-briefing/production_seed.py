@@ -19,6 +19,8 @@ polygon={'type':'Feature','properties':{'satellite_id':'AOR','fixture_kind':'syn
 (coverage/'commka.geojson').write_text(json.dumps({'type':'FeatureCollection','features':[polygon]}))
 (satellites/'catalog.yaml').write_text('satellites:\\n  - id: X-Acceptance\\n    transport: X\\n    longitude: -102\\n    slot: Synthetic acceptance provider\\n')
 print(json.dumps({'fixtureKind':'synthetic provider acceptance fixture','coverage':'supported GeoJSON','catalog':'supported YAML'}))
+with (satellites/'catalog.yaml').open('a') as catalog:
+ catalog.write(chr(10).join(['  - id: X-Blocked','    transport: X','    longitude: 80','    slot: Synthetic geometrically blocked acceptance provider'])+chr(10))
 """
 
 
@@ -53,6 +55,7 @@ def seed_missions(api, root):
         "midnight": {"start": BASE + timedelta(hours=60)},
         "dst": {"start": datetime(2026, 11, 1, 5, tzinfo=timezone.utc)},
         "subminute": {"subminute": True},
+        "uncertain-subminute": {"subminute": True, "uncertain": True},
         "nested-outage": {"nested": True},
         "ar-sof": {"ar": True},
         "adjusted": {"adjusted": True},
@@ -75,7 +78,14 @@ def seed_missions(api, root):
             end = start + duration
             transports = {
                 "initial_x_satellite_id": (
-                    "X-Unspecified" if recipe.get("unknown") else "X-Acceptance"
+                    "X-Unspecified"
+                    if recipe.get("unknown")
+                    else (
+                        "X-Blocked"
+                        if (recipe.get("subminute") or recipe.get("nested"))
+                        and not recipe.get("uncertain")
+                        else "X-Acceptance"
+                    )
                 ),
                 "initial_ka_satellite_ids": ["AOR"],
             }
@@ -113,17 +123,18 @@ def seed_missions(api, root):
                         "reason": "Synthetic brief nested total outage",
                     }
                 ]
-                # An unspecified X position preserves uncertainty; known X is
-                # explicitly taken down by a configured same-satellite transition.
-                transports["x_transitions"] = [
-                    {
-                        "id": "test-transition",
-                        "latitude": 35,
-                        "longitude": -103.5,
-                        "target_satellite_id": "X-Acceptance",
-                        "is_same_satellite_transition": True,
-                    }
-                ]
+                # Keep the unresolved transition control distinct from confirmed
+                # geometric blockage; uncertainty never proves total unavailability.
+                if recipe.get("uncertain"):
+                    transports["x_transitions"] = [
+                        {
+                            "id": "test-transition",
+                            "latitude": 35,
+                            "longitude": -103.5,
+                            "target_satellite_id": "X-Acceptance",
+                            "is_same_satellite_transition": True,
+                        }
+                    ]
             if recipe.get("ar"):
                 transports["aar_windows"] = [
                     {

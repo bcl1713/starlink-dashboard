@@ -166,11 +166,12 @@ def assert_scenario(case, report):
             item["decisions"][2]["value"] != "?" for item in intervals
         ):
             raise ValueError("Unspecified X-Band was promoted to certainty")
-        if case in {"subminute", "nested-outage"}:
+        if case in {"subminute", "nested-outage", "uncertain-subminute"}:
             down = [
                 item
                 for item in intervals
-                if all(d["value"] == "Down" for d in item["decisions"])
+                if [d["value"] for d in item["decisions"]]
+                == ["Down", "Down", "?" if case == "uncertain-subminute" else "Down"]
             ]
             a = base + timedelta(minutes=60, seconds=3)
             b = base + timedelta(
@@ -184,11 +185,20 @@ def assert_scenario(case, report):
                 raise ValueError(
                     "Brief total outage changed exact configured intersection"
                 )
+            if case == "uncertain-subminute" and any(
+                all(d["value"] == "Down" for d in item["decisions"])
+                for item in intervals
+            ):
+                raise ValueError("Unresolved X was promoted to definitive total outage")
             if not any(
                 row["clock"]["start"].count(":") == 2
                 and row["clock"]["end"].count(":") == 2
                 for row in leg["customerRows"]
                 if "All transports unavailable" in row["impact"]
+                or (
+                    case == "uncertain-subminute"
+                    and row["remaining"] == "No transport confirmed available"
+                )
             ):
                 raise ValueError("Brief total outage lost second-precision clocks")
         if case in {"short", "ar-sof"}:

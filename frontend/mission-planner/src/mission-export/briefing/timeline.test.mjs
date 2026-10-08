@@ -100,6 +100,16 @@ test('fall-back axis distinguishes repeated Eastern clock hours without changing
   assert.equal((svg.match(/class="axis"/g) || []).length, 9);
   assert.match(svg, /data-posture="Nominal"[^>]*width="960"/);
 });
+test('fractional-minute short-flight ticks retain seconds at their exact positions', async () => {
+  const p = structuredClone(payload);
+  p.flight.endUtc = '2026-10-25T14:10:00Z';
+  p.intervals = [{ ...p.intervals[0], ...p.flight, restrictionLabels: [] }];
+  const svg = (await renderer())(p);
+  assert.match(svg, />10:01:15<\/text>/);
+  assert.match(svg, />10:02:30<\/text>/);
+  assert.match(svg, />10:03:45<\/text>/);
+  assert.equal((svg.match(/class="axis"/g) || []).length, 9);
+});
 
 test('narrow incomplete intervals expose one and zero confirmed without definitive color', async () => {
   const p = structuredClone(payload);

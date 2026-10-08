@@ -163,15 +163,21 @@ export function renderTimeline(payload) {
     );
   const showZone =
     zone(start) !== zone(end) || repeated(start) || repeated(end);
+  const tickTimes = Array.from(
+    { length: 9 },
+    (_, h) => start + ((end - start) * h) / 8
+  );
+  const seconds = tickTimes.some((t) => t % 60000 !== 0);
   const et = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
     ...(showZone ? { timeZoneName: 'short' } : {}),
+    ...(seconds ? { second: '2-digit' } : {}),
   });
   for (let h = 0; h <= 8; h++) {
-    const t = start + ((end - start) * h) / 8;
+    const t = tickTimes[h];
     const px = 280 + (960 * h) / 8;
     out +=
       `<path d="M${px} 224v5" stroke="#83909e"/>` +
