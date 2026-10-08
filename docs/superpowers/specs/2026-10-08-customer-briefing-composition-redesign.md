@@ -17,6 +17,11 @@ and
 [visual design](https://github.com/bcl1713/starlink-dashboard/pull/309#issuecomment-6059091135).
 The reviewed five-leg, 290-slide deck failed customer acceptance.
 
+The
+[written-spec review](https://github.com/bcl1713/starlink-dashboard/pull/309#issuecomment-6059411867)
+adds the fully assessed primary visual checkpoint and incomplete-planning pair
+defined below.
+
 This spec supersedes the customer composition, appendix, clock display,
 typography, and pagination requirements in the
 [original trial design](2026-10-07-customer-mission-briefing-trial-design.md).
@@ -217,12 +222,29 @@ serialization modules. Replace the composition in `trial_pptx.py` and its layout
 helpers. Update package assembly and acceptance inspections for the new atomic
 artifact pair and new page contract.
 
-The implementation plan must begin with the customer-view contracts and one real
-editable normal-leg PPTX, rendered to a full-resolution preview. Use SOF, an
-obvious outage, and meaningful endpoint names. Review its hierarchy, table
-readability, branding, and integrated map before expanding the builder to
-dense/long and multi-leg cases. This is a visual checkpoint, not a substitute
-for the final production export or customer acceptance.
+The implementation plan must begin with customer-view contracts and a pair of
+real editable normal-leg PPTXs, rendered to full-resolution previews:
+
+1. Primary visual acceptance leg: Commercial Ka, Starshield, and X-Band are
+   fully planned and independently classifiable throughout the flight, with no
+   unknown transport states. Include nominal periods, at least one known outage,
+   an overlapping outage that changes posture, takeoff/landing SOF, and
+   meaningful endpoint names. Show Nominal green, Degraded amber, and Limited
+   orange; include Communications unavailable red when supported by the fixture.
+   Transport lanes explain the three/two/one/zero available counts, while SOF
+   styling stays independent of transport state.
+2. Secondary incomplete-planning leg: X-Band is intentionally unresolved.
+   Demonstrate that the neutral Assessment incomplete treatment and one
+   leg-level note preserve the visibility of known Ka/Starshield outages and
+   confirmed remaining capability. This leg cannot substitute for the primary
+   color review.
+
+Build and render the single polished primary page first. Review its hierarchy,
+posture colors, table readability, branding, and integrated map at full
+resolution. Do not expand to dense/long or multi-leg implementation until that
+page is explicitly accepted visually. The secondary leg verifies incomplete
+planning within the same early checkpoint. This checkpoint does not replace
+final production export, scan testing, or customer acceptance of the full deck.
 
 ## Verification and acceptance
 
@@ -235,7 +257,9 @@ offline assets, not just text presence or bounding boxes.
 Representative rendered candidates must include:
 
 - A normal six-to-eight-hour leg: one page, readable multi-row table, both SOF
-  windows, an immediately obvious outage, and remaining transports.
+  windows, an immediately obvious outage and overlap, and remaining transports.
+  All three transports are assessed for the primary visual acceptance leg; the
+  separate incomplete-planning leg proves unknown X does not hide known risk.
 - A dense/long leg: at most three pages, justified continuation, no duplicated
   window representation, and complete customer-relevant coverage.
 - The five-leg acceptance mission: fewer than fifteen customer slides, with
