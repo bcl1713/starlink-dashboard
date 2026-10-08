@@ -10,8 +10,13 @@ From the clean feature worktree, run with its full committed SHA:
   --sha "$(git rev-parse HEAD)" \
   --evidence /absolute/path/to/new/durable/evidence \
   --task-root /tmp/new-customer-briefing-task-root \
-  --profile /absolute/path/to/provisioned-platform-descriptor.toml
+  --profile /absolute/path/to/provisioned-platform-descriptor.toml \
+  --existing-package /absolute/path/to/existing-local-mission.zip
 ```
+
+The optional existing-package input is anonymized locally: human labels and IDs
+are replaced, free-text metadata is removed, and KML timing is retained. Its
+geometry remains private local review evidence and is never committed.
 
 The evidence and temporary roots must be new and disjoint. Existing project
 resources and image tags are refused. The SHA must match clean tracked HEAD.

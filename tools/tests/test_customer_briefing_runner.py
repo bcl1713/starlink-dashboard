@@ -304,3 +304,111 @@ def test_backend_probe_exports_the_real_application(tmp_path, monkeypatch):
     probe = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(probe)
     assert getattr(probe, "app", None) is app
+
+
+def test_existing_package_anonymization_preserves_times_and_references(tmp_path):
+    import zipfile
+
+    spec = importlib.util.spec_from_file_location(
+        "anonymize", ROOT / "tools/acceptance/customer-briefing/anonymize_package.py"
+    )
+    helper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(helper)
+    original = tmp_path / "private.zip"
+    with zipfile.ZipFile(original, "w") as archive:
+        archive.writestr(
+            "mission.json",
+            json.dumps(
+                {
+                    "id": "private-mission",
+                    "name": "Private customer",
+                    "description": "Private crew",
+                    "metadata": {"mission_number": "PRIVATE"},
+                    "legs": [
+                        {
+                            "id": "private-leg",
+                            "name": "Private leg",
+                            "route_id": "private-route",
+                            "adjusted_departure_time": "2026-10-07T08:00:00Z",
+                            "transports": {
+                                "aar_windows": [
+                                    {
+                                        "id": "private-ar",
+                                        "start_waypoint_name": "Private waypoint",
+                                        "end_waypoint_name": "Private waypoint",
+                                    }
+                                ]
+                            },
+                        }
+                    ],
+                }
+            ),
+        )
+        archive.writestr(
+            "routes/private-route.kml",
+            '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>Private waypoint</name><description>Private crew; Time Over Waypoint: 2026-10-07 08:00:00Z</description><Point><coordinates>1,2,0</coordinates></Point></Placemark></Document></kml>',
+        )
+    out = tmp_path / "anonymized.zip"
+    report = helper.anonymize(original, out)
+    with zipfile.ZipFile(out) as archive:
+        assert all(
+            b"Private" not in archive.read(n) and b"private-" not in archive.read(n)
+            for n in archive.namelist()
+        )
+        mission = json.loads(archive.read("mission.json"))
+        leg = mission["legs"][0]
+        route = archive.read(f'routes/{leg["route_id"]}.kml')
+        assert (
+            leg["transports"]["aar_windows"][0]["start_waypoint_name"].encode() in route
+        )
+        assert b"Time Over Waypoint: 2026-10-07 08:00:00Z" in route
+        assert b"1,2,0" in route
+        assert leg["adjusted_departure_time"] == "2026-10-07T08:00:00Z"
+    assert report["geometry"] == "retained locally; no customer data committed"
+
+
+def test_source_comparison_accepts_legacy_serialization_but_rejects_time_change():
+    runner = load()
+    api = {
+        "initial_x_satellite_id": "X-fixture",
+        "ka_outages": [
+            {
+                "id": "outage",
+                "start_time": "2026-10-07T08:10:00Z",
+                "duration_seconds": 30,
+                "reason": None,
+            }
+        ],
+    }
+    legacy = {
+        "initial_x_satellite_id": "X-fixture",
+        "ka_outages": [
+            {
+                "id": "outage",
+                "start_time": "2026-10-07 08:10:00+00:00",
+                "duration_seconds": 30,
+            }
+        ],
+    }
+    assert runner.source_transport_equal(api, legacy)
+    legacy["ka_outages"][0]["start_time"] = "2026-10-07 08:10:01+00:00"
+    assert not runner.source_transport_equal(api, legacy)
+
+
+def test_port_check_accepts_time_wait_and_rejects_live_listener():
+    import socket
+
+    runner = load()
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+        listener.listen()
+        with pytest.raises(OSError):
+            runner.port_free(port)
+        with socket.socket() as client:
+            client.connect(("127.0.0.1", port))
+            peer, _ = listener.accept()
+            peer.close()
+    # The listener is gone; a closed accepted connection is not a live resource.
+    runner.port_free(port)

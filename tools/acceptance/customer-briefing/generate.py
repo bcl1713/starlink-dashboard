@@ -395,6 +395,9 @@ def api_exports(base, imports, output, status):
     report = {}
     for name, entry in imports.items():
         before, _ = http(base, f'/api/v2/missions/{entry["mission_id"]}')
+        folder = output / name
+        folder.mkdir()
+        (folder / "mission-before.json").write_bytes(before)
         started = time.monotonic()
         data, headers = http(
             base,
@@ -402,7 +405,7 @@ def api_exports(base, imports, output, status):
             data=b"{}",
             headers={
                 "Content-Type": "application/json",
-                "Origin": "http://127.0.0.1:15309",
+                "Origin": base,
             },
         )
         elapsed = time.monotonic() - started
@@ -415,8 +418,6 @@ def api_exports(base, imports, output, status):
             "private-token" in w or "/private" in w for w in warnings
         ):
             raise ValueError("unsafe export warnings")
-        folder = output / name
-        folder.mkdir()
         (folder / "mission.zip").write_bytes(data)
         with zipfile.ZipFile(io.BytesIO(data)) as archive, zipfile.ZipFile(
             entry["archive"]
@@ -428,12 +429,12 @@ def api_exports(base, imports, output, status):
             assert "exports/mission/mission-slides.pptx" in archive.namelist()
             for leg in entry["mission"]["legs"]:
                 exported = json.loads(archive.read(f'legs/{leg["id"]}.json'))
-                assert (
-                    exported["transports"]
-                    == json.loads(before)["legs"][entry["mission"]["legs"].index(leg)][
+                assert source_transport_equal(
+                    exported["transports"],
+                    json.loads(before)["legs"][entry["mission"]["legs"].index(leg)][
                         "transports"
-                    ]
-                )
+                    ],
+                ), "saved transport model changed during export"
                 path = f'routes/{leg["route_id"]}.kml'
                 if path in source.namelist():
                     assert archive.read(path) == source.read(path)
@@ -445,6 +446,12 @@ def api_exports(base, imports, output, status):
             ):
                 if path in archive.namelist():
                     (folder / f"{label}.pptx").write_bytes(archive.read(path))
+        from inspect_pptx import inspect
+
+        deck_inspection = {
+            p.stem: inspect(p, p.stem == "trial") for p in folder.glob("*.pptx")
+        }
+        write_json(folder / "inspection.json", deck_inspection)
         after, _ = http(base, f'/api/v2/missions/{entry["mission_id"]}')
         assert before == after, "export wrote mission metadata"
         assert status != "failed" or warnings
@@ -516,6 +523,13 @@ def browser_journey(owner, profile_path, task, base, output, mission_name, statu
         write_json(output / "cleanup.json", {"closed": True})
 
 
+def source_transport_equal(left, right):
+    sys.path.insert(0, str(ROOT / "backend/starlink-location"))
+    from app.mission.models import TransportConfig
+
+    return TransportConfig.model_validate(left) == TransportConfig.model_validate(right)
+
+
 def scoped_docker(owner, project, kind, serial):
     command = (
         ["docker", "ps", "-aq"]
@@ -535,6 +549,7 @@ def port_free(port):
     import socket
 
     with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(("127.0.0.1", port))
 
 
@@ -671,6 +686,23 @@ def production(args):
         http(base, "/missions")
         http(base, "/api/status")
         imports = import_archives(source, evidence / "imports")
+        if getattr(args, "existing_package", None):
+            from anonymize_package import anonymize
+
+            existing_path = evidence / "imports/existing.zip"
+            existing_info = anonymize(args.existing_package, existing_path)
+            import zipfile
+
+            with zipfile.ZipFile(existing_path) as archive:
+                existing_mission = json.loads(archive.read("mission.json"))
+            imports["EXISTING"] = {
+                "archive": str(existing_path),
+                "mission_id": existing_mission["id"],
+                "mission": existing_mission,
+                "required_poi_name": None,
+            }
+            write_json(evidence / "existing-selection.json", existing_info)
+        write_json(evidence / "imports/imports.json", imports)
         imported = {}
         for name, entry in imports.items():
             imported[name] = upload(base, Path(entry["archive"]))
@@ -835,6 +867,23 @@ def production(args):
             env=env,
             seconds=60,
         )
+        stages = [
+            json.loads(line)
+            for line in (evidence / "stages.jsonl").read_text().splitlines()
+        ]
+        primary = [
+            m
+            for stage in stages
+            if stage.get("fault") == "none"
+            for m in stage.get("maps", [])
+            if m["status"] == "primary"
+        ]
+        assert any(
+            m["leg_id"] == "f01" for m in primary
+        ), "production default renderer never produced a primary F01 map"
+        report["production_primary_maps"] = [
+            {"leg_id": m["leg_id"], "views": m["views"]} for m in primary
+        ]
         # Render representative paired extracts, retaining every remaining deck for inspection.
         review = evidence / "review"
         review.mkdir()
@@ -866,6 +915,11 @@ def production(args):
                     shutil.copy2(path, dest / path.name)
                 if (src / "inspection.json").exists():
                     shutil.copy2(src / "inspection.json", dest / "inspection.json")
+        if "EXISTING" in imports:
+            dest = review / "enabled-EXISTING"
+            dest.mkdir()
+            for path in (evidence / "enabled/EXISTING").glob("*.pptx"):
+                shutil.copy2(path, dest / path.name)
         render_image = resources["images"][2]
         owner.run(
             "render-build",
@@ -953,6 +1007,19 @@ def production(args):
         if started:
             attempt(
                 lambda: owner.run(
+                    "probe-copy-on-exit",
+                    [
+                        *compose,
+                        "cp",
+                        "starlink-location:/probe/stages.jsonl",
+                        str(evidence / "stages-on-exit.jsonl"),
+                    ],
+                    env=env,
+                    seconds=30,
+                )
+            )
+            attempt(
+                lambda: owner.run(
                     "container-logs",
                     [*compose, "logs", "--no-color"],
                     env=env,
@@ -1038,6 +1105,11 @@ def main():
     parser.add_argument("--evidence", required=True, type=Path)
     parser.add_argument("--task-root", required=True, type=Path)
     parser.add_argument("--profile", type=Path)
+    parser.add_argument(
+        "--existing-package",
+        type=Path,
+        help="existing local package; anonymized locally, never committed",
+    )
     parser.add_argument("--port", type=int, default=15309)
     parser.add_argument("--check", action="store_true")
     parser.add_argument(

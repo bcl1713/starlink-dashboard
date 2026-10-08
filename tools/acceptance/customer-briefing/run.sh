@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec timeout --kill-after=10s 45m python3 "$(dirname "$0")/generate.py" "$@"
+runner_dir=$(cd "$(dirname "$0")" && pwd)
+exec timeout --kill-after=10s 45m uv run --python 3.11 \
+  --with-requirements "$runner_dir/../../../backend/starlink-location/requirements.txt" \
+  python "$runner_dir/generate.py" "$@"
