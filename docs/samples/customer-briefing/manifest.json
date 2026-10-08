@@ -1,0 +1,50 @@
+{
+  "renderCandidateSha": "0f31ced97ddb6f7323813021e8c9f39fdfcd914f",
+  "imageId": "sha256:f3aed4cd1512ded10cde4d8015b1c3608446a57d2707b394fe43747d244df6f2",
+  "fixtureKind": "synthetic immutable DTO injection; no API capture or legacy ZIP equivalence claim",
+  "pageSizePt": [
+    960,
+    540
+  ],
+  "samples": {
+    "fully-assessed.pdf": {
+      "sha256": "dc963760d81e8a0771c42fd16314ba3b4b8436ddfccbe0f8f29d663585b23d53",
+      "bytes": 11049024,
+      "pageCount": 1
+    },
+    "incomplete-x.pdf": {
+      "sha256": "f74f1c4149f6a7eb6c8c84b5eaf4ddea0c9f6394adbba23a019ddade04011655",
+      "bytes": 10782253,
+      "pageCount": 1
+    }
+  },
+  "primaryVisualAcceptance": {
+    "status": "accepted",
+    "source": "https://github.com/bcl1713/starlink-dashboard/pull/312#issuecomment-6064926803",
+    "condition": "Requested callouts removed and actual PDF composition inspected against preview; condition fulfilled."
+  },
+  "primaryScanTest": {
+    "status": "user reports five-second scan working",
+    "source": "https://github.com/bcl1713/starlink-dashboard/pull/312#issuecomment-6064926803",
+    "measuredDurationSeconds": null
+  },
+  "incompleteXVisualAcceptance": {
+    "status": "accepted",
+    "source": "User final acceptance in task handoff, 2026-10-08."
+  },
+  "validation": {
+    "exactImageControlsPassed": 17,
+    "onePagePdfs": true,
+    "actualPdfColorAndGrayscaleInspected": true,
+    "determinismPassed": true,
+    "cleanupQualifiedBeforePublication": true
+  },
+  "scope": "Two checkpoint samples only; no dense/multi-leg or production integration.",
+  "finalUserAcceptance": {
+    "status": "accepted",
+    "scope": "Both committed synthetic checkpoint PDFs only.",
+    "source": "User final acceptance in task handoff, 2026-10-08.",
+    "supersedes": "Historical pending acceptance flags in retained checkpoint evidence.",
+    "primaryScanTest": "User reports successful five-second scan; no independently measured duration."
+  }
+}

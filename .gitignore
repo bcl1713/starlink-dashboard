@@ -61,3 +61,5 @@ frontend/mission-planner/dist/
 
 # Isolated feature worktrees
 .worktrees/
+
+frontend/mission-planner/dist-mission-export/

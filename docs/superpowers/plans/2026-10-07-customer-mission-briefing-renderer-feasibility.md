@@ -1,5 +1,11 @@
 # Customer Briefing Renderer Feasibility Gate
 
+Status: historical map-renderer qualification plan. Reuse its map work subject
+to audit, but prior timing/render results do not qualify combined HTML/PDF
+rendering. The
+[restart spec](../specs/2026-10-08-customer-briefing-html-pdf-design.md) defines
+the new proposed render contract; do not execute the old trial plan.
+
 Required Task 3A details for the
 [phase-one plan](2026-10-07-customer-mission-briefing-phase-one.md) and its
 [technical companion](2026-10-07-customer-mission-briefing-phase-one-acceptance.md).

@@ -1,5 +1,10 @@
 # Customer Briefing Phase-One Technical and Acceptance Details
 
+Status: historical native-PPTX acceptance companion. Its output-format and
+reader-specific gates do not qualify the HTML-to-PDF restart. The
+[new written spec](../specs/2026-10-08-customer-briefing-html-pdf-design.md)
+defines the proposed browser/PDF contract; a new plan follows spec approval.
+
 This is the required companion to the
 [phase-one plan](2026-10-07-customer-mission-briefing-phase-one.md). All checks
 and generated artifacts here are implementation deliverables, not claims that

@@ -1,0 +1,18 @@
+services:
+  checkpoint:
+    image: ${CHECKPOINT_IMAGE:?exact checkpoint image required}
+    init: true
+    network_mode: none
+    cpus: 2
+    mem_limit: 4g
+    shm_size: 256m
+    environment:
+      CHECKPOINT_RUNTIME_TESTS: ${CHECKPOINT_RUNTIME_TESTS:-0}
+      CHECKPOINT_IMAGE_ID: ${CHECKPOINT_IMAGE_ID:-unknown}
+      CHECKPOINT_CANDIDATE_SHA: ${CHECKPOINT_CANDIDATE_SHA:-unknown}
+    volumes:
+      - evidence:/evidence
+    tmpfs:
+      - /tmp:rw,nosuid,size=1g,mode=1777
+volumes:
+  evidence:
