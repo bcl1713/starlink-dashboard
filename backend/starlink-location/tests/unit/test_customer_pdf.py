@@ -162,6 +162,36 @@ def test_wrapped_cells_use_geometric_reading_order_and_nfc():
     assert verifier().verify_pdf_layout(raw, expected, FONTS)["verified"]
 
 
+@pytest.mark.parametrize("damage", [None, "same-line", "changed-time", "missing-dash"])
+def test_clock_range_soft_wrap_preserves_every_character_and_line_boundary(damage):
+    expected = expectations()
+    expected["rows"][0]["displayCells"][0] = "≈ 10:00–10:15"
+    tree = ET.fromstring(xml())
+    line = tree.find(".//line")
+    line.remove(next(iter(line)))
+    parts = [
+        ("≈", 20, 45, 30, 52),
+        ("10:00–", 40, 45, 94, 52),
+        ("10:15", 20, 53, 75, 64),
+    ]
+    if damage == "same-line":
+        parts[-1] = ("10:15", 100, 45, 150, 52)
+    if damage == "changed-time":
+        parts[-1] = ("10:16", 20, 53, 75, 64)
+    if damage == "missing-dash":
+        parts[1] = ("10:00", 40, 45, 94, 52)
+    for text, a, b, c, d in parts:
+        ET.SubElement(
+            line, "word", xMin=str(a), yMin=str(b), xMax=str(c), yMax=str(d)
+        ).text = text
+    raw = ET.tostring(tree, encoding="unicode")
+    if damage:
+        with pytest.raises(ValueError):
+            verifier().verify_pdf_layout(raw, expected, FONTS)
+    else:
+        assert verifier().verify_pdf_layout(raw, expected, FONTS)["verified"]
+
+
 @pytest.mark.parametrize(
     "alteration", ["seconds", "offset", "punctuation", "approximation"]
 )

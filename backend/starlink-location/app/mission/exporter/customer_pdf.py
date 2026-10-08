@@ -40,6 +40,31 @@ def contains(box, word, tolerance=TOLERANCE):
     )
 
 
+def cell_matches(expected, words):
+    """Rejoin native dash wraps without inventing or dropping printed characters."""
+    cursor = 0
+    for token in normalized(expected).split():
+        if cursor >= len(words):
+            return False
+        text, bounds = words[cursor]
+        actual = normalized(text)
+        cursor += 1
+        while actual != token:
+            if (
+                not token.startswith(actual)
+                or not actual.endswith(("–", "-", "‐"))
+                or cursor >= len(words)
+            ):
+                return False
+            text, next_bounds = words[cursor]
+            if next_bounds[1] <= bounds[1] + TOLERANCE:
+                return False
+            actual += normalized(text)
+            bounds = next_bounds
+            cursor += 1
+    return cursor == len(words)
+
+
 def verify_pdf_layout(layout_xml: str, expectations: dict, fonts: str) -> dict:
     if expectations.get("schemaVersion") != 1 or expectations.get("pageSizePt") != list(
         SIZE
@@ -123,7 +148,7 @@ def verify_pdf_layout(layout_xml: str, expectations: dict, fonts: str) -> dict:
                     used.add(key)
                     matches.append((text, bounds))
             matches.sort(key=lambda w: (round(w[1][1], 2), w[1][0]))
-            if normalized(" ".join(w[0] for w in matches)) != normalized(cell):
+            if not cell_matches(cell, matches):
                 raise ValueError("PDF coordination cell content mismatch")
         results.append(
             {
