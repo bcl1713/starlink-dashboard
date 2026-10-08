@@ -7,6 +7,8 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 
 import pytest
+from pptx import Presentation
+
 from app.mission import storage, timeline_preparation
 from app.mission.models import (
     AARWindow,
@@ -22,7 +24,6 @@ from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTiming
 from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from pptx import Presentation
 
 BASE = datetime(2026, 10, 7, 8, tzinfo=timezone.utc)
 

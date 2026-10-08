@@ -1,7 +1,6 @@
 import importlib
 
 from app.mission.exporter.trial_projection import project_trial_leg
-
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 

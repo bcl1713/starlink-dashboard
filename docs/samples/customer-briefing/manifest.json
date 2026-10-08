@@ -28,7 +28,10 @@
     "source": "https://github.com/bcl1713/starlink-dashboard/pull/312#issuecomment-6064926803",
     "measuredDurationSeconds": null
   },
-  "incompleteXVisualAcceptance": "pending",
+  "incompleteXVisualAcceptance": {
+    "status": "accepted",
+    "source": "User final acceptance in task handoff, 2026-10-08."
+  },
   "validation": {
     "exactImageControlsPassed": 17,
     "onePagePdfs": true,
@@ -36,5 +39,12 @@
     "determinismPassed": true,
     "cleanupQualifiedBeforePublication": true
   },
-  "scope": "Two checkpoint samples only; no dense/multi-leg or production integration."
+  "scope": "Two checkpoint samples only; no dense/multi-leg or production integration.",
+  "finalUserAcceptance": {
+    "status": "accepted",
+    "scope": "Both committed synthetic checkpoint PDFs only.",
+    "source": "User final acceptance in task handoff, 2026-10-08.",
+    "supersedes": "Historical pending acceptance flags in retained checkpoint evidence.",
+    "primaryScanTest": "User reports successful five-second scan; no independently measured duration."
+  }
 }
