@@ -801,6 +801,30 @@ def production(args):
             )
             report["browser"] = "enabled UI passed; remaining modes pending"
         owner.run(
+            "fixture-expectations",
+            [
+                *compose,
+                "exec",
+                "-T",
+                "starlink-location",
+                "timeout",
+                "--kill-after=10s",
+                "5m",
+                "env",
+                "PYTHONPATH=/app:/source/backend/starlink-location",
+                "python",
+                "-m",
+                "pytest",
+                "-q",
+                "/source/backend/starlink-location/tests/unit/test_trial_projection.py",
+                "/source/backend/starlink-location/tests/unit/test_trial_clocks.py",
+                "--basetemp",
+                "/probe/fixture-temp",
+            ],
+            env=env,
+            seconds=320,
+        )
+        owner.run(
             "canonical",
             [
                 *compose,

@@ -477,3 +477,71 @@ def test_grayscale_posture_labels_and_body_legend_remain_explicit():
                 assert shape.text in ("?", "Posture uncertain")
             if shape.name in ("legend", "prediction-caveat"):
                 assert all(run.font.size.pt >= 18 for run in runs(shape))
+
+
+@pytest.mark.parametrize("duration_hours", [6, 125])
+def test_flight_header_preserves_subsecond_clocks_in_primary_layout(duration_hours):
+    from datetime import timedelta
+
+    from app.mission.exporter.trial_pptx import _page
+
+    frozen, legs, _maps = inputs("F01")
+    start = legs[0].utc_bounds[0] + timedelta(seconds=59, microseconds=123456)
+    end = start + timedelta(
+        hours=duration_hours, minutes=59, seconds=59, microseconds=654321
+    )
+    leg = replace(legs[0], utc_bounds=(start, end))
+    prs = Presentation()
+    prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
+    slide = _page(prs, frozen.legs[0], leg, 1, 1, "timeline", "Subsecond flight")
+    header = next(s for s in slide.shapes if s.name == "time:flight")
+    assert format_clocks(start, start).et in header.text
+    assert format_clocks(end, start).et in header.text
+    assert (
+        "Departure" in header.text
+        and "Arrival" in header.text
+        and "Flight" in header.text
+    )
+    assert all(r.font.size.pt >= 20 for r in runs(header))
+    assert header.top + header.height <= Inches(2.15)
+
+
+def test_complete_subsecond_deck_keeps_exact_clocks_and_body_clear():
+    import json
+    from datetime import datetime, timedelta
+
+    from app.mission.exporter.trial_pptx import build_trial_pptx
+
+    def shift(value):
+        if isinstance(value, dict):
+            return {k: shift(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [shift(v) for v in value]
+        if isinstance(value, str) and value.startswith("2026-"):
+            try:
+                return (
+                    datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    + timedelta(seconds=59, microseconds=123456)
+                ).isoformat()
+            except ValueError:
+                pass
+        return value
+
+    data = shift(fixture("F02_AR"))
+    captured = snapshot(data)
+    leg = project_trial_leg(captured)
+    frozen, _, maps = inputs("F02_AR")
+    frozen = replace(frozen, legs=(captured,))
+    prs = Presentation(io.BytesIO(build_trial_pptx(frozen, (leg,), maps)))
+    for slide in prs.slides:
+        header = next(s for s in slide.shapes if s.name == "time:flight")
+        assert format_clocks(leg.utc_bounds[0], leg.utc_bounds[0]).et in header.text
+        assert format_clocks(leg.utc_bounds[1], leg.utc_bounds[0]).et in header.text
+        assert header.top + header.height <= Inches(2.15)
+        for shape in slide.shapes:
+            if (
+                shape.name.startswith(("time:panel-", "window:"))
+                or shape.name == "coordination-table"
+            ):
+                assert shape.top >= header.top + header.height
+    assert json.loads(captured.timeline_json)["segments"]

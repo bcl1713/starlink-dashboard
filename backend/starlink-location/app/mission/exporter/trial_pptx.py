@@ -139,21 +139,25 @@ def _page(prs, captured, leg, n, total, kind, title):
         hours, seconds = divmod(int((end - start).total_seconds()), 3600)
         minutes, seconds = divmod(seconds, 60)
         duration = f"{hours}h {minutes:02d}m" + (f" {seconds:02d}s" if seconds else "")
-        # Dates and offsets are always explicit, even on repeated DST clocks.
+        # Exact subsecond clocks can exceed one line. Reserve two readable
+        # lines above the body instead of discarding precision or shrinking type.
+        flight = f"Departure {format_clocks(start, start).et} · Arrival {format_clocks(end, start).et} · Flight {duration}"
+        if "\n" in wrap(flight, 12.6, 20):
+            flight = f"Departure {format_clocks(start, start).et}\nArrival {format_clocks(end, start).et} · Flight {duration}"
         textbox(
             slide,
             "time:flight",
-            f"Departure {format_clocks(start, start).et} · Arrival {format_clocks(end, start).et} · Flight {duration}",
+            flight,
             0.35,
             1.38,
             12.6,
-            0.55,
+            0.75,
             size=20,
         )
         textbox(
             slide,
             "support:clocks",
-            f"Zulu {format_clocks(start, start).zulu} → {format_clocks(end, start).zulu} · {format_clocks(start, start).relative} → {format_clocks(end, start).relative} · Planned departure basis",
+            f"{format_clocks(start, start).zulu} → {format_clocks(end, start).zulu} · {format_clocks(start, start).relative} → {format_clocks(end, start).relative}",
             0.35,
             6.76,
             12.6,
@@ -235,7 +239,7 @@ def _timeline(prs, captured, leg, result, n, total):
         )
         style_frame(
             support.text_frame,
-            f"Panel Zulu {a.zulu} → {b.zulu} · {a.relative} → {b.relative} · Planned departure basis",
+            f"{a.zulu} → {b.zulu} · {a.relative} → {b.relative}",
             14,
         )
         x, width = 3.7, 6.1
@@ -244,9 +248,9 @@ def _timeline(prs, captured, leg, result, n, total):
             "time:panel-start",
             format_clocks(start, leg.utc_bounds[0]).et.replace(" ", "\n", 1),
             x,
-            1.95,
+            2.15,
             3.3,
-            0.93,
+            0.75,
             size=20,
             wrapped=False,
         )
@@ -255,14 +259,16 @@ def _timeline(prs, captured, leg, result, n, total):
             "time:panel-end",
             format_clocks(end, leg.utc_bounds[0]).et.replace(" ", "\n", 1),
             x + width - 3.2,
-            1.95,
+            2.15,
             3.3,
-            0.93,
+            0.75,
             size=20,
             wrapped=False,
         )
-        y = 2.83
-        for lane, (label, h) in enumerate(zip(LANES, LANE_HEIGHTS)):
+        y = 3.00
+        for lane, (label, h) in enumerate(
+            zip(LANES, (LANE_HEIGHTS[0], 0.39, 0.39, 0.39, 0.68))
+        ):
             textbox(
                 slide, f"lane:{lane}", label, 0.35, y, 3.3, h, size=18, bold=lane == 0
             )
@@ -364,7 +370,7 @@ def _timeline(prs, captured, leg, result, n, total):
         slide = _page(
             prs, captured, leg, n, total, "map-view", f"Route context · {view.id}"
         )
-        _picture(slide, f"map:{view.id}", view.png, 0.5, 2.05, 9.3, 3.8)
+        _picture(slide, f"map:{view.id}", view.png, 0.5, 2.15, 9.3, 3.8)
         textbox(
             slide, "support:map", f"{view.id}\n{result.label}", 10.0, 2.15, 2.9, size=14
         )
@@ -421,7 +427,7 @@ def _table(prs, captured, leg, result, n, total):
                 "coordination-notes",
                 "Coordination notes / planned basis",
             )
-            textbox(slide, "notes", part, 0.35, 2.05, 12.6, size=18, wrapped=False)
+            textbox(slide, "notes", part, 0.35, 2.15, 12.6, size=18, wrapped=False)
     pending = []
     for interval in leg.coordination_rows:
         _, remaining, posture = _row_text(interval)
@@ -474,7 +480,7 @@ def _table(prs, captured, leg, result, n, total):
             )
             reserved = len(prefix.split("\n")) - 1 if prefix else 0
             capacity = (
-                int((2.95 - 0.08 - 0.10 - 2 * 1.20 / 72) / line_height(18)) - reserved
+                int((2.85 - 0.08 - 0.10 - 2 * 1.20 / 72) / line_height(18)) - reserved
             )
             if capacity < 1:
                 raise ValueError("Window identity exceeds readable table capacity")
@@ -496,7 +502,7 @@ def _table(prs, captured, leg, result, n, total):
         page += 1
         batch = []
         height = 1.30
-        while pending and height + pending[0][1] <= 4.25:
+        while pending and height + pending[0][1] <= 4.15:
             row = pending.pop(0)
             batch.append(row)
             height += row[1]
@@ -518,7 +524,7 @@ def _table(prs, captured, leg, result, n, total):
             1 + len(batch),
             5,
             Inches(0.35),
-            Inches(2.05),
+            Inches(2.15),
             Inches(sum(COLUMN_WIDTHS)),
             Inches(height),
         )
@@ -556,7 +562,7 @@ def _window_details(prs, captured, leg, n, total):
         # The first two lines are the window label and immutable identity,
         # already repeated at 20 points above every expanded row card.
         content = "\n".join(facts.split("\n")[2:])
-        for part_index, part in enumerate(chunks(content, 12.6, 18, 3.05)):
+        for part_index, part in enumerate(chunks(content, 12.6, 18, 2.75)):
             slide = _page(
                 prs,
                 captured,
@@ -572,7 +578,7 @@ def _window_details(prs, captured, leg, n, total):
                 f"window:{interval.id}",
                 f"Window {interval.window_number} · {interval.id}",
                 0.35,
-                1.95,
+                2.15,
                 12.6,
                 0.50,
                 size=20,
@@ -586,18 +592,18 @@ def _window_details(prs, captured, leg, n, total):
                 "time:window-range",
                 f"Start {a.et} · End {b.et}",
                 0.35,
-                2.45,
+                2.65,
                 12.6,
-                0.50,
+                0.75,
                 size=20,
             )
             textbox(
-                slide, "window-facts", part, 0.35, 2.98, 12.6, size=18, wrapped=False
+                slide, "window-facts", part, 0.35, 3.48, 12.6, size=18, wrapped=False
             )
             support = next(sh for sh in slide.shapes if sh.name == "support:clocks")
             style_frame(
                 support.text_frame,
-                f"Window Zulu {a.zulu} → {b.zulu} · {a.relative} → {b.relative} · Planned departure basis",
+                f"{a.zulu} → {b.zulu} · {a.relative} → {b.relative}",
                 14,
             )
 
@@ -620,7 +626,7 @@ def _appendix(prs, captured, leg, n, total):
                 "appendix-window",
                 "Reference · window clocks" + (" · continued" if part_index else ""),
             )
-            textbox(slide, "reference", part, 0.35, 2.05, 12.6, size=14, wrapped=False)
+            textbox(slide, "reference", part, 0.35, 2.15, 12.6, size=14, wrapped=False)
     for source in leg.sources:
         header = f"Source: {source.source_id}\n{source.source_type} · {source.transport.value if source.transport else 'Coordination / advisory'}\n"
         content = header
@@ -649,7 +655,7 @@ def _appendix(prs, captured, leg, n, total):
             )
             if part_index:
                 part = f"Source continued: {source.source_id}\n" + part
-            textbox(slide, "source", part, 0.35, 2.05, 12.6, size=14, wrapped=False)
+            textbox(slide, "source", part, 0.35, 2.15, 12.6, size=14, wrapped=False)
     # Captured normalized timeline and advisories are reference-only. Preserve
     # source state fields and minor transitions without promoting new windows.
     timeline = json.loads(captured.timeline_json) if captured.timeline_json else {}
@@ -667,7 +673,7 @@ def _appendix(prs, captured, leg, n, total):
                     f"Reference · {collection}"
                     + (" · continued" if part_index else ""),
                 )
-                textbox(slide, "state", part, 0.35, 2.05, 12.6, size=14, wrapped=False)
+                textbox(slide, "state", part, 0.35, 2.15, 12.6, size=14, wrapped=False)
 
 
 def _validate_inputs(snapshot, legs, maps):
@@ -822,7 +828,7 @@ def build_trial_pptx(
                             "missing",
                             part,
                             0.35,
-                            2.05,
+                            2.15,
                             12.6,
                             size=18,
                             wrapped=False,

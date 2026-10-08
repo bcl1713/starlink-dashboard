@@ -15,8 +15,10 @@ From the clean feature worktree, run with its full committed SHA:
 ```
 
 The optional existing-package input is anonymized locally: human labels and IDs
-are replaced, free-text metadata is removed, and KML timing is retained. Its
-geometry remains private local review evidence and is never committed.
+are replaced, free-text metadata is removed, and KML timing is retained. Public
+default satellite identifiers remain intact; private satellite references and
+lookup names are remapped consistently. Its geometry remains private local
+review evidence and is never committed.
 
 The evidence and temporary roots must be new and disjoint. Existing project
 resources and image tags are refused. The SHA must match clean tracked HEAD.
@@ -86,3 +88,33 @@ reduced redundancy, complete outage, remaining transports and SOF/AR. A few
 seconds is the target, not a measured result. Explicit customer acceptance of
 layout/semantics is required before phase two; legacy replacement requires a
 separate decision.
+
+The export-only Nginx location allows 180 seconds for the synchronous legacy,
+trial renderer/fallback and deck assembly stages. Other API routes retain their
+existing timeout. The slow-renderer fault is exercised through this production
+proxy and must still return a ZIP with safe warning feedback.
+
+Normal API leg comparisons use saved IDs, because the API may sort multi-leg
+missions. Source marker labels, coordinates and categories are checked against
+the imported input; import may allocate new persistent POI IDs/timestamps.
+Canonical projection and clock fixture assertions also run inside the isolated
+production runtime before paired decks are generated.
+
+Private probe artifacts stream through a bounded container exec/tar command.
+This avoids rootless Docker copy failures on read-only bind mounts without
+changing the actor daemon or its configuration. Archive paths and file types are
+validated before extraction. API resources stop after their checks, before the
+offline rendering stage; renderer teardown is checked independently.
+
+A review checkpoint is not customer acceptance. The customer must separately
+record scan times for reduced redundancy, total outage, remaining transports and
+SOF/AR, approve the layout and semantics, and edit a title/table cell in desktop
+PowerPoint offline with the reader version recorded. Missing provisioned browser
+authority leaves UI acceptance blocked even when API, unit and render checks
+pass.
+
+Exact subsecond clocks use two 20-point flight-header lines when needed. The
+primary body starts below that reserved space; pagination and footer spacing
+remain bounded, and the overall posture lane retains its dominant height.
+Supporting Zulu/T-plus labels retain exact timestamps in a compact footer; the
+planned departure basis remains explicit in the prediction caveat and notes.

@@ -1,0 +1,76 @@
+{
+  "schema": "CustomerBriefingAcceptanceCheckpoint/v1",
+  "scope": "Task 6 only; customer review checkpoint, default-off parallel trial",
+  "acceptance_status": "pending explicit customer layout/semantics acceptance",
+  "candidate_identity": "full clean HEAD recorded by each run in resources.json, source archive and OCI image labels",
+  "evidence_root": ".superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence",
+  "production_evidence": "task6-production-<candidate-prefix>/report.json; enabled/disabled/fault ZIPs, stage timings, image/runtime identities and cleanup.json",
+  "paired_decks": "production run canonical/ and enabled/; separate capture-boundary semantic pairs and normal HTTP rebuild exports",
+  "rendered_evidence": "production run review/ contains paired PPTX, offline PDF, color/grayscale pages and contact sheets",
+  "fixture_semantics": "projection and clock fixture assertions run in production runtime; complete canonical backend gate verifies expected partitions, source identities, uncertainty and editability contracts",
+  "legacy_compatibility": "fixed-clock baseline comparison includes ZIP paths, source JSON/KML/POIs, CSV and PPTX XML/geometry/palette/styles/relationships/media; only archive/core clocks excluded",
+  "direct_legacy_qualification": "v2 has no single-leg HTTP export route; preserved builder checked with trial flag off/on inside production runtime",
+  "review": {
+    "range": "d77efd81..9af4c42a",
+    "reviewer": "phase_one_final_review",
+    "fresh_context": true,
+    "critical": [],
+    "important": [
+      {
+        "finding": "continuous X warnings concealed changes between Up and Down",
+        "grade": "Important",
+        "regression": "test_export_captures_material_x_changes_without_changing_legacy_events",
+        "disposition": "export-only geometry condition collector; both directions with Ka/Ku outages RED\u2192GREEN"
+      },
+      {
+        "finding": "synchronous export can exceed Nginx default read timeout",
+        "grade": "Important",
+        "regression": "test_nginx_export_timeout_is_scoped_and_exceeds_trial_and_legacy_budget",
+        "disposition": "scoped export route allows 180s; production slow-renderer run pending"
+      },
+      {
+        "finding": "existing-package verification always demands synthetic POI",
+        "grade": "Important",
+        "regression": "test_existing_exports_preserve_actual_pois_and_match_legs_by_identity",
+        "disposition": "actual source marker preservation; synthetic sentinel conditional RED\u2192GREEN"
+      },
+      {
+        "finding": "anonymization breaks catalog/POI satellite references",
+        "grade": "Important",
+        "regression": "test_anonymization_keeps_satellite_lookup_targets_consistent",
+        "disposition": "default public IDs retained; private lookup targets consistently remapped RED\u2192GREEN"
+      }
+    ],
+    "minor_deferred": [],
+    "declined_to_judge": [
+      "phase-two scheduling/cache/cancellation/publication/worker recovery excluded by user",
+      "legacy replacement/promotion unauthorized",
+      "unchanged pre-existing GFS staging-cleanup race outside scope"
+    ],
+    "limitations": [
+      "review sampled retained Task 4 color/grayscale pages; no customer scan performance claim",
+      "UI requires absent provisioned browser descriptor",
+      "desktop PowerPoint editing and explicit customer acceptance pending",
+      "prior Task 3B remains hardware/runtime qualified"
+    ],
+    "rereview": false
+  },
+  "pending_manual_gates": [
+    "Provisioned platform-browser descriptor required for real UI enabled/disabled/warning/fallback journeys; default profile is explicitly unprovisioned. No browser substitute installed.",
+    "Offline desktop PowerPoint title/table-cell editing, reader version and result.",
+    "Customer scan timings for reduced redundancy, unavailable periods, remaining transports and SOF/AR; a few seconds is a target, not a measured result.",
+    "Explicit customer acceptance of layout and semantics before phase two."
+  ],
+  "rollout": "No merge, promotion, legacy replacement or phase-two work authorized.",
+  "resource_policy": "Ownership recorded before resource launch; wall-clock limits with forced grace; actor Docker configuration retained; private project/volumes; prompt API teardown before offline rendering; approved host audit before handoff.",
+  "task_3b_qualification": "prior three cold whole-mission runs 20.248s/20.778s/20.590s; 60s shared stage and 50s screen; input hashes unchanged; different hardware/runtime requires repeat qualification",
+  "production_discovered_fix": {
+    "finding": "existing five-leg mission failed trial layout when exact clocks include subsecond precision",
+    "regressions": [
+      "test_flight_header_preserves_subsecond_clocks_in_primary_layout",
+      "test_complete_subsecond_deck_keeps_exact_clocks_and_body_clear"
+    ],
+    "disposition": "RED\u2192GREEN: two readable 20-point header lines; primary body/pagination reserve that space; exact ET/Zulu/T-plus clocks retained; dominant posture lane height retained",
+    "legacy_behavior": "normal legacy download survived trial failure; fixed-clock legacy comparison has zero differences"
+  }
+}
