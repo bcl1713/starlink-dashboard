@@ -843,7 +843,7 @@ def production(args):
                 "--kill-after=10s",
                 "10m",
                 "python",
-                "/acceptance/generate.py",
+                "/source/tools/acceptance/customer-briefing/generate.py",
                 "--canonical",
                 "/source",
                 "/probe/canonical",
