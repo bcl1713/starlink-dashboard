@@ -11,6 +11,9 @@ from pathlib import Path
 
 from app.mission.exporter import trial_maps, trial_pptx, trial_projection
 from app.mission.package import __main__ as package
+from main import app
+
+__all__ = ["app"]
 
 PROBE = Path("/probe")
 PROBE.mkdir(exist_ok=True)

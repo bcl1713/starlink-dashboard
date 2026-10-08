@@ -274,3 +274,33 @@ def test_log_collection_failure_still_tears_down_project(
         runner.production(args)
     assert any("down" in command and "--volumes" in command for command in calls)
     assert not args.task_root.exists()
+
+
+def test_backend_probe_exports_the_real_application(tmp_path, monkeypatch):
+    import pathlib
+    from types import ModuleType, SimpleNamespace
+
+    app = object()
+    monkeypatch.setattr(pathlib.Path, "mkdir", lambda *a, **k: None)
+    main = ModuleType("main")
+    main.app = app
+    package = ModuleType("app.mission.package")
+    package.__main__ = SimpleNamespace(capture_export_snapshot=lambda *a: None)
+    exporter = ModuleType("app.mission.exporter")
+    exporter.trial_maps = SimpleNamespace(render_trial_maps=lambda *a: None)
+    exporter.trial_pptx = SimpleNamespace(build_trial_pptx=lambda *a: None)
+    exporter.trial_projection = SimpleNamespace(project_trial_leg=lambda *a: None)
+    for name, module in [
+        ("main", main),
+        ("app", ModuleType("app")),
+        ("app.mission", ModuleType("app.mission")),
+        ("app.mission.package", package),
+        ("app.mission.exporter", exporter),
+    ]:
+        monkeypatch.setitem(sys.modules, name, module)
+    spec = importlib.util.spec_from_file_location(
+        "backend_probe", ROOT / "tools/acceptance/customer-briefing/backend_probe.py"
+    )
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    assert getattr(probe, "app", None) is app

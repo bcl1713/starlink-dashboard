@@ -7,6 +7,12 @@ services:
       dockerfile: backend/starlink-location/Dockerfile
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    entrypoint:
+      - sh
+      - -c
+      - 'mkdir -p /probe && chown appuser:appuser /probe && exec
+        /usr/local/bin/entrypoint.sh "$@"'
+      - --
     command: [uvicorn, backend_probe:app, --host, 0.0.0.0, --port, "8000"]
     environment:
       PYTHONPATH: /acceptance:/app
@@ -22,6 +28,7 @@ services:
       PROMETHEUS_URL: http://prometheus:9090
     volumes:
       - ${BRIEFING_SOURCE}/tools/acceptance/customer-briefing:/acceptance:ro
+      - ${BRIEFING_SOURCE}:/source:ro
       - probe:/probe
       - missions:/app/data/missions
       - settings:/app/data/settings
