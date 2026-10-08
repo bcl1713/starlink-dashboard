@@ -14,11 +14,7 @@
   "contract": {
     "trialPath": "exports/mission/mission-customer-briefing-trial.pptx",
     "label": "Customer briefing \u2014 Trial",
-    "statuses": [
-      "disabled",
-      "included",
-      "failed"
-    ],
+    "statuses": ["disabled", "included", "failed"],
     "legacyBuiltFirst": true,
     "completeBytesValidatedBeforeInclusion": true,
     "disabledManifestUnchanged": true,
@@ -26,10 +22,7 @@
       "export_mission_package",
       "exportImportApi.exportMission"
     ],
-    "headers": [
-      "X-Mission-Export-Trial-Status",
-      "X-Mission-Export-Warnings"
-    ],
+    "headers": ["X-Mission-Export-Trial-Status", "X-Mission-Export-Warnings"],
     "corsExposed": true,
     "warningBound": "At most three fixed summaries (less than 2048 ASCII JSON bytes); no raw exception/source diagnostics.",
     "dialog": "Normal download; warning feedback persists until dismissed; warning-free completion retains its two-second dismissal."
@@ -165,14 +158,7 @@
       "exitCode": 0
     },
     "frontendLint": {
-      "command": [
-        "timeout",
-        "--kill-after=10s",
-        "10m",
-        "npm",
-        "run",
-        "lint"
-      ],
+      "command": ["timeout", "--kill-after=10s", "10m", "npm", "run", "lint"],
       "log": "evidence/task5-final-eslint.log",
       "result": {
         "status": "passed"
@@ -312,11 +298,7 @@
       "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
       "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30"
     },
-    "coldFiveViewWholeMissionSeconds": [
-      20.248,
-      20.778,
-      20.59
-    ],
+    "coldFiveViewWholeMissionSeconds": [20.248, 20.778, 20.59],
     "sharedDeadlineSeconds": 60,
     "screenSeconds": 50,
     "qualification": "Valid only for the recorded hardware/runtime; repeat on hardware/runtime changes. Task 5 in-process package tests use synthetic map results and make no new production timing claim."
