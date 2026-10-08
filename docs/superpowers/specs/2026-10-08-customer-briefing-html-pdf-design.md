@@ -6,10 +6,9 @@ rendering work have not started on this branch.
 
 ## Purpose and authority
 
-For each flight leg, the customer must identify within seconds when
-communications capability is reduced, why, what remains available, and when
-SOF/AR coordination restrictions apply. The result is a polished operational
-brief with approximately one page per normal leg.
+For each leg, customers must identify communications reductions, causes,
+remaining transports, and SOF/AR restrictions within seconds. Produce a polished
+operational brief with approximately one page per normal leg.
 
 The user selected HTML/CSS/SVG rendered by headless Chromium to PDF and
 explicitly confirmed that native PowerPoint editability is not a requirement.
@@ -28,10 +27,10 @@ plan.
 
 ## Restart boundary and retained work
 
-Use `.worktrees/customer-briefing-html-pdf` on
-`feat/customer-briefing-html-pdf`, based on `origin/dev` at `3276aa06`. Keep the
-primary checkout on `dev`. Preserve #309, its worktree, uncommitted
-checkpoint-runner changes, and private evidence without modification.
+Use `.worktrees/customer-briefing-html-pdf`, branch
+`feat/customer-briefing-html-pdf`, from `origin/dev` at `3276aa06`. Keep primary
+on `dev`; preserve #309's worktree, uncommitted checkpoint-runner changes, and
+private evidence.
 
 The retained implementation reference is #309's committed checkpoint `575730a8`.
 It contains immutable snapshot modules, `trial_projection.py`,
@@ -47,9 +46,8 @@ Retain the canonical data/projection contracts and provenance machinery. Audit
 customer-view grouping, uncertainty changes, endpoint fallback, and wording
 before reuse; existing code is useful input rather than proof of acceptance.
 
-The trial stays default-off and additive. No legacy replacement, merge,
-promotion, phase-two background worker, new external rendering service, or
-shared runtime configuration change is part of this restart.
+Trial stays default-off/additive. No legacy replacement, merge, promotion,
+phase-two worker, external rendering service, or shared runtime changes.
 
 ## Selected architecture
 
@@ -58,31 +56,26 @@ and an SVG timeline. Embed PNG maps returned by the existing overview-style
 renderer. Reuse packaged Chromium and its pinned browser/asset dependencies. No
 interactive dashboard or live subscriptions enter the document.
 
-Rendering the globe directly inside each briefing page is an alternative, but
-couples PDF readiness and pagination to WebGL lifecycle. Embedded completed maps
-provide a simpler boundary and preserve the proven map scene. Native PPTX
-objects and a PPTX wrapper of rendered images are deferred product decisions.
+Embedded maps preserve the proven scene without coupling PDF layout to WebGL.
+Direct in-page globe rendering is deferred, as are native PPTX objects and
+image-wrapped PPTX artifacts.
 
 The data flow is:
 
 1. Capture one immutable export snapshot, including effective timing and routes.
 2. Produce the canonical transport/posture/restriction projection.
-3. Produce a pure customer view: wording, display clocks, material rows,
-   notices.
+3. Produce pure customer wording, clocks, material rows, and notices.
 4. Render useful route maps from that same snapshot.
 5. Compose fixed 16:9 HTML pages with exact-duration SVG geometry.
-6. Load the document in packaged Chromium, await fonts/images/layout, and
-   inspect fit. Later continuation planning uses actual browser layout
-   measurements.
+6. Await fonts/images/layout in packaged Chromium and inspect fit; browser
+   measurements inform later continuation planning.
 7. Print the complete accepted page document to PDF and validate its page count.
 8. Serialize and validate paired evidence from the same snapshot and page plan.
 9. Publish both optional files together into the normal legacy ZIP.
 
-Keep focused interfaces for canonical projection, customer view, HTML
-composition, browser rendering, evidence serialization, and package publication.
-Composition cannot independently infer transport availability. Export cannot
-write back to mission/timeline storage or recapture data between the two
-artifact builders.
+Separate projection, customer view, HTML, browser, evidence, and publication
+interfaces. Composition cannot infer availability. Export cannot mutate mission
+or timeline storage or recapture data between artifact builders.
 
 ## Artifact and failure contract
 
@@ -206,33 +199,41 @@ two agreed normal-leg examples; general pagination is a later gated extension.
 ## Browser determinism, ownership, and evidence
 
 Use pinned Chromium/Playwright, bundled fonts/assets, fixed viewport/pixel
-ratio, fixed print options, explicit timezone/locale, and snapshot-derived
-timestamps. Disable animation and live-clock content. Wait for fonts, decoded
-images, and an explicit composition-ready signal; a sleep is not readiness.
-Escape customer strings as text and allow only bundled assets, embedded image
-data, and scoped loopback resources. No external asset or screenshot service is
-required.
+ratio, print options, timezone/locale, and snapshot timestamps. Disable
+animations/live clocks. Await fonts, decoded images, and explicit composition
+readiness, never a sleep. Escape customer strings as text; allow only bundled
+assets, embedded data, and scoped loopback resources. No external assets or
+screenshot service.
 
-Retain the existing 60-second map-stage ceiling. The whole new render pipeline
-(maps, HTML layout, PDF printing, and renderer cleanup) additionally shares a
-60-second monotonic deadline for this design. This is a stricter combined
-contract to verify at the checkpoint, not an already-proven performance claim.
-Measure cold runs before generalizing; if the combined budget cannot pass, stop
-and revise the design instead of silently increasing a timeout. Verify that the
-production export proxy accommodates legacy export plus the bounded trial
-without broad timeout changes.
+At trial-render start, establish one request-owned monotonic deadline, once, 60
+seconds ahead. Browser startup, maps, HTML composition/readiness/fit inspection,
+PDF print, and cleanup all consume that same remaining budget. No stage resets
+the deadline or receives a fresh 60 seconds. Maps get at most the lesser of
+their existing cap and the remaining shared budget, with an early cutoff
+reserving time for PDF output and cleanup. Fall back/reclaim map space or fail
+safely when that reserve is reached. The checkpoint plan defines and measures
+the reserve. Cold runs must prove this combined contract; failure requires
+design revision, not a silent timeout increase. Verify the export proxy
+accommodates the bounded trial plus legacy export without broad timeout changes.
 
-Record ownership before launching child processes, browser contexts/listeners,
-Compose projects, private volumes, and temporary paths. Use exit/signal cleanup
-and wall-clock limits with forced-termination grace. Close/reap children and
-verify task-owned resources are gone after success, failure, or cancellation.
-Preserve the actor's Docker daemon/context and other tasks' resources.
+Prefer one request-owned browser process, fresh separate map/document contexts
+and pages, and one scoped asset listener if needed. Refactor the retained map
+runner's stage-local deadline and launch/teardown ownership for this contract.
+Close contexts/pages eagerly; close/reap the browser and listener before trial
+success. If sharing is unsafe, document why and keep both processes under the
+same request owner, deadline, and cleanup model; measure both cold starts.
+Record ownership before launching processes/listeners, Compose projects, private
+volumes, or temporary paths. Use exit/signal cleanup and wall limits with kill
+grace; verify cleanup on every exit. Preserve actor Docker/shared resources.
 
-Versioned evidence records snapshot fingerprint, canonical intervals/decisions,
-all exact clocks, unsplit source records, restriction/confidence data, customer
-row mappings, page assignments, map/fallback results, runtime/font/asset
-identities, fit results, timings, and cleanup outcome. Private geometry stays
-local.
+Versioned evidence records snapshot/interval/decision/source data, exact clocks,
+restrictions/confidence, customer-row mappings, pages, maps/fallbacks, fit and
+cleanup results, and browser/runtime/font/asset identities. Record whether maps
+and PDF shared a browser, cold startup, map rendering, HTML
+readiness/layout-fit, PDF printing, teardown, and total shared-budget
+consumption. Include stage durations and offsets from the same request start so
+deadline use is auditable. The first checkpoint proves lifecycle/budget
+feasibility as well as appearance; private geometry stays local.
 
 Determinism means repeated identical inputs in the same pinned runtime produce
 the same customer text, SVG geometry, page count/assignments, and decoded
