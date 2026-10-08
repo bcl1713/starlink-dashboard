@@ -41,7 +41,7 @@ def kml(start, duration, wide=False):
         f"{longitude},{latitude},10000" for longitude, latitude in coordinates
     )
     return (
-        '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Synthetic production acceptance route</name>'
+        '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Synthetic production acceptance KADW-PAED route</name>'
         + "".join(points)
         + f"<Placemark><name>Flight route</name><LineString><coordinates>{line}</coordinates></LineString></Placemark></Document></kml>"
     ).encode()
@@ -56,7 +56,7 @@ def seed_missions(api, root):
         "dst": {"start": datetime(2026, 11, 1, 5, tzinfo=timezone.utc)},
         "short-dst": {
             "start": datetime(2026, 11, 1, 5, tzinfo=timezone.utc),
-            "duration": timedelta(minutes=10),
+            "minutes": 10,
         },
         "subminute": {"subminute": True},
         "uncertain-subminute": {"subminute": True, "uncertain": True},
@@ -217,6 +217,38 @@ def seed_missions(api, root):
                 uploads.append(json.loads(body))
         actual, _, _ = api.request("GET", f"/api/v2/missions/{mission_id}")
         saved[name] = json.loads(actual)
+        source_timelines = []
+        invalid_bounds = False
+        for number, leg in enumerate(saved[name]["legs"]):
+            timeline, _, _ = api.request(
+                "GET", f"/api/v2/missions/{mission_id}/legs/{leg['id']}/timeline"
+            )
+            timeline = json.loads(timeline)
+            source_timelines.append(timeline)
+            segments = timeline["segments"]
+            expected_start = recipe.get("start", BASE) + timedelta(days=number)
+            if recipe.get("adjusted"):
+                expected_start += timedelta(hours=2)
+            expected_end = expected_start + timedelta(
+                minutes=recipe.get("minutes", 240)
+            )
+            if (
+                not segments
+                or min(
+                    datetime.fromisoformat(s["start_time"].replace("Z", "+00:00"))
+                    for s in segments
+                )
+                != expected_start
+                or (
+                    not recipe.get("splice")
+                    and max(
+                        datetime.fromisoformat(s["end_time"].replace("Z", "+00:00"))
+                        for s in segments
+                    )
+                    != expected_end
+                )
+            ):
+                invalid_bounds = True
         (root / f"seed-{name}.json").write_text(
             json.dumps(
                 {
@@ -224,8 +256,13 @@ def seed_missions(api, root):
                     "created": json.loads(created),
                     "uploads": uploads,
                     "actual": saved[name],
+                    "sourceTimelines": source_timelines,
                 },
                 indent=2,
             )
         )
+        if invalid_bounds:
+            raise ValueError(
+                "Supported inputs did not prepare expected flight bounds: " + name
+            )
     return saved
