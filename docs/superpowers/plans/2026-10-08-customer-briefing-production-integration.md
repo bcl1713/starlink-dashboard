@@ -3,7 +3,8 @@
 Required Tasks 5–8 companion to the
 [production plan](2026-10-08-customer-briefing-production.md). Its constraints,
 definitions, verification commands, and approval gate apply. Implementation and
-broad acceptance remain pending.
+broad acceptance remain pending; native implementation is authorized by the
+user's 2026-10-08 approval.
 
 ## Task 5: Feed enabled legacy exports from the same captured snapshot
 

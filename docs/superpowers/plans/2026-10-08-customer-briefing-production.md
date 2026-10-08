@@ -20,14 +20,16 @@ Docker/Nginx, existing ZIP/PPTX builders.
 [Production completion design](../specs/2026-10-08-customer-briefing-production-design.md)
 and
 [governing HTML-to-PDF design](../specs/2026-10-08-customer-briefing-html-pdf-design.md).
-The new design resolves final-checkpoint presentation and proposes remaining
-interfaces; both this plan and those proposed decisions await user approval.
+The user approved this design and all three plan files for native execution on
+2026-10-08. Approval authorizes implementation; broader acceptance remains gated.
 
 ## Global constraints
 
 - Planning branch: `docs/customer-briefing-production-plan`, worktree
   `.worktrees/customer-briefing-production-plan`, fresh `origin/dev` at
-  `f1ee64f42faa9f7a2f02a80d5f22dd324d459902`. Product code is unchanged.
+  `f1ee64f42faa9f7a2f02a80d5f22dd324d459902`. That checkpoint changed docs only.
+  Approved implementation uses `feat/customer-briefing-production` in
+  `.worktrees/customer-briefing-production` from the same fresh base.
 - Implementation starts only after explicit plan/design approval and execution
   selection, in its own feature worktree from newly fetched `origin/dev`.
 - Preserve `customer-mission-briefing-phase-one` and its files/resources. Do not
@@ -197,9 +199,8 @@ stage. The payload, page-plan, deadline, and package interfaces are tightly
 coupled; maintain one implementer's context while independently reviewing
 completed stages. Subagent-driven execution is available if selected.
 
-Review the proposed design and all three plan files. Approval must explicitly
-precede Tasks 1–8; approval of this documentation PR is not evidence that the
-feature is implemented or production-accepted.
+User approval explicitly preceded Tasks 1–8. Approval is not evidence that the
+feature is implemented or production-accepted; Task 8 retains those gates.
 
 Self-review: both prerequisites have dedicated tasks; pagination, versioned
 evidence, single-owner lifecycle, immutable legacy reads, ZIP atomicity, API/UI

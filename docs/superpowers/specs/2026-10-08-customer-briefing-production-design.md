@@ -1,8 +1,8 @@
 # Customer briefing production completion design
 
-Status: proposed for user review. This document and its companion plan do not
-authorize implementation. The user requested a separate plan and approval before
-dense/multi-leg pagination or production integration.
+Status: approved for native implementation by the user on 2026-10-08. Approval
+covers this design and Tasks 1–8 of its companion plans. New visual acceptance,
+production-path acceptance, and shared production enablement remain separate.
 
 ## Authority and accepted baseline
 
@@ -185,4 +185,5 @@ Customer acceptance must explicitly cover readable continuations, dense/long
 examples, multi-leg output, and production downloads. Checkpoint acceptance does
 not qualify them. Keep the feature default-off after delivery; enabling it in
 shared production configuration or replacing legacy PPTX needs a separate user
-decision. This task authorizes planning and a draft documentation PR only.
+decision. User approval authorizes native implementation; production enablement
+and legacy PPTX replacement remain separate decisions.

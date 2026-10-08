@@ -18,6 +18,33 @@ def load_checker_module():
 
 
 class PublishGhcrWorkflowContractTests(unittest.TestCase):
+    def test_backend_build_uses_root_context_without_changing_other_images(self):
+        checker = load_checker_module()
+        entries = checker.workflow_entries(WORKFLOW_PATH)
+        by_image = {entry["image"].rsplit("/", 1)[-1]: entry for entry in entries}
+        self.assertEqual(by_image["starlink-location"]["context"], ".")
+        self.assertEqual(by_image["mission-planner"]["context"], "./frontend/mission-planner")
+        self.assertEqual(by_image["gfs-worker"]["context"], "./backend/starlink-location")
+        text = WORKFLOW_PATH.read_text().replace(
+            "            context: .\n            file: ./backend/starlink-location/Dockerfile",
+            "            context: ./backend/starlink-location\n            file: ./backend/starlink-location/Dockerfile",
+        )
+        self.assertTrue(any("starlink-location context must be ." in error for error in self.validate_workflow_text(text)))
+
+    def test_backend_image_has_isolated_pinned_runtime_and_precise_build_inputs(self):
+        dockerfile = (REPO_ROOT / "backend/starlink-location/Dockerfile").read_text()
+        self.assertIn("FROM node:22.22.2-trixie-slim", dockerfile)
+        self.assertIn("/opt/customer-briefing", dockerfile)
+        self.assertIn("PLAYWRIGHT_BROWSERS_PATH", dockerfile)
+        self.assertIn("fonts-dejavu-core", dockerfile)
+        self.assertIn("poppler-utils", dockerfile)
+        self.assertIn("COPY backend/starlink-location/requirements.txt", dockerfile)
+        self.assertIn('ENTRYPOINT ["entrypoint.sh"]', dockerfile)
+        self.assertIn("useradd -m -u 1000 appuser", dockerfile)
+        ignore = REPO_ROOT / "backend/starlink-location/Dockerfile.dockerignore"
+        self.assertTrue(ignore.exists(), "Root-context backend exclusion rules absent")
+        self.assertEqual(ignore.read_text().splitlines()[0], "**")
+
     def validate_workflow_text(self, workflow_text: str) -> list[str]:
         checker = load_checker_module()
         with tempfile.TemporaryDirectory() as temporary_directory:

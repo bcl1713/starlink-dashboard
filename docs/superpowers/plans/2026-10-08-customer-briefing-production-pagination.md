@@ -3,7 +3,7 @@
 Required Tasks 3–4 companion to the
 [production plan](2026-10-08-customer-briefing-production.md). Its constraints,
 definitions, verification commands, and approval gate apply. These tasks are
-proposed implementation, not completed verification.
+approved implementation, not completed verification.
 
 ## File and interface boundaries
 
