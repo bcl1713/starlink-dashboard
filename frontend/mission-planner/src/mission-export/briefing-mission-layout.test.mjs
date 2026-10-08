@@ -1,5 +1,61 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+test('normal legs reuse their actual batched primary measurement without loading five candidates', async () => {
+  const module = await import('./briefing-mission-layout.mjs');
+  assert.equal(
+    typeof module.cachePrimaryMeasurements,
+    'function',
+    'Batched measurement reuse absent'
+  );
+  let probes = 0;
+  const measured = Array.from({ length: 5 }, (_, i) => ({
+    legId: 'leg-' + i,
+    visibleRowIds: ['r'],
+    width: 1280,
+    height: 720,
+    overflow: [],
+    labelOverlaps: [],
+  }));
+  const measure = module.cachePrimaryMeasurements({
+    measured,
+    measure: async () => {
+      probes++;
+      return { fits: true };
+    },
+  });
+  for (let i = 0; i < 5; i++)
+    assert.equal(
+      (
+        await measure({
+          legId: 'leg-' + i,
+          kind: 'primary',
+          rowIds: ['r'],
+          continued: false,
+        })
+      ).fits,
+      true
+    );
+  assert.equal(probes, 0);
+  await measure({
+    legId: 'leg-0',
+    kind: 'primary',
+    rowIds: ['r'],
+    continued: true,
+  });
+  await measure({
+    legId: 'leg-0',
+    kind: 'continuation',
+    rowIds: ['r'],
+    continued: false,
+  });
+  await measure({
+    legId: 'leg-0',
+    kind: 'primary',
+    rowIds: [],
+    continued: false,
+  });
+  assert.equal(probes, 3);
+});
 test('measurement keeps one loaded font head while updating candidate page bodies', async () => {
   const module = await import('./briefing-mission-layout.mjs');
   assert.equal(

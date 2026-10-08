@@ -78,6 +78,25 @@ export function createMissionDocumentLoader({
   };
 }
 
+const fitsPage = (fit) =>
+  fit.width === 1280 &&
+  fit.height === 720 &&
+  !fit.overflow.length &&
+  !fit.labelOverlaps.length;
+export function cachePrimaryMeasurements({ measured, measure }) {
+  return async (request) => {
+    const original = measured.find((p) => p.legId === request.legId);
+    if (
+      original &&
+      request.kind === 'primary' &&
+      !request.continued &&
+      JSON.stringify(original.visibleRowIds) === JSON.stringify(request.rowIds)
+    )
+      return { fits: fitsPage(original) };
+    return measure(request);
+  };
+}
+
 async function measurePages(page, budget) {
   return within(
     page.evaluate(() =>
@@ -225,50 +244,69 @@ export async function prepareMissionDocument({
     check,
     isBlocked: () => blocked,
   });
-  const progress = async (operation) =>
-    writeFile(
+  const history = [];
+  const progress = async (operation) => {
+    history.push({ operation, elapsedMs: budget.elapsedMs() });
+    await writeFile(
       ownedPath(outputRoot, 'document-progress.json'),
-      JSON.stringify({ operation, elapsedMs: budget.elapsedMs() })
+      JSON.stringify({ history })
     );
+  };
+  const primaryPlan = {
+    schemaVersion: 2,
+    missionId: payload.missionId,
+    snapshotFingerprint: payload.snapshotFingerprint,
+    pages: payload.legs.map((leg, index) => ({
+      page: index + 1,
+      legId: leg.legId,
+      kind: 'primary',
+      legPage: 1,
+      legPageCount: 1,
+      rowIds: leg.rows.map((r) => r.id),
+    })),
+  };
+  const initialHtml = composeMissionBriefing(payload, primaryPlan, assets);
+  await progress('batch-primary');
+  if (fault === 'measure-hang')
+    await within(new Promise(() => {}), budget.workRemainingMs());
+  await load(initialHtml);
+  const initialMeasured = await measurePages(page, budget);
   const pagePlan = await planBriefingPages({
     payload,
     budget,
-    measure: async (request) => {
-      await progress(
-        'measure:' +
-          request.legId +
-          ':' +
-          request.kind +
-          ':' +
-          request.rowIds.length
-      );
-      if (fault === 'measure-hang')
-        await within(new Promise(() => {}), budget.workRemainingMs());
-      const leg = payload.legs.find((l) => l.legId === request.legId);
-      await load(
-        composeMissionPage(
-          leg,
-          {
-            ...request,
-            legPage: request.kind === 'primary' ? 1 : 3,
-            legPageCount: 3,
-          },
-          assets
-        )
-      );
-      const [fit] = await measurePages(page, budget);
-      return {
-        fits:
-          fit.width === 1280 &&
-          fit.height === 720 &&
-          !fit.overflow.length &&
-          !fit.labelOverlaps.length,
-      };
-    },
+    measure: cachePrimaryMeasurements({
+      measured: initialMeasured,
+      measure: async (request) => {
+        await progress(
+          'measure:' +
+            request.legId +
+            ':' +
+            request.kind +
+            ':' +
+            request.rowIds.length
+        );
+        if (fault === 'measure-hang')
+          await within(new Promise(() => {}), budget.workRemainingMs());
+        const leg = payload.legs.find((l) => l.legId === request.legId);
+        await load(
+          composeMissionPage(
+            leg,
+            {
+              ...request,
+              legPage: request.kind === 'primary' ? 1 : 3,
+              legPageCount: 3,
+            },
+            assets
+          )
+        );
+        const [fit] = await measurePages(page, budget);
+        return { fits: fitsPage(fit) };
+      },
+    }),
   });
   const html = composeMissionBriefing(payload, pagePlan, assets);
   await progress('final-assembly');
-  await load(html);
+  if (html !== initialHtml) await load(html);
   const measured = await measurePages(page, budget);
   if (
     measured.length !== pagePlan.pages.length ||

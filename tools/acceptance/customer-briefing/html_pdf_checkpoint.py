@@ -7,6 +7,7 @@ import os
 import shutil
 import signal
 import subprocess
+import tarfile
 import time
 from hashlib import sha256
 from pathlib import Path
@@ -170,6 +171,12 @@ class CheckpointOwner:
             "compose_removed": not any(remaining.values()),
             "remaining": remaining,
         }
+        for temporary in self.ownership["temporaryPaths"]:
+            path = Path(temporary)
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
         self.ownership["cleanup"] = cleanup
         self.closed = True
         self.persist()
@@ -227,6 +234,23 @@ def run_checkpoint(
     }
     try:
         if image_tag is None:
+            context = root / "candidate-build-source"
+            archive = root / "candidate-build-source.tar"
+            owner.ownership["temporaryPaths"] += [str(context), str(archive)]
+            owner.persist()
+            owner.command(
+                [
+                    "git",
+                    "archive",
+                    "--format=tar",
+                    f"--output={archive}",
+                    candidate_sha,
+                ],
+                timeout=60,
+            )
+            context.mkdir()
+            with tarfile.open(archive) as source:
+                source.extractall(context, filter="data")
             build = [
                 "timeout",
                 "--kill-after=10s",
@@ -234,7 +258,10 @@ def run_checkpoint(
                 "docker",
                 "build",
                 "-f",
-                "tools/acceptance/customer-briefing/Dockerfile.html-pdf-checkpoint",
+                str(
+                    context
+                    / "tools/acceptance/customer-briefing/Dockerfile.html-pdf-checkpoint"
+                ),
                 "--build-arg",
                 f"ACCEPTANCE_CANDIDATE_SHA={candidate_sha}",
                 "-t",
@@ -243,7 +270,7 @@ def run_checkpoint(
             ca = os.environ.get("CODEX_PROXY_CERT")
             if ca:
                 build += ["--secret", f"id=proxy_ca,src={ca}"]
-            owner.command([*build, "."], timeout=2715)
+            owner.command([*build, str(context)], timeout=2715)
         identity = json.loads(
             owner.command(
                 ["docker", "image", "inspect", image, "--format", "{{json .}}"],
