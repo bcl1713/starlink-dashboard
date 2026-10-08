@@ -305,3 +305,29 @@ def test_over_budget_control_requires_the_page_budget_boundary():
         controls().assert_scenario(
             "over-budget", {"status": "omitted", "warning": "runtime"}
         )
+
+
+def test_rendered_request_cannot_pass_without_observed_owner_evidence():
+    with pytest.raises(ValueError, match="observations"):
+        controls().assert_observations(
+            {"observations": {}}, {"observations": {}}, renders=1
+        )
+
+
+def test_spliced_input_cannot_pass_with_the_original_route_end_time():
+    report = {
+        "status": "included",
+        "evidence": {
+            "legs": [
+                {
+                    "legId": "l",
+                    "canonical": {
+                        "utcBounds": ["2026-10-25T14:00:00Z", "2026-10-25T18:00:00Z"]
+                    },
+                }
+            ],
+            "render": {"maps": {"l": {"status": "primary"}}},
+        },
+    }
+    with pytest.raises(ValueError, match="splice timing"):
+        controls().assert_scenario("spliced", report)

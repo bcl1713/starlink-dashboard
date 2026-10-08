@@ -48,14 +48,28 @@ for root in (
             sources[str(file)] = sha256(file.read_bytes()).hexdigest()
 identity_checks = []
 listener_checks = []
+observations = {}
+observer_alive = False
+observer_file = Path("/tmp/briefing-production-observations/observer-owner.json")
+if observer_file.exists():
+    observer = json.loads(observer_file.read_text())
+    try:
+        fields = (
+            Path(f"/proc/{observer['pid']}/stat").read_text().split(") ")[1].split()
+        )
+        observer_alive = fields[19] == observer["start"] and fields[0] != "Z"
+    except OSError:
+        pass
 for directory in Path("/tmp/briefing-production-observations").glob(
     "customer-briefing-*"
 ):
+    records_by_name = {}
     for name in ("ownership.json", "python-owner.json"):
         file = directory / name
         if not file.exists():
             continue
         owner = json.loads(file.read_text())
+        records_by_name[name] = owner
         records = [owner, *owner.get("workers", [])]
         if owner.get("browserPid"):
             records.append({"pid": owner["browserPid"], "start": owner["browserStart"]})
@@ -86,12 +100,35 @@ for directory in Path("/tmp/briefing-production-observations").glob(
             listener_checks.append(
                 {"request": directory.name, **listener, "listening": listening}
             )
+    history_file = directory / "stage-history.jsonl"
+    history = (
+        [json.loads(line) for line in history_file.read_text().splitlines()]
+        if history_file.exists()
+        else []
+    )
+    report_file = directory / "render-report.json"
+    render = json.loads(report_file.read_text()) if report_file.exists() else {}
+    node = records_by_name.get("ownership.json", {})
+    python = records_by_name.get("python-owner.json", {})
+    observations[directory.name] = {
+        "nodeIdentityRecorded": bool(node.get("pid") and node.get("start")),
+        "pythonIdentityRecorded": bool(python.get("pid") and python.get("start")),
+        "browserIdentityRecorded": bool(
+            node.get("browserPid") and node.get("browserStart")
+        ),
+        "listenerRecorded": bool(node.get("listener")),
+        "stages": history,
+        "finalCleanupRecorded": render.get("cleanup", {}).get("success") is True
+        or node.get("cleanup", {}).get("success") is True,
+    }
 report = {
     "processes": survivors,
     "privateStaging": [str(p) for p in staging],
     "sourceHashes": sources,
     "ownedIdentityChecks": identity_checks,
     "ownedListenerChecks": listener_checks,
+    "observerAlive": observer_alive,
+    "observations": observations,
 }
 print(json.dumps(report))
 if (

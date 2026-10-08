@@ -6,6 +6,7 @@ import json
 import time
 import zipfile
 from hashlib import sha256
+from math import radians, sin, cos, asin, sqrt
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.error import HTTPError
@@ -129,6 +130,29 @@ def assert_scenario(case, report):
             raise ValueError(
                 "Exact flight bounds changed from submitted UTC inputs: " + case
             )
+        if case == "spliced":
+
+            def distance(a, b):
+                lat1, lon1, lat2, lon2 = map(radians, (*a, *b))
+                return (
+                    2
+                    * 3440.065
+                    * asin(
+                        sqrt(
+                            sin((lat2 - lat1) / 2) ** 2
+                            + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
+                        )
+                    )
+                )
+
+            diversion_hours = (
+                distance((35, -103.5), (37, -102)) + distance((37, -102), (35, -100.5))
+            ) / 450
+            expected_end = expected_start + timedelta(hours=2 + diversion_hours)
+            if abs((bounds[1] - expected_end).total_seconds()) > 0.00001:
+                raise ValueError(
+                    "Configured manual splice timing was ignored or changed"
+                )
         intervals = canonical["intervals"]
         if (
             not intervals
@@ -194,6 +218,29 @@ def assert_scenario(case, report):
             for row in leg["customerRows"]
         ):
             raise ValueError("Midnight rows lost date disambiguation")
+
+
+def assert_observations(result, baseline, *, renders, cancelled=False):
+    new = set(result["observations"]) - set(baseline["observations"])
+    if len(new) != renders:
+        raise ValueError(
+            f"Missing/extra per-request renderer observations for {renders} renderer request(s): expected {renders}, observed {len(new)}"
+        )
+    for request in new:
+        observation = result["observations"][request]
+        if not all(
+            observation[key]
+            for key in (
+                "nodeIdentityRecorded",
+                "pythonIdentityRecorded",
+                "browserIdentityRecorded",
+                "listenerRecorded",
+                "stages",
+            )
+        ):
+            raise ValueError("Incomplete owned renderer evidence: " + request)
+        if not cancelled and not observation["finalCleanupRecorded"]:
+            raise ValueError("Final request cleanup evidence missing: " + request)
 
 
 def inspect_download(content, headers, expected_status):
@@ -369,7 +416,20 @@ def qualify(owner):
     )
 
     def copy_to_backend(source, destination):
+        if not destination.startswith("/tmp/briefing-"):
+            raise ValueError("Acceptance copies must use task-private temporary paths")
         owner.compose("cp", str(source), f"starlink-location:{destination}", timeout=30)
+        owner.compose(
+            "exec",
+            "-T",
+            "--user",
+            "root",
+            "starlink-location",
+            "chown",
+            "appuser:appuser",
+            destination,
+            timeout=30,
+        )
 
     def backend_python(code, *arguments, timeout=30):
         return owner.compose(
@@ -388,8 +448,10 @@ def qualify(owner):
     audit_code = (tools / "production_runtime_audit.py").read_text()
     audit_reports = []
 
-    def audit(label, baseline=None, legacy_disabled=False):
+    def audit(label, baseline=None, legacy_disabled=False, renders=0, cancelled=False):
         result = json.loads(backend_python(audit_code).splitlines()[-1])
+        if owner.ownership.get("observer") and not result["observerAlive"]:
+            raise ValueError("Owned runtime observer is not alive: " + label)
         if baseline is not None:
             changed = sorted(
                 name
@@ -405,6 +467,7 @@ def qualify(owner):
                 raise ValueError(
                     "Export changed persisted inputs: " + label + ": " + str(changed)
                 )
+            assert_observations(result, baseline, renders=renders, cancelled=cancelled)
         result["label"] = label
         audit_reports.append(result)
         (owner.root / "runtime-audits.json").write_text(
@@ -441,7 +504,12 @@ def qualify(owner):
         content = (destination / "download.zip").read_bytes()
         headers = result["requests"][0]["headers"]
         inspect_download(content, headers, status)
-        audit("after-browser-" + case + "-" + status, baseline, status == "disabled")
+        audit(
+            "after-browser-" + case + "-" + status,
+            baseline,
+            status == "disabled",
+            renders=0 if status == "disabled" else 1,
+        )
         return result
 
     def pdf_inspection(destination, label):
@@ -497,6 +565,14 @@ def qualify(owner):
             json.dumps({"headers": headers, "proxyTotalSeconds": elapsed}, indent=2)
         )
         report = inspect_download(content, headers, status)
+        if case == "spliced":
+            from production_seed import kml, BASE
+
+            with zipfile.ZipFile(io.BytesIO(content)) as archive:
+                original = archive.read("routes/briefing-spliced-route-1.kml")
+                if original != kml(BASE, timedelta(hours=4)):
+                    raise ValueError("Spliced export changed original import KML bytes")
+            report["originalPlannedKmlSha256"] = sha256(original).hexdigest()
         if warning is not None and report["warning"] != warning:
             raise ValueError("Unexpected omission boundary: " + str(report["warning"]))
         report.update(case=case, attempt=label, proxyTotalSeconds=elapsed)
@@ -507,7 +583,17 @@ def qualify(owner):
         (owner.root / "production-downloads.json").write_text(
             json.dumps(reports, indent=2)
         )
-        audit("after-download-" + label, baseline, status == "disabled")
+        audit(
+            "after-download-" + label,
+            baseline,
+            status == "disabled",
+            renders=(
+                0
+                if status == "disabled"
+                or report["warning"] in {"data", "snapshot", "busy"}
+                else 1
+            ),
+        )
         if status != "disabled" and not label.startswith("fault-"):
             assert_scenario(case, report)
         return report
@@ -562,6 +648,10 @@ def qualify(owner):
             observer,
             timeout=30,
         )
+
+        readiness = json.loads(backend_python(audit_code).splitlines()[-1])
+        if not readiness["observerAlive"]:
+            raise ValueError("Owned observer did not become ready")
 
     start_observer()
     # Supported storage cases retain the real saved inputs and cached predictions.
@@ -646,7 +736,12 @@ def qualify(owner):
                 result["second"]["headers"],
                 "omitted",
             )
-        audit("after-lifecycle-" + mode, baseline)
+        audit(
+            "after-lifecycle-" + mode,
+            baseline,
+            renders=1,
+            cancelled=mode != "concurrent",
+        )
         return result
 
     # Disconnects count against the existing rate limiter too.
