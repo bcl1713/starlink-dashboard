@@ -93,3 +93,59 @@ def test_document_map_has_customer_endpoints_without_event_ordinals():
     }
     assert payload["mapInput"]["markers"] == []
     assert payload["rows"] and all(r["id"] for r in payload["rows"])
+
+
+@pytest.mark.parametrize("invalid", ["missing", "malformed", "timing", "density"])
+def test_map_input_diagnostics_survive_document_and_evidence(invalid):
+    from app.mission.exporter.map_inputs import build_map_input
+    from tests.unit.test_customer_evidence import build as evidence, report
+
+    captured, trial, view = inputs()
+    route = json.loads(captured.legs[0].effective_route_json)
+    if invalid == "missing":
+        route_json = None
+    elif invalid == "malformed":
+        route_json = canonical_json({"points": [{"latitude": "bad"}]})
+    elif invalid == "timing":
+        route["points"][0]["expected_arrival_time"] = "2026-10-25T13:00:00Z"
+        route_json = canonical_json(route)
+    else:
+        route["points"] = route["points"] * 501
+        route_json = canonical_json(route)
+    leg = replace(captured.legs[0], effective_route_json=route_json)
+    captured = replace(captured, legs=(leg,))
+    _, reasons = build_map_input(leg, trial)
+    assert reasons
+    payload = build(captured, view, trial)
+    assert payload.get("mapInputDiagnostics") == list(reasons)
+    raw = report(captured, view)
+    raw["map"] = {"status": "unavailable", "warnings": ["Runtime map failed"]}
+    result = json.loads(evidence(captured, trial, view, raw))
+    assert result["mapInputDiagnostics"] == list(reasons)
+    assert result["render"]["map"]["warnings"] == ["Runtime map failed"]
+    assert captured.legs[0].effective_route_json == route_json
+
+
+def test_successful_map_diagnostics_are_retained(monkeypatch):
+    import app.mission.exporter.customer_document as module
+    from app.mission.exporter.map_inputs import build_map_input
+
+    captured, trial, view = inputs()
+    map_input, _ = build_map_input(captured.legs[0], trial)
+    monkeypatch.setattr(
+        module, "build_map_input", lambda *args: (map_input, ("Position advisory",))
+    )
+    payload = build(captured, view, trial)
+    assert payload.get("mapInputDiagnostics") == ["Position advisory"]
+    assert payload["mapInput"]
+
+
+def test_document_rows_carry_exact_display_cells():
+    captured, trial, view = inputs()
+    payload = build(captured, view, trial)
+    assert payload["rows"][0].get("displayCells") == [
+        "10:00–10:15",
+        "Takeoff SOF",
+        "Ka, Starshield, X-Band",
+        "Nominal",
+    ]

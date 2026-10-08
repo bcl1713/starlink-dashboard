@@ -2,6 +2,8 @@
 
 import json
 
+from .customer_display import display_row
+
 from .customer_view import CustomerLegView, restriction_labels
 from .map_inputs import build_map_input
 from .snapshot import ExportSnapshot
@@ -43,8 +45,9 @@ def build_customer_document(
         for r in view.rows
     ):
         raise ValueError("Customer rows do not match partition")
-    map_input = build_map_input(snapshot.legs[0], trial)[0]
+    map_input, map_reasons = build_map_input(snapshot.legs[0], trial)
     if map_input:
+        map_input = json.loads(json.dumps(map_input))
         leg = json.loads(snapshot.legs[0].leg_json)
         map_input["endpointLabels"] = {
             "departure": leg.get("departure_airport") or "Departure",
@@ -52,7 +55,7 @@ def build_customer_document(
         }
         # Customer overview shows the route and airports; exact events stay in evidence.
         map_input["markers"] = []
-    return {
+    payload = {
         "schemaVersion": 1,
         "snapshotFingerprint": snapshot.fingerprint,
         "legId": trial.leg_id,
@@ -90,4 +93,8 @@ def build_customer_document(
             for r in view.rows
         ],
         "mapInput": map_input,
+        "mapInputDiagnostics": list(map_reasons),
     }
+    for row in payload["rows"]:
+        row["displayCells"] = list(display_row(row))
+    return payload

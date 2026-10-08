@@ -11,7 +11,7 @@ from .trial_clocks import format_clocks
 
 
 def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
-    build_customer_document(snapshot, view, trial)
+    payload = build_customer_document(snapshot, view, trial)
     expected = [r.id for r in view.rows]
     fit = report.get("fit") or {}
     pdf = report.get("pdfValidation") or {}
@@ -57,6 +57,7 @@ def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
             "schemaVersion": 1,
             "snapshotFingerprint": snapshot.fingerprint,
             "legId": trial.leg_id,
+            "mapInputDiagnostics": payload["mapInputDiagnostics"],
             "canonical": {
                 "utcBounds": [stamp(v) for v in trial.utc_bounds],
                 "intervals": [

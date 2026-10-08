@@ -14,16 +14,29 @@ export function composeBriefing(
   if (/<\/style/i.test(cssText) || /https?:|@import/i.test(cssText))
     throw new Error('Nonlocal CSS rejected');
   const short = (s) =>
-    e(
-      s
-        .replaceAll('Commercial Ka', 'Ka')
-        .replaceAll('X-Band MILSATCOM', 'X-Band')
-    );
+    s
+      .replaceAll('Commercial Ka', 'Ka')
+      .replaceAll('X-Band MILSATCOM', 'X-Band');
   const rows = payload.rows
-    .map(
-      (r) =>
-        `<tr data-row-id="${e(r.id)}" data-fit><td class="et">${e(r.et.replaceAll(' ET', ''))}</td><td>${short(r.impact)}</td><td class="remaining-cell" data-fit>${short(r.remaining.replaceAll(' + ', ', '))}</td><td class="posture-cell">${e({ 'Limited / elevated risk': 'Elevated risk', 'Communications unavailable': 'Unavailable', 'Assessment incomplete': 'Incomplete' }[r.posture] || r.posture)}</td></tr>`
-    )
+    .map((r) => {
+      const cells = r.displayCells ?? [
+        r.et.replaceAll(' ET', ''),
+        short(r.impact),
+        short(r.remaining.replaceAll(' + ', ', ')),
+        {
+          'Limited / elevated risk': 'Elevated risk',
+          'Communications unavailable': 'Unavailable',
+          'Assessment incomplete': 'Incomplete',
+        }[r.posture] || r.posture,
+      ];
+      if (
+        !Array.isArray(cells) ||
+        cells.length !== 4 ||
+        cells.some((cell) => typeof cell !== 'string')
+      )
+        throw new Error('Expected four display cells');
+      return `<tr data-row-id="${e(r.id)}" data-fit><td class="et">${e(cells[0])}</td><td>${e(cells[1])}</td><td class="remaining-cell" data-fit>${e(cells[2])}</td><td class="posture-cell">${e(cells[3])}</td></tr>`;
+    })
     .join('');
   const map = mapDataUrl
     ? `<aside class="map-card" data-fit><img src="${dataAsset(mapDataUrl, 'image/')}" alt="Mission route between departure and arrival airports" data-fit></aside>`
