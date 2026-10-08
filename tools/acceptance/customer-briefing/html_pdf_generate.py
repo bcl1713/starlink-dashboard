@@ -11,6 +11,7 @@ from pathlib import Path
 
 from app.mission.exporter.customer_document import build_customer_document
 from app.mission.exporter.customer_evidence import build_customer_evidence
+from app.mission.exporter.customer_pdf import verify_customer_pdf
 from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
@@ -205,11 +206,13 @@ def generate(root: Path):
         }:
             raise ValueError("Missing four posture colors")
         inspection = inspect_pdf(
-            out / report["artifacts"]["pdfPath"], out / report["artifacts"]["pngPath"]
+            out / report["artifacts"]["pdfPath"],
+            out / report["artifacts"]["pngPath"],
+            report["fit"]["pdfExpectations"],
         )
         (out / "pdf-inspection.json").write_text(json.dumps(inspection, indent=2))
         report["pdfValidation"] = {
-            k: inspection[k] for k in ("verified", "pageCount", "pageSizePt")
+            k: inspection[k] for k in ("verified", "pageCount", "pageSizePt", "rows")
         }
         report["pdfValidation"]["textHash"] = sha256(
             inspection["text"].encode()
@@ -259,11 +262,13 @@ def generate(root: Path):
     ):
         raise ValueError("Incomplete-X page unqualified")
     inspection = inspect_pdf(
-        out / report["artifacts"]["pdfPath"], out / report["artifacts"]["pngPath"]
+        out / report["artifacts"]["pdfPath"],
+        out / report["artifacts"]["pngPath"],
+        report["fit"]["pdfExpectations"],
     )
     (out / "pdf-inspection.json").write_text(json.dumps(inspection, indent=2))
     report["pdfValidation"] = {
-        k: inspection[k] for k in ("verified", "pageCount", "pageSizePt")
+        k: inspection[k] for k in ("verified", "pageCount", "pageSizePt", "rows")
     }
     if inspection["text"].count("X-Band planning incomplete") != 1 or any(
         phrase not in " ".join(word["text"] for word in inspection["words"])
@@ -287,10 +292,33 @@ def generate(root: Path):
     _, overflow = render("overflow", "composition-assessed", "overflow-title")
     if overflow["status"] != "failed" or overflow["artifacts"] is not None:
         raise ValueError("Overflow published partial pair")
+    damaged_pdf_controls = []
+    for damage in ("missing", "duplicate", "swapped", "changed", "split"):
+        out, damaged = render(
+            "pdf-row-" + damage, "composition-assessed", "pdf-row-" + damage
+        )
+        if damaged["status"] != "success":
+            raise ValueError("Damage control did not reach actual PDF print")
+        try:
+            verify_customer_pdf(
+                out / damaged["artifacts"]["pdfPath"],
+                damaged["fit"]["pdfExpectations"],
+                timeout_seconds=20,
+            )
+        except ValueError:
+            damaged_pdf_controls.append(
+                {"damage": damage, "actualPdfRejected": True, "domClaimedAllRows": True}
+            )
+        else:
+            raise ValueError("Actual PDF row damage incorrectly qualified: " + damage)
+    (root / "pdf-row-controls.json").write_text(
+        json.dumps(damaged_pdf_controls, indent=2)
+    )
     manifest["fontAssetHashes"] = report["assetHashes"]
     (root / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2))
     summary = {
         "checksPassed": True,
+        "actualPdfRowControls": damaged_pdf_controls,
         "visualAcceptance": "pending",
         "scanTest": "pending",
         "pageCounts": {"fullyAssessed": 1, "incompleteX": 1},

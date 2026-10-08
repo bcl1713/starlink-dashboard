@@ -6,6 +6,7 @@ import { createRenderBudget, within } from './render-budget.mjs';
 import { openRenderOwner, ownedPath } from './render-owner.mjs';
 import { renderMapInContext } from './map-stage.mjs';
 import { composeBriefing } from './briefing/document.mjs';
+import { buildPdfExpectations } from './briefing/pdf-expectations.mjs';
 
 const hash = (v) => createHash('sha256').update(v).digest('hex');
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -297,7 +298,27 @@ export async function renderBriefing({
         const red = document.querySelector(
           '[data-posture="Communications unavailable"]'
         );
+        const localBox = (e) => {
+          const r = e.getBoundingClientRect();
+          return [
+            r.left - p.left,
+            r.top - p.top,
+            r.right - p.left,
+            r.bottom - p.top,
+          ];
+        };
+        const tableRows = [...document.querySelectorAll('[data-row-id]')];
+        const pdfMeasured = {
+          tableBodyBoundsPx: tableRows.length
+            ? localBox(document.querySelector('tbody'))
+            : null,
+          rows: tableRows.map((r) => ({
+            id: r.dataset.rowId,
+            cellBoundsPx: [...r.cells].map(localBox),
+          })),
+        };
         return {
+          pdfMeasured,
           page: bounds(page),
           pageCount: 1,
           visibleRowIds: [...document.querySelectorAll('[data-row-id]')].map(
@@ -316,6 +337,12 @@ export async function renderBriefing({
           mapCount: document.querySelectorAll('.map-card').length,
         };
       });
+      if (payload.rows.every((r) => r.displayCells)) {
+        report.fit.pdfExpectations = buildPdfExpectations(
+          payload,
+          report.fit.pdfMeasured
+        );
+      }
       if (
         report.fit.overflow.length ||
         report.fit.labelOverlaps.length ||
@@ -340,6 +367,19 @@ export async function renderBriefing({
       check();
     });
     await stage('pdf', async () => {
+      if (fault?.startsWith('pdf-row-')) {
+        await page.locator('tbody').evaluate((body, damage) => {
+          const rows = [...body.rows];
+          const row = rows[Math.floor(rows.length / 2)];
+          if (damage === 'pdf-row-missing') row.remove();
+          if (damage === 'pdf-row-duplicate') body.append(row.cloneNode(true));
+          if (damage === 'pdf-row-swapped') body.insertBefore(rows[1], rows[0]);
+          if (damage === 'pdf-row-changed')
+            row.cells[2].textContent = 'Unexpected capability';
+          if (damage === 'pdf-row-split')
+            row.style.transform = 'translateY(500px)';
+        }, fault);
+      }
       if (fault === 'print') throw error('print', 'Injected PDF rejection');
       if (fault === 'print-hang')
         await within(new Promise(() => {}), budget.workRemainingMs());

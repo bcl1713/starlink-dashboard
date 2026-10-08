@@ -10,6 +10,31 @@ from tests.unit.test_customer_document import inputs
 
 
 def report(captured, view):
+    from app.mission.exporter.customer_display import display_row
+
+    rows = [
+        {
+            "legId": view.leg_id,
+            "rowId": r.id,
+            "page": 1,
+            "displayCells": list(
+                display_row(
+                    {
+                        "et": ("≈ " if r.clock.approximate else "")
+                        + r.clock.start
+                        + "–"
+                        + r.clock.end,
+                        "impact": r.impact,
+                        "remaining": r.remaining,
+                        "posture": r.posture,
+                    }
+                )
+            ),
+            "cellsMatched": True,
+            "inBounds": True,
+        }
+        for r in view.rows
+    ]
     return {
         "schemaVersion": 1,
         "status": "success",
@@ -34,7 +59,12 @@ def report(captured, view):
             "pngPath": "b" * 64,
             "pdfPath": "c" * 64,
         },
-        "pdfValidation": {"verified": True, "pageCount": 1, "pageSizePt": [960, 540]},
+        "pdfValidation": {
+            "verified": True,
+            "pageCount": 1,
+            "pageSizePt": [960, 540],
+            "rows": rows,
+        },
     }
 
 
@@ -90,3 +120,25 @@ def test_evidence_preserves_exact_unknown_and_source_records():
         for i in parsed["canonical"]["intervals"]
     )
     assert parsed["pages"][0]["rowIds"] == [r.id for r in view.rows]
+
+
+def test_evidence_rejects_unverified_actual_pdf_rows():
+    captured, trial, view = inputs()
+    raw = report(captured, view)
+    for rows in (
+        None,
+        [],
+        [
+            {
+                "rowId": r.id,
+                "legId": view.leg_id,
+                "page": 1,
+                "cellsMatched": False,
+                "inBounds": True,
+            }
+            for r in view.rows
+        ],
+    ):
+        raw["pdfValidation"]["rows"] = rows
+        with pytest.raises(ValueError):
+            build(captured, trial, view, raw)

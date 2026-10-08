@@ -15,6 +15,18 @@ def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
     expected = [r.id for r in view.rows]
     fit = report.get("fit") or {}
     pdf = report.get("pdfValidation") or {}
+    verified_rows = pdf.get("rows") or []
+    expected_rows = [
+        {
+            "legId": trial.leg_id,
+            "rowId": row["id"],
+            "page": 1,
+            "displayCells": row["displayCells"],
+            "cellsMatched": True,
+            "inBounds": True,
+        }
+        for row in payload["rows"]
+    ]
     if (
         report.get("schemaVersion") != 1
         or report.get("status") != "success"
@@ -28,6 +40,7 @@ def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
         or not 0 <= report["totalMs"] <= 60000
         or pdf.get("verified") is not True
         or pdf.get("pageCount") != 1
+        or verified_rows != expected_rows
         or len(pdf.get("pageSizePt", [])) != 2
         or any(abs(a - b) > 0.01 for a, b in zip(pdf["pageSizePt"], (960, 540)))
     ):
