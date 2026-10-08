@@ -53,7 +53,7 @@ test('exact red geometry', async () => {
   assert.equal(Number(red[1]) / 960, 5 / 480);
   assert.match(svg, /Takeoff SOF/);
   assert.match(svg, /Landing SOF/);
-  assert.match(svg, /data-callout/);
+  assert.doesNotMatch(svg, /data-callout/);
 });
 test('unknown has neutral confirmed capability', async () => {
   const p = structuredClone(payload);

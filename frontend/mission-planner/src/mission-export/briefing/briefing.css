@@ -102,11 +102,6 @@ h1 {
 .lane-state {
   font-size: 10pt;
 }
-.outage-callout {
-  font-size: 14pt;
-  font-weight: 700;
-  fill: #b72e36 !important;
-}
 .restriction-label {
   font-size: 11pt;
 }
@@ -240,16 +235,4 @@ footer {
 .confirmed-callout {
   font-size: 14pt;
   font-weight: 700;
-}
-
-.degraded-callout,
-.risk-callout {
-  font-size: 14pt;
-  font-weight: 700;
-}
-.degraded-callout {
-  fill: #8b6807 !important;
-}
-.risk-callout {
-  fill: #a55019 !important;
 }

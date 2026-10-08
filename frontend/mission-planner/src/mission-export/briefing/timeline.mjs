@@ -63,56 +63,6 @@ export function renderTimeline(payload) {
       );
     }
   }
-  const callouts = [
-    {
-      posture: 'Degraded',
-      label: 'Degraded',
-      x: 525,
-      y: 24,
-      lineY: 32,
-      color: '#8b6807',
-      className: 'degraded-callout',
-    },
-    {
-      posture: 'Limited / elevated risk',
-      label: 'Elevated risk',
-      x: 740,
-      y: 24,
-      lineY: 34,
-      color: '#a55019',
-      className: 'risk-callout',
-    },
-    {
-      posture: 'Communications unavailable',
-      x: 630,
-      y: 54,
-      lineY: 58,
-      color: '#b72e36',
-      className: 'outage-callout',
-    },
-  ];
-  for (const callout of callouts) {
-    const windows = payload.intervals.filter(
-      (i) => i.posture === callout.posture
-    );
-    if (!windows.length) continue;
-    const minutes = windows.reduce(
-      (sum, i) => sum + (Date.parse(i.endUtc) - Date.parse(i.startUtc)) / 60000,
-      0
-    );
-    const label =
-      callout.label || `COMMUNICATIONS UNAVAILABLE · ${minutes} MIN`;
-    for (const i of windows) {
-      const anchor = x(i.startUtc) + width(i) / 2;
-      out += `<path d="M${anchor} 68V${callout.lineY}H${callout.x}" fill="none" stroke="${callout.color}"/>`;
-    }
-    out += text(
-      callout.x,
-      callout.y,
-      label,
-      `${callout.label ? 'text-anchor="middle"' : ''} class="${callout.className}" data-callout data-svg-label`
-    );
-  }
   for (const i of unknownGroups.filter((i) => width(i) >= 90)) {
     out += text(
       x(i.startUtc) + width(i) / 2,

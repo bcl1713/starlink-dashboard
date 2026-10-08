@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 export function registerDocumentTests({ run, clean, root, assetRoot }) {
-  test('one launch two isolated contexts; dimensions fonts narrow red callout', async () => {
+  test('one launch two isolated contexts; dimensions fonts exact narrow red band', async () => {
     const r = await run('primary');
     assert.equal(r.status, 'success', JSON.stringify(r));
     assert.equal(r.launchCount, 1);
@@ -13,18 +13,19 @@ export function registerDocumentTests({ run, clean, root, assetRoot }) {
     assert.equal(r.fit.redFraction, 5 / 480);
     assert.deepEqual(r.fit.fonts, ['Briefing 400', 'Briefing 700']);
     assert.equal(r.fit.overflow.length, 0);
-    for (const label of [
-      'Overall communications posture',
-      'Nominal',
-      'Degraded',
-      'Elevated risk',
-      'COMMUNICATIONS UNAVAILABLE · 5 MIN',
-    ]) {
+    for (const label of ['Overall communications posture', 'Nominal']) {
       assert.ok(
         r.fit.labels.some((l) => l.text === label),
         label
       );
     }
+    assert.ok(
+      r.fit.labels.every(
+        (l) =>
+          !['Degraded', 'Elevated risk'].includes(l.text) &&
+          !l.text.includes('COMMUNICATIONS UNAVAILABLE')
+      )
+    );
     assert.deepEqual(r.fit.labelOverlaps, []);
     assert.ok(
       r.fit.remainingLines.every((r) => r.lines === 1 && r.fontPx >= 18.66)
