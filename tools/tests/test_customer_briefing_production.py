@@ -233,3 +233,35 @@ def test_publication_fault_preserves_ordinary_legacy_zip_writes():
     with zipfile.ZipFile(stream) as archive:
         assert archive.namelist() == ["mission.json"]
         assert archive.read("mission.json") == b"real legacy boundary"
+
+
+def legacy_fixture(clock, damage=False):
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        archive.writestr("mission.json", b'{"id":"m"}')
+        archive.writestr(
+            "exports/mission/timeline.csv",
+            f"Mission,M,Total Legs,1,Generated,{clock}\r\nEvent,unchanged\r\n",
+        )
+        presentation = io.BytesIO()
+        with zipfile.ZipFile(presentation, "w") as pptx:
+            pptx.writestr(
+                "ppt/slides/slide1.xml", b"slide changed" if damage else b"slide"
+            )
+            pptx.writestr("ppt/media/image1.png", b"real media")
+        archive.writestr("exports/mission/slides.pptx", presentation.getvalue())
+    return stream.getvalue()
+
+
+def test_production_legacy_comparison_excludes_only_combined_csv_generation_clock():
+    value = controls()
+    assert value.compare_legacy(legacy_fixture("first"), legacy_fixture("second"))[
+        "matched"
+    ]
+
+
+def test_production_legacy_comparison_rejects_changed_presentation_member():
+    with pytest.raises(ValueError, match="Legacy content differs"):
+        controls().compare_legacy(
+            legacy_fixture("first"), legacy_fixture("second", True)
+        )

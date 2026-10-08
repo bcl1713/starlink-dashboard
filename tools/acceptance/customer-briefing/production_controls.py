@@ -1,5 +1,6 @@
 """Real source capture and ZIP downloads through production Nginx."""
 
+import csv
 import io
 import json
 import time
@@ -24,6 +25,50 @@ WARNINGS = {
     "publication",
     "busy",
 }
+
+
+def compare_legacy(disabled, enabled):
+    """Compare every legacy entry and PPTX member; ignore ZIP container times."""
+
+    def members(content):
+        result = {}
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            for name in archive.namelist():
+                if name in {PDF, EVIDENCE, "manifest.json"}:
+                    continue
+                value = archive.read(name)
+                if name.endswith(".pptx"):
+                    with zipfile.ZipFile(io.BytesIO(value)) as presentation:
+                        for member in presentation.namelist():
+                            result[name + "::" + member] = presentation.read(member)
+                    continue
+                if name.startswith("exports/mission/") and name.endswith(".csv"):
+                    rows = list(csv.reader(io.StringIO(value.decode())))
+                    if rows and len(rows[0]) == 6 and rows[0][4] == "Generated":
+                        rows[0][5] = "identified-generation-clock"
+                        output = io.StringIO(newline="")
+                        csv.writer(output).writerows(rows)
+                        value = output.getvalue().encode()
+                result[name] = value
+        return result
+
+    left, right = members(disabled), members(enabled)
+    differences = sorted(
+        name for name in left.keys() | right.keys() if left.get(name) != right.get(name)
+    )
+    if differences:
+        raise ValueError("Legacy content differs: " + ", ".join(differences))
+    return {
+        "matched": True,
+        "memberHashes": {
+            name: sha256(content).hexdigest() for name, content in left.items()
+        },
+        "exclusions": [
+            "ZIP member container timestamps",
+            "combined mission CSV Generated clock",
+            "manifest separately qualified; optional pair added",
+        ],
+    }
 
 
 def inspect_download(content, headers, expected_status):
@@ -180,7 +225,36 @@ def qualify(owner):
     def copy_to_backend(source, destination):
         owner.compose("cp", str(source), f"starlink-location:{destination}", timeout=30)
 
+    def backend_python(code, *arguments, timeout=30):
+        return owner.compose(
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            code,
+            *arguments,
+            timeout=timeout,
+        )
+
+    audit_code = (tools / "production_runtime_audit.py").read_text()
+    audit_reports = []
+
+    def audit(label, baseline=None):
+        result = json.loads(backend_python(audit_code).splitlines()[-1])
+        if baseline is not None and result["sourceHashes"] != baseline["sourceHashes"]:
+            raise ValueError("Export changed persisted inputs: " + label)
+        result["label"] = label
+        audit_reports.append(result)
+        (owner.root / "runtime-audits.json").write_text(
+            json.dumps(audit_reports, indent=2)
+        )
+        return result
+
     def browser(case, status):
+        baseline = audit("before-browser-" + case + "-" + status)
         script = "/tmp/briefing-production-journey.mjs"
         copy_to_backend(tools / "production-journey.mjs", script)
         output = f"/tmp/briefing-browser-{case}-{status}"
@@ -208,6 +282,7 @@ def qualify(owner):
         content = (destination / "download.zip").read_bytes()
         headers = result["requests"][0]["headers"]
         inspect_download(content, headers, status)
+        audit("after-browser-" + case + "-" + status, baseline)
         return result
 
     def pdf_inspection(destination, label):
@@ -249,7 +324,8 @@ def qualify(owner):
         )
         return result
 
-    def download(case, status, attempt=None):
+    def download(case, status, attempt=None, warning=None):
+        baseline = audit("before-download-" + (attempt or case))
         mission = fixtures[case]["id"]
         label = attempt or case
         content, headers, elapsed = api.request(
@@ -262,11 +338,17 @@ def qualify(owner):
             json.dumps({"headers": headers, "proxyTotalSeconds": elapsed}, indent=2)
         )
         report = inspect_download(content, headers, status)
+        if warning is not None and report["warning"] != warning:
+            raise ValueError("Unexpected omission boundary: " + str(report["warning"]))
         report.update(case=case, attempt=label, proxyTotalSeconds=elapsed)
         if status == "included":
             report["actualPdfInspection"] = pdf_inspection(destination, label)
         (destination / "inspection.json").write_text(json.dumps(report, indent=2))
         reports.append(report)
+        (owner.root / "production-downloads.json").write_text(
+            json.dumps(reports, indent=2)
+        )
+        audit("after-download-" + label, baseline)
         return report
 
     download("normal", "disabled", "normal-disabled")
@@ -306,8 +388,33 @@ def qualify(owner):
         observer,
         timeout=30,
     )
+    # Supported storage cases retain the real saved inputs and cached predictions.
+    backend_python(
+        "from app.mission.storage import delete_mission_timeline; "
+        "delete_mission_timeline('briefing-missing-timeline-leg-1', 'briefing-missing-timeline')"
+    )
+    backend_python(
+        "from pathlib import Path; "
+        "Path('/data/routes/briefing-cached-missing-route-route-1.kml').unlink()"
+    )
+    # Let the real RouteManager filesystem watcher observe the removed input.
+    time.sleep(2)
     for case in fixtures:
-        download(case, "omitted" if case == "over-budget" else "included")
+        download(
+            case,
+            (
+                "omitted"
+                if case in {"over-budget", "cached-missing-route"}
+                else "included"
+            ),
+        )
+    legacy_comparison = compare_legacy(
+        (owner.root / "downloads/normal-disabled/download.zip").read_bytes(),
+        (owner.root / "downloads/normal/download.zip").read_bytes(),
+    )
+    (owner.root / "legacy-comparison.json").write_text(
+        json.dumps(legacy_comparison, indent=2)
+    )
     for attempt in (2, 3):
         download("five-leg", "included", f"five-leg-cold-{attempt}")
     five = [r for r in reports if r["case"] == "five-leg"]
@@ -324,10 +431,138 @@ def qualify(owner):
         browser("normal", "included"),
         browser("over-budget", "omitted"),
     ]
+
+    def lifecycle(mode):
+        baseline = audit("before-lifecycle-" + mode)
+        script = "/tmp/briefing-production-lifecycle.mjs"
+        copy_to_backend(tools / "production-lifecycle.mjs", script)
+        output = "/tmp/briefing-production-lifecycle-" + mode
+        result = json.loads(
+            owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "appuser",
+                "starlink-location",
+                "node",
+                script,
+                "http://mission-planner",
+                mode,
+                fixtures["five-leg"]["id"],
+                fixtures["normal"]["id"],
+                output,
+                timeout=110,
+            ).splitlines()[-1]
+        )
+        destination = owner.root / "lifecycle" / mode
+        destination.mkdir(parents=True)
+        owner.compose(
+            "cp", f"starlink-location:{output}/.", str(destination), timeout=30
+        )
+        if mode == "concurrent":
+            inspect_download(
+                (destination / "first.zip").read_bytes(),
+                result["first"]["value"]["headers"],
+                "included",
+            )
+            inspect_download(
+                (destination / "second.zip").read_bytes(),
+                result["second"]["headers"],
+                "omitted",
+            )
+        audit("after-lifecycle-" + mode, baseline)
+        return result
+
+    # Disconnects count against the existing rate limiter too.
+    time.sleep(60)
+    lifecycle_reports = [
+        lifecycle(mode) for mode in ("concurrent", "map", "pdf", "verify")
+    ]
+
+    def restart_fault(render="", application=""):
+        owner.env.update(BRIEFING_RENDER_FAULT=render, BRIEFING_APP_FAULT=application)
+        owner.compose(
+            "up",
+            "-d",
+            "--force-recreate",
+            "--no-deps",
+            "--wait",
+            "--wait-timeout",
+            "150",
+            "starlink-location",
+            timeout=180,
+        )
+        owner.compose(
+            "up", "-d", "--force-recreate", "--no-deps", "mission-planner", timeout=60
+        )
+
+    # The observer belongs to this backend instance; preserve it before restart.
+    # Application/proxy logs and each request's private owner remain audit evidence.
+    owner.finish_observer()
+    fault_reports = []
+    for fault in ("pdf", "evidence", "publication"):
+        restart_fault(application=fault)
+        fault_reports.append(download("normal", "omitted", "fault-" + fault, fault))
+    restart_fault(render="print-hang")
+    fault_reports.append(
+        download("normal", "omitted", "fault-print-deadline", "deadline")
+    )
+    restart_fault()
+
+    imported = []
+    for label in ("normal-disabled", "normal"):
+        content = (owner.root / "downloads" / label / "download.zip").read_bytes()
+        response, _, _ = api.request(
+            "POST", "/api/v2/missions/import", multipart=(label + ".zip", content)
+        )
+        result = json.loads(response)
+        if result.get("success") is not True:
+            raise ValueError("Real ZIP import failed: " + response.decode())
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            expected = json.loads(archive.read("mission.json"))
+            actual, _, _ = api.request("GET", "/api/v2/missions/" + expected["id"])
+            actual = json.loads(actual)
+            if actual["id"] != expected["id"] or [
+                leg["route_id"] for leg in actual["legs"]
+            ] != [leg["route_id"] for leg in expected["legs"]]:
+                raise ValueError("ZIP import changed original route ownership")
+            source_proof = json.loads(
+                backend_python(
+                    "import json,sys; from pathlib import Path; from hashlib import sha256; "
+                    "print(json.dumps({name:sha256(Path('/data/routes',Path(name).name).read_bytes()).hexdigest() for name in json.loads(sys.argv[1])}))",
+                    json.dumps(
+                        [
+                            name
+                            for name in archive.namelist()
+                            if name.startswith("routes/") and name.endswith(".kml")
+                        ]
+                    ),
+                ).splitlines()[-1]
+            )
+            if any(
+                sha256(archive.read(name)).hexdigest() != digest
+                for name, digest in source_proof.items()
+            ):
+                raise ValueError("ZIP import changed original KML bytes")
+        imported.append(
+            {
+                "package": label,
+                "response": result,
+                "actualMission": actual,
+                "originalRouteHashes": source_proof,
+            }
+        )
+    (owner.root / "roundtrip-imports.json").write_text(json.dumps(imported, indent=2))
+
     (owner.root / "production-downloads.json").write_text(json.dumps(reports, indent=2))
     return {
         "fixtureKind": "synthetic providers and supported API mission/KML inputs",
         "downloads": reports,
         "browser": browser_reports,
+        "lifecycle": lifecycle_reports,
+        "faults": fault_reports,
+        "runtimeAudits": audit_reports,
+        "legacyComparison": legacy_comparison,
+        "roundtripImports": imported,
         "customerAcceptance": "pending",
     }

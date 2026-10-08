@@ -56,6 +56,9 @@ def seed_missions(api, root):
         "nested-outage": {"nested": True},
         "ar-sof": {"ar": True},
         "adjusted": {"adjusted": True},
+        "spliced": {"splice": True},
+        "missing-timeline": {},
+        "cached-missing-route": {},
         "two-page": {"dense": 12},
         "three-page": {"dense": 28},
         "five-leg": {"legs": 5},
@@ -131,6 +134,26 @@ def seed_missions(api, root):
                         "override_end_time": stamp(end),
                     }
                 ]
+            if recipe.get("splice"):
+                transports["manual_aar_tracks"] = [
+                    {
+                        "id": "synthetic-track",
+                        "name": "Synthetic manual AR track",
+                        "points": [
+                            {"latitude": 35, "longitude": -103.5},
+                            {"latitude": 37, "longitude": -102},
+                            {"latitude": 35, "longitude": -100.5},
+                        ],
+                    }
+                ]
+                transports["manual_route_splice"] = {
+                    "enabled_track_id": "synthetic-track",
+                    "leave_segment_index": 0,
+                    "leave_fraction": 0.5,
+                    "rejoin_segment_index": 1,
+                    "rejoin_fraction": 0.5,
+                    "speed_knots": 450,
+                }
             leg = {
                 "id": f"{mission_id}-leg-{number+1}",
                 "name": f"Synthetic {name} leg {number+1}",

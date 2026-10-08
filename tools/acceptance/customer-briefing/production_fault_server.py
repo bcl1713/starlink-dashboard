@@ -69,6 +69,6 @@ if __name__ == "__main__":
 
     restore = install(os.environ.get("BRIEFING_APP_FAULT", ""))
     try:
-        uvicorn.run("main:app", host="0.0.0.0", port=8000)
+        uvicorn.run("main:app", app_dir="/app", host="0.0.0.0", port=8000)
     finally:
         restore()

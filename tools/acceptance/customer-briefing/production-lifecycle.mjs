@@ -18,9 +18,10 @@ const read = async (file) => {
     return null;
   }
 };
-async function phase(wanted, mission) {
+async function phase(wanted, mission, finished) {
   const deadline = Date.now() + 85000;
   while (Date.now() < deadline) {
+    if (finished()) throw Error("Request completed before " + wanted);
     for (const name of await readdir("/tmp")) {
       if (!name.startsWith("customer-briefing-")) continue;
       const root = path.join("/tmp", name);
@@ -66,12 +67,19 @@ try {
   controllers.add(firstController);
   const first = download(firstMission, "first", firstController);
   // Attach rejection before observing to avoid an unhandled disconnect promise.
+  let finished = false;
   const outcome = first.then(
-    (value) => ({ value }),
-    (error) => ({ error: String(error) }),
+    (value) => {
+      finished = true;
+      return { value };
+    },
+    (error) => {
+      finished = true;
+      return { error: String(error) };
+    },
   );
   const wanted = mode === "concurrent" ? "map" : mode;
-  report.observed = await phase(wanted, firstMission);
+  report.observed = await phase(wanted, firstMission, () => finished);
   if (mode === "concurrent") {
     const secondController = new AbortController();
     controllers.add(secondController);

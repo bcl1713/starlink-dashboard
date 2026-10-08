@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
@@ -93,6 +93,11 @@ async function scenario(fault = null) {
       await observe('verify');
       seen.push(actual);
       actual.workRemainingMs();
+      if (fault === 'journal-failure') {
+        const journal = path.join(outputRoot, 'stage-progress.json');
+        await rm(journal);
+        await mkdir(journal);
+      }
       if (fault === 'verify-deadline') {
         clock = 58000;
         actual.workRemainingMs();
@@ -152,6 +157,13 @@ test('private phase evidence identifies actual active work before observation or
     'verify',
     'teardown',
   ]);
+});
+test('failed private journal writes cannot prevent request owner cleanup', async () => {
+  const s = await scenario('journal-failure');
+  assert.equal(s.closes, 1);
+  assert.equal(s.report.cleanup.success, true);
+  assert.equal(s.report.status, 'failed');
+  assert.equal(s.pdf, null);
 });
 for (const [fault, code] of [
   ['pagination', 'overflow'],

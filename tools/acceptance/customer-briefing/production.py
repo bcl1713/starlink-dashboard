@@ -127,6 +127,50 @@ class ProductionOwner:
             timeout=timeout,
         )
 
+    def finish_observer(self):
+        observer = self.ownership.get("observer")
+        if not observer:
+            return
+        self.compose(
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            """import json,os,signal,time
+from pathlib import Path
+p=Path('/tmp/briefing-production-observations/observer-owner.json')
+r=json.loads(p.read_text()); stat=Path(f'/proc/{r["pid"]}/stat')
+def alive():
+ try:
+  fields=stat.read_text().split(') ')[1].split()
+  return fields[19]==r['start'] and fields[0]!='Z'
+ except OSError:return False
+if alive():os.kill(r['pid'],signal.SIGTERM)
+deadline=time.monotonic()+2
+while alive() and time.monotonic()<deadline:time.sleep(.01)
+if alive():os.kill(r['pid'],signal.SIGKILL)
+deadline=time.monotonic()+2
+while alive() and time.monotonic()<deadline:time.sleep(.01)
+stopped=not alive()
+print(json.dumps({'observerStopped':stopped}))
+if not stopped:raise SystemExit(1)
+""",
+            timeout=10,
+        )
+        observations = self.root / "runtime-observations"
+        observations.mkdir()
+        self.compose(
+            "cp",
+            f"starlink-location:{observer['output']}/.",
+            str(observations),
+            timeout=30,
+        )
+        self.ownership["completedObserver"] = self.ownership.pop("observer")
+        self.persist()
+
     def close(self):
         if self.closed:
             return self.ownership["cleanup"]
@@ -316,39 +360,7 @@ def run_production(candidate_sha, evidence_root, images_only=False):
                 pass
             if observer := owner.ownership.get("observer"):
                 try:
-                    owner.compose(
-                        "exec",
-                        "-T",
-                        "--user",
-                        "appuser",
-                        "starlink-location",
-                        "python",
-                        "-c",
-                        """import json,os,signal,time
-from pathlib import Path
-p=Path('/tmp/briefing-production-observations/observer-owner.json')
-r=json.loads(p.read_text()); stat=Path(f'/proc/{r["pid"]}/stat')
-def alive():
- try:
-  fields=stat.read_text().split(') ')[1].split()
-  return fields[19]==r['start'] and fields[0]!='Z'
- except OSError:return False
-if alive():os.kill(r['pid'],signal.SIGTERM)
-deadline=time.monotonic()+2
-while alive() and time.monotonic()<deadline:time.sleep(.01)
-if alive():os.kill(r['pid'],signal.SIGKILL)
-print(json.dumps({'observerStopped':not alive()}))
-""",
-                        timeout=10,
-                    )
-                    observations = owner.root / "runtime-observations"
-                    observations.mkdir()
-                    owner.compose(
-                        "cp",
-                        f"starlink-location:{observer['output']}/.",
-                        str(observations),
-                        timeout=30,
-                    )
+                    owner.finish_observer()
                 except (RuntimeError, OSError, ValueError, TimeoutError) as error:
                     summary["observerError"] = str(error)
                     summary["checksPassed"] = False
@@ -365,9 +377,7 @@ if __name__ == "__main__":
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--images-only", action="store_true")
     args = parser.parse_args()
-    print(
-        json.dumps(
-            run_production(args.candidate_sha, args.evidence_root, args.images_only),
-            indent=2,
-        )
-    )
+    result = run_production(args.candidate_sha, args.evidence_root, args.images_only)
+    print(json.dumps(result, indent=2))
+    if not result["checksPassed"]:
+        raise SystemExit(1)

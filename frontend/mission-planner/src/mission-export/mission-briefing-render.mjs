@@ -68,31 +68,39 @@ export async function renderMissionBriefing(
     document;
   const stage = async (name, fn) => {
     const startMs = budget.elapsedMs();
+    const journal = async (record) => {
+      try {
+        await writeFile(
+          ownedPath(outputRoot, 'stage-progress.json'),
+          JSON.stringify(record)
+        );
+      } catch (e) {
+        if (name !== 'teardown') throw e;
+        // Diagnostic I/O must never prevent release of the request owner.
+        report.status = 'failed';
+        report.errorCode ??= 'runtime';
+        (report.journalErrors ??= []).push(String(e));
+      }
+    };
     try {
-      await writeFile(
-        ownedPath(outputRoot, 'stage-progress.json'),
-        JSON.stringify({
-          stage: name,
-          pid: process.pid,
-          startMs,
-          completed: false,
-        })
-      );
+      await journal({
+        stage: name,
+        pid: process.pid,
+        startMs,
+        completed: false,
+      });
       return await fn();
     } finally {
       report.stages[name] = {
         startMs,
         durationMs: budget.elapsedMs() - startMs,
       };
-      await writeFile(
-        ownedPath(outputRoot, 'stage-progress.json'),
-        JSON.stringify({
-          stage: name,
-          pid: process.pid,
-          ...report.stages[name],
-          completed: true,
-        })
-      );
+      await journal({
+        stage: name,
+        pid: process.pid,
+        ...report.stages[name],
+        completed: true,
+      });
     }
   };
   const stop = () => {

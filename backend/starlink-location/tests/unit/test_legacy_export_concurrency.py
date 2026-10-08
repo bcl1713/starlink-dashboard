@@ -4,9 +4,10 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+from cartopy.mpl.geoaxes import GeoAxes
+
 from app.mission.exporter import __main__ as exporter
 from app.mission.models import MissionLegTimeline
-from cartopy.mpl.geoaxes import GeoAxes
 
 pytest_plugins = ["tests.unit.test_export_snapshot"]
 

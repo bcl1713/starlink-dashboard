@@ -3,7 +3,6 @@
 import json
 
 from .customer_display import display_row
-
 from .customer_view import CustomerLegView, project_customer_leg, restriction_labels
 from .map_inputs import build_map_input
 from .snapshot import ExportSnapshot
