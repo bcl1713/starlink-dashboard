@@ -36,7 +36,7 @@ export function composeBriefing(
         cells.some((cell) => typeof cell !== 'string')
       )
         throw new Error('Expected four display cells');
-      return `<tr data-row-id="${e(r.id)}" data-fit><td class="et">${e(cells[0])}</td><td>${e(cells[1])}</td><td class="remaining-cell" data-fit>${e(cells[2])}</td><td class="posture-cell">${e(cells[3])}</td></tr>`;
+      return `<tr data-row-id="${e(r.id)}" data-fit><td class="et" data-fit>${e(cells[0])}</td><td data-fit>${e(cells[1])}</td><td class="remaining-cell" data-fit>${e(cells[2])}</td><td class="posture-cell" data-fit>${e(cells[3])}</td></tr>`;
     })
     .join('');
   const pageCopy = page && (page.kind === 'continuation' || page.continued)

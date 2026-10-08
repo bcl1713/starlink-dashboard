@@ -199,7 +199,7 @@ tbody tr:nth-child(even) {
 .et {
   font-variant-numeric: tabular-nums;
   font-size: 14pt;
-  white-space: nowrap;
+  white-space: normal;
 }
 .posture-cell {
   font-weight: 700;

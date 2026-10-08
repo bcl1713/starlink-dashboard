@@ -25,6 +25,7 @@ def generate_missions(root, run):
         "mission-three-page",
         "mission-over-budget",
         "mission-five-leg",
+        "mission-midnight",
     )
     captured = {name: mission_snapshot(name) for name in names}
     for name, snapshot in captured.items():
@@ -128,7 +129,7 @@ def generate_missions(root, run):
             deliveries["five-leg"] = output
     if any(identity != identities[0] for identity in identities[1:]):
         raise ValueError("Five-leg cold render nondeterminism")
-    for name in ("mission-two-page", "mission-three-page"):
+    for name in ("mission-two-page", "mission-three-page", "mission-midnight"):
         deliveries[name] = render(name, name)[0]
     render("mission-over-budget", "mission-over-budget")
     fault_payload = build_customer_mission_document(captured["mission-five-leg"])

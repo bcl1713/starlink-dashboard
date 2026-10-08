@@ -1,0 +1,6 @@
+{
+  "fixture": "mission-midnight",
+  "kind": "synthetic immutable DTO",
+  "legs": [{"base": "composition-assessed", "departureShiftHours": 60}],
+  "expectedPages": 2
+}

@@ -3,10 +3,10 @@
   "kind": "synthetic immutable DTO",
   "legs": [
     {"base": "composition-assessed", "departureShiftHours": 0},
-    {"base": "composition-assessed", "departureShiftHours": 30},
-    {"base": "composition-assessed", "departureShiftHours": 60},
-    {"base": "composition-assessed", "departureShiftHours": 90},
-    {"base": "composition-assessed", "departureShiftHours": 120}
+    {"base": "composition-assessed", "departureShiftHours": 24},
+    {"base": "composition-assessed", "departureShiftHours": 48},
+    {"base": "composition-assessed", "departureShiftHours": 72},
+    {"base": "composition-assessed", "departureShiftHours": 96}
   ],
   "expectedPages": 5
 }
