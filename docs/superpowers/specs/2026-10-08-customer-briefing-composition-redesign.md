@@ -68,8 +68,10 @@ coordination windows, then optional geographic context.
 The top approximately fifteen percent contains a 28–32 pt leg title, a short
 optional geographic subtitle, and an 18–22 pt timing row. Use this structure:
 
-> LEG 1 OF 5 — KADW → PAED  
-> Washington, DC → Anchorage, AK  
+> LEG 1 OF 5 — KADW → PAED
+>
+> Washington, DC → Anchorage, AK
+>
 > DEP 06:00 ET | ARR 13:39 ET | 7h 39m
 
 Use resolved airport names/identifiers first, endpoint waypoint labels second,
