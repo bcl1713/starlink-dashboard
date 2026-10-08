@@ -1,0 +1,44 @@
+services:
+  starlink-location:
+    image: ${BRIEFING_BACKEND_IMAGE:?owned exact-SHA backend image required}
+    init: true
+    cpus: 2
+    mem_limit: 4g
+    shm_size: 256m
+    environment:
+      STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED: ${BRIEFING_ENABLED:-false}
+      STARLINK_MODE: simulation
+      PROMETHEUS_URL: http://prometheus:9090
+    volumes:
+      - app-data:/app/data
+      - poi-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
+    stop_grace_period: 20s
+
+  mission-planner:
+    image: ${BRIEFING_FRONTEND_IMAGE:?owned exact-SHA frontend image required}
+    ports:
+      - "127.0.0.1:${BRIEFING_PORT:?private loopback port required}:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ${BRIEFING_SOURCE_ROOT:?exact candidate source required}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${BRIEFING_SOURCE_ROOT}/monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=1h
+
+volumes:
+  app-data:
+  poi-data:
+  prometheus-data:
