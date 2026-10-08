@@ -76,8 +76,10 @@ export async function openRenderOwner({
   const ownership = {
     pid: process.pid,
     pgid: self.pgid,
+    start: self.start,
     browserPid: null,
     browserPgid: null,
+    browserStart: null,
     listener: null,
     contexts: [],
     workers: [],
@@ -102,6 +104,7 @@ export async function openRenderOwner({
       const record = {
         pid: child.pid,
         pgid: child.pid,
+        start: (await processInfo(child.pid))?.start ?? null,
         command,
         reaped: false,
       };
@@ -317,7 +320,9 @@ export async function openRenderOwner({
     });
     const child = browserServer.process();
     ownership.browserPid = child.pid;
-    ownership.browserPgid = (await processInfo(child.pid)).pgid;
+    const browserProcess = await processInfo(child.pid);
+    ownership.browserPgid = browserProcess.pgid;
+    ownership.browserStart = browserProcess.start;
     await persist();
     browser = await chromium.connect(browserServer.wsEndpoint(), {
       timeout: budget.workRemainingMs(),

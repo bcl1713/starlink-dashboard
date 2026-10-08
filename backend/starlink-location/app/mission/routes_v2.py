@@ -26,6 +26,7 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse
 
+from app.core.config import ConfigManager
 from app.core.limiter import limiter
 from app.mission.dependencies import (
     get_optional_simulation_run_service,
@@ -36,7 +37,8 @@ from app.mission.dependencies import (
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.leg_activation import activate_leg_transaction
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
-from app.mission.package import export_mission_package
+from app.mission.package.customer_artifacts import WARNING_CODES
+from app.mission.package.export_job import OwnedZipResponse, run_mission_package_job
 from app.mission.storage import (
     delete_mission_timeline,
     get_active_leg_lock,
@@ -498,17 +500,29 @@ async def export_mission(
 ) -> StreamingResponse:
     """Export mission as zip package."""
     try:
-        zip_file = export_mission_package(
+        download = await run_mission_package_job(
+            request,
             mission_id,
-            route_manager=route_manager,
-            poi_manager=poi_manager,
+            route_manager,
+            poi_manager,
+            enabled=ConfigManager().get_config().exports.customer_briefing_enabled,
         )
-
-        return StreamingResponse(
-            zip_file,
-            media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{mission_id}.zip"'},
-        )
+        headers = {"Content-Disposition": f'attachment; filename="{mission_id}.zip"'}
+        if download.briefing is not None:
+            included = download.briefing.status == "included"
+            headers["X-Customer-Briefing-Status"] = (
+                "included" if included else "omitted"
+            )
+            if not included:
+                warning = download.briefing.warning_code
+                headers["X-Customer-Briefing-Warning"] = (
+                    warning if warning in WARNING_CODES else "runtime"
+                )
+        try:
+            return OwnedZipResponse(download.stream, headers=headers)
+        except BaseException:
+            download.stream.close()
+            raise
     except (
         RuntimeError,
         ValueError,

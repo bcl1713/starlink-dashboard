@@ -1,0 +1,184 @@
+"""Optional customer documents share captured inputs and publish atomically."""
+
+import io
+import json
+import threading
+import zipfile
+from dataclasses import dataclass
+from typing import IO
+
+from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
+from app.mission.exporter.snapshot import capture_export_snapshot
+
+from .__main__ import export_mission_package
+from .snapshot_export import build_snapshot_legacy_package
+
+WARNING_CODES = frozenset(
+    {
+        "snapshot",
+        "data",
+        "page-budget",
+        "overflow",
+        "runtime",
+        "deadline",
+        "pdf",
+        "evidence",
+        "cleanup",
+        "publication",
+        "busy",
+    }
+)
+RENDER_SLOT = threading.BoundedSemaphore(1)
+EXPORT_ERRORS = (
+    RuntimeError,
+    ValueError,
+    OSError,
+    KeyError,
+    TypeError,
+    AttributeError,
+    LookupError,
+    ImportError,
+    EOFError,
+    zipfile.BadZipFile,
+)
+PDF_PATH = "exports/mission/mission-customer-briefing-trial.pdf"
+EVIDENCE_PATH = "exports/mission/mission-customer-briefing-evidence.json"
+
+
+@dataclass(frozen=True)
+class CustomerBriefingArtifacts:
+    pdf: bytes
+    evidence: bytes
+
+
+@dataclass(frozen=True)
+class CustomerBriefingOutcome:
+    status: str
+    warning_code: str | None
+    artifacts: CustomerBriefingArtifacts | None
+
+
+@dataclass(frozen=True)
+class MissionPackageDownload:
+    stream: IO[bytes]
+    briefing: CustomerBriefingOutcome | None
+
+
+def render_customer_artifacts(snapshot, *, cancel):
+    # Keep DTOs independent of runtime initialization and browser dependencies.
+    from app.mission.exporter.customer_runtime import (
+        render_customer_artifacts as render,
+    )
+
+    return render(snapshot, cancel=cancel)
+
+
+def _publish_pair(stream, artifacts, cancel):
+    result = io.BytesIO()
+    try:
+        stream.seek(0)
+        with zipfile.ZipFile(stream) as source, zipfile.ZipFile(result, "w") as target:
+            manifest = json.loads(source.read("manifest.json"))
+            if manifest["version"] != "2.0" or any(
+                name in source.namelist() for name in (PDF_PATH, EVIDENCE_PATH)
+            ):
+                raise ValueError("Unexpected legacy package structure")
+            for entry in source.infolist():
+                check_cancelled(cancel)
+                if entry.filename != "manifest.json":
+                    target.writestr(entry, source.read(entry))
+            target.writestr(PDF_PATH, artifacts.pdf)
+            check_cancelled(cancel)
+            target.writestr(EVIDENCE_PATH, artifacts.evidence)
+            manifest["file_structure"]["mission_exports"].extend(
+                [PDF_PATH, EVIDENCE_PATH]
+            )
+            manifest["statistics"]["mission_export_files"] += 2
+            manifest["statistics"]["total_files"] += 2
+            target.writestr("manifest.json", json.dumps(manifest, indent=2))
+        check_cancelled(cancel)
+        result.seek(0)
+        return result
+    except BaseException:
+        result.close()
+        raise
+
+
+def build_mission_package_download(
+    mission_id, route_manager, poi_manager, *, enabled, cancel
+):
+    check_cancelled(cancel)
+    if not enabled:
+        stream = export_mission_package(
+            mission_id, route_manager, poi_manager, cancel=cancel
+        )
+        if cancel.is_set():
+            stream.close()
+            check_cancelled(cancel)
+        return MissionPackageDownload(stream, None)
+    if not RENDER_SLOT.acquire(blocking=False):
+        stream = export_mission_package(
+            mission_id, route_manager, poi_manager, cancel=cancel
+        )
+        if cancel.is_set():
+            stream.close()
+            check_cancelled(cancel)
+        return MissionPackageDownload(
+            stream, CustomerBriefingOutcome("omitted", "busy", None)
+        )
+    stream = None
+    try:
+        try:
+            snapshot = capture_export_snapshot(mission_id, route_manager, poi_manager)
+        except ExportCancelled:
+            raise
+        except EXPORT_ERRORS:
+            check_cancelled(cancel)
+            stream = export_mission_package(
+                mission_id, route_manager, poi_manager, cancel=cancel
+            )
+            check_cancelled(cancel)
+            return MissionPackageDownload(
+                stream, CustomerBriefingOutcome("omitted", "snapshot", None)
+            )
+        check_cancelled(cancel)
+        stream = build_snapshot_legacy_package(snapshot, cancel=cancel)
+        check_cancelled(cancel)
+        try:
+            outcome = render_customer_artifacts(snapshot, cancel=cancel)
+        except ExportCancelled:
+            raise
+        except EXPORT_ERRORS:
+            outcome = CustomerBriefingOutcome("omitted", "runtime", None)
+        check_cancelled(cancel)
+        if outcome.status != "included" or outcome.artifacts is None:
+            code = (
+                outcome.warning_code
+                if outcome.warning_code in WARNING_CODES
+                else "runtime"
+            )
+            return MissionPackageDownload(
+                stream, CustomerBriefingOutcome("omitted", code, None)
+            )
+        try:
+            paired = _publish_pair(stream, outcome.artifacts, cancel)
+        except ExportCancelled:
+            raise
+        except EXPORT_ERRORS:
+            stream.close()
+            stream = build_snapshot_legacy_package(snapshot, cancel=cancel)
+            check_cancelled(cancel)
+            return MissionPackageDownload(
+                stream, CustomerBriefingOutcome("omitted", "publication", None)
+            )
+        stream.close()
+        stream = paired
+        return MissionPackageDownload(
+            stream, CustomerBriefingOutcome("included", None, outcome.artifacts)
+        )
+    except BaseException:
+        if stream is not None:
+            stream.close()
+        raise
+    finally:
+        RENDER_SLOT.release()

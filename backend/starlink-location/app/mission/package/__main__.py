@@ -18,6 +18,7 @@ from app.mission.exporter import (
     TimelineExportFormat,
     generate_timeline_export,
 )
+from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
 from app.mission.exporter.snapshot_views import SnapshotViews
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TimelineStatus
 from app.mission.storage import (
@@ -33,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 def _snapshot_kwargs(snapshot):
     return {"snapshot": snapshot} if snapshot is not None else {}
+
+
+def _cancel_kwargs(cancel):
+    return {"cancel": cancel} if cancel is not None else {}
 
 
 def _export_kwargs(snapshot):
@@ -607,6 +612,7 @@ def _add_per_leg_exports_to_zip(
     map_cache: dict[str, bytes] | None = None,
     *,
     snapshot=None,
+    cancel=None,
 ):
     """Generate and add per-leg exports (CSV, PPTX) to zip archive.
 
@@ -619,6 +625,7 @@ def _add_per_leg_exports_to_zip(
         map_cache: Optional cache for generated maps (route_id -> bytes)
     """
     for leg in mission.legs:
+        check_cancelled(cancel)
         # Rebuild from the latest leg settings so adjusted departure times and
         # derived AAR/event windows cannot be served from a stale timeline cache.
         leg_timeline = _load_export_timeline(
@@ -666,6 +673,7 @@ def _add_per_leg_exports_to_zip(
         ) as e:
             logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
 
+        check_cancelled(cancel)
         try:
             # PPTX export
             pptx_export = generate_timeline_export(
@@ -707,6 +715,7 @@ def _add_combined_mission_exports_to_zip(
     map_cache: dict[str, bytes] | None = None,
     *,
     snapshot=None,
+    cancel=None,
 ):
     """Generate and add combined mission-level exports (CSV, PPTX) to zip archive.
 
@@ -735,6 +744,7 @@ def _add_combined_mission_exports_to_zip(
                 "exports/mission/mission-timeline.csv"
             )
 
+        check_cancelled(cancel)
         # Combined PPTX - stream to temp file
         with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
             generate_mission_combined_pptx(
@@ -750,8 +760,11 @@ def _add_combined_mission_exports_to_zip(
                 "exports/mission/mission-slides.pptx"
             )
 
+        check_cancelled(cancel)
         logger.info("Combined mission-level exports complete")
 
+    except ExportCancelled:
+        raise
     except (
         RuntimeError,
         ValueError,
@@ -817,6 +830,7 @@ def export_mission_package(
     poi_manager: POIManager,
     *,
     snapshot=None,
+    cancel=None,
 ) -> IO[bytes]:
     """Export complete mission as zip archive.
 
@@ -853,6 +867,7 @@ def export_mission_package(
     Returns:
         File-like object containing the zip archive. Caller must close it to delete the temp file.
     """
+    check_cancelled(cancel)
     if snapshot is not None:
         if snapshot.mission_id != mission_id:
             raise ExportPackageError("Snapshot mission identity mismatch")
@@ -885,14 +900,17 @@ def export_mission_package(
         with zipfile.ZipFile(zip_temp, "w", zipfile.ZIP_DEFLATED) as zf:
             # Add mission metadata and leg files
             _add_mission_metadata_to_zip(zf, mission, manifest_files)
+            check_cancelled(cancel)
 
             # Add route KML files
             _add_route_kmls_to_zip(
                 zf, mission, route_manager, manifest_files, **_snapshot_kwargs(snapshot)
             )
+            check_cancelled(cancel)
 
             # Add POI data (leg-specific and satellites)
             _add_pois_to_zip(zf, mission, poi_manager, manifest_files)
+            check_cancelled(cancel)
 
             # Generate and add per-leg exports (will populate map_cache)
             _add_per_leg_exports_to_zip(
@@ -903,7 +921,9 @@ def export_mission_package(
                 manifest_files,
                 map_cache,
                 **_snapshot_kwargs(snapshot),
+                **_cancel_kwargs(cancel),
             )
+            check_cancelled(cancel)
 
             # Generate and add combined mission-level exports (will reuse cached maps)
             _add_combined_mission_exports_to_zip(
@@ -914,7 +934,9 @@ def export_mission_package(
                 manifest_files,
                 map_cache,
                 **_snapshot_kwargs(snapshot),
+                **_cancel_kwargs(cancel),
             )
+            check_cancelled(cancel)
 
             # Create and add manifest
             manifest = _create_export_manifest(mission, manifest_files)
