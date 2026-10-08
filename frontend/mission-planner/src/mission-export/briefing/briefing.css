@@ -236,3 +236,19 @@ footer {
   font-size: 14pt;
   font-weight: 700;
 }
+
+.briefing-page + .briefing-page {
+  break-before: page;
+}
+.briefing-page {
+  break-inside: avoid;
+}
+.page-copy {
+  margin: 0;
+  font-size: 12pt;
+  line-height: 1.15;
+  font-weight: 700;
+}
+.continuation .details {
+  grid-template-columns: 1fr;
+}

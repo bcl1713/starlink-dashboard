@@ -4,11 +4,11 @@ import json
 
 from .customer_display import display_row
 
-from .customer_view import CustomerLegView, restriction_labels
+from .customer_view import CustomerLegView, project_customer_leg, restriction_labels
 from .map_inputs import build_map_input
 from .snapshot import ExportSnapshot
 from .trial_clocks import ensure_utc
-from .trial_projection import TrialLeg
+from .trial_projection import TrialLeg, project_trial_leg
 
 
 def stamp(value):
@@ -24,9 +24,35 @@ def build_customer_document(
         or view.leg_id != trial.leg_id
     ):
         raise ValueError("Checkpoint requires one matching leg")
+    return _leg_payload(snapshot, snapshot.legs[0], view, trial)
+
+
+def build_customer_mission_document(snapshot: ExportSnapshot) -> dict:
+    if not snapshot.legs or len({leg.leg_id for leg in snapshot.legs}) != len(
+        snapshot.legs
+    ):
+        raise ValueError("Mission requires nonempty unique legs")
+    legs = []
+    for number, captured in enumerate(snapshot.legs, 1):
+        trial = project_trial_leg(captured)
+        view = project_customer_leg(
+            captured, trial, leg_number=number, leg_count=len(snapshot.legs)
+        )
+        legs.append(_leg_payload(snapshot, captured, view, trial))
+    return {
+        "schemaVersion": 2,
+        "missionId": snapshot.mission_id,
+        "snapshotFingerprint": snapshot.fingerprint,
+        "legs": legs,
+    }
+
+
+def _leg_payload(snapshot, captured, view, trial):
     if (
         not trial.utc_bounds
-        or snapshot.legs[0].utc_bounds != trial.utc_bounds
+        or captured.utc_bounds != trial.utc_bounds
+        or captured.leg_id != trial.leg_id
+        or view.leg_id != trial.leg_id
         or view.intervals != trial.intervals
     ):
         raise ValueError("Checkpoint bounds/projection mismatch")
@@ -45,10 +71,14 @@ def build_customer_document(
         for r in view.rows
     ):
         raise ValueError("Customer rows do not match partition")
-    map_input, map_reasons = build_map_input(snapshot.legs[0], trial)
+    if len({r.id for r in view.rows}) != len(view.rows) or any(
+        a.end_time > b.start_time for a, b in zip(view.rows, view.rows[1:])
+    ):
+        raise ValueError("Unordered or duplicate customer rows")
+    map_input, map_reasons = build_map_input(captured, trial)
     if map_input:
         map_input = json.loads(json.dumps(map_input))
-        leg = json.loads(snapshot.legs[0].leg_json)
+        leg = json.loads(captured.leg_json)
         map_input["endpointLabels"] = {
             "departure": leg.get("departure_airport") or "Departure",
             "arrival": leg.get("arrival_airport") or "Arrival",

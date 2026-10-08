@@ -149,3 +149,57 @@ def test_document_rows_carry_exact_display_cells():
         "Ka, Starshield, X-Band",
         "Nominal",
     ]
+
+
+def mission_document(captured):
+    import app.mission.exporter.customer_document as module
+
+    assert hasattr(module, "build_customer_mission_document"), "Mission contract absent"
+    return module.build_customer_mission_document(captured)
+
+
+def test_mission_projects_ordered_legs_from_one_snapshot_without_mutation():
+    captured, _, _ = inputs()
+    legs = tuple(replace(captured.legs[0], leg_id=f"leg-{n}") for n in range(5))
+    captured = replace(captured, legs=legs)
+    payload = mission_document(captured)
+    assert payload["schemaVersion"] == 2
+    assert payload["missionId"] == captured.mission_id
+    assert payload["snapshotFingerprint"] == captured.fingerprint
+    assert [leg["legId"] for leg in payload["legs"]] == [leg.leg_id for leg in legs]
+    for number, leg in enumerate(payload["legs"], 1):
+        assert leg["snapshotFingerprint"] == captured.fingerprint
+        assert leg["header"]["title"].startswith(f"LEG {number} OF 5")
+        assert leg["flight"]["startUtc"] == "2026-10-25T14:00:00Z"
+        assert leg["rows"][0]["displayCells"][0] == "10:00–10:15"
+    assert captured.legs == legs
+
+
+@pytest.mark.parametrize("case", ["empty", "duplicate", "bounds"])
+def test_mission_rejects_unusable_identity_and_flight_data(case):
+    captured, _, _ = inputs()
+    legs = {
+        "empty": (),
+        "duplicate": captured.legs * 2,
+        "bounds": (replace(captured.legs[0], utc_bounds=None),),
+    }[case]
+    with pytest.raises(ValueError):
+        mission_document(replace(captured, legs=legs))
+
+
+def test_mission_missing_map_retains_reasons_and_transport_facts():
+    captured, _, _ = inputs()
+    captured = replace(
+        captured, legs=(replace(captured.legs[0], effective_route_json=None),)
+    )
+    leg = mission_document(captured)["legs"][0]
+    assert leg["mapInput"] is None
+    assert leg["mapInputDiagnostics"]
+    assert any(row["posture"] == "Communications unavailable" for row in leg["rows"])
+
+
+def test_document_rejects_reversed_and_duplicate_customer_rows():
+    captured, trial, view = inputs()
+    for rows in (view.rows[::-1], view.rows[:1] * 2):
+        with pytest.raises(ValueError):
+            build(captured, replace(view, rows=rows), trial)

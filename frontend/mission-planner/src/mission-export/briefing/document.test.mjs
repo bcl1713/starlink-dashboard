@@ -76,3 +76,82 @@ test('rejects incomplete canonical display cells', async () => {
   const compose = await composer();
   assert.throws(() => compose(p, assets), /four display cells/);
 });
+
+test('mission continuation repeats identity clocks and caveat without map or timeline', async () => {
+  const module = await import('./document.mjs');
+  assert.equal(
+    typeof module.composeMissionBriefing,
+    'function',
+    'Mission composition absent'
+  );
+  const leg = structuredClone(payload);
+  leg.legId = 'leg';
+  leg.rows = [0, 1].map((i) => ({
+    id: 'row-' + i,
+    displayCells: ['≈ 01:30 EDT–01:30 EST', '<impact>', 'Ka', 'Incomplete'],
+  }));
+  leg.header.notice = 'Assessment incomplete';
+  const mission = {
+    schemaVersion: 2,
+    missionId: 'm',
+    snapshotFingerprint: 'f',
+    legs: [leg],
+  };
+  const plan = {
+    schemaVersion: 2,
+    missionId: 'm',
+    snapshotFingerprint: 'f',
+    pages: [
+      {
+        page: 1,
+        legId: 'leg',
+        kind: 'primary',
+        legPage: 1,
+        legPageCount: 2,
+        rowIds: ['row-0'],
+      },
+      {
+        page: 2,
+        legId: 'leg',
+        kind: 'continuation',
+        legPage: 2,
+        legPageCount: 2,
+        rowIds: ['row-1'],
+      },
+    ],
+  };
+  const html = module.composeMissionBriefing(mission, plan, {
+    ...assets,
+    maps: { leg: 'data:image/png;base64,AA==' },
+  });
+  assert.equal((html.match(/class="briefing-page/g) || []).length, 2);
+  assert.equal((html.match(/class="timeline"/g) || []).length, 1);
+  assert.equal((html.match(/class="map-card"/g) || []).length, 1);
+  for (const text of ['Assessment incomplete', 'not a throughput guarantee'])
+    assert.equal(html.split(text).length - 1, 2, text);
+  assert.equal(
+    (html.match(/<td class="et">≈ 01:30 EDT–01:30 EST<\/td>/g) || []).length,
+    2
+  );
+  assert.match(html, /Page 2 of 2/);
+  assert.match(html, /Coordination windows continued/);
+  assert.match(html, /continues on next page/);
+  assert.match(html, /&lt;impact&gt;/);
+  assert.equal((html.match(/data-row-id="row-0"/g) || []).length, 1);
+  assert.equal((html.match(/data-row-id="row-1"/g) || []).length, 1);
+  assert.throws(
+    () =>
+      module.composeMissionBriefing(
+        mission,
+        { ...plan, snapshotFingerprint: 'wrong' },
+        assets
+      ),
+    /identity/
+  );
+  const missing = structuredClone(plan);
+  missing.pages[1].rowIds = [];
+  assert.throws(
+    () => module.composeMissionBriefing(mission, missing, assets),
+    /coverage/
+  );
+});
