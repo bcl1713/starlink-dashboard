@@ -143,6 +143,16 @@ def generate(root: Path):
     }.items():
         manifest["hashes"][label] = sha256(file.read_bytes()).hexdigest()
     (root / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2))
+    if os.environ.get("CHECKPOINT_MISSION_ONLY") == "1":
+        from html_pdf_mission_generate import generate_missions
+
+        summary = {
+            "checksPassed": True,
+            "qualificationScope": "missions only",
+            "missions": generate_missions(root, run),
+        }
+        (root / "generation-report.json").write_text(json.dumps(summary, indent=2))
+        return summary
     if os.environ.get("CHECKPOINT_RUNTIME_TESTS") == "1":
         code = run(
             [

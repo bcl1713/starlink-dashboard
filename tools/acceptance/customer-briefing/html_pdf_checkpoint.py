@@ -185,10 +185,13 @@ def run_checkpoint(
     image_tag=None,
     build_only=False,
     mission_tests=False,
+    mission_only=False,
 ):
     def git(*args):
         return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
+    if mission_only and not mission_tests:
+        raise ValueError("Mission-only requires mission tests")
     if candidate_sha != git("rev-parse", "HEAD") or git("status", "--porcelain"):
         raise ValueError("Checkpoint requires clean committed HEAD")
     run_id = str(time.time_ns())
@@ -205,6 +208,7 @@ def run_checkpoint(
         "CHECKPOINT_IMAGE": image,
         "CHECKPOINT_RUNTIME_TESTS": "1" if runtime_tests else "0",
         "CHECKPOINT_MISSION_TESTS": "1" if mission_tests else "0",
+        "CHECKPOINT_MISSION_ONLY": "1" if mission_only else "0",
     }
     owner.compose_env = env
     started_container = False
@@ -301,7 +305,7 @@ def run_checkpoint(
             raise ValueError("Generated checkpoint failed")
         pending = root / "deliverables-staging"
         pending.mkdir()
-        for name in ("fully-assessed", "incomplete-x"):
+        for name in (() if mission_only else ("fully-assessed", "incomplete-x")):
             source = raw / "delivered" / name
             evidence = (source / "mission-customer-briefing-evidence.json").read_bytes()
             staged = pending / (name + "-staging")
@@ -358,6 +362,7 @@ if __name__ == "__main__":
     parser.add_argument("--image-tag")
     parser.add_argument("--build-only", action="store_true")
     parser.add_argument("--mission-tests", action="store_true")
+    parser.add_argument("--mission-only", action="store_true")
     args = parser.parse_args()
     print(
         json.dumps(
@@ -368,6 +373,7 @@ if __name__ == "__main__":
                 args.image_tag,
                 args.build_only,
                 args.mission_tests,
+                args.mission_only,
             ),
             indent=2,
         )

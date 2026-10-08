@@ -45,6 +45,39 @@ async function ready(page, budget) {
   if (!result.images) throw error('runtime', 'Image decode failed');
 }
 
+export function createMissionDocumentLoader({
+  page,
+  budget,
+  check,
+  isBlocked,
+}) {
+  let loaded = false;
+  return async (html) => {
+    check();
+    if (!loaded) {
+      await page.setContent(html, {
+        waitUntil: 'domcontentloaded',
+        timeout: budget.workRemainingMs(),
+      });
+      loaded = true;
+    } else {
+      const body = html.slice(
+        html.indexOf('<body>') + 6,
+        html.lastIndexOf('</body>')
+      );
+      await within(
+        page.locator('body').evaluate((element, content) => {
+          element.innerHTML = content;
+        }, body),
+        budget.workRemainingMs()
+      );
+    }
+    await ready(page, budget);
+    if (isBlocked()) throw error('runtime', 'Remote asset rejected');
+    check();
+  };
+}
+
 async function measurePages(page, budget) {
   return within(
     page.evaluate(() =>
@@ -186,20 +219,29 @@ export async function prepareMissionDocument({
   });
   const page = await context.newPage();
   await page.emulateMedia({ media: 'print' });
-  const load = async (html) => {
-    check();
-    await page.setContent(html, {
-      waitUntil: 'domcontentloaded',
-      timeout: budget.workRemainingMs(),
-    });
-    await ready(page, budget);
-    if (blocked) throw error('runtime', 'Remote asset rejected');
-    check();
-  };
+  const load = createMissionDocumentLoader({
+    page,
+    budget,
+    check,
+    isBlocked: () => blocked,
+  });
+  const progress = async (operation) =>
+    writeFile(
+      ownedPath(outputRoot, 'document-progress.json'),
+      JSON.stringify({ operation, elapsedMs: budget.elapsedMs() })
+    );
   const pagePlan = await planBriefingPages({
     payload,
     budget,
     measure: async (request) => {
+      await progress(
+        'measure:' +
+          request.legId +
+          ':' +
+          request.kind +
+          ':' +
+          request.rowIds.length
+      );
       if (fault === 'measure-hang')
         await within(new Promise(() => {}), budget.workRemainingMs());
       const leg = payload.legs.find((l) => l.legId === request.legId);
@@ -225,6 +267,7 @@ export async function prepareMissionDocument({
     },
   });
   const html = composeMissionBriefing(payload, pagePlan, assets);
+  await progress('final-assembly');
   await load(html);
   const measured = await measurePages(page, budget);
   if (
@@ -270,14 +313,12 @@ export async function prepareMissionDocument({
   );
   for (let i = 0; i < measured.length; i++) {
     check();
-    const png = await page
-      .locator('.briefing-page')
-      .nth(i)
-      .screenshot({
-        type: 'png',
-        animations: 'disabled',
-        timeout: budget.workRemainingMs(),
-      });
+    await progress('preview:' + (i + 1));
+    const png = await page.locator('.briefing-page').nth(i).screenshot({
+      type: 'png',
+      animations: 'disabled',
+      timeout: budget.workRemainingMs(),
+    });
     const name = `mission-customer-briefing-trial-page-${i + 1}.png`;
     onDiagnostic(name);
     await writeFile(ownedPath(outputRoot, name), png);
