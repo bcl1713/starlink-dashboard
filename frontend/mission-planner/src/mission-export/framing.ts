@@ -12,6 +12,7 @@ export interface MissionMapView {
   startIndex: number;
   endIndex: number;
   endsRoute: boolean;
+  endpointLabels?: MissionMapInput['endpointLabels'];
   points: [number, number, number][];
   markers: (MissionMapInput['markers'][number] & {
     point: [number, number, number];
@@ -66,6 +67,7 @@ export function frameMissionRoute(input: MissionMapInput): MissionMapView[] {
       endIndex: low,
       endsRoute: low === points.length - 1,
       points: subset,
+      endpointLabels: input.endpointLabels,
       direction: frame.direction!.toArray(),
       distance: frame.distance + 0.02,
       offsetX: frame.offsetX,

@@ -6,6 +6,12 @@ export const mapInputSchema = z
     framingVersion: z.literal('mission-map-v1'),
     legId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
     referenceUtc: z.iso.datetime(),
+    endpointLabels: z
+      .object({
+        departure: z.string().min(1).max(32),
+        arrival: z.string().min(1).max(32),
+      })
+      .optional(),
     route: z
       .array(
         z.object({

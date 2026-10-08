@@ -34,10 +34,18 @@ type Label = {
 function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
   const candidates = [
     {
-      text: view.startIndex === 0 ? 'Start' : 'Continues',
+      text:
+        view.startIndex === 0
+          ? view.endpointLabels?.departure || 'Departure'
+          : 'Continues',
       point: view.points[0],
     },
-    { text: view.endsRoute ? 'End' : 'Continues', point: view.points.at(-1)! },
+    {
+      text: view.endsRoute
+        ? view.endpointLabels?.arrival || 'Arrival'
+        : 'Continues',
+      point: view.points.at(-1)!,
+    },
     ...view.markers.map((m) => ({ text: m.label, point: m.point })),
   ];
   const labels: Label[] = [];
@@ -45,7 +53,7 @@ function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
     const p = new THREE.Vector3(...point).project(camera);
     const x = ((p.x + 1) * MAP_WIDTH) / 2,
       y = ((1 - p.y) * MAP_HEIGHT) / 2;
-    const width = text.length * 48 + 48;
+    const width = text.length * 64 + 48;
     const offsets = [
       [0, -112],
       [0, 112],
@@ -67,7 +75,7 @@ function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
           labels.every(
             (other) =>
               Math.abs(other.x - l.x) >
-                (width + other.text.length * 48 + 48) / 2 ||
+                (width + other.text.length * 64 + 48) / 2 ||
               Math.abs(other.y - l.y) > 104
           )
       );
@@ -266,11 +274,12 @@ export function MissionExportScene({
             left: label.x,
             top: label.y,
             transform: 'translate(-50%, -50%)',
-            padding: '4px 12px',
-            background: '#f4f4f4',
-            color: '#202020',
-            borderRadius: 4,
-            fontSize: 84,
+            padding: '4px 16px',
+            background: 'rgba(18, 42, 68, 0.86)',
+            color: '#fff',
+            borderRadius: 8,
+            fontSize: 96,
+            fontWeight: 700,
             whiteSpace: 'nowrap',
           }}
         >

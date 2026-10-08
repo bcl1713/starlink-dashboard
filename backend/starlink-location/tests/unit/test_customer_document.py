@@ -6,11 +6,11 @@ from dataclasses import replace
 from hashlib import sha256
 
 import pytest
+
 from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
 from app.mission.exporter.trial_projection import project_trial_leg
-
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 
@@ -82,3 +82,14 @@ def test_document_rejects_identity_and_partition_mismatch():
                 ),
             ),
         )
+
+
+def test_document_map_has_customer_endpoints_without_event_ordinals():
+    captured, trial, view = inputs()
+    payload = build(captured, view, trial)
+    assert payload["mapInput"]["endpointLabels"] == {
+        "departure": "KADW",
+        "arrival": "PAED",
+    }
+    assert payload["mapInput"]["markers"] == []
+    assert payload["rows"] and all(r["id"] for r in payload["rows"])

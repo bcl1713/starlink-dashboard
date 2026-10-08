@@ -1,5 +1,7 @@
 """Pure one-leg document payload; never classifies or renders availability."""
 
+import json
+
 from .customer_view import CustomerLegView, restriction_labels
 from .map_inputs import build_map_input
 from .snapshot import ExportSnapshot
@@ -43,12 +45,13 @@ def build_customer_document(
         raise ValueError("Customer rows do not match partition")
     map_input = build_map_input(snapshot.legs[0], trial)[0]
     if map_input:
-        labels = {r.interval_ids[0]: str(n) for n, r in enumerate(view.rows, 1)}
-        map_input["markers"] = [
-            {**m, "label": labels[m["id"]]}
-            for m in map_input["markers"]
-            if m["id"] in labels
-        ]
+        leg = json.loads(snapshot.legs[0].leg_json)
+        map_input["endpointLabels"] = {
+            "departure": leg.get("departure_airport") or "Departure",
+            "arrival": leg.get("arrival_airport") or "Arrival",
+        }
+        # Customer overview shows the route and airports; exact events stay in evidence.
+        map_input["markers"] = []
     return {
         "schemaVersion": 1,
         "snapshotFingerprint": snapshot.fingerprint,

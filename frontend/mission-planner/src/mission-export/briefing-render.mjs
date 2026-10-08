@@ -271,6 +271,29 @@ export async function renderBriefing({
           if (e.hasAttribute('data-svg-label'))
             markers.push({ text: e.textContent, bounds: bounds(e) });
         }
+        const labelOverlaps = [];
+        for (let i = 0; i < markers.length; i++) {
+          for (let j = i + 1; j < markers.length; j++) {
+            const a = markers[i].bounds,
+              b = markers[j].bounds;
+            if (
+              Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 &&
+              Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1
+            )
+              labelOverlaps.push([markers[i].text, markers[j].text]);
+          }
+        }
+        const remainingLines = [
+          ...document.querySelectorAll('.remaining-cell'),
+        ].map((cell) => {
+          const range = document.createRange();
+          range.selectNodeContents(cell);
+          return {
+            text: cell.textContent,
+            lines: new Set([...range.getClientRects()].map((r) => r.top)).size,
+            fontPx: parseFloat(getComputedStyle(cell).fontSize),
+          };
+        });
         const red = document.querySelector(
           '[data-posture="Communications unavailable"]'
         );
@@ -282,6 +305,8 @@ export async function renderBriefing({
           ),
           fonts: ['Briefing 400', 'Briefing 700'],
           labels: markers,
+          labelOverlaps,
+          remainingLines,
           overflow,
           redFraction: red ? red.getBBox().width / 960 : null,
           postures: [...document.querySelectorAll('[data-posture]')].map(
@@ -293,6 +318,7 @@ export async function renderBriefing({
       });
       if (
         report.fit.overflow.length ||
+        report.fit.labelOverlaps.length ||
         report.fit.page.width !== 1280 ||
         report.fit.page.height !== 720 ||
         JSON.stringify(report.fit.visibleRowIds) !==

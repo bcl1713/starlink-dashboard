@@ -13,6 +13,26 @@ export function registerDocumentTests({ run, clean, root, assetRoot }) {
     assert.equal(r.fit.redFraction, 5 / 480);
     assert.deepEqual(r.fit.fonts, ['Briefing 400', 'Briefing 700']);
     assert.equal(r.fit.overflow.length, 0);
+    for (const label of [
+      'Overall communications posture',
+      'Nominal',
+      'Degraded',
+      'Elevated risk',
+      'COMMUNICATIONS UNAVAILABLE · 5 MIN',
+    ]) {
+      assert.ok(
+        r.fit.labels.some((l) => l.text === label),
+        label
+      );
+    }
+    assert.deepEqual(r.fit.labelOverlaps, []);
+    assert.ok(
+      r.fit.remainingLines.every((r) => r.lines === 1 && r.fontPx >= 18.66)
+    );
+    assert.deepEqual(
+      r.map.markers.map((m) => m.text),
+      ['KADW', 'PAED']
+    );
     clean(r);
   });
   test('unknown X keeps confirmed risks', async () => {

@@ -57,6 +57,17 @@ describe('mission map framing', () => {
     expect(allIds).toEqual(fixture.expectedViewIds);
   });
 
+  it('keeps meaningful endpoint labels through validation and framing', () => {
+    const endpointLabels = { departure: 'KADW', arrival: 'PAED' };
+    const input = validateMapInput({
+      ...fixture.legs[0],
+      endpointLabels,
+      markers: [],
+    });
+    const [view] = frameMissionRoute(input);
+    expect(view).toHaveProperty('endpointLabels', endpointLabels);
+  });
+
   it('fits synthetic numbered route markers within the padded view', () => {
     const input = validateMapInput({
       ...fixture.legs[0],

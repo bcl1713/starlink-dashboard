@@ -36,50 +36,87 @@ export function renderTimeline(payload) {
     else unknownGroups.push({ ...i, count });
   }
   const narrowUnknown = unknownGroups.filter((i) => width(i) < 90);
-  let out = `<svg class="timeline" viewBox="0 0 1240 218" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>`;
+  let out = `<svg class="timeline" viewBox="0 0 1240 246" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>`;
 
-  out += text(0, 64, 'Overall posture', 'class="hero-label"');
+  out += text(
+    0,
+    24,
+    'Overall communications posture',
+    'class="hero-label" data-svg-label'
+  );
   for (const i of payload.intervals) {
     const w = width(i),
       px = x(i.startUtc);
     out += rect(
       i,
-      40,
+      68,
       38,
       COLORS[i.posture] || COLORS['Posture uncertain'],
       `data-posture="${escapeText(i.posture)}" data-interval-start="${i.startUtc}"`
     );
-    const uncertain = i.posture === 'Posture uncertain';
-    const label = uncertain
-      ? `${i.decisions.filter((v) => v === 'Up').length} confirmed`
-      : {
-          Nominal: '3-Up',
-          Degraded: '2-Up',
-          'Limited / elevated risk': '1-Up',
-          'Communications unavailable': '0-Up',
-        }[i.posture] || i.posture;
-    if (uncertain) continue;
-    if (w >= 90)
+    if (i.posture === 'Nominal' && w >= 90) {
       out += text(
         px + w / 2,
-        65,
-        label,
-        `text-anchor="middle" class="band-label ${i.posture === 'Nominal' ? 'light' : ''}" data-svg-label`
+        93,
+        'Nominal',
+        'text-anchor="middle" class="band-label light" data-svg-label'
       );
-    else if (i.posture === 'Communications unavailable')
-      out +=
-        `<path d="M${px + w / 2} 40V15H${px + 68}" fill="none" stroke="#b72e36"/>` +
-        text(
-          px + 73,
-          20,
-          '0-Up · 5 min',
-          'class="outage-callout" data-callout data-svg-label'
-        );
+    }
+  }
+  const callouts = [
+    {
+      posture: 'Degraded',
+      label: 'Degraded',
+      x: 525,
+      y: 24,
+      lineY: 32,
+      color: '#8b6807',
+      className: 'degraded-callout',
+    },
+    {
+      posture: 'Limited / elevated risk',
+      label: 'Elevated risk',
+      x: 740,
+      y: 24,
+      lineY: 34,
+      color: '#a55019',
+      className: 'risk-callout',
+    },
+    {
+      posture: 'Communications unavailable',
+      x: 630,
+      y: 54,
+      lineY: 58,
+      color: '#b72e36',
+      className: 'outage-callout',
+    },
+  ];
+  for (const callout of callouts) {
+    const windows = payload.intervals.filter(
+      (i) => i.posture === callout.posture
+    );
+    if (!windows.length) continue;
+    const minutes = windows.reduce(
+      (sum, i) => sum + (Date.parse(i.endUtc) - Date.parse(i.startUtc)) / 60000,
+      0
+    );
+    const label =
+      callout.label || `COMMUNICATIONS UNAVAILABLE · ${minutes} MIN`;
+    for (const i of windows) {
+      const anchor = x(i.startUtc) + width(i) / 2;
+      out += `<path d="M${anchor} 68V${callout.lineY}H${callout.x}" fill="none" stroke="${callout.color}"/>`;
+    }
+    out += text(
+      callout.x,
+      callout.y,
+      label,
+      `${callout.label ? 'text-anchor="middle"' : ''} class="${callout.className}" data-callout data-svg-label`
+    );
   }
   for (const i of unknownGroups.filter((i) => width(i) >= 90)) {
     out += text(
       x(i.startUtc) + width(i) / 2,
-      65,
+      93,
       `${i.count} confirmed`,
       'text-anchor="middle" class="band-label" data-svg-label'
     );
@@ -91,17 +128,17 @@ export function renderTimeline(payload) {
       const anchor = x(i.startUtc) + width(i) / 2;
       const labelX = center + (n - (narrowUnknown.length - 1) / 2) * 180;
       out +=
-        `<path d="M${anchor} 40L${labelX} 24" fill="none" stroke="#526678"/>` +
+        `<path d="M${anchor} 68L${labelX} 58" fill="none" stroke="#526678"/>` +
         text(
           labelX,
-          20,
+          54,
           `${i.decisions.filter((v) => v === 'Up').length} confirmed`,
           'text-anchor="middle" class="confirmed-callout" data-callout data-svg-label'
         );
     });
   }
   ['Commercial Ka', 'Starshield', 'X-Band MILSATCOM'].forEach((name, n) => {
-    const y = 91 + n * 27;
+    const y = 119 + n * 27;
     out += text(0, y + 15, name, 'class="lane-label"');
     for (const i of payload.intervals) {
       const state = i.decisions[n];
@@ -112,17 +149,27 @@ export function renderTimeline(payload) {
         state === 'Down' ? 'url(#down)' : state === '?' ? '#e9edf1' : '#b8c7cc',
         `data-transport="${n}" data-state="${escapeText(state)}"`
       );
-      if (width(i) > 80)
+    }
+    const runs = [];
+    for (const i of payload.intervals) {
+      const state = i.decisions[n];
+      const last = runs.at(-1);
+      if (last && last.endUtc === i.startUtc && last.state === state)
+        last.endUtc = i.endUtc;
+      else runs.push({ ...i, state });
+    }
+    for (const run of runs) {
+      if (width(run) >= 40)
         out += text(
-          x(i.startUtc) + width(i) / 2,
+          x(run.startUtc) + width(run) / 2,
           y + 14,
-          state,
+          run.state,
           'text-anchor="middle" class="lane-state"'
         );
     }
   });
-  out += text(0, 188, 'SOF / AR', 'class="lane-label"');
-  out += '<rect x="280" y="174" width="960" height="18" fill="#edf1f5"/>';
+  out += text(0, 216, 'SOF / AR', 'class="lane-label"');
+  out += '<rect x="280" y="202" width="960" height="18" fill="#edf1f5"/>';
   // Join identical restriction segments, but never their quiet gaps.
   const restrictions = [];
   for (const i of payload.intervals) {
@@ -134,11 +181,11 @@ export function renderTimeline(payload) {
     else restrictions.push({ ...i, label });
   }
   for (const i of restrictions) {
-    out += rect(i, 174, 18, '#899db9', 'data-restriction');
+    out += rect(i, 202, 18, '#899db9', 'data-restriction');
     const a = x(i.startUtc);
     out += text(
       a < 700 ? a + width(i) + 8 : a - 8,
-      188,
+      216,
       i.label,
       `text-anchor="${a < 700 ? 'start' : 'end'}" class="restriction-label" data-svg-label`
     );
@@ -153,10 +200,10 @@ export function renderTimeline(payload) {
     const t = start + ((end - start) * h) / 8;
     const px = 280 + (960 * h) / 8;
     out +=
-      `<path d="M${px} 196v5" stroke="#83909e"/>` +
+      `<path d="M${px} 224v5" stroke="#83909e"/>` +
       text(
         px,
-        216,
+        244,
         et.format(t),
         `text-anchor="${h === 0 ? 'start' : h === 8 ? 'end' : 'middle'}" class="axis"`
       );
