@@ -1,8 +1,8 @@
 # Customer Mission Briefing Phase-One Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
-> to implement this plan task-by-task after user review. Steps use checkbox
-> syntax. This handoff authorizes planning only.
+Stopped native-PPTX plan. Review the
+[HTML-to-PDF restart spec](../specs/2026-10-08-customer-briefing-html-pdf-design.md)
+before preparing a fresh checkpoint-only implementation plan.
 
 **Goal:** Add an automatic customer trial deck to the normal mission ZIP while
 preserving the established deck and direct single-leg PowerPoint download.
