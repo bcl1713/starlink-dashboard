@@ -134,13 +134,16 @@ def seed_missions(api, root):
             leg = {
                 "id": f"{mission_id}-leg-{number+1}",
                 "name": f"Synthetic {name} leg {number+1}",
-                "route_id": f"{mission_id}-route-{number+1}",
+                "route_id": "",
                 "transports": transports,
             }
-            if recipe.get("adjusted"):
-                leg["adjusted_departure_time"] = stamp(start + timedelta(hours=2))
             legs.append(leg)
-            routes.append(kml(start, duration, recipe.get("wide", False)))
+            routes.append(
+                (
+                    f"{mission_id}-route-{number+1}.kml",
+                    kml(start, duration, recipe.get("wide", False)),
+                )
+            )
         mission = {
             "id": mission_id,
             "name": f"Synthetic briefing {name}",
@@ -154,9 +157,26 @@ def seed_missions(api, root):
             body, _, _ = api.request(
                 "PUT",
                 f"/api/v2/missions/{mission_id}/legs/{leg['id']}/route",
-                multipart=(leg["route_id"] + ".kml", route),
+                multipart=route,
             )
             uploads.append(json.loads(body))
+            if any(
+                "Timeline regeneration failed" in warning
+                for warning in uploads[-1].get("warnings", [])
+            ):
+                raise ValueError(
+                    "Supported route upload did not produce a timeline: "
+                    + body.decode()
+                )
+            if recipe.get("adjusted"):
+                updated = uploads[-1]["leg"]
+                updated["adjusted_departure_time"] = stamp(BASE + timedelta(hours=2))
+                body, _, _ = api.request(
+                    "PUT",
+                    f"/api/v2/missions/{mission_id}/legs/{leg['id']}",
+                    data=updated,
+                )
+                uploads.append(json.loads(body))
         actual, _, _ = api.request("GET", f"/api/v2/missions/{mission_id}")
         saved[name] = json.loads(actual)
         (root / f"seed-{name}.json").write_text(
