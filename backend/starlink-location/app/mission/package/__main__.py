@@ -10,10 +10,12 @@ import json
 import logging
 import tempfile
 import zipfile
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import IO
+from typing import IO, Literal
 
+from app.core.config import ConfigManager
 from app.mission.exporter import (
     TimelineExportFormat,
     generate_timeline_export,
@@ -45,6 +47,59 @@ def _display_status(status_value: str) -> str:
 
 class ExportPackageError(RuntimeError):
     """Raised when mission package export fails."""
+
+
+TRIAL_PATH = "exports/mission/mission-customer-briefing-trial.pptx"
+TRIAL_LABEL = "Customer briefing — Trial"
+TRIAL_FAILURE_WARNING = (
+    "Customer briefing — Trial could not be generated. Legacy exports are included."
+)
+
+
+@dataclass(frozen=True)
+class PackageExportResult:
+    """A caller-owned ZIP stream and safe, bounded trial feedback."""
+
+    stream: IO[bytes]
+    warnings: tuple[str, ...]
+    trial_status: Literal["disabled", "included", "failed"]
+
+
+def _build_trial_export(
+    snapshot: ExportSnapshot,
+) -> tuple[bytes | None, tuple[str, ...]]:
+    # Keep every optional stage, including imports and final validation, isolated.
+    try:
+        from app.mission.exporter.trial_maps import render_trial_maps
+        from app.mission.exporter.trial_pptx import (
+            build_trial_pptx,
+            validate_trial_pptx,
+        )
+        from app.mission.exporter.trial_projection import project_trial_leg
+
+        legs = tuple(project_trial_leg(leg) for leg in snapshot.legs)
+        maps = render_trial_maps(snapshot, legs)
+        data = build_trial_pptx(snapshot, legs, maps)
+        validate_trial_pptx(data)
+        # Only fixed summaries leave the backend. Source text, paths, identities
+        # and exception details remain in the deck or server diagnostics.
+        warnings = []
+        if snapshot.warnings or any(leg.notes for leg in legs):
+            warnings.append(
+                "Customer briefing — Trial contains incomplete prediction or timing data; review its leg notes."
+            )
+        if any(result.status == "static" for result in maps):
+            warnings.append(
+                "Customer briefing — Trial uses a labeled static route fallback where overview maps are unavailable."
+            )
+        if any(result.status == "unavailable" for result in maps):
+            warnings.append(
+                "Customer briefing — Trial contains labeled unavailable route maps; review its leg notes."
+            )
+        return data, tuple(warnings)
+    except Exception:
+        logger.exception("Customer briefing trial omitted; legacy package retained")
+        return None, (TRIAL_FAILURE_WARNING,)
 
 
 def generate_mission_combined_csv(
@@ -812,12 +867,12 @@ def _create_export_manifest(mission: Mission, manifest_files: dict) -> dict:
     }
 
 
-def export_mission_package(
+def export_mission_package_result(
     mission_id: str,
     route_manager: RouteManager,
     poi_manager: POIManager,
-) -> IO[bytes]:
-    """Export complete mission as zip archive.
+) -> PackageExportResult:
+    """Export complete mission as zip archive with isolated trial feedback.
 
     Package structure:
         mission-{id}.zip
@@ -850,8 +905,13 @@ def export_mission_package(
         poi_manager: POIManager instance for fetching mission POIs
 
     Returns:
-        File-like object containing the zip archive. Caller must close it to delete the temp file.
+        Result with the caller-owned ZIP stream, safe warnings and trial status.
     """
+    trial_enabled = (
+        ConfigManager.get_instance().get_config().customer_briefing_trial_enabled
+    )
+    trial_status: Literal["disabled", "included", "failed"] = "disabled"
+    warnings: tuple[str, ...] = ()
     try:
         snapshot = capture_export_snapshot(mission_id, route_manager, poi_manager)
     except SnapshotCaptureError as exc:
@@ -908,8 +968,23 @@ def export_mission_package(
                 snapshot,
             )
 
-            # Create and add manifest
+            # Legacy files are complete before any optional trial work begins.
+            if trial_enabled:
+                trial_data, warnings = _build_trial_export(snapshot)
+                if trial_data is not None:
+                    zf.writestr(TRIAL_PATH, trial_data)
+                    manifest_files["mission_exports"].append(TRIAL_PATH)
+                    trial_status = "included"
+                else:
+                    trial_status = "failed"
+
+            # Preserve the original manifest exactly when the flag is disabled.
             manifest = _create_export_manifest(mission, manifest_files)
+            if trial_enabled:
+                manifest["trial_status"] = trial_status
+                manifest["warnings"] = list(warnings)
+                if trial_status == "included":
+                    manifest["export_labels"] = {TRIAL_PATH: TRIAL_LABEL}
             manifest_json = json.dumps(manifest, indent=2)
             zf.writestr("manifest.json", manifest_json)
             logger.info(
@@ -935,4 +1010,13 @@ def export_mission_package(
 
     # Seek to beginning so it can be read
     zip_temp.seek(0)
-    return zip_temp
+    return PackageExportResult(zip_temp, warnings, trial_status)
+
+
+def export_mission_package(
+    mission_id: str,
+    route_manager: RouteManager,
+    poi_manager: POIManager,
+) -> IO[bytes]:
+    """Compatibility API: return the caller-owned mission ZIP stream."""
+    return export_mission_package_result(mission_id, route_manager, poi_manager).stream

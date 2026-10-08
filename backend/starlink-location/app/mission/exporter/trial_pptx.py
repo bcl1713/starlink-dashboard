@@ -765,6 +765,11 @@ def _validate_deck(data):
     return data
 
 
+def validate_trial_pptx(data: bytes) -> bytes:
+    """Validate completed bytes again at the package publication boundary."""
+    return _validate_deck(data)
+
+
 def build_trial_pptx(
     snapshot: ExportSnapshot, legs: tuple[TrialLeg, ...], maps: tuple[LegMapResult, ...]
 ) -> bytes:

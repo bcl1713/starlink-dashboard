@@ -1,3 +1,8 @@
+export interface MissionExportResult {
+  blob: Blob;
+  warnings: string[];
+}
+
 export interface ExportProgress {
   status: 'preparing' | 'exporting' | 'complete' | 'error';
   message: string;

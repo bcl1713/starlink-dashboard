@@ -1,5 +1,11 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { exportImportApi } from '../../services/export-import';
@@ -18,10 +24,35 @@ export function ExportDialog({
   missionId,
   missionName,
 }: ExportDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      {open && (
+        <ExportDialogContent
+          onClose={onClose}
+          missionId={missionId}
+          missionName={missionName}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+function ExportDialogContent({
+  onClose,
+  missionId,
+  missionName,
+}: Omit<ExportDialogProps, 'open'>) {
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [progress, setProgress] = useState<ExportProgress>({
     status: 'preparing',
     message: 'Preparing export...',
   });
+
+  useEffect(() => {
+    if (progress.status !== 'complete' || warnings.length > 0) return;
+    const timer = window.setTimeout(onClose, 2000);
+    return () => window.clearTimeout(timer);
+  }, [progress.status, warnings.length, onClose]);
 
   const handleExport = async () => {
     try {
@@ -31,7 +62,8 @@ export function ExportDialog({
         progress: 50,
       });
 
-      const blob = await exportImportApi.exportMission(missionId);
+      const { blob, warnings: exportWarnings } =
+        await exportImportApi.exportMissionResult(missionId);
 
       // Trigger download
       const url = window.URL.createObjectURL(blob);
@@ -39,20 +71,22 @@ export function ExportDialog({
       a.href = url;
       a.download = `${missionId}.zip`;
       document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      try {
+        a.click();
+      } finally {
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }
+      setWarnings(exportWarnings);
 
       setProgress({
         status: 'complete',
-        message: 'Export complete!',
+        message:
+          exportWarnings.length > 0
+            ? 'Export downloaded with warnings.'
+            : 'Export complete!',
         progress: 100,
       });
-
-      setTimeout(() => {
-        onClose();
-        setProgress({ status: 'preparing', message: 'Preparing export...' });
-      }, 2000);
     } catch (error) {
       setProgress({
         status: 'error',
@@ -62,47 +96,53 @@ export function ExportDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Export Mission: {missionName}</DialogTitle>
-        </DialogHeader>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Export Mission: {missionName}</DialogTitle>
+        <DialogDescription>
+          Export includes all legs, routes, POIs, and mission documents.
+        </DialogDescription>
+      </DialogHeader>
 
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Export will include all legs, routes, POIs, and pre-generated
-            documents.
-          </p>
-
-          {progress.status !== 'preparing' && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">{progress.message}</p>
-              {progress.progress !== undefined && (
-                <Progress value={progress.progress} />
-              )}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={progress.status === 'exporting'}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleExport}
-              disabled={
-                progress.status === 'exporting' ||
-                progress.status === 'complete'
-              }
-            >
-              {progress.status === 'exporting' ? 'Exporting...' : 'Export'}
-            </Button>
+      <div className="space-y-4">
+        {progress.status !== 'preparing' && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{progress.message}</p>
+            {progress.progress !== undefined && (
+              <Progress value={progress.progress} />
+            )}
           </div>
+        )}
+
+        {warnings.length > 0 && (
+          <div role="alert" className="space-y-2 text-sm">
+            <p className="font-medium">Export warnings</p>
+            <ul className="list-disc space-y-1 pl-5">
+              {warnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={progress.status === 'exporting'}
+          >
+            {progress.status === 'complete' ? 'Close' : 'Cancel'}
+          </Button>
+          <Button
+            onClick={handleExport}
+            disabled={
+              progress.status === 'exporting' || progress.status === 'complete'
+            }
+          >
+            {progress.status === 'exporting' ? 'Exporting...' : 'Export'}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogContent>
   );
 }

@@ -276,3 +276,27 @@ class TestHeadingTrackerConfig:
         finally:
             temp_path.unlink()
             del os.environ["STARLINK_HEADING_TRACKER_MIN_DISTANCE_METERS"]
+
+
+@pytest.mark.parametrize(
+    "value, expected", [("true", True), ("false", False), ("1", True), ("0", False)]
+)
+def test_customer_briefing_trial_top_level_env_override(
+    monkeypatch, tmp_path, value, expected
+):
+    monkeypatch.setenv("STARLINK_CUSTOMER_BRIEFING_TRIAL_ENABLED", value)
+    data = {"customer_briefing_trial_enabled": not expected}
+    path = tmp_path / "config.yaml"
+    path.write_text(yaml.safe_dump(data))
+    assert (
+        ConfigManager.load_from_dict(data).customer_briefing_trial_enabled is expected
+    )
+    assert (
+        ConfigManager.load_from_file(path).customer_briefing_trial_enabled is expected
+    )
+
+
+def test_customer_briefing_trial_defaults_disabled(monkeypatch):
+    monkeypatch.delenv("STARLINK_CUSTOMER_BRIEFING_TRIAL_ENABLED", raising=False)
+    assert SimulationConfig().customer_briefing_trial_enabled is False
+    assert ConfigManager.load_from_dict({}).customer_briefing_trial_enabled is False

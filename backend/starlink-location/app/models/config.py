@@ -167,6 +167,10 @@ class HeadingTrackerConfig(BaseModel):
 class SimulationConfig(BaseModel):
     """Main simulation configuration."""
 
+    customer_briefing_trial_enabled: bool = Field(
+        default=False,
+        description="Include the customer briefing trial in mission ZIP exports",
+    )
     mode: Literal["simulation", "live"] = Field(
         default="simulation", description="Operation mode: simulation or live"
     )

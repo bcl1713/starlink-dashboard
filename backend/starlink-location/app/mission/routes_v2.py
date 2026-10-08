@@ -25,6 +25,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 
 from app.core.limiter import limiter
 from app.mission.dependencies import (
@@ -36,7 +37,7 @@ from app.mission.dependencies import (
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.leg_activation import activate_leg_transaction
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
-from app.mission.package import export_mission_package
+from app.mission.package import export_mission_package_result
 from app.mission.storage import (
     delete_mission_timeline,
     get_active_leg_lock,
@@ -498,16 +499,23 @@ async def export_mission(
 ) -> StreamingResponse:
     """Export mission as zip package."""
     try:
-        zip_file = export_mission_package(
+        result = export_mission_package_result(
             mission_id,
             route_manager=route_manager,
             poi_manager=poi_manager,
         )
 
         return StreamingResponse(
-            zip_file,
+            result.stream,
+            background=BackgroundTask(result.stream.close),
             media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{mission_id}.zip"'},
+            headers={
+                "Content-Disposition": f'attachment; filename="{mission_id}.zip"',
+                "X-Mission-Export-Trial-Status": result.trial_status,
+                "X-Mission-Export-Warnings": json.dumps(
+                    result.warnings, ensure_ascii=True
+                ),
+            },
         )
     except (
         RuntimeError,

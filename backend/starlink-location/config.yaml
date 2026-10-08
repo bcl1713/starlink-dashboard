@@ -4,6 +4,10 @@
 # Operation mode: 'simulation' or 'live'
 mode: simulation
 
+# Evaluation-only customer briefing deck in mission ZIP exports (default off).
+# Override with STARLINK_CUSTOMER_BRIEFING_TRIAL_ENABLED.
+customer_briefing_trial_enabled: false
+
 # Update interval for metrics and position updates (seconds)
 update_interval_seconds: 1.0
 

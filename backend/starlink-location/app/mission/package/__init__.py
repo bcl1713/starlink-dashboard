@@ -14,10 +14,14 @@ from __future__ import annotations
 # Public API - re-export main functions
 from app.mission.package.__main__ import (
     ExportPackageError,
+    PackageExportResult,
     export_mission_package,
+    export_mission_package_result,
 )
 
 __all__ = [
     "ExportPackageError",
+    "PackageExportResult",
     "export_mission_package",
+    "export_mission_package_result",
 ]
