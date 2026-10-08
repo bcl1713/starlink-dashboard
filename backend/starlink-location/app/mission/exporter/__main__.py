@@ -47,6 +47,7 @@ from app.mission.exporter.formatting import (
     humanize_metric_name,
     mission_start_timestamp,
 )
+from app.mission.exporter.plot_ownership import serialized_plot
 from app.mission.exporter.pptx_styling import (
     add_footer_bar,
     add_header_bar,
@@ -382,6 +383,7 @@ def _export_kwargs(export_snapshot):
     return {"export_snapshot": export_snapshot} if export_snapshot is not None else {}
 
 
+@serialized_plot
 def _generate_route_map(
     timeline: MissionLegTimeline,
     mission: Mission | None = None,
@@ -1129,12 +1131,13 @@ def _generate_route_map(
 
     # Save to PNG bytes
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", dpi=dpi, bbox_inches="tight", pad_inches=0)
+    fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
     buf.seek(0)
     return buf.read()
 
 
+@serialized_plot
 def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     """Generate a PNG image of a horizontal bar chart showing transport timeline.
 
@@ -1290,7 +1293,7 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     ax.spines["bottom"].set_color("#bdc3c7")
 
     # Adjust layout
-    plt.tight_layout()
+    fig.tight_layout()
 
     # Save to buffer with high quality
     buffer = io.BytesIO()
@@ -1778,6 +1781,7 @@ def generate_pptx_export(
     return buffer.read()
 
 
+@serialized_plot
 def _base_map_canvas() -> bytes:
     """Generate a blank 4K map canvas with no route or markers."""
     width_inches = 3840 / 300
@@ -1799,7 +1803,7 @@ def _base_map_canvas() -> bytes:
     ax.set_yticks([])
 
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", dpi=300, bbox_inches="tight", pad_inches=0)
+    fig.savefig(buf, format="png", dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
     buf.seek(0)
     return buf.read()

@@ -163,7 +163,8 @@ def verify_pdf_layout(layout_xml: str, expectations: dict, fonts: str) -> dict:
     inspection = {
         p["page"]: rectangle(p.get("tableInspectionBoundsPt") or p["tableBodyBoundsPt"])
         for p in expectations["pages"]
-        if p.get("tableBodyBoundsPt") is not None
+        if p.get("tableInspectionBoundsPt") is not None
+        or p.get("tableBodyBoundsPt") is not None
     }
     for number, box in inspection.items():
         for index, (_, bounds) in enumerate(page_words[number]):

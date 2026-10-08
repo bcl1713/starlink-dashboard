@@ -19,6 +19,7 @@ from app.mission.exporter import (
     generate_timeline_export,
 )
 from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
+from app.mission.exporter.plot_ownership import export_plot_context
 from app.mission.exporter.snapshot_views import SnapshotViews
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TimelineStatus
 from app.mission.storage import (
@@ -824,6 +825,7 @@ def _create_export_manifest(mission: Mission, manifest_files: dict) -> dict:
     }
 
 
+@export_plot_context
 def export_mission_package(
     mission_id: str,
     route_manager: RouteManager,

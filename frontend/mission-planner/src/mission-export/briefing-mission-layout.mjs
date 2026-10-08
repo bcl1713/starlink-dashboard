@@ -147,6 +147,8 @@ async function measurePages(page, budget) {
           }
         const rows = [...element.querySelectorAll('[data-row-id]')];
         const body = rows.length ? box(element.querySelector('tbody')) : null;
+        const table = box(element.querySelector('table'));
+        const header = box(element.querySelector('thead'));
         return {
           page: index + 1,
           legId: element.dataset.legId,
@@ -158,14 +160,12 @@ async function measurePages(page, budget) {
           labels,
           pdfMeasured: {
             tableBodyBoundsPx: body,
-            tableInspectionBoundsPx: body
-              ? [
-                  body[0],
-                  body[1],
-                  body[2],
-                  box(element.querySelector('footer'))[1],
-                ]
-              : null,
+            tableInspectionBoundsPx: [
+              table[0],
+              body ? body[1] : header[3],
+              table[2],
+              box(element.querySelector('footer'))[1],
+            ],
             rows: rows.map((r) => ({
               id: r.dataset.rowId,
               cellBoundsPx: [...r.cells].map(box),

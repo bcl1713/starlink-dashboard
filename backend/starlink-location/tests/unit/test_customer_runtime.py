@@ -2,6 +2,8 @@
 
 import importlib
 import json
+import os
+import signal
 import sys
 import threading
 from hashlib import sha256
@@ -147,6 +149,75 @@ def test_cancelled_real_renderer_is_reaped_and_no_pair_is_returned(tmp_path):
         timer.join()
     owner = json.loads((tmp_path / "python-owner.json").read_text())
     assert owner["reaped"] is True and owner["cleanup"]["survivors"] == []
+
+
+def test_exited_root_recovered_browser_tree_is_cleaned(monkeypatch, tmp_path):
+    module = implementation()
+    browser = tmp_path / "browser.py"
+    browser.write_text("""import json, os, subprocess, sys, time
+from pathlib import Path
+root=Path(sys.argv[1])
+worker=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'],start_new_session=True)
+def start(pid):return Path(f'/proc/{pid}/stat').read_text().split(') ')[1].split()[19]
+(root/'grandchild.json').write_text(json.dumps({'pid':worker.pid,'start':start(worker.pid)}))
+time.sleep(60)
+""")
+    script = tmp_path / "root.py"
+    script.write_text("""import json, os, subprocess, sys, time
+from pathlib import Path
+root=Path(sys.argv[1])
+browser=subprocess.Popen([sys.executable,str(root/'browser.py'),str(root)],start_new_session=True)
+def start(pid):return Path(f'/proc/{pid}/stat').read_text().split(') ')[1].split()[19]
+(root/'ownership.json').write_text(json.dumps({'pid':os.getpid(),'start':start(os.getpid()),'browserPid':browser.pid,'browserStart':start(browser.pid),'workers':[]}))
+while not (root/'grandchild.json').exists():time.sleep(.01)
+""")
+    original = module._collect
+
+    def after_exit(child, staging, records):
+        if child.poll() is not None:
+            original(child, staging, records)
+
+    monkeypatch.setattr(module, "_collect", after_exit)
+    try:
+        module.run_owned_renderer(
+            [sys.executable, str(script), str(tmp_path)],
+            tmp_path,
+            cancel=threading.Event(),
+            wall_seconds=3,
+            kill_grace_seconds=0.2,
+        )
+        grandchild = json.loads((tmp_path / "grandchild.json").read_text())
+        assert not module._alive(
+            grandchild
+        ), "detached browser descendant survived successful cleanup"
+    finally:
+        # Keep a failing regression from leaving its verified owned processes alive.
+        for name in ("grandchild.json", "ownership.json"):
+            if (tmp_path / name).exists():
+                value = json.loads((tmp_path / name).read_text())
+                record = (
+                    value
+                    if name == "grandchild.json"
+                    else {"pid": value["browserPid"], "start": value["browserStart"]}
+                )
+                if module._alive(record):
+                    os.kill(record["pid"], signal.SIGKILL)
+
+
+def test_replaced_root_pid_never_discovers_unrelated_children(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    module = implementation()
+    current = module._process_record(os.getpid())
+    stale = current | {"start": "expired-kernel-start"}
+
+    def unrelated_process(pid):
+        pytest.fail("A reused PID must not be traversed as an owned root")
+
+    monkeypatch.setattr(module.psutil, "Process", unrelated_process)
+    records = {(stale["pid"], stale["start"]): stale}
+    module._collect(SimpleNamespace(pid=current["pid"]), tmp_path, records)
+    assert list(records.values()) == [stale]
 
 
 def test_blocked_cleanup_retains_ownership_evidence_without_publishing_pair(

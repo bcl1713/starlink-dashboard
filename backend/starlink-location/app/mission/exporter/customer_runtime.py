@@ -83,13 +83,24 @@ def _alive(record):
 
 
 def _collect(child, staging, records):
-    try:
-        for process in psutil.Process(child.pid).children(recursive=True):
-            record = _process_record(process.pid)
-            if record:
-                records[(record["pid"], record["start"])] = record
-    except psutil.Error:
-        pass
+    def descendants(root):
+        if not _alive(root):
+            return
+        try:
+            process = psutil.Process(root["pid"])
+            # Recheck identity after opening the process handle, before traversal.
+            if not _alive(root):
+                return
+            for descendant in process.children(recursive=True):
+                record = _process_record(descendant.pid)
+                if record:
+                    records[(record["pid"], record["start"])] = record
+        except psutil.Error:
+            pass
+
+    # Previously recorded descendants can outlive and be reparented from Node.
+    for record in list(records.values()):
+        descendants(record)
     try:
         owner = json.loads((Path(staging) / "ownership.json").read_text())
     except (OSError, ValueError):
@@ -107,6 +118,7 @@ def _collect(child, staging, records):
         record = _process_record(pid)
         if record and record["start"] == start:
             records[(pid, start)] = record
+            descendants(record)
 
 
 def _signal_record(record, sig):

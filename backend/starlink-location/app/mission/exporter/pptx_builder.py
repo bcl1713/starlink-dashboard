@@ -23,6 +23,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
+from app.mission.exporter.export_cancel import ExportCancelled
 from app.mission.exporter.formatting import mission_start_timestamp
 from app.mission.exporter.pptx_styling import (
     STATUS_CRITICAL,
@@ -249,6 +250,8 @@ def add_route_map_slide(
             # Store in cache if available
             if map_cache_key and map_cache is not None:
                 map_cache[map_cache_key] = map_image_bytes
+        except ExportCancelled:
+            raise
         except (
             RuntimeError,
             ValueError,

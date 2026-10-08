@@ -147,6 +147,27 @@ def test_duplicate_appended_below_measured_body_is_rejected():
         )
 
 
+@pytest.mark.parametrize("mixed", [False, True])
+def test_empty_leg_rejects_unassigned_coordination_words(mixed):
+    expected = expectations()
+    tree = ET.fromstring(xml())
+    if mixed:
+        expected["pageCount"] = 2
+        empty_page = deepcopy(tree.find(".//page"))
+        tree.find("body").append(empty_page)
+        expected["pages"].append({"page": 2})
+    else:
+        expected["rows"] = []
+        empty_page = tree.find(".//page")
+    expected["pages"][-1].update(
+        tableBodyBoundsPt=None, tableInspectionBoundsPt=[10, 40, 950, 300]
+    )
+    with pytest.raises(ValueError, match="unassigned"):
+        verifier().verify_pdf_layout(
+            ET.tostring(tree, encoding="unicode"), expected, FONTS
+        )
+
+
 def test_wrapped_cells_use_geometric_reading_order_and_nfc():
     expected = expectations()
     expected["rows"][0]["displayCells"][1] = "Café coordination"
