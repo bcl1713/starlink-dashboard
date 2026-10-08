@@ -19,7 +19,7 @@ export function renderTimeline(payload) {
     end = Date.parse(payload.flight.endUtc);
   if (!Number.isFinite(start) || end <= start)
     throw new Error('Invalid flight bounds');
-  const x = (t) => 220 + ((Date.parse(t) - start) / (end - start)) * 960;
+  const x = (t) => 280 + ((Date.parse(t) - start) / (end - start)) * 960;
   const width = (i) =>
     ((Date.parse(i.endUtc) - Date.parse(i.startUtc)) / (end - start)) * 960;
   const text = (a, b, s, extra = '') =>
@@ -27,7 +27,7 @@ export function renderTimeline(payload) {
   const rect = (i, y, h, color, extra = '') =>
     `<rect x="${x(i.startUtc)}" y="${y}" ${extra} width="${width(i)}" height="${h}" fill="${color}"/>`;
   let out =
-    '<svg class="timeline" viewBox="0 0 1180 218" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>';
+    '<svg class="timeline" viewBox="0 0 1240 218" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>';
   out += text(0, 64, 'Overall posture', 'class="hero-label"');
   for (const i of payload.intervals) {
     const w = width(i),
@@ -87,7 +87,7 @@ export function renderTimeline(payload) {
     }
   });
   out += text(0, 188, 'SOF / AR', 'class="lane-label"');
-  out += '<rect x="220" y="174" width="960" height="18" fill="#edf1f5"/>';
+  out += '<rect x="280" y="174" width="960" height="18" fill="#edf1f5"/>';
   // Join identical restriction segments, but never their quiet gaps.
   const restrictions = [];
   for (const i of payload.intervals) {
@@ -116,7 +116,7 @@ export function renderTimeline(payload) {
   });
   for (let h = 0; h <= 8; h++) {
     const t = start + ((end - start) * h) / 8;
-    const px = 220 + (960 * h) / 8;
+    const px = 280 + (960 * h) / 8;
     out +=
       `<path d="M${px} 196v5" stroke="#83909e"/>` +
       text(

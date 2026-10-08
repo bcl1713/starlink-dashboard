@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:mission-export": "vite build --config vite.mission-export.config.ts",
     "lint": "eslint .",
     "test:unit": "NODE_ENV=test vitest run",
     "preview": "vite preview"

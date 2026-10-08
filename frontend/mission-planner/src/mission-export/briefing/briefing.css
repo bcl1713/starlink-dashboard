@@ -19,7 +19,7 @@ body {
   padding: 20px 26px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   background: #f8fafc;
   break-after: avoid;
 }
@@ -30,7 +30,7 @@ header {
   background: #122a44;
   color: #fff;
   margin: -20px -26px 0;
-  padding: 14px 26px 15px;
+  padding: 10px 26px 10px;
   border-bottom: 4px solid #c8a052;
 }
 .header-copy {
@@ -144,7 +144,7 @@ h1 {
 }
 .details {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 266px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 18px;
   flex: 1;
   min-height: 0;
@@ -176,13 +176,13 @@ table {
   width: 16%;
 }
 .impact-col {
-  width: 30%;
+  width: 35%;
 }
 .remain-col {
-  width: 29%;
+  width: 28%;
 }
 .posture-col {
-  width: 25%;
+  width: 21%;
 }
 th {
   font-size: 14pt;
@@ -191,7 +191,7 @@ th {
 }
 td,
 th {
-  padding: 6px 8px;
+  padding: 3px 8px;
   vertical-align: middle;
   border-bottom: 1px solid #d7dfe7;
 }
@@ -216,7 +216,7 @@ tbody tr:nth-child(even) {
 }
 .map-card img {
   width: 100%;
-  height: 238px;
+  height: auto;
   object-fit: contain;
   background: #102336;
   display: block;
@@ -231,4 +231,16 @@ footer {
   border-top: 1px solid #cbd5df;
   padding-top: 6px;
   color: #485c71;
+}
+
+.table-card {
+  min-height: 0;
+}
+
+.row-number {
+  display: inline-block;
+  font-size: 10pt;
+  min-width: 16px;
+  margin-right: 5px;
+  color: #526678;
 }

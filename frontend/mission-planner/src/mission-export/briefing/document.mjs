@@ -21,8 +21,8 @@ export function composeBriefing(
     );
   const rows = payload.rows
     .map(
-      (r) =>
-        `<tr data-row-id="${e(r.id)}" data-fit><td class="et">${e(r.et.replaceAll(' ET', ''))}</td><td>${short(r.impact)}</td><td>${short(r.remaining)}</td><td class="posture-cell">${e(r.posture)}</td></tr>`
+      (r, n) =>
+        `<tr data-row-id="${e(r.id)}" data-fit><td class="et">${e(r.et.replaceAll(' ET', ''))}</td><td><span class="row-number">${n + 1}</span>${short(r.impact)}</td><td>${short(r.remaining)}</td><td class="posture-cell">${e({ 'Limited / elevated risk': 'Elevated risk', 'Communications unavailable': 'Unavailable', 'Assessment incomplete': 'Incomplete' }[r.posture] || r.posture)}</td></tr>`
     )
     .join('');
   const map = mapDataUrl
