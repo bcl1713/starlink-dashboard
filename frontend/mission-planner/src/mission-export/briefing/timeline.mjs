@@ -26,8 +26,11 @@ export function renderTimeline(payload) {
     `<text x="${a}" y="${b}" ${extra}>${escapeText(s)}</text>`;
   const rect = (i, y, h, color, extra = '') =>
     `<rect x="${x(i.startUtc)}" y="${y}" ${extra} width="${width(i)}" height="${h}" fill="${color}"/>`;
-  let out =
-    '<svg class="timeline" viewBox="0 0 1240 218" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>';
+  const uncertain = payload.intervals.every(
+    (i) => i.posture === 'Posture uncertain'
+  );
+  let out = `<svg class="timeline ${uncertain ? 'uncertain-timeline' : ''}" viewBox="0 ${uncertain ? 24 : 0} 1240 ${uncertain ? 194 : 218}" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>`;
+
   out += text(0, 64, 'Overall posture', 'class="hero-label"');
   for (const i of payload.intervals) {
     const w = width(i),

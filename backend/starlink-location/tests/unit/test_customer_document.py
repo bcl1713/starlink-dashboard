@@ -10,6 +10,7 @@ from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
 from app.mission.exporter.trial_projection import project_trial_leg
+
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 

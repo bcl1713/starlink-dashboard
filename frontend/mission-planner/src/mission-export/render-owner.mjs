@@ -102,8 +102,8 @@ export async function openRenderOwner({
       );
       contexts.add(context);
       ownership.contexts.push(ownership.contexts.length + 1);
-      await persist();
       context.once('close', () => contexts.delete(context));
+      await persist();
       return context;
     },
     close() {
@@ -169,8 +169,12 @@ export async function openRenderOwner({
         for (const info of owned) {
           if (await alive(info)) survivors.push(info.pid);
         }
+        const browserExited =
+          !child || child.exitCode !== null || child.signalCode !== null;
+        if (browserExited) contexts.clear();
         const cleanup = {
-          contextsClosed: contextsClosed && contexts.size === 0,
+          contextsClosed:
+            (contextsClosed && contexts.size === 0) || browserExited,
           browserExited:
             !child || child.exitCode !== null || child.signalCode !== null,
           listenerClosed,

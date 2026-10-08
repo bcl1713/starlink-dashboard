@@ -24,7 +24,13 @@ const HALO = {
   maxWorldWidth: 0.05,
   opacity: 1,
 };
-type Label = { text: string; x: number; y: number };
+type Label = {
+  text: string;
+  x: number;
+  y: number;
+  anchorX?: number;
+  anchorY?: number;
+};
 function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
   const candidates = [
     {
@@ -40,14 +46,17 @@ function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
     const x = ((p.x + 1) * MAP_WIDTH) / 2,
       y = ((1 - p.y) * MAP_HEIGHT) / 2;
     const width = text.length * 48 + 48;
-    const candidate = [
-      [0, -100],
-      [0, 100],
-      [width, 0],
-      [-width, 0],
-      [0, -200],
-      [0, 200],
-    ]
+    const offsets = [
+      [0, -112],
+      [0, 112],
+    ];
+    for (let ring = 1; ring <= 4; ring++) {
+      for (const dy of [0, -112 * ring, 112 * ring]) {
+        offsets.push([width * ring, dy], [-width * ring, dy]);
+      }
+      offsets.push([0, -112 * ring], [0, 112 * ring]);
+    }
+    const candidate = offsets
       .map(([dx, dy]) => ({ text, x: x + dx, y: y + dy }))
       .find(
         (l) =>
@@ -64,7 +73,7 @@ function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
       );
     if (!candidate)
       throw new Error('Projected labels cannot fit without overlap');
-    labels.push(candidate);
+    labels.push({ ...candidate, anchorX: x, anchorY: y });
   }
   return labels;
 }
@@ -231,6 +240,23 @@ export function MissionExportScene({
           <ReadyScene view={view} digest={digest} onLabels={setLabels} />
         </Suspense>
       </Canvas>
+      <svg
+        width={MAP_WIDTH}
+        height={MAP_HEIGHT}
+        style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}
+      >
+        {labels.map((label, i) => (
+          <line
+            key={i}
+            x1={label.anchorX}
+            y1={label.anchorY}
+            x2={label.x}
+            y2={label.y}
+            stroke="#f4f4f4"
+            strokeWidth={4}
+          />
+        ))}
+      </svg>
       {labels.map((label, i) => (
         <div
           key={i}
