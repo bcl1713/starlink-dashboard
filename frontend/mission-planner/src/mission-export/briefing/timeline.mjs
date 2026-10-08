@@ -26,9 +26,16 @@ export function renderTimeline(payload) {
     `<text x="${a}" y="${b}" ${extra}>${escapeText(s)}</text>`;
   const rect = (i, y, h, color, extra = '') =>
     `<rect x="${x(i.startUtc)}" y="${y}" ${extra} width="${width(i)}" height="${h}" fill="${color}"/>`;
-  const narrowUnknown = payload.intervals.filter(
-    (i) => i.posture === 'Posture uncertain' && width(i) < 90
-  );
+  const unknownGroups = [];
+  for (const i of payload.intervals) {
+    if (i.posture !== 'Posture uncertain') continue;
+    const count = i.decisions.filter((v) => v === 'Up').length;
+    const last = unknownGroups.at(-1);
+    if (last && last.endUtc === i.startUtc && last.count === count)
+      last.endUtc = i.endUtc;
+    else unknownGroups.push({ ...i, count });
+  }
+  const narrowUnknown = unknownGroups.filter((i) => width(i) < 90);
   let out = `<svg class="timeline" viewBox="0 0 1240 218" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>`;
 
   out += text(0, 64, 'Overall posture', 'class="hero-label"');
@@ -51,6 +58,7 @@ export function renderTimeline(payload) {
           'Limited / elevated risk': '1-Up',
           'Communications unavailable': '0-Up',
         }[i.posture] || i.posture;
+    if (uncertain) continue;
     if (w >= 90)
       out += text(
         px + w / 2,
@@ -67,6 +75,14 @@ export function renderTimeline(payload) {
           '0-Up · 5 min',
           'class="outage-callout" data-callout data-svg-label'
         );
+  }
+  for (const i of unknownGroups.filter((i) => width(i) >= 90)) {
+    out += text(
+      x(i.startUtc) + width(i) / 2,
+      65,
+      `${i.count} confirmed`,
+      'text-anchor="middle" class="band-label" data-svg-label'
+    );
   }
   if (narrowUnknown.length) {
     const center =

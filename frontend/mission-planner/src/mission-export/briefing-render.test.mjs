@@ -20,6 +20,10 @@ export function registerDocumentTests({ run, clean, root, assetRoot }) {
     assert.equal(r.status, 'success', JSON.stringify(r));
     assert.equal(r.fit.noticeCount, 1);
     assert.equal(
+      r.fit.labels.filter((l) => l.text === '2 confirmed').length,
+      2
+    );
+    assert.equal(
       r.fit.labels.filter((l) => l.text === '1 confirmed').length,
       2
     );
