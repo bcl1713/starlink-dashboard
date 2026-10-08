@@ -1,8 +1,8 @@
 # Customer briefing HTML-to-PDF trial
 
-Status: architecture direction selected by the user; written spec awaiting
-review. Implementation planning follows written-spec approval. Product code and
-rendering work have not started on this branch.
+Status: written spec re-reviewed with no further changes requested on #312.
+Checkpoint-only implementation plan awaits review and execution selection.
+Product code and rendering work have not started on this branch.
 
 ## Purpose and authority
 
