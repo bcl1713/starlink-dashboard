@@ -1,10 +1,11 @@
 # Draft customer mission briefing trial design
 
-Add an automatic second PowerPoint for a recurring customer who reads it before
-a live brief. For each leg, show communications and coordination restrictions,
-their causes, and remaining capability. Evaluate it alongside the existing deck.
+Add a parallel trial deck for recurring customers to read before a live brief.
+Show each leg's communications, restrictions, causes, and remaining capability.
 
-This is a design for review, not an implementation or a replacement decision.
+See the [proposed redesign][redesign] after PR #309 failed customer acceptance.
+
+[redesign]: 2026-10-08-customer-briefing-composition-redesign.md
 
 ## Customer requirements
 
@@ -49,8 +50,8 @@ downloads remain legacy; separate trial files for each leg are out of scope.
 A feature flag enables the deployed trial for evaluation. Disabling it restores
 the original file set without migration. Customers need no extra export steps.
 
-[Phase two](2026-10-07-mission-slide-background-generation-design.md)
-After deck validation, it generates on save and assembles caches on export.
+[Phase two](2026-10-07-mission-slide-background-generation-design.md) After deck
+validation, it generates on save and assembles caches on export.
 
 Both builders share immutable metadata, ordered legs, routes, and timelines.
 Preserve rebuild/cache behavior and label incomplete trial data. Export never
@@ -276,9 +277,9 @@ Use synthetic fixtures plus suitable existing missions. Verify:
    and outages without losing separate causes.
 6. Graphics cover the full leg without gaps; table rows are a non-overlapping
    filtered projection with exact interval boundaries/IDs. Test long quiet legs,
-   standard SOF, nested Ka/X outages, AR overlaps, and uncertain usability.
-   Omit quiet rows without losing relevant windows, causes, or remaining
-   capability. Unsplit source records stay in the appendix.
+   standard SOF, nested Ka/X outages, AR overlaps, and uncertain usability. Omit
+   quiet rows without losing relevant windows, causes, or remaining capability.
+   Unsplit source records stay in the appendix.
 7. Check ET, Zulu, and relative times across midnight, DST, adjusted departures,
    AR overrides, and multiple legs. Dates and EST/EDT disambiguate times.
 8. Maps automatically fit short, long, polar, and dateline routes. Failed
