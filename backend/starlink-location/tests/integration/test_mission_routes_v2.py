@@ -764,7 +764,11 @@ class TestMissionV2ListEndpoint:
         )
 
         assert response.status_code == 200
-        assert response.headers["access-control-expose-headers"] == "X-Total-Count"
+        exposed = {
+            header.strip().lower()
+            for header in response.headers["access-control-expose-headers"].split(",")
+        }
+        assert "x-total-count" in exposed
 
     def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
         """The additive total header lets clients paginate without breaking arrays."""

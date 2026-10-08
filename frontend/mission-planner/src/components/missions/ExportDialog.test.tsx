@@ -24,11 +24,11 @@ beforeEach(() => {
       static revokeObjectURL = vi.fn();
     }
   );
-  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
-    function (this: HTMLAnchorElement) {
-      downloads.push(this.download);
-    }
-  );
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+    this: HTMLAnchorElement
+  ) {
+    downloads.push(this.download);
+  });
 });
 afterEach(() => {
   cleanup();
@@ -94,4 +94,24 @@ it('resets completed state and old warnings when reopened', async () => {
   view.rerender(<ExportDialog open {...props} />);
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Export' })).toBeEnabled();
+});
+
+it('preserves normal completion and automatic dismissal for a warning-free download', async () => {
+  vi.spyOn(apiClient, 'post').mockResolvedValue({
+    data: new Blob(['zip']),
+    headers: {},
+  });
+  vi.useFakeTimers();
+  const onClose = vi.fn();
+  mount(onClose);
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+  });
+  expect(downloads).toEqual(['m.zip']);
+  expect(screen.getByText('Export complete!')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2000);
+  });
+  expect(onClose).toHaveBeenCalledOnce();
 });
