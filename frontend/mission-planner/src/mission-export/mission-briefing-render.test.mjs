@@ -22,11 +22,23 @@ async function scenario(fault = null) {
     closes = 0;
   const seen = [],
     budget = createRenderBudget({ clock: () => clock });
+  const observed = [];
+  const observe = async (name) => {
+    if (fault !== 'observe-stage') return;
+    const record = JSON.parse(
+      await readFile(path.join(outputRoot, 'stage-progress.json'), 'utf8')
+    );
+    assert.equal(record.stage, name);
+    assert.equal(record.pid, process.pid);
+    assert.equal(record.completed, false);
+    observed.push(name);
+  };
   let closed;
   const owner = {
     browserIdentity: { version: 'test' },
     close: () =>
       (closed ??= (async () => {
+        await observe('teardown');
         closes++;
         clock += 100;
         if (fault === 'cleanup-error')
@@ -47,16 +59,19 @@ async function scenario(fault = null) {
   const dependencies = {
     createBudget: () => budget,
     openOwner: async ({ budget: actual }) => {
+      await observe('startup');
       seen.push(actual);
       launches++;
       return owner;
     },
     mapStage: async ({ budget: actual, input }) => {
+      await observe('map:l' + input.id);
       seen.push(actual);
       clock += fault === 'map-cutoff' ? 15000 : 1000;
       return { status: 'primary', pngs: ['map'], warnings: [] };
     },
     documentStage: async ({ budget: actual }) => {
+      await observe('document');
       seen.push(actual);
       if (fault === 'cancel-pagination') process.emit('SIGTERM');
       if (fault === 'pagination')
@@ -69,11 +84,13 @@ async function scenario(fault = null) {
       };
     },
     printStage: async ({ budget: actual }) => {
+      await observe('pdf');
       seen.push(actual);
       clock += 1000;
       return Buffer.from('pdf');
     },
     verifyStage: async ({ budget: actual }) => {
+      await observe('verify');
       seen.push(actual);
       actual.workRemainingMs();
       if (fault === 'verify-deadline') {
@@ -93,6 +110,7 @@ async function scenario(fault = null) {
       closes,
       seen,
       budget,
+      observed,
       pdf: await readFile(
         path.join(outputRoot, 'mission-customer-briefing-trial.pdf')
       ).catch(() => null),
@@ -118,6 +136,22 @@ test('shared map reserve skips later legs instead of refreshing allowance', asyn
   assert.equal(s.report.maps.l3.status, 'unavailable');
   assert.deepEqual(s.report.maps.l3.inputDiagnostics, ['input-3']);
   assert.match(s.report.maps.l3.warnings.join(), /reserve/);
+});
+test('private phase evidence identifies actual active work before observation or cancellation', async () => {
+  const s = await scenario('observe-stage');
+  assert.equal(s.report.status, 'success');
+  assert.deepEqual(s.observed, [
+    'startup',
+    'map:l0',
+    'map:l1',
+    'map:l2',
+    'map:l3',
+    'map:l4',
+    'document',
+    'pdf',
+    'verify',
+    'teardown',
+  ]);
 });
 for (const [fault, code] of [
   ['pagination', 'overflow'],

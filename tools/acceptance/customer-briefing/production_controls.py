@@ -30,7 +30,9 @@ def inspect_download(content, headers, expected_status):
     headers = {key.lower(): value for key, value in headers.items()}
     status = headers.get("x-customer-briefing-status")
     if status != (None if expected_status == "disabled" else expected_status):
-        raise ValueError("Unexpected customer briefing response status")
+        raise ValueError(
+            f"Unexpected customer briefing response status: expected={expected_status}, actual={status}, warning={headers.get('x-customer-briefing-warning')}"
+        )
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         names = archive.namelist()
         manifest = json.loads(archive.read("manifest.json"))
@@ -253,11 +255,14 @@ def qualify(owner):
         content, headers, elapsed = api.request(
             "POST", f"/api/v2/missions/{mission}/export"
         )
-        report = inspect_download(content, headers, status)
-        report.update(case=case, attempt=label, proxyTotalSeconds=elapsed)
         destination = owner.root / "downloads" / label
         destination.mkdir(parents=True)
         (destination / "download.zip").write_bytes(content)
+        (destination / "response.json").write_text(
+            json.dumps({"headers": headers, "proxyTotalSeconds": elapsed}, indent=2)
+        )
+        report = inspect_download(content, headers, status)
+        report.update(case=case, attempt=label, proxyTotalSeconds=elapsed)
         if status == "included":
             report["actualPdfInspection"] = pdf_inspection(destination, label)
         (destination / "inspection.json").write_text(json.dumps(report, indent=2))
@@ -281,6 +286,25 @@ def qualify(owner):
     # Nginx resolves upstream addresses at startup; recreate its real image too.
     owner.compose(
         "up", "-d", "--force-recreate", "--no-deps", "mission-planner", timeout=60
+    )
+    observer = "/tmp/briefing-production-observer.py"
+    copy_to_backend(tools / "production_observer.py", observer)
+    owner.ownership["observer"] = {
+        "service": "starlink-location",
+        "script": observer,
+        "output": "/tmp/briefing-production-observations",
+    }
+    owner.persist()
+    owner.compose(
+        "exec",
+        "-d",
+        "-T",
+        "--user",
+        "appuser",
+        "starlink-location",
+        "python",
+        observer,
+        timeout=30,
     )
     for case in fixtures:
         download(case, "omitted" if case == "over-budget" else "included")

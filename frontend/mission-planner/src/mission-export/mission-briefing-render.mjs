@@ -69,12 +69,30 @@ export async function renderMissionBriefing(
   const stage = async (name, fn) => {
     const startMs = budget.elapsedMs();
     try {
+      await writeFile(
+        ownedPath(outputRoot, 'stage-progress.json'),
+        JSON.stringify({
+          stage: name,
+          pid: process.pid,
+          startMs,
+          completed: false,
+        })
+      );
       return await fn();
     } finally {
       report.stages[name] = {
         startMs,
         durationMs: budget.elapsedMs() - startMs,
       };
+      await writeFile(
+        ownedPath(outputRoot, 'stage-progress.json'),
+        JSON.stringify({
+          stage: name,
+          pid: process.pid,
+          ...report.stages[name],
+          completed: true,
+        })
+      );
     }
   };
   const stop = () => {

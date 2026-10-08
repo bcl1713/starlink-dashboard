@@ -308,6 +308,50 @@ def run_production(candidate_sha, evidence_root, images_only=False):
         return summary
     finally:
         try:
+            # Logs remain private evidence even when a production control fails.
+            owner.cleaning = True
+            try:
+                owner.compose("logs", "--no-color", timeout=30)
+            except (RuntimeError, OSError, TimeoutError):
+                pass
+            if observer := owner.ownership.get("observer"):
+                try:
+                    owner.compose(
+                        "exec",
+                        "-T",
+                        "--user",
+                        "appuser",
+                        "starlink-location",
+                        "python",
+                        "-c",
+                        """import json,os,signal,time
+from pathlib import Path
+p=Path('/tmp/briefing-production-observations/observer-owner.json')
+r=json.loads(p.read_text()); stat=Path(f'/proc/{r["pid"]}/stat')
+def alive():
+ try:
+  fields=stat.read_text().split(') ')[1].split()
+  return fields[19]==r['start'] and fields[0]!='Z'
+ except OSError:return False
+if alive():os.kill(r['pid'],signal.SIGTERM)
+deadline=time.monotonic()+2
+while alive() and time.monotonic()<deadline:time.sleep(.01)
+if alive():os.kill(r['pid'],signal.SIGKILL)
+print(json.dumps({'observerStopped':not alive()}))
+""",
+                        timeout=10,
+                    )
+                    observations = owner.root / "runtime-observations"
+                    observations.mkdir()
+                    owner.compose(
+                        "cp",
+                        f"starlink-location:{observer['output']}/.",
+                        str(observations),
+                        timeout=30,
+                    )
+                except (RuntimeError, OSError, ValueError, TimeoutError) as error:
+                    summary["observerError"] = str(error)
+                    summary["checksPassed"] = False
             summary["cleanup"] = owner.close()
         finally:
             for number, handler in previous.items():
