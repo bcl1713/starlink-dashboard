@@ -35,6 +35,16 @@ test('no map reclaims grid', async () => {
   assert.match(html, /without-map/);
   assert.doesNotMatch(html, /class="map-card"/);
 });
+test('a fitting mission primary preserves the accepted checkpoint page', async () => {
+  const compose = await composer();
+  const withMap = { ...assets, mapDataUrl: 'data:image/png;base64,AA==' };
+  assert.equal(
+    compose(payload, withMap, {
+      kind: 'primary', legPage: 1, legPageCount: 1, continued: false,
+    }),
+    compose(payload, withMap)
+  );
+});
 test('renders four canonical display cells as escaped customer text', async () => {
   const p = structuredClone(payload);
   p.rows = [
