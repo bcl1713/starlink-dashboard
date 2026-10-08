@@ -1,0 +1,331 @@
+{
+  "schema": 1,
+  "task": "5",
+  "status": "pass",
+  "sourceRevision": "96ba48b78d5941e77891a296f7a2365e3eda429f",
+  "baseRevision": "d61322d0f4240d4c8b5a84d822b567958437b4c5",
+  "scope": "Task 5 only; Task 6, production-path/browser acceptance, whole-branch review and customer promotion remain pending.",
+  "flag": {
+    "field": "SimulationConfig.customer_briefing_trial_enabled",
+    "environment": "STARLINK_CUSTOMER_BRIEFING_TRIAL_ENABLED",
+    "default": false,
+    "capture": "once before snapshot/legacy work"
+  },
+  "contract": {
+    "trialPath": "exports/mission/mission-customer-briefing-trial.pptx",
+    "label": "Customer briefing \u2014 Trial",
+    "statuses": ["disabled", "included", "failed"],
+    "legacyBuiltFirst": true,
+    "completeBytesValidatedBeforeInclusion": true,
+    "disabledManifestUnchanged": true,
+    "compatibilityWrappers": [
+      "export_mission_package",
+      "exportImportApi.exportMission"
+    ],
+    "headers": ["X-Mission-Export-Trial-Status", "X-Mission-Export-Warnings"],
+    "corsExposed": true,
+    "warningBound": "At most three fixed summaries (less than 2048 ASCII JSON bytes); no raw exception/source diagnostics.",
+    "dialog": "Normal download; warning feedback persists until dismissed; warning-free completion retains its two-second dismissal."
+  },
+  "failureInjection": [
+    "projection exception",
+    "map-stage exception",
+    "PPTX exception",
+    "final validation exception",
+    "invalid returned PPTX bytes",
+    "malicious/oversized map diagnostics",
+    "malformed/missing frontend warning header"
+  ],
+  "preservation": [
+    "exact disabled legacy file set",
+    "legacy JSON/CSV content and PPTX XML/media/relationships on fixed inputs",
+    "direct single-leg PPTX",
+    "source JSON/KML/POIs and actual source import",
+    "no export writes to mission storage",
+    "one immutable snapshot"
+  ],
+  "verification": {
+    "focusedBackend": {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "uv",
+        "run",
+        "--with-requirements",
+        "requirements-dev.txt",
+        "pytest",
+        "tests/unit/test_trial_package.py",
+        "tests/unit/test_trial_export_endpoint.py",
+        "tests/unit/test_config.py",
+        "tests/unit/test_export_snapshot.py",
+        "tests/unit/test_package_exporter.py",
+        "tests/unit/test_package_adjusted_export.py",
+        "tests/unit/test_package_export_adjusted_times.py",
+        "tests/unit/test_mission_package_endpoint_pois.py",
+        "tests/unit/test_mission_exporter.py",
+        "tests/unit/test_pptx_builder.py",
+        "tests/unit/test_trial_projection.py",
+        "tests/unit/test_trial_clocks.py",
+        "tests/unit/test_trial_maps.py",
+        "tests/unit/test_trial_pptx.py",
+        "-q",
+        "--basetemp",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/customer-mission-briefing-phase-one/.superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task5-focused-backend-temp"
+      ],
+      "log": "evidence/task5-focused-backend.log",
+      "result": {
+        "passed": 195,
+        "warnings": 5
+      },
+      "exitCode": 0
+    },
+    "canonicalBackend": {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "30m",
+        "env",
+        "PYTEST_ADDOPTS=--basetemp=/home/oracle-worker/Work/starlink-dashboard/.worktrees/customer-mission-briefing-phase-one/.superpowers/sdd/2026-10-07-customer-mission-briefing-phase-one/evidence/task5-canonical-backend-final-temp",
+        "./tools/verify",
+        "backend"
+      ],
+      "log": "evidence/task5-canonical-backend-final.log",
+      "result": {
+        "passed": 2364,
+        "skipped": 20,
+        "warnings": 6,
+        "wallSeconds": 207.28
+      },
+      "exitCode": 0
+    },
+    "frontend": {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "20m",
+        "env",
+        "PATH=/home/oracle-worker/.npm/_npx/5705de4b80ce9477/node_modules/node/bin:/home/oracle-worker/.local/bin:/usr/local/bin:/usr/bin:/bin",
+        "./tools/verify",
+        "frontend"
+      ],
+      "log": "evidence/task5-frontend-final.log",
+      "result": {
+        "files": 178,
+        "passed": 1367,
+        "productionBuild": "passed",
+        "node": "22.22.2"
+      },
+      "exitCode": 0
+    },
+    "missionExportAssetBuild": {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "env",
+        "PATH=/home/oracle-worker/.npm/_npx/5705de4b80ce9477/node_modules/node/bin:/home/oracle-worker/.local/bin:/usr/local/bin:/usr/bin:/bin",
+        "npm",
+        "--prefix",
+        "frontend/mission-planner",
+        "run",
+        "build:mission-export"
+      ],
+      "log": "evidence/task5-map-assets-build.log",
+      "result": {
+        "status": "passed"
+      },
+      "exitCode": 0
+    },
+    "backendStyle": {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "uv",
+        "run",
+        "--with-requirements",
+        "requirements-dev.txt",
+        "python",
+        "-c",
+        "import subprocess; subprocess.run([\"black\", \"--check\", \"app\", \"tests\"], check=True); subprocess.run([\"ruff\", \"check\", \"app\", \"tests\"], check=True)"
+      ],
+      "log": "evidence/task5-final-backend-style.log",
+      "result": {
+        "ruff": "passed",
+        "blackUnchanged": 404
+      },
+      "exitCode": 0
+    },
+    "frontendLint": {
+      "command": ["timeout", "--kill-after=10s", "10m", "npm", "run", "lint"],
+      "log": "evidence/task5-final-eslint.log",
+      "result": {
+        "status": "passed"
+      },
+      "exitCode": 0
+    },
+    "frontendFormat": {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "npm",
+        "exec",
+        "--",
+        "prettier",
+        "--check",
+        "src/services/export-import.ts",
+        "src/services/export-import.test.ts",
+        "src/components/missions/ExportDialog.tsx",
+        "src/components/missions/ExportDialog.test.tsx",
+        "src/types/export.ts",
+        "../../backend/starlink-location/config.yaml"
+      ],
+      "log": "evidence/task5-check-final-format.log",
+      "result": {
+        "status": "passed"
+      },
+      "exitCode": 0
+    }
+  },
+  "sourceDigests": {
+    "backend/starlink-location/app/mission/exporter/trial_pptx.py": "54075a8ecb583c65a8f28dd24a3a6c7811e640d0e3ad434419ac893a7b6dac88",
+    "backend/starlink-location/app/mission/package/__init__.py": "6fc1f0075d5ed80b48dcccf3ccfc1af3da6dfa4c717a82d57f8840a057f18f49",
+    "backend/starlink-location/app/mission/package/__main__.py": "abc8d877b7913da308108d104c670f730fd9feef69767cd3cdfc8e0a776c8296",
+    "backend/starlink-location/app/mission/routes_v2.py": "a501dbb94a860ef0b101cdaf5137f1fcb0e9586bab00dd4c219a399837f1642c",
+    "backend/starlink-location/app/models/config.py": "d54afe0e1e156a17420e5ae50eb8ef03a4a8c3a315403b89b7c880a23521ab4e",
+    "backend/starlink-location/config.yaml": "7032ec706fafd6acb792fdb58a0d67c4038f41ffc7d4017f2b2bcaef0b3cfe9a",
+    "backend/starlink-location/main.py": "ae765dd604531e6428882cd9f11c2a4ffd22c6339d0c19b765c57234ee1eda5e",
+    "backend/starlink-location/tests/integration/test_mission_routes_v2.py": "4040166bd7e856415fe228d19820a07565a29b1ebe67816ad16cd7d45b4298b9",
+    "backend/starlink-location/tests/unit/test_config.py": "b2bbaa555c56edee6b69db48cf9e84b996084d0675b7c9350a93ff6e645d32d1",
+    "backend/starlink-location/tests/unit/test_trial_export_endpoint.py": "48a785a55553aad95bebbca02719c3548d0b66d820d3f16e82fb0c713af64e5e",
+    "backend/starlink-location/tests/unit/test_trial_package.py": "7d2991ad2a41e8de0b50904d288c0f949223b36c7e1e06536e7564f59a955c59",
+    "frontend/mission-planner/src/components/missions/ExportDialog.test.tsx": "401a49fbaa9da3e771203dd0ebc5a187adc8d38ccc74d0c7db4a4089adcbcebe",
+    "frontend/mission-planner/src/components/missions/ExportDialog.tsx": "138d4b8afa05f921bdf93c759cbf6b0c1fe6db625d5669abe74ee36b88df6ffd",
+    "frontend/mission-planner/src/services/export-import.test.ts": "cee0f09ff311dc52ce0d4311d531eb94fa8097bf41533b27da0c219ef61401fa",
+    "frontend/mission-planner/src/services/export-import.ts": "61266c8a94da6ce06dc7465ee2e23385e1365dd602b16ca7374ff0f270e6913c",
+    "frontend/mission-planner/src/types/export.ts": "10ae0a093935f40bcb149a050a3afac1dacc48b94a6980071879c34eab146c73"
+  },
+  "negativeEvidence": [
+    {
+      "log": "evidence/task5-red-backend.log",
+      "exitCode": 2
+    },
+    {
+      "log": "evidence/task5-red-backend-host.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-red-frontend.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-red-backend-corrected.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-red-frontend-corrected.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-red-endpoint.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-stream-red.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-green-frontend.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-source-stream-green.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-format-python.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-pinned-ruff.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-ruff-fix.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-frontend-suite.log",
+      "exitCode": 2
+    },
+    {
+      "log": "evidence/task5-prettier-check.log",
+      "exitCode": 1
+    },
+    {
+      "log": "evidence/task5-canonical-backend.log",
+      "exitCode": 1
+    }
+  ],
+  "canonicalFirstFailure": {
+    "name": "tests/integration/test_mission_routes_v2.py::TestMissionV2ListEndpoint::test_cors_exposes_total_header_to_the_mission_planner",
+    "result": {
+      "passed": 2363,
+      "failed": 1,
+      "skipped": 20
+    },
+    "cause": "Existing exact CORS string assertion rejected the required additive export headers.",
+    "resolution": "Preserve X-Total-Count membership; export endpoint contracts verify both new headers. Dedicated 5-test rerun and final canonical suite passed."
+  },
+  "mapQualification": {
+    "evidence": "tools/acceptance/customer-briefing/task-3b-evidence.json",
+    "qualifiedInputsStillMatch": true,
+    "runtimeInputs": {
+      "backend/starlink-location/Dockerfile": "fdddf9a78390dffb5965ae3b32d1dc5640289c072285387753c348f238d8aff9",
+      "backend/starlink-location/app/mission/exporter/trial_maps.py": "797994499d4d8e911ef871abfebd65f747500b3b5c7699f725e7ae98b869cf09",
+      "backend/starlink-location/app/mission/exporter/trial_projection.py": "3ffa42f536cf3dbd339dd236cb4c997a75e27e3a5c255a0df73b998623ff97bd",
+      "backend/starlink-location/tests/fixtures/customer_briefing/f08.json": "8771a7ee150cea23475a00593c6b4651125771bf9dd3e87f43b8a6af1c9f4af0",
+      "frontend/mission-planner/package-lock.json": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+      "frontend/mission-planner/src/mission-export/render.mjs": "1d9aa4aa4f64140c69b7a8ed38438fbc3f6e6292e64b31b99322c9fc7824dda0",
+      "frontend/mission-planner/src/mission-export/protocol.ts": "c0fa64e2928d6ffacbd71102f38814dd464dfe51f14c68e1ad6c9f4fe2260bee",
+      "frontend/mission-planner/src/mission-export/framing.ts": "6d3970e822244fdfe5a67d58e64cd09aa0587d32b0a12ce4504175539d64dbbe",
+      "frontend/mission-planner/src/mission-export/scene.tsx": "7ba0b5f4a44e235c5790a2ecba7dc1d821be019d4d8b78e8ff67c40f07047fad",
+      "frontend/mission-planner/src/mission-export/main.tsx": "1b4de8b560dfd124e65353731fc07ba11f7d3abb31afbeec0134eda3c6d59a30"
+    },
+    "coldFiveViewWholeMissionSeconds": [20.248, 20.778, 20.59],
+    "sharedDeadlineSeconds": 60,
+    "screenSeconds": 50,
+    "qualification": "Valid only for the recorded hardware/runtime; repeat on hardware/runtime changes. Task 5 in-process package tests use synthetic map results and make no new production timing claim."
+  },
+  "task4Evidence": "tools/acceptance/customer-briefing/task-4-evidence.json",
+  "cleanup": {
+    "hostAudit": "evidence/task5-host-cleanup.json",
+    "groupsChecked": 61,
+    "nestedPidsChecked": 41,
+    "liveSurvivors": 0,
+    "ownedListeners": 0,
+    "dockerResourcesCreated": false,
+    "taskFilteredDockerResources": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "removedDisposablePaths": 13,
+    "temporaryPathsAbsent": true,
+    "retained": "Worktree, ledger, logs, ownership and prior Task 3B/4 evidence."
+  },
+  "rulings": [
+    {
+      "decision": "Stop at the Task 5 checkpoint and retain evidence/worktree.",
+      "reason": "Explicit user boundary.",
+      "costIfWrong": "Whole-branch review and final acceptance remain deferred to Task 6."
+    },
+    {
+      "decision": "Change pagination CORS test from exact header-string equality to X-Total-Count membership.",
+      "reason": "Task 5 requires additive export headers.",
+      "costIfWrong": "Pagination test no longer constrains unrelated header names; dedicated export tests constrain the required new names."
+    }
+  ]
+}
