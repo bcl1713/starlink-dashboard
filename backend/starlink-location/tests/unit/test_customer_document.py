@@ -98,7 +98,8 @@ def test_document_map_has_customer_endpoints_without_event_ordinals():
 @pytest.mark.parametrize("invalid", ["missing", "malformed", "timing", "density"])
 def test_map_input_diagnostics_survive_document_and_evidence(invalid):
     from app.mission.exporter.map_inputs import build_map_input
-    from tests.unit.test_customer_evidence import build as evidence, report
+    from tests.unit.test_customer_evidence import build as evidence
+    from tests.unit.test_customer_evidence import report
 
     captured, trial, view = inputs()
     route = json.loads(captured.legs[0].effective_route_json)
@@ -203,3 +204,38 @@ def test_document_rejects_reversed_and_duplicate_customer_rows():
     for rows in (view.rows[::-1], view.rows[:1] * 2):
         with pytest.raises(ValueError):
             build(captured, replace(view, rows=rows), trial)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "mission-two-page",
+        "mission-three-page",
+        "mission-over-budget",
+        "mission-five-leg",
+    ],
+)
+def test_mission_fixture_material_rows_and_per_leg_flight_axes(name):
+    from tests.unit.customer_briefing_fixtures import mission_snapshot
+
+    captured = mission_snapshot(name)
+    payload = mission_document(captured)
+    assert len(payload["legs"]) == (5 if name == "mission-five-leg" else 1)
+    for leg in payload["legs"]:
+        assert all(row["impact"] != "Assessment changed" for row in leg["rows"])
+        assert len({row["id"] for row in leg["rows"]}) == len(leg["rows"])
+        assert all(
+            a["endUtc"] <= b["startUtc"] for a, b in zip(leg["rows"], leg["rows"][1:])
+        )
+        assert all(
+            leg["flight"]["startUtc"]
+            <= row["startUtc"]
+            < row["endUtc"]
+            <= leg["flight"]["endUtc"]
+            for row in leg["rows"]
+        )
+    if name == "mission-five-leg":
+        assert all(
+            a["flight"]["endUtc"] < b["flight"]["startUtc"]
+            for a, b in zip(payload["legs"], payload["legs"][1:])
+        )

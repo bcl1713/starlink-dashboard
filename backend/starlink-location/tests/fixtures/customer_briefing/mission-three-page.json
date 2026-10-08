@@ -1,0 +1,6 @@
+{
+  "fixture": "mission-three-page",
+  "kind": "synthetic immutable DTO",
+  "legs": [{"base": "composition-assessed", "departureShiftHours": 0, "denseTransitions": 40}],
+  "expectedPages": 3
+}

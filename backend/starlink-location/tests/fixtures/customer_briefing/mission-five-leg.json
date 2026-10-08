@@ -1,0 +1,12 @@
+{
+  "fixture": "mission-five-leg",
+  "kind": "synthetic immutable DTO",
+  "legs": [
+    {"base": "composition-assessed", "departureShiftHours": 0},
+    {"base": "composition-assessed", "departureShiftHours": 30},
+    {"base": "composition-assessed", "departureShiftHours": 60},
+    {"base": "composition-assessed", "departureShiftHours": 90},
+    {"base": "composition-assessed", "departureShiftHours": 120}
+  ],
+  "expectedPages": 5
+}

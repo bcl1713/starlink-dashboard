@@ -17,6 +17,7 @@ test('PDF expectations use canonical cells and page-local measured bounds', asyn
   };
   const measured = {
     tableBodyBoundsPx: [10, 40, 1000, 80],
+    tableInspectionBoundsPx: [10, 40, 1000, 700],
     rows: [
       {
         id: 'r',
@@ -43,7 +44,11 @@ test('PDF expectations use canonical cells and page-local measured bounds', asyn
     ],
   });
   assert.deepEqual(result.pages, [
-    { page: 1, tableBodyBoundsPt: [7.5, 30, 750, 60] },
+    {
+      page: 1,
+      tableBodyBoundsPt: [7.5, 30, 750, 60],
+      tableInspectionBoundsPt: [7.5, 30, 750, 525],
+    },
   ]);
 });
 test('PDF expectations reject omitted and duplicate measured rows', async () => {
