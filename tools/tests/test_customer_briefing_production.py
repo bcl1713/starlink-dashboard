@@ -182,3 +182,54 @@ def test_download_inspection_rejects_partial_or_unqualified_pair(damage):
             {"X-Customer-Briefing-Status": "included"},
             "included",
         )
+
+
+def fault_module():
+    entry = ROOT / "tools/acceptance/customer-briefing/production_fault_server.py"
+    assert entry.exists(), "isolated failure boundary controls are missing"
+    spec = importlib.util.spec_from_file_location("briefing_faults", entry)
+    value = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(value)
+    return value
+
+
+@pytest.mark.parametrize("fault", ["pdf", "evidence"])
+def test_decode_fault_changes_only_real_render_proof_boundary(fault):
+    value = fault_module()
+    untouched = {"schemaVersion": 2, "missionId": "m", "legs": []}
+    report = json.loads(download_fixture_evidence())
+    render = report["render"] | {"schemaVersion": 2, "snapshotFingerprint": "a" * 64}
+    serialized = json.dumps(render)
+    restore = value.install(fault)
+    try:
+        assert json.loads(json.dumps(untouched)) == untouched
+        actual = json.loads(serialized)
+        if fault == "pdf":
+            assert actual["artifactHashes"]["pdfPath"] == "0" * 64
+        else:
+            assert actual["snapshotFingerprint"] == "0" * 64
+    finally:
+        restore()
+
+
+def download_fixture_evidence():
+    with zipfile.ZipFile(io.BytesIO(download_fixture())) as archive:
+        return archive.read("exports/mission/mission-customer-briefing-evidence.json")
+
+
+def test_publication_fault_preserves_ordinary_legacy_zip_writes():
+    restore = fault_module().install("publication")
+    stream = io.BytesIO()
+    try:
+        with zipfile.ZipFile(stream, "w") as archive:
+            archive.writestr("mission.json", b"real legacy boundary")
+            with pytest.raises(OSError):
+                archive.writestr(
+                    "exports/mission/mission-customer-briefing-evidence.json",
+                    b"pair boundary",
+                )
+    finally:
+        restore()
+    with zipfile.ZipFile(stream) as archive:
+        assert archive.namelist() == ["mission.json"]
+        assert archive.read("mission.json") == b"real legacy boundary"

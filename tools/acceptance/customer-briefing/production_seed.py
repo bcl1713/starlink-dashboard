@@ -162,7 +162,7 @@ def seed_missions(api, root):
             uploads.append(json.loads(body))
             if any(
                 "Timeline regeneration failed" in warning
-                for warning in uploads[-1].get("warnings", [])
+                for warning in (uploads[-1].get("warnings") or [])
             ):
                 raise ValueError(
                     "Supported route upload did not produce a timeline: "

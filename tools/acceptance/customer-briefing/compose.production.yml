@@ -9,9 +9,13 @@ services:
       STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED: ${BRIEFING_ENABLED:-false}
       STARLINK_MODE: simulation
       PROMETHEUS_URL: http://prometheus:9090
+      CHECKPOINT_FAULT: ${BRIEFING_RENDER_FAULT:-}
+      BRIEFING_APP_FAULT: ${BRIEFING_APP_FAULT:-}
+    command: ["python", "/acceptance/production_fault_server.py"]
     volumes:
       - app-data:/app/data
       - poi-data:/data
+      - ${BRIEFING_SOURCE_ROOT:?exact candidate source required}/tools/acceptance/customer-briefing:/acceptance:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 2s
