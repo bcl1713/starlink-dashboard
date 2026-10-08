@@ -100,6 +100,10 @@ class SnapshotViews:
         payload = self._leg(leg_id).timeline_json
         return MissionLegTimeline.model_validate_json(payload) if payload else None
 
+    def effective_route(self, leg_id: str) -> ParsedRoute | None:
+        payload = self._leg(leg_id).effective_route_json
+        return ParsedRoute.model_validate_json(payload) if payload else None
+
     @property
     def route_manager(self) -> RouteView:
         return RouteView(self.snapshot.source_payloads)

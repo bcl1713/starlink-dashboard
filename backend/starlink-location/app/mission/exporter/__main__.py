@@ -75,6 +75,8 @@ from app.services.ground_entry_point import (
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
+from .snapshot_views import SnapshotViews
+
 logger = logging.getLogger(__name__)
 
 EASTERN_TZ = ZoneInfo("America/New_York")
@@ -376,12 +378,18 @@ def _plot_segment_with_idl_handling(ax, lon1, lat1, lon2, lat2, color):
         )
 
 
+def _export_kwargs(export_snapshot):
+    return {"export_snapshot": export_snapshot} if export_snapshot is not None else {}
+
+
 def _generate_route_map(
     timeline: MissionLegTimeline,
     mission: Mission | None = None,
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
+    *,
+    export_snapshot=None,
 ) -> bytes:
     """Generate a 4K PNG image of the route map.
 
@@ -401,6 +409,10 @@ def _generate_route_map(
     Returns:
         PNG image as bytes.
     """
+    if export_snapshot is not None and mission is not None:
+        views = SnapshotViews(export_snapshot)
+        route_manager = views.route_manager
+        poi_manager = views.map_poi_manager(mission.id)
     # Phase 9: Draw route as simple line with IDL handling and Pacific centering
 
     # Canvas dimensions for 4K 16:9
@@ -430,7 +442,8 @@ def _generate_route_map(
         f"_generate_route_map: Generating map for mission={mission.id}, route={mission.route_id}"
     )
 
-    # Fetch route from manager
+    # The injected adapter supplies the captured original route. Preserve legacy
+    # PPTX geometry; the customer PDF uses its separately captured effective route.
     route = route_manager.get_route(mission.route_id)
     if route is None:
         # Log available routes to help diagnose mismatch
@@ -1353,12 +1366,18 @@ def _compact_reason_label(segment: TimelineSegment) -> str:
 def _segment_rows(
     timeline: MissionLegTimeline,
     mission: Mission | None,
+    *,
+    export_snapshot=None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
     export_timeline = timeline.model_copy(deep=True)
     normalize_call_availability_timeline(export_timeline)
     mission_start = mission_start_timestamp(export_timeline)
-    ground_entry_point = get_cached_ground_entry_point()
+    ground_entry_point = (
+        SnapshotViews(export_snapshot).ground_entry_point()
+        if export_snapshot is not None
+        else get_cached_ground_entry_point()
+    )
     ground_entry_values = _ground_entry_export_values(ground_entry_point)
     rows: list[tuple[datetime, int, dict]] = []
 
@@ -1578,6 +1597,8 @@ def _cover_metadata_line(
     mission: Mission | MissionLeg | None,
     leg_count: int,
     parent_mission_id: str | None = None,
+    *,
+    export_snapshot=None,
 ) -> str:
     """Build title-slide metadata without stale description/revision mismatches."""
 
@@ -1586,7 +1607,13 @@ def _cover_metadata_line(
         return leg_label
 
     metadata_source: Mission | MissionLeg | None = mission
-    if parent_mission_id and not hasattr(mission, "legs"):
+    if (
+        export_snapshot is not None
+        and parent_mission_id
+        and not hasattr(mission, "legs")
+    ):
+        metadata_source = SnapshotViews(export_snapshot).mission()
+    elif parent_mission_id and not hasattr(mission, "legs"):
         try:
             from app.mission.storage import load_mission_v2
 
@@ -1630,11 +1657,14 @@ def _cover_metadata_line(
 
 
 def generate_csv_export(
-    timeline: MissionLegTimeline, mission: Mission | None = None
+    timeline: MissionLegTimeline,
+    mission: Mission | None = None,
+    *,
+    export_snapshot=None,
 ) -> bytes:
     """Return CSV bytes for the mission timeline."""
     csv_buffer = io.StringIO()
-    df = _segment_rows(timeline, mission)
+    df = _segment_rows(timeline, mission, **_export_kwargs(export_snapshot))
     df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue().encode("utf-8")
 
@@ -1646,6 +1676,8 @@ def generate_pptx_export(
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
     map_cache: dict[str, bytes] | None = None,
+    *,
+    export_snapshot=None,
 ) -> bytes:
     """Generate a PowerPoint presentation with map and timeline table.
 
@@ -1716,7 +1748,9 @@ def generate_pptx_export(
         Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
     )
     info_frame = info_box.text_frame
-    info_frame.text = _cover_metadata_line(mission, leg_count, parent_mission_id)
+    info_frame.text = _cover_metadata_line(
+        mission, leg_count, parent_mission_id, **_export_kwargs(export_snapshot)
+    )
 
     info_paragraph = info_frame.paragraphs[0]
     info_paragraph.alignment = PP_ALIGN.CENTER
@@ -1735,6 +1769,7 @@ def generate_pptx_export(
         poi_manager=poi_manager,
         logo_path=logo_path,
         map_cache=map_cache,
+        **_export_kwargs(export_snapshot),
     )
 
     buffer = io.BytesIO()
@@ -1778,6 +1813,8 @@ def generate_timeline_export(
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
     map_cache: dict[str, bytes] | None = None,
+    *,
+    export_snapshot=None,
 ) -> ExportArtifact:
     """Generate the requested export artifact (CSV or PPTX only).
 
@@ -1786,7 +1823,9 @@ def generate_timeline_export(
             will check cache before generating maps and store newly generated maps.
     """
     if export_format is TimelineExportFormat.CSV:
-        content = generate_csv_export(timeline, mission)
+        content = generate_csv_export(
+            timeline, mission, **_export_kwargs(export_snapshot)
+        )
         return ExportArtifact(content=content, media_type="text/csv", extension="csv")
     if export_format is TimelineExportFormat.PPTX:
         content = generate_pptx_export(
@@ -1796,6 +1835,7 @@ def generate_timeline_export(
             route_manager=route_manager,
             poi_manager=poi_manager,
             map_cache=map_cache,
+            **_export_kwargs(export_snapshot),
         )
         return ExportArtifact(
             content=content,

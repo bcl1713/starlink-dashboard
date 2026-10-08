@@ -102,6 +102,167 @@ def _slide_text(content):
     )
 
 
+def test_enabled_package_builders_never_reread_after_capture(
+    export_inputs, monkeypatch
+):
+    import inspect
+    import zipfile
+
+    from app.mission.exporter.customer_document import build_customer_mission_document
+    from app.mission.exporter.snapshot import capture_export_snapshot
+    from app.mission.package import __main__ as package
+
+    mission, routes, pois, catalog = export_inputs
+    captured = capture_export_snapshot("m", routes, pois)
+    assert (
+        "snapshot" in inspect.signature(package.export_mission_package).parameters
+    ), "Snapshot package injection absent"
+    mission.name = "Later mission"
+    storage.save_mission_v2(mission)
+    (routes.routes_dir / "r.kml").write_bytes(b"later KML")
+    routes._routes.clear()
+    pois._pois.clear()
+    catalog.satellites.clear()
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Live dependency reread after capture")
+
+    for target in (
+        "app.mission.storage.load_mission_v2",
+        "app.mission.storage.load_mission_timeline",
+        "app.mission.package.__main__.load_mission_v2",
+        "app.mission.package.__main__.load_mission_timeline",
+        "app.mission.package.__main__.build_mission_timeline",
+        "app.mission.exporter.__main__.get_cached_ground_entry_point",
+        "app.mission.exporter.snapshot.prepare_mission_timeline",
+    ):
+        monkeypatch.setattr(target, forbidden)
+    monkeypatch.setattr(routes, "get_route", forbidden)
+    monkeypatch.setattr(pois, "list_pois", forbidden)
+    data_root = routes.routes_dir.parent
+    before = {
+        str(p.relative_to(data_root)): p.read_bytes()
+        for p in data_root.rglob("*")
+        if p.is_file()
+    }
+    with package.export_mission_package(
+        "m", routes, pois, snapshot=captured
+    ) as stream, zipfile.ZipFile(stream) as archive:
+        assert json.loads(archive.read("mission.json"))["name"] == "Captured mission"
+        assert archive.read("routes/r.kml") == b"<kml>captured</kml>"
+        assert b"Captured POI" in archive.read("pois/l-pois.json")
+        for name in (
+            "exports/legs/l/slides.pptx",
+            "exports/mission/mission-slides.pptx",
+        ):
+            text = _slide_text(archive.read(name))
+            assert "Captured" in text
+            assert "Later" not in text
+        assert b"1970" not in archive.read("exports/legs/l/timeline.csv")
+    assert (
+        build_customer_mission_document(captured)["snapshotFingerprint"]
+        == captured.fingerprint
+    )
+    assert {
+        str(p.relative_to(data_root)): p.read_bytes()
+        for p in data_root.rglob("*")
+        if p.is_file()
+    } == before
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "normal",
+        "adjusted",
+        "shared-route",
+        "cached",
+        "missing-timeline",
+        "ar",
+        "splice",
+    ],
+)
+def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch, case):
+    import inspect
+    import zipfile
+
+    from app.mission.exporter.snapshot import capture_export_snapshot
+    from app.mission.package import __main__ as package
+
+    mission, routes, pois, _ = export_inputs
+    assert (
+        "snapshot" in inspect.signature(package.export_mission_package).parameters
+    ), "Snapshot package injection absent"
+    if case != "ar":
+        mission.legs[0].transports.aar_windows = []
+    if case == "splice":
+        mission.legs[0].transports.manual_aar_tracks = [
+            ManualAARTrack(
+                id="track",
+                name="Track",
+                points=[
+                    ManualAARTrackPoint(latitude=0.3, longitude=0.01),
+                    ManualAARTrackPoint(latitude=0.7, longitude=0.01),
+                ],
+            )
+        ]
+        mission.legs[0].transports.manual_route_splice = ManualRouteSplice(
+            enabled_track_id="track", speed_knots=100
+        )
+    if case == "adjusted":
+        mission.legs[0].adjusted_departure_time = BASE + timedelta(hours=2)
+    if case == "shared-route":
+        second = mission.legs[0].model_copy(deep=True)
+        second.id = "l2"
+        second.name = "Second captured leg"
+        mission.legs.append(second)
+    storage.save_mission_v2(mission)
+    if case in ("cached", "missing-timeline"):
+        if case == "cached":
+            storage.save_mission_timeline(
+                "l",
+                timeline_preparation.prepare_mission_timeline(
+                    mission.legs[0], routes, pois
+                ).timeline,
+                parent_mission_id="m",
+            )
+        failing = Mock(side_effect=RuntimeError("Forced cached fallback"))
+        monkeypatch.setattr(
+            "app.mission.exporter.snapshot.prepare_mission_timeline", failing
+        )
+        monkeypatch.setattr(package, "build_mission_timeline", failing)
+
+    class DatetimeType(type):
+        def __instancecheck__(cls, value):
+            return isinstance(value, datetime)
+
+    class FixedDatetime(datetime, metaclass=DatetimeType):
+        @classmethod
+        def now(cls, tz=None):
+            return BASE
+
+    monkeypatch.setattr(package, "datetime", FixedDatetime)
+    captured = capture_export_snapshot("m", routes, pois)
+    with package.export_mission_package("m", routes, pois) as stream:
+        baseline = stream.getvalue()
+    with package.export_mission_package("m", routes, pois, snapshot=captured) as stream:
+        frozen = stream.getvalue()
+    with zipfile.ZipFile(io.BytesIO(baseline)) as a, zipfile.ZipFile(
+        io.BytesIO(frozen)
+    ) as b:
+        assert a.namelist() == b.namelist()
+        for name in a.namelist():
+            if name.endswith(".pptx"):
+                with zipfile.ZipFile(io.BytesIO(a.read(name))) as x, zipfile.ZipFile(
+                    io.BytesIO(b.read(name))
+                ) as y:
+                    assert x.namelist() == y.namelist()
+                    for member in x.namelist():
+                        assert x.read(member) == y.read(member), (case, name, member)
+            else:
+                assert a.read(name) == b.read(name), (case, name)
+
+
 def test_snapshot_isolated_from_later_save_and_builder_mutation(
     export_inputs, monkeypatch
 ):
