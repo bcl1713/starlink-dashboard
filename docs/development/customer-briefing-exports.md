@@ -32,8 +32,8 @@ The endpoint retains HTTP 200, `application/zip`, and the mission ZIP filename
 when the optional pair is omitted. Enabled requests receive
 `X-Customer-Briefing-Status: included|omitted`; omission also supplies
 `X-Customer-Briefing-Warning` with one of `snapshot`, `data`, `page-budget`,
-`overflow`, `runtime`, `deadline`, `pdf`, `evidence`, `cleanup`, `publication`, or
-`busy`. Disabled requests have neither header. Headers contain no exception or
+`overflow`, `runtime`, `deadline`, `pdf`, `evidence`, `cleanup`, `publication`,
+or `busy`. Disabled requests have neither header. Headers contain no exception or
 source details. The dialog keeps omission feedback visible until dismissal and
 confirms that legacy documents were downloaded. The existing Blob service
 wrapper remains available.

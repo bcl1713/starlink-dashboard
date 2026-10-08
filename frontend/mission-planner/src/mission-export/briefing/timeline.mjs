@@ -132,12 +132,14 @@ export function renderTimeline(payload) {
   }
   for (const i of restrictions) {
     out += rect(i, 202, 18, '#899db9', 'data-restriction');
-    const a = x(i.startUtc);
+    const a = x(i.startUtc),
+      w = width(i),
+      inside = w >= 260;
     out += text(
-      a < 700 ? a + width(i) + 8 : a - 8,
+      inside ? a + w / 2 : a < 700 ? a + w + 8 : a - 8,
       216,
       i.label,
-      `text-anchor="${a < 700 ? 'start' : 'end'}" class="restriction-label" data-svg-label`
+      `text-anchor="${inside ? 'middle' : a < 700 ? 'start' : 'end'}" class="restriction-label" data-svg-label`
     );
   }
   const et = new Intl.DateTimeFormat('en-US', {

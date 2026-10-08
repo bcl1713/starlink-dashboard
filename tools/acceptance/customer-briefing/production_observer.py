@@ -32,12 +32,15 @@ while running:
             "python-owner.json",
             "stage-progress.json",
             "render-report.json",
+            "payload.json",
         ):
             source = root / name
             try:
-                content = source.read_bytes()
-                if seen.get(str(source)) == content:
+                stat = source.stat()
+                version = (stat.st_mtime_ns, stat.st_size)
+                if seen.get(str(source)) == version:
                     continue
+                content = source.read_bytes()
                 data = json.loads(content)
                 if name == "render-report.json":
                     for result in data.get("maps", {}).values():
@@ -66,7 +69,7 @@ while running:
                             )
                             + "\n"
                         )
-                seen[str(source)] = content
+                seen[str(source)] = version
             except (OSError, ValueError):
                 continue
     time.sleep(0.002)

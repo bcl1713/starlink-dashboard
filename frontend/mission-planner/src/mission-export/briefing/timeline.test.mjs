@@ -66,6 +66,27 @@ test('unknown has neutral confirmed capability', async () => {
   assert.doesNotMatch(svg, /fill="#b72e36"/);
   assert.match(svg, />\?<\/text>/);
 });
+test('short-flight overlapping SOF keeps its full-width label inside the exact restriction band', async () => {
+  const p = structuredClone(payload);
+  p.flight.endUtc = '2026-10-25T14:10:00Z';
+  p.intervals = [
+    {
+      startUtc: p.flight.startUtc,
+      endUtc: p.flight.endUtc,
+      posture: 'Nominal',
+      decisions: ['Up', 'Up', 'Up'],
+      restrictionLabels: ['Takeoff SOF', 'Landing SOF'],
+    },
+  ];
+  const svg = (await renderer())(p);
+  const label = svg.match(
+    /<text x="([^"]+)" y="216" ([^>]+)>Takeoff SOF \+ Landing SOF<\/text>/
+  );
+  assert.ok(label);
+  assert.ok(Number(label[1]) > 280 && Number(label[1]) < 1240);
+  assert.match(label[2], /text-anchor="middle"/);
+  assert.match(svg, /data-restriction width="960"/);
+});
 
 test('narrow incomplete intervals expose one and zero confirmed without definitive color', async () => {
   const p = structuredClone(payload);
