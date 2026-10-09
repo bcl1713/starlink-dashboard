@@ -45,8 +45,6 @@ export function renderTimeline(payload) {
     'class="hero-label" data-svg-label'
   );
   for (const i of payload.intervals) {
-    const w = width(i),
-      px = x(i.startUtc);
     out += rect(
       i,
       68,
@@ -54,9 +52,18 @@ export function renderTimeline(payload) {
       COLORS[i.posture] || COLORS['Posture uncertain'],
       `data-posture="${escapeText(i.posture)}" data-interval-start="${i.startUtc}"`
     );
-    if (i.posture === 'Nominal' && w >= 90) {
+  }
+  const nominalGroups = [];
+  for (const i of payload.intervals) {
+    if (i.posture !== 'Nominal') continue;
+    const last = nominalGroups.at(-1);
+    if (last && last.endUtc === i.startUtc) last.endUtc = i.endUtc;
+    else nominalGroups.push({ ...i });
+  }
+  for (const i of nominalGroups) {
+    if (width(i) >= 110) {
       out += text(
-        px + w / 2,
+        x(i.startUtc) + width(i) / 2,
         93,
         'Nominal',
         'text-anchor="middle" class="band-label light" data-svg-label'

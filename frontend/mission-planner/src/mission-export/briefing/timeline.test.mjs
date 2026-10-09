@@ -199,3 +199,27 @@ test('separated refueling windows retain exact bands and quiet gaps without floa
   );
   assert.doesNotMatch(svg, /Air refueling|data-restriction-label/);
 });
+
+test('continuous nominal posture gets one centered label across restriction changes', async () => {
+  const p = structuredClone(payload);
+  p.flight.endUtc = '2026-10-25T14:40:00Z';
+  p.intervals = [
+    ['2026-10-25T14:00:00Z', '2026-10-25T14:10:00Z', ['Takeoff SOF']],
+    ['2026-10-25T14:10:00Z', '2026-10-25T14:30:00Z', ['Air refueling']],
+    ['2026-10-25T14:30:00Z', '2026-10-25T14:40:00Z', ['Landing SOF']],
+  ].map(([startUtc, endUtc, restrictionLabels]) => ({
+    startUtc,
+    endUtc,
+    restrictionLabels,
+    decisions: ['Up', 'Up', 'Up'],
+    posture: 'Nominal',
+  }));
+  const svg = (await renderer())(p);
+  const labels = [
+    ...svg.matchAll(/<text x="([^"]+)" y="93"[^>]*>Nominal<\/text>/g),
+  ];
+  assert.equal(labels.length, 1);
+  assert.equal(Number(labels[0][1]), 760);
+  assert.equal((svg.match(/data-restriction width=/g) || []).length, 3);
+  assert.equal((svg.match(/data-posture="Nominal"/g) || []).length, 3);
+});
