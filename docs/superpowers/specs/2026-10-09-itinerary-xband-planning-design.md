@@ -1,8 +1,8 @@
 # Itinerary import and X band planning
 
-**Status:** Draft for user review. The workflow was agreed in conversation; this
-written spec and its detailed defaults await review. Implementation is not
-authorized by this document alone.
+**Status:** Approved by the user on 2026-10-09 after independent review of
+`76a912f1` found no unresolved critical or important issues. Implementation
+planning follows; the implementation plan still requires review.
 
 **Scope:** Flight planner itinerary PDF, per-leg KML upload, refueling review,
 proposed X-band satellite assignments, manual edits, and itinerary revisions.

@@ -3,7 +3,7 @@
 These contracts are normative parts of the
 [itinerary import and X-band planning design](2026-10-09-itinerary-xband-planning-design.md).
 They resolve independent-review findings and the user's decision to prefer
-Starshield whenever possible. Both documents await design approval.
+Starshield whenever possible. Both documents were approved on 2026-10-09.
 
 ## Starshield preference and outage cost
 
