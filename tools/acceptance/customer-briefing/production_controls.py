@@ -697,7 +697,19 @@ def qualify(owner):
     )
     # Let the real RouteManager filesystem watcher observe the removed input.
     time.sleep(2)
-    for case in fixtures:
+    # Exercise the remaining complex production cases before repeated simple ones.
+    priority = [
+        "normal",
+        "spliced",
+        "two-page",
+        "three-page",
+        "five-leg",
+        "over-budget",
+        "missing-map",
+        "adjusted",
+        "short-dst",
+    ]
+    for case in [*priority, *(case for case in fixtures if case not in priority)]:
         download(
             case,
             (
@@ -725,6 +737,22 @@ def qualify(owner):
         for r in five[1:]
     ):
         raise ValueError("Three cold production five-leg exports differ")
+    previews = [r["evidence"]["render"]["diagnosticHashes"] for r in five]
+    if not {f"page-{number}" for number in range(1, 6)} <= previews[0].keys() or any(
+        preview != previews[0] for preview in previews[1:]
+    ):
+        raise ValueError("Three cold production HTML/preview PNGs differ")
+    (owner.root / "preview-comparison.json").write_text(
+        json.dumps(
+            {
+                "matched": True,
+                "scope": "three fresh browser five-leg production exports",
+                "comparison": "identical renderer PNG bytes imply identical decoded preview pixels",
+                "diagnosticSha256": previews[0],
+            },
+            indent=2,
+        )
+    )
     browser_reports += [
         browser("normal", "included"),
         browser("over-budget", "omitted"),

@@ -4,6 +4,7 @@ import io
 import json
 from dataclasses import FrozenInstanceError
 from datetime import datetime, timedelta, timezone
+from itertools import pairwise
 from unittest.mock import Mock
 
 import pytest
@@ -561,6 +562,55 @@ def test_fallback_bounds_use_effective_splice_and_current_departure(
     assert snapshot.legs[0].utc_bounds == (
         prepared.projector.start_time,
         prepared.projector.end_time,
+    )
+
+
+def test_splice_coincident_joins_remain_mappable_without_changing_effective_route(
+    export_inputs,
+):
+    from app.mission.exporter.customer_document import build_customer_mission_document
+    from app.mission.exporter.snapshot import capture_export_snapshot
+
+    mission, routes, pois, _ = export_inputs
+    leg = mission.legs[0]
+    leg.transports.manual_aar_tracks = [
+        ManualAARTrack(
+            id="track",
+            name="Track",
+            points=[
+                ManualAARTrackPoint(latitude=0.25, longitude=0),
+                ManualAARTrackPoint(latitude=0.5, longitude=0.25),
+                ManualAARTrackPoint(latitude=0.75, longitude=0),
+            ],
+        )
+    ]
+    leg.transports.manual_route_splice = ManualRouteSplice(
+        enabled_track_id="track",
+        leave_segment_index=0,
+        leave_fraction=0.25,
+        rejoin_segment_index=0,
+        rejoin_fraction=0.75,
+        speed_knots=450,
+    )
+    storage.save_mission_v2(mission)
+    captured = capture_export_snapshot("m", routes, pois)
+    original = captured.legs[0].effective_route_json
+    points = json.loads(original)["points"]
+    assert any(
+        a["expected_arrival_time"] == b["expected_arrival_time"]
+        for a, b in pairwise(points)
+    )
+    payload = build_customer_mission_document(captured)["legs"][0]
+    assert payload["mapInput"] is not None
+    scene = payload["mapInput"]["route"]
+    assert len({p["timestamp"] for p in scene}) == len(scene)
+    assert scene[0]["timestamp"] == payload["flight"]["startUtc"]
+    assert scene[-1]["timestamp"] == payload["flight"]["endUtc"]
+    assert any(p["latitude"] == 0.5 and p["longitude"] == 0.25 for p in scene)
+    assert any("coincident" in reason for reason in payload["mapInputDiagnostics"])
+    assert captured.legs[0].effective_route_json == original
+    assert routes.get_route("r").points[-1].expected_arrival_time == BASE + timedelta(
+        hours=1
     )
 
 

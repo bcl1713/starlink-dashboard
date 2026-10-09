@@ -1,4 +1,7 @@
+import copy
 import importlib
+
+import pytest
 
 from app.mission.exporter.trial_projection import project_trial_leg
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
@@ -29,3 +32,42 @@ def test_map_input_preserves_exact_outage_markers_and_dateline():
     assert not warnings
     mid = next(p for p in raw["route"] if p["timestamp"] == "2026-10-25T16:25:00Z")
     assert abs(mid["longitude"]) > 179
+
+
+@pytest.mark.parametrize(
+    "case", ["coincident", "conflicting", "backward", "stationary"]
+)
+def test_map_timing_normalization_preserves_positions_and_rejects_ambiguity(case):
+    from app.mission.exporter.map_inputs import build_map_input
+
+    data = fixture("composition-assessed")
+    points = data["route"]["points"]
+    if case == "stationary":
+        points[1]["latitude"] = points[0]["latitude"]
+        points[1]["longitude"] = points[0]["longitude"]
+    else:
+        duplicate = copy.deepcopy(points[0])
+        if case == "conflicting":
+            duplicate["longitude"] += 1
+        elif case == "backward":
+            duplicate["expected_arrival_time"] = "2026-10-25T13:59:59Z"
+        points.insert(1, duplicate)
+    captured = snapshot(data)
+    original = captured.effective_route_json
+    scene, reasons = build_map_input(captured, project_trial_leg(captured))
+    if case in {"conflicting", "backward"}:
+        assert scene is None and reasons
+    else:
+        assert scene is not None
+        assert len({p["timestamp"] for p in scene["route"]}) == len(scene["route"])
+        first = scene["route"][0]
+        if case == "stationary":
+            assert any(
+                p["timestamp"] != first["timestamp"]
+                and p["latitude"] == first["latitude"]
+                and p["longitude"] == first["longitude"]
+                for p in scene["route"]
+            )
+        else:
+            assert any("coincident" in reason for reason in reasons)
+    assert captured.effective_route_json == original
