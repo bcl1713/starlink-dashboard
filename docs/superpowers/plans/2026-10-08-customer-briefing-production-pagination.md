@@ -59,49 +59,49 @@ coordinator supplies it from one loaded-font document context; it neither
 launches a browser nor creates a deadline. The planner returns page assignments
 only after validating canonical row coverage and maximum three pages per leg.
 
-- [ ] Write `five normal legs produce five pages`,
+- [x] Write `five normal legs produce five pages`,
       `wrapped rows choose the measured boundary`,
       `continuation labels consume space`, `every row exactly once`,
       `three pages accepted fourth rejected`, and `oversized row fails`. Assert
       no source-record pagination, no filler, no quiet gap merging, unchanged
       row IDs/clocks/cells, no repeated material rows, and no ground span across
       legs. Synthetic measure tests prove planning only.
-- [ ] Add backend tests for multi-leg identity/fingerprint/partition validation,
+- [x] Add backend tests for multi-leg identity/fingerprint/partition validation,
       missing flight bounds, empty mission, missing routes, missing AR timing,
       stale cache uncertainty, duplicate leg IDs, and nonchronological row data.
       Missing useful map is allowed with reasons; missing valid flight bounds
       fails the whole optional pair with a `data` code.
-- [ ] Run focused backend/Node tests; retain actual contract RED assertions.
-- [ ] Implement mission payload and pure page composition. Keep the accepted
+- [x] Run focused backend/Node tests; retain actual contract RED assertions.
+- [x] Implement mission payload and pure page composition. Keep the accepted
       primary page for fitting normal legs. Repeat leg header, planned timing,
       relevant notice, table columns, compact legend/caveat, row range, and page
       numbering on continuations. Omit their map and full-flight timeline. Add
       explicit page breaks, none after the last page, and row break avoidance.
-- [ ] Implement largest-fitting contiguous row-prefix selection using real
+- [x] Implement largest-fitting contiguous row-prefix selection using real
       measurements at accepted fonts/column widths. Reserve continuation copy
       before measuring; verify the final combined document again after local
       counts are known. No arbitrary fixed row count, hidden overflow, row
       splitting, clipping, font reduction, or speculative extra page.
-- [ ] Add real-browser two-/three-page examples with long causes and remaining
+- [x] Add real-browser two-/three-page examples with long causes and remaining
       lists; print and verify every actual PDF row using Task 2. Check exact
       page geometry, no blank page, no overlapping essential labels, per-leg
       ceiling, five-leg budget, and visible continuation/page-range copy.
-- [ ] Exercise midnight and DST fold ranges, colliding/subminute boundaries,
+- [x] Exercise midnight and DST fold ranges, colliding/subminute boundaries,
       changing unknown state without outage, nested brief total outage,
       restriction-only rows, short-flight SOF overlap, full AR plus outages,
       adjusted departure/splice, and long quiet legs. Assert exact canonical
       mappings and printed clock precision at each page boundary.
-- [ ] Reject a timeline that remains unreadable at the accepted full-flight
+- [x] Reject a timeline that remains unreadable at the accepted full-flight
       scale; preserve a reproducer and request a separate timeline-panel design
       if representative required inputs expose that limitation.
-- [ ] Validate version-2 evidence covers all ordered legs, sources/intervals,
+- [x] Validate version-2 evidence covers all ordered legs, sources/intervals,
       exact clocks, page rows, map input reasons, verified PDF cells, artifact
       hashes, fit, and cleanup. Reject missing/duplicate rows or any wrong
       fingerprint/leg association. Retain version-1 schema tests. Public
       artifact references name only the delivered PDF and its hash. Preview/HTML
       hashes may record diagnostic identities without implying those files exist
       in the ZIP; remove their local paths from public reports.
-- [ ] Run focused semantic, composition, actual-PDF, and page-budget controls;
+- [x] Run focused semantic, composition, actual-PDF, and page-budget controls;
       commit `feat: paginate mission briefings at measured row boundaries`.
 
 ### Task 4: Render the whole mission under one owner and deadline
@@ -130,43 +130,43 @@ elapsed ms, safe error code, and final artifact names. Artifact paths are
 relative; only successful fully qualified reports contain deliverables. Preserve
 `renderBriefing` as a one-leg checkpoint wrapper with its v1 report.
 
-- [ ] Write `one mission one launch`, `same budget object all legs`,
+- [x] Write `one mission one launch`, `same budget object all legs`,
       `map cutoff skips later legs`, `print and verify share remaining time`,
       `teardown charged once`, `late acquired context closed`, and
       `cancel during pagination closes owner`. Advance a controlled clock
       through multiple legs and prove none receives another 60 seconds.
-- [ ] Add map tests for dateline/polar routes, invalid timed input, failed
+- [x] Add map tests for dateline/polar routes, invalid timed input, failed
       texture/readiness, and multi-view framing. Never silently select the first
       view of a route that needs more: reclaim the map card and retain exact
       input/stage/framing reasons. Successful maps remain endpoint-only as
       accepted; no new event markers or map-only continuation pages.
-- [ ] Run unit tests for RED; implement orchestration with one render-budget
+- [x] Run unit tests for RED; implement orchestration with one render-budget
       object, browser, and scoped listener. Render maps in leg order, close each
       fresh map context eagerly, and stop maps when the shared reserve is
       reached. Missing maps do not discard known transport risks.
-- [ ] Use a fresh document context for measurement/final assembly. Await
+- [x] Use a fresh document context for measurement/final assembly. Await
       font/image/composition readiness, remeasure every page, screenshot page
       elements, and print the assembled mission PDF once. No PDF merge library,
       separate browser per leg, sleeps, or external resource fetch.
-- [ ] Invoke Task 2's production verifier CLI with the remaining work allowance.
+- [x] Invoke Task 2's production verifier CLI with the remaining work allowance.
       Register its PID/PGID before waiting; reap it on timeout/signal/failure.
       Validate all rows/fonts/dimensions before closing owner. All work and
       teardown still finish within 60,000 ms; actual-PDF inspection has no
       independent allowance that extends the render.
-- [ ] Add real processes for slow fifth-leg map, hung measurement/print/
+- [x] Add real processes for slow fifth-leg map, hung measurement/print/
       verification, failed startup/fonts/assets, signal during each stage, owner
       cleanup failure, and late child/context acquisition. Assert no optional
       artifacts on failure and no owned process/listener survives.
-- [ ] Run three cold representative five-leg renders in a clean exact-SHA image.
+- [x] Run three cold representative five-leg renders in a clean exact-SHA image.
       Require intended useful maps for the primary representative control, five
       pages for normal legs, one browser, verified all-row PDF, and recorded
       timing margin. Compare text, exact SVG geometry, page assignments, decoded
       preview pixels, and normalized PDF structure. Keep fallback controls
       distinct.
-- [ ] If cold runs exceed the deadline, stop qualification and revise the
+- [x] If cold runs exceed the deadline, stop qualification and revise the
       design. Do not increase the budget or claim the emergency wall limit
       qualified success.
-- [ ] Commit `feat: render multi-leg briefs under one bounded browser owner`.
+- [x] Commit `feat: render multi-leg briefs under one bounded browser owner`.
 
 ## Pagination-stage handoff
 

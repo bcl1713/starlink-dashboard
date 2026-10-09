@@ -21,7 +21,24 @@ Docker/Nginx, existing ZIP/PPTX builders.
 and
 [governing HTML-to-PDF design](../specs/2026-10-08-customer-briefing-html-pdf-design.md).
 The user approved this design and all three plan files for native execution on
-2026-10-08. Approval authorizes implementation; broader acceptance remains gated.
+2026-10-08. Approval authorizes implementation; broader acceptance remains
+gated.
+
+## Execution status — 2026-10-09
+
+Tasks 1–7 are implemented and independently reviewed in PR #314. Production
+qualification combines the complete PDF/browser/lifecycle/fault case receipts at
+`960ae0ba` with final actual ZIP imports at `aa64cc9f`. Application/runtime
+sources, resolved dependencies/base images and installed assets match. A
+redundant full rerun was stopped at the user’s request. The baseline runner’s
+raw timestamp-encoding comparison failure is retained; it is not an application
+import defect. No new-head full-matrix pass is claimed.
+
+[Review samples and provenance](../../samples/customer-briefing/production/README.md)
+record the three new PDFs and actual omitted-download feedback. Runtime
+resources are removed and evidence is preserved outside the worktree. Task 8
+remains open for explicit customer acceptance and final PR integration. Default
+stays off.
 
 ## Global constraints
 
@@ -117,26 +134,26 @@ additive `mapInputDiagnostics: list[str]` and row `displayCells: list[str]`.
 Evidence records diagnostics separately from map render status/warnings; no
 source diagnostic enters visible HTML.
 
-- [ ] Write `test_map_input_diagnostics_survive_document_and_evidence`: missing,
+- [x] Write `test_map_input_diagnostics_survive_document_and_evidence`: missing,
       malformed, timing-mismatched, and marker-density inputs retain exact
       returned reasons even if runtime map failure adds another warning. Assert
       success reasons are also retained and input is not mutated.
-- [ ] Write `test_display_cells_preserve_accepted_customer_copy`: exact existing
+- [x] Write `test_display_cells_preserve_accepted_customer_copy`: exact existing
       Ka/X-Band shortening, comma-separated remaining transports, Elevated
       risk/Unavailable/Incomplete table wording, ET punctuation, approximation
       marks, midnight dates, DST offsets, and second precision. Test escaped
       HTML separately; display values remain plain strings.
-- [ ] Run named backend/Node tests and save contract assertion failures.
-- [ ] Keep both map-builder results. Move existing table-only copy transforms to
+- [x] Run named backend/Node tests and save contract assertion failures.
+- [x] Keep both map-builder results. Move existing table-only copy transforms to
       `display_row` (use exact accepted `Elevated risk` spelling). The composer
       renders supplied cells as escaped text, with its current transformation
       fallback for historical version-1 payloads.
-- [ ] Require four display cells per generated row; validate row identity and
+- [x] Require four display cells per generated row; validate row identity and
       canonical mappings independently of formatting. Thread diagnostics into
       evidence and checkpoint reports without recapturing/rebuilding map data.
-- [ ] Run scoped checks and inspect generated display payloads for both accepted
+- [x] Run scoped checks and inspect generated display payloads for both accepted
       fixtures; no new visible words or definitive timeline callouts.
-- [ ] Commit: `feat: retain briefing map diagnostics and display contracts`.
+- [x] Commit: `feat: retain briefing map diagnostics and display contracts`.
 
 ### Task 2: Verify every delivered PDF row
 
@@ -167,30 +184,30 @@ timeout for each subprocess. The verifier owns/reaps its subprocesses. CLI JSON
 input/output exposes the same contract for the Node coordinator; the production
 image runs it with application code.
 
-- [ ] Write failures for missing, duplicate, reordered, wrong-page, wrong-cell,
+- [x] Write failures for missing, duplicate, reordered, wrong-page, wrong-cell,
       wrapped, split, and off-page rows; repeated SOF/transport text must not
       satisfy another row. Reject a wrong remaining transport or time even when
       selected phrases elsewhere match. Assert NFC/whitespace normalization
       preserves meaningful punctuation, dates, signs, offsets, and seconds.
-- [ ] Run focused verifier/evidence tests for RED. Unit fixtures for Poppler
+- [x] Run focused verifier/evidence tests for RED. Unit fixtures for Poppler
       output prove parsing only; add actual PDF mutations in the browser suite.
-- [ ] Measure stable `[data-row-id]` and cell selectors in print layout. Extract
+- [x] Measure stable `[data-row-id]` and cell selectors in print layout. Extract
       PDF words within each expected cell with a 0.75 pt edge tolerance;
       reconstruct wrapped lines in geometric reading order. Reject ambiguous
       cross-cell allocation, unmatched expected words, and unmatched words
       within the measured table-body region (including extra table rows). Check
       intended embedded fonts and every page's exact geometry.
-- [ ] Make evidence qualification require complete `pdfValidation.rows` matching
+- [x] Make evidence qualification require complete `pdfValidation.rows` matching
       expected IDs/order/cells. Preserve existing artifact hash, snapshot,
       geometry, cleanup, and deadline checks.
-- [ ] Run real-process PDFs with a middle row removed, same text duplicated,
+- [x] Run real-process PDFs with a middle row removed, same text duplicated,
       swapped rows, changed remaining transport, a wrapped cell, and split row.
       A real bad PDF must fail even if DOM fit/report claims all IDs are
       present.
-- [ ] Requalify both accepted examples with all-row verification, intended map
+- [x] Requalify both accepted examples with all-row verification, intended map
       success, color/grayscale inspection, and unchanged customer composition.
       Do not reinterpret this as dense/multi-leg or production acceptance.
-- [ ] Commit: `feat: qualify every coordination row in delivered PDFs`.
+- [x] Commit: `feat: qualify every coordination row in delivered PDFs`.
 
 ## Approval and execution handoff
 
