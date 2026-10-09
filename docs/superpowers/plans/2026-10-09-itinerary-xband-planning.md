@@ -134,6 +134,26 @@ optional for unmanaged legs, whose historical behavior/response is retained.
 Parent metadata updates preserve server-owned planning data; callers cannot
 replace the manifest through ordinary mission metadata writes.
 
+Task 3 owns `app/mission/planning/order.py`:
+
+```python
+project_leg_order(manifest: PlanningManifest | None, legacy_ids: tuple[str, ...]) -> LegOrder
+```
+
+`LegOrder` carries executable IDs in display order, ID-to-number mapping and
+total display count. Managed legs follow nonretired ExpectedLeg.ordinal through
+installed-leg links; never use UUID filenames or review/save order. Unmapped
+legacy legs follow in their historical relative order. For partial itineraries,
+managed display numbers retain expected ordinals and the count includes all
+nonretired expected cards (plus unmapped legacy legs); legs 1 and 3 of three
+remain **LEG 1 OF 3** and **LEG 3 OF 3**, with no executable placeholder for 2.
+Archived legs retain provenance but are excluded from live order. Validate
+unique contiguous expected ordinals and installed links before mutations. Use
+this projection for full/stub mission loads, reviewed publication, revision
+reorder/retirement, import, UI and export snapshots. Customer document/evidence,
+Excel and slide-cache numbering/fingerprints consume it; a reorder invalidates
+number-dependent cached output. Unmanaged missions retain legacy numbering.
+
 Distinguish two identities: EvaluationContext.input_identity hashes immutable
 route/height/AR/configuration/policy/locks and persisted seed C/B, excluding the
 selected unlocked schedule. Each leg card's input_identity additionally hashes

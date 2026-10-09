@@ -96,6 +96,8 @@ carry fabricated final executable legs from the browser.
       MissionDetail Delete passes the current planning CAS arguments through
       useDeleteLeg; component tests cover managed success, stale rejection and
       unmanaged deletion. Do not silently retry deletion with a newer revision.
+      Test revision reorder/retirement rebuilding live order/display numbers
+      without changing stable IDs or archived provenance.
 - [ ] **Step 5:** Commit `feat: reconcile itinerary and route revisions safely`.
 
 ## Task 9: Source closure, collision-safe archives and owned deletion
@@ -105,6 +107,8 @@ carry fabricated final executable legs from the browser.
 planning/sources.py, `app/mission/{routes_v2,storage}.py`,
 `app/mission/package/{__main__,snapshot_export}.py`,
 `app/mission/exporter/{snapshot_inputs,snapshot_views}.py`,
+`app/mission/exporter/{snapshot,customer_document,customer_evidence,excel_utils}.py`,
+`app/mission/slide_cache/identity.py` and their focused regressions,
 `app/api/routes/delete.py` and its endpoint tests.
 
 **Interfaces:**
@@ -122,7 +126,11 @@ independently of storage IDs. Snapshot payloads include every accepted
 draft/retired/prior KML, PDF revision, policy and evaluation context, not only
 Mission.legs resources. Include/remap owned KML profile descriptors in this
 closure and validate their hash/owner/ingestion version on import. Rebuilt
-caches use the same profile.
+caches use the same profile. Snapshot per-leg display ordinals and total count
+come from project_leg_order, including partial itineraries; add optional
+LegSnapshot display_number while retaining legacy offset fallback. Customer
+document/evidence, Excel and slide cache share that mapping rather than
+enumerate sparse executable lists.
 
 - [ ] **Step 1:** Test `test_roundtrip_with_zero_executable_legs`,
       `test_partial_review_and_retired_history_roundtrip`,
@@ -144,6 +152,8 @@ caches use the same profile.
   Standalone route DELETE tests cover each draft/executable/retired/history
   reference class, active references and genuinely unreferenced legacy routes;
   rejection preserves files, descriptors, POIs, cache and active/runtime state.
+  Package-round-trip legs 1/3 with opposite UUID order and assert reload/export
+  headers 1/3 and 3/3. Revision reorder changes slide-cache identity/numbering.
 
 - [ ] **Step 2:** Run test_packages.py and test_source_lifecycle.py; expect
       missing manifest source enumeration, staging rollback and foreign

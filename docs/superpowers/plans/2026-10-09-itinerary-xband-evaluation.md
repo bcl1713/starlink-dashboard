@@ -204,9 +204,11 @@ transport/timing/AR fields into the draft, clear review/context/proposals and
 increment the manifest revision. Retain unchanged provenance/anchors and omitted
 planning-only fields; changed legacy coordinates needing anchors become
 unresolved until explicit review. Non-plan field changes preserve review but
-still increment revision. Unmanaged PUT retains historical behavior.
-`XBandPlanReview` consumes draft/proposal/evaluation and emits explicit manual
-edits/lock toggles; `ProposalComparison` emits Apply only on user action.
+still increment revision. Unmanaged PUT retains historical behavior. Reviewed
+publication uses project_leg_order, preserving itinerary ordinals regardless of
+the order in which cards are reviewed. `XBandPlanReview` consumes
+draft/proposal/evaluation and emits explicit manual edits/lock toggles;
+`ProposalComparison` emits Apply only on user action.
 
 - [ ] **Step 1:** Test auto proposal after first route acceptance, unresolved AR
       provisional state, manual edit without replacement, re-optimize preserving

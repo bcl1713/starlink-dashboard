@@ -181,6 +181,7 @@ existing public parser name and legacy optional return contract.
 ## Task 3: Owned sources, draft persistence and transactional planning API
 
 **Files:** Create `app/mission/planning/{store,sources,service,routes}.py`,
+`app/mission/planning/order.py` and `tests/planning/test_order.py`,
 `tests/planning/{test_store,test_api}.py`; modify `main.py`,
 `app/mission/storage.py`, and scoped marker operations in
 `app/services/poi/manager.py` or its existing public facade.
@@ -227,6 +228,10 @@ ownership from the durable source inventory, not descriptor presence.
   assert unrelated_metadata_after == unrelated_metadata_before
   ```
 
+  Pin the main plan's LegOrder with reversed lexical UUIDs, reviewing 3 before
+  1; full/stub reload returns [1, 3], with display numbers 1/3 and total
+  count 3.
+
   Inject failure after each mission/leg/timeline/owned-POI write. Readers must
   observe the previous or next coherent record, never half a reviewed plan.
   Exercise actual app startup with an interrupted journal: recovery must finish
@@ -245,6 +250,7 @@ ownership from the durable source inventory, not descriptor presence.
       staging. Binding a new route creates Needs review; first acceptance can
       request the later proposal service only after it exists. Recover before
       app readiness, before startup active-leg reconciliation and watchers.
+      Implement project_leg_order/LegOrder per the main plan; use it in storage.
 - [ ] **Step 4:** Rerun focused tests; extend existing mission storage/CRUD
       tests for metadata preservation and inactive behavior. No computation runs
       while a synchronous persistence lock is held.
