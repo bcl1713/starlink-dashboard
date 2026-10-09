@@ -116,6 +116,40 @@ def controls():
 
 
 @pytest.mark.parametrize(
+    "damage", ["none", "microsecond", "route", "active", "metadata"]
+)
+def test_import_comparison_normalizes_encoding_without_losing_content(damage):
+    expected = {
+        "created_at": "2026-10-09 01:06:16.247084+00:00",
+        "metadata": {"created_at": "2026-10-09 01:06:16.247084+00:00"},
+        "legs": [
+            {
+                "updated_at": "2026-10-09 01:06:16.247081+00:00",
+                "route_id": "original",
+                "is_active": False,
+            }
+        ],
+    }
+    actual = json.loads(json.dumps(expected))
+    actual["created_at"] = "2026-10-09T01:06:16.247084Z"
+    actual["legs"][0]["updated_at"] = "2026-10-09T01:06:16.247081Z"
+    if damage == "microsecond":
+        actual["legs"][0]["updated_at"] = "2026-10-09T01:06:16.247082Z"
+    elif damage == "route":
+        actual["legs"][0]["route_id"] = "changed"
+    elif damage == "active":
+        actual["legs"][0]["is_active"] = True
+    elif damage == "metadata":
+        actual["metadata"]["created_at"] = "2026-10-09T01:06:16.247084Z"
+    before = json.loads(json.dumps(expected))
+    assert (
+        controls().mission_import_content(expected)
+        == controls().mission_import_content(actual)
+    ) is (damage == "none")
+    assert expected == before
+
+
+@pytest.mark.parametrize(
     "damage", ["none", "broad-scope", "other-api", "forwarding", "security"]
 )
 def test_export_proxy_allowance_preserves_other_routes_and_headers(damage):

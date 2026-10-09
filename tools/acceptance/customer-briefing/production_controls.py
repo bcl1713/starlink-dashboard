@@ -31,6 +31,39 @@ WARNINGS = {
 }
 
 
+def mission_import_content(value):
+    """Normalize typed UTC timestamp encoding, retaining every exact value/field."""
+    timestamps = {
+        "created_at",
+        "updated_at",
+        "adjusted_departure_time",
+        "start_time",
+        "end_time",
+        "override_start_time",
+        "override_end_time",
+        "timestamp",
+    }
+    if isinstance(value, list):
+        return [mission_import_content(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    result = {}
+    for key, item in value.items():
+        if key == "metadata":
+            # Free-form metadata is not a typed datetime field. Compare it verbatim.
+            result[key] = item
+        elif key in timestamps and isinstance(item, str):
+            stamp = datetime.fromisoformat(item)
+            if stamp.tzinfo is None:
+                raise ValueError("Import comparison requires timezone-aware timestamps")
+            result[key] = stamp.astimezone(timezone.utc).isoformat(
+                timespec="microseconds"
+            )
+        else:
+            result[key] = mission_import_content(item)
+    return result
+
+
 def verify_export_proxy_config(config):
     """Check the actual image config; Nginx itself separately validates syntax."""
     scope = "^/api/v2/missions/[^/]+/export$"
@@ -963,13 +996,22 @@ def qualify(owner):
             "POST", "/api/v2/missions/import", multipart=(label + ".zip", content)
         )
         result = json.loads(response)
+        import_receipt = owner.root / "imports" / label
+        import_receipt.mkdir(parents=True)
+        (import_receipt / "response.json").write_text(json.dumps(result, indent=2))
         if result.get("success") is not True or result.get("warnings"):
             raise ValueError("Real ZIP import failed: " + response.decode())
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
             expected = json.loads(archive.read("mission.json"))
             actual, _, _ = api.request("GET", "/api/v2/missions/" + expected["id"])
             actual = json.loads(actual)
-            if actual != expected:
+            (import_receipt / "exported-mission.json").write_text(
+                json.dumps(expected, indent=2)
+            )
+            (import_receipt / "imported-mission.json").write_text(
+                json.dumps(actual, indent=2)
+            )
+            if mission_import_content(actual) != mission_import_content(expected):
                 raise ValueError("ZIP import changed original mission/leg content")
             expected_pois = [
                 poi
@@ -1032,6 +1074,7 @@ def qualify(owner):
                 "package": label,
                 "response": result,
                 "actualMission": actual,
+                "missionTimestampComparison": "Equivalent UTC encodings only; exact instants/microseconds and all content retained; metadata verbatim",
                 "originalRouteHashes": source_proof,
                 "identifiablePois": expected_pois,
                 "poiImportClockExclusions": ["created_at", "updated_at"],
