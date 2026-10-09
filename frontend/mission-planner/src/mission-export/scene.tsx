@@ -14,18 +14,9 @@ import { sunLightPosition } from '../pages/solar-position';
 import { applyCameraFrame, type MissionMapView } from './framing';
 import type { MissionMapInput } from './protocol';
 
-const NEUTRAL = {
-  color: '#f4f4f4',
-  widthPixels: 4,
-  maxWorldWidth: 0.028,
-  opacity: 1,
-};
-const HALO = {
-  color: '#252525',
-  widthPixels: 8,
-  maxWorldWidth: 0.05,
-  opacity: 1,
-};
+// Pixel-sized globe overlays need to survive the high-resolution image being
+// reduced to the 280px map column in the PDF.
+const PDF_MAP_WIDTH = 280;
 function projectEndpoints(camera: THREE.Camera, view: MissionMapView) {
   const endpoints = [
     ...(view.startIndex === 0
@@ -179,6 +170,40 @@ export function MissionExportScene({
     []
   );
   const sun = sunLightPosition(new Date(input.referenceUtc), 10);
+  const pixelScale = view.width / PDF_MAP_WIDTH;
+  const routeStyle = useMemo(
+    () => ({
+      outer: {
+        color: '#ffb000',
+        widthPixels: 8 * pixelScale,
+        maxWorldWidth: 0.05 * pixelScale,
+        opacity: 0.18,
+        blending: THREE.AdditiveBlending,
+      },
+      glow: {
+        color: '#ffb000',
+        widthPixels: 4 * pixelScale,
+        maxWorldWidth: 0.028 * pixelScale,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending,
+      },
+      core: {
+        color: '#ffd86b',
+        widthPixels: 2 * pixelScale,
+        maxWorldWidth: 0.012 * pixelScale,
+        opacity: 1,
+      },
+    }),
+    [pixelScale]
+  );
+  const endpointStyle = {
+    color: '#ffffff',
+    size: 0.13,
+    coreRadius: 0.06,
+    glowSizePixels: 24 * pixelScale,
+    glowIntensity: 2.3,
+    maxCorePixels: 6 * pixelScale,
+  };
   return (
     <div
       style={{
@@ -200,31 +225,13 @@ export function MissionExportScene({
         <directionalLight position={sun} intensity={5} />
         <Suspense fallback={null}>
           <CityLitGlobe sunPosition={sun} />
-          <GlobeRouteRibbon
-            points={view.points}
-            outer={HALO}
-            glow={NEUTRAL}
-            core={NEUTRAL}
-            depthTest
-          />
+          <GlobeRouteRibbon points={view.points} {...routeStyle} depthTest />
           <OverviewBoundaryLayer kind="countries" segments={boundaries} />
           {view.startIndex === 0 && (
-            <StarMarker
-              position={view.points[0]}
-              color="#f4f4f4"
-              size={0.13}
-              glowSizePixels={64}
-              maxCorePixels={5}
-            />
+            <StarMarker position={view.points[0]} {...endpointStyle} />
           )}
           {view.endsRoute && (
-            <StarMarker
-              position={view.points.at(-1)!}
-              color="#f4f4f4"
-              size={0.13}
-              glowSizePixels={64}
-              maxCorePixels={5}
-            />
+            <StarMarker position={view.points.at(-1)!} {...endpointStyle} />
           )}
           <ReadyScene view={view} digest={digest} />
         </Suspense>
