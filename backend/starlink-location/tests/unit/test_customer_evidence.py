@@ -47,9 +47,9 @@ def report(captured, view):
         "cleanup": {"success": True},
         "totalMs": 1234,
         "artifacts": {
-            "htmlPath": "mission-customer-briefing-trial.html",
-            "pngPath": "mission-customer-briefing-trial.png",
-            "pdfPath": "mission-customer-briefing-trial.pdf",
+            "htmlPath": "mission-customer-briefing.html",
+            "pngPath": "mission-customer-briefing.png",
+            "pdfPath": "mission-customer-briefing.pdf",
         },
         "artifactHashes": {
             "htmlPath": "a" * 64,
@@ -72,7 +72,7 @@ def build(*args):
 
 
 def test_evidence_rejects_mismatched_snapshot_and_page_rows():
-    captured, trial, view = inputs()
+    captured, projection, view = inputs()
     for field, value in (
         ("snapshotFingerprint", "other"),
         ("legId", "other"),
@@ -82,26 +82,28 @@ def test_evidence_rejects_mismatched_snapshot_and_page_rows():
         raw = report(captured, view)
         raw[field] = value
         with pytest.raises(ValueError):
-            build(captured, trial, view, raw)
+            build(captured, projection, view, raw)
     raw = report(captured, view)
     raw["fit"]["visibleRowIds"].pop()
     with pytest.raises(ValueError):
-        build(captured, trial, view, raw)
+        build(captured, projection, view, raw)
     raw = report(captured, view)
     raw["cleanup"]["success"] = False
     with pytest.raises(ValueError):
-        build(captured, trial, view, raw)
+        build(captured, projection, view, raw)
     raw = report(captured, view)
     raw["pdfValidation"]["verified"] = False
     with pytest.raises(ValueError):
-        build(captured, trial, view, raw)
+        build(captured, projection, view, raw)
 
 
 def test_evidence_preserves_exact_unknown_and_source_records():
-    captured, trial, view = inputs("composition-incomplete-x")
-    evidence = build(captured, trial, view, report(captured, view))
+    captured, projection, view = inputs("composition-incomplete-x")
+    evidence = build(captured, projection, view, report(captured, view))
     parsed = json.loads(evidence)
-    assert evidence == build(captured, trial, view, deepcopy(report(captured, view)))
+    assert evidence == build(
+        captured, projection, view, deepcopy(report(captured, view))
+    )
     assert all(
         i["decisions"][2]["value"] == "?" for i in parsed["canonical"]["intervals"]
     )
@@ -120,7 +122,7 @@ def test_evidence_preserves_exact_unknown_and_source_records():
 
 
 def test_evidence_rejects_unverified_actual_pdf_rows():
-    captured, trial, view = inputs()
+    captured, projection, view = inputs()
     raw = report(captured, view)
     for rows in (
         None,
@@ -138,7 +140,7 @@ def test_evidence_rejects_unverified_actual_pdf_rows():
     ):
         raw["pdfValidation"]["rows"] = rows
         with pytest.raises(ValueError):
-            build(captured, trial, view, raw)
+            build(captured, projection, view, raw)
 
 
 def mission_case():
@@ -234,7 +236,7 @@ def mission_case():
             "fonts": ["DejaVuSans", "DejaVuSans-Bold"],
         },
         "artifacts": {
-            "pdfPath": "mission-customer-briefing-trial.pdf",
+            "pdfPath": "mission-customer-briefing.pdf",
             "htmlPath": "private-preview.html",
             "pngPath": "private-preview.png",
         },
@@ -267,9 +269,7 @@ def test_mission_evidence_retains_exact_leg_records_and_public_pdf_only():
         l["canonical"]["intervals"][0]["clocks"]["start"]["t_plus"] == "T+00:00"
         for l in parsed["legs"]
     )
-    assert parsed["render"]["artifacts"] == {
-        "pdfPath": "mission-customer-briefing-trial.pdf"
-    }
+    assert parsed["render"]["artifacts"] == {"pdfPath": "mission-customer-briefing.pdf"}
     assert "private-preview" not in json.dumps(parsed)
     assert raw == original
 

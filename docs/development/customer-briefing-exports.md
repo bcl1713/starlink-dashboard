@@ -1,5 +1,10 @@
 # Customer briefing exports
 
+The customer PDF is exported as `exports/mission/<mission-name>-brief.pdf` (for
+example, `exports/mission/27-02-brief.pdf`). Path separators and unsafe filename
+characters are replaced with underscores. Long names are capped at 240 UTF-8
+bytes before the suffix; an empty name uses `mission`.
+
 Customer PDFs are enabled by default through
 `exports.customer_briefing_enabled`. Set
 `STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED=false` to opt out explicitly.

@@ -1,4 +1,4 @@
-"""Pure trial presentation projection; legacy domain states are never mutated.
+"""Pure briefing presentation projection; legacy domain states are never mutated.
 
 Rules follow replay_state, timeline_builder/events and call_availability:
 Coverage gaps, X transitions, manual AR tracks and recognized X conflicts
@@ -17,9 +17,9 @@ from typing import Literal
 
 from app.mission.models import Transport, TransportState
 
+from .briefing_clocks import ensure_utc, format_clocks
 from .snapshot import LegSnapshot
 from .snapshot_inputs import canonical_json
-from .trial_clocks import ensure_utc, format_clocks
 
 TRANSPORTS = (Transport.KA, Transport.KU, Transport.X)
 TRANSPORT_NAMES = ("Commercial Ka", "Starshield", "X-Band MILSATCOM")
@@ -64,7 +64,7 @@ class UsabilityDecision:
 
 
 @dataclass(frozen=True)
-class TrialRestriction:
+class BriefingRestriction:
     source_id: str
     kind: str
     label: str
@@ -73,14 +73,14 @@ class TrialRestriction:
 
 
 @dataclass(frozen=True)
-class TrialInterval:
+class BriefingInterval:
     id: str
     window_number: int
     start_time: datetime
     end_time: datetime
-    decisions: tuple[UsabilityDecision, ...]  # Ka, Ku, X; matches the trial lanes.
+    decisions: tuple[UsabilityDecision, ...]  # Ka, Ku, X; matches the briefing lanes.
     posture: str
-    restrictions: tuple[TrialRestriction, ...]
+    restrictions: tuple[BriefingRestriction, ...]
     active_source_ids: tuple[str, ...]
     causes: tuple[str, ...]
     limitations: tuple[str, ...]
@@ -88,11 +88,11 @@ class TrialInterval:
 
 
 @dataclass(frozen=True)
-class TrialLeg:
+class BriefingLeg:
     leg_id: str
     utc_bounds: tuple[datetime, datetime] | None
-    intervals: tuple[TrialInterval, ...]
-    coordination_rows: tuple[TrialInterval, ...]
+    intervals: tuple[BriefingInterval, ...]
+    coordination_rows: tuple[BriefingInterval, ...]
     sources: tuple[SourceRecord, ...]
     notes: tuple[str, ...]
     planned_departure_basis: str
@@ -508,7 +508,7 @@ def _restrictions(
     start: datetime,
     end: datetime,
     notes: list[str],
-) -> tuple[TrialRestriction, ...]:
+) -> tuple[BriefingRestriction, ...]:
     restrictions = []
     resolved_ids = set()
     for value in leg.resolved_restrictions:
@@ -520,7 +520,7 @@ def _restrictions(
             notes.append(f"AR {identity}: timing unresolved; no timed window shown.")
         elif max(start, a) < min(end, b):
             restrictions.append(
-                TrialRestriction(
+                BriefingRestriction(
                     identity, raw["kind"], raw["label"], max(start, a), min(end, b)
                 )
             )
@@ -583,14 +583,14 @@ def _decisions(
     return tuple(decisions)
 
 
-def _mergeable(left: TrialInterval, right: TrialInterval) -> bool:
+def _mergeable(left: BriefingInterval, right: BriefingInterval) -> bool:
     return (
         left.end_time == right.start_time
         and replace(left, start_time=right.start_time, end_time=right.end_time) == right
     )
 
 
-def project_trial_leg(leg: LegSnapshot) -> TrialLeg:
+def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
     """Freeze full flight partition first; filter its exact objects afterward."""
     committed = json.loads(leg.leg_json)
     timeline = json.loads(leg.timeline_json) if leg.timeline_json else {}
@@ -601,7 +601,7 @@ def project_trial_leg(leg: LegSnapshot) -> TrialLeg:
         notes.append(
             "Flight timing unavailable; incomplete leg data, no timed partition shown."
         )
-        return TrialLeg(
+        return BriefingLeg(
             leg.leg_id,
             None,
             (),
@@ -613,7 +613,7 @@ def project_trial_leg(leg: LegSnapshot) -> TrialLeg:
         )
     start, end = (ensure_utc(v) for v in leg.utc_bounds)
     if end <= start:
-        raise ValueError("Trial leg landing must follow takeoff")
+        raise ValueError("Briefing leg landing must follow takeoff")
     basis = f"Planned departure basis: {format_clocks(start, start).et} / {format_clocks(start, start).zulu}. {guidance}"
     if leg.preparation_origin != "rebuilt":
         notes.append(
@@ -689,7 +689,7 @@ def project_trial_leg(leg: LegSnapshot) -> TrialLeg:
             + [r.label for r in context]
         )
         limitations = _unique(d.limitation for d in decisions)
-        interval = TrialInterval(
+        interval = BriefingInterval(
             "",
             0,
             a,
@@ -726,7 +726,7 @@ def project_trial_leg(leg: LegSnapshot) -> TrialLeg:
         )
         and not notes
     )
-    return TrialLeg(
+    return BriefingLeg(
         leg.leg_id,
         (start, end),
         full,

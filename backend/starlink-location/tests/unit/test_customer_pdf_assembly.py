@@ -58,6 +58,9 @@ def test_assembly_preserves_pages_and_rebases_evidence():
         == sha256(outcome.artifacts.pdf).hexdigest()
     )
     assert evidence["render"]["launchCount"] == 0
+    assert evidence["render"]["artifacts"]["pdfPath"] == (
+        json.loads(captured.metadata_json)["name"] + "-brief.pdf"
+    )
 
 
 def test_failed_leg_does_not_publish_partial_mission_pdf():

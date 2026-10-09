@@ -8,6 +8,7 @@ from time import monotonic
 
 from pypdf import PdfReader, PdfWriter
 
+from app.mission.exporter.customer_filename import customer_brief_filename
 from app.mission.exporter.export_cancel import check_cancelled
 from app.mission.exporter.snapshot_inputs import canonical_json
 from app.mission.package.customer_artifacts import (
@@ -96,7 +97,11 @@ def assemble_customer_pdf(snapshot, records, *, cancel=None, ordered_ids=None):
                 "maps": maps,
                 "pdfValidation": proof,
                 "fragments": fragments,
-                "artifacts": {"pdfPath": "mission-customer-briefing-trial.pdf"},
+                "artifacts": {
+                    "pdfPath": customer_brief_filename(
+                        json.loads(snapshot.metadata_json).get("name")
+                    )
+                },
                 "artifactHashes": {"pdfPath": sha256(pdf).hexdigest()},
                 "cleanup": {"success": True, "survivors": [], "errors": []},
             },

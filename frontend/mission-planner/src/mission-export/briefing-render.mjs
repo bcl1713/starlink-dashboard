@@ -12,7 +12,7 @@ export { renderMissionBriefing };
 
 const hash = (v) => createHash('sha256').update(v).digest('hex');
 const here = path.dirname(fileURLToPath(import.meta.url));
-const stem = 'mission-customer-briefing-trial';
+const stem = 'mission-customer-briefing';
 const error = (code, message) => Object.assign(new Error(message), { code });
 export async function renderBriefing({
   payload,

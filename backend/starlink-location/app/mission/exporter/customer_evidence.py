@@ -6,15 +6,15 @@ from copy import deepcopy
 from dataclasses import asdict
 from pathlib import PurePosixPath
 
+from .briefing_clocks import format_clocks
 from .customer_document import (
     build_customer_document,
     build_customer_mission_document,
     stamp,
 )
+from .customer_projection import project_briefing_leg
 from .customer_view import project_customer_leg
 from .snapshot_inputs import canonical_json
-from .trial_clocks import format_clocks
-from .trial_projection import project_trial_leg
 
 
 def _validate_page_plan(payload, plan):
@@ -116,7 +116,7 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
         report.get("artifactHashes") or {},
     )
     if (
-        artifacts.get("pdfPath") != "mission-customer-briefing-trial.pdf"
+        artifacts.get("pdfPath") != "mission-customer-briefing.pdf"
         or any(
             not isinstance(v, str) or not re.fullmatch(r"[0-9a-f]{64}", v)
             for v in hashes.values()
@@ -132,10 +132,10 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
         result.pop("pngs", None)
     legs = []
     for number, captured in enumerate(snapshot.legs, 1 + snapshot.leg_number_offset):
-        trial = project_trial_leg(captured)
+        projection = project_briefing_leg(captured)
         view = project_customer_leg(
             captured,
-            trial,
+            projection,
             leg_number=number,
             leg_count=snapshot.leg_count or len(snapshot.legs),
         )
@@ -145,7 +145,7 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
                 "mapInputDiagnostics": payload["legs"][
                     number - 1 - snapshot.leg_number_offset
                 ]["mapInputDiagnostics"],
-                **_leg_records(captured, trial, view),
+                **_leg_records(captured, projection, view),
             }
         )
     return canonical_json(
@@ -160,15 +160,15 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
     )
 
 
-def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
-    payload = build_customer_document(snapshot, view, trial)
+def build_customer_evidence(snapshot, projection, view, report: dict) -> bytes:
+    payload = build_customer_document(snapshot, view, projection)
     expected = [r.id for r in view.rows]
     fit = report.get("fit") or {}
     pdf = report.get("pdfValidation") or {}
     verified_rows = pdf.get("rows") or []
     expected_rows = [
         {
-            "legId": trial.leg_id,
+            "legId": projection.leg_id,
             "rowId": row["id"],
             "page": 1,
             "displayCells": row["displayCells"],
@@ -181,7 +181,7 @@ def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
         report.get("schemaVersion") != 1
         or report.get("status") != "success"
         or report.get("snapshotFingerprint") != snapshot.fingerprint
-        or report.get("legId") != trial.leg_id
+        or report.get("legId") != projection.leg_id
         or fit.get("pageCount") != 1
         or fit.get("visibleRowIds") != expected
         or fit.get("overflow") != []
@@ -213,14 +213,14 @@ def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
         {
             "schemaVersion": 1,
             "snapshotFingerprint": snapshot.fingerprint,
-            "legId": trial.leg_id,
+            "legId": projection.leg_id,
             "mapInputDiagnostics": payload["mapInputDiagnostics"],
-            **_leg_records(snapshot.legs[0], trial, view),
+            **_leg_records(snapshot.legs[0], projection, view),
             "pages": [
                 {
                     "page": 1,
-                    "startUtc": stamp(trial.utc_bounds[0]),
-                    "endUtc": stamp(trial.utc_bounds[1]),
+                    "startUtc": stamp(projection.utc_bounds[0]),
+                    "endUtc": stamp(projection.utc_bounds[1]),
                     "rowIds": expected,
                 }
             ],
@@ -229,8 +229,8 @@ def build_customer_evidence(snapshot, trial, view, report: dict) -> bytes:
     )
 
 
-def _leg_records(captured, trial, view):
-    origin = trial.utc_bounds[0]
+def _leg_records(captured, projection, view):
+    origin = projection.utc_bounds[0]
 
     def clocks(value):
         labels = format_clocks(value, origin)
@@ -238,7 +238,7 @@ def _leg_records(captured, trial, view):
 
     return {
         "canonical": {
-            "utcBounds": [stamp(v) for v in trial.utc_bounds],
+            "utcBounds": [stamp(v) for v in projection.utc_bounds],
             "intervals": [
                 {
                     "id": i.id,
@@ -256,7 +256,7 @@ def _leg_records(captured, trial, view):
                     "limitations": i.limitations,
                     "remainingTransports": i.remaining_transports,
                 }
-                for i in trial.intervals
+                for i in projection.intervals
             ],
             "sources": [
                 {
@@ -267,10 +267,10 @@ def _leg_records(captured, trial, view):
                     "sourceDigest": s.source_digest,
                     "original": json.loads(s.original_json),
                 }
-                for s in trial.sources
+                for s in projection.sources
             ],
             "capturedSourceRecords": [json.loads(s) for s in captured.source_records],
-            "notes": trial.notes,
+            "notes": projection.notes,
         },
         "customerRows": [
             {

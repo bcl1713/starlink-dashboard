@@ -4,10 +4,10 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 
+from .briefing_clocks import EASTERN
 from .customer_clocks import CustomerRange, format_customer_range
+from .customer_projection import TRANSPORT_NAMES, BriefingInterval, BriefingLeg
 from .snapshot import LegSnapshot
-from .trial_clocks import EASTERN
-from .trial_projection import TRANSPORT_NAMES, TrialInterval, TrialLeg
 
 INCOMPLETE_X = (
     "X-Band planning incomplete — confirmed transport capability shown below."
@@ -35,12 +35,12 @@ class CustomerLegView:
     date_label: str
     timing_label: str
     notice: str | None
-    intervals: tuple[TrialInterval, ...]
+    intervals: tuple[BriefingInterval, ...]
     rows: tuple[CustomerRow, ...]
     legend_required: bool
 
 
-def confirmed_capability(interval: TrialInterval) -> str:
+def confirmed_capability(interval: BriefingInterval) -> str:
     names = [
         n
         for n, d in zip(("Ka", "Starshield", "X-Band"), interval.decisions)
@@ -53,7 +53,7 @@ def confirmed_capability(interval: TrialInterval) -> str:
     )
 
 
-def restriction_labels(interval: TrialInterval) -> tuple[str, ...]:
+def restriction_labels(interval: BriefingInterval) -> tuple[str, ...]:
     labels = []
     for r in interval.restrictions:
         if r.kind == "sof":
@@ -88,9 +88,9 @@ def _impact(interval):
 
 
 def project_customer_leg(
-    captured: LegSnapshot, trial: TrialLeg, *, leg_number: int, leg_count: int
+    captured: LegSnapshot, projection: BriefingLeg, *, leg_number: int, leg_count: int
 ) -> CustomerLegView:
-    if captured.leg_id != trial.leg_id or not 1 <= leg_number <= leg_count:
+    if captured.leg_id != projection.leg_id or not 1 <= leg_number <= leg_count:
         raise ValueError("Customer leg identity/number mismatch")
     raw = json.loads(captured.leg_json)
     route = json.loads(captured.effective_route_json or b"{}")
@@ -114,34 +114,38 @@ def project_customer_leg(
         subtitle = points[0]["location_name"] + " → " + points[-1]["location_name"]
     title = f"LEG {leg_number} OF {leg_count} — {identity}"
     notice = None
-    if trial.intervals and all(i.decisions[2].value == "?" for i in trial.intervals):
+    if projection.intervals and all(
+        i.decisions[2].value == "?" for i in projection.intervals
+    ):
         notice = INCOMPLETE_X
-    elif any(d.value == "?" for i in trial.intervals for d in i.decisions):
+    elif any(d.value == "?" for i in projection.intervals for d in i.decisions):
         notice = "Transport assessment incomplete — confirmed capability shown below."
-    if not trial.utc_bounds:
+    if not projection.utc_bounds:
         return CustomerLegView(
-            trial.leg_id,
+            projection.leg_id,
             title,
             subtitle,
             "",
             "Flight timing unavailable",
             "Flight timing/data incomplete — confirmed information only.",
-            trial.intervals,
+            projection.intervals,
             (),
             leg_number == 1,
         )
-    departure, arrival = trial.utc_bounds
+    departure, arrival = projection.utc_bounds
     flight = format_customer_range(departure, arrival, departure)
     minutes = int((arrival - departure).total_seconds() // 60)
     timing = (
         f"DEP {flight.start} | ARR {flight.end} | {minutes // 60}h {minutes % 60:02d}m"
     )
     varying_assessment = {
-        n for n in range(3) if len({i.decisions[n].value for i in trial.intervals}) > 1
+        n
+        for n in range(3)
+        if len({i.decisions[n].value for i in projection.intervals}) > 1
     }
     groups = []
     previous = None
-    for interval in trial.intervals:
+    for interval in projection.intervals:
         selected = (
             bool(interval.restrictions)
             or any(interval.decisions[n].value == "?" for n in varying_assessment)
@@ -173,7 +177,7 @@ def project_customer_leg(
         )
         rows.append(
             CustomerRow(
-                f"{trial.leg_id}-customer-{n:03d}",
+                f"{projection.leg_id}-customer-{n:03d}",
                 first.start_time,
                 last.end_time,
                 format_customer_range(first.start_time, last.end_time, departure),
@@ -185,13 +189,13 @@ def project_customer_leg(
             )
         )
     return CustomerLegView(
-        trial.leg_id,
+        projection.leg_id,
         title,
         subtitle,
         departure.astimezone(EASTERN).strftime("%d %b %Y"),
         timing,
         notice,
-        trial.intervals,
+        projection.intervals,
         tuple(rows),
         leg_number == 1,
     )

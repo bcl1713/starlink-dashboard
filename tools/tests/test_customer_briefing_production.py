@@ -233,7 +233,7 @@ def test_geometry_receipt_excludes_only_identified_generation_clocks(damage):
 
 def download_fixture(damage=None):
     pdf = b"%PDF-qualified-independent-inspection-follows"
-    pdf_path = "exports/mission/mission-customer-briefing-trial.pdf"
+    pdf_path = "exports/mission/27-02-brief.pdf"
     evidence_path = "exports/mission/mission-customer-briefing-evidence.json"
     evidence = {
         "schemaVersion": 2,
@@ -266,7 +266,7 @@ def download_fixture(damage=None):
         },
     }
     entries = {
-        "mission.json": b'{"id":"m"}',
+        "mission.json": b'{"id":"m","name":"27-02"}',
         "exports/mission/mission-timeline.csv": b"csv",
     }
     entries[pdf_path] = pdf
@@ -390,7 +390,7 @@ def test_publication_fault_preserves_ordinary_legacy_zip_writes():
 def legacy_fixture(clock, damage=False):
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w") as archive:
-        archive.writestr("mission.json", b'{"id":"m"}')
+        archive.writestr("mission.json", b'{"id":"m","name":"27-02"}')
         archive.writestr(
             "exports/mission/timeline.csv",
             f"Mission,M,Total Legs,1,Generated,{clock}\r\nEvent,unchanged\r\n",

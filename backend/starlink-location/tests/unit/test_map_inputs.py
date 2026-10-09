@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.mission.exporter.trial_projection import project_trial_leg
+from app.mission.exporter.customer_projection import project_briefing_leg
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 
@@ -31,10 +31,10 @@ def test_supported_untimed_vertex_fixture_retains_bounds_and_reasoned_map_fallba
     data = fixture("composition-assessed")
     data["route"] = route.model_dump(mode="json")
     captured = snapshot(data)
-    scene, reasons = build_map_input(captured, project_trial_leg(captured))
+    scene, reasons = build_map_input(captured, project_briefing_leg(captured))
     assert scene is None
     assert reasons == (
-        "Effective route geometry or timing cannot locate trial windows",
+        "Effective route geometry or timing cannot locate briefing windows",
     )
 
 
@@ -44,10 +44,12 @@ def test_map_input_preserves_exact_outage_markers_and_dateline():
     build = importlib.import_module(name).build_map_input
     captured = snapshot(fixture("composition-assessed"))
     before = captured.effective_route_json
-    trial = project_trial_leg(captured)
-    raw, warnings = build(captured, trial)
+    projection = project_briefing_leg(captured)
+    raw, warnings = build(captured, projection)
     assert not warnings
-    red = next(i for i in trial.intervals if i.posture == "Communications unavailable")
+    red = next(
+        i for i in projection.intervals if i.posture == "Communications unavailable"
+    )
     marker = next(m for m in raw["markers"] if m["id"] == red.id)
     point = raw["route"][marker["routeIndex"]]
     assert point["timestamp"] == "2026-10-25T16:25:00Z"
@@ -59,7 +61,7 @@ def test_map_input_preserves_exact_outage_markers_and_dateline():
         point["latitude"] = 20
         point["longitude"] = [170, 179, -179, -170][n]
     cap = snapshot(data)
-    raw, warnings = build(cap, project_trial_leg(cap))
+    raw, warnings = build(cap, project_briefing_leg(cap))
     assert not warnings
     mid = next(p for p in raw["route"] if p["timestamp"] == "2026-10-25T16:25:00Z")
     assert abs(mid["longitude"]) > 179
@@ -85,7 +87,7 @@ def test_map_timing_normalization_preserves_positions_and_rejects_ambiguity(case
         points.insert(1, duplicate)
     captured = snapshot(data)
     original = captured.effective_route_json
-    scene, reasons = build_map_input(captured, project_trial_leg(captured))
+    scene, reasons = build_map_input(captured, project_briefing_leg(captured))
     if case in {"conflicting", "backward"}:
         assert scene is None and reasons
     else:

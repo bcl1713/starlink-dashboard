@@ -24,7 +24,7 @@ def implementation():
 def stage_report(module, monkeypatch, tmp_path, mutate=lambda report: None):
     captured, _payload, _plan, report = mission_case()
     pdf = b"%PDF-qualified-test-control"
-    report["artifacts"] = {"pdfPath": "mission-customer-briefing-trial.pdf"}
+    report["artifacts"] = {"pdfPath": "mission-customer-briefing.pdf"}
     report["artifactHashes"]["pdfPath"] = sha256(pdf).hexdigest()
     report["cleanup"].update(
         contextsClosed=True,
@@ -39,7 +39,7 @@ def stage_report(module, monkeypatch, tmp_path, mutate=lambda report: None):
 
     def run(command, staging, *, cancel, **kwargs):
         roots.append(Path(staging))
-        (Path(staging) / "mission-customer-briefing-trial.pdf").write_bytes(pdf)
+        (Path(staging) / "mission-customer-briefing.pdf").write_bytes(pdf)
         (Path(staging) / "render-report.json").write_text(json.dumps(report))
         return 0
 
