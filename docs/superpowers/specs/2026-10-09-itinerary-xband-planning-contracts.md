@@ -59,15 +59,25 @@ and event resolver is required; validating only the winning schedule using the
 old sampler is insufficient.
 
 Define candidate swap times C from the departure-relative 60-second grid, route
-timing/heading/altitude anchors, AR/overlay/outage/safety boundaries, and locked
-swap times. Include departure and arrival; only eligible interior times can host
-generated swaps. A locked time retains its exact seconds.
+timing/heading/altitude anchors, AR/overlay/outage/safety boundaries, and every
+current draft swap time, whether manual or generated, locked or unlocked.
+Include departure and arrival; only eligible interior times can host generated
+swaps. Every existing swap retains its exact seconds and buffer edges for
+preview/scoring, including manually overlapping swaps.
 
 Define evaluation boundaries B as C plus each candidate's swap-buffer start and
 end, clipped to the flight. B is common to all schedules for the same input
 identity, independent of the winning schedule. Extra evaluation boundaries do
 not become new swap candidates recursively. Display both the candidate cadence
 and the fact that exact event boundaries supplement it.
+
+Persist an evaluation context with its seed times, C/B sets, input identity, and
+model version. Applying a proposal, saving it, or reloading retains this
+context, even if the new schedule omits an unlocked draft swap that seeded C. Do
+not shrink B by rebuilding it from only the winning schedule. Structural input
+changes or an explicit manual timing edit create a new context and invalidate
+old proposals; recompute both the comparison baseline and proposal under that
+new context. Persist/export/import the context with the plan.
 
 All intervals are half-open [start, end). AR exclusions apply at AR entry and
 cease at AR exit. At swap time the assignment becomes the target satellite; the
@@ -80,7 +90,8 @@ Sample route position, heading, altitude, and each satellite's geometry at each
 left boundary, then hold sampled geometry through the next boundary. This is the
 disclosed approximation; no between-boundary crossing is claimed detected. Exact
 operational boundaries and their effects are never rounded to a minute.
-Recompute the same boundary set from persisted inputs after save or reload.
+Reconstruct the same boundary set from the persisted evaluation context after
+save or reload; validate it against its input identity before using it.
 
 Score every candidate using these intervals and the outage predicate above.
 Reconstruction through canonical preparation must reproduce the same interval
@@ -137,10 +148,11 @@ Preserve logical relationships even when no executable legs have been created.
 
 Import stages and validates this complete graph before committing bindings. A
 missing or invalid referenced file fails the new planning package import without
-a partial mission/route mutation; legacy packages keep their documented
-compatibility behavior. An incomplete source set fails export with actionable
-errors instead of producing a package that appears to preserve recoverable work.
-Successful round-trip resumes unfinished review and keeps retired work archived.
+a partial mission/route mutation; legacy packages retain format compatibility
+subject to the same collision and ownership protections. An incomplete source
+set fails export with actionable errors instead of producing a package that
+appears to preserve recoverable work. Successful round-trip resumes unfinished
+review and keeps retired work archived.
 
 ## Required acceptance cases
 
@@ -150,9 +162,11 @@ Successful round-trip resumes unfinished review and keeps retired work archived.
 - When Starshield is disabled or in a Ku outage, permit otherwise viable X in
   that sector. Elevation/AR blocks and overlaps still count once. Safety advice
   alone contributes no X outage seconds and remains visible in call guidance.
-- Use AR boundaries and locked swaps at second-level times such as 12:00:30;
-  check entry, exit, simultaneous conditions, and both buffer edges. Assert
-  equal optimizer/canonical intervals and costs, including after save/reload.
+- Use AR boundaries and locked/unlocked swaps at times such as 12:00:30; check
+  entry, exit, simultaneous conditions, and both buffer edges. Assert equal
+  optimizer/canonical intervals and costs. Remove an unlocked seed swap by
+  applying a proposal; verify unchanged C/B and scoring after save/reload and
+  package round-trip. A manual timing edit explicitly creates a new context.
 - Enumerate all schedules for small candidate sets and compare their canonical
   costs under the same policy, including deterministic ties and manual locks.
 - Import a different mission with a colliding filename/route ID, including an
