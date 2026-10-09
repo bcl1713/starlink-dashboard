@@ -166,3 +166,84 @@ test('narrow incomplete intervals expose one and zero confirmed without definiti
   assert.equal((svg.match(/>2 confirmed<\/text>/g) || []).length, 2);
   assert.doesNotMatch(svg, /fill="#b72e36"/);
 });
+
+test('separated refueling windows retain exact bands with readable measured labels', async () => {
+  const p = structuredClone(payload);
+  p.flight = {
+    startUtc: '2026-10-29T14:00:00Z',
+    endUtc: '2026-10-30T06:10:10Z',
+  };
+  p.intervals = [
+    ['2026-10-29T14:00:00Z', '2026-10-29T18:18:29Z', []],
+    ['2026-10-29T18:18:29Z', '2026-10-29T19:50:32Z', ['Air refueling']],
+    ['2026-10-29T19:50:32Z', '2026-10-29T22:58:53Z', []],
+    ['2026-10-29T22:58:53Z', '2026-10-30T00:05:05Z', ['Air refueling']],
+    ['2026-10-30T00:05:05Z', '2026-10-30T06:10:10Z', []],
+  ].map(([startUtc, endUtc, restrictionLabels]) => ({
+    startUtc,
+    endUtc,
+    restrictionLabels,
+    posture: 'Nominal',
+    decisions: ['Up', 'Up', 'Up'],
+  }));
+  const svg = (await renderer())(p);
+  const labels = [
+    ...svg.matchAll(/<text x="([^"]+)" y="216" ([^>]+)>Air refueling<\/text>/g),
+  ];
+  assert.equal(labels.length, 2);
+  // Reproduce the 92px DejaVu labels measured in the production browser.
+  const { positionRestrictionLabels } = await import('./timeline.mjs');
+  const positions = positionRestrictionLabels(
+    labels.map((label) => ({
+      left:
+        Number(label[1]) - (label[2].includes('text-anchor="end"') ? 92 : 0),
+      width: 92,
+    }))
+  );
+  assert.ok(positions[1] - positions[0] >= 100);
+  assert.equal((svg.match(/data-restriction width=/g) || []).length, 2);
+});
+
+test('measured restriction labels keep separation near landing without shrinking', async () => {
+  const { positionRestrictionLabels } = await import('./timeline.mjs');
+  assert.equal(typeof positionRestrictionLabels, 'function');
+  const labels = [
+    { left: 1074, width: 92 },
+    { left: 1105, width: 97 },
+  ];
+  const positions = positionRestrictionLabels(labels);
+  assert.ok(positions[1] - (positions[0] + 92) >= 8);
+  assert.ok(positions[0] >= 280);
+  assert.ok(positions[1] + 97 <= 1240);
+  assert.deepEqual(labels, [
+    { left: 1074, width: 92 },
+    { left: 1105, width: 97 },
+  ]);
+});
+
+test('restriction labels retain measured positions when already clear', async () => {
+  const { positionRestrictionLabels } = await import('./timeline.mjs');
+  assert.equal(typeof positionRestrictionLabels, 'function');
+  assert.deepEqual(
+    positionRestrictionLabels([
+      { left: 320, width: 89 },
+      { left: 535, width: 92 },
+      { left: 800, width: 92 },
+      { left: 1110, width: 97 },
+    ]),
+    [320, 535, 800, 1110]
+  );
+});
+
+test('restriction labels reject a lane too crowded for their full measured widths', async () => {
+  const { positionRestrictionLabels } = await import('./timeline.mjs');
+  assert.equal(typeof positionRestrictionLabels, 'function');
+  assert.throws(
+    () =>
+      positionRestrictionLabels([
+        { left: 280, width: 600 },
+        { left: 600, width: 600 },
+      ]),
+    (e) => e.code === 'overflow'
+  );
+});

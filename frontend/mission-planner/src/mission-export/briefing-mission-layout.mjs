@@ -10,6 +10,7 @@ import {
 } from './briefing/document.mjs';
 import { planBriefingPages } from './briefing/pagination.mjs';
 import { buildPdfExpectations } from './briefing/pdf-expectations.mjs';
+import { positionRestrictionLabels } from './briefing/timeline.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const hash = (v) => createHash('sha256').update(v).digest('hex');
 const error = (code, message) => Object.assign(new Error(message), { code });
@@ -37,12 +38,40 @@ async function ready(page, budget) {
           }
         })
       );
-      return { fonts, images: images.every(Boolean) };
+      return {
+        fonts,
+        images: images.every(Boolean),
+        restrictions: [...document.querySelectorAll('.timeline')].map((svg) =>
+          [...svg.querySelectorAll('[data-restriction-label]')].map((label) => {
+            const bounds = label.getBBox();
+            return { left: bounds.x, width: bounds.width };
+          })
+        ),
+      };
     }),
     budget.workRemainingMs()
   );
   if (!result.fonts) throw error('runtime', 'Intended fonts did not load');
   if (!result.images) throw error('runtime', 'Image decode failed');
+  if (result.restrictions?.length) {
+    const positions = result.restrictions.map((labels) =>
+      positionRestrictionLabels(labels)
+    );
+    await within(
+      page.evaluate((positions) => {
+        [...document.querySelectorAll('.timeline')].forEach((svg, index) => {
+          [...svg.querySelectorAll('[data-restriction-label]')].forEach(
+            (label, number) => {
+              const width = label.getBBox().width;
+              label.setAttribute('text-anchor', 'middle');
+              label.setAttribute('x', positions[index][number] + width / 2);
+            }
+          );
+        });
+      }, positions),
+      budget.workRemainingMs()
+    );
+  }
 }
 
 export function createMissionDocumentLoader({
@@ -343,11 +372,12 @@ export async function prepareMissionDocument({
       ...expected.rows.map((r) => ({ ...r, page: i + 1 }))
     );
   }
+  const renderedHtml = await within(page.content(), budget.workRemainingMs());
   const diagnosticNames = [],
-    diagnosticHashes = { htmlPath: hash(html) };
+    diagnosticHashes = { htmlPath: hash(renderedHtml) };
   await writeFile(
     ownedPath(outputRoot, 'mission-customer-briefing-trial.html'),
-    html
+    renderedHtml
   );
   for (let i = 0; i < measured.length; i++) {
     check();
