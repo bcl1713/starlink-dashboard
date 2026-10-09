@@ -5,9 +5,10 @@ import io
 import json
 import time
 import zipfile
-from hashlib import sha256
-from math import radians, sin, cos, asin, sqrt
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+from itertools import pairwise
+from math import asin, cos, radians, sin, sqrt
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
@@ -27,6 +28,19 @@ WARNINGS = {
     "publication",
     "busy",
 }
+
+
+def verify_cold_previews(previews, page_count):
+    required = {"htmlPath"} | {f"page-{number}" for number in range(1, page_count + 1)}
+    if (
+        len(previews) != 3
+        or not required <= previews[0].keys()
+        or any(preview != previews[0] for preview in previews[1:])
+    ):
+        raise ValueError(
+            "Three cold production HTML/preview PNGs differ or are missing"
+        )
+    return previews[0]
 
 
 def compare_legacy(disabled, enabled):
@@ -160,7 +174,7 @@ def assert_scenario(case, report):
             or instant(intervals[-1]["endUtc"]) != bounds[1]
         ):
             raise ValueError("Canonical interval coverage lost flight endpoints")
-        if any(a["endUtc"] != b["startUtc"] for a, b in zip(intervals, intervals[1:])):
+        if any(a["endUtc"] != b["startUtc"] for a, b in pairwise(intervals)):
             raise ValueError("Canonical intervals have gaps or overlap")
         if case == "incomplete-x" and any(
             item["decisions"][2]["value"] != "?" for item in intervals
@@ -593,7 +607,7 @@ def qualify(owner):
         )
         report = inspect_download(content, headers, status)
         if case == "spliced":
-            from production_seed import kml, BASE
+            from production_seed import BASE, kml
 
             with zipfile.ZipFile(io.BytesIO(content)) as archive:
                 original = archive.read("routes/briefing-spliced-route-1.kml")
@@ -738,17 +752,14 @@ def qualify(owner):
     ):
         raise ValueError("Three cold production five-leg exports differ")
     previews = [r["evidence"]["render"]["diagnosticHashes"] for r in five]
-    if not {f"page-{number}" for number in range(1, 6)} <= previews[0].keys() or any(
-        preview != previews[0] for preview in previews[1:]
-    ):
-        raise ValueError("Three cold production HTML/preview PNGs differ")
+    verified_previews = verify_cold_previews(previews, 5)
     (owner.root / "preview-comparison.json").write_text(
         json.dumps(
             {
                 "matched": True,
                 "scope": "three fresh browser five-leg production exports",
                 "comparison": "identical renderer PNG bytes imply identical decoded preview pixels",
-                "diagnosticSha256": previews[0],
+                "diagnosticSha256": verified_previews,
             },
             indent=2,
         )

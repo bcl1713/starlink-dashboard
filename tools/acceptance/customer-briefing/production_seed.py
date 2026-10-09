@@ -24,7 +24,7 @@ with (satellites/'catalog.yaml').open('a') as catalog:
 """
 
 
-def kml(start, duration, wide=False):
+def kml(start, duration, wide=False, untimed_middle=False):
     coordinates = (
         [(-105, 35), (-102, 35), (-99, 35)]
         if not wide
@@ -34,8 +34,13 @@ def kml(start, duration, wide=False):
     for index, (longitude, latitude) in enumerate(coordinates):
         time = start + duration * index / (len(coordinates) - 1)
         clock = time.strftime("%Y-%m-%d %H:%M:%S") + "Z"
+        description = (
+            "Untimed interior vertex for synthetic map fallback acceptance"
+            if untimed_middle and index == 1
+            else "Time Over Waypoint: " + clock
+        )
         points.append(
-            f"<Placemark><name>Waypoint {index}</name><description>Time Over Waypoint: {clock}</description><Point><coordinates>{longitude},{latitude},10000</coordinates></Point></Placemark>"
+            f"<Placemark><name>Waypoint {index}</name><description>{description}</description><Point><coordinates>{longitude},{latitude},10000</coordinates></Point></Placemark>"
         )
     line = " ".join(
         f"{longitude},{latitude},10000" for longitude, latitude in coordinates
@@ -70,7 +75,7 @@ def seed_missions(api, root):
         "three-page": {"dense": 28},
         "five-leg": {"legs": 5},
         "over-budget": {"dense": 100},
-        "missing-map": {"wide": True},
+        "missing-map": {"untimed_middle": True},
     }
     saved = {}
     for name, recipe in recipes.items():
@@ -179,7 +184,12 @@ def seed_missions(api, root):
             routes.append(
                 (
                     f"{mission_id}-route-{number+1}.kml",
-                    kml(start, duration, recipe.get("wide", False)),
+                    kml(
+                        start,
+                        duration,
+                        recipe.get("wide", False),
+                        recipe.get("untimed_middle", False),
+                    ),
                 )
             )
         mission = {

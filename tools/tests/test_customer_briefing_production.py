@@ -115,6 +115,23 @@ def controls():
     return value
 
 
+@pytest.mark.parametrize("damage", ["htmlPath", "page-5", "different", "only-two"])
+def test_cold_preview_proof_requires_three_complete_identical_artifact_sets(damage):
+    complete = {"htmlPath": "a" * 64} | {
+        f"page-{page}": str(page) * 64 for page in range(1, 6)
+    }
+    previews = [dict(complete) for _ in range(3)]
+    if damage == "only-two":
+        previews.pop()
+    elif damage == "different":
+        previews[2]["page-3"] = "b" * 64
+    else:
+        for preview in previews:
+            preview.pop(damage)
+    with pytest.raises(ValueError, match="cold production"):
+        controls().verify_cold_previews(previews, 5)
+
+
 def download_fixture(damage=None):
     pdf = b"%PDF-qualified-independent-inspection-follows"
     pdf_path = "exports/mission/mission-customer-briefing-trial.pdf"

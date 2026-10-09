@@ -1,10 +1,41 @@
 import copy
 import importlib
+from datetime import timedelta
+from pathlib import Path
 
 import pytest
 
 from app.mission.exporter.trial_projection import project_trial_leg
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
+
+
+def test_supported_untimed_vertex_fixture_retains_bounds_and_reasoned_map_fallback(
+    tmp_path,
+):
+    from app.mission.exporter.map_inputs import build_map_input
+    from app.mission.timeline_builder.calculator import derive_mission_window
+    from app.services.kml_parser import parse_kml_file
+
+    source = (
+        Path(__file__).resolve().parents[4]
+        / "tools/acceptance/customer-briefing/production_seed.py"
+    )
+    spec = importlib.util.spec_from_file_location("production_seed", source)
+    seed = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(seed)
+    path = tmp_path / "untimed-vertex.kml"
+    path.write_bytes(seed.kml(seed.BASE, timedelta(hours=4), untimed_middle=True))
+    route = parse_kml_file(path)
+    assert derive_mission_window(route) == (seed.BASE, seed.BASE + timedelta(hours=4))
+    assert route.points[1].expected_arrival_time is None
+    data = fixture("composition-assessed")
+    data["route"] = route.model_dump(mode="json")
+    captured = snapshot(data)
+    scene, reasons = build_map_input(captured, project_trial_leg(captured))
+    assert scene is None
+    assert reasons == (
+        "Effective route geometry or timing cannot locate trial windows",
+    )
 
 
 def test_map_input_preserves_exact_outage_markers_and_dateline():
