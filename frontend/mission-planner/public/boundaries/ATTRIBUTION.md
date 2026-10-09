@@ -5,18 +5,25 @@ All Natural Earth vector data is [public domain](https://www.naturalearthdata.co
 
 ## Source and coverage
 
-Both inputs are Natural Earth 1:10 million scale, version **5.1.0**:
+All inputs are Natural Earth 1:10 million scale. The two political boundary
+inputs are version **5.1.0**; the coastline input is version **4.1.0**:
 
 - [Admin 0 land boundary lines](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-boundary-lines/):
   [source archive](https://naturalearth.s3.amazonaws.com/10m_cultural/ne_10m_admin_0_boundary_lines_land.zip),
   SHA-256 `16ead035f539c8b6c23650c5845d86ad3556553e7456bdf9b4730210f26aacbe`.
+- [Coastline](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/):
+  [source archive](https://naturalearth.s3.amazonaws.com/10m_physical/ne_10m_coastline.zip),
+  SHA-256 `bfa04cdbcbef07ef90dfca1dabb48062eca29900a113df0f389303e255484017`.
 - [Admin 1 state/province boundary lines](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-1-states-provinces/):
   [source archive](https://naturalearth.s3.amazonaws.com/10m_cultural/ne_10m_admin_1_states_provinces_lines.zip),
   SHA-256 `86acd56ce6c0e47f5fa79725591533b5766f26d6ed1437b086f2b8d4028fe456`.
 
-Country borders are shared international land borders, without country fills,
-coastline outlines, maritime claims, lease limits, overlay limits, or water
-indicators. Subdivisions cover worldwide states, provinces and equivalent
+Country borders combine shared international land borders with solid coastline
+outlines, including major islands and the Caspian Sea as supplied by Natural
+Earth. Minor islands are not all included. Both sources ship in `countries.json`
+and follow the same Country borders switch and stroke. No country fills,
+maritime claims, lease limits, overlay limits, or water indicators are added.
+Subdivisions cover worldwide states, provinces and equivalent
 administrative/statistical regions as supplied by Natural Earth. Coverage is
 not universal: Antarctica, some disputed areas and small jurisdictions lack
 admin-1 boundaries. These generalized reference lines may be outdated and are
@@ -34,8 +41,8 @@ does not establish legal sovereignty or identify every disputed boundary.
 
 ## Reproducible conversion and runtime availability
 
-Download the two archives as `countries.zip` and `subdivisions.zip` into a
-scratch directory, then run from the repository root:
+Download the three archives as `countries.zip`, `coastlines.zip` and
+`subdivisions.zip` into a scratch directory, then run from the repository root:
 
 ```sh
 uv run tools/build-overview-boundaries.py --input-dir /path/to/archives
@@ -45,8 +52,11 @@ The script verifies the archive hashes, uses pinned pyshp 2.3.1 and Shapely
 2.1.2, unwraps longitude before simplification, preserves multipart separation
 and line endpoints, simplifies at 0.025 degrees, and rounds coordinates to five
 decimal places. It strips labels and unused source metadata; only points and
-source-classified disputed flags are shipped. Country data contains 7,920 line
-parts / 22,176 points; subdivision data contains 44,943 parts / 114,763 points.
+source-classified disputed flags are shipped. Country and coastline data together
+contain 12,039 line parts / 105,499 points; subdivision data contains 44,943
+parts / 114,763 points. Closed coastline loops and multipart separation are
+preserved.
+The runtime budgets apply to the combined country asset.
 
 The generated compact JSON files are bundled in the production frontend and
 served by the same Nginx origin. There are **no external runtime requests**.

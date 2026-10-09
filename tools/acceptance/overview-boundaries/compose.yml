@@ -4,7 +4,8 @@ services:
       starlink-282-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact candidate SHA
       required}
     build:
-      context: ${BOUNDARY_ACCEPTANCE_SOURCE_ROOT:-../../..}/backend/starlink-location
+      context: ${BOUNDARY_ACCEPTANCE_SOURCE_ROOT:-../../..}
+      dockerfile: backend/starlink-location/Dockerfile
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
     environment:

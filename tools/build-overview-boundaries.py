@@ -6,21 +6,22 @@
 """Convert verified Natural Earth archives into bounded, offline globe assets.
 
 uv run tools/build-overview-boundaries.py --input-dir /path/to/archives
-The input directory must contain countries.zip and subdivisions.zip.
+The input directory must contain countries.zip, coastlines.zip and subdivisions.zip.
 """
 
 import argparse
 import hashlib
 import io
 import json
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 import shapefile
 from shapely.geometry import LineString
 
 SOURCES = {
     "countries": "16ead035f539c8b6c23650c5845d86ad3556553e7456bdf9b4730210f26aacbe",
+    "coastlines": "bfa04cdbcbef07ef90dfca1dabb48062eca29900a113df0f389303e255484017",
     "subdivisions": "86acd56ce6c0e47f5fa79725591533b5766f26d6ed1437b086f2b8d4028fe456",
 }
 
@@ -39,11 +40,15 @@ def convert(archive: Path, expected_hash: str) -> dict:
             encoding="utf-8",
         )
         for record in reader.iterShapeRecords():
-            attrs = record.record.as_dict()
+            # Physical coastline fields are lowercase; cultural boundary fields
+            # are uppercase. Normalize the trusted source schemas before filtering.
+            attrs = {
+                key.upper(): value for key, value in record.record.as_dict().items()
+            }
             classification = attrs["FEATURECLA"]
             if (
                 classification in {"Lease limit", "Overlay limit"}
-                or attrs["TYPE"] == "Water Indicator"
+                or attrs.get("TYPE") == "Water Indicator"
             ):
                 continue
             disputed = any(
@@ -97,8 +102,16 @@ def main() -> None:
     )
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    for name, expected_hash in SOURCES.items():
-        data = convert(args.input_dir / f"{name}.zip", expected_hash)
+    for name in ("countries", "subdivisions"):
+        data = convert(args.input_dir / f"{name}.zip", SOURCES[name])
+        if name == "countries":
+            coastlines = convert(
+                args.input_dir / "coastlines.zip", SOURCES["coastlines"]
+            )
+            data["lines"].extend(coastlines["lines"])
+        points_count = sum(len(line["points"]) for line in data["lines"])
+        if points_count > 120_000:
+            raise ValueError("Dataset exceeds the runtime point budget")
         output = args.output_dir / f"{name}.json"
         output.write_text(
             json.dumps(data, separators=(",", ":")) + "\n", encoding="utf-8"
@@ -106,7 +119,7 @@ def main() -> None:
         if output.stat().st_size > 4_000_000:
             raise ValueError("Dataset exceeds the runtime byte budget")
         print(
-            f"{name}: {len(data['lines'])} lines, {sum(len(line['points']) for line in data['lines'])} points, {output.stat().st_size} bytes"
+            f"{name}: {len(data['lines'])} lines, {points_count} points, {output.stat().st_size} bytes"
         )
 
 

@@ -28,7 +28,9 @@ async function scene(page: Page) {
                   fn: (o: {
                     name: string;
                     geometry?: {
-                      attributes: { position?: { count: number } };
+                      attributes: {
+                        position?: { count: number; array: ArrayLike<number> };
+                      };
                       type: string;
                       parameters?: { radius?: number };
                     };
@@ -53,6 +55,7 @@ async function scene(page: Page) {
     const borders: {
       name: string;
       count: number;
+      hawaiiVertices: number;
       depthTest?: boolean;
       depthWrite?: boolean;
     }[] = [];
@@ -62,13 +65,29 @@ async function scene(page: Page) {
         o.geometry.parameters?.radius === 2
       )
         earth = true;
-      if (o.name.startsWith('overview-boundaries-'))
+      if (o.name.startsWith('overview-boundaries-')) {
+        const positions = o.geometry?.attributes.position?.array ?? [];
+        let hawaiiVertices = 0;
+        for (let i = 0; i < positions.length; i += 3) {
+          const [x, y, z] = [positions[i], positions[i + 1], positions[i + 2]];
+          const latitude = (Math.asin(y / Math.hypot(x, y, z)) * 180) / Math.PI;
+          const longitude = (Math.atan2(-z, x) * 180) / Math.PI;
+          if (
+            longitude > -157 &&
+            longitude < -154 &&
+            latitude > 18 &&
+            latitude < 22
+          )
+            hawaiiVertices++;
+        }
         borders.push({
           name: o.name,
           count: (o.geometry?.attributes.position?.count ?? 0) / 2,
           depthTest: o.material?.depthTest,
           depthWrite: o.material?.depthWrite,
+          hawaiiVertices,
         });
+      }
     });
     return {
       borders,
@@ -231,6 +250,15 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       );
       const countryScene = await scene(overview);
       expect(countryScene.borders).toHaveLength(2);
+      expect(
+        countryScene.borders.find(
+          (line) => line.name === 'overview-boundaries-countries'
+        )?.hawaiiVertices
+      ).toBeGreaterThan(0);
+      expect(
+        countryScene.borders.find((line) => line.name.endsWith('-disputed'))
+          ?.hawaiiVertices
+      ).toBe(0);
       await expect(
         (await legend(overview)).getByText('Country borders', { exact: true })
       ).toBeVisible();
@@ -471,6 +499,8 @@ test('fixture operational overlays remain readable with real bundled borders', a
   // Camera probes exercise globe-attached geometry at the date line and pole;
   // they are identified as controlled views rather than public recenter behavior.
   for (const [name, latitude, longitude] of [
+    ['hawaii-coastlines', 20, -156],
+    ['australia-coastlines', -28, 135],
     ['dateline', 10, 180],
     ['polar', 82, 20],
   ] as const) {

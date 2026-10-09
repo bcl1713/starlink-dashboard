@@ -24,7 +24,7 @@ export function OverviewBoundarySettingsCard() {
             [
               'country_borders_enabled',
               'Country borders',
-              'Show international land borders.',
+              'Show international land borders and coastlines.',
             ],
             [
               'state_borders_enabled',
