@@ -200,6 +200,8 @@ print('staged ready export')
                 "-T",
                 "--user",
                 "appuser",
+                "-e",
+                "PYTHONPATH=/acceptance:/app",
                 "starlink-location",
                 "python",
                 "/acceptance/production_pdf_probe.py",
