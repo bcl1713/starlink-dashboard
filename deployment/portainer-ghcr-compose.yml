@@ -5,7 +5,9 @@ services:
     image: ghcr.io/bcl1713/starlink-dashboard/starlink-location:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
     # Deliberately on-demand: start the Portainer stack when needed.
     restart: "no"
+    init: true
     environment:
+      STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED: ${STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED:-false}
       STARLINK_MODE: ${STARLINK_MODE:-simulation}
       SIMULATION_MODE: ${SIMULATION_MODE:-true}
       STARLINK_DISH_HOST: ${STARLINK_DISH_HOST:-192.168.100.1}

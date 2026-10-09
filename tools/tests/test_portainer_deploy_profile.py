@@ -179,10 +179,18 @@ def test_backend_compose_healthchecks_allow_observed_cold_start() -> None:
 @pytest.mark.parametrize(
     "filename", ["portainer-ghcr-compose.yml", "portainer-forge-dev-compose.yml"]
 )
+@pytest.mark.parametrize("briefing_flag", [None, "", "false", "true"])
 def test_deployment_has_private_worker_with_same_tag_and_shared_state(
-    tmp_path: Path, filename: str
+    tmp_path: Path, filename: str, briefing_flag: str | None
 ):
-    env = {k: v for k, v in os.environ.items() if not k.startswith("COMPOSE_")}
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not k.startswith("COMPOSE_")
+        and k != "STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED"
+    }
+    if briefing_flag is not None:
+        env["STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED"] = briefing_flag
     env.update(
         STARLINK_IMAGE_TAG="sha-" + "a" * 40,
         STARLINK_APP_DATA_PATH=str(tmp_path / "app"),
@@ -209,6 +217,11 @@ def test_deployment_has_private_worker_with_same_tag_and_shared_state(
     services = config["services"]
     worker = services["gfs-worker"]
     api = services["starlink-location"]
+    assert api["environment"]["STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED"] == (
+        briefing_flag or "false"
+    )
+    assert api["init"] is True
+    assert "STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED" not in worker["environment"]
     assert (
         worker["image"]
         == "ghcr.io/bcl1713/starlink-dashboard/gfs-worker:sha-" + "a" * 40
