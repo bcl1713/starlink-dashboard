@@ -36,9 +36,10 @@ import defect. No new-head full-matrix pass is claimed.
 
 [Review samples and provenance](../../samples/customer-briefing/production/README.md)
 record the three new PDFs and actual omitted-download feedback. Runtime
-resources are removed and evidence is preserved outside the worktree. Task 8
-remains open for explicit customer acceptance and final PR integration. Default
-stays off.
+resources are removed and evidence is preserved outside the worktree. Task 8 has
+received explicit customer acceptance: the user replied "Looks great" on
+2026-10-09 to the request covering these PDFs and production download behavior.
+Final PR integration remains. Default stays off.
 
 ## Global constraints
 

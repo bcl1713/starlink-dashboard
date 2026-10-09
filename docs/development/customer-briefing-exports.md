@@ -91,4 +91,5 @@ adjustment passed production HTTP 200 deadline-omission ZIP qualification at
 76.73 seconds, with complete legacy content, safe headers, unchanged source
 inputs and owned cleanup.
 [Production samples and validation scope](../samples/customer-briefing/production/README.md)
-record the remaining customer acceptance boundary.
+record the user's 2026-10-09 acceptance of the presented three PDFs and
+production download behavior. Shared production enablement remains separate.

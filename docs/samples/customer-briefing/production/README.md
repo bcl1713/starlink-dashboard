@@ -2,7 +2,9 @@
 
 These files were extracted unchanged from real mission export ZIPs through the
 production API and Nginx, using supported synthetic mission, KML and provider
-inputs. They are ready for customer review; acceptance remains pending.
+inputs. The user accepted these examples and the presented production download
+behavior on 2026-10-09 with "Looks great" in direct response to the acceptance
+request for PR #314.
 
 | Actual PDF                                        | Pages | Verified coordination rows |
 | ------------------------------------------------- | ----: | -------------------------: |
@@ -31,6 +33,8 @@ pass. Adjacent evidence JSONs are the actual published evidence; private HTML,
 previews and runtime files remain outside the ZIP. The feature remains off by
 default.
 
-Customer acceptance is required for these new continuation/multi-leg examples
-and production download behavior. PR #312 accepted only its original two
-single-page examples. No new five-second scan duration has been measured.
+This acceptance covers these three continuation/multi-leg examples and the
+presented production download behavior. It is separate from PR #312's two
+single-page examples and does not authorize shared production enablement. No new
+five-second scan duration has been measured. Historical pending flags in private
+runtime receipts are superseded by this final acceptance record.

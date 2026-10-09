@@ -226,7 +226,7 @@ responses or monkeypatch the renderer.
 - [x] Run applicable static/backend/frontend gates, focused Node/browser/tools
       controls, and exact-head CI gates. Fixes require a new committed candidate
       and affected plus final production acceptance on that candidate.
-- [ ] Present new dense/continuation/five-leg actual PDFs and production
+- [x] Present new dense/continuation/five-leg actual PDFs and production
       download behavior for explicit customer acceptance and scan/readability
       feedback. Preserve acceptance scope and user source; do not inherit #312
       acceptance or invent measured scan duration.

@@ -52,5 +52,8 @@ instants and all fields; free-form metadata remains verbatim.
 The baseline overall runner stopped on that comparison, and a redundant final
 whole-matrix rerun was cancelled at the user’s request. Neither is relabelled as
 a standalone full-matrix success. Combined qualification has explicit SHA/scope
-provenance, all owned resources were removed, and customer acceptance is
-pending.
+provenance and all owned resources were removed. On 2026-10-09 the user replied
+"Looks great" directly to the request to accept the presented three PDFs and
+production download behavior for PR #314. The sample manifest records that
+acceptance scope; historical pending flags are superseded. Shared production
+enablement remains a separate decision.
