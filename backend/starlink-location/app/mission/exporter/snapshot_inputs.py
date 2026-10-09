@@ -13,7 +13,7 @@ from xml.etree import ElementTree as ET
 
 from app.mission import storage, timeline_service
 from app.mission.models import Mission
-from app.satellites.catalog import get_satellite_catalog
+from app.satellites.catalog import get_satellite_catalog, load_satellite_catalog
 from app.satellites.coverage import CoverageSampler
 from app.satellites.kmz_importer import (
     extract_polygon_from_kml,
@@ -51,9 +51,9 @@ class SnapshotCaptureError(RuntimeError):
     """Committed export inputs were missing or could not be captured consistently."""
 
 
-def _coverage_inputs() -> tuple[SourcePayload, ...]:
+def _coverage_inputs(*, persisted: bool = False) -> tuple[SourcePayload, ...]:
     # Preserve legacy precedence, including an already loaded default sampler.
-    sampler = timeline_service._COVERAGE_SAMPLER
+    sampler = None if persisted else timeline_service._COVERAGE_SAMPLER
     if sampler is not None:
         return (
             SourcePayload(
@@ -79,7 +79,7 @@ def _coverage_inputs() -> tuple[SourcePayload, ...]:
 
 
 def _read_dependencies(
-    mission: Mission, route_manager, poi_manager
+    mission: Mission, route_manager, poi_manager, *, persisted: bool = False
 ) -> tuple[SourcePayload, ...]:
     sources = []
     for route_id in dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id):
@@ -126,7 +126,11 @@ def _read_dependencies(
             canonical_json(
                 [
                     asdict(satellite)
-                    for satellite in get_satellite_catalog(read_only=True).list_all()
+                    for satellite in (
+                        load_satellite_catalog(read_only=True)
+                        if persisted
+                        else get_satellite_catalog(read_only=True)
+                    ).list_all()
                 ]
             ),
         )
@@ -143,7 +147,9 @@ def _read_dependencies(
             canonical_json(asdict(ground_entry) if ground_entry else None),
         )
     )
-    sources.extend(_coverage_inputs())
+    sources.extend(
+        _coverage_inputs(persisted=True) if persisted else _coverage_inputs()
+    )
     for leg in mission.legs:
         try:
             timeline = storage.load_mission_timeline(
@@ -159,7 +165,7 @@ def _read_dependencies(
     return tuple(sources)
 
 
-def capture_inputs(mission_id: str, route_manager, poi_manager):
+def capture_inputs(mission_id: str, route_manager, poi_manager, *, persisted=False):
     """Lock order matches saves; recheck mutable dependencies before release."""
     last_error = None
     for attempt in range(2):
@@ -169,8 +175,13 @@ def capture_inputs(mission_id: str, route_manager, poi_manager):
                 if mission is None:
                     raise SnapshotCaptureError(f"Mission {mission_id} not found")
                 metadata = canonical_json(mission.model_dump(mode="json"))
-                first = _read_dependencies(mission, route_manager, poi_manager)
-                second = _read_dependencies(mission, route_manager, poi_manager)
+                options = {"persisted": True} if persisted else {}
+                first = _read_dependencies(
+                    mission, route_manager, poi_manager, **options
+                )
+                second = _read_dependencies(
+                    mission, route_manager, poi_manager, **options
+                )
                 if first == second:
                     warnings = (
                         (

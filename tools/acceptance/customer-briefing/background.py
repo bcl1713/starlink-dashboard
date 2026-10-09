@@ -65,6 +65,13 @@ def run(sha, evidence_root):
             )
         )
 
+    def input_profile():
+        return json.loads(
+            python(
+                "import json; from app.mission.slide_cache.store import default_store; from app.mission.slide_cache.identity import renderer_revision; c=default_store(); print(json.dumps({'rendererRevision':renderer_revision(),'missions':{m:{l:json.loads(r['inputs']) for l,r in c.records(m).items()} for m in c.missions()}}))"
+            )
+        )
+
     def copy_out(source, destination):
         # Rootless Docker may reject cp's read-only mount remount. Stream an
         # archive through exec without changing the actor's daemon settings.
@@ -318,9 +325,15 @@ print(json.dumps(records))
             "oldWorkerReaped": stopped,
             "unrelatedArtifactsReused": True,
         }
+        (owner.root / "inputs-before-restart.json").write_text(
+            json.dumps(input_profile(), indent=2)
+        )
         owner.compose("restart", "starlink-location", timeout=60)
         owner.compose("up", "-d", "--wait", timeout=180)
         recovered = wait_ready()
+        (owner.root / "inputs-after-restart.json").write_text(
+            json.dumps(input_profile(), indent=2)
+        )
         assert recovered == final
         summary["restartReusesReadyPages"] = True
         browser_root = "/tmp/background-browser"

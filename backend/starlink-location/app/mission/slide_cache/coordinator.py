@@ -57,7 +57,7 @@ def reconcile(mission_id, route_manager, poi_manager, cache, revision, *, retry=
 
         poi_manager = persisted_pois(poi_manager)
         metadata, sources, warnings = capture_inputs(
-            mission_id, route_manager, poi_manager
+            mission_id, route_manager, poi_manager, persisted=True
         )
         import json
 

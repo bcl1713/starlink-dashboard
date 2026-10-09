@@ -99,6 +99,88 @@ def test_snapshot_roundtrip_retains_immutable_evidence():
     assert decode_snapshot(encode_snapshot(captured)) == captured
 
 
+def test_route_reparse_import_clock_does_not_invalidate_pages():
+    from app.mission.slide_cache.identity import leg_inputs
+
+    metadata = canonical_json({"id": "m", "legs": [{"id": "a", "route_id": "r"}]})
+    route = {"metadata": {"imported_at": "2026-10-09T12:00:00Z"}, "points": [1]}
+    before = leg_inputs(
+        metadata, (SourcePayload("route/r", canonical_json(route)),), "a", "v1"
+    )[0]
+    route["metadata"]["imported_at"] = "2026-10-09T13:00:00Z"
+    assert (
+        leg_inputs(
+            metadata, (SourcePayload("route/r", canonical_json(route)),), "a", "v1"
+        )[0]
+        == before
+    )
+    route["points"] = [2]
+    assert (
+        leg_inputs(
+            metadata, (SourcePayload("route/r", canonical_json(route)),), "a", "v1"
+        )[0]
+        != before
+    )
+
+
+def test_ready_identity_survives_coverage_and_catalog_cache_reset(
+    tmp_path, monkeypatch
+):
+    from app.mission import storage, timeline_service
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+    from app.mission.slide_cache.coordinator import reconcile
+    from app.satellites import catalog
+    from app.satellites.coverage import CoverageSampler
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")
+    path = tmp_path / "data/sat_coverage/commka.geojson"
+    path.parent.mkdir(parents=True)
+    path.write_text('{"type":"FeatureCollection","features":[]}')
+    storage.save_mission_v2(
+        Mission(
+            id="m",
+            name="Mission",
+            legs=[
+                MissionLeg(
+                    id="a",
+                    name="A",
+                    route_id="",
+                    transports=TransportConfig(initial_x_satellite_id=""),
+                )
+            ],
+        )
+    )
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", CoverageSampler(path))
+    monkeypatch.setattr(
+        catalog, "_catalog", catalog.load_satellite_catalog(read_only=True)
+    )
+    cache = store(tmp_path)
+    reconcile("m", None, None, cache, "v1")
+    job = cache.claim()
+    cache.publish("m", "a", job["token"], b"snapshot", b"pdf", b"evidence")
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", None)
+    monkeypatch.setattr(catalog, "_catalog", None)
+    reconcile("m", None, None, cache, "v1")
+    assert cache.records("m")["a"]["token"] == job["token"]
+    assert cache.records("m")["a"]["state"] == "ready"
+    path.write_text('{"type":"FeatureCollection","features":[],"revision":2}')
+    reconcile("m", None, None, cache, "v1")
+    assert cache.records("m")["a"]["state"] == "queued"
+    job = cache.claim()
+    cache.publish("m", "a", job["token"], b"snapshot", b"pdf", b"evidence")
+    monkeypatch.setattr(
+        catalog, "_catalog", catalog.load_satellite_catalog(read_only=True)
+    )
+    catalog_path = tmp_path / "data/satellites/catalog.yaml"
+    catalog_path.parent.mkdir()
+    catalog_path.write_text(
+        "satellites:\n  - id: X-New\n    transport: X\n    longitude: -100\n"
+    )
+    reconcile("m", None, None, cache, "v1")
+    assert cache.records("m")["a"]["state"] == "queued"
+
+
 def test_storage_save_invalidates_changed_leg_without_rendering(tmp_path, monkeypatch):
     from app.mission import storage
     from app.mission.models import Mission, MissionLeg, TransportConfig

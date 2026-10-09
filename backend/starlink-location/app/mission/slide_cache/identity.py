@@ -10,7 +10,7 @@ from pathlib import Path
 from app.mission.exporter.snapshot import ExportSnapshot, LegSnapshot
 from app.mission.exporter.snapshot_inputs import SourcePayload, canonical_json
 
-BOOKKEEPING = {"created_at", "updated_at", "is_active"}
+BOOKKEEPING = {"created_at", "updated_at", "imported_at", "is_active"}
 
 
 def effective(value):
