@@ -23,6 +23,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
+from app.mission.exporter.export_cancel import ExportCancelled
 from app.mission.exporter.formatting import mission_start_timestamp
 from app.mission.exporter.pptx_styling import (
     STATUS_CRITICAL,
@@ -37,6 +38,7 @@ from app.mission.exporter.pptx_styling import (
     add_logo,
     add_slide_title,
 )
+from app.mission.exporter.snapshot_views import SnapshotViews
 from app.mission.exporter.transport_utils import STATE_COLUMNS, TRANSPORT_DISPLAY
 from app.mission.models import Transport
 
@@ -50,9 +52,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _export_kwargs(export_snapshot):
+    return {"export_snapshot": export_snapshot} if export_snapshot is not None else {}
+
+
 def _get_footer_metadata(
     mission: Mission | MissionLeg | None,
     parent_mission_id: str | None,
+    *,
+    export_snapshot=None,
 ) -> str:
     """Resolve footer metadata from parent mission or leg.
 
@@ -77,7 +85,11 @@ def _get_footer_metadata(
     if parent_mission_id:
         from app.mission.storage import load_mission_v2
 
-        parent_mission = load_mission_v2(parent_mission_id)
+        parent_mission = (
+            SnapshotViews(export_snapshot).mission()
+            if export_snapshot is not None
+            else load_mission_v2(parent_mission_id)
+        )
         if parent_mission:
             # Use parent mission metadata
             name = parent_mission.name or parent_mission.id
@@ -109,6 +121,8 @@ def add_mission_slides_to_presentation(
     poi_manager: POIManager | None = None,
     logo_path: Path | None = None,
     map_cache: dict[str, bytes] | None = None,
+    *,
+    export_snapshot=None,
 ) -> None:
     """Add mission slides (route map and timeline tables) to an existing presentation.
 
@@ -140,6 +154,7 @@ def add_mission_slides_to_presentation(
         logo_path=logo_path,
         map_cache=map_cache,
         _generate_route_map=_generate_route_map,
+        **_export_kwargs(export_snapshot),
     )
 
     # Add timeline table slides
@@ -149,6 +164,7 @@ def add_mission_slides_to_presentation(
         mission=mission,
         parent_mission_id=parent_mission_id,
         logo_path=logo_path,
+        **_export_kwargs(export_snapshot),
     )
 
 
@@ -162,6 +178,8 @@ def add_route_map_slide(
     logo_path: Path | None,
     map_cache: dict[str, bytes] | None,
     _generate_route_map,  # Injected to avoid circular import
+    *,
+    export_snapshot=None,
 ) -> None:
     """Add route map slide to presentation.
 
@@ -195,7 +213,9 @@ def add_route_map_slide(
     add_slide_title(slide_map, f"{leg_name} - Route Map", top=0.2)
 
     # Get footer metadata using helper
-    footer_metadata = _get_footer_metadata(mission, parent_mission_id)
+    footer_metadata = _get_footer_metadata(
+        mission, parent_mission_id, **_export_kwargs(export_snapshot)
+    )
     if not footer_metadata:
         # Fallback if mission is None
         footer_metadata = timeline.mission_leg_id if timeline else "Organization"
@@ -223,12 +243,15 @@ def add_route_map_slide(
                 parent_mission_id=parent_mission_id,
                 route_manager=route_manager,
                 poi_manager=poi_manager,
+                **_export_kwargs(export_snapshot),
             )
             logger.info(f"Cache miss for route {route_id}, generated map")
 
             # Store in cache if available
             if map_cache_key and map_cache is not None:
                 map_cache[map_cache_key] = map_image_bytes
+        except ExportCancelled:
+            raise
         except (
             RuntimeError,
             ValueError,
@@ -298,6 +321,8 @@ def add_timeline_table_slides(
     mission: Mission | MissionLeg | None,
     parent_mission_id: str | None,
     logo_path: Path | None,
+    *,
+    export_snapshot=None,
 ) -> None:
     """Add paginated timeline table slides to presentation.
 
@@ -314,7 +339,7 @@ def add_timeline_table_slides(
     # Import here to avoid circular dependency
     from app.mission.exporter import _segment_rows
 
-    timeline_df = _segment_rows(timeline, mission)
+    timeline_df = _segment_rows(timeline, mission, **_export_kwargs(export_snapshot))
 
     if timeline_df.empty:
         return
@@ -344,7 +369,9 @@ def add_timeline_table_slides(
         leg_name = timeline.mission_leg_id if timeline else "Mission"
 
     # Get footer metadata using helper
-    footer_metadata = _get_footer_metadata(mission, parent_mission_id)
+    footer_metadata = _get_footer_metadata(
+        mission, parent_mission_id, **_export_kwargs(export_snapshot)
+    )
     if not footer_metadata:
         # Fallback if mission is None
         footer_metadata = timeline.mission_leg_id if timeline else "Organization"

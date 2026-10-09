@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
@@ -12,18 +12,39 @@ interface ExportDialogProps {
   missionName: string;
 }
 
-export function ExportDialog({
-  open,
-  onClose,
-  missionId,
-  missionName,
-}: ExportDialogProps) {
+export function ExportDialog(props: ExportDialogProps) {
+  return (
+    <Dialog open={props.open} onOpenChange={props.onClose}>
+      {props.open && <ExportContent key={props.missionId} {...props} />}
+    </Dialog>
+  );
+}
+
+function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
+  const mounted = useRef(true);
+  const busy = useRef(false);
+  const request = useRef<AbortController | null>(null);
+  const completionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [briefingOmitted, setBriefingOmitted] = useState(false);
   const [progress, setProgress] = useState<ExportProgress>({
     status: 'preparing',
     message: 'Preparing export...',
   });
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      request.current?.abort();
+      if (completionTimer.current !== null)
+        clearTimeout(completionTimer.current);
+    };
+  }, []);
+
   const handleExport = async () => {
+    if (busy.current) return;
+    busy.current = true;
+    request.current = new AbortController();
     try {
       setProgress({
         status: 'exporting',
@@ -31,78 +52,93 @@ export function ExportDialog({
         progress: 50,
       });
 
-      const blob = await exportImportApi.exportMission(missionId);
+      const download = await exportImportApi.exportMissionDownload(missionId, {
+        signal: request.current.signal,
+      });
+      if (!mounted.current) return;
 
       // Trigger download
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(download.blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `${missionId}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      try {
+        a.href = url;
+        a.download = `${missionId}.zip`;
+        document.body.appendChild(a);
+        a.click();
+      } finally {
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }
 
+      const omitted = download.briefingStatus === 'omitted';
+      setBriefingOmitted(omitted);
       setProgress({
         status: 'complete',
-        message: 'Export complete!',
+        message: omitted
+          ? 'ZIP downloaded. Legacy documents are included; the customer PDF could not be included.'
+          : 'Export complete!',
         progress: 100,
       });
 
-      setTimeout(() => {
-        onClose();
-        setProgress({ status: 'preparing', message: 'Preparing export...' });
-      }, 2000);
-    } catch (error) {
+      if (!omitted)
+        completionTimer.current = setTimeout(() => {
+          if (mounted.current) onClose();
+        }, 2000);
+    } catch {
+      if (!mounted.current) return;
       setProgress({
         status: 'error',
-        message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: 'Export failed. Please try again.',
       });
+    } finally {
+      busy.current = false;
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Export Mission: {missionName}</DialogTitle>
-        </DialogHeader>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Export Mission: {missionName}</DialogTitle>
+      </DialogHeader>
 
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Export will include all legs, routes, POIs, and pre-generated
-            documents.
-          </p>
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Export will include all legs, routes, POIs, and pre-generated
+          documents.
+        </p>
 
-          {progress.status !== 'preparing' && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">{progress.message}</p>
-              {progress.progress !== undefined && (
-                <Progress value={progress.progress} />
-              )}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={progress.status === 'exporting'}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleExport}
-              disabled={
-                progress.status === 'exporting' ||
-                progress.status === 'complete'
-              }
-            >
-              {progress.status === 'exporting' ? 'Exporting...' : 'Export'}
-            </Button>
+        {progress.status !== 'preparing' && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{progress.message}</p>
+            {progress.status === 'complete' && briefingOmitted && (
+              <p className="text-sm text-muted-foreground">
+                You can retry the export. If this continues, contact support.
+              </p>
+            )}
+            {progress.progress !== undefined && (
+              <Progress value={progress.progress} />
+            )}
           </div>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={progress.status === 'exporting'}
+          >
+            {progress.status === 'complete' ? 'Close' : 'Cancel'}
+          </Button>
+          <Button
+            onClick={handleExport}
+            disabled={
+              progress.status === 'exporting' || progress.status === 'complete'
+            }
+          >
+            {progress.status === 'exporting' ? 'Exporting...' : 'Export'}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogContent>
   );
 }

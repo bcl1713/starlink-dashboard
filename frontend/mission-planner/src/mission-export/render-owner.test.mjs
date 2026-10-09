@@ -48,6 +48,8 @@ export function registerOwnerTests({ run, clean, root, assetRoot }) {
         await new Promise((r) => setTimeout(r, 30));
       }
       assert.ok(owned?.browserPid, stderr);
+      assert.equal(typeof owned.start, 'string');
+      assert.equal(typeof owned.browserStart, 'string');
       child.kill('SIGTERM');
       const result = await exit;
       assert.equal(result.code, 1, stderr);

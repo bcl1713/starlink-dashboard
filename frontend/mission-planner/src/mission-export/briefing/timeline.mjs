@@ -132,31 +132,62 @@ export function renderTimeline(payload) {
   }
   for (const i of restrictions) {
     out += rect(i, 202, 18, '#899db9', 'data-restriction');
-    const a = x(i.startUtc);
+    const a = x(i.startUtc),
+      w = width(i),
+      inside = w >= 260;
     out += text(
-      a < 700 ? a + width(i) + 8 : a - 8,
+      inside ? a + w / 2 : a < 700 ? a + w + 8 : a - 8,
       216,
       i.label,
-      `text-anchor="${a < 700 ? 'start' : 'end'}" class="restriction-label" data-svg-label`
+      `text-anchor="${inside ? 'middle' : a < 700 ? 'start' : 'end'}" class="restriction-label" data-svg-label`
     );
   }
+  const localDateClock = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+  const zones = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    timeZoneName: 'short',
+  });
+  const zone = (t) =>
+    zones.formatToParts(t).find((part) => part.type === 'timeZoneName').value;
+  const repeated = (t) =>
+    [-3600000, 3600000].some(
+      (delta) => localDateClock.format(t) === localDateClock.format(t + delta)
+    );
+  const showZone =
+    zone(start) !== zone(end) || repeated(start) || repeated(end);
+  const tickTimes = Array.from(
+    { length: 9 },
+    (_, h) => start + ((end - start) * h) / 8
+  );
+  const seconds = tickTimes.some((t) => t % 60000 !== 0);
   const et = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
+    ...(showZone ? { timeZoneName: 'short' } : {}),
+    ...(seconds ? { second: '2-digit' } : {}),
   });
   for (let h = 0; h <= 8; h++) {
-    const t = start + ((end - start) * h) / 8;
+    const t = tickTimes[h];
     const px = 280 + (960 * h) / 8;
-    out +=
-      `<path d="M${px} 224v5" stroke="#83909e"/>` +
-      text(
-        px,
-        244,
-        et.format(t),
-        `text-anchor="${h === 0 ? 'start' : h === 8 ? 'end' : 'middle'}" class="axis"`
-      );
+    out += `<path d="M${px} 224v5" stroke="#83909e"/>`;
+    // Keep every exact tick, with room for explicit offset identity.
+    if (showZone && h % 2) continue;
+    out += text(
+      px,
+      244,
+      et.format(t),
+      `text-anchor="${h === 0 ? 'start' : h === 8 ? 'end' : 'middle'}" class="axis" data-svg-label`
+    );
   }
   return out + '</svg>';
 }

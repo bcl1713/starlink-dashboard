@@ -164,6 +164,12 @@ class HeadingTrackerConfig(BaseModel):
         return v
 
 
+class ExportsConfig(BaseModel):
+    """Optional mission download formats."""
+
+    customer_briefing_enabled: bool = False
+
+
 class SimulationConfig(BaseModel):
     """Main simulation configuration."""
 
@@ -191,6 +197,7 @@ class SimulationConfig(BaseModel):
         default_factory=HeadingTrackerConfig,
         description="Heading tracker configuration",
     )
+    exports: ExportsConfig = Field(default_factory=ExportsConfig)
 
     @field_validator("update_interval_seconds")
     @classmethod

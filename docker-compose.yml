@@ -1,10 +1,12 @@
 services:
   starlink-location:
     build:
-      context: ./backend/starlink-location/
+      context: .
+      dockerfile: backend/starlink-location/Dockerfile
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
     container_name: starlink-location
+    init: true
     env_file: .env
     environment:
       GFS_MAILBOX_PATH: /app/data/gfs-mailbox

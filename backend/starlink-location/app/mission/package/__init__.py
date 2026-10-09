@@ -16,8 +16,10 @@ from app.mission.package.__main__ import (
     ExportPackageError,
     export_mission_package,
 )
+from app.mission.package.snapshot_export import build_snapshot_legacy_package
 
 __all__ = [
     "ExportPackageError",
+    "build_snapshot_legacy_package",
     "export_mission_package",
 ]

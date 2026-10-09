@@ -1,0 +1,209 @@
+{
+  "renderCandidateSha": "960ae0ba27fcc02572dd2c70f21753110c9e907e",
+  "featureCandidateSha": "aa64cc9f91868b4a958ed85230acd4db12ce3c04",
+  "productionImages": {
+    "backend": {
+      "tag": "briefing-production-backend:960ae0ba27fc-1791507876207444873",
+      "id": "sha256:8deed84d9b89dd620f1a638277c4d910b612d5c4fa2ce14b2da34dbffe0b3f34",
+      "revision": "960ae0ba27fcc02572dd2c70f21753110c9e907e"
+    },
+    "frontend": {
+      "tag": "briefing-production-frontend:960ae0ba27fc-1791507876207444873",
+      "id": "sha256:1d204a4cc08a8eb14caa398fa481cca624c58b8e88cc76a08eb71cac34c83e81",
+      "revision": "960ae0ba27fcc02572dd2c70f21753110c9e907e"
+    }
+  },
+  "fixtureKind": "Supported synthetic mission API, timed KML and provider storage inputs; real production source capture, ZIP export, Nginx and browser; no composition DTO injection",
+  "pageSizePt": [960, 540],
+  "samples": {
+    "dense-two-page.pdf": {
+      "sha256": "1923da667e1b15a915289978b6ac901099c231f5c944dd3fbd660e3dbba91d55",
+      "bytes": 12606153,
+      "pageCount": 2,
+      "rowCount": 14,
+      "snapshotFingerprint": "0ebb781772808fc27c4acce99c620fd83f4222b0de3afe16a32e07f4c2375dec",
+      "actualPdfInspection": {
+        "pageCount": 2,
+        "rowCount": 14,
+        "snapshotFingerprint": "0ebb781772808fc27c4acce99c620fd83f4222b0de3afe16a32e07f4c2375dec",
+        "normalizedPdfHash": "82f220d9fbd1a8b3ce3ba3ce9cec683dd04d63d09b453491541d78a015a114b9",
+        "geometryTextHash": "47f70a1483df5ce6c347a9f6138c8b1b683037b7d2212c12e71c902586acc28e",
+        "excludedGeometryMetadata": ["CreationDate", "ModDate"],
+        "rasters": {
+          "color": [
+            {
+              "file": "pdf-color-1.png",
+              "pixelHash": "4f247b88ee776229564c28a51454cf2b2f7e52e3b3f2fa7d13fc8e0f98013fa3"
+            },
+            {
+              "file": "pdf-color-2.png",
+              "pixelHash": "87a175c3babb9091c896acf132c0cc90631f39c91e8f97f1cfd30baefc5edc83"
+            }
+          ],
+          "grayscale": [
+            {
+              "file": "pdf-grayscale-1.png",
+              "pixelHash": "4137058f708db337fa136bd8161c3d7353d89e0a65fc310ebb7df728d479911b"
+            },
+            {
+              "file": "pdf-grayscale-2.png",
+              "pixelHash": "e0c15227349ac5d6630b341bc9c09b29d2659823d306487c12cac78e07e3d1ed"
+            }
+          ]
+        }
+      },
+      "renderMs": 19237.730502,
+      "proxyTotalSeconds": 26.46124753798358,
+      "colorAndGrayscaleInspection": {
+        "sourceCandidateSha": "7caefa09635b7c083fb6d332f8c338278b5f8915",
+        "allPagesIndividuallyViewed": true,
+        "currentActualPdfPixelsMatch": true
+      }
+    },
+    "dense-three-page.pdf": {
+      "sha256": "ca8a405878c3159ad1df6f3fecb1cb035a5bf5492dff00ec5f3c80c6901bbcdb",
+      "bytes": 13901702,
+      "pageCount": 3,
+      "rowCount": 30,
+      "snapshotFingerprint": "1e85b442772d1abd684157b5687c200e6c4c61544a364f1143ab3272e51b01ad",
+      "actualPdfInspection": {
+        "pageCount": 3,
+        "rowCount": 30,
+        "snapshotFingerprint": "1e85b442772d1abd684157b5687c200e6c4c61544a364f1143ab3272e51b01ad",
+        "normalizedPdfHash": "4e416167ac3d396fdce004fb8e75d0bc99e3382485ed78a61298610d76721fc0",
+        "geometryTextHash": "2c91b49c9e429466e22da9c57a67dfd132f895584625d21e75deb6b3d6e86c44",
+        "excludedGeometryMetadata": ["CreationDate", "ModDate"],
+        "rasters": {
+          "color": [
+            {
+              "file": "pdf-color-1.png",
+              "pixelHash": "1edbe5f5290d81e5babd2c48c64528ff0371ffb72e413a96a159b40c74a45839"
+            },
+            {
+              "file": "pdf-color-2.png",
+              "pixelHash": "b9869dafc442c7745d152d2a6382163886dc550ae8d2815965fe832fa5d784dd"
+            },
+            {
+              "file": "pdf-color-3.png",
+              "pixelHash": "38c8d544ac5f22541eb5f53264fb483f774fd053740f0beb8deb2301baeb41b6"
+            }
+          ],
+          "grayscale": [
+            {
+              "file": "pdf-grayscale-1.png",
+              "pixelHash": "e1ebbcf921fb11bd3451fd488e88976cb7b8048da5d5ca872e8d94a7b23f0d80"
+            },
+            {
+              "file": "pdf-grayscale-2.png",
+              "pixelHash": "199a23246ad85f0b9367bf81807f057452b5ed046b6ab64379aa26243550614c"
+            },
+            {
+              "file": "pdf-grayscale-3.png",
+              "pixelHash": "b81edde6b4e91d1d28bb737606547d9b87b56137255d79f59fbdf03f148ff3c5"
+            }
+          ]
+        }
+      },
+      "renderMs": 27315.671959000003,
+      "proxyTotalSeconds": 35.06659877393395,
+      "colorAndGrayscaleInspection": {
+        "sourceCandidateSha": "7caefa09635b7c083fb6d332f8c338278b5f8915",
+        "allPagesIndividuallyViewed": true,
+        "currentActualPdfPixelsMatch": true
+      }
+    },
+    "five-leg.pdf": {
+      "sha256": "6a4d730a53d7ed931c1dabc503859c43102f8777904bf5f794663a865a767cd3",
+      "bytes": 23174496,
+      "pageCount": 5,
+      "rowCount": 10,
+      "snapshotFingerprint": "c7b4311e96d4f8032fd80c847340ecc43e6d1b1fbda75b24baeaabf7ee4c69dd",
+      "actualPdfInspection": {
+        "pageCount": 5,
+        "rowCount": 10,
+        "snapshotFingerprint": "c7b4311e96d4f8032fd80c847340ecc43e6d1b1fbda75b24baeaabf7ee4c69dd",
+        "normalizedPdfHash": "ca2d35759737fa43be7136e41663e17b195e50d4883ac44c01a3390e8fc9d691",
+        "geometryTextHash": "ecb74b88c65de7a8b34e82ea6ae68ffe6fb2efcd4e045443d4f2e80c07afdcdc",
+        "excludedGeometryMetadata": ["CreationDate", "ModDate"],
+        "rasters": {
+          "color": [
+            {
+              "file": "pdf-color-1.png",
+              "pixelHash": "d7ae4a38417efd826450262da26e15329f1450e615de07bc8b43c6b84b3a9824"
+            },
+            {
+              "file": "pdf-color-2.png",
+              "pixelHash": "4d0ebc8566167fee360c63a0ae5a4d58338a9fda4e1b44810a7d4e01a54e6064"
+            },
+            {
+              "file": "pdf-color-3.png",
+              "pixelHash": "71daf69a374e6305898bcf393220acbcc7d095422d0010f31794cdcabf1ec8b5"
+            },
+            {
+              "file": "pdf-color-4.png",
+              "pixelHash": "00e439288e513fb385d0702568a43f0e4bc40868e676b1e9f20874f97154403d"
+            },
+            {
+              "file": "pdf-color-5.png",
+              "pixelHash": "62c91377fd998ab62c615479ce1fbc3ae3304e6647e08092dd9972a6a408a84e"
+            }
+          ],
+          "grayscale": [
+            {
+              "file": "pdf-grayscale-1.png",
+              "pixelHash": "7901c2a8dbb54bb51d40a0a9e5ccf2eebd6d9054aa9c211a6cc132478366a8b4"
+            },
+            {
+              "file": "pdf-grayscale-2.png",
+              "pixelHash": "6e1d98eb289ea3913826d43b5c68d19c062aa65f02fab74cfa78c19e6d27eb79"
+            },
+            {
+              "file": "pdf-grayscale-3.png",
+              "pixelHash": "6afb9a49c5677f3900c24d9552e7550542ffbead9ae0aa88af0238c5ae653192"
+            },
+            {
+              "file": "pdf-grayscale-4.png",
+              "pixelHash": "34093cc19a68df28564fcd5a8e7e9bc23c66bd3d5c5d7c4e56d15edea6784d2a"
+            },
+            {
+              "file": "pdf-grayscale-5.png",
+              "pixelHash": "fef44dda3289f9cee0b4c4dda102012b6adbe619f488636cecad77b0b26fca4d"
+            }
+          ]
+        }
+      },
+      "renderMs": 37861.178056,
+      "proxyTotalSeconds": 56.42382293799892,
+      "colorAndGrayscaleInspection": {
+        "sourceCandidateSha": "7caefa09635b7c083fb6d332f8c338278b5f8915",
+        "allPagesIndividuallyViewed": true,
+        "currentActualPdfPixelsMatch": true
+      }
+    }
+  },
+  "productionQualification": {
+    "checksPassed": true,
+    "scope": "Combined qualification: 19 source cases, three cold repeats, browser, lifecycle and fault controls at960ae0ba; two actual production imports ataa64cc9f. The baseline runner stopped on UTC timestamp-encoding comparison. The duplicate aa64matrix was cancelled at the user\u2019s request. No new-head full-matrix pass is claimed.",
+    "evidenceRoots": [
+      "preserved .superpowers/sdd/2026-10-08-customer-briefing-production/task8-production-export-timeout-qualified",
+      "preserved .superpowers/sdd/2026-10-08-customer-briefing-production/final-production-imports"
+    ],
+    "runtimeSourceAndResolvedBuildEquivalence": true,
+    "ownedRuntimeRemoved": true
+  },
+  "customerAcceptance": {
+    "status": "accepted",
+    "acceptedOn": "2026-10-09",
+    "userSource": "Looks great",
+    "acceptanceContext": "Direct response to the request to accept the presented two-page, three-page and five-leg PDFs and real production download behavior for PR #314",
+    "scope": "These two dense continuation PDFs, five-leg PDF, and real included/disabled/omitted download behavior",
+    "measuredScanDurationSeconds": null,
+    "originalCheckpointAcceptanceInherited": false
+  },
+  "omittedDownload": {
+    "screenshot": "omitted-download.png",
+    "realBrowserJourneyPassed": true,
+    "persistentFeedbackAndDismissReopenReset": true
+  },
+  "defaultEnabled": false
+}

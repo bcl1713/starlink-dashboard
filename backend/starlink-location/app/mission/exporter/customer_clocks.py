@@ -39,8 +39,14 @@ def format_customer_range(
         local_a.date() != local_b.date()
         or local_a.date() != origin.astimezone(EASTERN).date()
     )
+
     # Fold boundaries need explicit timezone identity on both ends.
-    offsets = local_a.utcoffset() != local_b.utcoffset() or local_a.fold or local_b.fold
+    def ambiguous(value):
+        return value.utcoffset() != value.replace(fold=1 - value.fold).utcoffset()
+
+    offsets = local_a.utcoffset() != local_b.utcoffset() or any(
+        ambiguous(value) for value in (local_a, local_b)
+    )
     pattern = ("%d %b " if dates else "") + "%H:%M" + (":%S" if seconds else "")
 
     def label(value):

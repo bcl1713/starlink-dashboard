@@ -54,18 +54,34 @@ def build_map_input(
     if not snapshot_leg.effective_route_json:
         return None, ("Captured effective route is unavailable",)
     try:
-        points = json.loads(snapshot_leg.effective_route_json)["points"]
-        if len(points) < 2 or len(points) > 2000 or not trial_leg.utc_bounds:
+        captured_points = json.loads(snapshot_leg.effective_route_json)["points"]
+        if (
+            len(captured_points) < 2
+            or len(captured_points) > 2000
+            or not trial_leg.utc_bounds
+        ):
             raise ValueError("Effective route timing/bounds unavailable")
         timed = {}
         times = []
-        for point in points:
+        points = []
+        coincident = 0
+        for point in captured_points:
             stamp = _utc(point["expected_arrival_time"])
-            if times and stamp <= times[-1]:
-                raise ValueError("Effective route timing must increase")
             lat, lon = float(point["latitude"]), float(point["longitude"])
             if not (-90 <= lat <= 90 and -180 <= lon <= 180):
                 raise ValueError("Effective route coordinates invalid")
+            if times and stamp <= times[-1]:
+                prior = timed[times[-1]]
+                if stamp == times[-1] and (lat, lon) == (
+                    prior["latitude"],
+                    prior["longitude"],
+                ):
+                    # Zero-distance splice connectors repeat one exact position.
+                    # Normalize only the scene; retain all canonical route data.
+                    coincident += 1
+                    continue
+                raise ValueError("Effective route timing must increase")
+            points.append(point)
             times.append(stamp)
             timed[stamp] = {
                 "latitude": lat,
@@ -74,7 +90,13 @@ def build_map_input(
             }
         if (times[0], times[-1]) != trial_leg.utc_bounds:
             raise ValueError("Effective route timing does not match flight bounds")
-        notes = []
+        notes = (
+            [
+                f"{coincident} coincident timed route joins represented as one map position"
+            ]
+            if coincident
+            else []
+        )
         markers = []
         for interval in trial_leg.coordination_rows:
             stamp = interval.start_time

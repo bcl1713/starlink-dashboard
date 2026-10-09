@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - image: ghcr.io/${{ github.repository }}/starlink-location
-            context: ./backend/starlink-location
+            context: .
             file: ./backend/starlink-location/Dockerfile
           - image: ghcr.io/${{ github.repository }}/mission-planner
             context: ./frontend/mission-planner

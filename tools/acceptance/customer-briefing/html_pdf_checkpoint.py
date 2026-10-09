@@ -7,6 +7,7 @@ import os
 import shutil
 import signal
 import subprocess
+import tarfile
 import time
 from hashlib import sha256
 from pathlib import Path
@@ -170,6 +171,12 @@ class CheckpointOwner:
             "compose_removed": not any(remaining.values()),
             "remaining": remaining,
         }
+        for temporary in self.ownership["temporaryPaths"]:
+            path = Path(temporary)
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
         self.ownership["cleanup"] = cleanup
         self.closed = True
         self.persist()
@@ -184,10 +191,14 @@ def run_checkpoint(
     runtime_tests: bool = False,
     image_tag=None,
     build_only=False,
+    mission_tests=False,
+    mission_only=False,
 ):
     def git(*args):
         return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
+    if mission_only and not mission_tests:
+        raise ValueError("Mission-only requires mission tests")
     if candidate_sha != git("rev-parse", "HEAD") or git("status", "--porcelain"):
         raise ValueError("Checkpoint requires clean committed HEAD")
     run_id = str(time.time_ns())
@@ -203,6 +214,8 @@ def run_checkpoint(
         **os.environ,
         "CHECKPOINT_IMAGE": image,
         "CHECKPOINT_RUNTIME_TESTS": "1" if runtime_tests else "0",
+        "CHECKPOINT_MISSION_TESTS": "1" if mission_tests else "0",
+        "CHECKPOINT_MISSION_ONLY": "1" if mission_only else "0",
     }
     owner.compose_env = env
     started_container = False
@@ -221,6 +234,23 @@ def run_checkpoint(
     }
     try:
         if image_tag is None:
+            context = root / "candidate-build-source"
+            archive = root / "candidate-build-source.tar"
+            owner.ownership["temporaryPaths"] += [str(context), str(archive)]
+            owner.persist()
+            owner.command(
+                [
+                    "git",
+                    "archive",
+                    "--format=tar",
+                    f"--output={archive}",
+                    candidate_sha,
+                ],
+                timeout=60,
+            )
+            context.mkdir()
+            with tarfile.open(archive) as source:
+                source.extractall(context, filter="data")
             build = [
                 "timeout",
                 "--kill-after=10s",
@@ -228,7 +258,10 @@ def run_checkpoint(
                 "docker",
                 "build",
                 "-f",
-                "tools/acceptance/customer-briefing/Dockerfile.html-pdf-checkpoint",
+                str(
+                    context
+                    / "tools/acceptance/customer-briefing/Dockerfile.html-pdf-checkpoint"
+                ),
                 "--build-arg",
                 f"ACCEPTANCE_CANDIDATE_SHA={candidate_sha}",
                 "-t",
@@ -237,7 +270,7 @@ def run_checkpoint(
             ca = os.environ.get("CODEX_PROXY_CERT")
             if ca:
                 build += ["--secret", f"id=proxy_ca,src={ca}"]
-            owner.command([*build, "."], timeout=2715)
+            owner.command([*build, str(context)], timeout=2715)
         identity = json.loads(
             owner.command(
                 ["docker", "image", "inspect", image, "--format", "{{json .}}"],
@@ -299,12 +332,16 @@ def run_checkpoint(
             raise ValueError("Generated checkpoint failed")
         pending = root / "deliverables-staging"
         pending.mkdir()
-        for name in ("fully-assessed", "incomplete-x"):
+        for name in (() if mission_only else ("fully-assessed", "incomplete-x")):
             source = raw / "delivered" / name
             evidence = (source / "mission-customer-briefing-evidence.json").read_bytes()
             staged = pending / (name + "-staging")
             shutil.copytree(source, staged)
             publish_checkpoint(staged, pending / name, evidence)
+        if mission_tests:
+            if generated.get("missions", {}).get("checksPassed") is not True:
+                raise ValueError("Mission qualification missing")
+            shutil.copytree(raw / "missions" / "delivered", pending / "missions")
         summary["cleanup"] = publish_after_cleanup(
             owner, pending, root / "deliverables"
         )
@@ -351,6 +388,8 @@ if __name__ == "__main__":
     parser.add_argument("--runtime-tests", action="store_true")
     parser.add_argument("--image-tag")
     parser.add_argument("--build-only", action="store_true")
+    parser.add_argument("--mission-tests", action="store_true")
+    parser.add_argument("--mission-only", action="store_true")
     args = parser.parse_args()
     print(
         json.dumps(
@@ -360,6 +399,8 @@ if __name__ == "__main__":
                 args.runtime_tests,
                 args.image_tag,
                 args.build_only,
+                args.mission_tests,
+                args.mission_only,
             ),
             indent=2,
         )

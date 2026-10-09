@@ -4,6 +4,12 @@ export interface ExportProgress {
   progress?: number;
 }
 
+export interface MissionExportDownload {
+  blob: Blob;
+  briefingStatus?: 'included' | 'omitted';
+  warningCode?: string;
+}
+
 export interface ImportValidationError {
   field: string;
   message: string;

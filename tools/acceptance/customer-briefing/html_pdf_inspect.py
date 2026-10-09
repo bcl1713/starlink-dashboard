@@ -15,7 +15,9 @@ def command(args):
     ).stdout
 
 
-def inspect_pdf(pdf_path: Path, html_png_path: Path) -> dict:
+def inspect_pdf(
+    pdf_path: Path, html_png_path: Path, expectations: dict | None = None
+) -> dict:
     info = command(["pdfinfo", str(pdf_path)])
     count = int(re.search(r"Pages:\s+(\d+)", info)[1])
     size = [
@@ -85,6 +87,11 @@ def inspect_pdf(pdf_path: Path, html_png_path: Path) -> dict:
         if preview.size != (3200, 1800):
             raise ValueError("HTML preview size mismatch")
         preview_hash = sha256(preview.convert("RGBA").tobytes()).hexdigest()
+    row_validation = {}
+    if expectations is not None:
+        from app.mission.exporter.customer_pdf import verify_customer_pdf
+
+        row_validation = verify_customer_pdf(pdf_path, expectations, timeout_seconds=30)
     return {
         "verified": True,
         "pageCount": count,
@@ -96,6 +103,7 @@ def inspect_pdf(pdf_path: Path, html_png_path: Path) -> dict:
         "fonts": fonts,
         "images": images,
         "previewPixelHash": preview_hash,
+        "rows": row_validation.get("rows"),
     }
 
 

@@ -1,8 +1,10 @@
 """Integration tests for mission v2 API endpoints."""
 
 import asyncio
+import io
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -24,6 +26,69 @@ from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import OverviewClockSettingsStore
 from main import app
+
+
+class TestCustomerBriefingDownload:
+    @pytest.mark.parametrize(
+        "enabled,briefing_status,warning",
+        [
+            (False, None, None),
+            (True, "included", None),
+            (True, "omitted", "deadline"),
+            (True, "omitted", "Private exception details"),
+        ],
+    )
+    def test_optional_outcome_headers_preserve_zip_download_and_close_stream(
+        self, client, monkeypatch, enabled, briefing_status, warning
+    ):
+        from app.core.config import ConfigManager
+        from app.mission.package.customer_artifacts import (
+            CustomerBriefingOutcome,
+            MissionPackageDownload,
+        )
+
+        assert hasattr(
+            mission_routes_v2, "run_mission_package_job"
+        ), "Owned route worker absent"
+        stream = io.BytesIO(b"PK-qualified-zip")
+
+        async def run(*args, **kwargs):
+            assert kwargs["enabled"] is enabled
+            outcome = (
+                CustomerBriefingOutcome(briefing_status, warning, None)
+                if enabled
+                else None
+            )
+            return MissionPackageDownload(stream, outcome)
+
+        monkeypatch.setattr(mission_routes_v2, "run_mission_package_job", run)
+        monkeypatch.setattr(
+            ConfigManager,
+            "get_config",
+            lambda *a: SimpleNamespace(
+                exports=SimpleNamespace(customer_briefing_enabled=enabled)
+            ),
+        )
+        response = client.post("/api/v2/missions/customer-download/export")
+        assert response.status_code == 200
+        assert response.content == b"PK-qualified-zip"
+        assert response.headers["content-type"] == "application/zip"
+        assert (
+            response.headers["content-disposition"]
+            == 'attachment; filename="customer-download.zip"'
+        )
+        assert stream.closed
+        if enabled:
+            assert response.headers["x-customer-briefing-status"] == briefing_status
+            if warning:
+                assert response.headers["x-customer-briefing-warning"] == (
+                    warning if warning == "deadline" else "runtime"
+                )
+            else:
+                assert "x-customer-briefing-warning" not in response.headers
+        else:
+            assert "x-customer-briefing-status" not in response.headers
+            assert "x-customer-briefing-warning" not in response.headers
 
 
 class TestMissionV2ClockLifecycle:

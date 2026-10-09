@@ -7,6 +7,9 @@ mode: simulation
 # Update interval for metrics and position updates (seconds)
 update_interval_seconds: 1.0
 
+exports:
+  customer_briefing_enabled: false
+
 # Route simulation configuration
 route:
   # Route pattern: 'circular' or 'straight'

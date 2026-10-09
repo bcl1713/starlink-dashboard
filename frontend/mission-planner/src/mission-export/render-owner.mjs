@@ -76,24 +76,49 @@ export async function openRenderOwner({
   const ownership = {
     pid: process.pid,
     pgid: self.pgid,
+    start: self.start,
     browserPid: null,
     browserPgid: null,
+    browserStart: null,
     listener: null,
     contexts: [],
+    workers: [],
     temporaryPaths: [temp],
     command: process.argv.slice(0, 2),
   };
   const contexts = new Set(),
-    sockets = new Set();
+    sockets = new Set(),
+    workers = new Set();
   let server, browserServer, browser, closing;
   const persist = () =>
     writeFile(ownershipPath, JSON.stringify(ownership, null, 2));
   await persist();
   const owner = {
     budget,
+    outputRoot,
     browser: null,
     origin: null,
     ownership,
+    async trackChild(child, command) {
+      workers.add(child);
+      const record = {
+        pid: child.pid,
+        pgid: child.pid,
+        start: (await processInfo(child.pid))?.start ?? null,
+        command,
+        reaped: false,
+      };
+      ownership.workers.push(record);
+      await persist();
+      if (closing) child.kill('SIGTERM');
+      return async () => {
+        record.reaped = child.exitCode !== null || child.signalCode !== null;
+        record.exitCode = child.exitCode;
+        record.signalCode = child.signalCode;
+        if (record.reaped) workers.delete(child);
+        await persist();
+      };
+    },
     async newContext(options, { remainingMs = budget.workRemainingMs } = {}) {
       remainingMs();
       let abandoned = false;
@@ -127,9 +152,32 @@ export async function openRenderOwner({
       if (closing) return closing;
       closing = (async () => {
         const errors = [];
+        const workerOwned = [];
+        for (const child of workers) {
+          workerOwned.push(...(await descendants(child.pid)));
+          if (child.exitCode === null && child.signalCode === null) {
+            try {
+              process.kill(-child.pid, 'SIGTERM');
+            } catch {}
+            try {
+              await within(
+                once(child, 'close'),
+                Math.max(1, Math.min(250, budget.remainingMs()))
+              );
+            } catch {
+              try {
+                process.kill(-child.pid, 'SIGKILL');
+              } catch {}
+              await within(once(child, 'close'), 1000).catch((e) =>
+                errors.push(String(e))
+              );
+            }
+          }
+        }
         const owned = browserServer
           ? await descendants(browserServer.process().pid)
           : [];
+        owned.push(...workerOwned);
         let contextsClosed = true;
         for (const context of [...contexts]) {
           try {
@@ -199,12 +247,16 @@ export async function openRenderOwner({
           errors,
           contextCount: ownership.contexts.length,
           childrenReaped:
-            !child || child.exitCode !== null || child.signalCode !== null,
+            (!child || child.exitCode !== null || child.signalCode !== null) &&
+            [...workers].every(
+              (c) => c.exitCode !== null || c.signalCode !== null
+            ),
         };
         cleanup.success =
           cleanup.contextsClosed &&
           cleanup.browserExited &&
           listenerClosed &&
+          cleanup.childrenReaped &&
           !survivors.length &&
           !errors.length;
         ownership.cleanup = cleanup;
@@ -268,7 +320,9 @@ export async function openRenderOwner({
     });
     const child = browserServer.process();
     ownership.browserPid = child.pid;
-    ownership.browserPgid = (await processInfo(child.pid)).pgid;
+    const browserProcess = await processInfo(child.pid);
+    ownership.browserPgid = browserProcess.pgid;
+    ownership.browserStart = browserProcess.start;
     await persist();
     browser = await chromium.connect(browserServer.wsEndpoint(), {
       timeout: budget.workRemainingMs(),

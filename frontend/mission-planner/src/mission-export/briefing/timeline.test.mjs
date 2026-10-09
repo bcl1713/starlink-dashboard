@@ -66,6 +66,80 @@ test('unknown has neutral confirmed capability', async () => {
   assert.doesNotMatch(svg, /fill="#b72e36"/);
   assert.match(svg, />\?<\/text>/);
 });
+test('short-flight overlapping SOF keeps its full-width label inside the exact restriction band', async () => {
+  const p = structuredClone(payload);
+  p.flight.endUtc = '2026-10-25T14:10:00Z';
+  p.intervals = [
+    {
+      startUtc: p.flight.startUtc,
+      endUtc: p.flight.endUtc,
+      posture: 'Nominal',
+      decisions: ['Up', 'Up', 'Up'],
+      restrictionLabels: ['Takeoff SOF', 'Landing SOF'],
+    },
+  ];
+  const svg = (await renderer())(p);
+  const label = svg.match(
+    /<text x="([^"]+)" y="216" ([^>]+)>Takeoff SOF \+ Landing SOF<\/text>/
+  );
+  assert.ok(label);
+  assert.ok(Number(label[1]) > 280 && Number(label[1]) < 1240);
+  assert.match(label[2], /text-anchor="middle"/);
+  assert.match(svg, /data-restriction width="960"/);
+});
+test('fall-back axis distinguishes repeated Eastern clock hours without changing geometry', async () => {
+  const p = structuredClone(payload);
+  p.flight = {
+    startUtc: '2026-11-01T05:00:00Z',
+    endUtc: '2026-11-01T09:00:00Z',
+  };
+  p.intervals = [{ ...p.intervals[0], ...p.flight, restrictionLabels: [] }];
+  const svg = (await renderer())(p);
+  assert.match(svg, />01:00 EDT<\/text>/);
+  assert.match(svg, />01:00 EST<\/text>/);
+  assert.equal((svg.match(/class="axis"/g) || []).length, 5);
+  assert.equal((svg.match(/M\d+ 224v5/g) || []).length, 9);
+  assert.match(svg, /data-posture="Nominal"[^>]*width="960"/);
+});
+test('fractional-minute short-flight ticks retain seconds at their exact positions', async () => {
+  const p = structuredClone(payload);
+  p.flight.endUtc = '2026-10-25T14:10:00Z';
+  p.intervals = [{ ...p.intervals[0], ...p.flight, restrictionLabels: [] }];
+  const svg = (await renderer())(p);
+  assert.match(svg, />10:01:15<\/text>/);
+  assert.match(svg, />10:02:30<\/text>/);
+  assert.match(svg, />10:03:45<\/text>/);
+  assert.equal((svg.match(/class="axis"/g) || []).length, 9);
+});
+test('short repeated-hour axis keeps exact clocks readable and measured', async () => {
+  const p = structuredClone(payload);
+  p.flight = {
+    startUtc: '2026-11-01T05:00:00Z',
+    endUtc: '2026-11-01T05:10:00Z',
+  };
+  p.intervals = [{ ...p.intervals[0], ...p.flight, restrictionLabels: [] }];
+  const svg = (await renderer())(p);
+  assert.equal((svg.match(/M\d+ 224v5/g) || []).length, 9);
+  const labels = [
+    ...svg.matchAll(/<text x="([^"]+)" y="244" ([^>]+)>([^<]+)<\/text>/g),
+  ];
+  assert.deepEqual(
+    labels.map((m) => Number(m[1])),
+    [280, 520, 760, 1000, 1240]
+  );
+  assert.deepEqual(
+    labels.map((m) => m[3]),
+    [
+      '01:00:00 EDT',
+      '01:02:30 EDT',
+      '01:05:00 EDT',
+      '01:07:30 EDT',
+      '01:10:00 EDT',
+    ]
+  );
+  assert.ok(labels.every((m) => m[2].includes('data-svg-label')));
+  assert.match(svg, /data-posture="Nominal"[^>]*width="960"/);
+});
 
 test('narrow incomplete intervals expose one and zero confirmed without definitive color', async () => {
   const p = structuredClone(payload);

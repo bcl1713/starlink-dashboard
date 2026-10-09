@@ -185,6 +185,7 @@ class ConfigManager:
             "obstruction",
             "position",
             "heading_tracker",
+            "exports",
         ]:
             if section not in data:
                 data[section] = {}
@@ -227,6 +228,7 @@ class ConfigManager:
             "obstruction",
             "position",
             "heading_tracker",
+            "exports",
         ]:
             if section not in data:
                 data[section] = {}
