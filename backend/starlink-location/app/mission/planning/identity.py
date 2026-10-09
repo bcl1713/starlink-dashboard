@@ -9,7 +9,10 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-_TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}")
+_TIMESTAMP = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?"
+    r"(?:Z|[+-]\d{2}(?::?\d{2})?)?"
+)
 
 
 def _canonical(value):
@@ -21,7 +24,7 @@ def _canonical(value):
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("Identity timestamps must be timezone-aware")
         return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-    if isinstance(value, str) and _TIMESTAMP.match(value):
+    if isinstance(value, str) and _TIMESTAMP.fullmatch(value):
         return _canonical(datetime.fromisoformat(value.replace("Z", "+00:00")))
     if isinstance(value, float):
         if not math.isfinite(value):

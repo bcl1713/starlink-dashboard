@@ -119,7 +119,9 @@ class ItineraryAR(PlanningRecord):
 
 
 class AccessConfirmation(PlanningRecord):
-    satellite_ids: list[str]
+    model_config = ConfigDict(frozen=True)
+
+    satellite_ids: tuple[str, ...]
     confirmed: bool = False
     confirmed_at: UTCTimestamp | None = None
 
@@ -127,7 +129,7 @@ class AccessConfirmation(PlanningRecord):
 class SatelliteSelection(PlanningRecord):
     model_config = ConfigDict(validate_assignment=True)
 
-    permitted_satellite_ids: list[str] = Field(default_factory=list)
+    permitted_satellite_ids: tuple[str, ...] = Field(default_factory=tuple)
     access_confirmation: AccessConfirmation | None = None
     starshield_enabled: bool = True
 

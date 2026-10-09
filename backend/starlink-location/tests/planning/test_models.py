@@ -1,5 +1,7 @@
 """Typed planning contracts and legacy-compatible occurrence anchors."""
 
+import hashlib
+import json
 from copy import deepcopy
 from datetime import datetime, timezone
 
@@ -307,7 +309,7 @@ def test_evaluation_intervals_are_valid_half_open_windows():
         )
 
 
-def test_changing_selected_ids_in_place_clears_access_confirmation():
+def test_replacing_selected_ids_clears_access_confirmation():
     draft = models.PlanningDraft(
         permitted_satellite_ids=["X-1"],
         access_confirmation={"satellite_ids": ["X-1"], "confirmed": True},
@@ -402,3 +404,71 @@ def test_identity_normalizes_minute_precision_utc_timestamps():
     assert planning_identity({"time": "2026-10-25T12:00Z"}) == planning_identity(
         {"time": "2026-10-25T12:00:00Z"}
     )
+
+
+def test_permitted_ids_cannot_be_mutated_through_the_returned_collection():
+    draft = models.PlanningDraft(
+        permitted_satellite_ids=["X-1"],
+        access_confirmation={"satellite_ids": ["X-1"], "confirmed": True},
+    )
+    with pytest.raises(AttributeError):
+        draft.permitted_satellite_ids.append("X-2")
+    assert tuple(draft.permitted_satellite_ids) == ("X-1",)
+    assert draft.access_confirmation.confirmed
+
+
+def test_permitted_ids_augmented_replacement_invalidates_access():
+    draft = models.PlanningDraft(
+        permitted_satellite_ids=["X-1"],
+        access_confirmation={"satellite_ids": ["X-1"], "confirmed": True},
+    )
+    draft.permitted_satellite_ids += ("X-2",)
+    assert tuple(draft.permitted_satellite_ids) == ("X-1", "X-2")
+    assert draft.access_confirmation is None
+
+
+def test_confirmation_ids_cannot_be_mutated_through_a_retained_reference():
+    confirmation = models.AccessConfirmation(satellite_ids=["X-1"], confirmed=True)
+    draft = models.PlanningDraft(
+        permitted_satellite_ids=["X-1"], access_confirmation=confirmation
+    )
+    with pytest.raises(AttributeError):
+        confirmation.satellite_ids.append("X-2")
+    assert tuple(draft.access_confirmation.satellite_ids) == ("X-1",)
+
+
+def test_retained_confirmation_cannot_be_reassigned():
+    confirmation = models.AccessConfirmation(satellite_ids=["X-1"], confirmed=True)
+    draft = models.PlanningDraft(
+        permitted_satellite_ids=["X-1"], access_confirmation=confirmation
+    )
+    with pytest.raises(ValidationError):
+        confirmation.satellite_ids = ("X-2",)
+    assert tuple(draft.access_confirmation.satellite_ids) == ("X-1",)
+
+
+@pytest.mark.parametrize(
+    "source_text",
+    [
+        "2026-10-25T12:10 AR TRACK 210",
+        "2026-10-25T12:10:00Z AR TRACK 210",
+        "2026-10-25T12:10:00Z continued evidence",
+    ],
+)
+def test_identity_preserves_datetime_prefixed_evidence_text(source_text):
+    expected = hashlib.sha256(
+        json.dumps({"source_text": source_text}, separators=(",", ":")).encode()
+    ).hexdigest()
+    assert planning_identity({"source_text": source_text}) == expected
+
+
+def test_immutable_satellite_ids_still_serialize_as_wire_arrays():
+    draft = models.PlanningDraft(
+        permitted_satellite_ids=["X-1"],
+        access_confirmation={"satellite_ids": ["X-1"], "confirmed": True},
+    )
+    dumped = draft.model_dump(mode="json")
+    assert dumped["permitted_satellite_ids"] == ["X-1"]
+    assert dumped["access_confirmation"]["satellite_ids"] == ["X-1"]
+    restored = models.PlanningDraft.model_validate_json(draft.model_dump_json())
+    assert restored == draft
