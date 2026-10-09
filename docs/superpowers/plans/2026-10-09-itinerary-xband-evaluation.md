@@ -83,7 +83,10 @@ enabled. Overview visibility is never an input.
   assignments, exact altitude changes, manual overlays, effective splice route,
   longitude wrap and missing satellite/height assumptions. Pin enablement
   persistence/reload/export and invariance under Overview visibility edits;
-  enabling/disabling invalidates context and review identity.
+  enabling/disabling invalidates context and review identity. Parse/bind
+  repeated-visit KML through the API, reload RouteManager, and compare
+  preview/canonical costs and positions at both timed visits. Constructed
+  ParsedRoute fixtures alone cannot prove the ingestion/timing contract.
 
 - [ ] **Step 2:** Run `test_policy.py test_grid.py test_canonical.py`; expect
       policy restoration and fixed-grid inconsistencies to fail.
@@ -184,7 +187,9 @@ storage and manifest references, with stale identity reflected on read.
 planning/{service,routes,store}.py and create
 `tests/planning/test_reviewed_save.py`. Adapt existing
 `app/mission/routes_v2.py` ordinary leg PUT and parent update delegation; extend
-its regression tests.
+its regression tests. Update frontend `src/services/missions.ts` and
+`src/hooks/api/useMissions.ts` with optional typed planning CAS arguments for
+managed PUT/DELETE callers; retain unmanaged call signatures.
 
 **Interfaces:** `PlanningService.preview(..., request: PreviewDraft)` returns
 PlanningEvaluation without writes. `save_reviewed(..., request: SaveReviewed)`
@@ -232,7 +237,10 @@ edits/lock toggles; `ProposalComparison` emits Apply only on user action.
       deadline/cleanup. Persist drafts before resume, disable reviewed save
       while field errors remain, and reconcile request errors without losing
       manual edits. Reuse existing AR/X/map controls with occurrence anchors and
-      accessible actions.
+      accessible actions. Managed legacy edit callers send the current
+      PlanningView revision and leg identity; invalidate mission and planning
+      queries together on success. Missing/stale CAS errors preserve local
+      changes and require reload.
 - [ ] **Step 4:** Run focused backend/frontend tests and existing mission/leg
       tests; verify two-tab race, a deleted satellite on reopen, physical/policy
       labels, keyboard locks and mobile review. No fake initial satellite

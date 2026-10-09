@@ -93,6 +93,9 @@ carry fabricated final executable legs from the browser.
       installed route, POIs, timeline, manual choices and active flags. Pin
       managed legacy DELETE, stale DELETE, and retained source closure; deleted
       installed-leg IDs appear only in archived history, not live cards.
+      MissionDetail Delete passes the current planning CAS arguments through
+      useDeleteLeg; component tests cover managed success, stale rejection and
+      unmanaged deletion. Do not silently retry deletion with a newer revision.
 - [ ] **Step 5:** Commit `feat: reconcile itinerary and route revisions safely`.
 
 ## Task 9: Source closure, collision-safe archives and owned deletion
@@ -101,7 +104,8 @@ carry fabricated final executable legs from the browser.
 `tests/planning/{test_packages,test_source_lifecycle}.py`; extend
 planning/sources.py, `app/mission/{routes_v2,storage}.py`,
 `app/mission/package/{__main__,snapshot_export}.py`,
-`app/mission/exporter/{snapshot_inputs,snapshot_views}.py`.
+`app/mission/exporter/{snapshot_inputs,snapshot_views}.py`,
+`app/api/routes/delete.py` and its endpoint tests.
 
 **Interfaces:**
 
@@ -116,7 +120,9 @@ SourceStore.release_owned(mission_id: str, references: tuple[SourceRevision, ...
 graph with ID remaps and active-reference checks. It uses content hashes
 independently of storage IDs. Snapshot payloads include every accepted
 draft/retired/prior KML, PDF revision, policy and evaluation context, not only
-Mission.legs resources.
+Mission.legs resources. Include/remap owned KML profile descriptors in this
+closure and validate their hash/owner/ingestion version on import. Rebuilt
+caches use the same profile.
 
 - [ ] **Step 1:** Test `test_roundtrip_with_zero_executable_legs`,
       `test_partial_review_and_retired_history_roundtrip`,
@@ -135,6 +141,9 @@ Mission.legs resources.
 
   Delete failures are retryable and identify remaining owned paths. Export with
   absent retained bytes fails explicitly rather than emitting an incomplete ZIP.
+  Standalone route DELETE tests cover each draft/executable/retired/history
+  reference class, active references and genuinely unreferenced legacy routes;
+  rejection preserves files, descriptors, POIs, cache and active/runtime state.
 
 - [ ] **Step 2:** Run test_packages.py and test_source_lifecycle.py; expect
       missing manifest source enumeration, staging rollback and foreign
@@ -147,7 +156,13 @@ Mission.legs resources.
       legs inactive. Extend legacy package import to enforce collision/ownership
       protection while keeping its field/format compatibility. Roll back staged
       sources after failure; deletion releases only verified unreferenced owned
-      bytes and cache entries, with no global prune operation.
+      bytes and cache entries, with no global prune operation. Guard standalone
+      route DELETE under the same global gate/reference inventory before any
+      deactivation, cancellation, POI or file mutation. Referenced/owned
+      retained routes return 409 with a mission action; release retained bytes
+      through owned mission deletion only. Unreferenced unmanaged deletion
+      retains existing behavior. Reference-changing imports, bindings,
+      retirements and deletion share the gate to prevent check/delete races.
 - [ ] **Step 4:** Rerun focused tests plus existing mission-package endpoint
       POI, mission storage, exporter and retirement integration tests. Compare
       source inventories before/after failed import, deletion and package

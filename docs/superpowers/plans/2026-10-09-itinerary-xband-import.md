@@ -69,7 +69,8 @@ optional legacy-compatible fields.
   acknowledgment and save time. `PlanningView` exposes expected-leg cards with
   their input identities, review/computation status, draft and review records.
   `RouteBinding` carries immutable route/source IDs, content hash and filename;
-  RouteBindingPreview adds discrepancy errors and matched AR candidates.
+  versioned ingestion profile `planning_v1`; RouteBindingPreview adds
+  discrepancy errors and matched AR candidates.
 - `PlanningSatelliteOptions`: configured satellite IDs/labels, transport,
   validated position and eligibility/error; eligible options are configured X
   satellites resolved through the canonical catalog/POI path. Access is never
@@ -116,7 +117,9 @@ numbers and ordered records; storage IDs are separate from content hashes.
 **Files:** Create `app/mission/planning/{extract,match,deadlines}.py`,
 `tests/planning/{test_extract,test_match,test_deadlines}.py`. Modify
 `app/mission/timeline_builder/{aar,calculator}.py` for optional anchor
-resolution.
+resolution, `app/services/kml/{parser,timing,route_builder}.py`,
+`app/services/route_manager.py` and `app/models/route.py` for planning
+ingestion.
 
 **Interfaces:**
 
@@ -125,12 +128,20 @@ extract_itinerary(pdf_bytes: bytes) -> ItineraryPreview
 match_ar_windows(leg: ExpectedLeg, route: ParsedRoute) -> list[ItineraryAR]
 resolve_anchor(anchor: RouteAnchor, route: ParsedRoute, adjustment: datetime | None) -> datetime
 run_bounded(fn: Callable[..., T], args: tuple, seconds: float) -> T
+parse_kml_file(file_path: str | Path, *, profile: Literal["legacy", "planning_v1"] = "legacy") -> ParsedRoute | None
 ```
 
 `deadlines.py` owns spawned process handles, timeout termination/reaping, and
 typed deadline errors. Functions passed to it are module-level/picklable.
 Extraction returns leg/AR source evidence and field errors; match returns
-candidate occurrences rather than collapsing names into a dictionary.
+candidate occurrences rather than collapsing names into a dictionary. Planning
+ingestion preserves primary segment/waypoint occurrence provenance before
+assigning timestamps. Match timed waypoints to ordered primary visits; never
+overwrite one visit with another's time or use alternate timestamps. Ambiguous
+chains/mappings are typed input errors; strict planning parsing cannot fall back
+to flattening all segments. Unmanaged routes keep the legacy profile. The
+planning profile returns a usable route or raises KMLParseError; preserve the
+existing public parser name and legacy optional return contract.
 
 - [ ] **Step 1:** Generate sanitized PDF/KML fixtures using existing pypdf and
       synthetic XML. Test `test_rotated_utc_columns_and_five_ar_windows`,
@@ -147,6 +158,9 @@ candidate occurrences rather than collapsing names into a dictionary.
 
   Add partial-segment interpolation, antimeridian, fixed/elapsed overrides,
   departure delta applied once, 10 MiB rejection and killed-worker cleanup.
+  Parse actual synthetic KML with visits to identical P at 10:00 and 11:00;
+  assert distinct point timestamps/occurrences and valid interpolated positions.
+  Pin alternate timing exclusion and ambiguous primary-chain rejection.
 
 - [ ] **Step 2:** Run `test_extract.py test_match.py test_deadlines.py`; expect
       missing extraction, ambiguity, and bounded-worker behavior.
@@ -155,8 +169,12 @@ candidate occurrences rather than collapsing names into a dictionary.
       approved same-minute candidate rule and occurrence-aware resolution. Use
       run_bounded for the 10-second parser; never log raw operational PDF
       content. Keep legacy name/coordinate resolvers for missing anchors.
+      Version planning ingestion and its timing normalization; RouteManager
+      loads owned KMLs with that same profile after restart, never reparsing
+      accepted planning bindings through the legacy timestamp mapper.
 - [ ] **Step 4:** Rerun these tests and existing KML/timeline tests; require no
       live parser children after successful, failed, or timed-out parsing.
+      Ordinary legacy KML fixtures retain their historical results.
 - [ ] **Step 5:** Commit
       `feat: extract itineraries and match refueling anchors`.
 
@@ -188,7 +206,12 @@ and validated positions. Confirm/create validates selected IDs; an empty set or
 unconfirmed access remains an explicit planning field error. It permits mission
 creation/AR draft review, but blocks proposal computation and reviewed save.
 File IDs never depend on upload names; stage outside locks, then recheck
-expected revision under global activation lock before parent lock.
+expected revision under global activation lock before parent lock. Owned KMLs
+have a versioned sibling profile descriptor (route ID, source hash, owner and
+ingestion profile); journal it with route binding/source writes. RouteManager
+validates that descriptor to select planning ingestion on every load/cache
+refresh. Missing/invalid descriptors fail closed for owned routes. Determine
+ownership from the durable source inventory, not descriptor presence.
 
 - [ ] **Step 1:** Pin `test_confirm_creates_expected_cards_not_executable_legs`,
       `test_accept_upload_assigns_selected_leg_not_filename`,
@@ -206,6 +229,10 @@ expected revision under global activation lock before parent lock.
 
   Inject failure after each mission/leg/timeline/owned-POI write. Readers must
   observe the previous or next coherent record, never half a reviewed plan.
+  Exercise actual app startup with an interrupted journal: recovery must finish
+  before `reconcile_active_legs_on_startup`, route watchers, simulation startup
+  or any mission/timeline/POI readers/writers run; unrecoverable state blocks
+  readiness.
 
 - [ ] **Step 2:** Run `test_store.py test_api.py`; expect unmet endpoints and
       CAS.
@@ -217,7 +244,7 @@ expected revision under global activation lock before parent lock.
       updates. Enforce 24-hour staging expiry and remove failed/abandoned owned
       staging. Binding a new route creates Needs review; first acceptance can
       request the later proposal service only after it exists. Recover before
-      app readiness.
+      app readiness, before startup active-leg reconciliation and watchers.
 - [ ] **Step 4:** Rerun focused tests; extend existing mission storage/CRUD
       tests for metadata preservation and inactive behavior. No computation runs
       while a synchronous persistence lock is held.
