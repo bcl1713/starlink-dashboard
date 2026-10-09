@@ -8,7 +8,7 @@ mode: simulation
 update_interval_seconds: 1.0
 
 exports:
-  customer_briefing_enabled: false
+  customer_briefing_enabled: true
 
 # Route simulation configuration
 route:

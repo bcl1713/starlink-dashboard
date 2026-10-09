@@ -167,7 +167,7 @@ class HeadingTrackerConfig(BaseModel):
 class ExportsConfig(BaseModel):
     """Optional mission download formats."""
 
-    customer_briefing_enabled: bool = False
+    customer_briefing_enabled: bool = True
 
 
 class SimulationConfig(BaseModel):

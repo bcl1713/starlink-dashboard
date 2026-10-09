@@ -52,7 +52,7 @@ def kml(start, duration, wide=False, untimed_middle=False):
     ).encode()
 
 
-def seed_missions(api, root):
+def seed_missions(api, root, *, names=None):
     recipes = {
         "normal": {},
         "incomplete-x": {"unknown": True},
@@ -77,6 +77,8 @@ def seed_missions(api, root):
         "over-budget": {"dense": 100},
         "missing-map": {"untimed_middle": True},
     }
+    if names is not None:
+        recipes = {name: recipes[name] for name in names}
     saved = {}
     for name, recipe in recipes.items():
         mission_id = "briefing-" + name

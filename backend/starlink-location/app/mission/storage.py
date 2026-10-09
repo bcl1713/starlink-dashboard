@@ -102,7 +102,14 @@ def save_mission_v2(mission: Mission) -> dict:
     # implementation private so callers cannot accidentally take this lock
     # twice while coordinating a broader v2 operation.
     with get_active_leg_lock():
-        return _save_mission_v2_unlocked(mission)
+        previous = load_mission_v2(mission.id)
+        result = _save_mission_v2_unlocked(mission)
+        # Queue invalidation only after committed persistence. Rendering never
+        # runs on the save path; startup reconciliation repairs missed signals.
+        from app.mission.slide_cache.coordinator import saved_mission
+
+        saved_mission(previous, mission)
+        return result
 
 
 def _save_mission_v2_unlocked(mission: Mission) -> dict:

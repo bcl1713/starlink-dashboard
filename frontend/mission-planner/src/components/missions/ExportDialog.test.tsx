@@ -18,7 +18,7 @@ vi.mock('../../services/export-import', () => ({
   },
 }));
 const omission =
-  'ZIP downloaded. Legacy documents are included; the customer PDF could not be included.';
+  'ZIP downloaded. Mission data and CSVs are included; the customer PDF could not be included.';
 const props = {
   open: true,
   onClose: vi.fn(),

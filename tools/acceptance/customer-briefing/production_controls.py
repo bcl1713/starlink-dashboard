@@ -86,7 +86,7 @@ def verify_export_proxy_config(config):
         "^~ /api/overview-weather/",
     )
     if (
-        "proxy_read_timeout 120s;" not in export
+        "proxy_read_timeout 660s;" not in export
         or config.count("proxy_read_timeout") != 1
         or any(
             any(header not in bodies.get(route, "") for header in forwarding)
@@ -115,7 +115,7 @@ def verify_export_proxy_config(config):
     ):
         raise ValueError("Unqualified export proxy route matching")
     return {
-        "exportReadTimeoutSeconds": 120,
+        "exportReadTimeoutSeconds": 660,
         "otherRouteReadTimeoutSeconds": 60,
         "matchingRoutes": matches,
         "nonmatchingRoutes": others,
@@ -391,8 +391,8 @@ def inspect_download(content, headers, expected_status):
             for name in (PDF, EVIDENCE)
         ):
             raise ValueError("Optional artifact/manifest/status mismatch")
-        if not any(name.endswith(".pptx") for name in names):
-            raise ValueError("Legacy presentation missing")
+        if any(name.endswith(".pptx") for name in names):
+            raise ValueError("PowerPoint files must not be delivered")
         warning = headers.get("x-customer-briefing-warning")
         if (status == "omitted" and warning not in WARNINGS) or (
             status != "omitted" and warning
@@ -420,8 +420,15 @@ def inspect_download(content, headers, expected_status):
                 or render["status"] != "success"
                 or render["cleanup"]["success"] is not True
                 or not 0 <= render["totalMs"] <= 60000
-                or render["launchCount"] != 1
-                or render["sharedBrowser"] is not True
+                or render["launchCount"] != 0
+                or render["sharedBrowser"] is not False
+                or render.get("mode") != "cached-page-assembly"
+                or len(render.get("fragments", [])) != len(evidence["legs"])
+                or any(
+                    f["render"]["launchCount"] != 1
+                    or f["render"]["cleanup"]["success"] is not True
+                    for f in render["fragments"]
+                )
                 or proof["verified"] is not True
                 or [(row["legId"], row["rowId"]) for row in proof["rows"]] != rows
                 or any(

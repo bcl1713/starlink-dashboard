@@ -131,17 +131,20 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
     for result in public["maps"].values():
         result.pop("pngs", None)
     legs = []
-    for number, captured in enumerate(snapshot.legs, 1):
+    for number, captured in enumerate(snapshot.legs, 1 + snapshot.leg_number_offset):
         trial = project_trial_leg(captured)
         view = project_customer_leg(
-            captured, trial, leg_number=number, leg_count=len(snapshot.legs)
+            captured,
+            trial,
+            leg_number=number,
+            leg_count=snapshot.leg_count or len(snapshot.legs),
         )
         legs.append(
             {
                 "legId": captured.leg_id,
-                "mapInputDiagnostics": payload["legs"][number - 1][
-                    "mapInputDiagnostics"
-                ],
+                "mapInputDiagnostics": payload["legs"][
+                    number - 1 - snapshot.leg_number_offset
+                ]["mapInputDiagnostics"],
                 **_leg_records(captured, trial, view),
             }
         )
