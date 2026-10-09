@@ -28,11 +28,26 @@ async function scene(page: Page) {
                   fn: (o: {
                     name: string;
                     geometry?: {
-                      attributes: { position?: { count: number } };
+                      attributes: {
+                        position?: { count: number; array: ArrayLike<number> };
+                      };
+                      uuid: string;
+                      addEventListener: (
+                        type: 'dispose',
+                        listener: () => void
+                      ) => void;
                       type: string;
                       parameters?: { radius?: number };
                     };
-                    material?: { depthTest: boolean; depthWrite: boolean };
+                    material?: {
+                      uuid: string;
+                      addEventListener: (
+                        type: 'dispose',
+                        listener: () => void
+                      ) => void;
+                      depthTest: boolean;
+                      depthWrite: boolean;
+                    };
                   }) => void
                 ) => void;
               };
@@ -49,10 +64,16 @@ async function scene(page: Page) {
       )
       ?.containerInfo?.getState?.();
     if (!state) return { borders: [], geometries: 0, calls: 0 };
+    const evidence = window as unknown as {
+      __overviewBoundaryEvidenceResources?: Set<string>;
+    };
+    const resources = (evidence.__overviewBoundaryEvidenceResources ??=
+      new Set<string>());
     let earth = false;
     const borders: {
       name: string;
       count: number;
+      hawaiiVertices: number;
       depthTest?: boolean;
       depthWrite?: boolean;
     }[] = [];
@@ -62,19 +83,47 @@ async function scene(page: Page) {
         o.geometry.parameters?.radius === 2
       )
         earth = true;
-      if (o.name.startsWith('overview-boundaries-'))
+      if (o.name.startsWith('overview-boundaries-')) {
+        // Observe disposal of the resources owned by these optional layers.
+        // Telemetry/track geometry can change while the simulation progresses.
+        for (const resource of [o.geometry, o.material]) {
+          if (!resource || resources.has(resource.uuid)) continue;
+          resources.add(resource.uuid);
+          resource.addEventListener('dispose', () =>
+            resources.delete(resource.uuid)
+          );
+        }
+        const positions = o.name.startsWith('overview-boundaries-countries')
+          ? (o.geometry?.attributes.position?.array ?? [])
+          : [];
+        let hawaiiVertices = 0;
+        for (let i = 0; i < positions.length; i += 3) {
+          const [x, y, z] = [positions[i], positions[i + 1], positions[i + 2]];
+          const latitude = (Math.asin(y / Math.hypot(x, y, z)) * 180) / Math.PI;
+          const longitude = (Math.atan2(-z, x) * 180) / Math.PI;
+          if (
+            longitude > -157 &&
+            longitude < -154 &&
+            latitude > 18 &&
+            latitude < 22
+          )
+            hawaiiVertices++;
+        }
         borders.push({
           name: o.name,
           count: (o.geometry?.attributes.position?.count ?? 0) / 2,
           depthTest: o.material?.depthTest,
           depthWrite: o.material?.depthWrite,
+          hawaiiVertices,
         });
+      }
     });
     return {
       borders,
       earth,
       geometries: state.gl.info.memory.geometries,
       calls: state.gl.info.render.calls,
+      boundaryResources: resources.size,
     };
   });
 }
@@ -132,7 +181,9 @@ async function frameSample(page: Page) {
         function frame(now: number) {
           values.push(now - previous);
           previous = now;
-          if (values.length >= 30) resolve(values.slice(1));
+          // Give both samples the same warm-up, then retain 90 intervals.
+          // Sampling follows identical tab/legend state and precedes screenshots.
+          if (values.length >= 121) resolve(values.slice(31));
           else requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
@@ -214,13 +265,14 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       await overview.mouse.up();
       await overview.mouse.wheel(0, -900);
       const camera = await settledOverviewCamera(overview);
-      const baselineFrames = frameStats(await frameSample(overview));
       const originalScene = await scene(overview);
       const editing = await context.newPage();
       await editing.goto('/configuration');
       await expect(
         editing.getByRole('heading', { name: 'Geographic boundaries' })
       ).toBeVisible();
+      await legend(overview);
+      const baselineFrames = frameStats(await frameSample(overview));
       const before = await overview.evaluate(() => performance.timeOrigin);
       const countryMs = await toggle(
         editing,
@@ -231,6 +283,15 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       );
       const countryScene = await scene(overview);
       expect(countryScene.borders).toHaveLength(2);
+      expect(
+        countryScene.borders.find(
+          (line) => line.name === 'overview-boundaries-countries'
+        )?.hawaiiVertices
+      ).toBeGreaterThan(0);
+      expect(
+        countryScene.borders.find((line) => line.name.endsWith('-disputed'))
+          ?.hawaiiVertices
+      ).toBe(0);
       await expect(
         (await legend(overview)).getByText('Country borders', { exact: true })
       ).toBeVisible();
@@ -243,6 +304,7 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       );
       const bothScene = await scene(overview);
       expect(bothScene.borders).toHaveLength(4);
+      expect(bothScene.boundaryResources).toBe(8);
       expect(bothScene.calls - originalScene.calls).toBeLessThanOrEqual(4);
       for (const line of bothScene.borders) {
         expect(line.count).toBeGreaterThan(0);
@@ -260,13 +322,6 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
         expect(
           await overview.evaluate(() => !!document.fullscreenElement)
         ).toBe(true);
-      await overview.screenshot({
-        path: info.outputPath(`${mode}-borders.png`),
-      });
-      await editing.screenshot({
-        path: info.outputPath(`${mode}-settings.png`),
-        fullPage: true,
-      });
       const borderFrames = frameStats(await frameSample(overview));
       expect(borderFrames.median).toBeLessThan(
         Math.max(100, baselineFrames.median * 2)
@@ -274,6 +329,13 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       expect(borderFrames.p95).toBeLessThan(
         Math.max(200, baselineFrames.p95 * 3)
       );
+      await overview.screenshot({
+        path: info.outputPath(`${mode}-borders.png`),
+      });
+      await editing.screenshot({
+        path: info.outputPath(`${mode}-settings.png`),
+        fullPage: true,
+      });
       const countryOffMs = await toggle(
         editing,
         overview,
@@ -314,8 +376,8 @@ for (const mode of ['desktop', 'fullscreen', 'mobile'] as const) {
       // Successful immutable assets are reused; no polling or per-feature requests.
       expect(assets).toHaveLength(2);
       await expect
-        .poll(async () => (await scene(overview)).geometries)
-        .toBe(originalScene.geometries);
+        .poll(async () => (await scene(overview)).boundaryResources)
+        .toBe(0);
       await editing.reload();
       await expect(
         editing.getByRole('switch', { name: 'State/province borders' })
@@ -471,6 +533,8 @@ test('fixture operational overlays remain readable with real bundled borders', a
   // Camera probes exercise globe-attached geometry at the date line and pole;
   // they are identified as controlled views rather than public recenter behavior.
   for (const [name, latitude, longitude] of [
+    ['hawaii-coastlines', 20, -156],
+    ['australia-coastlines', -28, 135],
     ['dateline', 10, 180],
     ['polar', 82, 20],
   ] as const) {

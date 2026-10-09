@@ -6,7 +6,8 @@ settings apply to all Overview displays and reach an already-open display on its
 next five-second settings refresh, including fullscreen, without a reload or
 active mission. A failed save leaves the last confirmed preference in place.
 
-Country borders show international land boundaries; state/province borders show
+Country borders show international land boundaries and coastlines, including
+major islands, with the same stroke and switch. State/province borders show
 worldwide subdivisions where the bundled Natural Earth dataset supplies them.
 Thin contrasting strokes remain below the aircraft, route and satellite
 presentation. Dashed lines identify source-classified disputed or uncertain

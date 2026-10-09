@@ -124,3 +124,37 @@ it('projects the shipped worldwide data within geometry budgets', async () => {
     expect(standard.length + disputed.length).toBeLessThan(1_500_000);
   }
 });
+
+it('includes solid island coastlines with country borders', async () => {
+  const { readFileSync } = await import('node:fs');
+  const countries = parseBoundaries(
+    JSON.parse(
+      readFileSync(
+        new URL('../../public/boundaries/countries.json', import.meta.url),
+        'utf8'
+      )
+    )
+  );
+  // Hawaii and Australia have no international land borders. Their closed
+  // outlines catch a missing coastline input in the shipped country asset.
+  for (const [west, east, south, north] of [
+    [-157, -154, 18, 22],
+    [112, 154, -44, -10],
+  ]) {
+    const outlines = countries.lines.filter(
+      ({ points }) =>
+        points.length > 3 &&
+        points.every(
+          ([lon, lat]) =>
+            lon >= west && lon <= east && lat >= south && lat <= north
+        ) &&
+        points[0][0] === points.at(-1)![0] &&
+        points[0][1] === points.at(-1)![1]
+    );
+    expect(outlines.length).toBeGreaterThan(0);
+    expect(outlines.every(({ disputed }) => !disputed)).toBe(true);
+    const projected = projectBoundaries({ version: 1, lines: outlines });
+    expect(projected.standard.length).toBeGreaterThan(0);
+    expect(projected.disputed).toHaveLength(0);
+  }
+});
