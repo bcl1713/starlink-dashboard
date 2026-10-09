@@ -6,11 +6,11 @@ from dataclasses import replace
 from hashlib import sha256
 
 import pytest
-
+from app.mission.exporter.customer_projection import project_briefing_leg
 from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.exporter.trial_projection import project_trial_leg
+
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 
@@ -25,9 +25,9 @@ def inputs(name="composition-assessed"):
         (),
         (),
     )
-    trial = project_trial_leg(leg)
-    view = project_customer_leg(leg, trial, leg_number=1, leg_count=1)
-    return captured, trial, view
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    return captured, projection, view
 
 
 def build(*args):
@@ -37,8 +37,8 @@ def build(*args):
 
 
 def test_document_preserves_geometry_and_safe_customer_fields():
-    captured, trial, view = inputs()
-    payload = build(captured, view, trial)
+    captured, projection, view = inputs()
+    payload = build(captured, view, projection)
     assert payload["flight"] == {
         "startUtc": "2026-10-25T14:00:00Z",
         "endUtc": "2026-10-25T22:00:00Z",
@@ -60,14 +60,14 @@ def test_document_preserves_geometry_and_safe_customer_fields():
 
 
 def test_document_rejects_identity_and_partition_mismatch():
-    captured, trial, view = inputs()
+    captured, projection, view = inputs()
     for bad in (
         replace(captured, legs=captured.legs * 2),
         replace(captured, legs=(replace(captured.legs[0], leg_id="other"),)),
     ):
         with pytest.raises(ValueError):
-            build(bad, view, trial)
-    bad = replace(trial, intervals=trial.intervals[1:])
+            build(bad, view, projection)
+    bad = replace(projection, intervals=projection.intervals[1:])
     with pytest.raises(ValueError):
         build(captured, replace(view, intervals=bad.intervals), bad)
     with pytest.raises(ValueError):
@@ -75,18 +75,18 @@ def test_document_rejects_identity_and_partition_mismatch():
             captured,
             view,
             replace(
-                trial,
+                projection,
                 utc_bounds=(
-                    trial.utc_bounds[0].replace(tzinfo=None),
-                    trial.utc_bounds[1],
+                    projection.utc_bounds[0].replace(tzinfo=None),
+                    projection.utc_bounds[1],
                 ),
             ),
         )
 
 
 def test_document_map_has_customer_endpoints_without_event_ordinals():
-    captured, trial, view = inputs()
-    payload = build(captured, view, trial)
+    captured, projection, view = inputs()
+    payload = build(captured, view, projection)
     assert payload["mapInput"]["endpointLabels"] == {
         "departure": "KADW",
         "arrival": "PAED",
@@ -98,10 +98,11 @@ def test_document_map_has_customer_endpoints_without_event_ordinals():
 @pytest.mark.parametrize("invalid", ["missing", "malformed", "timing", "density"])
 def test_map_input_diagnostics_survive_document_and_evidence(invalid):
     from app.mission.exporter.map_inputs import build_map_input
+
     from tests.unit.test_customer_evidence import build as evidence
     from tests.unit.test_customer_evidence import report
 
-    captured, trial, view = inputs()
+    captured, projection, view = inputs()
     route = json.loads(captured.legs[0].effective_route_json)
     if invalid == "missing":
         route_json = None
@@ -115,13 +116,13 @@ def test_map_input_diagnostics_survive_document_and_evidence(invalid):
         route_json = canonical_json(route)
     leg = replace(captured.legs[0], effective_route_json=route_json)
     captured = replace(captured, legs=(leg,))
-    _, reasons = build_map_input(leg, trial)
+    _, reasons = build_map_input(leg, projection)
     assert reasons
-    payload = build(captured, view, trial)
+    payload = build(captured, view, projection)
     assert payload.get("mapInputDiagnostics") == list(reasons)
     raw = report(captured, view)
     raw["map"] = {"status": "unavailable", "warnings": ["Runtime map failed"]}
-    result = json.loads(evidence(captured, trial, view, raw))
+    result = json.loads(evidence(captured, projection, view, raw))
     assert result["mapInputDiagnostics"] == list(reasons)
     assert result["render"]["map"]["warnings"] == ["Runtime map failed"]
     assert captured.legs[0].effective_route_json == route_json
@@ -131,19 +132,19 @@ def test_successful_map_diagnostics_are_retained(monkeypatch):
     import app.mission.exporter.customer_document as module
     from app.mission.exporter.map_inputs import build_map_input
 
-    captured, trial, view = inputs()
-    map_input, _ = build_map_input(captured.legs[0], trial)
+    captured, projection, view = inputs()
+    map_input, _ = build_map_input(captured.legs[0], projection)
     monkeypatch.setattr(
         module, "build_map_input", lambda *args: (map_input, ("Position advisory",))
     )
-    payload = build(captured, view, trial)
+    payload = build(captured, view, projection)
     assert payload.get("mapInputDiagnostics") == ["Position advisory"]
     assert payload["mapInput"]
 
 
 def test_document_rows_carry_exact_display_cells():
-    captured, trial, view = inputs()
-    payload = build(captured, view, trial)
+    captured, projection, view = inputs()
+    payload = build(captured, view, projection)
     assert payload["rows"][0].get("displayCells") == [
         "10:00–10:15",
         "Takeoff SOF",
@@ -200,10 +201,10 @@ def test_mission_missing_map_retains_reasons_and_transport_facts():
 
 
 def test_document_rejects_reversed_and_duplicate_customer_rows():
-    captured, trial, view = inputs()
+    captured, projection, view = inputs()
     for rows in (view.rows[::-1], view.rows[:1] * 2):
         with pytest.raises(ValueError):
-            build(captured, replace(view, rows=rows), trial)
+            build(captured, replace(view, rows=rows), projection)
 
 
 @pytest.mark.parametrize(
@@ -242,7 +243,7 @@ def test_mission_fixture_material_rows_and_per_leg_flight_axes(name):
 
 
 def test_rounded_customer_times_omit_marks_without_losing_exact_bounds():
-    captured, trial, view = inputs()
+    captured, projection, view = inputs()
     first = view.rows[0]
     start = first.start_time.replace(second=29)
     from app.mission.exporter.customer_clocks import format_customer_range
@@ -250,9 +251,9 @@ def test_rounded_customer_times_omit_marks_without_losing_exact_bounds():
     row = replace(
         first,
         start_time=start,
-        clock=format_customer_range(start, first.end_time, trial.utc_bounds[0]),
+        clock=format_customer_range(start, first.end_time, projection.utc_bounds[0]),
     )
-    payload = build(captured, replace(view, rows=(row,)), trial)
+    payload = build(captured, replace(view, rows=(row,)), projection)
     assert row.clock.approximate is True
     assert payload["rows"][0]["et"] == "10:00 ET–10:15 ET"
     assert payload["rows"][0]["displayCells"][0] == "10:00–10:15"

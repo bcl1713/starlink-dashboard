@@ -4,9 +4,9 @@ import json
 import math
 from datetime import datetime
 
+from .briefing_clocks import ensure_utc
+from .customer_projection import BriefingLeg
 from .snapshot import LegSnapshot
-from .trial_clocks import ensure_utc
-from .trial_projection import TrialLeg
 
 
 def _utc(raw: str | datetime) -> datetime:
@@ -46,10 +46,10 @@ def _interpolate(a: dict, b: dict, ratio: float) -> tuple[float, float]:
 
 
 def build_map_input(
-    snapshot_leg: LegSnapshot, trial_leg: TrialLeg
+    snapshot_leg: LegSnapshot, projected_leg: BriefingLeg
 ) -> tuple[dict | None, tuple[str, ...]]:
     """Insert exact window starts into the effective timed route; never renumber."""
-    if snapshot_leg.leg_id != trial_leg.leg_id:
+    if snapshot_leg.leg_id != projected_leg.leg_id:
         raise ValueError("Projection and captured leg identities differ")
     if not snapshot_leg.effective_route_json:
         return None, ("Captured effective route is unavailable",)
@@ -58,7 +58,7 @@ def build_map_input(
         if (
             len(captured_points) < 2
             or len(captured_points) > 2000
-            or not trial_leg.utc_bounds
+            or not projected_leg.utc_bounds
         ):
             raise ValueError("Effective route timing/bounds unavailable")
         timed = {}
@@ -88,7 +88,7 @@ def build_map_input(
                 "longitude": lon,
                 "timestamp": _stamp(stamp),
             }
-        if (times[0], times[-1]) != trial_leg.utc_bounds:
+        if (times[0], times[-1]) != projected_leg.utc_bounds:
             raise ValueError("Effective route timing does not match flight bounds")
         notes = (
             [
@@ -98,7 +98,7 @@ def build_map_input(
             else []
         )
         markers = []
-        for interval in trial_leg.coordination_rows:
+        for interval in projected_leg.coordination_rows:
             stamp = interval.start_time
             if stamp < times[0] or stamp > times[-1]:
                 notes.append(
@@ -123,7 +123,7 @@ def build_map_input(
         return {
             "schemaVersion": 1,
             "framingVersion": "mission-map-v1",
-            "legId": trial_leg.leg_id,
+            "legId": projected_leg.leg_id,
             "referenceUtc": _stamp(times[0]),
             "route": [timed[t] for t in ordered],
             "markers": [
@@ -132,4 +132,6 @@ def build_map_input(
             ],
         }, tuple(notes)
     except (ValueError, KeyError, TypeError, StopIteration):
-        return None, ("Effective route geometry or timing cannot locate trial windows",)
+        return None, (
+            "Effective route geometry or timing cannot locate briefing windows",
+        )

@@ -9,16 +9,15 @@ import sys
 from hashlib import sha256
 from pathlib import Path
 
-from html_pdf_checkpoint import publish_checkpoint
-from html_pdf_inspect import inspect_pdf, normalized_pdf_hash
-
 from app.mission.exporter.customer_document import build_customer_document
 from app.mission.exporter.customer_evidence import build_customer_evidence
 from app.mission.exporter.customer_pdf import verify_customer_pdf
+from app.mission.exporter.customer_projection import project_briefing_leg
 from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.exporter.trial_projection import project_trial_leg
+from html_pdf_checkpoint import publish_checkpoint
+from html_pdf_inspect import inspect_pdf, normalized_pdf_hash
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 FRONTEND = Path("/renderer/frontend/mission-planner")
@@ -84,9 +83,9 @@ def canonical(name):
         (),
         (),
     )
-    trial = project_trial_leg(leg)
-    view = project_customer_leg(leg, trial, leg_number=1, leg_count=1)
-    return captured, trial, view
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    return captured, projection, view
 
 
 def generate(root: Path):
@@ -100,8 +99,8 @@ def generate(root: Path):
         for name in ("composition-assessed", "composition-incomplete-x")
     }
     input_hashes = {}
-    for name, (captured, trial, view) in fixtures.items():
-        raw = canonical_json(build_customer_document(captured, view, trial))
+    for name, (captured, projection, view) in fixtures.items():
+        raw = canonical_json(build_customer_document(captured, view, projection))
         (inputs / (name + ".json")).write_bytes(raw)
         input_hashes[name] = sha256(raw).hexdigest()
     manifest = {
@@ -126,8 +125,8 @@ def generate(root: Path):
             "snapshot",
             "snapshot_inputs",
             "snapshot_views",
-            "trial_projection",
-            "trial_clocks",
+            "customer_projection",
+            "briefing_clocks",
             "customer_view",
             "customer_clocks",
             "pure map inputs and scene",
@@ -228,8 +227,8 @@ def generate(root: Path):
         report["pdfValidation"]["textHash"] = sha256(
             inspection["text"].encode()
         ).hexdigest()
-        captured, trial, view = fixtures["composition-assessed"]
-        evidence = build_customer_evidence(captured, trial, view, report)
+        captured, projection, view = fixtures["composition-assessed"]
+        evidence = build_customer_evidence(captured, projection, view, report)
         browser = Path(report["browserIdentity"]["executable"])
         manifest["hashes"]["browser"] = sha256(browser.read_bytes()).hexdigest()
         identity = {
@@ -238,7 +237,7 @@ def generate(root: Path):
             "pdf": normalized_pdf_hash(out / report["artifacts"]["pdfPath"]),
             "geometry": [
                 (i.start_time.isoformat(), i.end_time.isoformat(), i.posture)
-                for i in trial.intervals
+                for i in projection.intervals
             ],
             "pageRows": report["fit"]["visibleRowIds"],
         }
@@ -286,8 +285,8 @@ def generate(root: Path):
         for phrase in ("No transport confirmed available", "1 confirmed", "0 confirmed")
     ):
         raise ValueError("Incomplete-X customer content missing")
-    captured, trial, view = fixtures["composition-incomplete-x"]
-    evidence = build_customer_evidence(captured, trial, view, report)
+    captured, projection, view = fixtures["composition-incomplete-x"]
+    evidence = build_customer_evidence(captured, projection, view, report)
     staged = root / "incomplete-staging"
     staged.mkdir()
     for name in report["artifacts"].values():

@@ -8,22 +8,24 @@ import zipfile
 from hashlib import sha256
 from pathlib import Path
 
+from app.mission.exporter.customer_display import display_row
+from app.mission.exporter.customer_filename import customer_brief_filename
+from app.mission.exporter.customer_pdf import verify_customer_pdf
 from PIL import Image
 from production_pdf_geometry import geometry_text_hash
-
-from app.mission.exporter.customer_display import display_row
-from app.mission.exporter.customer_pdf import verify_customer_pdf
 
 source, destination = map(Path, sys.argv[1:3])
 destination.mkdir()
 with zipfile.ZipFile(source) as archive:
-    pdf = archive.read("exports/mission/mission-customer-briefing-trial.pdf")
+    mission = json.loads(archive.read("mission.json"))
+    filename = customer_brief_filename(mission.get("name"))
+    pdf = archive.read("exports/mission/" + filename)
     evidence = json.loads(
         archive.read("exports/mission/mission-customer-briefing-evidence.json")
     )
     mission = json.loads(archive.read("mission.json"))
 assert mission["id"] == evidence["missionId"]
-(destination / "mission-customer-briefing-trial.pdf").write_bytes(pdf)
+(destination / filename).write_bytes(pdf)
 (destination / "mission-customer-briefing-evidence.json").write_text(
     json.dumps(evidence, indent=2)
 )
@@ -73,7 +75,7 @@ for page, measured in zip(evidence["pages"], evidence["render"]["fit"]["pages"])
                 ],
             }
         )
-pdf_path = destination / "mission-customer-briefing-trial.pdf"
+pdf_path = destination / filename
 proof = verify_customer_pdf(pdf_path, expected, timeout_seconds=30)
 assert proof == evidence["render"]["pdfValidation"]
 (destination / "actual-pdf-proof.json").write_text(json.dumps(proof, indent=2))

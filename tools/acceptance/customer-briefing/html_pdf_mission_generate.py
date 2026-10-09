@@ -148,7 +148,7 @@ def generate_missions(root, run):
     ):
         render("fault-single-leg", "failure-" + fault, fault=fault, budget=8000)
     for name, output in deliveries.items():
-        pdf = output / "mission-customer-briefing-trial.pdf"
+        pdf = output / "mission-customer-briefing.pdf"
         report = json.loads((output / "render-report.json").read_text())
         text = subprocess.check_output(
             ["pdftotext", "-layout", str(pdf), "-"], text=True, timeout=30

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from .trial_clocks import EASTERN, ensure_utc
+from .briefing_clocks import EASTERN, ensure_utc
 
 
 @dataclass(frozen=True)

@@ -8,8 +8,6 @@ from itertools import pairwise
 from unittest.mock import Mock
 
 import pytest
-from pptx import Presentation
-
 from app.mission import storage, timeline_preparation
 from app.mission.models import (
     AARWindow,
@@ -25,6 +23,7 @@ from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTiming
 from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from pptx import Presentation
 
 BASE = datetime(2026, 10, 7, 8, tzinfo=timezone.utc)
 
@@ -750,8 +749,8 @@ def test_source_archive_distinguishes_empty_kml_from_missing_file(
 def test_export_captures_material_x_changes_without_changing_legacy_events(
     export_inputs, monkeypatch, blocked_first
 ):
+    from app.mission.exporter.customer_projection import project_briefing_leg
     from app.mission.exporter.snapshot import capture_export_snapshot
-    from app.mission.exporter.trial_projection import project_trial_leg
     from app.mission.models import KaOutage, KuOutageOverride
     from app.satellites.rules import EventType, RuleEngine
 
@@ -806,15 +805,15 @@ def test_export_captures_material_x_changes_without_changing_legacy_events(
             BASE + timedelta(hours=1),
         ]
     )
-    trial = project_trial_leg(snap.legs[0])
+    projection = project_briefing_leg(snap.legs[0])
     a = next(
         i
-        for i in trial.intervals
+        for i in projection.intervals
         if i.start_time <= BASE + timedelta(minutes=20) < i.end_time
     )
     b = next(
         i
-        for i in trial.intervals
+        for i in projection.intervals
         if i.start_time <= BASE + timedelta(minutes=40) < i.end_time
     )
     assert [a.decisions[2].value, b.decisions[2].value] == ["Down", "Down"]

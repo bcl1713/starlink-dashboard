@@ -4,10 +4,11 @@ import io
 import json
 import threading
 import zipfile
+from dataclasses import replace
 
 import pytest
-
 from app.mission.package import customer_artifacts as module
+
 from tests.unit.test_customer_document import inputs
 
 
@@ -50,8 +51,11 @@ def test_disabled_delivers_data_without_waiting_for_pdf(monkeypatch):
         assert not any(n.endswith(".pptx") for n in archive.namelist())
 
 
-def prepared(monkeypatch, outcome):
+def prepared(monkeypatch, outcome, mission_name="27-02"):
     captured = inputs()[0]
+    metadata = json.loads(captured.metadata_json)
+    metadata["name"] = mission_name
+    captured = replace(captured, metadata_json=json.dumps(metadata).encode())
     monkeypatch.setattr(
         module, "get_prepared_package", lambda *a, **k: (captured, outcome)
     )
@@ -60,7 +64,20 @@ def prepared(monkeypatch, outcome):
     )
 
 
-def test_enabled_publishes_pdf_evidence_and_manifest_as_pair(monkeypatch):
+@pytest.mark.parametrize(
+    "mission_name, filename",
+    [
+        ("27-02", "27-02-brief.pdf"),
+        ("Mission Alpha", "Mission Alpha-brief.pdf"),
+        ("../27/02\\brief", "27_02_brief-brief.pdf"),
+        ("", "mission-brief.pdf"),
+        ("A" * 300, "A" * 240 + "-brief.pdf"),
+        ("🚀" * 100, "🚀" * 60 + "-brief.pdf"),
+    ],
+)
+def test_enabled_publishes_pdf_evidence_and_manifest_as_pair(
+    monkeypatch, mission_name, filename
+):
     prepared(
         monkeypatch,
         module.CustomerBriefingOutcome(
@@ -68,17 +85,18 @@ def test_enabled_publishes_pdf_evidence_and_manifest_as_pair(monkeypatch):
             None,
             module.CustomerBriefingArtifacts(b"%PDF-qualified", b'{"qualified":true}'),
         ),
+        mission_name,
     )
     result = module.build_mission_package_download(
         "m", None, None, enabled=True, cancel=threading.Event()
     )
     with result.stream, zipfile.ZipFile(result.stream) as archive:
         manifest = json.loads(archive.read("manifest.json"))
-        assert archive.read(module.PDF_PATH) == b"%PDF-qualified"
+        assert archive.read("exports/mission/" + filename) == b"%PDF-qualified"
         assert archive.read(module.EVIDENCE_PATH) == b'{"qualified":true}'
         assert manifest["statistics"] == {"mission_export_files": 3, "total_files": 5}
         assert manifest["file_structure"]["mission_exports"][-2:] == [
-            module.PDF_PATH,
+            "exports/mission/" + filename,
             module.EVIDENCE_PATH,
         ]
     assert result.briefing.status == "included"
@@ -98,7 +116,7 @@ def test_insertion_failure_preserves_data_without_partial_pdf(monkeypatch, bound
         filename = getattr(name, "filename", name)
         body = data.decode() if isinstance(data, bytes) else data
         if (
-            (boundary == "pdf" and filename == module.PDF_PATH)
+            (boundary == "pdf" and filename == "exports/mission/27-02-brief.pdf")
             or (boundary == "evidence" and filename == module.EVIDENCE_PATH)
             or (
                 boundary == "manifest"

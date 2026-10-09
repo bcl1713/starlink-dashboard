@@ -246,12 +246,10 @@ def render_customer_artifacts(snapshot, *, cancel):
             if code or report.get("status") != "success":
                 safe = report.get("errorCode")
                 raise RendererFailure(safe if safe in WARNING_CODES else "runtime")
-            if report.get("artifacts") != {
-                "pdfPath": "mission-customer-briefing-trial.pdf"
-            }:
+            if report.get("artifacts") != {"pdfPath": "mission-customer-briefing.pdf"}:
                 raise RendererFailure("pdf")
             try:
-                pdf = (root / "mission-customer-briefing-trial.pdf").read_bytes()
+                pdf = (root / "mission-customer-briefing.pdf").read_bytes()
             except OSError as exc:
                 raise RendererFailure("pdf") from exc
             if not pdf.startswith(b"%PDF-") or sha256(pdf).hexdigest() != report.get(

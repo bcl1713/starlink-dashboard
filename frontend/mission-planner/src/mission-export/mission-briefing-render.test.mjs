@@ -122,7 +122,7 @@ async function scenario(fault = null) {
       budget,
       observed,
       pdf: await readFile(
-        path.join(outputRoot, 'mission-customer-briefing-trial.pdf')
+        path.join(outputRoot, 'mission-customer-briefing.pdf')
       ).catch(() => null),
     };
   } finally {

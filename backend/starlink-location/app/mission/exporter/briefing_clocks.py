@@ -16,7 +16,7 @@ class ClockLabels:
 
 def ensure_utc(timestamp: datetime) -> datetime:
     if timestamp.tzinfo is None or timestamp.utcoffset() is None:
-        raise ValueError("Trial clocks require a timezone-aware timestamp")
+        raise ValueError("Briefing clocks require a timezone-aware timestamp")
     return timestamp.astimezone(timezone.utc)
 
 

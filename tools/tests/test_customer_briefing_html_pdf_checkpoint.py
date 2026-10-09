@@ -21,7 +21,7 @@ def staging(tmp_path):
     p = tmp_path / "staging"
     p.mkdir()
     artifacts = {
-        k: f"mission-customer-briefing-trial.{suffix}"
+        k: f"mission-customer-briefing.{suffix}"
         for k, suffix in [("htmlPath", "html"), ("pngPath", "png"), ("pdfPath", "pdf")]
     }
     for name in artifacts.values():
@@ -62,7 +62,7 @@ def test_checkpoint_publishes_only_validated_pair(tmp_path):
 def test_evidence_failure_after_pdf_leaves_no_deliverable(tmp_path):
     mod = module()
     p, e = staging(tmp_path)
-    (p / "mission-customer-briefing-trial.pdf").write_bytes(b"changed")
+    (p / "mission-customer-briefing.pdf").write_bytes(b"changed")
     dest = tmp_path / "published"
     with pytest.raises(ValueError):
         mod.publish_checkpoint(p, dest, e)

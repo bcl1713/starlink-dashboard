@@ -14,7 +14,6 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
 
-PDF = "exports/mission/mission-customer-briefing-trial.pdf"
 EVIDENCE = "exports/mission/mission-customer-briefing-evidence.json"
 WARNINGS = {
     "snapshot",
@@ -138,14 +137,24 @@ def verify_cold_previews(previews, page_count):
     return previews[0]
 
 
+def customer_pdf_path(archive):
+    mission = json.loads(archive.read("mission.json"))
+    name = re.sub(
+        r'[<>:"/\\|?*\x00-\x1f]+', "_", mission.get("name") or "mission"
+    ).strip(" ._")
+    name = name.encode("utf-8")[:240].decode("utf-8", errors="ignore").rstrip(" ._")
+    return f"exports/mission/{name or 'mission'}-brief.pdf"
+
+
 def compare_legacy(disabled, enabled):
     """Compare every legacy entry and PPTX member; ignore ZIP container times."""
 
     def members(content):
         result = {}
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            pdf_path = customer_pdf_path(archive)
             for name in archive.namelist():
-                if name in {PDF, EVIDENCE, "manifest.json"}:
+                if name in {pdf_path, EVIDENCE, "manifest.json"}:
                     continue
                 value = archive.read(name)
                 if name.endswith(".pptx"):
@@ -370,6 +379,7 @@ def inspect_download(content, headers, expected_status):
             f"Unexpected customer briefing response status: expected={expected_status}, actual={status}, warning={headers.get('x-customer-briefing-warning')}"
         )
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        pdf_path = customer_pdf_path(archive)
         names = archive.namelist()
         manifest = json.loads(archive.read("manifest.json"))
         structure = manifest["file_structure"]
@@ -382,13 +392,13 @@ def inspect_download(content, headers, expected_status):
             or any(name not in names for name in listed)
         ):
             raise ValueError("Manifest file/statistics mismatch")
-        included = PDF in names and EVIDENCE in names
-        if any(name in names for name in (PDF, EVIDENCE)) != included:
+        included = pdf_path in names and EVIDENCE in names
+        if any(name in names for name in (pdf_path, EVIDENCE)) != included:
             raise ValueError("Partial optional artifact pair")
         if included != (status == "included") or any(
             listed.count(name) != (1 if included else 0)
             or structure["mission_exports"].count(name) != (1 if included else 0)
-            for name in (PDF, EVIDENCE)
+            for name in (pdf_path, EVIDENCE)
         ):
             raise ValueError("Optional artifact/manifest/status mismatch")
         if any(name.endswith(".pptx") for name in names):
@@ -435,7 +445,7 @@ def inspect_download(content, headers, expected_status):
                     not row["cellsMatched"] or not row["inBounds"]
                     for row in proof["rows"]
                 )
-                or sha256(archive.read(PDF)).hexdigest()
+                or sha256(archive.read(pdf_path)).hexdigest()
                 != render["artifactHashes"]["pdfPath"]
             ):
                 raise ValueError("Unqualified PDF/evidence pair")

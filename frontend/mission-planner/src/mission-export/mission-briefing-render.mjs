@@ -114,8 +114,8 @@ export async function renderMissionBriefing(
   };
   process.once('SIGTERM', stop);
   process.once('SIGINT', stop);
-  const pdfName = 'mission-customer-briefing-trial.pdf';
-  const generated = [pdfName, 'mission-customer-briefing-trial.html'];
+  const pdfName = 'mission-customer-briefing.pdf';
+  const generated = [pdfName, 'mission-customer-briefing.html'];
   try {
     await mkdir(outputRoot, { recursive: true });
     ownedPath(outputRoot, ownershipPath);

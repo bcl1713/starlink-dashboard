@@ -8,9 +8,8 @@ from tests.unit.test_customer_document import inputs
 
 
 def test_assembly_preserves_pages_and_rebases_evidence():
-    from pypdf import PdfReader, PdfWriter
-
     from app.mission.slide_cache.assembly import assemble_customer_pdf
+    from pypdf import PdfReader, PdfWriter
 
     def fragment(leg, widths):
         writer, stream = PdfWriter(), io.BytesIO()
@@ -58,6 +57,9 @@ def test_assembly_preserves_pages_and_rebases_evidence():
         == sha256(outcome.artifacts.pdf).hexdigest()
     )
     assert evidence["render"]["launchCount"] == 0
+    assert evidence["render"]["artifacts"]["pdfPath"] == (
+        json.loads(captured.metadata_json)["name"] + "-brief.pdf"
+    )
 
 
 def test_failed_leg_does_not_publish_partial_mission_pdf():

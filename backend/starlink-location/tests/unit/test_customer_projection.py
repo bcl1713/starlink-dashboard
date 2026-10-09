@@ -5,13 +5,13 @@ from dataclasses import FrozenInstanceError, replace
 from datetime import timedelta
 
 import pytest
-
 from app.mission.models import Transport, TransportState
+
 from tests.unit.customer_briefing_fixtures import fixture, snapshot, utc
 
 
 def evidence(kind, transport="X", reason="", **metadata):
-    from app.mission.exporter.trial_projection import SourceRecord
+    from app.mission.exporter.customer_projection import SourceRecord
 
     return SourceRecord(
         source_id=kind,
@@ -106,7 +106,7 @@ def evidence(kind, transport="X", reason="", **metadata):
     ],
 )
 def test_reason_specific_usability(state, sources, expected):
-    from app.mission.exporter.trial_projection import classify_transport
+    from app.mission.exporter.customer_projection import classify_transport
 
     records = tuple(
         evidence(kind, transport, reason, **meta)
@@ -138,10 +138,10 @@ def contiguous(leg):
 
 
 def test_quiet_nominal_only_standard_sof():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f01")
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     contiguous(leg)
     assert all(i.posture == "Nominal" for i in leg.intervals)
     assert [
@@ -161,10 +161,10 @@ def test_quiet_nominal_only_standard_sof():
 
 
 def test_nested_outages_partition_and_filtered_ids():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f02")
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     contiguous(leg)
     rows = [
         (
@@ -200,7 +200,7 @@ def test_nested_outages_partition_and_filtered_ids():
         utc("2026-10-07T12:15:00Z"),
     )
     assert source.source_digest and source.source_revision
-    nested = project_trial_leg(snapshot(fixture("f02_ar")))
+    nested = project_briefing_leg(snapshot(fixture("f02_ar")))
     contiguous(nested)
     ar = next(i for i in nested.intervals if "ar-nested" in i.active_source_ids)
     assert (ar.start_time, ar.end_time) == (
@@ -212,9 +212,9 @@ def test_nested_outages_partition_and_filtered_ids():
 
 
 def test_half_open_brief_outage_and_short_sof():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
-    leg = project_trial_leg(snapshot(fixture("f03")))
+    leg = project_briefing_leg(snapshot(fixture("f03")))
     contiguous(leg)
     red = [i for i in leg.intervals if i.posture == "Communications unavailable"]
     assert len(red) == 1
@@ -230,7 +230,7 @@ def test_half_open_brief_outage_and_short_sof():
         "Starshield",
         "X-Band MILSATCOM",
     )
-    short = project_trial_leg(snapshot(fixture("f04")))
+    short = project_briefing_leg(snapshot(fixture("f04")))
     contiguous(short)
     assert all(i.posture == "Nominal" for i in short.intervals)
     assert (
@@ -256,7 +256,7 @@ def test_half_open_brief_outage_and_short_sof():
 
 
 def test_resolved_ar_and_missing_timing_note():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
     from app.mission.models import MissionLeg
     from app.mission.timeline_builder.aar import resolve_aar_windows
     from app.mission.timeline_builder.calculator import RouteTemporalProjector
@@ -274,7 +274,7 @@ def test_resolved_ar_and_missing_timing_note():
         w.name: [w.start_time.strftime("%H:%M:%S"), w.end_time.strftime("%H:%M:%S")]
         for w in resolved
     } == data["expected"]
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     contiguous(leg)
     assert all(i.posture == "Nominal" for i in leg.intervals)
     assert any(
@@ -289,9 +289,9 @@ def test_resolved_ar_and_missing_timing_note():
 
 
 def test_conflict_and_transition_reduce_remaining_capability():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
-    leg = project_trial_leg(snapshot(fixture("f06")))
+    leg = project_briefing_leg(snapshot(fixture("f06")))
     contiguous(leg)
     pure = next(i for i in leg.intervals if i.start_time == utc("2026-10-07T08:20:00Z"))
     assert pure.decisions[2].value == "Down" and pure.posture == "Degraded"
@@ -309,16 +309,16 @@ def test_conflict_and_transition_reduce_remaining_capability():
 
 
 def test_missing_stale_and_uncovered_evidence_never_verified_nominal():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f10")
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     assert all(i.posture == "Posture uncertain" for i in leg.intervals)
     assert leg.quiet_summary is None
     assert any(s.source_type == "cached_segment" for s in leg.sources)
     # Shift current departure but retain all original cached timestamps.
     data["utc_bounds"] = ["2026-10-07T10:00:00Z", "2026-10-07T16:00:00Z"]
-    shifted = project_trial_leg(snapshot(data))
+    shifted = project_briefing_leg(snapshot(data))
     contiguous(shifted)
     assert all(i.posture == "Posture uncertain" for i in shifted.intervals)
     source = next(s for s in shifted.sources if s.source_type == "cached_segment")
@@ -327,14 +327,14 @@ def test_missing_stale_and_uncovered_evidence_never_verified_nominal():
     missing = replace(
         snapshot(data), utc_bounds=None, effective_route_json=None, timeline_json=None
     )
-    incomplete = project_trial_leg(missing)
+    incomplete = project_briefing_leg(missing)
     assert incomplete.utc_bounds is None and incomplete.intervals == ()
     assert incomplete.quiet_summary is None
     assert any("timing" in n.lower() for n in incomplete.notes)
     data = fixture("f01")
     data["source_records"][0]["end_time"] = "2026-10-07T10:00:00Z"
     data["timeline"]["segments"][0]["end_time"] = "2026-10-07T10:00:00Z"
-    partial = project_trial_leg(snapshot(data))
+    partial = project_briefing_leg(snapshot(data))
     contiguous(partial)
     assert all(
         i.posture == "Posture uncertain"
@@ -344,27 +344,27 @@ def test_missing_stale_and_uncovered_evidence_never_verified_nominal():
 
 
 def test_unsplit_outside_flight_source_and_immutable_result():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f02")
     data["mission"]["legs"][0]["transports"]["ka_outages"][0].update(
         start_time="2026-10-07T07:00:00Z", duration_seconds=8 * 3600
     )
     original = snapshot(data)
-    leg = project_trial_leg(original)
+    leg = project_briefing_leg(original)
     source = next(s for s in leg.sources if s.source_id == "ka-long")
     assert (source.start_time, source.end_time) == (
         utc("2026-10-07T07:00:00Z"),
         utc("2026-10-07T15:00:00Z"),
     )
-    assert project_trial_leg(original) == leg
+    assert project_briefing_leg(original) == leg
     with pytest.raises(FrozenInstanceError):
         leg.intervals[0].posture = "Nominal"
     assert all(isinstance(s.metadata_json, bytes) for s in leg.sources)
 
 
 def test_internal_informational_events_do_not_fragment_primary_windows():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f01")
     data["source_records"].append(
@@ -377,7 +377,7 @@ def test_internal_informational_events_do_not_fragment_primary_windows():
             "metadata": {},
         }
     )
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     assert len(leg.intervals) == 3
     assert any(s.reason == "Minor detail" for s in leg.sources)
 
@@ -385,8 +385,8 @@ def test_internal_informational_events_do_not_fragment_primary_windows():
 @pytest.mark.parametrize("available", [True, False])
 def test_manual_ar_selected_splice_applicability(export_inputs, available):
     from app.mission import storage
+    from app.mission.exporter.customer_projection import project_briefing_leg
     from app.mission.exporter.snapshot import capture_export_snapshot
-    from app.mission.exporter.trial_projection import project_trial_leg
     from app.mission.models import (
         ManualAARTrack,
         ManualAARTrackPoint,
@@ -410,14 +410,15 @@ def test_manual_ar_selected_splice_applicability(export_inputs, available):
     )
     storage.save_mission_v2(mission)
     captured = capture_export_snapshot("m", routes, pois).legs[0]
-    trial = project_trial_leg(captured)
+    projection = project_briefing_leg(captured)
     assert (
-        any("track-saved" in i.active_source_ids for i in trial.intervals) is available
+        any("track-saved" in i.active_source_ids for i in projection.intervals)
+        is available
     )
-    assert any(s.source_id == "track-saved" for s in trial.sources)
+    assert any(s.source_id == "track-saved" for s in projection.sources)
     if not available:
         assert any(
-            "track-saved" in n and "unavailable" in n.lower() for n in trial.notes
+            "track-saved" in n and "unavailable" in n.lower() for n in projection.notes
         )
 
 
@@ -426,7 +427,7 @@ def test_capture_records_missing_transport_prerequisites(
     export_inputs, monkeypatch, missing
 ):
     from app.mission.exporter import snapshot as module
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     _, routes, pois, catalog = export_inputs
     if missing == "coverage":
@@ -435,15 +436,15 @@ def test_capture_records_missing_transport_prerequisites(
         catalog.satellites.clear()
     captured = module.capture_export_snapshot("m", routes, pois).legs[0]
     assert captured.preparation_origin == "rebuilt"
-    trial = project_trial_leg(captured)
+    projection = project_briefing_leg(captured)
     lane = 0 if missing == "coverage" else 2
-    assert all(i.decisions[lane].value == "?" for i in trial.intervals)
-    assert all(i.posture == "Posture uncertain" for i in trial.intervals)
+    assert all(i.decisions[lane].value == "?" for i in projection.intervals)
+    assert all(i.posture == "Posture uncertain" for i in projection.intervals)
 
 
 def test_configured_sof_reuses_captured_buffers(export_inputs, monkeypatch):
     from app.mission.exporter import snapshot as module
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
     from app.satellites.rules import ConstraintConfig
 
     monkeypatch.setattr(
@@ -451,15 +452,17 @@ def test_configured_sof_reuses_captured_buffers(export_inputs, monkeypatch):
         lambda: ConstraintConfig(takeoff_buffer_minutes=7, landing_buffer_minutes=9),
     )
     _, routes, pois, _ = export_inputs
-    trial = project_trial_leg(module.capture_export_snapshot("m", routes, pois).legs[0])
+    projection = project_briefing_leg(
+        module.capture_export_snapshot("m", routes, pois).legs[0]
+    )
     takeoff = [
         i
-        for i in trial.intervals
+        for i in projection.intervals
         if any(r.source_id == "sof-takeoff" for r in i.restrictions)
     ]
     landing = [
         i
-        for i in trial.intervals
+        for i in projection.intervals
         if any(r.source_id == "sof-landing" for r in i.restrictions)
     ]
     assert takeoff[-1].end_time - takeoff[0].start_time == timedelta(minutes=7)
@@ -467,7 +470,7 @@ def test_configured_sof_reuses_captured_buffers(export_inputs, monkeypatch):
 
 
 def test_cached_unambiguous_sources_and_stale_basis():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f10")
     segment = data["timeline"]["segments"][0]
@@ -475,14 +478,14 @@ def test_cached_unambiguous_sources_and_stale_basis():
         "Ka coverage lost (AOR)",
         "X line-of-sight blocked (X-fixture, elevation 0.0° < min 10.0°)",
     ]
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     assert all(
         [d.value for d in i.decisions] == ["Down", "?", "Down"] for i in leg.intervals
     )
     assert all(i.posture == "Posture uncertain" for i in leg.intervals)
     # Even overlapping stale sources must not be asserted as current outage.
     data["utc_bounds"] = ["2026-10-07T10:00:00Z", "2026-10-07T16:00:00Z"]
-    stale = project_trial_leg(snapshot(data))
+    stale = project_briefing_leg(snapshot(data))
     assert all(
         [d.value for d in i.decisions] == ["?", "?", "?"] for i in stale.intervals
     )
@@ -493,7 +496,7 @@ def test_cached_unambiguous_sources_and_stale_basis():
     )
     data["utc_bounds"] = ["2026-10-07T08:00:00Z", "2026-10-07T14:00:00Z"]
     data["mission"]["legs"][0]["updated_at"] = "2026-10-07T15:00:00Z"
-    stale_revision = project_trial_leg(snapshot(data))
+    stale_revision = project_briefing_leg(snapshot(data))
     assert all(
         [d.value for d in i.decisions] == ["?", "?", "?"]
         for i in stale_revision.intervals
@@ -502,8 +505,8 @@ def test_cached_unambiguous_sources_and_stale_basis():
 
 def test_saved_transition_id_and_zero_duration_events(export_inputs, monkeypatch):
     from app.mission import storage
+    from app.mission.exporter.customer_projection import project_briefing_leg
     from app.mission.exporter.snapshot import capture_export_snapshot
-    from app.mission.exporter.trial_projection import project_trial_leg
     from app.mission.models import XTransition
     from app.satellites.rules import ConstraintConfig
 
@@ -517,19 +520,19 @@ def test_saved_transition_id_and_zero_duration_events(export_inputs, monkeypatch
         )
     ]
     storage.save_mission_v2(mission)
-    leg = project_trial_leg(capture_export_snapshot("m", routes, pois).legs[0])
+    leg = project_briefing_leg(capture_export_snapshot("m", routes, pois).legs[0])
     active = [i for i in leg.intervals if "transition-live-id" in i.active_source_ids]
     assert active and any("Transition" in c for i in active for c in i.causes)
     monkeypatch.setattr(
         "app.mission.exporter.snapshot_inputs.ConstraintConfig",
         lambda: ConstraintConfig(transition_buffer_minutes=0),
     )
-    zero = project_trial_leg(capture_export_snapshot("m", routes, pois).legs[0])
+    zero = project_briefing_leg(capture_export_snapshot("m", routes, pois).legs[0])
     assert all("transition-live-id" not in i.active_source_ids for i in zero.intervals)
 
 
 def test_nested_same_transport_outages_keep_union_and_ids():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f02")
     data["mission"]["legs"][0]["transports"]["ka_outages"].append(
@@ -539,7 +542,7 @@ def test_nested_same_transport_outages_keep_union_and_ids():
             "duration_seconds": 600,
         }
     )
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     nested = next(
         i for i in leg.intervals if i.start_time == utc("2026-10-07T10:00:00Z")
     )
@@ -555,11 +558,11 @@ def test_nested_same_transport_outages_keep_union_and_ids():
 
 
 def test_uncovered_predictions_cannot_prove_geometry_outage():
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f02")
     data["timeline"]["segments"][0]["end_time"] = "2026-10-07T10:00:00Z"
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     interval = next(
         i for i in leg.intervals if i.start_time == utc("2026-10-07T10:00:00Z")
     )
@@ -569,24 +572,24 @@ def test_uncovered_predictions_cannot_prove_geometry_outage():
 
 @pytest.mark.parametrize("normalized_state", ["available", "degraded"])
 def test_cached_starshield_conflict_proves_down_despite_other_warning(normalized_state):
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f10")
     segment = data["timeline"]["segments"][0]
     segment["x_state"] = "available"  # Normalizer's usable X-Ku semantics.
     segment["metadata"]["source_reasons"] = ["X-Ku Conflict az=180° el=35°"]
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     assert all(i.decisions[2].value == "Down" and i.limitations for i in leg.intervals)
     assert all(i.posture == "Posture uncertain" for i in leg.intervals)
     segment["x_state"] = normalized_state
     segment["metadata"]["source_reasons"].append("Unexpected X warning")
-    ambiguous = project_trial_leg(snapshot(data))
+    ambiguous = project_briefing_leg(snapshot(data))
     assert all(i.decisions[2].value == "Down" for i in ambiguous.intervals)
 
 
 @pytest.mark.parametrize("state", ["available", "offline"])
 def test_stale_evidence_cannot_verify_transport(state):
-    from app.mission.exporter.trial_projection import classify_transport
+    from app.mission.exporter.customer_projection import classify_transport
 
     decision = classify_transport(
         TransportState(state),
@@ -597,8 +600,8 @@ def test_stale_evidence_cannot_verify_transport(state):
 
 def test_cached_fallback_retains_current_configured_sof(export_inputs, monkeypatch):
     from app.mission import storage, timeline_preparation
+    from app.mission.exporter.customer_projection import project_briefing_leg
     from app.mission.exporter.snapshot import capture_export_snapshot
-    from app.mission.exporter.trial_projection import project_trial_leg
 
     mission, routes, pois, _ = export_inputs
     old = timeline_preparation.prepare_mission_timeline(
@@ -614,18 +617,20 @@ def test_cached_fallback_retains_current_configured_sof(export_inputs, monkeypat
     monkeypatch.setattr(
         "app.mission.exporter.snapshot.prepare_mission_timeline", failed
     )
-    trial = project_trial_leg(capture_export_snapshot("m", routes, pois).legs[0])
+    projection = project_briefing_leg(
+        capture_export_snapshot("m", routes, pois).legs[0]
+    )
     sof = {
         r.source_id: (r.start_time, r.end_time)
-        for i in trial.intervals
+        for i in projection.intervals
         for r in i.restrictions
     }
     assert sof == {
         "sof-takeoff": (utc("2026-10-07T10:00:00Z"), utc("2026-10-07T10:15:00Z")),
         "sof-landing": (utc("2026-10-07T10:45:00Z"), utc("2026-10-07T11:00:00Z")),
     }
-    assert all(i.posture == "Posture uncertain" for i in trial.intervals)
-    assert any("ar" in n and "timing" in n.lower() for n in trial.notes)
+    assert all(i.posture == "Posture uncertain" for i in projection.intervals)
+    assert any("ar" in n and "timing" in n.lower() for n in projection.notes)
 
 
 # Register an existing real capture fixture under a local name.
@@ -640,7 +645,7 @@ def export_inputs(request):
 
 def test_independent_x_clear_keeps_other_constraint_active():
     """dev's aft clear must not clear an independently active elevation outage."""
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("composition-assessed")
     data["source_records"] = [
@@ -670,7 +675,7 @@ def test_independent_x_clear_keeps_other_constraint_active():
                 },
             }
         )
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     middle = next(
         i
         for i in leg.intervals
@@ -698,7 +703,7 @@ def test_independent_x_clear_keeps_other_constraint_active():
     ],
 )
 def test_known_x_downtime_overrides_up_basis_but_stale_condition_does_not(kind, reason):
-    from app.mission.exporter.trial_projection import classify_transport
+    from app.mission.exporter.customer_projection import classify_transport
 
     basis = evidence("availability_basis", independent_usability="Up")
     condition = evidence(kind, reason=reason)
@@ -719,13 +724,13 @@ def test_known_x_downtime_overrides_up_basis_but_stale_condition_does_not(kind, 
     ],
 )
 def test_cached_known_x_conditions_prove_down(reason):
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f10")
     segment = data["timeline"]["segments"][0]
     segment["x_state"] = "degraded"
     segment["metadata"]["source_reasons"] = [reason]
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     assert all(i.decisions[2].value == "Down" for i in leg.intervals)
 
 
@@ -739,7 +744,7 @@ def test_cached_known_x_conditions_prove_down(reason):
     ],
 )
 def test_x_down_windows_end_at_the_exact_clear_event(start_kind, end_kind, reason):
-    from app.mission.exporter.trial_projection import project_trial_leg
+    from app.mission.exporter.customer_projection import project_briefing_leg
 
     data = fixture("f01")
     data["source_records"] += [
@@ -762,7 +767,7 @@ def test_x_down_windows_end_at_the_exact_clear_event(start_kind, end_kind, reaso
             "metadata": {"transition_id": "swap", "track_id": "ar"},
         },
     ]
-    leg = project_trial_leg(snapshot(data))
+    leg = project_briefing_leg(snapshot(data))
     down = [i for i in leg.intervals if i.decisions[2].value == "Down"]
     assert [(i.start_time, i.end_time) for i in down] == [
         (utc("2026-10-07T09:00:29Z"), utc("2026-10-07T09:10:31Z"))

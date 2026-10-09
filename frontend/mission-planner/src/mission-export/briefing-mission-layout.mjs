@@ -350,7 +350,7 @@ export async function prepareMissionDocument({
   const diagnosticNames = [],
     diagnosticHashes = { htmlPath: hash(renderedHtml) };
   await writeFile(
-    ownedPath(outputRoot, 'mission-customer-briefing-trial.html'),
+    ownedPath(outputRoot, 'mission-customer-briefing.html'),
     renderedHtml
   );
   for (let i = 0; i < measured.length; i++) {
@@ -361,7 +361,7 @@ export async function prepareMissionDocument({
       animations: 'disabled',
       timeout: budget.workRemainingMs(),
     });
-    const name = `mission-customer-briefing-trial-page-${i + 1}.png`;
+    const name = `mission-customer-briefing-page-${i + 1}.png`;
     onDiagnostic(name);
     await writeFile(ownedPath(outputRoot, name), png);
     diagnosticNames.push(name);

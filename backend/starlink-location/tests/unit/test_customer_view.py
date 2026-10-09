@@ -2,22 +2,26 @@
 
 import importlib
 
-from app.mission.exporter.trial_projection import project_trial_leg
+from app.mission.exporter.customer_projection import project_briefing_leg
+
 from tests.unit.customer_briefing_fixtures import fixture, snapshot, utc
 
 
-def view(captured, trial=None):
+def view(captured, projection=None):
     name = "app.mission.exporter.customer_view"
     assert importlib.util.find_spec(name), "customer presentation contract is absent"
     return importlib.import_module(name).project_customer_leg(
-        captured, trial or project_trial_leg(captured), leg_number=1, leg_count=1
+        captured,
+        projection or project_briefing_leg(captured),
+        leg_number=1,
+        leg_count=1,
     )
 
 
 def test_checkpoint_pair_has_independent_assessment_and_known_risks():
     for name in ("composition-assessed", "composition-incomplete-x"):
         captured = snapshot(fixture(name))
-        leg = project_trial_leg(captured)
+        leg = project_briefing_leg(captured)
         result = view(captured, leg)
         assert result.intervals is leg.intervals
         assert leg.utc_bounds == (
@@ -68,8 +72,8 @@ def test_customer_view_groups_equivalent_adjacent_sources():
         }
     )
     captured = snapshot(data)
-    trial = project_trial_leg(captured)
-    result = view(captured, trial)
+    projection = project_briefing_leg(captured)
+    result = view(captured, projection)
     row = next(r for r in result.rows if r.start_time == utc("2026-10-25T16:00:00Z"))
     assert row.end_time == utc("2026-10-25T16:15:00Z")
     assert len(row.interval_ids) == 2
@@ -142,9 +146,9 @@ def test_customer_grouping_ignores_internal_rule_identity():
     from dataclasses import replace
 
     captured = snapshot(fixture("composition-assessed"))
-    trial = project_trial_leg(captured)
+    projection = project_briefing_leg(captured)
     first = next(
-        i for i in trial.intervals if i.start_time == utc("2026-10-25T16:00:00Z")
+        i for i in projection.intervals if i.start_time == utc("2026-10-25T16:00:00Z")
     )
     left = replace(first, end_time=utc("2026-10-25T16:10:00Z"))
     right = replace(
@@ -154,10 +158,11 @@ def test_customer_grouping_ignores_internal_rule_identity():
         decisions=tuple(replace(d, rule_id="internal-churn") for d in first.decisions),
     )
     split = replace(
-        trial,
+        projection,
         intervals=tuple(
             sorted(
-                tuple(i for i in trial.intervals if i is not first) + (left, right),
+                tuple(i for i in projection.intervals if i is not first)
+                + (left, right),
                 key=lambda i: i.start_time,
             )
         ),
@@ -171,9 +176,9 @@ def test_customer_uncertainty_change_without_outage_is_material():
     from dataclasses import replace
 
     captured = snapshot(fixture("composition-assessed"))
-    trial = project_trial_leg(captured)
+    projection = project_briefing_leg(captured)
     nominal = next(
-        i for i in trial.intervals if not i.restrictions and i.posture == "Nominal"
+        i for i in projection.intervals if not i.restrictions and i.posture == "Nominal"
     )
     changed = replace(
         nominal,
@@ -187,11 +192,12 @@ def test_customer_uncertainty_change_without_outage_is_material():
         ),
         posture="Posture uncertain",
     )
-    trial = replace(
-        trial, intervals=tuple(changed if i is nominal else i for i in trial.intervals)
+    projection = replace(
+        projection,
+        intervals=tuple(changed if i is nominal else i for i in projection.intervals),
     )
     row = next(
-        r for r in view(captured, trial).rows if r.start_time == changed.start_time
+        r for r in view(captured, projection).rows if r.start_time == changed.start_time
     )
     assert row.posture == "Assessment incomplete"
     assert row.remaining == "Ka + Starshield confirmed"
