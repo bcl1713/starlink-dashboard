@@ -233,6 +233,8 @@ class SlideCoordinator:
 
 def start_runtime(route_manager, poi_manager):
     global _runtime
-    _runtime = SlideCoordinator(route_manager, poi_manager)
-    _runtime.start()
+    _runtime = None
+    runtime = SlideCoordinator(route_manager, poi_manager)
+    runtime.start()
+    _runtime = runtime
     return _runtime

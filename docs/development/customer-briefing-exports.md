@@ -42,8 +42,14 @@ the assembled PDF hash, rebased page proof, and each qualified fragment's
 original render report. The APO JPEG is circularly clipped in the PDF layout to
 remove its white corners without changing the artwork.
 
-Verify background delivery against committed production images with
-`tools/acceptance/customer-briefing/background.py --candidate-sha <HEAD-SHA> --evidence-root <private-directory>`.
+Verify background delivery against committed production images:
+
+```bash
+timeout --kill-after=10s 75m python3 \
+  tools/acceptance/customer-briefing/background.py \
+  --candidate-sha <HEAD-SHA> --evidence-root <private-directory>
+```
+
 The runner owns an isolated Compose project, compares ready exports with full
 rendering, checks supersession and restart reuse, verifies actual PDF geometry
 and raster output, downloads through the browser, and removes its containers,

@@ -1,6 +1,8 @@
 """Exact-SHA background PDF acceptance, timings, browser journey, and teardown."""
 
 import argparse
+import base64
+import io
 import json
 import os
 import signal
@@ -62,6 +64,23 @@ def run(sha, evidence_root):
                 "import json; from app.mission.slide_cache.store import default_store; c=default_store(); print(json.dumps({m:{l:{k:r[k] for k in ('token','state','fingerprint','warning')} for l,r in c.records(m).items()} for m in c.missions()}))"
             )
         )
+
+    def copy_out(source, destination):
+        # Rootless Docker may reject cp's read-only mount remount. Stream an
+        # archive through exec without changing the actor's daemon settings.
+        encoded = python(
+            f"""import base64,io,tarfile
+from pathlib import Path
+source=Path({source!r}); output=io.BytesIO()
+with tarfile.open(fileobj=output,mode='w:gz') as archive:
+ for path in source.iterdir(): archive.add(path,arcname=path.name)
+print(base64.b64encode(output.getvalue()).decode())
+""",
+            timeout=180,
+        )
+        destination.mkdir()
+        with tarfile.open(fileobj=io.BytesIO(base64.b64decode(encoded))) as archive:
+            archive.extractall(destination, filter="data")
 
     def wait_ready(mission=None, state=None):
         deadline = time.monotonic() + 300
@@ -166,8 +185,15 @@ def run(sha, evidence_root):
                 "readyExportSeconds": elapsed,
                 "pageCount": inspected["pageCount"],
             }
-            owner.compose(
-                "cp", str(target), f"starlink-location:/tmp/{case}.zip", timeout=30
+            summary["timings"] = timings
+            python(
+                f"""from pathlib import Path
+from urllib.request import Request,urlopen
+request=Request('http://mission-planner/api/v2/missions/{saved[case]['id']}/export',data=b'{{}}',headers={{'Content-Type':'application/json'}},method='POST')
+with urlopen(request,timeout=660) as response: Path('/tmp/{case}.zip').write_bytes(response.read())
+print('staged ready export')
+""",
+                timeout=660,
             )
             owner.compose(
                 "exec",
@@ -181,12 +207,7 @@ def run(sha, evidence_root):
                 f"/tmp/{case}-inspection",
                 timeout=180,
             )
-            owner.compose(
-                "cp",
-                f"starlink-location:/tmp/{case}-inspection",
-                str(owner.root / f"{case}-inspection"),
-                timeout=30,
-            )
+            copy_out(f"/tmp/{case}-inspection", owner.root / f"{case}-inspection")
             baseline = json.loads(
                 python(
                     f"""import json,time,threading
@@ -315,12 +336,7 @@ print(json.dumps(records))
             browser_root,
             timeout=120,
         )
-        owner.compose(
-            "cp",
-            f"starlink-location:{browser_root}",
-            str(owner.root / "browser"),
-            timeout=30,
-        )
+        copy_out(browser_root, owner.root / "browser")
         final_body, headers, _ = api.request(
             "POST", f"/api/v2/missions/{mission['id']}/export", data={}
         )

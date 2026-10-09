@@ -503,11 +503,18 @@ async def startup_event():
             _simulation_config.exports.customer_briefing_enabled
             and _background_updates_enabled
         ):
+            import sqlite3
+
             from app.mission.slide_cache.coordinator import start_runtime
 
-            app.state.customer_pdf_coordinator = start_runtime(
-                _route_manager, poi_manager
-            )
+            try:
+                app.state.customer_pdf_coordinator = start_runtime(
+                    _route_manager, poi_manager
+                )
+            except (OSError, ValueError, RuntimeError, sqlite3.Error):
+                logger.warning_json(
+                    "Customer PDF background preparation unavailable", exc_info=True
+                )
 
         logger.info_json("Starlink Location Backend ready")
     except (
