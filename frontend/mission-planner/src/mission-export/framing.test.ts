@@ -38,8 +38,8 @@ describe('mission map framing', () => {
           // Independent visibility inequality: tangent to radius-two Earth.
           expect(point.dot(camera.position)).toBeGreaterThan(4.04);
           const pixel = point.clone().project(camera);
-          expect(Math.abs(pixel.x)).toBeLessThan(0.86);
-          expect(Math.abs(pixel.y)).toBeLessThan(0.72);
+          expect(Math.abs(pixel.x)).toBeLessThan(0.94);
+          expect(Math.abs(pixel.y)).toBeLessThan(0.9);
         }
       }
       expect(views[0].startIndex).toBe(0);
@@ -55,6 +55,14 @@ describe('mission map framing', () => {
       }
     }
     expect(allIds).toEqual(fixture.expectedViewIds);
+  });
+
+  it('uses the map height for a polar route while leaving room for endpoint stars', () => {
+    const [view] = frameMissionRoute(validateMapInput(fixture.legs[1]));
+    const camera = new PerspectiveCamera(38, 1920 / 1080, 0.1, 100);
+    applyCameraFrame(camera, view);
+    const ys = view.points.map((p) => new Vector3(...p).project(camera).y);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(1.5);
   });
 
   it('keeps meaningful endpoint labels through validation and framing', () => {

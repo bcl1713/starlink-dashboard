@@ -31,9 +31,10 @@ export function registerDocumentTests({ run, clean, root, assetRoot }) {
       r.fit.remainingLines.every((r) => r.lines === 1 && r.fontPx >= 18.66)
     );
     assert.deepEqual(
-      r.map.markers.map((m) => m.text),
-      ['KADW', 'PAED']
+      r.map.endpoints.map((m) => m.role),
+      ['departure', 'arrival']
     );
+    assert.deepEqual(r.map.markers, []);
     clean(r);
   });
   test('unknown X keeps confirmed risks', async () => {

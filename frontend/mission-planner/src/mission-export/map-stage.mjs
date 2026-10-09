@@ -114,6 +114,7 @@ export async function renderMapInContext({ owner, budget, input, fault }) {
       warnings,
       framing: readiness.framing,
       markers: readiness.labels,
+      endpoints: readiness.endpoints,
       inputDigest: digest,
       pngHash: createHash('sha256').update(png).digest('hex'),
     };

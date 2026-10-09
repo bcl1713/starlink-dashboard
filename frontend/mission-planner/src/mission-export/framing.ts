@@ -6,7 +6,8 @@ import type { MissionMapInput } from './protocol';
 
 export const MAP_WIDTH = 1920;
 export const MAP_HEIGHT = 1080;
-const SAFE_RECT = { x: 128, y: 160, width: 1664, height: 736 };
+// Reserve only a small inset for the endpoint stars; the PDF map has no labels.
+const SAFE_RECT = { x: 64, y: 64, width: 1792, height: 952 };
 export interface MissionMapView {
   id: string;
   startIndex: number;

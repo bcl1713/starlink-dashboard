@@ -69,6 +69,7 @@ export interface MapReadiness {
   viewId?: string;
   framing?: unknown;
   labels?: { text: string; x: number; y: number }[];
+  endpoints?: { role: 'departure' | 'arrival'; x: number; y: number }[];
   stages?: string[];
 }
 declare global {

@@ -1,8 +1,15 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityLitGlobe } from '../pages/CityLitGlobe';
 import { GlobeRouteRibbon } from '../pages/GlobeRouteRibbon';
+import { StarMarker } from '../pages/OverviewStarMarker';
+import { OverviewBoundaryLayer } from '../pages/OverviewBoundaryLayer';
+import {
+  parseBoundaries,
+  projectBoundaries,
+} from '../pages/overview-boundaries';
+import countries from '../../public/boundaries/countries.json';
 import { sunLightPosition } from '../pages/solar-position';
 import {
   applyCameraFrame,
@@ -24,75 +31,30 @@ const HALO = {
   maxWorldWidth: 0.05,
   opacity: 1,
 };
-type Label = {
-  text: string;
-  x: number;
-  y: number;
-  anchorX?: number;
-  anchorY?: number;
-};
-function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
-  const candidates = [
-    {
-      text:
-        view.startIndex === 0
-          ? view.endpointLabels?.departure || 'Departure'
-          : 'Continues',
-      point: view.points[0],
-    },
-    {
-      text: view.endsRoute
-        ? view.endpointLabels?.arrival || 'Arrival'
-        : 'Continues',
-      point: view.points.at(-1)!,
-    },
-    ...view.markers.map((m) => ({ text: m.label, point: m.point })),
+function projectEndpoints(camera: THREE.Camera, view: MissionMapView) {
+  const endpoints = [
+    ...(view.startIndex === 0
+      ? [{ role: 'departure' as const, point: view.points[0] }]
+      : []),
+    ...(view.endsRoute
+      ? [{ role: 'arrival' as const, point: view.points.at(-1)! }]
+      : []),
   ];
-  const labels: Label[] = [];
-  for (const { text, point } of candidates) {
+  return endpoints.map(({ role, point }) => {
     const p = new THREE.Vector3(...point).project(camera);
-    const x = ((p.x + 1) * MAP_WIDTH) / 2,
-      y = ((1 - p.y) * MAP_HEIGHT) / 2;
-    const width = text.length * 64 + 48;
-    const offsets = [
-      [0, -112],
-      [0, 112],
-    ];
-    for (let ring = 1; ring <= 4; ring++) {
-      for (const dy of [0, -112 * ring, 112 * ring]) {
-        offsets.push([width * ring, dy], [-width * ring, dy]);
-      }
-      offsets.push([0, -112 * ring], [0, 112 * ring]);
-    }
-    const candidate = offsets
-      .map(([dx, dy]) => ({ text, x: x + dx, y: y + dy }))
-      .find(
-        (l) =>
-          l.x - width / 2 >= 64 &&
-          l.x + width / 2 <= MAP_WIDTH - 64 &&
-          l.y >= 128 &&
-          l.y <= MAP_HEIGHT - 128 &&
-          labels.every(
-            (other) =>
-              Math.abs(other.x - l.x) >
-                (width + other.text.length * 64 + 48) / 2 ||
-              Math.abs(other.y - l.y) > 104
-          )
-      );
-    if (!candidate)
-      throw new Error('Projected labels cannot fit without overlap');
-    labels.push({ ...candidate, anchorX: x, anchorY: y });
-  }
-  return labels;
+    return {
+      role,
+      x: ((p.x + 1) * MAP_WIDTH) / 2,
+      y: ((1 - p.y) * MAP_HEIGHT) / 2,
+    };
+  });
 }
 function ReadyScene({
   view,
   digest,
-  onLabels,
 }: {
   view: MissionMapView;
   digest: string;
-  onLabels: (labels: Label[]) => void;
 }) {
   const { gl, scene, camera, invalidate } = useThree();
   const prepared = useRef(false);
@@ -153,8 +115,6 @@ function ReadyScene({
         )
           throw new Error('Shader compilation failed');
         if (!active || window.missionMap.state.status === 'error') return;
-        const labels = projectLabels(camera, view);
-        onLabels(labels);
         prepared.current = true;
         invalidate();
       } catch (error) {
@@ -170,7 +130,7 @@ function ReadyScene({
       active = false;
       canvas.removeEventListener('webglcontextlost', lost);
     };
-  }, [camera, digest, gl, invalidate, onLabels, scene, view]);
+  }, [camera, digest, gl, invalidate, scene, view]);
   useFrame(() => {
     if (!prepared.current || window.missionMap.state.status === 'error') return;
     gl.render(scene, camera);
@@ -194,12 +154,14 @@ function ReadyScene({
         startIndex: view.startIndex,
         endIndex: view.endIndex,
       },
-      labels: projectLabels(camera, view),
+      labels: [],
+      endpoints: projectEndpoints(camera, view),
       stages: [
         'textures-decoded',
         'shaders-compiled',
         'camera-settled',
-        'labels-projected',
+        'boundaries-ready',
+        'endpoint-stars-projected',
         'render-complete',
       ],
     };
@@ -215,7 +177,10 @@ export function MissionExportScene({
   view: MissionMapView;
   digest: string;
 }) {
-  const [labels, setLabels] = useState<Label[]>([]);
+  const boundaries = useMemo(
+    () => projectBoundaries(parseBoundaries(countries)),
+    []
+  );
   const sun = sunLightPosition(new Date(input.referenceUtc), 10);
   return (
     <div
@@ -245,47 +210,28 @@ export function MissionExportScene({
             core={NEUTRAL}
             depthTest
           />
-          <ReadyScene view={view} digest={digest} onLabels={setLabels} />
+          <OverviewBoundaryLayer kind="countries" segments={boundaries} />
+          {view.startIndex === 0 && (
+            <StarMarker
+              position={view.points[0]}
+              color="#f4f4f4"
+              size={0.13}
+              glowSizePixels={64}
+              maxCorePixels={5}
+            />
+          )}
+          {view.endsRoute && (
+            <StarMarker
+              position={view.points.at(-1)!}
+              color="#f4f4f4"
+              size={0.13}
+              glowSizePixels={64}
+              maxCorePixels={5}
+            />
+          )}
+          <ReadyScene view={view} digest={digest} />
         </Suspense>
       </Canvas>
-      <svg
-        width={MAP_WIDTH}
-        height={MAP_HEIGHT}
-        style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}
-      >
-        {labels.map((label, i) => (
-          <line
-            key={i}
-            x1={label.anchorX}
-            y1={label.anchorY}
-            x2={label.x}
-            y2={label.y}
-            stroke="#f4f4f4"
-            strokeWidth={4}
-          />
-        ))}
-      </svg>
-      {labels.map((label, i) => (
-        <div
-          key={i}
-          data-map-label
-          style={{
-            position: 'absolute',
-            left: label.x,
-            top: label.y,
-            transform: 'translate(-50%, -50%)',
-            padding: '4px 16px',
-            background: 'rgba(18, 42, 68, 0.86)',
-            color: '#fff',
-            borderRadius: 8,
-            fontSize: 96,
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {label.text}
-        </div>
-      ))}
     </div>
   );
 }
