@@ -79,13 +79,20 @@ carry fabricated final executable legs from the browser.
       destructive legacy replacement for itinerary-owned records. Accepted
       replacement updates a draft only; reviewed save installs it. Move retired
       installed legs into manifest history atomically and retain every source
-      reference. Revision confirmation applies the entire validated diff or
-      none, preserving explicit corrections and unresolved rows. Retain source
+      reference. Delegate legacy DELETE for a planning-managed leg to the same
+      CAS-checked retirement transaction: reject active legs, remove its
+      executable binding from live cards, archive the installed leg/draft and
+      sources, and invalidate proposals/increment revision without orphan IDs.
+      Unmanaged deletion keeps its historical response and owned-source guards.
+      Revision confirmation applies the entire validated diff or none,
+      preserving explicit corrections and unresolved rows. Retain source
       revisions and invalidate context/review identities only on affected legs.
 - [ ] **Step 4:** Rerun focused checks plus existing route replacement tests;
       confirm legacy behavior remains compatible except required ownership
       protection. Test cancel/failed stage and stale preview with identical
-      installed route, POIs, timeline, manual choices and active flags.
+      installed route, POIs, timeline, manual choices and active flags. Pin
+      managed legacy DELETE, stale DELETE, and retained source closure; deleted
+      installed-leg IDs appear only in archived history, not live cards.
 - [ ] **Step 5:** Commit `feat: reconcile itinerary and route revisions safely`.
 
 ## Task 9: Source closure, collision-safe archives and owned deletion
@@ -188,19 +195,21 @@ screenshots, console/network errors and final resource ownership evidence.
       for operators.
 - [ ] **Step 4:** Run focused planning tests and applicable legacy regressions,
       frontend unit suite/build, format/lint and docs checks. Then from repo
-      root:
+      root commit the complete Task 10 candidate as
+      `test: prove itinerary planning workflow in production`; verify a clean
+      tracked worktree before running:
 
   ```bash
   timeout --kill-after=10s 30m tools/acceptance/itinerary-planning/run.sh
   ```
 
   Require exact-candidate API/browser evidence and zero owned resources after
-  cleanup. Builds requiring more time get a separately explicit bounded limit;
-  after a timeout verify the old tree is gone before rerunning. Do not keep the
-  acceptance project running while the PR waits for review.
+  cleanup. Keep this HEAD unchanged for review/PR evidence; any fixes need a new
+  commit and rerun. Builds requiring more time get a separately explicit bounded
+  limit; after a timeout verify the old tree is gone before rerunning. Do not
+  keep the acceptance project running while the PR waits for review.
 
-- [ ] **Step 5:** Commit
-      `test: prove itinerary planning workflow in production`. Obtain
-      whole-branch review, push the feature branch and submit/update its PR
-      against dev with exact-head checks and evidence. Follow workspace cleanup
-      after merge; preserve unrelated branches, runtime and credentials.
+- [ ] **Step 5:** Obtain whole-branch review, push the feature branch and
+      submit/update its PR against dev with exact-head checks and evidence.
+      Follow workspace cleanup after merge; preserve unrelated branches, runtime
+      and credentials.

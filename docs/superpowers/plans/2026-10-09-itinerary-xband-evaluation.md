@@ -49,14 +49,17 @@ evaluate_context(inputs: PlanningInputs, draft: PlanningDraft, context: Evaluati
 
 Define `PlanningInputs` in planning/models.py: immutable route/height/timing
 snapshots, AR/overlay/outage intervals, permitted satellite positions,
-ConstraintConfig, policy and canonical input identity. inputs.py uses the same
-POI/catalog resolution order as timeline planning and rejects missing positions.
-effective_route.py extracts shared departure/splice preparation from canonical
-timeline preparation; both callers use it, preserving simulation normalization.
-Missing AR units remain an unresolved review issue, not an invented conversion.
-grid.py creates/persists C/B exactly as specified, including every existing
-swap. evaluate.py returns raw identities plus physical/policy states
-independently.
+operational Starshield enablement, ConstraintConfig, policy and canonical input
+identity. inputs.py uses the same POI/catalog resolution order as timeline
+planning and rejects missing positions. effective_route.py extracts shared
+departure/splice preparation from canonical timeline preparation; both callers
+use it, preserving simulation normalization. Missing AR units remain an
+unresolved review issue, not an invented conversion. grid.py creates/persists
+C/B exactly as specified, including every existing swap. evaluate.py returns raw
+identities plus physical/policy states independently. With planning policy,
+disabled Starshield projects Ku unavailable before transport-choice policy for
+canonical timelines, map and export/backup gaps. Ku overrides still apply when
+enabled. Overview visibility is never an input.
 
 - [ ] **Step 1:** Write named cases
       `test_ku_preference_counts_conflict_shutdown`,
@@ -78,7 +81,9 @@ independently.
   Use finite geometric fixtures or stub only look angles; do not stub policy or
   canonical decisions. Test AR entry/exit half-open behavior, simultaneous
   assignments, exact altitude changes, manual overlays, effective splice route,
-  longitude wrap and missing satellite/height assumptions.
+  longitude wrap and missing satellite/height assumptions. Pin enablement
+  persistence/reload/export and invariance under Overview visibility edits;
+  enabling/disabling invalidates context and review identity.
 
 - [ ] **Step 2:** Run `test_policy.py test_grid.py test_canonical.py`; expect
       policy restoration and fixed-grid inconsistencies to fail.
@@ -117,6 +122,10 @@ ProposalService.apply(mission_id: str, leg_id: str, request: ApplyProposal) -> P
 
 `GenerateProposal` supplies expected revision and optional idempotency key.
 `ApplyProposal` supplies proposal ID, expected revision and input identity. The
+service requires a nonempty validated permitted set and current access
+confirmation; all generated assignments stay within it. Selection edits
+invalidate proposals/review and require reconfirmation, without silently
+removing manual assignments or locks (ineligible ones become field errors). The
 service captures inputs/context under the store gate, computes outside locks
 with a 30-second deadline, and rechecks identity before publishing. Derived
 proposal persistence does not increment the user-edit revision; draft
@@ -128,7 +137,8 @@ storage and manifest references, with stale identity reflected on read.
       swaps whose 30-minute buffer erases benefit, unavoidable gaps, policy-free
       alternatives, locked initial/swap choices, overlapping preexisting locks,
       same-instant incompatible locks, deterministic ties, deadline kill/reap,
-      and late result after a tab changes Ku outage or draft timing:
+      excluded/ineligible satellites, unconfirmed access, and late result after
+      a tab changes Ku outage, enablement, permitted set or draft timing:
 
   ```python
   assert candidate_score == min(exhaustive_canonical_scores)
@@ -172,13 +182,24 @@ storage and manifest references, with stale identity reflected on read.
 `src/pages/LegDetailPage.tsx` and
 `src/pages/LegDetailPage/LegMapVisualization.tsx`. Backend extend
 planning/{service,routes,store}.py and create
-`tests/planning/test_reviewed_save.py`.
+`tests/planning/test_reviewed_save.py`. Adapt existing
+`app/mission/routes_v2.py` ordinary leg PUT and parent update delegation; extend
+its regression tests.
 
 **Interfaces:** `PlanningService.preview(..., request: PreviewDraft)` returns
 PlanningEvaluation without writes. `save_reviewed(..., request: SaveReviewed)`
 validates AR confirmations/exclusions and satellite plan, rechecks identity,
 prepares artifacts, then calls Task 3's commit_reviewed. Requests include
-revision; reviewed save carries input identity and gap acknowledgment.
+revision; reviewed save carries input identity and gap acknowledgment. Reviewed
+save requires current satellite access confirmation and explicit Starshield
+enablement. Managed ordinary PUT uses the same revision/identity checks and
+transactional publication, rejects plan changes on active legs, and rejects
+route-ID replacement (use staged route APIs). Reconcile changed
+transport/timing/AR fields into the draft, clear review/context/proposals and
+increment the manifest revision. Retain unchanged provenance/anchors and omitted
+planning-only fields; changed legacy coordinates needing anchors become
+unresolved until explicit review. Non-plan field changes preserve review but
+still increment revision. Unmanaged PUT retains historical behavior.
 `XBandPlanReview` consumes draft/proposal/evaluation and emits explicit manual
 edits/lock toggles; `ProposalComparison` emits Apply only on user action.
 
@@ -197,7 +218,10 @@ edits/lock toggles; `ProposalComparison` emits Apply only on user action.
 
   UI tests assert **X-band outage under Starshield preference**, exact UTC swap
   times, baseline comparison, separate backup/safety guidance, and **Save
-  reviewed plan and upload next leg** selects the next unbound expected leg.
+  reviewed plan and upload next leg** selects the next unbound expected leg. Pin
+  ordinary PUT between planning read and reviewed save: draft reflects the new
+  inputs, status is Needs review, old tab gets 409 without any writes. Test
+  active managed PUT rejection and unmanaged PUT compatibility.
 
 - [ ] **Step 2:** Run reviewed-save backend tests and new frontend component
       tests; expect missing controls/validated commit behavior.

@@ -92,6 +92,7 @@ resource IDs.
 | Operation            | Method and suffix                                                  | Request → response                                         |
 | -------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
 | Extract itinerary    | POST `/itinerary-previews`                                         | PDF multipart → ItineraryPreview                           |
+| Satellite options    | GET `/satellite-options`                                           | none → PlanningSatelliteOptions                            |
 | Confirm/create       | POST `/missions`                                                   | ConfirmItinerary → PlanningView                            |
 | Read/resume          | GET `/missions/{mission_id}`                                       | none → PlanningView                                        |
 | Bind/stage KML       | POST `/missions/{mission_id}/legs/{leg_id}/route-previews`         | KML multipart plus expected_revision → RouteBindingPreview |
@@ -107,9 +108,12 @@ resource IDs.
 
 Every mutating request carries `expected_revision`; apply/reviewed requests also
 carry `input_identity`. Confirm/create carries `preview_id` and corrected
-extracted data. Route acceptance carries `preview_id` and explicit discrepancy
-acknowledgments. Store previews under task/mission staging with a 24-hour
-expiry; preview GET/POST computation does not modify executable mission state.
+extracted data, permitted satellite IDs/access confirmation and operational
+`starshield_enabled` (default true for creation). Confirm/create has no existing
+mission revision to match. Route acceptance carries `preview_id` and explicit
+discrepancy acknowledgments. Store previews under task/mission staging with a
+24-hour expiry; preview GET/POST computation does not modify executable mission
+state.
 
 Malformed inputs return 422; missing objects 404; stale/active conflicts 409;
 unavailable computation 503. Deadline errors include `code` and `retryable`.
@@ -121,6 +125,14 @@ Planning data is typed on load and stored in
 contains the parent mission, manifest revision, expected leg cards, per-leg
 review/computation status, errors, and links to installed executable legs. The
 companion plans define domain types and module interfaces.
+
+For planning-managed legs, existing leg PUT/DELETE require optional query
+parameters `expected_revision` and `input_identity`; absent/stale values return
+409 with a reload action. They use the planning commit gate and invalidate or
+archive planning records as specified in Tasks 7–9. These parameters remain
+optional for unmanaged legs, whose historical behavior/response is retained.
+Parent metadata updates preserve server-owned planning data; callers cannot
+replace the manifest through ordinary mission metadata writes.
 
 Distinguish two identities: EvaluationContext.input_identity hashes immutable
 route/height/AR/configuration/policy/locks and persisted seed C/B, excluding the

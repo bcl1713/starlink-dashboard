@@ -49,8 +49,10 @@ optional legacy-compatible fields.
 - `ExpectedLeg`: stable ID, ordinal, endpoints, UTC bounds, AR rows, optional
   `route`, draft, review record and installed leg ID, and retired flag.
 - `PlanningDraft`: optional initial X satellite, anchored swaps, permitted IDs,
-  AR corrections, existing manual overlays/outages/splice, departure adjustment,
-  locks, `prefer_starshield_v1`, and optional evaluation context.
+  access confirmation bound to the selected IDs, operational
+  `starshield_enabled` (true at creation), AR corrections, manual
+  overlays/outages/splice, departure adjustment, locks, `prefer_starshield_v1`,
+  and optional evaluation context.
 - `PlanningManifest`: schema version 1, revision, source revisions, expected
   legs, proposals, review records, and retained route bindings/history.
 - `EvaluationContext`: seed times, candidates C, boundaries B, input identity,
@@ -68,11 +70,17 @@ optional legacy-compatible fields.
   their input identities, review/computation status, draft and review records.
   `RouteBinding` carries immutable route/source IDs, content hash and filename;
   RouteBindingPreview adds discrepancy errors and matched AR candidates.
+- `PlanningSatelliteOptions`: configured satellite IDs/labels, transport,
+  validated position and eligibility/error; eligible options are configured X
+  satellites resolved through the canonical catalog/POI path. Access is never
+  inferred from eligibility.
 
 Define the main plan's request/response DTOs in this module; no free-form
 mutation body. `PlanningView` derives card status from input/review identity.
 Extend `AARWindow` and `XTransition` with optional anchors, and TransportConfig
-with optional policy/context; omitted fields preserve historical behavior.
+with optional policy/context and operational `starshield_enabled: bool | None`;
+omitted fields preserve historical behavior. Planning writes persist an explicit
+boolean separately from Overview visibility preferences.
 `identity.planning_identity(inputs: dict) -> str` canonicalizes UTC, finite
 numbers and ordered records; storage IDs are separate from content hashes.
 
@@ -85,6 +93,7 @@ numbers and ordered records; storage IDs are separate from content hashes.
       RouteAnchor.model_validate({**anchor_fields, "fraction": 1.01})
   assert planning_identity(before) != planning_identity(after_ku_outage_edit)
   assert planning_identity(before) != planning_identity(after_manual_lock_edit)
+  assert planning_identity(before) != planning_identity(after_starshield_disable)
   ```
 
   Create `cases.py` synthetic itinerary/route factories and `conftest.py`
@@ -96,6 +105,8 @@ numbers and ordered records; storage IDs are separate from content hashes.
 - [ ] **Step 3:** Implement DTO validation and identity; mirror JSON schemas in
       TypeScript. Require confirmed altitude units before geometric conversion.
       Reject NaN/inf, invalid UTC windows and contradictory anchor timing modes.
+      ConfirmItinerary/SaveDraft carry permitted IDs, access confirmation and
+      operational enablement; changing permitted IDs clears access confirmation.
 - [ ] **Step 4:** Rerun the focused check; all assertions pass. Run existing
       `tests/unit/test_mission_models.py` to verify legacy contracts.
 - [ ] **Step 5:** Commit `feat: define itinerary planning records and anchors`.
@@ -172,8 +183,12 @@ PlanningService.accept_route(mission_id: str, leg_id: str, request: AcceptRouteB
 
 `service.py` composes parser/matcher and immutable sources. Add main-plan API
 routes through draft save/read; availability/proposal/reviewed handlers arrive
-in Tasks 5–7. File IDs never depend on upload names; stage outside locks, then
-recheck expected revision under global activation lock before parent lock.
+in Tasks 5–7. Satellite options use the canonical resolver, retaining transport
+and validated positions. Confirm/create validates selected IDs; an empty set or
+unconfirmed access remains an explicit planning field error. It permits mission
+creation/AR draft review, but blocks proposal computation and reviewed save.
+File IDs never depend on upload names; stage outside locks, then recheck
+expected revision under global activation lock before parent lock.
 
 - [ ] **Step 1:** Pin `test_confirm_creates_expected_cards_not_executable_legs`,
       `test_accept_upload_assigns_selected_leg_not_filename`,
@@ -198,7 +213,8 @@ recheck expected revision under global activation lock before parent lock.
       owned-write journal, staged files, rollback, and startup recovery before
       serving planning readers. Coordinate relevant mission/timeline/owned-POI
       readers with the same commit gate; avoid restoring entire shared POI
-      files. Enforce 24-hour staging expiry and remove failed/abandoned owned
+      files. Preserve server-owned planning metadata through ordinary parent
+      updates. Enforce 24-hour staging expiry and remove failed/abandoned owned
       staging. Binding a new route creates Needs review; first acceptance can
       request the later proposal service only after it exists. Recover before
       app readiness.
@@ -221,20 +237,28 @@ and colocated tests. Modify
 `usePlanning(missionId)` returns PlanningView and revision-aware mutations.
 `ARReview` consumes ItineraryAR rows and returns corrected rows; expected-leg
 routes use stable IDs in the existing URL, resolved from manifest before
-requiring MissionLeg.
+requiring MissionLeg. Add `PermittedSatellites.tsx` and its test, reused in
+creation and leg review, consuming PlanningSatelliteOptions. Preselect eligible
+X IDs only; require explicit service-access confirmation before the first run.
+Creation defaults copy into each leg; later per-leg changes affect that leg.
 
 - [ ] **Step 1:** Test rotated-format extraction correction, selected-leg
       upload, AR-before-X tab order, altitude-unit confirmation, unknown section
       errors, no-AR confirmation, exact/interpolated map spans, and draft
       reload. Assert failed uploads keep their input/corrections and stale saves
-      explain 409.
+      explain 409. Test valid-X-only preselection, excluded IDs, access
+      confirmation reset on selection changes, and operational Starshield toggle
+      persistence.
 - [ ] **Step 2:** Run the main frontend command for the new component/service
       tests; expect missing itinerary controls and draft routing.
 - [ ] **Step 3:** Add Create from itinerary alongside existing manual creation;
       render card statuses/actions from PlanningView. Route accepted uploads
       directly into review; preserve manual controls and unsaved-change guard.
-      Until Task 7, expose manual draft edits without promising auto
-      optimization or allowing reviewed save without a validated X plan.
+      Expose permitted-set/access controls and **Starshield enabled for this
+      plan** in creation/review. Persist through ConfirmItinerary/SaveDraft;
+      catalog display visibility never changes these operational inputs. Until
+      Task 7, expose manual draft edits without promising auto optimization or
+      allowing reviewed save without a validated X plan.
 - [ ] **Step 4:** Run focused Vitest plus existing mission/leg tests; check
       accessible field errors, focus return, keyboard upload and mobile layout.
 - [ ] **Step 5:** Commit `feat: add itinerary creation and refueling review`.
