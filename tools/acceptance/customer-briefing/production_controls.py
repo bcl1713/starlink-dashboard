@@ -3,6 +3,7 @@
 import csv
 import io
 import json
+import re
 import time
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -28,6 +29,67 @@ WARNINGS = {
     "publication",
     "busy",
 }
+
+
+def verify_export_proxy_config(config):
+    """Check the actual image config; Nginx itself separately validates syntax."""
+    scope = "^/api/v2/missions/[^/]+/export$"
+    locations = re.findall(
+        r"    location ([^\n]+) \{\n(.*?)\n    \}", config, re.DOTALL
+    )
+    bodies = dict(locations)
+    export = bodies.get("~ " + scope, "")
+    forwarding = (
+        "proxy_pass http://starlink-location:8000;",
+        "proxy_set_header Host $http_host;",
+        "proxy_set_header X-Real-IP $remote_addr;",
+        "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;",
+        "proxy_set_header X-Forwarded-Proto $scheme;",
+    )
+    proxies = (
+        "~ " + scope,
+        "/api/",
+        "= /api/v2/missions/import",
+        "^~ /api/overview-weather/",
+    )
+    if (
+        "proxy_read_timeout 120s;" not in export
+        or config.count("proxy_read_timeout") != 1
+        or any(
+            any(header not in bodies.get(route, "") for header in forwarding)
+            for route in proxies
+        )
+        or any("add_header" in bodies.get(route, "") for route in proxies)
+        or 'add_header X-Frame-Options "SAMEORIGIN" always;' not in config
+        or 'add_header X-Content-Type-Options "nosniff" always;' not in config
+        or "client_max_body_size 100m;" not in config
+    ):
+        raise ValueError("Unqualified export proxy scope, timeout, or headers")
+    matches = ["/api/v2/missions/briefing-normal/export", "/api/v2/missions/a.b/export"]
+    others = [
+        "/api/v2/missions/import",
+        "/api/status",
+        "/api/overview-weather/tile.png",
+        "/api/v2/missions/a/export/extra",
+        "/api/v2/missions/a/export/",
+        "/api/v2/missions/a/b/export",
+        "/api/v2/missions//export",
+        "/api/v2/missions/a/EXPORT",
+        "/assets/app.js",
+    ]
+    if any(not re.fullmatch(scope, path) for path in matches) or any(
+        re.fullmatch(scope, path) for path in others
+    ):
+        raise ValueError("Unqualified export proxy route matching")
+    return {
+        "exportReadTimeoutSeconds": 120,
+        "otherRouteReadTimeoutSeconds": 60,
+        "matchingRoutes": matches,
+        "nonmatchingRoutes": others,
+        "forwardingPreserved": True,
+        "securityHeaderInheritancePreserved": True,
+        "importUploadLimitMiB": 100,
+    }
 
 
 def verify_cold_previews(previews, page_count):
@@ -430,6 +492,19 @@ def qualify(owner):
     )
     owner.compose("up", "-d", "--wait", "--wait-timeout", "150", timeout=180)
     api = ProductionApi(owner)
+    owner.compose("exec", "-T", "mission-planner", "nginx", "-t", timeout=30)
+    proxy_config = owner.compose(
+        "exec",
+        "-T",
+        "mission-planner",
+        "cat",
+        "/etc/nginx/conf.d/default.conf",
+        timeout=30,
+    )
+    proxy_receipt = verify_export_proxy_config(proxy_config)
+    (owner.root / "export-proxy-config.json").write_text(
+        json.dumps(proxy_receipt, indent=2)
+    )
     fixtures = seed_missions(api, owner.root)
     for category in ("landmark", "satellite"):
         api.request(
@@ -594,12 +669,12 @@ def qualify(owner):
         )
         return result
 
-    def download(case, status, attempt=None, warning=None):
+    def download(case, status, attempt=None, warning=None, timeout=95):
         baseline = audit("before-download-" + (attempt or case))
         mission = fixtures[case]["id"]
         label = attempt or case
         content, headers, elapsed = api.request(
-            "POST", f"/api/v2/missions/{mission}/export"
+            "POST", f"/api/v2/missions/{mission}/export", timeout=timeout
         )
         destination = owner.root / "downloads" / label
         destination.mkdir(parents=True)
@@ -608,6 +683,13 @@ def qualify(owner):
             json.dumps({"headers": headers, "proxyTotalSeconds": elapsed}, indent=2)
         )
         report = inspect_download(content, headers, status)
+        safe_headers = {key.lower(): value for key, value in headers.items()}
+        if (
+            safe_headers.get("x-frame-options") != "SAMEORIGIN"
+            or safe_headers.get("x-content-type-options") != "nosniff"
+            or "content-security-policy" not in safe_headers
+        ):
+            raise ValueError("Production export lost inherited security headers")
         if case == "spliced":
             from production_seed import BASE, kml
 
@@ -736,7 +818,9 @@ def qualify(owner):
     # Document scenarios are already qualified; resolve the remaining proxy
     # deadline boundary before repeating their complete final-candidate matrix.
     restart_fault(render="print-hang")
-    fault_reports = [download("normal", "omitted", "fault-print-deadline", "deadline")]
+    fault_reports = [
+        download("normal", "omitted", "fault-print-deadline", "deadline", timeout=135)
+    ]
     restart_fault()
 
     # Exercise the remaining complex production cases before repeated simple ones.

@@ -115,6 +115,36 @@ def controls():
     return value
 
 
+@pytest.mark.parametrize(
+    "damage", ["none", "broad-scope", "other-api", "forwarding", "security"]
+)
+def test_export_proxy_allowance_preserves_other_routes_and_headers(damage):
+    config = (ROOT / "frontend/mission-planner/nginx.conf").read_text()
+    if damage == "broad-scope":
+        config = config.replace("[^/]+/export$", ".*")
+    elif damage == "other-api":
+        config = config.replace(
+            "location /api/ {", "location /api/ {\n        proxy_read_timeout 120s;"
+        )
+    elif damage == "forwarding":
+        config = config.replace(
+            "proxy_set_header Host $http_host;", "proxy_set_header Host localhost;", 1
+        )
+    elif damage == "security":
+        config = config.replace(
+            "proxy_read_timeout 120s;",
+            'proxy_read_timeout 120s;\n        add_header X-Control "lost inheritance";',
+        )
+    if damage == "none":
+        receipt = controls().verify_export_proxy_config(config)
+        assert receipt["exportReadTimeoutSeconds"] == 120
+        assert receipt["otherRouteReadTimeoutSeconds"] == 60
+        assert receipt["matchingRoutes"] and receipt["nonmatchingRoutes"]
+    else:
+        with pytest.raises(ValueError, match="export proxy"):
+            controls().verify_export_proxy_config(config)
+
+
 @pytest.mark.parametrize("damage", ["htmlPath", "page-5", "different", "only-two"])
 def test_cold_preview_proof_requires_three_complete_identical_artifact_sets(damage):
     complete = {"htmlPath": "a" * 64} | {

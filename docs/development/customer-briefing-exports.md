@@ -63,6 +63,14 @@ reserves. Actual-PDF verification and cleanup consume that same allowance. The
 application's emergency 70-second wall guard and termination grace force failure;
 they cannot qualify a render that exceeds 60 seconds.
 
+Nginx allows 120 seconds of upstream inactivity only for
+`/api/v2/missions/{mission_id}/export`. Legacy building precedes optional
+rendering, so the request must allow both that work and bounded failure cleanup
+before returning its ZIP. Other API routes retain Nginx's 60-second default.
+Forwarding, security headers, and the mission-import upload limit remain intact.
+This scoped adjustment followed independent review of a measured production
+504 at 60.061 seconds during the controlled print-hang deadline check.
+
 Private staging records root/browser/worker process IDs, process groups, and
 kernel start identities. Forced cleanup signals only verified owned processes.
 Successful process cleanup precedes staging deletion and paired publication. If
@@ -77,5 +85,6 @@ The two accepted checkpoint samples do not accept continuation pages or real
 exports. Production qualification must inspect enabled, disabled, omitted,
 concurrent, and disconnected requests through the actual API/Nginx/browser path,
 including legacy equivalence and ZIP import. New dense and multi-leg PDFs require
-explicit customer acceptance. No proxy timeout change is implied by this
-implementation; any needed export-route adjustment follows measured review.
+explicit customer acceptance. The reviewed export-route timeout adjustment
+still requires a fresh production HTTP 200 deadline-omission ZIP qualification;
+the original measured 504 is failure evidence, not acceptance.
