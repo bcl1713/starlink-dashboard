@@ -45,7 +45,15 @@ def run(sha, evidence_root):
 
     def python(code, timeout=120):
         return owner.compose(
-            "exec", "-T", "starlink-location", "python", "-c", code, timeout=timeout
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            code,
+            timeout=timeout,
         ).splitlines()[-1]
 
     def records():
@@ -164,6 +172,8 @@ def run(sha, evidence_root):
             owner.compose(
                 "exec",
                 "-T",
+                "--user",
+                "appuser",
                 "starlink-location",
                 "python",
                 "/acceptance/production_pdf_probe.py",
@@ -207,6 +217,8 @@ print(json.dumps({{'renderSeconds':time.monotonic()-start}}))
         owner.compose(
             "exec",
             "-d",
+            "--user",
+            "appuser",
             "starlink-location",
             "timeout",
             "--kill-after=5s",
@@ -292,6 +304,8 @@ print(json.dumps(records))
         owner.compose(
             "exec",
             "-T",
+            "--user",
+            "appuser",
             "starlink-location",
             "node",
             "/acceptance/production-journey.mjs",
