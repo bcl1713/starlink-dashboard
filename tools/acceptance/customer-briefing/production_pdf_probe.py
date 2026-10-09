@@ -8,9 +8,11 @@ import zipfile
 from hashlib import sha256
 from pathlib import Path
 
+from PIL import Image
+from production_pdf_geometry import geometry_text_hash
+
 from app.mission.exporter.customer_display import display_row
 from app.mission.exporter.customer_pdf import verify_customer_pdf
-from PIL import Image
 
 source, destination = map(Path, sys.argv[1:3])
 destination.mkdir()
@@ -111,7 +113,8 @@ result = {
     "rowCount": len(proof["rows"]),
     "snapshotFingerprint": evidence["snapshotFingerprint"],
     "normalizedPdfHash": sha256(normalized).hexdigest(),
-    "geometryTextHash": sha256(text.encode()).hexdigest(),
+    "geometryTextHash": geometry_text_hash(text),
+    "excludedGeometryMetadata": ["CreationDate", "ModDate"],
     "rasters": rasters,
 }
 (destination / "inspection.json").write_text(json.dumps(result, indent=2))

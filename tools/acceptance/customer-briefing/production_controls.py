@@ -565,6 +565,8 @@ def qualify(owner):
                 "-T",
                 "--user",
                 "appuser",
+                "-e",
+                "PYTHONPATH=/acceptance:/app",
                 "starlink-location",
                 "python",
                 "-c",
@@ -711,6 +713,32 @@ def qualify(owner):
     )
     # Let the real RouteManager filesystem watcher observe the removed input.
     time.sleep(2)
+
+    def restart_fault(render="", application=""):
+        owner.finish_observer()
+        owner.env.update(BRIEFING_RENDER_FAULT=render, BRIEFING_APP_FAULT=application)
+        owner.compose(
+            "up",
+            "-d",
+            "--force-recreate",
+            "--no-deps",
+            "--wait",
+            "--wait-timeout",
+            "150",
+            "starlink-location",
+            timeout=180,
+        )
+        owner.compose(
+            "up", "-d", "--force-recreate", "--no-deps", "mission-planner", timeout=60
+        )
+        start_observer()
+
+    # Document scenarios are already qualified; resolve the remaining proxy
+    # deadline boundary before repeating their complete final-candidate matrix.
+    restart_fault(render="print-hang")
+    fault_reports = [download("normal", "omitted", "fault-print-deadline", "deadline")]
+    restart_fault()
+
     # Exercise the remaining complex production cases before repeated simple ones.
     priority = [
         "normal",
@@ -822,35 +850,11 @@ def qualify(owner):
         lifecycle(mode) for mode in ("concurrent", "map", "pdf", "verify")
     ]
 
-    def restart_fault(render="", application=""):
-        owner.finish_observer()
-        owner.env.update(BRIEFING_RENDER_FAULT=render, BRIEFING_APP_FAULT=application)
-        owner.compose(
-            "up",
-            "-d",
-            "--force-recreate",
-            "--no-deps",
-            "--wait",
-            "--wait-timeout",
-            "150",
-            "starlink-location",
-            timeout=180,
-        )
-        owner.compose(
-            "up", "-d", "--force-recreate", "--no-deps", "mission-planner", timeout=60
-        )
-        start_observer()
-
     # The observer belongs to this backend instance; preserve it before restart.
     # Application/proxy logs and each request's private owner remain audit evidence.
-    fault_reports = []
     for fault in ("pdf", "evidence", "publication"):
         restart_fault(application=fault)
         fault_reports.append(download("normal", "omitted", "fault-" + fault, fault))
-    restart_fault(render="print-hang")
-    fault_reports.append(
-        download("normal", "omitted", "fault-print-deadline", "deadline")
-    )
     restart_fault()
 
     imported = []

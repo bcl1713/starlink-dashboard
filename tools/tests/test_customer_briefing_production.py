@@ -132,6 +132,41 @@ def test_cold_preview_proof_requires_three_complete_identical_artifact_sets(dama
         controls().verify_cold_previews(previews, 5)
 
 
+@pytest.mark.parametrize(
+    "damage", ["CreationDate", "ModDate", "Producer", "text", "coordinate", "page"]
+)
+def test_geometry_receipt_excludes_only_identified_generation_clocks(damage):
+    entry = ROOT / "tools/acceptance/customer-briefing/production_pdf_geometry.py"
+    assert entry.exists(), "geometry receipt normalization is missing"
+    spec = importlib.util.spec_from_file_location("pdf_geometry", entry)
+    value = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(value)
+    original = (
+        '<html xmlns="http://www.w3.org/1999/xhtml"><head>'
+        '<meta name="CreationDate" content="2026-10-09T00:00:00Z"/>'
+        '<meta name="ModDate" content="2026-10-09T00:00:00Z"/>'
+        '<meta name="Producer" content="Skia"/></head><body>'
+        '<doc><page width="960" height="540"><word xMin="10" yMin="20" '
+        'xMax="30" yMax="40">Up</word></page></doc></body></html>'
+    )
+    if damage in {"CreationDate", "ModDate"}:
+        changed = original.replace(
+            f'name="{damage}" content="2026-10-09T00:00:00Z"',
+            f'name="{damage}" content="2026-10-09T01:00:00Z"',
+        )
+    else:
+        before, after = {
+            "Producer": ('content="Skia"', 'content="changed"'),
+            "text": (">Up<", ">Down<"),
+            "coordinate": ('xMin="10"', 'xMin="11"'),
+            "page": ('height="540"', 'height="541"'),
+        }[damage]
+        changed = original.replace(before, after)
+    assert (
+        value.geometry_text_hash(original) == value.geometry_text_hash(changed)
+    ) == (damage in {"CreationDate", "ModDate"})
+
+
 def download_fixture(damage=None):
     pdf = b"%PDF-qualified-independent-inspection-follows"
     pdf_path = "exports/mission/mission-customer-briefing-trial.pdf"
