@@ -1,3 +1,5 @@
+import type { RouteAnchor } from './planning';
+
 // Satellite manager interface for CRUD operations
 export interface Satellite {
   id: string;
@@ -12,6 +14,7 @@ export interface XBandTransition {
   latitude: number;
   longitude: number;
   target_satellite_id: string;
+  anchor?: RouteAnchor | null;
   target_beam_id?: string;
   is_same_satellite_transition?: boolean;
 }
