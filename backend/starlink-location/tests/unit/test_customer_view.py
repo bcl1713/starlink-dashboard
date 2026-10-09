@@ -3,7 +3,6 @@
 import importlib
 
 from app.mission.exporter.customer_projection import project_briefing_leg
-
 from tests.unit.customer_briefing_fixtures import fixture, snapshot, utc
 
 

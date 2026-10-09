@@ -7,8 +7,8 @@ import zipfile
 from dataclasses import replace
 
 import pytest
-from app.mission.package import customer_artifacts as module
 
+from app.mission.package import customer_artifacts as module
 from tests.unit.test_customer_document import inputs
 
 

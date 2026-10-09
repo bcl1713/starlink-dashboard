@@ -4,8 +4,8 @@ from datetime import timedelta
 from pathlib import Path
 
 import pytest
-from app.mission.exporter.customer_projection import project_briefing_leg
 
+from app.mission.exporter.customer_projection import project_briefing_leg
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 

@@ -8,8 +8,9 @@ from tests.unit.test_customer_document import inputs
 
 
 def test_assembly_preserves_pages_and_rebases_evidence():
-    from app.mission.slide_cache.assembly import assemble_customer_pdf
     from pypdf import PdfReader, PdfWriter
+
+    from app.mission.slide_cache.assembly import assemble_customer_pdf
 
     def fragment(leg, widths):
         writer, stream = PdfWriter(), io.BytesIO()

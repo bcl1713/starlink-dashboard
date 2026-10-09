@@ -5,8 +5,8 @@ from dataclasses import FrozenInstanceError, replace
 from datetime import timedelta
 
 import pytest
-from app.mission.models import Transport, TransportState
 
+from app.mission.models import Transport, TransportState
 from tests.unit.customer_briefing_fixtures import fixture, snapshot, utc
 
 

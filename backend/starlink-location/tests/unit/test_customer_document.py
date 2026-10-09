@@ -6,11 +6,11 @@ from dataclasses import replace
 from hashlib import sha256
 
 import pytest
+
 from app.mission.exporter.customer_projection import project_briefing_leg
 from app.mission.exporter.customer_view import project_customer_leg
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.exporter.snapshot_inputs import canonical_json
-
 from tests.unit.customer_briefing_fixtures import fixture, snapshot
 
 
@@ -98,7 +98,6 @@ def test_document_map_has_customer_endpoints_without_event_ordinals():
 @pytest.mark.parametrize("invalid", ["missing", "malformed", "timing", "density"])
 def test_map_input_diagnostics_survive_document_and_evidence(invalid):
     from app.mission.exporter.map_inputs import build_map_input
-
     from tests.unit.test_customer_evidence import build as evidence
     from tests.unit.test_customer_evidence import report
 
