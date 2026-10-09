@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+export const mapViewportSchema = z.object({
+  width: z.number().int().min(256).max(4096),
+  height: z.number().int().min(256).max(4096),
+});
+export type MapViewport = z.infer<typeof mapViewportSchema>;
+
 export const mapInputSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -69,13 +75,19 @@ export interface MapReadiness {
   viewId?: string;
   framing?: unknown;
   labels?: { text: string; x: number; y: number }[];
+  endpoints?: { role: 'departure' | 'arrival'; x: number; y: number }[];
   stages?: string[];
 }
 declare global {
   interface Window {
     missionMap: {
-      plan: (raw: unknown) => { id: string }[];
-      render: (raw: unknown, viewIndex: number, digest: string) => void;
+      plan: (raw: unknown, viewport?: MapViewport) => { id: string }[];
+      render: (
+        raw: unknown,
+        viewIndex: number,
+        digest: string,
+        viewport?: MapViewport
+      ) => void;
       state: MapReadiness;
     };
   }

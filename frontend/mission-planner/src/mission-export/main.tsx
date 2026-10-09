@@ -37,13 +37,15 @@ class SceneBoundary extends Component<
 }
 window.missionMap = {
   state: { status: 'loading' },
-  plan: (raw) =>
-    frameMissionRoute(validateMapInput(raw)).map(({ id }) => ({ id })),
-  render: (raw, viewIndex, digest) => {
+  plan: (raw, viewport) =>
+    frameMissionRoute(validateMapInput(raw), viewport).map(({ id }) => ({
+      id,
+    })),
+  render: (raw, viewIndex, digest, viewport) => {
     window.missionMap.state = { status: 'loading', digest };
     try {
       const input = validateMapInput(raw);
-      const views = frameMissionRoute(input);
+      const views = frameMissionRoute(input, viewport);
       const view = views[viewIndex];
       if (!view) throw new Error('Missing required view');
       root.render(

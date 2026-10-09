@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import { within } from './render-budget.mjs';
-export async function renderMapInContext({ owner, budget, input, fault }) {
+export async function renderMapInContext({
+  owner,
+  budget,
+  input,
+  fault,
+  viewport = { width: 1920, height: 1080 },
+}) {
   let context,
     result,
     finishing = false;
@@ -22,7 +28,7 @@ export async function renderMapInContext({ owner, budget, input, fault }) {
     if (!input || fault === 'map') throw new Error('Map unavailable');
     const acquisition = owner.newContext(
       {
-        viewport: { width: 1920, height: 1080 },
+        viewport,
         deviceScaleFactor: 1,
         locale: 'en-US',
         timezoneId: 'UTC',
@@ -63,7 +69,10 @@ export async function renderMapInContext({ owner, budget, input, fault }) {
       timeout: budget.mapRemainingMs(),
     });
     const plan = await within(
-      page.evaluate((raw) => window.missionMap.plan(raw), input),
+      page.evaluate(
+        ({ input, viewport }) => window.missionMap.plan(input, viewport),
+        { input, viewport }
+      ),
       budget.mapRemainingMs()
     );
     if (plan.length !== 1)
@@ -73,8 +82,9 @@ export async function renderMapInContext({ owner, budget, input, fault }) {
       .digest('hex');
     await within(
       page.evaluate(
-        ({ input, digest }) => window.missionMap.render(input, 0, digest),
-        { input, digest }
+        ({ input, digest, viewport }) =>
+          window.missionMap.render(input, 0, digest, viewport),
+        { input, digest, viewport }
       ),
       budget.mapRemainingMs()
     );
@@ -113,7 +123,9 @@ export async function renderMapInContext({ owner, budget, input, fault }) {
       viewIds: plan.map((v) => v.id),
       warnings,
       framing: readiness.framing,
+      viewport,
       markers: readiness.labels,
+      endpoints: readiness.endpoints,
       inputDigest: digest,
       pngHash: createHash('sha256').update(png).digest('hex'),
     };

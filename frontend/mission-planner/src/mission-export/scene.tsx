@@ -1,98 +1,46 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityLitGlobe } from '../pages/CityLitGlobe';
 import { GlobeRouteRibbon } from '../pages/GlobeRouteRibbon';
-import { sunLightPosition } from '../pages/solar-position';
+import { StarMarker } from '../pages/OverviewStarMarker';
+import { OverviewBoundaryLayer } from '../pages/OverviewBoundaryLayer';
 import {
-  applyCameraFrame,
-  MAP_HEIGHT,
-  MAP_WIDTH,
-  type MissionMapView,
-} from './framing';
+  parseBoundaries,
+  projectBoundaries,
+} from '../pages/overview-boundaries';
+import countries from '../../public/boundaries/countries.json';
+import { sunLightPosition } from '../pages/solar-position';
+import { applyCameraFrame, type MissionMapView } from './framing';
 import type { MissionMapInput } from './protocol';
 
-const NEUTRAL = {
-  color: '#f4f4f4',
-  widthPixels: 4,
-  maxWorldWidth: 0.028,
-  opacity: 1,
-};
-const HALO = {
-  color: '#252525',
-  widthPixels: 8,
-  maxWorldWidth: 0.05,
-  opacity: 1,
-};
-type Label = {
-  text: string;
-  x: number;
-  y: number;
-  anchorX?: number;
-  anchorY?: number;
-};
-function projectLabels(camera: THREE.Camera, view: MissionMapView): Label[] {
-  const candidates = [
-    {
-      text:
-        view.startIndex === 0
-          ? view.endpointLabels?.departure || 'Departure'
-          : 'Continues',
-      point: view.points[0],
-    },
-    {
-      text: view.endsRoute
-        ? view.endpointLabels?.arrival || 'Arrival'
-        : 'Continues',
-      point: view.points.at(-1)!,
-    },
-    ...view.markers.map((m) => ({ text: m.label, point: m.point })),
+// Pixel-sized globe overlays need to survive the high-resolution image being
+// reduced to the 280px map column in the PDF.
+const PDF_MAP_WIDTH = 280;
+function projectEndpoints(camera: THREE.Camera, view: MissionMapView) {
+  const endpoints = [
+    ...(view.startIndex === 0
+      ? [{ role: 'departure' as const, point: view.points[0] }]
+      : []),
+    ...(view.endsRoute
+      ? [{ role: 'arrival' as const, point: view.points.at(-1)! }]
+      : []),
   ];
-  const labels: Label[] = [];
-  for (const { text, point } of candidates) {
+  return endpoints.map(({ role, point }) => {
     const p = new THREE.Vector3(...point).project(camera);
-    const x = ((p.x + 1) * MAP_WIDTH) / 2,
-      y = ((1 - p.y) * MAP_HEIGHT) / 2;
-    const width = text.length * 64 + 48;
-    const offsets = [
-      [0, -112],
-      [0, 112],
-    ];
-    for (let ring = 1; ring <= 4; ring++) {
-      for (const dy of [0, -112 * ring, 112 * ring]) {
-        offsets.push([width * ring, dy], [-width * ring, dy]);
-      }
-      offsets.push([0, -112 * ring], [0, 112 * ring]);
-    }
-    const candidate = offsets
-      .map(([dx, dy]) => ({ text, x: x + dx, y: y + dy }))
-      .find(
-        (l) =>
-          l.x - width / 2 >= 64 &&
-          l.x + width / 2 <= MAP_WIDTH - 64 &&
-          l.y >= 128 &&
-          l.y <= MAP_HEIGHT - 128 &&
-          labels.every(
-            (other) =>
-              Math.abs(other.x - l.x) >
-                (width + other.text.length * 64 + 48) / 2 ||
-              Math.abs(other.y - l.y) > 104
-          )
-      );
-    if (!candidate)
-      throw new Error('Projected labels cannot fit without overlap');
-    labels.push({ ...candidate, anchorX: x, anchorY: y });
-  }
-  return labels;
+    return {
+      role,
+      x: ((p.x + 1) * view.width) / 2,
+      y: ((1 - p.y) * view.height) / 2,
+    };
+  });
 }
 function ReadyScene({
   view,
   digest,
-  onLabels,
 }: {
   view: MissionMapView;
   digest: string;
-  onLabels: (labels: Label[]) => void;
 }) {
   const { gl, scene, camera, invalidate } = useThree();
   const prepared = useRef(false);
@@ -153,8 +101,6 @@ function ReadyScene({
         )
           throw new Error('Shader compilation failed');
         if (!active || window.missionMap.state.status === 'error') return;
-        const labels = projectLabels(camera, view);
-        onLabels(labels);
         prepared.current = true;
         invalidate();
       } catch (error) {
@@ -170,7 +116,7 @@ function ReadyScene({
       active = false;
       canvas.removeEventListener('webglcontextlost', lost);
     };
-  }, [camera, digest, gl, invalidate, onLabels, scene, view]);
+  }, [camera, digest, gl, invalidate, scene, view]);
   useFrame(() => {
     if (!prepared.current || window.missionMap.state.status === 'error') return;
     gl.render(scene, camera);
@@ -187,6 +133,8 @@ function ReadyScene({
       digest,
       viewId: view.id,
       framing: {
+        width: view.width,
+        height: view.height,
         direction: view.direction,
         distance: view.distance,
         offsetX: view.offsetX,
@@ -194,12 +142,14 @@ function ReadyScene({
         startIndex: view.startIndex,
         endIndex: view.endIndex,
       },
-      labels: projectLabels(camera, view),
+      labels: [],
+      endpoints: projectEndpoints(camera, view),
       stages: [
         'textures-decoded',
         'shaders-compiled',
         'camera-settled',
-        'labels-projected',
+        'boundaries-ready',
+        'endpoint-stars-projected',
         'render-complete',
       ],
     };
@@ -215,14 +165,51 @@ export function MissionExportScene({
   view: MissionMapView;
   digest: string;
 }) {
-  const [labels, setLabels] = useState<Label[]>([]);
+  const boundaries = useMemo(
+    () => projectBoundaries(parseBoundaries(countries)),
+    []
+  );
   const sun = sunLightPosition(new Date(input.referenceUtc), 10);
+  const pixelScale = view.width / PDF_MAP_WIDTH;
+  const routeStyle = useMemo(
+    () => ({
+      outer: {
+        color: '#ffb000',
+        widthPixels: 8 * pixelScale,
+        maxWorldWidth: 0.05 * pixelScale,
+        opacity: 0.18,
+        blending: THREE.AdditiveBlending,
+      },
+      glow: {
+        color: '#ffb000',
+        widthPixels: 4 * pixelScale,
+        maxWorldWidth: 0.028 * pixelScale,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending,
+      },
+      core: {
+        color: '#ffd86b',
+        widthPixels: 2 * pixelScale,
+        maxWorldWidth: 0.012 * pixelScale,
+        opacity: 1,
+      },
+    }),
+    [pixelScale]
+  );
+  const endpointStyle = {
+    color: '#ffffff',
+    size: 0.13,
+    coreRadius: 0.06,
+    glowSizePixels: 24 * pixelScale,
+    glowIntensity: 2.3,
+    maxCorePixels: 6 * pixelScale,
+  };
   return (
     <div
       style={{
         position: 'relative',
-        width: MAP_WIDTH,
-        height: MAP_HEIGHT,
+        width: view.width,
+        height: view.height,
         background: '#101820',
         color: '#f4f4f4',
         fontFamily: 'DejaVu Sans, sans-serif',
@@ -238,54 +225,17 @@ export function MissionExportScene({
         <directionalLight position={sun} intensity={5} />
         <Suspense fallback={null}>
           <CityLitGlobe sunPosition={sun} />
-          <GlobeRouteRibbon
-            points={view.points}
-            outer={HALO}
-            glow={NEUTRAL}
-            core={NEUTRAL}
-            depthTest
-          />
-          <ReadyScene view={view} digest={digest} onLabels={setLabels} />
+          <GlobeRouteRibbon points={view.points} {...routeStyle} depthTest />
+          <OverviewBoundaryLayer kind="countries" segments={boundaries} />
+          {view.startIndex === 0 && (
+            <StarMarker position={view.points[0]} {...endpointStyle} />
+          )}
+          {view.endsRoute && (
+            <StarMarker position={view.points.at(-1)!} {...endpointStyle} />
+          )}
+          <ReadyScene view={view} digest={digest} />
         </Suspense>
       </Canvas>
-      <svg
-        width={MAP_WIDTH}
-        height={MAP_HEIGHT}
-        style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}
-      >
-        {labels.map((label, i) => (
-          <line
-            key={i}
-            x1={label.anchorX}
-            y1={label.anchorY}
-            x2={label.x}
-            y2={label.y}
-            stroke="#f4f4f4"
-            strokeWidth={4}
-          />
-        ))}
-      </svg>
-      {labels.map((label, i) => (
-        <div
-          key={i}
-          data-map-label
-          style={{
-            position: 'absolute',
-            left: label.x,
-            top: label.y,
-            transform: 'translate(-50%, -50%)',
-            padding: '4px 16px',
-            background: 'rgba(18, 42, 68, 0.86)',
-            color: '#fff',
-            borderRadius: 8,
-            fontSize: 96,
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {label.text}
-        </div>
-      ))}
     </div>
   );
 }

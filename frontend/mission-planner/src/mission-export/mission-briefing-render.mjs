@@ -65,9 +65,12 @@ export async function renderMissionBriefing(
     watchdog,
     cancelled = false,
     deadline = false,
-    document;
+    document,
+    activeStage;
   const stage = async (name, fn) => {
     const startMs = budget.elapsedMs();
+    const parent = activeStage;
+    activeStage = { stage: name, pid: process.pid, startMs, completed: false };
     const journal = async (record) => {
       try {
         await writeFile(
@@ -83,24 +86,22 @@ export async function renderMissionBriefing(
       }
     };
     try {
-      await journal({
-        stage: name,
-        pid: process.pid,
-        startMs,
-        completed: false,
-      });
+      await journal(activeStage);
       return await fn();
     } finally {
       report.stages[name] = {
         startMs,
         durationMs: budget.elapsedMs() - startMs,
       };
-      await journal({
-        stage: name,
-        pid: process.pid,
-        ...report.stages[name],
-        completed: true,
-      });
+      activeStage = parent;
+      await journal(
+        parent ?? {
+          stage: name,
+          pid: process.pid,
+          ...report.stages[name],
+          completed: true,
+        }
+      );
     }
   };
   const stop = () => {
@@ -142,37 +143,56 @@ export async function renderMissionBriefing(
     report.launchCount = 1;
     report.browserIdentity = owner.browserIdentity;
     check();
-    let cutoff = false;
-    for (const leg of payload.legs) {
-      try {
-        budget.mapRemainingMs();
-      } catch {
-        cutoff = true;
+    const renderMaps = async (viewports) => {
+      let cutoff = false;
+      for (const leg of payload.legs) {
+        check();
+        const previous = report.maps[leg.legId];
+        const viewport = viewports[leg.legId];
+        if (
+          previous &&
+          (previous.status === 'unavailable' ||
+            (previous.viewport?.width === viewport?.width &&
+              previous.viewport?.height === viewport?.height))
+        )
+          continue;
+        try {
+          budget.mapRemainingMs();
+        } catch {
+          cutoff = true;
+        }
+        const map = cutoff
+          ? {
+              status: 'unavailable',
+              pngs: [],
+              warnings: ['Map reserve cutoff'],
+              viewIds: [],
+              framing: null,
+              markers: [],
+            }
+          : await stage('map:' + leg.legId, () =>
+              mapStage({
+                owner,
+                budget,
+                input: leg.mapInput,
+                fault,
+                viewport,
+              })
+            );
+        report.maps[leg.legId] = {
+          ...map,
+          inputDiagnostics: leg.mapInputDiagnostics,
+        };
+        check();
       }
-      const map = cutoff
-        ? {
-            status: 'unavailable',
-            pngs: [],
-            warnings: ['Map reserve cutoff'],
-            viewIds: [],
-            framing: null,
-            markers: [],
-          }
-        : await stage('map:' + leg.legId, () =>
-            mapStage({ owner, budget, input: leg.mapInput, fault })
-          );
-      report.maps[leg.legId] = {
-        ...map,
-        inputDiagnostics: leg.mapInputDiagnostics,
-      };
-      check();
-    }
+      return report.maps;
+    };
     document = await stage('document', () =>
       documentStage({
         owner,
         budget,
         payload,
-        maps: report.maps,
+        renderMaps,
         outputRoot,
         fault,
         check,

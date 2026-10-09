@@ -38,8 +38,8 @@ describe('mission map framing', () => {
           // Independent visibility inequality: tangent to radius-two Earth.
           expect(point.dot(camera.position)).toBeGreaterThan(4.04);
           const pixel = point.clone().project(camera);
-          expect(Math.abs(pixel.x)).toBeLessThan(0.86);
-          expect(Math.abs(pixel.y)).toBeLessThan(0.72);
+          expect(Math.abs(pixel.x)).toBeLessThan(0.94);
+          expect(Math.abs(pixel.y)).toBeLessThan(0.9);
         }
       }
       expect(views[0].startIndex).toBe(0);
@@ -56,6 +56,41 @@ describe('mission map framing', () => {
     }
     expect(allIds).toEqual(fixture.expectedViewIds);
   });
+
+  it('uses the map height for a polar route while leaving room for endpoint stars', () => {
+    const [view] = frameMissionRoute(validateMapInput(fixture.legs[1]));
+    const camera = new PerspectiveCamera(38, 1920 / 1080, 0.1, 100);
+    applyCameraFrame(camera, view);
+    const ys = view.points.map((p) => new Vector3(...p).project(camera).y);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(1.5);
+  });
+
+  it.each([1920, 2400])(
+    'fits the whole route to a %s-pixel tall PDF corner',
+    (height) => {
+      const viewport = { width: 1920, height };
+      const [view] = frameMissionRoute(
+        validateMapInput(fixture.legs[1]),
+        viewport
+      );
+      const camera = new PerspectiveCamera(38, 1920 / 1080, 0.1, 100);
+      applyCameraFrame(camera, view);
+      expect(camera.aspect).toBe(viewport.width / viewport.height);
+      expect(view.width).toBe(viewport.width);
+      expect(view.height).toBe(viewport.height);
+      for (const tuple of view.points) {
+        const point = new Vector3(...tuple);
+        expect(point.dot(camera.position)).toBeGreaterThan(4.04);
+        const projected = point.clone().project(camera);
+        const x = ((projected.x + 1) * viewport.width) / 2;
+        const y = ((1 - projected.y) * viewport.height) / 2;
+        expect(x).toBeGreaterThan(64);
+        expect(x).toBeLessThan(viewport.width - 64);
+        expect(y).toBeGreaterThan(64);
+        expect(y).toBeLessThan(viewport.height - 64);
+      }
+    }
+  );
 
   it('keeps meaningful endpoint labels through validation and framing', () => {
     const endpointLabels = { departure: 'KADW', arrival: 'PAED' };
