@@ -100,6 +100,19 @@ export function cachePrimaryMeasurements({ measured, measure }) {
   };
 }
 
+export async function planWithMapFallback(plan, resolveUnavailableMaps) {
+  try {
+    return await plan();
+  } catch (cause) {
+    if (
+      !['overflow', 'page-budget'].includes(cause.code) ||
+      !(await resolveUnavailableMaps())
+    )
+      throw cause;
+    return plan();
+  }
+}
+
 async function measurePages(page, budget) {
   return within(
     page.evaluate(() =>
@@ -148,6 +161,8 @@ async function measurePages(page, budget) {
             )
               labelOverlaps.push([labels[i].text, labels[j].text]);
           }
+        const card = element.querySelector('.map-card');
+        const mapImage = card?.querySelector('img');
         const rows = [...element.querySelectorAll('[data-row-id]')];
         const body = rows.length ? box(element.querySelector('tbody')) : null;
         const table = box(element.querySelector('table'));
@@ -157,6 +172,15 @@ async function measurePages(page, budget) {
           legId: element.dataset.legId,
           width: p.width,
           height: p.height,
+          mapPlacement: card
+            ? {
+                boundsPx: box(card),
+                detailsBoundsPx: box(element.querySelector('.details')),
+                footerTopPx: box(element.querySelector('footer'))[1],
+                imageWidth: mapImage.naturalWidth,
+                imageHeight: mapImage.naturalHeight,
+              }
+            : null,
           visibleRowIds: rows.map((r) => r.dataset.rowId),
           overflow,
           labelOverlaps,
@@ -185,7 +209,7 @@ export async function prepareMissionDocument({
   owner,
   budget,
   payload,
-  maps,
+  renderMaps,
   outputRoot,
   fault,
   check,
@@ -220,8 +244,15 @@ export async function prepareMissionDocument({
     boldFontDataUrl: encoded('boldFont', 'font/ttf'),
     apoDataUrl: encoded('apo', 'image/jpeg'),
     cssText: bytes.css.toString(),
+    // Measure the real card before rendering Earth. The placeholder contributes
+    // no intrinsic size: the grid and footer determine the available corner.
     maps: Object.fromEntries(
-      Object.entries(maps).map(([id, m]) => [id, m.pngs[0] ?? null])
+      payload.legs.map((leg) => [
+        leg.legId,
+        leg.mapInput
+          ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+          : null,
+      ])
     ),
   };
   if (fault === 'font')
@@ -268,48 +299,100 @@ export async function prepareMissionDocument({
       rowIds: leg.rows.map((r) => r.id),
     })),
   };
+  const renderCurrentMaps = async () => {
+    const viewports = await within(
+      page.evaluate(() =>
+        Object.fromEntries(
+          [...document.querySelectorAll('.briefing-page')].flatMap(
+            (element) => {
+              const card = element.querySelector('.map-card');
+              if (!card) return [];
+              const { width, height } = card.getBoundingClientRect();
+              return [
+                [
+                  element.dataset.legId,
+                  { width: 1920, height: Math.round((1920 * height) / width) },
+                ],
+              ];
+            }
+          )
+        )
+      ),
+      budget.workRemainingMs()
+    );
+    const rendered = await renderMaps(viewports);
+    const lostMap = payload.legs.some(
+      (leg) => assets.maps[leg.legId] && !rendered[leg.legId]?.pngs[0]
+    );
+    assets.maps = Object.fromEntries(
+      payload.legs.map((leg) => [
+        leg.legId,
+        rendered[leg.legId]?.pngs[0] ?? null,
+      ])
+    );
+    return lostMap;
+  };
   const initialHtml = composeMissionBriefing(payload, primaryPlan, assets);
   await progress('batch-primary');
   if (fault === 'measure-hang')
     await within(new Promise(() => {}), budget.workRemainingMs());
   await load(initialHtml);
-  const initialMeasured = await measurePages(page, budget);
-  const pagePlan = await planBriefingPages({
-    payload,
-    budget,
-    measure: cachePrimaryMeasurements({
-      measured: initialMeasured,
-      measure: async (request) => {
-        await progress(
-          'measure:' +
-            request.legId +
-            ':' +
-            request.kind +
-            ':' +
-            request.rowIds.length
-        );
-        if (fault === 'measure-hang')
-          await within(new Promise(() => {}), budget.workRemainingMs());
-        const leg = payload.legs.find((l) => l.legId === request.legId);
-        await load(
-          composeMissionPage(
-            leg,
-            {
-              ...request,
-              legPage: request.kind === 'primary' ? 1 : 3,
-              legPageCount: 3,
-            },
-            assets
-          )
-        );
-        const [fit] = await measurePages(page, budget);
-        return { fits: fitsPage(fit) };
-      },
-    }),
-  });
-  const html = composeMissionBriefing(payload, pagePlan, assets);
+  let initialMeasured = await measurePages(page, budget);
+  const planPages = (measured) =>
+    planBriefingPages({
+      payload,
+      budget,
+      measure: cachePrimaryMeasurements({
+        measured,
+        measure: async (request) => {
+          await progress(
+            'measure:' +
+              request.legId +
+              ':' +
+              request.kind +
+              ':' +
+              request.rowIds.length
+          );
+          if (fault === 'measure-hang')
+            await within(new Promise(() => {}), budget.workRemainingMs());
+          const leg = payload.legs.find((l) => l.legId === request.legId);
+          await load(
+            composeMissionPage(
+              leg,
+              {
+                ...request,
+                legPage: request.kind === 'primary' ? 1 : 3,
+                legPageCount: 3,
+              },
+              assets
+            )
+          );
+          const [fit] = await measurePages(page, budget);
+          return { fits: fitsPage(fit) };
+        },
+      }),
+    });
+  let pagePlan = await planWithMapFallback(
+    () => planPages(initialMeasured),
+    async () => {
+      // An unavailable map may make an otherwise over-budget leg fit.
+      await load(initialHtml);
+      if (!(await renderCurrentMaps())) return false;
+      await load(composeMissionBriefing(payload, primaryPlan, assets));
+      initialMeasured = await measurePages(page, budget);
+      return true;
+    }
+  );
+  let html = composeMissionBriefing(payload, pagePlan, assets);
   await progress('final-assembly');
   if (html !== initialHtml) await load(html);
+  if (await renderCurrentMaps()) {
+    // Failed maps reclaim their column before pagination, as in the original path.
+    await load(composeMissionBriefing(payload, primaryPlan, assets));
+    pagePlan = await planPages(await measurePages(page, budget));
+  }
+  html = composeMissionBriefing(payload, pagePlan, assets);
+  await load(html);
   const measured = await measurePages(page, budget);
   if (
     measured.length !== pagePlan.pages.length ||

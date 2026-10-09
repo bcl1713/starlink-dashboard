@@ -204,12 +204,16 @@ tbody tr:nth-child(even) {
 }
 .map-card {
   min-width: 0;
-  align-self: start;
+  align-self: stretch;
+  min-height: 0;
+  position: relative;
   margin: 0;
 }
 .map-card img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;
   background: #102336;
   display: block;

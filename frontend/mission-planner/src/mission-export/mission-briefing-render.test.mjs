@@ -22,7 +22,8 @@ async function scenario(fault = null) {
     closes = 0;
   const seen = [],
     budget = createRenderBudget({ clock: () => clock });
-  const observed = [];
+  const observed = [],
+    viewports = [];
   const observe = async (name) => {
     if (fault !== 'observe-stage') return;
     const record = JSON.parse(
@@ -69,18 +70,31 @@ async function scenario(fault = null) {
       }
       return owner;
     },
-    mapStage: async ({ budget: actual, input }) => {
+    mapStage: async ({ budget: actual, input, viewport }) => {
       await observe('map:l' + input.id);
       seen.push(actual);
+      viewports.push(viewport);
       clock += fault === 'map-cutoff' ? 15000 : 1000;
       return { status: 'primary', pngs: ['map'], warnings: [] };
     },
-    documentStage: async ({ budget: actual }) => {
+    documentStage: async ({ budget: actual, renderMaps }) => {
       await observe('document');
       seen.push(actual);
       if (fault === 'cancel-pagination') process.emit('SIGTERM');
       if (fault === 'pagination')
         throw Object.assign(new Error('overflow'), { code: 'overflow' });
+      await renderMaps(
+        Object.fromEntries(
+          payload.legs.map((l) => [l.legId, { width: 1920, height: 1800 }])
+        )
+      );
+      if (fault === 'observe-stage') {
+        const record = JSON.parse(
+          await readFile(path.join(outputRoot, 'stage-progress.json'), 'utf8')
+        );
+        assert.equal(record.stage, 'document');
+        assert.equal(record.completed, false);
+      }
       return {
         pagePlan: { pages: [] },
         fit: {},
@@ -121,6 +135,7 @@ async function scenario(fault = null) {
       seen,
       budget,
       observed,
+      viewports,
       pdf: await readFile(
         path.join(outputRoot, 'mission-customer-briefing.pdf')
       ).catch(() => null),
@@ -138,6 +153,10 @@ test('one mission one owner and one unchanged budget through maps print verify t
   assert.ok(s.seen.every((b) => b === s.budget));
   assert.equal(s.report.totalMs, 6100);
   assert.ok(s.pdf);
+  assert.deepEqual(
+    s.viewports,
+    Array.from({ length: 5 }, () => ({ width: 1920, height: 1800 }))
+  );
 });
 test('shared map reserve skips later legs instead of refreshing allowance', async () => {
   const s = await scenario('map-cutoff');
@@ -152,12 +171,12 @@ test('private phase evidence identifies actual active work before observation or
   assert.equal(s.report.status, 'success');
   assert.deepEqual(s.observed, [
     'startup',
+    'document',
     'map:l0',
     'map:l1',
     'map:l2',
     'map:l3',
     'map:l4',
-    'document',
     'pdf',
     'verify',
     'teardown',

@@ -11,12 +11,7 @@ import {
 } from '../pages/overview-boundaries';
 import countries from '../../public/boundaries/countries.json';
 import { sunLightPosition } from '../pages/solar-position';
-import {
-  applyCameraFrame,
-  MAP_HEIGHT,
-  MAP_WIDTH,
-  type MissionMapView,
-} from './framing';
+import { applyCameraFrame, type MissionMapView } from './framing';
 import type { MissionMapInput } from './protocol';
 
 const NEUTRAL = {
@@ -44,8 +39,8 @@ function projectEndpoints(camera: THREE.Camera, view: MissionMapView) {
     const p = new THREE.Vector3(...point).project(camera);
     return {
       role,
-      x: ((p.x + 1) * MAP_WIDTH) / 2,
-      y: ((1 - p.y) * MAP_HEIGHT) / 2,
+      x: ((p.x + 1) * view.width) / 2,
+      y: ((1 - p.y) * view.height) / 2,
     };
   });
 }
@@ -147,6 +142,8 @@ function ReadyScene({
       digest,
       viewId: view.id,
       framing: {
+        width: view.width,
+        height: view.height,
         direction: view.direction,
         distance: view.distance,
         offsetX: view.offsetX,
@@ -186,8 +183,8 @@ export function MissionExportScene({
     <div
       style={{
         position: 'relative',
-        width: MAP_WIDTH,
-        height: MAP_HEIGHT,
+        width: view.width,
+        height: view.height,
         background: '#101820',
         color: '#f4f4f4',
         fontFamily: 'DejaVu Sans, sans-serif',
