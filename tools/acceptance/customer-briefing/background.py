@@ -138,8 +138,8 @@ def run(sha, evidence_root):
         )
         owner.compose("up", "-d", "--wait", timeout=180)
         api = ProductionApi(owner)
-        saved = seed_missions(api, owner.root, names=["normal", "two-page", "five-leg"])
         start = time.monotonic()
+        saved = seed_missions(api, owner.root, names=["normal", "two-page", "five-leg"])
         initial = wait_ready()
         summary["initialPreparationSeconds"] = time.monotonic() - start
         timings = {}
@@ -200,6 +200,41 @@ print(json.dumps({{'renderSeconds':time.monotonic()-start}}))
         summary["timings"] = timings
         mission = saved["normal"]
         leg = dict(mission["legs"][0])
+        # Hold the preparation lock briefly so even a fast machine observes an
+        # actual owned worker before issuing the superseding save.
+        owner.ownership["preparationGate"] = "/tmp/background-save-gate.json"
+        owner.persist()
+        owner.compose(
+            "exec",
+            "-d",
+            "starlink-location",
+            "timeout",
+            "--kill-after=5s",
+            "40s",
+            "python",
+            "-c",
+            """import json,time,os
+from pathlib import Path
+from filelock import FileLock
+from app.mission.slide_cache.store import default_store
+from app.mission.exporter.customer_runtime import _process_record
+with FileLock(str(default_store().path.with_suffix('.worker.lock'))):
+ Path('/tmp/background-save-gate.json').write_text(json.dumps(_process_record(os.getpid())))
+ deadline=time.monotonic()+30
+ while not Path('/tmp/background-save-gate.release').exists() and time.monotonic()<deadline: time.sleep(.05)
+""",
+            timeout=30,
+        )
+        for _ in range(50):
+            gate = json.loads(
+                python(
+                    "import json; from pathlib import Path; p=Path('/tmp/background-save-gate.json'); print(p.read_text() if p.exists() else 'null')"
+                )
+            )
+            if gate:
+                break
+            time.sleep(0.1)
+        assert gate, "Preparation barrier did not acquire ownership"
         leg["adjusted_departure_time"] = "2026-10-25T14:01:00Z"
         _, _, save_seconds = api.request(
             "PUT", f"/api/v2/missions/{mission['id']}/legs/{leg['id']}", data=leg
@@ -211,13 +246,18 @@ records=[]
 for path in Path('/proc').glob('[0-9]*/cmdline'):
  try:
   command=path.read_bytes()
-  if b'app.mission.slide_cache.worker' in command and b'-c' not in command.split(b'\\0'): records.append(_process_record(int(path.parent.name)))
+  if b'app.mission.slide_cache.worker' in command and b'-c' not in command.split(b'\\0'):
+   record=_process_record(int(path.parent.name))
+   if record: records.append(record)
  except OSError: pass
 print(json.dumps(records))
 """))
         leg["adjusted_departure_time"] = "2026-10-25T14:02:00Z"
         api.request(
             "PUT", f"/api/v2/missions/{mission['id']}/legs/{leg['id']}", data=leg
+        )
+        python(
+            "from pathlib import Path; Path('/tmp/background-save-gate.release').touch(); print('released')"
         )
         final = wait_ready()
         assert (
@@ -233,6 +273,11 @@ print(json.dumps(records))
             )
         )
         assert stopped
+        assert json.loads(
+            python(
+                f"from app.mission.exporter.customer_runtime import _alive; import json; print(json.dumps(not _alive({gate!r})))"
+            )
+        )
         summary["supersedingSave"] = {
             "saveSeconds": save_seconds,
             "oldWorkerReaped": stopped,

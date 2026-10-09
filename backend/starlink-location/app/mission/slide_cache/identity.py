@@ -26,8 +26,10 @@ def renderer_revision():
     root = Path(__file__).resolve().parents[1]
     paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     deployed = Path("/opt/customer-briefing/renderer")
-    local = root.parents[3] / "frontend/mission-planner/src/mission-export"
-    renderer = deployed if deployed.exists() else local
+    if deployed.exists():
+        renderer = deployed
+    else:
+        renderer = root.parents[3] / "frontend/mission-planner/src/mission-export"
     paths += list(renderer.rglob("*.mjs")) + list(renderer.rglob("*.css"))
     assets = Path("/opt/customer-briefing/assets")
     if assets.exists():

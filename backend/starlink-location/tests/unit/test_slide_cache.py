@@ -176,6 +176,30 @@ def test_local_css_changes_invalidate_renderer_revision(tmp_path, monkeypatch):
     assert identity.renderer_revision() != before
 
 
+def test_deployed_renderer_does_not_require_checkout_depth(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from app.mission.slide_cache import identity
+
+    renderer = tmp_path / "renderer"
+    renderer.mkdir()
+    css = renderer / "briefing.css"
+    css.write_text("header {color: red}")
+    monkeypatch.setattr(
+        identity, "__file__", "/app/app/mission/slide_cache/identity.py"
+    )
+    monkeypatch.setattr(
+        identity,
+        "Path",
+        lambda value: (
+            renderer if value == "/opt/customer-briefing/renderer" else Path(value)
+        ),
+    )
+    before = identity.renderer_revision()
+    css.write_text("header {color: blue}")
+    assert identity.renderer_revision() != before
+
+
 def test_shared_route_generated_pois_do_not_supersede_unchanged_leg():
     from app.mission.slide_cache.identity import leg_inputs
 
