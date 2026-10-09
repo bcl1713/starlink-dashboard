@@ -38,6 +38,9 @@ Task 10 pins process/container cleanup and recovery after interrupted commits.
 and adapt `app/mission/routes_v2.py` to delegate owned-plan replacements.
 Frontend create `src/components/planning/RevisionReview.tsx` and its test;
 extend services/planning.ts, usePlanning.ts, MissionDetailPage.tsx and ARReview.
+Modify `src/pages/LegDetailPage/LegHeader.tsx` and its tests to route managed
+**Update Route** through planning previews/acceptance; retain the legacy upload
+helper for unmanaged legs.
 
 **Interfaces:**
 
@@ -97,7 +100,11 @@ carry fabricated final executable legs from the browser.
       useDeleteLeg; component tests cover managed success, stale rejection and
       unmanaged deletion. Do not silently retry deletion with a newer revision.
       Test revision reorder/retirement rebuilding live order/display numbers
-      without changing stable IDs or archived provenance.
+      without changing stable IDs or archived provenance. Managed Update Route
+      tests cover preview, discrepancies/acknowledgment, cancellation, stale
+      revision and retained installed work. Accepting only replaces the draft
+      binding; reviewed save installs it. The existing button must not send a
+      managed file to the immediate legacy replacement helper.
 - [ ] **Step 5:** Commit `feat: reconcile itinerary and route revisions safely`.
 
 ## Task 9: Source closure, collision-safe archives and owned deletion
