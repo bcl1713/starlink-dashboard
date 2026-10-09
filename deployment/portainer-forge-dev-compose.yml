@@ -9,7 +9,9 @@ services:
     ports:
       - "${STARLINK_BIND_IP:?Set the Forge host IP}:18000:8000"
     restart: "no"
+    init: true
     environment:
+      STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED: ${STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED:-false}
       STARLINK_MODE: ${STARLINK_MODE:-simulation}
       SIMULATION_MODE: ${SIMULATION_MODE:-true}
       STARLINK_DISH_HOST: ${STARLINK_DISH_HOST:-192.168.100.1}
