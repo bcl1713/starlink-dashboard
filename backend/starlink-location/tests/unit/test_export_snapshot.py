@@ -823,9 +823,7 @@ def test_export_captures_material_x_changes_without_changing_legacy_events(
         for i in trial.intervals
         if i.start_time <= BASE + timedelta(minutes=40) < i.end_time
     )
-    assert [a.decisions[2].value, b.decisions[2].value] == (
-        ["Down", "Up"] if blocked_first else ["Up", "Down"]
-    )
+    assert [a.decisions[2].value, b.decisions[2].value] == ["Down", "Down"]
     blocked = a if blocked_first else b
     assert blocked.remaining_transports == ()
     assert blocked.posture == "Communications unavailable"

@@ -14,26 +14,6 @@ export const COLORS = {
   'Communications unavailable': '#b72e36',
   'Posture uncertain': '#dce2e8',
 };
-/** Pack actual font measurements without changing restriction time geometry. */
-export function positionRestrictionLabels(labels) {
-  const positions = [];
-  let edge = 280;
-  for (const label of labels) {
-    const left = Math.max(label.left, edge);
-    positions.push(left);
-    edge = left + label.width + 8;
-  }
-  edge = 1240;
-  for (let index = labels.length - 1; index >= 0; index--) {
-    positions[index] = Math.min(positions[index], edge - labels[index].width);
-    edge = positions[index] - 8;
-  }
-  if (positions.length && positions[0] < 280)
-    throw Object.assign(new Error('Restriction labels cannot fit'), {
-      code: 'overflow',
-    });
-  return positions;
-}
 export function renderTimeline(payload) {
   const start = Date.parse(payload.flight.startUtc),
     end = Date.parse(payload.flight.endUtc);
@@ -65,8 +45,6 @@ export function renderTimeline(payload) {
     'class="hero-label" data-svg-label'
   );
   for (const i of payload.intervals) {
-    const w = width(i),
-      px = x(i.startUtc);
     out += rect(
       i,
       68,
@@ -74,9 +52,18 @@ export function renderTimeline(payload) {
       COLORS[i.posture] || COLORS['Posture uncertain'],
       `data-posture="${escapeText(i.posture)}" data-interval-start="${i.startUtc}"`
     );
-    if (i.posture === 'Nominal' && w >= 90) {
+  }
+  const nominalGroups = [];
+  for (const i of payload.intervals) {
+    if (i.posture !== 'Nominal') continue;
+    const last = nominalGroups.at(-1);
+    if (last && last.endUtc === i.startUtc) last.endUtc = i.endUtc;
+    else nominalGroups.push({ ...i });
+  }
+  for (const i of nominalGroups) {
+    if (width(i) >= 110) {
       out += text(
-        px + w / 2,
+        x(i.startUtc) + width(i) / 2,
         93,
         'Nominal',
         'text-anchor="middle" class="band-label light" data-svg-label'
@@ -152,15 +139,6 @@ export function renderTimeline(payload) {
   }
   for (const i of restrictions) {
     out += rect(i, 202, 18, '#899db9', 'data-restriction');
-    const a = x(i.startUtc),
-      w = width(i),
-      inside = w >= 260;
-    out += text(
-      inside ? a + w / 2 : a < 700 ? a + w + 8 : a - 8,
-      216,
-      i.label,
-      `text-anchor="${inside ? 'middle' : a < 700 ? 'start' : 'end'}" class="restriction-label" data-restriction-label data-svg-label`
-    );
   }
   const localDateClock = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',

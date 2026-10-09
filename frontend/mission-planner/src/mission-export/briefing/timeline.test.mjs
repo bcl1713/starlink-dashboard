@@ -51,8 +51,8 @@ test('exact red geometry', async () => {
   );
   assert.ok(red);
   assert.equal(Number(red[1]) / 960, 5 / 480);
-  assert.match(svg, /Takeoff SOF/);
-  assert.match(svg, /Landing SOF/);
+  assert.doesNotMatch(svg, /Takeoff SOF|Landing SOF|data-restriction-label/);
+  assert.equal((svg.match(/data-restriction width=/g) || []).length, 2);
   assert.doesNotMatch(svg, /data-callout/);
 });
 test('unknown has neutral confirmed capability', async () => {
@@ -66,7 +66,7 @@ test('unknown has neutral confirmed capability', async () => {
   assert.doesNotMatch(svg, /fill="#b72e36"/);
   assert.match(svg, />\?<\/text>/);
 });
-test('short-flight overlapping SOF keeps its full-width label inside the exact restriction band', async () => {
+test('short-flight overlapping SOF retains its exact band without floating labels', async () => {
   const p = structuredClone(payload);
   p.flight.endUtc = '2026-10-25T14:10:00Z';
   p.intervals = [
@@ -79,13 +79,8 @@ test('short-flight overlapping SOF keeps its full-width label inside the exact r
     },
   ];
   const svg = (await renderer())(p);
-  const label = svg.match(
-    /<text x="([^"]+)" y="216" ([^>]+)>Takeoff SOF \+ Landing SOF<\/text>/
-  );
-  assert.ok(label);
-  assert.ok(Number(label[1]) > 280 && Number(label[1]) < 1240);
-  assert.match(label[2], /text-anchor="middle"/);
   assert.match(svg, /data-restriction width="960"/);
+  assert.doesNotMatch(svg, /Takeoff SOF|Landing SOF|data-restriction-label/);
 });
 test('fall-back axis distinguishes repeated Eastern clock hours without changing geometry', async () => {
   const p = structuredClone(payload);
@@ -167,7 +162,7 @@ test('narrow incomplete intervals expose one and zero confirmed without definiti
   assert.doesNotMatch(svg, /fill="#b72e36"/);
 });
 
-test('separated refueling windows retain exact bands with readable measured labels', async () => {
+test('separated refueling windows retain exact bands and quiet gaps without floating labels', async () => {
   const p = structuredClone(payload);
   p.flight = {
     startUtc: '2026-10-29T14:00:00Z',
@@ -187,63 +182,44 @@ test('separated refueling windows retain exact bands with readable measured labe
     decisions: ['Up', 'Up', 'Up'],
   }));
   const svg = (await renderer())(p);
-  const labels = [
-    ...svg.matchAll(/<text x="([^"]+)" y="216" ([^>]+)>Air refueling<\/text>/g),
+  const bands = [
+    ...svg.matchAll(
+      /<rect x="([^"]+)" y="202" data-restriction width="([^"]+)"/g
+    ),
   ];
-  assert.equal(labels.length, 2);
-  // Reproduce the 92px DejaVu labels measured in the production browser.
-  const { positionRestrictionLabels } = await import('./timeline.mjs');
-  const positions = positionRestrictionLabels(
-    labels.map((label) => ({
-      left:
-        Number(label[1]) - (label[2].includes('text-anchor="end"') ? 92 : 0),
-      width: 92,
-    }))
+  assert.equal(bands.length, 2);
+  const duration = (16 * 3600 + 10 * 60 + 10) * 1000;
+  assert.equal(
+    Number(bands[0][1]),
+    280 + (((4 * 3600 + 18 * 60 + 29) * 1000) / duration) * 960
   );
-  assert.ok(positions[1] - positions[0] >= 100);
-  assert.equal((svg.match(/data-restriction width=/g) || []).length, 2);
+  assert.equal(
+    Number(bands[0][2]),
+    (((3600 + 32 * 60 + 3) * 1000) / duration) * 960
+  );
+  assert.doesNotMatch(svg, /Air refueling|data-restriction-label/);
 });
 
-test('measured restriction labels keep separation near landing without shrinking', async () => {
-  const { positionRestrictionLabels } = await import('./timeline.mjs');
-  assert.equal(typeof positionRestrictionLabels, 'function');
+test('continuous nominal posture gets one centered label across restriction changes', async () => {
+  const p = structuredClone(payload);
+  p.flight.endUtc = '2026-10-25T14:40:00Z';
+  p.intervals = [
+    ['2026-10-25T14:00:00Z', '2026-10-25T14:10:00Z', ['Takeoff SOF']],
+    ['2026-10-25T14:10:00Z', '2026-10-25T14:30:00Z', ['Air refueling']],
+    ['2026-10-25T14:30:00Z', '2026-10-25T14:40:00Z', ['Landing SOF']],
+  ].map(([startUtc, endUtc, restrictionLabels]) => ({
+    startUtc,
+    endUtc,
+    restrictionLabels,
+    decisions: ['Up', 'Up', 'Up'],
+    posture: 'Nominal',
+  }));
+  const svg = (await renderer())(p);
   const labels = [
-    { left: 1074, width: 92 },
-    { left: 1105, width: 97 },
+    ...svg.matchAll(/<text x="([^"]+)" y="93"[^>]*>Nominal<\/text>/g),
   ];
-  const positions = positionRestrictionLabels(labels);
-  assert.ok(positions[1] - (positions[0] + 92) >= 8);
-  assert.ok(positions[0] >= 280);
-  assert.ok(positions[1] + 97 <= 1240);
-  assert.deepEqual(labels, [
-    { left: 1074, width: 92 },
-    { left: 1105, width: 97 },
-  ]);
-});
-
-test('restriction labels retain measured positions when already clear', async () => {
-  const { positionRestrictionLabels } = await import('./timeline.mjs');
-  assert.equal(typeof positionRestrictionLabels, 'function');
-  assert.deepEqual(
-    positionRestrictionLabels([
-      { left: 320, width: 89 },
-      { left: 535, width: 92 },
-      { left: 800, width: 92 },
-      { left: 1110, width: 97 },
-    ]),
-    [320, 535, 800, 1110]
-  );
-});
-
-test('restriction labels reject a lane too crowded for their full measured widths', async () => {
-  const { positionRestrictionLabels } = await import('./timeline.mjs');
-  assert.equal(typeof positionRestrictionLabels, 'function');
-  assert.throws(
-    () =>
-      positionRestrictionLabels([
-        { left: 280, width: 600 },
-        { left: 600, width: 600 },
-      ]),
-    (e) => e.code === 'overflow'
-  );
+  assert.equal(labels.length, 1);
+  assert.equal(Number(labels[0][1]), 760);
+  assert.equal((svg.match(/data-restriction width=/g) || []).length, 3);
+  assert.equal((svg.match(/data-posture="Nominal"/g) || []).length, 3);
 });

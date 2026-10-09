@@ -140,7 +140,11 @@ test('mission continuation repeats identity clocks and caveat without map or tim
   assert.equal((html.match(/class="briefing-page/g) || []).length, 2);
   assert.equal((html.match(/class="timeline"/g) || []).length, 1);
   assert.equal((html.match(/class="map-card"/g) || []).length, 1);
-  for (const text of ['Assessment incomplete', 'not a throughput guarantee'])
+  for (const text of [
+    'Assessment incomplete',
+    'All times are approximate.',
+    'not guaranteed',
+  ])
     assert.equal(html.split(text).length - 1, 2, text);
   assert.equal(
     (html.match(/<td class="et" data-fit>≈ 01:30 EDT–01:30 EST<\/td>/g) || [])

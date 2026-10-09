@@ -34,10 +34,7 @@ for leg in evidence["legs"]:
         canonical[leg["legId"], row["id"]] = list(
             display_row(
                 {
-                    "et": ("≈ " if clock["approximate"] else "")
-                    + clock["start"]
-                    + "–"
-                    + clock["end"],
+                    "et": clock["start"] + "–" + clock["end"],
                     "impact": row["impact"],
                     "remaining": row["remaining"],
                     "posture": row["posture"],

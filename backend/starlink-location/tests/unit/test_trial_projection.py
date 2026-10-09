@@ -45,17 +45,17 @@ def evidence(kind, transport="X", reason="", **metadata):
         (
             "degraded",
             [("x_azimuth_violation", "X", "X-Ku Conflict az=180° el=35°", {})],
-            "Up",
+            "Down",
         ),
         (
             "available",
             [("x_azimuth_violation", "X", "X-Ku Conflict az=180° el=35°", {})],
-            "Up",
+            "Down",
         ),
-        ("degraded", [("x_transition_start", "X", "transition", {})], "?"),
-        ("degraded", [("manual_aar_track_start", "X", "Manual AR Track", {})], "?"),
-        ("degraded", [("x_azimuth_violation", "X", "X-AAR Conflict", {})], "?"),
-        ("degraded", [("x_azimuth_violation", "X", "X azimuth conflict", {})], "?"),
+        ("degraded", [("x_transition_start", "X", "transition", {})], "Down"),
+        ("degraded", [("manual_aar_track_start", "X", "Manual AR Track", {})], "Down"),
+        ("degraded", [("x_azimuth_violation", "X", "X-AAR Conflict", {})], "Down"),
+        ("degraded", [("x_azimuth_violation", "X", "X azimuth conflict", {})], "Down"),
         ("degraded", [("ka_transition", "Ka", "Ka transition", {})], "?"),
         (
             "available",
@@ -74,7 +74,7 @@ def evidence(kind, transport="X", reason="", **metadata):
                 ("x_azimuth_violation", "X", "X-Ku Conflict", {}),
                 ("x_transition_start", "X", "transition", {}),
             ],
-            "?",
+            "Down",
         ),
         (
             "degraded",
@@ -117,7 +117,9 @@ def test_reason_specific_usability(state, sources, expected):
     assert decision.rule_id
     assert set(decision.source_ids) == {s.source_id for s in records}
     if any("X-Ku" in s.reason for s in records):
-        assert decision.limitation  # Text is preserved even when lane is plain Up.
+        assert (
+            decision.limitation
+        )  # Conflict provenance is preserved with the Down decision.
 
 
 def contiguous(leg):
@@ -286,19 +288,22 @@ def test_resolved_ar_and_missing_timing_note():
     assert any(s.source_id == "ar-unresolved" for s in leg.sources)
 
 
-def test_two_down_plus_unknown_and_concurrency_materiality():
+def test_conflict_and_transition_reduce_remaining_capability():
     from app.mission.exporter.trial_projection import project_trial_leg
 
     leg = project_trial_leg(snapshot(fixture("f06")))
     contiguous(leg)
     pure = next(i for i in leg.intervals if i.start_time == utc("2026-10-07T08:20:00Z"))
-    assert pure.decisions[2].value == "Up" and pure.posture == "Nominal"
+    assert pure.decisions[2].value == "Down" and pure.posture == "Degraded"
     assert pure.limitations and pure in leg.coordination_rows
     mixed = next(
         i for i in leg.intervals if i.start_time == utc("2026-10-07T08:40:00Z")
     )
-    assert [d.value for d in mixed.decisions] == ["Down", "Down", "?"]
-    assert mixed.posture == "Posture uncertain" and mixed.remaining_transports == ()
+    assert [d.value for d in mixed.decisions] == ["Down", "Down", "Down"]
+    assert (
+        mixed.posture == "Communications unavailable"
+        and mixed.remaining_transports == ()
+    )
     assert any(s.source_id == "transition-saved" for s in leg.sources)
     assert leg.quiet_summary is None
 
@@ -563,7 +568,7 @@ def test_uncovered_predictions_cannot_prove_geometry_outage():
 
 
 @pytest.mark.parametrize("normalized_state", ["available", "degraded"])
-def test_cached_concurrency_requires_no_conflicting_x_reason(normalized_state):
+def test_cached_starshield_conflict_proves_down_despite_other_warning(normalized_state):
     from app.mission.exporter.trial_projection import project_trial_leg
 
     data = fixture("f10")
@@ -571,12 +576,12 @@ def test_cached_concurrency_requires_no_conflicting_x_reason(normalized_state):
     segment["x_state"] = "available"  # Normalizer's usable X-Ku semantics.
     segment["metadata"]["source_reasons"] = ["X-Ku Conflict az=180° el=35°"]
     leg = project_trial_leg(snapshot(data))
-    assert all(i.decisions[2].value == "Up" and i.limitations for i in leg.intervals)
+    assert all(i.decisions[2].value == "Down" and i.limitations for i in leg.intervals)
     assert all(i.posture == "Posture uncertain" for i in leg.intervals)
     segment["x_state"] = normalized_state
     segment["metadata"]["source_reasons"].append("Unexpected X warning")
     ambiguous = project_trial_leg(snapshot(data))
-    assert all(i.decisions[2].value == "?" for i in ambiguous.intervals)
+    assert all(i.decisions[2].value == "Down" for i in ambiguous.intervals)
 
 
 @pytest.mark.parametrize("state", ["available", "offline"])
@@ -680,3 +685,88 @@ def test_independent_x_clear_keeps_other_constraint_active():
         if i.start_time <= utc("2026-10-25T16:50:00Z") < i.end_time
     )
     assert restored.decisions[2].value == "Up"
+
+
+@pytest.mark.parametrize(
+    "kind, reason",
+    [
+        ("x_transition_start", "X Transition to X-2"),
+        ("manual_aar_track_start", "Manual AR Track: AR-1"),
+        ("x_azimuth_violation", "X-AAR Conflict az=90° el=35°"),
+        ("x_azimuth_violation", "X-Ku Conflict az=180° el=35°"),
+        ("x_azimuth_violation", "X azimuth conflict (X-2, forward, 20° relative)"),
+    ],
+)
+def test_known_x_downtime_overrides_up_basis_but_stale_condition_does_not(kind, reason):
+    from app.mission.exporter.trial_projection import classify_transport
+
+    basis = evidence("availability_basis", independent_usability="Up")
+    condition = evidence(kind, reason=reason)
+    assert (
+        classify_transport(TransportState.AVAILABLE, (basis, condition)).value == "Down"
+    )
+    stale = evidence(kind, reason=reason, stale=True)
+    assert classify_transport(TransportState.AVAILABLE, (basis, stale)).value == "Up"
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "X Transition to X-2",
+        "Manual AR Track: AR-1",
+        "X-AAR Conflict az=90° el=35°",
+        "X azimuth conflict (X-2, forward, 20° relative)",
+    ],
+)
+def test_cached_known_x_conditions_prove_down(reason):
+    from app.mission.exporter.trial_projection import project_trial_leg
+
+    data = fixture("f10")
+    segment = data["timeline"]["segments"][0]
+    segment["x_state"] = "degraded"
+    segment["metadata"]["source_reasons"] = [reason]
+    leg = project_trial_leg(snapshot(data))
+    assert all(i.decisions[2].value == "Down" for i in leg.intervals)
+
+
+@pytest.mark.parametrize(
+    "start_kind, end_kind, reason",
+    [
+        ("x_transition_start", "x_transition_end", "X Transition to X-2"),
+        ("manual_aar_track_start", "manual_aar_track_end", "Manual AR Track: AR-1"),
+        ("x_azimuth_violation", "x_azimuth_violation", "X-AAR Conflict"),
+        ("x_azimuth_violation", "x_azimuth_violation", "X-Ku Conflict"),
+    ],
+)
+def test_x_down_windows_end_at_the_exact_clear_event(start_kind, end_kind, reason):
+    from app.mission.exporter.trial_projection import project_trial_leg
+
+    data = fixture("f01")
+    data["source_records"] += [
+        {
+            "source_id": "active",
+            "source_type": start_kind,
+            "transport": "X",
+            "timestamp": "2026-10-07T09:00:29Z",
+            "severity": "warning",
+            "reason": reason,
+            "metadata": {"transition_id": "swap", "track_id": "ar"},
+        },
+        {
+            "source_id": "clear",
+            "source_type": end_kind,
+            "transport": "X",
+            "timestamp": "2026-10-07T09:10:31Z",
+            "severity": "info",
+            "reason": "Condition cleared",
+            "metadata": {"transition_id": "swap", "track_id": "ar"},
+        },
+    ]
+    leg = project_trial_leg(snapshot(data))
+    down = [i for i in leg.intervals if i.decisions[2].value == "Down"]
+    assert [(i.start_time, i.end_time) for i in down] == [
+        (utc("2026-10-07T09:00:29Z"), utc("2026-10-07T09:10:31Z"))
+    ]
+    assert down[0].posture == "Degraded"
+    assert down[0].remaining_transports == ("Commercial Ka", "Starshield")
+    assert all(i.decisions[2].value == "Up" for i in leg.intervals if i not in down)

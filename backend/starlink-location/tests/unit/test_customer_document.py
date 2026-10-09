@@ -239,3 +239,21 @@ def test_mission_fixture_material_rows_and_per_leg_flight_axes(name):
             a["flight"]["endUtc"] < b["flight"]["startUtc"]
             for a, b in zip(payload["legs"], payload["legs"][1:])
         )
+
+
+def test_rounded_customer_times_omit_marks_without_losing_exact_bounds():
+    captured, trial, view = inputs()
+    first = view.rows[0]
+    start = first.start_time.replace(second=29)
+    from app.mission.exporter.customer_clocks import format_customer_range
+
+    row = replace(
+        first,
+        start_time=start,
+        clock=format_customer_range(start, first.end_time, trial.utc_bounds[0]),
+    )
+    payload = build(captured, replace(view, rows=(row,)), trial)
+    assert row.clock.approximate is True
+    assert payload["rows"][0]["et"] == "10:00 ET–10:15 ET"
+    assert payload["rows"][0]["displayCells"][0] == "10:00–10:15"
+    assert payload["rows"][0]["startUtc"] == "2026-10-25T14:00:29Z"

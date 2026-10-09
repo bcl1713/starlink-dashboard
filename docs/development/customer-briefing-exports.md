@@ -11,9 +11,14 @@ separate decision from shipping the default-off implementation.
 
 When enabled, one immutable snapshot feeds both legacy exports and the customer
 document. The PDF contains ordered leg pages and measured row continuations,
-with a ceiling of three pages per leg. Times, offsets, seconds, approximation
-marks, uncertainty, and restriction semantics come from the canonical
-projection. The renderer does not classify availability or merge ground gaps.
+with a ceiling of three pages per leg. Times, offsets, seconds, uncertainty, and
+restriction semantics come from the canonical projection. Customer tables omit
+approximation marks; the footer covers approximate times. Exact UTC bounds and
+rounding flags stay in evidence. SOF / AR bands retain exact window geometry,
+with event details in the table. Active X-band transitions, manual AR tracks,
+and conflicts with AR or Starshield show X-band Down; missing or stale
+prerequisites remain uncertain. The renderer does not classify availability or
+merge ground gaps.
 
 ## Download contract
 
