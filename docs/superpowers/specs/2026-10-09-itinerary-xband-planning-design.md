@@ -13,12 +13,12 @@ Mission planners should upload an itinerary, attach each leg's KML, and review
 automatically identified air-refueling (AR) windows and proposed X-band swaps.
 Success means less manual entry, fewer predicted X-band unavailable minutes,
 clear explanations of remaining gaps, and reliable preservation of operator
-choices. Proposals are planning estimates under the configured constraints.
+choices. Starshield is preferred whenever usable; X-band yields in conflict
+areas unless another permitted satellite avoids the conflict. Proposals are
+planning estimates under the configured constraints.
 
-The selected approach is itinerary-first creation with independent leg review.
-Requiring every KML before planning delays useful feedback. Importing files in
-an arbitrary sequence makes leg assignment and revision reconciliation harder.
-The existing manual mission creation and mission ZIP import remain available.
+Use itinerary-first creation with independent leg review. Existing manual
+mission creation and mission ZIP import remain available.
 
 ## User workflow
 
@@ -79,10 +79,10 @@ exclusion requires a note. Leg 2 in the sample explicitly shows no listed ARs.
 
 X-band review shows the initial satellite, ordered swaps, swap locations and UTC
 times, degraded intervals, reason codes, and remaining constraints. Show
-predicted X-band unavailable minutes, swap count, longest unavailable interval,
-and periods with no usable backup transport. Compare the proposal with the
-current draft; on the first run use the best permitted constant-satellite plan
-as the baseline. A baseline is not installed automatically.
+**X-band outage under Starshield preference**, swap count, longest outage, and
+periods with no usable backup transport. Compare the proposal with the current
+draft; on the first run use the best permitted constant-satellite plan as the
+baseline. A baseline is not installed automatically.
 
 Every proposal identifies its permitted satellites, constraints, timing and
 altitude assumptions, model version, and resolution. If constraints prevent
@@ -138,7 +138,7 @@ as approximate geometric heights, expose that assumption and conversion. Within
 an AR span use the confirmed AR height when geometrically usable; otherwise use
 valid route height, then the existing documented cruise fallback. Record every
 fallback. Optimizer, map, timeline, and exports use the same chosen height
-profile. A conservative planning margin is not a measured obstruction.
+profile.
 
 ## Satellite proposal and optimization
 
@@ -149,34 +149,31 @@ permitted satellite set before the first run; initially preselect configured
 X-band satellites with valid positions and label access as operator-confirmed.
 Orbital visibility does not establish terminal compatibility or service access.
 
-For each permitted satellite, evaluate aircraft-relative azimuth, simultaneous
-normal and AR exclusions, elevation, existing independent AR overlays, and
-transition/takeoff/landing buffers against the effective timed route. Existing
-defaults are normal exclusion 135–225 degrees, AR exclusion 315–45 degrees,
-minimum elevation 10 degrees, and swap degradation of 15 minutes on each side.
-Read these from shared configuration rather than duplicating constants.
+The
+[required planning contracts](2026-10-09-itinerary-xband-planning-contracts.md)
+are part of this spec. They define the Starshield preference policy, exact
+outage predicate, common evaluation boundaries, interval conventions, route
+ownership, replacement recovery, and package coverage.
 
-Optimize each leg independently over a deterministic time grid using the
-existing 60-second cadence plus route, AR, outage, and pinned-swap boundaries.
-Use a shortest-path/dynamic-programming search with sufficient state to account
-for the complete swap buffer, not an instantaneous highest-elevation choice.
-Proposed swaps must have their full buffer within the leg, and consecutive
-generated swap buffers may touch but not overlap. Existing manually overlapping
-swaps remain editable and are scored by their combined unavailable interval.
+For each permitted satellite evaluate the effective timed route using the shared
+constraint evaluator. Existing defaults are normal conflict 135–225 degrees, AR
+exclusion 315–45 degrees, minimum elevation 10 degrees, and swap degradation of
+15 minutes on each side. Read these from shared configuration. Takeoff and
+landing safety advisories remain visible but do not alone count as X outages.
 
-The objective is lexicographic: minimize the union of predicted X-band
-unavailable seconds, then swap count, then stable satellite ID/time ordering.
-Never double-count overlapping causes. Report cross-transport gaps separately
-using canonical call-availability policy, including X/Ku conflict semantics; do
-not assume independently available transports can always operate together. Ka/Ku
-allocation and minimizing total communications downtime are not additional
-optimization objectives in this version.
+Optimize each leg independently with a shortest-path/dynamic-programming search
+that accounts for the complete swap buffer and the shared evaluation grid.
+Generated swaps have their full buffer within the leg; consecutive generated
+buffers may touch but not overlap. Existing manually overlapping swaps remain
+editable and are scored by the union of their outage intervals.
 
-Validate the winning schedule through canonical timeline preparation and report
-its actual modeled cost before offering it. Describe optimality only within the
-permitted set, configured constraints, and stated search grid. Enforce a
-30-second computation deadline; on timeout return failure rather than a partial
-plan labeled optimal. Calculation can be retried without reuploading the route.
+Minimize Starshield-preference X outage seconds, then swap count, then stable
+satellite ID/time ordering. Report backup gaps using the same operating policy.
+Ka/Ku allocation and total communications downtime are not extra objectives.
+Canonical validation must reproduce the winning cost exactly; disagreement is a
+computation failure, not a proposal to apply. Describe optimality within the
+permitted set, constraints, and stated candidate grid. A 30-second computation
+deadline returns failure rather than a partial optimum; retry needs no reupload.
 
 Geometry and warnings are predictions from the existing geostationary model.
 Live RF interference, airframe/antenna masking, terrain, pitch/roll, tanker
@@ -233,16 +230,19 @@ conflicts return 409, invalid inputs 422, and unavailable computation 503.
 Planning identity includes effective route/timing/altitude, ARs, manual
 overlays, permitted satellites and positions, constraints, locks, relevant
 outage policy, and algorithm version. Late results cannot replace newer drafts.
-Reload can retrieve persisted proposals; retries are idempotent. Reject changes
-to active legs until deactivation under the existing global activation/mission
+Reload can retrieve persisted proposals; retries are idempotent. Include the
+persisted Starshield preference policy in planning identity. Reject changes to
+active legs until deactivation under the existing global activation/mission
 locks.
 
 Preserve source PDFs in mission-owned storage, not temporary upload paths.
 Validate PDF uploads with a 10 MiB limit; preserve existing KML limits. Parse
-with a 10-second deadline and remove failed staging artifacts. ZIP export/import
-round-trips the manifest, PDF, review provenance, anchors, and locks; missing
-new fields remain backward compatible. Imported reviews require revalidation
-against available route and satellite inputs before showing Reviewed.
+with a 10-second deadline and remove failed staging artifacts. Route bindings
+use mission-owned immutable IDs; imports remap collisions without overwriting
+another mission's resources. Packages and dependency snapshots include draft,
+reviewed, retired, and retained prior-route KMLs as specified in the contracts.
+Missing new fields remain backward compatible. Imported reviews require
+revalidation against available inputs before showing Reviewed.
 
 ## Itinerary revisions and recovery
 
@@ -257,6 +257,10 @@ review. Added legs await KML; removed legs remain explicitly retired with their
 previous work retained. A lower revision needs explicit override; identical
 content is a no-op. Validate the complete change set before committing it, and
 reject a revision affecting an active leg before any mutation.
+
+Replacement KMLs use the staged recovery contract: retain the previous route and
+plan, preserve departure adjustments, and expose unresolved AR/lock anchors for
+correction. Do not reuse the legacy destructive replacement behavior unchanged.
 
 ## Acceptance and delivery
 
@@ -280,7 +284,9 @@ shifts; altitude assumptions; and unavailable configured satellites. Optimizer
 tests compare tiny cases with exhaustive enumeration, include swaps whose
 buffers erase their benefit, unavoidable gaps, deterministic ties, and locks.
 Integration tests cover stale results, atomic reviewed saves, inactive imports,
-revision conflicts, retry cleanup, and metadata/PDF package round-trips.
+revision conflicts, retry cleanup, and complete draft/retired package
+round-trips. The contracts add policy, exact-boundary, collision, and
+replacement tests.
 
 Rendered browser acceptance follows itinerary confirmation through per-leg KML
 upload, AR correction, proposal comparison, manual locks, re-optimization,
@@ -288,7 +294,5 @@ reviewed save, next-leg upload, reload/resume, and revision reconciliation.
 Include keyboard use, accessible errors, mobile review, and failure recovery.
 Use isolated projects and bounded runners under the workspace lifecycle rules.
 
-Implementation planning should sequence import/review persistence and matching,
-then shared constraint evaluation and optimization, then revision/package
-compatibility and complete browser acceptance. This document is the design
-review artifact; implementation planning follows approval of the written spec.
+Implementation planning follows approval of both design documents: import and
+matching, optimization, revision/package compatibility, and browser acceptance.
