@@ -180,8 +180,8 @@ export function renderTimeline(payload) {
     const t = tickTimes[h];
     const px = 280 + (960 * h) / 8;
     out += `<path d="M${px} 224v5" stroke="#83909e"/>`;
-    // Keep every exact tick, with room for both seconds and offset identity.
-    if (showZone && seconds && h % 2) continue;
+    // Keep every exact tick, with room for explicit offset identity.
+    if (showZone && h % 2) continue;
     out += text(
       px,
       244,

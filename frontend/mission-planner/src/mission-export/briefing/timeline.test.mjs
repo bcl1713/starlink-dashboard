@@ -97,7 +97,8 @@ test('fall-back axis distinguishes repeated Eastern clock hours without changing
   const svg = (await renderer())(p);
   assert.match(svg, />01:00 EDT<\/text>/);
   assert.match(svg, />01:00 EST<\/text>/);
-  assert.equal((svg.match(/class="axis"/g) || []).length, 9);
+  assert.equal((svg.match(/class="axis"/g) || []).length, 5);
+  assert.equal((svg.match(/M\d+ 224v5/g) || []).length, 9);
   assert.match(svg, /data-posture="Nominal"[^>]*width="960"/);
 });
 test('fractional-minute short-flight ticks retain seconds at their exact positions', async () => {

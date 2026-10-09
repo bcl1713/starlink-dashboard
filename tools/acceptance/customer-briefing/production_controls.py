@@ -475,7 +475,7 @@ def qualify(owner):
     audit_code = (tools / "production_runtime_audit.py").read_text()
     audit_reports = []
 
-    def audit(label, baseline=None, legacy_disabled=False, renders=0, cancelled=False):
+    def audit(label, baseline=None, legacy_fallback=False, renders=0, cancelled=False):
         result = json.loads(backend_python(audit_code).splitlines()[-1])
         if owner.ownership.get("observer") and not result["observerAlive"]:
             raise ValueError("Owned runtime observer is not alive: " + label)
@@ -488,9 +488,9 @@ def qualify(owner):
                 != baseline["sourceHashes"].get(name)
             )
             result["changedSources"] = changed
-            # The unmodified disabled legacy path republishes generated POIs.
+            # The original disabled/busy legacy path republishes generated POIs.
             # Record that behavior; snapshot-fed enabled exports must change nothing.
-            if changed and (not legacy_disabled or changed != ["/data/pois.json"]):
+            if changed and (not legacy_fallback or changed != ["/data/pois.json"]):
                 raise ValueError(
                     "Export changed persisted inputs: " + label + ": " + str(changed)
                 )
@@ -771,6 +771,7 @@ def qualify(owner):
         audit(
             "after-lifecycle-" + mode,
             baseline,
+            legacy_fallback=mode == "concurrent",
             renders=1,
             cancelled=mode != "concurrent",
         )
