@@ -104,10 +104,9 @@ def test_export_mission_package_returns_file_object(mock_load_mission, mock_miss
 
 
 @patch("app.mission.package.__main__.load_mission_v2")
-@patch("app.mission.package.__main__.generate_mission_combined_pptx")
 @patch("app.mission.package.__main__.generate_mission_combined_csv")
 def test_export_mission_package_uses_temp_files_for_mission_exports(
-    mock_gen_csv, mock_gen_pptx, mock_load_mission, mock_mission
+    mock_gen_csv, mock_load_mission, mock_mission
 ):
     mock_load_mission.return_value = mock_mission
     mock_route_manager = MagicMock()
@@ -118,13 +117,7 @@ def test_export_mission_package_uses_temp_files_for_mission_exports(
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("dummy csv content")
 
-    def pptx_side_effect(mission, output_path=None, **kwargs):
-        if output_path:
-            with open(output_path, "wb") as f:
-                f.write(b"dummy pptx content")
-
     mock_gen_csv.side_effect = csv_side_effect
-    mock_gen_pptx.side_effect = pptx_side_effect
 
     zip_file = export_mission_package("mission1", mock_route_manager, mock_poi_manager)
 
@@ -133,21 +126,15 @@ def test_export_mission_package_uses_temp_files_for_mission_exports(
 
         with zipfile.ZipFile(zip_file, "r") as zf:
             assert "exports/mission/mission-timeline.csv" in zf.namelist()
-            assert "exports/mission/mission-slides.pptx" in zf.namelist()
+            assert not any(name.endswith(".pptx") for name in zf.namelist())
             assert "exports/mission/mission-timeline.xlsx" not in zf.namelist()
             assert (
                 zf.read("exports/mission/mission-timeline.csv") == b"dummy csv content"
             )
-            assert (
-                zf.read("exports/mission/mission-slides.pptx") == b"dummy pptx content"
-            )
 
         assert mock_gen_csv.called
-        assert mock_gen_pptx.called
         csv_call_args = mock_gen_csv.call_args
-        pptx_call_args = mock_gen_pptx.call_args
         assert "output_path" in csv_call_args.kwargs or len(csv_call_args.args) > 1
-        assert "output_path" in pptx_call_args.kwargs or len(pptx_call_args.args) > 1
 
     finally:
         zip_file.close()

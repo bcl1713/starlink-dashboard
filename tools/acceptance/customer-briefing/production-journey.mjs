@@ -51,7 +51,7 @@ try {
   if (mode === "omitted") {
     await dialog
       .getByText(
-        "ZIP downloaded. Legacy documents are included; the customer PDF could not be included.",
+        "ZIP downloaded. Mission data and CSVs are included; the customer PDF could not be included.",
       )
       .waitFor();
     await page.waitForTimeout(2300);
@@ -67,7 +67,7 @@ try {
     if (
       await dialog
         .getByText(
-          "ZIP downloaded. Legacy documents are included; the customer PDF could not be included.",
+          "ZIP downloaded. Mission data and CSVs are included; the customer PDF could not be included.",
         )
         .count()
     )

@@ -78,7 +78,7 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
     mock_build.assert_called_once()
     mock_save.assert_not_called()
     mock_load.assert_not_called()
-    assert mock_generate.call_count == 2
+    assert mock_generate.call_count == 1
     assert all(
         call.kwargs["timeline"] is rebuilt_timeline
         for call in mock_generate.call_args_list

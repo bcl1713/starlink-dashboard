@@ -31,3 +31,4 @@ python-pptx>=0.6.21
 slowapi>=0.1.9
 timezonefinder
 reverse-geocoder
+pypdf>=6.0,<7

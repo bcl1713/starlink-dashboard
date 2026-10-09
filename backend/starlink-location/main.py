@@ -240,8 +240,16 @@ def initialize_aviation_weather_runtime() -> None:
     try:
         app.state.aviation_gfs_bridge = GfsBridge(
             store,
-            Path(os.environ.get("GFS_ARTIFACT_PATH", str(store.path.parent.parent / "gfs"))),
-            Path(os.environ.get("GFS_MAILBOX_PATH", str(store.path.parent.parent / "gfs-mailbox"))),
+            Path(
+                os.environ.get(
+                    "GFS_ARTIFACT_PATH", str(store.path.parent.parent / "gfs")
+                )
+            ),
+            Path(
+                os.environ.get(
+                    "GFS_MAILBOX_PATH", str(store.path.parent.parent / "gfs-mailbox")
+                )
+            ),
         )
     except Exception:  # noqa: BLE001 - optional GFS must preserve bulletin/core startup
         logger.warning_json("GFS bridge initialization unavailable", exc_info=True)
@@ -491,6 +499,16 @@ async def startup_event():
                 "Background update task disabled via STARLINK_DISABLE_BACKGROUND_TASKS"
             )
 
+        if (
+            _simulation_config.exports.customer_briefing_enabled
+            and _background_updates_enabled
+        ):
+            from app.mission.slide_cache.coordinator import start_runtime
+
+            app.state.customer_pdf_coordinator = start_runtime(
+                _route_manager, poi_manager
+            )
+
         logger.info_json("Starlink Location Backend ready")
     except (
         Exception
@@ -511,6 +529,9 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "customer_pdf_coordinator"):
+            await asyncio.to_thread(app.state.customer_pdf_coordinator.close)
+            del app.state.customer_pdf_coordinator
         if hasattr(app.state, "aviation_gfs_bridge"):
             try:
                 await app.state.aviation_gfs_bridge.aclose()

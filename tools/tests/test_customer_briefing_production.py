@@ -158,7 +158,7 @@ def test_export_proxy_allowance_preserves_other_routes_and_headers(damage):
         config = config.replace("[^/]+/export$", ".*")
     elif damage == "other-api":
         config = config.replace(
-            "location /api/ {", "location /api/ {\n        proxy_read_timeout 120s;"
+            "location /api/ {", "location /api/ {\n        proxy_read_timeout 660s;"
         )
     elif damage == "forwarding":
         config = config.replace(
@@ -166,12 +166,12 @@ def test_export_proxy_allowance_preserves_other_routes_and_headers(damage):
         )
     elif damage == "security":
         config = config.replace(
-            "proxy_read_timeout 120s;",
-            'proxy_read_timeout 120s;\n        add_header X-Control "lost inheritance";',
+            "proxy_read_timeout 660s;",
+            'proxy_read_timeout 660s;\n        add_header X-Control "lost inheritance";',
         )
     if damage == "none":
         receipt = controls().verify_export_proxy_config(config)
-        assert receipt["exportReadTimeoutSeconds"] == 120
+        assert receipt["exportReadTimeoutSeconds"] == 660
         assert receipt["otherRouteReadTimeoutSeconds"] == 60
         assert receipt["matchingRoutes"] and receipt["nonmatchingRoutes"]
     else:
@@ -250,8 +250,15 @@ def download_fixture(damage=None):
         "render": {
             "status": "success",
             "totalMs": 1234,
-            "launchCount": 1,
-            "sharedBrowser": True,
+            "launchCount": 0,
+            "sharedBrowser": False,
+            "mode": "cached-page-assembly",
+            "fragments": [
+                {
+                    "legId": "l",
+                    "render": {"launchCount": 1, "cleanup": {"success": True}},
+                }
+            ],
             "cleanup": {"success": True},
             "maps": {"l": {"inputDiagnostics": ["captured reason"]}},
             "pdfValidation": {"verified": True, "rows": [], "pageCount": 1},
@@ -260,7 +267,7 @@ def download_fixture(damage=None):
     }
     entries = {
         "mission.json": b'{"id":"m"}',
-        "exports/mission/mission-slides.pptx": b"legacy",
+        "exports/mission/mission-timeline.csv": b"csv",
     }
     entries[pdf_path] = pdf
     if damage != "half-pair":
@@ -338,7 +345,12 @@ def test_decode_fault_changes_only_real_render_proof_boundary(fault):
     value = fault_module()
     untouched = {"schemaVersion": 2, "missionId": "m", "legs": []}
     report = json.loads(download_fixture_evidence())
-    render = report["render"] | {"schemaVersion": 2, "snapshotFingerprint": "a" * 64}
+    render = report["render"] | {
+        "schemaVersion": 2,
+        "snapshotFingerprint": "a" * 64,
+        "sharedBrowser": True,
+        "launchCount": 1,
+    }
     serialized = json.dumps(render)
     restore = value.install(fault)
     try:

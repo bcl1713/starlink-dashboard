@@ -2,13 +2,14 @@
 
 import io
 import json
-import threading
+import sqlite3
 import zipfile
 from dataclasses import dataclass
 from typing import IO
 
+from pypdf.errors import PyPdfError
+
 from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
-from app.mission.exporter.snapshot import capture_export_snapshot
 
 from .__main__ import export_mission_package
 from .snapshot_export import build_snapshot_legacy_package
@@ -28,8 +29,9 @@ WARNING_CODES = frozenset(
         "busy",
     }
 )
-RENDER_SLOT = threading.BoundedSemaphore(1)
 EXPORT_ERRORS = (
+    sqlite3.Error,
+    PyPdfError,
     RuntimeError,
     ValueError,
     OSError,
@@ -64,13 +66,20 @@ class MissionPackageDownload:
     briefing: CustomerBriefingOutcome | None
 
 
-def render_customer_artifacts(snapshot, *, cancel):
-    # Keep DTOs independent of runtime initialization and browser dependencies.
-    from app.mission.exporter.customer_runtime import (
-        render_customer_artifacts as render,
-    )
+def get_prepared_package(mission_id, route_manager, poi_manager, *, cancel):
+    from app.mission.slide_cache.assembly import assemble_customer_pdf
+    from app.mission.slide_cache.prepared_export import await_prepared
 
-    return render(snapshot, cancel=cancel)
+    snapshot, records = await_prepared(
+        mission_id, route_manager, poi_manager, cancel=cancel
+    )
+    try:
+        outcome = assemble_customer_pdf(snapshot, records, cancel=cancel)
+    except ExportCancelled:
+        raise
+    except EXPORT_ERRORS:
+        outcome = CustomerBriefingOutcome("omitted", "runtime", None)
+    return snapshot, outcome
 
 
 def _publish_pair(stream, artifacts, cancel):
@@ -116,20 +125,12 @@ def build_mission_package_download(
             stream.close()
             check_cancelled(cancel)
         return MissionPackageDownload(stream, None)
-    if not RENDER_SLOT.acquire(blocking=False):
-        stream = export_mission_package(
-            mission_id, route_manager, poi_manager, cancel=cancel
-        )
-        if cancel.is_set():
-            stream.close()
-            check_cancelled(cancel)
-        return MissionPackageDownload(
-            stream, CustomerBriefingOutcome("omitted", "busy", None)
-        )
     stream = None
     try:
         try:
-            snapshot = capture_export_snapshot(mission_id, route_manager, poi_manager)
+            snapshot, outcome = get_prepared_package(
+                mission_id, route_manager, poi_manager, cancel=cancel
+            )
         except ExportCancelled:
             raise
         except EXPORT_ERRORS:
@@ -139,17 +140,10 @@ def build_mission_package_download(
             )
             check_cancelled(cancel)
             return MissionPackageDownload(
-                stream, CustomerBriefingOutcome("omitted", "snapshot", None)
+                stream, CustomerBriefingOutcome("omitted", "runtime", None)
             )
         check_cancelled(cancel)
         stream = build_snapshot_legacy_package(snapshot, cancel=cancel)
-        check_cancelled(cancel)
-        try:
-            outcome = render_customer_artifacts(snapshot, cancel=cancel)
-        except ExportCancelled:
-            raise
-        except EXPORT_ERRORS:
-            outcome = CustomerBriefingOutcome("omitted", "runtime", None)
         check_cancelled(cancel)
         if outcome.status != "included" or outcome.artifacts is None:
             code = (
@@ -165,9 +159,8 @@ def build_mission_package_download(
         except ExportCancelled:
             raise
         except EXPORT_ERRORS:
-            stream.close()
-            stream = build_snapshot_legacy_package(snapshot, cancel=cancel)
             check_cancelled(cancel)
+            stream.seek(0)
             return MissionPackageDownload(
                 stream, CustomerBriefingOutcome("omitted", "publication", None)
             )
@@ -180,5 +173,3 @@ def build_mission_package_download(
         if stream is not None:
             stream.close()
         raise
-    finally:
-        RENDER_SLOT.release()

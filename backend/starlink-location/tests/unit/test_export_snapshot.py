@@ -152,13 +152,7 @@ def test_enabled_package_builders_never_reread_after_capture(
         assert json.loads(archive.read("mission.json"))["name"] == "Captured mission"
         assert archive.read("routes/r.kml") == b"<kml>captured</kml>"
         assert b"Captured POI" in archive.read("pois/l-pois.json")
-        for name in (
-            "exports/legs/l/slides.pptx",
-            "exports/mission/mission-slides.pptx",
-        ):
-            text = _slide_text(archive.read(name))
-            assert "Captured" in text
-            assert "Later" not in text
+        assert not any(name.endswith(".pptx") for name in archive.namelist())
         assert b"1970" not in archive.read("exports/legs/l/timeline.csv")
     assert (
         build_customer_mission_document(captured)["snapshotFingerprint"]

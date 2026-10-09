@@ -187,187 +187,6 @@ def _write_mission_combined_csv(
             logger.error(f"Failed to include leg {leg.id} in combined CSV: {e}")
 
 
-def generate_mission_combined_pptx(
-    mission: Mission,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    output_path: str | None = None,
-    map_cache: dict[str, bytes] | None = None,
-    *,
-    snapshot=None,
-) -> bytes | None:
-    """Generate combined PPTX slides for entire mission.
-
-    Creates presentation with:
-    - Title slide (mission overview)
-    - All slides from each leg (map + timeline tables) - generated using shared pptx_builder module
-
-    This function has been refactored to use the shared pptx_builder module,
-    eliminating code duplication with exporter/__main__.py::generate_pptx_export().
-
-    Args:
-        map_cache: Optional cache for generated maps (route_id -> bytes)
-    """
-    import io
-
-    try:
-        from pptx import Presentation
-        from pptx.enum.text import PP_ALIGN
-        from pptx.util import Inches, Pt
-    except ImportError:
-        logger.error("python-pptx not installed")
-        return b""
-
-    # Import shared functions
-    from pathlib import Path
-
-    from app.mission.exporter.__main__ import _cover_metadata_line
-    from app.mission.exporter.pptx_builder import add_mission_slides_to_presentation
-    from app.mission.exporter.pptx_styling import (
-        TEXT_BLACK,
-        add_footer_bar,
-        add_header_bar,
-        add_logo,
-    )
-
-    prs = Presentation()
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.62)
-
-    # Logo path
-    logo_path = Path(__file__).parent.parent.joinpath("assets").joinpath("logo.png")
-
-    # Mission metadata
-    mission_id = mission.id
-    mission_name = mission.name
-    leg_count = len(mission.legs)
-
-    # Title slide with styling
-    blank_slide_layout = prs.slide_layouts[6]
-    title_slide = prs.slides.add_slide(blank_slide_layout)
-
-    # Add header and footer bars
-    add_header_bar(title_slide, 0, 0, 10, 0.15)
-    add_footer_bar(title_slide, 0, 5.47, 10, 0.15)
-
-    # Add logo if available
-    add_logo(title_slide, logo_path, 0.2, 0.02, 0.6, 0.6)
-
-    # Add mission title
-    title_box = title_slide.shapes.add_textbox(
-        Inches(1.5), Inches(2.0), Inches(7.0), Inches(1.0)
-    )
-    text_frame = title_box.text_frame
-    text_frame.text = mission_name
-
-    paragraph = text_frame.paragraphs[0]
-    paragraph.alignment = PP_ALIGN.CENTER
-    paragraph.font.size = Pt(28)
-    paragraph.font.bold = True
-    paragraph.font.color.rgb = TEXT_BLACK
-
-    # Add mission ID
-    id_box = title_slide.shapes.add_textbox(
-        Inches(1.5), Inches(3.0), Inches(7.0), Inches(0.5)
-    )
-    id_frame = id_box.text_frame
-    id_frame.text = f"Mission ID: {mission_id}"
-
-    id_paragraph = id_frame.paragraphs[0]
-    id_paragraph.alignment = PP_ALIGN.CENTER
-    id_paragraph.font.size = Pt(14)
-    id_paragraph.font.color.rgb = TEXT_BLACK
-
-    # Add leg count and mission metadata
-    info_box = title_slide.shapes.add_textbox(
-        Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
-    )
-    info_frame = info_box.text_frame
-    info_frame.text = _cover_metadata_line(
-        mission, leg_count, **_export_kwargs(snapshot)
-    )
-
-    info_paragraph = info_frame.paragraphs[0]
-    info_paragraph.alignment = PP_ALIGN.CENTER
-    info_paragraph.font.size = Pt(14)
-    info_paragraph.font.color.rgb = TEXT_BLACK
-
-    # For each leg, generate slides using shared builder
-    for leg_idx, leg in enumerate(mission.legs):
-        # Rebuild from the latest leg settings so adjusted departure times and
-        # derived AAR/event windows cannot be served from a stale timeline cache.
-        leg_timeline = _load_export_timeline(
-            mission, leg, route_manager, poi_manager, **_snapshot_kwargs(snapshot)
-        )
-        if not leg_timeline:
-            logger.warning(
-                f"No timeline found for leg {leg.id}, adding summary slide only"
-            )
-        else:
-            # Log timeline start time for debugging
-            if leg_timeline.segments:
-                first_segment_start = leg_timeline.segments[0].start_time
-                logger.info(
-                    f"Loaded timeline for leg {leg.id}: "
-                    f"first segment starts at {first_segment_start}, "
-                    f"leg.adjusted_departure_time={leg.adjusted_departure_time}"
-                )
-
-        if not leg_timeline:
-            # Add a summary slide for this leg
-            slide = prs.slides.add_slide(prs.slide_layouts[1])
-            title_shape = slide.shapes.title
-            content = slide.placeholders[1]
-            title_shape.text = leg.name
-            content.text = f"Leg ID: {leg.id}\nDescription: {leg.description or 'N/A'}\n\nNo timeline data available."
-            continue
-
-        try:
-            # Add slides for this leg directly to main presentation
-            add_mission_slides_to_presentation(
-                prs=prs,
-                mission=leg,
-                timeline=leg_timeline,
-                parent_mission_id=mission.id,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                logo_path=logo_path,
-                map_cache=map_cache,
-                **_export_kwargs(snapshot),
-            )
-
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            logger.error(f"Failed to generate PPTX slides for leg {leg.id}: {e}")
-            # Add error slide
-            slide = prs.slides.add_slide(prs.slide_layouts[1])
-            title_shape = slide.shapes.title
-            content = slide.placeholders[1]
-            title_shape.text = f"{leg.name} - Export Error"
-            content.text = f"Leg ID: {leg.id}\n\nFailed to generate timeline: {e!s}"
-
-    # Save to bytes or file
-    if output_path:
-        prs.save(output_path)
-        return None
-
-    output = io.BytesIO()
-    prs.save(output)
-    output.seek(0)
-    return output.read()
-
-
 def _add_mission_metadata_to_zip(
     zf: zipfile.ZipFile, mission: Mission, manifest_files: dict
 ):
@@ -615,7 +434,7 @@ def _add_per_leg_exports_to_zip(
     snapshot=None,
     cancel=None,
 ):
-    """Generate and add per-leg exports (CSV, PPTX) to zip archive.
+    """Generate and add per-leg CSV exports to zip archive.
 
     Args:
         zf: ZipFile to add files to
@@ -674,38 +493,6 @@ def _add_per_leg_exports_to_zip(
         ) as e:
             logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
 
-        check_cancelled(cancel)
-        try:
-            # PPTX export
-            pptx_export = generate_timeline_export(
-                export_format=TimelineExportFormat.PPTX,
-                mission=leg,
-                timeline=leg_timeline,
-                parent_mission_id=mission.id,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                map_cache=map_cache,
-                **_export_kwargs(snapshot),
-            )
-            pptx_path = f"exports/legs/{leg.id}/slides.pptx"
-            zf.writestr(pptx_path, pptx_export.content)
-            manifest_files["per_leg_exports"].append(pptx_path)
-            logger.info(f"Generated PPTX for leg {leg.id}")
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
-
 
 def _add_combined_mission_exports_to_zip(
     zf: zipfile.ZipFile,
@@ -718,7 +505,7 @@ def _add_combined_mission_exports_to_zip(
     snapshot=None,
     cancel=None,
 ):
-    """Generate and add combined mission-level exports (CSV, PPTX) to zip archive.
+    """Generate and add the combined mission CSV export to zip archive.
 
     Args:
         zf: ZipFile to add files to
@@ -743,22 +530,6 @@ def _add_combined_mission_exports_to_zip(
             zf.write(tmp_csv.name, "exports/mission/mission-timeline.csv")
             manifest_files["mission_exports"].append(
                 "exports/mission/mission-timeline.csv"
-            )
-
-        check_cancelled(cancel)
-        # Combined PPTX - stream to temp file
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
-            generate_mission_combined_pptx(
-                mission,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                output_path=tmp_pptx.name,
-                map_cache=map_cache,
-                **_snapshot_kwargs(snapshot),
-            )
-            zf.write(tmp_pptx.name, "exports/mission/mission-slides.pptx")
-            manifest_files["mission_exports"].append(
-                "exports/mission/mission-slides.pptx"
             )
 
         check_cancelled(cancel)
@@ -851,15 +622,12 @@ def export_mission_package(
         │   └── {leg-id-2}-pois.json
         ├── exports/
         │   ├── mission/
-        │   │   ├── mission-timeline.csv
-        │   │   └── mission-slides.pptx
+        │   │   └── mission-timeline.csv
         │   └── legs/
         │       ├── {leg-id-1}/
-        │       │   ├── timeline.csv
-        │       │   └── slides.pptx
+        │       │   └── timeline.csv
         │       └── {leg-id-2}/
-        │           ├── timeline.csv
-        │           └── slides.pptx
+        │           └── timeline.csv
 
     Args:
         mission_id: Mission to export

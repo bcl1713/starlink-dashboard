@@ -63,8 +63,9 @@ h1 {
 }
 .apo {
   width: 84px;
-  height: 98px;
+  height: 84px;
   object-fit: contain;
+  clip-path: circle(49%);
   margin-left: 16px;
 }
 .timeline-section {

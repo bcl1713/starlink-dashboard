@@ -75,7 +75,7 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
       setProgress({
         status: 'complete',
         message: omitted
-          ? 'ZIP downloaded. Legacy documents are included; the customer PDF could not be included.'
+          ? 'ZIP downloaded. Mission data and CSVs are included; the customer PDF could not be included.'
           : 'Export complete!',
         progress: 100,
       });
@@ -103,8 +103,8 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
 
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Export will include all legs, routes, POIs, and pre-generated
-          documents.
+          Export will include all legs, routes, POIs, CSVs, and the customer
+          PDF. PDF pages prepare automatically after saved changes.
         </p>
 
         {progress.status !== 'preparing' && (

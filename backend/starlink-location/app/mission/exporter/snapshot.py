@@ -65,6 +65,8 @@ class ExportSnapshot:
     legs: tuple[LegSnapshot, ...]
     source_payloads: tuple[SourcePayload, ...]
     warnings: tuple[str, ...]
+    leg_number_offset: int = 0
+    leg_count: int | None = None
 
 
 def _availability_basis(
@@ -236,6 +238,11 @@ def capture_export_snapshot(
 ) -> ExportSnapshot:
     """Copy under capture locks, release, then prepare each leg exactly once."""
     metadata, sources, warnings = capture_inputs(mission_id, route_manager, poi_manager)
+    return prepare_export_snapshot(metadata, sources, warnings)
+
+
+def prepare_export_snapshot(metadata, sources, warnings=()):
+    """Prepare copied inputs in a cancellable background process."""
     mission = Mission.model_validate_json(metadata)
     routes, pois = RouteView(sources), captured_pois(sources)
     catalog = captured_catalog(sources)
