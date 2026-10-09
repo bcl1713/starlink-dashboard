@@ -111,10 +111,7 @@ def _leg_payload(snapshot, captured, view, trial):
                 "id": r.id,
                 "startUtc": stamp(r.start_time),
                 "endUtc": stamp(r.end_time),
-                "et": ("≈ " if r.clock.approximate else "")
-                + r.clock.start
-                + "–"
-                + r.clock.end,
+                "et": r.clock.start + "–" + r.clock.end,
                 "impact": r.impact,
                 "remaining": r.remaining,
                 "posture": r.posture,

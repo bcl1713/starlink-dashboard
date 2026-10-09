@@ -20,10 +20,7 @@ def report(captured, view):
             "displayCells": list(
                 display_row(
                     {
-                        "et": ("≈ " if r.clock.approximate else "")
-                        + r.clock.start
-                        + "–"
-                        + r.clock.end,
+                        "et": r.clock.start + "–" + r.clock.end,
                         "impact": r.impact,
                         "remaining": r.remaining,
                         "posture": r.posture,

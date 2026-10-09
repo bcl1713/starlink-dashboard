@@ -88,7 +88,7 @@ def seed_missions(api, root):
             transports = {
                 "initial_x_satellite_id": (
                     "X-Unspecified"
-                    if recipe.get("unknown")
+                    if recipe.get("unknown") or recipe.get("uncertain")
                     else (
                         "X-Blocked"
                         if (recipe.get("subminute") or recipe.get("nested"))
@@ -132,18 +132,6 @@ def seed_missions(api, root):
                         "reason": "Synthetic brief nested total outage",
                     }
                 ]
-                # Keep the unresolved transition control distinct from confirmed
-                # geometric blockage; uncertainty never proves total unavailability.
-                if recipe.get("uncertain"):
-                    transports["x_transitions"] = [
-                        {
-                            "id": "test-transition",
-                            "latitude": 35,
-                            "longitude": -103.5,
-                            "target_satellite_id": "X-Acceptance",
-                            "is_same_satellite_transition": True,
-                        }
-                    ]
             if recipe.get("ar"):
                 transports["aar_windows"] = [
                     {

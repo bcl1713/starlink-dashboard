@@ -1,8 +1,8 @@
 """Pure trial presentation projection; legacy domain states are never mutated.
 
 Rules follow replay_state, timeline_builder/events and call_availability:
-coverage gaps and X geometry blockage prove Down; pure X-Ku proves usable with
-a concurrency limitation. Other degradation needs independent usability proof.
+Coverage gaps, X transitions, manual AR tracks and recognized X conflicts
+prove Down. Other degradation needs independent usability proof.
 SOF and resolved AR are coordination context, never availability evidence.
 """
 
@@ -124,18 +124,15 @@ def _proven_down(source: SourceRecord) -> bool:
     ):
         return True
     return source.transport == Transport.X and (
-        meta.get("line_of_sight_blocked") is True
+        source.source_type in {"x_transition_start", "manual_aar_track_start"}
+        or (
+            source.source_type == "x_azimuth_violation"
+            and source.reason.startswith(
+                ("X-Ku Conflict", "X-AAR Conflict", "X azimuth conflict")
+            )
+        )
+        or meta.get("line_of_sight_blocked") is True
         or meta.get("elevation_below_min") is True
-    )
-
-
-def _pure_x_ku(source: SourceRecord) -> bool:
-    # Match the producer's semantic prefix, not any free text mentioning X/Ku.
-    return (
-        source.transport == Transport.X
-        and source.source_type == "x_azimuth_violation"
-        and source.reason.startswith("X-Ku Conflict")
-        and not _proven_down(source)
     )
 
 
@@ -179,18 +176,15 @@ def classify_transport(
         for s in sources
         if s.source_type not in {"availability_basis", "transport_state"}
     ]
-    unknown = [s for s in conditions if not _pure_x_ku(s)]
     independent_up = any(
         s.metadata.get("independent_usability") == "Up" for s in sources
     )
-    if unknown and not independent_up:
+    if conditions and not independent_up:
         return UsabilityDecision(
             "?", "unresolved-condition", ids, text or "Transport usability unresolved"
         )
     if independent_up:
         return UsabilityDecision("Up", "independent-usability", ids, text)
-    if conditions and all(_pure_x_ku(s) for s in conditions):
-        return UsabilityDecision("Up", "pure-x-ku-concurrency", ids, text)
     if state == TransportState.AVAILABLE:
         return UsabilityDecision("Up", "available", ids, text)
     return UsabilityDecision(
@@ -435,14 +429,14 @@ def _cached_spans(
                 )
                 spans.append(_Span(source.start_time, source.end_time, evidence))
         for transport, field in ((Transport.KA, "ka_state"), (Transport.X, "x_state")):
-            pure_x_warning = transport == Transport.X and any(
-                span.source.source_id == source.source_id and _pure_x_ku(span.source)
+            known_x_down = transport == Transport.X and any(
+                span.source.source_id == source.source_id and _proven_down(span.source)
                 for span in spans
             )
             if (
                 unknown_reason
-                and (raw.get(field) in {"degraded", "offline"} or pure_x_warning)
-            ) or (raw.get(field) == "offline" and pure_x_warning):
+                and (raw.get(field) in {"degraded", "offline"} or known_x_down)
+            ) or (raw.get(field) == "offline" and known_x_down):
                 unresolved = replace(
                     source,
                     transport=transport,
