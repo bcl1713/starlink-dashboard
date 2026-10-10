@@ -17,7 +17,9 @@ export async function journey(context, origin, seed, output) {
     networkErrors = [],
     writes = [];
   const observed = [];
-  let staleConflict;
+  let staleConflict, replacementValidation;
+  const expectedAnchorMessage =
+    "Anchor does not belong to this immutable route version";
   const expectedConflictMessage =
     "Planning revision has changed; reload before saving";
   const record = async (name, value = {}) => {
@@ -43,6 +45,7 @@ export async function journey(context, origin, seed, output) {
           message: message.text(),
           location: message.location(),
           stalePhase: staleConflict?.page === target,
+          replacementPhase: replacementValidation?.page === target,
         });
     });
     target.on("requestfailed", (request) =>
@@ -60,7 +63,17 @@ export async function journey(context, origin, seed, output) {
           staleConflict?.page === target &&
           expectedMethod === request.method() &&
           request.postDataJSON()?.expected_revision === staleConflict.revision;
-        const body = expectedConflict ? await response.json() : undefined;
+        const expectedAnchor =
+          response.status() === 422 &&
+          replacementValidation?.page === target &&
+          response.url() === replacementValidation.url &&
+          request.method() === "POST" &&
+          request.postDataJSON()?.expected_revision ===
+            replacementValidation.revision;
+        const body =
+          expectedConflict || expectedAnchor
+            ? await response.json()
+            : undefined;
         networkErrors.push({
           url: response.url(),
           status: response.status(),
@@ -69,6 +82,10 @@ export async function journey(context, origin, seed, output) {
             body?.detail?.code === "planning_conflict" &&
             body?.detail?.message === expectedConflictMessage &&
             body?.detail?.action === "reload",
+          expectedAnchor:
+            expectedAnchor &&
+            body?.detail?.code === "invalid_route_anchor" &&
+            body?.detail?.message === expectedAnchorMessage,
         });
       }
       if (
@@ -546,8 +563,75 @@ export async function journey(context, origin, seed, output) {
     await record("package-collision-roundtrip", { clone, cloneView, round });
     await page.goto(`${origin}/missions/${mission}/legs/${cards[0].leg.id}`);
     const beforeReplacement = await read();
+    replacementValidation = {
+      page,
+      url: `${origin}/api/v2/missions/planning/missions/${mission}/legs/${cards[0].leg.id}/preview`,
+      revision: beforeReplacement.revision + 1,
+    };
+    const replacementPreview = page.waitForResponse(
+      (response) =>
+        response.url() === replacementValidation.url &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON()?.expected_revision ===
+          replacementValidation.revision,
+    );
     await bind(1, "replacement.kml");
     const replaced = await read();
+    const rejectedPreview = await replacementPreview;
+    assert.equal(rejectedPreview.status(), 422);
+    assert.equal(
+      (await rejectedPreview.json()).detail.code,
+      "invalid_route_anchor",
+    );
+    await expect(
+      page.getByRole("alert").filter({ hasText: expectedAnchorMessage }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Route accepted. Review AR windows first.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    for (const field of ["ar_corrections", "swaps", "locks"])
+      assert.deepEqual(
+        replaced.expected_legs[0].leg.draft[field],
+        beforeReplacement.expected_legs[0].leg.draft[field],
+      );
+    assert.deepEqual(replaced.mission.legs, beforeReplacement.mission.legs);
+    assert.equal(replaced.expected_legs[0].leg.review, null);
+    assert(
+      replaced.mission.metadata.itinerary_planning.proposal_refs
+        .filter((ref) => ref.leg_id === cards[0].leg.id)
+        .every((ref) => ref.state === "stale"),
+    );
+    await page.getByRole("tab", { name: "X-band plan", exact: true }).click();
+    await page
+      .getByLabel("I confirm this satellite plan and Starshield enablement")
+      .check();
+    await page
+      .getByLabel("I acknowledge the X-band outages and backup gaps")
+      .check();
+    await expect(
+      page.getByRole("button", { name: "Save reviewed plan", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", {
+        name: "Save reviewed plan and upload next leg",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Apply proposal", exact: true }),
+    ).toHaveCount(0);
+    assert.deepEqual(
+      await read(),
+      replaced,
+      "provisional preview must not publish or mutate retained work",
+    );
+    assert.equal(
+      networkErrors.filter((error) => error.expectedAnchor).length,
+      1,
+    );
+    replacementValidation = undefined;
     assert(
       replaced.mission.metadata.itinerary_planning.route_history.length >
         beforeReplacement.mission.metadata.itinerary_planning.route_history
@@ -629,15 +713,43 @@ export async function journey(context, origin, seed, output) {
       ).length,
       expected409s.length,
     );
+    const expectedAnchors = networkErrors.filter(
+      (error) => error.expectedAnchor,
+    );
+    const expectedAnchorResource =
+      "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)";
+    const expectedAnchorApi = `API Error: {status: 422, data: Object, message: ${expectedAnchorMessage}}`;
+    const anchorConsole = consoleErrors.filter(
+      (error) =>
+        error.type === "console" &&
+        error.replacementPhase &&
+        ((error.message === expectedAnchorResource &&
+          expectedAnchors.some(
+            (response) => response.url === error.location.url,
+          )) ||
+          error.message === expectedAnchorApi),
+    );
+    assert.equal(
+      anchorConsole.filter((error) => error.message === expectedAnchorResource)
+        .length,
+      expectedAnchors.length,
+    );
+    assert.equal(
+      anchorConsole.filter((error) => error.message === expectedAnchorApi)
+        .length,
+      expectedAnchors.length,
+    );
     assert.equal(
       consoleErrors.length,
-      expectedConsole.length,
+      expectedConsole.length + anchorConsole.length,
       JSON.stringify(consoleErrors),
     );
     assert.equal(
       networkErrors.filter(
         (error) =>
-          !error.expectedConflict && error.error !== "net::ERR_ABORTED",
+          !error.expectedConflict &&
+          !error.expectedAnchor &&
+          error.error !== "net::ERR_ABORTED",
       ).length,
       0,
       JSON.stringify(networkErrors),
