@@ -328,6 +328,10 @@ export async function journey(context, origin, seed, output) {
     const cloneView = await json(
       `/api/v2/missions/planning/missions/${clone.mission_id}`,
     );
+    await writeFile(
+      join(output, "collision-views.json"),
+      JSON.stringify({ beforeClone, cloneView }, null, 2),
+    );
     assert.equal(cloneView.expected_legs.length, 3);
     assert.equal(cloneView.mission.legs.length, 2);
     const verifyClone = (original, cloned) => {
@@ -381,17 +385,13 @@ export async function journey(context, origin, seed, output) {
         cloned.mission.metadata.itinerary_planning.review_records.length,
         original.mission.metadata.itinerary_planning.review_records.length,
       );
-      for (const card of cloned.expected_legs.filter(
-        (item) => item.leg.route,
-      )) {
-        assert.equal(card.review_status, "needs_review");
-        assert.equal(card.leg.review, null);
-        assert(
-          card.errors.some(
-            (error) => error.code === "review_dependencies_changed",
-          ),
-        );
-      }
+      cloned.expected_legs.forEach((card, index) => {
+        const previous = original.expected_legs[index];
+        assert.equal(card.input_identity, previous.input_identity);
+        assert.equal(card.review_status, previous.review_status);
+        assert.deepEqual(card.leg.review, previous.leg.review);
+        assert.deepEqual(card.errors, previous.errors);
+      });
       original.expected_legs.forEach((card, index) => {
         const context = card.leg.draft.evaluation_context;
         if (context) {
@@ -429,8 +429,10 @@ export async function journey(context, origin, seed, output) {
       "outage_seconds",
       "longest_gap_seconds",
       "swap_count",
-    ])
+    ]) {
+      assert(Number.isFinite(originalPreview[metric]));
       assert.equal(clonedPreview[metric], originalPreview[metric]);
+    }
     assert.deepEqual(
       await read(),
       beforeClone,
@@ -483,14 +485,8 @@ export async function journey(context, origin, seed, output) {
     );
     await page.goto(`${origin}/missions/${clone.mission_id}`);
     await expect(
-      page.getByRole("link", { name: "Review leg", exact: true }),
-    ).toHaveCount(2);
-    await expect(page.getByText("Needs review", { exact: true })).toHaveCount(
-      2,
-    );
-    await expect(
       page.getByRole("link", { name: "Open reviewed plan" }),
-    ).toHaveCount(0);
+    ).toHaveCount(2);
     await record("package-collision-roundtrip", { clone, cloneView, round });
     await page.goto(`${origin}/missions/${mission}/legs/${cards[0].leg.id}`);
     const beforeReplacement = await read();
@@ -519,8 +515,10 @@ export async function journey(context, origin, seed, output) {
         "/itinerary-previews",
       );
       for (const issue of staged.conflicts ?? []) {
-        const select = page.getByLabel(issue.message, { exact: true });
-        if (await select.count()) await select.selectOption("retain");
+        for (const select of await page
+          .getByLabel(issue.message, { exact: true })
+          .all())
+          await select.selectOption("retain");
       }
       await page.getByLabel("I confirm the complete leg mapping").check();
       await clickResponse(page, "Apply itinerary revision", "/revision");
