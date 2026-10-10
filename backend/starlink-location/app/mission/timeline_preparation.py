@@ -64,6 +64,7 @@ class TimelineArtifacts:
     generated_pois: tuple[POICreate, ...]
     x_assignments: tuple[tuple[datetime, str, str | None], ...] = ()
     export_x_conditions: tuple[MissionEvent, ...] | None = None
+    validated_leg: MissionLeg | None = None
 
 
 def prepare_mission_timeline(

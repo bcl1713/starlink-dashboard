@@ -5,6 +5,7 @@ from pathlib import Path
 
 from filelock import FileLock
 
+from app.mission.storage import planning_read_gate
 from app.models.poi import POI
 from app.services.poi_manager import POIManager
 
@@ -14,6 +15,7 @@ class PersistedPOIs:
         self.path = Path(manager.pois_file)
         self.lock_file = str(manager.lock_file)
 
+    @planning_read_gate
     def list_pois(self):
         # capture_inputs reads this twice, detecting intervening persisted edits.
         with FileLock(self.lock_file, timeout=5):

@@ -3,7 +3,6 @@
 import json
 
 import pytest
-
 from app.mission import storage
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TransportConfig
 from app.mission.storage import (
@@ -242,6 +241,8 @@ def test_startup_reconciler_uses_global_lock_before_each_changed_parent_lock(
     assert events == [
         "enter:active",
         "enter:mission:active-parent",
+        "enter:active",  # storage read re-enters the same repository gate
+        "exit:active",
         "exit:mission:active-parent",
         "exit:active",
     ]

@@ -219,13 +219,17 @@ def test_profile_resolver_precedes_restart_load(tmp_path):
 
     manager = RouteManager(directory, profile_resolver=profile)
     manager._load_existing_routes()
+    # Resolve before parsing and again before publication; reads revalidate too.
+    assert len(calls) >= 2 and set(calls) == {path.stem}
+    before_read = len(calls)
     route = manager.get_route(path.stem)
-    assert calls == [path.stem]
+    assert len(calls) > before_read and set(calls) == {path.stem}
     assert route.ingestion_profile == "planning_v1"
     assert route.points[3].expected_arrival_time == utc("11:00:40")
     manager._profile_resolver = lambda _: None
     manager._load_route_file(str(path))
     assert path.stem in manager.get_route_errors()
+    assert manager.get_route(path.stem) is None
 
 
 def test_anchored_aar_and_swap_use_occurrences(tmp_path):

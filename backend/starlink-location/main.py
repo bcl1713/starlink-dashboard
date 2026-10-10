@@ -8,15 +8,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-
 from app.api import (
     active_x_link,
+    aviation_weather,
     config,
     export,
     flight_status,
@@ -30,12 +24,11 @@ from app.api import (
     overview_history,
     overview_link_settings,
     overview_upcoming_pois,
+    overview_weather,
     pois,
     routes,
     status,
     ui,
-    overview_weather,
-    aviation_weather,
 )
 from app.api.simulation_run import router as simulation_run_router
 from app.core.config import ConfigManager
@@ -47,10 +40,20 @@ from app.live.coordinator import LiveCoordinator
 from app.mission import (
     routes_v2 as mission_routes_v2,
 )
+from app.mission import storage as mission_storage
+from app.mission.planning.journal import Journal
+from app.mission.planning.routes import router as planning_router
+from app.mission.planning.service import PlanningService
+from app.mission.planning.sources import SourceStore
+from app.mission.planning.store import PlanningStore
 from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
+from app.services.aviation_weather.gfs.bridge import GfsBridge
+from app.services.aviation_weather.runtime import AviationWeatherService
+from app.services.aviation_weather.settings import AviationSettingsStore
+from app.services.aviation_weather.transport import AwcTransport
 from app.services.ground_entry_point import (
     get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
@@ -70,10 +73,6 @@ from app.services.overview_history_settings import (
     resolve_overview_history_window_default,
 )
 from app.services.overview_link_settings import OverviewLinkSettingsStore
-from app.services.aviation_weather.gfs.bridge import GfsBridge
-from app.services.aviation_weather.runtime import AviationWeatherService
-from app.services.aviation_weather.settings import AviationSettingsStore
-from app.services.aviation_weather.transport import AwcTransport
 from app.services.overview_weather.acquisitions import WeatherAcquisitionPool
 from app.services.overview_weather.admission import WeatherAdmission
 from app.services.overview_weather.clock import WeatherClock
@@ -87,6 +86,12 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -262,6 +267,20 @@ async def startup_event():
     try:
         logger.info_json("Initializing Starlink Location Backend")
 
+        # Resolve interrupted writes before any mission, POI, route or runtime reader.
+        with mission_storage.get_active_leg_lock():
+            Journal(
+                mission_storage.MISSIONS_DIR,
+                Path("/data/routes"),
+                Path("/data/pois.json"),
+            ).recover()
+
+        reconciliation = reconcile_active_legs_on_startup()
+        logger.info_json(
+            "Reconciled persisted Mission V2 active legs at startup",
+            extra_fields=reconciliation,
+        )
+
         # Load configuration
         logger.info_json("Loading configuration")
         config_manager = ConfigManager()
@@ -285,12 +304,6 @@ async def startup_event():
         initialize_aviation_weather_runtime()
         await app.state.overview_adsb_service.start()
 
-        reconciliation = reconcile_active_legs_on_startup()
-        logger.info_json(
-            "Reconciled persisted Mission V2 active legs at startup",
-            extra_fields=reconciliation,
-        )
-
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
 
@@ -305,9 +318,7 @@ async def startup_event():
                             "country": entry_point.country,
                         },
                     )
-            except (
-                Exception
-            ) as e:  # noqa: BLE001 - optional DNS/metrics discovery must not block startup
+            except Exception as e:  # noqa: BLE001
                 logger.warning_json(
                     "Failed to publish ground entry point metrics",
                     extra_fields={"error": str(e)},
@@ -371,7 +382,17 @@ async def startup_event():
         # Initialize Route Manager for KML route handling
         logger.info_json("Initializing Route Manager")
         try:
-            _route_manager = RouteManager()
+            owned_sources = SourceStore(
+                mission_storage.MISSIONS_DIR, Path("/data/routes")
+            )
+            _route_manager = RouteManager(
+                profile_resolver=owned_sources.resolve_profile
+            )
+            planning_store = PlanningStore(
+                mission_storage.MISSIONS_DIR, _route_manager, poi_manager
+            )
+            planning_store.recover()
+            app.state.planning_service = PlanningService(planning_store)
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
@@ -387,7 +408,7 @@ async def startup_event():
                 logger.info_json("RouteManager injected into SimulationCoordinator")
 
             logger.info_json("Route Manager initialized successfully")
-        except Exception as e:  # noqa: BLE001 - ETA is optional
+        except Exception as e:
             logger.error_json(
                 "Failed to initialize Route Manager",
                 extra_fields={"error": str(e)},
@@ -409,9 +430,7 @@ async def startup_event():
                         flight_state.update_route_context(
                             active_route, auto_reset=False, reason="startup"
                         )
-                except (
-                    Exception
-                ) as sync_exc:  # noqa: BLE001 - route sync must not block startup
+                except Exception as sync_exc:  # noqa: BLE001 - optional flight sync
                     logger.debug_json(
                         "Failed to sync flight state with active route during startup",
                         extra_fields={"error": str(sync_exc)},
@@ -423,7 +442,7 @@ async def startup_event():
                     "initial_eta_mode": flight_state.get_status().eta_mode.value,
                 },
             )
-        except Exception as e:  # noqa: BLE001 - ETA is optional
+        except Exception as e:
             logger.error_json(
                 "Failed to initialize Flight State Manager",
                 extra_fields={"error": str(e)},
@@ -454,9 +473,7 @@ async def startup_event():
                     "CommKa KMZ file not found",
                     extra_fields={"expected_path": str(commka_kmz)},
                 )
-        except (
-            Exception
-        ) as e:  # noqa: BLE001 - optional KMZ import must not block startup
+        except Exception as e:  # noqa: BLE001
             logger.warning_json(
                 "Failed to initialize CommKa coverage",
                 extra_fields={"error": str(e)},
@@ -517,9 +534,7 @@ async def startup_event():
                 )
 
         logger.info_json("Starlink Location Backend ready")
-    except (
-        Exception
-    ) as e:  # noqa: BLE001 - optional static mount must not block API import
+    except Exception as e:
         logger.error_json(
             "Failed to initialize application",
             extra_fields={"error": str(e)},
@@ -606,9 +621,7 @@ async def shutdown_event():
         shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
-    except (
-        Exception
-    ) as e:  # noqa: BLE001 - log and suppress cleanup errors; later steps may be skipped
+    except Exception as e:  # noqa: BLE001
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
@@ -616,7 +629,6 @@ async def shutdown_event():
 
 def _publish_replay_telemetry(telemetry, tick):
     from app.core.metrics import update_metrics_from_telemetry
-
     from app.simulation.run_timing import mission_time_context
 
     update_metrics_from_telemetry(
@@ -702,9 +714,7 @@ async def _background_update_loop(poi_manager=None):
                             starlink_metrics_last_update_timestamp_seconds.set(
                                 time.time()
                             )
-                        except (
-                            Exception
-                        ) as metric_error:  # noqa: BLE001 - telemetry metrics must not stop updates
+                        except Exception as metric_error:  # noqa: BLE001
                             starlink_metrics_generation_errors_total.inc()
                             logger.warning_json(
                                 "Error updating metrics",
@@ -755,9 +765,7 @@ async def _background_update_loop(poi_manager=None):
                 else:
                     await asyncio.sleep(delay)
 
-            except (
-                Exception
-            ) as e:  # noqa: BLE001 - optional DNS/metrics discovery must not block startup
+            except Exception as e:  # noqa: BLE001
                 error_count += 1
                 logger.warning_json(
                     "Error in background update",
@@ -872,6 +880,7 @@ app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
+app.include_router(planning_router)
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])

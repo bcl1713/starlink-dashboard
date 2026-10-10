@@ -12,13 +12,35 @@ import re
 import uuid
 from collections.abc import Sequence
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 
+from app.mission.storage import planning_read_gate
+from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
 from filelock import FileLock
 
-from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
-
 logger = logging.getLogger(__name__)
+
+
+def _file_signature(path):
+    try:
+        stat = path.stat()
+        return stat.st_dev, stat.st_ino, stat.st_mtime_ns, stat.st_size
+    except FileNotFoundError:
+        return None
+
+
+def _poi_access(fn):
+    @wraps(fn)
+    @planning_read_gate
+    def coherent(self, *args, **kwargs):
+        if _file_signature(self.pois_file) != getattr(
+            self, "_persisted_signature", None
+        ):
+            self._load_pois()
+        return fn(self, *args, **kwargs)
+
+    return coherent
 
 
 def _route_geometry_hash(route) -> str:
@@ -71,6 +93,7 @@ class POIManager:
             except OSError as e:
                 logger.error(f"Failed to create POI file: {e}")
 
+    @planning_read_gate
     def _load_pois(self) -> None:
         """Load POIs from JSON file with file locking.
 
@@ -83,6 +106,7 @@ class POIManager:
         try:
             with lock.acquire(timeout=5), open(self.pois_file, "r") as f:
                 data = json.load(f)
+                signature = _file_signature(self.pois_file)
         except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
@@ -147,8 +171,10 @@ class POIManager:
             ) as e:
                 logger.warning(f"Failed to load POI {poi_id}: {e}")
 
+        self._persisted_signature = signature
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
+    @planning_read_gate
     def _save_pois(self) -> None:
         """Save POIs to JSON file with file locking and atomic writes.
 
@@ -199,6 +225,7 @@ class POIManager:
                         json.dump(data, f, indent=2)
                     # Atomic rename (platform-specific but reliable on both Unix and Windows)
                     temp_file.replace(self.pois_file)
+                    self._persisted_signature = _file_signature(self.pois_file)
                     logger.debug(f"Saved {len(self._pois)} POIs to {self.pois_file}")
                 except OSError as e:
                     logger.error(f"Failed to save POI file: {e}")
@@ -233,6 +260,7 @@ class POIManager:
         ) as e:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
+    @_poi_access
     def checkpoint(self) -> tuple[dict[str, POI], bytes | None]:
         """Capture owned POIs and exact persisted state for mutation compensation."""
         return (
@@ -240,6 +268,7 @@ class POIManager:
             self.pois_file.read_bytes() if self.pois_file.exists() else None,
         )
 
+    @_poi_access
     def restore_checkpoint(
         self, checkpoint: tuple[dict[str, POI], bytes | None]
     ) -> None:
@@ -252,7 +281,9 @@ class POIManager:
                 temporary.write_bytes(data)
                 temporary.replace(self.pois_file)
             self._pois = {key: poi.model_copy(deep=True) for key, poi in pois.items()}
+            self._persisted_signature = _file_signature(self.pois_file)
 
+    @_poi_access
     def list_pois(
         self, route_id: str | None = None, mission_id: str | None = None
     ) -> list[POI]:
@@ -266,13 +297,14 @@ class POIManager:
         Returns:
             List of POI objects
         """
-        pois = list(self._pois.values())
+        pois = [poi.model_copy(deep=True) for poi in self._pois.values()]
         if route_id:
             pois = [poi for poi in pois if poi.route_id == route_id]
         if mission_id:
             pois = [poi for poi in pois if poi.mission_id == mission_id]
         return pois
 
+    @_poi_access
     def get_poi(self, poi_id: str) -> POI | None:
         """
         Get a specific POI by ID.
@@ -283,8 +315,11 @@ class POIManager:
         Returns:
             POI object or None if not found
         """
-        return self._pois.get(poi_id)
+        return (
+            self._pois[poi_id].model_copy(deep=True) if poi_id in self._pois else None
+        )
 
+    @_poi_access
     def find_poi_by_name(self, name: str) -> POI | None:
         """
         Find the first POI matching the provided name (case-insensitive).
@@ -301,6 +336,7 @@ class POIManager:
                 return poi
         return None
 
+    @_poi_access
     def find_global_poi_by_name(self, name: str) -> POI | None:
         """
         Find a global (non-scoped) POI by name.
@@ -321,6 +357,7 @@ class POIManager:
                 return poi
         return None
 
+    @_poi_access
     def delete_scoped_pois_by_names(self, names: set[str]) -> int:
         """
         Delete mission- or route-scoped POIs whose names match.
@@ -347,6 +384,7 @@ class POIManager:
             self._save_pois()
         return len(removed_ids)
 
+    @_poi_access
     def create_poi(
         self,
         poi_create: POICreate,
@@ -453,6 +491,7 @@ class POIManager:
         logger.info(f"Created POI: {poi_id}")
         return poi
 
+    @_poi_access
     def update_poi(self, poi_id: str, poi_update: POIUpdate) -> POI | None:
         """
         Update an existing POI.
@@ -488,6 +527,7 @@ class POIManager:
         logger.info(f"Updated POI: {poi_id}")
         return poi
 
+    @_poi_access
     def delete_poi(self, poi_id: str) -> bool:
         """
         Delete a POI.
@@ -508,6 +548,7 @@ class POIManager:
         logger.info(f"Deleted POI: {poi_id}")
         return True
 
+    @_poi_access
     def count_pois(self, route_id: str | None = None) -> int:
         """
         Count POIs, optionally by route.
@@ -522,6 +563,7 @@ class POIManager:
             return len([poi for poi in self._pois.values() if poi.route_id == route_id])
         return len(self._pois)
 
+    @_poi_access
     def delete_route_pois(self, route_id: str) -> int:
         """
         Delete all POIs associated with a specific route.
@@ -545,6 +587,7 @@ class POIManager:
 
         return len(pois_to_delete)
 
+    @_poi_access
     def delete_mission_pois(self, mission_id: str) -> int:
         """
         Delete all POIs associated with a specific mission.
@@ -568,6 +611,7 @@ class POIManager:
 
         return len(pois_to_delete)
 
+    @_poi_access
     def delete_mission_pois_by_category(
         self, mission_id: str, categories: set[str]
     ) -> int:
@@ -602,6 +646,7 @@ class POIManager:
 
         return len(to_remove)
 
+    @_poi_access
     def delete_mission_pois_by_name_prefixes(
         self, mission_id: str, prefixes: Sequence[str]
     ) -> int:
@@ -635,6 +680,7 @@ class POIManager:
             )
         return len(to_remove)
 
+    @_poi_access
     def delete_route_mission_pois_with_prefixes(
         self,
         route_id: str,
@@ -675,6 +721,7 @@ class POIManager:
             )
         return len(to_remove)
 
+    @_poi_access
     def delete_leg_pois(
         self,
         route_id: str,
@@ -734,6 +781,7 @@ class POIManager:
             )
         return len(to_remove)
 
+    @_poi_access
     def reload_pois(self) -> None:
         """Reload POIs from disk, discarding any unsaved changes.
 
@@ -742,6 +790,7 @@ class POIManager:
         self._load_pois()
         logger.info("Reloaded POIs from disk")
 
+    @_poi_access
     def calculate_poi_projections(self, route) -> int:
         """
         Calculate route projections for all POIs using a given route.
@@ -828,6 +877,7 @@ class POIManager:
 
         return projected_count
 
+    @_poi_access
     def clear_poi_projections(self) -> int:
         """
         Clear all route projection data from POIs (typically on route deactivation).

@@ -4,6 +4,7 @@ import json
 import logging
 import threading
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 
 from filelock import FileLock
@@ -46,13 +47,56 @@ def get_active_leg_lock() -> FileLock:
     newer ``is_singleton`` constructor option.
     """
     ensure_missions_directory()
-    lock_path = str(MISSIONS_DIR / ".active-leg.lock")
+    lock_path = str((MISSIONS_DIR / ".active-leg.lock").resolve())
     with _active_leg_locks_guard:
         lock = _active_leg_locks.get(lock_path)
         if lock is None:
             lock = FileLock(lock_path)
             _active_leg_locks[lock_path] = lock
         return lock
+
+
+def planning_read_gate(fn):
+    """Serialize persistence/POI snapshots with planning commits and activation."""
+
+    @wraps(fn)
+    def guarded(*args, **kwargs):
+        with get_active_leg_lock():
+            journals = MISSIONS_DIR / ".planning" / "journals"
+            if journals.exists() and any(journals.glob("*.json")):
+                raise RuntimeError("Planning recovery required before storage access")
+            return fn(*args, **kwargs)
+
+    return guarded
+
+
+def public_mission(mission: Mission) -> Mission:
+    """Response-only projection; persisted private source paths stay lossless."""
+    result = mission.model_copy(deep=True)
+    raw = result.metadata.get("itinerary_planning")
+    if raw is not None:
+        from app.mission.planning.models import PlanningManifest
+
+        result.metadata["itinerary_planning"] = PlanningManifest.model_validate(
+            raw
+        ).model_dump(mode="json")
+    return result
+
+
+def mission_leg_order(mission: Mission):
+    from app.mission.planning.models import PlanningManifest
+    from app.mission.planning.order import project_leg_order
+
+    raw = mission.metadata.get("itinerary_planning")
+    manifest = PlanningManifest.model_validate(raw) if raw is not None else None
+    return project_leg_order(manifest, tuple(leg.id for leg in mission.legs))
+
+
+def _ordered_mission(mission: Mission) -> Mission:
+    order = mission_leg_order(mission)
+    by_id = {leg.id: leg for leg in mission.legs}
+    mission.legs = [by_id[key] for key in order.executable_ids]
+    return mission
 
 
 def get_leg_timeline_path(leg_id: str, parent_mission_id: str) -> Path:
@@ -103,6 +147,15 @@ def save_mission_v2(mission: Mission) -> dict:
     # twice while coordinating a broader v2 operation.
     with get_active_leg_lock():
         previous = load_mission_v2(mission.id)
+        if previous and "itinerary_planning" in previous.metadata:
+            mission = mission.model_copy(deep=True)
+            mission.metadata["itinerary_planning"] = previous.metadata[
+                "itinerary_planning"
+            ]
+        elif "itinerary_planning" in mission.metadata:
+            raise ValueError(
+                "Planning manifests can only be created through planning APIs"
+            )
         result = _save_mission_v2_unlocked(mission)
         # Queue invalidation only after committed persistence. Rendering never
         # runs on the save path; startup reconciliation repairs missed signals.
@@ -148,6 +201,7 @@ def _save_mission_v2_unlocked(mission: Mission) -> dict:
     }
 
 
+@planning_read_gate
 def load_mission_v2(mission_id: str) -> Mission | None:
     """Load a hierarchical mission with all legs.
 
@@ -178,12 +232,13 @@ def load_mission_v2(mission_id: str) -> Mission | None:
                 legs.append(MissionLeg(**leg_data))
 
     mission_data["legs"] = legs
-    mission = Mission(**mission_data)
+    mission = _ordered_mission(Mission(**mission_data))
 
     logger.info(f"Mission {mission_id} loaded with {len(legs)} legs")
     return mission
 
 
+@planning_read_gate
 def load_mission_metadata_v2(mission_id: str) -> Mission | None:
     """Load mission metadata with leg count but without full leg data.
 
@@ -239,7 +294,7 @@ def load_mission_metadata_v2(mission_id: str) -> Mission | None:
                 )
 
         mission_data["legs"] = [MissionLeg(**stub) for stub in leg_stubs]
-        mission = Mission(**mission_data)
+        mission = _ordered_mission(Mission(**mission_data))
 
         logger.debug(
             f"Mission {mission_id} metadata loaded with {len(leg_stubs)} leg stubs"
@@ -281,6 +336,7 @@ def _parse_persisted_timestamp(value: object) -> datetime | None:
     return timestamp.astimezone(timezone.utc)
 
 
+@planning_read_gate
 def list_mission_metadata_v2() -> list[Mission]:
     """List hierarchical mission metadata newest-first with stable legacy fallback."""
     ensure_missions_directory()
@@ -363,6 +419,7 @@ def reconcile_active_legs_on_startup() -> dict[str, int]:
     return {"missions": changed_missions, "legs": changed_legs}
 
 
+@planning_read_gate
 def save_mission_timeline(
     leg_id: str,
     timeline: MissionLegTimeline,
@@ -378,6 +435,7 @@ def save_mission_timeline(
     return timeline_path
 
 
+@planning_read_gate
 def load_mission_timeline(
     leg_id: str,
     parent_mission_id: str,
@@ -390,6 +448,7 @@ def load_mission_timeline(
         return MissionLegTimeline(**json.load(handle))
 
 
+@planning_read_gate
 def delete_mission_timeline(
     leg_id: str,
     parent_mission_id: str,

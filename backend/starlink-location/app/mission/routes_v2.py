@@ -47,6 +47,7 @@ from app.mission.storage import (
     list_mission_metadata_v2,
     load_mission_timeline,
     load_mission_v2,
+    public_mission,
     save_mission_timeline,
     save_mission_v2,
 )
@@ -156,7 +157,7 @@ async def create_mission(
                             f"Failed to generate timeline for leg {leg.id}"
                         )
                         # Don't fail creation if timeline generation fails
-        return mission
+        return public_mission(mission)
     except (
         RuntimeError,
         ValueError,
@@ -197,7 +198,9 @@ async def list_missions(
     try:
         missions = list_mission_metadata_v2()
         response.headers["X-Total-Count"] = str(len(missions))
-        return missions[offset : offset + limit]
+        return [
+            public_mission(mission) for mission in missions[offset : offset + limit]
+        ]
     except (
         RuntimeError,
         ValueError,
@@ -236,7 +239,7 @@ async def get_mission(mission_id: str) -> Mission:
             detail=f"Mission {mission_id} not found",
         )
 
-    return mission
+    return public_mission(mission)
 
 
 @router.patch("/{mission_id}", response_model=Mission)
@@ -283,7 +286,7 @@ async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
             save_mission_v2(mission)
             logger.info(f"Mission {mission_id} updated successfully")
 
-            return mission
+            return public_mission(mission)
     except HTTPException:
         raise
     except (

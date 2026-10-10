@@ -26,7 +26,7 @@ def planning_storage(tmp_path: Path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def ensure_eta_service_initialized(planning_storage):
+def ensure_eta_service_initialized(planning_storage, isolate_mission_storage):
     """Override the parent's setup so dependencies use owned paths first."""
     from app.core import eta_service
     from app.services.poi_manager import POIManager
