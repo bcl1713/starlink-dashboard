@@ -248,11 +248,20 @@ export async function journey(context, origin, seed, output) {
     await expect(
       second.getByRole("button", { name: "Save draft", exact: true }),
     ).toBeVisible();
+    const unsavedSetting = second.getByLabel(
+      "Starshield enabled for this plan",
+      { exact: true },
+    );
+    await unsavedSetting.uncheck();
     await save(page);
     await clickResponse(second, "Save draft", "/draft", 409);
-    await expect(
-      second.getByRole("alert").filter({ hasText: "Planning state changed" }),
-    ).toBeVisible();
+    const conflicts = second
+      .getByRole("alert")
+      .filter({ hasText: "Planning state changed" });
+    assert((await conflicts.count()) > 0, "409 must show a recovery message");
+    for (const alert of await conflicts.all())
+      await expect(alert).toBeVisible();
+    await expect(unsavedSetting).not.toBeChecked();
     await second.screenshot({
       path: join(output, "second-tab-conflict.png"),
       fullPage: true,
