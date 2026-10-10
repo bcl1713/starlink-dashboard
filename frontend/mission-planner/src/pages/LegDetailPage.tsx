@@ -31,7 +31,7 @@ export function LegDetailPage() {
   const planning = usePlanning(missionId || '', managed);
   if (isLoading || (managed && planning.isLoading))
     return <div className="app-page">Loading leg configuration…</div>;
-  if (managed && planning.error)
+  if (managed && planning.error && !planning.data)
     return (
       <div className="app-page">
         <p role="alert">

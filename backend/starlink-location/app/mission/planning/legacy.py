@@ -181,11 +181,7 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
                 parent_mission_id=mission_id,
                 constraint_config=constraints,
             )
-    files = {
-        storage.get_mission_leg_file_path(
-            mission_id, installed_id
-        ).resolve(): json_bytes(output.model_dump(mode="json"))
-    }
+    files = {}
     pois = None
     if artifacts is not None:
         files[storage.get_leg_timeline_path(installed_id, mission_id).resolve()] = (
@@ -226,6 +222,18 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
                 reference.state = "stale"
             for proposal in manifest.proposals:
                 proposal.state = "stale"
+        else:
+            # Activation does not change planning CAS. Merge metadata into the
+            # freshly loaded installed leg while holding the publication gate.
+            output = next(
+                leg for leg in mission.legs if leg.id == installed_id
+            ).model_copy(deep=True)
+            for name in ("name", "description"):
+                if name in incoming.model_fields_set:
+                    setattr(output, name, getattr(incoming, name))
+        files[storage.get_mission_leg_file_path(mission_id, installed_id).resolve()] = (
+            json_bytes(output.model_dump(mode="json"))
+        )
         manifest.revision += 1
         mission.legs = [output if l.id == installed_id else l for l in mission.legs]
         store.persist(

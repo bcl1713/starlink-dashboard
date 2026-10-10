@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -36,7 +36,10 @@ vi.mock('./LegDetailPage/useLegData', () => ({
 vi.mock('../hooks/api/usePlanning', () => ({ usePlanning: vi.fn() }));
 vi.mock('../components/planning/PlanningLegReview', () => ({
   PlanningLegReview: ({ legId }: { legId: string }) => (
-    <output>Review {legId}</output>
+    <>
+      <output>Review {legId}</output>
+      <input aria-label="Local managed correction" defaultValue="" />
+    </>
   ),
 }));
 import { useMission } from '../hooks/api/useMissions';
@@ -110,4 +113,64 @@ it('keeps unmanaged legs on the existing manual controls and name-based AR flow'
   expect(screen.getByText('Save Changes')).toBeVisible();
   expect(screen.queryByText('Review manual')).toBeNull();
   expect(vi.mocked(usePlanning).mock.calls[0]).toEqual(['m', false]);
+});
+
+it('keeps the managed editor mounted when refetch fails with retained planning data', () => {
+  vi.mocked(useMission).mockReturnValue({
+    data: { id: 'm', legs: [], metadata: { itinerary_planning: {} } },
+    isLoading: false,
+  } as never);
+  const saved = {
+    data: { expected_legs: [{ leg: { id: 'expected' } }] },
+    isLoading: false,
+  };
+  vi.mocked(usePlanning).mockReturnValue(saved as never);
+  const page = () => (
+    <MemoryRouter initialEntries={['/missions/m/legs/expected']}>
+      <Routes>
+        <Route
+          path="/missions/:missionId/legs/:legId"
+          element={<LegDetailPage />}
+        />
+      </Routes>
+    </MemoryRouter>
+  );
+  const mounted = render(page());
+  const control = screen.getByLabelText('Local managed correction');
+  fireEvent.change(control, { target: { value: 'Keep local AR correction' } });
+  vi.mocked(usePlanning).mockReturnValue({
+    ...saved,
+    error: new Error('Reload failed'),
+  } as never);
+  mounted.rerender(page());
+  expect(screen.getByLabelText('Local managed correction')).toBe(control);
+  expect(control).toHaveValue('Keep local AR correction');
+});
+
+it('keeps editing unavailable when the initial planning load fails without data', () => {
+  vi.mocked(useMission).mockReturnValue({
+    data: { id: 'm', legs: [], metadata: { itinerary_planning: {} } },
+    isLoading: false,
+  } as never);
+  vi.mocked(usePlanning).mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    error: new Error('Initial load failed'),
+  } as never);
+  render(
+    <MemoryRouter initialEntries={['/missions/m/legs/expected']}>
+      <Routes>
+        <Route
+          path="/missions/:missionId/legs/:legId"
+          element={<LegDetailPage />}
+        />
+      </Routes>
+    </MemoryRouter>
+  );
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Unable to resolve the expected leg'
+  );
+  expect(
+    screen.queryByLabelText('Local managed correction')
+  ).not.toBeInTheDocument();
 });

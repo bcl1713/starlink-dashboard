@@ -322,12 +322,20 @@ export function usePlanningLegWorkflow({
       !window.confirm('Discard local edits and reload the current saved draft?')
     )
       return;
-    const result = await planning.refetch();
-    if (result.data) {
+    setSequencePending(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await planning.refetch();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('Unable to reload the saved draft');
       receive(result.data);
       setProposal(null);
-      setError('');
       setMessage('Saved draft reloaded.');
+    } catch (e) {
+      setError(planningErrorMessage(e));
+    } finally {
+      setSequencePending(false);
     }
   };
   const invalid =

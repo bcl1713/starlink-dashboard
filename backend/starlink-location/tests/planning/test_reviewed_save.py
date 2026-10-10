@@ -564,3 +564,135 @@ def test_existing_initial_ka_selection_survives_put_and_review(prepared, omitted
     current = service.store.read(view.mission.id)
     reviewed = service.save_reviewed(view.mission.id, "card-1", review(current))
     assert reviewed.mission.legs[0].transports.initial_ka_satellite_ids == ["AOR"]
+
+
+@pytest.mark.parametrize("activated", [True, False])
+def test_metadata_put_preserves_runtime_flag_changed_between_gates(
+    prepared, monkeypatch, activated
+):
+    import json
+    from contextlib import contextmanager
+
+    from app.mission import storage
+
+    service, view = confirmed(prepared)
+    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    parent = storage.load_mission_v2(view.mission.id)
+    parent.legs[0].is_active = not activated
+    storage.save_mission_v2(parent)
+    incoming = parent.legs[0].model_copy(deep=True)
+    incoming.name = "Renamed during runtime change"
+    incoming.description = "Metadata must retain current activation"
+    gate = storage.get_active_leg_lock
+    entries = 0
+    interleaved = False
+
+    @contextmanager
+    def runtime_change_before_final_gate():
+        nonlocal entries, interleaved
+        lock = gate()
+        outermost = not lock.is_locked
+        if outermost:
+            entries += 1
+        if outermost and entries == 2:
+            with gate(), storage.get_mission_lock(view.mission.id):
+                current = storage.load_mission_v2(view.mission.id)
+                current.legs[0].is_active = activated
+                storage.save_mission_v2(current)
+                assert (
+                    current.metadata["itinerary_planning"]["revision"] == view.revision
+                )
+                interleaved = True
+        with gate():
+            yield
+
+    monkeypatch.setattr(
+        storage, "get_active_leg_lock", runtime_change_before_final_gate
+    )
+    result = service.update_managed_leg(
+        view.mission.id,
+        incoming.id,
+        incoming,
+        view.revision,
+        view.expected_legs[0].input_identity,
+    )
+    current = service.store.read(view.mission.id)
+    stored = json.loads(
+        storage.get_mission_leg_file_path(view.mission.id, incoming.id).read_text()
+    )
+    assert interleaved
+    for output in (result["leg"], stored, current.mission.legs[0].model_dump()):
+        assert output["is_active"] is activated
+        assert output["name"] == incoming.name
+        assert output["description"] == incoming.description
+    assert current.revision == view.revision + 1
+    assert current.expected_legs[0].leg.review == view.expected_legs[0].leg.review
+    assert current.expected_legs[0].leg.draft == view.expected_legs[0].leg.draft
+
+
+def test_parent_patch_waiting_for_gate_preserves_interleaved_reviewed_draft(
+    prepared, monkeypatch
+):
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+    from contextlib import contextmanager
+    from threading import Event
+    from types import SimpleNamespace
+
+    from app.mission import routes_v2
+    from app.mission.models import MissionUpdate
+
+    service, view = confirmed(prepared)
+    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    parent_waiting, release_parent = Event(), Event()
+    original_gate = routes_v2.get_active_leg_lock
+
+    @contextmanager
+    def delayed_parent_gate():
+        parent_waiting.set()
+        assert release_parent.wait(10), "Timed out waiting for leg edit"
+        with original_gate():
+            yield
+
+    monkeypatch.setattr(routes_v2, "get_active_leg_lock", delayed_parent_gate)
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(planning_service=service))
+    )
+    with ThreadPoolExecutor(max_workers=1) as worker:
+        future = worker.submit(
+            asyncio.run,
+            routes_v2.update_mission(
+                view.mission.id, MissionUpdate(name="Concurrent parent name"), request
+            ),
+        )
+        try:
+            assert parent_waiting.wait(10), "Parent PATCH did not reach the gate"
+            draft = view.expected_legs[0].leg.draft.model_copy(deep=True)
+            draft.starshield_enabled = False
+            changed = service.store.save_draft(
+                view.mission.id,
+                "card-1",
+                SaveDraft(expected_revision=view.revision, draft=draft),
+            )
+            latest = service.save_reviewed(view.mission.id, "card-1", review(changed))
+        finally:
+            release_parent.set()
+        parent = future.result(timeout=10)
+    current = service.store.read(view.mission.id)
+    assert parent.name == "Concurrent parent name"
+    assert current.revision == latest.revision + 1
+    assert current.expected_legs[0].leg == latest.expected_legs[0].leg
+    assert current.expected_legs[0].review_status == "reviewed"
+    assert current.expected_legs[0].leg.draft.starshield_enabled is False
+    assert latest.mission.metadata["itinerary_planning"]["source_revisions"]
+    assert len(latest.mission.metadata["itinerary_planning"]["review_records"]) == 2
+    for key in (
+        "expected_legs",
+        "review_records",
+        "source_revisions",
+        "route_bindings",
+    ):
+        assert (
+            parent.metadata["itinerary_planning"][key]
+            == latest.mission.metadata["itinerary_planning"][key]
+        )

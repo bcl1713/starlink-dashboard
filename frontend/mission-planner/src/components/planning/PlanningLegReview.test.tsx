@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -523,4 +524,73 @@ it('disables draft edits during deferred route acceptance and enables them after
     expected_revision: 8,
     draft: { starshield_enabled: false },
   });
+});
+
+it.each([false, true])(
+  'freezes explicit reload throughout a deferred response (dirty=%s)',
+  async (dirty) => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const client = setup();
+    const control = await screen.findByLabelText(
+      'Starshield enabled for this plan'
+    );
+    await waitFor(() =>
+      expect(client.isFetching({ queryKey: ['planning', 'm'] })).toBe(0)
+    );
+    if (dirty) fireEvent.click(control);
+    let resolveRead!: (value: PlanningView) => void;
+    vi.mocked(planningApi.read).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve;
+        })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Reload saved draft' }));
+    await waitFor(() => expect(resolveRead).toBeDefined());
+    expect(control).toBeDisabled();
+    act(() => (control as HTMLInputElement).click());
+    expect((control as HTMLInputElement).checked).toBe(!dirty);
+    expect(confirm).toHaveBeenCalledTimes(dirty ? 1 : 0);
+    resolveRead(view);
+    await screen.findByText('Saved draft reloaded.');
+    expect(control).toBeEnabled();
+    expect(control).toBeChecked();
+    act(() => (control as HTMLInputElement).click());
+    expect(control).not.toBeChecked();
+  }
+);
+
+it('preserves dirty edits when reload fails despite retained query data', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const client = setup();
+  const control = await screen.findByLabelText(
+    'Starshield enabled for this plan'
+  );
+  await waitFor(() =>
+    expect(client.isFetching({ queryKey: ['planning', 'm'] })).toBe(0)
+  );
+  fireEvent.click(control);
+  let rejectRead!: (error: Error) => void;
+  vi.mocked(planningApi.read).mockImplementationOnce(
+    () =>
+      new Promise((_resolve, reject) => {
+        rejectRead = reject;
+      })
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Reload saved draft' }));
+  await waitFor(() => expect(rejectRead).toBeDefined());
+  rejectRead(new Error('Reload connection failed'));
+  await waitFor(() =>
+    expect(client.getQueryState(['planning', 'm'])?.status).toBe('error')
+  );
+  expect(client.getQueryData(['planning', 'm'])).toEqual(view);
+  await screen.findByText('Reload connection failed');
+  expect(screen.queryByText('Saved draft reloaded.')).not.toBeInTheDocument();
+  expect(control).toBeEnabled();
+  expect(control).not.toBeChecked();
+  confirm.mockReturnValue(false);
+  fireEvent.click(screen.getByText('Cancel'));
+  expect(confirm).toHaveBeenLastCalledWith(
+    'You have unsaved changes. Are you sure you want to leave?'
+  );
 });
