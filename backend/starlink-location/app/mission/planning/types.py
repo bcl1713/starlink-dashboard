@@ -89,3 +89,56 @@ class EvaluationContext(PlanningRecord):
         if not set(self.seed_times).issubset(self.candidate_times):
             raise ValueError("Every seed must be retained as a candidate")
         return self
+
+
+class PlanningSpan(PlanningRecord):
+    model_config = ConfigDict(frozen=True)
+    start_time: UTCTimestamp
+    end_time: UTCTimestamp
+    reason: str
+    state: Literal["available", "degraded", "offline"] = "degraded"
+    height_meters: float | None = None
+    assumption: str | None = None
+
+    @model_validator(mode="after")
+    def nonempty(self):
+        if self.end_time <= self.start_time:
+            raise ValueError("Planning spans must be nonempty")
+        return self
+
+
+class SatellitePosition(PlanningRecord):
+    model_config = ConfigDict(frozen=True)
+    satellite_id: str
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+
+class PlanningInputSnapshot(PlanningRecord):
+    """Immutable normalized computation inputs, free of managers and private paths.
+
+    JSON strings contain copied route geometry, constraint configuration and
+    structural draft records. Deserialization always produces private objects.
+    """
+
+    model_config = ConfigDict(frozen=True)
+    version: Literal["planning_v1"] = "planning_v1"
+    route_json: str
+    anchor_route_json: str
+    structural_draft_json: str
+    constraints_json: str
+    coverage_json: str = "null"
+    ka_coverage_events_json: str = "[]"
+    ka_coverage_windows: tuple[PlanningSpan, ...] = ()
+    start_time: UTCTimestamp
+    end_time: UTCTimestamp
+    ar_windows: tuple[PlanningSpan, ...] = ()
+    overlays: tuple[PlanningSpan, ...] = ()
+    ka_outages: tuple[PlanningSpan, ...] = ()
+    ku_outages: tuple[PlanningSpan, ...] = ()
+    safety_windows: tuple[PlanningSpan, ...] = ()
+    satellites: tuple[SatellitePosition, ...]
+    starshield_enabled: bool
+    planning_policy: PlanningPolicy = "prefer_starshield_v1"
+    assumptions: tuple[str, ...] = ()
+    unresolved: tuple[str, ...] = ()

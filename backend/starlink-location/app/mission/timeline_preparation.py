@@ -7,11 +7,14 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.mission.planning.models import PlanningEvaluation
 
 from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.derived_route import (
     build_derived_route_estimate,
-    derived_route_for_estimate,
 )
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
 from app.mission.state import generate_transport_intervals
@@ -49,7 +52,6 @@ from app.satellites.coverage import CoverageSampler
 from app.satellites.rules import ConstraintConfig, MissionEvent, RuleEngine
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.simulation.run_route import normalize_timed_route
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,7 @@ class TimelineArtifacts:
     x_assignments: tuple[tuple[datetime, str, str | None], ...] = ()
     export_x_conditions: tuple[MissionEvent, ...] | None = None
     validated_leg: MissionLeg | None = None
+    planning_evaluation: PlanningEvaluation | None = None
 
 
 def prepare_mission_timeline(
@@ -83,47 +86,52 @@ def prepare_mission_timeline(
 ) -> TimelineArtifacts:
     """Prepare effective geometry, canonical events and POIs without publishing."""
 
-    if not mission.route_id:
-        raise TimelineComputationError("Mission is missing route_id")
+    from app.mission.effective_route import prepare_effective_route
 
-    route = route_manager.get_route(mission.route_id)
-    if not route:
-        raise TimelineComputationError(f"Route {mission.route_id} not loaded")
-
-    if normalize_for_simulation:
-        route = normalize_timed_route(route)
-    route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
+    route = prepare_effective_route(mission, route_manager, normalize_for_simulation)
     splice = mission.transports.manual_route_splice
-    selected_track = None
-    splice_available = False
-    if splice:
-        selected_track = next(
-            (
-                track
-                for track in mission.transports.manual_aar_tracks
-                if track.id == splice.enabled_track_id
+    selected_track = next(
+        (
+            t
+            for t in mission.transports.manual_aar_tracks
+            if splice and t.id == splice.enabled_track_id
+        ),
+        None,
+    )
+    # The shared route extractor preserves the legacy feasible-splice rule.
+    splice_available = bool(
+        selected_track
+        and build_derived_route_estimate(
+            route_with_adjusted_departure(
+                route_manager.get_route(mission.route_id),
+                mission.adjusted_departure_time,
             ),
-            None,
-        )
-        if selected_track:
-            estimate = build_derived_route_estimate(route, selected_track, splice)
-            if normalize_for_simulation and not estimate.available:
-                raise TimelineComputationError(
-                    f"Selected diversion is unavailable: {estimate.unavailable_reason}"
-                )
-            splice_available = estimate.available
-            route = derived_route_for_estimate(route, estimate)
-            if normalize_for_simulation and splice_available:
-                for point in route.points:
-                    point.expected_segment_speed_knots = None
-        elif normalize_for_simulation:
-            raise TimelineComputationError("Selected diversion track is missing")
-    if normalize_for_simulation:
-        route = normalize_timed_route(route)
-    else:
-        route = route.model_copy(deep=True)
+            selected_track,
+            splice,
+        ).available
+    )
     mission_start, mission_end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
+
+    planning_evaluation = None
+    if mission.transports.planning_policy is not None:
+        from app.mission.planning.evaluate import evaluate_context
+        from app.mission.planning.inputs import canonical_inputs
+
+        if (
+            mission.transports.planning_inputs is None
+            or mission.transports.evaluation_context is None
+        ):
+            raise TimelineComputationError(
+                "Planning policy requires persisted inputs and evaluation context"
+            )
+        try:
+            inputs, draft, context = canonical_inputs(
+                mission, route, constraint_config, satellite_catalog, poi_manager
+            )
+            planning_evaluation = evaluate_context(inputs, draft, context)
+        except ValueError as exc:
+            raise TimelineComputationError(str(exc)) from exc
 
     coverage_path = Path("data/sat_coverage/commka.geojson")
     resolved_sampler = coverage_sampler or (
@@ -138,7 +146,13 @@ def prepare_mission_timeline(
         projector,
         coverage_sampler=resolved_sampler,
         interval_seconds=TIMELINE_SAMPLE_INTERVAL_SECONDS,
+        boundaries=(
+            planning_evaluation.context.boundaries if planning_evaluation else None
+        ),
     )
+    if planning_evaluation is not None:
+        for sample, height in zip(samples, planning_evaluation.context.height_profile):
+            sample.altitude = height.height_meters
     sampling_runtime_ms = (time.perf_counter() - sample_start) * 1000.0
     logger.debug(
         "Generated %d timeline samples (interval=%ds) for mission %s in %.1f ms",
@@ -175,7 +189,15 @@ def prepare_mission_timeline(
     apply_manual_aar_tracks(rule_engine, manual_tracks, projector)
 
     transition_schedule = apply_x_transitions(
-        rule_engine, mission, projector, aar_windows
+        rule_engine,
+        mission,
+        projector,
+        aar_windows,
+        anchor_route=(
+            ParsedRoute.model_validate_json(inputs.anchor_route_json)
+            if planning_evaluation
+            else None
+        ),
     )
 
     coverage_result = analyze_ka_coverage(
@@ -197,6 +219,7 @@ def prepare_mission_timeline(
         mission_end,
         satellite_catalog=satellite_catalog,
         condition_events=export_x_conditions,
+        planning_evaluation=planning_evaluation,
     )
 
     generated_pois = construct_mission_pois(
@@ -229,7 +252,20 @@ def prepare_mission_timeline(
         intervals=intervals,
     )
     timeline.coverage_events = coverage_result.coverage_events
+    if planning_evaluation is not None:
+        import json
+
+        from app.mission.models import KaCoverageEvent
+
+        timeline.coverage_events = [
+            KaCoverageEvent.model_validate(e)
+            for e in json.loads(inputs.ka_coverage_events_json)
+        ]
     annotate_aar_markers(timeline, events)
+    if planning_evaluation is not None:
+        from app.mission.planning.evaluate import timeline_segments
+
+        timeline.segments = timeline_segments(planning_evaluation, mission.id)
     normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
 
@@ -280,6 +316,7 @@ def prepare_mission_timeline(
         generated_pois,
         tuple(transition_schedule),
         tuple(export_x_conditions) if export_x_conditions is not None else None,
+        planning_evaluation=planning_evaluation,
     )
 
 

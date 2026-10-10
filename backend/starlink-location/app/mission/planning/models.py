@@ -17,6 +17,7 @@ from .types import (
     ContentHash,
     EvaluationContext,
     HeightProfilePoint,
+    PlanningInputSnapshot,
     PlanningPolicy,
     PlanningRecord,
     RouteAnchor,
@@ -45,6 +46,7 @@ __all__ = [
     "PlanningDraft",
     "PlanningError",
     "PlanningEvaluation",
+    "PlanningInputs",
     "PlanningLock",
     "PlanningManifest",
     "PlanningPolicy",
@@ -300,6 +302,11 @@ class EvaluationInterval(PlanningRecord):
     policy_x_state: Literal["available", "degraded", "offline"] = "available"
     policy_ka_state: Literal["available", "degraded", "offline"] = "available"
     policy_ku_state: Literal["available", "degraded", "offline"] = "available"
+    raw_constraints: list[str] = Field(default_factory=list)
+    latitude: float | None = None
+    longitude: float | None = None
+    altitude_meters: float | None = None
+    heading_degrees: float | None = None
     physical_reasons: list[str] = Field(default_factory=list)
     policy_reasons: list[str] = Field(default_factory=list)
     safety_reasons: list[str] = Field(default_factory=list)
@@ -550,3 +557,7 @@ class ApplyRevision(GenerateProposal):
     leg_mappings: list[RevisionLegMapping]
     discrepancy_acknowledgments: list[str] = Field(default_factory=list)
     allow_lower_revision: bool = False
+
+
+class PlanningInputs(PlanningInputSnapshot):
+    """Immutable shared evaluation snapshot (also persisted on installed legs)."""

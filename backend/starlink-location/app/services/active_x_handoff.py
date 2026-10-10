@@ -152,7 +152,27 @@ def _project_transitions(
 ) -> list[tuple[float, XTransition]]:
     projected: list[tuple[float, XTransition]] = []
     for transition in transitions:
-        progress = _project_progress(route, transition.latitude, transition.longitude)
+        if transition.anchor is not None:
+            from app.mission.planning.match import resolve_anchor
+            from app.mission.timeline_builder.calculator import (
+                RouteTemporalProjector,
+                derive_mission_window,
+            )
+
+            resolve_anchor(transition.anchor, route)
+            projector = RouteTemporalProjector(route, *derive_mission_window(route))
+            index = transition.anchor.segment_index
+            distances = projector.cumulative_distances
+            distance = distances[index]
+            if index + 1 < len(distances):
+                distance += transition.anchor.fraction * (
+                    distances[index + 1] - distance
+                )
+            progress = 100.0 * distance / projector.total_distance
+        else:
+            progress = _project_progress(
+                route, transition.latitude, transition.longitude
+            )
         if progress is not None:
             projected.append((progress, transition))
     return sorted(projected, key=lambda item: item[0])

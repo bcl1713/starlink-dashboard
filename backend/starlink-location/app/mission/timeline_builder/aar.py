@@ -147,6 +147,8 @@ def apply_x_transitions(
     mission: MissionLeg,
     projector: RouteTemporalProjector,
     aar_windows: list[ResolvedAARWindow],
+    *,
+    anchor_route: ParsedRoute | None = None,
 ) -> list[tuple[datetime, str, str | None]]:
     """Apply X-band transition events and return the transition schedule."""
     schedule: list[tuple[datetime, str, str | None]] = []
@@ -160,7 +162,7 @@ def apply_x_transitions(
     for transition in mission.transports.x_transitions:
         if transition.anchor:
             timestamp = resolve_anchor(
-                transition.anchor, projector.route, projector.start_time
+                transition.anchor, anchor_route or projector.route, projector.start_time
             )
         else:
             projection = projector.project(transition.latitude, transition.longitude)

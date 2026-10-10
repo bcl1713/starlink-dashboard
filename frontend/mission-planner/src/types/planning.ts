@@ -155,7 +155,52 @@ export interface SourceRevision {
   expires_at?: string | null;
 }
 
+export interface PlanningSpan {
+  start_time: string;
+  end_time: string;
+  reason: string;
+  state?: 'available' | 'degraded' | 'offline';
+  height_meters?: number | null;
+  assumption?: string | null;
+}
+
+export interface SatellitePosition {
+  satellite_id: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface PlanningInputSnapshot {
+  version?: 'planning_v1';
+  route_json: string;
+  anchor_route_json: string;
+  structural_draft_json: string;
+  constraints_json: string;
+  coverage_json?: string;
+  ka_coverage_events_json?: string;
+  ka_coverage_windows?: PlanningSpan[];
+  start_time: string;
+  end_time: string;
+  ar_windows?: PlanningSpan[];
+  overlays?: PlanningSpan[];
+  ka_outages?: PlanningSpan[];
+  ku_outages?: PlanningSpan[];
+  safety_windows?: PlanningSpan[];
+  satellites: SatellitePosition[];
+  starshield_enabled: boolean;
+  planning_policy?: PlanningPolicy;
+  assumptions?: string[];
+  unresolved?: string[];
+}
+
+export type PlanningInputs = PlanningInputSnapshot;
+
 export interface EvaluationInterval {
+  raw_constraints?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
+  altitude_meters?: number | null;
+  heading_degrees?: number | null;
   start_time: string;
   end_time: string;
   satellite_id?: string | null;
@@ -337,6 +382,7 @@ export interface SaveDraft {
 export interface PreviewDraft {
   expected_revision: number;
   draft: PlanningDraft;
+  ar_section_status?: 'listed' | 'empty' | 'unrecognized' | null;
 }
 
 export interface GenerateProposal {

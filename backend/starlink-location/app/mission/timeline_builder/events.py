@@ -115,8 +115,28 @@ def apply_x_azimuth_events(
     *,
     satellite_catalog: SatelliteCatalog | None = None,
     condition_events: list[MissionEvent] | None = None,
+    planning_evaluation=None,
 ) -> list[XBandWarningBoundary]:
     """Apply X constraints and return combined shutdown/turn-on boundaries."""
+    if planning_evaluation is not None:
+        boundaries = []
+        previous = False
+        for sample, interval in zip(samples, planning_evaluation.intervals):
+            warning = interval.policy_x_state != "available"
+            if warning != previous:
+                boundaries.append(
+                    XBandWarningBoundary(
+                        sample=sample,
+                        satellite_id=interval.satellite_id,
+                        warning=warning,
+                        reasons=tuple(
+                            interval.physical_reasons + interval.policy_reasons
+                        ),
+                    )
+                )
+            previous = warning
+        return boundaries
+
     if not mission.transports.initial_x_satellite_id:
         return []
 

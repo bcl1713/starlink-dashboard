@@ -16,7 +16,12 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
-from .planning.types import EvaluationContext, PlanningPolicy, RouteAnchor
+from .planning.types import (
+    EvaluationContext,
+    PlanningInputSnapshot,
+    PlanningPolicy,
+    RouteAnchor,
+)
 
 
 class Transport(str, Enum):
@@ -302,6 +307,7 @@ class TransportConfig(BaseModel):
     starshield_enabled: bool | None = None
     planning_policy: PlanningPolicy | None = None
     evaluation_context: EvaluationContext | None = None
+    planning_inputs: PlanningInputSnapshot | None = None
 
     initial_x_satellite_id: str = Field(
         ...,
