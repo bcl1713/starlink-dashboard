@@ -25,6 +25,11 @@ def project_leg_order(
         key=lambda leg: leg.ordinal,
     )
     archived = {leg.installed_leg_id for leg in manifest.expected_legs if leg.retired}
+    archived.update(
+        item.installed_leg.id
+        for item in manifest.leg_history
+        if item.reason == "retirement" and item.installed_leg is not None
+    )
     numbers = {
         leg.installed_leg_id: leg.ordinal
         for leg in live

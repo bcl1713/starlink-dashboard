@@ -160,6 +160,10 @@ export function usePlanningLegWorkflow({
         accepted.expected_legs.find((c) => c.leg.id === leg.id)!.input_identity
       );
       setRoutePreview(null);
+      setEvaluation(null);
+      setPlanConfirmed(false);
+      setGapAcknowledged(false);
+      setProposal(null);
       onAcceptedRoute();
       setMessage('Route accepted. Review AR windows first.');
       if (!leg.route) {

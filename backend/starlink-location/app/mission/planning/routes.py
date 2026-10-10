@@ -17,6 +17,7 @@ from .match import RouteAnchorError
 from .models import (
     AcceptRouteBinding,
     ApplyProposal,
+    ApplyRevision,
     ConfirmItinerary,
     GenerateProposal,
     ItineraryPreview,
@@ -25,6 +26,7 @@ from .models import (
     PlanningSatelliteOptions,
     PlanningView,
     PreviewDraft,
+    RevisionPreview,
     RouteBindingPreview,
     SaveDraft,
     SaveReviewed,
@@ -241,3 +243,30 @@ async def save_reviewed(
     service: Annotated[PlanningService, Depends(get_service)],
 ):
     return await invoke(service.save_reviewed, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/itinerary-previews", response_model=RevisionPreview
+)
+async def preview_revision(
+    mission_id: str,
+    file: Annotated[UploadFile, File()],
+    expected_revision: Annotated[int, Form(ge=1)],
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(
+        service.preview_revision,
+        mission_id,
+        await upload_bytes(file, pdf=True),
+        expected_revision,
+        file.filename or "itinerary.pdf",
+    )
+
+
+@router.post("/missions/{mission_id}/revision", response_model=PlanningView)
+async def apply_revision(
+    mission_id: str,
+    request: ApplyRevision,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.apply_revision, mission_id, request)

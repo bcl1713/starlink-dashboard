@@ -226,6 +226,16 @@ export function ARReview({
             <legend className="font-semibold">
               {row.track || 'New AR row'}
             </legend>
+            {((row.start_anchor &&
+              row.start_anchor.route_id !== leg.route?.route_id) ||
+              (row.end_anchor &&
+                row.end_anchor.route_id !== leg.route?.route_id)) && (
+              <p role="alert">
+                Retained anchors from the previous route. Choose current timed
+                occurrences for {row.track}; prior corrections remain visible
+                until resolved.
+              </p>
+            )}
             <p className="break-words text-sm">
               Page {original.source_page ?? 'manual'}, row{' '}
               {original.source_row ?? 'manual'} ·{' '}

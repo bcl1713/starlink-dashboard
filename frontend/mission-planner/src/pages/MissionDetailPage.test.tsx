@@ -1,5 +1,11 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -8,7 +14,7 @@ import type { PlanningView } from '../types/planning';
 vi.mock('../hooks/api/useMissions', () => ({
   useMission: vi.fn(),
   useAddLeg: () => ({}),
-  useDeleteLeg: () => ({}),
+  useDeleteLeg: vi.fn(() => ({})),
   useActivateLeg: () => ({}),
   useDeactivateAllLegs: () => ({}),
   useDeleteMission: () => ({}),
@@ -24,7 +30,7 @@ vi.mock('../components/missions/AddLegDialog', () => ({
 vi.mock('../components/missions/SimulateLegDialog', () => ({
   SimulateLegDialog: () => null,
 }));
-import { useMission } from '../hooks/api/useMissions';
+import { useMission, useDeleteLeg } from '../hooks/api/useMissions';
 import { usePlanning } from '../hooks/api/usePlanning';
 import { MissionDetailPage } from './MissionDetailPage';
 afterEach(() => {
@@ -92,7 +98,7 @@ it('renders each managed installed leg once, counts pending cards and keeps lega
   expect(screen.getAllByRole('button', { name: 'Simulate leg…' })).toHaveLength(
     3
   );
-  expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(3);
   expect(screen.getByRole('link', { name: 'Upload KML' })).toHaveAttribute(
     'href',
     '/missions/m/legs/expected-2'
@@ -164,4 +170,120 @@ it('keeps leg actions available for a confirmed unmanaged mission without planni
   expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Activate' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Simulate leg…' })).toBeEnabled();
+});
+
+it.each([false, true])(
+  'managed Delete sends captured CAS and never retries stale=%s',
+  async (stale) => {
+    const leg = {
+      id: 'installed',
+      name: 'Leg',
+      route_id: 'route',
+      transports: { initial_x_satellite_id: 'X' },
+    };
+    const mission = {
+      id: 'm',
+      name: 'Synthetic',
+      created_at: '',
+      updated_at: '',
+      metadata: { itinerary_planning: {} },
+      legs: [leg],
+    } as Mission;
+    const view = {
+      mission,
+      revision: 7,
+      expected_legs: [
+        {
+          input_identity: 'captured',
+          review_status: 'needs_review',
+          leg: {
+            id: 'card',
+            ordinal: 1,
+            installed_leg_id: 'installed',
+            departure_airport: 'AAA',
+            arrival_airport: 'BBB',
+          },
+        },
+      ],
+    } as PlanningView;
+    const remove = vi.fn();
+    if (stale)
+      remove.mockRejectedValue({
+        response: {
+          status: 409,
+          data: { detail: { message: 'Reload before deleting' } },
+        },
+      });
+    else remove.mockResolvedValue(undefined);
+    vi.mocked(useDeleteLeg).mockReturnValue({ mutateAsync: remove } as never);
+    vi.mocked(useMission).mockReturnValue({
+      data: mission,
+      isLoading: false,
+    } as never);
+    vi.mocked(usePlanning).mockReturnValue({
+      data: view,
+      isLoading: false,
+    } as never);
+    vi.spyOn(window, 'confirm').mockImplementation(() => {
+      view.revision = 8;
+      view.expected_legs[0].input_identity = 'newer';
+      return true;
+    });
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <MemoryRouter initialEntries={['/missions/m']}>
+        <Routes>
+          <Route path="/missions/:missionId" element={<MissionDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await waitFor(() =>
+      expect(remove).toHaveBeenCalledWith({
+        legId: 'installed',
+        planning: { expected_revision: 7, input_identity: 'captured' },
+      })
+    );
+    if (stale) await waitFor(() => expect(window.alert).toHaveBeenCalled());
+    expect(remove).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  }
+);
+
+it('keeps unmanaged deletion on the historical leg-ID request', async () => {
+  const mission: Mission = {
+    id: 'm',
+    name: 'Legacy mission',
+    metadata: {},
+    created_at: '',
+    updated_at: '',
+    legs: [
+      {
+        id: 'legacy',
+        name: 'Legacy leg',
+        route_id: 'r',
+        transports: { initial_x_satellite_id: 'X' },
+      },
+    ],
+  };
+  const remove = vi.fn().mockResolvedValue(undefined);
+  vi.mocked(useMission).mockReturnValue({
+    data: mission,
+    isLoading: false,
+  } as never);
+  vi.mocked(usePlanning).mockReturnValue({} as never);
+  vi.mocked(useDeleteLeg).mockReturnValue({ mutateAsync: remove } as never);
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  render(
+    <MemoryRouter initialEntries={['/missions/m']}>
+      <Routes>
+        <Route path="/missions/:missionId" element={<MissionDetailPage />} />
+      </Routes>
+    </MemoryRouter>
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+  await waitFor(() => expect(remove).toHaveBeenCalledWith('legacy'));
+  expect(remove).toHaveBeenCalledTimes(1);
+  vi.restoreAllMocks();
 });

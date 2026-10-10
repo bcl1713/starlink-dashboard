@@ -176,7 +176,16 @@ class PlanningService:
                     )
                 leg_draft.no_ars_confirmed = True
             legs.append(original.model_copy(update={"draft": leg_draft}))
-        manifest = PlanningManifest(source_revisions=[accepted], expected_legs=legs)
+        from .models import ItineraryData
+
+        baseline = (
+            ItineraryData.model_validate(record["preview"]["parsed_values"])
+            if record.get("preview", {}).get("parsed_values")
+            else None
+        )
+        manifest = PlanningManifest(
+            source_revisions=[accepted], expected_legs=legs, itinerary_baseline=baseline
+        )
         mission = Mission(
             id=mission_id,
             name=request.itinerary.name,
@@ -241,6 +250,20 @@ class PlanningService:
                     )
                 )
             preview = RouteBindingPreview(
+                old_source_hash=leg.route.content_hash if leg.route else None,
+                unresolved_lock_ids=[
+                    lock.id
+                    for lock in (leg.draft.locks if leg.draft else [])
+                    if lock.anchor
+                ],
+                unresolved_ar_ids=[
+                    row.id
+                    for row in (leg.draft.ar_corrections if leg.draft else [])
+                    if row.start_anchor or row.end_anchor
+                ],
+                adjusted_departure_time=(
+                    leg.draft.adjusted_departure_time if leg.draft else None
+                ),
                 preview_id=source.id,
                 expected_revision=revision,
                 binding=binding,
@@ -300,25 +323,154 @@ class PlanningService:
                 mission_id, leg_id, request.expected_revision
             )
             self.sources.get_preview(request.preview_id)
+            from .store import leg_identity
+
+            previous_identity = leg_identity(leg)
             if leg.route:
+                from .revisions import archive_leg
+
+                archive_leg(self.store, mission, manifest, leg, "route_replacement")
                 manifest.route_history.append(leg.route)
             leg.route = preview.binding
             leg.review = None
             # Existing corrections and locks survive replacements, including unresolved anchors.
             if leg.draft is None:
                 leg.draft = PlanningDraft()
+            leg.draft.evaluation_context = None
             if not leg.draft.ar_corrections:
                 from .models import ItineraryAR
 
                 leg.draft.ar_corrections = [
                     ItineraryAR.model_validate(row) for row in record["matched_ar"]
                 ]
+            for reference in manifest.proposal_refs:
+                if reference.leg_id == leg.id:
+                    reference.state = "stale"
             manifest.source_revisions.append(accepted)
             manifest.route_bindings.append(preview.binding)
             manifest.proposals = [
-                p.model_copy(update={"state": "stale"}) for p in manifest.proposals
+                (
+                    p.model_copy(update={"state": "stale"})
+                    if p.input_identity == previous_identity
+                    else p
+                )
+                for p in manifest.proposals
             ]
             manifest.revision += 1
             view = self.store.persist(mission, manifest, files=files)
             self.store.route_manager.add_route(source.id, route)
             return view
+
+    def preview_revision(self, mission_id, data, revision, filename="itinerary.pdf"):
+        from .revisions import preview_revision
+
+        with storage.get_active_leg_lock():
+            _, manifest = self.store._load(mission_id)
+            if manifest.revision != revision:
+                raise conflict()
+        source = self.sources.stage(data, "pdf", mission_id, filename)
+        try:
+            incoming = extract_itinerary(data).model_copy(
+                update={
+                    "preview_id": source.id,
+                    "source": source,
+                    "expires_at": source.expires_at,
+                }
+            )
+            preview = preview_revision(manifest, incoming)
+            self.sources.save_preview(
+                source.id,
+                {
+                    "kind": "revision",
+                    "mission_id": mission_id,
+                    "preview": preview.model_dump(mode="json"),
+                    "source": source.storage_record(),
+                },
+            )
+            return preview
+        except BaseException:
+            self.sources.discard(source)
+            raise
+
+    def apply_revision(self, mission_id, request):
+        from .models import RevisionPreview
+        from .revisions import reconcile, revision_identity
+
+        record, source, _ = self.sources.acceptance_snapshot(request.preview_id)
+        if (
+            record.get("kind") != "revision"
+            or record.get("mission_id") != mission_id
+            or source.owner != mission_id
+        ):
+            raise PlanningFailure(
+                422, "revision_owner_mismatch", "Revision belongs to another mission"
+            )
+        preview = RevisionPreview.model_validate(
+            {**record["preview"], "source": source}
+        )
+        with storage.get_active_leg_lock():
+            mission, current = self.store._load(mission_id)
+            if (
+                current.revision != request.expected_revision
+                or preview.expected_revision != request.expected_revision
+                or revision_identity(current) != request.input_identity
+                or preview.input_identity != request.input_identity
+            ):
+                raise conflict()
+        if preview.lower_revision and not request.allow_lower_revision:
+            raise PlanningFailure(
+                422,
+                "lower_source_revision",
+                "Explicitly authorize the lower source revision",
+            )
+        if preview.identical_content:
+            with storage.get_active_leg_lock():
+                mission, latest = self.store._load(mission_id)
+                if (
+                    latest.revision != request.expected_revision
+                    or revision_identity(latest) != request.input_identity
+                ):
+                    raise conflict()
+                return self.store._view(mission, latest)
+        revised = reconcile(current, preview, request)
+        return self.store.commit_revision(mission_id, request, revised)
+
+    def retire_managed_leg(self, mission_id, installed_id, revision, identity):
+        from .models import ApplyRevision
+        from .revisions import revision_identity
+
+        if revision is None or identity is None:
+            raise conflict("Reload planning before deleting a managed leg")
+        with storage.get_active_leg_lock():
+            _, manifest = self.store._load(mission_id)
+            card = next(
+                (
+                    x
+                    for x in manifest.expected_legs
+                    if x.installed_leg_id == installed_id and not x.retired
+                ),
+                None,
+            )
+            if card is None:
+                raise PlanningFailure(404, "leg_not_found", "Managed leg not found")
+            self.store.checked(mission_id, card.id, revision, identity)
+            revised = manifest.model_copy(deep=True)
+            for item in revised.expected_legs:
+                if item.id == card.id:
+                    item.retired = True
+                    item.installed_leg_id = None
+            for index, item in enumerate(
+                sorted(
+                    (x for x in revised.expected_legs if not x.retired),
+                    key=lambda x: x.ordinal,
+                ),
+                1,
+            ):
+                item.ordinal = index
+            request = ApplyRevision(
+                preview_id="retirement",
+                expected_revision=revision,
+                input_identity=revision_identity(manifest),
+                leg_mappings=[],
+            )
+        return self.store.commit_revision(mission_id, request, revised, retirement=True)

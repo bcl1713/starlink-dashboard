@@ -12,6 +12,8 @@ from app.mission.models import (
     ManualAARTrack,
     ManualRouteSplice,
     Mission,
+    MissionLeg,
+    MissionLegTimeline,
     XTransition,
 )
 
@@ -36,6 +38,7 @@ __all__ = [
     "ApplyRevision",
     "BackupGap",
     "ConfirmItinerary",
+    "CorrectionResolution",
     "EvaluationContext",
     "EvaluationInterval",
     "ExpectedLeg",
@@ -45,6 +48,7 @@ __all__ = [
     "ItineraryAR",
     "ItineraryData",
     "ItineraryPreview",
+    "LegHistory",
     "PlanningDraft",
     "PlanningError",
     "PlanningEvaluation",
@@ -59,6 +63,7 @@ __all__ = [
     "PreviewDraft",
     "ReviewRecord",
     "RevisionChange",
+    "RevisionConflict",
     "RevisionLegMapping",
     "RevisionPreview",
     "RevisionRequest",
@@ -376,6 +381,15 @@ class ProposalReference(PlanningRecord):
     idempotency_hash: ContentHash | None = None
 
 
+class LegHistory(PlanningRecord):
+    leg: ExpectedLeg
+    installed_leg: MissionLeg | None = None
+    timeline: MissionLegTimeline | None = None
+    source_ids: list[str] = Field(default_factory=list)
+    revision: int = Field(ge=1)
+    reason: Literal["revision", "retirement", "route_replacement"]
+
+
 class PlanningManifest(PlanningRecord):
     schema_version: Literal[1] = 1
     revision: int = Field(default=1, ge=1)
@@ -386,6 +400,8 @@ class PlanningManifest(PlanningRecord):
     review_records: list[ReviewRecord] = Field(default_factory=list)
     route_bindings: list[RouteBinding] = Field(default_factory=list)
     route_history: list[RouteBinding] = Field(default_factory=list)
+    leg_history: list[LegHistory] = Field(default_factory=list)
+    itinerary_baseline: "ItineraryData | None" = None
 
     @field_validator("schema_version", mode="before")
     @classmethod
@@ -478,6 +494,10 @@ class ARMatchCandidates(PlanningRecord):
 
 
 class RouteBindingPreview(PlanningRecord):
+    old_source_hash: ContentHash | None = None
+    unresolved_lock_ids: list[str] = Field(default_factory=list)
+    unresolved_ar_ids: list[str] = Field(default_factory=list)
+    adjusted_departure_time: UTCTimestamp | None = None
     preview_id: str
     expected_revision: int = Field(ge=1)
     binding: RouteBinding
@@ -520,11 +540,28 @@ class RevisionLegMapping(PlanningRecord):
 
 
 class RevisionChange(PlanningRecord):
+    incoming_leg_id: str | None = None
     field: str
     expected_leg_id: str | None = None
     before: str | None = None
     after: str | None = None
     requires_resolution: bool = False
+
+
+class RevisionConflict(PlanningRecord):
+    allowed_actions: list[Literal["retain", "use_source", "remove"]] = Field(
+        default_factory=lambda: ["retain", "use_source", "remove"]
+    )
+    id: str
+    expected_leg_id: str
+    field: str
+    row_id: str | None = None
+    message: str
+
+
+class CorrectionResolution(PlanningRecord):
+    conflict_id: str
+    action: Literal["retain", "use_source", "remove"]
 
 
 class RevisionPreview(ItineraryPreview):
@@ -534,6 +571,10 @@ class RevisionPreview(ItineraryPreview):
     leg_mappings: list[RevisionLegMapping] = Field(default_factory=list)
     lower_revision: bool = False
     identical_content: bool = False
+    unresolved_mappings: list[str] = Field(default_factory=list)
+    conflicts: list[RevisionConflict] = Field(default_factory=list)
+    old_source_hash: ContentHash | None = None
+    previous_source_revision: int | None = None
 
 
 class ConfirmItinerary(SatelliteSelection):
@@ -579,7 +620,8 @@ class SaveReviewed(GenerateProposal):
 
 class ApplyRevision(GenerateProposal):
     preview_id: str = Field(min_length=1)
-    itinerary: ItineraryData
+    itinerary: ItineraryData | None = None
+    correction_resolutions: list[CorrectionResolution] = Field(default_factory=list)
     leg_mappings: list[RevisionLegMapping]
     discrepancy_acknowledgments: list[str] = Field(default_factory=list)
     allow_lower_revision: bool = False
@@ -587,3 +629,6 @@ class ApplyRevision(GenerateProposal):
 
 class PlanningInputs(PlanningInputSnapshot):
     """Immutable shared evaluation snapshot (also persisted on installed legs)."""
+
+
+PlanningManifest.model_rebuild()

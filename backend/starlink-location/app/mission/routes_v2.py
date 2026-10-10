@@ -1433,6 +1433,9 @@ async def update_leg(
 async def delete_leg(
     mission_id: str,
     leg_id: str,
+    expected_revision: int | None = None,
+    input_identity: str | None = None,
+    request: Request = None,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
     run_service: Annotated[
@@ -1451,6 +1454,36 @@ async def delete_leg(
     Raises:
         HTTPException: 404 if mission/leg not found, 500 on deletion failure
     """
+    from app.mission import storage
+    from app.mission.planning.routes import invoke
+    from app.mission.planning.service import PlanningService
+    from app.mission.planning.store import PlanningStore
+
+    with get_active_leg_lock():
+        parent = load_mission_v2(mission_id)
+        raw = parent.metadata.get("itinerary_planning") if parent else None
+        managed = raw and any(
+            c.get("installed_leg_id") == leg_id and not c.get("retired")
+            for c in raw.get("expected_legs", [])
+        )
+    if managed:
+        service = (
+            getattr(request.app.state, "planning_service", None) if request else None
+        )
+        service = service or PlanningService(
+            PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+        )
+        if run_service:
+            run_service.assert_plan_edit_allowed(mission_id, leg_id)
+        await invoke(
+            service.retire_managed_leg,
+            mission_id,
+            leg_id,
+            expected_revision,
+            input_identity,
+        )
+        return Response(status_code=204)
+
     try:
         from pathlib import Path
 
@@ -1477,6 +1510,24 @@ async def delete_leg(
                         "code": "ACTIVE_LEG_DELETION_FORBIDDEN",
                         "message": "Deactivate the leg before deleting it.",
                         "action": "Deactivate the leg, then delete it.",
+                    },
+                )
+
+            from app.mission.planning.sources import SourceStore
+
+            if (
+                leg.route_id
+                and route_manager
+                and SourceStore(
+                    storage.MISSIONS_DIR, route_manager.routes_dir
+                ).resolve_profile(leg.route_id)
+                == "planning_v1"
+            ):
+                raise HTTPException(
+                    409,
+                    {
+                        "code": "owned_route_source",
+                        "message": "This immutable route belongs to itinerary planning; retire its managed binding instead.",
                     },
                 )
 
@@ -1989,6 +2040,7 @@ async def update_leg_route(
     request: Request,
     mission_id: str,
     leg_id: str,
+    expected_revision: int | None = None,
     file: Annotated[UploadFile, File()] = ...,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
@@ -2016,6 +2068,49 @@ async def update_leg_route(
     Raises:
         HTTPException: 400 for invalid file, 404 for mission/leg not found
     """
+    from app.mission import storage
+    from app.mission.planning.routes import invoke
+    from app.mission.planning.service import PlanningService
+    from app.mission.planning.store import PlanningStore
+
+    with get_active_leg_lock():
+        parent = load_mission_v2(mission_id)
+        raw = parent.metadata.get("itinerary_planning") if parent else None
+        card = (
+            next(
+                (
+                    c
+                    for c in raw.get("expected_legs", [])
+                    if c.get("installed_leg_id") == leg_id and not c.get("retired")
+                ),
+                None,
+            )
+            if raw
+            else None
+        )
+    if card:
+        if expected_revision is None:
+            raise HTTPException(
+                409,
+                {
+                    "code": "planning_revision_required",
+                    "message": "Reload planning and preview the replacement route before acceptance.",
+                },
+            )
+        service = getattr(request.app.state, "planning_service", None)
+        service = service or PlanningService(
+            PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+        )
+        preview = await invoke(
+            service.preview_route,
+            mission_id,
+            card["id"],
+            await file.read(),
+            expected_revision,
+            file.filename or "route.kml",
+        )
+        return preview.model_dump(mode="json")
+
     try:
         from app.services.kml_parser import KMLParseError
 
@@ -2061,6 +2156,23 @@ async def update_leg_route(
                         "code": "ACTIVE_LEG_ROUTE_REPLACEMENT_FORBIDDEN",
                         "message": "Deactivate the leg before replacing its route.",
                         "action": "Deactivate the leg, upload the replacement route, then activate the leg again.",
+                    },
+                )
+
+            from app.mission.planning.sources import SourceStore
+
+            if (
+                leg.route_id
+                and SourceStore(
+                    storage.MISSIONS_DIR, route_manager.routes_dir
+                ).resolve_profile(leg.route_id)
+                == "planning_v1"
+            ):
+                raise HTTPException(
+                    409,
+                    {
+                        "code": "owned_route_source",
+                        "message": "Use the itinerary planning route preview for this owned source.",
                     },
                 )
 

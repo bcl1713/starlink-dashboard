@@ -7,6 +7,7 @@ import type {
   GenerateProposal,
   ApplyProposal,
   SaveReviewed,
+  ApplyRevision,
 } from '../../types/planning';
 
 export function usePlanning(missionId: string, enabled = true) {
@@ -101,7 +102,23 @@ export function usePlanning(missionId: string, enabled = true) {
     }) => planningApi.saveReviewed(missionId, legId, request),
     onSuccess: receive,
   });
+  const previewRevision = useMutation({
+    mutationFn: ({
+      file,
+      expectedRevision,
+    }: {
+      file: File;
+      expectedRevision: number;
+    }) => planningApi.previewRevision(missionId, file, expectedRevision),
+  });
+  const applyRevision = useMutation({
+    mutationFn: (request: ApplyRevision) =>
+      planningApi.applyRevision(missionId, request),
+    onSuccess: receive,
+  });
   return {
+    previewRevision,
+    applyRevision,
     ...query,
     previewRoute,
     acceptRoute,

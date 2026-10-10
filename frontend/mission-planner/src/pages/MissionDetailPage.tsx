@@ -24,6 +24,8 @@ import { EditableField } from '../components/missions/EditableField';
 import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
 import { usePlanning } from '../hooks/api/usePlanning';
+import { RevisionReview } from '../components/planning/RevisionReview';
+import type { PlanningCAS } from '../services/missions';
 import { ExpectedLegCards } from '../components/planning/ExpectedLegCards';
 
 export function MissionDetailPage() {
@@ -80,10 +82,16 @@ export function MissionDetailPage() {
     }
   };
 
-  const handleDeleteLeg = async (leg: MissionLeg, confirmed: boolean) => {
+  const handleDeleteLeg = async (
+    leg: MissionLeg,
+    confirmed: boolean,
+    captured?: PlanningCAS
+  ) => {
     if (confirmed) {
       try {
-        await deleteLegMutation.mutateAsync(leg.id);
+        await deleteLegMutation.mutateAsync(
+          captured ? { legId: leg.id, planning: captured } : leg.id
+        );
       } catch (error) {
         console.error('Failed to delete leg:', error);
         alert(formatMissionDeletionError(error));
@@ -119,8 +127,31 @@ export function MissionDetailPage() {
   const renderInstalledActions = (legId: string) => {
     const leg = mission.legs.find((leg) => leg.id === legId);
     if (!leg) return null;
+    const card = planning.data?.expected_legs.find(
+      (c) => c.leg.installed_leg_id === legId
+    );
+    const captured =
+      card && planning.data
+        ? {
+            expected_revision: planning.data.revision,
+            input_identity: card.input_identity,
+          }
+        : undefined;
     return (
       <div className="flex flex-wrap gap-2">
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={deleteLegMutation.isPending || !captured}
+          onClick={() => {
+            const confirmed = window.confirm(
+              `Delete leg ${leg.name}? Its planning history will be retained.`
+            );
+            void handleDeleteLeg(leg, confirmed, captured);
+          }}
+        >
+          Delete
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -197,10 +228,24 @@ export function MissionDetailPage() {
         <div className="space-y-4">
           <h2 className="text-base font-semibold">Itinerary legs</h2>
           {planningResolved && planning.data ? (
-            <ExpectedLegCards
-              view={planning.data}
-              renderInstalledActions={renderInstalledActions}
-            />
+            <>
+              <RevisionReview
+                view={planning.data}
+                previewRevision={(file, expectedRevision) =>
+                  planning.previewRevision.mutateAsync({
+                    file,
+                    expectedRevision,
+                  })
+                }
+                applyRevision={(request) =>
+                  planning.applyRevision.mutateAsync(request)
+                }
+              />
+              <ExpectedLegCards
+                view={planning.data}
+                renderInstalledActions={renderInstalledActions}
+              />
+            </>
           ) : (
             <p role={planning.error ? 'alert' : 'status'}>
               {planning.error

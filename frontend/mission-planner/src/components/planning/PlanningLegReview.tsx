@@ -74,6 +74,7 @@ function ReviewEditor({
   const leg = card.leg;
   const [tab, setTab] = useState('ar');
   const arTab = useRef<HTMLButtonElement>(null);
+  const routeInput = useRef<HTMLInputElement>(null);
   const options = useQuery({
     queryKey: ['planning-satellite-options'],
     queryFn: planningApi.satelliteOptions,
@@ -143,6 +144,11 @@ function ReviewEditor({
             UTC {leg.departure_time} → {leg.arrival_time}
           </p>
         </div>
+        {leg.route && (
+          <Button variant="outline" onClick={() => routeInput.current?.focus()}>
+            Update Route
+          </Button>
+        )}
         <Button variant="outline" onClick={returnToMission}>
           Return to mission
         </Button>
@@ -162,6 +168,7 @@ function ReviewEditor({
         <label>
           KML for leg {leg.ordinal}
           <Input
+            ref={routeInput}
             aria-label={`KML for leg ${leg.ordinal}`}
             type="file"
             accept=".kml,application/vnd.google-earth.kml+xml"
@@ -177,6 +184,29 @@ function ReviewEditor({
         </Button>
         {routePreview && (
           <div className="space-y-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRoutePreview(null);
+                setAcknowledgments([]);
+                setFile(null);
+                if (routeInput.current) routeInput.current.value = '';
+              }}
+            >
+              Cancel route replacement
+            </Button>
+            {!!routePreview.unresolved_lock_ids?.length && (
+              <p role="alert">
+                Existing locks need occurrence review:{' '}
+                {routePreview.unresolved_lock_ids.join(', ')}
+              </p>
+            )}
+            {!!routePreview.unresolved_ar_ids?.length && (
+              <p role="alert">
+                Existing AR anchors need review:{' '}
+                {routePreview.unresolved_ar_ids.join(', ')}
+              </p>
+            )}
             <p className="break-words">
               Preview for leg {leg.ordinal}: {routePreview.binding.filename}
             </p>

@@ -447,3 +447,136 @@ class PlanningStore:
                 poi_scope={"mission_id": mission_id, "route_ids": sorted(scope_routes)},
                 pois=records,
             )
+
+    def commit_revision(self, mission_id, request, revised, *, retirement=False):
+        from .proposals import environment_identity
+        from .revisions import archive_leg, revision_identity
+
+        files = {}
+        if not retirement:
+            _, source, data = self.sources.acceptance_snapshot(request.preview_id)
+            accepted, files = self.sources.acceptance_files(source, mission_id, data)
+        with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
+            mission, current = self._load(mission_id)
+            if (
+                current.revision != request.expected_revision
+                or revision_identity(current) != request.input_identity
+            ):
+                raise conflict()
+            if not retirement:
+                self.sources.get_preview(request.preview_id)
+            changed = set()
+            retired_ids = set()
+            routes = set()
+            # Rebase server-owned derived payload indexes acquired after preview.
+            revised.proposals = current.proposals
+            revised.proposal_refs = current.proposal_refs
+            revised.review_records = current.review_records
+            revised.leg_history = current.leg_history
+            for old in current.expected_legs:
+                if old.retired:
+                    continue
+                new = next((x for x in revised.expected_legs if x.id == old.id), None)
+                if new is None:
+                    raise PlanningFailure(
+                        422,
+                        "invalid_revision",
+                        "Existing leg must be retained or archived",
+                    )
+                if new == old:
+                    continue
+                self.checked(mission_id, old.id, request.expected_revision)
+                archive_leg(
+                    self,
+                    mission,
+                    revised,
+                    old,
+                    "retirement" if new.retired else "revision",
+                )
+                if new.retired:
+                    retired_ids.add(old.installed_leg_id)
+                    if old.installed_leg_id:
+                        installed = next(
+                            (x for x in mission.legs if x.id == old.installed_leg_id),
+                            None,
+                        )
+                        if installed:
+                            routes.add(installed.route_id)
+                        files[
+                            storage.get_mission_leg_file_path(
+                                mission_id, old.installed_leg_id
+                            ).resolve()
+                        ] = None
+                        files[
+                            storage.get_leg_timeline_path(
+                                old.installed_leg_id, mission_id
+                            ).resolve()
+                        ] = None
+                    changed.add(old.id)
+                    continue
+                pure_reorder = old.model_dump(
+                    exclude={"ordinal", "review"}
+                ) == new.model_dump(exclude={"ordinal", "review"})
+                if (
+                    pure_reorder
+                    and old.review
+                    and old.review.input_identity == leg_identity(old)
+                ):
+                    try:
+                        unchanged_environment = (
+                            old.review.environment_identity
+                            == environment_identity(
+                                self, old, self.planning_constraints_provider()
+                            )
+                        )
+                    except (PlanningFailure, ValueError):
+                        unchanged_environment = False
+                    if unchanged_environment:
+                        new.review = old.review.model_copy(
+                            update={"input_identity": leg_identity(new)}
+                        )
+                    else:
+                        new.review = None
+                elif not pure_reorder:
+                    changed.add(old.id)
+                    new.review = None
+                    if new.draft:
+                        new.draft.evaluation_context = None
+            if any(
+                item.id not in retired_ids and item.route_id in routes
+                for item in mission.legs
+            ):
+                raise conflict(
+                    "Managed marker scopes cannot be shared by installed legs"
+                )
+            mission.legs = [x for x in mission.legs if x.id not in retired_ids]
+            for ref in revised.proposal_refs:
+                if ref.leg_id in changed:
+                    ref.state = "stale"
+            for proposal in revised.proposals:
+                if any(
+                    proposal.input_identity == leg_identity(x)
+                    for x in current.expected_legs
+                    if x.id in changed
+                ):
+                    proposal.state = "stale"
+            if not retirement:
+                revised.source_revisions.append(accepted)
+                metadata = request.itinerary or revised.itinerary_baseline
+                if metadata:
+                    mission.name = metadata.name
+                    mission.metadata["itinerary"] = metadata.model_dump(
+                        mode="json", exclude={"expected_legs"}
+                    )
+            revised.revision = current.revision + 1
+            return self.persist(
+                mission,
+                revised,
+                files=files,
+                poi_scope=(
+                    {"mission_id": mission_id, "route_ids": sorted(routes)}
+                    if routes
+                    else None
+                ),
+                pois={},
+            )

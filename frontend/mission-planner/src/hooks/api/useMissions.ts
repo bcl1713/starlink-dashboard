@@ -90,8 +90,10 @@ export function useDeleteLeg(missionId: string, planning?: PlanningCAS) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (legId: string) =>
-      missionsApi.deleteLeg(missionId, legId, planning),
+    mutationFn: (value: string | { legId: string; planning: PlanningCAS }) =>
+      typeof value === 'string'
+        ? missionsApi.deleteLeg(missionId, value, planning)
+        : missionsApi.deleteLeg(missionId, value.legId, value.planning),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['planning', missionId] });

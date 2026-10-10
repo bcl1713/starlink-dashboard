@@ -594,3 +594,95 @@ it('preserves dirty edits when reload fails despite retained query data', async 
     'You have unsaved changes. Are you sure you want to leave?'
   );
 });
+
+it('exposes managed Update Route with cancel and retains installed route until reviewed save', async () => {
+  const installed = structuredClone(view);
+  installed.expected_legs[0].leg.route = {
+    route_id: 'old',
+    source_id: 'old',
+    content_hash: 'oldhash',
+    filename: 'old.kml',
+  };
+  installed.expected_legs[0].leg.installed_leg_id = 'installed';
+  setup(installed);
+  const stage = vi
+    .spyOn(planningApi, 'previewRoute')
+    .mockResolvedValue({
+      preview_id: 'p',
+      expected_revision: 7,
+      binding: {
+        route_id: 'new',
+        source_id: 'new',
+        content_hash: 'newhash',
+        filename: 'new.kml',
+      },
+      expires_at: '2099-01-01T00:00:00Z',
+      discrepancy_errors: [],
+    });
+  const accept = vi.spyOn(planningApi, 'acceptRoute');
+  fireEvent.click(screen.getByRole('button', { name: 'Update Route' }));
+  fireEvent.change(screen.getByLabelText('KML for leg 3'), {
+    target: { files: [new File(['synthetic'], 'new.kml')] },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Preview selected-leg KML' })
+  );
+  await waitFor(() => expect(stage).toHaveBeenCalled());
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Cancel route replacement' })
+  );
+  expect(accept).not.toHaveBeenCalled();
+  expect(screen.getByText('Accepted route: old.kml')).toBeVisible();
+  expect(planningApi.generateProposal).not.toHaveBeenCalled();
+});
+
+it('keeps replacement preview and local corrections when acceptance CAS is stale', async () => {
+  const installed = structuredClone(view);
+  installed.expected_legs[0].leg.route = {
+    route_id: 'old',
+    source_id: 'old',
+    content_hash: 'oldhash',
+    filename: 'old.kml',
+  };
+  setup(installed);
+  vi.spyOn(planningApi, 'previewRoute').mockResolvedValue({
+    preview_id: 'p',
+    expected_revision: 7,
+    binding: {
+      route_id: 'new',
+      source_id: 'new',
+      content_hash: 'newhash',
+      filename: 'new.kml',
+    },
+    expires_at: '2099-01-01T00:00:00Z',
+    discrepancy_errors: [{ code: 'different', message: 'Times differ' }],
+  });
+  const accept = vi
+    .spyOn(planningApi, 'acceptRoute')
+    .mockRejectedValue({ response: { status: 409 } });
+  fireEvent.change(screen.getByLabelText('KML for leg 3'), {
+    target: { files: [new File(['synthetic'], 'new.kml')] },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Preview selected-leg KML' })
+  );
+  const acknowledgment = await screen.findByLabelText(
+    'Acknowledge: Times differ'
+  );
+  expect(
+    screen.getByRole('button', { name: 'Accept route and review AR windows' })
+  ).toBeDisabled();
+  fireEvent.click(acknowledgment);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Accept route and review AR windows' })
+  );
+  await screen.findByText(/Planning state changed/);
+  expect(accept).toHaveBeenCalledWith('m', 'stable-3', {
+    preview_id: 'p',
+    expected_revision: 7,
+    discrepancy_acknowledgments: ['different'],
+  });
+  expect(screen.getByText('Accepted route: old.kml')).toBeVisible();
+  expect(acknowledgment).toBeChecked();
+  expect(planningApi.generateProposal).not.toHaveBeenCalled();
+});

@@ -272,6 +272,8 @@ export interface PlanningManifest {
   review_records?: ReviewRecord[];
   route_bindings?: RouteBinding[];
   route_history?: RouteBinding[];
+  itinerary_baseline?: ItineraryData | null;
+  leg_history?: LegHistory[];
 }
 
 export interface ExpectedLegCard {
@@ -322,6 +324,10 @@ export interface ARMatchCandidates {
 }
 
 export interface RouteBindingPreview {
+  old_source_hash?: string | null;
+  unresolved_lock_ids?: string[];
+  unresolved_ar_ids?: string[];
+  adjusted_departure_time?: string | null;
   preview_id: string;
   expected_revision: number;
   binding: RouteBinding;
@@ -351,6 +357,7 @@ export interface RevisionLegMapping {
 }
 
 export interface RevisionChange {
+  incoming_leg_id?: string | null;
   field: string;
   expected_leg_id?: string | null;
   before?: string | null;
@@ -372,6 +379,10 @@ export interface RevisionPreview {
   leg_mappings?: RevisionLegMapping[];
   lower_revision?: boolean;
   identical_content?: boolean;
+  unresolved_mappings?: string[];
+  conflicts?: RevisionConflict[];
+  old_source_hash?: string | null;
+  previous_source_revision?: number | null;
 }
 
 export interface ConfirmItinerary {
@@ -427,11 +438,32 @@ export interface SaveReviewed {
   gap_acknowledged?: boolean;
 }
 
+export interface LegHistory {
+  leg: ExpectedLeg;
+  installed_leg?: import('./mission').MissionLeg | null;
+  timeline?: import('./timeline').Timeline | null;
+  source_ids: string[];
+  revision: number;
+  reason: 'revision' | 'retirement' | 'route_replacement';
+}
+export interface RevisionConflict {
+  allowed_actions?: CorrectionResolution['action'][];
+  id: string;
+  expected_leg_id: string;
+  field: string;
+  row_id?: string | null;
+  message: string;
+}
+export interface CorrectionResolution {
+  conflict_id: string;
+  action: 'retain' | 'use_source' | 'remove';
+}
 export interface ApplyRevision {
   expected_revision: number;
   input_identity: string;
   preview_id: string;
-  itinerary: ItineraryData;
+  itinerary?: ItineraryData | null;
+  correction_resolutions?: CorrectionResolution[];
   leg_mappings: RevisionLegMapping[];
   discrepancy_acknowledgments?: string[];
   allow_lower_revision?: boolean;
