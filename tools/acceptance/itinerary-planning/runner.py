@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import errno
 import json
+import logging
 import os
 import shutil
 import signal
@@ -15,9 +17,18 @@ import tarfile
 import time
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "starlink-itinerary-planning"
 PORT = 15322
+# Kernel-owned, process-lifetime coordination across worktrees; no stale lockfile.
+CLAIM_NAME = f"{PROJECT}-{os.getuid()}-{PORT}"
+RESOURCE_COMMANDS = {
+    "containers": ["docker", "ps", "-aq"],
+    "networks": ["docker", "network", "ls", "-q"],
+    "volumes": ["docker", "volume", "ls", "-q"],
+}
 
 
 class Owner:
@@ -30,6 +41,7 @@ class Owner:
             raise RuntimeError("Evidence directory already has an ownership record")
         self.env = dict(os.environ)
         self.children: list[subprocess.Popen[str]] = []
+        self.claim: socket.socket | None = None
         self.record: dict = {
             "candidate_sha": sha,
             "pid": os.getpid(),
@@ -51,6 +63,36 @@ class Owner:
         pending = self.output / "ownership.pending"
         pending.write_text(json.dumps(self.record, indent=2))
         pending.replace(self.output / "ownership.json")
+
+    def acquire_claim(self) -> None:
+        self.record["claim"] = {
+            "kind": "linux-abstract-unix-socket",
+            "name": CLAIM_NAME,
+            "state": "requested",
+        }
+        self.persist()  # Record intent before the atomic, nonblocking acquisition.
+        claim = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            claim.bind("\0" + CLAIM_NAME)
+        except OSError as error:
+            claim.close()
+            self.record["claim"]["state"] = (
+                "contended" if error.errno == errno.EADDRINUSE else "failed"
+            )
+            self.persist()
+            raise RuntimeError(
+                f"Cannot acquire exclusive run claim {CLAIM_NAME}: {error}"
+            ) from error
+        self.claim = claim
+        self.record["claim"]["state"] = "acquired"
+        self.persist()
+
+    def release_claim(self) -> None:
+        if self.claim is not None:
+            self.claim.close()
+            self.claim = None
+            self.record["claim"]["state"] = "released"
+            self.persist()
 
     def signal(self, signum: int, _frame: object) -> None:
         raise InterruptedError(f"Interrupted by signal {signum}")
@@ -129,11 +171,26 @@ class Owner:
         return log.read_text()
 
     def close_processes(self) -> None:
+        failures = []
+        self.record["cleanup"]["processes_gone"] = False
         for child in list(self.children):
-            self.stop(child)
+            try:
+                self.stop(child)
+            except BaseException as error:
+                logger.exception("Failed to stop owned group %s", child.pid)
+                failures.append(f"Owned group {child.pid}: {error}")
+                continue
             self.children.remove(child)
-        self.record["cleanup"]["processes_gone"] = True
+            for command in self.record["commands"]:
+                if command["pid"] == child.pid:
+                    command.update(reaped=True, returncode=child.returncode)
+        self.record["cleanup"].update(
+            processes_gone=not self.children,
+            unreaped_groups=[child.pid for child in self.children],
+        )
         self.persist()
+        if failures:
+            raise RuntimeError("; ".join(failures))
 
     def compose(self, *arguments: str, timeout: float = 120) -> str:
         return self.execute(
@@ -158,11 +215,7 @@ def resources(owner: Owner) -> dict[str, str]:
         key: owner.execute(
             [*command, "--filter", f"label=com.docker.compose.project={PROJECT}"]
         ).strip()
-        for key, command in {
-            "containers": ["docker", "ps", "-aq"],
-            "networks": ["docker", "network", "ls", "-q"],
-            "volumes": ["docker", "volume", "ls", "-q"],
-        }.items()
+        for key, command in RESOURCE_COMMANDS.items()
     }
 
 
@@ -183,6 +236,80 @@ def preflight(owner: Owner) -> None:
         "endpoint": os.environ.get("DOCKER_HOST", "<context>"),
     }
     owner.persist()
+
+
+def cleanup(owner: Owner, owned: bool) -> list[dict[str, str]]:
+    """Attempt independent teardown stages and preserve every unresolved identifier."""
+    failures: list[dict[str, str]] = []
+
+    def attempt(stage, operation):
+        try:
+            return operation()
+        except BaseException as error:
+            logger.exception("Cleanup stage failed: %s", stage)
+            failures.append({"stage": stage, "error": str(error)})
+            return None
+
+    attempt("processes_initial", owner.close_processes)
+    if owned:
+        attempt("compose_logs", lambda: owner.compose("logs", "--no-color", timeout=30))
+        attempt(
+            "compose_down",
+            lambda: owner.compose("down", "--volumes", "--remove-orphans", timeout=90),
+        )
+        remaining = {}
+        for kind, command in RESOURCE_COMMANDS.items():
+            result = attempt(
+                f"audit_{kind}",
+                lambda command=command: owner.execute(
+                    [
+                        *command,
+                        "--filter",
+                        f"label=com.docker.compose.project={PROJECT}",
+                    ]
+                ).strip(),
+            )
+            remaining[kind] = result  # None means unknown, never falsely empty.
+            if result:
+                failures.append(
+                    {
+                        "stage": f"audit_{kind}",
+                        "error": f"Owned {kind} remain: {result}",
+                    }
+                )
+        owner.record["cleanup"]["resources"] = remaining
+        owner.record["cleanup"]["port_free"] = False
+
+        def audit_port():
+            check_port()
+            owner.record["cleanup"]["port_free"] = True
+
+        attempt("audit_port", audit_port)
+    attempt("processes_final", owner.close_processes)
+    survivors = []
+    for temporary in owner.record["temporary_paths"]:
+        path = Path(temporary)
+
+        def remove(path=path):
+            if owner.children:
+                raise RuntimeError(
+                    f"Cannot remove {path}; owned groups still live: {[child.pid for child in owner.children]}"
+                )
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
+
+        attempt(f"remove:{temporary}", remove)
+        exists = attempt(f"audit_path:{temporary}", path.exists)
+        if exists is not False:
+            survivors.append(temporary)
+    owner.record["cleanup"].update(
+        temporary_paths_removed=not survivors,
+        temporary_survivors=survivors,
+    )
+    attempt("persist_cleanup", owner.persist)
+    return failures
 
 
 def main() -> None:
@@ -216,7 +343,9 @@ def main() -> None:
     signal.alarm(28 * 60)  # Reserve two minutes for teardown before the outer deadline.
     owned = False
     summary: dict = {"candidate_sha": sha, "passed": False}
+    primary_error: BaseException | None = None
     try:
+        owner.acquire_claim()
         preflight(owner)
         if args.check:
             summary["passed"] = True
@@ -274,6 +403,12 @@ def main() -> None:
                 raise RuntimeError("Built image candidate SHA mismatch")
             summary[name] = {"image": identity["Id"], "revision": sha}
         owner.compose("config", "--quiet")
+        # A non-cooperating process may have created foreign resources during builds.
+        if any(resources(owner).values()):
+            raise RuntimeError(
+                "Project resources appeared during build; ownership not assumed"
+            )
+        check_port()
         owned = True  # Record responsibility before any partial Compose launch.
         owner.record["compose_started"] = True
         owner.persist()
@@ -347,42 +482,42 @@ def main() -> None:
         )
         summary["passed"] = True
     except BaseException as error:
+        primary_error = error
         summary["error"] = str(error)
         raise
     finally:
         signal.alarm(0)
         for number in previous:
             signal.signal(number, signal.SIG_IGN)
+        failures = []
         try:
-            owner.close_processes()
-            if owned:
-                try:
-                    owner.compose("logs", "--no-color", timeout=30)
-                finally:
-                    owner.compose("down", "--volumes", "--remove-orphans", timeout=90)
-                remaining = resources(owner)
-                owner.record["cleanup"]["resources"] = remaining
-                owner.persist()
-                if any(remaining.values()):
-                    raise RuntimeError(f"Owned resources remain: {remaining}")
-                check_port()
-                owner.record["cleanup"]["port_free"] = True
-            for temporary in owner.record["temporary_paths"]:
-                path = Path(temporary)
-                if path.is_dir():
-                    shutil.rmtree(path)
-                else:
-                    path.unlink(missing_ok=True)
-            owner.record["cleanup"]["temporary_paths_removed"] = True
-            owner.close_processes()
+            failures.extend(cleanup(owner, owned))
         except BaseException as error:
-            summary.update(passed=False, cleanup_error=str(error))
-            raise
+            logger.exception("Cleanup orchestration failed")
+            failures.append({"stage": "cleanup_orchestration", "error": str(error)})
         finally:
+            try:
+                owner.release_claim()
+            except BaseException as error:
+                logger.exception("Failed to release exclusive run claim")
+                failures.append({"stage": "release_claim", "error": str(error)})
+            if failures:
+                summary.update(passed=False, cleanup_errors=failures)
             summary["cleanup"] = owner.record["cleanup"]
-            (owner.output / "summary.json").write_text(json.dumps(summary, indent=2))
-            for number, handler in previous.items():
-                signal.signal(number, handler)
+            summary["claim"] = owner.record.get("claim")
+            try:
+                (owner.output / "summary.json").write_text(
+                    json.dumps(summary, indent=2)
+                )
+            finally:
+                for number, handler in previous.items():
+                    signal.signal(number, handler)
+        if failures:
+            message = f"Acceptance cleanup failed: {failures}"
+            if primary_error is not None:
+                primary_error.add_note(message)
+            else:
+                raise RuntimeError(message)
 
 
 if __name__ == "__main__":
