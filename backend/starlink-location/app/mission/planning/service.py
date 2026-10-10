@@ -110,7 +110,7 @@ class PlanningService:
                 if record["identity"] != identity:
                     raise conflict("Idempotency key already used for different input")
                 return self.store.read(record["mission_id"])
-        record, source = self.sources.get_preview(request.preview_id)
+            record, source, data = self.sources.acceptance_snapshot(request.preview_id)
         if record["kind"] != "itinerary":
             raise PlanningFailure(
                 422, "wrong_preview_kind", "An itinerary preview is required"
@@ -120,7 +120,7 @@ class PlanningService:
                 422, "expected_legs_required", "At least one expected leg is required"
             )
         mission_id = str(uuid4())
-        accepted, files = self.sources.acceptance_files(source, mission_id)
+        accepted, files = self.sources.acceptance_files(source, mission_id, data)
         draft = PlanningDraft(
             **request.model_dump(
                 include={
@@ -237,7 +237,7 @@ class PlanningService:
             raise
 
     def accept_route(self, mission_id, leg_id, request):
-        record, source = self.sources.get_preview(request.preview_id)
+        record, source, data = self.sources.acceptance_snapshot(request.preview_id)
         if (
             record.get("kind") != "route"
             or record.get("mission_id") != mission_id
@@ -260,7 +260,7 @@ class PlanningService:
                 "discrepancy_acknowledgment_required",
                 "Acknowledge route discrepancies before acceptance",
             )
-        accepted, files = self.sources.acceptance_files(source, mission_id)
+        accepted, files = self.sources.acceptance_files(source, mission_id, data)
         from app.models.route import ParsedRoute
 
         route = ParsedRoute.model_validate(record["route"])

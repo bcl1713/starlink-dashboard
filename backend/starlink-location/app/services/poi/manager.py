@@ -384,7 +384,6 @@ class POIManager:
             self._save_pois()
         return len(removed_ids)
 
-    @_poi_access
     def create_poi(
         self,
         poi_create: POICreate,
@@ -406,6 +405,8 @@ class POIManager:
         Raises:
             ValueError: If POI creation fails
         """
+        original_route = active_route
+        poi_create, active_route = self._creation_inputs(poi_create, active_route)
         slug_source = poi_create.name.lower()
         slug_source = re.sub(r"\s+", "-", slug_source.strip())
         slug_source = re.sub(r"[^a-z0-9\-]+", "", slug_source)
@@ -416,13 +417,6 @@ class POIManager:
             poi_id = f"{poi_create.mission_id}-{base_slug}"
         else:
             poi_id = base_slug
-
-        # Ensure unique ID
-        counter = 1
-        original_id = poi_id
-        while poi_id in self._pois:
-            poi_id = f"{original_id}-{counter}"
-            counter += 1
 
         now = datetime.now(timezone.utc)
         poi = POI(
@@ -485,11 +479,34 @@ class POIManager:
                     f"Failed to project new POI {poi_id} onto active route: {e}"
                 )
 
-        self._pois[poi_id] = poi
-        self._save_pois()
+        return self._publish_created_poi(poi, original_route, active_route)
 
-        logger.info(f"Created POI: {poi_id}")
-        return poi
+    @planning_read_gate
+    def _creation_inputs(self, poi_create, route):
+        return (
+            poi_create.model_copy(deep=True),
+            route.model_copy(deep=True) if route is not None else None,
+        )
+
+    @_poi_access
+    def _publish_created_poi(self, poi, original_route, route_snapshot):
+        if original_route != route_snapshot:
+            # Creating the POI remains valid if its optional projection raced a
+            # route edit. Do not publish coordinates or provenance for old geometry.
+            poi.projected_latitude = None
+            poi.projected_longitude = None
+            poi.projected_waypoint_index = None
+            poi.projected_route_progress = None
+            poi.planned_route_geometry_hash = None
+        counter = 1
+        original_id = poi.id
+        while poi.id in self._pois:
+            poi.id = f"{original_id}-{counter}"
+            counter += 1
+        self._pois[poi.id] = poi
+        self._save_pois()
+        logger.info(f"Created POI: {poi.id}")
+        return poi.model_copy(deep=True)
 
     @_poi_access
     def update_poi(self, poi_id: str, poi_update: POIUpdate) -> POI | None:
@@ -790,7 +807,6 @@ class POIManager:
         self._load_pois()
         logger.info("Reloaded POIs from disk")
 
-    @_poi_access
     def calculate_poi_projections(self, route) -> int:
         """
         Calculate route projections for all POIs using a given route.
@@ -806,6 +822,8 @@ class POIManager:
         if not route or not route.points:
             return 0
 
+        original_route = route
+        pois, route, signature = self._projection_inputs(route)
         from app.services.route_eta_calculator import RouteETACalculator
 
         try:
@@ -825,10 +843,10 @@ class POIManager:
             logger.error(f"Failed to create route ETA calculator: {e}")
             return 0
 
-        projected_count = 0
         route_geometry_hash = _route_geometry_hash(route)
 
-        for poi_id, poi in list(self._pois.items()):
+        projected = {}
+        for poi_id, poi in pois.items():
             try:
                 # Generated warning cues know which visit to a repeated location
                 # they represent. Keep that segment when reactivating their route.
@@ -850,10 +868,7 @@ class POIManager:
                 poi.projected_waypoint_index = projection["projected_waypoint_index"]
                 poi.projected_route_progress = projection["projected_route_progress"]
 
-                # Ensure the POI object is updated in the dict
-                self._pois[poi_id] = poi
-
-                projected_count += 1
+                projected[poi_id] = poi
             except (
                 RuntimeError,
                 ValueError,
@@ -870,12 +885,31 @@ class POIManager:
                 logger.warning(f"Failed to project POI {poi_id} onto route: {e}")
                 continue
 
-        # Save POIs with projection data
-        if projected_count > 0:
-            self._save_pois()
-            logger.info(f"Calculated projections for {projected_count} POIs on route")
+        return self._publish_projections(projected, signature, original_route, route)
 
-        return projected_count
+    @_poi_access
+    def _projection_inputs(self, route):
+        return (
+            {key: poi.model_copy(deep=True) for key, poi in self._pois.items()},
+            route.model_copy(deep=True),
+            self._persisted_signature,
+        )
+
+    @_poi_access
+    def _publish_projections(
+        self, projected, signature, original_route, route_snapshot
+    ):
+        # The access gate refreshes this manager before comparing. Any intervening
+        # write (including clearing projections) invalidates this batch rather
+        # than overwriting the newer POI coordinates, ownership or projection.
+        if signature != self._persisted_signature or original_route != route_snapshot:
+            logger.info("Discarded POI projections because snapshot inputs changed")
+            return 0
+        if projected:
+            self._pois.update(projected)
+            self._save_pois()
+            logger.info(f"Calculated projections for {len(projected)} POIs on route")
+        return len(projected)
 
     @_poi_access
     def clear_poi_projections(self) -> int:
@@ -900,9 +934,10 @@ class POIManager:
                 poi.projected_route_progress = None
                 cleared_count += 1
 
-        # Save POIs with cleared projections
+        # Persist even an empty clear so a projection already computing from a
+        # prior snapshot cannot republish after deactivation.
+        self._save_pois()
         if cleared_count > 0:
-            self._save_pois()
             logger.info(f"Cleared projections for {cleared_count} POIs")
 
         return cleared_count

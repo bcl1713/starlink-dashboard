@@ -598,3 +598,119 @@ def test_unknown_preview_is_404_while_expired_preview_remains_409(service):
         assert expired.value.status_code == 409
         assert expired.value.error.action == "reupload"
     assert not service.sources.path(source).exists()
+
+
+def pending_create(service):
+    source = service.sources.stage(b"synthetic pdf", "pdf", None, "same.pdf")
+    service.sources.save_preview(
+        source.id, {"kind": "itinerary", "source": source.storage_record()}
+    )
+    return ConfirmItinerary(
+        preview_id=source.id,
+        idempotency_key="overlapping-create",
+        itinerary=ItineraryData(
+            name="Concurrent", expected_legs=[ExpectedLeg(**expected_leg_fields())]
+        ),
+    )
+
+
+@pytest.mark.parametrize("operation", ["create", "accept_route"])
+def test_overlapping_source_consumption_resolves_idempotency_or_conflict(
+    service, tmp_path, monkeypatch, operation
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event, current_thread
+
+    from app.mission.planning.errors import PlanningFailure
+
+    if operation == "create":
+        request = pending_create(service)
+        invoke = lambda: service.create(request)
+    else:
+        view, _ = create(service)
+        preview = service.preview_route(
+            view.mission.id, "card-1", kml_fixture(tmp_path).read_bytes(), 1
+        )
+        request = AcceptRouteBinding(
+            expected_revision=1,
+            preview_id=preview.preview_id,
+            discrepancy_acknowledgments=[e.code for e in preview.discrepancy_errors],
+        )
+        invoke = lambda: service.accept_route(view.mission.id, "card-1", request)
+
+    waiting, release = Event(), Event()
+    original = service.sources.acceptance_files
+
+    def pause_duplicate(*args, **kwargs):
+        if current_thread().name.startswith("duplicate"):
+            waiting.set()
+            assert release.wait(5)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service.sources, "acceptance_files", pause_duplicate)
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="duplicate") as executor:
+        duplicate = executor.submit(invoke)
+        try:
+            assert waiting.wait(5)
+            first = invoke()
+        finally:
+            release.set()
+        if operation == "create":
+            assert duplicate.result(timeout=5) == first
+        else:
+            with pytest.raises(PlanningFailure) as conflict:
+                duplicate.result(timeout=5)
+            assert conflict.value.status_code == 409
+            assert service.store.read(first.mission.id) == first
+    assert len(storage.list_mission_metadata_v2()) == 1
+
+
+def test_new_upload_collects_expired_unvisited_staging_during_uptime(service):
+    from datetime import datetime, timedelta, timezone
+
+    from app.mission.planning.errors import PlanningFailure
+    from app.mission.planning.journal import atomic_write, json_bytes
+
+    abandoned = service.sources.stage(b"abandoned", "pdf", None, "abandoned.pdf")
+    abandoned = abandoned.model_copy(
+        update={"expires_at": datetime.now(timezone.utc) - timedelta(seconds=1)}
+    )
+    atomic_write(
+        service.sources.root / "staging" / f"{abandoned.id}.source.json",
+        json_bytes(abandoned.storage_record()),
+    )
+    service.sources.save_preview(
+        abandoned.id, {"kind": "itinerary", "source": abandoned.storage_record()}
+    )
+    active = service.sources.stage(b"active", "kml", "mission", "active.kml")
+    assert not service.sources.path(abandoned).exists()
+    assert service.sources.path(active).read_bytes() == b"active"
+    with pytest.raises(PlanningFailure) as expired:
+        service.sources.get_preview(abandoned.id)
+    assert expired.value.status_code == 409
+    assert expired.value.error.action == "reupload"
+
+
+def test_expiry_sweep_bounds_work_and_rotates_past_unvisited_descriptors(service):
+    from datetime import datetime, timedelta, timezone
+
+    from app.mission.planning.journal import atomic_write, json_bytes
+
+    sources = [
+        service.sources.stage(b"synthetic", "pdf", None, "test.pdf") for _ in range(4)
+    ]
+    for source in sources:
+        expired = source.model_copy(
+            update={"expires_at": datetime.now(timezone.utc) - timedelta(seconds=1)}
+        )
+        atomic_write(
+            service.sources.root / "staging" / f"{source.id}.source.json",
+            json_bytes(expired.storage_record()),
+        )
+    previous = len(sources)
+    for _ in range(len(sources) + 2):
+        service.sources.cleanup_expired(limit=1)
+        remaining = sum(service.sources.path(source).exists() for source in sources)
+        assert previous - remaining in (0, 1)
+        previous = remaining
+    assert remaining == 0

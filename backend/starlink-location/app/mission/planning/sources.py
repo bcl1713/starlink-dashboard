@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from app.mission.storage import planning_read_gate
 from app.services.kml_parser import KMLParseError
 
 from .errors import PlanningFailure
@@ -17,7 +18,9 @@ class SourceStore:
     def __init__(self, root: Path, routes_dir: Path):
         self.root = Path(root).resolve() / ".planning"
         self.routes_dir = Path(routes_dir).resolve()
+        self._cleanup_candidates = None
 
+    @planning_read_gate
     def stage(
         self, data: bytes, kind: str, owner: str | None, filename: str
     ) -> SourceRevision:
@@ -25,6 +28,7 @@ class SourceStore:
             raise ValueError("Unsupported source kind")
         if kind == "pdf" and len(data) > 10 * 1024 * 1024:
             raise PlanningFailure(422, "upload_too_large", "Upload exceeds 10 MiB")
+        self.cleanup_expired(limit=100)
         source_id = str(uuid4())
         source = SourceRevision(
             id=source_id,
@@ -58,9 +62,11 @@ class SourceStore:
             raise PlanningFailure(404, "preview_not_found", "Preview not found")
         return self.root / "staging" / f"{preview_id}.preview.json"
 
+    @planning_read_gate
     def save_preview(self, preview_id, record):
         atomic_write(self.preview_path(preview_id), json_bytes(record))
 
+    @planning_read_gate
     def get_preview(self, preview_id):
         path = self.preview_path(preview_id)
         if not path.exists():
@@ -88,6 +94,7 @@ class SourceStore:
             )
         return record, source
 
+    @planning_read_gate
     def expire(self, source):
         # Retain only resource status, never expired source or parsed content.
         self.save_preview(source.id, {"expired": True})
@@ -97,6 +104,7 @@ class SourceStore:
         ):
             path.unlink(missing_ok=True)
 
+    @planning_read_gate
     def discard(self, source):
         if source.owned_relative_path.startswith("staging/"):
             for path in (
@@ -106,11 +114,30 @@ class SourceStore:
             ):
                 path.unlink(missing_ok=True)
 
-    def cleanup_expired(self):
-        for path in (self.root / "staging").glob("*.source.json"):
+    @planning_read_gate
+    def cleanup_expired(self, *, limit=None):
+        # Retain the iterator between bounded batches so fresh descriptors at the
+        # front cannot indefinitely hide abandoned sources later in the sweep.
+        if limit is None or self._cleanup_candidates is None:
+            self._cleanup_candidates = (self.root / "staging").glob("*.source.json")
+        count = 0
+        while limit is None or count < limit:
+            path = next(self._cleanup_candidates, None)
+            if path is None:
+                self._cleanup_candidates = None
+                break
+            count += 1
+            if not path.exists():
+                continue  # Accepted or discarded since this batch was enumerated.
             source = SourceRevision.model_validate_json(path.read_bytes())
             if source.expires_at and source.expires_at <= datetime.now(timezone.utc):
                 self.expire(source)
+
+    @planning_read_gate
+    def acceptance_snapshot(self, preview_id):
+        """Capture immutable input before another acceptance can consume staging."""
+        record, source = self.get_preview(preview_id)
+        return record, source, self.path(source).read_bytes()
 
     def descriptor_path(self, route_id):
         return self.routes_dir / f"{route_id}.profile.json"
@@ -145,7 +172,7 @@ class SourceStore:
                     "Invalid owned route profile; explicit recovery required"
                 ) from exc
 
-    def acceptance_files(self, source, owner):
+    def acceptance_files(self, source, owner, data):
         suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
         accepted = source.model_copy(
             update={
@@ -154,7 +181,6 @@ class SourceStore:
                 "owned_relative_path": f"sources/{source.id}.{suffix}",
             }
         )
-        data = self.path(source).read_bytes()
         if hashlib.sha256(data).hexdigest() != source.content_hash:
             raise PlanningFailure(
                 422, "source_changed", "Staged source failed integrity validation"
