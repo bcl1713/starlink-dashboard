@@ -168,3 +168,70 @@ it('shows individual AR source changes and supports mixed conflict resolutions',
     )
   );
 });
+
+it('shows mission metadata conflicts and submits independent retain/use-source choices', async () => {
+  const detailed = {
+    ...preview,
+    accepted_metadata: {
+      name: 'Operator mission',
+      aircraft: 'Operator aircraft',
+      call_sign: 'Operator call',
+    },
+    conflicts: ['name', 'aircraft', 'call_sign'].map((field) => ({
+      id: `metadata:${field}`,
+      expected_leg_id: null,
+      field,
+      message: `Resolve accepted ${field}`,
+      allowed_actions: ['retain', 'use_source'],
+    })),
+    changes: [
+      {
+        field: 'aircraft',
+        before: 'Operator aircraft',
+        after: 'Incoming aircraft',
+        requires_resolution: true,
+      },
+    ],
+  } as RevisionPreview;
+  const apply = vi.fn().mockResolvedValue(view);
+  render(
+    <RevisionReview
+      view={view}
+      previewRevision={vi.fn().mockResolvedValue(detailed)}
+      applyRevision={apply}
+    />
+  );
+  fireEvent.change(screen.getByLabelText('Revised itinerary PDF'), {
+    target: { files: [new File(['synthetic'], 'revision.pdf')] },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Preview itinerary revision' })
+  );
+  await screen.findByText('aircraft: Operator aircraft → Incoming aircraft');
+  fireEvent.click(screen.getByLabelText('I confirm the complete leg mapping'));
+  expect(
+    screen.getByRole('button', { name: 'Apply itinerary revision' })
+  ).toBeDisabled();
+  for (const field of ['name', 'aircraft', 'call_sign'])
+    fireEvent.change(screen.getByLabelText(`Resolve accepted ${field}`), {
+      target: { value: field === 'aircraft' ? 'use_source' : 'retain' },
+    });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Apply itinerary revision' })
+  );
+  await waitFor(() =>
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        correction_resolutions: [
+          { conflict_id: 'metadata:name', action: 'retain' },
+          { conflict_id: 'metadata:aircraft', action: 'use_source' },
+          { conflict_id: 'metadata:call_sign', action: 'retain' },
+        ],
+        expected_revision: 7,
+        input_identity: 'captured',
+      })
+    )
+  );
+  expect(apply.mock.calls[0][0]).not.toHaveProperty('accepted_metadata');
+  expect(apply.mock.calls[0][0]).not.toHaveProperty('itinerary');
+});

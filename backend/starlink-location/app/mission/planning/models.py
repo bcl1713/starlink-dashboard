@@ -47,6 +47,7 @@ __all__ = [
     "HeightProfilePoint",
     "ItineraryAR",
     "ItineraryData",
+    "ItineraryMetadata",
     "ItineraryPreview",
     "LegHistory",
     "PlanningDraft",
@@ -469,6 +470,15 @@ class SourceEvidence(PlanningRecord):
     field: str | None = None
 
 
+class ItineraryMetadata(PlanningRecord):
+    """Accepted mission metadata comparison; populated only by the server."""
+
+    name: str = Field(min_length=1)
+    itinerary_revision: int | None = Field(default=None, ge=1)
+    aircraft: str | None = None
+    call_sign: str | None = None
+
+
 class ItineraryData(PlanningRecord):
     name: str = Field(min_length=1)
     itinerary_revision: int | None = Field(default=None, ge=1)
@@ -553,7 +563,7 @@ class RevisionConflict(PlanningRecord):
         default_factory=lambda: ["retain", "use_source", "remove"]
     )
     id: str
-    expected_leg_id: str
+    expected_leg_id: str | None = None
     field: str
     row_id: str | None = None
     message: str
@@ -565,6 +575,7 @@ class CorrectionResolution(PlanningRecord):
 
 
 class RevisionPreview(ItineraryPreview):
+    accepted_metadata: ItineraryMetadata | None = None
     expected_revision: int = Field(ge=1)
     input_identity: ContentHash
     changes: list[RevisionChange] = Field(default_factory=list)

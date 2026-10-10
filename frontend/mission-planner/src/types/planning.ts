@@ -365,7 +365,15 @@ export interface RevisionChange {
   requires_resolution?: boolean;
 }
 
+export interface ItineraryMetadata {
+  name: string;
+  aircraft?: string | null;
+  call_sign?: string | null;
+  itinerary_revision?: number | null;
+}
+
 export interface RevisionPreview {
+  accepted_metadata?: ItineraryMetadata | null;
   preview_id: string;
   parsed_values?: ItineraryData | null;
   field_errors?: PlanningError[];
@@ -449,7 +457,7 @@ export interface LegHistory {
 export interface RevisionConflict {
   allowed_actions?: CorrectionResolution['action'][];
   id: string;
-  expected_leg_id: string;
+  expected_leg_id?: string | null;
   field: string;
   row_id?: string | null;
   message: string;

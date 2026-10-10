@@ -1,5 +1,6 @@
 """Pure source reconciliation and typed archival; publication belongs to the store."""
 
+from collections import Counter
 from uuid import uuid4
 
 from app.mission import storage
@@ -8,6 +9,7 @@ from app.mission.models import MissionLegTimeline
 from .errors import PlanningFailure
 from .identity import planning_identity
 from .models import (
+    ItineraryMetadata,
     ItineraryPreview,
     LegHistory,
     PlanningDraft,
@@ -44,6 +46,58 @@ def revision_identity(manifest):
     )
 
 
+METADATA_FIELDS = ("name", "aircraft", "call_sign")
+
+
+def mission_metadata(mission) -> ItineraryMetadata:
+    metadata = mission.metadata.get("itinerary", {})
+    return ItineraryMetadata.model_validate(
+        {
+            **{
+                field: metadata.get(field)
+                for field in (*METADATA_FIELDS, "itinerary_revision")
+            },
+            "name": mission.name,
+        }
+    )
+
+
+def metadata_conflicts(baseline, accepted, incoming):
+    if baseline is None or accepted is None:
+        return []
+    return [
+        RevisionConflict(
+            id=f"metadata:{field}",
+            field=field,
+            allowed_actions=["retain", "use_source"],
+            message=f"Accepted {field} and incoming source both changed; retain correction or use source.",
+        )
+        for field in METADATA_FIELDS
+        if getattr(accepted, field) != getattr(baseline, field)
+        and getattr(incoming, field) != getattr(baseline, field)
+        and getattr(incoming, field) != getattr(accepted, field)
+    ]
+
+
+def merge_metadata(baseline, accepted, incoming, resolutions):
+    """Recompute from the current mission under the commit gate, never client state."""
+    choices = {choice.conflict_id: choice.action for choice in resolutions}
+    for issue in metadata_conflicts(baseline, accepted, incoming):
+        if choices.get(issue.id) not in issue.allowed_actions:
+            raise invalid("Resolve each accepted mission metadata conflict")
+    values = {"itinerary_revision": incoming.itinerary_revision}
+    for field in METADATA_FIELDS:
+        old = getattr(accepted, field)
+        new = getattr(incoming, field)
+        keep = (
+            baseline is None
+            or (new == getattr(baseline, field) and old != getattr(baseline, field))
+            or choices.get(f"metadata:{field}") == "retain"
+        )
+        values[field] = old if keep else new
+    return ItineraryMetadata.model_validate(values)
+
+
 def archive_leg(store, mission, manifest, leg, reason):
     installed = next(
         (item for item in mission.legs if item.id == leg.installed_leg_id), None
@@ -71,23 +125,43 @@ def row_signature(row):
 
 def row_pairs(old, incoming):
     """Unique source evidence only. Duplicate tracks never select a guessed row."""
+    old_signatures = Counter(row_signature(row) for row in old)
+    new_signatures = Counter(row_signature(row) for row in incoming)
+    old_tracks = Counter(row.track for row in old)
+    new_tracks = Counter(row.track for row in incoming)
     used = set()
     result = []
     for row in incoming:
-        matches = [
-            x
-            for x in old
-            if x.id not in used and row_signature(x) == row_signature(row)
-        ]
-        if len(matches) != 1:
-            matches = [x for x in old if x.id not in used and x.track == row.track]
-            if sum(x.track == row.track for x in incoming) != 1:
-                matches = []
-        previous = matches[0] if len(matches) == 1 else None
+        signature = row_signature(row)
+        previous = None
+        if old_signatures[signature] == new_signatures[signature] == 1:
+            previous = next(x for x in old if row_signature(x) == signature)
+        elif old_tracks[row.track] == new_tracks[row.track] == 1:
+            previous = next(x for x in old if x.track == row.track)
+        if previous and previous.id in used:
+            previous = None
         if previous:
             used.add(previous.id)
         result.append((previous, row))
     return result, [x for x in old if x.id not in used]
+
+
+def merge_source_row(previous, incoming, corrected):
+    changes = {
+        field: getattr(incoming, field)
+        for field in AR_FIELDS
+        if getattr(previous, field) != getattr(incoming, field)
+    }
+    changes["confirmed"] = False
+    start_changed = "entry_time" in changes or "source_time_precision" in changes
+    end_changed = "exit_time" in changes or "source_time_precision" in changes
+    if start_changed:
+        changes["start_anchor"] = None
+    if end_changed:
+        changes["end_anchor"] = None
+    if (start_changed or end_changed) and corrected.match_status != "excluded":
+        changes["match_status"] = "unresolved"
+    return corrected.model_copy(update=changes, deep=True)
 
 
 def conflicts_for(old, incoming, baseline):
@@ -168,13 +242,16 @@ def conflicts_for(old, incoming, baseline):
 
 
 def preview_revision(
-    current: PlanningManifest, incoming: ItineraryPreview
+    current: PlanningManifest,
+    incoming: ItineraryPreview,
+    accepted_metadata: ItineraryMetadata | None = None,
 ) -> RevisionPreview:
     live = [x for x in current.expected_legs if not x.retired]
     parsed = incoming.parsed_values
     pdfs = [s for s in current.source_revisions if s.kind == "itinerary_pdf"]
     baseline = current.itinerary_baseline
     result = RevisionPreview(
+        accepted_metadata=accepted_metadata,
         **incoming.model_dump(exclude={"source"}),
         source=incoming.source,
         expected_revision=current.revision,
@@ -299,13 +376,24 @@ def preview_revision(
             if x.id not in used
         )
     if baseline:
-        for field in ("name", "aircraft", "call_sign", "itinerary_revision"):
-            if getattr(baseline, field) != getattr(parsed, field):
+        issues = metadata_conflicts(baseline, accepted_metadata, parsed)
+        result.conflicts.extend(issues)
+        for field in (*METADATA_FIELDS, "itinerary_revision"):
+            previous = getattr(accepted_metadata or baseline, field)
+            incoming_value = getattr(parsed, field)
+            # An unchanged source must preserve accepted corrections automatically.
+            if (
+                getattr(baseline, field) != incoming_value
+                and previous != incoming_value
+            ):
                 result.changes.append(
                     RevisionChange(
                         field=field,
-                        before=str(getattr(baseline, field)),
-                        after=str(getattr(parsed, field)),
+                        before=str(previous),
+                        after=str(incoming_value),
+                        requires_resolution=any(
+                            issue.field == field for issue in issues
+                        ),
                     )
                 )
     return result
@@ -363,7 +451,16 @@ def reconcile(current, preview, request):
     resolutions = {x.conflict_id: x for x in request.correction_resolutions}
     if len(resolutions) != len(request.correction_resolutions):
         raise invalid("Duplicate correction resolution")
-    required = set()
+    metadata_issues = metadata_conflicts(
+        current.itinerary_baseline, preview.accepted_metadata, parsed
+    )
+    for issue in metadata_issues:
+        if (
+            issue.id not in resolutions
+            or resolutions[issue.id].action not in issue.allowed_actions
+        ):
+            raise invalid("Resolve each accepted mission metadata conflict")
+    required = {issue.id for issue in metadata_issues}
     revised = current.model_copy(deep=True)
     revised.expected_legs = [x for x in revised.expected_legs if x.retired]
     source_baseline = []
@@ -461,8 +558,12 @@ def reconcile(current, preview, request):
             source_rows.append(row)
             key = f"{old.id}:{new.id}:ar:{row.id}"
             choice = resolutions.get(key)
-            if previous is None or (choice and choice.action == "use_source"):
+            if previous is None:
                 corrections[row.id] = row.model_copy(deep=True)
+            elif choice and choice.action == "use_source":
+                corrections[row.id] = merge_source_row(
+                    previous, row, corrections.get(row.id, previous)
+                )
             elif choice and choice.action == "remove":
                 corrections[row.id] = row.model_copy(
                     update={
@@ -472,18 +573,25 @@ def reconcile(current, preview, request):
                     },
                     deep=True,
                 )
+            if choice and row.id in corrections:
+                corrections[row.id].confirmed = False
         for row in removed:
             choice = resolutions[f"{old.id}:{new.id}:ar:{row.id}"]
             if choice.action == "use_source":
                 raise invalid("A removed source row requires retain or remove")
             if choice.action == "remove":
                 corrections.pop(row.id, None)
+            elif row.id in corrections:
+                corrections[row.id].confirmed = False
         updated.ar_rows = source_rows
         # Only reset corrected review data when source fields actually changed.
         same_source = all(getattr(old, f) == getattr(updated, f) for f in FIELDS) and [
             row_signature(x) for x in old.ar_rows
         ] == [row_signature(x) for x in source_rows]
-        if same_source:
+        same_corrections = list(corrections.values()) == (
+            (old.draft.ar_corrections or old.ar_rows) if old.draft else old.ar_rows
+        )
+        if same_source and same_corrections:
             updated.ar_rows = [row.model_copy(deep=True) for row in old.ar_rows]
         else:
             updated.review = None
@@ -491,8 +599,9 @@ def reconcile(current, preview, request):
             updated.draft.ar_corrections = list(corrections.values())
             updated.draft.evaluation_context = None
             updated.draft.no_ars_confirmed = False
-            for row in updated.draft.ar_corrections:
-                row.confirmed = False
+            if any(getattr(old, field) != getattr(updated, field) for field in FIELDS):
+                for row in updated.draft.ar_corrections:
+                    row.confirmed = False
         revised.expected_legs.append(updated)
         record_baseline(new.id, old.id, row_ids)
     if set(resolutions) != required:

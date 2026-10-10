@@ -450,7 +450,12 @@ class PlanningStore:
 
     def commit_revision(self, mission_id, request, revised, *, retirement=False):
         from .proposals import environment_identity
-        from .revisions import archive_leg, revision_identity
+        from .revisions import (
+            archive_leg,
+            merge_metadata,
+            mission_metadata,
+            revision_identity,
+        )
 
         files = {}
         if not retirement:
@@ -564,10 +569,17 @@ class PlanningStore:
                 revised.source_revisions.append(accepted)
                 metadata = request.itinerary or revised.itinerary_baseline
                 if metadata:
-                    mission.name = metadata.name
-                    mission.metadata["itinerary"] = metadata.model_dump(
-                        mode="json", exclude={"expected_legs"}
+                    merged = merge_metadata(
+                        current.itinerary_baseline,
+                        mission_metadata(mission),
+                        metadata,
+                        request.correction_resolutions,
                     )
+                    mission.name = merged.name
+                    mission.metadata["itinerary"] = {
+                        **mission.metadata.get("itinerary", {}),
+                        **merged.model_dump(mode="json"),
+                    }
             revised.revision = current.revision + 1
             return self.persist(
                 mission,

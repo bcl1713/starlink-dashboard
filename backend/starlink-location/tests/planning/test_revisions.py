@@ -717,3 +717,293 @@ def test_historical_missing_baseline_requires_explicit_uncertainty_acknowledgeme
     assert [card.leg.id for card in saved.expected_legs] == [
         card.leg.id for card in view.expected_legs
     ]
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_duplicate_pdf_ar_occurrences_never_guess_correction_owner(service, reverse):
+    from io import BytesIO
+
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.generic import DecodedStreamObject, NameObject
+
+    from app.mission.planning.models import ConfirmItinerary, CorrectionResolution
+    from app.mission.planning.revisions import row_pairs
+
+    from .test_extract import synthetic_pdf
+
+    original = service.preview_itinerary(synthetic_pdf(), "synthetic.pdf")
+    view = service.create(
+        ConfirmItinerary(
+            preview_id=original.preview_id,
+            itinerary=original.parsed_values,
+            idempotency_key="duplicate-occurrence",
+        )
+    )
+    card = view.expected_legs[0]
+    draft = card.leg.draft.model_copy(deep=True)
+    draft.ar_corrections = [r.model_copy(deep=True) for r in card.leg.ar_rows]
+    old = draft.ar_corrections[0]
+    old.source_altitude = 250
+    old.confirmed_units = "flight_level"
+    old.confirmed = True
+    view = service.store.save_draft(
+        view.mission.id,
+        card.leg.id,
+        SaveDraft(expected_revision=view.revision, draft=draft),
+    )
+    writer = PdfWriter(clone_from=PdfReader(BytesIO(synthetic_pdf())))
+    page = writer.pages[0]
+    data = page["/Contents"].get_data().replace(b"(GRIZZ-W)", b"(AR106LW)")
+    data = data.replace(b"(19:20Z)", b"(14:26Z)").replace(b"(20:33Z)", b"(15:23Z)")
+    stream = DecodedStreamObject()
+    stream.set_data(data)
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = BytesIO()
+    writer.write(output)
+    preview = service.preview_revision(
+        view.mission.id, output.getvalue(), view.revision
+    )
+    assert preview.confirmable and not preview.field_errors
+    incoming = preview.parsed_values.expected_legs[0]
+    if reverse:
+        incoming.ar_rows.reverse()
+    pairs, removed = row_pairs(card.leg.ar_rows, incoming.ar_rows)
+    assert old.id in {r.id for r in removed}
+    assert all(prior is None for prior, row in pairs if row.track == old.track)
+    mappings = {
+        (m.expected_leg_id, m.incoming_leg_id)
+        for m in preview.leg_mappings
+        if m.action == "retain"
+    }
+    conflicts = [
+        c
+        for c in preview.conflicts
+        if any(c.id.startswith(f"{o}:{i}:") for o, i in mappings)
+    ]
+    assert any(
+        c.row_id == old.id and c.allowed_actions == ["retain", "remove"]
+        for c in conflicts
+    )
+    request = revision_request(preview)
+    before = snapshot(service)
+    with pytest.raises(PlanningFailure):
+        service.apply_revision(view.mission.id, request)
+    assert snapshot(service) == before
+    request.correction_resolutions = [
+        CorrectionResolution(conflict_id=c.id, action="retain") for c in conflicts
+    ]
+    # Corrected extraction may reorder rows, but cannot decide their old occurrence IDs.
+    request.itinerary = preview.parsed_values
+    saved = service.apply_revision(view.mission.id, request)
+    rows = saved.expected_legs[0].leg.draft.ar_corrections
+    kept = next(r for r in rows if r.id == old.id)
+    assert kept.source_altitude == 250 and kept.confirmed_units == "flight_level"
+    assert not kept.confirmed
+    new = [r for r in rows if r.track == old.track and r.id != old.id]
+    assert len(new) == 2 and len({r.id for r in rows}) == len(rows)
+    assert all(not r.confirmed and r.confirmed_units is None for r in new)
+    before = snapshot(service)
+    with pytest.raises(PlanningFailure):
+        service.apply_revision(view.mission.id, request)
+    assert snapshot(service) == before
+
+
+@pytest.mark.parametrize("source_changed", [False, True])
+def test_revision_three_way_metadata_preserves_or_resolves_accepted_corrections(
+    prepared, monkeypatch, source_changed
+):
+    from app.mission.planning.models import CorrectionResolution
+
+    service, view = prepared
+    mission, manifest = service.store._load(view.mission.id)
+    manifest.itinerary_baseline.name = "Original source"
+    manifest.itinerary_baseline.aircraft = "Source aircraft"
+    manifest.itinerary_baseline.call_sign = "Source call"
+    mission.name = "Operator mission"
+    mission.metadata["itinerary"] = {
+        "name": mission.name,
+        "aircraft": "Operator aircraft",
+        "call_sign": "Operator call",
+        "itinerary_revision": 1,
+    }
+    view = service.store.persist(mission, manifest)
+    raw = manifest.itinerary_baseline.model_copy(deep=True)
+    raw.itinerary_revision = 2
+    if source_changed:
+        raw.name = "Changed source"
+        raw.aircraft = "Changed aircraft"
+        raw.call_sign = "Changed call"
+    from datetime import datetime, timezone
+
+    from app.mission.planning.models import ItineraryPreview
+
+    monkeypatch.setattr(
+        "app.mission.planning.service.extract_itinerary",
+        lambda _: ItineraryPreview(
+            preview_id="source",
+            parsed_values=raw,
+            confirmable=True,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+        ),
+    )
+    preview = service.preview_revision(
+        view.mission.id, b"metadata source revision", view.revision
+    )
+    assert preview.accepted_metadata.name == "Operator mission"
+    issues = [c for c in preview.conflicts if c.expected_leg_id is None]
+    request = revision_request(preview, leg_mappings=explicit_mappings(view))
+    if source_changed:
+        assert {c.field for c in issues} == {"name", "aircraft", "call_sign"}
+        assert all(c.allowed_actions == ["retain", "use_source"] for c in issues)
+        assert {
+            (c.field, c.before, c.after)
+            for c in preview.changes
+            if c.expected_leg_id is None and c.field != "itinerary_revision"
+        } == {
+            ("name", "Operator mission", "Changed source"),
+            ("aircraft", "Operator aircraft", "Changed aircraft"),
+            ("call_sign", "Operator call", "Changed call"),
+        }
+        before = snapshot(service)
+        with pytest.raises(PlanningFailure):
+            service.apply_revision(view.mission.id, request)
+        assert snapshot(service) == before
+        request.correction_resolutions = [
+            CorrectionResolution(
+                conflict_id=c.id,
+                action="use_source" if c.field == "aircraft" else "retain",
+            )
+            for c in issues
+        ]
+    else:
+        assert not issues
+    saved = service.apply_revision(view.mission.id, request)
+    assert saved.mission.name == "Operator mission"
+    assert saved.mission.metadata["itinerary"]["aircraft"] == (
+        "Changed aircraft" if source_changed else "Operator aircraft"
+    )
+    assert saved.mission.metadata["itinerary"]["call_sign"] == "Operator call"
+    baseline = service.store._load(view.mission.id)[1].itinerary_baseline
+    assert (baseline.name, baseline.aircraft, baseline.call_sign) == (
+        raw.name,
+        raw.aircraft,
+        raw.call_sign,
+    )
+
+
+@pytest.mark.parametrize("changed_field", ["source_altitude", "entry_time"])
+@pytest.mark.parametrize("excluded", [False, True])
+@pytest.mark.parametrize("accepted_source_matches", [False, True])
+def test_use_source_merges_only_changed_ar_fields_into_saved_operator_data(
+    prepared, monkeypatch, changed_field, excluded, accepted_source_matches
+):
+    from app.mission.planning.models import CorrectionResolution, ItineraryAR
+
+    service, view = prepared
+    route = service.store.route_manager.get_route(
+        view.expected_legs[0].leg.route.route_id
+    )
+    start = _candidates(route.points[1].expected_arrival_time, "second", route)[0]
+    end = _candidates(route.points[3].expected_arrival_time, "second", route)[0]
+    row = ItineraryAR(
+        id="old-ar",
+        track="SYNTH",
+        entry_time=start.source_time,
+        exit_time=end.source_time,
+        source_time_precision="second",
+        source_altitude=210,
+    )
+    untouched = row.model_copy(update={"id": "untouched", "track": "OTHER"}, deep=True)
+    mission, manifest = service.store._load(view.mission.id)
+    for leg in (
+        manifest.expected_legs[0],
+        manifest.itinerary_baseline.expected_legs[0],
+    ):
+        leg.departure_time = route.points[0].expected_arrival_time
+        leg.arrival_time = route.points[-1].expected_arrival_time
+    new_value = (
+        220.0
+        if changed_field == "source_altitude"
+        else row.entry_time + timedelta(seconds=60)
+    )
+    manifest.expected_legs[0].ar_rows = [
+        (
+            row.model_copy(update={changed_field: new_value}, deep=True)
+            if accepted_source_matches
+            else row
+        ),
+        untouched,
+    ]
+    manifest.itinerary_baseline.expected_legs[0].ar_rows = [row, untouched]
+    view = service.store.persist(mission, manifest)
+    draft = view.expected_legs[0].leg.draft.model_copy(deep=True)
+    corrected = row.model_copy(
+        update={
+            "source_altitude": 250.0,
+            "confirmed_units": "flight_level",
+            "start_anchor": start,
+            "end_anchor": end,
+            "match_status": "excluded" if excluded else "matched",
+            "exclusion_note": "Operator decision retained",
+            "confirmed": True,
+        },
+        deep=True,
+    )
+    other = untouched.model_copy(
+        update={
+            "confirmed_units": "feet",
+            "start_anchor": start,
+            "end_anchor": end,
+            "match_status": "matched",
+            "confirmed": True,
+        },
+        deep=True,
+    )
+    draft.ar_corrections = [corrected, other]
+    draft.swaps = [
+        AnchoredSwap(id="manual-swap", target_satellite_id="WEST", anchor=start)
+    ]
+    draft.locks = [
+        PlanningLock(
+            id="manual-lock",
+            swap_id="manual-swap",
+            target_satellite_id="WEST",
+            anchor=start,
+        )
+    ]
+    view = service.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(expected_revision=view.revision, draft=draft),
+    )
+    incoming = [c.leg.model_copy(deep=True) for c in view.expected_legs]
+    incoming[0].ar_rows[0] = row.model_copy(
+        update={changed_field: new_value}, deep=True
+    )
+    preview = revision_preview(service, view, monkeypatch, legs=incoming)
+    request = revision_request(
+        preview,
+        leg_mappings=explicit_mappings(view),
+        correction_resolutions=[
+            CorrectionResolution(
+                conflict_id="card-1:card-1:ar:old-ar", action="use_source"
+            )
+        ],
+    )
+    saved = service.apply_revision(view.mission.id, request)
+    final = saved.expected_legs[0].leg.draft
+    result = next(r for r in final.ar_corrections if r.id == row.id)
+    assert result.confirmed_units == "flight_level"
+    assert result.exclusion_note == corrected.exclusion_note
+    assert not result.confirmed
+    assert result.end_anchor == end
+    if changed_field == "source_altitude":
+        assert result.source_altitude == 220 and result.start_anchor == start
+        assert result.entry_time == corrected.entry_time
+        assert result.match_status == corrected.match_status
+    else:
+        assert result.entry_time == new_value and result.source_altitude == 250
+        assert result.start_anchor is None
+        assert result.match_status == ("excluded" if excluded else "unresolved")
+    assert next(r for r in final.ar_corrections if r.id == other.id) == other
+    assert final.swaps == draft.swaps and final.locks == draft.locks

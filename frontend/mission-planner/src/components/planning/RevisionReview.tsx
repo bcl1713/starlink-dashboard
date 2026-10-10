@@ -69,12 +69,14 @@ export function RevisionReview({
   const selected = incoming
     .map((leg) => mappings[leg.id])
     .filter((id) => id && id !== 'add');
-  const conflicts = (preview?.conflicts ?? []).filter((issue) =>
-    incoming.some(
-      (leg) =>
-        mappings[leg.id] === issue.expected_leg_id &&
-        issue.id.startsWith(`${issue.expected_leg_id}:${leg.id}:`)
-    )
+  const conflicts = (preview?.conflicts ?? []).filter(
+    (issue) =>
+      !issue.expected_leg_id ||
+      incoming.some(
+        (leg) =>
+          mappings[leg.id] === issue.expected_leg_id &&
+          issue.id.startsWith(`${issue.expected_leg_id}:${leg.id}:`)
+      )
   );
   const complete =
     incoming.every((leg) => !!mappings[leg.id]) &&
@@ -149,6 +151,13 @@ export function RevisionReview({
             Source: {preview.source?.filename} · Revision{' '}
             {preview.parsed_values?.itinerary_revision ?? 'unknown'}
           </p>
+          {(!preview.accepted_metadata ||
+            preview.previous_source_revision == null) && (
+            <p>
+              Prior mission metadata comparison is incomplete. Accepted values
+              are retained when the source baseline is unavailable.
+            </p>
+          )}
           {(preview.field_errors ?? []).map((issue, index) => (
             <p role="alert" key={index}>
               {issue.message}

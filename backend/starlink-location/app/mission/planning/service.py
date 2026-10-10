@@ -362,10 +362,10 @@ class PlanningService:
             return view
 
     def preview_revision(self, mission_id, data, revision, filename="itinerary.pdf"):
-        from .revisions import preview_revision
+        from .revisions import mission_metadata, preview_revision
 
         with storage.get_active_leg_lock():
-            _, manifest = self.store._load(mission_id)
+            mission, manifest = self.store._load(mission_id)
             if manifest.revision != revision:
                 raise conflict()
         source = self.sources.stage(data, "pdf", mission_id, filename)
@@ -377,7 +377,7 @@ class PlanningService:
                     "expires_at": source.expires_at,
                 }
             )
-            preview = preview_revision(manifest, incoming)
+            preview = preview_revision(manifest, incoming, mission_metadata(mission))
             self.sources.save_preview(
                 source.id,
                 {
