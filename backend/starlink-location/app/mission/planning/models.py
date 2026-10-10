@@ -345,6 +345,7 @@ class PlanningProposal(PlanningRecord):
         "generated_nonoverlap_plus_current_v1"
     )
     retained_current_draft: bool = False
+    baseline_kind: Literal["current", "lock_feasible", "best_constant"] = "current"
     id: str = Field(min_length=1)
     expected_revision: int = Field(ge=1)
     input_identity: ContentHash

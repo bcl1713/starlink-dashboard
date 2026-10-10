@@ -246,6 +246,7 @@ export interface ProposalReference {
 export interface PlanningProposal {
   search_domain?: 'generated_nonoverlap_plus_current_v1';
   retained_current_draft?: boolean;
+  baseline_kind?: 'current' | 'lock_feasible' | 'best_constant';
   id: string;
   expected_revision: number;
   input_identity: string;

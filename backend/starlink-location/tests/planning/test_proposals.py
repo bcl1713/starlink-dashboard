@@ -461,3 +461,74 @@ def test_proposal_http_generate_read_apply_with_real_bounded_worker(prepared):
         )
         assert applied.status_code == 200, applied.text
         assert applied.json()["revision"] == view.revision + 1
+
+
+@pytest.mark.parametrize("kind", ["initial", "swap"])
+def test_saved_standalone_lock_can_generate_and_apply(prepared, monkeypatch, kind):
+    from app.mission.planning.inputs import build_inputs
+    from app.mission.planning.models import PlanningLock
+
+    from .cases import timed_swap
+
+    api, view, _ = proposal_api(prepared, monkeypatch)
+    leg = view.expected_legs[0].leg
+    draft = leg.draft.model_copy(deep=True)
+    inputs = build_inputs(
+        leg,
+        draft,
+        api.store.route_manager,
+        api.store.poi_manager,
+        api.constraints_provider(),
+    )
+    draft.locks = [
+        PlanningLock(
+            id="standalone",
+            kind=kind,
+            target_satellite_id="WEST",
+            anchor=timed_swap(inputs, 60, "WEST").anchor if kind == "swap" else None,
+        )
+    ]
+    view = api.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(expected_revision=view.revision, draft=draft),
+    )
+    request = GenerateProposal(
+        expected_revision=view.revision,
+        input_identity=view.expected_legs[0].input_identity,
+    )
+    before = api.store.read(view.mission.id)
+    proposal = api.generate(view.mission.id, "card-1", request)
+    after = api.store.read(view.mission.id)
+    assert proposal.state == "ready"
+    from app.mission.planning.models import PlanningProposal
+
+    legacy = proposal.model_dump(mode="json")
+    legacy.pop("baseline_kind")
+    assert PlanningProposal.model_validate(legacy).baseline_kind == "current"
+    assert not proposal.retained_current_draft
+    assert proposal.baseline_kind == "lock_feasible"
+    assert after.revision == before.revision
+    assert (
+        after.expected_legs[0].input_identity == before.expected_legs[0].input_identity
+    )
+    assert after.expected_legs[0].leg.draft == before.expected_legs[0].leg.draft
+    assert proposal.proposed_draft.locks == draft.locks
+    if kind == "initial":
+        assert proposal.proposed_draft.initial_x_satellite_id == "WEST"
+    else:
+        assert any(
+            s.id == "standalone" and s.target_satellite_id == "WEST"
+            for s in proposal.proposed_draft.swaps
+        )
+    applied = api.apply(
+        view.mission.id,
+        "card-1",
+        ApplyProposal(
+            expected_revision=view.revision,
+            input_identity=request.input_identity,
+            proposal_id=proposal.id,
+        ),
+    )
+    assert applied.revision == view.revision + 1
+    assert applied.expected_legs[0].leg.draft == proposal.proposed_draft

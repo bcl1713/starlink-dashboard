@@ -18,7 +18,7 @@ from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.satellites.rules import ConstraintConfig
 
 from .evaluate import evaluate_context
-from .grid import _context, swap_times, validate_context
+from .grid import ManualLockViolation, _context, swap_times, validate_context
 from .inputs import draft_to_mission_leg, structural_draft
 from .match import _anchor, resolve_anchor
 from .models import AnchoredSwap, PlanningProposal
@@ -115,7 +115,17 @@ def _mandatory(inputs, draft):
         fixed[swap.id] = (time, swap)
     if not initials:
         raise ValueError("No feasible initial lock assignment")
-    return sorted(initials), sorted(fixed.values(), key=lambda item: item[0])
+    # Existing simultaneous assignments retain draft order independently of the
+    # lock list. Synthesized lock-only assignments follow in stable ID order.
+    original_order = {swap.id: index for index, swap in enumerate(draft.swaps)}
+    return sorted(initials), sorted(
+        fixed.values(),
+        key=lambda item: (
+            item[0],
+            original_order.get(item[1].id, len(original_order)),
+            item[1].id,
+        ),
+    )
 
 
 def _canonical(inputs, draft, context):
@@ -306,7 +316,19 @@ def optimize(inputs, draft, context):
         raise PlanningModelConsistencyError(
             "Planning model-consistency error: canonical winner differs"
         )
-    if draft.initial_x_satellite_id is None:
+    baseline = None
+    baseline_kind = "current"
+    if draft.initial_x_satellite_id is not None:
+        try:
+            baseline = evaluate_context(inputs, draft, context)
+        except ManualLockViolation:
+            # A standalone lock may not yet be installed in the saved schedule.
+            # Only this lock-satisfaction failure excludes the current incumbent;
+            # all structural, timing, eligibility, and canonical errors propagate.
+            pass
+    current_is_valid = baseline is not None
+    if not current_is_valid:
+        baseline_kind = "lock_feasible" if draft.locks else "best_constant"
         baselines = [
             draft.model_copy(
                 deep=True, update={"initial_x_satellite_id": s, "swaps": fixed_swaps}
@@ -317,10 +339,8 @@ def optimize(inputs, draft, context):
             (evaluate_context(inputs, b, context) for b in baselines),
             key=lambda e: (e.outage_seconds, e.swap_count),
         )
-    else:
-        baseline = evaluate_context(inputs, draft, context)
     retained = False
-    if draft.initial_x_satellite_id is not None and (
+    if current_is_valid and (
         baseline.outage_seconds,
         baseline.swap_count,
         schedule_key(inputs, draft),
@@ -335,6 +355,7 @@ def optimize(inputs, draft, context):
             )
         retained = True
     return PlanningProposal(
+        baseline_kind=baseline_kind,
         retained_current_draft=retained,
         id=str(
             uuid5(NAMESPACE_URL, context.input_identity + repr(key(initial, history)))

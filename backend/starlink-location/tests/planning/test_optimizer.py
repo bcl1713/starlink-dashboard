@@ -104,6 +104,7 @@ def test_full_buffer_erases_short_benefit_and_no_initial_uses_best_constant(
     result = optimize(inputs, draft, context)
     assert result.proposed_draft.initial_x_satellite_id in draft.permitted_satellite_ids
     assert result.proposed_draft.swaps == []
+    assert result.baseline_kind == "best_constant"
     assert (
         result.baseline_evaluation.outage_seconds
         == result.candidate_evaluation.outage_seconds
@@ -297,12 +298,14 @@ def test_unchanged_manual_incumbent_can_beat_generated_domain(monkeypatch):
     result = optimizer()(inputs, draft, context)
     assert result.candidate_evaluation.outage_seconds == current.outage_seconds
     assert result.retained_current_draft
+    assert result.baseline_kind == "current"
     assert result.proposed_draft.swaps == draft.swaps
     assert result.proposed_draft.locks == draft.locks
     assert optimizer()(inputs, draft, context).proposed_draft == result.proposed_draft
 
 
-def test_compatible_same_instant_locked_swaps_keep_both_ids(monkeypatch):
+@pytest.mark.parametrize("reverse_locks", [False, True])
+def test_compatible_same_instant_locked_swaps_keep_both_ids(monkeypatch, reverse_locks):
     inputs, draft = configured(monkeypatch, buffer=0.25)
     draft.swaps = [
         timed_swap(inputs, 60, "WEST", id="first"),
@@ -317,6 +320,8 @@ def test_compatible_same_instant_locked_swaps_keep_both_ids(monkeypatch):
         )
         for s in draft.swaps
     ]
+    if reverse_locks:
+        draft.locks.reverse()
     inputs, context = context_for(inputs, draft)
     result = optimizer()(inputs, draft, context)
     assert [s.id for s in result.proposed_draft.swaps] == ["first", "second"]
@@ -390,3 +395,80 @@ def test_canonical_disagreement_fails_with_specific_model_error(monkeypatch):
         module.optimize(inputs, draft, context)
     assert failure.value.code == "planning_model_consistency"
     assert draft.model_dump_json() == before
+
+
+@pytest.mark.parametrize("kind", ["initial", "swap"])
+@pytest.mark.parametrize("has_initial", [True, False])
+def test_standalone_locks_use_feasible_baseline_and_exact_winner(
+    monkeypatch, kind, has_initial
+):
+    inputs, draft = configured(monkeypatch)
+    if not has_initial:
+        draft.initial_x_satellite_id = None
+    draft.locks = [
+        PlanningLock(
+            id="standalone",
+            kind=kind,
+            target_satellite_id="WEST",
+            anchor=timed_swap(inputs, 60, "WEST").anchor if kind == "swap" else None,
+        )
+    ]
+    inputs, context = context_for(inputs, draft)
+    before = draft.model_dump_json()
+    expected = []
+    for candidate in exhaustive_schedules(inputs, draft, context):
+        value = canonical_evaluation(inputs, candidate, context)
+        expected.append(
+            (value.outage_seconds, value.swap_count, schedule_key(inputs, candidate))
+        )
+    result = optimizer()(inputs, draft, context)
+    assert (
+        result.candidate_evaluation.outage_seconds,
+        result.candidate_evaluation.swap_count,
+        schedule_key(inputs, result.proposed_draft),
+    ) == min(expected)
+    assert (
+        result.candidate_evaluation.outage_seconds
+        <= result.baseline_evaluation.outage_seconds
+    )
+    assert not result.retained_current_draft
+    assert result.baseline_kind == "lock_feasible"
+    assert result.proposed_draft.locks == draft.locks
+    assert (
+        canonical_evaluation(inputs, result.proposed_draft, context)
+        == result.candidate_evaluation
+    )
+    assert draft.model_dump_json() == before
+
+
+def test_invalid_current_schedule_error_is_not_treated_as_lock_violation(monkeypatch):
+    inputs, draft = configured(monkeypatch)
+    draft.swaps = [timed_swap(inputs, 60, "SOUTH"), timed_swap(inputs, 60, "WEST")]
+    draft.locks = [
+        PlanningLock(
+            id="standalone",
+            target_satellite_id="WEST",
+            anchor=timed_swap(inputs, 120, "WEST").anchor,
+        )
+    ]
+    inputs, context = context_for(inputs, draft)
+    before = draft.model_dump_json()
+    with pytest.raises(ValueError, match="Conflicting satellite assignments"):
+        optimizer()(inputs, draft, context)
+    assert draft.model_dump_json() == before
+
+
+def test_synthesized_same_instant_locks_use_deterministic_id_order(monkeypatch):
+    inputs, draft = configured(monkeypatch)
+    draft.locks = [
+        PlanningLock(
+            id=id,
+            target_satellite_id="WEST",
+            anchor=timed_swap(inputs, 60, "WEST").anchor,
+        )
+        for id in ("b", "a")
+    ]
+    inputs, context = context_for(inputs, draft)
+    result = optimizer()(inputs, draft, context)
+    assert [s.id for s in result.proposed_draft.swaps] == ["a", "b"]
+    assert result.candidate_evaluation.swap_count == 2

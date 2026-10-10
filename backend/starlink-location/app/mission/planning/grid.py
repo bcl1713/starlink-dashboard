@@ -13,6 +13,10 @@ from .models import PlanningDraft, PlanningInputs
 from .types import EvaluationContext, HeightProfilePoint
 
 
+class ManualLockViolation(ValueError):
+    """The current schedule does not yet satisfy its otherwise validated locks."""
+
+
 def _route(inputs):
     return ParsedRoute.model_validate_json(inputs.route_json)
 
@@ -191,4 +195,4 @@ def validate_context(inputs, draft, context):
                 at.get(resolve_anchor(lock.anchor, route)) == lock.target_satellite_id
             )
         if not valid:
-            raise ValueError("Selected schedule violates a manual lock")
+            raise ManualLockViolation("Selected schedule violates a manual lock")
