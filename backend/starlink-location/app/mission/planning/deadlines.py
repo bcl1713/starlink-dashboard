@@ -80,18 +80,21 @@ def run_bounded(
                 raise PlanningDeadlineError(
                     "Planning computation exceeded its deadline"
                 )
-            if reader.poll(min(remaining, 0.05)):
-                try:
-                    success, result = reader.recv()
-                except EOFError as exc:
-                    raise PlanningWorkerError(
-                        "Planning worker exited without a result"
-                    ) from exc
-                if success:
-                    return result
-                raise result
-            if not process.is_alive():
-                raise PlanningWorkerError("Planning worker exited without a result")
+            if not reader.poll(min(remaining, 0.05)):
+                if process.is_alive():
+                    continue
+                # A worker can send and exit between the poll and liveness check.
+                if not reader.poll():
+                    raise PlanningWorkerError("Planning worker exited without a result")
+            try:
+                success, result = reader.recv()
+            except EOFError as exc:
+                raise PlanningWorkerError(
+                    "Planning worker exited without a result"
+                ) from exc
+            if success:
+                return result
+            raise result
     finally:
         reader.close()
         writer.close()
