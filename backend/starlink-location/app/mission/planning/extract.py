@@ -118,6 +118,7 @@ def _parse_itinerary(pdf_bytes):
     active = None
     departure = None
     ar_section = False
+    ar_section_has_errors = False
     mission = re.search(
         r"Mission:\s*(.*?)\s+Revision\s*#?:\s*(\d+)", document, re.IGNORECASE
     )
@@ -126,6 +127,7 @@ def _parse_itinerary(pdf_bytes):
     utc_left = utc_right = None
     ar_split = None
     altitude_x = None
+    ar_table_left = ar_table_y = None
 
     def error(code, message, page, row, field):
         errors.append(
@@ -139,7 +141,7 @@ def _parse_itinerary(pdf_bytes):
         )
 
     def finish():
-        nonlocal active, ar_section
+        nonlocal active, ar_section, ar_section_has_errors
         if active:
             try:
                 legs.append(ExpectedLeg(**active))
@@ -153,6 +155,7 @@ def _parse_itinerary(pdf_bytes):
                 )
             active = None
         ar_section = False
+        ar_section_has_errors = False
 
     for page_number, rows in enumerate(pages, 1):
         for row_number, row in enumerate(rows, 1):
@@ -169,6 +172,7 @@ def _parse_itinerary(pdf_bytes):
                     utc_right = adj.x - 3
             if "Air-to-Air" in text and "Refueling" in text:
                 ar_section = True
+                ar_split = altitude_x = ar_table_left = ar_table_y = None
                 if active:
                     active["ar_section_status"] = "unrecognized"
                 continue
@@ -179,6 +183,8 @@ def _parse_itinerary(pdf_bytes):
                 if entry and exit and altitude:
                     ar_split = (entry.x + exit.x) / 2
                     altitude_x = altitude.x
+                    ar_table_left = row[0].x
+                    ar_table_y = row[0].y
                 continue
             utc_text = _text(
                 [t for t in row if utc_left is not None and utc_left <= t.x < utc_right]
@@ -237,13 +243,22 @@ def _parse_itinerary(pdf_bytes):
                     continue
             if ar_section and active:
                 if re.search(r"\b(None|No ARs?)\b", text, re.IGNORECASE):
-                    active["ar_section_status"] = "empty"
+                    if not ar_section_has_errors:
+                        active["ar_section_status"] = "empty"
                     ar_section = False
                     continue
-                # Data rows begin with an AR row number and track. Missing UTC
-                # fields are errors, never silently counted as an empty section.
+                # Identify occupied rows below the table header from their
+                # track and timing/altitude columns, even if the row label is
+                # unreadable. Headers and explicit no-AR text were handled above.
                 first = row[0].text if row else ""
-                if first.isdigit() and row[0].x < 200:
+                numeric_label = bool(row) and first.isdigit() and row[0].x < 200
+                table_row = (
+                    ar_table_left is not None
+                    and row[0].y < ar_table_y - 3
+                    and ar_table_left - 3 <= row[0].x < min(200, altitude_x)
+                    and any(token.x >= altitude_x - 3 for token in row)
+                )
+                if numeric_label or table_row:
                     evidence.append(
                         SourceEvidence(
                             source_page=page_number,
@@ -253,9 +268,22 @@ def _parse_itinerary(pdf_bytes):
                         )
                     )
                     if ar_split is None or altitude_x is None:
+                        ar_section_has_errors = True
+                        active["ar_section_status"] = "unrecognized"
                         error(
                             "unrecognized_ar_section",
                             "AR table columns are unrecognized",
+                            page_number,
+                            row_number,
+                            "ar_rows",
+                        )
+                        continue
+                    if not numeric_label:
+                        ar_section_has_errors = True
+                        active["ar_section_status"] = "unrecognized"
+                        error(
+                            "unrecognized_ar_section",
+                            "AR row label requires correction",
                             page_number,
                             row_number,
                             "ar_rows",
@@ -300,12 +328,10 @@ def _parse_itinerary(pdf_bytes):
                         ):
                             raise ValueError("AR outside leg")
                         active["ar_rows"].append(ar)
-                        if active["ar_section_status"] != "unrecognized" or not any(
-                            e.field == "ar_rows" and e.source_page == page_number
-                            for e in errors
-                        ):
+                        if not ar_section_has_errors:
                             active["ar_section_status"] = "listed"
                     except (ValueError, ValidationError):
+                        ar_section_has_errors = True
                         active["ar_section_status"] = "unrecognized"
                         error(
                             "invalid_ar_utc",

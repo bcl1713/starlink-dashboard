@@ -8,7 +8,14 @@ from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 
-def synthetic_pdf(*, unknown=False, unknown_rows=False, blank=False, encrypted=False):
+def synthetic_pdf(
+    *,
+    unknown=False,
+    unknown_rows=False,
+    unreadable_ar_label=None,
+    blank=False,
+    encrypted=False,
+):
     writer = PdfWriter()
     page = writer.add_blank_page(width=800, height=600)
     page.rotate(90)
@@ -108,7 +115,14 @@ def synthetic_pdf(*, unknown=False, unknown_rows=False, blank=False, encrypted=F
                 for i, (track, d1, t1, d2, t2) in enumerate(ars, 1):
                     line(
                         y,
-                        (115, "?" if unknown_rows else str(i)),
+                        (
+                            115,
+                            (
+                                "?"
+                                if unknown_rows or unreadable_ar_label == (ordinal, i)
+                                else str(i)
+                            ),
+                        ),
                         (140, track),
                         (419, "210"),
                         (489, d1),
@@ -117,6 +131,13 @@ def synthetic_pdf(*, unknown=False, unknown_rows=False, blank=False, encrypted=F
                         (660, t2),
                     )
                     y -= 15
+        line(
+            y - 5,
+            (80, "Total"),
+            (140, "Planned Flight Time"),
+            (489, "06:00"),
+            (610, "hours"),
+        )
     stream = DecodedStreamObject()
     stream.set_data(("q 0 1 -1 0 600 0 cm\n" + "\n".join(commands) + "\nQ").encode())
     page[NameObject("/Contents")] = writer._add_object(stream)
@@ -193,3 +214,21 @@ def test_explicit_empty_ar_section():
     preview = extract_itinerary(out.getvalue())
     assert preview.confirmable
     assert preview.parsed_values.expected_legs[1].ar_section_status == "empty"
+
+
+@pytest.mark.parametrize("unreadable_row", [1, 2, 3])
+def test_mixed_readable_and_unreadable_ar_rows_block_confirmation(unreadable_row):
+    preview = extract_itinerary(synthetic_pdf(unreadable_ar_label=(1, unreadable_row)))
+    assert not preview.confirmable
+    assert preview.parsed_values.expected_legs[0].ar_section_status == "unrecognized"
+    assert preview.parsed_values.expected_legs[2].ar_section_status == "listed"
+    rows = [e for e in preview.source_evidence if e.field == "ar_rows"]
+    assert len(rows) == 5
+    unknown = next(e for e in rows if e.source_text.startswith("? "))
+    assert any(
+        e.field == "ar_rows"
+        and e.source_page == unknown.source_page
+        and e.source_row == unknown.source_row
+        for e in preview.field_errors
+    )
+    assert len(preview.parsed_values.expected_legs[0].ar_rows) == 2
