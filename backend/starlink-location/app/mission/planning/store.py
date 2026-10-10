@@ -171,6 +171,13 @@ class PlanningStore:
                 mission_id, leg_id, request.expected_revision
             )
             leg.draft = request.draft.model_copy(deep=True)
+            if request.ar_section_status is not None:
+                leg.ar_section_status = request.ar_section_status
+            rows = leg.draft.ar_corrections or leg.ar_rows
+            if leg.ar_section_status == "unrecognized" or any(
+                row.match_status != "excluded" for row in rows
+            ):
+                leg.draft.no_ars_confirmed = False
             leg.review = None
             manifest.proposals = [
                 p.model_copy(update={"state": "stale"}) for p in manifest.proposals

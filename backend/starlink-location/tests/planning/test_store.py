@@ -34,12 +34,17 @@ def service(tmp_path, monkeypatch):
     return PlanningService(store)
 
 
-def create(service, key="create-one"):
+def create(service, key="create-one", leg_updates=None):
     source = service.sources.stage(b"synthetic pdf", "pdf", None, "same.pdf")
     data = ItineraryData(
         name="Synthetic",
         expected_legs=[
-            ExpectedLeg(**expected_leg_fields(id=f"card-{n}", ordinal=n))
+            ExpectedLeg(
+                **{
+                    **expected_leg_fields(id=f"card-{n}", ordinal=n),
+                    **(leg_updates or {}),
+                }
+            )
             for n in (1, 2, 3)
         ],
     )
@@ -74,6 +79,39 @@ def test_confirm_creates_expected_cards_not_executable_legs(service):
     assert stored.metadata["itinerary_planning"]["source_revisions"][0][
         "owned_relative_path"
     ]
+
+
+def test_create_retains_only_validated_per_leg_no_ar_confirmation(service):
+    view, _ = create(
+        service,
+        leg_updates={
+            "draft": PlanningDraft(
+                no_ars_confirmed=True,
+                permitted_satellite_ids=["ignored-client-default"],
+                starshield_enabled=False,
+            ),
+        },
+    )
+    reloaded = service.store.read(view.mission.id)
+    assert all(card.leg.draft.no_ars_confirmed for card in reloaded.expected_legs)
+    assert all(card.leg.draft.starshield_enabled for card in reloaded.expected_legs)
+    assert all(
+        not card.leg.draft.permitted_satellite_ids for card in reloaded.expected_legs
+    )
+
+
+def test_create_rejects_no_ar_confirmation_for_unknown_sections(service):
+    from app.mission.planning.errors import PlanningFailure
+
+    with pytest.raises(PlanningFailure) as exc:
+        create(
+            service,
+            leg_updates={
+                "ar_section_status": "unrecognized",
+                "draft": PlanningDraft(no_ars_confirmed=True),
+            },
+        )
+    assert exc.value.status_code == 422
 
 
 def test_idempotent_create_and_expired_preview(service):
@@ -116,6 +154,73 @@ def test_two_tabs_stale_save_has_no_writes(service):
         if p.is_file() and p.suffix != ".lock"
     }
     assert service.store.read(view.mission.id) == saved
+
+
+def test_no_ar_correction_confirmation_survives_reload_and_cas(service):
+    from app.mission.planning.errors import PlanningFailure
+
+    view, _ = create(service)
+    original = view.expected_legs[0].input_identity
+    saved = service.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(
+            expected_revision=1,
+            ar_section_status="empty",
+            draft=PlanningDraft(no_ars_confirmed=True, starshield_enabled=False),
+        ),
+    )
+    reloaded = service.store.read(view.mission.id)
+    assert reloaded == saved
+    assert reloaded.expected_legs[0].leg.draft.no_ars_confirmed is True
+    assert reloaded.expected_legs[0].leg.draft.starshield_enabled is False
+    assert reloaded.expected_legs[0].leg.ar_section_status == "empty"
+    assert reloaded.expected_legs[0].input_identity != original
+    with pytest.raises(PlanningFailure) as exc:
+        service.store.save_draft(
+            view.mission.id,
+            "card-1",
+            SaveDraft(
+                expected_revision=1,
+                ar_section_status="unrecognized",
+                draft=PlanningDraft(),
+            ),
+        )
+    assert exc.value.status_code == 409
+    assert service.store.read(view.mission.id) == saved
+
+
+def test_no_ar_confirmation_resets_with_active_rows_and_unknown_section(service):
+    from app.mission.planning.models import ItineraryAR
+
+    view, _ = create(service)
+    row = ItineraryAR(
+        id="ar",
+        track="Synthetic",
+        entry_time="2026-10-25T12:10:00Z",
+        exit_time="2026-10-25T12:20:00Z",
+        source_time_precision="minute",
+    )
+    saved = service.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(
+            expected_revision=1,
+            ar_section_status="listed",
+            draft=PlanningDraft(no_ars_confirmed=True, ar_corrections=[row]),
+        ),
+    )
+    assert saved.expected_legs[0].leg.draft.no_ars_confirmed is False
+    saved = service.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(
+            expected_revision=2,
+            ar_section_status="unrecognized",
+            draft=PlanningDraft(no_ars_confirmed=True),
+        ),
+    )
+    assert saved.expected_legs[0].leg.draft.no_ars_confirmed is False
 
 
 def test_accept_upload_assigns_selected_leg_not_filename(service, tmp_path):

@@ -95,6 +95,7 @@ export interface PlanningLock {
 }
 
 export interface PlanningDraft {
+  no_ars_confirmed?: boolean;
   permitted_satellite_ids?: string[];
   access_confirmation?: AccessConfirmation | null;
   starshield_enabled?: boolean;
@@ -330,6 +331,7 @@ export interface AcceptRouteBinding {
 export interface SaveDraft {
   expected_revision: number;
   draft: PlanningDraft;
+  ar_section_status?: 'listed' | 'empty' | 'unrecognized' | null;
 }
 
 export interface PreviewDraft {

@@ -143,9 +143,18 @@ class PlanningService:
                     "invalid_expected_leg",
                     "Imported cards cannot supply server-owned bindings or reviews",
                 )
-            legs.append(
-                original.model_copy(update={"draft": draft.model_copy(deep=True)})
-            )
+            leg_draft = draft.model_copy(deep=True)
+            if original.draft and original.draft.no_ars_confirmed:
+                if original.ar_section_status == "unrecognized" or any(
+                    row.match_status != "excluded" for row in original.ar_rows
+                ):
+                    raise PlanningFailure(
+                        422,
+                        "invalid_no_ar_confirmation",
+                        "Correct the AR section and active rows before confirming no ARs",
+                    )
+                leg_draft.no_ars_confirmed = True
+            legs.append(original.model_copy(update={"draft": leg_draft}))
         manifest = PlanningManifest(source_revisions=[accepted], expected_legs=legs)
         mission = Mission(
             id=mission_id,

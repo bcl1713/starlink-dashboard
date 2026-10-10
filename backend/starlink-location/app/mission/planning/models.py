@@ -176,6 +176,7 @@ class PlanningLock(PlanningRecord):
 
 
 class PlanningDraft(SatelliteSelection):
+    no_ars_confirmed: bool = False
     initial_x_satellite_id: str | None = None
     swaps: list[AnchoredSwap] = Field(default_factory=list)
     ar_corrections: list[ItineraryAR] = Field(default_factory=list)
@@ -520,6 +521,7 @@ class AcceptRouteBinding(RevisionRequest):
 
 class SaveDraft(RevisionRequest):
     draft: PlanningDraft
+    ar_section_status: Literal["listed", "empty", "unrecognized"] | None = None
 
 
 class PreviewDraft(SaveDraft):

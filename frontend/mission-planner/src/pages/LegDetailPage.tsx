@@ -18,8 +18,44 @@ import type {
 } from '../types/aar';
 import type { TimelinePreviewRequest } from '../services/timeline';
 import { ManualRouteEstimateControls } from '../components/aar/ManualRouteEstimateControls';
+import { usePlanning } from '../hooks/api/usePlanning';
+import { PlanningLegReview } from '../components/planning/PlanningLegReview';
 
 export function LegDetailPage() {
+  const { missionId, legId } = useParams<{
+    missionId: string;
+    legId: string;
+  }>();
+  const { data: mission, isLoading } = useMission(missionId || '');
+  const managed = !!mission?.metadata?.itinerary_planning;
+  const planning = usePlanning(missionId || '', managed);
+  if (isLoading || (managed && planning.isLoading))
+    return <div className="app-page">Loading leg configuration…</div>;
+  if (managed && planning.error)
+    return (
+      <div className="app-page">
+        <p role="alert">
+          Unable to resolve the expected leg. Reload the mission before editing.
+        </p>
+      </div>
+    );
+  const expected = planning.data?.expected_legs.find(
+    (card) =>
+      !card.leg.retired &&
+      (card.leg.id === legId || card.leg.installed_leg_id === legId)
+  );
+  if (expected)
+    return (
+      <PlanningLegReview
+        key={expected.leg.id}
+        missionId={missionId || ''}
+        legId={expected.leg.id}
+      />
+    );
+  return <ManualLegDetailPage />;
+}
+
+function ManualLegDetailPage() {
   const { missionId, legId } = useParams<{
     missionId: string;
     legId: string;
