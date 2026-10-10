@@ -3,9 +3,10 @@
 from io import BytesIO
 
 import pytest
-from app.mission.planning.extract import ItineraryExtractionError, extract_itinerary
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+from app.mission.planning.extract import ItineraryExtractionError, extract_itinerary
 
 
 def synthetic_pdf(

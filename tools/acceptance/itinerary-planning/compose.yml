@@ -1,0 +1,37 @@
+services:
+  starlink-location:
+    image: ${ITINERARY_BACKEND_IMAGE:?exact candidate image required}
+    init: true
+    environment:
+      STARLINK_MODE: simulation
+      PROMETHEUS_URL: http://prometheus:9090
+    volumes:
+      - app-data:/app/data
+      - poi-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
+  mission-planner:
+    image: ${ITINERARY_FRONTEND_IMAGE:?exact candidate image required}
+    ports:
+      - "127.0.0.1:15322:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ${ITINERARY_SOURCE_ROOT:?candidate source
+        required}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${ITINERARY_SOURCE_ROOT}/monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - metrics:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=1h
+volumes:
+  app-data:
+  poi-data:
+  metrics:

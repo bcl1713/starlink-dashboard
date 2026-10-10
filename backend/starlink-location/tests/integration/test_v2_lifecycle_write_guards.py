@@ -319,13 +319,14 @@ def _run_isolated_lifecycle_worker(
             self._logger = poi_manager_module.logger
             self._load_pois()
 
-        def worker_route_init(self, routes_dir=worker_root / "routes"):
-            self.routes_dir = Path(routes_dir)
-            self.routes_dir.mkdir(parents=True, exist_ok=True)
-            self._routes = {}
-            self._active_route_id = None
-            self._observer = None
-            self._errors = {}
+        original_worker_route_init = route_manager_module.RouteManager.__init__
+
+        def worker_route_init(
+            self, routes_dir=worker_root / "routes", *, profile_resolver=None
+        ):
+            original_worker_route_init(
+                self, routes_dir, profile_resolver=profile_resolver
+            )
 
         poi_manager_module.POIManager.__init__ = worker_poi_init
         route_manager_module.RouteManager.__init__ = worker_route_init
@@ -337,6 +338,7 @@ def _run_isolated_lifecycle_worker(
             storage.MISSIONS_DIR = worker_root / "missions"
             storage.ensure_missions_directory()
             route_manager = app.state.route_manager
+            assert callable(route_manager._profile_resolver)
             route_manager.routes_dir = worker_root / "routes"
             route_manager.routes_dir.mkdir(parents=True, exist_ok=True)
             route_manager._routes = {}

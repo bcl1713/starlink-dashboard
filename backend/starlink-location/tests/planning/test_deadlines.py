@@ -2,6 +2,7 @@ import multiprocessing
 import time
 
 import pytest
+
 from app.mission.planning.deadlines import PlanningDeadlineError, run_bounded
 
 

@@ -1,13 +1,15 @@
 """Regression coverage for the test bootstrap manager patches."""
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
-def test_bootstrap_patches_are_observed_by_application_lifecycle():
+def test_bootstrap_patches_are_observed_by_application_lifecycle(tmp_path):
     """A clean interpreter must give app startup the test manager instances."""
     backend_root = Path(__file__).resolve().parents[2]
+    owned_root = tmp_path / "bootstrap"
     probe = f"""
 import importlib.util
 import sys
@@ -16,6 +18,11 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 backend_root = Path({str(backend_root)!r})
+owned_root = Path({str(tmp_path / "bootstrap")!r})
+def reject_shared_root(event, args):
+    if event in {{"open", "os.mkdir", "os.remove", "os.rmdir", "os.rename"}}:
+        assert not any(isinstance(value, str) and value.startswith("/tmp/test_data") for value in args), (event, args)
+sys.addaudithook(reject_shared_root)
 conftest_path = backend_root / "tests" / "conftest.py"
 assert "main" not in sys.modules
 
@@ -37,13 +44,20 @@ assert ApplicationRouteManager is RouteManager
 assert ApplicationPOIManager is POIManager
 
 with TestClient(bootstrap.app):
-    assert bootstrap.app.state.route_manager.routes_dir == Path("/tmp/test_data/routes")
-    assert bootstrap.app.state.poi_manager.pois_file == Path("/tmp/test_data/pois.json")
+    assert callable(bootstrap.app.state.route_manager._profile_resolver)
+    assert bootstrap.app.state.route_manager.routes_dir == owned_root / "routes"
+    assert bootstrap.app.state.poi_manager.pois_file == owned_root / "pois.json"
 """
 
     result = subprocess.run(
         [sys.executable, "-c", probe],
-        cwd=backend_root,
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "STARLINK_TEST_DATA_DIR": str(owned_root),
+            "PYTHONPATH": str(backend_root),
+        },
+        timeout=60,
         capture_output=True,
         check=False,
         text=True,
@@ -52,9 +66,12 @@ with TestClient(bootstrap.app):
     assert result.returncode == 0, result.stderr
 
 
-def test_startup_reconciles_persisted_active_legs_before_route_manager_initializes():
+def test_startup_reconciles_persisted_active_legs_before_route_manager_initializes(
+    tmp_path,
+):
     """A restart clears durable lifecycle flags without restoring a route."""
     backend_root = Path(__file__).resolve().parents[2]
+    owned_root = tmp_path / "bootstrap"
     probe = f"""
 import importlib.util
 import sys
@@ -64,6 +81,11 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 backend_root = Path({str(backend_root)!r})
+owned_root = Path({str(tmp_path / "bootstrap")!r})
+def reject_shared_root(event, args):
+    if event in {{"open", "os.mkdir", "os.remove", "os.rmdir", "os.rename"}}:
+        assert not any(isinstance(value, str) and value.startswith("/tmp/test_data") for value in args), (event, args)
+sys.addaudithook(reject_shared_root)
 conftest_path = backend_root / "tests" / "conftest.py"
 spec = importlib.util.spec_from_file_location("bootstrap_reconciliation_probe", conftest_path)
 assert spec is not None
@@ -75,7 +97,7 @@ spec.loader.exec_module(bootstrap)
 from app.mission import storage
 from app.mission.models import Mission, MissionLeg, TransportConfig
 
-with tempfile.TemporaryDirectory() as directory:
+with tempfile.TemporaryDirectory(dir={str(tmp_path)!r}) as directory:
     storage.MISSIONS_DIR = Path(directory)
     storage.save_mission_v2(Mission(
         id="persisted-active",
@@ -97,7 +119,13 @@ with tempfile.TemporaryDirectory() as directory:
 
     result = subprocess.run(
         [sys.executable, "-c", probe],
-        cwd=backend_root,
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "STARLINK_TEST_DATA_DIR": str(owned_root),
+            "PYTHONPATH": str(backend_root),
+        },
+        timeout=60,
         capture_output=True,
         check=False,
         text=True,

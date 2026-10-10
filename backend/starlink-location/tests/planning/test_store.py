@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+
 from app.mission import storage
 from app.mission.models import MissionLeg, MissionLegTimeline, TransportConfig
 from app.mission.planning.models import (

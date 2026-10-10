@@ -6,10 +6,11 @@ from copy import deepcopy
 from datetime import datetime, timezone
 
 import pytest
+from pydantic import ValidationError
+
 from app.mission.models import AARWindow, MissionLeg, TransportConfig, XTransition
 from app.mission.planning import models
 from app.mission.planning.identity import planning_identity
-from pydantic import ValidationError
 
 from .cases import anchor_fields, ar_fields, expected_leg_fields
 

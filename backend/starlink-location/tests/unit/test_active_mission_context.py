@@ -142,33 +142,57 @@ def test_resolver_ignores_flat_v1_active_looking_artifact(route_manager) -> None
 def test_resolver_and_v2_writer_share_active_leg_lock(
     monkeypatch, route_manager
 ) -> None:
-    from app.mission import storage
+    from app.mission import active_context, storage
     from app.mission.active_context import resolve_active_mission_leg_context
 
-    lock_paths: list[str] = []
+    events = []
+    instances = []
 
     class RecordingLock:
-        def __init__(self, path: str, is_singleton: bool = False):
+        def __init__(self, path: str):
             self.path = path
-            self.is_singleton = is_singleton
+            self.depth = 0
+            instances.append(self)
 
         def __enter__(self):
-            lock_paths.append(self.path)
+            self.depth += 1
+            events.append(("enter", self))
             return self
 
         def __exit__(self, exc_type, exc_value, traceback):
+            events.append(("exit", self))
+            self.depth -= 1
             return False
 
     monkeypatch.setattr(storage, "_active_leg_locks", {})
     monkeypatch.setattr(storage, "FileLock", RecordingLock)
+    real_list = active_context.list_mission_metadata_v2
+    real_write = storage._save_mission_v2_unlocked
 
+    def guarded_list():
+        assert storage.get_active_leg_lock().depth > 0
+        events.append(("read", storage.get_active_leg_lock()))
+        return real_list()
+
+    def guarded_write(mission):
+        assert storage.get_active_leg_lock().depth > 0
+        events.append(("write", storage.get_active_leg_lock()))
+        return real_write(mission)
+
+    monkeypatch.setattr(active_context, "list_mission_metadata_v2", guarded_list)
+    monkeypatch.setattr(storage, "_save_mission_v2_unlocked", guarded_write)
     resolve_active_mission_leg_context(route_manager)
     save_mission_v2(_mission("mission-a", "leg-a", "route-a"))
 
-    assert lock_paths == [
-        str(storage.MISSIONS_DIR / ".active-leg.lock"),
-        str(storage.MISSIONS_DIR / ".active-leg.lock"),
+    assert len(instances) == 1
+    assert instances[0].path == str(storage.MISSIONS_DIR / ".active-leg.lock")
+    assert all(lock is instances[0] for _, lock in events)
+    assert [event for event, _ in events if event in {"read", "write"}] == [
+        "read",
+        "write",
     ]
+    assert events[0][0] == "enter" and events[-1][0] == "exit"
+    assert instances[0].depth == 0
 
 
 def test_active_leg_lock_uses_a_canonical_minimum_version_compatible_instance(
@@ -219,21 +243,31 @@ def test_active_leg_lock_is_reentrant_when_save_runs_inside_coordination_scope()
 
 
 def test_delete_endpoint_acquires_global_active_leg_lock_before_parent_lock(
-    monkeypatch,
+    monkeypatch, route_manager, tmp_path
 ) -> None:
     from app.mission import routes_v2
 
+    mission_id = "delete-lock-boundary"
+    save_mission_v2(_mission(mission_id, "leg-a", "route-a"))
+    route_file = tmp_path / "route-a.kml"
+    route_file.write_text("synthetic route ownership fixture")
+    route_manager.get_route("route-a").metadata.file_path = str(route_file)
     entered: list[str] = []
+    stack: list[str] = []
 
     class RecordingLock:
         def __init__(self, name: str):
             self.name = name
 
         def __enter__(self):
+            if self.name == "mission":
+                assert stack == ["active"]
             entered.append(self.name)
+            stack.append(self.name)
             return self
 
         def __exit__(self, exc_type, exc_value, traceback):
+            assert stack.pop() == self.name
             return False
 
     monkeypatch.setattr(
@@ -242,19 +276,23 @@ def test_delete_endpoint_acquires_global_active_leg_lock_before_parent_lock(
     monkeypatch.setattr(
         routes_v2, "get_active_leg_lock", lambda: RecordingLock("active")
     )
-    monkeypatch.setattr(
-        routes_v2,
-        "load_mission_v2",
-        lambda mission_id: _mission(mission_id, "leg-a", "route-a"),
-    )
+    real_get = route_manager.get_route
 
+    def guarded_get(route_id):
+        assert stack == ["active", "mission"]
+        return real_get(route_id)
+
+    monkeypatch.setattr(route_manager, "get_route", guarded_get)
     asyncio.run(
         routes_v2.delete_mission_endpoint(
-            "delete-lock-boundary", route_manager=object(), poi_manager=None
+            mission_id, route_manager=route_manager, poi_manager=None
         )
     )
-
     assert entered == ["active", "mission"]
+    assert not stack
+    assert load_mission_v2(mission_id) is None
+    assert not route_file.exists()
+    assert "route-a" not in route_manager._routes
 
 
 def test_v2_writer_removes_deleted_active_leg_inside_shared_lock(route_manager) -> None:

@@ -3,6 +3,7 @@
 import json
 
 import pytest
+
 from app.mission import storage
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TransportConfig
 from app.mission.storage import (

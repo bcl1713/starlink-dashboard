@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 
 import pytest
+
 from app.mission import storage
 from app.models.poi import POICreate, POIUpdate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint

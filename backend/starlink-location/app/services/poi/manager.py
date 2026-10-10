@@ -15,9 +15,10 @@ from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 
+from filelock import FileLock
+
 from app.mission.storage import planning_read_gate
 from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
-from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 

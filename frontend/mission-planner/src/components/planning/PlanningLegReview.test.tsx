@@ -605,20 +605,18 @@ it('exposes managed Update Route with cancel and retains installed route until r
   };
   installed.expected_legs[0].leg.installed_leg_id = 'installed';
   setup(installed);
-  const stage = vi
-    .spyOn(planningApi, 'previewRoute')
-    .mockResolvedValue({
-      preview_id: 'p',
-      expected_revision: 7,
-      binding: {
-        route_id: 'new',
-        source_id: 'new',
-        content_hash: 'newhash',
-        filename: 'new.kml',
-      },
-      expires_at: '2099-01-01T00:00:00Z',
-      discrepancy_errors: [],
-    });
+  const stage = vi.spyOn(planningApi, 'previewRoute').mockResolvedValue({
+    preview_id: 'p',
+    expected_revision: 7,
+    binding: {
+      route_id: 'new',
+      source_id: 'new',
+      content_hash: 'newhash',
+      filename: 'new.kml',
+    },
+    expires_at: '2099-01-01T00:00:00Z',
+    discrepancy_errors: [],
+  });
   const accept = vi.spyOn(planningApi, 'acceptRoute');
   fireEvent.click(screen.getByRole('button', { name: 'Update Route' }));
   fireEvent.change(screen.getByLabelText('KML for leg 3'), {
