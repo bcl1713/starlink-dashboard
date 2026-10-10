@@ -4,10 +4,11 @@ import asyncio
 from unittest.mock import Mock
 
 import pytest
+from fastapi import HTTPException
+
 from app.api.routes.delete import delete_route
 from app.mission import storage
 from app.mission.planning.models import LegHistory
-from fastapi import HTTPException
 
 from . import test_store
 from .test_store import bind, create

@@ -4,12 +4,13 @@ import json
 import zipfile
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from app.mission import storage
 from app.mission.planning.models import LegHistory, SaveDraft
 from app.mission.planning.routes import router
 from app.mission.timeline_preparation import prepare_mission_timeline
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from . import test_proposals
 from .test_packages import archive

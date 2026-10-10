@@ -1,12 +1,13 @@
 """API-owned satellite changes invalidate computation and publication."""
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from app.mission.dependencies import get_poi_manager
 from app.mission.planning.inputs import resolve_positions
 from app.mission.planning.routes import router
 from app.satellites.routes import router as satellite_router
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from .test_proposals import prepared as prepared_fixture
 from .test_proposals import proposal_api
