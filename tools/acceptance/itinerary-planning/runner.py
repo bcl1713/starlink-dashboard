@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import ctypes
 import errno
+import gzip
 import json
 import logging
 import os
@@ -15,6 +17,7 @@ import subprocess
 import sys
 import tarfile
 import time
+import zipfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -313,7 +316,13 @@ def cleanup(owner: Owner, owned: bool) -> list[dict[str, str]]:
 
 
 def verify_clone_snapshot(owner, source):
-    expected = json.loads((owner.output / "clone-rebuilt-timelines.json").read_text())
+    views = json.loads((owner.output / "collision-views.json").read_text())
+    # The journey intentionally revises the original later. Use its actual
+    # clone-time package and reconstruct against the retained immutable sources.
+    with zipfile.ZipFile(owner.output / "synthetic-package.zip") as package:
+        original = base64.b64encode(
+            gzip.compress(package.read("mission.json"))
+        ).decode()
     result = owner.compose(
         "exec",
         "-T",
@@ -321,7 +330,8 @@ def verify_clone_snapshot(owner, source):
         "python",
         "-c",
         (source / "tools/acceptance/itinerary-planning/verify-clone.py").read_text(),
-        expected["mission_id"],
+        views["cloneView"]["mission"]["id"],
+        original,
         timeout=120,
     )
     line = next(
@@ -331,16 +341,17 @@ def verify_clone_snapshot(owner, source):
     (owner.output / "clone-export-rebuild.json").write_text(
         json.dumps(receipt, indent=2)
     )
-    assert receipt["mission_id"] == expected["mission_id"]
-    assert len(receipt["legs"]) == len(expected["legs"])
-    for actual, baseline in zip(receipt["legs"], expected["legs"]):
-        assert actual["leg_id"] == baseline["leg_id"]
-        assert actual["preparation_origin"] == "rebuilt"
-        assert actual["context"] == baseline["context"]
-        assert actual["intervals"] == [
-            segment["metadata"]["planning_interval"]
-            for segment in baseline["timeline"]["segments"]
-        ]
+    assert receipt["original_mission_id"] == views["beforeClone"]["mission"]["id"]
+    assert receipt["mission_id"] == views["cloneView"]["mission"]["id"]
+    assert receipt["stored_files_unchanged"]
+    expected = views["cloneView"]["mission"]["legs"]
+    assert len(receipt["legs"]) == len(expected)
+    for actual, baseline in zip(receipt["legs"], expected):
+        assert actual["leg_id"] == baseline["id"]
+        assert actual["preparation_origins"] == ["rebuilt", "rebuilt"]
+        assert actual["context"] == baseline["transports"]["evaluation_context"]
+        assert actual["canonical_evaluations_equal"]
+        assert actual["export_intervals_equal"]
 
 
 def main() -> None:

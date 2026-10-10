@@ -470,35 +470,50 @@ m.main()
             process.wait(timeout=5)
 
 
-@pytest.mark.parametrize("fault", [None, "cached", "interval"])
+@pytest.mark.parametrize("fault", [None, "cached", "interval", "context", "writes"])
 def test_clone_export_receipt_requires_rebuilt_equivalent_timeline(tmp_path, fault):
+    import zipfile
     from types import SimpleNamespace
 
     module = load_runner()
     expected = {
-        "mission_id": "clone",
+        "id": "clone",
         "legs": [
             {
-                "leg_id": "leg",
-                "context": {"input_identity": "same"},
-                "timeline": {
-                    "segments": [{"metadata": {"planning_interval": {"outage": 42}}}]
-                },
+                "id": "leg",
+                "transports": {"evaluation_context": {"input_identity": "same"}},
             }
         ],
     }
-    (tmp_path / "clone-rebuilt-timelines.json").write_text(json.dumps(expected))
+    (tmp_path / "collision-views.json").write_text(
+        json.dumps(
+            {
+                "beforeClone": {"mission": {"id": "original"}},
+                "cloneView": {"mission": expected},
+            }
+        )
+    )
+    with zipfile.ZipFile(tmp_path / "synthetic-package.zip", "w") as package:
+        package.writestr("mission.json", '{"id":"original"}')
     script = tmp_path / "tools/acceptance/itinerary-planning/verify-clone.py"
     script.parent.mkdir(parents=True)
     script.write_text("read_only_proof")
     receipt = {
+        "original_mission_id": "original",
         "mission_id": "clone",
+        "stored_files_unchanged": fault != "writes",
         "legs": [
             {
                 "leg_id": "leg",
-                "context": {"input_identity": "same"},
-                "preparation_origin": "cached" if fault == "cached" else "rebuilt",
-                "intervals": [{"outage": 0 if fault == "interval" else 42}],
+                "context": {
+                    "input_identity": "changed" if fault == "context" else "same"
+                },
+                "preparation_origins": [
+                    "rebuilt",
+                    "cached" if fault == "cached" else "rebuilt",
+                ],
+                "canonical_evaluations_equal": True,
+                "export_intervals_equal": fault != "interval",
             }
         ],
     }
