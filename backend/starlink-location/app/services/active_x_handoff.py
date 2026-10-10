@@ -41,7 +41,7 @@ class ActiveXContext:
     handoff: dict[str, Any]
 
 
-_HANDOFF_TRACKERS: dict[str, XHandoffTracker] = {}
+_HANDOFF_TRACKERS: dict[str, tuple[str, XHandoffTracker]] = {}
 
 
 def reset_x_handoff_state() -> None:
@@ -83,8 +83,10 @@ def resolve_active_x_context(
         return paced_context
     current_satellite = leg.transports.initial_x_satellite_id
     if not current_satellite:
+        _HANDOFF_TRACKERS.pop(leg.id, None)
         return ActiveXContext(None, None, empty_handoff_context())
     if route is None or not leg.transports.x_transitions:
+        _HANDOFF_TRACKERS.pop(leg.id, None)
         return ActiveXContext(current_satellite, None, empty_handoff_context())
 
     tracker = _tracker_for(leg, route)
@@ -202,8 +204,14 @@ def _tracker_for(leg: MissionLeg, route: ParsedRoute) -> XHandoffTracker:
     identity.update((leg.transports.initial_x_satellite_id or "").encode())
     for transition in leg.transports.x_transitions:
         identity.update(transition.model_dump_json().encode())
-    key = f"{leg.id}:{identity.hexdigest()}"
-    return _HANDOFF_TRACKERS.setdefault(key, XHandoffTracker())
+    digest = identity.hexdigest()
+    current = _HANDOFF_TRACKERS.get(leg.id)
+    if current is None or current[0] != digest:
+        # Keep only this leg's active identity. A restored configuration must
+        # establish new observed progress, never resume superseded history.
+        current = (digest, XHandoffTracker())
+        _HANDOFF_TRACKERS[leg.id] = current
+    return current[1]
 
 
 def _handoff_context(
