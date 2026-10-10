@@ -658,3 +658,372 @@ def test_final_cleanup_preserves_new_interleaved_file_and_retry_authority(
     assert raised.value.status_code == 409
     assert foreign.read_bytes() == b"new independent work"
     assert (service.sources.root / "deletions" / f"{view.mission.id}.json").exists()
+
+
+@pytest.mark.parametrize(
+    "resource", ["payload", "directory", "authority", "poi", "cache"]
+)
+def test_retry_preflight_io_failure_is_structured_and_recovers(
+    service, tmp_path, monkeypatch, resource
+):
+    import sqlite3
+    from pathlib import Path
+
+    from app.mission.routes_v2 import delete_mission_endpoint
+    from app.mission.slide_cache.store import SlideStore, default_store
+
+    default_store().request("foreign", "foreign", "hash", b"foreign inputs")
+    owner, payload = _failed_deletion(service, tmp_path, monkeypatch)
+    authority = service.sources.root / "deletions" / f"{owner}.json"
+    target = {
+        "payload": payload,
+        "directory": payload.parent,
+        "authority": authority,
+        "poi": service.store.poi_manager.pois_file,
+        "cache": default_store().path,
+    }[resource]
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    with monkeypatch.context() as patch:
+        if resource == "cache":
+            original = SlideStore.records
+
+            def fail(store, mission):
+                if store.path == target:
+                    raise sqlite3.OperationalError("temporary cache unavailable")
+                return original(store, mission)
+
+            patch.setattr(SlideStore, "records", fail)
+        elif resource == "directory":
+            original = Path.iterdir
+
+            def fail(path):
+                if path == target:
+                    raise PermissionError("temporary unreadable directory")
+                return original(path)
+
+            patch.setattr(Path, "iterdir", fail)
+        else:
+            original = Path.read_bytes
+
+            def fail(path):
+                if path == target:
+                    raise PermissionError("temporary unreadable resource")
+                return original(path)
+
+            patch.setattr(Path, "read_bytes", fail)
+        with pytest.raises(HTTPException) as raised:
+            asyncio.run(
+                delete_mission_endpoint(
+                    owner, service.store.route_manager, service.store.poi_manager
+                )
+            )
+        assert raised.value.status_code == 503
+        assert raised.value.detail["code"] == "owned_delete_incomplete"
+        assert raised.value.detail["retryable"] is True
+        assert raised.value.detail["action"] == "retry_delete"
+        assert raised.value.detail["remaining_paths"] == [str(target)]
+    assert authority.exists()
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    asyncio.run(
+        delete_mission_endpoint(
+            owner, service.store.route_manager, service.store.poi_manager
+        )
+    )
+    assert not authority.exists()
+    assert not storage.get_mission_directory(owner).exists()
+    assert default_store().records("foreign")
+
+
+@pytest.mark.parametrize(
+    "resource",
+    [
+        "metadata",
+        "pdf",
+        "kml",
+        "profile",
+        "inventory",
+        "payload",
+        "directory",
+        "poi",
+        "cache",
+    ],
+)
+def test_initial_owned_delete_preflight_io_failure_has_no_mutation(
+    service, tmp_path, monkeypatch, resource
+):
+    import builtins
+    import sqlite3
+    from pathlib import Path
+
+    from app.mission.routes_v2 import delete_mission_endpoint
+    from app.mission.slide_cache.store import SlideStore, default_store
+
+    view, _ = create(service)
+    bind(service, tmp_path)
+    mission, manifest = service.store._load(view.mission.id)
+    source = next(s for s in manifest.source_revisions if s.kind == "route_kml")
+    pdf = next(s for s in manifest.source_revisions if s.kind == "itinerary_pdf")
+    payload = storage.get_mission_directory(mission.id) / "payload.json"
+    payload.write_bytes(b"retained initial payload")
+    cache = default_store()
+    cache.request(mission.id, "owned", "hash", b"inputs")
+    target = {
+        "metadata": storage.get_mission_file_path(mission.id),
+        "pdf": service.sources.path(pdf),
+        "kml": service.sources.routes_dir / f"{source.id}.kml",
+        "profile": service.sources.descriptor_path(source.id),
+        "inventory": service.sources.root / "inventory" / f"{source.id}.json",
+        "payload": payload,
+        "directory": payload.parent,
+        "poi": service.store.poi_manager.pois_file,
+        "cache": cache.path,
+    }[resource]
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    with monkeypatch.context() as patch:
+        if resource == "metadata":
+            original_open = builtins.open
+
+            def fail(path, *args, **kwargs):
+                if Path(path) == target:
+                    raise PermissionError("temporary unreadable mission metadata")
+                return original_open(path, *args, **kwargs)
+
+            patch.setattr(builtins, "open", fail)
+        elif resource == "cache":
+
+            def fail(store, owner):
+                raise sqlite3.OperationalError("temporary cache unavailable")
+
+            patch.setattr(SlideStore, "records", fail)
+        elif resource == "directory":
+            original = Path.iterdir
+
+            def fail(path):
+                if path == target:
+                    raise PermissionError("temporary unreadable directory")
+                return original(path)
+
+            patch.setattr(Path, "iterdir", fail)
+        else:
+            original = Path.read_bytes
+
+            def fail(path):
+                if path == target:
+                    raise PermissionError("temporary unreadable resource")
+                return original(path)
+
+            patch.setattr(Path, "read_bytes", fail)
+        with pytest.raises(HTTPException) as raised:
+            asyncio.run(
+                delete_mission_endpoint(
+                    mission.id, service.store.route_manager, service.store.poi_manager
+                )
+            )
+        assert raised.value.status_code == 503
+        assert raised.value.detail["code"] == "owned_delete_incomplete"
+        assert raised.value.detail["retryable"] is True
+        assert raised.value.detail["action"] == "retry_delete"
+        assert raised.value.detail["remaining_paths"] == [str(target)]
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    assert not list((service.sources.root / "deletions").glob("*.json"))
+    asyncio.run(
+        delete_mission_endpoint(
+            mission.id, service.store.route_manager, service.store.poi_manager
+        )
+    )
+    assert not storage.get_mission_directory(mission.id).exists()
+
+
+@pytest.mark.parametrize("operation", ["route", "mission", "legacy", "import"])
+@pytest.mark.parametrize("fault", ["unreadable", "malformed", "aliased", "leg"])
+def test_reference_inventory_fails_closed_before_mutation(
+    service, tmp_path, monkeypatch, operation, fault
+):
+    import builtins
+    import zipfile
+    from pathlib import Path
+
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+    from app.mission.planning.errors import PlanningFailure
+    from app.mission.planning.packages import commit_package, stage_package
+    from app.mission.routes_v2 import delete_mission_endpoint
+
+    from .test_packages import archive
+
+    view, _ = create(service)
+    bind(service, tmp_path)
+    mission, manifest = service.store._load(view.mission.id)
+    route_id = manifest.expected_legs[0].route.route_id
+    foreign = Mission(
+        id="foreign",
+        name="Foreign",
+        legs=[
+            MissionLeg(
+                id="foreign-leg",
+                name="Foreign",
+                route_id=route_id,
+                transports=TransportConfig(initial_x_satellite_id="SOUTH"),
+            )
+        ],
+    )
+    storage.save_mission_v2(foreign)
+    if operation == "legacy":
+        legacy = foreign.model_copy(update={"id": "legacy-delete"}, deep=True)
+        storage.save_mission_v2(legacy)
+    with archive(service, mission.id) as handle, zipfile.ZipFile(handle) as zf:
+        plan = stage_package(zf, None, service.sources)
+    target = storage.get_mission_file_path(foreign.id)
+    if fault == "leg":
+        target = storage.get_mission_leg_file_path(foreign.id, "foreign-leg")
+    if fault == "malformed":
+        target.write_bytes(b"{broken metadata")
+    elif fault == "aliased":
+        other = tmp_path / "foreign-metadata.json"
+        target.rename(other)
+        target.symlink_to(other)
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    runtime = Mock()
+    with monkeypatch.context() as patch:
+        if fault in {"unreadable", "leg"}:
+            original_read, original_open = Path.read_bytes, builtins.open
+
+            def fail_read(path):
+                if path == target:
+                    raise PermissionError("unreadable foreign reference")
+                return original_read(path)
+
+            def fail_open(path, *args, **kwargs):
+                if Path(path) == target:
+                    raise PermissionError("unreadable foreign reference")
+                return original_open(path, *args, **kwargs)
+
+            patch.setattr(Path, "read_bytes", fail_read)
+            patch.setattr(builtins, "open", fail_open)
+        if fault in {"unreadable", "malformed"}:
+            assert foreign.id not in {p.id for p in storage.list_mission_metadata_v2()}
+        with pytest.raises((HTTPException, PlanningFailure)) as raised:
+            if operation == "route":
+                asyncio.run(
+                    delete_route(
+                        route_id,
+                        service.store.route_manager,
+                        service.store.poi_manager,
+                        runtime,
+                    )
+                )
+            elif operation in {"mission", "legacy"}:
+                asyncio.run(
+                    delete_mission_endpoint(
+                        legacy.id if operation == "legacy" else mission.id,
+                        service.store.route_manager,
+                        service.store.poi_manager,
+                        runtime,
+                    )
+                )
+            else:
+                commit_package(plan, None)
+        assert raised.value.status_code == (
+            503 if fault in {"unreadable", "leg"} else 409
+        )
+        detail = (
+            raised.value.detail
+            if isinstance(raised.value, HTTPException)
+            else raised.value.error.model_dump()
+        )
+        if fault in {"malformed", "aliased"}:
+            assert detail["code"] == "planning_conflict"
+        else:
+            assert detail["retryable"] is True
+            paths = (
+                raised.value.detail["remaining_paths"]
+                if isinstance(raised.value, HTTPException)
+                else list(raised.value.remaining_paths)
+            )
+            assert paths == [str(target)]
+    runtime.runtime.cancel.assert_not_called()
+    runtime.cancel_owned.assert_not_called()
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    assert not list((service.sources.root / "deletions").glob("*.json"))
+
+
+def test_reference_inventory_includes_partial_deletion_authority(
+    service, tmp_path, monkeypatch
+):
+    from app.mission.planning.sources import route_references
+
+    owner, _payload = _failed_deletion(service, tmp_path, monkeypatch)
+    from app.mission.planning.deletion import load_record
+
+    record = load_record(service.sources, owner)
+    route_id = next(
+        s["id"]
+        for s in record.mission.metadata["itinerary_planning"]["source_revisions"]
+        if s["kind"] == "route_kml"
+    )
+    assert not storage.get_mission_file_path(owner).exists()
+    assert owner in route_references(route_id, sources=service.sources)
+
+
+def test_zero_route_import_requires_complete_reference_inventory(
+    service, tmp_path, monkeypatch
+):
+    import zipfile
+    from pathlib import Path
+
+    from app.mission.planning.errors import PlanningFailure
+    from app.mission.planning.packages import commit_package, stage_package
+
+    from .test_packages import archive
+
+    view, _ = create(service)
+    with archive(service, view.mission.id) as handle, zipfile.ZipFile(handle) as zf:
+        plan = stage_package(zf, None, service.sources)
+    assert not plan.routes
+    target = storage.get_mission_file_path(view.mission.id)
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    original = Path.read_bytes
+    with monkeypatch.context() as patch:
+
+        def unreadable(path):
+            if path == target:
+                raise PermissionError("unreadable foreign metadata")
+            return original(path)
+
+        patch.setattr(Path, "read_bytes", unreadable)
+        with pytest.raises(PlanningFailure) as raised:
+            commit_package(plan, None)
+        assert raised.value.status_code == 503
+        assert raised.value.remaining_paths == (str(target),)
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }

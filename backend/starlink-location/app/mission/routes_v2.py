@@ -373,6 +373,7 @@ async def delete_mission_endpoint(
             # A durable deletion authority survives partially removed metadata.
             from app.mission import storage
             from app.mission.planning.deletion import (
+                _io,
                 delete_owned,
                 load_record,
                 verified_store,
@@ -387,6 +388,14 @@ async def delete_mission_endpoint(
                         SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir),
                         mission_id,
                     )
+                except PlanningFailure as exc:
+                    raise HTTPException(
+                        exc.status_code,
+                        detail={
+                            **exc.error.model_dump(mode="json"),
+                            "remaining_paths": list(exc.remaining_paths),
+                        },
+                    ) from exc
                 except ValueError as exc:
                     raise HTTPException(
                         422,
@@ -395,7 +404,23 @@ async def delete_mission_endpoint(
                             "message": str(exc),
                         },
                     ) from exc
-            mission = record.mission if record else load_mission_v2(mission_id)
+            try:
+                mission = (
+                    record.mission
+                    if record
+                    else _io(
+                        storage.get_mission_file_path(mission_id),
+                        lambda: load_mission_v2(mission_id),
+                    )
+                )
+            except PlanningFailure as exc:
+                raise HTTPException(
+                    exc.status_code,
+                    detail={
+                        **exc.error.model_dump(mode="json"),
+                        "remaining_paths": list(exc.remaining_paths),
+                    },
+                ) from exc
             if not mission:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -438,6 +463,28 @@ async def delete_mission_endpoint(
                     ) from exc
                 return
 
+            # Verify the complete foreign inventory before any legacy cascade mutation.
+            try:
+                retained_routes = {
+                    leg.route_id
+                    for leg in mission.legs
+                    if leg.route_id
+                    and route_references(
+                        leg.route_id,
+                        sources=SourceStore(
+                            storage.MISSIONS_DIR, route_manager.routes_dir
+                        ),
+                        excluding_mission=mission_id,
+                    )
+                }
+            except PlanningFailure as exc:
+                raise HTTPException(
+                    exc.status_code,
+                    detail={
+                        **exc.error.model_dump(mode="json"),
+                        "remaining_paths": list(getattr(exc, "remaining_paths", ())),
+                    },
+                ) from exc
             if run_service:
                 run_service.cancel_owned(mission_id, None, "Deleted")
             # Log cascade deletion info
@@ -458,7 +505,7 @@ async def delete_mission_endpoint(
 
                 # Delete route if it exists
                 if leg.route_id:
-                    if route_references(leg.route_id, excluding_mission=mission_id):
+                    if leg.route_id in retained_routes:
                         continue
                     try:
                         parsed_route = route_manager.get_route(leg.route_id)

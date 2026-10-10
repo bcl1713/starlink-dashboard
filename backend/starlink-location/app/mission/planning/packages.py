@@ -18,7 +18,14 @@ from .errors import conflict
 from .journal import json_bytes
 from .match import resolve_anchor
 from .models import PlanningManifest, PlanningProposal, PlanningView
-from .sources import SourceStore, _records, route_references, source_closure
+from .sources import (
+    SourceStore,
+    _graph_references,
+    _records,
+    _reference_graphs,
+    route_references,
+    source_closure,
+)
 from .types import RouteAnchor
 
 
@@ -183,7 +190,9 @@ def _retained_target(target, mission, manifest, sources, source_bytes):
         if sources.path(source).read_bytes() != source_bytes[source.id]:
             raise ValueError("Target owned bytes changed")
         if source.kind == "route_kml":
-            if route_references(source.id, excluding_mission=target.id):
+            if route_references(
+                source.id, sources=sources, excluding_mission=target.id
+            ):
                 raise ValueError(
                     "Target route has foreign references; import as a new mission"
                 )
@@ -477,6 +486,7 @@ def commit_package(
         else None
     )
     with storage.get_active_leg_lock(), storage.get_mission_lock(mission.id):
+        graphs = _reference_graphs(sources)
         current = storage.load_mission_v2(mission.id)
         if plan.target_json is None:
             if current is not None or expected_revision is not None:
@@ -497,7 +507,7 @@ def commit_package(
             for r in (ParsedRoute.model_validate_json(data) for data in plan.routes)
         }
         if any(
-            route_references(route_id, excluding_mission=mission.id)
+            _graph_references(graphs, route_id, excluding_mission=mission.id)
             for route_id in routes
         ):
             raise conflict("A foreign mission now references an import destination")

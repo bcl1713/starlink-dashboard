@@ -52,22 +52,123 @@ def _records(value):
             yield from _records(child)
 
 
-def route_references(route_id, *, excluding_mission=None):
-    """Call under the global gate; inventory includes every retained graph node."""
-    from app.mission import storage
+def _inventory_io(path, operation):
+    try:
+        return operation()
+    except OSError as exc:
+        failure = PlanningFailure(
+            503,
+            "reference_inventory_unavailable",
+            f"Cannot verify retained references: {path}",
+            action="retry",
+            retryable=True,
+        )
+        failure.remaining_paths = (str(exc.filename or path),)
+        raise failure from exc
 
-    result = []
-    for parent in storage.list_mission_metadata_v2():
-        if parent.id == excluding_mission:
+
+def _inventory_path(path):
+    from .errors import conflict
+
+    if _inventory_io(path, path.resolve) != path:
+        raise conflict(f"Reference inventory contains an aliased path: {path}")
+    return path
+
+
+def _reference_graphs(sources):
+    """Strict safety inventory, independent of tolerant UI metadata listings."""
+    from app.mission import storage
+    from app.mission.models import MissionLeg, MissionLegTimeline
+
+    from .deletion import load_record
+    from .errors import conflict
+
+    root = _inventory_path(storage.MISSIONS_DIR.absolute())
+    if sources.root.parent != root:
+        raise conflict("Reference inventory root does not match source context")
+    authorities = {}
+    directory = _inventory_path(sources.root / "deletions")
+    if _inventory_io(directory, directory.exists):
+        for path in _inventory_io(directory, lambda: list(directory.iterdir())):
+            _inventory_path(path)
+            if path.suffix != ".json":
+                continue
+            try:
+                record = load_record(sources, path.stem)
+                if record is None:
+                    raise ValueError("Deletion authority disappeared")
+            except ValueError as exc:
+                raise conflict(f"Invalid retained authority: {path}") from exc
+            authorities[record.owner] = record.mission.model_dump(mode="json")
+    graphs = list(authorities.items())
+    for directory in _inventory_io(root, lambda: list(root.iterdir())):
+        if directory.name in {".planning", ".slide-cache"}:
+            _inventory_path(directory)
             continue
-        mission = storage.load_mission_v2(parent.id)
-        if any(
-            record.get("route_id") == route_id
-            or (record.get("kind") == "route_kml" and record.get("id") == route_id)
-            for record in _records(mission.model_dump(mode="json"))
-        ):
-            result.append(parent.id)
-    return tuple(result)
+        _inventory_path(directory)
+        if not _inventory_io(directory, directory.is_dir):
+            continue
+        path = _inventory_path(directory / "mission.json")
+        try:
+            if not _inventory_io(path, path.exists) and directory.name in authorities:
+                mission = Mission.model_validate(authorities[directory.name])
+            else:
+                data = _inventory_io(path, path.read_bytes)
+                mission = Mission.model_validate_json(data)
+            if mission.id != directory.name:
+                raise ValueError("Mission identity does not match directory")
+            raw = mission.metadata.get("itinerary_planning")
+            if raw is not None:
+                source_closure(mission, PlanningManifest.model_validate(raw))
+            graph = [mission.model_dump(mode="json")]
+            legs = _inventory_path(directory / "legs")
+            if _inventory_io(legs, legs.exists):
+                for path in _inventory_io(legs, lambda legs=legs: list(legs.iterdir())):
+                    _inventory_path(path)
+                    if path.suffix != ".json":
+                        continue
+                    data = json.loads(_inventory_io(path, path.read_bytes))
+                    if path.name.endswith(storage.TIMELINE_SUFFIX):
+                        timeline = MissionLegTimeline.model_validate(data)
+                        if (
+                            path.name
+                            != timeline.mission_leg_id + storage.TIMELINE_SUFFIX
+                        ):
+                            raise ValueError("Timeline identity does not match path")
+                    else:
+                        leg = MissionLeg.model_validate(data)
+                        if path.stem != leg.id:
+                            raise ValueError("Leg identity does not match path")
+                    graph.append(data)
+        except (ValueError, TypeError, KeyError) as exc:
+            raise conflict(f"Invalid retained reference metadata: {path}") from exc
+        graphs.append((mission.id, graph))
+    return graphs
+
+
+def route_references(route_id, *, sources, excluding_mission=None):
+    """Call under the global gate; failed inventory never implies no references."""
+    return _graph_references(_reference_graphs(sources), route_id, excluding_mission)
+
+
+def _graph_references(graphs, route_id, excluding_mission=None):
+    return tuple(
+        sorted(
+            {
+                owner
+                for owner, graph in graphs
+                if owner != excluding_mission
+                and any(
+                    record.get("route_id") == route_id
+                    or (
+                        record.get("kind") == "route_kml"
+                        and record.get("id") == route_id
+                    )
+                    for record in _records(graph)
+                )
+            }
+        )
+    )
 
 
 def guard_route_delete(route_id, routes_dir):
@@ -75,12 +176,18 @@ def guard_route_delete(route_id, routes_dir):
 
     from app.mission import storage
 
-    owners = route_references(route_id)
-    inventory = (
-        SourceStore(storage.MISSIONS_DIR, routes_dir).root
-        / "inventory"
-        / f"{route_id}.json"
-    )
+    sources = SourceStore(storage.MISSIONS_DIR, routes_dir)
+    try:
+        owners = route_references(route_id, sources=sources)
+    except PlanningFailure as exc:
+        raise HTTPException(
+            exc.status_code,
+            detail={
+                **exc.error.model_dump(mode="json"),
+                "remaining_paths": list(getattr(exc, "remaining_paths", ())),
+            },
+        ) from exc
+    inventory = sources.root / "inventory" / f"{route_id}.json"
     if owners or inventory.exists():
         raise HTTPException(
             409,
@@ -314,7 +421,7 @@ class SourceStore:
         self.bind_store(self._store)
         if self._store.root != storage.MISSIONS_DIR.resolve():
             raise ValueError("Owned release store root changed")
-        from .deletion import ownership_mission
+        from .deletion import _io, _read_bytes, ownership_mission
 
         mission = ownership_mission(self, mission_id)
         if mission is None or "itinerary_planning" not in mission.metadata:
@@ -337,6 +444,14 @@ class SourceStore:
                 "A retained route is selected for tracking.",
                 action="Deactivate the selected route, then delete the owning mission.",
             )
+        try:
+            graphs = _reference_graphs(self)
+        except PlanningFailure as exc:
+            if exc.status_code == 503:
+                from .deletion import _incomplete
+
+                raise _incomplete(exc.remaining_paths) from exc
+            raise
         candidates = []
         for source in references:
             if source.owner != mission_id:
@@ -344,11 +459,12 @@ class SourceStore:
             suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
             if source.owned_relative_path != f"sources/{source.id}.{suffix}":
                 raise ValueError("Invalid owned source path")
-            if source.kind == "route_kml" and route_references(
-                source.id, excluding_mission=mission_id
+            if source.kind == "route_kml" and _graph_references(
+                graphs, source.id, excluding_mission=mission_id
             ):
                 continue
-            paths = [self.path(source)]
+            owned_path = self.root / source.owned_relative_path
+            paths = [_io(owned_path, lambda source=source: self.path(source))]
             if source.kind == "route_kml":
                 paths.extend(
                     [
@@ -358,13 +474,13 @@ class SourceStore:
                     ]
                 )
             for path in paths:
-                if path.resolve() != path:
+                if _io(path, path.resolve) != path:
                     raise ValueError(
                         "Owned source path cannot contain a filesystem alias"
                     )
-                if not path.exists():
+                if not _io(path, path.exists):
                     continue
-                data = path.read_bytes()
+                data = _read_bytes(path)
                 if path.suffix in {".pdf", ".kml"}:
                     if hashlib.sha256(data).hexdigest() != source.content_hash:
                         raise ValueError(f"Owned source changed: {path}")

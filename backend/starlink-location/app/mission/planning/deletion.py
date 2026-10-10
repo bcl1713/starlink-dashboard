@@ -3,6 +3,7 @@
 import hashlib
 import json
 import sqlite3
+import stat
 from pathlib import Path
 from typing import Literal
 
@@ -34,9 +35,21 @@ class DeletionRecord(BaseModel):
     cache: dict[str, str]
 
 
+def _io(path, operation):
+    """Only transient filesystem failures are retryable; validation stays distinct."""
+    try:
+        return operation()
+    except OSError as exc:
+        raise _incomplete([exc.filename or path]) from exc
+
+
+def _read_bytes(path):
+    return _io(path, path.read_bytes)
+
+
 def _canonical(path):
     path = Path(path)
-    if path.resolve() != path:
+    if _io(path, path.resolve) != path:
         raise ValueError(f"Owned deletion path contains an alias: {path}")
     return path
 
@@ -53,9 +66,9 @@ def record_path(sources, mission_id):
 
 def load_record(sources, mission_id):
     path = record_path(sources, mission_id)
-    if not path.exists():
+    if not _io(path, path.exists):
         return None
-    record = DeletionRecord.model_validate_json(path.read_bytes())
+    record = DeletionRecord.model_validate_json(_read_bytes(path))
     if (
         record.owner != mission_id
         or record.mission.id != mission_id
@@ -82,7 +95,14 @@ def load_record(sources, mission_id):
 
 def ownership_mission(sources, mission_id):
     record = load_record(sources, mission_id)
-    return record.mission if record else storage.load_mission_v2(mission_id)
+    return (
+        record.mission
+        if record
+        else _io(
+            storage.get_mission_file_path(mission_id),
+            lambda: storage.load_mission_v2(mission_id),
+        )
+    )
 
 
 def verified_store(route_manager, poi_manager):
@@ -143,28 +163,41 @@ def _owned_pois(mission, records):
 
 
 def _read_pois(path):
-    with FileLock(str(path) + ".lock"):
-        return json.loads(path.read_bytes()).get("pois", {})
+    try:
+        with FileLock(str(path) + ".lock"):
+            data = path.read_bytes()
+    except OSError as exc:
+        raise _incomplete([path]) from exc
+    return json.loads(data).get("pois", {})
 
 
 def _tree(directory):
     _canonical(directory)
     files, directories = {}, [""]
-    if directory.exists():
-        for path in directory.rglob("*"):
+    pending = [directory] if _io(directory, directory.exists) else []
+    while pending:
+        parent = pending.pop()
+        # Explicit traversal propagates unreadable directories; rglob can skip them.
+        children = _io(parent, lambda parent=parent: list(parent.iterdir()))
+        for path in children:
             _canonical(path)
             relative = str(path.relative_to(directory))
-            if path.is_dir():
+            mode = _io(path, path.stat).st_mode
+            if stat.S_ISDIR(mode):
                 directories.append(relative)
-            elif path.is_file():
-                files[relative] = _hash(path.read_bytes())
+                pending.append(path)
+            elif stat.S_ISREG(mode):
+                files[relative] = _hash(_read_bytes(path))
             else:
                 raise ValueError(f"Unexpected owned deletion file type: {path}")
     return files, directories
 
 
 def _cache_records(path, owner):
-    return SlideStore(path).records(owner) if path.exists() else {}
+    try:
+        return SlideStore(path).records(owner) if path.exists() else {}
+    except (OSError, sqlite3.OperationalError) as exc:
+        raise _incomplete([path]) from exc
 
 
 def _subset(current, expected):
