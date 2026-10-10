@@ -1,0 +1,61 @@
+{
+  "id": "leg",
+  "ordinal": 1,
+  "departure_airport": "AAAA",
+  "arrival_airport": "BBBB",
+  "departure_time": "2026-10-25T09:00:00Z",
+  "arrival_time": "2026-10-25T12:00:00Z",
+  "ar_rows": [
+    {
+      "id": "ar",
+      "track": "SYNTH",
+      "source_page": null,
+      "source_row": null,
+      "source_text": "Synthetic PDF AR source",
+      "entry_time": "2026-10-25T10:00:00Z",
+      "exit_time": "2026-10-25T11:00:00Z",
+      "source_time_precision": "minute",
+      "source_altitude": 210.0,
+      "confirmed_units": "flight_level",
+      "start_anchor": {
+        "route_id": "synthetic-minute-route",
+        "content_hash": "834895045281226c1053c9a01b86c50424d07cbbe5b84e1b0d93732c47d4baf9",
+        "segment_index": 1,
+        "fraction": 0.0,
+        "occurrence_id": "point:1",
+        "source_time": "2026-10-25T10:00:30Z",
+        "latitude": 0.0,
+        "longitude": 1.0,
+        "timing_mode": "route_bound",
+        "elapsed_seconds": null
+      },
+      "end_anchor": {
+        "route_id": "synthetic-minute-route",
+        "content_hash": "834895045281226c1053c9a01b86c50424d07cbbe5b84e1b0d93732c47d4baf9",
+        "segment_index": 3,
+        "fraction": 0.0,
+        "occurrence_id": "point:3",
+        "source_time": "2026-10-25T11:00:30Z",
+        "latitude": 0.0,
+        "longitude": 1.0,
+        "timing_mode": "route_bound",
+        "elapsed_seconds": null
+      },
+      "match_status": "matched",
+      "confirmed": false,
+      "exclusion_note": null
+    }
+  ],
+  "ar_section_status": "listed",
+  "route": {
+    "route_id": "synthetic-minute-route",
+    "source_id": "synthetic-minute-route",
+    "content_hash": "834895045281226c1053c9a01b86c50424d07cbbe5b84e1b0d93732c47d4baf9",
+    "filename": "synthetic.kml",
+    "ingestion_profile": "planning_v1"
+  },
+  "draft": null,
+  "review": null,
+  "installed_leg_id": null,
+  "retired": false
+}

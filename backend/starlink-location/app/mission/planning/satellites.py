@@ -47,10 +47,14 @@ def satellite_options(poi_manager, satellite_catalog=None):
             position = SatellitePosition(
                 satellite_id=identifier, latitude=latitude, longitude=longitude
             )
-        except ValueError as exc:
+        except ValueError:
             error = PlanningError(
                 code="satellite_position_missing",
-                message=str(exc),
+                message=(
+                    "Remove duplicate satellite identifiers in satellite configuration."
+                    if ambiguous
+                    else "Configure a valid latitude and longitude for this satellite."
+                ),
                 action="edit_satellite",
             )
             position = None

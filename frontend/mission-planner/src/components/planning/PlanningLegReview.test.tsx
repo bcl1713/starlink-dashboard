@@ -684,3 +684,98 @@ it('keeps replacement preview and local corrections when acceptance CAS is stale
   expect(acknowledgment).toBeChecked();
   expect(planningApi.generateProposal).not.toHaveBeenCalled();
 });
+
+it.each(['ready', 'stale identity', 'stale revision'])(
+  'resumes persisted %s proposal on mount and explicit reload without generation or application',
+  async (state) => {
+    const reference = {
+      id: 'persisted',
+      leg_id: card.leg.id,
+      expected_revision: 7,
+      input_identity: 'hash',
+      state: 'ready',
+    };
+    const persisted = {
+      id: 'persisted',
+      expected_revision: state === 'stale revision' ? 6 : 7,
+      input_identity: state === 'stale identity' ? 'old' : 'hash',
+      context: { input_identity: 'context' },
+      state: 'ready' as const,
+      proposed_draft: { initial_x_satellite_id: 'X-eligible' },
+    };
+    const read = vi
+      .spyOn(planningApi, 'readProposal')
+      .mockResolvedValue(persisted);
+    const apply = vi.spyOn(planningApi, 'applyProposal');
+    setup({
+      ...view,
+      mission: {
+        ...view.mission,
+        metadata: { itinerary_planning: { proposal_refs: [reference] } },
+      },
+    });
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'X-band plan' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    await screen.findByRole('region', { name: 'Proposal comparison' });
+    expect(
+      screen.getByRole('button', { name: 'Apply proposal' })
+    ).toHaveProperty('disabled', state !== 'ready');
+    if (state !== 'ready')
+      expect(screen.getByText(/Proposal is stale/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /Reload saved draft/ }));
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+    expect(planningApi.generateProposal).not.toHaveBeenCalled();
+    expect(apply).not.toHaveBeenCalled();
+  }
+);
+
+it('keeps edits made while a persisted proposal retrieval is pending and marks it stale', async () => {
+  let resolve!: (
+    value: Awaited<ReturnType<typeof planningApi.readProposal>>
+  ) => void;
+  vi.spyOn(planningApi, 'readProposal').mockReturnValue(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  setup({
+    ...view,
+    mission: {
+      ...view.mission,
+      metadata: {
+        itinerary_planning: {
+          proposal_refs: [
+            {
+              id: 'persisted',
+              leg_id: card.leg.id,
+              expected_revision: 7,
+              input_identity: 'hash',
+              state: 'ready',
+            },
+          ],
+        },
+      },
+    },
+  });
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'X-band plan' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  await screen.findByLabelText('Starshield enabled for this plan');
+  fireEvent.click(screen.getByLabelText('Starshield enabled for this plan'));
+  await act(async () =>
+    resolve({
+      id: 'persisted',
+      expected_revision: 7,
+      input_identity: 'hash',
+      context: { input_identity: 'context' },
+      state: 'ready',
+      proposed_draft: { starshield_enabled: true },
+    })
+  );
+  expect(screen.getByLabelText(/Starshield enabled/i)).not.toBeChecked();
+  expect(screen.getByText(/Proposal is stale/)).toBeVisible();
+  expect(planningApi.generateProposal).not.toHaveBeenCalled();
+});

@@ -167,6 +167,12 @@ def build_inputs(
             continue
         entry = resolve_anchor(ar.start_anchor, anchor_route)
         exit = resolve_anchor(ar.end_anchor, anchor_route)
+        if not start <= entry < exit <= end:
+            unresolved.append(
+                f"AR {ar.id} must have increasing entry/exit within the effective flight "
+                f"({start.isoformat()} to {end.isoformat()}); correct its timing anchors"
+            )
+            continue
         height, assumption = None, None
         if ar.source_altitude is not None and ar.confirmed_units is not None:
             height = ar.geometric_height_meters()

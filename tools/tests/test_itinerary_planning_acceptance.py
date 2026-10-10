@@ -155,6 +155,7 @@ def main_run(monkeypatch, tmp_path):
     monkeypatch.setattr(
         compose, "parse_buildkit_log", lambda *args: [SimpleNamespace(complete=True)]
     )
+    monkeypatch.setattr(module, "verify_clone_snapshot", lambda owner, source: None)
     original_remove = module.shutil.rmtree
     original_close = module.Owner.close_processes
     original_unlink = module.Path.unlink
@@ -467,3 +468,47 @@ m.main()
         if process.poll() is None:
             process.terminate()
             process.wait(timeout=5)
+
+
+@pytest.mark.parametrize("fault", [None, "cached", "interval"])
+def test_clone_export_receipt_requires_rebuilt_equivalent_timeline(tmp_path, fault):
+    from types import SimpleNamespace
+
+    module = load_runner()
+    expected = {
+        "mission_id": "clone",
+        "legs": [
+            {
+                "leg_id": "leg",
+                "context": {"input_identity": "same"},
+                "timeline": {
+                    "segments": [{"metadata": {"planning_interval": {"outage": 42}}}]
+                },
+            }
+        ],
+    }
+    (tmp_path / "clone-rebuilt-timelines.json").write_text(json.dumps(expected))
+    script = tmp_path / "tools/acceptance/itinerary-planning/verify-clone.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("read_only_proof")
+    receipt = {
+        "mission_id": "clone",
+        "legs": [
+            {
+                "leg_id": "leg",
+                "context": {"input_identity": "same"},
+                "preparation_origin": "cached" if fault == "cached" else "rebuilt",
+                "intervals": [{"outage": 0 if fault == "interval" else 42}],
+            }
+        ],
+    }
+    owner = SimpleNamespace(
+        output=tmp_path,
+        compose=lambda *args, **kwargs: "CANONICAL_RECEIPT=" + json.dumps(receipt),
+    )
+    if fault:
+        with pytest.raises(AssertionError):
+            module.verify_clone_snapshot(owner, tmp_path)
+    else:
+        module.verify_clone_snapshot(owner, tmp_path)
+    assert json.loads((tmp_path / "clone-export-rebuild.json").read_text()) == receipt

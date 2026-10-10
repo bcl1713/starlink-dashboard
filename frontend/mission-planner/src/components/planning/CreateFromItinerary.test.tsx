@@ -67,6 +67,11 @@ it('corrects extraction and creates expected cards without requiring a permitted
   });
   fireEvent.click(screen.getByRole('button', { name: 'Extract itinerary' }));
   await screen.findByLabelText('Mission name');
+  expect(
+    screen.getByText(
+      /Review AR windows and satellite access, generate and compare a proposal, then save the reviewed plan/
+    )
+  ).toBeVisible();
   fireEvent.change(screen.getByLabelText('Mission name'), {
     target: { value: 'Corrected name' },
   });

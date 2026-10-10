@@ -144,12 +144,19 @@ export function ARReview({
           !!row.confirmed_units;
         const start = row.start_anchor;
         const end = row.end_anchor;
+        const matchesSourceTime = (time: string, source: string) => {
+          const actual = Date.parse(time);
+          const expected = Date.parse(source);
+          return row.source_time_precision === 'minute'
+            ? Math.floor(actual / 60_000) === Math.floor(expected / 60_000)
+            : actual === expected;
+        };
         const orderedAnchors =
           !!start &&
           !!end &&
           Date.parse(start.source_time) < Date.parse(end.source_time) &&
-          Date.parse(start.source_time) >= Date.parse(row.entry_time) &&
-          Date.parse(end.source_time) <= Date.parse(row.exit_time) &&
+          matchesSourceTime(start.source_time, row.entry_time) &&
+          matchesSourceTime(end.source_time, row.exit_time) &&
           start.segment_index + start.fraction <
             end.segment_index + end.fraction &&
           start.route_id === leg.route?.route_id &&

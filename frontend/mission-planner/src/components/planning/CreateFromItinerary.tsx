@@ -342,9 +342,8 @@ function ItineraryForm({
           )}
           <p className="text-sm text-muted-foreground">
             Creation defaults copy into every leg. Later edits apply to the
-            selected leg. Unconfirmed inputs stay visible for correction;
-            automatic optimization and saving reviewed plans are not yet
-            available.
+            selected leg. Review AR windows and satellite access, generate and
+            compare a proposal, then save the reviewed plan.
           </p>
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={onClose} disabled={busy}>

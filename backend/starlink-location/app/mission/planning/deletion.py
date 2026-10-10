@@ -76,10 +76,13 @@ def load_record(sources, mission_id):
         or record.routes_root != str(sources.routes_dir)
     ):
         raise ValueError("Deletion authority does not match its verified owner/root")
-    source_closure(
-        record.mission,
-        PlanningManifest.model_validate(record.mission.metadata["itinerary_planning"]),
-    )
+    try:
+        manifest = PlanningManifest.model_validate(
+            record.mission.metadata.get("itinerary_planning")
+        )
+        source_closure(record.mission, manifest)
+    except ValueError as exc:
+        raise conflict(f"Invalid retained authority: {mission_id}") from exc
     directory = _canonical(sources.root.parent / mission_id)
     for relative in [*record.files, *record.directories]:
         target = directory / relative

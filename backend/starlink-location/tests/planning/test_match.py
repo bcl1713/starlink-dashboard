@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-
 from app.mission.planning.match import (
     ar_match_candidates,
     match_ar_windows,
@@ -437,3 +436,40 @@ def test_planning_invalid_geometry_is_a_typed_input_error(tmp_path, coordinate):
     path.write_text(path.read_text().replace("0,0,1000", coordinate))
     with pytest.raises(KMLParseError):
         parse_kml_file(path, profile="planning_v1")
+
+
+def minute_candidate_dto(tmp_path):
+    """Synthetic public DTO shared with the AR review component regression."""
+    from app.mission.planning.models import RouteBinding
+
+    path = kml_fixture(tmp_path)
+    path.write_bytes(
+        path.read_bytes()
+        .replace(b"10:00:20", b"10:00:30")
+        .replace(b"11:00:40", b"11:00:30")
+    )
+    route = parse_kml_file(path, profile="planning_v1")
+    route.route_id = "synthetic-minute-route"
+    expected = leg()
+    expected.route = RouteBinding(
+        route_id=route.route_id,
+        source_id=route.route_id,
+        content_hash=route.content_hash,
+        filename="synthetic.kml",
+    )
+    expected.ar_rows[0].source_altitude = 210
+    expected.ar_rows[0].confirmed_units = "flight_level"
+    expected.ar_rows[0].source_text = "Synthetic PDF AR source"
+    expected.ar_rows = match_ar_windows(expected, route)
+    return expected.model_dump(mode="json")
+
+
+def test_minute_candidate_matches_frontend_contract_fixture(tmp_path):
+    import json
+    from pathlib import Path
+
+    fixture = (
+        Path(__file__).resolve().parents[4]
+        / "frontend/mission-planner/src/components/planning/minute-candidate.fixture.json"
+    )
+    assert minute_candidate_dto(tmp_path) == json.loads(fixture.read_text())

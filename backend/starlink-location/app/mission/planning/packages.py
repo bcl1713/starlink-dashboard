@@ -5,6 +5,7 @@ import json
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
+from types import SimpleNamespace
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -17,7 +18,7 @@ from app.services.kml_parser import parse_kml_file
 from .errors import conflict
 from .journal import json_bytes
 from .match import resolve_anchor
-from .models import PlanningManifest, PlanningProposal, PlanningView
+from .models import PlanningDraft, PlanningManifest, PlanningProposal, PlanningView
 from .sources import (
     SourceStore,
     _graph_references,
@@ -101,6 +102,24 @@ def _remap(value, routes, old_owner, new_owner, key=None):
     if isinstance(value, list):
         return [_remap(v, routes, old_owner, new_owner, key) for v in value]
     if isinstance(value, str):
+        embedded = {
+            "route_json": ParsedRoute,
+            "anchor_route_json": ParsedRoute,
+            "structural_draft_json": PlanningDraft,
+        }
+        if key in embedded:
+            try:
+                decoded = json.loads(value)
+                embedded[key].model_validate(decoded)
+                return json.dumps(
+                    _remap(decoded, routes, old_owner, new_owner),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            except (ValueError, TypeError) as exc:
+                raise ValueError(
+                    f"Invalid embedded planning {key}; restore a valid package"
+                ) from exc
         if key in {"route_id", "source_id", "source_ids"}:
             return routes.get(value, value)
         if key in {"mission_id", "owner"} and value == old_owner:
@@ -426,6 +445,22 @@ def stage_package(
             r.route_id: r
             for r in (ParsedRoute.model_validate_json(data) for data in remapped_routes)
         }
+        # Validate preserved installed and historical snapshots against the actual
+        # remapped immutable geometry. Never accept an unusable Reviewed clone.
+        from app.mission.effective_route import prepare_effective_route
+
+        from .canonical import canonical_inputs
+
+        installed = list(mission.legs)
+        if manifest:
+            installed.extend(
+                h.installed_leg for h in manifest.leg_history if h.installed_leg
+            )
+        route_view = SimpleNamespace(get_route=route_models.get)
+        for leg in installed:
+            if leg.transports.planning_inputs is not None:
+                effective = prepare_effective_route(leg, route_view)
+                canonical_inputs(leg, effective)
         for leg in mission.legs:
             route = route_models.get(leg.route_id)
             if route is None or not route.points:

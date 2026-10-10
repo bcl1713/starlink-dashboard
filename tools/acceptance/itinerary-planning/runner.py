@@ -312,6 +312,37 @@ def cleanup(owner: Owner, owned: bool) -> list[dict[str, str]]:
     return failures
 
 
+def verify_clone_snapshot(owner, source):
+    expected = json.loads((owner.output / "clone-rebuilt-timelines.json").read_text())
+    result = owner.compose(
+        "exec",
+        "-T",
+        "starlink-location",
+        "python",
+        "-c",
+        (source / "tools/acceptance/itinerary-planning/verify-clone.py").read_text(),
+        expected["mission_id"],
+        timeout=120,
+    )
+    line = next(
+        line for line in result.splitlines() if line.startswith("CANONICAL_RECEIPT=")
+    )
+    receipt = json.loads(line.removeprefix("CANONICAL_RECEIPT="))
+    (owner.output / "clone-export-rebuild.json").write_text(
+        json.dumps(receipt, indent=2)
+    )
+    assert receipt["mission_id"] == expected["mission_id"]
+    assert len(receipt["legs"]) == len(expected["legs"])
+    for actual, baseline in zip(receipt["legs"], expected["legs"]):
+        assert actual["leg_id"] == baseline["leg_id"]
+        assert actual["preparation_origin"] == "rebuilt"
+        assert actual["context"] == baseline["context"]
+        assert actual["intervals"] == [
+            segment["metadata"]["planning_interval"]
+            for segment in baseline["timeline"]["segments"]
+        ]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
@@ -480,6 +511,7 @@ def main() -> None:
             ["node", str(source / "tools/acceptance/browser/itinerary-planning.mjs")],
             timeout=600,
         )
+        verify_clone_snapshot(owner, source)
         summary["passed"] = True
     except BaseException as error:
         primary_error = error

@@ -1,13 +1,12 @@
 """API-owned satellite changes invalidate computation and publication."""
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.mission.dependencies import get_poi_manager
 from app.mission.planning.inputs import resolve_positions
 from app.mission.planning.routes import router
 from app.satellites.routes import router as satellite_router
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from .test_proposals import prepared as prepared_fixture
 from .test_proposals import proposal_api
@@ -183,3 +182,52 @@ def test_api_position_changed_before_review_commit_does_not_publish(
         service.save_reviewed(view.mission.id, "card-1", review(view))
     assert service.store._load(view.mission.id)[1].storage_record() == before
     assert service.store.read(view.mission.id).mission.legs == []
+
+
+@pytest.mark.parametrize("longitude", [None, 200, float("nan")])
+def test_invalid_position_has_operator_configuration_guidance(longitude):
+    from types import SimpleNamespace
+
+    from app.mission.planning.satellites import satellite_options
+
+    catalog = SimpleNamespace(
+        list_all=lambda: [
+            SimpleNamespace(satellite_id="BAD", transport="X", longitude=longitude),
+            SimpleNamespace(satellite_id="GOOD", transport="X", longitude=0),
+        ]
+    )
+    options = {s.id: s for s in satellite_options(None, catalog)}
+    assert options["GOOD"].eligible
+    bad = options["BAD"]
+    assert not bad.eligible
+    assert bad.error.code == "satellite_position_missing"
+    assert bad.error.action == "edit_satellite"
+    assert (
+        bad.error.message
+        == "Configure a valid latitude and longitude for this satellite."
+    )
+
+
+def test_duplicate_satellite_has_operator_configuration_guidance():
+    from types import SimpleNamespace
+
+    from app.mission.planning.satellites import satellite_options
+
+    poi = SimpleNamespace(
+        name="DUP",
+        category="satellite",
+        mission_id=None,
+        route_id=None,
+        icon="X",
+        latitude=0,
+        longitude=1,
+    )
+    options = satellite_options(
+        SimpleNamespace(list_pois=lambda: [poi, poi]),
+        SimpleNamespace(list_all=list),
+    )
+    assert not options[0].eligible
+    assert (
+        options[0].error.message
+        == "Remove duplicate satellite identifiers in satellite configuration."
+    )

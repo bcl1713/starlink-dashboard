@@ -237,3 +237,35 @@ it('maps an added row using explicit timed occurrences and rejects reversed span
   fireEvent.click(screen.getByLabelText('Confirm AR106'));
   expect(screen.getByLabelText('Confirm AR106')).toBeChecked();
 });
+
+import minuteCandidate from './minute-candidate.fixture.json';
+
+it('confirms a real backend minute candidate at +30 seconds without changing PDF evidence', () => {
+  const initial = minuteCandidate as ExpectedLeg;
+  render(<Form initial={initial} />);
+  const confirm = screen.getByLabelText('Confirm SYNTH');
+  expect(confirm).toBeEnabled();
+  fireEvent.click(confirm);
+  const corrected = JSON.parse(
+    screen.getByLabelText('Corrections').textContent!
+  )[0];
+  expect(corrected.confirmed).toBe(true);
+  expect(corrected.entry_time).toBe(initial.ar_rows![0].entry_time);
+  expect(corrected.exit_time).toBe(initial.ar_rows![0].exit_time);
+  expect(corrected.source_text).toBe('Synthetic PDF AR source');
+  expect(corrected.end_anchor.source_time).toContain('11:00:30');
+});
+
+it.each(['next minute', 'exact second', 'reversed occurrence'])(
+  'rejects backend candidate edited to %s',
+  (invalid) => {
+    const initial = structuredClone(minuteCandidate) as ExpectedLeg;
+    const row = initial.ar_rows![0];
+    if (invalid === 'next minute')
+      row.end_anchor!.source_time = '2026-10-25T11:01:00Z';
+    if (invalid === 'exact second') row.source_time_precision = 'second';
+    if (invalid === 'reversed occurrence') row.end_anchor!.segment_index = 0;
+    render(<Form initial={initial} />);
+    expect(screen.getByLabelText('Confirm SYNTH')).toBeDisabled();
+  }
+);

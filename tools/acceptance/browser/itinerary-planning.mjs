@@ -276,7 +276,22 @@ export async function journey(context, origin, seed, output) {
     await expect(
       page.getByText(/Physical X: available · Policy X: offline/).first(),
     ).toBeVisible();
-    await record("manual-lock-policy-proposal", { proposal });
+    // Resume the persisted result across navigation without generating or applying.
+    const proposalWrites = writes.length;
+    await page.reload();
+    await page.getByRole("tab", { name: "X-band plan", exact: true }).click();
+    await expect(
+      page.getByRole("region", { name: "Proposal comparison" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Apply proposal", exact: true }),
+    ).toBeEnabled();
+    assert(
+      !writes
+        .slice(proposalWrites)
+        .some((entry) => /\/(proposals|apply)$/.test(entry.url)),
+    );
+    await record("manual-lock-policy-proposal", { proposal, resumed: true });
     saved = await clickResponse(page, "Apply proposal", "/apply");
     assert.deepEqual(
       saved.expected_legs[0].leg.draft.evaluation_context,
@@ -432,7 +447,13 @@ export async function journey(context, origin, seed, output) {
         }),
       );
       const compareReferences = (originalValue, clonedValue, key) => {
-        if (Array.isArray(originalValue)) {
+        if (
+          ["route_json", "anchor_route_json", "structural_draft_json"].includes(
+            key,
+          )
+        ) {
+          compareReferences(JSON.parse(originalValue), JSON.parse(clonedValue));
+        } else if (Array.isArray(originalValue)) {
           assert.equal(clonedValue.length, originalValue.length);
           originalValue.forEach((value, index) =>
             compareReferences(value, clonedValue[index], key),
@@ -482,6 +503,49 @@ export async function journey(context, origin, seed, output) {
       return compareReferences;
     };
     const compareCloneReferences = verifyClone(beforeClone, cloneView);
+    const rebuiltTimelines = [];
+    for (const installed of beforeClone.mission.legs) {
+      const rebuilt = [];
+      for (const view of [beforeClone, cloneView]) {
+        const response = await api.post(
+          `${origin}/api/v2/missions/${view.mission.id}/legs/${installed.id}/timeline/preview`,
+          { data: {} },
+        );
+        assert(response.ok(), await response.text());
+        const timeline = await response.json();
+        assert(timeline.segments.length > 0);
+        assert(
+          timeline.segments.every(
+            (segment) => segment.metadata?.planning_interval,
+          ),
+        );
+        rebuilt.push(timeline);
+      }
+      assert.deepEqual(
+        rebuilt[0].segments.map((s) => s.metadata.planning_interval),
+        rebuilt[1].segments.map((s) => s.metadata.planning_interval),
+      );
+      const clonedLeg = cloneView.mission.legs.find(
+        (leg) => leg.id === installed.id,
+      );
+      assert.deepEqual(
+        clonedLeg.transports.evaluation_context,
+        installed.transports.evaluation_context,
+      );
+      rebuiltTimelines.push({
+        leg_id: installed.id,
+        timeline: rebuilt[1],
+        context: clonedLeg.transports.evaluation_context,
+      });
+    }
+    await writeFile(
+      join(output, "clone-rebuilt-timelines.json"),
+      JSON.stringify(
+        { mission_id: clone.mission_id, legs: rebuiltTimelines },
+        null,
+        2,
+      ),
+    );
     const scopedPreview = async (view) => {
       const card = view.expected_legs[0];
       const result = await api.post(

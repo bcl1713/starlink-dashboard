@@ -4,11 +4,10 @@ import asyncio
 from unittest.mock import Mock
 
 import pytest
-from fastapi import HTTPException
-
 from app.api.routes.delete import delete_route
 from app.mission import storage
 from app.mission.planning.models import LegHistory
+from fastapi import HTTPException
 
 from . import test_store
 from .test_store import bind, create
@@ -1022,6 +1021,44 @@ def test_zero_route_import_requires_complete_reference_inventory(
             commit_package(plan, None)
         assert raised.value.status_code == 503
         assert raised.value.remaining_paths == (str(target),)
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+
+
+def test_missing_planning_metadata_in_deletion_authority_is_structured(
+    service, tmp_path, monkeypatch
+):
+    import json
+
+    from app.mission.planning.deletion import load_record, record_path
+    from app.mission.planning.errors import PlanningFailure
+    from app.mission.planning.sources import route_references
+
+    owner, _ = _failed_deletion(service, tmp_path, monkeypatch)
+    path = record_path(service.sources, owner)
+    raw = json.loads(path.read_bytes())
+    raw["mission"]["metadata"].pop("itinerary_planning")
+    path.write_text(json.dumps(raw))
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    for action in (
+        lambda: load_record(service.sources, owner),
+        lambda: route_references("any", sources=service.sources),
+    ):
+        with pytest.raises(PlanningFailure) as raised:
+            action()
+        assert raised.value.status_code in (409, 422)
+        assert owner in raised.value.error.message
+        assert raised.value.error.code in (
+            "planning_conflict",
+            "invalid_deletion_authority",
+        )
     assert before == {
         str(p): p.read_bytes()
         for p in tmp_path.rglob("*")

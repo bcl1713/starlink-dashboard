@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { usePlanning } from './api/usePlanning';
 import { planningApi, planningErrorMessage } from '../services/planning';
 import type {
@@ -7,6 +7,7 @@ import type {
   PlanningDraft,
   PlanningEvaluation,
   PlanningProposal,
+  PlanningManifest,
   PlanningSatelliteOptions,
   RouteBindingPreview,
 } from '../types/planning';
@@ -40,6 +41,37 @@ export function usePlanningLegWorkflow({
   const [sequencePending, setSequencePending] = useState(false);
   const [inputIdentity, setInputIdentity] = useState(card.input_identity);
   const [proposal, setProposal] = useState<PlanningProposal | null>(null);
+  const [resumeView, setResumeView] = useState({ view });
+  const currentInputs = useRef({ dirty, expectedRevision, inputIdentity });
+  currentInputs.current = { dirty, expectedRevision, inputIdentity };
+  useEffect(() => {
+    const manifest = resumeView.view.mission.metadata?.itinerary_planning as
+      | PlanningManifest
+      | undefined;
+    const reference = manifest?.proposal_refs
+      ?.filter((item) => item.leg_id === leg.id)
+      .at(-1);
+    if (!reference) return;
+    let current = true;
+    planningApi
+      .readProposal(resumeView.view.mission.id, leg.id, reference.id)
+      .then((saved) => {
+        if (!current) return;
+        const inputs = currentInputs.current;
+        const stale =
+          inputs.dirty ||
+          reference.state === 'stale' ||
+          saved.expected_revision !== inputs.expectedRevision ||
+          saved.input_identity !== inputs.inputIdentity;
+        setProposal(stale ? { ...saved, state: 'stale' } : saved);
+      })
+      .catch((failure) => {
+        if (current) setError(planningErrorMessage(failure));
+      });
+    return () => {
+      current = false;
+    };
+  }, [resumeView, leg.id]);
   const [evaluation, setEvaluation] = useState<PlanningEvaluation | null>(null);
   const [previewError, setPreviewError] = useState('');
   const [planConfirmed, setPlanConfirmed] = useState(false);
@@ -335,6 +367,7 @@ export function usePlanningLegWorkflow({
       if (!result.data) throw new Error('Unable to reload the saved draft');
       receive(result.data);
       setProposal(null);
+      setResumeView({ view: result.data });
       setMessage('Saved draft reloaded.');
     } catch (e) {
       setError(planningErrorMessage(e));
