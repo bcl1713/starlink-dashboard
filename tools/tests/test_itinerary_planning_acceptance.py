@@ -517,10 +517,24 @@ def test_clone_export_receipt_requires_rebuilt_equivalent_timeline(tmp_path, fau
             }
         ],
     }
-    owner = SimpleNamespace(
-        output=tmp_path,
-        compose=lambda *args, **kwargs: "CANONICAL_RECEIPT=" + json.dumps(receipt),
-    )
+
+    def compose(*args, **kwargs):
+        # docker exec bypasses the image entrypoint; Python dependencies live
+        # in the production appuser site, so use the same runuser transition.
+        assert args[:8] == (
+            "exec",
+            "-T",
+            "starlink-location",
+            "runuser",
+            "-u",
+            "appuser",
+            "--",
+            "python",
+        )
+        assert kwargs == {"timeout": 120}
+        return "CANONICAL_RECEIPT=" + json.dumps(receipt)
+
+    owner = SimpleNamespace(output=tmp_path, compose=compose)
     if fault:
         with pytest.raises(AssertionError):
             module.verify_clone_snapshot(owner, tmp_path)
