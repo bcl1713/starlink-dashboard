@@ -123,6 +123,11 @@ def pdf(revision: int, legs: int = 3) -> bytes:
 
 def kml(ordinal: int, shifted: bool = False) -> bytes:
     start, duration = [(13, 180), (18, 60), (20, 180)][ordinal - 1]
+    departure_airport, arrival_airport = [
+        ("AAAA", "BBBB"),
+        ("BBBB", "CCCC"),
+        ("CCCC", "AAAA"),
+    ][ordinal - 1]
     departure = datetime(2026, 10, 25, start, tzinfo=timezone.utc)
     marks, coordinates = [], []
     for minute in range(0, duration + 1, 10):
@@ -131,11 +136,16 @@ def kml(ordinal: int, shifted: bool = False) -> bytes:
         coordinate = f"{longitude},{latitude},6400"
         coordinates.append(coordinate)
         clock = (departure + timedelta(minutes=minute)).strftime("%Y-%m-%d %H:%M:%SZ")
+        name = (
+            departure_airport
+            if minute == 0
+            else arrival_airport if minute == duration else f"Point {minute}"
+        )
         marks.append(
-            f"<Placemark><name>Point {minute}</name><description>Time Over Waypoint: {clock}</description><Point><coordinates>{coordinate}</coordinates></Point></Placemark>"
+            f"<Placemark><name>{name}</name><description>Time Over Waypoint: {clock}</description><Point><coordinates>{coordinate}</coordinates></Point></Placemark>"
         )
     return (
-        '<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Synthetic route</name>'
+        f'<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>{departure_airport}-{arrival_airport}</name>'
         + "".join(marks)
         + "<Placemark><LineString><coordinates>"
         + " ".join(coordinates)

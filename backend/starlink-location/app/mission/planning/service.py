@@ -1,12 +1,10 @@
 """Parse outside locks; accept immutable sources with revision-CAS transactions."""
 
 import hashlib
-import math
 from uuid import uuid4
 
 from app.mission import storage
 from app.mission.models import Mission
-from app.mission.timeline_builder.events import _resolve_satellite_longitude
 from app.satellites.catalog import get_satellite_catalog
 from app.services.kml_parser import parse_kml_file
 
@@ -20,7 +18,6 @@ from .models import (
     PlanningDraft,
     PlanningError,
     PlanningManifest,
-    PlanningSatelliteOption,
     PlanningSatelliteOptions,
     RouteBinding,
     RouteBindingPreview,
@@ -58,31 +55,13 @@ class PlanningService:
         return update_leg(self, mission_id, leg_id, updated_leg, revision, identity)
 
     def satellite_options(self):
-        catalog = get_satellite_catalog(read_only=True)
-        options = []
-        for sat in catalog.list_all():
-            lon = _resolve_satellite_longitude(
-                sat.satellite_id, self.store.poi_manager, catalog
+        from .satellites import satellite_options
+
+        return PlanningSatelliteOptions(
+            satellites=satellite_options(
+                self.store.poi_manager, get_satellite_catalog(read_only=True)
             )
-            valid = lon is not None and math.isfinite(lon) and -180 <= lon <= 180
-            error = None
-            if not valid:
-                error = PlanningError(
-                    code="satellite_position_missing",
-                    message="No validated configured position",
-                )
-            options.append(
-                PlanningSatelliteOption(
-                    id=sat.satellite_id,
-                    label=sat.satellite_id,
-                    transport=sat.transport,
-                    longitude=lon if valid else None,
-                    latitude=0 if valid else None,
-                    eligible=sat.transport == "X" and valid,
-                    error=error,
-                )
-            )
-        return PlanningSatelliteOptions(satellites=options)
+        )
 
     def validate_selection(self, selection):
         eligible = {
@@ -224,6 +203,17 @@ class PlanningService:
             )
             errors = []
             timing = route.timing_profile
+            if (
+                timing is None
+                or timing.departure_time is None
+                or timing.arrival_time is None
+            ):
+                raise PlanningFailure(
+                    422,
+                    "route_timing_required",
+                    "KML requires named departure/arrival airports and timed primary route endpoints",
+                    action="replace_route",
+                )
             if (
                 timing.departure_time != leg.departure_time
                 or timing.arrival_time != leg.arrival_time

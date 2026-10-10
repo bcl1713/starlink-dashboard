@@ -16,13 +16,13 @@ from app.mission.timeline_builder.calculator import (
     derive_mission_window,
     route_with_adjusted_departure,
 )
-from app.satellites import catalog
 from app.satellites.rules import ConstraintConfig, EventType, RuleEngine
 
 from .identity import planning_identity
 from .match import resolve_anchor
 from .models import PlanningInputs
-from .types import PlanningSpan, SatellitePosition
+from .satellites import resolve_positions
+from .types import PlanningSpan
 
 if TYPE_CHECKING:
     from app.services.poi_manager import POIManager
@@ -86,41 +86,6 @@ def input_identity(inputs):
     ):
         record[field] = json.loads(record[field])
     return planning_identity(record)
-
-
-def resolve_positions(ids, poi_manager, satellite_catalog=None):
-    selected = satellite_catalog or catalog.get_satellite_catalog(read_only=True)
-    result = []
-    for satellite_id in sorted(ids):
-        sat = selected.get_satellite(satellite_id)
-        if sat and sat.longitude is not None:
-            if sat.transport != "X":
-                raise ValueError(f"Satellite {satellite_id} is not X-band")
-            latitude, longitude = 0, sat.longitude
-        else:
-            poi = (
-                poi_manager.find_global_poi_by_name(satellite_id)
-                if poi_manager
-                else None
-            )
-            if (
-                poi is None
-                or poi.longitude is None
-                or poi.latitude is None
-                or poi.icon != "X"
-            ):
-                raise ValueError(
-                    f"Missing configured X satellite position: {satellite_id}"
-                )
-            latitude, longitude = poi.latitude, poi.longitude
-        result.append(
-            SatellitePosition(
-                satellite_id=satellite_id, latitude=latitude, longitude=longitude
-            )
-        )
-    if not result:
-        raise ValueError("Permitted satellite positions are required")
-    return tuple(result)
 
 
 def build_inputs(

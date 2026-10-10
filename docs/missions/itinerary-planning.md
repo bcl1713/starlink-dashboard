@@ -15,11 +15,21 @@ Starshield is enabled by default. Unconfirmed access or AR details remain
 visible as provisional errors, and you can save an incomplete draft for later
 review.
 
+Configured global satellite records take precedence over static defaults with
+that identifier. Planning requires an explicit X-band transport and a finite,
+valid position; ambiguous duplicate identifiers cannot be selected. Changing a
+selected satellite's position or transport requires another preview and review.
+Records with an unrecognized transport band are excluded from the selector;
+correct their configured band before selecting them. They cannot silently use a
+static default with the same identifier.
+
 ## Review each leg
 
 1. Open the expected leg's **Upload KML** action. Preview its KML, check any
    route timing or airport discrepancies, and explicitly acknowledge them before
-   accepting. Other legs keep their own route bindings.
+   accepting. Other legs keep their own route bindings. A KML without a usable
+   timing profile needs a replacement with named departure/arrival airports and
+   timed primary-route endpoints.
 2. Review **AR windows** first. Confirm altitude units, entry and exit UTC times
    and route occurrences. An occurrence identifies a particular traversal of a
    point, including repeated coordinates. The map shows selected spans. Correct

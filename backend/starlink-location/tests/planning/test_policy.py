@@ -57,7 +57,7 @@ def scenario(monkeypatch, seconds=60, **draft_changes):
     )
     # Catalog itself is real; managers are read-only fixture views.
     manager = SimpleNamespace(get_route=lambda _: route)
-    pois = SimpleNamespace(find_global_poi_by_name=lambda _: None)
+    pois = SimpleNamespace(list_pois=list)
     draft = PlanningDraft(
         permitted_satellite_ids=("SOUTH", "WEST"),
         initial_x_satellite_id="SOUTH",

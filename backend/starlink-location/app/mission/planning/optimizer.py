@@ -132,15 +132,21 @@ def _canonical(inputs, draft, context):
     from app.mission.timeline_preparation import prepare_mission_timeline
 
     catalog = SatelliteCatalog()
-    positions = {
-        sat.satellite_id: SimpleNamespace(
-            latitude=sat.latitude, longitude=sat.longitude, icon="X"
+    positions = tuple(
+        SimpleNamespace(
+            name=sat.satellite_id,
+            category="satellite",
+            icon="X",
+            latitude=sat.latitude,
+            longitude=sat.longitude,
+            mission_id=None,
+            route_id=None,
         )
         for sat in inputs.satellites
-    }
+    )
     for sat in inputs.satellites:
         catalog.add_satellite(Satellite(sat.satellite_id, "X", longitude=None))
-    pois = SimpleNamespace(find_global_poi_by_name=positions.get)
+    pois = SimpleNamespace(list_pois=lambda: positions)
     route = ParsedRoute.model_validate_json(inputs.anchor_route_json)
     leg = draft_to_mission_leg(inputs, draft, context, leg_id="proposal-validation")
     return prepare_mission_timeline(
