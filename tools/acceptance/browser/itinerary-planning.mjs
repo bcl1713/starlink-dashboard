@@ -17,6 +17,9 @@ export async function journey(context, origin, seed, output) {
     networkErrors = [],
     writes = [];
   const observed = [];
+  let staleConflict;
+  const expectedConflictMessage =
+    "Planning revision has changed; reload before saving";
   const record = async (name, value = {}) => {
     const screenshot = `${String(steps.length + 1).padStart(2, "0")}-${name}.png`;
     await page.screenshot({ path: join(output, screenshot), fullPage: true });
@@ -26,9 +29,21 @@ export async function journey(context, origin, seed, output) {
   context.on("page", observe);
   observe(page);
   function observe(target) {
-    target.on("pageerror", (error) => consoleErrors.push(String(error)));
+    target.on("pageerror", (error) =>
+      consoleErrors.push({
+        type: "pageerror",
+        message: String(error),
+        stack: error.stack,
+      }),
+    );
     target.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
+      if (message.type() === "error")
+        consoleErrors.push({
+          type: "console",
+          message: message.text(),
+          location: message.location(),
+          stalePhase: staleConflict?.page === target,
+        });
     });
     target.on("requestfailed", (request) =>
       networkErrors.push({
@@ -37,8 +52,25 @@ export async function journey(context, origin, seed, output) {
       }),
     );
     target.on("response", async (response) => {
-      if (response.status() >= 400)
-        networkErrors.push({ url: response.url(), status: response.status() });
+      if (response.status() >= 400) {
+        const request = response.request();
+        const expectedMethod = staleConflict?.requests.get(response.url());
+        const expectedConflict =
+          response.status() === 409 &&
+          staleConflict?.page === target &&
+          expectedMethod === request.method() &&
+          request.postDataJSON()?.expected_revision === staleConflict.revision;
+        const body = expectedConflict ? await response.json() : undefined;
+        networkErrors.push({
+          url: response.url(),
+          status: response.status(),
+          expectedConflict:
+            expectedConflict &&
+            body?.detail?.code === "planning_conflict" &&
+            body?.detail?.message === expectedConflictMessage &&
+            body?.detail?.action === "reload",
+        });
+      }
       if (
         response.url().includes("/planning/") &&
         response.request().method() !== "GET"
@@ -252,6 +284,16 @@ export async function journey(context, origin, seed, output) {
       "Starshield enabled for this plan",
       { exact: true },
     );
+    const staleView = await read();
+    const staleLegUrl = `${origin}/api/v2/missions/planning/missions/${mission}/legs/${cards[0].leg.id}`;
+    staleConflict = {
+      page: second,
+      revision: staleView.revision,
+      requests: new Map([
+        [`${staleLegUrl}/draft`, "PUT"],
+        [`${staleLegUrl}/preview`, "POST"],
+      ]),
+    };
     await unsavedSetting.uncheck();
     await save(page);
     await clickResponse(second, "Save draft", "/draft", 409);
@@ -267,7 +309,21 @@ export async function journey(context, origin, seed, output) {
       fullPage: true,
     });
     await second.close();
-    await record("second-tab-409");
+    const expectedConflicts = networkErrors.filter(
+      (error) => error.expectedConflict,
+    );
+    assert.equal(
+      expectedConflicts.filter((error) => error.url === `${staleLegUrl}/draft`)
+        .length,
+      1,
+    );
+    assert(
+      expectedConflicts.filter(
+        (error) => error.url === `${staleLegUrl}/preview`,
+      ).length <= 1,
+    );
+    staleConflict = undefined;
+    await record("second-tab-409", { expectedConflicts });
     saved = await reviewed(true);
     assert.equal(saved.mission.legs.length, 1);
     assert(saved.mission.legs.every((l) => l.is_active === false));
@@ -546,14 +602,42 @@ export async function journey(context, origin, seed, output) {
       "planning must never activate or send terminal commands",
     );
     assert((await read()).mission.legs.every((l) => !l.is_active));
+    const expected409s = networkErrors.filter(
+      (error) => error.expectedConflict,
+    );
+    const expectedResourceMessage =
+      "Failed to load resource: the server responded with a status of 409 (Conflict)";
+    const expectedApiMessage = `API Error: {status: 409, data: Object, message: ${expectedConflictMessage}}`;
+    const expectedConsole = consoleErrors.filter(
+      (error) =>
+        error.type === "console" &&
+        error.stalePhase &&
+        ((error.message === expectedResourceMessage &&
+          expected409s.some(
+            (response) => response.url === error.location.url,
+          )) ||
+          error.message === expectedApiMessage),
+    );
     assert.equal(
-      consoleErrors.filter((e) => !e.includes("409 (Conflict)")).length,
-      0,
-      consoleErrors.join("\n"),
+      expectedConsole.filter((error) => error.message === expectedApiMessage)
+        .length,
+      expected409s.length,
+    );
+    assert.equal(
+      expectedConsole.filter(
+        (error) => error.message === expectedResourceMessage,
+      ).length,
+      expected409s.length,
+    );
+    assert.equal(
+      consoleErrors.length,
+      expectedConsole.length,
+      JSON.stringify(consoleErrors),
     );
     assert.equal(
       networkErrors.filter(
-        (e) => e.status !== 409 && e.error !== "net::ERR_ABORTED",
+        (error) =>
+          !error.expectedConflict && error.error !== "net::ERR_ABORTED",
       ).length,
       0,
       JSON.stringify(networkErrors),
