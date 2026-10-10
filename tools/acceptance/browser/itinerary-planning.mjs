@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), "../../..");
 const require = createRequire(
@@ -125,7 +126,26 @@ export async function journey(context, origin, seed, output) {
     assert.equal(result.status(), status, await result.text());
     return result.json();
   };
-  const save = (target) => clickResponse(target, "Save draft", "/draft");
+  const save = async (target) => {
+    const before = await read();
+    const legId = new URL(target.url()).pathname.split("/").at(-1);
+    const preview = target.waitForResponse(
+      (response) =>
+        response.url() ===
+          `${origin}/api/v2/missions/planning/missions/${mission}/legs/${legId}/preview` &&
+        response.status() === 200 &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON()?.expected_revision ===
+          before.revision + 1,
+    );
+    const saved = await clickResponse(target, "Save draft", "/draft");
+    const result = await preview;
+    assert.deepEqual(
+      result.request().postDataJSON().draft,
+      saved.expected_legs.find((card) => card.leg.id === legId).leg.draft,
+    );
+    return saved;
+  };
   const bind = async (ordinal, filename = `leg-${ordinal}.kml`) => {
     await page
       .getByLabel(`KML for leg ${ordinal}`, { exact: true })
@@ -155,6 +175,44 @@ export async function journey(context, origin, seed, output) {
     }
   };
   const prepareX = async (manual = false) => {
+    const before = await read();
+    const legId = new URL(page.url()).pathname.split("/").at(-1);
+    const expectedRows = before.expected_legs.find(
+      (card) => card.leg.id === legId,
+    ).leg.ar_rows;
+    const editedPreview = page.waitForResponse((response) => {
+      if (
+        response.url() !==
+          `${origin}/api/v2/missions/planning/missions/${mission}/legs/${legId}/preview` ||
+        response.status() !== 200 ||
+        response.request().method() !== "POST"
+      )
+        return false;
+      const request = response.request().postDataJSON();
+      const draft = request?.draft;
+      const corrections = draft?.ar_corrections ?? [];
+      return (
+        request?.expected_revision === before.revision &&
+        draft?.initial_x_satellite_id === "X-SYNTH-A" &&
+        draft.access_confirmation?.confirmed === true &&
+        corrections.length === expectedRows.length &&
+        corrections.every((row) => row.confirmed) &&
+        (manual
+          ? draft.swaps?.length === 1 &&
+            draft.swaps[0].target_satellite_id === "X-SYNTH-B" &&
+            draft.swaps[0].anchor.segment_index === 9 &&
+            draft.locks?.some(
+              (lock) =>
+                lock.kind === "initial" &&
+                lock.target_satellite_id === "X-SYNTH-A",
+            ) &&
+            draft.locks?.some(
+              (lock) =>
+                lock.kind === "swap" && lock.swap_id === draft.swaps[0].id,
+            )
+          : !(draft.swaps?.length || draft.locks?.length))
+      );
+    });
     await page.getByRole("tab", { name: "X-band plan", exact: true }).click();
     await page
       .getByLabel("Initial X-band satellite", { exact: true })
@@ -172,6 +230,7 @@ export async function journey(context, origin, seed, output) {
         .click();
       await page.getByLabel("Lock swap 1", { exact: true }).check();
     }
+    await editedPreview;
     return save(page);
   };
   const reviewed = async (next) => {
@@ -280,9 +339,13 @@ export async function journey(context, origin, seed, output) {
     const proposalWrites = writes.length;
     const resumedPreview = page.waitForResponse(
       (response) =>
-        response.url().endsWith("/preview") &&
+        response.url() ===
+          `${origin}/api/v2/missions/planning/missions/${mission}/legs/${cards[0].leg.id}/preview` &&
         response.request().method() === "POST" &&
-        response.status() === 200,
+        response.status() === 200 &&
+        response.request().postDataJSON()?.expected_revision ===
+          proposal.expected_revision &&
+        isDeepStrictEqual(response.request().postDataJSON()?.draft, locked),
     );
     await page.reload();
     await resumedPreview;
@@ -305,10 +368,24 @@ export async function journey(context, origin, seed, output) {
       proposal.context,
     );
     assert.deepEqual(saved.expected_legs[0].leg.draft.locks, locked.locks);
+    const reloadedPreview = page.waitForResponse(
+      (response) =>
+        response.url() ===
+          `${origin}/api/v2/missions/planning/missions/${mission}/legs/${cards[0].leg.id}/preview` &&
+        response.status() === 200 &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON()?.expected_revision ===
+          saved.revision &&
+        isDeepStrictEqual(
+          response.request().postDataJSON()?.draft,
+          saved.expected_legs[0].leg.draft,
+        ),
+    );
     await page
       .getByRole("button", { name: "Reload saved draft", exact: true })
       .click();
     await expect(page.getByText("Saved draft reloaded.")).toBeVisible();
+    await reloadedPreview;
     assert.deepEqual(
       (await read()).expected_legs[0].leg.draft.evaluation_context,
       proposal.context,

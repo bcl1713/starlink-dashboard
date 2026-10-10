@@ -780,98 +780,117 @@ it('keeps edits made while a persisted proposal retrieval is pending and marks i
   expect(planningApi.generateProposal).not.toHaveBeenCalled();
 });
 
-it('ignores an obsolete preview conflict after resumed Apply and keeps the accepted draft usable', async () => {
-  const bound = structuredClone(view);
-  bound.expected_legs[0].leg.route = {
-    route_id: 'r',
-    source_id: 's',
-    content_hash: 'hash',
-    filename: 'r.kml',
-  };
-  bound.expected_legs[0].leg.draft = {
-    ...card.leg.draft,
-    initial_x_satellite_id: 'X-eligible',
-    no_ars_confirmed: true,
-  };
-  bound.mission.metadata = {
-    itinerary_planning: {
-      proposal_refs: [{ id: 'persisted', leg_id: card.leg.id, state: 'ready' }],
-    },
-  };
-  vi.spyOn(planningApi, 'readProposal').mockResolvedValue({
-    id: 'persisted',
-    expected_revision: 7,
-    input_identity: 'hash',
-    context: { input_identity: 'context' },
-    state: 'ready',
-    proposed_draft: {
-      ...bound.expected_legs[0].leg.draft,
-      starshield_enabled: false,
-    },
-  });
-  const accepted = structuredClone(bound);
-  accepted.revision = 8;
-  accepted.expected_legs[0].input_identity = 'accepted';
-  accepted.expected_legs[0].leg.draft!.starshield_enabled = false;
-  const apply = vi
-    .spyOn(planningApi, 'applyProposal')
-    .mockResolvedValue(accepted);
-  const save = vi
-    .spyOn(planningApi, 'saveDraft')
-    .mockResolvedValue({ ...accepted, revision: 9 });
-  setup(bound);
-  let rejectObsolete!: (error: unknown) => void;
-  vi.mocked(planningApi.previewDraft).mockImplementationOnce(
-    () =>
-      new Promise((_resolve, reject) => {
-        rejectObsolete = reject;
+it.each(['Apply', 'Save'] as const)(
+  'ignores an obsolete preview conflict after %s and keeps the accepted draft usable',
+  async (mutation) => {
+    const bound = structuredClone(view);
+    bound.expected_legs[0].leg.route = {
+      route_id: 'r',
+      source_id: 's',
+      content_hash: 'hash',
+      filename: 'r.kml',
+    };
+    bound.expected_legs[0].leg.draft = {
+      ...card.leg.draft,
+      initial_x_satellite_id: 'X-eligible',
+      no_ars_confirmed: true,
+    };
+    bound.mission.metadata = {
+      itinerary_planning: {
+        proposal_refs: [
+          { id: 'persisted', leg_id: card.leg.id, state: 'ready' },
+        ],
+      },
+    };
+    vi.spyOn(planningApi, 'readProposal').mockResolvedValue({
+      id: 'persisted',
+      expected_revision: 7,
+      input_identity: 'hash',
+      context: { input_identity: 'context' },
+      state: 'ready',
+      proposed_draft: {
+        ...bound.expected_legs[0].leg.draft,
+        starshield_enabled: false,
+      },
+    });
+    if (mutation === 'Save')
+      bound.expected_legs[0].leg.draft!.starshield_enabled = false;
+    const accepted = structuredClone(bound);
+    accepted.revision = 8;
+    accepted.expected_legs[0].input_identity = 'accepted';
+    accepted.expected_legs[0].leg.draft!.starshield_enabled = false;
+    const apply = vi
+      .spyOn(planningApi, 'applyProposal')
+      .mockResolvedValue(accepted);
+    const save = vi
+      .spyOn(planningApi, 'saveDraft')
+      .mockResolvedValue({ ...accepted, revision: 9 });
+    if (mutation === 'Save') save.mockResolvedValueOnce(accepted);
+    setup(bound);
+    let rejectObsolete!: (error: unknown) => void;
+    vi.mocked(planningApi.previewDraft).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectObsolete = reject;
+        })
+    );
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'X-band plan' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    await screen.findByRole('button', { name: 'Apply proposal' });
+    await waitFor(() => expect(rejectObsolete).toBeDefined());
+    expect(
+      vi.mocked(planningApi.previewDraft).mock.calls[0][2].expected_revision
+    ).toBe(7);
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: mutation === 'Apply' ? 'Apply proposal' : 'Save draft',
       })
-  );
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'X-band plan' }), {
-    button: 0,
-    ctrlKey: false,
-  });
-  await screen.findByRole('button', { name: 'Apply proposal' });
-  await waitFor(() => expect(rejectObsolete).toBeDefined());
-  expect(
-    vi.mocked(planningApi.previewDraft).mock.calls[0][2].expected_revision
-  ).toBe(7);
-  fireEvent.click(screen.getByRole('button', { name: 'Apply proposal' }));
-  await screen.findByText(
-    'Proposal applied to the draft. Review availability before saving.'
-  );
-  await waitFor(() =>
-    expect(planningApi.previewDraft).toHaveBeenCalledTimes(2)
-  );
-  expect(vi.mocked(planningApi.previewDraft).mock.calls[1][2]).toMatchObject({
-    expected_revision: 8,
-    draft: { starshield_enabled: false },
-  });
-  await act(async () => rejectObsolete({ response: { status: 409 } }));
-  expect(screen.queryByText(/Planning state changed/)).not.toBeInTheDocument();
-  expect(
-    screen.getByLabelText('Starshield enabled for this plan')
-  ).not.toBeChecked();
-  expect(
-    screen.getByLabelText('Starshield enabled for this plan')
-  ).toBeEnabled();
-  expect(
-    screen.queryByRole('button', { name: 'Apply proposal' })
-  ).not.toBeInTheDocument();
-  fireEvent.click(
-    screen.getByLabelText(
-      'I confirm this satellite plan and Starshield enablement'
-    )
-  );
-  expect(
-    screen.getByRole('button', { name: 'Save reviewed plan' })
-  ).toBeEnabled();
-  fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
-  await screen.findByText('Draft saved.');
-  expect(save.mock.calls[0][2]).toMatchObject({
-    expected_revision: 8,
-    draft: { starshield_enabled: false },
-  });
-  expect(apply).toHaveBeenCalledOnce();
-  expect(planningApi.generateProposal).not.toHaveBeenCalled();
-});
+    );
+    await screen.findByText(
+      mutation === 'Apply'
+        ? 'Proposal applied to the draft. Review availability before saving.'
+        : 'Draft saved.'
+    );
+    await waitFor(() =>
+      expect(planningApi.previewDraft).toHaveBeenCalledTimes(2)
+    );
+    expect(vi.mocked(planningApi.previewDraft).mock.calls[1][2]).toMatchObject({
+      expected_revision: 8,
+      draft: { starshield_enabled: false },
+    });
+    await act(async () => rejectObsolete({ response: { status: 409 } }));
+    expect(
+      screen.queryByText(/Planning state changed/)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Starshield enabled for this plan')
+    ).not.toBeChecked();
+    expect(
+      screen.getByLabelText('Starshield enabled for this plan')
+    ).toBeEnabled();
+    if (mutation === 'Apply')
+      expect(
+        screen.queryByRole('button', { name: 'Apply proposal' })
+      ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByLabelText(
+        'I confirm this satellite plan and Starshield enablement'
+      )
+    );
+    expect(
+      screen.getByRole('button', { name: 'Save reviewed plan' })
+    ).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledTimes(mutation === 'Apply' ? 1 : 2)
+    );
+    expect(save.mock.calls.at(-1)![2]).toMatchObject({
+      expected_revision: 8,
+      draft: { starshield_enabled: false },
+    });
+    expect(apply).toHaveBeenCalledTimes(mutation === 'Apply' ? 1 : 0);
+    expect(planningApi.generateProposal).not.toHaveBeenCalled();
+  }
+);
