@@ -6,12 +6,91 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from app.mission.models import Mission
 from app.mission.storage import planning_read_gate
 from app.services.kml_parser import KMLParseError
 
 from .errors import PlanningFailure
 from .journal import atomic_write, json_bytes
-from .models import SourceRevision
+from .models import PlanningManifest, SourceRevision
+
+
+def source_closure(
+    mission: Mission, manifest: PlanningManifest | None
+) -> tuple[SourceRevision, ...]:
+    """All accepted revisions remain live provenance, including retired history."""
+    if manifest is None:
+        return ()
+    sources = {}
+    for source in manifest.source_revisions:
+        if source.owner != mission.id or source.expires_at is not None:
+            raise ValueError("Accepted source ownership is inconsistent")
+        suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
+        if source.owned_relative_path != f"sources/{source.id}.{suffix}":
+            raise ValueError("Invalid accepted source path")
+        if source.id in sources and sources[source.id] != source:
+            raise ValueError("Conflicting source revisions")
+        sources[source.id] = source
+    for record in _records(manifest.storage_record()):
+        if "source_id" in record and "content_hash" in record:
+            source = sources.get(record["source_id"])
+            if source is None or source.content_hash != record["content_hash"]:
+                raise ValueError("Planning graph references a missing source revision")
+        for source_id in record.get("source_ids", []):
+            if source_id not in sources:
+                raise ValueError("History references a missing source revision")
+    return tuple(sources.values())
+
+
+def _records(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _records(child)
+    elif isinstance(value, (list, tuple)):
+        for child in value:
+            yield from _records(child)
+
+
+def route_references(route_id, *, excluding_mission=None):
+    """Call under the global gate; inventory includes every retained graph node."""
+    from app.mission import storage
+
+    result = []
+    for parent in storage.list_mission_metadata_v2():
+        if parent.id == excluding_mission:
+            continue
+        mission = storage.load_mission_v2(parent.id)
+        if any(
+            record.get("route_id") == route_id
+            or (record.get("kind") == "route_kml" and record.get("id") == route_id)
+            for record in _records(mission.model_dump(mode="json"))
+        ):
+            result.append(parent.id)
+    return tuple(result)
+
+
+def guard_route_delete(route_id, routes_dir):
+    from fastapi import HTTPException
+
+    from app.mission import storage
+
+    owners = route_references(route_id)
+    inventory = (
+        SourceStore(storage.MISSIONS_DIR, routes_dir).root
+        / "inventory"
+        / f"{route_id}.json"
+    )
+    if owners or inventory.exists():
+        raise HTTPException(
+            409,
+            detail={
+                "code": "mission_route_retained",
+                "message": "Route is retained by a mission",
+                "mission_ids": list(owners),
+                "action": "Delete the owning mission to release retained route sources.",
+            },
+        )
 
 
 class SourceStore:
@@ -19,6 +98,18 @@ class SourceStore:
         self.root = Path(root).resolve() / ".planning"
         self.routes_dir = Path(routes_dir).resolve()
         self._cleanup_candidates = None
+        self._store = None
+
+    def bind_store(self, store):
+        if (
+            store.sources is not self
+            or store.root != self.root.parent
+            or Path(store.route_manager.routes_dir).resolve() != self.routes_dir
+        ):
+            raise ValueError("Invalid source commit context")
+        if self._store is not None and self._store is not store:
+            raise ValueError("Source store already has a commit context")
+        self._store = store
 
     @planning_read_gate
     def stage(
@@ -47,8 +138,8 @@ class SourceStore:
         return source
 
     def path(self, source):
-        path = (self.root / source.owned_relative_path).resolve()
-        if not path.is_relative_to(self.root):
+        path = self.root / source.owned_relative_path
+        if path.resolve() != path or not path.is_relative_to(self.root):
             raise ValueError("Invalid owned source path")
         return path
 
@@ -209,3 +300,81 @@ class SourceStore:
             }
         )
         return accepted, files
+
+    @planning_read_gate
+    def release_owned(
+        self, mission_id: str, references: tuple[SourceRevision, ...]
+    ) -> None:
+        """Release verified, unreferenced bytes; retain exact failed paths for retry."""
+        from app.mission import storage
+
+        from .models import PlanningManifest
+
+        mission = storage.load_mission_v2(mission_id)
+        if mission is None or "itinerary_planning" not in mission.metadata:
+            raise ValueError("Owned source release requires its persisted mission")
+        accepted = source_closure(
+            mission,
+            PlanningManifest.model_validate(mission.metadata["itinerary_planning"]),
+        )
+        if any(source not in accepted for source in references):
+            raise ValueError(
+                "Source ownership is not established by the owning mission"
+            )
+        candidates = []
+        for source in references:
+            if source.owner != mission_id:
+                raise ValueError("Cannot release another mission's source")
+            suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
+            if source.owned_relative_path != f"sources/{source.id}.{suffix}":
+                raise ValueError("Invalid owned source path")
+            if source.kind == "route_kml" and route_references(
+                source.id, excluding_mission=mission_id
+            ):
+                continue
+            paths = [self.path(source)]
+            if source.kind == "route_kml":
+                paths.extend(
+                    [
+                        self.routes_dir / f"{source.id}.kml",
+                        self.descriptor_path(source.id),
+                        self.root / "inventory" / f"{source.id}.json",
+                    ]
+                )
+            for path in paths:
+                if not path.exists():
+                    continue
+                if path.is_symlink():
+                    raise ValueError("Owned source path cannot be a symlink")
+                data = path.read_bytes()
+                if path.suffix in {".pdf", ".kml"}:
+                    if hashlib.sha256(data).hexdigest() != source.content_hash:
+                        raise ValueError(f"Owned source changed: {path}")
+                elif path == self.descriptor_path(source.id):
+                    if json.loads(data) != {
+                        "version": 1,
+                        "route_id": source.id,
+                        "source_hash": source.content_hash,
+                        "owner": mission_id,
+                        "ingestion_profile": "planning_v1",
+                    }:
+                        raise ValueError(f"Owned profile changed: {path}")
+                elif SourceRevision.model_validate_json(data) != source:
+                    raise ValueError(f"Owned inventory changed: {path}")
+            candidates.extend(paths)
+        remaining = []
+        for path in candidates:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                remaining.append(str(path))
+        if remaining:
+            failure = PlanningFailure(
+                503,
+                "owned_delete_incomplete",
+                "Remaining owned paths: " + ", ".join(remaining),
+                action="retry_delete",
+                retryable=True,
+            )
+            failure.remaining_paths = tuple(remaining)
+            raise failure

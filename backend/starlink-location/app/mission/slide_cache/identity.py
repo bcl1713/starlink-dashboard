@@ -43,9 +43,16 @@ def renderer_revision():
 
 def leg_inputs(metadata, sources, leg_id, revision):
     raw = json.loads(metadata)
-    number, leg = next(
-        (i, l) for i, l in enumerate(raw["legs"], 1) if l["id"] == leg_id
+    from app.mission.planning.models import PlanningManifest
+    from app.mission.planning.order import project_leg_order
+
+    manifest = raw.get("metadata", {}).get("itinerary_planning")
+    order = project_leg_order(
+        PlanningManifest.model_validate(manifest) if manifest is not None else None,
+        tuple(leg["id"] for leg in raw["legs"]),
     )
+    number = order.numbers[leg_id]
+    leg = next(l for l in raw["legs"] if l["id"] == leg_id)
     route_id = leg.get("route_id")
     selected = tuple(
         s
@@ -96,16 +103,14 @@ def leg_inputs(metadata, sources, leg_id, revision):
                 effective(parent),
                 effective(leg),
                 number,
-                len(raw["legs"]),
+                order.total_count,
                 dependencies,
                 revision,
             ]
         )
     ).hexdigest()
     raw["legs"] = [leg]
-    inputs = encode_inputs(
-        canonical_json(raw), selected, (), number, len(json.loads(metadata)["legs"])
-    )
+    inputs = encode_inputs(canonical_json(raw), selected, (), number, order.total_count)
     return fingerprint, inputs
 
 

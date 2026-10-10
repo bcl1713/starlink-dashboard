@@ -37,16 +37,21 @@ def create_mission_summary_sheet(
         Worksheet with mission summary information
     """
     ws = wb.active
+    from app.mission.storage import mission_leg_order
+
+    order = mission_leg_order(mission)
     ws.title = "Mission Summary"
     ws.append(["Mission Name", mission.name])
     ws.append(["Mission ID", mission.id])
-    ws.append(["Total Legs", len(mission.legs)])
+    ws.append(["Total Legs", order.total_count])
     ws.append(["Generated", datetime.now(timezone.utc).isoformat()])
     ws.append([])
     ws.append(["Leg #", "Leg ID", "Leg Name", "Description"])
 
-    for idx, leg in enumerate(mission.legs, 1):
-        ws.append([idx, leg.id, leg.name, leg.description or ""])
+    by_id = {leg.id: leg for leg in mission.legs}
+    for identity in order.executable_ids:
+        leg = by_id[identity]
+        ws.append([order.numbers[identity], leg.id, leg.name, leg.description or ""])
 
     # Set column widths for better readability
     ws.column_dimensions["A"].width = 10

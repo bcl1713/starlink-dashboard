@@ -99,6 +99,7 @@ class PlanningStore:
         self.route_manager = route_manager
         self.poi_manager = poi_manager
         self.sources = SourceStore(self.root, route_manager.routes_dir)
+        self.sources.bind_store(self)
         self.journal = Journal(
             self.root, route_manager.routes_dir, poi_manager.pois_file
         )

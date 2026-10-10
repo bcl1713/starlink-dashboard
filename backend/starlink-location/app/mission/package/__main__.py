@@ -229,8 +229,10 @@ def _add_route_kmls_to_zip(
     if not route_manager:
         return
 
+    seen = set()
     for leg in mission.legs:
-        if leg.route_id:
+        if leg.route_id and leg.route_id not in seen:
+            seen.add(leg.route_id)
             if snapshot is not None:
                 content = SnapshotViews(snapshot).kml(leg.route_id)
                 if content is not None:
@@ -647,6 +649,14 @@ def export_mission_package(
         poi_manager = views.poi_manager
     else:
         mission = load_mission_v2(mission_id)
+        if mission and mission.metadata.get("itinerary_planning") is not None:
+            from app.mission.exporter.snapshot import capture_export_snapshot
+
+            snapshot = capture_export_snapshot(mission_id, route_manager, poi_manager)
+            views = SnapshotViews(snapshot)
+            mission = views.mission()
+            route_manager = views.route_manager
+            poi_manager = views.poi_manager
 
     if not mission:
         raise ExportPackageError(f"Mission {mission_id} not found")
@@ -668,6 +678,18 @@ def export_mission_package(
 
     try:
         with zipfile.ZipFile(zip_temp, "w", zipfile.ZIP_DEFLATED) as zf:
+            if snapshot is not None:
+                for payload in SnapshotViews(snapshot).package_payloads():
+                    if payload.name.startswith("package/"):
+                        zf.writestr(
+                            payload.name.removeprefix("package/"), payload.content
+                        )
+                    elif payload.name.startswith("kml/") and payload.name.removeprefix(
+                        "kml/"
+                    ) not in {leg.route_id for leg in mission.legs}:
+                        path = f"routes/{payload.name.removeprefix('kml/')}.kml"
+                        zf.writestr(path, payload.content)
+                        manifest_files["routes"].append(path)
             # Add mission metadata and leg files
             _add_mission_metadata_to_zip(zf, mission, manifest_files)
             check_cancelled(cancel)

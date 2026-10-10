@@ -12,6 +12,7 @@ def build_snapshot_legacy_package(
     from .__main__ import export_mission_package
 
     views = SnapshotViews(snapshot)
+    views.package_payloads()
     return export_mission_package(
         snapshot.mission_id,
         views.route_manager,

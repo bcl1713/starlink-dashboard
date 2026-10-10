@@ -87,6 +87,45 @@ def captured_pois(sources: tuple[SourcePayload, ...]) -> POIView:
 class SnapshotViews:
     snapshot: ExportSnapshot
 
+    def package_payloads(self) -> tuple[SourcePayload, ...]:
+        """Validate retained provenance even for a deserialized snapshot."""
+        from hashlib import sha256
+
+        from app.mission.planning.models import PlanningManifest
+        from app.mission.planning.sources import source_closure
+
+        payloads = {p.name: p.content for p in self.snapshot.source_payloads}
+        if len(payloads) != len(self.snapshot.source_payloads):
+            raise ValueError("Duplicate captured source paths")
+        mission = self.mission()
+        raw = mission.metadata.get("itinerary_planning")
+        if raw is not None:
+            manifest = PlanningManifest.model_validate(raw)
+            for source in source_closure(mission, manifest):
+                data = payloads.get(f"package/planning/{source.owned_relative_path}")
+                if data is None or sha256(data).hexdigest() != source.content_hash:
+                    raise ValueError("Captured retained source is missing or changed")
+                if source.kind == "route_kml":
+                    profile = payloads.get(f"package/routes/{source.id}.profile.json")
+                    if (
+                        profile is None
+                        or json.loads(profile)
+                        != {
+                            "version": 1,
+                            "route_id": source.id,
+                            "source_hash": source.content_hash,
+                            "owner": mission.id,
+                            "ingestion_profile": "planning_v1",
+                        }
+                        or payloads.get(f"kml/{source.id}") != data
+                    ):
+                        raise ValueError("Captured owned route profile is inconsistent")
+            for reference in manifest.proposal_refs:
+                data = payloads.get(f"package/planning/proposals/{reference.id}.json")
+                if data is None or sha256(data).hexdigest() != reference.payload_hash:
+                    raise ValueError("Captured proposal payload is missing or changed")
+        return self.snapshot.source_payloads
+
     def mission(self) -> Mission:
         return Mission.model_validate_json(self.snapshot.metadata_json)
 

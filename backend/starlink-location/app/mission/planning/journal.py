@@ -53,6 +53,11 @@ def json_bytes(value):
 
 
 def scope_matches(poi, scope):
+    if "imported" in scope:
+        owner = scope["imported"].get(poi.get("id"))
+        return owner is not None and all(
+            poi.get(field) == value for field, value in owner.items()
+        )
     return (
         poi.get("mission_id") == scope["mission_id"]
         and poi.get("route_id") in scope.get("route_ids", [scope.get("route_id")])
