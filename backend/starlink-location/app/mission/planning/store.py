@@ -38,15 +38,36 @@ def selection_errors(draft):
             )
         ]
     confirmation = draft.access_confirmation
+    errors = []
     if not confirmation or not confirmation.confirmed:
-        return [
+        errors.append(
             PlanningError(
                 code="satellite_access_required",
                 field="access_confirmation",
                 message="Confirm access to the selected satellites",
             )
-        ]
-    return []
+        )
+    permitted = set(draft.permitted_satellite_ids)
+    for field, selected in [
+        ("initial_x_satellite_id", draft.initial_x_satellite_id),
+        *(
+            (f"swaps.{i}.target_satellite_id", swap.target_satellite_id)
+            for i, swap in enumerate(draft.swaps)
+        ),
+        *(
+            (f"locks.{i}.target_satellite_id", lock.target_satellite_id)
+            for i, lock in enumerate(draft.locks)
+        ),
+    ]:
+        if selected is not None and selected not in permitted:
+            errors.append(
+                PlanningError(
+                    code="satellite_not_permitted",
+                    field=field,
+                    message="Assignment is outside the permitted satellite set",
+                )
+            )
+    return errors
 
 
 class PlanningStore:
@@ -56,6 +77,9 @@ class PlanningStore:
             raise ValueError(
                 "Planning and mission storage must share the canonical root"
             )
+        from app.satellites.rules import ConstraintConfig
+
+        self.planning_constraints_provider = ConstraintConfig
         self.route_manager = route_manager
         self.poi_manager = poi_manager
         self.sources = SourceStore(self.root, route_manager.routes_dir)
@@ -101,6 +125,35 @@ class PlanningStore:
             for leg in sorted(manifest.expected_legs, key=lambda leg: leg.ordinal)
             if not leg.retired
         ]
+        from .proposals import ProposalService
+
+        proposals = ProposalService(self)
+        from .service import PlanningService
+
+        eligible = {
+            s.id
+            for s in PlanningService(self).satellite_options().satellites
+            if s.eligible
+        }
+        for card in cards:
+            if (
+                card.leg.draft
+                and set(card.leg.draft.permitted_satellite_ids) - eligible
+            ):
+                card.errors.append(
+                    PlanningError(
+                        code="invalid_satellite_selection",
+                        field="permitted_satellite_ids",
+                        message="A selected satellite is no longer eligible in the current catalog",
+                    )
+                )
+            references = [
+                ref for ref in manifest.proposal_refs if ref.leg_id == card.leg.id
+            ]
+            if references:
+                card.computation_status = proposals.status(
+                    card.leg, references[-1], manifest.revision
+                )
         errors = [error for card in cards for error in card.errors]
         return PlanningView(
             mission=storage.public_mission(mission),
@@ -166,11 +219,65 @@ class PlanningStore:
         return self._view(updated, manifest)
 
     def save_draft(self, mission_id, leg_id, request):
+        validated_context = None
+        if request.draft.evaluation_context is not None:
+
+            from .grid import swap_times, validate_context
+            from .inputs import build_inputs
+
+            with storage.get_active_leg_lock():
+                _, _, source_leg = self.checked(
+                    mission_id, leg_id, request.expected_revision
+                )
+                source_leg = source_leg.model_copy(deep=True)
+            # Accept a new client-supplied context only after validating all
+            # captured inputs and exact current seeds outside commit locks.
+            try:
+                inputs = build_inputs(
+                    source_leg,
+                    request.draft,
+                    self.route_manager,
+                    self.poi_manager,
+                    self.planning_constraints_provider(),
+                )
+                validate_context(
+                    inputs, request.draft, request.draft.evaluation_context
+                )
+                if request.draft.evaluation_context.seed_times == sorted(
+                    set(swap_times(inputs, request.draft))
+                ):
+                    validated_context = request.draft.evaluation_context.model_copy(
+                        deep=True
+                    )
+            except ValueError:
+                pass
         with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
             mission, manifest, leg = self.checked(
                 mission_id, leg_id, request.expected_revision
             )
-            leg.draft = request.draft.model_copy(deep=True)
+            from .inputs import structural_draft
+
+            previous = leg.draft
+            incoming = request.draft.model_copy(deep=True)
+            # Context is server-owned. Explicit manual timing edits always reseed,
+            # including moving a swap onto an already existing candidate instant.
+            unchanged = previous is not None and structural_draft(
+                previous
+            ) == structural_draft(incoming)
+            timing = lambda d: [(s.id, s.anchor.model_dump()) for s in d.swaps]
+            same_timing = previous is not None and timing(previous) == timing(incoming)
+            incoming.evaluation_context = (
+                previous.evaluation_context
+                if unchanged and same_timing and previous.evaluation_context is not None
+                else validated_context
+            )
+            if previous is not None and set(previous.permitted_satellite_ids) != set(
+                incoming.permitted_satellite_ids
+            ):
+                incoming.access_confirmation = None
+            leg.draft = incoming
+            for reference in manifest.proposal_refs:
+                reference.state = "stale"
             if request.ar_section_status is not None:
                 leg.ar_section_status = request.ar_section_status
             rows = leg.draft.ar_corrections or leg.ar_rows
@@ -277,7 +384,7 @@ class PlanningStore:
                 )
             leg.installed_leg_id = installed.id
             leg.review = ReviewRecord(
-                **request.model_dump(exclude={"expected_revision"}),
+                **request.model_dump(exclude={"expected_revision", "idempotency_key"}),
                 saved_at=datetime.now(timezone.utc),
             )
             manifest.review_records.append(leg.review)

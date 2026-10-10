@@ -231,7 +231,21 @@ export interface PlanningEvaluation {
   errors?: PlanningError[];
 }
 
+export interface ProposalReference {
+  id: string;
+  leg_id: string;
+  expected_revision: number;
+  input_identity: string;
+  structural_identity: string;
+  environment_identity: string;
+  payload_hash: string;
+  state: 'ready' | 'failed' | 'stale';
+  idempotency_hash?: string | null;
+}
+
 export interface PlanningProposal {
+  search_domain?: 'generated_nonoverlap_plus_current_v1';
+  retained_current_draft?: boolean;
   id: string;
   expected_revision: number;
   input_identity: string;
@@ -249,6 +263,7 @@ export interface PlanningManifest {
   source_revisions?: SourceRevision[];
   expected_legs?: ExpectedLeg[];
   proposals?: PlanningProposal[];
+  proposal_refs?: ProposalReference[];
   review_records?: ReviewRecord[];
   route_bindings?: RouteBinding[];
   route_history?: RouteBinding[];
@@ -386,6 +401,7 @@ export interface PreviewDraft {
 }
 
 export interface GenerateProposal {
+  idempotency_key?: string | null;
   expected_revision: number;
   input_identity: string;
 }

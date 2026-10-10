@@ -36,6 +36,12 @@ class PlanningService:
         self.store = store
         self.sources = store.sources
 
+    @property
+    def proposals(self):
+        from .proposals import ProposalService
+
+        return ProposalService(self.store)
+
     def satellite_options(self):
         catalog = get_satellite_catalog(read_only=True)
         options = []

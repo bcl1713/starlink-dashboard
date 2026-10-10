@@ -341,6 +341,10 @@ class PlanningEvaluation(PlanningRecord):
 
 
 class PlanningProposal(PlanningRecord):
+    search_domain: Literal["generated_nonoverlap_plus_current_v1"] = (
+        "generated_nonoverlap_plus_current_v1"
+    )
+    retained_current_draft: bool = False
     id: str = Field(min_length=1)
     expected_revision: int = Field(ge=1)
     input_identity: ContentHash
@@ -352,12 +356,27 @@ class PlanningProposal(PlanningRecord):
     errors: list[PlanningError] = Field(default_factory=list)
 
 
+class ProposalReference(PlanningRecord):
+    """Manifest index; immutable payload location is derived from opaque IDs."""
+
+    id: str
+    leg_id: str
+    expected_revision: int = Field(ge=1)
+    input_identity: ContentHash
+    structural_identity: ContentHash
+    environment_identity: ContentHash
+    payload_hash: ContentHash
+    state: Literal["ready", "failed", "stale"]
+    idempotency_hash: ContentHash | None = None
+
+
 class PlanningManifest(PlanningRecord):
     schema_version: Literal[1] = 1
     revision: int = Field(default=1, ge=1)
     source_revisions: list[SourceRevision] = Field(default_factory=list)
     expected_legs: list[ExpectedLeg] = Field(default_factory=list)
     proposals: list[PlanningProposal] = Field(default_factory=list)
+    proposal_refs: list[ProposalReference] = Field(default_factory=list)
     review_records: list[ReviewRecord] = Field(default_factory=list)
     route_bindings: list[RouteBinding] = Field(default_factory=list)
     route_history: list[RouteBinding] = Field(default_factory=list)
@@ -537,6 +556,7 @@ class PreviewDraft(SaveDraft):
 
 class GenerateProposal(RevisionRequest):
     input_identity: ContentHash
+    idempotency_key: str | None = Field(default=None, min_length=1)
 
 
 class ApplyProposal(GenerateProposal):

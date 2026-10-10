@@ -1,5 +1,8 @@
 """Itinerary-first planning API through draft persistence."""
 
+import asyncio
+import threading
+from functools import partial
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -13,8 +16,11 @@ from .extract import ItineraryExtractionError
 from .match import RouteAnchorError
 from .models import (
     AcceptRouteBinding,
+    ApplyProposal,
     ConfirmItinerary,
+    GenerateProposal,
     ItineraryPreview,
+    PlanningProposal,
     PlanningSatelliteOptions,
     PlanningView,
     RouteBindingPreview,
@@ -142,3 +148,69 @@ async def save_draft(
 ):
     await invoke(service.validate_selection, request.draft)
     return await invoke(service.store.save_draft, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/proposals", response_model=PlanningProposal
+)
+async def generate_proposal(
+    mission_id: str,
+    leg_id: str,
+    request: GenerateProposal,
+    http_request: Request,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    cancel = threading.Event()
+    operation = asyncio.create_task(
+        invoke(
+            partial(service.proposals.generate, cancel_event=cancel),
+            mission_id,
+            leg_id,
+            request,
+        )
+    )
+
+    async def disconnect():
+        while not operation.done():
+            if await http_request.is_disconnected():
+                cancel.set()
+                return
+            await asyncio.sleep(0.05)
+
+    watcher = asyncio.create_task(disconnect())
+    try:
+        return await asyncio.shield(operation)
+    finally:
+        cancel.set()
+        watcher.cancel()
+        # Reap the owned worker before the request task exits, even when the
+        # server cancels this request. The operation itself is never abandoned.
+        try:
+            await asyncio.shield(operation)
+        except (HTTPException, asyncio.CancelledError):
+            if not operation.done():
+                await operation
+        await asyncio.gather(watcher, return_exceptions=True)
+
+
+@router.get(
+    "/missions/{mission_id}/legs/{leg_id}/proposals/{proposal_id}",
+    response_model=PlanningProposal,
+)
+async def read_proposal(
+    mission_id: str,
+    leg_id: str,
+    proposal_id: str,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.proposals.get, mission_id, leg_id, proposal_id)
+
+
+@router.post("/missions/{mission_id}/legs/{leg_id}/apply", response_model=PlanningView)
+async def apply_proposal(
+    mission_id: str,
+    leg_id: str,
+    request: ApplyProposal,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.proposals.apply, mission_id, leg_id, request)

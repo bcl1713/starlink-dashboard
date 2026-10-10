@@ -8,6 +8,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -86,12 +93,6 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -262,6 +263,9 @@ def initialize_aviation_weather_runtime() -> None:
 
 async def startup_event():
     """Initialize application on startup."""
+    from app.mission.planning.deadlines import start_workers
+
+    start_workers()
     global _coordinator, _background_task, _simulation_config, _route_manager
 
     try:
@@ -545,6 +549,9 @@ async def startup_event():
 
 async def shutdown_event():
     """Cleanup on shutdown."""
+    from app.mission.planning.deadlines import shutdown_workers
+
+    await asyncio.to_thread(shutdown_workers)
     global _background_task, _overview_history_client
     global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
     global _overview_link_settings_store

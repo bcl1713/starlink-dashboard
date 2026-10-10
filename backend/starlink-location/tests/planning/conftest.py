@@ -36,3 +36,13 @@ def ensure_eta_service_initialized(planning_storage, isolate_mission_storage):
     eta_service.initialize_eta_service(POIManager())
     yield
     eta_service._eta_calculator = original
+
+
+@pytest.fixture(autouse=True)
+def planning_workers():
+    """Each synthetic application owns its bounded computation lifecycle."""
+    from app.mission.planning.deadlines import shutdown_workers, start_workers
+
+    start_workers()
+    yield
+    shutdown_workers()
