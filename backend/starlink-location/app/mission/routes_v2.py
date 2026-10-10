@@ -5,9 +5,9 @@
 # coordinate across storage, KML parsing, and state machines. Separation would
 # create circular imports. Deferred to v0.4.0.
 import asyncio
+import io
 import json
 import logging
-import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -47,6 +47,7 @@ from app.mission.storage import (
     list_mission_metadata_v2,
     load_mission_timeline,
     load_mission_v2,
+    public_mission,
     save_mission_timeline,
     save_mission_v2,
 )
@@ -156,7 +157,7 @@ async def create_mission(
                             f"Failed to generate timeline for leg {leg.id}"
                         )
                         # Don't fail creation if timeline generation fails
-        return mission
+        return public_mission(mission)
     except (
         RuntimeError,
         ValueError,
@@ -197,7 +198,9 @@ async def list_missions(
     try:
         missions = list_mission_metadata_v2()
         response.headers["X-Total-Count"] = str(len(missions))
-        return missions[offset : offset + limit]
+        return [
+            public_mission(mission) for mission in missions[offset : offset + limit]
+        ]
     except (
         RuntimeError,
         ValueError,
@@ -236,11 +239,15 @@ async def get_mission(mission_id: str) -> Mission:
             detail=f"Mission {mission_id} not found",
         )
 
-    return mission
+    return public_mission(mission)
 
 
 @router.patch("/{mission_id}", response_model=Mission)
-async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
+async def update_mission(
+    mission_id: str,
+    updates: MissionUpdate,
+    request: Request = None,
+) -> Mission:
     """Update mission name and/or description.
 
     Args:
@@ -280,10 +287,34 @@ async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
             mission.updated_at = datetime.now(timezone.utc)
 
             # Save updated mission
+            if "itinerary_planning" in mission.metadata:
+                from app.mission import storage
+                from app.mission.planning.models import PlanningManifest
+                from app.mission.planning.store import PlanningStore
+
+                service = (
+                    getattr(request.app.state, "planning_service", None)
+                    if request
+                    else None
+                )
+                store = (
+                    service.store
+                    if service
+                    else PlanningStore(
+                        storage.MISSIONS_DIR,
+                        get_route_manager(request),
+                        get_poi_manager(request),
+                    )
+                )
+                manifest = PlanningManifest.model_validate(
+                    mission.metadata["itinerary_planning"]
+                )
+                manifest.revision += 1
+                return store.persist(mission, manifest).mission
             save_mission_v2(mission)
             logger.info(f"Mission {mission_id} updated successfully")
 
-            return mission
+            return public_mission(mission)
     except HTTPException:
         raise
     except (
@@ -339,8 +370,57 @@ async def delete_mission_endpoint(
         # Activation already uses this order, so deletion cannot form an AB/BA
         # cycle while activation persists the same parent.
         with get_active_leg_lock(), get_mission_lock(mission_id):
-            # Check mission exists
-            mission = load_mission_v2(mission_id)
+            # A durable deletion authority survives partially removed metadata.
+            from app.mission import storage
+            from app.mission.planning.deletion import (
+                _io,
+                delete_owned,
+                load_record,
+                verified_store,
+            )
+            from app.mission.planning.errors import PlanningFailure
+            from app.mission.planning.sources import SourceStore, route_references
+
+            record = None
+            if getattr(route_manager, "routes_dir", None) is not None:
+                try:
+                    record = load_record(
+                        SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir),
+                        mission_id,
+                    )
+                except PlanningFailure as exc:
+                    raise HTTPException(
+                        exc.status_code,
+                        detail={
+                            **exc.error.model_dump(mode="json"),
+                            "remaining_paths": list(exc.remaining_paths),
+                        },
+                    ) from exc
+                except ValueError as exc:
+                    raise HTTPException(
+                        422,
+                        detail={
+                            "code": "invalid_deletion_authority",
+                            "message": str(exc),
+                        },
+                    ) from exc
+            try:
+                mission = (
+                    record.mission
+                    if record
+                    else _io(
+                        storage.get_mission_file_path(mission_id),
+                        lambda: load_mission_v2(mission_id),
+                    )
+                )
+            except PlanningFailure as exc:
+                raise HTTPException(
+                    exc.status_code,
+                    detail={
+                        **exc.error.model_dump(mode="json"),
+                        "remaining_paths": list(exc.remaining_paths),
+                    },
+                ) from exc
             if not mission:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -356,6 +436,55 @@ async def delete_mission_endpoint(
                     },
                 )
 
+            raw = mission.metadata.get("itinerary_planning")
+            if raw is not None:
+                if route_manager is None or poi_manager is None:
+                    raise HTTPException(
+                        503,
+                        detail="Verified route and POI managers required for owned deletion",
+                    )
+                try:
+                    store = verified_store(route_manager, poi_manager)
+                    delete_owned(store, mission_id, run_service)
+                except PlanningFailure as exc:
+                    raise HTTPException(
+                        exc.status_code,
+                        detail={
+                            **exc.error.model_dump(mode="json"),
+                            "remaining_paths": list(
+                                getattr(exc, "remaining_paths", ())
+                            ),
+                        },
+                    ) from exc
+                except ValueError as exc:
+                    raise HTTPException(
+                        422,
+                        detail={"code": "invalid_owned_deletion", "message": str(exc)},
+                    ) from exc
+                return
+
+            # Verify the complete foreign inventory before any legacy cascade mutation.
+            try:
+                retained_routes = {
+                    leg.route_id
+                    for leg in mission.legs
+                    if leg.route_id
+                    and route_references(
+                        leg.route_id,
+                        sources=SourceStore(
+                            storage.MISSIONS_DIR, route_manager.routes_dir
+                        ),
+                        excluding_mission=mission_id,
+                    )
+                }
+            except PlanningFailure as exc:
+                raise HTTPException(
+                    exc.status_code,
+                    detail={
+                        **exc.error.model_dump(mode="json"),
+                        "remaining_paths": list(getattr(exc, "remaining_paths", ())),
+                    },
+                ) from exc
             if run_service:
                 run_service.cancel_owned(mission_id, None, "Deleted")
             # Log cascade deletion info
@@ -376,6 +505,8 @@ async def delete_mission_endpoint(
 
                 # Delete route if it exists
                 if leg.route_id:
+                    if leg.route_id in retained_routes:
+                        continue
                     try:
                         parsed_route = route_manager.get_route(leg.route_id)
                         if parsed_route:
@@ -929,137 +1060,96 @@ async def import_mission(
         Import result with success status and mission ID
     """
     try:
-        warnings = []
-        routes_imported = 0
-        pois_imported = 0
-        endpoint_pois_restored = 0
-        satellites_imported = 0
-        satellites_updated = 0
+        from app.mission import storage
+        from app.mission.planning.errors import PlanningFailure
+        from app.mission.planning.packages import commit_package, stage_package
+        from app.mission.planning.store import PlanningStore
 
-        # Create temp directory for extraction
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = Path(tmpdir)
-            zip_path = tmppath / "upload.zip"
+        contents = await file.read()
+        if len(contents) > MISSION_PACKAGE_MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                413,
+                detail={
+                    "code": "mission_package_too_large",
+                    "layer": "application",
+                    "max_bytes": MISSION_PACKAGE_MAX_UPLOAD_BYTES,
+                    "received_bytes": len(contents),
+                },
+            )
+        if route_manager is None or poi_manager is None:
+            raise HTTPException(503, detail="Package storage managers are unavailable")
+        with zipfile.ZipFile(io.BytesIO(contents)) as zf:
+            if "mission.json" not in zf.namelist():
+                raise HTTPException(400, detail="Invalid package: missing mission.json")
+            incoming = Mission.model_validate_json(zf.read("mission.json"))
+            from app.mission.planning.packages import _selector
 
-            # Save uploaded file
-            contents = await file.read()
-
-            if len(contents) > MISSION_PACKAGE_MAX_UPLOAD_BYTES:
-                raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail={
-                        "code": "mission_package_too_large",
-                        "layer": "application",
-                        "max_bytes": MISSION_PACKAGE_MAX_UPLOAD_BYTES,
-                        "received_bytes": len(contents),
-                    },
+            try:
+                _selector(incoming.id)
+            except ValueError as exc:
+                raise HTTPException(422, detail=str(exc)) from exc
+            with get_active_leg_lock():
+                existing = load_mission_v2(incoming.id)
+                target = (
+                    existing
+                    if existing
+                    and "itinerary_planning" not in existing.metadata
+                    and "itinerary_planning" not in incoming.metadata
+                    else None
                 )
-
-            await asyncio.to_thread(zip_path.write_bytes, contents)
-
-            # Extract and validate. Hold lifecycle coordination across every
-            # import side effect, not just the metadata save.
-            with get_active_leg_lock(), zipfile.ZipFile(zip_path, "r") as zf:
-                # Check for required files
-                if "mission.json" not in zf.namelist():
+                if target and any(leg.is_active for leg in target.legs):
                     raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Invalid package: missing mission.json",
+                        409,
+                        detail={
+                            "code": "ACTIVE_MISSION_IMPORT_FORBIDDEN",
+                            "message": "Deactivate the mission leg before re-importing this mission.",
+                            "action": "Deactivate the leg, re-import the mission package, then activate the leg again.",
+                        },
                     )
-
-                # Extract mission.json
-                mission_data = json.loads(zf.read("mission.json"))
-
-                # Create Mission object
-                mission = Mission(**mission_data)
-
-                # Re-importing an active parent would invalidate the active
-                # route transaction. Require the lifecycle command first.
-                with get_mission_lock(mission.id):
-                    existing_mission = load_mission_v2(mission.id)
-                    if existing_mission and any(
-                        leg.is_active for leg in existing_mission.legs
-                    ):
-                        raise HTTPException(
-                            status_code=status.HTTP_409_CONFLICT,
-                            detail={
-                                "code": "ACTIVE_MISSION_IMPORT_FORBIDDEN",
-                                "message": "Deactivate the mission leg before re-importing this mission.",
-                                "action": "Deactivate the leg, re-import the mission package, then activate the leg again.",
-                            },
-                        )
-                    mission = _normalize_leg_lifecycle_state(mission)
-                    save_mission_v2(mission)
-                logger.info(f"Mission {mission.id} imported successfully")
-
-                # Import route KML files from routes/ folder
-                if route_manager:
-                    routes_imported, route_warnings = _import_routes_from_zip(
-                        zf, route_manager, tmppath
-                    )
-                    warnings.extend(route_warnings)
-                else:
-                    warnings.append("Route manager not available, routes not imported")
-
-                # Import POIs from pois/ folder
-                if poi_manager:
-                    poi_files = [
-                        f
-                        for f in zf.namelist()
-                        if f.startswith("pois/") and f.endswith(".json")
-                    ]
-                    satellite_file = "pois/satellites.json"
-
-                    # Process satellite POIs first (for deduplication)
-                    satellites_imported, satellites_updated, sat_warnings = (
-                        _import_satellite_pois(zf, poi_manager)
-                    )
-                    warnings.extend(sat_warnings)
-
-                    # Process leg-specific POI files
-                    pois_imported, poi_warnings = _import_leg_pois(
-                        zf, poi_manager, poi_files, satellite_file, tmppath
-                    )
-                    warnings.extend(poi_warnings)
-
-                    if route_manager:
-                        endpoint_pois_restored, endpoint_warnings = (
-                            _synchronize_imported_endpoint_pois(
-                                mission, route_manager, poi_manager
-                            )
-                        )
-                        warnings.extend(endpoint_warnings)
-                    else:
-                        warnings.append(
-                            "Endpoint POIs not restored: route manager unavailable"
-                        )
-                else:
-                    warnings.append("POI manager not available, POIs not imported")
-
-                result = {
-                    "success": True,
-                    "mission_id": mission.id,
-                    "mission_name": mission.name,
-                    "leg_count": len(mission.legs),
-                    "routes_imported": routes_imported,
-                    "pois_imported": pois_imported,
-                    "endpoint_pois_restored": endpoint_pois_restored,
-                    "satellites_imported": satellites_imported,
-                    "satellites_updated": satellites_updated,
-                    "warnings": warnings,
-                }
-
-                # Generate timelines for all imported legs to ensure derived data (like Ka transitions) is present
-                if route_manager:
-                    timeline_warnings = _generate_timelines_for_imported_legs(
-                        mission, route_manager, poi_manager, _coverage_sampler
-                    )
-                    warnings.extend(timeline_warnings)
-
-                if warnings:
-                    logger.warning(f"Import completed with {len(warnings)} warnings")
-
-                return result
+            app = request.scope.get("app")
+            service = getattr(app.state, "planning_service", None) if app else None
+            store = service.store if service else None
+            if (
+                store is None
+                or store.root != storage.MISSIONS_DIR.resolve()
+                or store.route_manager is not route_manager
+                or store.poi_manager is not poi_manager
+                or store.sources.routes_dir != Path(route_manager.routes_dir).resolve()
+            ):
+                provider = store.planning_constraints_provider if store else None
+                store = PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+                if provider is not None:
+                    store.planning_constraints_provider = provider
+            try:
+                plan = stage_package(zf, target, store.sources)
+                view = commit_package(plan, None)
+            except PlanningFailure as exc:
+                raise HTTPException(
+                    exc.status_code, detail=exc.error.model_dump(mode="json")
+                ) from exc
+            except (ValueError, KeyError) as exc:
+                raise HTTPException(
+                    422, detail={"code": "invalid_mission_package", "message": str(exc)}
+                ) from exc
+        endpoints = sum(
+            "mission-package endpoint" in (json.loads(p).get("description") or "")
+            for p in plan.pois
+        )
+        satellites = sum(
+            json.loads(p).get("category") == "satellite" for p in plan.pois
+        )
+        return {
+            "success": True,
+            "mission_id": view.mission.id,
+            "mission_name": view.mission.name,
+            "leg_count": len(view.mission.legs),
+            "routes_imported": len(plan.routes),
+            "pois_imported": len(plan.pois) - endpoints - satellites,
+            "endpoint_pois_restored": endpoints,
+            "satellites_imported": satellites,
+            "satellites_updated": 0,
+            "warnings": [],
+        }
 
     except zipfile.BadZipFile:
         raise HTTPException(
@@ -1196,6 +1286,9 @@ async def update_leg(
     run_service: Annotated[
         SimulationRunService | None, Depends(get_optional_simulation_run_service)
     ] = None,
+    expected_revision: int | None = None,
+    input_identity: str | None = None,
+    request: Request = None,
 ) -> dict:
     """Update an existing leg in a mission.
 
@@ -1207,6 +1300,36 @@ async def update_leg(
     Returns:
         Dict with updated leg and optional warnings array
     """
+    from app.mission import storage
+    from app.mission.planning.routes import invoke
+    from app.mission.planning.service import PlanningService
+    from app.mission.planning.store import PlanningStore
+
+    with get_active_leg_lock():
+        parent = load_mission_v2(mission_id)
+        manifest = parent.metadata.get("itinerary_planning") if parent else None
+        managed = manifest and any(
+            c.get("installed_leg_id") == leg_id and not c.get("retired")
+            for c in manifest.get("expected_legs", [])
+        )
+    if managed:
+        if run_service:
+            run_service.assert_plan_edit_allowed(mission_id, leg_id)
+        service = (
+            getattr(request.app.state, "planning_service", None) if request else None
+        )
+        service = service or PlanningService(
+            PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+        )
+        return await invoke(
+            service.update_managed_leg,
+            mission_id,
+            leg_id,
+            updated_leg,
+            expected_revision,
+            input_identity,
+        )
+
     try:
         warnings = []
 
@@ -1369,6 +1492,9 @@ async def update_leg(
 async def delete_leg(
     mission_id: str,
     leg_id: str,
+    expected_revision: int | None = None,
+    input_identity: str | None = None,
+    request: Request = None,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
     run_service: Annotated[
@@ -1387,6 +1513,36 @@ async def delete_leg(
     Raises:
         HTTPException: 404 if mission/leg not found, 500 on deletion failure
     """
+    from app.mission import storage
+    from app.mission.planning.routes import invoke
+    from app.mission.planning.service import PlanningService
+    from app.mission.planning.store import PlanningStore
+
+    with get_active_leg_lock():
+        parent = load_mission_v2(mission_id)
+        raw = parent.metadata.get("itinerary_planning") if parent else None
+        managed = raw and any(
+            c.get("installed_leg_id") == leg_id and not c.get("retired")
+            for c in raw.get("expected_legs", [])
+        )
+    if managed:
+        service = (
+            getattr(request.app.state, "planning_service", None) if request else None
+        )
+        service = service or PlanningService(
+            PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+        )
+        if run_service:
+            run_service.assert_plan_edit_allowed(mission_id, leg_id)
+        await invoke(
+            service.retire_managed_leg,
+            mission_id,
+            leg_id,
+            expected_revision,
+            input_identity,
+        )
+        return Response(status_code=204)
+
     try:
         from pathlib import Path
 
@@ -1413,6 +1569,24 @@ async def delete_leg(
                         "code": "ACTIVE_LEG_DELETION_FORBIDDEN",
                         "message": "Deactivate the leg before deleting it.",
                         "action": "Deactivate the leg, then delete it.",
+                    },
+                )
+
+            from app.mission.planning.sources import SourceStore
+
+            if (
+                leg.route_id
+                and route_manager
+                and SourceStore(
+                    storage.MISSIONS_DIR, route_manager.routes_dir
+                ).resolve_profile(leg.route_id)
+                == "planning_v1"
+            ):
+                raise HTTPException(
+                    409,
+                    {
+                        "code": "owned_route_source",
+                        "message": "This immutable route belongs to itinerary planning; retire its managed binding instead.",
                     },
                 )
 
@@ -1925,6 +2099,7 @@ async def update_leg_route(
     request: Request,
     mission_id: str,
     leg_id: str,
+    expected_revision: int | None = None,
     file: Annotated[UploadFile, File()] = ...,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
@@ -1952,6 +2127,49 @@ async def update_leg_route(
     Raises:
         HTTPException: 400 for invalid file, 404 for mission/leg not found
     """
+    from app.mission import storage
+    from app.mission.planning.routes import invoke
+    from app.mission.planning.service import PlanningService
+    from app.mission.planning.store import PlanningStore
+
+    with get_active_leg_lock():
+        parent = load_mission_v2(mission_id)
+        raw = parent.metadata.get("itinerary_planning") if parent else None
+        card = (
+            next(
+                (
+                    c
+                    for c in raw.get("expected_legs", [])
+                    if c.get("installed_leg_id") == leg_id and not c.get("retired")
+                ),
+                None,
+            )
+            if raw
+            else None
+        )
+    if card:
+        if expected_revision is None:
+            raise HTTPException(
+                409,
+                {
+                    "code": "planning_revision_required",
+                    "message": "Reload planning and preview the replacement route before acceptance.",
+                },
+            )
+        service = getattr(request.app.state, "planning_service", None)
+        service = service or PlanningService(
+            PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+        )
+        preview = await invoke(
+            service.preview_route,
+            mission_id,
+            card["id"],
+            await file.read(),
+            expected_revision,
+            file.filename or "route.kml",
+        )
+        return preview.model_dump(mode="json")
+
     try:
         from app.services.kml_parser import KMLParseError
 
@@ -1997,6 +2215,23 @@ async def update_leg_route(
                         "code": "ACTIVE_LEG_ROUTE_REPLACEMENT_FORBIDDEN",
                         "message": "Deactivate the leg before replacing its route.",
                         "action": "Deactivate the leg, upload the replacement route, then activate the leg again.",
+                    },
+                )
+
+            from app.mission.planning.sources import SourceStore
+
+            if (
+                leg.route_id
+                and SourceStore(
+                    storage.MISSIONS_DIR, route_manager.routes_dir
+                ).resolve_profile(leg.route_id)
+                == "planning_v1"
+            ):
+                raise HTTPException(
+                    409,
+                    {
+                        "code": "owned_route_source",
+                        "message": "Use the itinerary planning route preview for this owned source.",
                     },
                 )
 

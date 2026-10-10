@@ -129,7 +129,13 @@ def normalize_call_availability_timeline(timeline: MissionLegTimeline) -> None:
             end,
             decision,
         )
-        if normalized and _can_merge(normalized[-1], segment):
+        policy_sources = [
+            s for s in active_segments if s.metadata.get("planning_policy")
+        ]
+        if policy_sources:
+            for key in ("planning_policy", "planning_interval", "policy_x_shutdown"):
+                segment.metadata[key] = policy_sources[0].metadata[key]
+        if normalized and not policy_sources and _can_merge(normalized[-1], segment):
             normalized[-1] = _merge_segments(normalized[-1], segment)
         else:
             normalized.append(segment)
@@ -240,8 +246,11 @@ def _decide_availability(
     has_ku_x_conflict = XConstraint.AFT_CONE.value in transport_constraints.get(
         Transport.X.value, []
     ) or _has_ku_x_conflict(source_reasons)
+    if any(s.metadata.get("planning_policy") for s in segments):
+        has_ku_x_conflict = False
     if (
         has_ku_x_conflict
+        and not any(s.metadata.get("policy_x_shutdown") for s in segments)
         and x_state == TransportState.DEGRADED
         and not any(
             _segment_has_actual_x_degradation(segment, in_sof) for segment in segments

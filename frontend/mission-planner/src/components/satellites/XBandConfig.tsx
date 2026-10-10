@@ -143,7 +143,15 @@ export function XBandConfig({
               <TableRow key={transition.id}>
                 <TableCell>{transition.latitude}</TableCell>
                 <TableCell>{transition.longitude}</TableCell>
-                <TableCell>{transition.target_satellite_id}</TableCell>
+                <TableCell>
+                  {transition.target_satellite_id}
+                  {transition.anchor && (
+                    <p className="break-words text-xs">
+                      UTC {transition.anchor.source_time} · occurrence{' '}
+                      {transition.anchor.occurrence_id}
+                    </p>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="destructive"

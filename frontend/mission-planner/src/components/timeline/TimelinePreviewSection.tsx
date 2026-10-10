@@ -3,12 +3,14 @@ import type { Timeline } from '../../services/timeline';
 import { TimelineTable } from './TimelineTable';
 import { CoverageSequence } from './CoverageSequence';
 import { formatDuration } from './formatting';
+import type { PlanningEvaluation } from '../../types/planning';
 
 interface TimelinePreviewSectionProps {
   timeline: Timeline | null;
   isCalculating: boolean;
   isUnsaved?: boolean;
   error?: Error | null;
+  planningEvaluation?: PlanningEvaluation | null;
 }
 
 export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
@@ -16,6 +18,7 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
   isCalculating,
   isUnsaved = false,
   error = null,
+  planningEvaluation,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -78,8 +81,66 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
             </div>
           )}
 
-          {!isCalculating && <CoverageSequence timeline={timeline} />}
-          <TimelineTable timeline={timeline} isLoading={isCalculating} />
+          {planningEvaluation ? (
+            <div className="min-w-0 space-y-3">
+              <h4 className="font-semibold">
+                X-band outage under Starshield preference
+              </h4>
+              <p>
+                {planningEvaluation.outage_seconds} seconds · longest X outage{' '}
+                {planningEvaluation.longest_gap_seconds} seconds
+              </p>
+              {planningEvaluation.errors?.map((issue, index) => (
+                <p key={index} role="alert">
+                  Provisional: {issue.message}
+                </p>
+              ))}
+              <details>
+                <summary className="min-h-11 cursor-pointer">
+                  Physical capability and operating policy · exact UTC intervals
+                </summary>
+                {planningEvaluation.intervals?.map((interval, index) => (
+                  <p key={index} className="break-words text-sm">
+                    UTC {interval.start_time} → {interval.end_time} ·{' '}
+                    {interval.satellite_id} · Physical X:{' '}
+                    {interval.physical_x_state} · Policy X:{' '}
+                    {interval.policy_x_state} ·{' '}
+                    {interval.policy_reasons?.join(', ')}
+                  </p>
+                ))}
+              </details>
+              <h4 className="font-semibold">Backup guidance</h4>
+              <p>
+                Fewer than two effectively available transports among X, Ka and
+                Ku.
+              </p>
+              {planningEvaluation.backup_gaps?.length ? (
+                planningEvaluation.backup_gaps.map((gap, index) => (
+                  <p key={index} className="break-words">
+                    UTC {gap.start_time} → {gap.end_time} ·{' '}
+                    {gap.reasons?.join(', ')}
+                  </p>
+                ))
+              ) : (
+                <p>No backup gaps in this evaluation.</p>
+              )}
+              <h4 className="font-semibold">Safety guidance</h4>
+              <p>Safety advice alone adds no X-band outage time.</p>
+              {planningEvaluation.intervals
+                ?.filter((interval) => interval.safety_reasons?.length)
+                .map((interval, index) => (
+                  <p key={index} className="break-words">
+                    UTC {interval.start_time} → {interval.end_time} ·{' '}
+                    {interval.safety_reasons?.join(', ')}
+                  </p>
+                ))}
+            </div>
+          ) : (
+            <>
+              {!isCalculating && <CoverageSequence timeline={timeline} />}
+              <TimelineTable timeline={timeline} isLoading={isCalculating} />
+            </>
+          )}
 
           {timeline?.statistics && (
             <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border pt-4 sm:grid-cols-4">

@@ -136,7 +136,7 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
         view = project_customer_leg(
             captured,
             projection,
-            leg_number=number,
+            leg_number=captured.display_number or number,
             leg_count=snapshot.leg_count or len(snapshot.legs),
         )
         legs.append(

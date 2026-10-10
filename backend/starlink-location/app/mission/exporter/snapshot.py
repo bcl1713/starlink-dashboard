@@ -55,6 +55,7 @@ class LegSnapshot:
     preparation_origin: Literal["rebuilt", "cached", "missing"]
     warnings: tuple[str, ...]
     map_pois: tuple[bytes, ...] = ()
+    display_number: int | None = None
 
 
 @dataclass(frozen=True)
@@ -244,6 +245,9 @@ def capture_export_snapshot(
 def prepare_export_snapshot(metadata, sources, warnings=()):
     """Prepare copied inputs in a cancellable background process."""
     mission = Mission.model_validate_json(metadata)
+    from app.mission.storage import mission_leg_order
+
+    order = mission_leg_order(mission)
     routes, pois = RouteView(sources), captured_pois(sources)
     catalog = captured_catalog(sources)
     config = ConstraintConfig(**json.loads(source_content(sources, "constraints")))
@@ -382,6 +386,11 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
                 origin,
                 tuple(notes),
                 map_pois,
+                (
+                    order.numbers[leg.id]
+                    if mission.metadata.get("itinerary_planning") is not None
+                    else None
+                ),
             )
         )
     digest = sha256(metadata)
@@ -389,5 +398,11 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
         digest.update(canonical_json([source.name, source.digest]))
     all_warnings = warnings + tuple(note for leg in legs for note in leg.warnings)
     return ExportSnapshot(
-        mission.id, digest.hexdigest(), metadata, tuple(legs), sources, all_warnings
+        mission.id,
+        digest.hexdigest(),
+        metadata,
+        tuple(legs),
+        sources,
+        all_warnings,
+        leg_count=order.total_count,
     )

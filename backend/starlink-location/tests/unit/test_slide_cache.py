@@ -337,7 +337,10 @@ def test_persisted_pois_converge_across_stale_api_managers(tmp_path, monkeypatch
     poi = first.create_poi(POICreate(name="X", latitude=0, longitude=1))
     second = POIManager(tmp_path / "pois.json")
     second.update_poi(poi.id, POIUpdate(longitude=2))
-    assert first.list_pois()[0].longitude == 1  # Production manager remains stale.
+    assert first._pois[poi.id].longitude == 1  # Cache is stale before public read.
+    assert first.list_pois()[0].longitude == 2  # Public reads refresh shared storage.
+    assert second.list_pois()[0].longitude == 2
+    assert first._pois[poi.id].longitude == 2
     cache = store(tmp_path)
     reconcile("m", None, first, cache, "v1")
     desired = cache.records("m")["a"]

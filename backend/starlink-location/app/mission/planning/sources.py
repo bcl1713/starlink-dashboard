@@ -1,0 +1,522 @@
+"""Immutable upload staging, durable ownership inventory and strict profiles."""
+
+import hashlib
+import json
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from uuid import uuid4
+
+from app.mission.models import Mission
+from app.mission.storage import planning_read_gate
+from app.services.kml_parser import KMLParseError
+
+from .errors import PlanningFailure
+from .journal import atomic_write, json_bytes
+from .models import PlanningManifest, SourceRevision
+
+
+def source_closure(
+    mission: Mission, manifest: PlanningManifest | None
+) -> tuple[SourceRevision, ...]:
+    """All accepted revisions remain live provenance, including retired history."""
+    if manifest is None:
+        return ()
+    sources = {}
+    for source in manifest.source_revisions:
+        if source.owner != mission.id or source.expires_at is not None:
+            raise ValueError("Accepted source ownership is inconsistent")
+        suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
+        if source.owned_relative_path != f"sources/{source.id}.{suffix}":
+            raise ValueError("Invalid accepted source path")
+        if source.id in sources and sources[source.id] != source:
+            raise ValueError("Conflicting source revisions")
+        sources[source.id] = source
+    for record in _records(manifest.storage_record()):
+        if "source_id" in record and "content_hash" in record:
+            source = sources.get(record["source_id"])
+            if source is None or source.content_hash != record["content_hash"]:
+                raise ValueError("Planning graph references a missing source revision")
+        for source_id in record.get("source_ids", []):
+            if source_id not in sources:
+                raise ValueError("History references a missing source revision")
+    return tuple(sources.values())
+
+
+def _records(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _records(child)
+    elif isinstance(value, (list, tuple)):
+        for child in value:
+            yield from _records(child)
+
+
+def _inventory_io(path, operation):
+    try:
+        return operation()
+    except OSError as exc:
+        failure = PlanningFailure(
+            503,
+            "reference_inventory_unavailable",
+            f"Cannot verify retained references: {path}",
+            action="retry",
+            retryable=True,
+        )
+        failure.remaining_paths = (str(exc.filename or path),)
+        raise failure from exc
+
+
+def _inventory_path(path):
+    from .errors import conflict
+
+    if _inventory_io(path, path.resolve) != path:
+        raise conflict(f"Reference inventory contains an aliased path: {path}")
+    return path
+
+
+def _reference_graphs(sources):
+    """Strict safety inventory, independent of tolerant UI metadata listings."""
+    from app.mission import storage
+    from app.mission.models import MissionLeg, MissionLegTimeline
+
+    from .deletion import load_record
+    from .errors import conflict
+
+    root = _inventory_path(storage.MISSIONS_DIR.absolute())
+    if sources.root.parent != root:
+        raise conflict("Reference inventory root does not match source context")
+    authorities = {}
+    directory = _inventory_path(sources.root / "deletions")
+    if _inventory_io(directory, directory.exists):
+        for path in _inventory_io(directory, lambda: list(directory.iterdir())):
+            _inventory_path(path)
+            if path.suffix != ".json":
+                continue
+            try:
+                record = load_record(sources, path.stem)
+                if record is None:
+                    raise ValueError("Deletion authority disappeared")
+            except ValueError as exc:
+                raise conflict(f"Invalid retained authority: {path}") from exc
+            authorities[record.owner] = record.mission.model_dump(mode="json")
+    graphs = list(authorities.items())
+    for directory in _inventory_io(root, lambda: list(root.iterdir())):
+        if directory.name in {".planning", ".slide-cache"}:
+            _inventory_path(directory)
+            continue
+        _inventory_path(directory)
+        if not _inventory_io(directory, directory.is_dir):
+            continue
+        path = _inventory_path(directory / "mission.json")
+        try:
+            if not _inventory_io(path, path.exists) and directory.name in authorities:
+                mission = Mission.model_validate(authorities[directory.name])
+            else:
+                data = _inventory_io(path, path.read_bytes)
+                mission = Mission.model_validate_json(data)
+            if mission.id != directory.name:
+                raise ValueError("Mission identity does not match directory")
+            raw = mission.metadata.get("itinerary_planning")
+            if raw is not None:
+                source_closure(mission, PlanningManifest.model_validate(raw))
+            graph = [mission.model_dump(mode="json")]
+            legs = _inventory_path(directory / "legs")
+            if _inventory_io(legs, legs.exists):
+                for path in _inventory_io(legs, lambda legs=legs: list(legs.iterdir())):
+                    _inventory_path(path)
+                    if path.suffix != ".json":
+                        continue
+                    data = json.loads(_inventory_io(path, path.read_bytes))
+                    if path.name.endswith(storage.TIMELINE_SUFFIX):
+                        timeline = MissionLegTimeline.model_validate(data)
+                        if (
+                            path.name
+                            != timeline.mission_leg_id + storage.TIMELINE_SUFFIX
+                        ):
+                            raise ValueError("Timeline identity does not match path")
+                    else:
+                        leg = MissionLeg.model_validate(data)
+                        if path.stem != leg.id:
+                            raise ValueError("Leg identity does not match path")
+                    graph.append(data)
+        except (ValueError, TypeError, KeyError) as exc:
+            raise conflict(f"Invalid retained reference metadata: {path}") from exc
+        graphs.append((mission.id, graph))
+    return graphs
+
+
+def route_references(route_id, *, sources, excluding_mission=None):
+    """Call under the global gate; failed inventory never implies no references."""
+    return _graph_references(_reference_graphs(sources), route_id, excluding_mission)
+
+
+def _graph_references(graphs, route_id, excluding_mission=None):
+    return tuple(
+        sorted(
+            {
+                owner
+                for owner, graph in graphs
+                if owner != excluding_mission
+                and any(
+                    record.get("route_id") == route_id
+                    or (
+                        record.get("kind") == "route_kml"
+                        and record.get("id") == route_id
+                    )
+                    for record in _records(graph)
+                )
+            }
+        )
+    )
+
+
+def guard_route_delete(route_id, routes_dir):
+    from fastapi import HTTPException
+
+    from app.mission import storage
+
+    sources = SourceStore(storage.MISSIONS_DIR, routes_dir)
+    try:
+        owners = route_references(route_id, sources=sources)
+    except PlanningFailure as exc:
+        raise HTTPException(
+            exc.status_code,
+            detail={
+                **exc.error.model_dump(mode="json"),
+                "remaining_paths": list(getattr(exc, "remaining_paths", ())),
+            },
+        ) from exc
+    inventory = sources.root / "inventory" / f"{route_id}.json"
+    if owners or inventory.exists():
+        raise HTTPException(
+            409,
+            detail={
+                "code": "mission_route_retained",
+                "message": "Route is retained by a mission",
+                "mission_ids": list(owners),
+                "action": "Delete the owning mission to release retained route sources.",
+            },
+        )
+
+
+class SourceStore:
+    def __init__(self, root: Path, routes_dir: Path):
+        self.root = Path(root).resolve() / ".planning"
+        self.routes_dir = Path(routes_dir).resolve()
+        self._cleanup_candidates = None
+        self._store = None
+
+    def bind_store(self, store):
+        if (
+            store.sources is not self
+            or store.root != self.root.parent
+            or Path(store.route_manager.routes_dir).resolve() != self.routes_dir
+        ):
+            raise ValueError("Invalid source commit context")
+        if self._store is not None and self._store is not store:
+            raise ValueError("Source store already has a commit context")
+        self._store = store
+
+    @planning_read_gate
+    def stage(
+        self, data: bytes, kind: str, owner: str | None, filename: str
+    ) -> SourceRevision:
+        if kind not in {"pdf", "kml"}:
+            raise ValueError("Unsupported source kind")
+        if kind == "pdf" and len(data) > 10 * 1024 * 1024:
+            raise PlanningFailure(422, "upload_too_large", "Upload exceeds 10 MiB")
+        self.cleanup_expired(limit=100)
+        source_id = str(uuid4())
+        source = SourceRevision(
+            id=source_id,
+            owner=owner or source_id,
+            kind="itinerary_pdf" if kind == "pdf" else "route_kml",
+            filename=Path(filename).name,
+            content_hash=hashlib.sha256(data).hexdigest(),
+            owned_relative_path=f"staging/{source_id}.{kind}",
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        )
+        atomic_write(self.path(source), data)
+        atomic_write(
+            self.root / "staging" / f"{source.id}.source.json",
+            json_bytes(source.storage_record()),
+        )
+        return source
+
+    def path(self, source):
+        path = self.root / source.owned_relative_path
+        if path.resolve() != path or not path.is_relative_to(self.root):
+            raise ValueError("Invalid owned source path")
+        return path
+
+    def preview_path(self, preview_id):
+        # Public resource selectors never become arbitrary filesystem paths.
+        try:
+            from uuid import UUID
+
+            UUID(preview_id)
+        except (ValueError, TypeError):
+            raise PlanningFailure(404, "preview_not_found", "Preview not found")
+        return self.root / "staging" / f"{preview_id}.preview.json"
+
+    @planning_read_gate
+    def save_preview(self, preview_id, record):
+        atomic_write(self.preview_path(preview_id), json_bytes(record))
+
+    @planning_read_gate
+    def get_preview(self, preview_id):
+        path = self.preview_path(preview_id)
+        if not path.exists():
+            if not any(
+                (self.root / "sources" / f"{preview_id}.{suffix}").exists()
+                for suffix in ("pdf", "kml")
+            ):
+                raise PlanningFailure(404, "preview_not_found", "Preview not found")
+            raise PlanningFailure(
+                409,
+                "preview_expired",
+                "Preview unavailable or already accepted",
+                action="reupload",
+            )
+        record = json.loads(path.read_bytes())
+        if record.get("expired") is True:
+            raise PlanningFailure(
+                409, "preview_expired", "Preview expired", action="reupload"
+            )
+        source = SourceRevision.model_validate(record["source"])
+        if source.expires_at is None or source.expires_at <= datetime.now(timezone.utc):
+            self.expire(source)
+            raise PlanningFailure(
+                409, "preview_expired", "Preview expired", action="reupload"
+            )
+        return record, source
+
+    @planning_read_gate
+    def expire(self, source):
+        # Retain only resource status, never expired source or parsed content.
+        self.save_preview(source.id, {"expired": True})
+        for path in (
+            self.path(source),
+            self.root / "staging" / f"{source.id}.source.json",
+        ):
+            path.unlink(missing_ok=True)
+
+    @planning_read_gate
+    def discard(self, source):
+        if source.owned_relative_path.startswith("staging/"):
+            for path in (
+                self.path(source),
+                self.root / "staging" / f"{source.id}.source.json",
+                self.preview_path(source.id),
+            ):
+                path.unlink(missing_ok=True)
+
+    @planning_read_gate
+    def cleanup_expired(self, *, limit=None):
+        # Retain the iterator between bounded batches so fresh descriptors at the
+        # front cannot indefinitely hide abandoned sources later in the sweep.
+        if limit is None or self._cleanup_candidates is None:
+            self._cleanup_candidates = (self.root / "staging").glob("*.source.json")
+        count = 0
+        while limit is None or count < limit:
+            path = next(self._cleanup_candidates, None)
+            if path is None:
+                self._cleanup_candidates = None
+                break
+            count += 1
+            if not path.exists():
+                continue  # Accepted or discarded since this batch was enumerated.
+            source = SourceRevision.model_validate_json(path.read_bytes())
+            if source.expires_at and source.expires_at <= datetime.now(timezone.utc):
+                self.expire(source)
+
+    @planning_read_gate
+    def acceptance_snapshot(self, preview_id):
+        """Capture immutable input before another acceptance can consume staging."""
+        record, source = self.get_preview(preview_id)
+        return record, source, self.path(source).read_bytes()
+
+    def descriptor_path(self, route_id):
+        return self.routes_dir / f"{route_id}.profile.json"
+
+    def resolve_profile(self, route_id):
+        from app.mission.storage import get_active_leg_lock
+
+        with get_active_leg_lock():
+            if any((self.root / "journals").glob("*.json")):
+                raise KMLParseError("Owned route recovery must finish before loading")
+            inventory = self.root / "inventory" / f"{route_id}.json"
+            if not inventory.exists():
+                return "legacy"
+            try:
+                owned = json.loads(inventory.read_bytes())
+                descriptor = json.loads(self.descriptor_path(route_id).read_bytes())
+                expected = {
+                    "version": 1,
+                    "route_id": route_id,
+                    "source_hash": owned["content_hash"],
+                    "owner": owned["owner"],
+                    "ingestion_profile": "planning_v1",
+                }
+                if descriptor != expected or owned["id"] != route_id:
+                    raise ValueError("Invalid descriptor")
+                data = (self.routes_dir / f"{route_id}.kml").read_bytes()
+                if hashlib.sha256(data).hexdigest() != owned["content_hash"]:
+                    raise ValueError("Owned source content changed")
+                return "planning_v1"
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                raise KMLParseError(
+                    "Invalid owned route profile; explicit recovery required"
+                ) from exc
+
+    def acceptance_files(self, source, owner, data):
+        suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
+        accepted = source.model_copy(
+            update={
+                "owner": owner,
+                "expires_at": None,
+                "owned_relative_path": f"sources/{source.id}.{suffix}",
+            }
+        )
+        if hashlib.sha256(data).hexdigest() != source.content_hash:
+            raise PlanningFailure(
+                422, "source_changed", "Staged source failed integrity validation"
+            )
+        files = {self.path(accepted): data}
+        if suffix == "kml":
+            descriptor = {
+                "version": 1,
+                "route_id": source.id,
+                "source_hash": source.content_hash,
+                "owner": owner,
+                "ingestion_profile": "planning_v1",
+            }
+            # Inventory precedes descriptor and route; watcher profile resolution
+            # waits on the repository gate until the complete transaction exists.
+            files[self.root / "inventory" / f"{source.id}.json"] = json_bytes(
+                accepted.storage_record()
+            )
+            files[self.descriptor_path(source.id)] = json_bytes(descriptor)
+            files[self.routes_dir / f"{source.id}.kml"] = data
+        files.update(
+            {
+                self.path(source): None,
+                self.root / "staging" / f"{source.id}.source.json": None,
+                self.preview_path(source.id): None,
+            }
+        )
+        return accepted, files
+
+    def validate_release(
+        self, mission_id: str, references: tuple[SourceRevision, ...]
+    ) -> tuple[Path, ...]:
+        """Validate every release path and active reference before any unlink."""
+        from app.mission import storage
+
+        from .models import PlanningManifest
+
+        if self._store is None:
+            raise ValueError("Owned release requires an explicitly bound store context")
+        self.bind_store(self._store)
+        if self._store.root != storage.MISSIONS_DIR.resolve():
+            raise ValueError("Owned release store root changed")
+        from .deletion import _io, _read_bytes, ownership_mission
+
+        mission = ownership_mission(self, mission_id)
+        if mission is None or "itinerary_planning" not in mission.metadata:
+            raise ValueError("Owned source release requires its persisted mission")
+        accepted = source_closure(
+            mission,
+            PlanningManifest.model_validate(mission.metadata["itinerary_planning"]),
+        )
+        if any(source not in accepted for source in references):
+            raise ValueError(
+                "Source ownership is not established by the owning mission"
+            )
+        active = self._store.route_manager.get_active_route_id()
+        if any(
+            source.kind == "route_kml" and source.id == active for source in references
+        ):
+            raise PlanningFailure(
+                409,
+                "ACTIVE_ROUTE_DELETION_FORBIDDEN",
+                "A retained route is selected for tracking.",
+                action="Deactivate the selected route, then delete the owning mission.",
+            )
+        try:
+            graphs = _reference_graphs(self)
+        except PlanningFailure as exc:
+            if exc.status_code == 503:
+                from .deletion import _incomplete
+
+                raise _incomplete(exc.remaining_paths) from exc
+            raise
+        candidates = []
+        for source in references:
+            if source.owner != mission_id:
+                raise ValueError("Cannot release another mission's source")
+            suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
+            if source.owned_relative_path != f"sources/{source.id}.{suffix}":
+                raise ValueError("Invalid owned source path")
+            if source.kind == "route_kml" and _graph_references(
+                graphs, source.id, excluding_mission=mission_id
+            ):
+                continue
+            owned_path = self.root / source.owned_relative_path
+            paths = [_io(owned_path, lambda source=source: self.path(source))]
+            if source.kind == "route_kml":
+                paths.extend(
+                    [
+                        self.routes_dir / f"{source.id}.kml",
+                        self.descriptor_path(source.id),
+                        self.root / "inventory" / f"{source.id}.json",
+                    ]
+                )
+            for path in paths:
+                if _io(path, path.resolve) != path:
+                    raise ValueError(
+                        "Owned source path cannot contain a filesystem alias"
+                    )
+                if not _io(path, path.exists):
+                    continue
+                data = _read_bytes(path)
+                if path.suffix in {".pdf", ".kml"}:
+                    if hashlib.sha256(data).hexdigest() != source.content_hash:
+                        raise ValueError(f"Owned source changed: {path}")
+                elif path == self.descriptor_path(source.id):
+                    if json.loads(data) != {
+                        "version": 1,
+                        "route_id": source.id,
+                        "source_hash": source.content_hash,
+                        "owner": mission_id,
+                        "ingestion_profile": "planning_v1",
+                    }:
+                        raise ValueError(f"Owned profile changed: {path}")
+                elif SourceRevision.model_validate_json(data) != source:
+                    raise ValueError(f"Owned inventory changed: {path}")
+            candidates.extend(paths)
+        return tuple(candidates)
+
+    @planning_read_gate
+    def release_owned(
+        self, mission_id: str, references: tuple[SourceRevision, ...]
+    ) -> None:
+        """Release verified, unreferenced bytes; retain exact failed paths for retry."""
+        candidates = self.validate_release(mission_id, references)
+        remaining = []
+        for path in candidates:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                remaining.append(str(path))
+        if remaining:
+            failure = PlanningFailure(
+                503,
+                "owned_delete_incomplete",
+                "Remaining owned paths: " + ", ".join(remaining),
+                action="retry_delete",
+                retryable=True,
+            )
+            failure.remaining_paths = tuple(remaining)
+            raise failure

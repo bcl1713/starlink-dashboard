@@ -246,6 +246,7 @@ def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch,
         io.BytesIO(frozen)
     ) as b:
         assert a.namelist() == b.namelist()
+        assert len(a.namelist()) == len(set(a.namelist()))
         for name in a.namelist():
             if name.endswith(".pptx"):
                 with zipfile.ZipFile(io.BytesIO(a.read(name))) as x, zipfile.ZipFile(
@@ -821,3 +822,11 @@ def test_export_captures_material_x_changes_without_changing_legacy_events(
     blocked = a if blocked_first else b
     assert blocked.remaining_transports == ()
     assert blocked.posture == "Communications unavailable"
+
+
+def test_legacy_snapshot_preserves_offset_numbering_fallback(export_inputs):
+    from app.mission.exporter.snapshot import capture_export_snapshot
+
+    mission, routes, pois, _ = export_inputs
+    captured = capture_export_snapshot(mission.id, routes, pois)
+    assert captured.legs[0].display_number is None

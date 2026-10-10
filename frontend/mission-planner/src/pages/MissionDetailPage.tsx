@@ -23,6 +23,10 @@ import { MissionSimulationStatus } from '../components/missions/MissionSimulatio
 import { EditableField } from '../components/missions/EditableField';
 import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
+import { usePlanning } from '../hooks/api/usePlanning';
+import { RevisionReview } from '../components/planning/RevisionReview';
+import type { PlanningCAS } from '../services/missions';
+import { ExpectedLegCards } from '../components/planning/ExpectedLegCards';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
@@ -30,6 +34,10 @@ export function MissionDetailPage() {
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
   const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
+  const managed = !!mission?.metadata?.itinerary_planning;
+  const planning = usePlanning(missionId || '', managed);
+  const planningResolved =
+    !managed || (!!planning.data && !planning.isLoading && !planning.error);
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
   const deleteMissionMutation = useDeleteMission();
@@ -74,10 +82,16 @@ export function MissionDetailPage() {
     }
   };
 
-  const handleDeleteLeg = async (leg: MissionLeg, confirmed: boolean) => {
+  const handleDeleteLeg = async (
+    leg: MissionLeg,
+    confirmed: boolean,
+    captured?: PlanningCAS
+  ) => {
     if (confirmed) {
       try {
-        await deleteLegMutation.mutateAsync(leg.id);
+        await deleteLegMutation.mutateAsync(
+          captured ? { legId: leg.id, planning: captured } : leg.id
+        );
       } catch (error) {
         console.error('Failed to delete leg:', error);
         alert(formatMissionDeletionError(error));
@@ -108,6 +122,57 @@ export function MissionDetailPage() {
       id: mission!.id,
       updates: { description: newDescription },
     });
+  };
+
+  const renderInstalledActions = (legId: string) => {
+    const leg = mission.legs.find((leg) => leg.id === legId);
+    if (!leg) return null;
+    const card = planning.data?.expected_legs.find(
+      (c) => c.leg.installed_leg_id === legId
+    );
+    const captured =
+      card && planning.data
+        ? {
+            expected_revision: planning.data.revision,
+            input_identity: card.input_identity,
+          }
+        : undefined;
+    return (
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={deleteLegMutation.isPending || !captured}
+          onClick={() => {
+            const confirmed = window.confirm(
+              `Delete leg ${leg.name}? Its planning history will be retained.`
+            );
+            void handleDeleteLeg(leg, confirmed, captured);
+          }}
+        >
+          Delete
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSimulationLegId(leg.id)}
+        >
+          Simulate leg…
+        </Button>
+        <Button
+          variant={leg.is_active ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleActivateLeg(leg.id)}
+          disabled={activateLeg.isPending}
+        >
+          {activateLeg.isPending
+            ? 'Activating...'
+            : leg.is_active
+              ? 'Active'
+              : 'Activate'}
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -159,6 +224,37 @@ export function MissionDetailPage() {
       </div>
 
       <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
+      {managed && (
+        <div className="space-y-4">
+          <h2 className="text-base font-semibold">Itinerary legs</h2>
+          {planningResolved && planning.data ? (
+            <>
+              <RevisionReview
+                view={planning.data}
+                previewRevision={(file, expectedRevision) =>
+                  planning.previewRevision.mutateAsync({
+                    file,
+                    expectedRevision,
+                  })
+                }
+                applyRevision={(request) =>
+                  planning.applyRevision.mutateAsync(request)
+                }
+              />
+              <ExpectedLegCards
+                view={planning.data}
+                renderInstalledActions={renderInstalledActions}
+              />
+            </>
+          ) : (
+            <p role={planning.error ? 'alert' : 'status'}>
+              {planning.error
+                ? 'Unable to load itinerary draft. Reload the mission to retry.'
+                : 'Loading itinerary draft…'}
+            </p>
+          )}
+        </div>
+      )}
       <div className="border-t pt-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold tracking-tight">
@@ -184,101 +280,123 @@ export function MissionDetailPage() {
             </Button>
           </div>
         </div>
-        {mission.legs.length === 0 ? (
+        {!planningResolved ? (
+          <p className="text-muted-foreground">
+            Leg actions are unavailable until the itinerary draft loads.
+          </p>
+        ) : mission.legs.length === 0 ? (
           <p className="text-muted-foreground">
             No legs configured for this mission
           </p>
         ) : (
           <div className="grid gap-4">
-            {mission.legs.map((leg) => (
-              <Card
-                key={leg.id}
-                className={`hover:shadow-lg transition-shadow cursor-pointer ${
-                  leg.is_active ? 'border-[var(--status-nominal)] border-2' : ''
-                }`}
-                onClick={() =>
-                  navigate(`/missions/${mission.id}/legs/${leg.id}`)
-                }
-              >
-                <CardHeader>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{leg.name}</CardTitle>
-                        {leg.is_active && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold status-nominal">
-                            Active
-                          </span>
+            {mission.legs
+              .filter(
+                (leg) =>
+                  !planning.data?.expected_legs.some(
+                    (card) => card.leg.installed_leg_id === leg.id
+                  )
+              )
+              .map((leg) => (
+                <Card
+                  key={leg.id}
+                  className={`hover:shadow-lg transition-shadow cursor-pointer ${
+                    leg.is_active
+                      ? 'border-[var(--status-nominal)] border-2'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    navigate(`/missions/${mission.id}/legs/${leg.id}`)
+                  }
+                >
+                  <CardHeader>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle>{leg.name}</CardTitle>
+                          {leg.is_active && (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold status-nominal">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        {leg.description && (
+                          <CardDescription>{leg.description}</CardDescription>
                         )}
                       </div>
-                      {leg.description && (
-                        <CardDescription>{leg.description}</CardDescription>
+                      <div className="flex flex-wrap gap-2 ml-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSimulationLegId(leg.id);
+                          }}
+                        >
+                          Simulate leg…
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleActivateLeg(leg.id);
+                          }}
+                          variant={leg.is_active ? 'default' : 'outline'}
+                          size="sm"
+                          disabled={activateLeg.isPending}
+                        >
+                          {activateLeg.isPending
+                            ? 'Activating...'
+                            : leg.is_active
+                              ? 'Active'
+                              : 'Activate'}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const confirmed = window.confirm(
+                              `Are you sure you want to delete leg "${leg.name}"?\n\n` +
+                                `This will permanently delete:\n` +
+                                `- The leg configuration\n` +
+                                `- Associated route (${leg.route_id || 'none'})\n` +
+                                `- All associated POIs\n\n` +
+                                `This action cannot be undone.`
+                            );
+                            if (confirmed) {
+                              handleDeleteLeg(leg, confirmed);
+                            }
+                          }}
+                          disabled={deleteLegMutation.isPending}
+                        >
+                          {deleteLegMutation.isPending
+                            ? 'Deleting...'
+                            : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        ID: {leg.id}
+                      </p>
+                      {leg.route_id && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Route: {leg.route_id}
+                        </p>
+                      )}
+                      {!planning.data?.expected_legs.some(
+                        (card) => card.leg.installed_leg_id === leg.id
+                      ) && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Review status not recorded
+                        </p>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 ml-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setSimulationLegId(leg.id);
-                        }}
-                      >
-                        Simulate leg…
-                      </Button>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleActivateLeg(leg.id);
-                        }}
-                        variant={leg.is_active ? 'default' : 'outline'}
-                        size="sm"
-                        disabled={activateLeg.isPending}
-                      >
-                        {activateLeg.isPending
-                          ? 'Activating...'
-                          : leg.is_active
-                            ? 'Active'
-                            : 'Activate'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const confirmed = window.confirm(
-                            `Are you sure you want to delete leg "${leg.name}"?\n\n` +
-                              `This will permanently delete:\n` +
-                              `- The leg configuration\n` +
-                              `- Associated route (${leg.route_id || 'none'})\n` +
-                              `- All associated POIs\n\n` +
-                              `This action cannot be undone.`
-                          );
-                          if (confirmed) {
-                            handleDeleteLeg(leg, confirmed);
-                          }
-                        }}
-                        disabled={deleteLegMutation.isPending}
-                      >
-                        {deleteLegMutation.isPending ? 'Deleting...' : 'Delete'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      ID: {leg.id}
-                    </p>
-                    {leg.route_id && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Route: {leg.route_id}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         )}
       </div>

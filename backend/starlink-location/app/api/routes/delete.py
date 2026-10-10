@@ -52,14 +52,17 @@ async def delete_route(
             detail="Route manager not initialized",
         )
 
-    parsed_route = route_manager.get_route(route_id)
-    if not parsed_route:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Route not found: {route_id}",
-        )
-
     with get_active_leg_lock():
+        from app.mission.planning.sources import guard_route_delete
+
+        guard_route_delete(route_id, route_manager.routes_dir)
+        parsed_route = route_manager.get_route(route_id)
+        if not parsed_route:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Route not found: {route_id}",
+            )
+
         if (
             run_service
             and run_service.status().run
@@ -69,36 +72,36 @@ async def delete_route(
         if route_manager.get_active_route_id() == route_id:
             route_manager.deactivate_route(route_id)
 
-    try:
-        # Delete associated POIs (cascade delete)
-        if poi_manager:
-            deleted_pois = poi_manager.delete_route_pois(route_id)
-            logger.info(f"Deleted {deleted_pois} POIs for route {route_id}")
+        try:
+            # Delete associated POIs (cascade delete)
+            if poi_manager:
+                deleted_pois = poi_manager.delete_route_pois(route_id)
+                logger.info(f"Deleted {deleted_pois} POIs for route {route_id}")
 
-        # Delete KML file
-        file_path = Path(parsed_route.metadata.file_path)
-        if file_path.exists():
-            file_path.unlink()
-            logger.info(f"Deleted route file: {file_path} for route {route_id}")
+            # Delete KML file
+            file_path = Path(parsed_route.metadata.file_path)
+            if file_path.exists():
+                file_path.unlink()
+                logger.info(f"Deleted route file: {file_path} for route {route_id}")
 
-        # Remove from route manager cache
-        route_manager._routes.pop(route_id, None)
+            # Remove from route manager cache
+            route_manager._routes.pop(route_id, None)
 
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:
-        logger.error(f"Error deleting route {route_id}: {e!s}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error deleting route: {e!s}",
-        )
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.error(f"Error deleting route {route_id}: {e!s}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error deleting route: {e!s}",
+            )

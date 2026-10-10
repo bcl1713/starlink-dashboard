@@ -37,7 +37,7 @@ def build_customer_mission_document(snapshot: ExportSnapshot) -> dict:
         view = project_customer_leg(
             captured,
             projection,
-            leg_number=number,
+            leg_number=captured.display_number or number,
             leg_count=snapshot.leg_count or len(snapshot.legs),
         )
         legs.append(_leg_payload(snapshot, captured, view, projection))

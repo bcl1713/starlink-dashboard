@@ -16,6 +16,13 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
+from .planning.types import (
+    EvaluationContext,
+    PlanningInputSnapshot,
+    PlanningPolicy,
+    RouteAnchor,
+)
+
 
 class Transport(str, Enum):
     """Enumeration of available communication transports."""
@@ -69,6 +76,7 @@ class XTransition(BaseModel):
     target_satellite_id: str = Field(
         ..., description="Target satellite ID (e.g., 'X-1', 'X-2')"
     )
+    anchor: RouteAnchor | None = None
     target_beam_id: str | None = Field(
         default=None,
         description="Optional target beam ID for same-satellite transitions",
@@ -161,6 +169,8 @@ class AARWindow(BaseModel):
         ...,
         description="Name of the ending waypoint (from KML) for AAR segment",
     )
+    start_anchor: RouteAnchor | None = None
+    end_anchor: RouteAnchor | None = None
     override_start_time: datetime | None = Field(
         default=None,
         description="Optional pilot-projected AAR start override (UTC, ISO-8601)",
@@ -293,6 +303,11 @@ class KuOutageOverride(BaseModel):
 
 class TransportConfig(BaseModel):
     """Configuration for all three transports in the mission."""
+
+    starshield_enabled: bool | None = None
+    planning_policy: PlanningPolicy | None = None
+    evaluation_context: EvaluationContext | None = None
+    planning_inputs: PlanningInputSnapshot | None = None
 
     initial_x_satellite_id: str = Field(
         ...,

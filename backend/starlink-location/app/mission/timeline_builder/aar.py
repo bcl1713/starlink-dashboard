@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from app.mission.models import ManualAARTrack, MissionLeg
+from app.mission.planning.match import resolve_anchor
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
     ensure_timezone,
@@ -42,8 +43,16 @@ def resolve_aar_windows(
     for idx, window in enumerate(mission.transports.aar_windows or []):
         start_wp = waypoint_lookup.get(window.start_waypoint_name)
         end_wp = waypoint_lookup.get(window.end_waypoint_name)
-        route_start_time = timestamp_for_waypoint(start_wp, projector)
-        route_end_time = timestamp_for_waypoint(end_wp, projector)
+        route_start_time = (
+            resolve_anchor(window.start_anchor, route, projector.start_time)
+            if window.start_anchor
+            else timestamp_for_waypoint(start_wp, projector)
+        )
+        route_end_time = (
+            resolve_anchor(window.end_anchor, route, projector.start_time)
+            if window.end_anchor
+            else timestamp_for_waypoint(end_wp, projector)
+        )
         if window.override_start_elapsed:
             if route_start_time is None or route_end_time is None:
                 logger.warning(
@@ -138,6 +147,8 @@ def apply_x_transitions(
     mission: MissionLeg,
     projector: RouteTemporalProjector,
     aar_windows: list[ResolvedAARWindow],
+    *,
+    anchor_route: ParsedRoute | None = None,
 ) -> list[tuple[datetime, str, str | None]]:
     """Apply X-band transition events and return the transition schedule."""
     schedule: list[tuple[datetime, str, str | None]] = []
@@ -149,8 +160,13 @@ def apply_x_transitions(
         return schedule
 
     for transition in mission.transports.x_transitions:
-        projection = projector.project(transition.latitude, transition.longitude)
-        timestamp = projection.timestamp
+        if transition.anchor:
+            timestamp = resolve_anchor(
+                transition.anchor, anchor_route or projector.route, projector.start_time
+            )
+        else:
+            projection = projector.project(transition.latitude, transition.longitude)
+            timestamp = projection.timestamp
         if _falls_within_window(timestamp, aar_windows):
             rule_engine.add_x_transition_events(
                 timestamp,
@@ -171,6 +187,6 @@ def apply_x_transitions(
 def _falls_within_window(timestamp: datetime, windows: list[ResolvedAARWindow]) -> bool:
     """Check if timestamp falls within any AAR window."""
     for window in windows:
-        if window.start_time <= timestamp <= window.end_time:
+        if window.start_time <= timestamp < window.end_time:
             return True
     return False

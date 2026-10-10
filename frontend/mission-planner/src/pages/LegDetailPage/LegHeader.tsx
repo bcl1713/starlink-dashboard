@@ -20,6 +20,7 @@ interface LegHeaderProps {
   legId: string;
   routeId?: string;
   onBackClick: () => void;
+  onPlanningUpdateRoute?: () => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export function LegHeader({
   legId,
   routeId,
   onBackClick,
+  onPlanningUpdateRoute,
 }: LegHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const updateRouteMutation = useUpdateLegRoute(missionId);
@@ -73,7 +75,8 @@ export function LegHeader({
   };
 
   const handleUpdateRouteClick = () => {
-    fileInputRef.current?.click();
+    if (onPlanningUpdateRoute) onPlanningUpdateRoute();
+    else fileInputRef.current?.click();
   };
 
   return (

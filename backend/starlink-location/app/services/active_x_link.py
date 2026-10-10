@@ -126,7 +126,9 @@ def build_active_x_link(
     if active_context.pending_satellite_id:
         satellite_ids.append(active_context.pending_satellite_id)
 
-    links = _build_satellite_links(telemetry, poi_manager, satellite_ids)
+    links = _build_satellite_links(
+        telemetry, poi_manager, satellite_ids, mission=active_leg
+    )
     if not links:
         return empty
 
@@ -199,6 +201,8 @@ def _build_satellite_links(
     telemetry: TelemetryData,
     poi_manager: Any,
     satellite_ids: list[str],
+    *,
+    mission: MissionLeg | None = None,
 ) -> list[dict[str, Any]]:
     aircraft = telemetry.position
     links: list[dict[str, Any]] = []
@@ -207,7 +211,7 @@ def _build_satellite_links(
         if satellite is None:
             continue
         link_state, color, relative_azimuth, in_forbidden = _evaluate_link_state(
-            telemetry, satellite
+            telemetry, satellite, mission=mission
         )
         common = {
             "satellite_id": satellite_id,
@@ -216,6 +220,19 @@ def _build_satellite_links(
             "relative_azimuth_degrees": relative_azimuth,
             "in_forbidden_window": in_forbidden,
         }
+        if mission and mission.transports.planning_policy:
+            common.update(
+                {
+                    "planning_policy": mission.transports.planning_policy,
+                    "geometry_basis": "observed_position_heading_altitude",
+                    "position_observed_at": (
+                        aircraft.observed_at.isoformat()
+                        if aircraft.observed_at
+                        else None
+                    ),
+                    "operating_time": telemetry.timestamp.isoformat(),
+                }
+            )
         coordinates = [
             {
                 **common,
@@ -246,7 +263,7 @@ def _find_satellite_poi(poi_manager: Any, satellite_id: str) -> POI | None:
 
 
 def _evaluate_link_state(
-    telemetry: TelemetryData, satellite: POI
+    telemetry: TelemetryData, satellite: POI, *, mission: MissionLeg | None = None
 ) -> tuple[str, str, float, bool]:
     rule_engine = RuleEngine()
     aircraft = telemetry.position
@@ -265,6 +282,24 @@ def _evaluate_link_state(
         rule_engine.config.normal_azimuth_min,
         rule_engine.config.normal_azimuth_max,
     )
-    if in_forbidden:
-        return "warning", "yellow", round(relative_azimuth, 1), True
-    return "normal", "green", round(relative_azimuth, 1), False
+    warning = in_forbidden
+    if mission and mission.transports.planning_policy:
+        from datetime import timedelta
+
+        from app.mission.planning.evaluate import operating_x_state
+
+        raw = ["x_aft_cone"] if in_forbidden else []
+        physical = "degraded" if _debug.get("elevation_below_min") else "available"
+        usable = mission.transports.starshield_enabled is not False and not any(
+            x.start_time
+            <= telemetry.timestamp
+            < x.start_time + timedelta(seconds=x.duration_seconds)
+            for x in mission.transports.ku_overrides
+        )
+        # This overlay uses observed position/heading/altitude; planned interval
+        # geometry is never substituted for live observations.
+        state, _ = operating_x_state(raw, physical, usable)
+        warning = state != "available"
+    if warning:
+        return "warning", "yellow", round(relative_azimuth, 1), in_forbidden
+    return "normal", "green", round(relative_azimuth, 1), in_forbidden

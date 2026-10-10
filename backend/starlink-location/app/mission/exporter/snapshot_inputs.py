@@ -82,7 +82,57 @@ def _read_dependencies(
     mission: Mission, route_manager, poi_manager, *, persisted: bool = False
 ) -> tuple[SourcePayload, ...]:
     sources = []
-    for route_id in dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id):
+    from app.mission.planning.models import PlanningManifest
+    from app.mission.planning.sources import SourceStore, _records, source_closure
+
+    raw = mission.metadata.get("itinerary_planning")
+    manifest = PlanningManifest.model_validate(raw) if raw is not None else None
+    closure = source_closure(mission, manifest)
+    if closure and route_manager is None:
+        raise SnapshotCaptureError("Planning source storage is unavailable")
+    if manifest is not None:
+        store = SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir)
+        for source in closure:
+            content = store.path(source).read_bytes()
+            if sha256(content).hexdigest() != source.content_hash:
+                raise SnapshotCaptureError("Retained source content changed")
+            sources.append(
+                SourcePayload(f"package/planning/{source.owned_relative_path}", content)
+            )
+            if source.kind == "route_kml":
+                store.resolve_profile(source.id)
+                sources.append(
+                    SourcePayload(
+                        f"package/routes/{source.id}.profile.json",
+                        store.descriptor_path(source.id).read_bytes(),
+                    )
+                )
+        for reference in manifest.proposal_refs:
+            content = (
+                store.root.parent
+                / mission.id
+                / "planning"
+                / "proposals"
+                / f"{reference.id}.json"
+            ).read_bytes()
+            if sha256(content).hexdigest() != reference.payload_hash:
+                raise SnapshotCaptureError("Retained proposal payload changed")
+            sources.append(
+                SourcePayload(
+                    f"package/planning/proposals/{reference.id}.json", content
+                )
+            )
+    route_ids = dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id)
+    if manifest:
+        route_ids.update(
+            {
+                record["route_id"]: None
+                for record in _records(manifest.storage_record())
+                if record.get("route_id")
+            }
+        )
+        route_ids.update({s.id: None for s in closure if s.kind == "route_kml"})
+    for route_id in route_ids:
         route = route_manager.get_route(route_id) if route_manager else None
         sources.append(
             SourcePayload(
@@ -100,6 +150,8 @@ def _read_dependencies(
             if kml and kml.exists()
             else SourcePayload(f"kml_missing/{route_id}", b"")
         )
+        if manifest and not (kml and kml.exists()):
+            raise SnapshotCaptureError(f"Retained route {route_id} is missing")
     # All POIs are necessary: mission exports include global satellite POIs and
     # preparation resolves global X positions as well as mission-scoped markers.
     sources.append(
@@ -120,6 +172,20 @@ def _read_dependencies(
             ),
         )
     )
+    if manifest is not None:
+        pois = json.loads(next(p.content for p in sources if p.name == "pois"))
+        sources.append(
+            SourcePayload(
+                "package/pois/retained.json",
+                canonical_json(
+                    {
+                        "pois": [
+                            poi for poi in pois if poi.get("mission_id") == mission.id
+                        ]
+                    }
+                ),
+            )
+        )
     sources.append(
         SourcePayload(
             "catalog",
