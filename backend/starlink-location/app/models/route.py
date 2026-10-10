@@ -5,12 +5,18 @@
 # properties. Splitting would fragment the route domain. Deferred to v0.4.0.
 
 from datetime import datetime, timezone
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
 class RoutePoint(BaseModel):
     """Represents a single point in a route (from KML coordinate)."""
+
+    occurrence_id: str | None = None
+    timing_source: Literal["waypoint", "interpolated"] | None = None
+    source_segment_order: int | None = None
+    source_vertex_index: int | None = None
 
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
     longitude: float = Field(
@@ -45,6 +51,9 @@ class RoutePoint(BaseModel):
 
 class RouteWaypoint(BaseModel):
     """Represents a waypoint parsed from a KML Placemark."""
+
+    occurrence_id: str | None = None
+    point_sequence: int | None = None
 
     name: str | None = Field(
         default=None, description="Waypoint name as defined in KML"
@@ -168,6 +177,11 @@ class RouteTimingProfile(BaseModel):
 
 class ParsedRoute(BaseModel):
     """Complete route data parsed from a KML file."""
+
+    ingestion_profile: Literal["planning_v1"] | None = None
+    content_hash: str | None = None
+    route_id: str | None = None
+    source_departure_time: datetime | None = None
 
     metadata: RouteMetadata = Field(..., description="Route metadata")
     points: list[RoutePoint] = Field(..., description="Ordered list of route points")

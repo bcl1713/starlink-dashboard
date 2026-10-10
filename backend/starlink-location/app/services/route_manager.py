@@ -5,13 +5,14 @@
 # Splitting would fragment route lifecycle management. Deferred to v0.4.0.
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
-
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
+from typing import Literal
 
 from app.models.route import ParsedRoute
 from app.services.kml_parser import KMLParseError, parse_kml_file
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +60,18 @@ class RouteManager:
     - Handles errors gracefully
     """
 
-    def __init__(self, routes_dir: str | Path = "/data/routes"):
+    def __init__(
+        self,
+        routes_dir: str | Path = "/data/routes",
+        *,
+        profile_resolver: (
+            Callable[[str], Literal["legacy", "planning_v1"]] | None
+        ) = None,
+    ):
         self.routes_dir = Path(routes_dir)
         self.routes_dir.mkdir(parents=True, exist_ok=True)
 
+        self._profile_resolver = profile_resolver
         self._routes: dict[str, ParsedRoute] = {}
         self._active_route_id: str | None = None
         self._observer: Observer | None = None
@@ -107,6 +116,23 @@ class RouteManager:
         for kml_file in self.routes_dir.glob("*.kml"):
             self._load_route_file(str(kml_file))
 
+    def resolve_ingestion_profile(
+        self, route_id: str
+    ) -> Literal["legacy", "planning_v1"]:
+        """Resolve durable ownership before parsing; invalid profiles fail closed.
+
+        Task-owned inventory providers must return an explicit profile, returning
+        legacy only for known unmanaged routes. Missing managed descriptors raise
+        KMLParseError. Install the provider before start_watching/reload.
+        """
+        resolver = getattr(self, "_profile_resolver", None)
+        profile = resolver(route_id) if resolver else "legacy"
+        if profile not in ("legacy", "planning_v1"):
+            raise KMLParseError(
+                "Missing or unknown route ingestion profile; explicit migration required"
+            )
+        return profile
+
     def _load_route_file(self, file_path: str) -> None:
         """
         Load a single KML file and add to routes cache.
@@ -117,7 +143,12 @@ class RouteManager:
         route_id = Path(file_path).stem
 
         try:
-            parsed_route = parse_kml_file(file_path)
+            profile = self.resolve_ingestion_profile(route_id)
+            parsed_route = (
+                parse_kml_file(file_path, profile=profile)
+                if profile != "legacy"
+                else parse_kml_file(file_path)
+            )
             self._routes[route_id] = parsed_route
             # Clear any previous error for this route
             if route_id in self._errors:

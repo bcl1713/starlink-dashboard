@@ -10,13 +10,15 @@ def planning_storage(tmp_path: Path, monkeypatch):
     from app.services import poi_manager, route_manager
 
     inherited_poi_init = poi_manager.POIManager.__init__
-    inherited_route_init = route_manager.RouteManager.__init__
+    from tests.conftest import original_route_init
+
+    inherited_route_init = original_route_init
 
     def poi_init(self, pois_file=None):
         inherited_poi_init(self, pois_file or tmp_path / "pois.json")
 
-    def route_init(self, routes_dir=None):
-        inherited_route_init(self, routes_dir or tmp_path / "routes")
+    def route_init(self, routes_dir=None, **kwargs):
+        inherited_route_init(self, routes_dir or tmp_path / "routes", **kwargs)
 
     monkeypatch.setattr(poi_manager.POIManager, "__init__", poi_init)
     monkeypatch.setattr(route_manager.RouteManager, "__init__", route_init)

@@ -78,6 +78,8 @@ def route_with_adjusted_departure(
         return route
 
     shifted = route.model_copy(deep=True)
+    if shifted.source_departure_time is None and route.timing_profile:
+        shifted.source_departure_time = route.timing_profile.departure_time
 
     if shifted.timing_profile:
         if shifted.timing_profile.departure_time:

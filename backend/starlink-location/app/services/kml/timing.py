@@ -3,6 +3,7 @@
 import logging
 import re
 from datetime import datetime, timezone
+from itertools import pairwise
 
 from app.models.route import RoutePoint, RouteTimingProfile, RouteWaypoint
 from app.services.kml.geometry import haversine_distance
@@ -270,3 +271,122 @@ def build_route_timing_profile(
 
     logger.debug(f"Insufficient timing data for route {route_name}")
     return None
+
+
+def assign_planning_timestamps(points, waypoints):
+    """Uniquely map ordered, timed primary waypoint visits to route occurrences.
+
+    Equal time/location representations collapse; later visits at that location
+    survive. Alternate timestamps never participate. Untimed interior vertices
+    interpolate by distance between confirmed visits.
+    """
+    from app.services.kml.validator import KMLParseError
+
+    timed = sorted(
+        [w for w in waypoints if w.role != "alternate" and w.expected_arrival_time],
+        key=lambda w: (w.expected_arrival_time, w.order),
+    )
+    groups = []
+    for waypoint in timed:
+        if (
+            groups
+            and waypoint.expected_arrival_time == groups[-1][0].expected_arrival_time
+            and haversine_distance(
+                waypoint.latitude,
+                waypoint.longitude,
+                groups[-1][0].latitude,
+                groups[-1][0].longitude,
+            )
+            < 1
+        ):
+            groups[-1].append(waypoint)
+        else:
+            groups.append([waypoint])
+    choices = []
+    for group in groups:
+        waypoint = group[0]
+        indices = [
+            i
+            for i, p in enumerate(points)
+            if haversine_distance(
+                p.latitude, p.longitude, waypoint.latitude, waypoint.longitude
+            )
+            < 1
+        ]
+        if not indices:
+            raise KMLParseError("Primary waypoint timing mapping is absent")
+        choices.append((group, indices))
+    # Dynamic-programming counts avoid recursion limits and exponential walks.
+    # Each layer retains only capped path counts and a predecessor when unique.
+    previous = {}
+    parents = []
+    for layer, (_, indices) in enumerate(choices):
+        counts = {}
+        predecessor = {}
+        total = 0
+        sole = None
+        for index in range(len(points)):
+            if layer and index - 1 in previous:
+                added = previous[index - 1]
+                if total == 0 and added == 1:
+                    sole = index - 1
+                elif added:
+                    sole = None
+                total = min(2, total + added)
+            if index in indices:
+                count = 1 if layer == 0 else total
+                if count:
+                    counts[index] = count
+                    predecessor[index] = sole
+        previous = counts
+        parents.append(predecessor)
+    if sum(previous.values()) != 1:
+        raise KMLParseError("Ambiguous primary waypoint occurrence timing mapping")
+    index = next(iter(previous))
+    mapping = []
+    for predecessor in reversed(parents):
+        mapping.append(index)
+        index = predecessor[index]
+    mapping.reverse()
+    retained = []
+    for (group, _), point_index in zip(choices, mapping):
+        point = points[point_index]
+        point.expected_arrival_time = group[0].expected_arrival_time
+        point.timing_source = "waypoint"
+        wp = group[0]
+        wp.occurrence_id = point.occurrence_id
+        wp.point_sequence = point_index
+        retained.append(wp)
+    if (
+        len(retained) < 2
+        or points[0].expected_arrival_time is None
+        or points[-1].expected_arrival_time is None
+    ):
+        raise KMLParseError(
+            "Planning route requires timed primary departure and arrival"
+        )
+    timed_indices = [i for i, p in enumerate(points) if p.expected_arrival_time]
+    for left, right in pairwise(timed_indices):
+        start, end = (
+            points[left].expected_arrival_time,
+            points[right].expected_arrival_time,
+        )
+        if end <= start:
+            raise KMLParseError("Primary route timestamps must increase")
+        lengths = [
+            haversine_distance(a.latitude, a.longitude, b.latitude, b.longitude)
+            for a, b in zip(points[left:right], points[left + 1 : right + 1])
+        ]
+        total = sum(lengths)
+        if total <= 0:
+            if right == left + 1:
+                continue
+            raise KMLParseError("Primary timing span has zero distance")
+        cumulative = 0.0
+        for i, length in enumerate(lengths[:-1], left + 1):
+            cumulative += length
+            points[i].expected_arrival_time = start + (end - start) * (
+                cumulative / total
+            )
+            points[i].timing_source = "interpolated"
+    return retained
