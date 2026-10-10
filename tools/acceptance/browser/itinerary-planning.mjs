@@ -278,7 +278,14 @@ export async function journey(context, origin, seed, output) {
     ).toBeVisible();
     // Resume the persisted result across navigation without generating or applying.
     const proposalWrites = writes.length;
+    const resumedPreview = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/preview") &&
+        response.request().method() === "POST" &&
+        response.status() === 200,
+    );
     await page.reload();
+    await resumedPreview;
     await page.getByRole("tab", { name: "X-band plan", exact: true }).click();
     await expect(
       page.getByRole("region", { name: "Proposal comparison" }),
