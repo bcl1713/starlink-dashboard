@@ -32,10 +32,10 @@ export function MissionDetailPage() {
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
   const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
-  const planning = usePlanning(
-    missionId || '',
-    !!mission?.metadata?.itinerary_planning
-  );
+  const managed = !!mission?.metadata?.itinerary_planning;
+  const planning = usePlanning(missionId || '', managed);
+  const planningResolved =
+    !managed || (!!planning.data && !planning.isLoading && !planning.error);
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
   const deleteMissionMutation = useDeleteMission();
@@ -193,10 +193,10 @@ export function MissionDetailPage() {
       </div>
 
       <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
-      {!!mission.metadata?.itinerary_planning && (
+      {managed && (
         <div className="space-y-4">
           <h2 className="text-base font-semibold">Itinerary legs</h2>
-          {planning.data ? (
+          {planningResolved && planning.data ? (
             <ExpectedLegCards
               view={planning.data}
               renderInstalledActions={renderInstalledActions}
@@ -235,7 +235,11 @@ export function MissionDetailPage() {
             </Button>
           </div>
         </div>
-        {mission.legs.length === 0 ? (
+        {!planningResolved ? (
+          <p className="text-muted-foreground">
+            Leg actions are unavailable until the itinerary draft loads.
+          </p>
+        ) : mission.legs.length === 0 ? (
           <p className="text-muted-foreground">
             No legs configured for this mission
           </p>

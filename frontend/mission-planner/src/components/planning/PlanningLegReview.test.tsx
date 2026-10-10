@@ -244,3 +244,56 @@ it('disables edits during a pending save so the response cannot overwrite new in
     screen.getByLabelText('Starshield enabled for this plan')
   ).toBeEnabled();
 });
+
+it('disables draft edits during deferred route acceptance and enables them after the response', async () => {
+  let resolveAccept!: (value: PlanningView) => void;
+  const binding = {
+    route_id: 'r',
+    content_hash: 'hash',
+    source_id: 's',
+    filename: 'accepted.kml',
+  };
+  vi.spyOn(planningApi, 'previewRoute').mockResolvedValue({
+    preview_id: 'p',
+    expected_revision: 7,
+    binding,
+    expires_at: '2026-10-26T12:00:00Z',
+  });
+  const accept = vi.spyOn(planningApi, 'acceptRoute').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveAccept = resolve;
+      })
+  );
+  const save = vi.spyOn(planningApi, 'saveDraft').mockResolvedValue(view);
+  setup();
+  await screen.findByLabelText('Starshield enabled for this plan');
+  fireEvent.change(screen.getByLabelText('KML for leg 3'), {
+    target: { files: [new File(['synthetic'], 'accepted.kml')] },
+  });
+  fireEvent.click(screen.getByText('Preview selected-leg KML'));
+  await screen.findByText('Accept route and review AR windows');
+  fireEvent.click(screen.getByText('Accept route and review AR windows'));
+  await waitFor(() => expect(accept).toHaveBeenCalled());
+  expect(
+    screen.getByLabelText('Starshield enabled for this plan')
+  ).toBeDisabled();
+  expect(screen.getByLabelText('AR section correction')).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
+  resolveAccept({
+    ...view,
+    revision: 8,
+    expected_legs: [{ ...card, leg: { ...card.leg, route: binding } }],
+  });
+  await screen.findByText('Route accepted. Review AR windows first.');
+  expect(
+    screen.getByLabelText('Starshield enabled for this plan')
+  ).toBeEnabled();
+  fireEvent.click(screen.getByLabelText('Starshield enabled for this plan'));
+  fireEvent.click(screen.getByText('Save draft'));
+  await waitFor(() => expect(save).toHaveBeenCalled());
+  expect(save.mock.calls[0][2]).toMatchObject({
+    expected_revision: 8,
+    draft: { starshield_enabled: false },
+  });
+});

@@ -92,11 +92,76 @@ it('renders each managed installed leg once, counts pending cards and keeps lega
   expect(screen.getAllByRole('button', { name: 'Simulate leg…' })).toHaveLength(
     3
   );
-  expect(
-    screen.getAllByRole('button', { name: 'Delete' })
-  ).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(1);
   expect(screen.getByRole('link', { name: 'Upload KML' })).toHaveAttribute(
     'href',
     '/missions/m/legs/expected-2'
   );
+});
+
+it.each([
+  { state: 'loading', isLoading: true, error: null },
+  {
+    state: 'failed',
+    isLoading: false,
+    error: new Error('Planning unavailable'),
+  },
+])(
+  'withholds installed-leg actions when managed planning is $state',
+  ({ isLoading, error }) => {
+    vi.mocked(useMission).mockReturnValue({
+      data: {
+        id: 'm',
+        name: 'Managed',
+        metadata: { itinerary_planning: {} },
+        legs: [{ id: 'installed', name: 'Installed managed', route_id: 'r' }],
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(usePlanning).mockReturnValue({
+      data: undefined,
+      isLoading,
+      error,
+    } as never);
+    render(
+      <MemoryRouter initialEntries={['/missions/m']}>
+        <Routes>
+          <Route path="/missions/:missionId" element={<MissionDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Simulate leg…' })).toBeNull();
+    expect(
+      screen.getByText(
+        error ? /Unable to load itinerary draft/ : /Loading itinerary draft/
+      )
+    ).toBeVisible();
+  }
+);
+it('keeps leg actions available for a confirmed unmanaged mission without planning data', () => {
+  vi.mocked(useMission).mockReturnValue({
+    data: {
+      id: 'm',
+      name: 'Unmanaged',
+      metadata: {},
+      legs: [{ id: 'legacy', name: 'Legacy', route_id: 'r' }],
+    },
+    isLoading: false,
+  } as never);
+  vi.mocked(usePlanning).mockReturnValue({
+    data: undefined,
+    isLoading: false,
+  } as never);
+  render(
+    <MemoryRouter initialEntries={['/missions/m']}>
+      <Routes>
+        <Route path="/missions/:missionId" element={<MissionDetailPage />} />
+      </Routes>
+    </MemoryRouter>
+  );
+  expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Activate' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Simulate leg…' })).toBeEnabled();
 });

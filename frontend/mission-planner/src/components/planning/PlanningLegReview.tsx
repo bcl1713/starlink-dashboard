@@ -198,7 +198,7 @@ function ReviewEditor({
   return (
     <fieldset
       className="app-page min-w-0 space-y-6"
-      disabled={planning.saveDraft.isPending}
+      disabled={planning.saveDraft.isPending || planning.acceptRoute.isPending}
       aria-label="Leg planning draft"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
