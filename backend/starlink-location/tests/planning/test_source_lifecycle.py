@@ -287,3 +287,374 @@ def test_standalone_unreferenced_legacy_route_delete_remains_compatible(service)
     assert manager.get_route(route_id) is None
     assert service.store.poi_manager.get_poi(poi.id) is None
     assert not path.exists()
+
+
+@pytest.mark.parametrize("boundary", ["endpoint", "release"])
+def test_owned_delete_rejects_directly_activated_zero_leg_route_before_mutation(
+    service, tmp_path, boundary
+):
+    from app.api.routes.management import activate_route
+    from app.mission.planning.errors import PlanningFailure
+    from app.mission.routes_v2 import delete_mission_endpoint
+    from app.mission.slide_cache.store import default_store
+    from app.models.poi import POICreate
+
+    view, _ = create(service)
+    bind(service, tmp_path)
+    mission, manifest = service.store._load(view.mission.id)
+    assert mission.legs == []
+    route_id = manifest.expected_legs[0].route.route_id
+    manager, pois = service.store.route_manager, service.store.poi_manager
+    pois.create_poi(
+        POICreate(
+            name="Owned marker",
+            latitude=0,
+            longitude=0,
+            mission_id=mission.id,
+            route_id=route_id,
+        )
+    )
+    runtime = Mock()
+    asyncio.run(activate_route(route_id, manager, pois, runtime))
+    runtime.reset_mock()
+    cache = default_store()
+    cache.request(mission.id, "draft", "digest", b"inputs")
+    before_cache = cache.records(mission.id)
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    before_route = manager.get_route(route_id).model_copy(deep=True)
+    with pytest.raises((HTTPException, PlanningFailure)) as raised:
+        if boundary == "endpoint":
+            asyncio.run(delete_mission_endpoint(mission.id, manager, pois, runtime))
+        else:
+            service.sources.release_owned(mission.id, tuple(manifest.source_revisions))
+    assert raised.value.status_code == 409
+    detail = (
+        raised.value.detail
+        if isinstance(raised.value, HTTPException)
+        else raised.value.error.model_dump()
+    )
+    assert "deactivate" in detail["action"].lower()
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    assert manager.get_active_route_id() == route_id
+    assert manager.get_route(route_id) == before_route
+    assert cache.records(mission.id) == before_cache
+    runtime.cancel_owned.assert_not_called()
+    runtime.runtime.cancel.assert_not_called()
+
+
+def test_release_rejects_inventory_parent_alias_before_any_unlink(service, tmp_path):
+    view, _ = create(service)
+    bind(service, tmp_path)
+    mission, manifest = service.store._load(view.mission.id)
+    inventory = service.sources.root / "inventory"
+    foreign = tmp_path / "foreign-inventory"
+    inventory.rename(foreign)
+    inventory.symlink_to(foreign, target_is_directory=True)
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    with pytest.raises(ValueError, match="path|alias|symlink"):
+        service.sources.release_owned(mission.id, tuple(manifest.source_revisions))
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+
+
+def test_mission_delete_retry_survives_removed_parent_metadata(
+    service, tmp_path, monkeypatch
+):
+    import os
+
+    from app.mission.routes_v2 import delete_mission_endpoint
+    from app.mission.slide_cache.store import default_store
+
+    view, _ = create(service)
+    bind(service, tmp_path)
+    mission, _ = service.store._load(view.mission.id)
+    directory = storage.get_mission_directory(mission.id)
+    payload = directory / "planning" / "proposals" / "retained.json"
+    payload.parent.mkdir(parents=True, exist_ok=True)
+    payload.write_bytes(b'{"retained":"synthetic deletion fixture"}')
+    foreign = tmp_path / "foreign-payload.json"
+    foreign.write_bytes(b"foreign")
+    cache = default_store()
+    cache.request("foreign", "leg", "hash", b"inputs")
+    before_cache = cache.records("foreign")
+    original = os.unlink
+
+    def fail_payload(path, *args, **kwargs):
+        if str(path).endswith(payload.name):
+            metadata = storage.get_mission_file_path(mission.id)
+            if metadata.exists():
+                original(metadata)
+            raise PermissionError("injected retained payload cleanup failure")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "unlink", fail_payload)
+    with pytest.raises(HTTPException) as raised:
+        asyncio.run(
+            delete_mission_endpoint(
+                mission.id, service.store.route_manager, service.store.poi_manager
+            )
+        )
+    assert raised.value.status_code == 503
+    assert raised.value.detail["retryable"] is True
+    assert raised.value.detail["remaining_paths"] == [str(payload)]
+    assert not storage.get_mission_file_path(mission.id).exists()
+    assert payload.exists()
+    monkeypatch.setattr(os, "unlink", original)
+    asyncio.run(
+        delete_mission_endpoint(
+            mission.id, service.store.route_manager, service.store.poi_manager
+        )
+    )
+    assert not directory.exists()
+    assert foreign.read_bytes() == b"foreign"
+    assert cache.records("foreign") == before_cache
+    assert not list((service.sources.root / "deletions").glob("*.json"))
+
+
+def _failed_deletion(service, tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from app.mission.routes_v2 import delete_mission_endpoint
+
+    view, _ = create(service)
+    bind(service, tmp_path)
+    directory = storage.get_mission_directory(view.mission.id)
+    payload = directory / "retained.json"
+    payload.write_bytes(b"original retained bytes")
+    original = Path.unlink
+
+    def fail(path, *args, **kwargs):
+        if path == payload:
+            raise PermissionError("injected payload removal failure")
+        return original(path, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "unlink", fail)
+        with pytest.raises(HTTPException) as raised:
+            asyncio.run(
+                delete_mission_endpoint(
+                    view.mission.id,
+                    service.store.route_manager,
+                    service.store.poi_manager,
+                )
+            )
+        assert raised.value.status_code == 503
+    return view.mission.id, payload
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "payload",
+        "new_file",
+        "metadata",
+        "owned_poi",
+        "cache",
+        "version",
+        "authority_alias",
+    ],
+)
+def test_delete_retry_rejects_changed_or_new_work_without_mutation(
+    service, tmp_path, monkeypatch, change
+):
+    import json
+
+    from app.mission.routes_v2 import delete_mission_endpoint
+    from app.mission.slide_cache.store import default_store
+    from app.models.poi import POICreate
+
+    owner, payload = _failed_deletion(service, tmp_path, monkeypatch)
+    authority = service.sources.root / "deletions" / f"{owner}.json"
+    if change == "payload":
+        payload.write_bytes(b"replacement work")
+    elif change == "new_file":
+        payload.with_name("new-work.json").write_bytes(b"new work")
+    elif change == "metadata":
+        storage.get_mission_file_path(owner).write_bytes(b'{"new":"metadata work"}')
+    elif change == "owned_poi":
+        service.store.poi_manager.create_poi(
+            POICreate(
+                name="New generated work", latitude=0, longitude=0, mission_id=owner
+            ),
+            generated_source="mission-timeline",
+        )
+    elif change == "cache":
+        default_store().request(owner, "new-leg", "new-digest", b"new inputs")
+    elif change == "version":
+        data = json.loads(authority.read_bytes())
+        data["version"] = 2
+        authority.write_text(json.dumps(data))
+    else:
+        foreign = tmp_path / "foreign-authority.json"
+        authority.rename(foreign)
+        authority.symlink_to(foreign)
+    before = {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+    with pytest.raises(HTTPException) as raised:
+        asyncio.run(
+            delete_mission_endpoint(
+                owner, service.store.route_manager, service.store.poi_manager
+            )
+        )
+    assert raised.value.status_code in {409, 422}
+    assert before == {
+        str(p): p.read_bytes()
+        for p in tmp_path.rglob("*")
+        if p.is_file() and p.suffix != ".lock"
+    }
+
+
+@pytest.mark.parametrize("phase", ["poi", "cache", "directory", "authority"])
+def test_delete_retry_covers_every_cleanup_phase_and_preserves_foreign_work(
+    service, tmp_path, monkeypatch, phase
+):
+    import sqlite3
+    from contextlib import contextmanager
+    from pathlib import Path
+
+    from app.mission.planning import deletion
+    from app.mission.routes_v2 import delete_mission_endpoint
+    from app.mission.slide_cache.store import SlideStore, default_store
+    from app.models.poi import POICreate
+
+    view, _ = create(service)
+    bind(service, tmp_path)
+    owner = view.mission.id
+    manager = service.store.poi_manager
+    owned = manager.create_poi(
+        POICreate(name="Owned", latitude=0, longitude=0, mission_id=owner),
+        generated_source="mission-timeline",
+    )
+    foreign = manager.create_poi(
+        POICreate(name="Foreign", latitude=0, longitude=0, mission_id="foreign"),
+        generated_source="mission-timeline",
+    )
+    cache = default_store()
+    cache.request(owner, "owned", "hash", b"inputs")
+    cache.request("foreign", "foreign", "hash", b"foreign inputs")
+    foreign_cache = cache.records("foreign")
+    directory = storage.get_mission_directory(owner)
+    authority = service.sources.root / "deletions" / f"{owner}.json"
+    expected_path = {
+        "poi": manager.pois_file,
+        "cache": cache.path,
+        "directory": directory,
+        "authority": authority,
+    }[phase]
+    with monkeypatch.context() as patch:
+        if phase == "poi":
+            original = deletion.atomic_write
+
+            def fail(path, data):
+                if path == manager.pois_file:
+                    raise PermissionError("injected POI cleanup failure")
+                return original(path, data)
+
+            patch.setattr(deletion, "atomic_write", fail)
+        elif phase == "cache":
+            original = SlideStore.connection
+
+            @contextmanager
+            def fail(store):
+                with original(store) as db:
+
+                    class Proxy:
+                        def execute(self, sql, *args):
+                            if sql.startswith("DELETE FROM slides"):
+                                raise sqlite3.OperationalError(
+                                    "injected cache cleanup failure"
+                                )
+                            return db.execute(sql, *args)
+
+                    yield Proxy()
+
+            patch.setattr(SlideStore, "connection", fail)
+        else:
+            name = "rmdir" if phase == "directory" else "unlink"
+            original = getattr(Path, name)
+
+            def fail(path, *args, **kwargs):
+                if path == expected_path:
+                    raise PermissionError("injected final cleanup failure")
+                return original(path, *args, **kwargs)
+
+            patch.setattr(Path, name, fail)
+        with pytest.raises(HTTPException) as raised:
+            asyncio.run(
+                delete_mission_endpoint(owner, service.store.route_manager, manager)
+            )
+        assert raised.value.status_code == 503
+        assert raised.value.detail["retryable"] is True
+        assert raised.value.detail["remaining_paths"] == [str(expected_path)]
+    assert authority.exists()
+    assert not storage.get_mission_file_path(owner).exists()
+    # An independent writer reuses a formerly owned POI ID for foreign work.
+    import json
+
+    from filelock import FileLock
+
+    with FileLock(str(manager.pois_file) + ".lock"):
+        data = json.loads(manager.pois_file.read_bytes())
+        replacement = foreign.model_dump(mode="json") | {
+            "id": owned.id,
+            "name": "Foreign replacement",
+            "generated_source": None,
+        }
+        data["pois"][owned.id] = replacement
+        manager.pois_file.write_text(json.dumps(data))
+    asyncio.run(delete_mission_endpoint(owner, service.store.route_manager, manager))
+    assert manager.get_poi(owned.id).name == "Foreign replacement"
+    assert not directory.exists()
+    assert not authority.exists()
+    assert not manager.list_pois(mission_id=owner)
+    assert manager.get_poi(foreign.id) == foreign
+    assert cache.records(owner) == {}
+    assert cache.records("foreign") == foreign_cache
+
+
+def test_final_cleanup_preserves_new_interleaved_file_and_retry_authority(
+    service, monkeypatch
+):
+    from pathlib import Path
+
+    from app.mission.routes_v2 import delete_mission_endpoint
+
+    view, _ = create(service)
+    metadata = storage.get_mission_file_path(view.mission.id)
+    foreign = metadata.with_name("new-independent-work.json")
+    original = Path.unlink
+
+    def interleaved(path, *args, **kwargs):
+        result = original(path, *args, **kwargs)
+        if path == metadata:
+            foreign.write_bytes(b"new independent work")
+        return result
+
+    monkeypatch.setattr(Path, "unlink", interleaved)
+    with pytest.raises(HTTPException) as raised:
+        asyncio.run(
+            delete_mission_endpoint(
+                view.mission.id, service.store.route_manager, service.store.poi_manager
+            )
+        )
+    assert raised.value.status_code == 409
+    assert foreign.read_bytes() == b"new independent work"
+    assert (service.sources.root / "deletions" / f"{view.mission.id}.json").exists()

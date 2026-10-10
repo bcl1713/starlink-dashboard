@@ -370,8 +370,32 @@ async def delete_mission_endpoint(
         # Activation already uses this order, so deletion cannot form an AB/BA
         # cycle while activation persists the same parent.
         with get_active_leg_lock(), get_mission_lock(mission_id):
-            # Check mission exists
-            mission = load_mission_v2(mission_id)
+            # A durable deletion authority survives partially removed metadata.
+            from app.mission import storage
+            from app.mission.planning.deletion import (
+                delete_owned,
+                load_record,
+                verified_store,
+            )
+            from app.mission.planning.errors import PlanningFailure
+            from app.mission.planning.sources import SourceStore, route_references
+
+            record = None
+            if getattr(route_manager, "routes_dir", None) is not None:
+                try:
+                    record = load_record(
+                        SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir),
+                        mission_id,
+                    )
+                except ValueError as exc:
+                    raise HTTPException(
+                        422,
+                        detail={
+                            "code": "invalid_deletion_authority",
+                            "message": str(exc),
+                        },
+                    ) from exc
+            mission = record.mission if record else load_mission_v2(mission_id)
             if not mission:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -387,65 +411,31 @@ async def delete_mission_endpoint(
                     },
                 )
 
-            from app.mission import storage
-            from app.mission.planning.errors import PlanningFailure
-            from app.mission.planning.models import PlanningManifest
-            from app.mission.planning.sources import (
-                SourceStore,
-                route_references,
-                source_closure,
-            )
-
             raw = mission.metadata.get("itinerary_planning")
             if raw is not None:
-                if route_manager is None:
+                if route_manager is None or poi_manager is None:
                     raise HTTPException(
-                        503, detail="Route manager required for owned source deletion"
+                        503,
+                        detail="Verified route and POI managers required for owned deletion",
                     )
-                sources = SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir)
-                manifest = PlanningManifest.model_validate(raw)
-                references = source_closure(mission, manifest)
                 try:
-                    sources.release_owned(mission_id, references)
+                    store = verified_store(route_manager, poi_manager)
+                    delete_owned(store, mission_id, run_service)
                 except PlanningFailure as exc:
                     raise HTTPException(
                         exc.status_code,
                         detail={
                             **exc.error.model_dump(mode="json"),
-                            "remaining_paths": list(exc.remaining_paths),
+                            "remaining_paths": list(
+                                getattr(exc, "remaining_paths", ())
+                            ),
                         },
                     ) from exc
-                for source in references:
-                    if (
-                        source.kind == "route_kml"
-                        and not (
-                            Path(route_manager.routes_dir) / f"{source.id}.kml"
-                        ).exists()
-                    ):
-                        route_manager._routes.pop(source.id, None)
-                if run_service:
-                    run_service.cancel_owned(mission_id, None, "Deleted")
-                if poi_manager:
-                    retained = mission.legs + [
-                        history.installed_leg
-                        for history in manifest.leg_history
-                        if history.installed_leg is not None
-                    ]
-                    owned_endpoints = {
-                        (leg.route_id, _endpoint_marker(leg.id, role))
-                        for leg in retained
-                        for role in ("departure", "arrival")
-                    }
-                    for poi in poi_manager.list_pois(mission_id=mission_id):
-                        if (
-                            poi.generated_source == "mission-timeline"
-                            or (poi.route_id, poi.description) in owned_endpoints
-                        ):
-                            poi_manager.delete_poi(poi.id)
-                from app.mission.slide_cache.store import default_store
-
-                default_store().remove_except(mission_id, [])
-                shutil.rmtree(get_mission_directory(mission_id))
+                except ValueError as exc:
+                    raise HTTPException(
+                        422,
+                        detail={"code": "invalid_owned_deletion", "message": str(exc)},
+                    ) from exc
                 return
 
             if run_service:

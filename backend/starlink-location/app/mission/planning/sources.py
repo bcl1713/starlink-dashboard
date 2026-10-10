@@ -301,16 +301,22 @@ class SourceStore:
         )
         return accepted, files
 
-    @planning_read_gate
-    def release_owned(
+    def validate_release(
         self, mission_id: str, references: tuple[SourceRevision, ...]
-    ) -> None:
-        """Release verified, unreferenced bytes; retain exact failed paths for retry."""
+    ) -> tuple[Path, ...]:
+        """Validate every release path and active reference before any unlink."""
         from app.mission import storage
 
         from .models import PlanningManifest
 
-        mission = storage.load_mission_v2(mission_id)
+        if self._store is None:
+            raise ValueError("Owned release requires an explicitly bound store context")
+        self.bind_store(self._store)
+        if self._store.root != storage.MISSIONS_DIR.resolve():
+            raise ValueError("Owned release store root changed")
+        from .deletion import ownership_mission
+
+        mission = ownership_mission(self, mission_id)
         if mission is None or "itinerary_planning" not in mission.metadata:
             raise ValueError("Owned source release requires its persisted mission")
         accepted = source_closure(
@@ -320,6 +326,16 @@ class SourceStore:
         if any(source not in accepted for source in references):
             raise ValueError(
                 "Source ownership is not established by the owning mission"
+            )
+        active = self._store.route_manager.get_active_route_id()
+        if any(
+            source.kind == "route_kml" and source.id == active for source in references
+        ):
+            raise PlanningFailure(
+                409,
+                "ACTIVE_ROUTE_DELETION_FORBIDDEN",
+                "A retained route is selected for tracking.",
+                action="Deactivate the selected route, then delete the owning mission.",
             )
         candidates = []
         for source in references:
@@ -342,10 +358,12 @@ class SourceStore:
                     ]
                 )
             for path in paths:
+                if path.resolve() != path:
+                    raise ValueError(
+                        "Owned source path cannot contain a filesystem alias"
+                    )
                 if not path.exists():
                     continue
-                if path.is_symlink():
-                    raise ValueError("Owned source path cannot be a symlink")
                 data = path.read_bytes()
                 if path.suffix in {".pdf", ".kml"}:
                     if hashlib.sha256(data).hexdigest() != source.content_hash:
@@ -362,6 +380,14 @@ class SourceStore:
                 elif SourceRevision.model_validate_json(data) != source:
                     raise ValueError(f"Owned inventory changed: {path}")
             candidates.extend(paths)
+        return tuple(candidates)
+
+    @planning_read_gate
+    def release_owned(
+        self, mission_id: str, references: tuple[SourceRevision, ...]
+    ) -> None:
+        """Release verified, unreferenced bytes; retain exact failed paths for retry."""
+        candidates = self.validate_release(mission_id, references)
         remaining = []
         for path in candidates:
             try:
