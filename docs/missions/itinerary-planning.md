@@ -95,10 +95,13 @@ retain their history but leave the live itinerary. Lower source revisions need
 explicit acknowledgment. An identical source makes no change.
 
 Mission ZIP packages preserve planning sources and retained references.
-Importing an existing identifier clones the package graph with new identifiers.
-Partial itineraries keep expected numbering: reviewed legs 1 and 3 of three
-remain **LEG 1 OF 3** and **LEG 3 OF 3**, without an executable placeholder for
-leg 2. See
+Importing an existing mission identifier creates a new parent mission and remaps
+colliding source and route identifiers throughout the package graph. Leg
+identifiers remain scoped to their parent mission. Clones retain historical
+reviews and inactive installed legs, but remapped dependencies can require a new
+current review; open **Review leg** to preview and confirm again. Partial
+itineraries keep expected numbering: reviewed legs 1 and 3 of three remain **LEG
+1 OF 3** and **LEG 3 OF 3**, without an executable placeholder for leg 2. See
 [package upload limits](../setup/configuration/mission-package-upload-limits.md).
 
 A standalone route DELETE returns a conflict while any mission retains the

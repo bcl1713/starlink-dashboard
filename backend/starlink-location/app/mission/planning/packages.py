@@ -452,6 +452,12 @@ def stage_package(
                     mission_id=mission.id,
                 )
                 pois[poi.id] = json_bytes(_poi_record(poi))
+        # Storage's normal configured root may be relative to the process cwd.
+        # Make trusted destinations absolute without resolving away aliases.
+        absolute_files = {path.absolute(): data for path, data in files.items()}
+        if len(absolute_files) != len(files):
+            raise ValueError("Duplicate import destination")
+        files = absolute_files
         if any(p.resolve() != p for p in files):
             raise ValueError("Import destinations cannot contain filesystem aliases")
         before = tuple((str(p), p.read_bytes() if p.exists() else None) for p in files)

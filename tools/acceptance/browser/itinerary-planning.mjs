@@ -304,6 +304,7 @@ export async function journey(context, origin, seed, output) {
     ).toHaveCount(2);
     await expect(page.getByText("Leg 3 of 3", { exact: true })).toBeVisible();
     await record("resume-partial-1-and-3");
+    const beforeClone = await read();
     const exported = await api.post(
       `${origin}/api/v2/missions/${mission}/export`,
       { data: {}, timeout: 120000 },
@@ -329,11 +330,135 @@ export async function journey(context, origin, seed, output) {
     );
     assert.equal(cloneView.expected_legs.length, 3);
     assert.equal(cloneView.mission.legs.length, 2);
-    assert(
-      cloneView.expected_legs.every(
-        (c) => !cards.some((old) => old.leg.id === c.leg.id),
-      ),
+    const verifyClone = (original, cloned) => {
+      assert.notEqual(cloned.mission.id, original.mission.id);
+      assert.deepEqual(
+        cloned.expected_legs.map((c) => c.leg.id),
+        original.expected_legs.map((c) => c.leg.id),
+      );
+      assert.deepEqual(
+        cloned.mission.legs.map((l) => l.id),
+        original.mission.legs.map((l) => l.id),
+      );
+      const oldSources =
+        original.mission.metadata.itinerary_planning.source_revisions;
+      const newSources =
+        cloned.mission.metadata.itinerary_planning.source_revisions;
+      assert.equal(newSources.length, oldSources.length);
+      const remaps = new Map(
+        oldSources.map((source, index) => {
+          const replacement = newSources[index];
+          assert.equal(replacement.owner, cloned.mission.id);
+          assert.equal(replacement.content_hash, source.content_hash);
+          assert(!oldSources.some((old) => old.id === replacement.id));
+          return [source.id, replacement.id];
+        }),
+      );
+      const compareReferences = (originalValue, clonedValue, key) => {
+        if (Array.isArray(originalValue)) {
+          assert.equal(clonedValue.length, originalValue.length);
+          originalValue.forEach((value, index) =>
+            compareReferences(value, clonedValue[index], key),
+          );
+        } else if (originalValue && typeof originalValue === "object") {
+          for (const [field, value] of Object.entries(originalValue))
+            compareReferences(value, clonedValue?.[field], field);
+        } else if (
+          ["route_id", "source_id", "source_ids"].includes(key) &&
+          remaps.has(originalValue)
+        ) {
+          assert.equal(clonedValue, remaps.get(originalValue));
+        } else if (
+          ["owner", "mission_id"].includes(key) &&
+          originalValue === original.mission.id
+        ) {
+          assert.equal(clonedValue, cloned.mission.id);
+        }
+      };
+      compareReferences(original.mission, cloned.mission);
+      assert(cloned.mission.legs.every((leg) => leg.is_active === false));
+      assert.equal(
+        cloned.mission.metadata.itinerary_planning.review_records.length,
+        original.mission.metadata.itinerary_planning.review_records.length,
+      );
+      for (const card of cloned.expected_legs.filter(
+        (item) => item.leg.route,
+      )) {
+        assert.equal(card.review_status, "needs_review");
+        assert.equal(card.leg.review, null);
+        assert(
+          card.errors.some(
+            (error) => error.code === "review_dependencies_changed",
+          ),
+        );
+      }
+      original.expected_legs.forEach((card, index) => {
+        const context = card.leg.draft.evaluation_context;
+        if (context) {
+          const retained =
+            cloned.expected_legs[index].leg.draft.evaluation_context;
+          for (const key of [
+            "seed_times",
+            "candidate_times",
+            "boundaries",
+            "height_profile",
+          ])
+            assert.deepEqual(retained[key], context[key]);
+        }
+      });
+      return compareReferences;
+    };
+    const compareCloneReferences = verifyClone(beforeClone, cloneView);
+    const scopedPreview = async (view) => {
+      const card = view.expected_legs[0];
+      const result = await api.post(
+        `${origin}/api/v2/missions/planning/missions/${view.mission.id}/legs/${card.leg.id}/preview`,
+        {
+          data: { expected_revision: view.revision, draft: card.leg.draft },
+        },
+      );
+      assert(
+        result.ok(),
+        `cloned-parent child preview: ${await result.text()}`,
+      );
+      return result.json();
+    };
+    const originalPreview = await scopedPreview(beforeClone);
+    const clonedPreview = await scopedPreview(cloneView);
+    for (const metric of [
+      "outage_seconds",
+      "longest_gap_seconds",
+      "swap_count",
+    ])
+      assert.equal(clonedPreview[metric], originalPreview[metric]);
+    assert.deepEqual(
+      await read(),
+      beforeClone,
+      "clone import must preserve the original mission",
     );
+    for (const ref of beforeClone.mission.metadata.itinerary_planning
+      .proposal_refs) {
+      const suffix = `/legs/${ref.leg_id}/proposals/${ref.id}`;
+      const originalProposal = await json(
+        `/api/v2/missions/planning/missions/${mission}${suffix}`,
+      );
+      const clonedProposal = await json(
+        `/api/v2/missions/planning/missions/${clone.mission_id}${suffix}`,
+      );
+      compareCloneReferences(originalProposal, clonedProposal);
+      for (const field of ["baseline_evaluation", "candidate_evaluation"]) {
+        assert(originalProposal[field] && clonedProposal[field]);
+        for (const metric of [
+          "outage_seconds",
+          "longest_gap_seconds",
+          "swap_count",
+        ])
+          assert.equal(
+            clonedProposal[field][metric],
+            originalProposal[field][metric],
+          );
+      }
+    }
     const reexport = await api.post(
       `${origin}/api/v2/missions/${clone.mission_id}/export`,
       { data: {}, timeout: 120000 },
@@ -352,10 +477,20 @@ export async function journey(context, origin, seed, output) {
     assert(roundtrip.ok(), await roundtrip.text());
     const round = await roundtrip.json();
     assert(round.success && round.mission_id !== clone.mission_id);
+    verifyClone(
+      cloneView,
+      await json(`/api/v2/missions/planning/missions/${round.mission_id}`),
+    );
     await page.goto(`${origin}/missions/${clone.mission_id}`);
     await expect(
-      page.getByRole("link", { name: "Open reviewed plan" }),
+      page.getByRole("link", { name: "Review leg", exact: true }),
     ).toHaveCount(2);
+    await expect(page.getByText("Needs review", { exact: true })).toHaveCount(
+      2,
+    );
+    await expect(
+      page.getByRole("link", { name: "Open reviewed plan" }),
+    ).toHaveCount(0);
     await record("package-collision-roundtrip", { clone, cloneView, round });
     await page.goto(`${origin}/missions/${mission}/legs/${cards[0].leg.id}`);
     const beforeReplacement = await read();
