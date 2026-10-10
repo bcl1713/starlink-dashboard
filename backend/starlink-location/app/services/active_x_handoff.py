@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from app.mission.models import MissionLeg, XTransition
 from app.models.route import ParsedRoute
 from app.models.telemetry import TelemetryData
 from app.services.position_freshness import position_observation
-from app.services.route_eta_calculator import RouteETACalculator
+from app.services.route_eta_calculator import (
+    RouteETACalculator,
+    project_point_to_line_segment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,8 @@ class XHandoffTracker:
     """In-process guard state for live X-band handoff transitions."""
 
     committed_transition_ids: set[str] = field(default_factory=set)
+    observed_at: datetime | None = None
+    furthest_observed_progress: float | None = None
 
 
 @dataclass(frozen=True)
@@ -90,7 +95,15 @@ def resolve_active_x_context(
         telemetry.position.observed_at,
         datetime.now(timezone.utc),
     )
-    if position_state != "fresh":
+    anchored = any(t.anchor is not None for t in leg.transports.x_transitions)
+    duplicate = (
+        anchored
+        and tracker.observed_at is not None
+        and telemetry.position.observed_at is not None
+        and position_state == "fresh"
+        and telemetry.position.observed_at <= tracker.observed_at
+    )
+    if position_state != "fresh" or duplicate:
         handoff = empty_handoff_context()
         for transition_progress, transition in transitions:
             if transition.id in tracker.committed_transition_ids:
@@ -104,10 +117,12 @@ def resolve_active_x_context(
                 }
         return ActiveXContext(current_satellite, None, handoff)
 
-    current_progress = _project_progress(
-        route,
-        telemetry.position.latitude,
-        telemetry.position.longitude,
+    current_progress = (
+        _observed_progress(route, telemetry, tracker)
+        if anchored
+        else _project_progress(
+            route, telemetry.position.latitude, telemetry.position.longitude
+        )
     )
     if current_progress is None:
         return ActiveXContext(current_satellite, None, empty_handoff_context())
@@ -179,18 +194,16 @@ def _project_transitions(
 
 
 def _tracker_for(leg: MissionLeg, route: ParsedRoute) -> XHandoffTracker:
-    transition_ids = ",".join(
-        transition.id for transition in leg.transports.x_transitions or []
+    # IDs alone survive route and configuration replacement. Scope all live
+    # memory to the actual route and selected X schedule, including anchors.
+    identity = hashlib.sha256(
+        route.model_dump_json(exclude={"metadata": {"imported_at"}}).encode()
     )
-    key = f"{leg.id}:{_route_id(route) or ''}:{transition_ids}"
+    identity.update((leg.transports.initial_x_satellite_id or "").encode())
+    for transition in leg.transports.x_transitions:
+        identity.update(transition.model_dump_json().encode())
+    key = f"{leg.id}:{identity.hexdigest()}"
     return _HANDOFF_TRACKERS.setdefault(key, XHandoffTracker())
-
-
-def _route_id(route: ParsedRoute) -> str | None:
-    file_path = route.metadata.file_path
-    if not file_path:
-        return None
-    return Path(file_path).stem
 
 
 def _handoff_context(
@@ -216,6 +229,56 @@ def _handoff_context(
         "route_progress_percent": round(route_progress, 6),
         "transition_progress_percent": round(transition_progress, 6),
     }
+
+
+def _observed_progress(
+    route: ParsedRoute, telemetry: TelemetryData, tracker: XHandoffTracker
+) -> float | None:
+    """Disambiguate repeated geometry using only fresh observed route history.
+
+    Position chooses the nearest segments. Among coincident projections, choose
+    the occurrence nearest the prior observed progress; a tie advances forward.
+    Without prior evidence the earliest occurrence wins. Planned timestamps and
+    mission clock never resolve an ambiguous live position.
+    """
+    candidates = []
+    distance_along = 0.0
+    position = telemetry.position
+    for start, end in zip(route.points, route.points[1:]):
+        lat, lon, offset = project_point_to_line_segment(
+            position.latitude,
+            position.longitude,
+            start.latitude,
+            start.longitude,
+            end.latitude,
+            end.longitude,
+        )
+        distance = distance_along + _distance_meters(
+            start.latitude, start.longitude, lat, lon
+        )
+        candidates.append((offset, distance))
+        distance_along += _distance_meters(
+            start.latitude, start.longitude, end.latitude, end.longitude
+        )
+    if not candidates or distance_along <= 0:
+        return _project_progress(route, position.latitude, position.longitude)
+    # One metre absorbs floating point differences at shared vertices; it is
+    # not a geographic handoff zone or permission to jump to a distant leg.
+    nearest = min(offset for offset, _ in candidates)
+    distances = [distance for offset, distance in candidates if offset <= nearest + 1]
+    previous = tracker.furthest_observed_progress
+    if previous is None:
+        chosen = min(distances)
+    else:
+        previous_distance = previous * distance_along / 100
+        closest = min(abs(distance - previous_distance) for distance in distances)
+        contiguous = [d for d in distances if abs(d - previous_distance) <= closest + 1]
+        forward = [d for d in contiguous if d >= previous_distance]
+        chosen = min(forward) if forward else max(contiguous)
+    progress = 100 * chosen / distance_along
+    tracker.observed_at = position.observed_at
+    tracker.furthest_observed_progress = max(previous or 0, progress)
+    return progress
 
 
 def _project_progress(

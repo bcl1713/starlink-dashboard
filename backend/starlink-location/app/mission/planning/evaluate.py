@@ -194,7 +194,7 @@ def timeline_segments(evaluation, mission_id):
                 else TimelineStatus.SOF if i.safety_reasons else TimelineStatus.NOMINAL
             )
         )
-        reasons = [*i.physical_reasons, *i.policy_reasons]
+        reasons = [*i.physical_reasons, *i.policy_reasons, *i.safety_reasons]
         if "x_aft_cone" in i.raw_constraints:
             reasons.append("X-Ku Conflict")
         result.append(

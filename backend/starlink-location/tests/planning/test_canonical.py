@@ -1,3 +1,5 @@
+import pytest
+
 from app.mission.models import MissionLeg
 from app.mission.timeline_preparation import prepare_mission_timeline
 
@@ -132,7 +134,7 @@ def test_repeated_kml_bind_api_reload_canonical_equivalence(
             id=str(n),
             latitude=0,
             longitude=1,
-            target_satellite_id="WEST",
+            target_satellite_id=("WEST", "SOUTH")[n],
             anchor=_candidates(t, "second", route)[0],
         )
         for n, t in enumerate((utc("10:00:20"), utc("11:00:40")))
@@ -160,6 +162,24 @@ def test_repeated_kml_bind_api_reload_canonical_equivalence(
     ]
     projected = _project_transitions(route, transitions)
     assert projected[1][0] > projected[0][0]
+    from app.services.active_x_handoff import (
+        reset_x_handoff_state,
+        resolve_active_x_context,
+    )
+    from tests.unit.test_active_x_handoff import _telemetry
+
+    installed.transports.x_transitions = transitions
+    reset_x_handoff_state()
+    try:
+        first = resolve_active_x_context(installed, route, _telemetry(0, 1, 45))
+        assert first.current_satellite_id == "WEST"
+        resolve_active_x_context(installed, route, _telemetry(1, 2, 225))
+        second = resolve_active_x_context(installed, route, _telemetry(0, 1, 90))
+        assert second.current_satellite_id == "SOUTH"
+        assert second.pending_satellite_id is None
+        assert second.handoff["route_progress_percent"] == pytest.approx(65.685002)
+    finally:
+        reset_x_handoff_state()
 
 
 from .test_store import service as service_fixture
@@ -358,3 +378,41 @@ def test_cached_released_conflict_never_becomes_down_from_text(monkeypatch):
     result = project_briefing_leg(snapshot)
     assert all(i.decisions[2].value != "Down" for i in result.intervals)
     assert all(i.decisions[1].value == "Down" for i in result.intervals)
+
+
+@pytest.mark.parametrize("impairment", ["none", "policy", "physical"])
+def test_canonical_safety_markers_survive_with_and_without_rf_outage(
+    monkeypatch, impairment
+):
+    from app.mission.planning.inputs import draft_to_mission_leg
+
+    inputs, draft, context, _, manager, pois, _ = scenario(monkeypatch)
+    if impairment != "policy":
+        draft.initial_x_satellite_id = "WEST"
+    if impairment == "physical":
+        # An observed low elevation is independent of takeoff/landing safety.
+        monkeypatch.setattr(
+            "app.mission.planning.evaluate.look_angles", lambda *args: (90, 5)
+        )
+    artifacts = prepare_mission_timeline(
+        draft_to_mission_leg(inputs, draft, context, leg_id="safety"),
+        manager,
+        pois,
+        discover_coverage=False,
+    )
+    evaluation = artifacts.planning_evaluation
+    assert evaluation.outage_seconds == (0 if impairment == "none" else 60)
+    assert evaluation.backup_gaps == []
+    segment = artifacts.timeline.segments[0]
+    assert set(segment.metadata["operational_markers"]) == {
+        "Takeoff safety window",
+        "Landing safety window",
+    }
+    assert "safety" in " ".join(segment.reasons).lower()
+    if impairment == "none":
+        assert segment.status == "sof"
+        assert segment.metadata["call_posture"] == "Avoid calls"
+        assert segment.impacted_transports == []
+    else:
+        assert segment.x_state != "available"
+        assert segment.metadata["call_posture"] != "Nominal calls"
