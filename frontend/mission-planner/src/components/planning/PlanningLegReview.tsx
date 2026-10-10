@@ -1,28 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { usePlanning } from '../../hooks/api/usePlanning';
+import { usePlanningLegWorkflow } from '../../hooks/usePlanningLegWorkflow';
 import {
   planningApi,
   planningErrorMessage,
   planningDisplayCount,
 } from '../../services/planning';
 import { routesApi } from '../../services/routes';
-import type {
-  ExpectedLegCard,
-  PlanningDraft,
-  PlanningView,
-  RouteBindingPreview,
-} from '../../types/planning';
+import type { ExpectedLegCard, PlanningView } from '../../types/planning';
 import { ARReview } from './ARReview';
 import { PermittedSatellites } from './PermittedSatellites';
-import { PlanningXDraft } from './PlanningXDraft';
+import { XBandPlanReview } from './XBandPlanReview';
+import { UnresolvedARWindows } from './UnresolvedARWindows';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { KaOutageConfig } from '../satellites/KaOutageConfig';
 import { KuOutageConfig } from '../satellites/KuOutageConfig';
 import { ManualAARTrackEditor } from '../aar/ManualAARTrackEditor';
+import { LegMapVisualization } from '../../pages/LegDetailPage/LegMapVisualization';
 
 export function PlanningLegReview({
   missionId,
@@ -74,23 +72,7 @@ function ReviewEditor({
 }) {
   const navigate = useNavigate();
   const leg = card.leg;
-  const [draft, setDraft] = useState<PlanningDraft>(() => ({
-    ...leg.draft,
-    ar_corrections: leg.draft?.ar_corrections?.length
-      ? leg.draft.ar_corrections
-      : (leg.ar_rows ?? []),
-  }));
-  const [section, setSection] = useState(leg.ar_section_status ?? 'empty');
-  const [expectedRevision, setExpectedRevision] = useState(view.revision);
-  const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState('ar');
-  const [file, setFile] = useState<File | null>(null);
-  const [routePreview, setRoutePreview] = useState<RouteBindingPreview | null>(
-    null
-  );
-  const [acknowledgments, setAcknowledgments] = useState<string[]>([]);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const arTab = useRef<HTMLButtonElement>(null);
   const options = useQuery({
     queryKey: ['planning-satellite-options'],
@@ -102,103 +84,53 @@ function ReviewEditor({
     queryFn: () => routesApi.get(leg.route!.route_id),
     enabled: !!leg.route,
   });
-  const change = (updates: Partial<PlanningDraft>) => {
-    setDraft((current) => ({ ...current, ...updates }));
-    setDirty(true);
-    setMessage('');
-  };
-  useEffect(() => {
-    if (!dirty) return;
-    const beforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', beforeUnload);
-    return () => window.removeEventListener('beforeunload', beforeUnload);
-  }, [dirty]);
-  const returnToMission = () => {
-    if (
-      !dirty ||
-      window.confirm(
-        'You have unsaved changes. Are you sure you want to leave?'
-      )
-    )
-      navigate(`/missions/${view.mission.id}`);
-  };
-  const preview = async () => {
-    if (!file) return;
-    setError('');
-    setMessage('');
-    try {
-      const staged = await planning.previewRoute.mutateAsync({
-        legId: leg.id,
-        file,
-        expectedRevision,
-      });
-      setRoutePreview(staged);
-      setAcknowledgments([]);
-    } catch (e) {
-      setError(planningErrorMessage(e));
-    }
-  };
-  const accept = async () => {
-    if (!routePreview) return;
-    setError('');
-    try {
-      const accepted = await planning.acceptRoute.mutateAsync({
-        legId: leg.id,
-        previewId: routePreview.preview_id,
-        expectedRevision: routePreview.expected_revision,
-        acknowledgments,
-      });
-      const current = accepted.expected_legs.find(
-        (card) => card.leg.id === leg.id
-      )!.leg;
-      if (!dirty)
-        setDraft({
-          ...current.draft,
-          ar_corrections: current.draft?.ar_corrections?.length
-            ? current.draft.ar_corrections
-            : (current.ar_rows ?? []),
-        });
-      setExpectedRevision(accepted.revision);
+  const {
+    draft,
+    section,
+    setSection,
+    expectedRevision,
+    dirty,
+    proposal,
+    evaluation,
+    previewError,
+    planConfirmed,
+    setPlanConfirmed,
+    gapAcknowledged,
+    setGapAcknowledged,
+    file,
+    setFile,
+    routePreview,
+    setRoutePreview,
+    acknowledgments,
+    setAcknowledgments,
+    message,
+    error,
+    change,
+    returnToMission,
+    preview,
+    accept,
+    save,
+    optimize,
+    apply,
+    reviewed,
+    reload,
+    invalid,
+    pending,
+  } = usePlanningLegWorkflow({
+    card,
+    view,
+    planning,
+    satelliteOptions: options.data,
+    navigate,
+    onAcceptedRoute: () => {
       setTab('ar');
-      setMessage('Route accepted. Review AR windows first.');
       setTimeout(() => arTab.current?.focus(), 0);
-    } catch (e) {
-      setError(planningErrorMessage(e));
-    }
-  };
-  const save = async () => {
-    setError('');
-    setMessage('');
-    try {
-      const saved = await planning.saveDraft.mutateAsync({
-        legId: leg.id,
-        draft,
-        expectedRevision,
-        arSectionStatus: section,
-      });
-      const current = saved.expected_legs.find(
-        (card) => card.leg.id === leg.id
-      )!.leg;
-      setDraft(current.draft ?? {});
-      setSection(current.ar_section_status ?? 'empty');
-      setExpectedRevision(saved.revision);
-      setDirty(false);
-      setMessage('Draft saved.');
-    } catch (e) {
-      setError(planningErrorMessage(e));
-    }
-  };
-  const pending =
-    planning.previewRoute.isPending ||
-    planning.acceptRoute.isPending ||
-    planning.saveDraft.isPending;
+    },
+  });
   return (
     <fieldset
       className="app-page min-w-0 space-y-6"
-      disabled={planning.saveDraft.isPending || planning.acceptRoute.isPending}
+      disabled={pending}
       aria-label="Leg planning draft"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -312,6 +244,7 @@ function ReviewEditor({
             : 'Loading configured satellites…'}
         </p>
       )}
+      {previewError && <p role="alert">{previewError}</p>}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger ref={arTab} value="ar">
@@ -323,6 +256,12 @@ function ReviewEditor({
           <TabsTrigger value="manual">Manual AR Tracks</TabsTrigger>
         </TabsList>
         <TabsContent value="ar">
+          <UnresolvedARWindows
+            leg={leg}
+            draft={draft}
+            routePoints={coordinates.data?.points ?? []}
+            onChange={change}
+          />
           <ARReview
             leg={leg}
             rows={draft.ar_corrections ?? []}
@@ -353,11 +292,17 @@ function ReviewEditor({
           )}
         </TabsContent>
         <TabsContent value="x">
-          <PlanningXDraft
+          <XBandPlanReview
             leg={leg}
             draft={draft}
             onChange={change}
             options={options.data ?? { satellites: [] }}
+            routePoints={coordinates.data?.points ?? []}
+            evaluation={evaluation}
+            proposal={proposal}
+            onApply={apply}
+            onReoptimize={optimize}
+            disabled={pending}
           />
         </TabsContent>
         <TabsContent value="ka">
@@ -395,10 +340,58 @@ function ReviewEditor({
           />
         </TabsContent>
       </Tabs>
-      <p className="text-sm text-muted-foreground">
-        Manual draft edits are available. Automatic optimization and saving
-        reviewed plans are not yet available.
-      </p>
+      {!!coordinates.data?.points?.length && (
+        <LegMapVisualization
+          routeCoordinates={coordinates.data.points.map((point) => [
+            point.latitude,
+            point.longitude,
+          ])}
+          satelliteConfig={{
+            xband_starting_satellite: draft.initial_x_satellite_id ?? undefined,
+            xband_transitions: (draft.swaps ?? []).map((swap) => ({
+              id: swap.id,
+              target_satellite_id: swap.target_satellite_id,
+              latitude: swap.anchor.latitude,
+              longitude: swap.anchor.longitude,
+              anchor: swap.anchor,
+            })),
+            ka_outages: draft.ka_outages ?? [],
+            ku_outages: draft.ku_overrides ?? [],
+          }}
+          aarConfig={{
+            segments: [],
+            manualTracks: draft.manual_aar_tracks ?? [],
+          }}
+          kaTransitions={[]}
+          waypointNames={[]}
+          availableWaypoints={coordinates.data.waypoints ?? []}
+          planningLeg={leg}
+          planningDraft={draft}
+        />
+      )}
+      {invalid && (
+        <p role="alert">
+          Provisional plan: resolve field errors, AR review and current
+          satellite access before reviewed save.
+        </p>
+      )}
+      <label className="flex min-h-11 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={planConfirmed}
+          onChange={(e) => setPlanConfirmed(e.target.checked)}
+        />
+        I confirm this satellite plan and Starshield enablement
+      </label>
+      <label className="flex min-h-11 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={gapAcknowledged}
+          onChange={(e) => setGapAcknowledged(e.target.checked)}
+        />
+        I acknowledge the X-band outages and backup gaps
+      </label>
+      {dirty && <p>Save draft before confirming the reviewed plan.</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" onClick={returnToMission}>
           Cancel
@@ -406,7 +399,40 @@ function ReviewEditor({
         <Button onClick={save} disabled={pending}>
           {planning.saveDraft.isPending ? 'Saving…' : 'Save draft'}
         </Button>
-        <Button disabled>Save reviewed plan</Button>
+        <Button variant="outline" onClick={reload}>
+          Reload saved draft
+        </Button>
+        <Button
+          onClick={() => reviewed(false)}
+          disabled={
+            pending ||
+            dirty ||
+            !!invalid ||
+            !planConfirmed ||
+            !evaluation ||
+            !!evaluation.errors?.length ||
+            (!!(evaluation.outage_seconds || evaluation.backup_gaps?.length) &&
+              !gapAcknowledged)
+          }
+        >
+          Save reviewed plan
+        </Button>
+        <Button
+          className="h-auto min-h-11 whitespace-normal"
+          onClick={() => reviewed(true)}
+          disabled={
+            pending ||
+            dirty ||
+            !!invalid ||
+            !planConfirmed ||
+            !evaluation ||
+            !!evaluation.errors?.length ||
+            (!!(evaluation.outage_seconds || evaluation.backup_gaps?.length) &&
+              !gapAcknowledged)
+          }
+        >
+          Save reviewed plan and upload next leg
+        </Button>
       </div>
     </fieldset>
   );

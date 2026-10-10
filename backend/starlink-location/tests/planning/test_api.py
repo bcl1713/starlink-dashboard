@@ -43,7 +43,7 @@ def test_read_and_stale_draft_api(service):
             f"/api/v2/missions/{view.mission.id}", json={"name": "Renamed"}
         )
         assert patched.status_code == 200 and "owned_relative_path" not in patched.text
-        assert service.store.read(view.mission.id).revision == before.revision
+        assert service.store.read(view.mission.id).revision == before.revision + 1
 
 
 def test_real_lifespan_recovers_before_reconciliation_and_runtime_readers(
@@ -159,8 +159,9 @@ def test_parser_errors_have_typed_status_and_retryability(
 
 @pytest.mark.asyncio
 async def test_pdf_upload_bound_precedes_parse_and_kml_preserves_unbounded_read():
-    from app.mission.planning.routes import upload_bytes
     from fastapi import HTTPException
+
+    from app.mission.planning.routes import upload_bytes
 
     class Upload:
         def __init__(self, data):

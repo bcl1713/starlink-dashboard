@@ -4,6 +4,9 @@ import type {
   PlanningDraft,
   PlanningView,
   SaveDraft,
+  GenerateProposal,
+  ApplyProposal,
+  SaveReviewed,
 } from '../../types/planning';
 
 export function usePlanning(missionId: string, enabled = true) {
@@ -67,5 +70,44 @@ export function usePlanning(missionId: string, enabled = true) {
       }),
     onSuccess: receive,
   });
-  return { ...query, previewRoute, acceptRoute, saveDraft };
+  const generateProposal = useMutation({
+    mutationFn: ({
+      legId,
+      request,
+    }: {
+      legId: string;
+      request: GenerateProposal;
+    }) => planningApi.generateProposal(missionId, legId, request),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ['planning', missionId] }),
+  });
+  const applyProposal = useMutation({
+    mutationFn: ({
+      legId,
+      request,
+    }: {
+      legId: string;
+      request: ApplyProposal;
+    }) => planningApi.applyProposal(missionId, legId, request),
+    onSuccess: receive,
+  });
+  const saveReviewed = useMutation({
+    mutationFn: ({
+      legId,
+      request,
+    }: {
+      legId: string;
+      request: SaveReviewed;
+    }) => planningApi.saveReviewed(missionId, legId, request),
+    onSuccess: receive,
+  });
+  return {
+    ...query,
+    previewRoute,
+    acceptRoute,
+    saveDraft,
+    generateProposal,
+    applyProposal,
+    saveReviewed,
+  };
 }

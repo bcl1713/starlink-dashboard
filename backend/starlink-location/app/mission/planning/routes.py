@@ -20,11 +20,14 @@ from .models import (
     ConfirmItinerary,
     GenerateProposal,
     ItineraryPreview,
+    PlanningEvaluation,
     PlanningProposal,
     PlanningSatelliteOptions,
     PlanningView,
+    PreviewDraft,
     RouteBindingPreview,
     SaveDraft,
+    SaveReviewed,
 )
 from .service import PlanningService
 
@@ -214,3 +217,27 @@ async def apply_proposal(
     service: Annotated[PlanningService, Depends(get_service)],
 ):
     return await invoke(service.proposals.apply, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/preview", response_model=PlanningEvaluation
+)
+async def preview_draft(
+    mission_id: str,
+    leg_id: str,
+    request: PreviewDraft,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.preview, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/reviewed", response_model=PlanningView
+)
+async def save_reviewed(
+    mission_id: str,
+    leg_id: str,
+    request: SaveReviewed,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.save_reviewed, mission_id, leg_id, request)

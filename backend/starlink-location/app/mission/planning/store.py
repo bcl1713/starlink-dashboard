@@ -39,6 +39,22 @@ def selection_errors(draft):
         ]
     confirmation = draft.access_confirmation
     errors = []
+    if draft.unresolved_aar_windows:
+        errors.append(
+            PlanningError(
+                code="unresolved_aar_windows",
+                field="unresolved_aar_windows",
+                message="Resolve pending legacy AR windows using accepted timed endpoints",
+            )
+        )
+    if draft.unresolved_x_transitions:
+        errors.append(
+            PlanningError(
+                code="unresolved_x_transitions",
+                field="unresolved_x_transitions",
+                message="Choose an accepted timed route occurrence or remove each unresolved legacy swap",
+            )
+        )
     if not confirmation or not confirmation.confirmed:
         errors.append(
             PlanningError(
@@ -118,7 +134,7 @@ class PlanningStore:
     def _view(self, mission, manifest):
         cards = [
             ExpectedLegCard(
-                leg=leg,
+                leg=leg.model_copy(deep=True),
                 input_identity=leg_identity(leg),
                 errors=selection_errors(leg.draft),
             )
@@ -136,6 +152,23 @@ class PlanningStore:
             if s.eligible
         }
         for card in cards:
+            if card.leg.review:
+                from .proposals import environment_identity
+
+                try:
+                    current = environment_identity(
+                        self, card.leg, self.planning_constraints_provider()
+                    )
+                except (ValueError, PlanningFailure):
+                    current = None
+                if current is None or current != card.leg.review.environment_identity:
+                    card.leg.review = None
+                    card.errors.append(
+                        PlanningError(
+                            code="review_dependencies_changed",
+                            message="Planning dependencies changed; preview and review again",
+                        )
+                    )
             if (
                 card.leg.draft
                 and set(card.leg.draft.permitted_satellite_ids) - eligible
@@ -166,7 +199,9 @@ class PlanningStore:
         with storage.get_active_leg_lock():
             return self._view(*self._load(mission_id))
 
-    def checked(self, mission_id, leg_id, revision, identity=None):
+    def checked(
+        self, mission_id, leg_id, revision, identity=None, *, allow_active=False
+    ):
         mission, manifest = self._load(mission_id)
         if manifest.revision != revision:
             raise conflict()
@@ -185,7 +220,7 @@ class PlanningStore:
         # All referenced active legs, including another parent using a route,
         # prevent mutation of an active planning context.
         route_ids = {leg.route.route_id} if leg.route else set()
-        for parent in storage.list_mission_metadata_v2():
+        for parent in ([] if allow_active else storage.list_mission_metadata_v2()):
             loaded = storage.load_mission_v2(parent.id)
             if any(
                 item.is_active
@@ -292,7 +327,9 @@ class PlanningStore:
             manifest.revision += 1
             return self.persist(mission, manifest)
 
-    def commit_reviewed(self, mission_id, leg_id, request, artifacts):
+    def commit_reviewed(
+        self, mission_id, leg_id, request, artifacts, *, validate=None, environment=None
+    ):
         """Publish supplied validated results. Task 7 owns evaluation/validation."""
         installed = artifacts.validated_leg
         if installed is None:
@@ -326,6 +363,8 @@ class PlanningStore:
             mission, manifest, leg = self.checked(
                 mission_id, leg_id, request.expected_revision, request.input_identity
             )
+            if validate is not None:
+                validate(leg)
             if (
                 not leg.route
                 or installed.is_active
@@ -386,6 +425,7 @@ class PlanningStore:
             leg.review = ReviewRecord(
                 **request.model_dump(exclude={"expected_revision", "idempotency_key"}),
                 saved_at=datetime.now(timezone.utc),
+                environment_identity=environment,
             )
             manifest.review_records.append(leg.review)
             manifest.revision += 1

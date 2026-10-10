@@ -130,6 +130,10 @@ def build_inputs(
     poi_manager: "POIManager",
     constraints: ConstraintConfig,
 ) -> PlanningInputs:
+    if draft.unresolved_x_transitions or draft.unresolved_aar_windows:
+        raise ValueError(
+            "Resolve pending legacy X transitions and AR windows using accepted timed route occurrences before computing"
+        )
     # Copies alone are captured while sharing the activation/publication gate.
     with storage.get_active_leg_lock():
         leg = leg.model_copy(deep=True)
@@ -188,6 +192,8 @@ def build_inputs(
             "Geostationary satellite latitude is approximated as equatorial by the shared look-angle model.",
         ],
     )
+    if leg.ar_section_status == "unrecognized":
+        unresolved.append("AR section is unrecognized; explicitly review its contents")
     for ar in rows:
         if ar.match_status == "excluded":
             continue

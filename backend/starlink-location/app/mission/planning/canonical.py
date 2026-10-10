@@ -96,6 +96,8 @@ def canonical_inputs(
     expected = draft_to_mission_leg(inputs, draft, context, leg_id=mission.id)
     omitted = {
         "initial_x_satellite_id",
+        # Preserved legacy metadata; the planning evaluator uses Ka outage windows.
+        "initial_ka_satellite_ids",
         "x_transitions",
         "evaluation_context",
         "planning_inputs",

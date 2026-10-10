@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { planningApi } from '../../services/planning';
 import { routesApi } from '../../services/routes';
@@ -31,7 +31,11 @@ const card: ExpectedLegCard = {
     arrival_time: '2026-10-25T13:00:00Z',
     ar_rows: [],
     ar_section_status: 'empty',
-    draft: { permitted_satellite_ids: [], starshield_enabled: true },
+    draft: {
+      permitted_satellite_ids: ['X-eligible'],
+      access_confirmation: { satellite_ids: ['X-eligible'], confirmed: true },
+      starshield_enabled: true,
+    },
   },
 };
 const view = {
@@ -39,7 +43,25 @@ const view = {
   revision: 7,
   expected_legs: [card],
 } as unknown as PlanningView;
+function Location() {
+  return <output aria-label="Current route">{useLocation().pathname}</output>;
+}
 function setup(initial = view) {
+  vi.spyOn(planningApi, 'generateProposal').mockResolvedValue({
+    id: 'proposal',
+    expected_revision: 8,
+    input_identity: 'hash',
+    context: { input_identity: 'context' },
+    state: 'ready',
+    proposed_draft: { initial_x_satellite_id: 'X-eligible' },
+  });
+  vi.spyOn(planningApi, 'previewDraft').mockResolvedValue({
+    context: { input_identity: 'context' },
+    outage_seconds: 0,
+    swap_count: 0,
+    longest_gap_seconds: 0,
+    errors: [],
+  });
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -65,6 +87,7 @@ function setup(initial = view) {
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
+        <Location />
         <PlanningLegReview missionId="m" legId="stable-3" />
       </MemoryRouter>
     </QueryClientProvider>
@@ -122,6 +145,9 @@ it('uploads for selected expected leg and starts AR-first review after acceptanc
   fireEvent.click(screen.getByLabelText('Acknowledge: Endpoints differ'));
   fireEvent.click(screen.getByText('Accept route and review AR windows'));
   await waitFor(() => expect(accept).toHaveBeenCalled());
+  await waitFor(() =>
+    expect(planningApi.generateProposal).toHaveBeenCalledTimes(1)
+  );
   expect(preview.mock.calls[0]).toEqual(['m', 'stable-3', file, 7]);
   expect(accept.mock.calls[0][2]).toEqual({
     preview_id: 'p',
@@ -135,6 +161,205 @@ it('uploads for selected expected leg and starts AR-first review after acceptanc
   await waitFor(() =>
     expect(screen.getByRole('tab', { name: 'AR windows' })).toHaveFocus()
   );
+});
+
+it('keeps manual work after stale Apply and only re-optimizes explicitly', async () => {
+  const bound = {
+    ...view,
+    expected_legs: [
+      {
+        ...card,
+        leg: {
+          ...card.leg,
+          route: {
+            route_id: 'r',
+            content_hash: 'hash',
+            source_id: 's',
+            filename: 'r.kml',
+          },
+          draft: {
+            permitted_satellite_ids: ['X-eligible'],
+            initial_x_satellite_id: 'X-eligible',
+            starshield_enabled: true,
+            no_ars_confirmed: true,
+            access_confirmation: {
+              satellite_ids: ['X-eligible'],
+              confirmed: true,
+            },
+          },
+        },
+      },
+    ],
+  } as PlanningView;
+  const save = vi
+    .spyOn(planningApi, 'saveDraft')
+    .mockImplementation(async (_m, _l, request) => ({
+      ...bound,
+      revision: 8,
+      expected_legs: [
+        {
+          ...bound.expected_legs[0],
+          input_identity: 'saved',
+          leg: { ...bound.expected_legs[0].leg, draft: request.draft },
+        },
+      ],
+    }));
+  vi.spyOn(planningApi, 'applyProposal').mockRejectedValue({
+    response: { status: 409 },
+  });
+  setup(bound);
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'X-band plan' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  await screen.findByLabelText('Lock initial satellite');
+  fireEvent.click(screen.getByLabelText('Lock initial satellite'));
+  expect(planningApi.generateProposal).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Re-optimize' }));
+  await screen.findByRole('button', { name: 'Apply proposal' });
+  expect(save).toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Apply proposal' }));
+  await screen.findByText(/Your entered corrections are preserved here/);
+  expect(screen.getByLabelText('Lock initial satellite')).toBeChecked();
+});
+
+it('saves reviewed plan and selects the next unbound expected leg', async () => {
+  const bound = {
+    ...view,
+    expected_legs: [
+      {
+        ...card,
+        leg: {
+          ...card.leg,
+          route: {
+            route_id: 'r',
+            source_id: 's',
+            content_hash: 'h',
+            filename: 'r.kml',
+          },
+          draft: {
+            permitted_satellite_ids: ['X-eligible'],
+            initial_x_satellite_id: 'X-eligible',
+            access_confirmation: {
+              satellite_ids: ['X-eligible'],
+              confirmed: true,
+            },
+            starshield_enabled: true,
+            no_ars_confirmed: true,
+          },
+        },
+      },
+      { ...card, leg: { ...card.leg, id: 'next', ordinal: 4 } },
+    ],
+  } as PlanningView;
+  const reviewed = vi
+    .spyOn(planningApi, 'saveReviewed')
+    .mockResolvedValue({ ...bound, revision: 8 });
+  setup(bound);
+  await screen.findByLabelText(
+    'I confirm this satellite plan and Starshield enablement'
+  );
+  fireEvent.click(
+    screen.getByLabelText(
+      'I confirm this satellite plan and Starshield enablement'
+    )
+  );
+  const button = screen.getByRole('button', {
+    name: 'Save reviewed plan and upload next leg',
+  });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(screen.getByLabelText('Current route')).toHaveTextContent(
+      '/missions/m/legs/next'
+    )
+  );
+  expect(reviewed.mock.calls[0][2]).toMatchObject({
+    expected_revision: 7,
+    input_identity: 'hash',
+    satellite_plan_confirmed: true,
+    no_ars_confirmed: true,
+  });
+});
+
+it('persists pre-upload manual edits before the one initial proposal', async () => {
+  const initial = {
+    ...view,
+    expected_legs: [
+      {
+        ...card,
+        leg: {
+          ...card.leg,
+          draft: {
+            permitted_satellite_ids: ['X-eligible'],
+            access_confirmation: {
+              satellite_ids: ['X-eligible'],
+              confirmed: true,
+            },
+            starshield_enabled: true,
+          },
+        },
+      },
+    ],
+  } as PlanningView;
+  const binding = {
+    route_id: 'r',
+    content_hash: 'hash',
+    source_id: 's',
+    filename: 'r.kml',
+  };
+  vi.spyOn(planningApi, 'previewRoute').mockResolvedValue({
+    preview_id: 'p',
+    expected_revision: 7,
+    binding,
+    expires_at: '2026-10-26T12:00:00Z',
+  });
+  vi.spyOn(planningApi, 'acceptRoute').mockResolvedValue({
+    ...initial,
+    revision: 8,
+    expected_legs: [
+      {
+        ...initial.expected_legs[0],
+        leg: { ...initial.expected_legs[0].leg, route: binding },
+      },
+    ],
+  });
+  const save = vi
+    .spyOn(planningApi, 'saveDraft')
+    .mockImplementation(async (_m, _l, r) => ({
+      ...initial,
+      revision: 9,
+      expected_legs: [
+        {
+          ...initial.expected_legs[0],
+          input_identity: 'merged',
+          leg: {
+            ...initial.expected_legs[0].leg,
+            route: binding,
+            draft: r.draft,
+          },
+        },
+      ],
+    }));
+  setup(initial);
+  await screen.findByLabelText('Starshield enabled for this plan');
+  fireEvent.click(screen.getByLabelText('Starshield enabled for this plan'));
+  fireEvent.change(screen.getByLabelText('KML for leg 3'), {
+    target: { files: [new File(['synthetic'], 'r.kml')] },
+  });
+  fireEvent.click(screen.getByText('Preview selected-leg KML'));
+  await screen.findByText('Accept route and review AR windows');
+  fireEvent.click(screen.getByText('Accept route and review AR windows'));
+  await waitFor(() =>
+    expect(planningApi.generateProposal).toHaveBeenCalledOnce()
+  );
+  expect(save.mock.calls[0][2]).toMatchObject({
+    expected_revision: 8,
+    draft: { starshield_enabled: false },
+  });
+  expect(
+    vi.mocked(planningApi.generateProposal).mock.calls[0][2]
+  ).toMatchObject({ expected_revision: 9, input_identity: 'merged' });
 });
 it('preserves file/corrections on failure and explains stale draft saves', async () => {
   vi.spyOn(planningApi, 'previewRoute').mockRejectedValue(
@@ -285,7 +510,9 @@ it('disables draft edits during deferred route acceptance and enables them after
     revision: 8,
     expected_legs: [{ ...card, leg: { ...card.leg, route: binding } }],
   });
-  await screen.findByText('Route accepted. Review AR windows first.');
+  await screen.findByText(
+    'Route accepted. Review AR windows and compare the initial proposal before Apply.'
+  );
   expect(
     screen.getByLabelText('Starshield enabled for this plan')
   ).toBeEnabled();

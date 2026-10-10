@@ -6,11 +6,13 @@ from typing import Literal
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.mission.models import (
+    AARWindow,
     KaOutage,
     KuOutageOverride,
     ManualAARTrack,
     ManualRouteSplice,
     Mission,
+    XTransition,
 )
 
 from .types import (
@@ -181,6 +183,8 @@ class PlanningDraft(SatelliteSelection):
     no_ars_confirmed: bool = False
     initial_x_satellite_id: str | None = None
     swaps: list[AnchoredSwap] = Field(default_factory=list)
+    unresolved_x_transitions: list[XTransition] = Field(default_factory=list)
+    unresolved_aar_windows: list[AARWindow] = Field(default_factory=list)
     ar_corrections: list[ItineraryAR] = Field(default_factory=list)
     manual_aar_tracks: list[ManualAARTrack] = Field(default_factory=list)
     manual_route_splice: ManualRouteSplice | None = None
@@ -210,6 +214,7 @@ class PlanningDraft(SatelliteSelection):
 
 class ReviewRecord(PlanningRecord):
     input_identity: ContentHash
+    environment_identity: ContentHash | None = None
     confirmed_ar_ids: list[str] = Field(default_factory=list)
     excluded_ar_ids: list[str] = Field(default_factory=list)
     no_ars_confirmed: bool = False

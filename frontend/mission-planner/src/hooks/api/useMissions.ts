@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { missionsApi } from '../../services/missions';
+import { missionsApi, type PlanningCAS } from '../../services/missions';
 import type { SimulationStart } from '@/services/simulation-run';
 import { confirmSimulationRun } from './useSimulationRun';
 import type {
@@ -56,6 +56,7 @@ export function useUpdateMission() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['missions'] });
       queryClient.invalidateQueries({ queryKey: ['missions', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['planning', variables.id] });
     },
   });
 }
@@ -79,31 +80,39 @@ export function useAddLeg(missionId: string) {
       missionsApi.addLeg(missionId, leg),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['planning', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
     },
   });
 }
 
-export function useDeleteLeg(missionId: string) {
+export function useDeleteLeg(missionId: string, planning?: PlanningCAS) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (legId: string) => missionsApi.deleteLeg(missionId, legId),
+    mutationFn: (legId: string) =>
+      missionsApi.deleteLeg(missionId, legId, planning),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['planning', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
     },
   });
 }
 
-export function useUpdateLeg(missionId: string, legId: string) {
+export function useUpdateLeg(
+  missionId: string,
+  legId: string,
+  planning?: PlanningCAS
+) {
   const queryClient = useQueryClient();
 
   return useMutation<UpdateLegResponse, Error, MissionLeg>({
     mutationFn: (leg: MissionLeg) =>
-      missionsApi.updateLeg(missionId, legId, leg),
+      missionsApi.updateLeg(missionId, legId, leg, planning),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['planning', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
       queryClient.invalidateQueries({ queryKey: ['timeline', legId] });
     },
@@ -158,6 +167,7 @@ export function useDeactivateAllLegs(missionId: string) {
     mutationFn: () => missionsApi.deactivateAllLegs(missionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['planning', missionId] });
       queryClient.invalidateQueries({ queryKey: ['simulation-run'] });
       queryClient.invalidateQueries({
         queryKey: ['overview-clock-settings'],
@@ -174,6 +184,7 @@ export function useUpdateLegRoute(missionId: string) {
       missionsApi.updateLegRoute(missionId, legId, file),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['planning', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
       queryClient.invalidateQueries({
         queryKey: ['timeline', variables.legId],

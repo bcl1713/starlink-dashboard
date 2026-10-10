@@ -67,12 +67,9 @@ class ProposalService:
             _, manifest, leg = self.store.checked(
                 mission_id, leg_id, request.expected_revision, request.input_identity
             )
-            if selection_errors(leg.draft):
-                raise PlanningFailure(
-                    422,
-                    "satellite_access_required",
-                    "Confirm access to the permitted satellites",
-                )
+            errors = selection_errors(leg.draft)
+            if errors:
+                raise PlanningFailure(422, errors[0].code, errors[0].message)
             PlanningService(self.store).validate_selection(leg.draft)
             constraints = self.constraints_provider()
             environment = environment_identity(self.store, leg, constraints)

@@ -75,7 +75,6 @@ export const planningApi = {
     request: SaveDraft
   ): Promise<PlanningView> =>
     (await apiClient.put(`${legPath(mission, leg)}/draft`, request)).data,
-  // Signatures for the subsequent optimizer/publication tasks; current UI uses draft operations only.
   previewDraft: async (
     mission: string,
     leg: string,
@@ -87,7 +86,11 @@ export const planningApi = {
     leg: string,
     request: GenerateProposal
   ): Promise<PlanningProposal> =>
-    (await apiClient.post(`${legPath(mission, leg)}/proposals`, request)).data,
+    (
+      await apiClient.post(`${legPath(mission, leg)}/proposals`, request, {
+        timeout: 40_000,
+      })
+    ).data,
   readProposal: async (
     mission: string,
     leg: string,

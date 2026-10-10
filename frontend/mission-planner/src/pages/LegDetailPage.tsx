@@ -52,6 +52,14 @@ export function LegDetailPage() {
         legId={expected.leg.id}
       />
     );
+  if (managed && !mission?.legs.some((leg) => leg.id === legId))
+    return (
+      <div className="app-page">
+        <p role="alert">
+          Expected leg not found. Reload the mission before editing.
+        </p>
+      </div>
+    );
   return <ManualLegDetailPage />;
 }
 

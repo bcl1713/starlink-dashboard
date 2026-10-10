@@ -88,9 +88,8 @@ export function PlanningXDraft({
     <section aria-label="Manual X-band draft" className="min-w-0 space-y-4">
       <h2 className="font-semibold">X-band plan</h2>
       <p className="text-sm text-muted-foreground">
-        Edit the draft manually. These assignments remain provisional until
-        route, AR, service access and availability validation is available. No
-        automatic proposal is generated here.
+        Edit assignments manually and preview availability. Re-optimize
+        explicitly to compare another proposal; locks preserve your choices.
       </p>
       <label className="block">
         Initial X-band satellite

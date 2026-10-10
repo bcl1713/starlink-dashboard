@@ -243,7 +243,11 @@ async def get_mission(mission_id: str) -> Mission:
 
 
 @router.patch("/{mission_id}", response_model=Mission)
-async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
+async def update_mission(
+    mission_id: str,
+    updates: MissionUpdate,
+    request: Request = None,
+) -> Mission:
     """Update mission name and/or description.
 
     Args:
@@ -283,6 +287,30 @@ async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
             mission.updated_at = datetime.now(timezone.utc)
 
             # Save updated mission
+            if "itinerary_planning" in mission.metadata:
+                from app.mission import storage
+                from app.mission.planning.models import PlanningManifest
+                from app.mission.planning.store import PlanningStore
+
+                service = (
+                    getattr(request.app.state, "planning_service", None)
+                    if request
+                    else None
+                )
+                store = (
+                    service.store
+                    if service
+                    else PlanningStore(
+                        storage.MISSIONS_DIR,
+                        get_route_manager(request),
+                        get_poi_manager(request),
+                    )
+                )
+                manifest = PlanningManifest.model_validate(
+                    mission.metadata["itinerary_planning"]
+                )
+                manifest.revision += 1
+                return store.persist(mission, manifest).mission
             save_mission_v2(mission)
             logger.info(f"Mission {mission_id} updated successfully")
 
@@ -1199,6 +1227,9 @@ async def update_leg(
     run_service: Annotated[
         SimulationRunService | None, Depends(get_optional_simulation_run_service)
     ] = None,
+    expected_revision: int | None = None,
+    input_identity: str | None = None,
+    request: Request = None,
 ) -> dict:
     """Update an existing leg in a mission.
 
@@ -1210,6 +1241,36 @@ async def update_leg(
     Returns:
         Dict with updated leg and optional warnings array
     """
+    from app.mission import storage
+    from app.mission.planning.routes import invoke
+    from app.mission.planning.service import PlanningService
+    from app.mission.planning.store import PlanningStore
+
+    with get_active_leg_lock():
+        parent = load_mission_v2(mission_id)
+        manifest = parent.metadata.get("itinerary_planning") if parent else None
+        managed = manifest and any(
+            c.get("installed_leg_id") == leg_id and not c.get("retired")
+            for c in manifest.get("expected_legs", [])
+        )
+    if managed:
+        if run_service:
+            run_service.assert_plan_edit_allowed(mission_id, leg_id)
+        service = (
+            getattr(request.app.state, "planning_service", None) if request else None
+        )
+        service = service or PlanningService(
+            PlanningStore(storage.MISSIONS_DIR, route_manager, poi_manager)
+        )
+        return await invoke(
+            service.update_managed_leg,
+            mission_id,
+            leg_id,
+            updated_leg,
+            expected_revision,
+            input_identity,
+        )
+
     try:
         warnings = []
 

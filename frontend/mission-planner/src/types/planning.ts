@@ -1,7 +1,8 @@
 /** Planning v1 JSON wire schemas. UTC timestamps are ISO-8601 strings. */
 import type { Mission } from './mission';
+import type { AARSegment } from './aar';
 import type { ManualAARTrack, ManualRouteSplice } from './aar';
-import type { KaOutage, KuOutageOverride } from './satellite';
+import type { XBandTransition, KaOutage, KuOutageOverride } from './satellite';
 
 export type PlanningPolicy = 'prefer_starshield_v1';
 
@@ -101,6 +102,8 @@ export interface PlanningDraft {
   starshield_enabled?: boolean;
   initial_x_satellite_id?: string | null;
   swaps?: AnchoredSwap[];
+  unresolved_x_transitions?: XBandTransition[];
+  unresolved_aar_windows?: AARSegment[];
   ar_corrections?: ItineraryAR[];
   manual_aar_tracks?: ManualAARTrack[];
   manual_route_splice?: ManualRouteSplice | null;
@@ -114,6 +117,7 @@ export interface PlanningDraft {
 
 export interface ReviewRecord {
   input_identity: string;
+  environment_identity?: string | null;
   confirmed_ar_ids?: string[];
   excluded_ar_ids?: string[];
   no_ars_confirmed?: boolean;
