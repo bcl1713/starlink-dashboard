@@ -80,10 +80,29 @@ matches are pending at attachment stage; malformed UTC values, contradictory
 data, and ambiguous source evidence remain visible and correctable. After the
 attachment stage, unresolved dependencies block the relevant planning action.
 
-Provide one explicit source-altitude-unit operation over selected AR rows,
-showing source values and provenance. The initial unit remains unconfirmed.
-Preserve per-row overrides and explicitly distinguish flight level, pressure,
-and geometric altitude. Applying a default does not itself confirm AR intervals.
+Use flight level as the visible default for unlabelled itinerary AR altitudes,
+as requested by the user on 2026-10-13. Label the normal field AR altitude (FL)
+and display values such as FL200. Standard imports require no separate unit
+selection or repeated acknowledgment of that default. The operator's ordinary
+AR/source review covers the displayed values and their interpretation.
+
+Honor explicit source unit labels before the import default. Keep feet/meters
+available under an advanced import setting with per-row overrides for unusual
+sources. One import-wide override applies only to eligible unlabelled rows;
+explicit source units and existing row overrides remain intact. Retain the raw
+source value, selected units, and their provenance: source-declared, import
+default, or operator override. Do not reinterpret previously saved/reviewed rows
+when the default changes. Missing altitude, conflicting source labels, or
+unusable values still require correction; assigning units does not confirm an AR
+interval or invent a missing height.
+
+During AR windows, the accepted AR altitude overrides the route height in the
+X-band look-angle model. Flight level conversion uses FL times 30.48 meters as
+an approximate pressure-altitude height; disclose that assumption once in the
+review and retain it in calculation/export provenance. Feet and meters are
+alternative input units, not separate geometric/pressure-altitude models. Keep
+KML route altitudes in meters and aircraft status altitudes in feet under their
+existing contracts; normalize calculation heights to meters.
 
 Bound extraction to the actual AR table region and recognize page furniture
 using layout/context evidence. Retain positive malformed-row controls, including
