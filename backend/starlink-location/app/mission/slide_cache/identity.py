@@ -27,7 +27,6 @@ _renderer_cache = {}
 def renderer_revision(*, refresh=False):
     # Hash the shipped renderer, Python preparation code, and brand assets.
     root = Path(__file__).resolve().parents[1]
-    paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     deployed = Path("/opt/customer-briefing/renderer")
     is_deployed = deployed.exists()
     if is_deployed:
@@ -37,6 +36,7 @@ def renderer_revision(*, refresh=False):
     key = (str(root), str(renderer))
     if is_deployed and not refresh and key in _renderer_cache:
         return _renderer_cache[key][1]
+    paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     paths += list(renderer.rglob("*.mjs")) + list(renderer.rglob("*.css"))
     assets = Path("/opt/customer-briefing/assets")
     if assets.exists():

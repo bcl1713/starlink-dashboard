@@ -131,6 +131,21 @@ def test_idle_reconciliation_reuses_validated_inputs(tmp_path, monkeypatch):
     assert len(calls) == 2
 
 
+@pytest.mark.parametrize("relative", ["sources/retained.pdf", "inventory/route.json"])
+def test_capture_tracks_retained_source_changes(tmp_path, monkeypatch, relative):
+    from app.mission import storage
+    from app.mission.slide_cache.capture import capture_is_current, capture_raw
+
+    saved_leg(tmp_path, monkeypatch)
+    source = storage.MISSIONS_DIR / ".planning" / relative
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"retained input")
+    raw = capture_raw("m", None, None)
+    assert capture_is_current(raw)
+    source.write_bytes(b"changed retained input")
+    assert not capture_is_current(raw)
+
+
 def test_status_records_do_not_load_artifact_blobs(tmp_path, monkeypatch):
     import sqlite3
     from contextlib import contextmanager

@@ -93,6 +93,36 @@ it('prevents repeated exports while one request is pending', async () => {
   expect(exportImportApi.exportMissionDownload).toHaveBeenCalledOnce();
   await act(async () => finish({ blob: new Blob(['zip']) }));
 });
+
+it('shows the actual preparation stage and permits cancellation without invented progress', async () => {
+  vi.mocked(exportImportApi.exportMissionDownload).mockImplementation(
+    async (_mission, options) => {
+      options?.onProgress?.({
+        id: 'job',
+        mission_id: 'm',
+        state: 'preparing',
+        stage: 'preparing-slides',
+        fingerprint: 'f',
+        leg_states: { a: 'running' },
+        queued_at: 0,
+        deadline: 600,
+      });
+      return new Promise(() => {});
+    }
+  );
+  render(<ExportDialog {...props} />);
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }))
+  );
+  expect(screen.getByText(/Preparing customer PDF/)).toBeVisible();
+  expect(screen.queryByRole('progressbar')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  const signal = vi.mocked(exportImportApi.exportMissionDownload).mock
+    .calls[0][1]?.signal;
+  expect(signal?.aborted).toBe(true);
+  expect(props.onClose).toHaveBeenCalledOnce();
+});
 it('closes ordinary success after its existing delay and revokes the URL', async () => {
   render(<ExportDialog {...props} />);
   await download();

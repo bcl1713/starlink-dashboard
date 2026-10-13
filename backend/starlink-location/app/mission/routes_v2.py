@@ -26,7 +26,6 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse
 
-from app.core.config import ConfigManager
 from app.core.limiter import limiter
 from app.mission.dependencies import (
     get_optional_simulation_run_service,
@@ -37,8 +36,6 @@ from app.mission.dependencies import (
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.leg_activation import activate_leg_transaction
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
-from app.mission.package.customer_artifacts import WARNING_CODES
-from app.mission.package.export_job import OwnedZipResponse, run_mission_package_job
 from app.mission.storage import (
     delete_mission_timeline,
     get_active_leg_lock,
@@ -628,52 +625,27 @@ async def delete_mission_endpoint(
 async def export_mission(
     request: Request,
     mission_id: str,
-    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
-    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> StreamingResponse:
-    """Export mission as zip package."""
+    """Return a current ready ZIP, or an explicit 202 preparation reference."""
+    from fastapi.responses import JSONResponse
+
+    from app.mission.package.export_job import download_response
+    from app.mission.package.preparation_routes import get_export_preparation_service
+
+    service = get_export_preparation_service(request)
     try:
-        download = await run_mission_package_job(
-            request,
-            mission_id,
-            route_manager,
-            poi_manager,
-            enabled=ConfigManager().get_config().exports.customer_briefing_enabled,
-        )
-        headers = {"Content-Disposition": f'attachment; filename="{mission_id}.zip"'}
-        if download.briefing is not None:
-            included = download.briefing.status == "included"
-            headers["X-Customer-Briefing-Status"] = (
-                "included" if included else "omitted"
+        job = await asyncio.to_thread(service.start, mission_id)
+        if job.state == "ready":
+            download = await asyncio.to_thread(
+                service.open_download, mission_id, job.id
             )
-            if not included:
-                warning = download.briefing.warning_code
-                headers["X-Customer-Briefing-Warning"] = (
-                    warning if warning in WARNING_CODES else "runtime"
-                )
-        try:
-            return OwnedZipResponse(download.stream, headers=headers)
-        except BaseException:
-            download.stream.close()
-            raise
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:
-        logger.exception("Export failed")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            return download_response(download, mission_id, fingerprint=job.fingerprint)
+        location = f"/api/v2/missions/{mission_id}/export-preparations/{job.id}"
+        return JSONResponse(
+            job.model_dump(mode="json"), status_code=202, headers={"Location": location}
         )
+    except RuntimeError:
+        raise HTTPException(503, detail="Mission export preparation is unavailable")
 
 
 def safe_extract_path(zip_path: str, base_path: Path) -> Path:

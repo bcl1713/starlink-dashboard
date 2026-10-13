@@ -48,12 +48,24 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
     try {
       setProgress({
         status: 'exporting',
-        message: 'Exporting mission...',
-        progress: 50,
+        message: 'Preparing export...',
       });
 
       const download = await exportImportApi.exportMissionDownload(missionId, {
         signal: request.current.signal,
+        onProgress: (job) => {
+          if (!mounted.current) return;
+          const stages: Record<string, string> = {
+            queued: 'Export queued...',
+            'preparing-slides': 'Preparing customer PDF...',
+            assembling: 'Assembling mission ZIP...',
+            ready: 'Downloading mission ZIP...',
+          };
+          setProgress({
+            status: 'exporting',
+            message: stages[job.stage] ?? 'Preparing export...',
+          });
+        },
       });
       if (!mounted.current) return;
 
@@ -84,11 +96,17 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
         completionTimer.current = setTimeout(() => {
           if (mounted.current) onClose();
         }, 2000);
-    } catch {
-      if (!mounted.current) return;
+    } catch (error) {
+      if (!mounted.current || request.current?.signal.aborted) return;
       setProgress({
         status: 'error',
-        message: 'Export failed. Please try again.',
+        message:
+          error instanceof Error &&
+          /^(Preparation reached|The mission changed|Export preparation failed)/.test(
+            error.message
+          )
+            ? error.message
+            : 'Export failed. Please try again.',
       });
     } finally {
       busy.current = false;
@@ -124,8 +142,10 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
         <div className="flex justify-end gap-2">
           <Button
             variant="outline"
-            onClick={onClose}
-            disabled={progress.status === 'exporting'}
+            onClick={() => {
+              request.current?.abort();
+              onClose();
+            }}
           >
             {progress.status === 'complete' ? 'Close' : 'Cancel'}
           </Button>

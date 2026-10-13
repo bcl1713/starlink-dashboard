@@ -11,6 +11,8 @@ from app.mission.models import Mission
 def dependency_token(mission_id, route_manager, poi_manager):
     roots = [
         storage.get_mission_directory(mission_id),
+        storage.MISSIONS_DIR / ".planning/sources",
+        storage.MISSIONS_DIR / ".planning/inventory",
         Path("data/satellites"),
         Path("data/sat_coverage"),
         Path(__file__).resolve().parents[2] / "satellites/assets",

@@ -48,6 +48,7 @@ from app.mission import (
     routes_v2 as mission_routes_v2,
 )
 from app.mission import storage as mission_storage
+from app.mission.package.preparation_routes import router as preparation_router
 from app.mission.planning.journal import Journal
 from app.mission.planning.routes import router as planning_router
 from app.mission.planning.service import PlanningService
@@ -537,6 +538,15 @@ async def startup_event():
                     "Customer PDF background preparation unavailable", exc_info=True
                 )
 
+        from app.mission.package.preparation import ExportPreparationService
+
+        app.state.export_preparation_service = ExportPreparationService(
+            _route_manager,
+            poi_manager,
+            enabled=lambda: ConfigManager()
+            .get_config()
+            .exports.customer_briefing_enabled,
+        )
         logger.info_json("Starlink Location Backend ready")
     except Exception as e:
         logger.error_json(
@@ -558,6 +568,9 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if hasattr(app.state, "export_preparation_service"):
+            await asyncio.to_thread(app.state.export_preparation_service.close)
+            del app.state.export_preparation_service
         if hasattr(app.state, "customer_pdf_coordinator"):
             await asyncio.to_thread(app.state.customer_pdf_coordinator.close)
             del app.state.customer_pdf_coordinator
@@ -904,6 +917,7 @@ app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
 app.include_router(planning_router)
+app.include_router(preparation_router)
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])

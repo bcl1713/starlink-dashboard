@@ -128,10 +128,12 @@ def _publish_pair(stream, artifacts, cancel, pdf_path):
 
 
 def build_mission_package_download(
-    mission_id, route_manager, poi_manager, *, enabled, cancel
+    mission_id, route_manager, poi_manager, *, enabled, cancel, on_stage=None
 ):
     check_cancelled(cancel)
     if not enabled:
+        if on_stage:
+            on_stage("assembling")
         stream = export_mission_package(
             mission_id, route_manager, poi_manager, cancel=cancel
         )
@@ -157,6 +159,8 @@ def build_mission_package_download(
                 stream, CustomerBriefingOutcome("omitted", "runtime", None)
             )
         check_cancelled(cancel)
+        if on_stage:
+            on_stage("assembling")
         stream = build_snapshot_legacy_package(snapshot, cancel=cancel)
         check_cancelled(cancel)
         if outcome.status != "included" or outcome.artifacts is None:

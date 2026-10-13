@@ -7,6 +7,57 @@ import { apiClient } from './api-client';
 afterEach(() => vi.restoreAllMocks());
 
 describe('mission download metadata', () => {
+  it('waits for explicit ready state before fetching a cold package', async () => {
+    const queued = { id: 'job', state: 'queued', stage: 'queued' };
+    const ready = { ...queued, state: 'ready', stage: 'ready' };
+    const blob = new Blob(['zip']);
+    vi.spyOn(apiClient, 'post').mockResolvedValue({
+      status: 202,
+      data: new Blob([JSON.stringify(queued)]),
+      headers: {},
+    });
+    const read = vi
+      .spyOn(apiClient, 'get')
+      .mockResolvedValueOnce({ data: ready })
+      .mockResolvedValueOnce({ data: blob, headers: {} });
+    const progress = vi.fn();
+    const result = await exportImportApi.exportMissionDownload('m', {
+      onProgress: progress,
+    });
+    expect(result.blob).toBe(blob);
+    expect(read.mock.calls.map((call) => call[0])).toEqual([
+      '/api/v2/missions/m/export-preparations/job',
+      '/api/v2/missions/m/export-preparations/job/download',
+    ]);
+    expect(progress.mock.calls.map((call) => call[0].stage)).toEqual([
+      'queued',
+      'ready',
+    ]);
+  });
+
+  it('cancels the owned pending job on abort', async () => {
+    const controller = new AbortController();
+    vi.spyOn(apiClient, 'post').mockResolvedValue({
+      status: 202,
+      data: { id: 'job', state: 'queued', stage: 'queued' },
+      headers: {},
+    });
+    vi.spyOn(apiClient, 'get').mockImplementation(async () => {
+      controller.abort();
+      throw new DOMException('Aborted', 'AbortError');
+    });
+    const cancel = vi
+      .spyOn(apiClient, 'delete')
+      .mockResolvedValue({ data: { state: 'cancelled' } });
+    await expect(
+      exportImportApi.exportMissionDownload('m', { signal: controller.signal })
+    ).rejects.toThrow();
+    expect(cancel).toHaveBeenCalledWith(
+      '/api/v2/missions/m/export-preparations/job',
+      expect.anything()
+    );
+  });
+
   it.each([
     [{}, undefined, undefined],
     [{ 'x-customer-briefing-status': 'included' }, 'included', undefined],
