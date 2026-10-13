@@ -196,11 +196,11 @@ async def list_missions(
         List of missions with metadata only (empty legs arrays)
     """
     try:
-        missions = list_mission_metadata_v2()
+        missions = await asyncio.to_thread(
+            lambda: [public_mission(m) for m in list_mission_metadata_v2()]
+        )
         response.headers["X-Total-Count"] = str(len(missions))
-        return [
-            public_mission(mission) for mission in missions[offset : offset + limit]
-        ]
+        return [mission for mission in missions[offset : offset + limit]]
     except (
         RuntimeError,
         ValueError,
@@ -231,7 +231,9 @@ async def get_mission(mission_id: str) -> Mission:
     Returns:
         Mission object with all legs
     """
-    mission = load_mission_v2(mission_id)
+    mission = await asyncio.to_thread(
+        lambda: public_mission(m) if (m := load_mission_v2(mission_id)) else None
+    )
 
     if not mission:
         raise HTTPException(
@@ -239,7 +241,7 @@ async def get_mission(mission_id: str) -> Mission:
             detail=f"Mission {mission_id} not found",
         )
 
-    return public_mission(mission)
+    return mission
 
 
 @router.patch("/{mission_id}", response_model=Mission)

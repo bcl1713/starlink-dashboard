@@ -21,24 +21,39 @@ def effective(value):
     return value
 
 
-def renderer_revision():
+_renderer_cache = {}
+
+
+def renderer_revision(*, refresh=False):
     # Hash the shipped renderer, Python preparation code, and brand assets.
     root = Path(__file__).resolve().parents[1]
     paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     deployed = Path("/opt/customer-briefing/renderer")
-    if deployed.exists():
+    is_deployed = deployed.exists()
+    if is_deployed:
         renderer = deployed
     else:
         renderer = root.parents[3] / "frontend/mission-planner/src/mission-export"
+    key = (str(root), str(renderer))
+    if is_deployed and not refresh and key in _renderer_cache:
+        return _renderer_cache[key][1]
     paths += list(renderer.rglob("*.mjs")) + list(renderer.rglob("*.css"))
     assets = Path("/opt/customer-briefing/assets")
     if assets.exists():
         paths += [p for p in assets.rglob("*") if p.is_file()]
+    token = tuple(
+        (str(p), p.stat().st_mtime_ns, p.stat().st_ctime_ns, p.stat().st_size)
+        for p in sorted(paths)
+    )
+    if not refresh and key in _renderer_cache and _renderer_cache[key][0] == token:
+        return _renderer_cache[key][1]
     digest = sha256(b"customer-leg-cache-v1")
     for path in sorted(paths):
         digest.update(path.name.encode())
         digest.update(path.read_bytes())
-    return digest.hexdigest()
+    revision = digest.hexdigest()
+    _renderer_cache[key] = (token, revision)
+    return revision
 
 
 def leg_inputs(metadata, sources, leg_id, revision):

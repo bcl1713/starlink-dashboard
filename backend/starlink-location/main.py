@@ -649,6 +649,97 @@ def _publish_replay_telemetry(telemetry, tick):
     )
 
 
+def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
+    """One complete ordered telemetry/metric update, owned by the async loop."""
+    if should_automatically_refresh_ground_entry_point(_simulation_config):
+        maybe_refresh_ground_entry_point_metrics(
+            refresh_interval_seconds=refresh_interval
+        )
+
+    if _coordinator:
+        run_service = getattr(app.state, "simulation_run_service", None)
+        paced = (
+            run_service is not None and run_service.runtime.selected_plan() is not None
+        )
+        telemetry = (
+            run_service.collect(_coordinator, _publish_replay_telemetry)
+            if paced
+            else _coordinator.update()
+        )
+        update_count += 1
+
+        if telemetry is None:
+            from app.core.metrics import update_metrics_from_telemetry
+
+            update_metrics_from_telemetry(None)
+
+        # Only update metrics if telemetry is available
+        # In live mode, telemetry will be None when disconnected
+        if telemetry is not None and not paced:
+            # Track metric collection duration
+            from app.core.metrics import (
+                starlink_metrics_generation_errors_total,
+                starlink_metrics_last_update_timestamp_seconds,
+                starlink_metrics_scrape_duration_seconds,
+                update_metrics_from_telemetry,
+            )
+
+            scrape_start = time.time()
+            try:
+                # Both live and simulation metrics use the application's
+                # current route, independent of coordinator capabilities.
+                active_route = None
+                if _route_manager is not None:
+                    active_route = _route_manager.get_active_route()
+
+                update_metrics_from_telemetry(
+                    telemetry, _simulation_config, active_route, poi_manager
+                )
+                scrape_duration = time.time() - scrape_start
+                starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
+                starlink_metrics_last_update_timestamp_seconds.set(time.time())
+            except Exception as metric_error:  # noqa: BLE001
+                starlink_metrics_generation_errors_total.inc()
+                logger.warning_json(
+                    "Error updating metrics",
+                    extra_fields={"error": str(metric_error)},
+                    exc_info=True,
+                )
+
+            # Log periodic updates (every 60 seconds)
+            if update_count % 600 == 0:
+                logger.info_json(
+                    "Background updates running",
+                    extra_fields={
+                        "total_updates": update_count,
+                        "total_errors": error_count,
+                        "position": {
+                            "lat": telemetry.position.latitude,
+                            "lon": telemetry.position.longitude,
+                        },
+                        "network_latency_ms": telemetry.network.latency_ms,
+                    },
+                )
+        elif telemetry is None:
+            # Clear metrics when disconnected to prevent stale data
+            # This sets all telemetry metrics to NaN, which Prometheus won't store
+            from app.core.metrics import clear_telemetry_metrics
+
+            clear_telemetry_metrics()
+
+            # Log when disconnected (less frequently to avoid spam)
+            if update_count % 600 == 0:
+                logger.info_json(
+                    "Live mode: waiting for dish connection",
+                    extra_fields={
+                        "total_updates": update_count,
+                        "total_errors": error_count,
+                    },
+                )
+
+    return update_count
+
+
 async def _background_update_loop(poi_manager=None):
     """Background task that updates simulator every interval."""
     update_count = 0
@@ -669,96 +760,21 @@ async def _background_update_loop(poi_manager=None):
 
         while True:
             try:
-                if should_automatically_refresh_ground_entry_point(_simulation_config):
-                    maybe_refresh_ground_entry_point_metrics(
-                        refresh_interval_seconds=ground_entry_refresh_interval_seconds
+                work = asyncio.create_task(
+                    asyncio.to_thread(
+                        _background_update_tick,
+                        poi_manager,
+                        ground_entry_refresh_interval_seconds,
+                        update_count,
+                        error_count,
                     )
-
-                if _coordinator:
-                    run_service = getattr(app.state, "simulation_run_service", None)
-                    paced = (
-                        run_service is not None
-                        and run_service.runtime.selected_plan() is not None
-                    )
-                    telemetry = (
-                        run_service.collect(_coordinator, _publish_replay_telemetry)
-                        if paced
-                        else _coordinator.update()
-                    )
-                    update_count += 1
-
-                    if telemetry is None:
-                        from app.core.metrics import update_metrics_from_telemetry
-
-                        update_metrics_from_telemetry(None)
-
-                    # Only update metrics if telemetry is available
-                    # In live mode, telemetry will be None when disconnected
-                    if telemetry is not None and not paced:
-                        # Track metric collection duration
-                        from app.core.metrics import (
-                            starlink_metrics_generation_errors_total,
-                            starlink_metrics_last_update_timestamp_seconds,
-                            starlink_metrics_scrape_duration_seconds,
-                            update_metrics_from_telemetry,
-                        )
-
-                        scrape_start = time.time()
-                        try:
-                            # Both live and simulation metrics use the application's
-                            # current route, independent of coordinator capabilities.
-                            active_route = None
-                            if _route_manager is not None:
-                                active_route = _route_manager.get_active_route()
-
-                            update_metrics_from_telemetry(
-                                telemetry, _simulation_config, active_route, poi_manager
-                            )
-                            scrape_duration = time.time() - scrape_start
-                            starlink_metrics_scrape_duration_seconds.observe(
-                                scrape_duration
-                            )
-                            starlink_metrics_last_update_timestamp_seconds.set(
-                                time.time()
-                            )
-                        except Exception as metric_error:  # noqa: BLE001
-                            starlink_metrics_generation_errors_total.inc()
-                            logger.warning_json(
-                                "Error updating metrics",
-                                extra_fields={"error": str(metric_error)},
-                                exc_info=True,
-                            )
-
-                        # Log periodic updates (every 60 seconds)
-                        if update_count % 600 == 0:
-                            logger.info_json(
-                                "Background updates running",
-                                extra_fields={
-                                    "total_updates": update_count,
-                                    "total_errors": error_count,
-                                    "position": {
-                                        "lat": telemetry.position.latitude,
-                                        "lon": telemetry.position.longitude,
-                                    },
-                                    "network_latency_ms": telemetry.network.latency_ms,
-                                },
-                            )
-                    elif telemetry is None:
-                        # Clear metrics when disconnected to prevent stale data
-                        # This sets all telemetry metrics to NaN, which Prometheus won't store
-                        from app.core.metrics import clear_telemetry_metrics
-
-                        clear_telemetry_metrics()
-
-                        # Log when disconnected (less frequently to avoid spam)
-                        if update_count % 600 == 0:
-                            logger.info_json(
-                                "Live mode: waiting for dish connection",
-                                extra_fields={
-                                    "total_updates": update_count,
-                                    "total_errors": error_count,
-                                },
-                            )
+                )
+                try:
+                    update_count = await asyncio.shield(work)
+                except asyncio.CancelledError:
+                    # Shield keeps the worker owned; drain before shutting down managers.
+                    await work
+                    raise
 
                 # Sleep for configured update interval
                 run_service = getattr(app.state, "simulation_run_service", None)

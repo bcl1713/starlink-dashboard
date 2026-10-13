@@ -543,7 +543,7 @@ def test_import_revalidates_review_against_current_dependencies(prepared):
     )  # Historical provenance survives.
 
 
-def test_export_capture_blocks_reference_change_until_whole_graph_is_copied(
+def test_export_capture_retries_reference_change_without_blocking_writer(
     service, tmp_path, monkeypatch
 ):
     import threading
@@ -565,7 +565,9 @@ def test_export_capture_blocks_reference_change_until_whole_graph_is_copied(
         if calls == 1:
             entered.set()
             assert attempted.wait(5)
-            assert not committed.is_set()
+            assert committed.wait(
+                3
+            ), "Dependency validation blocked the committed writer"
         return original(*args, **kwargs)
 
     monkeypatch.setattr(snapshot_inputs, "_read_dependencies", dependencies)
@@ -589,10 +591,10 @@ def test_export_capture_blocks_reference_change_until_whole_graph_is_copied(
 
     assert (
         json.loads(metadata)["metadata"]["itinerary_planning"]["revision"]
-        == view.revision
+        == view.revision + 1
     )
     assert committed.is_set()
-    assert calls == 2
+    assert calls == 4
 
 
 def test_crash_recovery_of_import_preserves_interleaved_foreign_pois(

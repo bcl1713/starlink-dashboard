@@ -232,40 +232,26 @@ def _read_dependencies(
 
 
 def capture_inputs(mission_id: str, route_manager, poi_manager, *, persisted=False):
-    """Lock order matches saves; recheck mutable dependencies before release."""
+    """Capture bytes under the gate, then validate detached inputs outside it."""
+    from app.mission.slide_cache.capture import capture_raw, normalize_capture
+
     last_error = None
     for attempt in range(2):
         try:
-            with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
-                mission = storage.load_mission_v2(mission_id)
-                if mission is None:
-                    raise SnapshotCaptureError(f"Mission {mission_id} not found")
-                metadata = canonical_json(mission.model_dump(mode="json"))
-                options = {"persisted": True} if persisted else {}
-                first = _read_dependencies(
-                    mission, route_manager, poi_manager, **options
+            raw = capture_raw(mission_id, route_manager, poi_manager)
+            metadata, sources, warnings, _ = normalize_capture(
+                raw, persisted=persisted, fingerprints=False
+            )
+            if attempt:
+                warnings += (
+                    "Source inputs changed during capture; whole-capture retry succeeded.",
                 )
-                second = _read_dependencies(
-                    mission, route_manager, poi_manager, **options
-                )
-                if first == second:
-                    warnings = (
-                        (
-                            "Source inputs changed during capture; whole-capture retry succeeded.",
-                        )
-                        if attempt
-                        else ()
-                    )
-                    return metadata, first, warnings
-        except SnapshotCaptureError:
-            raise
+            return metadata, sources, warnings
         except (OSError, ValueError, RuntimeError, TypeError) as exc:
             last_error = exc
-    if last_error is not None:
-        raise SnapshotCaptureError(
-            "Source inputs unavailable during capture after one retry"
-        ) from last_error
-    raise SnapshotCaptureError("Source inputs changed during both capture attempts")
+    raise SnapshotCaptureError(
+        "Source inputs changed or unavailable during capture after one retry"
+    ) from last_error
 
 
 def captured_coverage(sources: tuple[SourcePayload, ...]) -> CoverageSampler | None:

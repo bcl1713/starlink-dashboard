@@ -3,12 +3,163 @@
 import json
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+import pytest
+from filelock import Timeout
 
 from app.mission.slide_cache.coordinator import JobCancellation, SlideCoordinator
 from app.mission.slide_cache.identity import encode_snapshot
 from app.mission.slide_cache.store import SlideStore
 from tests.unit.test_customer_document import inputs
+
+
+def saved_leg(tmp_path, monkeypatch):
+    from app.mission import storage
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")
+    mission = Mission(
+        id="m",
+        name="Original",
+        legs=[
+            MissionLeg(
+                id="a",
+                name="A",
+                route_id="",
+                transports=TransportConfig(initial_x_satellite_id=""),
+            )
+        ],
+    )
+    storage.save_mission_v2(mission)
+    return mission
+
+
+def test_normalization_releases_active_gate(tmp_path, monkeypatch):
+    from app.mission import storage
+    from app.mission.slide_cache import coordinator as module
+    from app.mission.slide_cache import identity
+
+    saved_leg(tmp_path, monkeypatch)
+    entered, release = threading.Event(), threading.Event()
+    original = identity.leg_inputs
+
+    def slow_normalization(*args):
+        entered.set()
+        assert release.wait(3)
+        return original(*args)
+
+    monkeypatch.setattr(identity, "leg_inputs", slow_normalization)
+    readable = False
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        task = executor.submit(
+            module.reconcile, "m", None, None, SlideStore(tmp_path / "cache"), "v1"
+        )
+        try:
+            assert entered.wait(2)
+            try:
+                with storage.get_active_leg_lock().acquire(timeout=0.25):
+                    readable = storage.load_mission_v2("m").name == "Original"
+            except Timeout:
+                pass
+        finally:
+            release.set()
+            task.result(timeout=3)
+    assert readable, "Customer normalization held the API's global storage gate"
+
+
+def test_superseded_capture_cannot_enqueue(tmp_path, monkeypatch):
+    from app.mission import storage
+    from app.mission.slide_cache import coordinator as module
+    from app.mission.slide_cache import identity
+
+    mission = saved_leg(tmp_path, monkeypatch)
+    original = identity.leg_inputs
+    changed = False
+
+    def change_after_capture(*args):
+        nonlocal changed
+        if not changed:
+            changed = True
+            mission.name = "New committed input"
+            storage.save_mission_v2(mission)
+        return original(*args)
+
+    monkeypatch.setattr(identity, "leg_inputs", change_after_capture)
+    cache = SlideStore(tmp_path / "cache")
+    module.reconcile("m", None, None, cache, "v1")
+    queued = json.loads(cache.records("m")["a"]["inputs"])
+    assert queued["metadata"]["name"] == "New committed input"
+
+
+def test_cancellation_poll_never_reconciles_full_inputs(tmp_path, monkeypatch):
+    coordinator = SlideCoordinator(None, None, cache=SlideStore(tmp_path / "cache"))
+    token = coordinator.cache.request("m", "a", "v1", b"inputs")
+    monkeypatch.setattr(
+        coordinator,
+        "reconcile_all",
+        lambda: pytest.fail("Heavy work in cancellation poll"),
+    )
+    assert not JobCancellation(
+        coordinator, {"mission": "m", "leg": "a", "token": token}
+    ).is_set()
+
+
+def test_idle_reconciliation_reuses_validated_inputs(tmp_path, monkeypatch):
+    from app.mission.slide_cache import capture
+    from app.mission.slide_cache import coordinator as module
+
+    mission = saved_leg(tmp_path, monkeypatch)
+    original = capture.normalize_capture
+    calls = []
+
+    def normalize(raw, **kwargs):
+        calls.append(raw)
+        return original(raw, **kwargs)
+
+    monkeypatch.setattr(capture, "normalize_capture", normalize)
+    cache, memo = SlideStore(tmp_path / "cache"), {}
+    module.reconcile("m", None, None, cache, "v1", memo=memo)
+    module.reconcile("m", None, None, cache, "v1", memo=memo)
+    assert len(calls) == 1
+    mission.name = "Changed"
+    __import__("app.mission.storage", fromlist=["save_mission_v2"]).save_mission_v2(
+        mission
+    )
+    module.reconcile("m", None, None, cache, "v1", memo=memo)
+    assert len(calls) == 2
+
+
+def test_status_records_do_not_load_artifact_blobs(tmp_path, monkeypatch):
+    import sqlite3
+    from contextlib import contextmanager
+
+    cache = SlideStore(tmp_path / "cache")
+    token = cache.request("m", "a", "v1", b"inputs")
+    cache.claim()
+    cache.publish("m", "a", token, b"snapshot", b"pdf", b"evidence")
+    original = cache.connection
+
+    @contextmanager
+    def metadata_only():
+        with original() as db:
+            db.set_authorizer(
+                lambda operation, table, column, *rest: (
+                    sqlite3.SQLITE_DENY
+                    if operation == sqlite3.SQLITE_READ
+                    and table == "slides"
+                    and column in {"inputs", "snapshot", "pdf", "evidence"}
+                    else sqlite3.SQLITE_OK
+                )
+            )
+            yield db
+
+    monkeypatch.setattr(cache, "connection", metadata_only)
+    assert hasattr(cache, "status_records"), "Cheap preparation status is absent"
+    record = cache.status_records("m")["a"]
+    assert record["state"] == "ready" and record["fingerprint"] == "v1"
+    assert not {"inputs", "snapshot", "pdf", "evidence"} & record.keys()
 
 
 def test_new_input_cancels_only_its_running_job(tmp_path, monkeypatch):

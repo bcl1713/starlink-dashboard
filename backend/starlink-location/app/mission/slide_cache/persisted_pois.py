@@ -16,10 +16,13 @@ class PersistedPOIs:
         self.lock_file = str(manager.lock_file)
 
     @planning_read_gate
-    def list_pois(self):
+    def read_bytes(self):
         # capture_inputs reads this twice, detecting intervening persisted edits.
         with FileLock(self.lock_file, timeout=5):
-            raw = json.loads(self.path.read_bytes())
+            return self.path.read_bytes()
+
+    def list_pois(self):
+        raw = json.loads(self.read_bytes())
         return [
             POI.model_validate(value)
             for _, value in sorted(raw.get("pois", {}).items())

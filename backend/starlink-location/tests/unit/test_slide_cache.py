@@ -13,6 +13,18 @@ def store(tmp_path):
     return module.SlideStore(tmp_path / "slides.sqlite3")
 
 
+def test_reserved_inputs_cannot_replace_a_superseding_capture(tmp_path):
+    cache = store(tmp_path)
+    assert hasattr(cache, "reserve"), "Queue reservation must precede BLOB attachment"
+    old = cache.reserve("m", "a", "old")
+    assert cache.claim() is None
+    new = cache.reserve("m", "a", "new")
+    assert not cache.attach_inputs("m", "a", old, b"old bytes")
+    assert cache.attach_inputs("m", "a", new, b"new bytes")
+    job = cache.claim()
+    assert job["token"] == new and job["inputs"] == b"new bytes"
+
+
 def test_superseding_save_rejects_late_worker_publication(tmp_path):
     cache = store(tmp_path)
     first = cache.request("m", "a", "old", b"old inputs")
@@ -279,7 +291,7 @@ def test_deployed_renderer_does_not_require_checkout_depth(tmp_path, monkeypatch
     )
     before = identity.renderer_revision()
     css.write_text("header {color: blue}")
-    assert identity.renderer_revision() != before
+    assert identity.renderer_revision(refresh=True) != before
 
 
 def test_shared_route_generated_pois_do_not_supersede_unchanged_leg():
@@ -351,3 +363,17 @@ def test_persisted_pois_converge_across_stale_api_managers(tmp_path, monkeypatch
         json.loads(next(s.content for s in sources if s.name == "pois"))[0]["longitude"]
         == 2
     )
+
+
+def test_unchanged_renderer_identity_does_not_reread_assets(monkeypatch):
+    from pathlib import Path
+
+    from app.mission.slide_cache import identity
+
+    before = identity.renderer_revision()
+
+    def forbidden(self):
+        raise AssertionError("Renderer hashing repeated during status polling")
+
+    monkeypatch.setattr(Path, "read_bytes", forbidden)
+    assert identity.renderer_revision() == before

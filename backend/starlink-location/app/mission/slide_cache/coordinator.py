@@ -15,9 +15,8 @@ from app.mission.exporter.customer_runtime import (
     run_owned_renderer,
 )
 from app.mission.exporter.export_cancel import ExportCancelled
-from app.mission.exporter.snapshot_inputs import capture_inputs
 
-from .identity import effective, leg_inputs, renderer_revision
+from .identity import effective, renderer_revision
 from .store import default_store
 
 logger = logging.getLogger(__name__)
@@ -50,39 +49,65 @@ def saved_mission(previous, mission):
         _runtime.wake.set()
 
 
-def reconcile(mission_id, route_manager, poi_manager, cache, revision, *, retry=False):
-    # Keep the capture and enqueue atomic with respect to saved mission writes.
-    with storage.get_active_leg_lock():
-        from .persisted_pois import persisted_pois
+def reconcile(
+    mission_id, route_manager, poi_manager, cache, revision, *, retry=False, memo=None
+):
+    from app.mission.exporter.snapshot_inputs import SnapshotCaptureError
 
-        poi_manager = persisted_pois(poi_manager)
-        metadata, sources, warnings = capture_inputs(
-            mission_id, route_manager, poi_manager, persisted=True
+    from .capture import capture_is_current, capture_raw, normalize_capture
+    from .persisted_pois import persisted_pois
+
+    poi_manager = persisted_pois(poi_manager)
+    for attempt in range(2):
+        raw = capture_raw(mission_id, route_manager, poi_manager, revision)
+        try:
+            cached = memo.get(mission_id) if memo is not None else None
+            if (
+                cached
+                and cached[0].dependency_token == raw.dependency_token
+                and cached[0].renderer_revision == revision
+                and time.monotonic() - cached[1] < 30
+            ):
+                metadata, sources, warnings, normalized = cached[2]
+            else:
+                metadata, sources, warnings, normalized = normalize_capture(raw)
+                if memo is not None:
+                    memo[mission_id] = (
+                        raw,
+                        time.monotonic(),
+                        (metadata, sources, warnings, normalized),
+                    )
+        except SnapshotCaptureError:
+            if not attempt:
+                continue
+            raise
+        with storage.get_active_leg_lock():
+            if not capture_is_current(raw):
+                continue
+            tokens = {
+                leg: cache.reserve(mission_id, leg, fingerprint, retry=retry)
+                for leg, (fingerprint, _) in normalized.items()
+            }
+            cache.remove_except(mission_id, list(normalized))
+        for leg, (_, inputs) in normalized.items():
+            cache.attach_inputs(mission_id, leg, tokens[leg], inputs)
+        return (
+            metadata,
+            sources,
+            warnings,
+            {leg: value[0] for leg, value in normalized.items()},
         )
-        import json
-
-        legs = json.loads(metadata)["legs"]
-        expected = {}
-        for leg in legs:
-            fingerprint, inputs = leg_inputs(metadata, sources, leg["id"], revision)
-            cache.request(mission_id, leg["id"], fingerprint, inputs, retry=retry)
-            expected[leg["id"]] = fingerprint
-        cache.remove_except(mission_id, list(expected))
-        return metadata, sources, warnings, expected
+    raise SnapshotCaptureError("Source inputs changed during queue publication")
 
 
 class JobCancellation:
     def __init__(self, coordinator, job):
         self.coordinator, self.job = coordinator, job
-        self.next_check = 0
 
     def is_set(self):
         owner, job = self.coordinator, self.job
         if owner.stop.is_set():
             return True
-        if time.monotonic() >= self.next_check:
-            self.next_check = time.monotonic() + 1
-            owner.reconcile_all()
         return not owner.cache.current(job["mission"], job["leg"], job["token"])
 
     def wait(self, seconds):
@@ -94,6 +119,7 @@ class SlideCoordinator:
     def __init__(self, route_manager, poi_manager, *, cache=None):
         self.route_manager, self.poi_manager = route_manager, poi_manager
         self.cache = cache or default_store()
+        self._captures = {}
         self.revision = renderer_revision()
         self.stop, self.wake = threading.Event(), threading.Event()
         self.thread = threading.Thread(
@@ -128,11 +154,12 @@ class SlideCoordinator:
                     self.poi_manager,
                     self.cache,
                     self.revision,
+                    memo=self._captures,
                 )
             except (OSError, ValueError, RuntimeError, sqlite3.Error):
                 logger.exception("Customer PDF reconciliation deferred for %s", mission)
                 # Never deliver a ready artifact whose inputs could not be checked.
-                self.cache.invalidate(mission, list(self.cache.records(mission)))
+                self.cache.invalidate(mission, list(self.cache.status_records(mission)))
 
     def run_job(self, job):
         cancel = JobCancellation(self, job)
@@ -171,7 +198,8 @@ class SlideCoordinator:
                     if result["included"]
                     else None
                 )
-                # Recheck dependencies and persistence before token-gated publish.
+                # Full reconciliation happens once before publication, never in polling.
+                self.reconcile_all()
                 if cancel.is_set():
                     raise ExportCancelled("Superseded slide generation")
                 self.cache.publish(

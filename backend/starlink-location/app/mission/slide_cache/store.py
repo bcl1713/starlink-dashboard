@@ -27,24 +27,50 @@ class SlideStore:
             db.close()
 
     def request(self, mission, leg, fingerprint, inputs, *, retry=False):
+        token = self.reserve(mission, leg, fingerprint, retry=retry)
+        self.attach_inputs(mission, leg, token, inputs)
+        return token
+
+    def reserve(self, mission, leg, fingerprint, *, retry=False):
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             old = db.execute(
-                "SELECT * FROM slides WHERE mission=? AND leg=?", (mission, leg)
+                "SELECT token,fingerprint,state FROM slides WHERE mission=? AND leg=?",
+                (mission, leg),
             ).fetchone()
             if (
                 old
                 and old["fingerprint"] == fingerprint
-                and old["state"] != "dirty"
+                and old["state"] not in {"dirty", "capturing"}
                 and not (retry and old["state"] == "failed")
             ):
                 return old["token"]
             token = uuid4().hex
             db.execute(
                 "INSERT OR REPLACE INTO slides VALUES (?,?,?,?,?,?,NULL,NULL,NULL,NULL)",
-                (mission, leg, fingerprint, token, "queued", inputs),
+                (mission, leg, fingerprint, token, "capturing", None),
             )
             return token
+
+    def attach_inputs(self, mission, leg, token, inputs):
+        with self.connection() as db:
+            return (
+                db.execute(
+                    "UPDATE slides SET inputs=?, state='queued' WHERE mission=? AND leg=? AND token=? AND state='capturing'",
+                    (inputs, mission, leg, token),
+                ).rowcount
+                == 1
+            )
+
+    def status_records(self, mission):
+        with self.connection() as db:
+            return {
+                r["leg"]: dict(r)
+                for r in db.execute(
+                    "SELECT mission,leg,fingerprint,token,state,warning FROM slides WHERE mission=?",
+                    (mission,),
+                )
+            }
 
     def invalidate(self, mission, legs):
         with self.connection() as db:
