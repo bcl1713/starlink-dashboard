@@ -239,9 +239,9 @@ def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch,
     monkeypatch.setattr(package, "datetime", FixedDatetime)
     captured = capture_export_snapshot("m", routes, pois)
     with package.export_mission_package("m", routes, pois) as stream:
-        baseline = stream.getvalue()
+        baseline = stream.read()
     with package.export_mission_package("m", routes, pois, snapshot=captured) as stream:
-        frozen = stream.getvalue()
+        frozen = stream.read()
     with zipfile.ZipFile(io.BytesIO(baseline)) as a, zipfile.ZipFile(
         io.BytesIO(frozen)
     ) as b:

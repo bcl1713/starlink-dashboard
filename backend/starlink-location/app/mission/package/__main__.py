@@ -22,6 +22,7 @@ from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
 from app.mission.exporter.plot_ownership import export_plot_context
 from app.mission.exporter.snapshot_views import SnapshotViews
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TimelineStatus
+from app.mission.package.streams import new_package_stream
 from app.mission.storage import (
     load_mission_timeline,
     load_mission_v2,
@@ -662,7 +663,7 @@ def export_mission_package(
         raise ExportPackageError(f"Mission {mission_id} not found")
 
     # Create a temporary file for the zip archive. The caller owns closing it.
-    zip_temp = io.BytesIO()
+    zip_temp = new_package_stream()
 
     manifest_files = {
         "mission_data": ["mission.json", "manifest.json"],

@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.mission.exporter.export_cancel import ExportCancelled
 
 from .customer_artifacts import build_mission_package_download
+from .streams import iter_zip_blocks
 
 
 async def _discard_worker_result(worker):
@@ -59,7 +60,9 @@ async def run_mission_package_job(
 class OwnedZipResponse(StreamingResponse):
     def __init__(self, stream, *, headers):
         self.owned_stream = stream
-        super().__init__(stream, media_type="application/zip", headers=headers)
+        super().__init__(
+            iter_zip_blocks(stream), media_type="application/zip", headers=headers
+        )
 
     async def __call__(self, scope, receive, send):
         try:
