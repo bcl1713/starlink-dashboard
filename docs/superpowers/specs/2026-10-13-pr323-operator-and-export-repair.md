@@ -12,9 +12,10 @@ The inspected starting head is `66577537e6bb8d13308fcfa718cb3175ae7d8a99`.
 
 The outcome is an operator journey that accepts the supplied itinerary and
 routes, preserves explicit executable-plan approval, and produces useful
-customer maps without making the API unresponsive. This document is a proposed
-design for review, not implementation or acceptance evidence. It supplements the
-existing
+customer maps without making the API unresponsive. The user approved this
+design, including the flight-level default, on 2026-10-13. Approval permits
+preparation of the implementation plan; this document is not acceptance
+evidence. It supplements the existing
 [itinerary planning design](2026-10-09-itinerary-xband-planning-design.md) and
 its
 [policy/resource contracts](2026-10-09-itinerary-xband-planning-contracts.md).
