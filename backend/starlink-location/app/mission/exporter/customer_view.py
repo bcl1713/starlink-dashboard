@@ -83,7 +83,10 @@ def _impact(interval):
     elif down:
         parts.append(" + ".join(down) + " unavailable")
     elif interval.limitations and not any(d.value == "?" for d in interval.decisions):
-        parts.append("Transport coordination limitation")
+        constrained = [
+            n for n, d in zip(TRANSPORT_NAMES, interval.decisions) if d.limitation
+        ]
+        parts.append((" + ".join(constrained) or "Transport") + " operating constraint")
     return "; ".join(parts) or "Assessment changed"
 
 

@@ -106,6 +106,9 @@ def _leg_payload(snapshot, captured, view, projection):
                 "posture": i.posture,
                 "decisions": [d.value for d in i.decisions],
                 "restrictionLabels": list(restriction_labels(i)),
+                "operatingConstraints": [
+                    d.value == "Up" and bool(d.limitation) for d in i.decisions
+                ],
             }
             for i in projection.intervals
         ],

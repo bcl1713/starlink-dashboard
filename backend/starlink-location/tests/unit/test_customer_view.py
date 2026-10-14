@@ -201,3 +201,33 @@ def test_customer_uncertainty_change_without_outage_is_material():
     assert row.posture == "Assessment incomplete"
     assert row.remaining == "Ka + Starshield confirmed"
     assert row.end_time == changed.end_time
+
+
+def test_available_transport_constraint_names_the_affected_transport():
+    from dataclasses import replace
+
+    captured = snapshot(fixture("composition-assessed"))
+    projection = project_briefing_leg(captured)
+    nominal = next(
+        i for i in projection.intervals if not i.restrictions and i.posture == "Nominal"
+    )
+    constrained = replace(
+        nominal,
+        decisions=tuple(
+            replace(d, limitation="PRIVATE internal geometry") if n == 0 else d
+            for n, d in enumerate(nominal.decisions)
+        ),
+        limitations=("PRIVATE internal geometry",),
+    )
+    projection = replace(
+        projection,
+        intervals=tuple(
+            constrained if i is nominal else i for i in projection.intervals
+        ),
+    )
+    row = next(
+        r for r in view(captured, projection).rows if r.start_time == nominal.start_time
+    )
+    assert row.impact == "Commercial Ka operating constraint"
+    assert row.posture == "Nominal"
+    assert row.remaining == "Commercial Ka + Starshield + X-Band MILSATCOM"

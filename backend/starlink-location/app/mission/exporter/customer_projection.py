@@ -155,8 +155,26 @@ def classify_transport(
     policy = tuple(s for s in fresh if s.source_type == "planning_policy")
     if policy:
         down = any(s.metadata.get("independent_usability") == "Down" for s in policy)
+        # Planning interval reasons are mission-wide. Only transport-local
+        # constraints can qualify an otherwise available transport's lane.
+        local = _unique(
+            reason
+            for source in fresh
+            for reason in (
+                source.metadata.get("transport_constraints", [])
+                if source.source_type == "planning_policy"
+                else (
+                    [source.reason]
+                    if source.source_type != "availability_basis"
+                    else []
+                )
+            )
+        )
         return UsabilityDecision(
-            "Down" if down else "Up", "prefer-starshield-v1", ids, text
+            "Down" if down else "Up",
+            "prefer-starshield-v1",
+            ids,
+            text if down else "; ".join(local) or None,
         )
     if (state == TransportState.OFFLINE and not has_stale) or any(
         _proven_down(s) for s in fresh
@@ -202,9 +220,7 @@ def classify_transport(
 
 
 def _time(raw) -> datetime | None:
-    return (
-        ensure_utc(datetime.fromisoformat(raw.replace("Z", "+00:00"))) if raw else None
-    )
+    return ensure_utc(datetime.fromisoformat(raw)) if raw else None
 
 
 def _source(
@@ -544,6 +560,11 @@ def _collect_sources(
                             "metadata": {
                                 "planning_policy": "prefer_starshield_v1",
                                 "raw_constraints": interval["raw_constraints"],
+                                "transport_constraints": (
+                                    interval["raw_constraints"]
+                                    if transport == "X"
+                                    else []
+                                ),
                                 "independent_usability": (
                                     "Up" if interval[field] == "available" else "Down"
                                 ),

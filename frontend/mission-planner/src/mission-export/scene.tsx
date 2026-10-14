@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityLitGlobe } from '../pages/CityLitGlobe';
 import { GlobeRouteRibbon } from '../pages/GlobeRouteRibbon';
@@ -46,6 +46,11 @@ function ReadyScene({
   onLabels: (labels: MarkerLabel[]) => void;
 }) {
   const { gl, scene, camera, invalidate } = useThree();
+  // Reuse the globe's TextureLoader cache, including its shader-only mask.
+  const textures = useLoader(THREE.TextureLoader, [
+    '/earth-day-hi.jpg',
+    '/city-lights-mask.png',
+  ]);
   const prepared = useRef(false);
   const frames = useRef(0);
   useEffect(() => {
@@ -63,28 +68,10 @@ function ReadyScene({
       try {
         applyCameraFrame(camera as THREE.PerspectiveCamera, view);
         const images = new Set<HTMLImageElement>();
-        scene.traverse((object) => {
-          const material = (object as THREE.Mesh).material;
-          for (const m of Array.isArray(material) ? material : [material]) {
-            if (!m) continue;
-            const map = (m as THREE.MeshStandardMaterial).map;
-            if (map?.image instanceof HTMLImageElement) images.add(map.image);
-          }
-        });
-        // useLoader has resolved both local textures; decode their source images
-        // explicitly, including the city mask used by onBeforeCompile.
-        for (const image of document.images) if (image.src) images.add(image);
-        if (images.size < 2) {
-          // TextureLoader's source cache carries the second shader-only mask.
-          const textures = await Promise.all(
-            ['/earth-day-hi.jpg', '/city-lights-mask.png'].map(async (src) => {
-              const image = new Image();
-              image.src = src;
-              await image.decode();
-              return image;
-            })
-          );
-          textures.forEach((image) => images.add(image));
+        for (const texture of textures) {
+          if (!(texture.image instanceof HTMLImageElement))
+            throw new Error('Expected local globe texture images');
+          images.add(texture.image);
         }
         await Promise.all([...images].map((image) => image.decode()));
         await document.fonts.ready;
@@ -119,7 +106,7 @@ function ReadyScene({
       active = false;
       canvas.removeEventListener('webglcontextlost', lost);
     };
-  }, [camera, digest, gl, invalidate, scene, view]);
+  }, [camera, digest, gl, invalidate, scene, textures, view]);
   useFrame(() => {
     if (!prepared.current || window.missionMap.state.status === 'error') return;
     gl.render(scene, camera);

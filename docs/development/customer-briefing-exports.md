@@ -67,3 +67,46 @@ The runner owns an isolated Compose project, compares ready exports with full
 rendering, checks supersession and restart reuse, verifies actual PDF geometry
 and raster output, downloads through the browser, and removes its containers,
 networks, private volumes, and image tags.
+
+## Table and timeline presentation
+
+Coordination rows show `HH:MM - HH:MM` in Eastern time. Exact UTC bounds, dates,
+seconds and DST offset identity remain in canonical evidence and CSVs. Headers
+and timeline axes retain their timing context. Cells stay on one line; rows use
+12pt text, reduced as needed to a 9pt minimum without truncation. Inputs that
+cannot fit at that minimum still fail the existing overflow checks.
+
+Transport availability uses the same blue as SOF/AR blocks. Gray hatching means
+an unavailable transport, `?` means unknown, and a dashed border marks an
+operating constraint on an available transport. The table names the affected
+transport. Planning interval reasons apply to the mission as a whole; only
+transport-local constraints qualify an available lane's marker.
+
+## Rendering performance investigation (14 October 2026)
+
+A controlled retained four-leg render (three available maps, seven pages) took
+20.8 seconds, used 78.1 CPU seconds across the container, and peaked at 1.59 GB
+of cgroup memory. Map stages consumed 13.5 seconds, actual PDF printing 0.26
+seconds, and actual PDF verification 1.80 seconds. These are renderer-only
+measurements, excluding source capture, background queue wait and ZIP assembly.
+They do not establish timings for every mission or a production download SLA.
+
+Detailed map instrumentation measured 10–30 ms for route planning and about
+three seconds per map for scene readiness. Chromium uses software WebGL; the
+Earth and city-light textures are both 8192 by 4096 pixels. The readiness probe
+previously fetched these textures again after the globe loaded them. It now uses
+the same TextureLoader cache. A real-browser regression proves one request per
+texture, and all three map PNG hashes match the baseline exactly.
+
+Texture reuse alone did not materially reduce latency or peak memory in this
+control: 20.6 seconds and 1.58 GB. Omitting all page previews in a diagnostic
+copy saved about 1.6 seconds and did not materially reduce peak memory; previews
+remain enabled. The main remaining resource cost lies in globe scene readiness,
+not PDF printing. Further work should profile texture upload, shader compilation
+and software rendering separately, then evaluate reuse across leg preparation.
+No texture or output resolution was reduced in this change.
+
+Maps already render directly at the measured printed dimensions using 300 DPI: a
+280 CSS-pixel column needs `ceil(280 * 300 / 96) = 875` raster pixels. The
+1920-pixel framing reference does not create a 1920-pixel intermediate raster.
+Preserve that output density when investigating further improvements.

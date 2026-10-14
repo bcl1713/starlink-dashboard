@@ -10,9 +10,14 @@ def display(row):
 
 
 @pytest.mark.parametrize(
-    "time", ["≈ 23:59 31 Oct–00:01 1 Nov", "01:30 EDT–01:30 EST", "12:25:01–12:25:05"]
+    "time,want",
+    [
+        ("≈ 23:59 31 Oct–00:01 1 Nov", "23:59 - 00:01"),
+        ("01:30 EDT–01:30 EST", "01:30 - 01:30"),
+        ("12:25:01–12:25:05", "12:25 - 12:25"),
+    ],
 )
-def test_display_cells_preserve_accepted_customer_copy(time):
+def test_display_cells_preserve_customer_meaning(time, want):
     assert display(
         {
             "et": time,
@@ -20,7 +25,7 @@ def test_display_cells_preserve_accepted_customer_copy(time):
             "remaining": "Commercial Ka + Starshield",
             "posture": "Limited / elevated risk",
         }
-    ) == (time, "Ka + X-Band unavailable", "Ka, Starshield", "Elevated risk")
+    ) == (want, "Ka + X-Band unavailable", "Ka, Starshield", "Elevated risk")
 
 
 @pytest.mark.parametrize(
@@ -39,4 +44,18 @@ def test_display_shortens_only_customer_posture(posture, want):
             "remaining": "None confirmed",
             "posture": posture,
         }
-    ) == ("10:00–10:15", "<script>unsafe</script>", "None confirmed", want)
+    ) == ("10:00 - 10:15", "<script>unsafe</script>", "None confirmed", want)
+
+
+@pytest.mark.parametrize(
+    "clock,want",
+    [
+        ("31 Oct 23:59 ET–01 Nov 00:01 ET", "23:59 - 00:01"),
+        ("01:30 EDT–01:30 EST", "01:30 - 01:30"),
+        ("12:25:01 ET–12:25:05 ET", "12:25 - 12:25"),
+    ],
+)
+def test_table_time_is_minutes_only_while_canonical_clock_stays_exact(clock, want):
+    row = {"et": clock, "impact": "SOF", "remaining": "Ka", "posture": "Nominal"}
+    assert display(row)[0] == want
+    assert row["et"] == clock

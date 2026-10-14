@@ -263,3 +263,22 @@ test('down_spans_use_clipped_vector_hatching', async () => {
   unknown.intervals.forEach((i) => (i.decisions = ['Up', '?', 'Up']));
   assert.doesNotMatch((await renderer())(unknown), /<clipPath/);
 });
+
+test('transport blocks match SOF blue without Up/Down text and constraints mark only the affected lane', async () => {
+  const p = structuredClone(payload);
+  p.intervals[0].operatingConstraints = [true, false, false];
+  const svg = (await renderer())(p);
+  assert.doesNotMatch(svg, />(Up|Down)<\/text>/);
+  const sof = svg.match(/data-restriction[^>]*fill="([^"]+)"/)[1];
+  assert.match(
+    svg,
+    new RegExp(`data-transport="0" data-state="Up"[^>]*fill="${sof}"`)
+  );
+  const marks = [
+    ...svg.matchAll(/<[^>]+data-operating-constraint="(\d)"[^>]+>/g),
+  ];
+  assert.equal(marks.length, 1);
+  assert.equal(marks[0][1], '0');
+  assert.match(marks[0][0], /width="290"/);
+  assert.match(svg, /Ka operating constraint/);
+});

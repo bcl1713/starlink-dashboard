@@ -14,6 +14,7 @@ export const COLORS = {
   'Communications unavailable': '#b72e36',
   'Posture uncertain': '#dce2e8',
 };
+export const TRANSPORT_BLUE = '#899db9';
 export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
   const prefix = Array.from(String(idPrefix), (c) =>
     c.codePointAt(0).toString(16)
@@ -122,25 +123,41 @@ export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
         i,
         y,
         18,
-        state === 'Down' ? '#d2d8df' : state === '?' ? '#e9edf1' : '#b8c7cc',
+        state === 'Down'
+          ? '#d2d8df'
+          : state === '?'
+            ? '#e9edf1'
+            : TRANSPORT_BLUE,
         `data-transport="${n}" data-state="${escapeText(state)}"`
       );
       if (state === 'Down') out += hatch(i, y);
     }
-    const runs = [];
+    // Unknown availability remains explicit; operating constraints do not imply an outage.
     for (const i of payload.intervals) {
-      const state = i.decisions[n];
-      const last = runs.at(-1);
-      if (last && last.endUtc === i.startUtc && last.state === state)
-        last.endUtc = i.endUtc;
-      else runs.push({ ...i, state });
+      if (i.operatingConstraints?.[n] && i.decisions[n] === 'Up') {
+        out += rect(
+          i,
+          y,
+          18,
+          'none',
+          `data-operating-constraint="${n}" stroke="#122a44" stroke-width="2" stroke-dasharray="4 3"`
+        );
+        out += `<title>${escapeText(name)} operating constraint</title>`;
+      }
     }
-    for (const run of runs) {
+    const unknownRuns = [];
+    for (const i of payload.intervals) {
+      if (i.decisions[n] !== '?') continue;
+      const last = unknownRuns.at(-1);
+      if (last && last.endUtc === i.startUtc) last.endUtc = i.endUtc;
+      else unknownRuns.push({ ...i });
+    }
+    for (const run of unknownRuns) {
       if (width(run) >= 40)
         out += text(
           x(run.startUtc) + width(run) / 2,
           y + 14,
-          run.state,
+          '?',
           'text-anchor="middle" class="lane-state"'
         );
     }
@@ -158,7 +175,7 @@ export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
     else restrictions.push({ ...i, label });
   }
   for (const i of restrictions) {
-    out += rect(i, 202, 18, '#899db9', 'data-restriction');
+    out += rect(i, 202, 18, TRANSPORT_BLUE, 'data-restriction');
   }
   const localDateClock = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',

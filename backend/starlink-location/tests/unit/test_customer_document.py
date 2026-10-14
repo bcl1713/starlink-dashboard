@@ -179,7 +179,7 @@ def test_document_rows_carry_exact_display_cells():
     captured, projection, view = inputs()
     payload = build(captured, view, projection)
     assert payload["rows"][0].get("displayCells") == [
-        "10:00–10:15",
+        "10:00 - 10:15",
         "Takeoff SOF",
         "Ka, Starshield, X-Band",
         "Nominal",
@@ -206,7 +206,7 @@ def test_mission_projects_ordered_legs_from_one_snapshot_without_mutation():
         assert leg["snapshotFingerprint"] == captured.fingerprint
         assert leg["header"]["title"].startswith(f"LEG {number} OF 5")
         assert leg["flight"]["startUtc"] == "2026-10-25T14:00:00Z"
-        assert leg["rows"][0]["displayCells"][0] == "10:00–10:15"
+        assert leg["rows"][0]["displayCells"][0] == "10:00 - 10:15"
     assert captured.legs == legs
 
 
@@ -289,5 +289,44 @@ def test_rounded_customer_times_omit_marks_without_losing_exact_bounds():
     payload = build(captured, replace(view, rows=(row,)), projection)
     assert row.clock.approximate is True
     assert payload["rows"][0]["et"] == "10:00 ET–10:15 ET"
-    assert payload["rows"][0]["displayCells"][0] == "10:00–10:15"
+    assert payload["rows"][0]["displayCells"][0] == "10:00 - 10:15"
     assert payload["rows"][0]["startUtc"] == "2026-10-25T14:00:29Z"
+
+
+def test_x_planning_condition_does_not_mark_available_ka_or_starshield():
+    data = fixture("composition-assessed")
+    data["source_records"] = []
+    data["timeline"]["segments"] = [
+        {
+            "start_time": data["utc_bounds"][0],
+            "end_time": data["utc_bounds"][1],
+            "metadata": {
+                "planning_interval": {
+                    "start_time": data["utc_bounds"][0],
+                    "end_time": data["utc_bounds"][1],
+                    "policy_x_state": "degraded",
+                    "policy_ka_state": "available",
+                    "policy_ku_state": "available",
+                    "raw_constraints": ["x_elevation"],
+                    "physical_reasons": ["x_elevation"],
+                    "policy_reasons": [],
+                }
+            },
+        }
+    ]
+    leg = replace(snapshot(data), preparation_origin="rebuilt")
+    captured = ExportSnapshot(
+        data["mission"]["id"],
+        "fingerprint",
+        canonical_json(data["mission"]),
+        (leg,),
+        (),
+        (),
+    )
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    payload = build(captured, view, projection)
+    assert all(i["decisions"] == ["Up", "Up", "Down"] for i in payload["intervals"])
+    assert all(
+        i["operatingConstraints"] == [False, False, False] for i in payload["intervals"]
+    )
