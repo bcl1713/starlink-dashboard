@@ -201,14 +201,19 @@ def assert_scenario(case, report):
         if report.get("warning") != "data":
             raise ValueError("Missing route must retain legacy with data omission")
         return
-    count = {"two-page": 2, "three-page": 3, "five-leg": 5}.get(case)
+    count = {
+        "two-page": 2,
+        "three-page": 3,
+        "five-leg": 5,
+        "mission-pdf-resources": 5,
+    }.get(case)
     if count is not None and report.get("pageCount") != count:
         raise ValueError(
             f"Wrong actual page count for {case}: {report.get('pageCount')}"
         )
     evidence = report["evidence"]
     legs = evidence["legs"]
-    if len(legs) != (5 if case == "five-leg" else 1):
+    if len(legs) != ({"five-leg": 5, "mission-pdf-resources": 3}.get(case, 1)):
         raise ValueError("Wrong number of captured legs")
     maps = evidence["render"]["maps"]
     if case == "missing-map":
@@ -880,6 +885,7 @@ def qualify(owner):
         "two-page",
         "three-page",
         "five-leg",
+        "mission-pdf-resources",
         "over-budget",
         "missing-map",
         "adjusted",
@@ -1110,4 +1116,153 @@ def qualify(owner):
         "legacyComparison": legacy_comparison,
         "roundtripImports": imported,
         "customerAcceptance": "pending",
+    }
+
+
+def download_prepared(api, mission_id, *, timeout=600, poll_seconds=0.25):
+    """Exercise the current preparation API; never mistake job JSON for a ZIP."""
+    started = time.monotonic()
+    base = f"/api/v2/missions/{mission_id}/export-preparations"
+    content, _, _ = api.request("POST", base)
+    job = json.loads(content)
+    stages = [job]
+    path = base + "/" + job["id"]
+    while job["state"] != "ready":
+        if job["state"] in {"failed", "cancelled", "expired"}:
+            raise ValueError("Export preparation did not become ready: " + str(job))
+        if time.monotonic() - started >= timeout:
+            api.request("DELETE", path)
+            raise TimeoutError("Export preparation exceeded acceptance deadline")
+        time.sleep(poll_seconds)
+        content, _, _ = api.request("GET", path)
+        job = json.loads(content)
+        stages.append(job)
+    content, headers, _ = api.request("GET", path + "/download")
+    return content, headers, time.monotonic() - started, stages
+
+
+def qualify_pdf_resources(owner):
+    """Current prepared-export source controls; private browser journey is separate."""
+    from production_seed import provider_seed, seed_missions
+
+    owner.env["BRIEFING_ENABLED"] = "true"
+    owner.compose(
+        "run",
+        "--rm",
+        "--no-deps",
+        "starlink-location",
+        "python",
+        "-c",
+        provider_seed(),
+        timeout=30,
+    )
+    owner.compose("up", "-d", "--wait", "--wait-timeout", "150", timeout=180)
+    api = ProductionApi(owner)
+    tools = (
+        Path(owner.env["BRIEFING_SOURCE_ROOT"]) / "tools/acceptance/customer-briefing"
+    )
+    # These two historical scenarios require destructive setup in qualify(),
+    # which is outside the focused PDF-resource matrix.
+    names = [
+        "mission-pdf-resources",
+        "normal",
+        "incomplete-x",
+        "short",
+        "midnight",
+        "dst",
+        "short-dst",
+        "subminute",
+        "uncertain-subminute",
+        "nested-outage",
+        "ar-sof",
+        "adjusted",
+        "spliced",
+        "two-page",
+        "three-page",
+        "five-leg",
+        "over-budget",
+        "missing-map",
+    ]
+    fixtures = seed_missions(api, owner.root, names=names)
+    reports = []
+
+    def inspect_case(case, mission, label):
+        destination = owner.root / "downloads" / label
+        destination.mkdir(parents=True)
+        content, headers, elapsed, stages = download_prepared(api, mission["id"])
+        (destination / "download.zip").write_bytes(content)
+        (destination / "preparation-stages.json").write_text(
+            json.dumps(stages, indent=2)
+        )
+        status = "omitted" if case == "over-budget" else "included"
+        report = inspect_download(content, headers, status)
+        assert_scenario(case, report)
+        report.update(
+            case=case, attempt=label, proxyTotalSeconds=elapsed, zipBytes=len(content)
+        )
+        if status == "included":
+            # Rootless Docker cannot docker-cp into a container with a read-only
+            # bind mount. Inspect the exact downloaded ZIP in a disposable probe
+            # container from the same image, with its evidence directory mounted.
+            report["actualPdfInspection"] = json.loads(
+                owner.compose(
+                    "run",
+                    "--rm",
+                    "--no-deps",
+                    "--user",
+                    "root",
+                    "--entrypoint",
+                    "python",
+                    "-e",
+                    "PYTHONPATH=/acceptance:/app:/home/appuser/.local/lib/python3.11/site-packages",
+                    "-v",
+                    f"{destination}:/probe-evidence",
+                    "starlink-location",
+                    "-c",
+                    (tools / "production_pdf_probe.py").read_text(),
+                    "/probe-evidence/download.zip",
+                    "/probe-evidence/actual-pdf",
+                    timeout=180,
+                ).splitlines()[-1]
+            )
+        if case == "mission-pdf-resources":
+            if status != "included" or report["actualPdfInspection"]["pageCount"] != 5:
+                raise ValueError("Five-page resource fixture was not delivered")
+            content_again, _, _, reused = download_prepared(api, mission["id"])
+            if content_again != content or reused[0]["id"] != stages[-1]["id"]:
+                raise ValueError("Ready resource export was not reused exactly")
+            report["readyReuse"] = True
+        (destination / "inspection.json").write_text(json.dumps(report, indent=2))
+        reports.append(report)
+
+    for case, mission in fixtures.items():
+        inspect_case(case, mission, case)
+    for attempt in (2, 3):
+        seed_root = owner.root / f"cold-resource-{attempt}"
+        seed_root.mkdir()
+        repeated = seed_missions(
+            api,
+            seed_root,
+            names=["mission-pdf-resources"],
+            id_prefix=f"briefing-cold-{attempt}-",
+        )
+        inspect_case(
+            "mission-pdf-resources",
+            repeated["mission-pdf-resources"],
+            f"mission-pdf-resources-cold-{attempt}",
+        )
+    cold = [
+        report["actualPdfInspection"]
+        for report in reports
+        if report["case"] == "mission-pdf-resources"
+    ]
+    for key in ("geometryTextHash", "rasters"):
+        if any(report[key] != cold[0][key] for report in cold[1:]):
+            raise ValueError(
+                "Cold resource exports changed page text/geometry or rendered pixels"
+            )
+    return {
+        "fixtureKind": "synthetic providers and supported API mission/KML inputs",
+        "mode": "prepared PDF resource controls",
+        "reports": reports,
     }

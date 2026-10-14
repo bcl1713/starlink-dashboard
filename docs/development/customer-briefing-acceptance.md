@@ -82,7 +82,26 @@ mission-list counts and final inactive reviewed-input readback. Two-second
 probes target the backend health listener, status and mission endpoints. Actual
 ZIP PDFs must contain route and airport overlays for all three original routes,
 with scene identity and PDF-image pixels checked independently. Fresh offline
-and online runs use equivalent inputs and monitoring load; timing differences
-do not by themselves establish network causation. Preserve failures and inspect
+and online runs use equivalent inputs and monitoring load; timing differences do
+not by themselves establish network causation. Preserve failures and inspect
 cleanup receipts before retrying. Brian's rendered-journey review remains a gate
 before closing the associated issues.
+
+## Prepared PDF resource controls
+
+For the customer PDF sizing and reuse change, use the current preparation API:
+
+```sh
+bash tools/acceptance/customer-briefing/run-production.sh \
+  --candidate-sha "$(git rev-parse HEAD)" \
+  --pdf-resources-only --evidence-root /path/to/private/resource-evidence
+```
+
+This mode builds fresh exact-SHA production images, seeds supported source
+scenarios, records preparation stages, downloads ready ZIPs through Nginx, and
+independently checks delivered PDF resources, canonical cells and page geometry.
+The three-leg resource fixture has five pages and distinct maps; its ready job
+must reuse the same ZIP and preparation ID. Run the private offline and online
+itinerary browser controls above separately. The historical full matrix's
+blocking `POST /export` assumption predates the current preparation API and
+cannot qualify that API by interpreting its job JSON as a ZIP.

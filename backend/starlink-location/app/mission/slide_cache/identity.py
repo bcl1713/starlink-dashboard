@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from dataclasses import asdict, replace
 from datetime import datetime
 from hashlib import sha256
@@ -34,13 +35,18 @@ def renderer_revision(*, refresh=False):
     else:
         renderer = root.parents[3] / "frontend/mission-planner/src/mission-export"
     key = (str(root), str(renderer))
-    if is_deployed and not refresh and key in _renderer_cache:
-        return _renderer_cache[key][1]
     paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     paths += list(renderer.rglob("*.mjs")) + list(renderer.rglob("*.css"))
     assets = Path("/opt/customer-briefing/assets")
     if assets.exists():
         paths += [p for p in assets.rglob("*") if p.is_file()]
+    # A development source bind mount does not replace the bundled PNG selected
+    # by BRIEFING_APO_PATH. Identity must include the bytes actually embedded.
+    if effective_apo := os.environ.get("BRIEFING_APO_PATH"):
+        asset = Path(effective_apo)
+        if asset.is_file():
+            paths.append(asset)
+    paths = list(set(paths))
     token = tuple(
         (str(p), p.stat().st_mtime_ns, p.stat().st_ctime_ns, p.stat().st_size)
         for p in sorted(paths)
@@ -67,7 +73,7 @@ def leg_inputs(metadata, sources, leg_id, revision):
         tuple(leg["id"] for leg in raw["legs"]),
     )
     number = order.numbers[leg_id]
-    leg = next(l for l in raw["legs"] if l["id"] == leg_id)
+    leg = next(item for item in raw["legs"] if item["id"] == leg_id)
     route_id = leg.get("route_id")
     selected = tuple(
         s

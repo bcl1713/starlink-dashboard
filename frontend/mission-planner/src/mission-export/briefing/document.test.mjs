@@ -173,3 +173,44 @@ test('mission continuation repeats identity clocks and caveat without map or tim
     /coverage/
   );
 });
+
+test('mission_timeline_clip_ids_are_unique', async () => {
+  const { composeMissionBriefing } = await import('./document.mjs');
+  const legs = [payload, { ...payload, legId: 'leg-two' }];
+  const pages = [
+    {
+      legId: 'leg',
+      page: 1,
+      kind: 'primary',
+      rowIds: [],
+      legPage: 1,
+      legPageCount: 2,
+    },
+    {
+      legId: 'leg',
+      page: 2,
+      kind: 'primary',
+      rowIds: [],
+      legPage: 2,
+      legPageCount: 2,
+    },
+    {
+      legId: 'leg-two',
+      page: 3,
+      kind: 'primary',
+      rowIds: [],
+      legPage: 1,
+      legPageCount: 1,
+    },
+  ];
+  const html = composeMissionBriefing(
+    { schemaVersion: 2, missionId: 'm', snapshotFingerprint: 'f', legs },
+    { schemaVersion: 2, missionId: 'm', snapshotFingerprint: 'f', pages },
+    assets
+  );
+  const ids = [...html.matchAll(/<clipPath id="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(ids.length, 9);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const id of ids)
+    assert.match(html, new RegExp(`clip-path="url\\(#${id}\\)"`));
+});

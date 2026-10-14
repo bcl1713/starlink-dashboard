@@ -244,7 +244,9 @@ def free_loopback_port():
         return listener.getsockname()[1]
 
 
-def run_production(candidate_sha, evidence_root, images_only=False):
+def run_production(
+    candidate_sha, evidence_root, images_only=False, pdf_resources_only=False
+):
     def git(*arguments):
         return subprocess.check_output(["git", *arguments], cwd=ROOT, text=True).strip()
 
@@ -361,9 +363,11 @@ def run_production(candidate_sha, evidence_root, images_only=False):
         )
         if not images_only:
             sys.path.insert(0, str(context / "tools/acceptance/customer-briefing"))
-            from production_controls import qualify
+            from production_controls import qualify, qualify_pdf_resources
 
-            summary["production"] = qualify(owner)
+            summary["production"] = (
+                qualify_pdf_resources if pdf_resources_only else qualify
+            )(owner)
         summary["checksPassed"] = True
         return summary
     finally:
@@ -374,7 +378,7 @@ def run_production(candidate_sha, evidence_root, images_only=False):
                 owner.compose("logs", "--no-color", timeout=30)
             except (RuntimeError, OSError, TimeoutError):
                 pass
-            if observer := owner.ownership.get("observer"):
+            if owner.ownership.get("observer"):
                 try:
                     owner.finish_observer()
                 except (RuntimeError, OSError, ValueError, TimeoutError) as error:
@@ -392,8 +396,14 @@ if __name__ == "__main__":
     parser.add_argument("--candidate-sha", required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--images-only", action="store_true")
+    parser.add_argument("--pdf-resources-only", action="store_true")
     args = parser.parse_args()
-    result = run_production(args.candidate_sha, args.evidence_root, args.images_only)
+    result = run_production(
+        args.candidate_sha,
+        args.evidence_root,
+        args.images_only,
+        args.pdf_resources_only,
+    )
     print(json.dumps(result, indent=2))
     if not result["checksPassed"]:
         raise SystemExit(1)

@@ -6,12 +6,17 @@ import subprocess
 from hashlib import sha256
 from pathlib import Path
 
+from PIL import Image
+
 from app.mission.exporter.customer_runtime import ASSET_ROOT, NODE, RENDERER_ENTRY
 
 assert os.getuid() == 1000, "production entrypoint did not select appuser"
 assert subprocess.check_output([NODE, "--version"], text=True).strip() == "v22.22.2"
 assert Path(RENDERER_ENTRY).is_file() and not RENDERER_ENTRY.startswith("/app/")
 assert Path(ASSET_ROOT, "mission-export.html").is_file()
+assert Path(RENDERER_ENTRY).with_name("raster-policy.mjs").is_file()
+with Image.open(os.environ["BRIEFING_APO_PATH"]) as logo:
+    assert logo.format == "PNG" and logo.size == (263, 263)
 paths = [
     RENDERER_ENTRY,
     str(Path(ASSET_ROOT, "mission-export.html")),

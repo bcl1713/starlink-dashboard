@@ -20,7 +20,9 @@ def scene_digest(scene, *, node="node"):
     # Use the renderer's JSON.stringify representation, including JS number encoding.
     command = "const fs=require('fs'),c=require('crypto');const s=JSON.parse(fs.readFileSync(0,'utf8'));process.stdout.write(c.createHash('sha256').update(JSON.stringify(s)).digest('hex'))"
     return subprocess.check_output(
-        [node, "-e", command], input=json.dumps(scene, sort_keys=True).encode(), timeout=10
+        [node, "-e", command],
+        input=json.dumps(scene, sort_keys=True).encode(),
+        timeout=10,
     ).decode()
 
 
@@ -57,7 +59,7 @@ def verify_rendered_map(
     width, height = image.size
     viewport = stage.get("viewport") or {}
     vw, vh = viewport.get("width"), viewport.get("height")
-    if width < 320 or height < 240 or not vw or not vh:
+    if width < 1 or height < 1 or not vw or not vh:
         raise ValueError("Rendered map dimensions are unusable")
     if not resampled and (width, height) != (vw, vh):
         raise ValueError("Rendered map dimensions do not match its stage")

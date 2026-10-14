@@ -16,6 +16,7 @@ from app.mission.package.customer_artifacts import (
     CustomerBriefingArtifacts,
     CustomerBriefingOutcome,
 )
+from app.mission.slide_cache.pdf_resources import deduplicate_pdf_resources
 
 
 def assemble_customer_pdf(snapshot, records, *, cancel=None, ordered_ids=None):
@@ -66,8 +67,11 @@ def assemble_customer_pdf(snapshot, records, *, cancel=None, ordered_ids=None):
             {"legId": leg, "inputFingerprint": record["fingerprint"], "render": report}
         )
     output = io.BytesIO()
-    writer.write(output)
-    writer.close()
+    try:
+        deduplicate_pdf_resources(writer, cancel=cancel)
+        writer.write(output)
+    finally:
+        writer.close()
     pdf = output.getvalue()
     check_cancelled(cancel)
     proof = {

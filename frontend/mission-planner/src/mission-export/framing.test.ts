@@ -136,3 +136,54 @@ describe('mission map framing', () => {
     expect(() => validateMapInput(raw)).toThrow();
   });
 });
+
+it('preserves complete routes and marker identities at print sampling density', async () => {
+  const { mapFrameInset } = await import('./framing');
+  const { mapViewportSchema } = await import('./protocol');
+  expect(mapFrameInset(875) / 875).toBeCloseTo(mapFrameInset(1920) / 1920);
+  expect(mapViewportSchema.parse({ width: 875, height: 250 }).height).toBe(250);
+  expect(mapViewportSchema.parse({ width: 1, height: 1 }).width).toBe(1);
+  for (const width of [0, -1, NaN, Infinity, 1.1, 4097]) {
+    expect(() => mapViewportSchema.parse({ width, height: 250 })).toThrow();
+  }
+  for (const raw of fixture.legs) {
+    const input = validateMapInput(raw);
+    const reference = frameMissionRoute(input, { width: 1920, height: 1857 });
+    const resized = frameMissionRoute(input, { width: 875, height: 844 });
+    expect(resized.map((v) => [v.startIndex, v.endIndex])).toEqual(
+      reference.map((v) => [v.startIndex, v.endIndex])
+    );
+    expect(resized.flatMap((v) => v.markers.map((m) => m.id))).toEqual(
+      reference.flatMap((v) => v.markers.map((m) => m.id))
+    );
+    for (const view of resized) {
+      const camera = new PerspectiveCamera(
+        38,
+        view.width / view.height,
+        0.1,
+        100
+      );
+      applyCameraFrame(camera, view);
+      for (const point of view.points) {
+        const projected = new Vector3(...point).project(camera);
+        expect(Math.abs(projected.x)).toBeLessThan(1);
+        expect(Math.abs(projected.y)).toBeLessThan(1);
+      }
+    }
+  }
+});
+
+it('preserves normalized camera framing when only raster sampling changes', () => {
+  const input = validateMapInput(fixture.legs[1]);
+  const [reference] = frameMissionRoute(input, { width: 1920, height: 1920 });
+  const [resized] = frameMissionRoute(input, { width: 875, height: 875 });
+  expect(resized.distance).toBeCloseTo(reference.distance, 10);
+  expect(resized.offsetX / resized.width).toBeCloseTo(
+    reference.offsetX / reference.width,
+    10
+  );
+  expect(resized.offsetY / resized.height).toBeCloseTo(
+    reference.offsetY / reference.height,
+    10
+  );
+});

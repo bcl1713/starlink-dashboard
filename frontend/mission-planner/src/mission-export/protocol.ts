@@ -2,8 +2,8 @@ import { z } from 'zod';
 import type { MarkerLabel } from './marker-labels';
 
 export const mapViewportSchema = z.object({
-  width: z.number().int().min(256).max(4096),
-  height: z.number().int().min(256).max(4096),
+  width: z.number().int().min(1).max(4096),
+  height: z.number().int().min(1).max(4096),
 });
 export type MapViewport = z.infer<typeof mapViewportSchema>;
 

@@ -127,7 +127,7 @@ export async function renderBriefing({
         apo:
           process.env.BRIEFING_APO_PATH ||
           path.resolve(
-            '../../backend/starlink-location/app/mission/assets/APO Patch.jpg'
+            '../../backend/starlink-location/app/mission/assets/apo-patch-briefing.png'
           ),
         css: path.join(here, 'briefing', 'briefing.css'),
       };
@@ -141,7 +141,7 @@ export async function renderBriefing({
         `data:${type};base64,${assets[key].toString('base64')}`;
       html = composeBriefing(payload, {
         mapDataUrl: report.map.pngs[0] || null,
-        apoDataUrl: encoded('apo', 'image/jpeg'),
+        apoDataUrl: encoded('apo', 'image/png'),
         regularFontDataUrl: encoded('regularFont', 'font/ttf'),
         boldFontDataUrl: encoded('boldFont', 'font/ttf'),
         cssText: assets.css.toString(),
@@ -172,12 +172,12 @@ export async function renderBriefing({
           );
       if (fault === 'image')
         html = html.replace(
-          encoded('apo', 'image/jpeg'),
+          encoded('apo', 'image/png'),
           'data:image/png;base64,broken'
         );
       if (fault === 'remote')
         html = html.replace(
-          encoded('apo', 'image/jpeg'),
+          encoded('apo', 'image/png'),
           'https://checkpoint.invalid/apo.png'
         );
       await page.setContent(html, {

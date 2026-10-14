@@ -10,6 +10,7 @@ import {
 
 export const MAP_WIDTH = 1920;
 export const MAP_HEIGHT = 1080;
+export const mapFrameInset = (width: number): number => (64 * width) / 1920;
 export interface MissionMapView {
   id: string;
   width: number;
@@ -39,21 +40,31 @@ function fit(points: [number, number, number][], viewport: MapViewport) {
     )
   )
     return null;
+  // Fit at the established reference resolution so delegated pixel margins
+  // and camera geometry do not vary with raster sampling density.
+  const referenceScale = 1920 / viewport.width;
+  const inset = mapFrameInset(viewport.width) * referenceScale;
   const frame = overviewCameraFrame({
-    width: viewport.width,
-    height: viewport.height,
+    width: viewport.width * referenceScale,
+    height: viewport.height * referenceScale,
     fov: 38,
     // Leave a small inset for the stars at the actual PDF card aspect ratio.
     safeRect: {
-      x: 64,
-      y: 64,
-      width: viewport.width - 128,
-      height: viewport.height - 128,
+      x: inset,
+      y: inset,
+      width: viewport.width * referenceScale - 2 * inset,
+      height: viewport.height * referenceScale - 2 * inset,
     },
     route: points,
     direction,
   });
-  return frame.routeFit === 'complete' ? frame : null;
+  return frame.routeFit === 'complete'
+    ? {
+        ...frame,
+        offsetX: frame.offsetX / referenceScale,
+        offsetY: frame.offsetY / referenceScale,
+      }
+    : null;
 }
 /** Greedy longest consecutive fitting arc; shared endpoints preserve every edge. */
 export function frameMissionRoute(

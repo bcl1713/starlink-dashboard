@@ -74,3 +74,72 @@ def test_failed_leg_does_not_publish_partial_mission_pdf():
     assert outcome.status == "omitted"
     assert outcome.warning_code == "overflow"
     assert outcome.artifacts is None
+
+
+def test_independent_nested_resources_are_shared_without_merging_unequal_semantics():
+    from pypdf import PdfReader, PdfWriter
+
+    from app.mission.slide_cache.assembly import assemble_customer_pdf
+    from tests.unit.pdf_resource_fixtures import make_pdf_fragments
+
+    captured, records = make_pdf_fragments()
+    baseline = PdfWriter()
+    for record in records.values():
+        baseline.append(PdfReader(io.BytesIO(record["pdf"])), import_outline=False)
+    stream = io.BytesIO()
+    baseline.write(stream)
+    baseline.close()
+    result = assemble_customer_pdf(captured, records)
+    reader = PdfReader(io.BytesIO(result.artifacts.pdf))
+    assert len(reader.pages) == 5
+    assert [p.extract_text() for p in reader.pages] == [
+        "a page 1",
+        "a page 2",
+        "b page 1",
+        "c page 1",
+        "c page 2",
+    ]
+    assert all(list(p.mediabox) == [0, 0, 960, 540] for p in reader.pages)
+    objects = [
+        p["/Resources"]["/XObject"]["/Nested"]["/Resources"]["/XObject"]
+        for p in reader.pages
+    ]
+    assert len({o.raw_get("/Logo").idnum for o in objects}) == 1
+    assert len({o.raw_get("/Map").idnum for o in objects}) == 3
+    assert len({o.raw_get("/Masked").idnum for o in objects}) == 3
+    assert objects[0].raw_get("/Control").idnum != objects[0].raw_get("/Logo").idnum
+    assert len(result.artifacts.pdf) < len(stream.getvalue())
+    assert b"orphan must disappear" not in result.artifacts.pdf
+    evidence = json.loads(result.artifacts.evidence)
+    assert (
+        evidence["render"]["artifactHashes"]["pdfPath"]
+        == sha256(result.artifacts.pdf).hexdigest()
+    )
+    assert [
+        f["render"]["artifactHashes"]["pdfPath"]
+        for f in evidence["render"]["fragments"]
+    ] == [sha256(r["pdf"]).hexdigest() for r in records.values()]
+    assert [p["page"] for p in evidence["pages"]] == [1, 2, 3, 4, 5]
+
+
+def test_resource_deduplication_checks_cancellation_before_and_between_passes():
+    import pytest
+    from pypdf import PdfWriter
+
+    from app.mission.exporter.export_cancel import ExportCancelled
+    from app.mission.slide_cache.pdf_resources import deduplicate_pdf_resources
+
+    class Cancel:
+        def __init__(self, at):
+            self.calls, self.at = 0, at
+
+        def is_set(self):
+            self.calls += 1
+            return self.calls >= self.at
+
+    for at in [1, 2]:
+        writer = PdfWriter()
+        writer.add_blank_page(960, 540)
+        with pytest.raises(ExportCancelled):
+            deduplicate_pdf_resources(writer, cancel=Cancel(at))
+        writer.close()

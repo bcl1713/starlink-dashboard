@@ -14,7 +14,11 @@ export const COLORS = {
   'Communications unavailable': '#b72e36',
   'Posture uncertain': '#dce2e8',
 };
-export function renderTimeline(payload) {
+export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
+  const prefix = Array.from(String(idPrefix), (c) =>
+    c.codePointAt(0).toString(16)
+  ).join('-');
+  let hatchIndex = 0;
   const start = Date.parse(payload.flight.startUtc),
     end = Date.parse(payload.flight.endUtc);
   if (!Number.isFinite(start) || end <= start)
@@ -36,7 +40,22 @@ export function renderTimeline(payload) {
     else unknownGroups.push({ ...i, count });
   }
   const narrowUnknown = unknownGroups.filter((i) => width(i) < 90);
-  let out = `<svg class="timeline" viewBox="0 0 1240 246" role="img" aria-label="Communications posture, transport availability and SOF restrictions"><defs><pattern id="down" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d2d8df"/><path d="M0 8L8 0" stroke="#99a4b0"/></pattern></defs>`;
+  const hatch = (i, y) => {
+    const left = x(i.startUtc),
+      right = left + width(i),
+      bottom = y + 18;
+    const id = `hatch-${prefix}-${hatchIndex++}`;
+    let strokes = '';
+    for (
+      let k = Math.floor((left + y) / 8);
+      k <= Math.ceil((right + bottom) / 8);
+      k++
+    ) {
+      strokes += `<path d="M${8 * k - y} ${y}L${8 * k - bottom} ${bottom}" stroke="#99a4b0" stroke-width="1"/>`;
+    }
+    return `<defs><clipPath id="${escapeText(id)}"><rect x="${left}" y="${y}" width="${width(i)}" height="18"/></clipPath></defs><g clip-path="url(#${escapeText(id)})">${strokes}</g>`;
+  };
+  let out = `<svg class="timeline" viewBox="0 0 1240 246" role="img" aria-label="Communications posture, transport availability and SOF restrictions">`;
 
   out += text(
     0,
@@ -103,9 +122,10 @@ export function renderTimeline(payload) {
         i,
         y,
         18,
-        state === 'Down' ? 'url(#down)' : state === '?' ? '#e9edf1' : '#b8c7cc',
+        state === 'Down' ? '#d2d8df' : state === '?' ? '#e9edf1' : '#b8c7cc',
         `data-transport="${n}" data-state="${escapeText(state)}"`
       );
+      if (state === 'Down') out += hatch(i, y);
     }
     const runs = [];
     for (const i of payload.intervals) {
