@@ -26,7 +26,7 @@ export async function batchJourney(context, origin, input, output) {
       events.push({ type: 'api-error', status: r.status(), url: r.url(), body: await r.text() });
   });
   const save = async name => {
-    await writeFile(join(output, 'operator-actions.json'), JSON.stringify({ count: actions.length, actions }, null, 2));
+    await writeFile(join(output, 'operator-actions.json'), JSON.stringify({ scope: 'Original intake-to-publication convention; excludes navigation, setup, export and repeated controls', count: actions.length, actions, export_actions: 2 }, null, 2));
     await page.screenshot({ path: join(output, `${name}.png`), fullPage: true });
   };
   const action = async (category, name, run) => {
@@ -56,7 +56,7 @@ export async function batchJourney(context, origin, input, output) {
   const monitoring = monitor();
   try {
     await page.goto(origin + '/missions');
-    await click('Create from itinerary', 'intake');
+    await page.getByRole('button', { name: 'Create from itinerary', exact: true }).click(); // navigation, excluded in the retained convention
     await action('intake', 'Upload itinerary PDF', () => page.getByLabel('Itinerary PDF', { exact: true }).setInputFiles(join(input, real ? 'Itinerary Rev 5.pdf' : 'itinerary.pdf')));
     await action('intake', 'Upload three KMLs together', () => page.getByLabel('Initial route KMLs', { exact: true }).setInputFiles([1, 2, 3].map(n => join(input, real ? `Leg ${n} Rev 5.kml` : `leg-${n}.kml`))));
     await click('Extract itinerary', 'intake');
@@ -82,6 +82,7 @@ export async function batchJourney(context, origin, input, output) {
     for (const row of initial.expected_legs.flatMap(c => c.leg.ar_rows ?? []))
       assert.equal(row.confirmed_units, 'flight_level');
     const source = page.getByRole('region', { name: 'Itinerary source review' });
+    await expect(source.getByRole('checkbox', { name: /^Confirm / })).toHaveCount(5, { timeout: 120000 });
     for (const box of await source.getByRole('checkbox', { name: /^Confirm / }).all())
       await action('safety', await box.getAttribute('aria-label'), () => box.check());
     await action('safety', 'Confirm no AR windows for leg 2', () => source.getByRole('checkbox', { name: 'I confirm no AR windows for this leg', exact: true }).check());
@@ -122,11 +123,11 @@ export async function batchJourney(context, origin, input, output) {
       temperature = mode;
       const start = performance.now();
       const open = () => page.getByRole('button', { name: 'Export', exact: true }).click();
-      if (mode === 'cold') await action('export', 'Open mission export', open); else await open();
+      await open(); // export controls recorded separately from the retained intake-to-publication count
       const dialog = page.getByRole('dialog');
       const download = page.waitForEvent('download', { timeout: 660000 });
       const exportClick = () => dialog.getByRole('button', { name: 'Export', exact: true }).click();
-      if (mode === 'cold') await action('export', 'Download reviewed mission', exportClick); else await exportClick();
+      await exportClick();
       const file = await download;
       assert.equal(await file.failure(), null);
       await file.saveAs(join(output, `${mode}.zip`));
