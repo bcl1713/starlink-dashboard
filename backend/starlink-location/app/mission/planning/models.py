@@ -368,7 +368,8 @@ class PlanningProposal(PlanningRecord):
     proposed_draft: PlanningDraft | None = None
     baseline_evaluation: PlanningEvaluation | None = None
     candidate_evaluation: PlanningEvaluation | None = None
-    state: Literal["ready", "failed", "stale"]
+    state: Literal["ready", "failed", "stale", "applied"]
+    applied_input_identity: ContentHash | None = None
     errors: list[PlanningError] = Field(default_factory=list)
 
 
@@ -382,7 +383,8 @@ class ProposalReference(PlanningRecord):
     structural_identity: ContentHash
     environment_identity: ContentHash
     payload_hash: ContentHash
-    state: Literal["ready", "failed", "stale"]
+    state: Literal["ready", "failed", "stale", "applied"]
+    applied_input_identity: ContentHash | None = None
     idempotency_hash: ContentHash | None = None
 
 
@@ -441,9 +443,9 @@ class PlanningManifest(PlanningRecord):
 class ExpectedLegCard(PlanningRecord):
     leg: ExpectedLeg
     input_identity: ContentHash
-    computation_status: Literal["idle", "calculating", "ready", "failed", "stale"] = (
-        "idle"
-    )
+    computation_status: Literal[
+        "idle", "calculating", "ready", "failed", "stale", "applied"
+    ] = "idle"
     errors: list[PlanningError] = Field(default_factory=list)
 
     @computed_field

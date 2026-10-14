@@ -29,6 +29,7 @@ export function usePlanningLegWorkflow({
   onAcceptedRoute: () => void;
 }) {
   const leg = card.leg;
+  const controller = planning.controller;
   const [draft, setDraft] = useState<PlanningDraft>(() => ({
     ...leg.draft,
     ar_corrections: leg.draft?.ar_corrections?.length
@@ -60,9 +61,9 @@ export function usePlanningLegWorkflow({
         const inputs = currentInputs.current;
         const stale =
           inputs.dirty ||
-          reference.state === 'stale' ||
-          saved.expected_revision !== inputs.expectedRevision ||
-          saved.input_identity !== inputs.inputIdentity;
+          saved.state === 'stale' ||
+          (saved.applied_input_identity ?? saved.input_identity) !==
+            inputs.inputIdentity;
         setProposal(stale ? { ...saved, state: 'stale' } : saved);
       })
       .catch((failure) => {
@@ -84,6 +85,7 @@ export function usePlanningLegWorkflow({
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const change = (updates: Partial<PlanningDraft>) => {
+    controller.cancelPreview(leg.id);
     setDraft((current) => ({ ...current, ...updates }));
     setDirty(true);
     setEvaluation(null);
@@ -95,15 +97,20 @@ export function usePlanningLegWorkflow({
   useEffect(() => {
     if (!leg.route || !draft.initial_x_satellite_id) return;
     let current = true;
+    const token = controller.beginPreview(
+      leg.id,
+      JSON.stringify({ draft, section })
+    );
     const timer = setTimeout(() => {
       planningApi
         .previewDraft(view.mission.id, leg.id, {
-          expected_revision: expectedRevision,
+          expected_revision:
+            controller.currentView()?.revision ?? expectedRevision,
           draft,
           ar_section_status: section,
         })
         .then((result) => {
-          if (current) {
+          if (current && controller.acceptPreview(token, result)) {
             setEvaluation(result);
             setPreviewError('');
           }
@@ -118,8 +125,17 @@ export function usePlanningLegWorkflow({
     return () => {
       current = false;
       clearTimeout(timer);
+      controller.cancelPreview(leg.id);
     };
-  }, [draft, expectedRevision, leg.id, leg.route, section, view.mission.id]);
+  }, [
+    controller,
+    draft,
+    expectedRevision,
+    leg.id,
+    leg.route,
+    section,
+    view.mission.id,
+  ]);
   const receive = (saved: PlanningView) => {
     const current = saved.expected_legs.find((c) => c.leg.id === leg.id)!;
     setDraft(current.leg.draft ?? {});
@@ -132,6 +148,25 @@ export function usePlanningLegWorkflow({
     setGapAcknowledged(false);
     return current;
   };
+  useEffect(() => {
+    if (view.revision < expectedRevision) return;
+    const current = view.expected_legs.find((item) => item.leg.id === leg.id);
+    if (!current) return;
+    if (current.input_identity === inputIdentity) {
+      setExpectedRevision(view.revision);
+    } else if (!dirty) {
+      receive(view);
+      setProposal((current) =>
+        current ? { ...current, state: 'stale' } : null
+      );
+    } else {
+      setError(
+        'Planning inputs changed. Local edits are retained; reload explicitly before saving.'
+      );
+    }
+    // Observe committed views without replacing unsaved work.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, leg.id]);
   useEffect(() => {
     if (!dirty) return;
     const beforeUnload = (event: BeforeUnloadEvent) => {
@@ -259,6 +294,7 @@ export function usePlanningLegWorkflow({
         legId: leg.id,
         draft,
         expectedRevision,
+        inputIdentity,
         arSectionStatus: section,
       });
       receive(saved);

@@ -122,11 +122,11 @@ class ProposalService:
         return result
 
     def status(self, leg, reference, revision):
-        if (
-            reference.state == "stale"
-            or reference.expected_revision != revision
-            or reference.input_identity != leg_identity(leg)
-        ):
+        if reference.state == "stale" or (
+            reference.applied_input_identity
+            if reference.state == "applied"
+            else reference.input_identity
+        ) != leg_identity(leg):
             return "stale"
         try:
             if (
@@ -270,7 +270,10 @@ class ProposalService:
                 )
             result = self._payload(mission_id, ref)
             return result.model_copy(
-                update={"state": self.status(leg, ref, manifest.revision)}
+                update={
+                    "state": self.status(leg, ref, manifest.revision),
+                    "applied_input_identity": ref.applied_input_identity,
+                }
             )
 
     def apply(self, mission_id, leg_id, request):
@@ -300,8 +303,16 @@ class ProposalService:
             leg.review = None
             manifest.revision += 1
             for previous in manifest.proposal_refs:
-                previous.state = "stale"
+                if previous.leg_id == leg_id:
+                    previous.state = "stale"
+            ref.state = "applied"
+            ref.applied_input_identity = leg_identity(leg)
             manifest.proposals = [
-                p.model_copy(update={"state": "stale"}) for p in manifest.proposals
+                (
+                    p.model_copy(update={"state": "stale"})
+                    if p.input_identity == request.input_identity
+                    else p
+                )
+                for p in manifest.proposals
             ]
             return self.store.persist(mission, manifest)

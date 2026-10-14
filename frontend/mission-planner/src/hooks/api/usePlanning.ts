@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { planningApi } from '../../services/planning';
+import { currentLeg } from '../../services/planning-mutations';
+import { usePlanningMissionController } from '../usePlanningMissionController';
 import type {
   PlanningDraft,
   PlanningView,
@@ -12,26 +14,36 @@ import type {
 
 export function usePlanning(missionId: string, enabled = true) {
   const client = useQueryClient();
+  const controller = usePlanningMissionController(missionId);
   const query = useQuery({
     queryKey: ['planning', missionId],
-    queryFn: () => planningApi.read(missionId),
+    queryFn: async () => {
+      const received = await planningApi.read(missionId);
+      const saved = controller.currentView();
+      return saved && saved.revision > received.revision ? saved : received;
+    },
     enabled: enabled && !!missionId,
     retry: false,
   });
   const receive = (view: PlanningView) => {
-    client.setQueryData(['planning', missionId], view);
+    if (view.revision >= (controller.currentView()?.revision ?? 0))
+      client.setQueryData(['planning', missionId], view);
     client.invalidateQueries({ queryKey: ['missions'] });
   };
   const previewRoute = useMutation({
     mutationFn: ({
       legId,
       file,
-      expectedRevision,
     }: {
       legId: string;
       file: File;
       expectedRevision: number;
-    }) => planningApi.previewRoute(missionId, legId, file, expectedRevision),
+    }) =>
+      controller.enqueueMutation(
+        (current) =>
+          planningApi.previewRoute(missionId, legId, file, current.revision),
+        () => null
+      ),
   });
   const acceptRoute = useMutation({
     mutationFn: ({
@@ -45,17 +57,22 @@ export function usePlanning(missionId: string, enabled = true) {
       expectedRevision: number;
       acknowledgments: string[];
     }) =>
-      planningApi.acceptRoute(missionId, legId, {
-        expected_revision: expectedRevision,
-        preview_id: previewId,
-        discrepancy_acknowledgments: acknowledgments,
-      }),
+      controller.enqueueMutation(
+        () =>
+          planningApi.acceptRoute(missionId, legId, {
+            expected_revision: expectedRevision,
+            preview_id: previewId,
+            discrepancy_acknowledgments: acknowledgments,
+          }),
+        (result) => result
+      ),
     onSuccess: receive,
   });
   const saveDraft = useMutation({
     mutationFn: ({
       legId,
       draft,
+      inputIdentity,
       expectedRevision,
       arSectionStatus,
     }: {
@@ -63,12 +80,23 @@ export function usePlanning(missionId: string, enabled = true) {
       draft: PlanningDraft;
       expectedRevision: number;
       arSectionStatus?: SaveDraft['ar_section_status'];
+      inputIdentity?: string;
     }) =>
-      planningApi.saveDraft(missionId, legId, {
-        expected_revision: expectedRevision,
-        draft,
-        ar_section_status: arSectionStatus,
-      }),
+      controller.enqueueMutation(
+        (current) => {
+          if (!inputIdentity && current.revision !== expectedRevision)
+            throw Object.assign(new Error('Planning state changed'), {
+              response: { status: 409 },
+            });
+          currentLeg(current, legId, inputIdentity);
+          return planningApi.saveDraft(missionId, legId, {
+            expected_revision: current.revision,
+            draft,
+            ar_section_status: arSectionStatus,
+          });
+        },
+        (result) => result
+      ),
     onSuccess: receive,
   });
   const generateProposal = useMutation({
@@ -78,7 +106,17 @@ export function usePlanning(missionId: string, enabled = true) {
     }: {
       legId: string;
       request: GenerateProposal;
-    }) => planningApi.generateProposal(missionId, legId, request),
+    }) =>
+      controller.enqueueMutation(
+        (current) => {
+          currentLeg(current, legId, request.input_identity);
+          return planningApi.generateProposal(missionId, legId, {
+            ...request,
+            expected_revision: current.revision,
+          });
+        },
+        () => null
+      ),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: ['planning', missionId] }),
   });
@@ -89,7 +127,17 @@ export function usePlanning(missionId: string, enabled = true) {
     }: {
       legId: string;
       request: ApplyProposal;
-    }) => planningApi.applyProposal(missionId, legId, request),
+    }) =>
+      controller.enqueueMutation(
+        (current) => {
+          currentLeg(current, legId, request.input_identity);
+          return planningApi.applyProposal(missionId, legId, {
+            ...request,
+            expected_revision: current.revision,
+          });
+        },
+        (result) => result
+      ),
     onSuccess: receive,
   });
   const saveReviewed = useMutation({
@@ -99,24 +147,37 @@ export function usePlanning(missionId: string, enabled = true) {
     }: {
       legId: string;
       request: SaveReviewed;
-    }) => planningApi.saveReviewed(missionId, legId, request),
+    }) =>
+      controller.enqueueMutation(
+        (current) => {
+          currentLeg(current, legId, request.input_identity);
+          return planningApi.saveReviewed(missionId, legId, {
+            ...request,
+            expected_revision: current.revision,
+          });
+        },
+        (result) => result
+      ),
     onSuccess: receive,
   });
   const previewRevision = useMutation({
-    mutationFn: ({
-      file,
-      expectedRevision,
-    }: {
-      file: File;
-      expectedRevision: number;
-    }) => planningApi.previewRevision(missionId, file, expectedRevision),
+    mutationFn: ({ file }: { file: File; expectedRevision: number }) =>
+      controller.enqueueMutation(
+        (current) =>
+          planningApi.previewRevision(missionId, file, current.revision),
+        () => null
+      ),
   });
   const applyRevision = useMutation({
     mutationFn: (request: ApplyRevision) =>
-      planningApi.applyRevision(missionId, request),
+      controller.enqueueMutation(
+        () => planningApi.applyRevision(missionId, request),
+        (result) => result
+      ),
     onSuccess: receive,
   });
   return {
+    controller,
     previewRevision,
     applyRevision,
     ...query,

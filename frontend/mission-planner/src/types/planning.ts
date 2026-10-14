@@ -248,7 +248,8 @@ export interface ProposalReference {
   structural_identity: string;
   environment_identity: string;
   payload_hash: string;
-  state: 'ready' | 'failed' | 'stale';
+  state: 'ready' | 'failed' | 'stale' | 'applied';
+  applied_input_identity?: string | null;
   idempotency_hash?: string | null;
 }
 
@@ -263,7 +264,8 @@ export interface PlanningProposal {
   proposed_draft?: PlanningDraft | null;
   baseline_evaluation?: PlanningEvaluation | null;
   candidate_evaluation?: PlanningEvaluation | null;
-  state: 'ready' | 'failed' | 'stale';
+  state: 'ready' | 'failed' | 'stale' | 'applied';
+  applied_input_identity?: string | null;
   errors?: PlanningError[];
 }
 
@@ -284,7 +286,13 @@ export interface PlanningManifest {
 export interface ExpectedLegCard {
   leg: ExpectedLeg;
   input_identity: string;
-  computation_status?: 'idle' | 'calculating' | 'ready' | 'failed' | 'stale';
+  computation_status?:
+    | 'idle'
+    | 'calculating'
+    | 'ready'
+    | 'failed'
+    | 'stale'
+    | 'applied';
   errors?: PlanningError[];
   readonly review_status: 'awaiting_kml' | 'needs_review' | 'reviewed';
 }

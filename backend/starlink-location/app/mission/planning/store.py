@@ -188,6 +188,13 @@ class PlanningStore:
                 card.computation_status = proposals.status(
                     card.leg, references[-1], manifest.revision
                 )
+            if card.review_status == "reviewed" and card.computation_status in {
+                "idle",
+                "stale",
+            }:
+                # A valid approved executable plan is current even if its old
+                # proposal index predates applied-state bookkeeping.
+                card.computation_status = "applied"
         errors = [error for card in cards for error in card.errors]
         return PlanningView(
             mission=storage.public_mission(mission),
@@ -293,6 +300,7 @@ class PlanningStore:
             )
             from .inputs import structural_draft
 
+            previous_identity = leg_identity(leg)
             previous = leg.draft
             incoming = request.draft.model_copy(deep=True)
             # Context is server-owned. Explicit manual timing edits always reseed,
@@ -312,8 +320,6 @@ class PlanningStore:
             ):
                 incoming.access_confirmation = None
             leg.draft = incoming
-            for reference in manifest.proposal_refs:
-                reference.state = "stale"
             if request.ar_section_status is not None:
                 leg.ar_section_status = request.ar_section_status
             rows = leg.draft.ar_corrections or leg.ar_rows
@@ -321,10 +327,19 @@ class PlanningStore:
                 row.match_status != "excluded" for row in rows
             ):
                 leg.draft.no_ars_confirmed = False
-            leg.review = None
-            manifest.proposals = [
-                p.model_copy(update={"state": "stale"}) for p in manifest.proposals
-            ]
+            if leg_identity(leg) != previous_identity:
+                leg.review = None
+                for reference in manifest.proposal_refs:
+                    if reference.leg_id == leg_id:
+                        reference.state = "stale"
+                manifest.proposals = [
+                    (
+                        p.model_copy(update={"state": "stale"})
+                        if p.input_identity == previous_identity
+                        else p
+                    )
+                    for p in manifest.proposals
+                ]
             manifest.revision += 1
             return self.persist(mission, manifest)
 

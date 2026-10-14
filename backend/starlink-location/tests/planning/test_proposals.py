@@ -532,3 +532,90 @@ def test_saved_standalone_lock_can_generate_and_apply(prepared, monkeypatch, kin
     )
     assert applied.revision == view.revision + 1
     assert applied.expected_legs[0].leg.draft == proposal.proposed_draft
+
+
+def test_other_leg_save_preserves_currency(prepared, monkeypatch):
+    api, view, request = proposal_api(prepared, monkeypatch)
+    proposal = api.generate(view.mission.id, "card-1", request)
+    other = view.expected_legs[1].leg
+    saved = api.store.save_draft(
+        view.mission.id,
+        other.id,
+        SaveDraft(expected_revision=view.revision, draft=other.draft),
+    )
+    assert saved.expected_legs[0].computation_status == "ready"
+    assert api.get(view.mission.id, "card-1", proposal.id).state == "ready"
+    applied = api.apply(
+        view.mission.id,
+        "card-1",
+        ApplyProposal(
+            expected_revision=saved.revision,
+            input_identity=request.input_identity,
+            proposal_id=proposal.id,
+        ),
+    )
+    assert applied.expected_legs[0].computation_status == "applied"
+    assert (
+        api.get(view.mission.id, "card-1", proposal.id).expected_revision
+        == proposal.expected_revision
+    )
+
+
+def test_reviewed_applied_plan_is_current(prepared, monkeypatch):
+    from .test_reviewed_save import confirmed, review
+
+    api, view, request = proposal_api(confirmed(prepared), monkeypatch)
+    proposal = api.generate(view.mission.id, "card-1", request)
+    path = api._path(view.mission.id, proposal.id)
+    before = path.read_bytes()
+    applied = api.apply(
+        view.mission.id,
+        "card-1",
+        ApplyProposal(
+            expected_revision=view.revision,
+            input_identity=request.input_identity,
+            proposal_id=proposal.id,
+        ),
+    )
+    assert applied.expected_legs[0].computation_status == "applied"
+    saved = prepared[0].save_reviewed(view.mission.id, "card-1", review(applied))
+    assert saved.expected_legs[0].review_status == "reviewed"
+    assert (
+        api.store.read(view.mission.id).expected_legs[0].computation_status == "applied"
+    )
+    assert api.get(view.mission.id, "card-1", proposal.id).state == "applied"
+    assert path.read_bytes() == before
+    other = saved.expected_legs[1].leg
+    after = api.store.save_draft(
+        view.mission.id,
+        other.id,
+        SaveDraft(expected_revision=saved.revision, draft=other.draft),
+    )
+    assert after.expected_legs[0].review_status == "reviewed"
+    assert after.expected_legs[0].computation_status == "applied"
+
+
+def test_current_review_does_not_label_historical_applied_payload_stale(prepared):
+    from app.mission.planning.models import ProposalReference
+
+    from .test_reviewed_save import confirmed, review
+
+    service, view = confirmed(prepared)
+    service.save_reviewed(view.mission.id, "card-1", review(view))
+    mission, manifest = service.store._load(view.mission.id)
+    manifest.proposal_refs.append(
+        ProposalReference(
+            id="historical",
+            leg_id="card-1",
+            expected_revision=1,
+            input_identity="a" * 64,
+            structural_identity="b" * 64,
+            environment_identity="c" * 64,
+            payload_hash="d" * 64,
+            state="stale",
+        )
+    )
+    service.store.persist(mission, manifest)
+    current = service.store.read(view.mission.id).expected_legs[0]
+    assert current.review_status == "reviewed"
+    assert current.computation_status == "applied"

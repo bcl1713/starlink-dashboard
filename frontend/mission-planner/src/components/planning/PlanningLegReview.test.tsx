@@ -48,14 +48,16 @@ function Location() {
   return <output aria-label="Current route">{useLocation().pathname}</output>;
 }
 function setup(initial = view) {
-  vi.spyOn(planningApi, 'generateProposal').mockResolvedValue({
-    id: 'proposal',
-    expected_revision: 8,
-    input_identity: 'hash',
-    context: { input_identity: 'context' },
-    state: 'ready',
-    proposed_draft: { initial_x_satellite_id: 'X-eligible' },
-  });
+  vi.spyOn(planningApi, 'generateProposal').mockImplementation(
+    async (_m, _l, request) => ({
+      id: 'proposal',
+      expected_revision: request.expected_revision,
+      input_identity: request.input_identity,
+      context: { input_identity: 'context' },
+      state: 'ready',
+      proposed_draft: { initial_x_satellite_id: 'X-eligible' },
+    })
+  );
   vi.spyOn(planningApi, 'previewDraft').mockResolvedValue({
     context: { input_identity: 'context' },
     outage_seconds: 0,
@@ -431,7 +433,7 @@ it('saves no-AR confirmation and per-leg operational settings, then reloads them
     screen.getByRole('button', { name: 'Save reviewed plan' })
   ).toBeDisabled();
 });
-it('guards return/cancel and saves the revision on which local edits began', async () => {
+it('guards return/cancel and saves unchanged leg inputs at the newest observed revision', async () => {
   const save = vi.spyOn(planningApi, 'saveDraft').mockResolvedValue(view);
   const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
   const client = setup();
@@ -447,7 +449,7 @@ it('guards return/cancel and saves the revision on which local edits began', asy
   await screen.findByText(/newer revision/);
   fireEvent.click(screen.getByText('Save draft'));
   await waitFor(() => expect(save).toHaveBeenCalled());
-  expect(save.mock.calls[0][2].expected_revision).toBe(7);
+  expect(save.mock.calls[0][2].expected_revision).toBe(9);
 });
 it('disables edits during a pending save so the response cannot overwrite new input', async () => {
   let resolveSave!: (value: PlanningView) => void;
@@ -685,7 +687,7 @@ it('keeps replacement preview and local corrections when acceptance CAS is stale
   expect(planningApi.generateProposal).not.toHaveBeenCalled();
 });
 
-it.each(['ready', 'stale identity', 'stale revision'])(
+it.each(['ready', 'stale identity', 'older generation revision'])(
   'resumes persisted %s proposal on mount and explicit reload without generation or application',
   async (state) => {
     const reference = {
@@ -697,7 +699,7 @@ it.each(['ready', 'stale identity', 'stale revision'])(
     };
     const persisted = {
       id: 'persisted',
-      expected_revision: state === 'stale revision' ? 6 : 7,
+      expected_revision: state === 'older generation revision' ? 6 : 7,
       input_identity: state === 'stale identity' ? 'old' : 'hash',
       context: { input_identity: 'context' },
       state: 'ready' as const,
@@ -721,8 +723,8 @@ it.each(['ready', 'stale identity', 'stale revision'])(
     await screen.findByRole('region', { name: 'Proposal comparison' });
     expect(
       screen.getByRole('button', { name: 'Apply proposal' })
-    ).toHaveProperty('disabled', state !== 'ready');
-    if (state !== 'ready')
+    ).toHaveProperty('disabled', state === 'stale identity');
+    if (state === 'stale identity')
       expect(screen.getByText(/Proposal is stale/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /Reload saved draft/ }));
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
