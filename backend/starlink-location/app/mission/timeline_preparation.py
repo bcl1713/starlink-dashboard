@@ -200,10 +200,27 @@ def prepare_mission_timeline(
         ),
     )
 
+    coverage_samples = samples
+    coverage_enabled = resolved_sampler is not None
+    if planning_evaluation is not None:
+        import json
+
+        # Planning derives Ka on the original minute grid. Re-interpolating
+        # those boundaries on the expanded X grid creates contradictory events
+        # a few seconds either side of the planned outage. Use the captured
+        # coverage and the same grid for events, swaps, and generated POIs.
+        captured_coverage = json.loads(inputs.coverage_json)
+        ka_sampler = None
+        if captured_coverage is not None:
+            ka_sampler = CoverageSampler()
+            ka_sampler.coverage_data = captured_coverage["data"]
+            ka_sampler.satellite_polygons = captured_coverage["polygons"]
+        coverage_enabled = ka_sampler is not None
+        coverage_samples = generate_timeline_samples(projector, ka_sampler)
     coverage_result = analyze_ka_coverage(
-        samples,
+        coverage_samples,
         projector,
-        coverage_enabled=resolved_sampler is not None,
+        coverage_enabled=coverage_enabled,
     )
     apply_ka_events(rule_engine, coverage_result)
     export_x_conditions = [] if capture_x_conditions else None

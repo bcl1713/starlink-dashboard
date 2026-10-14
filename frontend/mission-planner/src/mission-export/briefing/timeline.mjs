@@ -15,11 +15,7 @@ export const COLORS = {
   'Posture uncertain': '#dce2e8',
 };
 export const TRANSPORT_BLUE = '#899db9';
-export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
-  const prefix = Array.from(String(idPrefix), (c) =>
-    c.codePointAt(0).toString(16)
-  ).join('-');
-  let hatchIndex = 0;
+export function renderTimeline(payload) {
   const start = Date.parse(payload.flight.startUtc),
     end = Date.parse(payload.flight.endUtc);
   if (!Number.isFinite(start) || end <= start)
@@ -41,21 +37,6 @@ export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
     else unknownGroups.push({ ...i, count });
   }
   const narrowUnknown = unknownGroups.filter((i) => width(i) < 90);
-  const hatch = (i, y) => {
-    const left = x(i.startUtc),
-      right = left + width(i),
-      bottom = y + 18;
-    const id = `hatch-${prefix}-${hatchIndex++}`;
-    let strokes = '';
-    for (
-      let k = Math.floor((left + y) / 8);
-      k <= Math.ceil((right + bottom) / 8);
-      k++
-    ) {
-      strokes += `<path d="M${8 * k - y} ${y}L${8 * k - bottom} ${bottom}" stroke="#99a4b0" stroke-width="1"/>`;
-    }
-    return `<defs><clipPath id="${escapeText(id)}"><rect x="${left}" y="${y}" width="${width(i)}" height="18"/></clipPath></defs><g clip-path="url(#${escapeText(id)})">${strokes}</g>`;
-  };
   let out = `<svg class="timeline" viewBox="0 0 1240 246" role="img" aria-label="Communications posture, transport availability and SOF restrictions">`;
 
   out += text(
@@ -124,25 +105,55 @@ export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
         y,
         18,
         state === 'Down'
-          ? '#d2d8df'
+          ? TRANSPORT_BLUE
           : state === '?'
-            ? '#e9edf1'
-            : TRANSPORT_BLUE,
-        `data-transport="${n}" data-state="${escapeText(state)}"`
+            ? '#dce2e8'
+            : '#edf1f5',
+        `data-transport="${n}" data-state="${escapeText(state)}"${n === 2 && i.xStarshieldConflict ? ` data-x-starshield-conflict="${escapeText(i.xStarshieldConflict)}"` : ''}`
       );
-      if (state === 'Down') out += hatch(i, y);
     }
-    // Unknown availability remains explicit; operating constraints do not imply an outage.
-    for (const i of payload.intervals) {
-      if (i.operatingConstraints?.[n] && i.decisions[n] === 'Up') {
-        out += rect(
-          i,
-          y,
-          18,
-          'none',
-          `data-operating-constraint="${n}" stroke="#122a44" stroke-width="2" stroke-dasharray="4 3"`
-        );
-        out += `<title>${escapeText(name)} operating constraint</title>`;
+    if (n === 2) {
+      const conflicts = [];
+      for (const i of payload.intervals) {
+        const kind = i.xStarshieldConflict;
+        if (
+          !(
+            (kind === 'blocked' && i.decisions[n] === 'Down') ||
+            (kind === 'released' && i.decisions[n] === 'Up')
+          )
+        )
+          continue;
+        const last = conflicts.at(-1);
+        if (
+          last &&
+          last.endUtc === i.startUtc &&
+          last.xStarshieldConflict === kind
+        )
+          last.endUtc = i.endUtc;
+        else conflicts.push({ ...i });
+      }
+      for (const run of conflicts) {
+        const label =
+          run.xStarshieldConflict === 'blocked'
+            ? 'Starshield conflict'
+            : 'Conflict released';
+        const shown =
+          width(run) >= 150
+            ? label
+            : width(run) >= 60
+              ? run.xStarshieldConflict === 'blocked'
+                ? 'Conflict'
+                : run.xStarshieldConflict === 'released'
+                  ? 'Released'
+                  : ''
+              : '';
+        if (shown)
+          out += text(
+            x(run.startUtc) + width(run) / 2,
+            y + 14,
+            shown,
+            `text-anchor="middle" class="lane-state conflict-label${run.xStarshieldConflict === 'blocked' ? ' light' : ''}" data-conflict-label data-svg-label`
+          );
       }
     }
     const unknownRuns = [];

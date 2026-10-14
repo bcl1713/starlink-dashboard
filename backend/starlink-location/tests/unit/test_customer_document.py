@@ -327,6 +327,91 @@ def test_x_planning_condition_does_not_mark_available_ka_or_starshield():
     view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
     payload = build(captured, view, projection)
     assert all(i["decisions"] == ["Up", "Up", "Down"] for i in payload["intervals"])
-    assert all(
-        i["operatingConstraints"] == [False, False, False] for i in payload["intervals"]
+    assert all("operatingConstraints" not in i for i in payload["intervals"])
+
+
+@pytest.mark.parametrize(
+    "x_state,ku_state,raw_constraints,want",
+    [
+        ("offline", "available", ["x_aft_cone"], "blocked"),
+        ("available", "offline", ["x_aft_cone"], "released"),
+        ("degraded", "offline", ["x_aft_cone", "x_elevation"], "released"),
+        ("degraded", "available", ["x_elevation"], None),
+    ],
+)
+def test_customer_pdf_identifies_x_starshield_conflict_without_changing_availability(
+    x_state, ku_state, raw_constraints, want
+):
+    data = fixture("composition-assessed")
+    data["source_records"] = []
+    data["timeline"]["segments"] = [
+        {
+            "start_time": data["utc_bounds"][0],
+            "end_time": data["utc_bounds"][1],
+            "metadata": {
+                "planning_interval": {
+                    "start_time": data["utc_bounds"][0],
+                    "end_time": data["utc_bounds"][1],
+                    "policy_x_state": x_state,
+                    "policy_ka_state": "available",
+                    "policy_ku_state": ku_state,
+                    "raw_constraints": raw_constraints,
+                    "physical_reasons": (
+                        ["x_elevation"] if "x_elevation" in raw_constraints else []
+                    ),
+                    "policy_reasons": (
+                        ["prefer_starshield:x_aft_cone"] if want == "blocked" else []
+                    ),
+                }
+            },
+        }
+    ]
+    leg = replace(snapshot(data), preparation_origin="rebuilt")
+    captured = ExportSnapshot(
+        data["mission"]["id"],
+        "fingerprint",
+        canonical_json(data["mission"]),
+        (leg,),
+        (),
+        (),
     )
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    payload = build(captured, view, projection)
+    assert all(i.get("xStarshieldConflict") == want for i in payload["intervals"])
+    assert all(
+        i["decisions"]
+        == [
+            "Up",
+            "Down" if ku_state == "offline" else "Up",
+            "Up" if x_state == "available" else "Down",
+        ]
+        for i in payload["intervals"]
+    )
+    if want:
+        assert all("Starshield conflict" in row["impact"] for row in payload["rows"])
+    else:
+        assert not any(
+            "Starshield conflict" in row["impact"] for row in payload["rows"]
+        )
+
+
+@pytest.mark.parametrize("metadata_reasons", [False, True])
+def test_customer_pdf_identifies_legacy_cached_starshield_conflict(metadata_reasons):
+    data = fixture("f10")
+    segment = data["timeline"]["segments"][0]
+    segment["x_state"] = "degraded"
+    segment["reasons"] = ["X-Ku Conflict az=180° el=35°"]
+    segment["metadata"].pop("source_reasons", None)
+    if metadata_reasons:
+        segment["metadata"]["source_reasons"] = segment["reasons"]
+    leg = snapshot(data)
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    captured = ExportSnapshot(
+        data["mission"]["id"], "fixed", canonical_json(data["mission"]), (leg,), (), ()
+    )
+    payload = build(captured, view, projection)
+    assert all(i["decisions"][2] == "Down" for i in payload["intervals"])
+    assert all(i["xStarshieldConflict"] == "blocked" for i in payload["intervals"])
+    assert all("X–Starshield conflict" in row["impact"] for row in payload["rows"])

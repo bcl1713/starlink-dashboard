@@ -258,37 +258,6 @@ footer {
 tbody td {
   white-space: nowrap;
 }
-.transport-key {
-  gap: 16px;
-  font-size: 9pt;
-  margin-top: 3px;
-}
-.transport-key span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.transport-key i {
-  display: inline-block;
-  width: 18px;
-  height: 9px;
-  background: #899db9;
-}
-.transport-key .down-key {
-  background: repeating-linear-gradient(
-    135deg,
-    #d2d8df,
-    #d2d8df 3px,
-    #99a4b0 3px,
-    #99a4b0 4px
-  );
-}
-.transport-key .unknown-key {
-  background: #e9edf1;
-  font-style: normal;
-  text-align: center;
-  line-height: 9px;
-}
-.transport-key .constraint-key {
-  border: 1px dashed #122a44;
+.conflict-label.light {
+  fill: #fff;
 }

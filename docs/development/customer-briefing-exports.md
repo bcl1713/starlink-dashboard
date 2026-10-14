@@ -76,11 +76,18 @@ and timeline axes retain their timing context. Cells stay on one line; rows use
 12pt text, reduced as needed to a 9pt minimum without truncation. Inputs that
 cannot fit at that minimum still fail the existing overflow checks.
 
-Transport availability uses the same blue as SOF/AR blocks. Gray hatching means
-an unavailable transport, `?` means unknown, and a dashed border marks an
-operating constraint on an available transport. The table names the affected
-transport. Planning interval reasons apply to the mission as a whole; only
-transport-local constraints qualify an available lane's marker.
+Transport lanes use the same dark blue as SOF/AR blocks when unavailable and
+the same light background when available. They have no hatching, Up/Down text,
+or separate key; `?` still identifies unknown availability. X/Starshield
+concurrency evidence names the conflict in the table and labels the X lane
+where space permits. A released concurrency conflict does not override another
+independent X outage. Generic internal notes on available transports do not
+create customer "operating constraint" rows.
+
+Planning Ka events and POIs use the captured coverage on the original minute
+grid, matching the planning outage calculation. Recalculating coverage edges
+on the expanded X planning grid previously shifted those events by seconds,
+creating misleading available-with-note intervals beside real Ka outages.
 
 ## Rendering performance investigation (14 October 2026)
 

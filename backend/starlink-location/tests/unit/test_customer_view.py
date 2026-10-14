@@ -203,7 +203,7 @@ def test_customer_uncertainty_change_without_outage_is_material():
     assert row.end_time == changed.end_time
 
 
-def test_available_transport_constraint_names_the_affected_transport():
+def test_available_ka_note_does_not_invent_a_customer_operating_constraint():
     from dataclasses import replace
 
     captured = snapshot(fixture("composition-assessed"))
@@ -225,9 +225,8 @@ def test_available_transport_constraint_names_the_affected_transport():
             constrained if i is nominal else i for i in projection.intervals
         ),
     )
-    row = next(
-        r for r in view(captured, projection).rows if r.start_time == nominal.start_time
-    )
-    assert row.impact == "Commercial Ka operating constraint"
-    assert row.posture == "Nominal"
-    assert row.remaining == "Commercial Ka + Starshield + X-Band MILSATCOM"
+    result = view(captured, projection)
+    assert not any(row.start_time == nominal.start_time for row in result.rows)
+    assert not any("operating constraint" in row.impact for row in result.rows)
+    assert constrained.decisions[0].value == "Up"
+    assert constrained.decisions[0].limitation == "PRIVATE internal geometry"
