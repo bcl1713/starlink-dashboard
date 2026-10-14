@@ -129,6 +129,7 @@ def _parse_itinerary(pdf_bytes):
     ar_split = None
     altitude_x = None
     altitude_units = None
+    altitude_units_blocked = False
     ar_table_left = ar_table_y = None
 
     def error(code, message, page, row, field):
@@ -176,6 +177,7 @@ def _parse_itinerary(pdf_bytes):
                 ar_section = True
                 ar_split = altitude_x = ar_table_left = ar_table_y = None
                 altitude_units = None
+                altitude_units_blocked = False
                 if active:
                     active["ar_section_status"] = "unrecognized"
                 continue
@@ -189,9 +191,31 @@ def _parse_itinerary(pdf_bytes):
                     label_units = re.findall(
                         r"\b(FL|ft|feet|m|meters)\b", text, re.IGNORECASE
                     )
-                    altitude_units = (
-                        UNITS[label_units[0].lower()] if len(label_units) == 1 else None
+                    declared = {UNITS[unit.lower()] for unit in label_units}
+                    annotation = re.search(
+                        r"Altitude\s*(?:\(([^)]+)\)|\[([^\]]+)\])", text, re.IGNORECASE
                     )
+                    altitude_units_blocked = len(declared) > 1 or bool(
+                        annotation and not declared
+                    )
+                    altitude_units = (
+                        next(iter(declared)) if len(declared) == 1 else None
+                    )
+                    if altitude_units_blocked:
+                        ar_section_has_errors = True
+                        if active:
+                            active["ar_section_status"] = "unrecognized"
+                        error(
+                            (
+                                "conflicting_altitude_units"
+                                if len(declared) > 1
+                                else "unsupported_altitude_units"
+                            ),
+                            "AR altitude column units require correction; no import default was applied",
+                            page_number,
+                            row_number,
+                            "ar_rows",
+                        )
                     ar_table_left = row[0].x
                     ar_table_y = row[0].y
                 continue
@@ -336,7 +360,7 @@ def _parse_itinerary(pdf_bytes):
                             "ar_rows",
                         )
                         continue
-                    units = units or altitude_units
+                    units = None if altitude_units_blocked else units or altitude_units
                     try:
                         if not entry or not exit or not track:
                             raise ValueError("Incomplete AR row")
@@ -360,7 +384,9 @@ def _parse_itinerary(pdf_bytes):
                             <= active["arrival_time"]
                         ):
                             raise ValueError("AR outside leg")
-                        active["ar_rows"].extend(apply_import_units([ar]))
+                        active["ar_rows"].extend(
+                            [ar] if altitude_units_blocked else apply_import_units([ar])
+                        )
                         if not ar_section_has_errors:
                             active["ar_section_status"] = "listed"
                     except (ValueError, ValidationError):

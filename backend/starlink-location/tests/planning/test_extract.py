@@ -367,3 +367,19 @@ def test_explicit_unit_removal_uses_default_only_after_source_resolution():
     assert applied.unit_origin == "import_default"
     assert not applied.confirmed
     assert corrected.confirmed_units == "feet" and corrected.confirmed
+
+
+@pytest.mark.parametrize(
+    "label,code",
+    [
+        ("Altitude (ft/m)", "conflicting_altitude_units"),
+        ("Altitude (km)", "unsupported_altitude_units"),
+    ],
+)
+def test_unusable_declared_column_units_never_receive_flight_level_default(label, code):
+    preview = extract_itinerary(synthetic_pdf(altitude_header=label))
+    assert not preview.confirmable
+    assert any(error.code == code for error in preview.field_errors)
+    row = preview.parsed_values.expected_legs[0].ar_rows[0]
+    assert row.source_altitude == 210
+    assert row.confirmed_units is None and row.unit_origin is None
