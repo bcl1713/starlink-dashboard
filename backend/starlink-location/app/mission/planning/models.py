@@ -222,6 +222,7 @@ class PlanningDraft(SatelliteSelection):
 
 
 class ReviewRecord(PlanningRecord):
+    evaluation_identity: ContentHash | None = None
     input_identity: ContentHash
     environment_identity: ContentHash | None = None
     confirmed_ar_ids: list[str] = Field(default_factory=list)
@@ -630,6 +631,7 @@ class ApplyProposal(GenerateProposal):
 
 
 class SaveReviewed(GenerateProposal):
+    evaluation_identity: ContentHash | None = None
     confirmed_ar_ids: list[str] = Field(default_factory=list)
     excluded_ar_ids: list[str] = Field(default_factory=list)
     no_ars_confirmed: bool = False

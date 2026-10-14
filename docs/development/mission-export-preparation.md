@@ -13,3 +13,8 @@ already-ready ZIP, otherwise 202 JSON with a `Location` status URL. Clients
 must poll that preparation and then fetch its download, rather than saving the
 202 JSON as a ZIP. A cold download never waits for PDF rendering. Cancellation
 and download disconnects do not stop shared customer slide preparation.
+
+A retry after an omitted customer PDF creates a new preparation for the same
+inputs. Its original ready ZIP remains an immutable download until expiry.
+Terminal-job cleanup releases local captures, including requests assembled by
+another elected worker.

@@ -48,6 +48,7 @@ class ExportPreparationService(PreparationWorker):
             threading.RLock(),
         )
         self.captures = {}
+        self.executing = set()
         self.thread = threading.Thread(
             target=self.run, name="mission-export-assembly", daemon=True
         )
@@ -92,6 +93,7 @@ class ExportPreparationService(PreparationWorker):
                     old.mission_id == mission_id
                     and old.fingerprint == fingerprint
                     and old.state == "ready"
+                    and old.briefing_status != "omitted"
                     and old.expires_at > now
                     and self.path(old.id).exists()
                 ):
@@ -139,7 +141,16 @@ class ExportPreparationService(PreparationWorker):
                     leg: record["state"]
                     for leg, record in self.cache.status_records(mission_id).items()
                 }
+            if job.state in TERMINAL and job_id not in self.executing:
+                self.captures.pop(job_id, None)
             return job
+
+    def sweep_captures(self):
+        with self.guard:
+            terminal = {j.id for j in self.jobs.all() if j.state in TERMINAL}
+            for job_id in list(self.captures):
+                if job_id in terminal and job_id not in self.executing:
+                    self.captures.pop(job_id, None)
 
     def cancel(self, mission_id, job_id):
         with self.guard:
@@ -154,7 +165,8 @@ class ExportPreparationService(PreparationWorker):
                 )
                 if not self.jobs.write_pending(job):
                     return self.jobs.read(mission_id, job_id)
-            self.captures.pop(job_id, None)
+            if job_id not in self.executing:
+                self.captures.pop(job_id, None)
             self.wake.set()
             return job
 

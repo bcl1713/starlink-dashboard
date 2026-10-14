@@ -33,6 +33,7 @@ def ready(prepared, tmp_path, monkeypatch):
                     review=SaveReviewed(
                         expected_revision=view.revision,
                         input_identity=card.input_identity,
+                        evaluation_identity=card.leg.draft.evaluation_context.input_identity,
                         satellite_plan_confirmed=True,
                         no_ars_confirmed=True,
                         gap_acknowledged=True,

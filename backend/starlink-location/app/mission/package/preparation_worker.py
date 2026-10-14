@@ -192,9 +192,11 @@ class PreparationWorker:
         lock = FileLock(str(self.cache.path.with_suffix(".export-assembly.lock")))
         while not self.stop.is_set():
             try:
+                self.sweep_captures()
                 with lock.acquire(timeout=0):
                     self.recover()
                     while not self.stop.is_set():
+                        self.sweep_captures()
                         pending = [j for j in self.jobs.all() if j.state == "queued"]
                         for ready in self.jobs.all():
                             if (
@@ -204,6 +206,8 @@ class PreparationWorker:
                                 self.status(ready.mission_id, ready.id)
                         if pending:
                             job = min(pending, key=lambda j: j.queued_at)
+                            with self.guard:
+                                self.executing.add(job.id)
                             try:
                                 raw = self.captures.get(job.id) or self.capture(
                                     job.mission_id
@@ -221,6 +225,10 @@ class PreparationWorker:
                                 sqlite3.Error,
                             ):
                                 self.finish(job, "failed", "runtime")
+                            finally:
+                                with self.guard:
+                                    self.executing.discard(job.id)
+                                    self.captures.pop(job.id, None)
                         else:
                             self.wake.wait(0.25)
                             self.wake.clear()

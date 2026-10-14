@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { planningMissionController } from '../services/planning-mutations';
 
@@ -13,4 +13,14 @@ export function usePlanningMissionController(missionId: string) {
     return () => controller.release();
   }, [controller]);
   return controller;
+}
+
+export function usePlanningEditEpoch(
+  controller: ReturnType<typeof planningMissionController>
+) {
+  return useSyncExternalStore(
+    controller.subscribeEdits,
+    controller.editSnapshot,
+    controller.editSnapshot
+  );
 }

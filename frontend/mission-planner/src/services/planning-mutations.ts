@@ -10,6 +10,42 @@ export class PlanningMissionController {
     string,
     { token: string; base: string | undefined }
   >();
+  private edits = new Map<string, Set<symbol>>();
+  private editVersion = 0;
+  private editVersions = new Map<string, number>();
+  localEditIdentity(ids: string[]) {
+    return ids.map((id) => `${id}:${this.editVersions.get(id) ?? 0}`).join('|');
+  }
+  private editListeners = new Set<() => void>();
+  subscribeEdits = (listener: () => void) => {
+    this.editListeners.add(listener);
+    return () => {
+      this.editListeners.delete(listener);
+    };
+  };
+  editSnapshot = () => this.editVersion;
+  setLocalEdits(legId: string, owner: symbol, dirty: boolean) {
+    const owners = this.edits.get(legId) ?? new Set<symbol>();
+    const changed = dirty || owners.has(owner);
+    if (dirty) owners.add(owner);
+    else owners.delete(owner);
+    if (owners.size) this.edits.set(legId, owners);
+    else this.edits.delete(legId);
+    if (changed) {
+      this.editVersion++;
+      this.editVersions.set(legId, (this.editVersions.get(legId) ?? 0) + 1);
+      for (const listener of this.editListeners) listener();
+    }
+  }
+  hasLocalEdits(ids: string[]) {
+    return ids.some((id) => this.edits.has(id));
+  }
+  requireSavedSources(ids: string[]) {
+    if (this.hasLocalEdits(ids))
+      throw new Error(
+        'Save or resolve source edits before planning or publication'
+      );
+  }
   private owners = 0;
   private pending = 0;
   private client: QueryClient;

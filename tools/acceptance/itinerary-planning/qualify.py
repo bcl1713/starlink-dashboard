@@ -7,6 +7,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path.cwd()))
+
 from app.mission import storage
 from app.mission.exporter.map_inputs import prepare_map_input
 from app.mission.exporter.customer_filename import customer_brief_filename

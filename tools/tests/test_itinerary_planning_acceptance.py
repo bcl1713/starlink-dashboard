@@ -760,3 +760,46 @@ def test_exclusive_scope_cannot_overlap_other_run(tmp_path, collision):
     finally:
         first.release_claim()
         second.release_claim()
+
+
+def test_scene_identity_matches_production_canonical_payload(monkeypatch):
+    monkeypatch.syspath_prepend(str(ROOT / "backend/starlink-location"))
+    from app.mission.exporter.snapshot_inputs import canonical_json
+
+    scene = {
+        "schemaVersion": 1,
+        "legId": "toy",
+        "route": [{"latitude": 0.0, "longitude": 1.0}],
+        "markers": [],
+    }
+    payload = canonical_json({"mapInput": scene})
+    # Exact same protocol as the production renderer: parse canonical payload,
+    # then hash JSON.stringify of the nested scene, preserving parsed key order.
+    expected = subprocess.check_output(
+        [
+            "node",
+            "-e",
+            "const fs=require('fs'),c=require('crypto');const p=JSON.parse(fs.readFileSync(0,'utf8'));process.stdout.write(c.createHash('sha256').update(JSON.stringify(p.mapInput)).digest('hex'))",
+        ],
+        input=payload,
+    ).decode()
+    assert load_map_pixels().scene_digest(scene) == expected
+
+
+@pytest.mark.parametrize("relation", ["same", "inside", "ancestor"])
+def test_evidence_never_overlaps_immutable_inputs(tmp_path, relation):
+    module = load_runner()
+    root = tmp_path / "private" / "inputs"
+    root.mkdir(parents=True)
+    (root / "source.pdf").write_bytes(b"immutable")
+    output = {"same": root, "inside": root / "evidence", "ancestor": root.parent}[
+        relation
+    ]
+    before = {
+        str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()
+    }
+    with pytest.raises(ValueError, match="overlap"):
+        module.validate_evidence_scope(output, root)
+    assert {
+        str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()
+    } == before

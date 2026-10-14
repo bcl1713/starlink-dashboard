@@ -579,7 +579,9 @@ def test_reviewed_applied_plan_is_current(prepared, monkeypatch):
         ),
     )
     assert applied.expected_legs[0].computation_status == "applied"
-    saved = prepared[0].save_reviewed(view.mission.id, "card-1", review(applied))
+    saved = prepared[0].save_reviewed(
+        view.mission.id, "card-1", review(prepared[0], applied)
+    )
     assert saved.expected_legs[0].review_status == "reviewed"
     assert (
         api.store.read(view.mission.id).expected_legs[0].computation_status == "applied"
@@ -602,7 +604,7 @@ def test_current_review_does_not_label_historical_applied_payload_stale(prepared
     from .test_reviewed_save import confirmed, review
 
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     mission, manifest = service.store._load(view.mission.id)
     manifest.proposal_refs.append(
         ProposalReference(

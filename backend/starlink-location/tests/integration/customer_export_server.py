@@ -182,6 +182,29 @@ async def saturate():
     return {"occupied": worker_count}
 
 
+if mode == "serialization":
+    from types import SimpleNamespace
+
+    from pydantic import BaseModel, model_serializer
+
+    from app.mission import routes_v2
+    from app.mission.planning.models import PlanningView
+
+    class SlowMetadata(BaseModel):
+        @model_serializer(mode="plain")
+        def serialize(self):
+            time.sleep(3)
+            return "serialized"
+
+    delayed = Mission(id="m", name="Heavy response", metadata={"slow": SlowMetadata()})
+    routes_v2.load_mission_v2 = lambda _: delayed
+    main.app.state.planning_service = SimpleNamespace(
+        store=SimpleNamespace(
+            read=lambda _: PlanningView(mission=delayed, revision=1, expected_legs=[])
+        )
+    )
+
+
 listener = socket.socket(fileno=fd)
 server = uvicorn.Server(
     uvicorn.Config(main.app, log_level="warning", timeout_graceful_shutdown=5)

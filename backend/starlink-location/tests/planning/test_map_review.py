@@ -69,7 +69,7 @@ def test_unsupported_map_cannot_silently_publish(prepared, monkeypatch):
     monkeypatch.setattr(map_review, "check_map_review", lambda *args: (problem,))
     before = snapshot(service)
     with pytest.raises(PlanningFailure) as error:
-        service.save_reviewed(view.mission.id, "card-1", review(view))
+        service.save_reviewed(view.mission.id, "card-1", review(service, view))
     assert error.value.status_code == 422
     assert error.value.error.code == problem.code
     assert snapshot(service) == before

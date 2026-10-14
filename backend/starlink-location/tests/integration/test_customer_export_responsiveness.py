@@ -26,7 +26,7 @@ def probes():
 
 
 @contextmanager
-def server(tmp_path, *, blocking=False):
+def server(tmp_path, *, blocking=False, serialization=False):
     # Reserve the listener and pass its FD; record ownership before starting a server.
     listener = socket.socket()
     listener.bind(("127.0.0.1", 0))
@@ -49,7 +49,11 @@ def server(tmp_path, *, blocking=False):
                 str(script),
                 str(tmp_path),
                 str(listener.fileno()),
-                "blocking" if blocking else "normal",
+                (
+                    "serialization"
+                    if serialization
+                    else "blocking" if blocking else "normal"
+                ),
             ],
             pass_fds=(listener.fileno(),),
             start_new_session=True,
@@ -200,3 +204,23 @@ def test_thread_saturation_keeps_failed_samples(tmp_path):
             r["path"].endswith("/m") and r["error"] == "deadline"
             for r in report["failures"]
         )
+
+
+@pytest.mark.parametrize(
+    "path", ["/api/v2/missions/m", "/api/v2/missions/planning/missions/m"]
+)
+def test_response_serialization_keeps_real_health_socket_responsive(tmp_path, path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    module = probes()
+    with server(tmp_path, serialization=True) as origin, ThreadPoolExecutor(
+        max_workers=1
+    ) as pool:
+        heavy = pool.submit(module.probe_request, origin + path, seconds=10)
+        time.sleep(0.5)
+        health = module.probe_request(origin + "/health")
+        result = heavy.result(timeout=10)
+        assert result["status"] == 200 and not result["error"]
+        assert b"serialized" in result["body"]
+        assert health["status"] == 200 and not health["error"]
+        assert health["elapsed_seconds"] < 2

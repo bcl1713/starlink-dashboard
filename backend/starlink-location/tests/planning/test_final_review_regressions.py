@@ -65,7 +65,7 @@ def test_collision_rebuilds_installed_and_historical_snapshots(prepared, monkeyp
     view = service.save_reviewed(
         view.mission.id,
         "card-1",
-        review(view, confirmed_ar_ids=["ar"], no_ars_confirmed=False),
+        review(service, view, confirmed_ar_ids=["ar"], no_ars_confirmed=False),
     )
     mission, manifest = service.store._load(view.mission.id)
     installed = mission.legs[0]
@@ -127,7 +127,7 @@ def test_outside_fixed_ar_preview_and_review_never_publish(prepared, departure):
     installed = service.save_reviewed(
         view.mission.id,
         "card-1",
-        review(view, confirmed_ar_ids=["ar"], no_ars_confirmed=False),
+        review(service, view, confirmed_ar_ids=["ar"], no_ars_confirmed=False),
     )
     installed_bytes = storage.get_mission_leg_file_path(
         view.mission.id, installed.mission.legs[0].id
@@ -153,7 +153,7 @@ def test_outside_fixed_ar_preview_and_review_never_publish(prepared, departure):
         rejected = client.post(
             prefix + "/reviewed",
             json=review(
-                view, confirmed_ar_ids=["ar"], no_ars_confirmed=False
+                service, view, confirmed_ar_ids=["ar"], no_ars_confirmed=False
             ).model_dump(mode="json"),
         )
         assert rejected.status_code == 422, rejected.text
@@ -208,7 +208,7 @@ def test_malformed_embedded_snapshot_rejected_before_writes(prepared, field):
     from app.mission.planning.packages import stage_package
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     payload = io.BytesIO()
     with archive(service, view.mission.id) as handle, zipfile.ZipFile(
         handle

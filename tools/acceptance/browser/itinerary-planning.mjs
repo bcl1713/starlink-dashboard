@@ -895,9 +895,18 @@ async function main() {
     await readFile(join(output, "browser-provenance.json"), "utf8"),
   );
   assert.equal(provenance.executable.path, process.env.ITINERARY_CHROME);
+  const proxyAddress = process.env.ITINERARY_NETWORK_MODE === 'online'
+    ? (process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY) : undefined;
+  const proxyUrl = proxyAddress ? new URL(proxyAddress) : null;
   const browser = await chromium.launch({
     executablePath: process.env.ITINERARY_CHROME,
     headless: true,
+    proxy: proxyUrl ? {
+      server: proxyUrl.origin,
+      username: decodeURIComponent(proxyUrl.username),
+      password: decodeURIComponent(proxyUrl.password),
+      bypass: '127.0.0.1,localhost',
+    } : undefined,
   });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },

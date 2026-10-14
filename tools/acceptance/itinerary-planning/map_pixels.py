@@ -20,7 +20,7 @@ def scene_digest(scene, *, node="node"):
     # Use the renderer's JSON.stringify representation, including JS number encoding.
     command = "const fs=require('fs'),c=require('crypto');const s=JSON.parse(fs.readFileSync(0,'utf8'));process.stdout.write(c.createHash('sha256').update(JSON.stringify(s)).digest('hex'))"
     return subprocess.check_output(
-        [node, "-e", command], input=json.dumps(scene).encode(), timeout=10
+        [node, "-e", command], input=json.dumps(scene, sort_keys=True).encode(), timeout=10
     ).decode()
 
 

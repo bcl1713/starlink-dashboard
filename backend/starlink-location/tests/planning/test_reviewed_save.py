@@ -20,11 +20,26 @@ def snapshot(service):
     }
 
 
-def review(view, **changes):
+def review(service, view, **changes):
+    from app.mission.planning.grid import build_context
+    from app.mission.planning.inputs import build_inputs
+
+    leg = view.expected_legs[0].leg
+    context = build_context(
+        build_inputs(
+            leg,
+            leg.draft,
+            service.store.route_manager,
+            service.store.poi_manager,
+            service.store.planning_constraints_provider(),
+        ),
+        leg.draft,
+    )
     return SaveReviewed(
         **{
             "expected_revision": view.revision,
             "input_identity": view.expected_legs[0].input_identity,
+            "evaluation_identity": context.input_identity,
             "satellite_plan_confirmed": True,
             "no_ars_confirmed": True,
             "gap_acknowledged": True,
@@ -63,7 +78,7 @@ def test_preview_is_read_only_and_uses_shared_evaluation(prepared):
 def test_reviewed_save_creates_first_inactive_leg_and_canonical_timeline(prepared):
     service, view = confirmed(prepared)
     assert view.mission.legs == []
-    saved = service.save_reviewed(view.mission.id, "card-1", review(view))
+    saved = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     assert saved.mission.legs[0].is_active is False
     assert (
         saved.expected_legs[0].leg.review.input_identity
@@ -96,7 +111,9 @@ def test_incomplete_review_has_no_writes(prepared, changes):
     service, view = confirmed(prepared)
     before = snapshot(service)
     with pytest.raises(PlanningFailure) as error:
-        service.save_reviewed(view.mission.id, "card-1", review(view, **changes))
+        service.save_reviewed(
+            view.mission.id, "card-1", review(service, view, **changes)
+        )
     assert error.value.status_code == 422
     assert snapshot(service) == before
 
@@ -112,7 +129,7 @@ def test_stale_review_preserves_new_draft_without_writes(prepared):
     )
     before = snapshot(service)
     with pytest.raises(PlanningFailure) as error:
-        service.save_reviewed(view.mission.id, "card-1", review(view))
+        service.save_reviewed(view.mission.id, "card-1", review(service, view))
     assert error.value.status_code == 409
     assert snapshot(service) == before
 
@@ -150,7 +167,7 @@ def test_changed_dependencies_during_preparation_reject_without_writes(
     monkeypatch.setattr(module, "prepare_mission_timeline", raced)
     before = snapshot(service)
     with pytest.raises(PlanningFailure) as error:
-        service.save_reviewed(view.mission.id, "card-1", review(view))
+        service.save_reviewed(view.mission.id, "card-1", review(service, view))
     assert error.value.status_code == 409
     assert snapshot(service) == before
 
@@ -179,7 +196,7 @@ def test_unresolved_legacy_swap_blocks_preview_proposal_and_review(prepared):
             "card-1",
             PreviewDraft(expected_revision=view.revision, draft=draft),
         ),
-        lambda: service.save_reviewed(view.mission.id, "card-1", review(view)),
+        lambda: service.save_reviewed(view.mission.id, "card-1", review(service, view)),
     ):
         with pytest.raises((PlanningFailure, ValueError)):
             action()
@@ -204,7 +221,7 @@ def test_reopen_invalidates_review_without_mutating_provenance(
     prepared, monkeypatch, dependency
 ):
     service, view = confirmed(prepared)
-    saved = service.save_reviewed(view.mission.id, "card-1", review(view))
+    saved = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     from app.satellites.catalog import get_satellite_catalog
 
     if dependency == "moved":
@@ -241,7 +258,7 @@ def test_reopen_invalidates_review_without_mutating_provenance(
 
 def test_managed_put_stages_unanchored_inputs_preserving_executable(prepared):
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     installed = view.mission.legs[0]
     from app.mission.models import XTransition
 
@@ -267,7 +284,7 @@ def test_managed_put_stages_unanchored_inputs_preserving_executable(prepared):
     assert current.mission.legs[0].name == "Pending changes"
     before = snapshot(service)
     with pytest.raises(PlanningFailure) as error:
-        service.save_reviewed(view.mission.id, "card-1", review(view))
+        service.save_reviewed(view.mission.id, "card-1", review(service, view))
     assert error.value.status_code == 409
     assert snapshot(service) == before
 
@@ -275,7 +292,7 @@ def test_managed_put_stages_unanchored_inputs_preserving_executable(prepared):
 @pytest.mark.parametrize("revision,identity", [(None, None), (1, "f" * 64)])
 def test_managed_put_requires_current_cas(prepared, revision, identity):
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     before = snapshot(service)
     with pytest.raises(PlanningFailure) as error:
         service.update_managed_leg(
@@ -291,7 +308,7 @@ def test_managed_put_requires_current_cas(prepared, revision, identity):
 
 def test_managed_nonplan_put_preserves_review_and_increments_revision(prepared):
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     changed = view.mission.legs[0].model_copy(deep=True)
     changed.name = "Renamed"
     service.update_managed_leg(
@@ -312,7 +329,7 @@ async def test_ordinary_put_delegates_managed_cas_and_retains_omitted_fields(pre
     from app.mission.routes_v2 import update_leg
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     old = view.mission.legs[0]
     incoming = MissionLeg(
         id=old.id,
@@ -341,7 +358,7 @@ async def test_parent_metadata_edit_preserves_latest_draft_and_review(prepared):
     from app.mission.routes_v2 import update_mission
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     from types import SimpleNamespace
 
     parent = await update_mission(
@@ -362,7 +379,7 @@ def test_managed_ar_put_stages_raw_window_without_fabricated_time(prepared):
     from app.mission.models import AARWindow
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     incoming = view.mission.legs[0].model_copy(deep=True)
     incoming.transports.aar_windows = [
         AARWindow(id="new-ar", start_waypoint_name="ENTRY", end_waypoint_name="EXIT")
@@ -388,7 +405,7 @@ def test_managed_put_rejects_active_plan_edit_and_route_replacement(prepared, ch
     from app.mission import storage
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     incoming = view.mission.legs[0].model_copy(deep=True)
     if change == "active":
         parent = storage.load_mission_v2(view.mission.id)
@@ -412,7 +429,7 @@ def test_managed_put_rejects_active_plan_edit_and_route_replacement(prepared, ch
 
 def test_valid_ordinary_put_changes_draft_and_invalidates_review(prepared):
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     incoming = view.mission.legs[0].model_copy(deep=True)
     incoming.transports.starshield_enabled = False
     result = service.update_managed_leg(
@@ -435,7 +452,7 @@ def test_pending_swap_resolution_then_review_installs_requested_schedule(prepare
     from app.mission.planning.models import AnchoredSwap, RouteAnchor
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     incoming = view.mission.legs[0].model_copy(deep=True)
     timeline = storage.get_leg_timeline_path(incoming.id, view.mission.id).read_bytes()
     markers = service.store.poi_manager.pois_file.read_bytes()
@@ -479,14 +496,14 @@ def test_pending_swap_resolution_then_review_installs_requested_schedule(prepare
         "card-1",
         SaveDraft(expected_revision=current.revision, draft=draft),
     )
-    saved = service.save_reviewed(view.mission.id, "card-1", review(current))
+    saved = service.save_reviewed(view.mission.id, "card-1", review(service, current))
     assert saved.mission.legs[0].transports.x_transitions[0].id == "pending"
     assert saved.mission.legs[0].transports.x_transitions[0].anchor is not None
 
 
 def test_re_review_preserves_installed_leg_metadata(prepared):
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     updated = view.mission.legs[0].model_copy(deep=True)
     updated.name = "Reviewed custom title"
     updated.description = "Executive communications"
@@ -498,7 +515,7 @@ def test_re_review_preserves_installed_leg_metadata(prepared):
         view.expected_legs[0].input_identity,
     )
     current = service.store.read(view.mission.id)
-    saved = service.save_reviewed(view.mission.id, "card-1", review(current))
+    saved = service.save_reviewed(view.mission.id, "card-1", review(service, current))
     assert saved.mission.legs[0].name == updated.name
     assert saved.mission.legs[0].description == updated.description
 
@@ -519,7 +536,7 @@ def test_unrecognized_ar_section_is_provisional_in_preview(prepared):
 
 def test_managed_put_rejects_unsupported_initial_ka_selection_without_writes(prepared):
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     incoming = view.mission.legs[0].model_copy(deep=True)
     incoming.transports.initial_ka_satellite_ids = ["AOR"]
     before = snapshot(service)
@@ -543,7 +560,7 @@ def test_existing_initial_ka_selection_survives_put_and_review(prepared, omitted
     from app.mission.models import MissionLeg
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     parent = storage.load_mission_v2(view.mission.id)
     parent.legs[0].transports.initial_ka_satellite_ids = ["AOR"]
     storage.save_mission_v2(parent)
@@ -562,7 +579,9 @@ def test_existing_initial_ka_selection_survives_put_and_review(prepared, omitted
     )
     assert result["leg"]["transports"]["initial_ka_satellite_ids"] == ["AOR"]
     current = service.store.read(view.mission.id)
-    reviewed = service.save_reviewed(view.mission.id, "card-1", review(current))
+    reviewed = service.save_reviewed(
+        view.mission.id, "card-1", review(service, current)
+    )
     assert reviewed.mission.legs[0].transports.initial_ka_satellite_ids == ["AOR"]
 
 
@@ -576,7 +595,7 @@ def test_metadata_put_preserves_runtime_flag_changed_between_gates(
     from app.mission import storage
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     parent = storage.load_mission_v2(view.mission.id)
     parent.legs[0].is_active = not activated
     storage.save_mission_v2(parent)
@@ -643,7 +662,7 @@ def test_parent_patch_waiting_for_gate_preserves_interleaved_reviewed_draft(
     from app.mission.models import MissionUpdate
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     parent_waiting, release_parent = Event(), Event()
     original_gate = routes_v2.get_active_leg_lock
 
@@ -674,7 +693,9 @@ def test_parent_patch_waiting_for_gate_preserves_interleaved_reviewed_draft(
                 "card-1",
                 SaveDraft(expected_revision=view.revision, draft=draft),
             )
-            latest = service.save_reviewed(view.mission.id, "card-1", review(changed))
+            latest = service.save_reviewed(
+                view.mission.id, "card-1", review(service, changed)
+            )
         finally:
             release_parent.set()
         parent = future.result(timeout=10)
@@ -696,3 +717,37 @@ def test_parent_patch_waiting_for_gate_preserves_interleaved_reviewed_draft(
             parent.metadata["itinerary_planning"][key]
             == latest.mission.metadata["itinerary_planning"][key]
         )
+
+
+def test_review_binds_approval_to_preview_before_environment_change(prepared):
+    from app.satellites.rules import ConstraintConfig
+
+    service, view = confirmed(prepared)
+    request = review(service, view)
+    preview = service.preview(
+        view.mission.id,
+        "card-1",
+        PreviewDraft(
+            expected_revision=view.revision, draft=view.expected_legs[0].leg.draft
+        ),
+    )
+    request = request.model_copy(
+        update={"evaluation_identity": preview.context.input_identity}
+    )
+    service.proposals.constraints_provider = lambda: ConstraintConfig(
+        elevation_min_degrees=22
+    )
+    before = snapshot(service)
+    with pytest.raises(PlanningFailure, match="preview"):
+        service.save_reviewed(view.mission.id, "card-1", request)
+    assert snapshot(service) == before
+
+
+@pytest.mark.parametrize("identity", [None, "f" * 64])
+def test_review_requires_preview_identity_without_writes(prepared, identity):
+    service, view = confirmed(prepared)
+    request = review(service, view, evaluation_identity=identity)
+    before = snapshot(service)
+    with pytest.raises(PlanningFailure, match="preview"):
+        service.save_reviewed(view.mission.id, "card-1", request)
+    assert snapshot(service) == before

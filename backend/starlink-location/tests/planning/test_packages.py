@@ -349,7 +349,7 @@ def test_partial_review_and_retired_history_roundtrip(prepared, retire):
     from .test_reviewed_save import confirmed, review
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     mission, manifest = service.store._load(view.mission.id)
     timeline = storage.load_mission_timeline(
         mission.legs[0].id, parent_mission_id=mission.id
@@ -528,7 +528,7 @@ def test_import_revalidates_review_against_current_dependencies(prepared):
     from .test_reviewed_save import confirmed, review
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     with archive(service, view.mission.id) as handle, zipfile.ZipFile(handle) as zf:
         plan = stage_package(zf, None, service.sources)
     original = service.store.planning_constraints_provider()
@@ -890,7 +890,7 @@ def test_route_replacement_roundtrip_preserves_old_anchors_locks_pending_and_bas
     view = service.store.save_draft(
         view.mission.id, leg.id, SaveDraft(expected_revision=view.revision, draft=draft)
     )
-    view = service.save_reviewed(view.mission.id, leg.id, review(view))
+    view = service.save_reviewed(view.mission.id, leg.id, review(service, view))
     accept(service, view, replacement(service, view, tmp_path))
     original, before = service.store._load(view.mission.id)
     from app.mission.models import AARWindow, XTransition

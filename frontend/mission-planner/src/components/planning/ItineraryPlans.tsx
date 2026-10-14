@@ -5,7 +5,10 @@ import type {
   PlanningProposal,
   PlanningView,
 } from '../../types/planning';
-import { usePlanningMissionController } from '../../hooks/usePlanningMissionController';
+import {
+  usePlanningMissionController,
+  usePlanningEditEpoch,
+} from '../../hooks/usePlanningMissionController';
 import { planningSourceReady } from '../../services/planning-prerequisites';
 import { planningApi, planningErrorMessage } from '../../services/planning';
 import { currentLeg } from '../../services/planning-mutations';
@@ -16,6 +19,7 @@ import { Button } from '../ui/button';
 export function ItineraryPlans({ view }: { view: PlanningView }) {
   const missionId = view.mission.id;
   const controller = usePlanningMissionController(missionId);
+  usePlanningEditEpoch(controller);
   const [generated, setGenerated] = useState<Record<string, PlanningProposal>>(
     {}
   );
@@ -82,6 +86,7 @@ export function ItineraryPlans({ view }: { view: PlanningView }) {
       proposals[card.leg.id] = { ...current, state: 'stale' };
   }
   const ready =
+    !controller.hasLocalEdits(cards.map((card) => card.leg.id)) &&
     cards.length > 0 &&
     cards.every(
       (card) => planningSourceReady(card.leg) && !card.errors?.length
@@ -109,6 +114,7 @@ export function ItineraryPlans({ view }: { view: PlanningView }) {
         try {
           const result = await controller.enqueueMutation(
             async (current) => {
+              controller.requireSavedSources([legId]);
               const card = currentLeg(current, legId);
               if (!planningSourceReady(card.leg))
                 throw new Error(
@@ -161,12 +167,14 @@ export function ItineraryPlans({ view }: { view: PlanningView }) {
     const idempotencyKey = application.current!.key;
     try {
       const saved = await controller.enqueueMutation(
-        (current) =>
-          planningApi.applyProposals(missionId, {
+        (current) => {
+          controller.requireSavedSources(selected.map((card) => card.leg.id));
+          return planningApi.applyProposals(missionId, {
             expected_revision: current.revision,
             entries,
             idempotency_key: idempotencyKey,
-          }),
+          });
+        },
         (result) => result
       );
       setGenerated((current) => ({
@@ -261,7 +269,10 @@ export function ItineraryPlans({ view }: { view: PlanningView }) {
       )}
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
-      <Button onClick={() => void apply()} disabled={busy || !selected.length}>
+      <Button
+        onClick={() => void apply()}
+        disabled={busy || !ready || !selected.length}
+      >
         Apply selected plans
       </Button>
     </section>

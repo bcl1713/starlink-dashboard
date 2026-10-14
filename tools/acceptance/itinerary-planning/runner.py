@@ -279,7 +279,11 @@ def preflight(owner: Owner) -> None:
     check_port(owner.port + 2)
     owner.execute(["docker", "info", "--format", "{{.ServerVersion}} {{.Driver}}"])
     context = owner.execute(["docker", "context", "show"]).strip()
+    machine = owner.execute(
+        ["docker", "info", "--format", "{{json .Name}} {{.NCPU}} {{.MemTotal}}"]
+    ).strip()
     owner.record["docker"] = {
+        "machine": machine,
         "context": context,
         "endpoint": os.environ.get("DOCKER_HOST", "<context>"),
     }
@@ -413,6 +417,14 @@ PRIVATE_NAMES = [
 ]
 
 
+def validate_evidence_scope(output: Path, inputs: Path | None) -> None:
+    if inputs is None:
+        return
+    output, inputs = output.resolve(), inputs.resolve()
+    if output == inputs or inputs in output.parents or output in inputs.parents:
+        raise ValueError("Evidence and immutable input paths must not overlap")
+
+
 def private_inputs(root: Path) -> dict:
     root = root.resolve(strict=True)
     return {
@@ -460,6 +472,7 @@ def main() -> None:
         )
     )
     output = args.evidence or output
+    validate_evidence_scope(output, args.input_root)
     owner = Owner(output, sha, project=args.project, port=args.port)
     previous = {
         n: signal.signal(n, owner.signal)
@@ -474,10 +487,11 @@ def main() -> None:
         "project": owner.project,
         "port": owner.port,
     }
-    original_inputs = private_inputs(args.input_root) if args.input_root else None
+    original_inputs = None
     primary_error: BaseException | None = None
     try:
         owner.acquire_claim()
+        original_inputs = private_inputs(args.input_root) if args.input_root else None
         preflight(owner)
         if args.check:
             summary["passed"] = True
@@ -557,6 +571,13 @@ def main() -> None:
             "up", "--no-build", "-d", "--wait", "--wait-timeout", "180", timeout=210
         )
         origin = f"http://127.0.0.1:{owner.port}"
+        summary["configuration"] = {
+            "docker": owner.record["docker"],
+            "telemetry": "simulation",
+            "monitoring": "Prometheus, default scrape configuration plus 3 socket probes every 150ms",
+            "browser_network": args.network_mode,
+            "pdf_network": "local assets, external requests blocked",
+        }
         summary["api_status"] = json.loads(
             owner.execute(["curl", "--fail", "--silent", f"{origin}/api/status"])
         )
@@ -636,7 +657,7 @@ def main() -> None:
         )
         owner.execute(
             ["node", str(source / "tools/acceptance/browser/itinerary-planning.mjs")],
-            timeout=600,
+            timeout=1100,
         )
         if not original_inputs:
             verify_clone_snapshot(owner, source)

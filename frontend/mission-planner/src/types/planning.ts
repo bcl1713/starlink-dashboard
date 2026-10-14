@@ -451,6 +451,7 @@ export interface ApplyProposal {
 }
 
 export interface SaveReviewed {
+  evaluation_identity: string;
   expected_revision: number;
   input_identity: string;
   confirmed_ar_ids?: string[];

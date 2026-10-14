@@ -274,3 +274,66 @@ def test_preparation_http_never_waits_for_cold_download(tmp_path, monkeypatch):
                 assert client.post("/api/v2/missions/m/export").status_code == 200
         finally:
             release.set()
+
+
+def test_retry_omitted_pdf_rebuilds_without_changing_old_download(
+    tmp_path, monkeypatch
+):
+    from app.mission.package.customer_artifacts import CustomerBriefingOutcome
+
+    calls = []
+
+    def build(*args, **kwargs):
+        calls.append(1)
+        omitted = len(calls) == 1
+        return MissionPackageDownload(
+            io.BytesIO(b"PK" + bytes([len(calls)])),
+            CustomerBriefingOutcome(
+                "omitted" if omitted else "included",
+                "runtime" if omitted else None,
+                None,
+            ),
+        )
+
+    with runtime(tmp_path, monkeypatch, builder=build) as (service, _):
+        first = wait_state(service, service.start("m"), {"ready"})
+        second = wait_state(service, service.start("m"), {"ready"})
+        assert first.id != second.id
+        assert second.briefing_status == "included"
+        with service.open_download("m", first.id).stream as stream:
+            assert stream.read() == b"PK\x01"
+
+
+def test_queued_deadline_releases_capture_without_worker(tmp_path, monkeypatch):
+    from app.mission.package.preparation_worker import PreparationWorker
+
+    monkeypatch.setattr(PreparationWorker, "run", lambda self: None)
+    clock = [1000.0]
+    with runtime(tmp_path, monkeypatch, clock=lambda: clock[0]) as (service, _):
+        job = service.start("m")
+        assert job.id in service.captures
+        clock[0] += 601
+        assert service.status("m", job.id).state == "failed"
+        assert job.id not in service.captures
+
+
+def test_foreign_elected_worker_completion_releases_origin_capture(
+    tmp_path, monkeypatch
+):
+    from app.mission.package.preparation import ExportPreparationService
+
+    with runtime(tmp_path, monkeypatch) as (leader, _):
+        # First instance holds the real file lock while waiting for work.
+        time.sleep(0.2)
+        follower = ExportPreparationService(
+            None, None, enabled=False, cache=leader.cache
+        )
+        try:
+            job = follower.start("m")
+            wait_state(follower, job, {"ready"})
+            deadline = time.monotonic() + 2
+            while job.id in follower.captures and time.monotonic() < deadline:
+                time.sleep(0.02)
+            assert job.id not in follower.captures
+        finally:
+            follower.close()

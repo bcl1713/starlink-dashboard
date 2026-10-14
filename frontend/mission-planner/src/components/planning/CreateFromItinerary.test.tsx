@@ -240,3 +240,53 @@ it('overrides only new unlabeled AR units while preserving declared feet', async
     { confirmed_units: 'feet', unit_origin: 'source_declared' },
   ]);
 });
+
+it('preserves unresolved units from a blocked altitude-column declaration', async () => {
+  vi.spyOn(planningApi, 'previewItinerary').mockResolvedValue({
+    preview_id: 'blocked',
+    parsed_values: {
+      ...itinerary,
+      expected_legs: [
+        {
+          ...itinerary.expected_legs[0],
+          ar_section_status: 'unrecognized',
+          ar_rows: [
+            {
+              id: 'row',
+              track: 'UNSUPPORTED',
+              source_altitude: 210,
+              confirmed_units: null,
+              unit_origin: null,
+              entry_time: '2026-10-25T12:10:00Z',
+              exit_time: '2026-10-25T12:20:00Z',
+            },
+          ],
+        },
+      ],
+    },
+    field_errors: [
+      { code: 'altitude_units_unknown', message: 'Unsupported km units' },
+    ],
+    expires_at: '2026-10-26T12:00:00Z',
+  } as never);
+  const create = vi.spyOn(planningApi, 'create').mockResolvedValue({
+    mission: { id: 'created', legs: [] },
+    revision: 1,
+    expected_legs: [],
+  } as never);
+  setup();
+  fireEvent.change(screen.getByLabelText('Itinerary PDF'), {
+    target: { files: [new File(['source'], 'units.pdf')] },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Extract itinerary' }));
+  await screen.findByLabelText('Mission name');
+  expect(screen.getByText('UNSUPPORTED: 210 units required')).toBeVisible();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Continue to route attachments' })
+  );
+  await waitFor(() => expect(create).toHaveBeenCalledOnce());
+  expect(
+    create.mock.calls[0][0].itinerary.expected_legs?.[0].ar_rows?.[0]
+      .confirmed_units
+  ).toBeNull();
+});

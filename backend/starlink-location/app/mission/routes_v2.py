@@ -182,22 +182,31 @@ async def list_missions(
         int, Query(ge=1, le=MAX_PAGINATION_LIMIT)
     ] = DEFAULT_PAGINATION_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> list[Mission]:
-    """List all missions (metadata only, without legs).
+) -> Response:
+    """List missions using leg-file stubs without loading full legs.
 
     Args:
         limit: Maximum number to return
         offset: Number to skip
 
     Returns:
-        List of missions with metadata only (empty legs arrays)
+        List of missions with metadata and installed-leg stubs
     """
     try:
-        missions = await asyncio.to_thread(
-            lambda: [public_mission(m) for m in list_mission_metadata_v2()]
-        )
-        response.headers["X-Total-Count"] = str(len(missions))
-        return [mission for mission in missions[offset : offset + limit]]
+
+        def read_response():
+            missions = [public_mission(m) for m in list_mission_metadata_v2()]
+            return Response(
+                "["
+                + ",".join(
+                    m.model_dump_json() for m in missions[offset : offset + limit]
+                )
+                + "]",
+                media_type="application/json",
+                headers={"X-Total-Count": str(len(missions))},
+            )
+
+        return await asyncio.to_thread(read_response)
     except (
         RuntimeError,
         ValueError,
@@ -219,7 +228,7 @@ async def list_missions(
 
 
 @router.get("/{mission_id}", response_model=Mission)
-async def get_mission(mission_id: str) -> Mission:
+async def get_mission(mission_id: str) -> Response:
     """Get a specific mission by ID.
 
     Args:
@@ -228,17 +237,19 @@ async def get_mission(mission_id: str) -> Mission:
     Returns:
         Mission object with all legs
     """
-    mission = await asyncio.to_thread(
-        lambda: public_mission(m) if (m := load_mission_v2(mission_id)) else None
-    )
 
-    if not mission:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Mission {mission_id} not found",
+    def read_response():
+        mission = load_mission_v2(mission_id)
+        if not mission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Mission {mission_id} not found",
+            )
+        return Response(
+            public_mission(mission).model_dump_json(), media_type="application/json"
         )
 
-    return mission
+    return await asyncio.to_thread(read_response)
 
 
 @router.patch("/{mission_id}", response_model=Mission)

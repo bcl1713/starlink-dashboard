@@ -31,6 +31,11 @@ export function usePlanningLegWorkflow({
 }) {
   const leg = card.leg;
   const controller = planning.controller;
+  const editOwner = useRef(Symbol('source-editor'));
+  useEffect(() => {
+    const owner = editOwner.current;
+    return () => controller.setLocalEdits(leg.id, owner, false);
+  }, [controller, leg.id]);
   const editEpoch = useRef(0);
   const autosavedEpoch = useRef(0);
   const [draft, setDraft] = useState<PlanningDraft>(() => ({
@@ -89,6 +94,7 @@ export function usePlanningLegWorkflow({
   const [error, setError] = useState('');
   const change = (updates: Partial<PlanningDraft>) => {
     controller.cancelPreview(leg.id);
+    controller.setLocalEdits(leg.id, editOwner.current, true);
     editEpoch.current++;
     setDraft((current) => ({ ...current, ...updates }));
     setDirty(true);
@@ -146,6 +152,7 @@ export function usePlanningLegWorkflow({
     setSection(current.leg.ar_section_status ?? 'empty');
     setExpectedRevision(saved.revision);
     setInputIdentity(current.input_identity);
+    controller.setLocalEdits(leg.id, editOwner.current, false);
     setDirty(false);
     setEvaluation(null);
     setPlanConfirmed(false);
@@ -334,12 +341,16 @@ export function usePlanningLegWorkflow({
   const reviewed = async (next: boolean) => {
     setError('');
     try {
+      if (!evaluation)
+        throw new Error('Preview current inputs before approving publication');
+      controller.requireSavedSources([leg.id]);
       const rows = draft.ar_corrections ?? [];
       const saved = await planning.saveReviewed.mutateAsync({
         legId: leg.id,
         request: {
           expected_revision: expectedRevision,
           input_identity: inputIdentity,
+          evaluation_identity: evaluation.context.input_identity,
           satellite_plan_confirmed: planConfirmed,
           gap_acknowledged: gapAcknowledged,
           no_ars_confirmed: draft.no_ars_confirmed ?? false,

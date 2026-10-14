@@ -6,6 +6,8 @@ from functools import partial
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
+from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 from app.services.kml_parser import KMLParseError
@@ -47,9 +49,19 @@ def get_service(request: Request):
     return service
 
 
-async def invoke(fn, *args):
+async def invoke(fn, *args, status_code=200):
+    def execute():
+        value = fn(*args)
+        if isinstance(value, BaseModel):
+            return Response(
+                value.model_dump_json(),
+                status_code=status_code,
+                media_type="application/json",
+            )
+        return value
+
     try:
-        return await run_in_threadpool(fn, *args)
+        return await run_in_threadpool(execute)
     except PlanningFailure as exc:
         raise HTTPException(exc.status_code, exc.error.model_dump(mode="json")) from exc
     except (PlanningDeadlineError, PlanningWorkerError) as exc:
@@ -107,7 +119,7 @@ async def satellite_options(service: Annotated[PlanningService, Depends(get_serv
 async def create(
     request: ConfirmItinerary, service: Annotated[PlanningService, Depends(get_service)]
 ):
-    return await invoke(service.create, request)
+    return await invoke(service.create, request, status_code=201)
 
 
 @router.get("/missions/{mission_id}", response_model=PlanningView)

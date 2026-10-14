@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { PlanningView } from '../../types/planning';
-import { usePlanningMissionController } from '../../hooks/usePlanningMissionController';
+import {
+  usePlanningMissionController,
+  usePlanningEditEpoch,
+} from '../../hooks/usePlanningMissionController';
 import { planningSourceReady } from '../../services/planning-prerequisites';
 import { planningApi, planningErrorMessage } from '../../services/planning';
 import { currentLeg } from '../../services/planning-mutations';
@@ -11,6 +14,7 @@ import { Button } from '../ui/button';
 export function ItineraryFinalReview({ view }: { view: PlanningView }) {
   const missionId = view.mission.id;
   const controller = usePlanningMissionController(missionId);
+  usePlanningEditEpoch(controller);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [planApproval, setPlanApproval] = useState('');
   const [gapApproval, setGapApproval] = useState('');
@@ -22,6 +26,9 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
     (card) => !card.leg.retired && card.review_status !== 'reviewed'
   );
   const selected = cards.filter((card) => !excluded.includes(card.leg.id));
+  const selectedIds = selected.map((card) => card.leg.id);
+  const unsaved = controller.hasLocalEdits(selectedIds);
+  const editEpoch = controller.localEditIdentity(selectedIds);
   const inputs = selected
     .map((card) => `${card.leg.id}:${card.input_identity}`)
     .join('|');
@@ -33,8 +40,14 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
         !!card.leg.draft?.initial_x_satellite_id
     );
   const preview = useQuery({
-    queryKey: ['itinerary-final-review', missionId, view.revision, inputs],
-    enabled: eligible,
+    queryKey: [
+      'itinerary-final-review',
+      missionId,
+      view.revision,
+      inputs,
+      editEpoch,
+    ],
+    enabled: eligible && !unsaved,
     queryFn: async () =>
       Object.fromEntries(
         await Promise.all(
@@ -55,7 +68,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
   });
   const signature =
     inputs +
-    ':' +
+    `:${editEpoch}:` +
     JSON.stringify(
       selected.map(
         (card) => preview.data?.[card.leg.id]?.context.input_identity ?? null
@@ -72,6 +85,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
   });
   const publish = async () => {
     if (
+      unsaved ||
       !eligible ||
       missing ||
       blocked ||
@@ -87,6 +101,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
     try {
       await controller.enqueueMutation(
         (current) => {
+          controller.requireSavedSources(selected.map((card) => card.leg.id));
           const entries = selected.map((card) => {
             const latest = currentLeg(
               current,
@@ -102,6 +117,8 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
               review: {
                 expected_revision: current.revision,
                 input_identity: latest.input_identity,
+                evaluation_identity:
+                  preview.data![card.leg.id].context.input_identity,
                 satellite_plan_confirmed: true,
                 gap_acknowledged: gapApproval === signature,
                 no_ars_confirmed: draft.no_ars_confirmed ?? false,
@@ -141,6 +158,9 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
           All current itinerary legs are already reviewed. Existing approvals
           are retained.
         </p>
+      )}
+      {unsaved && (
+        <p role="status">Save or resolve source edits before final review.</p>
       )}
       {!eligible && !!cards.length && (
         <p>
@@ -215,6 +235,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
         <input
           type="checkbox"
           aria-label="I approve the selected satellite plans and Starshield settings"
+          disabled={unsaved || preview.isFetching || missing}
           checked={planApproval === signature}
           onChange={(event) =>
             setPlanApproval(event.target.checked ? signature : '')
@@ -227,6 +248,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
           <input
             type="checkbox"
             aria-label="I acknowledge the listed X-band outages and backup gaps"
+            disabled={unsaved || preview.isFetching || missing}
             checked={gapApproval === signature}
             onChange={(event) =>
               setGapApproval(event.target.checked ? signature : '')
@@ -241,6 +263,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
         onClick={() => void publish()}
         disabled={
           busy ||
+          unsaved ||
           !eligible ||
           missing ||
           blocked ||

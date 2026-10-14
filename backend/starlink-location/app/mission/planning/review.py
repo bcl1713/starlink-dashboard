@@ -118,6 +118,8 @@ def prepare_reviewed_leg(service, mission_id, leg_id, request):
     context = build_context(inputs, leg.draft)
     evaluation = evaluate_context(inputs, leg.draft, context)
     validate_review(leg, request, evaluation)
+    if request.evaluation_identity != context.input_identity:
+        raise conflict("Reviewed evaluation changed; preview and approve again")
     installed = draft_to_mission_leg(
         inputs,
         leg.draft,

@@ -37,7 +37,8 @@ static default with the same identifier.
    **Accept route bindings**. Ambiguous sources require an explicit assignment.
 3. **Continue to source review**. Confirm the displayed AR intervals, heights
    and occurrences, or explicitly confirm no ARs for a leg with none. Changes
-   save automatically. A failed save preserves edits and offers an explicit
+   save automatically. Unsaved or conflicted source edits block generation and
+   publication immediately. A failed save preserves edits and offers an explicit
    retry. Resolve ambiguous occurrences, unrecognized sections and exclusions
    before generating plans.
 4. **Generate plans** computes comparisons for all ready legs. Review outage
@@ -48,7 +49,8 @@ static default with the same identifier.
    and backup gaps. Approve the satellite plans and Starshield settings, and
    acknowledge listed gaps when present. **Publish reviewed plans** installs
    all selected legs atomically and leaves them inactive. Changing a reviewed
-   input requires new approval. The mission list counts the installed legs.
+   input or its evaluation dependencies requires a new preview and approval.
+   The mission list counts the installed legs.
 
 Individual leg editors remain available for exceptional corrections, route
 replacement, locks and manual swaps. Route occurrence identities distinguish

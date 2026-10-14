@@ -128,3 +128,37 @@ it('surfaces a specific map limitation before approval and blocks publication', 
   ).toBeDisabled();
   expect(publish).not.toHaveBeenCalled();
 });
+
+it('invalidates approval immediately for local edits and does not restore it after save', async () => {
+  const { planningMissionController } = await import(
+    '../../services/planning-mutations'
+  );
+  const { act } = await import('@testing-library/react');
+  const { publish, client } = setup();
+  await screen.findByText('Leg 2: 120 seconds of X-band outage');
+  fireEvent.click(
+    screen.getByLabelText(
+      'I approve the selected satellite plans and Starshield settings'
+    )
+  );
+  fireEvent.click(
+    screen.getByLabelText(
+      'I acknowledge the listed X-band outages and backup gaps'
+    )
+  );
+  const button = screen.getByRole('button', { name: 'Publish reviewed plans' });
+  expect(button).toBeEnabled();
+  const controller = planningMissionController(client, 'm');
+  const owner = Symbol('source-editor');
+  act(() => controller.setLocalEdits('a', owner, true));
+  expect(button).toBeDisabled();
+  fireEvent.click(button);
+  expect(publish).not.toHaveBeenCalled();
+  act(() => controller.setLocalEdits('a', owner, false));
+  expect(button).toBeDisabled();
+  expect(
+    screen.getByLabelText(
+      'I approve the selected satellite plans and Starshield settings'
+    )
+  ).not.toBeChecked();
+});

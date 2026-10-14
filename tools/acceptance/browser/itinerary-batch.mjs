@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -7,20 +8,24 @@ const { expect } = require('@playwright/test');
 
 export async function batchJourney(context, origin, input, output) {
   const page = await context.newPage();
-  const actions = [], events = [], probes = [], jobs = [];
+  const actions = [], events = [], probes = [], jobs = [], externalRequests = [];
+  let stageWrites = Promise.resolve();
+  const persistStages = () => stageWrites = stageWrites.then(() => writeFile(join(output, "export-stages.json"), JSON.stringify(jobs, null, 2)));
   let mission, temperature, probing = true;
   const real = !!process.env.ITINERARY_INPUT_ROOT;
   const networkMode = process.env.ITINERARY_NETWORK_MODE;
   if (networkMode === 'offline') await context.route('**/*', route =>
     new URL(route.request().url()).origin === origin ? route.continue() : route.abort('internetdisconnected'));
+  page.on('requestfailed', request => { if (!request.url().startsWith(origin)) externalRequests.push({ url: request.url(), error: request.failure()?.errorText, expected_offline: networkMode === 'offline' }); });
   page.on('pageerror', e => events.push({ type: 'pageerror', message: String(e) }));
   page.on('response', async r => {
+    if (!r.url().startsWith(origin)) externalRequests.push({ url: r.url(), status: r.status() });
     if (temperature && r.url().includes(`/api/v2/missions/${mission}/export`)) {
       const receipt = { temperature, url: r.url(), status: r.status(), headers: r.headers() };
       jobs.push(receipt);
       if (r.status() === 202 || r.headers()['content-type']?.includes('json')) receipt.job = await r.json();
       await r.finished(); receipt.timing = r.request().timing();
-      await writeFile(join(output, 'export-stages.json'), JSON.stringify(jobs, null, 2));
+      await persistStages();
     }
     if (r.url().startsWith(origin + '/api/') && r.status() >= 400)
       events.push({ type: 'api-error', status: r.status(), url: r.url(), body: await r.text() });
@@ -48,7 +53,7 @@ export async function batchJourney(context, origin, input, output) {
           const r = await fetch(url, { signal: AbortSignal.timeout(2000) });
           headers = (performance.now() - start) / 1000; status = r.status; await r.arrayBuffer();
         } catch (e) { error = String(e); }
-        probes.push({ url, status, error, headers_seconds: headers, body_seconds: (performance.now() - start) / 1000 });
+        probes.push({ at: new Date().toISOString(), phase: temperature ?? 'operator', url, status, error, headers_seconds: headers, body_seconds: (performance.now() - start) / 1000 });
       }));
       await new Promise(r => setTimeout(r, 150));
     }
@@ -135,8 +140,32 @@ export async function batchJourney(context, origin, input, output) {
       await save(`07-${mode}-export`);
       await expect(dialog).not.toBeVisible({ timeout: 10000 });
     }
-    temperature = undefined;
+    temperature = "save-cancel-isolation";
     const after = await read(); assert.deepEqual(after, installed, 'export must preserve reviewed inputs');
+    const coldJob = jobs.find(receipt => receipt.temperature === 'cold' && receipt.status === 202)?.job;
+    assert(coldJob, 'fresh cold export must return a preparation job');
+    const base = `/api/v2/missions/${mission}/export-preparations`;
+    await json(`/api/v2/missions/${mission}`, 'PATCH', { description: 'Owned invalidating-save control 1' });
+    const pending = await json(base, 'POST');
+    await json(`/api/v2/missions/${mission}`, 'PATCH', { description: 'Owned invalidating-save control 2' });
+    const cancelledCandidate = await json(base, 'POST');
+    const cancelled = await json(base + '/' + cancelledCandidate.id, 'DELETE');
+    assert.equal(cancelled.state, 'cancelled');
+    const survivor = await json(base, 'POST');
+    let current = survivor;
+    const until = Date.now() + 620000;
+    while (!['ready', 'failed', 'superseded'].includes(current.state)) {
+      assert(Date.now() < until); await new Promise(r => setTimeout(r, 250));
+      current = await json(base + '/' + current.id);
+    }
+    assert.equal(current.state, 'ready');
+    const old = await context.request.get(origin + base + '/' + coldJob.id + '/download', { timeout: 120000 });
+    assert.equal(old.status(), 200);
+    const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+    assert.equal(digest(await old.body()), digest(await readFile(join(output, 'cold.zip'))));
+    const pendingResult = await json(base + '/' + pending.id);
+    assert(['superseded', 'ready'].includes(pendingResult.state));
+    await writeFile(join(output, 'export-isolation-controls.json'), JSON.stringify({ cancelled, survivor: current, invalidated: pendingResult, immutable_ready_download: true }, null, 2));
     await writeFile(join(output, 'final-readback.json'), JSON.stringify(after, null, 2));
     if (!real) {
       const zip = await readFile(join(output, 'cold.zip'));
@@ -157,6 +186,8 @@ export async function batchJourney(context, origin, input, output) {
       candidate_sha: process.env.ACCEPTANCE_CANDIDATE_SHA, network_mode: networkMode };
   } finally {
     probing = false; await monitoring;
+    await persistStages();
+    await writeFile(join(output, "browser-network.json"), JSON.stringify({ mode: networkMode, externalRequests }, null, 2));
     await writeFile(join(output, 'api-probes.json'), JSON.stringify({ deadline_seconds: 2, probes, failures: probes.filter(p => p.error || p.status !== 200 || p.body_seconds > 2) }, null, 2));
     await writeFile(join(output, 'browser-events.json'), JSON.stringify(events, null, 2));
     await save('final-page').catch(() => {});

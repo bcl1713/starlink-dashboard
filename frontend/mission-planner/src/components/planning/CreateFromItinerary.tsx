@@ -112,11 +112,7 @@ function ItineraryForm({
       defaultRows.current = new Set(
         (parsed.expected_legs ?? []).flatMap((leg) =>
           (leg.ar_rows ?? [])
-            .filter(
-              (row) =>
-                row.unit_origin === 'import_default' ||
-                (!row.confirmed_units && row.source_altitude != null)
-            )
+            .filter((row) => row.unit_origin === 'import_default')
             .map((row) => row.id)
         )
       );
