@@ -8,11 +8,12 @@ from unittest.mock import MagicMock
 
 os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 
-# Ensure /data directories exist for RouteManager and Missions
-Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
-Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
+# A caller can isolate import-time and subprocess bootstrap storage as well.
+TEST_DATA_DIR = Path(os.environ.get("STARLINK_TEST_DATA_DIR", "/tmp/test_data"))
+(TEST_DATA_DIR / "routes").mkdir(parents=True, exist_ok=True)
+(TEST_DATA_DIR / "sim_routes").mkdir(parents=True, exist_ok=True)
 Path("data/missions").mkdir(parents=True, exist_ok=True)
-TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
+TEST_MISSIONS_DIR = TEST_DATA_DIR / "missions"
 TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
@@ -21,13 +22,10 @@ import app.services.route_manager as route_manager_module
 original_route_init = route_manager_module.RouteManager.__init__
 
 
-def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
-    self.routes_dir = Path(routes_dir)
-    self.routes_dir.mkdir(parents=True, exist_ok=True)
-    self._routes = {}
-    self._active_route_id = None
-    self._observer = None
-    self._errors = {}
+def patched_route_init(
+    self, routes_dir=TEST_DATA_DIR / "routes", *, profile_resolver=None
+):
+    original_route_init(self, routes_dir, profile_resolver=profile_resolver)
 
 
 route_manager_module.RouteManager.__init__ = patched_route_init
@@ -39,7 +37,7 @@ import app.services.poi_manager as poi_manager_module
 original_poi_init = poi_manager_module.POIManager.__init__
 
 
-def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
+def patched_poi_init(self, pois_file=TEST_DATA_DIR / "pois.json"):
     self.pois_file = Path(pois_file)
     self.pois_file.parent.mkdir(parents=True, exist_ok=True)
     self.lock_file = str(self.pois_file) + ".lock"

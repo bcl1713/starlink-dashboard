@@ -373,3 +373,194 @@ def test_active_x_link_accepts_verified_zero_coordinates(tmp_path, monkeypatch):
 
     assert result["satellite_id"] == "X-2"
     assert result["handoff"]["phase"] == "committed"
+
+
+def _repeated_route_and_leg():
+    from app.mission.planning.match import _candidates
+    from app.models.route import RouteTimingProfile
+
+    start = datetime(2026, 10, 25, 9, tzinfo=timezone.utc)
+    route = ParsedRoute(
+        route_id="repeat",
+        content_hash="b" * 64,
+        ingestion_profile="planning_v1",
+        source_departure_time=start,
+        metadata=RouteMetadata(
+            name="Repeated visit", file_path="repeat.kml", point_count=5
+        ),
+        points=[
+            RoutePoint(
+                latitude=lat,
+                longitude=lon,
+                altitude=1000,
+                sequence=n,
+                expected_arrival_time=start + timedelta(seconds=seconds),
+                occurrence_id=f"p{n}",
+            )
+            for n, (lon, lat, seconds) in enumerate(
+                [(0, 0, 0), (1, 0, 3620), (2, 1, 5400), (1, 0, 7240), (3, 0, 10800)]
+            )
+        ],
+        timing_profile=RouteTimingProfile(
+            departure_time=start, arrival_time=start + timedelta(hours=3)
+        ),
+    )
+    transitions = [
+        XTransition(
+            id=f"t{n}",
+            latitude=0,
+            longitude=1,
+            target_satellite_id=satellite,
+            anchor=_candidates(start + timedelta(seconds=seconds), "second", route)[0],
+        )
+        for n, (seconds, satellite) in enumerate([(3620, "WEST"), (7240, "SOUTH")])
+    ]
+    return route, MissionLeg(
+        id="repeat",
+        name="Repeat",
+        route_id="repeat",
+        transports=TransportConfig(
+            initial_x_satellite_id="SOUTH", x_transitions=transitions
+        ),
+    )
+
+
+def test_anchored_handoff_tracks_both_observed_visits_without_planned_time():
+    from app.services.active_x_handoff import resolve_active_x_context
+
+    route, leg = _repeated_route_and_leg()
+    # Deliberately unrelated mission timestamp; only observed position traverses the route.
+    late = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    first = resolve_active_x_context(leg, route, _telemetry(0, 1, 90, late))
+    assert first.current_satellite_id == "WEST"
+    assert first.handoff["route_progress_percent"] == pytest.approx(17.157499)
+    repeated_poll = resolve_active_x_context(leg, route, _telemetry(0, 1, 90, late))
+    assert repeated_poll.current_satellite_id == "WEST"
+    assert (
+        repeated_poll.handoff["route_progress_percent"]
+        == first.handoff["route_progress_percent"]
+    )
+    resolve_active_x_context(leg, route, _telemetry(0.0001, 1.0001, 45, late))
+    jitter = resolve_active_x_context(leg, route, _telemetry(0, 1, 45, late))
+    assert jitter.current_satellite_id == "WEST"
+    assert (
+        jitter.handoff["route_progress_percent"]
+        == first.handoff["route_progress_percent"]
+    )
+    middle = resolve_active_x_context(leg, route, _telemetry(1, 2, 225, late))
+    assert middle.current_satellite_id == "WEST"
+    assert middle.handoff["route_progress_percent"] == pytest.approx(41.421251)
+    second = resolve_active_x_context(leg, route, _telemetry(0, 1, 90, late))
+    assert second.current_satellite_id == "SOUTH"
+    assert second.pending_satellite_id is None
+    assert second.handoff["phase"] == "committed"
+    assert second.handoff["route_progress_percent"] == pytest.approx(65.685002)
+
+
+@pytest.mark.parametrize("provenance", ["missing", "stale", "future", "naive"])
+def test_anchored_handoff_unusable_position_does_not_advance_occurrence(provenance):
+    from app.services.active_x_handoff import resolve_active_x_context
+
+    route, leg = _repeated_route_and_leg()
+    resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    bad = _telemetry(1, 2, 225)
+    now = datetime.now(timezone.utc)
+    bad.position.observed_at = {
+        "missing": None,
+        "stale": now - timedelta(seconds=30),
+        "future": now + timedelta(seconds=30),
+        "naive": now.replace(tzinfo=None),
+    }[provenance]
+    unavailable = resolve_active_x_context(leg, route, bad)
+    assert unavailable.current_satellite_id == "WEST"
+    assert unavailable.handoff["route_progress_percent"] is None
+    first_again = resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    assert first_again.current_satellite_id == "WEST"
+    assert first_again.handoff["route_progress_percent"] == pytest.approx(17.157499)
+
+
+def test_anchored_handoff_duplicate_observation_cannot_commit_later_visit():
+    from app.services.active_x_handoff import resolve_active_x_context
+
+    route, leg = _repeated_route_and_leg()
+    resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    middle = _telemetry(1, 2, 225)
+    resolve_active_x_context(leg, route, middle)
+    duplicate = _telemetry(0, 1, 90)
+    duplicate.position.observed_at = middle.position.observed_at
+    result = resolve_active_x_context(leg, route, duplicate)
+    assert result.current_satellite_id == "WEST"
+    assert result.handoff["route_progress_percent"] is None
+    fresh = resolve_active_x_context(leg, route, _telemetry(0, 1, 90))
+    assert fresh.current_satellite_id == "SOUTH"
+
+
+@pytest.mark.parametrize("replacement", ["route", "transitions", "initial"])
+def test_anchored_handoff_replacement_does_not_reuse_observed_progress(replacement):
+    from app.services.active_x_handoff import resolve_active_x_context
+
+    route, leg = _repeated_route_and_leg()
+    resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    resolve_active_x_context(leg, route, _telemetry(1, 2, 225))
+    if replacement == "route":
+        route.points[-1].longitude = 4
+    elif replacement == "transitions":
+        leg.transports.x_transitions[1].target_satellite_id = "EAST"
+    else:
+        leg.transports.initial_x_satellite_id = "EAST"
+    result = resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    assert result.current_satellite_id == "WEST"
+    assert result.handoff["route_progress_percent"] < 20
+
+
+@pytest.mark.parametrize("replacement", ["route", "transitions", "initial"])
+def test_anchored_handoff_restoration_requires_new_traversal(replacement):
+    from app.services.active_x_handoff import resolve_active_x_context
+
+    route, leg = _repeated_route_and_leg()
+    original_route = route.model_copy(deep=True)
+    original_leg = leg.model_copy(deep=True)
+    resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    resolve_active_x_context(leg, route, _telemetry(1, 2, 225))
+    if replacement == "route":
+        route.points[-1].longitude = 4
+    elif replacement == "transitions":
+        leg.transports.x_transitions[1].target_satellite_id = "EAST"
+    else:
+        leg.transports.initial_x_satellite_id = "EAST"
+    replaced = resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    assert replaced.current_satellite_id == "WEST"
+    # Restore A after B was observed; A's old Q observation must be discarded.
+    restored = resolve_active_x_context(
+        original_leg, original_route, _telemetry(0, 1, 45)
+    )
+    assert restored.current_satellite_id == "WEST"
+    assert restored.handoff["route_progress_percent"] == pytest.approx(17.157499)
+    assert restored.pending_satellite_id == "SOUTH"
+    resolve_active_x_context(original_leg, original_route, _telemetry(1, 2, 225))
+    second = resolve_active_x_context(
+        original_leg, original_route, _telemetry(0, 1, 90)
+    )
+    assert second.current_satellite_id == "SOUTH"
+    assert second.handoff["route_progress_percent"] == pytest.approx(65.685002)
+
+
+@pytest.mark.parametrize("cleared", ["route", "transitions", "initial"])
+def test_anchored_handoff_cleared_context_discards_history(cleared):
+    from app.services.active_x_handoff import resolve_active_x_context
+
+    route, leg = _repeated_route_and_leg()
+    resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    resolve_active_x_context(leg, route, _telemetry(1, 2, 225))
+    cleared_leg = leg.model_copy(deep=True)
+    cleared_route = route
+    if cleared == "route":
+        cleared_route = None
+    elif cleared == "transitions":
+        cleared_leg.transports.x_transitions = []
+    else:
+        cleared_leg.transports.initial_x_satellite_id = None
+    resolve_active_x_context(cleared_leg, cleared_route, _telemetry(0, 1, 45))
+    restored = resolve_active_x_context(leg, route, _telemetry(0, 1, 45))
+    assert restored.current_satellite_id == "WEST"
+    assert restored.handoff["route_progress_percent"] == pytest.approx(17.157499)

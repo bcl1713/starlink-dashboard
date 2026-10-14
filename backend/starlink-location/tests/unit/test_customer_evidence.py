@@ -76,7 +76,7 @@ def test_evidence_rejects_mismatched_snapshot_and_page_rows():
     for field, value in (
         ("snapshotFingerprint", "other"),
         ("legId", "other"),
-        ("totalMs", 60001),
+        ("totalMs", 120001),
         ("status", "failed"),
     ):
         raw = report(captured, view)
@@ -307,7 +307,7 @@ def test_mission_evidence_rejects_unqualified_or_mismatched_proof(case):
     elif case == "cleanup":
         raw["cleanup"]["success"] = False
     elif case == "deadline":
-        raw["totalMs"] = 60001
+        raw["totalMs"] = 120001
     elif case == "overflow":
         raw["fit"]["pages"][0]["overflow"] = ["row"]
     elif case == "flight-bounds":
@@ -316,3 +316,46 @@ def test_mission_evidence_rejects_unqualified_or_mismatched_proof(case):
         raw["maps"]["leg-0"]["inputDiagnostics"] = ["invented reason"]
     with pytest.raises(ValueError):
         mission_evidence(captured, payload, plan, raw)
+
+
+def test_checkpoint_evidence_accepts_qualified_render_after_first_minute():
+    captured, projection, view = inputs()
+    raw = report(captured, view)
+    raw["totalMs"] = 90000
+    evidence = json.loads(build(captured, projection, view, raw))
+    assert evidence["render"]["totalMs"] == 90000
+
+
+def test_partial_itinerary_document_and_evidence_keep_planned_ordinals(monkeypatch):
+    from dataclasses import replace
+
+    from app.mission.exporter import customer_evidence
+    from app.mission.exporter.customer_document import build_customer_mission_document
+
+    captured, _, plan, raw = mission_case()
+    captured = replace(
+        captured,
+        leg_count=3,
+        legs=tuple(
+            replace(leg, display_number=number)
+            for leg, number in zip(captured.legs, (1, 3))
+        ),
+    )
+    payload = build_customer_mission_document(captured)
+    assert [leg["header"]["title"].split(" — ")[0] for leg in payload["legs"]] == [
+        "LEG 1 OF 3",
+        "LEG 3 OF 3",
+    ]
+    project = customer_evidence.project_customer_leg
+    seen = []
+
+    def record(*args, **kwargs):
+        seen.append((kwargs["leg_number"], kwargs["leg_count"]))
+        return project(*args, **kwargs)
+
+    monkeypatch.setattr(customer_evidence, "project_customer_leg", record)
+    result = json.loads(mission_evidence(captured, payload, plan, raw))
+    assert [leg["legId"] for leg in result["legs"]] == [
+        leg.leg_id for leg in captured.legs
+    ]
+    assert seen == [(1, 3), (3, 3)]

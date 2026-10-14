@@ -1,6 +1,6 @@
 """Optional customer documents share captured inputs and publish atomically."""
 
-import io
+import copy
 import json
 import sqlite3
 import zipfile
@@ -14,6 +14,7 @@ from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
 
 from .__main__ import export_mission_package
 from .snapshot_export import build_snapshot_legacy_package
+from .streams import iter_zip_blocks, new_package_stream
 
 WARNING_CODES = frozenset(
     {
@@ -82,8 +83,16 @@ def get_prepared_package(mission_id, route_manager, poi_manager, *, cancel):
     return snapshot, outcome
 
 
+def _write_payload(archive, name, payload, cancel):
+    view = memoryview(payload)
+    with archive.open(name, "w") as target:
+        for offset in range(0, len(view), 65536):
+            check_cancelled(cancel)
+            target.write(view[offset : offset + 65536])
+
+
 def _publish_pair(stream, artifacts, cancel, pdf_path):
-    result = io.BytesIO()
+    result = new_package_stream()
     try:
         stream.seek(0)
         with zipfile.ZipFile(stream) as source, zipfile.ZipFile(result, "w") as target:
@@ -95,10 +104,15 @@ def _publish_pair(stream, artifacts, cancel, pdf_path):
             for entry in source.infolist():
                 check_cancelled(cancel)
                 if entry.filename != "manifest.json":
-                    target.writestr(entry, source.read(entry))
-            target.writestr(pdf_path, artifacts.pdf)
+                    with source.open(entry) as incoming, target.open(
+                        copy.copy(entry), "w"
+                    ) as outgoing:
+                        for block in iter_zip_blocks(incoming):
+                            check_cancelled(cancel)
+                            outgoing.write(block)
+            _write_payload(target, pdf_path, artifacts.pdf, cancel)
             check_cancelled(cancel)
-            target.writestr(EVIDENCE_PATH, artifacts.evidence)
+            _write_payload(target, EVIDENCE_PATH, artifacts.evidence, cancel)
             manifest["file_structure"]["mission_exports"].extend(
                 [pdf_path, EVIDENCE_PATH]
             )
@@ -114,10 +128,12 @@ def _publish_pair(stream, artifacts, cancel, pdf_path):
 
 
 def build_mission_package_download(
-    mission_id, route_manager, poi_manager, *, enabled, cancel
+    mission_id, route_manager, poi_manager, *, enabled, cancel, on_stage=None
 ):
     check_cancelled(cancel)
     if not enabled:
+        if on_stage:
+            on_stage("assembling")
         stream = export_mission_package(
             mission_id, route_manager, poi_manager, cancel=cancel
         )
@@ -143,6 +159,8 @@ def build_mission_package_download(
                 stream, CustomerBriefingOutcome("omitted", "runtime", None)
             )
         check_cancelled(cancel)
+        if on_stage:
+            on_stage("assembling")
         stream = build_snapshot_legacy_package(snapshot, cancel=cancel)
         check_cancelled(cancel)
         if outcome.status != "included" or outcome.artifacts is None:

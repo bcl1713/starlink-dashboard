@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from app.mission.models import (
@@ -147,8 +148,8 @@ def test_combined_csv_rebuilds_adjusted_leg_timeline_instead_of_cached_stale_tim
             return_value=stale_timeline,
         ),
         patch(
-            "app.mission.package.__main__.build_mission_timeline",
-            return_value=(adjusted_timeline, MagicMock()),
+            "app.mission.package.__main__.prepare_mission_timeline",
+            return_value=SimpleNamespace(timeline=adjusted_timeline),
         ) as mock_build,
         patch(
             "app.mission.package.__main__.save_mission_timeline", create=True

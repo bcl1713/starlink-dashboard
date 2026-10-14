@@ -103,6 +103,22 @@ def _slide_text(content):
     )
 
 
+def test_disabled_package_generation_preserves_committed_sources(export_inputs):
+    import threading
+
+    from app.mission.package.customer_artifacts import build_mission_package_download
+
+    _, routes, pois, _ = export_inputs
+    before = pois.pois_file.read_bytes()
+    download = build_mission_package_download(
+        "m", routes, pois, enabled=False, cancel=threading.Event()
+    )
+    download.stream.close()
+    assert (
+        pois.pois_file.read_bytes() == before
+    ), "Export published generated POIs and invalidated its own snapshot"
+
+
 def test_enabled_package_builders_never_reread_after_capture(
     export_inputs, monkeypatch
 ):
@@ -133,7 +149,7 @@ def test_enabled_package_builders_never_reread_after_capture(
         "app.mission.storage.load_mission_timeline",
         "app.mission.package.__main__.load_mission_v2",
         "app.mission.package.__main__.load_mission_timeline",
-        "app.mission.package.__main__.build_mission_timeline",
+        "app.mission.package.__main__.prepare_mission_timeline",
         "app.mission.exporter.__main__.get_cached_ground_entry_point",
         "app.mission.exporter.snapshot.prepare_mission_timeline",
     ):
@@ -225,7 +241,7 @@ def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch,
         monkeypatch.setattr(
             "app.mission.exporter.snapshot.prepare_mission_timeline", failing
         )
-        monkeypatch.setattr(package, "build_mission_timeline", failing)
+        monkeypatch.setattr(package, "prepare_mission_timeline", failing)
 
     class DatetimeType(type):
         def __instancecheck__(cls, value):
@@ -239,13 +255,14 @@ def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch,
     monkeypatch.setattr(package, "datetime", FixedDatetime)
     captured = capture_export_snapshot("m", routes, pois)
     with package.export_mission_package("m", routes, pois) as stream:
-        baseline = stream.getvalue()
+        baseline = stream.read()
     with package.export_mission_package("m", routes, pois, snapshot=captured) as stream:
-        frozen = stream.getvalue()
+        frozen = stream.read()
     with zipfile.ZipFile(io.BytesIO(baseline)) as a, zipfile.ZipFile(
         io.BytesIO(frozen)
     ) as b:
         assert a.namelist() == b.namelist()
+        assert len(a.namelist()) == len(set(a.namelist()))
         for name in a.namelist():
             if name.endswith(".pptx"):
                 with zipfile.ZipFile(io.BytesIO(a.read(name))) as x, zipfile.ZipFile(
@@ -821,3 +838,11 @@ def test_export_captures_material_x_changes_without_changing_legacy_events(
     blocked = a if blocked_first else b
     assert blocked.remaining_transports == ()
     assert blocked.posture == "Communications unavailable"
+
+
+def test_legacy_snapshot_preserves_offset_numbering_fallback(export_inputs):
+    from app.mission.exporter.snapshot import capture_export_snapshot
+
+    mission, routes, pois, _ = export_inputs
+    captured = capture_export_snapshot(mission.id, routes, pois)
+    assert captured.legs[0].display_number is None

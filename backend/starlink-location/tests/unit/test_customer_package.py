@@ -2,6 +2,7 @@
 
 import io
 import json
+import os
 import threading
 import zipfile
 from dataclasses import replace
@@ -111,23 +112,30 @@ def test_insertion_failure_preserves_data_without_partial_pdf(monkeypatch, bound
         ),
     )
     original = zipfile.ZipFile.writestr
+    original_open = zipfile.ZipFile.open
+
+    def fail_open(archive, name, mode="r", *args, **kwargs):
+        filename = getattr(name, "filename", name)
+        if mode == "w" and (
+            (boundary == "pdf" and filename == "exports/mission/27-02-brief.pdf")
+            or (boundary == "evidence" and filename == module.EVIDENCE_PATH)
+        ):
+            raise OSError("Private publication details")
+        return original_open(archive, name, mode, *args, **kwargs)
 
     def fail(archive, name, data, *args, **kwargs):
         filename = getattr(name, "filename", name)
         body = data.decode() if isinstance(data, bytes) else data
         if (
-            (boundary == "pdf" and filename == "exports/mission/27-02-brief.pdf")
-            or (boundary == "evidence" and filename == module.EVIDENCE_PATH)
-            or (
-                boundary == "manifest"
-                and filename == "manifest.json"
-                and "customer-briefing" in body
-            )
+            boundary == "manifest"
+            and filename == "manifest.json"
+            and "customer-briefing" in body
         ):
             raise OSError("Private publication details")
         return original(archive, name, data, *args, **kwargs)
 
     monkeypatch.setattr(zipfile.ZipFile, "writestr", fail)
+    monkeypatch.setattr(zipfile.ZipFile, "open", fail_open)
     result = module.build_mission_package_download(
         "m", None, None, enabled=True, cancel=threading.Event()
     )
@@ -184,3 +192,51 @@ def test_cache_failure_does_not_prevent_data_delivery(monkeypatch):
         assert archive.read("exports/mission/mission-timeline.csv") == b"csv"
     assert result.briefing.status == "omitted"
     assert result.briefing.warning_code == "runtime"
+
+
+def test_package_spools_and_closes():
+    payload = b"z" * (9 * 1024 * 1024)
+    artifacts = module.CustomerBriefingArtifacts(b"pdf", b"evidence")
+    source = data_package()
+    with zipfile.ZipFile(source, "a") as archive:
+        archive.writestr("large.bin", payload)
+    paired = module._publish_pair(
+        source, artifacts, threading.Event(), "exports/mission/test-brief.pdf"
+    )
+    try:
+        assert os.fstat(paired.fileno()).st_size > 8 * 1024 * 1024
+        with zipfile.ZipFile(paired) as archive:
+            assert archive.read("large.bin") == payload
+            assert archive.read("exports/mission/test-brief.pdf") == b"pdf"
+            assert archive.read(module.EVIDENCE_PATH) == b"evidence"
+    finally:
+        paired.close()
+        source.close()
+    assert paired.closed
+
+
+def test_pair_copies_large_entries_in_byte_blocks(monkeypatch):
+    source = data_package()
+    payload = b"large entry" * 100000
+    with zipfile.ZipFile(source, "a") as archive:
+        archive.writestr("large.bin", payload)
+    original = zipfile.ZipExtFile.read
+
+    def bounded_read(handle, n=-1):
+        if handle.name == "large.bin":
+            assert 0 < n <= 65536, "Whole-entry read defeats bounded assembly"
+        return original(handle, n)
+
+    monkeypatch.setattr(zipfile.ZipExtFile, "read", bounded_read)
+    try:
+        paired = module._publish_pair(
+            source,
+            module.CustomerBriefingArtifacts(b"pdf", b"evidence"),
+            threading.Event(),
+            "exports/mission/test-brief.pdf",
+        )
+    finally:
+        source.close()
+    monkeypatch.setattr(zipfile.ZipExtFile, "read", original)
+    with paired, zipfile.ZipFile(paired) as archive:
+        assert archive.read("large.bin") == payload

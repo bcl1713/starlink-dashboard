@@ -15,14 +15,16 @@ async def test_activation_wakes_the_actual_background_loop(monkeypatch):
     wakeup = ReplayWakeup()
     observed = []
     state = {"running": False}
-    collected = asyncio.Event()
+    collected, ordinary = asyncio.Event(), asyncio.Event()
+    loop = asyncio.get_running_loop()
 
     def update():
         observed.append("ordinary")
+        loop.call_soon_threadsafe(ordinary.set)
 
     def collect(*args):
         observed.append("replay")
-        collected.set()
+        loop.call_soon_threadsafe(collected.set)
 
     service = SimpleNamespace(
         wakeup=wakeup,
@@ -44,7 +46,7 @@ async def test_activation_wakes_the_actual_background_loop(monkeypatch):
     )
     task = asyncio.create_task(main._background_update_loop())
     try:
-        await asyncio.sleep(0)
+        await asyncio.wait_for(ordinary.wait(), 0.5)
         assert observed == ["ordinary"]
         state["running"] = True
         wakeup.wake()

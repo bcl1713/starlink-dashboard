@@ -57,3 +57,32 @@ provenance and all owned resources were removed. On 2026-10-09 the user replied
 production download behavior for PR #314. The sample manifest records that
 acceptance scope; historical pending flags are superseded. Shared production
 enablement remains a separate decision.
+
+## PR323 itinerary controls
+
+Run each private-input control from a clean committed worktree with an isolated
+project, unprivileged port and new evidence directory:
+
+```sh
+bash tools/acceptance/itinerary-planning/run.sh \
+  --project pr323-repairs-SHA12-offline-1 --port 15422 \
+  --network-mode offline --input-root /path/to/private/immutable-inputs \
+  --evidence /path/to/private/offline-evidence
+```
+
+Repeat with a distinct project, port and directory for `online`. Replace SHA12
+with the actual candidate's first twelve hexadecimal characters. Inputs are the
+original itinerary, three KMLs and retained package; hash readback guards them
+before and after execution. Four authorized diagnostic satellites are synthetic
+and do not represent operational coverage. Customer briefing enablement is
+scoped to the disposable acceptance project.
+
+The browser records explicit action categories, actual preparation stages,
+mission-list counts and final inactive reviewed-input readback. Two-second
+probes target the backend health listener, status and mission endpoints. Actual
+ZIP PDFs must contain route and airport overlays for all three original routes,
+with scene identity and PDF-image pixels checked independently. Fresh offline
+and online runs use equivalent inputs and monitoring load; timing differences
+do not by themselves establish network causation. Preserve failures and inspect
+cleanup receipts before retrying. Brian's rendered-journey review remains a gate
+before closing the associated issues.

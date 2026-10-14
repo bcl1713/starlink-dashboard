@@ -1,7 +1,11 @@
+import type { RouteAnchor } from './planning';
+
 export interface AARSegment {
   id: string;
   start_waypoint_name: string;
   end_waypoint_name: string;
+  start_anchor?: RouteAnchor | null;
+  end_anchor?: RouteAnchor | null;
   override_start_time?: string | null;
   override_end_time?: string | null;
   override_start_elapsed?: string | null;

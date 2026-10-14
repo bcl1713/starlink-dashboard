@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityLitGlobe } from '../pages/CityLitGlobe';
@@ -13,6 +13,7 @@ import countries from '../../public/boundaries/countries.json';
 import { sunLightPosition } from '../pages/solar-position';
 import { applyCameraFrame, type MissionMapView } from './framing';
 import type { MissionMapInput } from './protocol';
+import { placeMarkerLabels, type MarkerLabel } from './marker-labels';
 
 // Pixel-sized globe overlays need to survive the high-resolution image being
 // reduced to the 280px map column in the PDF.
@@ -38,9 +39,11 @@ function projectEndpoints(camera: THREE.Camera, view: MissionMapView) {
 function ReadyScene({
   view,
   digest,
+  onLabels,
 }: {
   view: MissionMapView;
   digest: string;
+  onLabels: (labels: MarkerLabel[]) => void;
 }) {
   const { gl, scene, camera, invalidate } = useThree();
   const prepared = useRef(false);
@@ -128,6 +131,26 @@ function ReadyScene({
       invalidate();
       return;
     }
+    let labels: MarkerLabel[];
+    try {
+      labels = placeMarkerLabels(
+        view.markers.map((marker) => {
+          const point = new THREE.Vector3(...marker.point).project(camera);
+          return {
+            id: marker.id,
+            text: marker.label,
+            x: ((point.x + 1) * view.width) / 2,
+            y: ((1 - point.y) * view.height) / 2,
+          };
+        }),
+        view.width,
+        view.height
+      );
+    } catch (error) {
+      window.missionMap.state = { status: 'error', error: String(error) };
+      return;
+    }
+    onLabels(labels);
     window.missionMap.state = {
       status: 'ready',
       digest,
@@ -142,7 +165,7 @@ function ReadyScene({
         startIndex: view.startIndex,
         endIndex: view.endIndex,
       },
-      labels: [],
+      labels,
       endpoints: projectEndpoints(camera, view),
       stages: [
         'textures-decoded',
@@ -171,6 +194,7 @@ export function MissionExportScene({
   );
   const sun = sunLightPosition(new Date(input.referenceUtc), 10);
   const pixelScale = view.width / PDF_MAP_WIDTH;
+  const [labels, setLabels] = useState<MarkerLabel[]>([]);
   const routeStyle = useMemo(
     () => ({
       outer: {
@@ -233,9 +257,54 @@ export function MissionExportScene({
           {view.endsRoute && (
             <StarMarker position={view.points.at(-1)!} {...endpointStyle} />
           )}
-          <ReadyScene view={view} digest={digest} />
+          <ReadyScene view={view} digest={digest} onLabels={setLabels} />
         </Suspense>
       </Canvas>
+      {labels.length > 0 && (
+        <svg
+          width={view.width}
+          height={view.height}
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+        >
+          {labels.map((label) => (
+            <g key={label.id} data-map-label data-window-id={label.id}>
+              <line
+                x1={label.anchorX}
+                y1={label.anchorY}
+                x2={label.x}
+                y2={label.y}
+                stroke="#ffb000"
+                strokeWidth={(2 * view.width) / 1920}
+              />
+              <circle
+                cx={label.anchorX}
+                cy={label.anchorY}
+                r={(3 * view.width) / 280}
+                fill="#ffb000"
+              />
+              <circle
+                cx={label.x}
+                cy={label.y}
+                r={label.radius}
+                fill="#ffb000"
+                stroke="#101820"
+                strokeWidth={(2 * view.width) / 280}
+              />
+              <text
+                x={label.x}
+                y={label.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#101820"
+                fontSize={label.fontSize}
+                fontWeight="bold"
+              >
+                {label.text}
+              </text>
+            </g>
+          ))}
+        </svg>
+      )}
     </div>
   );
 }

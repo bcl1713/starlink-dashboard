@@ -292,7 +292,8 @@ pre-commit run black --all-files
 
 ---
 
-## Questions?
-
 For questions about development process, code quality standards, or tooling,
 open an issue or discussion on the project repository.
+
+Mission ZIP preparation and cancellation APIs are documented in
+[Mission export preparation](mission-export-preparation.md).

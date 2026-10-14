@@ -136,3 +136,12 @@ limit and error handling before retrying.
 [Back to Configuration](README.md) |
 [Mission package import behavior](../../missions/mission-package-import.md) |
 [Back to Setup](../README.md)
+
+## Itinerary PDF uploads
+
+Itinerary creation and revision accept text-bearing PDFs up to **10 MiB**
+(10,485,760 bytes). Parsing has a **10-second** deadline; expired previews need
+a fresh upload. Scan-only PDFs are unsupported. The PDF limit is independent of
+the KML and ZIP limits above and does not change them. See
+[itinerary communications planning](../../missions/itinerary-planning.md) for
+review and correction steps.

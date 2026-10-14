@@ -4,6 +4,7 @@ import asyncio
 import importlib
 import io
 import threading
+from hashlib import sha256
 
 import pytest
 from starlette.requests import ClientDisconnect
@@ -97,5 +98,43 @@ async def test_response_closes_zip_when_sending_fails():
         return {"type": "http.disconnect"}
 
     with pytest.raises(ClientDisconnect):
+        await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
+    assert stream.closed
+
+
+@pytest.mark.asyncio
+async def test_zip_blocks_preserve_bytes():
+    payload = b"binary\x00\xff\n" * 24000 + b"last"
+    stream = io.BytesIO(payload)
+    response = implementation().OwnedZipResponse(stream, headers={})
+    blocks = []
+
+    async def send(message):
+        if message["type"] == "http.response.body" and message.get("body"):
+            blocks.append(message["body"])
+
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
+    assert stream.closed
+    assert sha256(b"".join(blocks)).digest() == sha256(payload).digest()
+    assert all(len(block) == 65536 for block in blocks[:-1])
+    assert 0 < len(blocks[-1]) <= 65536
+
+
+@pytest.mark.asyncio
+async def test_response_closes_zip_on_cancelled_send():
+    stream = io.BytesIO(b"content" * 20000)
+    response = implementation().OwnedZipResponse(stream, headers={})
+
+    async def send(message):
+        if message["type"] == "http.response.body":
+            raise asyncio.CancelledError()
+
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    with pytest.raises(asyncio.CancelledError):
         await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
     assert stream.closed

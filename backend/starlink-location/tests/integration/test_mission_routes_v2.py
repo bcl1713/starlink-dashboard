@@ -2,9 +2,9 @@
 
 import asyncio
 import io
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -41,33 +41,36 @@ class TestCustomerBriefingDownload:
     def test_optional_outcome_headers_preserve_zip_download_and_close_stream(
         self, client, monkeypatch, enabled, briefing_status, warning
     ):
-        from app.core.config import ConfigManager
         from app.mission.package.customer_artifacts import (
             CustomerBriefingOutcome,
             MissionPackageDownload,
         )
+        from app.mission.package.preparation_store import ExportPreparation
 
-        assert hasattr(
-            mission_routes_v2, "run_mission_package_job"
-        ), "Owned route worker absent"
         stream = io.BytesIO(b"PK-qualified-zip")
 
-        async def run(*args, **kwargs):
-            assert kwargs["enabled"] is enabled
-            outcome = (
-                CustomerBriefingOutcome(briefing_status, warning, None)
-                if enabled
-                else None
-            )
-            return MissionPackageDownload(stream, outcome)
+        class ReadyService:
+            def start(self, mission_id):
+                return ExportPreparation(
+                    id="ready",
+                    mission_id=mission_id,
+                    state="ready",
+                    stage="ready",
+                    fingerprint="qualified",
+                    queued_at=0,
+                    deadline=600,
+                )
 
-        monkeypatch.setattr(mission_routes_v2, "run_mission_package_job", run)
+            def open_download(self, mission_id, job_id):
+                outcome = (
+                    CustomerBriefingOutcome(briefing_status, warning, None)
+                    if enabled
+                    else None
+                )
+                return MissionPackageDownload(stream, outcome)
+
         monkeypatch.setattr(
-            ConfigManager,
-            "get_config",
-            lambda *a: SimpleNamespace(
-                exports=SimpleNamespace(customer_briefing_enabled=enabled)
-            ),
+            app.state, "export_preparation_service", ReadyService(), raising=False
         )
         response = client.post("/api/v2/missions/customer-download/export")
         assert response.status_code == 200
@@ -849,8 +852,8 @@ class TestMissionV2ListEndpoint:
 
         page = asyncio.run(list_missions(response, limit=25, offset=25))
 
-        assert response.headers["X-Total-Count"] == "26"
-        assert [mission.id for mission in page] == ["mission-25"]
+        assert page.headers["X-Total-Count"] == "26"
+        assert [mission["id"] for mission in json.loads(page.body)] == ["mission-25"]
 
 
 class TestMissionV2UpdateEndpoint:

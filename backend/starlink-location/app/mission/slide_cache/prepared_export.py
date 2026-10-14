@@ -3,7 +3,6 @@
 import time
 from hashlib import sha256
 
-from app.mission import storage
 from app.mission.exporter.snapshot_inputs import canonical_json
 
 from . import coordinator
@@ -65,26 +64,44 @@ def await_prepared(mission_id, route_manager, poi_manager, *, cancel, wall_secon
     """Wait for shared workers; disconnect only cancels this export's wait."""
     from app.mission.exporter.export_cancel import check_cancelled
 
+    from .capture import capture_is_current
+
     cache, revision = default_store(), renderer_revision()
     deadline, retry = time.monotonic() + wall_seconds, True
+    memo = {}
     while True:
         check_cancelled(cancel)
         revision = renderer_revision()
-        with storage.get_active_leg_lock():
-            metadata, sources, warnings, expected = coordinator.reconcile(
-                mission_id, route_manager, poi_manager, cache, revision, retry=retry
-            )
+        metadata, sources, warnings, expected = coordinator.reconcile(
+            mission_id,
+            route_manager,
+            poi_manager,
+            cache,
+            revision,
+            retry=retry,
+            memo=memo,
+        )
+        status = cache.status_records(mission_id)
+        if all(
+            leg in status
+            and status[leg]["fingerprint"] == fingerprint
+            and status[leg]["state"] in {"ready", "failed"}
+            for leg, fingerprint in expected.items()
+        ):
             records = cache.records(mission_id)
-            if all(
-                records[leg]["fingerprint"] == fingerprint
-                and records[leg]["state"] in {"ready", "failed"}
+            if not capture_is_current(memo[mission_id][0]) or any(
+                leg not in records
+                or records[leg]["fingerprint"] != fingerprint
+                or records[leg]["state"] not in {"ready", "failed"}
                 for leg, fingerprint in expected.items()
             ):
-                return captured_snapshot(metadata, sources, warnings, records), records
+                continue
+            return captured_snapshot(metadata, sources, warnings, records), records
         retry = False
         if coordinator._runtime is None or time.monotonic() >= deadline:
             # Explicit background-task disablement and deadline preserve data/CSV
             # delivery without moving heavy preparation into the request.
+            records = cache.records(mission_id)
             for record in records.values():
                 if record["state"] not in {"ready", "failed"}:
                     record["state"] = "failed"

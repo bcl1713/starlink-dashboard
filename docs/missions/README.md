@@ -9,6 +9,9 @@ feature set.
 
 ### Planning & Operations
 
+- **[Itinerary communications planning](./itinerary-planning.md)** - PDF-first
+  drafts, AR review, X-band policy, manual locks and revision handling
+
 - **[PLANNING-guide.md](./mission-planning-guide.md)** (470 lines) - Complete
   mission planning guide
 - **[COMM-SOP.md](./mission-comm-sop.md)** (562 lines) - Communication standard

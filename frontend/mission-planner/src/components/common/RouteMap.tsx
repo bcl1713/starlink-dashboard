@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
 import type {
@@ -20,6 +20,11 @@ import { ColorCodedRoute } from './RouteMap/ColorCodedRoute';
 import { formatTime24Hour } from '@/lib/utils';
 
 interface RouteMapProps {
+  anchoredARSpans?: Array<{
+    id: string;
+    label: string;
+    coordinates: [number, number][];
+  }>;
   coordinates: LatLngExpression[];
   height?: string;
   xbandTransitions?: XBandTransition[];
@@ -35,6 +40,7 @@ interface RouteMapProps {
 }
 
 export function RouteMap({
+  anchoredARSpans = [],
   coordinates,
   height = '400px',
   xbandTransitions = [],
@@ -119,6 +125,25 @@ export function RouteMap({
             timeline={timelinePreview}
             isIDLCrossing={isIDLCrossing}
           />
+          {anchoredARSpans.map((span) => (
+            <Polyline
+              key={span.id}
+              positions={span.coordinates.map(
+                ([lat, lon]) =>
+                  [lat, isIDLCrossing && lon < 0 ? lon + 360 : lon] as [
+                    number,
+                    number,
+                  ]
+              )}
+              pathOptions={{
+                color: 'var(--route-aar, #d97706)',
+                weight: 8,
+                opacity: 0.8,
+              }}
+            >
+              <Popup>{span.label} · anchored AR route span</Popup>
+            </Polyline>
+          ))}
         </MapContainer>
         <MapLegend hasTimeline={Boolean(timelinePreview?.segments?.length)} />
       </div>

@@ -157,6 +157,8 @@ def _package(mission: Mission) -> bytes:
     payload = io.BytesIO()
     with zipfile.ZipFile(payload, "w") as archive:
         archive.writestr("mission.json", json.dumps(mission.model_dump(mode="json")))
+        for leg in mission.legs:
+            archive.writestr(f"routes/{leg.route_id}.kml", KML)
     return payload.getvalue()
 
 
@@ -317,13 +319,14 @@ def _run_isolated_lifecycle_worker(
             self._logger = poi_manager_module.logger
             self._load_pois()
 
-        def worker_route_init(self, routes_dir=worker_root / "routes"):
-            self.routes_dir = Path(routes_dir)
-            self.routes_dir.mkdir(parents=True, exist_ok=True)
-            self._routes = {}
-            self._active_route_id = None
-            self._observer = None
-            self._errors = {}
+        original_worker_route_init = route_manager_module.RouteManager.__init__
+
+        def worker_route_init(
+            self, routes_dir=worker_root / "routes", *, profile_resolver=None
+        ):
+            original_worker_route_init(
+                self, routes_dir, profile_resolver=profile_resolver
+            )
 
         poi_manager_module.POIManager.__init__ = worker_poi_init
         route_manager_module.RouteManager.__init__ = worker_route_init
@@ -335,6 +338,7 @@ def _run_isolated_lifecycle_worker(
             storage.MISSIONS_DIR = worker_root / "missions"
             storage.ensure_missions_directory()
             route_manager = app.state.route_manager
+            assert callable(route_manager._profile_resolver)
             route_manager.routes_dir = worker_root / "routes"
             route_manager.routes_dir.mkdir(parents=True, exist_ok=True)
             route_manager._routes = {}
@@ -987,14 +991,17 @@ class TestV2LifecycleWriteGuards:
         import_result: list[object] = []
         activation_result: list[object] = []
 
-        def pause_route_import(*_args, **_kwargs):
-            side_effect_entered.set()
-            assert release_import.wait(timeout=2)
-            return 0, []
+        from app.mission.planning import journal
 
-        monkeypatch.setattr(
-            "app.mission.routes_v2._import_routes_from_zip", pause_route_import
-        )
+        write = journal.atomic_write
+
+        def pause_route_import(path, data):
+            if path.suffix == ".kml":
+                side_effect_entered.set()
+                assert release_import.wait(timeout=2)
+            return write(path, data)
+
+        monkeypatch.setattr(journal, "atomic_write", pause_route_import)
         monkeypatch.setattr(
             "app.mission.routes_v2.build_mission_timeline",
             lambda mission, **_: _timeline(mission.id),
@@ -1052,15 +1059,27 @@ class TestV2LifecycleWriteGuards:
 
         entries: list[str] = []
 
+        active_depth = 0
+
         class RecordedLock:
             def __init__(self, name: str):
                 self.name = name
 
             def __enter__(self):
+                nonlocal active_depth
+                if self.name == "active":
+                    active_depth += 1
+                else:
+                    assert (
+                        active_depth > 0
+                    ), "Parent lock entered outside the active gate"
                 entries.append(self.name)
                 return self
 
             def __exit__(self, *_args):
+                nonlocal active_depth
+                if self.name == "active":
+                    active_depth -= 1
                 return False
 
         monkeypatch.setattr(
@@ -1105,4 +1124,5 @@ class TestV2LifecycleWriteGuards:
             entries.clear()
             response = request()
             assert response.status_code == expected_status
-            assert entries[:2] == ["active", "mission"]
+            assert entries[0] == "active" and "mission" in entries
+            assert active_depth == 0

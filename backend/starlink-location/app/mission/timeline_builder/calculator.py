@@ -78,6 +78,8 @@ def route_with_adjusted_departure(
         return route
 
     shifted = route.model_copy(deep=True)
+    if shifted.source_departure_time is None and route.timing_profile:
+        shifted.source_departure_time = route.timing_profile.departure_time
 
     if shifted.timing_profile:
         if shifted.timing_profile.departure_time:
@@ -221,7 +223,9 @@ class RouteTemporalProjector:
                 return start_distance + fraction * (end_distance - start_distance)
         return self.total_distance
 
-    def sample_at_distance(self, distance: float) -> RouteSample:
+    def sample_at_distance(
+        self, distance: float, *, forward_heading: bool = False
+    ) -> RouteSample:
         distance = max(0.0, min(distance, self.total_distance))
         if len(self.route.points) == 1:
             point = self.route.points[0]
@@ -241,7 +245,9 @@ class RouteTemporalProjector:
         for idx in range(1, len(self.cumulative_distances)):
             prev_dist = self.cumulative_distances[idx - 1]
             next_dist = self.cumulative_distances[idx]
-            if distance <= next_dist or idx == len(self.cumulative_distances) - 1:
+            if (
+                distance < next_dist if forward_heading else distance <= next_dist
+            ) or idx == len(self.cumulative_distances) - 1:
                 segment_span = max(next_dist - prev_dist, 1e-6)
                 ratio = max(0.0, min(1.0, (distance - prev_dist) / segment_span))
                 prev_point = self.route.points[idx - 1]
@@ -338,6 +344,8 @@ def generate_timeline_samples(
     projector: RouteTemporalProjector,
     coverage_sampler: CoverageSampler | None,
     interval_seconds: int = TIMELINE_SAMPLE_INTERVAL_SECONDS,
+    *,
+    boundaries: Sequence[datetime] | None = None,
 ) -> list[RouteSample]:
     """Generate minute-level samples along the mission timeline."""
 
@@ -346,6 +354,29 @@ def generate_timeline_samples(
 
     samples: list[RouteSample] = []
     total_duration = max(projector.duration_seconds, 0.0)
+
+    if boundaries is not None:
+        if (
+            list(boundaries) != sorted(set(boundaries))
+            or boundaries[0] != projector.start_time
+            or boundaries[-1] != projector.end_time
+        ):
+            raise ValueError(
+                "Explicit boundaries must span the flight in increasing order"
+            )
+        for timestamp in boundaries:
+            sample = projector.sample_at_distance(
+                projector.distance_for_timestamp(timestamp), forward_heading=True
+            )
+            sample.timestamp = timestamp
+            if coverage_sampler:
+                sample.coverage = set(
+                    coverage_sampler.check_coverage_at_point(
+                        sample.latitude, sample.longitude
+                    )
+                )
+            samples.append(sample)
+        return samples
 
     step = 0
     while True:

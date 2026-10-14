@@ -266,11 +266,11 @@ class TestKMLPOIIntegration:
 
     def test_upload_route_with_poi_import(self, test_client):
         """Verify uploading a route with import_pois creates POIs from waypoints."""
-        routes_dir = Path("/tmp/test_data/routes")
+        routes_dir = test_client.app.state.route_manager.routes_dir
         for existing in routes_dir.glob("*.kml"):
             existing.unlink()
 
-        pois_file = Path("/tmp/test_data/pois.json")
+        pois_file = test_client.app.state.poi_manager.pois_file
         pois_file.write_text(json.dumps({"pois": {}, "routes": {}}, indent=2))
 
         kml_content = textwrap.dedent("""

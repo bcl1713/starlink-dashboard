@@ -1,0 +1,378 @@
+"""Itinerary-first planning API through draft persistence."""
+
+import asyncio
+import threading
+from functools import partial
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
+from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
+
+from app.services.kml_parser import KMLParseError
+
+from .deadlines import PlanningDeadlineError, PlanningWorkerError
+from .errors import PlanningFailure
+from .extract import ItineraryExtractionError
+from .match import RouteAnchorError
+from .models import (
+    AcceptBatchRoutes,
+    AcceptRouteBinding,
+    ApplyBatchProposals,
+    ApplyProposal,
+    ApplyRevision,
+    BatchRoutePreview,
+    ConfirmItinerary,
+    GenerateProposal,
+    ItineraryPreview,
+    PlanningEvaluation,
+    PlanningProposal,
+    PlanningSatelliteOptions,
+    PlanningView,
+    PreviewDraft,
+    PublishReviewedBatch,
+    RevisionPreview,
+    RouteBindingPreview,
+    SaveDraft,
+    SaveReviewed,
+)
+from .preview_admission import preview_slot, run_owned_preview
+from .service import PlanningService
+
+router = APIRouter(prefix="/api/v2/missions/planning", tags=["Planning"])
+PREVIEW_QUEUE_SECONDS = 120
+
+
+def get_service(request: Request):
+    service = getattr(request.app.state, "planning_service", None)
+    if service is None:
+        raise HTTPException(503, {"code": "planning_unavailable", "retryable": True})
+    return service
+
+
+async def invoke(fn, *args, status_code=200, serialize_response=True):
+    def execute():
+        value = fn(*args)
+        if serialize_response and isinstance(value, BaseModel):
+            return Response(
+                value.model_dump_json(),
+                status_code=status_code,
+                media_type="application/json",
+            )
+        return value
+
+    try:
+        return await run_in_threadpool(execute)
+    except PlanningFailure as exc:
+        raise HTTPException(exc.status_code, exc.error.model_dump(mode="json")) from exc
+    except (PlanningDeadlineError, PlanningWorkerError) as exc:
+        raise HTTPException(
+            503, {"code": exc.code, "message": str(exc), "retryable": exc.retryable}
+        ) from exc
+    except (
+        ItineraryExtractionError,
+        RouteAnchorError,
+        KMLParseError,
+        ValueError,
+    ) as exc:
+        raise HTTPException(
+            422,
+            {
+                "code": getattr(exc, "code", "invalid_planning_input"),
+                "message": str(exc),
+                "retryable": False,
+            },
+        ) from exc
+
+
+async def upload_bytes(file, *, pdf=False):
+    content = await file.read(10 * 1024 * 1024 + 1) if pdf else await file.read()
+    if pdf and len(content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            422,
+            {
+                "code": "upload_too_large",
+                "message": "Upload exceeds 10 MiB",
+                "retryable": False,
+            },
+        )
+    return content
+
+
+@router.post("/itinerary-previews", response_model=ItineraryPreview)
+async def preview_itinerary(
+    file: Annotated[UploadFile, File()],
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(
+        service.preview_itinerary,
+        await upload_bytes(file, pdf=True),
+        file.filename or "itinerary.pdf",
+    )
+
+
+@router.get("/satellite-options", response_model=PlanningSatelliteOptions)
+async def satellite_options(service: Annotated[PlanningService, Depends(get_service)]):
+    return await invoke(service.satellite_options)
+
+
+@router.post("/missions", response_model=PlanningView, status_code=201)
+async def create(
+    request: ConfirmItinerary, service: Annotated[PlanningService, Depends(get_service)]
+):
+    return await invoke(service.create, request, status_code=201)
+
+
+@router.get("/missions/{mission_id}", response_model=PlanningView)
+async def read(
+    mission_id: str, service: Annotated[PlanningService, Depends(get_service)]
+):
+    return await invoke(service.store.read, mission_id)
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/route-previews",
+    response_model=RouteBindingPreview,
+)
+async def preview_route(
+    mission_id: str,
+    leg_id: str,
+    file: Annotated[UploadFile, File()],
+    expected_revision: Annotated[int, Form(ge=1)],
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(
+        service.preview_route,
+        mission_id,
+        leg_id,
+        await upload_bytes(file),
+        expected_revision,
+        file.filename or "route.kml",
+    )
+
+
+@router.post("/missions/{mission_id}/legs/{leg_id}/route", response_model=PlanningView)
+async def accept_route(
+    mission_id: str,
+    leg_id: str,
+    request: AcceptRouteBinding,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.accept_route, mission_id, leg_id, request)
+
+
+@router.put("/missions/{mission_id}/legs/{leg_id}/draft", response_model=PlanningView)
+async def save_draft(
+    mission_id: str,
+    leg_id: str,
+    request: SaveDraft,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    await invoke(service.validate_selection, request.draft)
+    return await invoke(service.store.save_draft, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/proposals", response_model=PlanningProposal
+)
+async def generate_proposal(
+    mission_id: str,
+    leg_id: str,
+    request: GenerateProposal,
+    http_request: Request,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    cancel = threading.Event()
+    operation = asyncio.create_task(
+        invoke(
+            partial(service.proposals.generate, cancel_event=cancel),
+            mission_id,
+            leg_id,
+            request,
+        )
+    )
+
+    async def disconnect():
+        while not operation.done():
+            if await http_request.is_disconnected():
+                cancel.set()
+                return
+            await asyncio.sleep(0.05)
+
+    watcher = asyncio.create_task(disconnect())
+    try:
+        return await asyncio.shield(operation)
+    finally:
+        cancel.set()
+        watcher.cancel()
+        # Reap the owned worker before the request task exits, even when the
+        # server cancels this request. The operation itself is never abandoned.
+        try:
+            await asyncio.shield(operation)
+        except (HTTPException, asyncio.CancelledError):
+            if not operation.done():
+                await operation
+        await asyncio.gather(watcher, return_exceptions=True)
+
+
+@router.get(
+    "/missions/{mission_id}/legs/{leg_id}/proposals/{proposal_id}",
+    response_model=PlanningProposal,
+)
+async def read_proposal(
+    mission_id: str,
+    leg_id: str,
+    proposal_id: str,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.proposals.get, mission_id, leg_id, proposal_id)
+
+
+@router.post("/missions/{mission_id}/legs/{leg_id}/apply", response_model=PlanningView)
+async def apply_proposal(
+    mission_id: str,
+    leg_id: str,
+    request: ApplyProposal,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.proposals.apply, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/preview", response_model=PlanningEvaluation
+)
+async def preview_draft(
+    mission_id: str,
+    leg_id: str,
+    request: PreviewDraft,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    try:
+        async with preview_slot(PREVIEW_QUEUE_SECONDS):
+            return await run_owned_preview(
+                invoke(service.preview, mission_id, leg_id, request)
+            )
+    except PlanningDeadlineError as exc:
+        raise HTTPException(
+            503, {"code": exc.code, "message": str(exc), "retryable": True}
+        ) from exc
+
+
+@router.post(
+    "/missions/{mission_id}/legs/{leg_id}/reviewed", response_model=PlanningView
+)
+async def save_reviewed(
+    mission_id: str,
+    leg_id: str,
+    request: SaveReviewed,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.save_reviewed, mission_id, leg_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/itinerary-previews", response_model=RevisionPreview
+)
+async def preview_revision(
+    mission_id: str,
+    file: Annotated[UploadFile, File()],
+    expected_revision: Annotated[int, Form(ge=1)],
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(
+        service.preview_revision,
+        mission_id,
+        await upload_bytes(file, pdf=True),
+        expected_revision,
+        file.filename or "itinerary.pdf",
+    )
+
+
+@router.post("/missions/{mission_id}/revision", response_model=PlanningView)
+async def apply_revision(
+    mission_id: str,
+    request: ApplyRevision,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.apply_revision, mission_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/route-batch-previews", response_model=BatchRoutePreview
+)
+async def preview_route_batch(
+    mission_id: str,
+    files: Annotated[list[UploadFile], File()],
+    expected_revision: Annotated[int, Form(ge=1)],
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    from .intake import MAX_BATCH_BYTES, MAX_BATCH_FILES, preview_routes
+
+    if not 1 <= len(files) <= MAX_BATCH_FILES:
+        raise HTTPException(
+            422, {"code": "route_batch_limit", "message": "Choose 1–16 KMLs"}
+        )
+    uploads = []
+    total = 0
+    for file in files:
+        data = await upload_bytes(file, pdf=True)
+        total += len(data)
+        if total > MAX_BATCH_BYTES:
+            raise HTTPException(
+                422,
+                {
+                    "code": "route_batch_limit",
+                    "message": "Route batch exceeds 40 MiB total",
+                },
+            )
+        uploads.append((file.filename or "route.kml", data))
+    return await invoke(preview_routes, service, mission_id, uploads, expected_revision)
+
+
+@router.post(
+    "/missions/{mission_id}/route-batch-acceptances", response_model=PlanningView
+)
+async def accept_route_batch(
+    mission_id: str,
+    request: AcceptBatchRoutes,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    from .intake import accept_routes
+
+    return await invoke(accept_routes, service, mission_id, request)
+
+
+@router.delete(
+    "/missions/{mission_id}/route-batch-previews/{preview_id}", status_code=204
+)
+async def discard_route_batch(
+    mission_id: str,
+    preview_id: str,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    from .intake import discard_routes
+
+    await invoke(discard_routes, service, mission_id, preview_id)
+
+
+@router.post(
+    "/missions/{mission_id}/proposal-applications", response_model=PlanningView
+)
+async def apply_batch_proposals(
+    mission_id: str,
+    request: ApplyBatchProposals,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.proposals.apply_batch, mission_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/reviewed-publications", response_model=PlanningView
+)
+async def publish_reviewed_batch(
+    mission_id: str,
+    request: PublishReviewedBatch,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.publish_reviewed_batch, mission_id, request)

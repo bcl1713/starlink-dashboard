@@ -4,10 +4,13 @@ import { MissionList } from '../components/missions/MissionList';
 import { CreateMissionDialog } from '../components/missions/CreateMissionDialog';
 import { ExportDialog } from '../components/missions/ExportDialog';
 import { ImportDialog } from '../components/missions/ImportDialog';
+import { CreateFromItinerary } from '../components/planning/CreateFromItinerary';
+import { Button } from '../components/ui/button';
 
 export function MissionsPage() {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [itineraryOpen, setItineraryOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<{
@@ -35,6 +38,11 @@ export function MissionsPage() {
 
   return (
     <div className="min-h-screen">
+      <div className="app-page pb-0">
+        <Button onClick={() => setItineraryOpen(true)}>
+          Create from itinerary
+        </Button>
+      </div>
       <MissionList
         onSelectMission={handleSelectMission}
         onCreateNew={() => setCreateDialogOpen(true)}
@@ -44,6 +52,11 @@ export function MissionsPage() {
       <CreateMissionDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
+        onSuccess={(missionId) => navigate(`/missions/${missionId}`)}
+      />
+      <CreateFromItinerary
+        open={itineraryOpen}
+        onClose={() => setItineraryOpen(false)}
         onSuccess={(missionId) => navigate(`/missions/${missionId}`)}
       />
       <ExportDialog

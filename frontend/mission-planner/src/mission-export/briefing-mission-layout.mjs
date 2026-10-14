@@ -69,9 +69,13 @@ export function createMissionDocumentLoader({
         html.lastIndexOf('</body>')
       );
       await within(
-        page.locator('body').evaluate((element, content) => {
-          element.innerHTML = content;
-        }, body),
+        page.locator('body').evaluate(
+          (element, content) => {
+            element.innerHTML = content;
+          },
+          body,
+          { timeout: budget.workRemainingMs() }
+        ),
         budget.workRemainingMs()
       );
     }

@@ -308,12 +308,17 @@ async def test_disconnect_releases_lease_and_unstarted_response_owns_none(tmp_pa
             "http_version": "1.1",
             "asgi": {"version": "3.0", "spec_version": "2.3"},
         }
+        body_started = asyncio.Event()
 
         async def receive():
+            # Exercise the socket-send failure while its lease is held. A
+            # pre-body disconnect may correctly cancel streaming without error.
+            await body_started.wait()
             return {"type": "http.disconnect"}
 
         async def send(message):
             if message["type"] == "http.response.body":
+                body_started.set()
                 products.prune(RUN + 18 * 3600000)
                 assert path.exists()
                 raise OSError("fixture socket disconnect")

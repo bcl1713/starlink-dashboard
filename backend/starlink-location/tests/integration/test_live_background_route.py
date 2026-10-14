@@ -1,6 +1,7 @@
 """Application-owned routes must reach live background phase evaluation."""
 
 import asyncio
+import threading
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -17,6 +18,38 @@ from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.flight_state import get_flight_state_manager
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("background_runtime", ["simulation"], indirect=True)
+async def test_repeated_cancellation_drains_owned_telemetry(
+    background_runtime, monkeypatch
+):
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    original = main._background_update_tick
+
+    def update(*args):
+        entered.set()
+        try:
+            assert release.wait(3)
+            return original(*args)
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(main, "_background_update_tick", update)
+    task = asyncio.create_task(main._background_update_loop())
+    try:
+        assert await asyncio.to_thread(entered.wait, 2)
+        task.cancel()
+        await asyncio.sleep(0)
+        task.cancel()
+        done, _ = await asyncio.wait({task}, timeout=0.05)
+        assert not done, "The telemetry owner exited while its worker still ran"
+    finally:
+        release.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert await asyncio.to_thread(finished.wait, 2)
 
 
 @pytest.fixture
@@ -161,6 +194,33 @@ async def test_live_background_loop_without_route_manager(
 
     update_metrics.assert_called_once()
     assert update_metrics.call_args.args[2] is None
+
+
+@pytest.mark.parametrize("background_runtime", ["live", "simulation"], indirect=True)
+async def test_telemetry_updates_remain_ordered(background_runtime, monkeypatch):
+    loop_thread = threading.get_ident()
+    observed = []
+    active = 0
+
+    def update(telemetry, *args, **kwargs):
+        nonlocal active
+        active += 1
+        assert active == 1
+        observed.append((threading.get_ident(), telemetry.timestamp))
+        active -= 1
+
+    async def next_tick(_delay):
+        if len(observed) == 2:
+            raise asyncio.CancelledError()
+        background_runtime.clock[0] += timedelta(seconds=1)
+
+    monkeypatch.setattr(metrics, "update_metrics_from_telemetry", update)
+    monkeypatch.setattr(main.asyncio, "sleep", next_tick)
+    with pytest.raises(asyncio.CancelledError):
+        await main._background_update_loop(main.app.state.poi_manager)
+    assert len(observed) == 2
+    assert all(worker != loop_thread for worker, _ in observed)
+    assert observed[0][1] < observed[1][1]
 
 
 @pytest.mark.parametrize("background_runtime", ["live"], indirect=True)

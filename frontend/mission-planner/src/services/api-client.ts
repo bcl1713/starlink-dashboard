@@ -30,6 +30,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (axios.isCancel(error)) return Promise.reject(error);
     const errorMessage =
       readableError(error.response?.data?.detail) ||
       readableError(error.response?.data?.message) ||

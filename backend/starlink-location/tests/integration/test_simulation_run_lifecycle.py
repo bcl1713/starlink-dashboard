@@ -113,7 +113,22 @@ def test_direct_route_changes_cancel_pacing(api, operation):
     client.app.include_router(deletion, prefix="/api/routes")
     assert start(client).status_code == 200
     if operation == "delete":
+        before_status = service.status()
+        before_frame = service.runtime.frame()
+        before_route = service.route_manager.get_route("replay").model_dump()
+        before_pois = service.poi_manager.pois_file.read_bytes()
+        before_mission = load_mission_v2("mission-1")
         response = client.delete("/api/routes/replay")
+        assert response.status_code == 409
+        assert response.json()["detail"]["code"] == "mission_route_retained"
+        assert "owning mission" in response.json()["detail"]["action"]
+        assert service.status() == before_status
+        assert service.runtime.frame() == before_frame
+        assert service.route_manager.get_active_route_id() == "replay"
+        assert service.route_manager.get_route("replay").model_dump() == before_route
+        assert service.poi_manager.pois_file.read_bytes() == before_pois
+        assert load_mission_v2("mission-1") == before_mission
+        return
     elif operation == "activate":
         response = client.post("/api/routes/replay/activate")
     else:
@@ -121,6 +136,26 @@ def test_direct_route_changes_cancel_pacing(api, operation):
     assert response.status_code in (200, 204), response.text
     assert service.status().state == "cancelled"
     assert service.runtime.frame() is None
+
+
+def test_unreferenced_route_delete_preserves_unrelated_pacing(api, tmp_path):
+    from app.api.routes.delete import router as deletion
+
+    client, service, _clocks = api
+    client.app.include_router(deletion, prefix="/api/routes")
+    assert start(client).status_code == 200
+    before = service.status()
+    route = service.route_manager.get_route("replay").model_copy(deep=True)
+    route_file = tmp_path / "unreferenced.kml"
+    route_file.write_text("synthetic unreferenced route")
+    route.metadata.file_path = str(route_file)
+    service.route_manager.add_route("unreferenced", route)
+    response = client.delete("/api/routes/unreferenced")
+    assert response.status_code == 204, response.text
+    assert not route_file.exists()
+    assert service.route_manager.get_route("unreferenced") is None
+    assert service.route_manager.get_active_route_id() == "replay"
+    assert service.status() == before
 
 
 @pytest.mark.parametrize("method", ["post", "put"])

@@ -5,7 +5,9 @@
 # Splitting would fragment route lifecycle management. Deferred to v0.4.0.
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
+from typing import Literal
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -59,10 +61,18 @@ class RouteManager:
     - Handles errors gracefully
     """
 
-    def __init__(self, routes_dir: str | Path = "/data/routes"):
+    def __init__(
+        self,
+        routes_dir: str | Path = "/data/routes",
+        *,
+        profile_resolver: (
+            Callable[[str], Literal["legacy", "planning_v1"]] | None
+        ) = None,
+    ):
         self.routes_dir = Path(routes_dir)
         self.routes_dir.mkdir(parents=True, exist_ok=True)
 
+        self._profile_resolver = profile_resolver
         self._routes: dict[str, ParsedRoute] = {}
         self._active_route_id: str | None = None
         self._observer: Observer | None = None
@@ -107,6 +117,23 @@ class RouteManager:
         for kml_file in self.routes_dir.glob("*.kml"):
             self._load_route_file(str(kml_file))
 
+    def resolve_ingestion_profile(
+        self, route_id: str
+    ) -> Literal["legacy", "planning_v1"]:
+        """Resolve durable ownership before parsing; invalid profiles fail closed.
+
+        Task-owned inventory providers must return an explicit profile, returning
+        legacy only for known unmanaged routes. Missing managed descriptors raise
+        KMLParseError. Install the provider before start_watching/reload.
+        """
+        resolver = getattr(self, "_profile_resolver", None)
+        profile = resolver(route_id) if resolver else "legacy"
+        if profile not in ("legacy", "planning_v1"):
+            raise KMLParseError(
+                "Missing or unknown route ingestion profile; explicit migration required"
+            )
+        return profile
+
     def _load_route_file(self, file_path: str) -> None:
         """
         Load a single KML file and add to routes cache.
@@ -117,8 +144,26 @@ class RouteManager:
         route_id = Path(file_path).stem
 
         try:
-            parsed_route = parse_kml_file(file_path)
-            self._routes[route_id] = parsed_route
+            profile = self.resolve_ingestion_profile(route_id)
+            parsed_route = (
+                parse_kml_file(file_path, profile=profile)
+                if profile != "legacy"
+                else parse_kml_file(file_path)
+            )
+            from app.mission.storage import get_active_leg_lock
+
+            with get_active_leg_lock():
+                if self.resolve_ingestion_profile(route_id) != profile:
+                    raise KMLParseError("Route profile changed during parsing")
+                if profile == "planning_v1":
+                    import hashlib
+
+                    if (
+                        hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
+                        != parsed_route.content_hash
+                    ):
+                        raise KMLParseError("Route content changed during parsing")
+                self._routes[route_id] = parsed_route
             # Clear any previous error for this route
             if route_id in self._errors:
                 del self._errors[route_id]
@@ -150,6 +195,7 @@ class RouteManager:
                     logger.debug("Failed to sync flight state on route reload: %s", exc)
         except KMLParseError as e:
             error_msg = str(e)
+            self._routes.pop(route_id, None)
             self._errors[route_id] = error_msg
             logger.warning(f"Failed to parse KML file {file_path}: {error_msg}")
         except (
@@ -166,6 +212,7 @@ class RouteManager:
             EOFError,
         ) as e:
             error_msg = f"Unexpected error parsing {file_path}: {e}"
+            self._routes.pop(route_id, None)
             self._errors[route_id] = error_msg
             logger.error(error_msg)
 
@@ -230,7 +277,10 @@ class RouteManager:
             Dictionary mapping route_id to route info
         """
         result = {}
-        for route_id, route in self._routes.items():
+        for route_id in tuple(self._routes):
+            route = self.get_route(route_id)
+            if route is None:
+                continue
             result[route_id] = {
                 "id": route_id,
                 "name": route.metadata.name,
@@ -252,6 +302,13 @@ class RouteManager:
         Returns:
             ParsedRoute or None if not found
         """
+        if getattr(self, "_profile_resolver", None):
+            try:
+                self.resolve_ingestion_profile(route_id)
+            except KMLParseError as exc:
+                self._routes.pop(route_id, None)
+                self._errors[route_id] = str(exc)
+                return None
         return self._routes.get(route_id)
 
     def get_active_route_id(self) -> str | None:
@@ -267,7 +324,7 @@ class RouteManager:
         """
         if self._active_route_id is None:
             return None
-        return self._routes.get(self._active_route_id)
+        return self.get_route(self._active_route_id)
 
     def activate_route(self, route_id: str) -> bool:
         """
@@ -279,7 +336,7 @@ class RouteManager:
         Returns:
             True if activation successful, False if route not found or already active
         """
-        if route_id not in self._routes:
+        if self.get_route(route_id) is None:
             logger.warning(f"Cannot activate non-existent route: {route_id}")
             return False
 

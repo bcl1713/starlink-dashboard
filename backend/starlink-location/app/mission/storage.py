@@ -2,20 +2,23 @@
 
 import json
 import logging
+import os
 import threading
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 
 from filelock import FileLock
 
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline
+from app.mission.repository_gate import RepositoryGate
 
 logger = logging.getLogger(__name__)
 
 # Base directory for mission storage
 MISSIONS_DIR = Path("data/missions")
 TIMELINE_SUFFIX = ".timeline.json"
-_active_leg_locks: dict[str, FileLock] = {}
+_active_leg_locks: dict[str, RepositoryGate] = {}
 _active_leg_locks_guard = threading.Lock()
 
 
@@ -38,21 +41,65 @@ def get_mission_lock(mission_id: str) -> FileLock:
     return FileLock(str(lock_path))
 
 
-def get_active_leg_lock() -> FileLock:
+def get_active_leg_lock() -> RepositoryGate:
     """Get the canonical repository-wide v2 active-leg read/write lock.
 
     FileLock 3.12.0 re-enters only when the same instance is acquired again in
     a thread. Cache the lock by its canonical path rather than relying on the
-    newer ``is_singleton`` constructor option.
+    newer ``is_singleton`` constructor option. FIFO local admission prevents
+    short polling acquisitions from repeatedly overtaking a waiting reader.
     """
     ensure_missions_directory()
-    lock_path = str(MISSIONS_DIR / ".active-leg.lock")
+    lock_path = str((MISSIONS_DIR / ".active-leg.lock").resolve())
     with _active_leg_locks_guard:
         lock = _active_leg_locks.get(lock_path)
-        if lock is None:
-            lock = FileLock(lock_path)
+        if lock is None or lock.process_id != os.getpid():
+            lock = RepositoryGate(lock_path)
             _active_leg_locks[lock_path] = lock
         return lock
+
+
+def planning_read_gate(fn):
+    """Serialize persistence/POI snapshots with planning commits and activation."""
+
+    @wraps(fn)
+    def guarded(*args, **kwargs):
+        with get_active_leg_lock():
+            journals = MISSIONS_DIR / ".planning" / "journals"
+            if journals.exists() and any(journals.glob("*.json")):
+                raise RuntimeError("Planning recovery required before storage access")
+            return fn(*args, **kwargs)
+
+    return guarded
+
+
+def public_mission(mission: Mission) -> Mission:
+    """Response-only projection; persisted private source paths stay lossless."""
+    result = mission.model_copy(deep=True)
+    raw = result.metadata.get("itinerary_planning")
+    if raw is not None:
+        from app.mission.planning.models import PlanningManifest
+
+        result.metadata["itinerary_planning"] = PlanningManifest.model_validate(
+            raw
+        ).model_dump(mode="json")
+    return result
+
+
+def mission_leg_order(mission: Mission):
+    from app.mission.planning.models import PlanningManifest
+    from app.mission.planning.order import project_leg_order
+
+    raw = mission.metadata.get("itinerary_planning")
+    manifest = PlanningManifest.model_validate(raw) if raw is not None else None
+    return project_leg_order(manifest, tuple(leg.id for leg in mission.legs))
+
+
+def _ordered_mission(mission: Mission) -> Mission:
+    order = mission_leg_order(mission)
+    by_id = {leg.id: leg for leg in mission.legs}
+    mission.legs = [by_id[key] for key in order.executable_ids]
+    return mission
 
 
 def get_leg_timeline_path(leg_id: str, parent_mission_id: str) -> Path:
@@ -103,6 +150,15 @@ def save_mission_v2(mission: Mission) -> dict:
     # twice while coordinating a broader v2 operation.
     with get_active_leg_lock():
         previous = load_mission_v2(mission.id)
+        if previous and "itinerary_planning" in previous.metadata:
+            mission = mission.model_copy(deep=True)
+            mission.metadata["itinerary_planning"] = previous.metadata[
+                "itinerary_planning"
+            ]
+        elif "itinerary_planning" in mission.metadata:
+            raise ValueError(
+                "Planning manifests can only be created through planning APIs"
+            )
         result = _save_mission_v2_unlocked(mission)
         # Queue invalidation only after committed persistence. Rendering never
         # runs on the save path; startup reconciliation repairs missed signals.
@@ -148,42 +204,36 @@ def _save_mission_v2_unlocked(mission: Mission) -> dict:
     }
 
 
-def load_mission_v2(mission_id: str) -> Mission | None:
-    """Load a hierarchical mission with all legs.
-
-    Args:
-        mission_id: ID of mission to load
-
-    Returns:
-        Mission object with legs loaded, or None if not found
-    """
+@planning_read_gate
+def _capture_mission_payloads(mission_id: str):
+    """Copy one complete stored generation, then release the repository gate."""
     mission_file = get_mission_file_path(mission_id)
-
     if not mission_file.exists():
         logger.warning(f"Mission {mission_id} not found at {mission_file}")
         return None
-
-    # Load mission metadata
-    with open(mission_file, "r") as f:
-        mission_data = json.load(f)
-
-    # Load all legs
     legs_dir = get_mission_legs_dir(mission_id)
-    legs = []
+    payloads = (
+        tuple(path.read_bytes() for path in _iter_mission_leg_files(legs_dir))
+        if legs_dir.exists()
+        else ()
+    )
+    return mission_file.read_bytes(), payloads
 
-    if legs_dir.exists():
-        for leg_file in _iter_mission_leg_files(legs_dir):
-            with open(leg_file, "r") as f:
-                leg_data = json.load(f)
-                legs.append(MissionLeg(**leg_data))
 
-    mission_data["legs"] = legs
-    mission = Mission(**mission_data)
-
-    logger.info(f"Mission {mission_id} loaded with {len(legs)} legs")
+def load_mission_v2(mission_id: str) -> Mission | None:
+    """Decode a detached whole-generation mission without retaining the gate."""
+    captured = _capture_mission_payloads(mission_id)
+    if captured is None:
+        return None
+    metadata, payloads = captured
+    mission_data = json.loads(metadata)
+    mission_data["legs"] = [MissionLeg.model_validate_json(data) for data in payloads]
+    mission = _ordered_mission(Mission.model_validate(mission_data))
+    logger.info(f"Mission {mission_id} loaded with {len(mission.legs)} legs")
     return mission
 
 
+@planning_read_gate
 def load_mission_metadata_v2(mission_id: str) -> Mission | None:
     """Load mission metadata with leg count but without full leg data.
 
@@ -239,7 +289,7 @@ def load_mission_metadata_v2(mission_id: str) -> Mission | None:
                 )
 
         mission_data["legs"] = [MissionLeg(**stub) for stub in leg_stubs]
-        mission = Mission(**mission_data)
+        mission = _ordered_mission(Mission(**mission_data))
 
         logger.debug(
             f"Mission {mission_id} metadata loaded with {len(leg_stubs)} leg stubs"
@@ -281,13 +331,14 @@ def _parse_persisted_timestamp(value: object) -> datetime | None:
     return timestamp.astimezone(timezone.utc)
 
 
-def list_mission_metadata_v2() -> list[Mission]:
+@planning_read_gate
+def list_mission_metadata_v2(*, exclude_mission_id: str | None = None) -> list[Mission]:
     """List hierarchical mission metadata newest-first with stable legacy fallback."""
     ensure_missions_directory()
     missions: list[tuple[datetime | None, str, Mission]] = []
 
     for mission_dir in sorted(MISSIONS_DIR.iterdir(), key=lambda path: path.name):
-        if not mission_dir.is_dir():
+        if mission_dir.name == exclude_mission_id or not mission_dir.is_dir():
             continue
 
         try:
@@ -363,6 +414,7 @@ def reconcile_active_legs_on_startup() -> dict[str, int]:
     return {"missions": changed_missions, "legs": changed_legs}
 
 
+@planning_read_gate
 def save_mission_timeline(
     leg_id: str,
     timeline: MissionLegTimeline,
@@ -378,6 +430,7 @@ def save_mission_timeline(
     return timeline_path
 
 
+@planning_read_gate
 def load_mission_timeline(
     leg_id: str,
     parent_mission_id: str,
@@ -390,6 +443,7 @@ def load_mission_timeline(
         return MissionLegTimeline(**json.load(handle))
 
 
+@planning_read_gate
 def delete_mission_timeline(
     leg_id: str,
     parent_mission_id: str,

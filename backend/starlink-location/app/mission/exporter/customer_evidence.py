@@ -12,6 +12,7 @@ from .customer_document import (
     build_customer_mission_document,
     stamp,
 )
+from .customer_limits import RENDER_MILLISECONDS
 from .customer_projection import project_briefing_leg
 from .customer_view import project_customer_leg
 from .snapshot_inputs import canonical_json
@@ -84,7 +85,7 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
         or report.get("sharedBrowser") is not True
         or report.get("cleanup", {}).get("success") is not True
         or not isinstance(report.get("totalMs"), (int, float))
-        or not 0 <= report["totalMs"] <= 60000
+        or not 0 <= report["totalMs"] <= RENDER_MILLISECONDS
         or fit.get("pageCount") != count
         or len(fit.get("pages", [])) != count
         or pdf.get("verified") is not True
@@ -136,7 +137,7 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
         view = project_customer_leg(
             captured,
             projection,
-            leg_number=number,
+            leg_number=captured.display_number or number,
             leg_count=snapshot.leg_count or len(snapshot.legs),
         )
         legs.append(
@@ -145,6 +146,9 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
                 "mapInputDiagnostics": payload["legs"][
                     number - 1 - snapshot.leg_number_offset
                 ]["mapInputDiagnostics"],
+                "mapInputDiagnosticCodes": payload["legs"][
+                    number - 1 - snapshot.leg_number_offset
+                ]["mapInputDiagnosticCodes"],
                 **_leg_records(captured, projection, view),
             }
         )
@@ -187,7 +191,7 @@ def build_customer_evidence(snapshot, projection, view, report: dict) -> bytes:
         or fit.get("overflow") != []
         or report.get("cleanup", {}).get("success") is not True
         or not isinstance(report.get("totalMs"), (int, float))
-        or not 0 <= report["totalMs"] <= 60000
+        or not 0 <= report["totalMs"] <= RENDER_MILLISECONDS
         or pdf.get("verified") is not True
         or pdf.get("pageCount") != 1
         or verified_rows != expected_rows
@@ -215,6 +219,7 @@ def build_customer_evidence(snapshot, projection, view, report: dict) -> bytes:
             "snapshotFingerprint": snapshot.fingerprint,
             "legId": projection.leg_id,
             "mapInputDiagnostics": payload["mapInputDiagnostics"],
+            "mapInputDiagnosticCodes": payload["mapInputDiagnosticCodes"],
             **_leg_records(snapshot.legs[0], projection, view),
             "pages": [
                 {

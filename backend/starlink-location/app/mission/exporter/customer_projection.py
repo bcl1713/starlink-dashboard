@@ -152,6 +152,12 @@ def classify_transport(
     text = "; ".join(limitations) or None
     fresh = tuple(s for s in sources if s.metadata.get("stale") is not True)
     has_stale = len(fresh) != len(sources)
+    policy = tuple(s for s in fresh if s.source_type == "planning_policy")
+    if policy:
+        down = any(s.metadata.get("independent_usability") == "Down" for s in policy)
+        return UsabilityDecision(
+            "Down" if down else "Up", "prefer-starshield-v1", ids, text
+        )
     if (state == TransportState.OFFLINE and not has_stale) or any(
         _proven_down(s) for s in fresh
     ):
@@ -401,6 +407,12 @@ def _cached_spans(
             elif reason.startswith(
                 ("X-Ku Conflict", "X-AAR Conflict", "X azimuth conflict")
             ):
+                # A planning interval already resolved concurrency. A cached
+                # historical advisory cannot undo its released conflict.
+                if source.metadata.get("planning_policy") and reason.startswith(
+                    "X-Ku Conflict"
+                ):
+                    continue
                 transport, kind = Transport.X, "x_azimuth_violation"
             elif reason.startswith("X Transition to "):
                 transport, kind = Transport.X, "x_transition_start"
@@ -454,6 +466,24 @@ def _collect_sources(
     revision = sha256(leg.leg_json).hexdigest()
     sources = [_source(json.loads(v), leg.leg_id, revision) for v in leg.source_records]
     transports = committed.get("transports") or {}
+    if (
+        transports.get("planning_policy")
+        and transports.get("starshield_enabled") is False
+        and leg.utc_bounds
+    ):
+        sources.append(
+            _source(
+                {
+                    "transport": "Ku",
+                    "start_time": leg.utc_bounds[0].isoformat(),
+                    "end_time": leg.utc_bounds[1].isoformat(),
+                    "reason": "Starshield operationally disabled",
+                },
+                leg.leg_id,
+                revision,
+                "configured_outage",
+            )
+        )
     for key, transport in (("ka_outages", "Ka"), ("ku_overrides", "Ku")):
         for raw in transports.get(key, []):
             start = _time(raw["start_time"])
@@ -491,6 +521,39 @@ def _collect_sources(
             )
             for raw in timeline.get("segments", [])
         )
+    if leg.preparation_origin == "rebuilt":
+        for segment in timeline.get("segments", []):
+            interval = segment.get("metadata", {}).get("planning_interval")
+            if not interval:
+                continue
+            for transport, field in (
+                ("X", "policy_x_state"),
+                ("Ku", "policy_ku_state"),
+                ("Ka", "policy_ka_state"),
+            ):
+                sources.append(
+                    _source(
+                        {
+                            "transport": transport,
+                            "start_time": interval["start_time"],
+                            "end_time": interval["end_time"],
+                            "reason": "; ".join(
+                                interval["physical_reasons"]
+                                + interval["policy_reasons"]
+                            ),
+                            "metadata": {
+                                "planning_policy": "prefer_starshield_v1",
+                                "raw_constraints": interval["raw_constraints"],
+                                "independent_usability": (
+                                    "Up" if interval[field] == "available" else "Down"
+                                ),
+                            },
+                        },
+                        leg.leg_id,
+                        revision,
+                        "planning_policy",
+                    )
+                )
     for kind, key in (
         ("advisory", "advisories"),
         ("coverage_detail", "coverage_events"),
@@ -628,7 +691,12 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         _Span(s.start_time, s.end_time, s)
         for s in sources
         if s.source_type
-        in {"configured_outage", "availability_basis", "transport_state"}
+        in {
+            "configured_outage",
+            "availability_basis",
+            "transport_state",
+            "planning_policy",
+        }
         and s.start_time
         and s.end_time
         and s.end_time > s.start_time

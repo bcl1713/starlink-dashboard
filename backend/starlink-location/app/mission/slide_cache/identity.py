@@ -21,31 +21,53 @@ def effective(value):
     return value
 
 
-def renderer_revision():
+_renderer_cache = {}
+
+
+def renderer_revision(*, refresh=False):
     # Hash the shipped renderer, Python preparation code, and brand assets.
     root = Path(__file__).resolve().parents[1]
-    paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     deployed = Path("/opt/customer-briefing/renderer")
-    if deployed.exists():
+    is_deployed = deployed.exists()
+    if is_deployed:
         renderer = deployed
     else:
         renderer = root.parents[3] / "frontend/mission-planner/src/mission-export"
+    key = (str(root), str(renderer))
+    if is_deployed and not refresh and key in _renderer_cache:
+        return _renderer_cache[key][1]
+    paths = list(root.parent.rglob("*.py")) + list((root / "assets").glob("*"))
     paths += list(renderer.rglob("*.mjs")) + list(renderer.rglob("*.css"))
     assets = Path("/opt/customer-briefing/assets")
     if assets.exists():
         paths += [p for p in assets.rglob("*") if p.is_file()]
+    token = tuple(
+        (str(p), p.stat().st_mtime_ns, p.stat().st_ctime_ns, p.stat().st_size)
+        for p in sorted(paths)
+    )
+    if not refresh and key in _renderer_cache and _renderer_cache[key][0] == token:
+        return _renderer_cache[key][1]
     digest = sha256(b"customer-leg-cache-v1")
     for path in sorted(paths):
         digest.update(path.name.encode())
         digest.update(path.read_bytes())
-    return digest.hexdigest()
+    revision = digest.hexdigest()
+    _renderer_cache[key] = (token, revision)
+    return revision
 
 
 def leg_inputs(metadata, sources, leg_id, revision):
     raw = json.loads(metadata)
-    number, leg = next(
-        (i, l) for i, l in enumerate(raw["legs"], 1) if l["id"] == leg_id
+    from app.mission.planning.models import PlanningManifest
+    from app.mission.planning.order import project_leg_order
+
+    manifest = raw.get("metadata", {}).get("itinerary_planning")
+    order = project_leg_order(
+        PlanningManifest.model_validate(manifest) if manifest is not None else None,
+        tuple(leg["id"] for leg in raw["legs"]),
     )
+    number = order.numbers[leg_id]
+    leg = next(l for l in raw["legs"] if l["id"] == leg_id)
     route_id = leg.get("route_id")
     selected = tuple(
         s
@@ -96,16 +118,14 @@ def leg_inputs(metadata, sources, leg_id, revision):
                 effective(parent),
                 effective(leg),
                 number,
-                len(raw["legs"]),
+                order.total_count,
                 dependencies,
                 revision,
             ]
         )
     ).hexdigest()
     raw["legs"] = [leg]
-    inputs = encode_inputs(
-        canonical_json(raw), selected, (), number, len(json.loads(metadata)["legs"])
-    )
+    inputs = encode_inputs(canonical_json(raw), selected, (), number, order.total_count)
     return fingerprint, inputs
 
 

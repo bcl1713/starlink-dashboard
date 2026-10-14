@@ -51,3 +51,22 @@ describe('LegHeader route replacement feedback', () => {
     alert.mockRestore();
   });
 });
+
+it('delegates managed Update Route to the planning review workflow', () => {
+  const planning = vi.fn();
+  const { unmount } = render(
+    <LegHeader
+      missionId="m"
+      legId="l"
+      onBackClick={vi.fn()}
+      onPlanningUpdateRoute={planning}
+    />
+  );
+  const before = mutateAsync.mock.calls.length;
+  fireEvent.click(
+    screen.getAllByRole('button', { name: 'Update Route' }).at(-1)!
+  );
+  expect(planning).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls).toHaveLength(before);
+  unmount();
+});

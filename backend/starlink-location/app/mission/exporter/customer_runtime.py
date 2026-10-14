@@ -22,6 +22,7 @@ from app.mission.package.customer_artifacts import (
 
 from .customer_document import build_customer_mission_document
 from .customer_evidence import build_customer_mission_evidence
+from .customer_limits import RENDER_MILLISECONDS, RENDER_WALL_SECONDS
 from .export_cancel import ExportCancelled, check_cancelled
 from .snapshot_inputs import canonical_json
 
@@ -149,9 +150,9 @@ def _cleanup(child, staging, records, grace):
 
 
 def run_owned_renderer(
-    command, staging, *, cancel, wall_seconds=70, kill_grace_seconds=10
+    command, staging, *, cancel, wall_seconds=RENDER_WALL_SECONDS, kill_grace_seconds=10
 ):
-    """The emergency guard forces failure; only Node's <=60s report qualifies."""
+    """The emergency guard forces failure; only Node's <=120s report qualifies."""
     check_cancelled(cancel)
     root = Path(staging)
     record_path = root / "python-owner.json"
@@ -241,7 +242,10 @@ def render_customer_artifacts(snapshot, *, cancel):
             ):
                 raise RendererFailure("cleanup")
             elapsed = report.get("totalMs")
-            if not isinstance(elapsed, (int, float)) or not 0 <= elapsed <= 60000:
+            if (
+                not isinstance(elapsed, (int, float))
+                or not 0 <= elapsed <= RENDER_MILLISECONDS
+            ):
                 raise RendererFailure("deadline")
             if code or report.get("status") != "success":
                 safe = report.get("errorCode")

@@ -21,3 +21,28 @@ export interface ImportResult {
   errors?: ImportValidationError[];
   warnings?: string[];
 }
+
+export interface ExportPreparation {
+  id: string;
+  mission_id: string;
+  state:
+    | 'queued'
+    | 'preparing'
+    | 'ready'
+    | 'failed'
+    | 'cancelled'
+    | 'superseded'
+    | 'expired';
+  fingerprint: string;
+  revision?: number | null;
+  stage: string;
+  leg_states: Record<string, string>;
+  queued_at: number;
+  started_at?: number | null;
+  finished_at?: number | null;
+  deadline: number;
+  expires_at?: number | null;
+  error_code?: string | null;
+  warning_code?: string | null;
+  download_url?: string | null;
+}

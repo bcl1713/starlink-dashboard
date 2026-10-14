@@ -82,7 +82,57 @@ def _read_dependencies(
     mission: Mission, route_manager, poi_manager, *, persisted: bool = False
 ) -> tuple[SourcePayload, ...]:
     sources = []
-    for route_id in dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id):
+    from app.mission.planning.models import PlanningManifest
+    from app.mission.planning.sources import SourceStore, _records, source_closure
+
+    raw = mission.metadata.get("itinerary_planning")
+    manifest = PlanningManifest.model_validate(raw) if raw is not None else None
+    closure = source_closure(mission, manifest)
+    if closure and route_manager is None:
+        raise SnapshotCaptureError("Planning source storage is unavailable")
+    if manifest is not None:
+        store = SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir)
+        for source in closure:
+            content = store.path(source).read_bytes()
+            if sha256(content).hexdigest() != source.content_hash:
+                raise SnapshotCaptureError("Retained source content changed")
+            sources.append(
+                SourcePayload(f"package/planning/{source.owned_relative_path}", content)
+            )
+            if source.kind == "route_kml":
+                store.resolve_profile(source.id)
+                sources.append(
+                    SourcePayload(
+                        f"package/routes/{source.id}.profile.json",
+                        store.descriptor_path(source.id).read_bytes(),
+                    )
+                )
+        for reference in manifest.proposal_refs:
+            content = (
+                store.root.parent
+                / mission.id
+                / "planning"
+                / "proposals"
+                / f"{reference.id}.json"
+            ).read_bytes()
+            if sha256(content).hexdigest() != reference.payload_hash:
+                raise SnapshotCaptureError("Retained proposal payload changed")
+            sources.append(
+                SourcePayload(
+                    f"package/planning/proposals/{reference.id}.json", content
+                )
+            )
+    route_ids = dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id)
+    if manifest:
+        route_ids.update(
+            {
+                record["route_id"]: None
+                for record in _records(manifest.storage_record())
+                if record.get("route_id")
+            }
+        )
+        route_ids.update({s.id: None for s in closure if s.kind == "route_kml"})
+    for route_id in route_ids:
         route = route_manager.get_route(route_id) if route_manager else None
         sources.append(
             SourcePayload(
@@ -100,6 +150,8 @@ def _read_dependencies(
             if kml and kml.exists()
             else SourcePayload(f"kml_missing/{route_id}", b"")
         )
+        if manifest and not (kml and kml.exists()):
+            raise SnapshotCaptureError(f"Retained route {route_id} is missing")
     # All POIs are necessary: mission exports include global satellite POIs and
     # preparation resolves global X positions as well as mission-scoped markers.
     sources.append(
@@ -120,6 +172,20 @@ def _read_dependencies(
             ),
         )
     )
+    if manifest is not None:
+        pois = json.loads(next(p.content for p in sources if p.name == "pois"))
+        sources.append(
+            SourcePayload(
+                "package/pois/retained.json",
+                canonical_json(
+                    {
+                        "pois": [
+                            poi for poi in pois if poi.get("mission_id") == mission.id
+                        ]
+                    }
+                ),
+            )
+        )
     sources.append(
         SourcePayload(
             "catalog",
@@ -166,40 +232,26 @@ def _read_dependencies(
 
 
 def capture_inputs(mission_id: str, route_manager, poi_manager, *, persisted=False):
-    """Lock order matches saves; recheck mutable dependencies before release."""
+    """Capture bytes under the gate, then validate detached inputs outside it."""
+    from app.mission.slide_cache.capture import capture_raw, normalize_capture
+
     last_error = None
     for attempt in range(2):
         try:
-            with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
-                mission = storage.load_mission_v2(mission_id)
-                if mission is None:
-                    raise SnapshotCaptureError(f"Mission {mission_id} not found")
-                metadata = canonical_json(mission.model_dump(mode="json"))
-                options = {"persisted": True} if persisted else {}
-                first = _read_dependencies(
-                    mission, route_manager, poi_manager, **options
+            raw = capture_raw(mission_id, route_manager, poi_manager)
+            metadata, sources, warnings, _ = normalize_capture(
+                raw, persisted=persisted, fingerprints=False
+            )
+            if attempt:
+                warnings += (
+                    "Source inputs changed during capture; whole-capture retry succeeded.",
                 )
-                second = _read_dependencies(
-                    mission, route_manager, poi_manager, **options
-                )
-                if first == second:
-                    warnings = (
-                        (
-                            "Source inputs changed during capture; whole-capture retry succeeded.",
-                        )
-                        if attempt
-                        else ()
-                    )
-                    return metadata, first, warnings
-        except SnapshotCaptureError:
-            raise
+            return metadata, sources, warnings
         except (OSError, ValueError, RuntimeError, TypeError) as exc:
             last_error = exc
-    if last_error is not None:
-        raise SnapshotCaptureError(
-            "Source inputs unavailable during capture after one retry"
-        ) from last_error
-    raise SnapshotCaptureError("Source inputs changed during both capture attempts")
+    raise SnapshotCaptureError(
+        "Source inputs changed or unavailable during capture after one retry"
+    ) from last_error
 
 
 def captured_coverage(sources: tuple[SourcePayload, ...]) -> CoverageSampler | None:

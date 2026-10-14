@@ -8,13 +8,15 @@ import zipfile
 from hashlib import sha256
 from pathlib import Path
 
-from app.mission.exporter.customer_display import display_row
-from app.mission.exporter.customer_filename import customer_brief_filename
-from app.mission.exporter.customer_pdf import verify_customer_pdf
 from PIL import Image
 from production_pdf_geometry import geometry_text_hash
 
+from app.mission.exporter.customer_display import display_row
+from app.mission.exporter.customer_filename import customer_brief_filename
+from app.mission.exporter.customer_pdf import verify_customer_pdf
+
 source, destination = map(Path, sys.argv[1:3])
+scene_path = Path(sys.argv[3]) if len(sys.argv) > 3 else None
 destination.mkdir()
 with zipfile.ZipFile(source) as archive:
     mission = json.loads(archive.read("mission.json"))
@@ -116,5 +118,15 @@ result = {
     "excludedGeometryMetadata": ["CreationDate", "ModDate"],
     "rasters": rasters,
 }
+if scene_path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "itinerary-planning"))
+    from map_pixels import inspect_pdf_maps
+
+    result["maps"] = inspect_pdf_maps(
+        pdf_path,
+        evidence,
+        destination / "map-overlays",
+        json.loads(scene_path.read_bytes()),
+    )
 (destination / "inspection.json").write_text(json.dumps(result, indent=2))
 print(json.dumps(result))

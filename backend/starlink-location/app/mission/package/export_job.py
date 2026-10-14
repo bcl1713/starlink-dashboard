@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.mission.exporter.export_cancel import ExportCancelled
 
 from .customer_artifacts import build_mission_package_download
+from .streams import iter_zip_blocks
 
 
 async def _discard_worker_result(worker):
@@ -59,10 +60,33 @@ async def run_mission_package_job(
 class OwnedZipResponse(StreamingResponse):
     def __init__(self, stream, *, headers):
         self.owned_stream = stream
-        super().__init__(stream, media_type="application/zip", headers=headers)
+        super().__init__(
+            iter_zip_blocks(stream), media_type="application/zip", headers=headers
+        )
 
     async def __call__(self, scope, receive, send):
         try:
             await super().__call__(scope, receive, send)
         finally:
             self.owned_stream.close()
+
+
+def download_response(download, mission_id, *, fingerprint=None):
+    from .customer_artifacts import WARNING_CODES
+
+    headers = {"Content-Disposition": f'attachment; filename="{mission_id}.zip"'}
+    if fingerprint:
+        headers["X-Export-Fingerprint"] = fingerprint
+    if download.briefing is not None:
+        included = download.briefing.status == "included"
+        headers["X-Customer-Briefing-Status"] = "included" if included else "omitted"
+        if not included:
+            warning = download.briefing.warning_code
+            headers["X-Customer-Briefing-Warning"] = (
+                warning if warning in WARNING_CODES else "runtime"
+            )
+    try:
+        return OwnedZipResponse(download.stream, headers=headers)
+    except BaseException:
+        download.stream.close()
+        raise
