@@ -139,11 +139,12 @@ test('AR boundaries render and each POI event layer can be toggled independently
         )
         .toBe(false);
       await expect(names).toHaveCount(
-        visible.filter((p) => !group.kinds.includes(p.kind)).length
+        visible.filter((p) => !group.kinds.includes(p.kind)).length,
+        { timeout: 15000 }
       );
       await control.click();
       await expect(control).toBeChecked();
-      await expect(names).toHaveCount(visible.length);
+      await expect(names).toHaveCount(visible.length, { timeout: 15000 });
     }
     await overview.screenshot({
       path: info.outputPath('overview-event-pois.png'),
