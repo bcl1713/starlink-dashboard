@@ -70,8 +70,21 @@ class PreparationWorker:
     def stage(self, job, stage):
         with self.guard:
             current = self.jobs.read(job.mission_id, job.id)
-            if current.state not in TERMINAL:
-                self.jobs.write_pending(current.model_copy(update={"stage": stage}))
+            if current.state not in TERMINAL and current.stage != stage:
+                now = self.clock()
+                timings = dict(current.stage_timings)
+                timings[current.stage] = max(
+                    0, now - (current.stage_started_at or current.started_at or now)
+                )
+                self.jobs.write_pending(
+                    current.model_copy(
+                        update={
+                            "stage": stage,
+                            "stage_started_at": now,
+                            "stage_timings": timings,
+                        }
+                    )
+                )
 
     def work(self, job):
         raw = self.captures[job.id]
@@ -86,6 +99,16 @@ class PreparationWorker:
                         "state": "preparing",
                         "stage": "preparing-slides",
                         "started_at": self.clock(),
+                        "stage_started_at": self.clock(),
+                        "stage_timings": dict(
+                            job.stage_timings,
+                            queue=max(
+                                0,
+                                self.clock()
+                                - job.queued_at
+                                - job.stage_timings.get("capture", 0),
+                            ),
+                        ),
                     }
                 )
             ):
@@ -120,6 +143,14 @@ class PreparationWorker:
                             "stage": "ready",
                             "finished_at": now,
                             "expires_at": now + 1800,
+                            "stage_timings": dict(
+                                current.stage_timings,
+                                **{
+                                    current.stage: max(
+                                        0, now - (current.stage_started_at or now)
+                                    )
+                                },
+                            ),
                             "briefing_status": outcome.status if outcome else None,
                             "warning_code": outcome.warning_code if outcome else None,
                             "download_url": f"/api/v2/missions/{job.mission_id}/export-preparations/{job.id}/download",

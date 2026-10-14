@@ -60,6 +60,8 @@ def reconcile(
     poi_manager = persisted_pois(poi_manager)
     for attempt in range(2):
         raw = capture_raw(mission_id, route_manager, poi_manager, revision)
+        normalized_now = False
+        normalized_at = time.monotonic()
         try:
             cached = memo.get(mission_id) if memo is not None else None
             if (
@@ -70,6 +72,7 @@ def reconcile(
             ):
                 metadata, sources, warnings, normalized = cached[2]
             else:
+                normalized_now = True
                 metadata, sources, warnings, normalized = normalize_capture(raw)
                 if memo is not None:
                     memo[mission_id] = (
@@ -81,6 +84,8 @@ def reconcile(
             if not attempt:
                 continue
             raise
+        normalized_seconds = time.monotonic() - normalized_at
+        queued_at = time.monotonic()
         with storage.get_active_leg_lock():
             if not capture_is_current(raw):
                 continue
@@ -91,6 +96,20 @@ def reconcile(
             cache.remove_except(mission_id, list(normalized))
         for leg, (_, inputs) in normalized.items():
             cache.attach_inputs(mission_id, leg, tokens[leg], inputs)
+        if normalized_now:
+            logger.info(
+                "Customer preparation stages",
+                extra={
+                    "extra_fields": {
+                        "mission_id": mission_id,
+                        "stage_timings": dict(
+                            raw.stage_timings,
+                            normalization=normalized_seconds,
+                            queue=time.monotonic() - queued_at,
+                        ),
+                    }
+                },
+            )
         return (
             metadata,
             sources,
@@ -168,6 +187,7 @@ class SlideCoordinator:
             with _private_staging() as root:
                 # Record and supervise Python and all Node/browser descendants.
                 (root / "inputs.json").write_bytes(job["inputs"])
+                render_started = time.monotonic()
                 try:
                     code = run_owned_renderer(
                         [
@@ -184,6 +204,18 @@ class SlideCoordinator:
                         kill_grace_seconds=5,
                     )
                 finally:
+                    logger.info(
+                        "Customer renderer stages",
+                        extra={
+                            "extra_fields": {
+                                "mission_id": job["mission"],
+                                "leg_id": job["leg"],
+                                "stage_timings": {
+                                    "render": time.monotonic() - render_started
+                                },
+                            }
+                        },
+                    )
                     if (root / "snapshot.json").exists():
                         snapshot = (root / "snapshot.json").read_bytes()
                 if code:

@@ -1,5 +1,6 @@
 """Copy committed bytes under the gate; validate and encode after releasing it."""
 
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -57,10 +58,13 @@ class RawCapture:
     route_manager: object
     poi_manager: object
     renderer_revision: str
+    stage_timings: tuple[tuple[str, float], ...] = ()
 
 
 def capture_raw(mission_id, route_manager, poi_manager, revision=""):
+    started = time.monotonic()
     with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
+        captured_at = time.monotonic()
         journals = storage.MISSIONS_DIR / ".planning/journals"
         if journals.exists() and any(journals.glob("*.json")):
             raise SnapshotCaptureError("Planning recovery required before capture")
@@ -76,7 +80,17 @@ def capture_raw(mission_id, route_manager, poi_manager, revision=""):
         )
         token = dependency_token(mission_id, route_manager, poi_manager)
     return RawCapture(
-        mission_id, metadata, legs, token, route_manager, poi_manager, revision
+        mission_id,
+        metadata,
+        legs,
+        token,
+        route_manager,
+        poi_manager,
+        revision,
+        (
+            ("lock_wait", captured_at - started),
+            ("raw_capture", time.monotonic() - captured_at),
+        ),
     )
 
 

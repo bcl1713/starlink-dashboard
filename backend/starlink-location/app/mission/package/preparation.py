@@ -79,6 +79,7 @@ class ExportPreparationService(PreparationWorker):
         if self.stop.is_set():
             raise RuntimeError("Export preparation is stopping")
         now = self.clock()
+        capture_started = time.monotonic()
         raw = self.capture(mission_id)
         fingerprint = self.fingerprint(raw)
         metadata = json.loads(raw.metadata)
@@ -103,6 +104,7 @@ class ExportPreparationService(PreparationWorker):
                 revision=revision,
                 queued_at=now,
                 deadline=now + 600,
+                stage_timings={"capture": time.monotonic() - capture_started},
             )
             self.jobs.write(job)
             self.captures[job.id] = raw

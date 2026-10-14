@@ -27,7 +27,7 @@ from app.mission.storage import (
     load_mission_timeline,
     load_mission_v2,
 )
-from app.mission.timeline_service import build_mission_timeline
+from app.mission.timeline_preparation import prepare_mission_timeline
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
@@ -395,13 +395,12 @@ def _load_export_timeline(
         return SnapshotViews(snapshot).timeline(leg.id)
     if route_manager and leg.route_id:
         try:
-            timeline, _summary = build_mission_timeline(
+            prepared = prepare_mission_timeline(
                 mission=leg,
                 route_manager=route_manager,
                 poi_manager=poi_manager,
-                parent_mission_id=mission.id,
             )
-            return timeline
+            return prepared.timeline
         except (
             RuntimeError,
             ValueError,

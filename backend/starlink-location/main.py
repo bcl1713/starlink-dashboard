@@ -568,6 +568,15 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        if _background_task:
+            logger.info_json("Cancelling background update task")
+            _background_task.cancel()
+            try:
+                await _background_task
+            except asyncio.CancelledError:
+                logger.info_json("Background task cancelled successfully")
+            _background_task = None
+
         if hasattr(app.state, "export_preparation_service"):
             await asyncio.to_thread(app.state.export_preparation_service.close)
             del app.state.export_preparation_service
@@ -622,14 +631,6 @@ async def shutdown_event():
             _overview_history_client = None
         _overview_history_settings_store = None
         _overview_clock_settings_store = None
-        if _background_task:
-            logger.info_json("Cancelling background update task")
-            _background_task.cancel()
-            try:
-                await _background_task
-            except asyncio.CancelledError:
-                logger.info_json("Background task cancelled successfully")
-            _background_task = None
 
         if _route_manager:
             logger.info_json("Stopping Route Manager watcher")
@@ -786,7 +787,13 @@ async def _background_update_loop(poi_manager=None):
                     update_count = await asyncio.shield(work)
                 except asyncio.CancelledError:
                     # Shield keeps the worker owned; drain before shutting down managers.
-                    await work
+                    while not work.done():
+                        try:
+                            await asyncio.gather(
+                                asyncio.shield(work), return_exceptions=True
+                            )
+                        except asyncio.CancelledError:
+                            continue
                     raise
 
                 # Sleep for configured update interval

@@ -20,6 +20,38 @@ from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("background_runtime", ["simulation"], indirect=True)
+async def test_repeated_cancellation_drains_owned_telemetry(
+    background_runtime, monkeypatch
+):
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    original = main._background_update_tick
+
+    def update(*args):
+        entered.set()
+        try:
+            assert release.wait(3)
+            return original(*args)
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(main, "_background_update_tick", update)
+    task = asyncio.create_task(main._background_update_loop())
+    try:
+        assert await asyncio.to_thread(entered.wait, 2)
+        task.cancel()
+        await asyncio.sleep(0)
+        task.cancel()
+        done, _ = await asyncio.wait({task}, timeout=0.05)
+        assert not done, "The telemetry owner exited while its worker still ran"
+    finally:
+        release.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert await asyncio.to_thread(finished.wait, 2)
+
+
 @pytest.fixture
 async def background_runtime(monkeypatch, tmp_path, request):
     origin = datetime(2026, 10, 3, 12, tzinfo=timezone.utc)

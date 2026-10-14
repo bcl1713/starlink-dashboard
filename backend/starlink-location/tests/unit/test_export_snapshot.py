@@ -103,6 +103,22 @@ def _slide_text(content):
     )
 
 
+def test_disabled_package_generation_preserves_committed_sources(export_inputs):
+    import threading
+
+    from app.mission.package.customer_artifacts import build_mission_package_download
+
+    _, routes, pois, _ = export_inputs
+    before = pois.pois_file.read_bytes()
+    download = build_mission_package_download(
+        "m", routes, pois, enabled=False, cancel=threading.Event()
+    )
+    download.stream.close()
+    assert (
+        pois.pois_file.read_bytes() == before
+    ), "Export published generated POIs and invalidated its own snapshot"
+
+
 def test_enabled_package_builders_never_reread_after_capture(
     export_inputs, monkeypatch
 ):
@@ -133,7 +149,7 @@ def test_enabled_package_builders_never_reread_after_capture(
         "app.mission.storage.load_mission_timeline",
         "app.mission.package.__main__.load_mission_v2",
         "app.mission.package.__main__.load_mission_timeline",
-        "app.mission.package.__main__.build_mission_timeline",
+        "app.mission.package.__main__.prepare_mission_timeline",
         "app.mission.exporter.__main__.get_cached_ground_entry_point",
         "app.mission.exporter.snapshot.prepare_mission_timeline",
     ):
@@ -225,7 +241,7 @@ def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch,
         monkeypatch.setattr(
             "app.mission.exporter.snapshot.prepare_mission_timeline", failing
         )
-        monkeypatch.setattr(package, "build_mission_timeline", failing)
+        monkeypatch.setattr(package, "prepare_mission_timeline", failing)
 
     class DatetimeType(type):
         def __instancecheck__(cls, value):

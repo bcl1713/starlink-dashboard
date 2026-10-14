@@ -17,6 +17,8 @@ class ExportPreparation(BaseModel):
     fingerprint: str
     revision: int | None = None
     stage: str = "queued"
+    stage_started_at: float | None = None
+    stage_timings: dict[str, float] = Field(default_factory=dict)
     leg_states: dict[str, str] = Field(default_factory=dict)
     queued_at: float
     started_at: float | None = None

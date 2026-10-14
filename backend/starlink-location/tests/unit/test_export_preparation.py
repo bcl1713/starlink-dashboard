@@ -62,6 +62,11 @@ def test_ready_package_is_scoped_and_downloads_exact_snapshot(tmp_path, monkeypa
         assert job.deadline - job.queued_at == 600
         ready = wait_state(service, job, {"ready"})
         assert ready.expires_at - ready.finished_at == 1800
+        assert hasattr(
+            ready, "stage_timings"
+        ), "Preparation stage timings are unavailable"
+        assert {"capture", "queue", "assembling"} <= ready.stage_timings.keys()
+        assert all(value >= 0 for value in ready.stage_timings.values())
         with service.open_download("m", job.id).stream as stream, zipfile.ZipFile(
             stream
         ) as archive:

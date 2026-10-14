@@ -15,6 +15,50 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "tools/acceptance/itinerary-planning/runner.py"
 
 
+def load_export_probes():
+    spec = importlib.util.spec_from_file_location(
+        "export_probes", RUNNER.with_name("export_probes.py")
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_export_preserves_header_and_body_timings(tmp_path):
+    import http.server
+    import threading
+
+    module = load_export_probes()
+
+    class Truncated(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Length", "100")
+            self.end_headers()
+            self.wfile.write(b"partial")
+            self.wfile.flush()
+            self.close_connection = True
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Truncated)
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+    try:
+        result = module.probe_request(f"http://127.0.0.1:{server.server_port}/download")
+        assert result["headers_seconds"] is not None
+        assert result["body_seconds"] >= result["headers_seconds"]
+        assert result["bytes"] == len(b"partial")
+        assert result["error"] == "incomplete-body"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(3)
+        assert not thread.is_alive()
+
+
 def load_runner():
     spec = importlib.util.spec_from_file_location("itinerary_runner", RUNNER)
     assert spec and spec.loader
