@@ -331,6 +331,78 @@ describe('Overview layer and exception integration', () => {
   });
 });
 
+it.each([
+  ['flight_events_enabled', 'AR Start'],
+  ['x_band_events_enabled', 'X warning'],
+  ['ka_events_enabled', 'Ka loss'],
+  ['starshield_events_enabled', 'Starshield loss'],
+])('hides and restores only %s map POIs', (field, hidden) => {
+  queries.pois = {
+    data: {
+      state: 'available',
+      pois: [
+        {
+          poi_id: 'ar',
+          name: 'AR Start',
+          kind: 'aar_start',
+          latitude: 0,
+          longitude: 0,
+          map_retained: true,
+        },
+        {
+          poi_id: 'x',
+          name: 'X warning',
+          kind: 'x_band_warning_start',
+          latitude: 0,
+          longitude: 1,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka',
+          name: 'Ka loss',
+          kind: 'ka_coverage_exit',
+          latitude: 0,
+          longitude: 2,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ku',
+          name: 'Starshield loss',
+          kind: 'starshield_outage_start',
+          latitude: 0,
+          longitude: 3,
+          map_retained: true,
+        },
+      ],
+    },
+  };
+  const view = render(<OverviewPage />);
+  const names = () =>
+    within(screen.getByRole('list', { name: 'Map POIs' }))
+      .getAllByRole('listitem')
+      .map((item) => item.textContent);
+  expect(names()).toHaveLength(4);
+  queries.links = {
+    data: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      [field]: false,
+    },
+  };
+  view.rerender(<OverviewPage />);
+  expect(names()).toHaveLength(3);
+  expect(names()).not.toContain(hidden);
+  queries.links = {
+    data: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      [field]: true,
+    },
+  };
+  view.rerender(<OverviewPage />);
+  expect(names()).toContain(hidden);
+});
+
 it('uses active contacts for the ADS-B legend and clears it on expiry or disable', () => {
   queries.adsb.contacts = projectAdsbContacts(
     [adsbContact()],

@@ -30,6 +30,10 @@ class OverviewLinkSettings:
     aircraft_marker_enabled: bool = True
     planned_route_enabled: bool = True
     poi_markers_enabled: bool = True
+    flight_events_enabled: bool = True
+    x_band_events_enabled: bool = True
+    ka_events_enabled: bool = True
+    starshield_events_enabled: bool = True
     ground_entry_point_enabled: bool = True
     configured_satellites_enabled: bool = True
 

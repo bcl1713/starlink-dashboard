@@ -397,7 +397,9 @@ def apply_manual_outages(
         duration = getattr(outage, "duration_seconds", 0) or 0
         end_time = start_time + timedelta(seconds=duration)
         reason = getattr(outage, "reason", None) or f"{transport.value} outage"
-        rule_engine.add_manual_outage_events(start_time, end_time, transport, reason)
+        rule_engine.add_manual_outage_events(
+            start_time, end_time, transport, reason, outage_id=outage.id
+        )
 
 
 def _format_gap_reason(event: str, lost: str | None, regain: str | None) -> str:

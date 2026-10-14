@@ -20,6 +20,10 @@ MissionPoiKind = Literal[
     "ka_coverage_exit",
     "ka_coverage_entry",
     "ka_transition",
+    "ka_outage_start",
+    "ka_outage_end",
+    "starshield_outage_start",
+    "starshield_outage_end",
 ]
 GeneratedPoiSource = Literal["mission-timeline"]
 

@@ -1,6 +1,7 @@
 import { Switch } from '@/components/ui/switch';
 import { ConfigurationSection } from './ConfigurationSection';
 import { useId } from 'react';
+import { MISSION_POI_LAYERS } from '@/lib/mission-poi-layers';
 import { useOverviewLinkSettings } from '@/hooks/api/useOverviewLinkSettings';
 import { useUpdateOverviewLinkSettings } from '@/hooks/api/useUpdateOverviewLinkSettings';
 
@@ -51,6 +52,11 @@ const groups = {
         label: 'Points of interest',
         description: 'Show mission POI markers and labels.',
       },
+      ...MISSION_POI_LAYERS.map(({ field, label }) => ({
+        field,
+        label,
+        description: `Show ${label.toLowerCase()} POI markers and labels.`,
+      })),
     ],
   },
   network: {

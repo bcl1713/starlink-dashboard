@@ -122,6 +122,7 @@ export function RouteLayer({
         return (
           <Marker
             key={`xband-${transition.id}`}
+            title="X-Band Transition"
             position={[transition.latitude, transition.longitude]}
             icon={createXBandIcon()}
           >
@@ -134,6 +135,7 @@ export function RouteLayer({
       {kaTransitions.map((transition, idx) => (
         <Marker
           key={`ka-${idx}`}
+          title="Ka Transition"
           position={[transition.latitude, transition.longitude]}
           icon={createKaIcon()}
         >

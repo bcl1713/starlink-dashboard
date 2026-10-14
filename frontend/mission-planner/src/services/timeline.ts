@@ -1,5 +1,6 @@
 import { apiClient } from './api-client';
 import type { ManualRouteSplice } from '../types/aar';
+import type { OverviewPoiKind } from './overview-upcoming-pois';
 
 export interface TimelineSegment {
   id: string;
@@ -32,6 +33,14 @@ export interface KaCoverageEvent {
 }
 
 export interface Timeline {
+  map_pois?: Array<{
+    name: string;
+    kind: OverviewPoiKind;
+    latitude: number;
+    longitude: number;
+    expected_arrival_time?: string | null;
+    description?: string | null;
+  }>;
   mission_leg_id: string;
   created_at: string;
   segments: TimelineSegment[];

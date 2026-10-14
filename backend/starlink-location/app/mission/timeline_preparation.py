@@ -263,6 +263,7 @@ def prepare_mission_timeline(
         coverage=coverage_result,
         parent_mission_id=parent_mission_id,
         warning_boundaries=warning_boundaries,
+        manual_tracks=manual_tracks,
     )
 
     apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
@@ -282,6 +283,7 @@ def prepare_mission_timeline(
         mission_end=mission_end,
         intervals=intervals,
     )
+    timeline.map_pois = list(generated_pois)
     timeline.coverage_events = coverage_result.coverage_events
     if planning_evaluation is not None:
         import json

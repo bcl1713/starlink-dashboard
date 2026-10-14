@@ -1,4 +1,8 @@
 import type { OverviewUpcomingPoi } from '@/services/overview-upcoming-pois';
+import {
+  missionPoiVisible,
+  type MissionPoiVisibility,
+} from '@/lib/mission-poi-layers';
 
 const URGENCY_STOPS = [
   { remainingMs: 0, color: '#ef4444' },
@@ -61,7 +65,8 @@ export function urgencyColor(
 
 export function overviewPoiView(
   records: OverviewUpcomingPoi[],
-  missionNowMs?: number
+  missionNowMs?: number,
+  visibility: MissionPoiVisibility = {}
 ): {
   markers: OverviewUpcomingPoi[];
 } {
@@ -69,6 +74,7 @@ export function overviewPoiView(
     markers: records.filter(
       ({ latitude, longitude, map_retained, estimated_arrival_time, kind }) =>
         map_retained &&
+        missionPoiVisible(kind, visibility) &&
         Number.isFinite(latitude) &&
         Number.isFinite(longitude) &&
         (missionNowMs === undefined ||

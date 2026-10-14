@@ -60,7 +60,29 @@ route progress when calculable, timing fields, `flight_phase`, and independent
 `upcoming` (route eligibility) and `map_retained` (map visibility) flags.
 Generated kinds are `departure`, `arrival`, `aar_start`, `aar_end`,
 `x_band_transition`, `x_band_warning_start`, `x_band_warning_end`,
-`ka_coverage_exit`, `ka_coverage_entry`, and `ka_transition`.
+`ka_coverage_exit`, `ka_coverage_entry`, `ka_transition`, `ka_outage_start`,
+`ka_outage_end`, `starshield_outage_start`, and `starshield_outage_end`.
+
+AR start/end cues cover named waypoint windows, anchored windows, and manual AR
+tracks. Anchored and overridden windows use their effective mission times to
+locate markers on the route. Manual tracks use the earliest/latest projected
+route times, matching the timeline's manual AR interval. A track whose points
+all project to one time does not create an AR operation.
+
+Ka and Starshield manual outage cues merge overlapping/touching intervals and
+include only boundaries within the mission. Starshield cues represent configured
+Ku outage overrides. Timeline responses expose the same generated cues in
+`map_pois` so route previews and persisted mission POIs share resolved
+positions.
+
+Overview configuration separates Flight events (departure, arrival, AR), X-band
+events, Ka-band events, and Starshield events. Each group defaults to visible
+and is saved independently through `/api/overview-links/settings` using
+`flight_events_enabled`, `x_band_events_enabled`, `ka_events_enabled`, and
+`starshield_events_enabled`. The existing `poi_markers_enabled` switch controls
+all map POIs. These settings affect map visibility; upcoming timing panels
+retain the event data. Route previews provide independent local POI layer
+checkboxes.
 
 `x_band_warning_start` is labelled **X-Band Shut Down** and `x_band_warning_end`
 is labelled **X-Band Turn On**. These planned cues combine Starlink interference

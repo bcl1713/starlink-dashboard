@@ -15,6 +15,10 @@ export const OVERVIEW_VISIBILITY_DEFAULTS = {
   aircraft_marker_enabled: true,
   planned_route_enabled: true,
   poi_markers_enabled: true,
+  flight_events_enabled: true,
+  x_band_events_enabled: true,
+  ka_events_enabled: true,
+  starshield_events_enabled: true,
   ground_entry_point_enabled: true,
   configured_satellites_enabled: true,
 } as const;

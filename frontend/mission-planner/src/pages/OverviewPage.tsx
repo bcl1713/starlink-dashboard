@@ -462,13 +462,15 @@ export function OverviewPage() {
       ? Date.parse(upcomingPoisResponse.mission_time.simulation_time)
       : missionNow
   );
+  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const upcomingPoiView = useMemo(
     () =>
       overviewPoiView(
         upcomingPoisResponse?.pois ?? [],
-        pacedRunning ? missionNow : undefined
+        pacedRunning ? missionNow : undefined,
+        overviewLinkSettings
       ),
-    [upcomingPoisResponse?.pois, pacedRunning, missionNow]
+    [upcomingPoisResponse?.pois, pacedRunning, missionNow, overviewLinkSettings]
   );
   const {
     data: overviewClockSettings,
@@ -484,7 +486,6 @@ export function OverviewPage() {
   // Refetch retries keep cached data and leave error null until exhausted.
   // Link activity stops on the first failed attempt and resumes on success.
   const statusRequestFailed = Boolean(statusError) || statusFailureCount > 0;
-  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const showClocks = overviewLinkSettings?.operational_clocks_enabled !== false;
   const showArrival = overviewLinkSettings?.arrival_panel_enabled !== false;
   const showPlannedSatellite =

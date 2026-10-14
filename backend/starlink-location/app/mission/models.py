@@ -16,6 +16,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.models.poi import POICreate
+
 from .planning.types import (
     EvaluationContext,
     PlanningInputSnapshot,
@@ -675,6 +677,9 @@ class KaCoverageEvent(BaseModel):
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
+    map_pois: list[POICreate] | None = Field(
+        default=None, description="Resolved map POIs from the same timeline calculation"
+    )
     mission_leg_id: str = Field(..., description="Associated mission leg ID")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

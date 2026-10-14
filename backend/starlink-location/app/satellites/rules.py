@@ -230,6 +230,8 @@ class RuleEngine:
         end_time: datetime,
         transport: Transport,
         reason: str = "",
+        *,
+        outage_id: str | None = None,
     ) -> None:
         """Add manual outage window events (Ka/Ku).
 
@@ -249,6 +251,7 @@ class RuleEngine:
                 affected_transport=transport,
                 severity="warning",
                 reason=reason or f"{transport} outage",
+                metadata={"id": outage_id} if outage_id is not None else {},
             )
         )
 
@@ -260,6 +263,7 @@ class RuleEngine:
                 affected_transport=transport,
                 severity="info",
                 reason=f"{transport} outage ended",
+                metadata={"id": outage_id} if outage_id is not None else {},
             )
         )
 

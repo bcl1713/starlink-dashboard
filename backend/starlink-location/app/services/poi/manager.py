@@ -849,12 +849,12 @@ class POIManager:
         projected = {}
         for poi_id, poi in pois.items():
             try:
-                # Generated warning cues know which visit to a repeated location
+                # Generated timed cues know which visit to a repeated location
                 # they represent. Keep that segment when reactivating their route.
                 route_segment_index = (
                     poi.planned_route_segment_index
                     if poi.generated_source == "mission-timeline"
-                    and poi.kind in {"x_band_warning_start", "x_band_warning_end"}
+                    and poi.planned_route_segment_index is not None
                     and poi.route_id == Path(route.metadata.file_path).stem
                     and poi.planned_route_geometry_hash == route_geometry_hash
                     else None

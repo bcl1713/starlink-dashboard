@@ -1,4 +1,13 @@
-import { MapContainer, TileLayer, Polyline, Popup } from 'react-leaflet';
+import { useState } from 'react';
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  Popup,
+  Marker,
+  Tooltip,
+} from 'react-leaflet';
+import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
 import type {
@@ -18,6 +27,28 @@ import { MapLegend } from './RouteMap/MapLegend';
 import { RouteLayer } from './RouteMap/RouteLayer';
 import { ColorCodedRoute } from './RouteMap/ColorCodedRoute';
 import { formatTime24Hour } from '@/lib/utils';
+import { PoiLayerControls } from './PoiLayerControls';
+import {
+  missionPoiLayer,
+  missionPoiVisible,
+  type MissionPoiVisibility,
+} from '@/lib/mission-poi-layers';
+import { draftEventPois } from './RouteMap/eventPois';
+
+function eventIcon(kind: string) {
+  const colors = {
+    flight_events_enabled: 'var(--route-air-refuel, #d97706)',
+    x_band_events_enabled: 'var(--route-handoff, #9333ea)',
+    ka_events_enabled: 'var(--route-transition, #16a34a)',
+    starshield_events_enabled: 'var(--route-manual-track, #0d9488)',
+  };
+  const color = colors[missionPoiLayer(kind) ?? 'flight_events_enabled'];
+  return divIcon({
+    className: 'mission-event-marker',
+    html: `<span style="display:block;width:14px;height:14px;border:2px solid white;border-radius:50%;background:${color}"></span>`,
+    iconSize: [14, 14],
+  });
+}
 
 interface RouteMapProps {
   anchoredARSpans?: Array<{
@@ -49,9 +80,24 @@ export function RouteMap({
   manualAARTracks = [],
   kaOutages = [],
   kuOutages = [],
+  waypointObjects = [],
   timelinePreview = null,
   derivedRouteEstimate = null,
 }: RouteMapProps) {
+  const [poiVisibility, setPoiVisibility] = useState<MissionPoiVisibility>({});
+  const resolvedPois = timelinePreview?.map_pois;
+  const eventPois =
+    resolvedPois ??
+    draftEventPois({
+      coordinates: coordinates || [],
+      spans: anchoredARSpans,
+      windows: aarSegments,
+      waypoints: waypointObjects,
+      tracks: manualAARTracks,
+      timeline: timelinePreview,
+      kaOutages,
+      kuOutages,
+    });
   const { mapRef, bounds, center, isIDLCrossing, normalizedCoordinates } =
     useMapState({ coordinates: coordinates || [] });
   const {
@@ -89,6 +135,14 @@ export function RouteMap({
 
   return (
     <div>
+      <div className="mb-3">
+        <PoiLayerControls
+          value={poiVisibility}
+          onChange={(field, enabled) =>
+            setPoiVisibility((current) => ({ ...current, [field]: enabled }))
+          }
+        />
+      </div>
       <div
         className="relative overflow-hidden rounded-xl border border-border bg-muted shadow-sm"
         style={{ height, width: '100%' }}
@@ -111,8 +165,16 @@ export function RouteMap({
           />
           <RouteLayer
             routeSegments={routeSegments}
-            xbandTransitions={normalizedXBandTransitions}
-            kaTransitions={normalizedKaTransitions}
+            xbandTransitions={
+              resolvedPois || poiVisibility.x_band_events_enabled === false
+                ? []
+                : normalizedXBandTransitions
+            }
+            kaTransitions={
+              resolvedPois || poiVisibility.ka_events_enabled === false
+                ? []
+                : normalizedKaTransitions
+            }
             aarSegments={aarSegments}
             manualAARTracks={manualAARTracks}
             getWaypointCoordinateIndex={getWaypointCoordinateIndex}
@@ -121,6 +183,30 @@ export function RouteMap({
             isIDLCrossing={isIDLCrossing}
             derivedRouteEstimate={derivedRouteEstimate}
           />
+          {eventPois
+            .filter((poi) => missionPoiVisible(poi.kind, poiVisibility))
+            .map((poi, index) => (
+              <Marker
+                key={`${poi.kind}-${index}`}
+                title={poi.name.replace(/\s+/g, ' ')}
+                position={[
+                  poi.latitude,
+                  isIDLCrossing && poi.longitude < 0
+                    ? poi.longitude + 360
+                    : poi.longitude,
+                ]}
+                icon={eventIcon(poi.kind)}
+              >
+                <Tooltip>{poi.name.replace(/\s+/g, ' ')}</Tooltip>
+                <Popup>
+                  <strong>{poi.name.replace(/\s+/g, ' ')}</strong>
+                  {poi.description && <p>{poi.description}</p>}
+                  {poi.expected_arrival_time && (
+                    <p>{formatTime24Hour(poi.expected_arrival_time)}</p>
+                  )}
+                </Popup>
+              </Marker>
+            ))}
           <ColorCodedRoute
             timeline={timelinePreview}
             isIDLCrossing={isIDLCrossing}
