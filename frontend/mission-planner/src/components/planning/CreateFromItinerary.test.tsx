@@ -68,22 +68,25 @@ it('corrects extraction and creates expected cards without requiring a permitted
   fireEvent.click(screen.getByRole('button', { name: 'Extract itinerary' }));
   await screen.findByLabelText('Mission name');
   expect(
-    screen.getByText(
-      /Review AR windows and satellite access, generate and compare a proposal, then save the reviewed plan/
-    )
+    screen.getByText(/Attach routes before reviewing AR occurrences/)
   ).toBeVisible();
   fireEvent.change(screen.getByLabelText('Mission name'), {
     target: { value: 'Corrected name' },
   });
-  fireEvent.click(screen.getByLabelText(/confirm no AR windows/i));
+  expect(screen.queryByLabelText(/confirm no AR windows/i)).toBeNull();
   fireEvent.click(
-    screen.getByRole('button', { name: 'Confirm itinerary and create draft' })
+    screen.getByRole('button', { name: 'Continue to route attachments' })
+  );
+  await screen.findByRole('group', { name: 'Batch route attachments' });
+  expect(done).not.toHaveBeenCalled();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Continue to source review' })
   );
   await waitFor(() => expect(done).toHaveBeenCalledWith('created'));
   expect(create.mock.calls[0][0]).toMatchObject({
     itinerary: {
       name: 'Corrected name',
-      expected_legs: [{ id: 'stable', draft: { no_ars_confirmed: true } }],
+      expected_legs: [{ id: 'stable', draft: { no_ars_confirmed: false } }],
     },
     permitted_satellite_ids: [],
     starshield_enabled: true,
@@ -114,4 +117,128 @@ it('retains the selected PDF and corrections after an extraction failure', async
   expect(
     (screen.getByLabelText('Itinerary PDF') as HTMLInputElement).files?.[0]
   ).toBe(file);
+});
+
+it('collects PDF and KML batch before route-dependent review', async () => {
+  vi.spyOn(planningApi, 'previewItinerary').mockResolvedValue({
+    preview_id: 'p',
+    parsed_values: itinerary,
+    field_errors: [{ code: 'source', message: 'Correct source UTC row' }],
+    expires_at: '2030-01-01T00:00:00Z',
+  });
+  vi.spyOn(planningApi, 'create').mockResolvedValue({
+    mission: { id: 'created', legs: [] },
+    revision: 1,
+    expected_legs: itinerary.expected_legs.map((leg) => ({
+      leg,
+      input_identity: 'identity',
+      review_status: 'awaiting_kml',
+    })),
+  } as never);
+  const preview = vi.spyOn(planningApi, 'previewRoutes').mockResolvedValue({
+    preview_id: 'batch',
+    expected_revision: 1,
+    expires_at: '2030-01-01T00:00:00Z',
+    attachments: [
+      {
+        attachment_id: 'route',
+        filename: 'route.kml',
+        content_hash: 'hash',
+        suggested_leg_id: 'stable',
+        errors: [],
+        candidates: [
+          {
+            leg_id: 'stable',
+            reasons: ['airports_match', 'utc_window_matches'],
+            discrepancy_errors: [],
+          },
+        ],
+      },
+    ],
+  });
+  setup();
+  const route = new File(['route'], 'route.kml');
+  fireEvent.change(screen.getByLabelText('Itinerary PDF'), {
+    target: { files: [new File(['pdf'], 'itinerary.pdf')] },
+  });
+  fireEvent.change(screen.getByLabelText('Initial route KMLs'), {
+    target: { files: [route] },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Extract itinerary' }));
+  await screen.findByText(/Correct source UTC row/);
+  expect(screen.queryByLabelText(/Confirm AR/)).toBeNull();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Continue to route attachments' })
+  );
+  expect(await screen.findByLabelText('Assign route.kml')).toHaveValue(
+    'stable'
+  );
+  expect(preview).toHaveBeenCalledWith('created', [route], 1);
+});
+
+it('overrides only new unlabeled AR units while preserving declared feet', async () => {
+  const rows = [
+    {
+      id: 'default',
+      track: 'DEFAULT',
+      entry_time: '2026-10-25T12:10:00Z',
+      exit_time: '2026-10-25T12:20:00Z',
+      source_time_precision: 'minute' as const,
+      source_altitude: 200,
+      confirmed_units: 'flight_level' as const,
+      unit_origin: 'import_default' as const,
+    },
+    {
+      id: 'declared',
+      track: 'DECLARED',
+      entry_time: '2026-10-25T12:30:00Z',
+      exit_time: '2026-10-25T12:40:00Z',
+      source_time_precision: 'minute' as const,
+      source_altitude: 20000,
+      confirmed_units: 'feet' as const,
+      unit_origin: 'source_declared' as const,
+    },
+  ];
+  vi.spyOn(planningApi, 'previewItinerary').mockResolvedValue({
+    preview_id: 'p',
+    expires_at: '2030-01-01T00:00:00Z',
+    parsed_values: {
+      ...itinerary,
+      expected_legs: [
+        {
+          ...itinerary.expected_legs[0],
+          ar_rows: rows,
+          ar_section_status: 'listed',
+        },
+      ],
+    },
+  });
+  const create = vi
+    .spyOn(planningApi, 'create')
+    .mockResolvedValue({
+      mission: { id: 'created', legs: [] },
+      revision: 1,
+      expected_legs: [],
+    } as never);
+  setup();
+  fireEvent.change(screen.getByLabelText('Itinerary PDF'), {
+    target: { files: [new File(['pdf'], 'itinerary.pdf')] },
+  });
+  fireEvent.click(screen.getByText('Extract itinerary'));
+  expect(await screen.findByText('DEFAULT: FL200')).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Unlabeled AR altitude units'), {
+    target: { value: 'meters' },
+  });
+  fireEvent.click(screen.getByText('Continue to route attachments'));
+  await waitFor(() => expect(create).toHaveBeenCalled());
+  expect(
+    create.mock.calls[0][0].itinerary.expected_legs?.[0].ar_rows
+  ).toMatchObject([
+    {
+      confirmed_units: 'meters',
+      unit_origin: 'operator_override',
+      confirmed: false,
+    },
+    { confirmed_units: 'feet', unit_origin: 'source_declared' },
+  ]);
 });

@@ -15,9 +15,11 @@ from .errors import PlanningFailure
 from .extract import ItineraryExtractionError
 from .match import RouteAnchorError
 from .models import (
+    AcceptBatchRoutes,
     AcceptRouteBinding,
     ApplyProposal,
     ApplyRevision,
+    BatchRoutePreview,
     ConfirmItinerary,
     GenerateProposal,
     ItineraryPreview,
@@ -270,3 +272,61 @@ async def apply_revision(
     service: Annotated[PlanningService, Depends(get_service)],
 ):
     return await invoke(service.apply_revision, mission_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/route-batch-previews", response_model=BatchRoutePreview
+)
+async def preview_route_batch(
+    mission_id: str,
+    files: Annotated[list[UploadFile], File()],
+    expected_revision: Annotated[int, Form(ge=1)],
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    from .intake import MAX_BATCH_BYTES, MAX_BATCH_FILES, preview_routes
+
+    if not 1 <= len(files) <= MAX_BATCH_FILES:
+        raise HTTPException(
+            422, {"code": "route_batch_limit", "message": "Choose 1–16 KMLs"}
+        )
+    uploads = []
+    total = 0
+    for file in files:
+        data = await upload_bytes(file, pdf=True)
+        total += len(data)
+        if total > MAX_BATCH_BYTES:
+            raise HTTPException(
+                422,
+                {
+                    "code": "route_batch_limit",
+                    "message": "Route batch exceeds 40 MiB total",
+                },
+            )
+        uploads.append((file.filename or "route.kml", data))
+    return await invoke(preview_routes, service, mission_id, uploads, expected_revision)
+
+
+@router.post(
+    "/missions/{mission_id}/route-batch-acceptances", response_model=PlanningView
+)
+async def accept_route_batch(
+    mission_id: str,
+    request: AcceptBatchRoutes,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    from .intake import accept_routes
+
+    return await invoke(accept_routes, service, mission_id, request)
+
+
+@router.delete(
+    "/missions/{mission_id}/route-batch-previews/{preview_id}", status_code=204
+)
+async def discard_route_batch(
+    mission_id: str,
+    preview_id: str,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    from .intake import discard_routes
+
+    await invoke(discard_routes, service, mission_id, preview_id)

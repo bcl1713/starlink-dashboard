@@ -9,7 +9,8 @@ import {
 } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { ARReview } from './ARReview';
+import { ItineraryIntake, ItinerarySourceLeg } from './ItineraryIntake';
+import { planningMissionController } from '../../services/planning-mutations';
 import { PermittedSatellites } from './PermittedSatellites';
 import {
   planningApi,
@@ -22,6 +23,8 @@ import type {
   ItineraryData,
   ItineraryPreview,
   SatelliteSelection,
+  BatchRoutePreview,
+  PlanningView,
 } from '../../types/planning';
 
 export function CreateFromItinerary({
@@ -60,8 +63,8 @@ export function CreateFromItinerary({
           <DialogTitle>Create from itinerary</DialogTitle>
           <DialogDescription>
             Upload a text-bearing itinerary PDF, correct extracted UTC values,
-            and create a resumable mission draft. Attach KMLs to individual
-            expected legs afterward.
+            and attach the KML batch before reviewing route occurrences. Your
+            mission draft is retained while you complete source review.
           </DialogDescription>
         </DialogHeader>
         {open && <ItineraryForm onClose={onClose} onSuccess={onSuccess} />}
@@ -90,7 +93,13 @@ function ItineraryForm({
   const [itinerary, setItinerary] = useState<ItineraryData | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [noARs, setNoARs] = useState<Record<string, boolean>>({});
+  const [routeFiles, setRouteFiles] = useState<File[]>([]);
+  const [created, setCreated] = useState<PlanningView | null>(null);
+  const [routeBatch, setRouteBatch] = useState<BatchRoutePreview | null>(null);
+  const [importUnits, setImportUnits] = useState<
+    'flight_level' | 'feet' | 'meters'
+  >('flight_level');
+  const defaultRows = useRef(new Set<string>());
   const idempotency = useRef(createClientId());
   const extract = async () => {
     if (!file) return;
@@ -99,7 +108,36 @@ function ItineraryForm({
     try {
       const result = await planningApi.previewItinerary(file);
       setPreview(result);
-      setItinerary(result.parsed_values ?? { name: '', expected_legs: [] });
+      const parsed = result.parsed_values ?? { name: '', expected_legs: [] };
+      defaultRows.current = new Set(
+        (parsed.expected_legs ?? []).flatMap((leg) =>
+          (leg.ar_rows ?? [])
+            .filter(
+              (row) =>
+                row.unit_origin === 'import_default' ||
+                (!row.confirmed_units && row.source_altitude != null)
+            )
+            .map((row) => row.id)
+        )
+      );
+      setItinerary({
+        ...parsed,
+        expected_legs: (parsed.expected_legs ?? []).map((leg) => ({
+          ...leg,
+          ar_rows: (leg.ar_rows ?? []).map((row) =>
+            defaultRows.current.has(row.id)
+              ? {
+                  ...row,
+                  confirmed_units: importUnits,
+                  unit_origin:
+                    importUnits === 'flight_level'
+                      ? 'import_default'
+                      : 'operator_override',
+                }
+              : row
+          ),
+        })),
+      });
       idempotency.current = createClientId();
     } catch (e) {
       setError(planningErrorMessage(e));
@@ -161,9 +199,9 @@ function ItineraryForm({
         preview_id: preview.preview_id,
         itinerary: {
           ...itinerary,
-          expected_legs: itinerary.expected_legs.map((leg) => ({
+          expected_legs: (itinerary.expected_legs ?? []).map((leg) => ({
             ...leg,
-            draft: { no_ars_confirmed: !!noARs[leg.id] },
+            draft: { no_ars_confirmed: false },
           })),
         },
         idempotency_key: idempotency.current,
@@ -171,16 +209,50 @@ function ItineraryForm({
       });
       client.setQueryData(['planning', view.mission.id], view);
       client.invalidateQueries({ queryKey: ['missions'] });
-      onSuccess(view.mission.id);
-      onClose();
+      if (routeFiles.length) {
+        try {
+          const staged = await planningMissionController(
+            client,
+            view.mission.id
+          ).enqueueMutation(
+            (current) =>
+              planningApi.previewRoutes(
+                view.mission.id,
+                routeFiles,
+                current.revision
+              ),
+            () => null
+          );
+          setRouteBatch(staged);
+        } catch (failure) {
+          setError(planningErrorMessage(failure));
+        }
+      }
+      setCreated(view);
     } catch (e) {
       setError(planningErrorMessage(e));
     } finally {
       setBusy(false);
     }
   };
+  if (created)
+    return (
+      <div className="space-y-3">
+        {error && <p role="alert">{error}</p>}
+        <ItineraryIntake
+          view={created}
+          initialFiles={routeFiles}
+          initialPreview={routeBatch}
+          onChange={setCreated}
+          onContinue={() => {
+            onSuccess(created.mission.id);
+            onClose();
+          }}
+        />
+      </div>
+    );
   return (
-    <div className="min-w-0 space-y-4">
+    <fieldset disabled={busy} className="min-w-0 space-y-4">
       <label className="block">
         Itinerary PDF
         <Input
@@ -188,6 +260,18 @@ function ItineraryForm({
           accept=".pdf,application/pdf"
           aria-label="Itinerary PDF"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        />
+      </label>
+      <label className="block">
+        Initial route KMLs
+        <Input
+          aria-label="Initial route KMLs"
+          type="file"
+          multiple
+          accept=".kml"
+          onChange={(event) =>
+            setRouteFiles(Array.from(event.target.files ?? []))
+          }
         />
       </label>
       <p className="text-sm text-muted-foreground">
@@ -262,47 +346,57 @@ function ItineraryForm({
               )
             )}
           </div>
+          <p>
+            Attach routes before reviewing AR occurrences. Extracted source
+            values remain editable here; missing route matches are pending
+            dependencies.
+          </p>
+          <details>
+            <summary>Advanced import altitude units</summary>
+            <label>
+              Unlabeled AR altitude units
+              <select
+                aria-label="Unlabeled AR altitude units"
+                value={importUnits}
+                onChange={(event) => {
+                  const units = event.target.value as typeof importUnits;
+                  setImportUnits(units);
+                  setItinerary({
+                    ...itinerary,
+                    expected_legs: (itinerary.expected_legs ?? []).map(
+                      (leg) => ({
+                        ...leg,
+                        ar_rows: (leg.ar_rows ?? []).map((row) =>
+                          defaultRows.current.has(row.id)
+                            ? {
+                                ...row,
+                                confirmed_units: units,
+                                unit_origin: 'operator_override',
+                                confirmed: false,
+                              }
+                            : row
+                        ),
+                      })
+                    ),
+                  });
+                }}
+              >
+                <option value="flight_level">Flight level (default)</option>
+                <option value="feet">Feet</option>
+                <option value="meters">Meters</option>
+              </select>
+            </label>
+            <p>
+              Changes apply only to new unlabeled rows. Explicit source units
+              are preserved.
+            </p>
+          </details>
           {itinerary.expected_legs?.map((leg) => (
-            <section
+            <ItinerarySourceLeg
               key={leg.id}
-              className="min-w-0 space-y-3 rounded-xl border p-4"
-            >
-              <h3 className="font-semibold">Leg {leg.ordinal}</h3>
-              <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-                {(
-                  [
-                    'departure_airport',
-                    'arrival_airport',
-                    'departure_time',
-                    'arrival_time',
-                  ] as const
-                ).map((key) => (
-                  <label key={key}>
-                    {key.replaceAll('_', ' ')} (leg {leg.ordinal})
-                    <Input
-                      aria-label={`${key.replaceAll('_', ' ')} leg ${leg.ordinal}`}
-                      value={leg[key]}
-                      onChange={(e) =>
-                        updateLeg(leg.id, { [key]: e.target.value })
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-              <ARReview
-                leg={leg}
-                rows={leg.ar_rows ?? []}
-                onChange={(rows) => updateLeg(leg.id, { ar_rows: rows })}
-                sectionStatus={leg.ar_section_status ?? 'empty'}
-                onSectionStatusChange={(status) =>
-                  updateLeg(leg.id, { ar_section_status: status })
-                }
-                noARsConfirmed={!!noARs[leg.id]}
-                onNoARsConfirmedChange={(value) =>
-                  setNoARs({ ...noARs, [leg.id]: value })
-                }
-              />
-            </section>
+              leg={leg}
+              onChange={(updates) => updateLeg(leg.id, updates)}
+            />
           ))}
           <Button
             variant="outline"
@@ -354,11 +448,11 @@ function ItineraryForm({
               disabled={busy}
               className="h-auto min-h-11 max-w-full whitespace-normal"
             >
-              Confirm itinerary and create draft
+              Continue to route attachments
             </Button>
           </div>
         </>
       )}
-    </div>
+    </fieldset>
   );
 }

@@ -489,3 +489,36 @@ export interface ApplyRevision {
   discrepancy_acknowledgments?: string[];
   allow_lower_revision?: boolean;
 }
+
+export interface BatchRouteCandidate {
+  leg_id: string;
+  reasons: string[];
+  discrepancy_errors: PlanningError[];
+}
+export interface BatchRouteAttachment {
+  departure_airport?: string | null;
+  arrival_airport?: string | null;
+  source_departure_time?: string | null;
+  source_arrival_time?: string | null;
+  attachment_id: string;
+  filename: string;
+  content_hash: string;
+  suggested_leg_id?: string | null;
+  candidates: BatchRouteCandidate[];
+  errors: PlanningError[];
+}
+export interface BatchRoutePreview {
+  preview_id: string;
+  expected_revision: number;
+  expires_at: string;
+  attachments: BatchRouteAttachment[];
+}
+export interface AcceptBatchRoutes {
+  preview_id: string;
+  expected_revision: number;
+  assignments: {
+    attachment_id: string;
+    leg_id: string;
+    discrepancy_acknowledgments: string[];
+  }[];
+}

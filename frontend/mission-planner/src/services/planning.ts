@@ -1,6 +1,8 @@
 import { apiClient } from './api-client';
 import type {
   AcceptRouteBinding,
+  AcceptBatchRoutes,
+  BatchRoutePreview,
   ApplyProposal,
   ApplyRevision,
   ConfirmItinerary,
@@ -43,6 +45,37 @@ export const planningApi = {
         multipart
       )
     ).data;
+  },
+  previewRoutes: async (
+    mission: string,
+    files: File[],
+    revision: number
+  ): Promise<BatchRoutePreview> => {
+    const body = new FormData();
+    for (const file of files) body.append('files', file);
+    body.append('expected_revision', String(revision));
+    return (
+      await apiClient.post(
+        `${missionPath(mission)}/route-batch-previews`,
+        body,
+        { ...multipart, timeout: 180_000 }
+      )
+    ).data;
+  },
+  acceptRoutes: async (
+    mission: string,
+    request: AcceptBatchRoutes
+  ): Promise<PlanningView> =>
+    (
+      await apiClient.post(
+        `${missionPath(mission)}/route-batch-acceptances`,
+        request
+      )
+    ).data,
+  discardRoutes: async (mission: string, preview: string): Promise<void> => {
+    await apiClient.delete(
+      `${missionPath(mission)}/route-batch-previews/${encodeURIComponent(preview)}`
+    );
   },
   satelliteOptions: async (): Promise<PlanningSatelliteOptions> =>
     (await apiClient.get(`${base}/satellite-options`)).data,

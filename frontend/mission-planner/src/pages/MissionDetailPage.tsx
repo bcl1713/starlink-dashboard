@@ -27,6 +27,7 @@ import { usePlanning } from '../hooks/api/usePlanning';
 import { RevisionReview } from '../components/planning/RevisionReview';
 import type { PlanningCAS } from '../services/missions';
 import { ExpectedLegCards } from '../components/planning/ExpectedLegCards';
+import { BatchRouteAttachments } from '../components/planning/BatchRouteAttachments';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
@@ -240,6 +241,13 @@ export function MissionDetailPage() {
                 applyRevision={(request) =>
                   planning.applyRevision.mutateAsync(request)
                 }
+              />
+              <BatchRouteAttachments
+                key={missionId}
+                view={planning.data}
+                onAccepted={() => {
+                  void planning.refetch();
+                }}
               />
               <ExpectedLegCards
                 view={planning.data}

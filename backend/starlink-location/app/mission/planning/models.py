@@ -649,3 +649,41 @@ class PlanningInputs(PlanningInputSnapshot):
 
 
 PlanningManifest.model_rebuild()
+
+
+class BatchRouteCandidate(PlanningRecord):
+    leg_id: str
+    reasons: list[str] = Field(default_factory=list)
+    discrepancy_errors: list[PlanningError] = Field(default_factory=list)
+
+
+class BatchRouteAttachment(PlanningRecord):
+    departure_airport: str | None = None
+    arrival_airport: str | None = None
+    source_departure_time: UTCTimestamp | None = None
+    source_arrival_time: UTCTimestamp | None = None
+    attachment_id: str
+    filename: str
+    content_hash: ContentHash
+    suggested_leg_id: str | None = None
+    candidates: list[BatchRouteCandidate] = Field(default_factory=list)
+    errors: list[PlanningError] = Field(default_factory=list)
+
+
+class BatchRoutePreview(PlanningRecord):
+    preview_id: str
+    expected_revision: int = Field(ge=1)
+    attachments: list[BatchRouteAttachment]
+    expires_at: UTCTimestamp
+
+
+class BatchRouteAssignment(PlanningRecord):
+    attachment_id: str
+    leg_id: str
+    discrepancy_acknowledgments: list[str] = Field(default_factory=list)
+
+
+class AcceptBatchRoutes(PlanningRecord):
+    preview_id: str
+    expected_revision: int = Field(ge=1)
+    assignments: list[BatchRouteAssignment]

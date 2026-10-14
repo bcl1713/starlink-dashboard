@@ -180,3 +180,67 @@ async def test_pdf_upload_bound_precedes_parse_and_kml_preserves_unbounded_read(
     kml = Upload(b"synthetic KML")
     assert await upload_bytes(kml) == b"synthetic KML"
     assert kml.read_sizes == [-1]
+
+
+def test_batch_routes_api_is_atomic_and_does_not_expose_owned_paths(service, tmp_path):
+    from app.mission.planning.routes import router
+
+    from .test_match import kml_fixture
+
+    app = FastAPI()
+    app.state.planning_service = service
+    app.include_router(router)
+    view, _ = create(service)
+    base = f"/api/v2/missions/planning/missions/{view.mission.id}"
+    with TestClient(app) as client:
+        response = client.post(
+            base + "/route-batch-previews",
+            data={"expected_revision": view.revision},
+            files=[
+                (
+                    "files",
+                    (
+                        "source.kml",
+                        kml_fixture(tmp_path).read_bytes(),
+                        "application/vnd.google-earth.kml+xml",
+                    ),
+                )
+            ],
+        )
+        assert response.status_code == 200
+        assert (
+            "owned_relative_path" not in response.text
+            and "file_path" not in response.text
+        )
+        preview = response.json()
+        source = preview["attachments"][0]
+        candidate = source["candidates"][0]
+        accepted = client.post(
+            base + "/route-batch-acceptances",
+            json={
+                "preview_id": preview["preview_id"],
+                "expected_revision": view.revision,
+                "assignments": [
+                    {
+                        "attachment_id": source["attachment_id"],
+                        "leg_id": candidate["leg_id"],
+                        "discrepancy_acknowledgments": [
+                            item["code"] for item in candidate["discrepancy_errors"]
+                        ],
+                    }
+                ],
+            },
+        )
+        assert accepted.status_code == 200
+        assert accepted.json()["revision"] == view.revision + 1
+        assert accepted.json()["mission"]["legs"] == []
+        assert "owned_relative_path" not in accepted.text
+        again = client.post(
+            base + "/route-batch-acceptances",
+            json={
+                "preview_id": preview["preview_id"],
+                "expected_revision": view.revision,
+                "assignments": [],
+            },
+        )
+        assert again.status_code == 409
