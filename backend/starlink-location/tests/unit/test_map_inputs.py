@@ -33,8 +33,12 @@ def test_supported_untimed_vertex_fixture_retains_bounds_and_reasoned_map_fallba
     captured = snapshot(data)
     scene, reasons = build_map_input(captured, project_briefing_leg(captured))
     assert scene is None
-    assert reasons == (
-        "Effective route geometry or timing cannot locate briefing windows",
+    assert reasons and "timing" in reasons[0].lower()
+    from app.mission.exporter.map_inputs import prepare_map_input
+
+    assert (
+        prepare_map_input(captured, project_briefing_leg(captured)).diagnostics[0].code
+        == "route_timing_missing"
     )
 
 
@@ -104,3 +108,77 @@ def test_map_timing_normalization_preserves_positions_and_rejects_ambiguity(case
         else:
             assert any("coincident" in reason for reason in reasons)
     assert captured.effective_route_json == original
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "route_missing",
+        "route_timing_missing",
+        "route_timing_non_increasing",
+        "route_bounds_mismatch",
+        "route_coordinates_invalid",
+        "route_antipodal_segment",
+        "route_point_limit",
+        "route_marker_limit",
+        "window_position_unavailable",
+    ],
+)
+def test_map_failures_have_specific_codes(code):
+    from dataclasses import replace
+
+    from app.mission.exporter import map_inputs
+    from tests.unit.test_map_real_input_boundaries import boundary
+
+    assert hasattr(
+        map_inputs, "prepare_map_input"
+    ), "Specific map diagnostics are absent"
+    captured, projected, _ = boundary(
+        "map-density-one" if code == "route_marker_limit" else "map-density-two"
+    )
+    import json
+
+    route = json.loads(captured.effective_route_json)
+    points = route["points"]
+    if code == "route_timing_missing":
+        points[1]["expected_arrival_time"] = None
+    elif code == "route_timing_non_increasing":
+        points[1]["expected_arrival_time"] = points[0]["expected_arrival_time"]
+    elif code == "route_bounds_mismatch":
+        projected = replace(
+            projected,
+            utc_bounds=(
+                projected.utc_bounds[0] + timedelta(seconds=1),
+                projected.utc_bounds[1],
+            ),
+        )
+    elif code == "route_coordinates_invalid":
+        points[1]["latitude"] = 91
+    elif code == "route_antipodal_segment":
+        points[0]["latitude"], points[0]["longitude"] = 0, 0
+        points[1]["latitude"], points[1]["longitude"] = 0, 180
+    elif code == "route_point_limit":
+        route["points"] = points * 201
+    elif code == "window_position_unavailable":
+        projected = replace(
+            projected,
+            coordination_rows=(
+                replace(
+                    projected.coordination_rows[0],
+                    start_time=projected.utc_bounds[0] - timedelta(minutes=1),
+                ),
+            ),
+        )
+    captured = replace(
+        captured,
+        effective_route_json=(
+            None if code == "route_missing" else json.dumps(route).encode()
+        ),
+    )
+    before = captured.effective_route_json
+    result = map_inputs.prepare_map_input(captured, projected)
+    assert result.scene is None
+    assert result.diagnostics[0].code == code
+    assert result.diagnostics[0].severity == "error"
+    assert result.diagnostics[0].message
+    assert captured.effective_route_json == before

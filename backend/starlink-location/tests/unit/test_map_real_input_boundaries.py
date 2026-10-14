@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
 
+import pytest
+
 from app.mission.exporter.customer_projection import (
     BriefingInterval,
     BriefingLeg,
@@ -141,4 +143,24 @@ def test_repeated_positions_keep_distinct_window_identity():
     assert {(point["latitude"], point["longitude"]) for point in scene["route"]} == {
         (0, 0)
     }
+    assert captured.effective_route_json == before
+
+
+@pytest.mark.parametrize("name", ["map-density-one", "map-density-three"])
+def test_overview_preserves_every_canonical_window_anchor(name):
+    from app.mission.exporter import map_inputs
+
+    assert hasattr(
+        map_inputs, "prepare_map_input"
+    ), "Specific scene eligibility contract is absent"
+    captured, projected, _ = boundary(name)
+    before = captured.effective_route_json
+    result = map_inputs.prepare_map_input(captured, projected, include_markers=False)
+    assert result.scene is not None and not result.diagnostics
+    assert result.scene["markers"] == []
+    timestamps = {point["timestamp"] for point in result.scene["route"]}
+    assert all(
+        row.start_time.isoformat().replace("+00:00", "Z") in timestamps
+        for row in projected.coordination_rows
+    )
     assert captured.effective_route_json == before

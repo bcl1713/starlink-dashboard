@@ -145,6 +145,9 @@ def build_customer_mission_evidence(snapshot, payload, page_plan, report) -> byt
                 "mapInputDiagnostics": payload["legs"][
                     number - 1 - snapshot.leg_number_offset
                 ]["mapInputDiagnostics"],
+                "mapInputDiagnosticCodes": payload["legs"][
+                    number - 1 - snapshot.leg_number_offset
+                ]["mapInputDiagnosticCodes"],
                 **_leg_records(captured, projection, view),
             }
         )
@@ -215,6 +218,7 @@ def build_customer_evidence(snapshot, projection, view, report: dict) -> bytes:
             "snapshotFingerprint": snapshot.fingerprint,
             "legId": projection.leg_id,
             "mapInputDiagnostics": payload["mapInputDiagnostics"],
+            "mapInputDiagnosticCodes": payload["mapInputDiagnosticCodes"],
             **_leg_records(snapshot.legs[0], projection, view),
             "pages": [
                 {

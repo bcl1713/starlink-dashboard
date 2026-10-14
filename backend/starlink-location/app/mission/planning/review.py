@@ -73,7 +73,29 @@ def preview(service, mission_id, leg_id, request):
     inputs = build_inputs(
         leg, leg.draft, store.route_manager, store.poi_manager, constraints
     )
-    evaluation = evaluate_context(inputs, leg.draft, build_context(inputs, leg.draft))
+    context = build_context(inputs, leg.draft)
+    evaluation = evaluate_context(inputs, leg.draft, context)
+    if not evaluation.errors:
+        from .map_review import check_prepared_map
+
+        candidate = draft_to_mission_leg(
+            inputs,
+            leg.draft,
+            context,
+            leg_id=leg.installed_leg_id or leg.id,
+            name=f"{leg.departure_airport}–{leg.arrival_airport}",
+        )
+        artifacts = prepare_mission_timeline(
+            candidate,
+            store.route_manager,
+            store.poi_manager,
+            parent_mission_id=mission_id,
+            constraint_config=constraints,
+            capture_x_conditions=True,
+        )
+        evaluation.map_diagnostics = list(
+            check_prepared_map(candidate, artifacts, constraints, store.poi_manager)
+        )
     with storage.get_active_leg_lock():
         store.checked(mission_id, leg_id, request.expected_revision)
         if (
@@ -129,9 +151,19 @@ def save_reviewed(service, mission_id, leg_id, request):
         store.poi_manager,
         parent_mission_id=mission_id,
         constraint_config=constraints,
+        capture_x_conditions=True,
     )
     if artifacts.planning_evaluation != evaluation:
         raise conflict("Canonical timeline changed; preview again")
+    service.proposals._recheck(mission_id, leg_id, request, environment)
+    from .map_review import check_prepared_map
+
+    diagnostics = check_prepared_map(
+        installed, artifacts, constraints, store.poi_manager
+    )
+    if diagnostics:
+        problem = diagnostics[0]
+        raise PlanningFailure(422, problem.code, problem.message, action=problem.action)
     artifacts = replace(artifacts, validated_leg=installed)
 
     def final_check(current):

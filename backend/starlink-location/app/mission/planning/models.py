@@ -342,6 +342,7 @@ class BackupGap(PlanningRecord):
 
 
 class PlanningEvaluation(PlanningRecord):
+    map_diagnostics: list[PlanningError] = Field(default_factory=list)
     context: EvaluationContext
     intervals: list[EvaluationInterval] = Field(default_factory=list)
     outage_seconds: float = Field(ge=0)

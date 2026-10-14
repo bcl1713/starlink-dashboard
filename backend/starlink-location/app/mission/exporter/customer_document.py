@@ -6,7 +6,7 @@ from .briefing_clocks import ensure_utc
 from .customer_display import display_row
 from .customer_projection import BriefingLeg, project_briefing_leg
 from .customer_view import CustomerLegView, project_customer_leg, restriction_labels
-from .map_inputs import build_map_input
+from .map_inputs import prepare_map_input
 from .snapshot import ExportSnapshot
 
 
@@ -77,7 +77,9 @@ def _leg_payload(snapshot, captured, view, projection):
         a.end_time > b.start_time for a, b in zip(view.rows, view.rows[1:])
     ):
         raise ValueError("Unordered or duplicate customer rows")
-    map_input, map_reasons = build_map_input(captured, projection)
+    map_result = prepare_map_input(captured, projection, include_markers=False)
+    map_input = map_result.scene
+    map_reasons = tuple(item.message for item in map_result.diagnostics)
     if map_input:
         map_input = json.loads(json.dumps(map_input))
         leg = json.loads(captured.leg_json)
@@ -85,8 +87,6 @@ def _leg_payload(snapshot, captured, view, projection):
             "departure": leg.get("departure_airport") or "Departure",
             "arrival": leg.get("arrival_airport") or "Arrival",
         }
-        # Customer overview shows the route and airports; exact events stay in evidence.
-        map_input["markers"] = []
     payload = {
         "schemaVersion": 1,
         "snapshotFingerprint": snapshot.fingerprint,
@@ -123,6 +123,15 @@ def _leg_payload(snapshot, captured, view, projection):
         ],
         "mapInput": map_input,
         "mapInputDiagnostics": list(map_reasons),
+        "mapInputDiagnosticCodes": [
+            {
+                "code": item.code,
+                "message": item.message,
+                "windowId": item.window_id,
+                "severity": item.severity,
+            }
+            for item in map_result.diagnostics
+        ],
     }
     for row in payload["rows"]:
         row["displayCells"] = list(display_row(row))

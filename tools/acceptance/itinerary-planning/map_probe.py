@@ -24,8 +24,10 @@ def verify_input_hashes(root, expected):
         raise ValueError("Original input hash mismatch")
 
 
-def probe_snapshot(captured, projected):
-    from app.mission.exporter.map_inputs import build_map_input
+def probe_snapshot(captured, projected, *, include_markers=True):
+    from app.mission.exporter import map_inputs
+
+    build_map_input = map_inputs.build_map_input
 
     route = (
         json.loads(captured.effective_route_json)
@@ -57,11 +59,23 @@ def probe_snapshot(captured, projected):
     try:
         # Observe the actual rejected branch rather than inferring it from counts.
         sys.settrace(trace)
-        scene, reasons = build_map_input(captured, projected)
+        scene, reasons = build_map_input(
+            captured,
+            projected,
+            **({"include_markers": False} if not include_markers else {})
+        )
     finally:
         sys.settrace(previous)
     code = None
-    if scene is None:
+    if hasattr(map_inputs, "prepare_map_input"):
+        structured = map_inputs.prepare_map_input(
+            captured, projected, include_markers=include_markers
+        )
+        code = next(
+            (item.code for item in structured.diagnostics if item.severity == "error"),
+            None,
+        )
+    if scene is None and code is None:
         if not captured.effective_route_json:
             code = "route_missing"
         elif failures:
@@ -92,9 +106,7 @@ def probe_snapshot(captured, projected):
         "leg_id": captured.leg_id,
         "point_count": len(points),
         "untimed_points": sum(stamp is None for stamp in stamps),
-        "non_increasing_adjacent": sum(
-            a >= b for a, b in pairwise(stamps) if a and b
-        ),
+        "non_increasing_adjacent": sum(a >= b for a, b in pairwise(stamps) if a and b),
         "utc_bounds": (
             [stamp.isoformat() for stamp in projected.utc_bounds]
             if projected.utc_bounds
@@ -103,6 +115,7 @@ def probe_snapshot(captured, projected):
         "occurrence_ids": [p.get("occurrence_id") for p in points],
         "window_ids": [row.id for row in projected.coordination_rows],
         "marker_count": len(projected.coordination_rows),
+        "display_marker_count": len(scene["markers"]) if scene else None,
         "scene_available": scene is not None,
         "failed_predicate": code,
         "diagnostics": list(reasons),
@@ -116,6 +129,7 @@ def main():
     parser.add_argument("--reviewed-package", type=Path, required=True)
     parser.add_argument("--expected-hashes", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--overview", action="store_true")
     args = parser.parse_args()
     expected = json.loads(args.expected_hashes.read_bytes())
     verify_input_hashes(args.input_root, expected["inputs"])
@@ -139,7 +153,7 @@ def main():
     temporary.mkdir(mode=0o700)
     try:
         results = [
-            probe_snapshot(captured, projected)
+            probe_snapshot(captured, projected, include_markers=not args.overview)
             for captured, projected in package_snapshots(
                 args.reviewed_package, temporary, set(expected["inputs"].values())
             )

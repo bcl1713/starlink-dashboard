@@ -43,3 +43,17 @@ def test_probe_names_failed_predicate():
     assert result["failed_predicate"] == "route_marker_limit"
     assert result["marker_count"] == recipe["windowCount"]
     assert not result["scene_available"]
+
+
+def test_probe_supports_customer_overview_without_hidden_marker_capacity():
+    module = probe_module()
+    import sys
+
+    sys.path.insert(0, str(ROOT / "backend/starlink-location"))
+    from tests.unit.test_map_real_input_boundaries import boundary
+
+    captured, projected, _ = boundary("map-density-three")
+    result = module.probe_snapshot(captured, projected, include_markers=False)
+    assert result["scene_available"] and result["failed_predicate"] is None
+    assert result["display_marker_count"] == 0
+    assert result["marker_count"] == 279

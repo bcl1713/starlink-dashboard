@@ -129,16 +129,50 @@ def test_map_input_diagnostics_survive_document_and_evidence(invalid):
 
 def test_successful_map_diagnostics_are_retained(monkeypatch):
     import app.mission.exporter.customer_document as module
-    from app.mission.exporter.map_inputs import build_map_input
+    from app.mission.exporter.map_inputs import (
+        MapInputDiagnostic,
+        MapInputResult,
+        prepare_map_input,
+    )
 
     captured, projection, view = inputs()
-    map_input, _ = build_map_input(captured.legs[0], projection)
+    map_input = prepare_map_input(
+        captured.legs[0], projection, include_markers=False
+    ).scene
     monkeypatch.setattr(
-        module, "build_map_input", lambda *args: (map_input, ("Position advisory",))
+        module,
+        "prepare_map_input",
+        lambda *args, **kwargs: MapInputResult(
+            map_input,
+            (
+                MapInputDiagnostic(
+                    "route_coincident_join", "Position advisory", severity="info"
+                ),
+            ),
+        ),
     )
     payload = build(captured, view, projection)
     assert payload.get("mapInputDiagnostics") == ["Position advisory"]
     assert payload["mapInput"]
+
+
+def test_customer_evidence_retains_specific_map_codes():
+    from dataclasses import replace
+
+    from tests.unit.test_customer_evidence import build as evidence
+    from tests.unit.test_customer_evidence import report
+
+    captured, projection, view = inputs()
+    captured = replace(
+        captured, legs=(replace(captured.legs[0], effective_route_json=None),)
+    )
+    payload = build(captured, view, projection)
+    raw = report(captured, view)
+    raw["map"] = {"status": "unavailable", "warnings": ["Unavailable route"]}
+    result = json.loads(evidence(captured, projection, view, raw))
+    assert result.get("mapInputDiagnosticCodes") == payload["mapInputDiagnosticCodes"]
+    assert result["mapInputDiagnosticCodes"][0]["code"] == "route_missing"
+    assert result["mapInputDiagnosticCodes"][0]["severity"] == "error"
 
 
 def test_document_rows_carry_exact_display_cells():
