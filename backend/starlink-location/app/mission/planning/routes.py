@@ -37,9 +37,11 @@ from .models import (
     SaveDraft,
     SaveReviewed,
 )
+from .preview_admission import preview_slot, run_owned_preview
 from .service import PlanningService
 
 router = APIRouter(prefix="/api/v2/missions/planning", tags=["Planning"])
+PREVIEW_QUEUE_SECONDS = 120
 
 
 def get_service(request: Request):
@@ -246,7 +248,15 @@ async def preview_draft(
     request: PreviewDraft,
     service: Annotated[PlanningService, Depends(get_service)],
 ):
-    return await invoke(service.preview, mission_id, leg_id, request)
+    try:
+        async with preview_slot(PREVIEW_QUEUE_SECONDS):
+            return await run_owned_preview(
+                invoke(service.preview, mission_id, leg_id, request)
+            )
+    except PlanningDeadlineError as exc:
+        raise HTTPException(
+            503, {"code": exc.code, "message": str(exc), "retryable": True}
+        ) from exc
 
 
 @router.post(
