@@ -188,15 +188,20 @@ def _parse_itinerary(pdf_bytes):
                 if entry and exit and altitude:
                     ar_split = (entry.x + exit.x) / 2
                     altitude_x = altitude.x
+                    column_label = _text(
+                        [token for token in row if altitude.x - 3 <= token.x < entry.x]
+                    )
                     label_units = re.findall(
-                        r"\b(FL|ft|feet|m|meters)\b", text, re.IGNORECASE
+                        r"\b(FL|ft|feet|m|meters)\b", column_label, re.IGNORECASE
                     )
                     declared = {UNITS[unit.lower()] for unit in label_units}
-                    annotation = re.search(
-                        r"Altitude\s*(?:\(([^)]+)\)|\[([^\]]+)\])", text, re.IGNORECASE
-                    )
+                    if re.search(r"\bflight\s+levels?\b", column_label, re.IGNORECASE):
+                        declared.add("flight_level")
+                    suffix = re.sub(
+                        r"^Altitude\b", "", column_label, flags=re.IGNORECASE
+                    ).strip()
                     altitude_units_blocked = len(declared) > 1 or bool(
-                        annotation and not declared
+                        suffix and not declared
                     )
                     altitude_units = (
                         next(iter(declared)) if len(declared) == 1 else None
