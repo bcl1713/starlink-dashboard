@@ -1,4 +1,6 @@
 import { performance } from 'node:perf_hooks';
+export const RENDER_BUDGET_MS = 120000;
+export const PDF_RESERVE_MS = 40000;
 export class RenderDeadlineError extends Error {
   constructor() {
     super('Shared render deadline exceeded');
@@ -6,9 +8,9 @@ export class RenderDeadlineError extends Error {
   }
 }
 export function createRenderBudget({
-  budgetMs = 60000,
+  budgetMs = RENDER_BUDGET_MS,
   clock = () => performance.now(),
-  pdfReserveMs = 20000,
+  pdfReserveMs = PDF_RESERVE_MS,
   cleanupReserveMs = 3000,
 } = {}) {
   if (
@@ -17,7 +19,7 @@ export function createRenderBudget({
       pdfReserveMs >= cleanupReserveMs &&
       pdfReserveMs < budgetMs &&
       cleanupReserveMs > 0 &&
-      budgetMs <= 60000
+      budgetMs <= RENDER_BUDGET_MS
     )
   )
     throw new Error('Invalid reserves');

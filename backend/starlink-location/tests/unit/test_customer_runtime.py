@@ -63,6 +63,21 @@ def test_qualified_pair_has_captured_identity_and_no_private_paths(
     assert all(not root.exists() for root in roots)
 
 
+def test_qualified_render_after_first_minute_is_included(monkeypatch, tmp_path):
+    module = implementation()
+    captured, roots, pdf = stage_report(
+        module,
+        monkeypatch,
+        tmp_path,
+        lambda report: report.update(totalMs=90000),
+    )
+    result = module.render_customer_artifacts(captured, cancel=threading.Event())
+    assert result.status == "included"
+    assert result.artifacts.pdf == pdf
+    assert json.loads(result.artifacts.evidence)["render"]["totalMs"] == 90000
+    assert all(not root.exists() for root in roots)
+
+
 @pytest.mark.parametrize(
     "case,code",
     [
@@ -86,7 +101,7 @@ def test_unqualified_report_omits_both_and_removes_staging(
         if case == "row":
             report["pdfValidation"]["rows"][0]["displayCells"][0] = "wrong"
         if case == "late":
-            report["totalMs"] = 60001
+            report["totalMs"] = 120001
         if case == "cleanup":
             report["cleanup"]["childrenReaped"] = False
 
@@ -128,6 +143,36 @@ time.sleep(3600)
         not psutil.pid_exists(child)
         or psutil.Process(child).status() == psutil.STATUS_ZOMBIE
     )
+
+
+def test_default_supervisor_allows_a_render_after_seventy_seconds(
+    monkeypatch, tmp_path
+):
+    module = implementation()
+    elapsed = 0
+
+    class Child:
+        pid = 123
+        returncode = None
+
+        def poll(self):
+            nonlocal elapsed
+            if elapsed == 0:
+                elapsed = 90
+                return None
+            self.returncode = 0
+            return 0
+
+    child = Child()
+    monkeypatch.setattr(module.subprocess, "Popen", lambda *a, **k: child)
+    monkeypatch.setattr(module.time, "monotonic", lambda: elapsed)
+    monkeypatch.setattr(module, "_process_record", lambda pid: None)
+    monkeypatch.setattr(module, "_collect", lambda *a: None)
+    monkeypatch.setattr(module, "_cleanup", lambda *a: {"survivors": []})
+    result = module.run_owned_renderer(["renderer"], tmp_path, cancel=threading.Event())
+    assert result == 0
+    owner = json.loads((tmp_path / "python-owner.json").read_text())
+    assert owner["reaped"] is True
 
 
 def test_cancelled_real_renderer_is_reaped_and_no_pair_is_returned(tmp_path):

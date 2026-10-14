@@ -35,6 +35,14 @@ allows 660 seconds for this endpoint. A new save while waiting follows current
 inputs. An export already assembling retains its captured revision.
 Disconnecting the request stops its wait while shared preparation continues.
 
+Each leg's renderer has one shared 120-second deadline, including layout, maps,
+printing, actual PDF verification, and cleanup. Maps retain 40 seconds for
+printing and verification; normal work retains three seconds for cleanup. The
+Python renderer supervisor has a 130-second emergency limit, and the outer slide
+worker allows 180 seconds for captured input preparation plus rendering. These
+per-leg limits do not extend the 600-second overall export deadline. Slow cold
+exports can still omit the PDF when that overall deadline is exhausted.
+
 A failed customer PDF leaves mission data and CSVs available with a safe
 omission warning. A subsequent export retries failed preparation. Explicitly
 disabling background tasks prevents new rendering; available ready artifacts can

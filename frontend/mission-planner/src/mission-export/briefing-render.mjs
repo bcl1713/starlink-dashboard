@@ -2,7 +2,12 @@ import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { createRenderBudget, within } from './render-budget.mjs';
+import {
+  createRenderBudget,
+  within,
+  RENDER_BUDGET_MS,
+  PDF_RESERVE_MS,
+} from './render-budget.mjs';
 import { openRenderOwner, ownedPath } from './render-owner.mjs';
 import { renderMapInContext } from './map-stage.mjs';
 import { composeBriefing } from './briefing/document.mjs';
@@ -19,8 +24,8 @@ export async function renderBriefing({
   outputRoot,
   assetRoot,
   ownershipPath = path.join(outputRoot, 'ownership.json'),
-  budgetMs = 60000,
-  pdfReserveMs = 20000,
+  budgetMs = RENDER_BUDGET_MS,
+  pdfReserveMs = PDF_RESERVE_MS,
   cleanupReserveMs = 3000,
   fault = null,
 }) {
@@ -472,10 +477,10 @@ if (
 ) {
   const [input, outputRoot, assetRoot] = process.argv.slice(2);
   const payload = JSON.parse(await readFile(input, 'utf8'));
-  const budgetMs = Number(process.env.CHECKPOINT_BUDGET_MS || 60000);
+  const budgetMs = Number(process.env.CHECKPOINT_BUDGET_MS || RENDER_BUDGET_MS);
   const options =
-    budgetMs === 60000
-      ? {}
+    budgetMs >= 60000
+      ? { pdfReserveMs: Math.floor(budgetMs / 3), cleanupReserveMs: 3000 }
       : {
           pdfReserveMs: Math.floor(budgetMs * 0.5),
           cleanupReserveMs: Math.floor(budgetMs * 0.1),

@@ -1,7 +1,12 @@
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { createRenderBudget, within } from './render-budget.mjs';
+import {
+  createRenderBudget,
+  within,
+  RENDER_BUDGET_MS,
+  PDF_RESERVE_MS,
+} from './render-budget.mjs';
 import { openRenderOwner, ownedPath } from './render-owner.mjs';
 import { renderMapInContext } from './map-stage.mjs';
 import { verifyPdfInOwner } from './briefing-pdf-stage.mjs';
@@ -19,8 +24,8 @@ export async function renderMissionBriefing(
     outputRoot,
     assetRoot,
     ownershipPath = path.join(outputRoot, 'ownership.json'),
-    budgetMs = 60000,
-    pdfReserveMs = 20000,
+    budgetMs = RENDER_BUDGET_MS,
+    pdfReserveMs = PDF_RESERVE_MS,
     cleanupReserveMs = 3000,
     fault = null,
   },

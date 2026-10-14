@@ -9,6 +9,7 @@ import time
 from filelock import FileLock, Timeout
 
 from app.mission import storage
+from app.mission.exporter.customer_limits import SLIDE_WALL_SECONDS
 from app.mission.exporter.customer_runtime import (
     RendererFailure,
     _private_staging,
@@ -200,7 +201,7 @@ class SlideCoordinator:
                         ],
                         root,
                         cancel=cancel,
-                        wall_seconds=120,
+                        wall_seconds=SLIDE_WALL_SECONDS,
                         kill_grace_seconds=5,
                     )
                 finally:

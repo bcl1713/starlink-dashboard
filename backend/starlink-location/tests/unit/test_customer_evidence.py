@@ -76,7 +76,7 @@ def test_evidence_rejects_mismatched_snapshot_and_page_rows():
     for field, value in (
         ("snapshotFingerprint", "other"),
         ("legId", "other"),
-        ("totalMs", 60001),
+        ("totalMs", 120001),
         ("status", "failed"),
     ):
         raw = report(captured, view)
@@ -307,7 +307,7 @@ def test_mission_evidence_rejects_unqualified_or_mismatched_proof(case):
     elif case == "cleanup":
         raw["cleanup"]["success"] = False
     elif case == "deadline":
-        raw["totalMs"] = 60001
+        raw["totalMs"] = 120001
     elif case == "overflow":
         raw["fit"]["pages"][0]["overflow"] = ["row"]
     elif case == "flight-bounds":
@@ -316,6 +316,14 @@ def test_mission_evidence_rejects_unqualified_or_mismatched_proof(case):
         raw["maps"]["leg-0"]["inputDiagnostics"] = ["invented reason"]
     with pytest.raises(ValueError):
         mission_evidence(captured, payload, plan, raw)
+
+
+def test_checkpoint_evidence_accepts_qualified_render_after_first_minute():
+    captured, projection, view = inputs()
+    raw = report(captured, view)
+    raw["totalMs"] = 90000
+    evidence = json.loads(build(captured, projection, view, raw))
+    assert evidence["render"]["totalMs"] == 90000
 
 
 def test_partial_itinerary_document_and_evidence_keep_planned_ordinals(monkeypatch):

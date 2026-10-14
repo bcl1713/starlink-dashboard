@@ -15,6 +15,36 @@ from app.mission.slide_cache.store import SlideStore
 from tests.unit.test_customer_document import inputs
 
 
+def test_worker_allows_preparation_plus_two_minute_render(tmp_path, monkeypatch):
+    import app.mission.slide_cache.coordinator as module
+    from app.mission.exporter.customer_runtime import RendererFailure
+
+    coordinator = SlideCoordinator(
+        None, None, cache=SlideStore(tmp_path / "slides.sqlite3")
+    )
+    monkeypatch.setattr(coordinator, "reconcile_all", lambda: None)
+    coordinator.cache.request("m", "a", "current", b"{}")
+    job = coordinator.cache.claim()
+
+    def render(command, staging, *, wall_seconds, **kwargs):
+        # A captured preparation plus a qualified render can exceed 120s even
+        # though the render itself fits its two-minute allowance.
+        if wall_seconds < 140:
+            raise RendererFailure("deadline")
+        root = Path(staging)
+        (root / "snapshot.json").write_bytes(encode_snapshot(inputs()[0]))
+        (root / "pages.pdf").write_bytes(b"pdf")
+        (root / "evidence.json").write_bytes(b"{}")
+        (root / "result.json").write_text(
+            json.dumps({"included": True, "warning": None})
+        )
+        return 0
+
+    monkeypatch.setattr(module, "run_owned_renderer", render)
+    coordinator.run_job(job)
+    assert coordinator.cache.records("m")["a"]["state"] == "ready"
+
+
 def saved_leg(tmp_path, monkeypatch):
     from app.mission import storage
     from app.mission.models import Mission, MissionLeg, TransportConfig

@@ -74,7 +74,7 @@ async function scenario(fault = null) {
       await observe('map:l' + input.id);
       seen.push(actual);
       viewports.push(viewport);
-      clock += fault === 'map-cutoff' ? 15000 : 1000;
+      clock += fault === 'map-cutoff' ? 30000 : 1000;
       return { status: 'primary', pngs: ['map'], warnings: [] };
     },
     documentStage: async ({ budget: actual, renderMaps }) => {
@@ -105,7 +105,7 @@ async function scenario(fault = null) {
     printStage: async ({ budget: actual }) => {
       await observe('pdf');
       seen.push(actual);
-      clock += 1000;
+      clock += fault === 'slow-success' ? 90000 : 1000;
       return Buffer.from('pdf');
     },
     verifyStage: async ({ budget: actual }) => {
@@ -118,7 +118,7 @@ async function scenario(fault = null) {
         await mkdir(journal);
       }
       if (fault === 'verify-deadline') {
-        clock = 58000;
+        clock = 118000;
         actual.workRemainingMs();
       }
       return { verified: true };
@@ -157,6 +157,15 @@ test('one mission one owner and one unchanged budget through maps print verify t
     s.viewports,
     Array.from({ length: 5 }, () => ({ width: 1920, height: 1800 }))
   );
+});
+
+test('a qualified render after the first minute still publishes its PDF', async () => {
+  const s = await scenario('slow-success');
+  assert.equal(s.report.status, 'success');
+  assert.equal(s.report.totalMs, 95100);
+  assert.equal(s.report.reserves.budgetMs, 120000);
+  assert.equal(s.closes, 1);
+  assert.ok(s.pdf);
 });
 test('shared map reserve skips later legs instead of refreshing allowance', async () => {
   const s = await scenario('map-cutoff');
