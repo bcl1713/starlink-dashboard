@@ -801,7 +801,12 @@ def test_duplicate_pdf_ar_occurrences_never_guess_correction_owner(service, reve
     assert not kept.confirmed
     new = [r for r in rows if r.track == old.track and r.id != old.id]
     assert len(new) == 2 and len({r.id for r in rows}) == len(rows)
-    assert all(not r.confirmed and r.confirmed_units is None for r in new)
+    assert all(
+        not r.confirmed
+        and r.confirmed_units == "flight_level"
+        and r.unit_origin == "import_default"
+        for r in new
+    )
     before = snapshot(service)
     with pytest.raises(PlanningFailure):
         service.apply_revision(view.mission.id, request)

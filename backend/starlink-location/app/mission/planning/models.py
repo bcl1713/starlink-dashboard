@@ -100,6 +100,9 @@ class ItineraryAR(PlanningRecord):
     source_time_precision: Literal["minute", "second"]
     source_altitude: float | None = None
     confirmed_units: Literal["flight_level", "feet", "meters"] | None = None
+    unit_origin: (
+        Literal["source_declared", "import_default", "operator_override"] | None
+    ) = None
     start_anchor: RouteAnchor | None = None
     end_anchor: RouteAnchor | None = None
     match_status: Literal["matched", "ambiguous", "unresolved", "excluded"] = (

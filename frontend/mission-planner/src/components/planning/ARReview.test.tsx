@@ -269,3 +269,28 @@ it.each(['next minute', 'exact second', 'reversed occurrence'])(
     expect(screen.getByLabelText('Confirm SYNTH')).toBeDisabled();
   }
 );
+
+it('shows imported FL without requiring another unit selection', () => {
+  render(
+    <Form
+      initial={{
+        ...leg,
+        ar_rows: [
+          {
+            ...row,
+            confirmed_units: 'flight_level',
+            unit_origin: 'import_default',
+          },
+        ],
+      }}
+    />
+  );
+  expect(
+    screen.getByText(/Flight level assumed for unlabeled source altitudes/i)
+  ).toBeVisible();
+  expect(
+    screen.getByLabelText('Advanced altitude units AR106')
+  ).not.toHaveAttribute('open');
+  expect(screen.getByLabelText('Altitude AR106')).toHaveValue(210);
+  expect(screen.queryByText(/confirm altitude and units/i)).toBeNull();
+});

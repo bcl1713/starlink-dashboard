@@ -40,7 +40,7 @@ def _canonical(value):
         return {
             key: _canonical(item)
             for key, item in sorted(value.items())
-            if key not in ignored
+            if key not in ignored and key != "unit_origin"
         }
     if isinstance(value, (list, tuple)):
         return [_canonical(item) for item in value]

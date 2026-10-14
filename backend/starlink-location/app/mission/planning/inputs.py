@@ -71,6 +71,7 @@ def structural_draft(draft):
     )
     for ar in record["ar_corrections"]:
         ar.pop("confirmed", None)
+        ar.pop("unit_origin", None)
     return record
 
 

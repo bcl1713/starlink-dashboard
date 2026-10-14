@@ -60,6 +60,11 @@ export interface ItineraryAR {
   source_time_precision: 'minute' | 'second';
   source_altitude?: number | null;
   confirmed_units?: 'flight_level' | 'feet' | 'meters' | null;
+  unit_origin?:
+    | 'source_declared'
+    | 'import_default'
+    | 'operator_override'
+    | null;
   start_anchor?: RouteAnchor | null;
   end_anchor?: RouteAnchor | null;
   match_status?: 'matched' | 'ambiguous' | 'unresolved' | 'excluded';

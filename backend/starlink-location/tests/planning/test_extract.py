@@ -16,6 +16,9 @@ def synthetic_pdf(
     unreadable_ar_label=None,
     blank=False,
     encrypted=False,
+    altitude="210",
+    footer=False,
+    altitude_header="Altitude",
 ):
     writer = PdfWriter()
     page = writer.add_blank_page(width=800, height=600)
@@ -108,7 +111,7 @@ def synthetic_pdf(
                 line(
                     y,
                     (110, "AR # Track Details"),
-                    (417, "Altitude"),
+                    (417, altitude_header),
                     (516, "ARIP"),
                     (636, "AREX"),
                 )
@@ -125,13 +128,22 @@ def synthetic_pdf(
                             ),
                         ),
                         (140, track),
-                        (419, "210"),
+                        (419, altitude),
                         (489, d1),
                         (537, t1 if not unknown else "UNKNOWN"),
                         (610, d2),
                         (660, t2),
                     )
                     y -= 15
+        if footer:
+            line(
+                y - 15,
+                (110, "Total Planned Flight Time is 06:00 hours"),
+                (
+                    420,
+                    "| Total Mission Time is 01d 12h | Report Generated on Thursday October 8 2026 at 19:16 UTC",
+                ),
+            )
         line(
             y - 5,
             (80, "Total"),
@@ -158,7 +170,7 @@ def test_rotated_utc_columns_and_five_ar_windows():
     assert legs[0].departure_time.year == 2026
     assert legs[2].ar_rows[1].exit_time.date() > legs[2].ar_rows[1].entry_time.date()
     assert legs[0].ar_rows[0].source_altitude == 210
-    assert legs[0].ar_rows[0].confirmed_units is None
+    assert legs[0].ar_rows[0].confirmed_units == "flight_level"
     assert preview.source_evidence and legs[0].ar_rows[0].source_page == 1
 
 
@@ -233,3 +245,105 @@ def test_mixed_readable_and_unreadable_ar_rows_block_confirmation(unreadable_row
         for e in preview.field_errors
     )
     assert len(preview.parsed_values.expected_legs[0].ar_rows) == 2
+
+
+def test_new_ar_defaults_to_flight_level():
+    row = (
+        extract_itinerary(synthetic_pdf(altitude="200"))
+        .parsed_values.expected_legs[0]
+        .ar_rows[0]
+    )
+    assert row.confirmed_units == "flight_level"
+    assert row.unit_origin == "import_default"
+    assert row.geometric_height_meters() == 6096
+    assert row.confirmed is False
+
+
+@pytest.mark.parametrize(
+    "value,unit,height",
+    [
+        ("200 FL", "flight_level", 6096),
+        ("200 ft", "feet", 60.96),
+        ("200 m", "meters", 200),
+    ],
+)
+def test_source_declared_altitude_units(value, unit, height):
+    row = (
+        extract_itinerary(synthetic_pdf(altitude=value))
+        .parsed_values.expected_legs[0]
+        .ar_rows[0]
+    )
+    assert row.confirmed_units == unit
+    assert row.unit_origin == "source_declared"
+    assert row.geometric_height_meters() == height
+
+
+def test_footer_keeps_malformed_ar_controls():
+    good = extract_itinerary(synthetic_pdf(footer=True))
+    assert good.confirmable
+    assert [len(x.ar_rows) for x in good.parsed_values.expected_legs] == [3, 0, 2]
+    for kwargs in [{"unreadable_ar_label": (3, 2)}, {"unknown": True}]:
+        bad = extract_itinerary(synthetic_pdf(footer=True, **kwargs))
+        assert not bad.confirmable
+        assert any(e.field == "ar_rows" for e in bad.field_errors)
+
+
+def test_historical_units_are_preserved():
+    from app.mission.planning.altitude import apply_import_units
+    from app.mission.planning.identity import planning_identity
+    from app.mission.planning.models import ItineraryAR
+
+    row = extract_itinerary(synthetic_pdf()).parsed_values.expected_legs[0].ar_rows[0]
+    old = row.model_dump(exclude={"unit_origin"})
+    old.update(confirmed_units="feet", confirmed=True)
+    loaded = ItineraryAR.model_validate(old)
+    assert loaded.unit_origin is None
+    assert loaded.confirmed_units == "feet"
+    assert loaded.model_dump()["confirmed"] is True
+    assert planning_identity(old) == planning_identity(loaded)
+    copied = apply_import_units([loaded])[0]
+    assert copied.confirmed_units == "feet" and copied.confirmed
+    assert copied is not loaded
+
+
+@pytest.mark.parametrize(
+    "label,unit",
+    [
+        ("Altitude (ft)", "feet"),
+        ("Altitude (m)", "meters"),
+        ("Altitude FL", "flight_level"),
+    ],
+)
+def test_altitude_column_declares_units(label, unit):
+    row = (
+        extract_itinerary(synthetic_pdf(altitude_header=label))
+        .parsed_values.expected_legs[0]
+        .ar_rows[0]
+    )
+    assert row.confirmed_units == unit
+    assert row.unit_origin == "source_declared"
+
+
+def test_conflicting_source_units_require_correction():
+    preview = extract_itinerary(
+        synthetic_pdf(altitude_header="Altitude (ft)", altitude="200 m")
+    )
+    assert not preview.confirmable
+    assert any(e.code == "conflicting_altitude_units" for e in preview.field_errors)
+
+
+def test_declared_unit_revision_requires_resolution():
+    from app.mission.planning.revisions import merge_source_row, row_signature
+
+    row = (
+        extract_itinerary(synthetic_pdf(altitude="200 ft"))
+        .parsed_values.expected_legs[0]
+        .ar_rows[0]
+    )
+    new = row.model_copy(update={"confirmed_units": "meters"})
+    assert row_signature(row) != row_signature(new)
+    corrected = row.model_copy(update={"confirmed": True})
+    applied = merge_source_row(row, new, corrected)
+    assert applied.confirmed_units == "meters"
+    assert applied.unit_origin == "source_declared"
+    assert not applied.confirmed

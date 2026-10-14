@@ -92,6 +92,11 @@ export function ARReview({
         rather than waypoint names. Imported AR windows use sector exclusions;
         Manual AR Tracks remain independent overlays.
       </p>
+      <p className="text-sm text-muted-foreground">
+        Flight level assumed for unlabeled source altitudes. Flight levels are
+        pressure altitude; geometry uses approximately 30.48 meters per flight
+        level. Explicit source units and saved choices are preserved.
+      </p>
       <label className="block">
         AR section correction
         <select
@@ -265,7 +270,11 @@ export function ARReview({
                 />
               </label>
               <label>
-                Altitude {row.track}
+                Altitude {row.track} (
+                {row.confirmed_units === 'flight_level'
+                  ? 'FL'
+                  : (row.confirmed_units ?? 'units required')}
+                )
                 <Input
                   aria-label={`Altitude ${row.track}`}
                   type="number"
@@ -310,38 +319,39 @@ export function ARReview({
                   }
                 />
               </label>
-              <label>
-                Altitude units {row.track}
-                <select
-                  aria-label={`Altitude units ${row.track}`}
-                  aria-invalid={!validAltitude}
-                  className="block min-h-11 w-full rounded border bg-background p-2"
-                  value={row.confirmed_units ?? ''}
-                  onChange={(e) =>
-                    update(row.id, {
-                      confirmed_units: (e.target.value ||
-                        null) as ItineraryAR['confirmed_units'],
-                    })
-                  }
-                >
-                  <option value="">Confirm units</option>
-                  <option value="flight_level">
-                    Flight level (pressure altitude)
-                  </option>
-                  <option value="feet">Feet</option>
-                  <option value="meters">Meters</option>
-                </select>
-              </label>
+              <details
+                aria-label={`Advanced altitude units ${row.track}`}
+                open={!row.confirmed_units}
+              >
+                <summary>Advanced altitude units {row.track}</summary>
+                <label>
+                  Altitude units {row.track}
+                  <select
+                    aria-label={`Altitude units ${row.track}`}
+                    aria-invalid={!validAltitude}
+                    className="block min-h-11 w-full rounded border bg-background p-2"
+                    value={row.confirmed_units ?? ''}
+                    onChange={(e) =>
+                      update(row.id, {
+                        unit_origin: 'operator_override',
+                        confirmed_units: (e.target.value ||
+                          null) as ItineraryAR['confirmed_units'],
+                      })
+                    }
+                  >
+                    <option value="">Confirm units</option>
+                    <option value="flight_level">
+                      Flight level (pressure altitude)
+                    </option>
+                    <option value="feet">Feet</option>
+                    <option value="meters">Meters</option>
+                  </select>
+                </label>
+              </details>
             </div>
             {!excluded && !validAltitude && (
               <p role="alert" className="text-sm text-destructive">
                 Confirm altitude and units before confirming this AR window.
-              </p>
-            )}
-            {row.confirmed_units === 'flight_level' && (
-              <p className="text-sm text-muted-foreground">
-                Flight levels are pressure altitude. Geometric conversion uses
-                approximately 30.48 meters per flight level.
               </p>
             )}
             {!validTime && (
@@ -440,6 +450,8 @@ export function ARReview({
               entry_time: leg.departure_time,
               exit_time: leg.arrival_time,
               source_time_precision: 'second',
+              confirmed_units: 'flight_level',
+              unit_origin: 'import_default',
               match_status: 'unresolved',
               confirmed: false,
             },

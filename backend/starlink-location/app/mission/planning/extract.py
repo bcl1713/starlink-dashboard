@@ -14,6 +14,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 from pypdf import PdfReader
 
+from .altitude import UNITS, apply_import_units, parse_altitude
 from .deadlines import run_bounded
 from .models import (
     ExpectedLeg,
@@ -127,6 +128,7 @@ def _parse_itinerary(pdf_bytes):
     utc_left = utc_right = None
     ar_split = None
     altitude_x = None
+    altitude_units = None
     ar_table_left = ar_table_y = None
 
     def error(code, message, page, row, field):
@@ -173,6 +175,7 @@ def _parse_itinerary(pdf_bytes):
             if "Air-to-Air" in text and "Refueling" in text:
                 ar_section = True
                 ar_split = altitude_x = ar_table_left = ar_table_y = None
+                altitude_units = None
                 if active:
                     active["ar_section_status"] = "unrecognized"
                 continue
@@ -183,6 +186,12 @@ def _parse_itinerary(pdf_bytes):
                 if entry and exit and altitude:
                     ar_split = (entry.x + exit.x) / 2
                     altitude_x = altitude.x
+                    label_units = re.findall(
+                        r"\b(FL|ft|feet|m|meters)\b", text, re.IGNORECASE
+                    )
+                    altitude_units = (
+                        UNITS[label_units[0].lower()] if len(label_units) == 1 else None
+                    )
                     ar_table_left = row[0].x
                     ar_table_y = row[0].y
                 continue
@@ -242,6 +251,20 @@ def _parse_itinerary(pdf_bytes):
                         ar_section = False
                     continue
             if ar_section and active:
+                # A planner summary closes this table only when its full furniture
+                # signature is below the header, outside a numbered AR row, and
+                # has no ARIP/AREX date-time cells. Malformed table rows stay errors.
+                if (
+                    ar_table_y is not None
+                    and row[0].y < ar_table_y - 3
+                    and not row[0].text.isdigit()
+                    and re.search(r"^Total Planned Flight Time\b", text)
+                    and "Total Mission Time" in text
+                    and "Report Generated" in text
+                    and not re.search(DATE_PATTERN + r"\s+\d{2}:\d{2}Z", text)
+                ):
+                    ar_section = False
+                    continue
                 if re.search(r"\b(None|No ARs?)\b", text, re.IGNORECASE):
                     if not ar_section_has_errors:
                         active["ar_section_status"] = "empty"
@@ -297,15 +320,23 @@ def _parse_itinerary(pdf_bytes):
                     pattern = r"(" + DATE_PATTERN + r")\s+(\d{2}:\d{2}Z)"
                     entry = re.search(pattern, entry_text)
                     exit = re.search(pattern, exit_text)
-                    altitude = next(
-                        (
-                            float(t.text)
-                            for t in row
-                            if altitude_x - 3 <= t.x <= altitude_x + 25
-                            and re.fullmatch(r"\d+(?:\.\d+)?", t.text)
-                        ),
-                        None,
+                    altitude, units = parse_altitude(
+                        _text(
+                            [t for t in row if altitude_x - 3 <= t.x <= altitude_x + 60]
+                        )
                     )
+                    if units and altitude_units and units != altitude_units:
+                        ar_section_has_errors = True
+                        active["ar_section_status"] = "unrecognized"
+                        error(
+                            "conflicting_altitude_units",
+                            "Altitude units conflict with the source column; correct this AR",
+                            page_number,
+                            row_number,
+                            "ar_rows",
+                        )
+                        continue
+                    units = units or altitude_units
                     try:
                         if not entry or not exit or not track:
                             raise ValueError("Incomplete AR row")
@@ -319,6 +350,8 @@ def _parse_itinerary(pdf_bytes):
                             exit_time=_utc(*exit.groups()),
                             source_time_precision="minute",
                             source_altitude=altitude,
+                            confirmed_units=units,
+                            unit_origin="source_declared" if units else None,
                         )
                         if (
                             not active["departure_time"]
@@ -327,7 +360,7 @@ def _parse_itinerary(pdf_bytes):
                             <= active["arrival_time"]
                         ):
                             raise ValueError("AR outside leg")
-                        active["ar_rows"].append(ar)
+                        active["ar_rows"].extend(apply_import_units([ar]))
                         if not ar_section_has_errors:
                             active["ar_section_status"] = "listed"
                     except (ValueError, ValidationError):
