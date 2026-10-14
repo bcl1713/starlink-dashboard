@@ -1,6 +1,7 @@
 # Customer PDF rendering and asset reuse
 
-Status: draft for review. This specification covers issue
+Status: approved by the user on 2026-10-14. Approval covers the design and
+preparation of its implementation plan. This specification covers issue
 [327](https://github.com/bcl1713/starlink-dashboard/issues/327). Implementation
 will use a separate branch from `origin/dev`; PR323 has merged into that branch
 at `e766a595b313d7766959af61cf394b97bc397f21`.
