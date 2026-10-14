@@ -230,7 +230,7 @@ export async function prepareMissionDocument({
       process.env.BRIEFING_APO_PATH ||
       path.resolve(
         here,
-        '../../../../backend/starlink-location/app/mission/assets/APO Patch.jpg'
+        '../../../../backend/starlink-location/app/mission/assets/apo-patch-briefing.png'
       ),
     css: path.join(here, 'briefing', 'briefing.css'),
   };
@@ -246,7 +246,7 @@ export async function prepareMissionDocument({
   const assets = {
     regularFontDataUrl: encoded('regularFont', 'font/ttf'),
     boldFontDataUrl: encoded('boldFont', 'font/ttf'),
-    apoDataUrl: encoded('apo', 'image/jpeg'),
+    apoDataUrl: encoded('apo', 'image/png'),
     cssText: bytes.css.toString(),
     // Measure the real card before rendering Earth. The placeholder contributes
     // no intrinsic size: the grid and footer determine the available corner.

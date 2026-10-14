@@ -30,7 +30,7 @@ COPY --from=renderer-build /usr/local/bin/node /usr/local/bin/node
 COPY --from=renderer-build /renderer/node_modules/playwright /opt/customer-briefing/node_modules/playwright
 COPY --from=renderer-build /renderer/node_modules/playwright-core /opt/customer-briefing/node_modules/playwright-core
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers \
-    BRIEFING_APO_PATH="/opt/customer-briefing/APO Patch.jpg"
+    BRIEFING_APO_PATH="/opt/customer-briefing/apo-patch-briefing.png"
 # The renderer remains available when development mounts replace /app.
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
@@ -43,6 +43,7 @@ COPY frontend/mission-planner/src/mission-export/briefing-render.mjs \
      frontend/mission-planner/src/mission-export/mission-briefing-render.mjs \
      frontend/mission-planner/src/mission-export/briefing-mission-layout.mjs \
      frontend/mission-planner/src/mission-export/briefing-pdf-stage.mjs \
+     frontend/mission-planner/src/mission-export/raster-policy.mjs \
      frontend/mission-planner/src/mission-export/map-stage.mjs \
      frontend/mission-planner/src/mission-export/render-budget.mjs \
      frontend/mission-planner/src/mission-export/render-owner.mjs /opt/customer-briefing/renderer/
@@ -52,6 +53,7 @@ COPY frontend/mission-planner/src/mission-export/briefing/document.mjs \
      frontend/mission-planner/src/mission-export/briefing/pdf-expectations.mjs \
      frontend/mission-planner/src/mission-export/briefing/briefing.css /opt/customer-briefing/renderer/briefing/
 COPY ["backend/starlink-location/app/mission/assets/APO Patch.jpg", "/opt/customer-briefing/APO Patch.jpg"]
+COPY backend/starlink-location/app/mission/assets/apo-patch-briefing.png /opt/customer-briefing/apo-patch-briefing.png
 
 # Create non-root user for security before copying dependencies into its home.
 # COPY --chown avoids a slow recursive chown over the installed Python package tree.
