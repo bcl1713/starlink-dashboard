@@ -283,7 +283,11 @@ def prepare_mission_timeline(
         mission_end=mission_end,
         intervals=intervals,
     )
-    timeline.map_pois = list(generated_pois)
+    from app.mission.models import TimelineMapPoi
+
+    timeline.map_pois = [
+        TimelineMapPoi.model_validate(p.model_dump()) for p in generated_pois
+    ]
     timeline.coverage_events = coverage_result.coverage_events
     if planning_evaluation is not None:
         import json

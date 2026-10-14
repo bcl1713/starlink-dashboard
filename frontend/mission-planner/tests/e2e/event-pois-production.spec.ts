@@ -14,7 +14,7 @@ test('AR boundaries render and each POI event layer can be toggled independently
   const leg = mission.legs.find(
     (row: { id: string }) => row.id === seed.firstLegId
   );
-  const start = Date.parse(leg.adjusted_departure_time);
+  const start = Date.now() + 3600000;
   const at = (minutes: number) =>
     new Date(start + minutes * 60000).toISOString();
   const endpoint = '/api/overview-links/settings';
@@ -26,6 +26,7 @@ test('AR boundaries render and each POI event layer can be toggled independently
       `/api/v2/missions/${seed.missionId}/legs/${seed.firstLegId}`,
       {
         data: {
+          adjusted_departure_time: new Date(start).toISOString(),
           transports: {
             ...leg.transports,
             aar_windows: [

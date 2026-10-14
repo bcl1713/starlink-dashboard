@@ -16,7 +16,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.models.poi import POICreate
+from app.models.poi import MissionPoiKind
 
 from .planning.types import (
     EvaluationContext,
@@ -674,10 +674,21 @@ class KaCoverageEvent(BaseModel):
     satellite_id: str | None = None
 
 
+class TimelineMapPoi(BaseModel):
+    """Public event cue without persistence-only projection provenance."""
+
+    name: str
+    kind: MissionPoiKind
+    latitude: float
+    longitude: float
+    expected_arrival_time: datetime | None = None
+    description: str | None = None
+
+
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
-    map_pois: list[POICreate] | None = Field(
+    map_pois: list[TimelineMapPoi] | None = Field(
         default=None, description="Resolved map POIs from the same timeline calculation"
     )
     mission_leg_id: str = Field(..., description="Associated mission leg ID")

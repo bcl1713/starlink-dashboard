@@ -47,6 +47,10 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
         "aircraft_marker_enabled": True,
         "planned_route_enabled": True,
         "poi_markers_enabled": True,
+        "flight_events_enabled": True,
+        "x_band_events_enabled": True,
+        "ka_events_enabled": True,
+        "starshield_events_enabled": True,
         "ground_entry_point_enabled": True,
         "configured_satellites_enabled": True,
     }
@@ -71,6 +75,10 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
             "aircraft_marker_enabled": True,
             "planned_route_enabled": True,
             "poi_markers_enabled": True,
+            "flight_events_enabled": True,
+            "x_band_events_enabled": True,
+            "ka_events_enabled": True,
+            "starshield_events_enabled": True,
             "ground_entry_point_enabled": True,
             "configured_satellites_enabled": True,
         }
