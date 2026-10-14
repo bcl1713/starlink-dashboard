@@ -26,6 +26,7 @@ test('AR boundaries render and each POI event layer can be toggled independently
       `/api/v2/missions/${seed.missionId}/legs/${seed.firstLegId}`,
       {
         data: {
+          ...leg,
           adjusted_departure_time: new Date(start).toISOString(),
           transports: {
             ...leg.transports,
