@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { MarkerLabel } from './marker-labels';
 
 export const mapViewportSchema = z.object({
   width: z.number().int().min(256).max(4096),
@@ -74,7 +75,7 @@ export interface MapReadiness {
   digest?: string;
   viewId?: string;
   framing?: unknown;
-  labels?: { text: string; x: number; y: number }[];
+  labels?: MarkerLabel[];
   endpoints?: { role: 'departure' | 'arrival'; x: number; y: number }[];
   stages?: string[];
 }

@@ -130,7 +130,11 @@ def main():
     parser.add_argument("--expected-hashes", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--overview", action="store_true")
+    parser.add_argument("--pdf", type=Path)
+    parser.add_argument("--customer-evidence", type=Path)
     args = parser.parse_args()
+    if bool(args.pdf) != bool(args.customer_evidence):
+        parser.error("--pdf and --customer-evidence must be provided together")
     expected = json.loads(args.expected_hashes.read_bytes())
     verify_input_hashes(args.input_root, expected["inputs"])
     package_hash = sha256(args.reviewed_package.read_bytes()).hexdigest()
@@ -152,12 +156,39 @@ def main():
         json.dump(owner, handle)
     temporary.mkdir(mode=0o700)
     try:
-        results = [
-            probe_snapshot(captured, projected, include_markers=not args.overview)
-            for captured, projected in package_snapshots(
+        pairs = list(
+            package_snapshots(
                 args.reviewed_package, temporary, set(expected["inputs"].values())
             )
+        )
+        results = [
+            probe_snapshot(captured, projected, include_markers=not args.overview)
+            for captured, projected in pairs
         ]
+        pixels = None
+        if args.pdf:
+            from map_pixels import inspect_pdf_maps
+
+            from app.mission.exporter.map_inputs import prepare_map_input
+
+            scenes = {}
+            for captured, projected in pairs:
+                scene = prepare_map_input(
+                    captured, projected, include_markers=not args.overview
+                ).scene
+                if scene:
+                    leg = json.loads(captured.leg_json)
+                    scene["endpointLabels"] = {
+                        "departure": leg.get("departure_airport") or "Departure",
+                        "arrival": leg.get("arrival_airport") or "Arrival",
+                    }
+                scenes[captured.leg_id] = scene
+            pixels = inspect_pdf_maps(
+                args.pdf,
+                json.loads(args.customer_evidence.read_bytes()),
+                args.output.with_suffix(".maps"),
+                scenes,
+            )
         verify_input_hashes(args.input_root, expected["inputs"])
         if sha256(args.reviewed_package.read_bytes()).hexdigest() != package_hash:
             raise ValueError("Reviewed package hash changed during probe")
@@ -165,6 +196,7 @@ def main():
             "package_sha256": package_hash,
             "input_hashes": expected["inputs"],
             "legs": results,
+            "rendered_maps": pixels,
         }
         with args.output.open("x") as handle:
             json.dump(report, handle, indent=2)

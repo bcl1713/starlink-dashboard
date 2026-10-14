@@ -25,6 +25,106 @@ def load_export_probes():
     return module
 
 
+def load_map_pixels():
+    spec = importlib.util.spec_from_file_location(
+        "map_pixels", RUNNER.with_name("map_pixels.py")
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize("overlays", [False, True])
+def test_map_probe_rejects_basemap_without_overlays(tmp_path, overlays):
+    from PIL import Image, ImageDraw
+
+    module = load_map_pixels()
+    image = Image.new("RGB", (640, 480), "#18303d")
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((80, 40, 570, 440), fill="#777777")
+    if overlays:
+        draw.line((100, 100, 500, 400), fill="#ffd86b", width=5)
+        for x, y in [(100, 100), (500, 400)]:
+            draw.line((x - 8, y, x + 8, y), fill="white", width=3)
+            draw.line((x, y - 8, x, y + 8), fill="white", width=3)
+    png = tmp_path / "map.png"
+    image.save(png)
+    stage = {
+        "status": "primary",
+        "inputDigest": "a" * 64,
+        "viewport": {"width": 640, "height": 480},
+        "markers": [],
+        "endpoints": [
+            {"role": "departure", "x": 100, "y": 100},
+            {"role": "arrival", "x": 500, "y": 400},
+        ],
+    }
+    if overlays:
+        result = module.verify_rendered_map(
+            png, stage, leg_id="toy", expected_digest="a" * 64, expected_marker_ids=[]
+        )
+        assert result["route_overlay_pixels"] > 100
+        assert result["endpoint_overlays"] == 2
+    else:
+        with pytest.raises(ValueError, match="overlay"):
+            module.verify_rendered_map(
+                png,
+                stage,
+                leg_id="toy",
+                expected_digest="a" * 64,
+                expected_marker_ids=[],
+            )
+
+
+def test_map_pixels_reject_wrong_scene_identity(tmp_path):
+    from PIL import Image
+
+    module = load_map_pixels()
+    path = tmp_path / "map.png"
+    Image.new("RGB", (640, 480), "#ffd86b").save(path)
+    with pytest.raises(ValueError, match="identity"):
+        module.verify_rendered_map(
+            path,
+            {"status": "primary", "inputDigest": "b" * 64},
+            leg_id="toy",
+            expected_digest="a" * 64,
+            expected_marker_ids=[],
+        )
+
+
+@pytest.mark.parametrize("single", [False, True])
+def test_valid_pdf_with_only_basemap_fails_map_qualification(tmp_path, single):
+    from PIL import Image
+
+    module = load_map_pixels()
+    pdf = tmp_path / "basemap.pdf"
+    Image.new("RGB", (640, 480), "#18303d").save(pdf, resolution=72)
+    scene = {
+        "legId": "toy",
+        "markers": [],
+        "route": [{"latitude": 0, "longitude": 0}, {"latitude": 1, "longitude": 1}],
+    }
+    stage = {
+        "status": "primary",
+        "inputDigest": module.scene_digest(scene),
+        "viewport": {"width": 640, "height": 480},
+        "markers": [],
+        "endpoints": [
+            {"role": "departure", "x": 100, "y": 100},
+            {"role": "arrival", "x": 500, "y": 400},
+        ],
+    }
+    evidence = {
+        "render": {"maps": {"toy": stage}},
+        "pages": [{"page": 1, "legId": "toy"}],
+    }
+    if single:
+        evidence = {"legId": "toy", "render": {"map": stage}, "pages": [{"page": 1}]}
+    with pytest.raises(ValueError, match="overlay"):
+        module.inspect_pdf_maps(pdf, evidence, tmp_path / "proof", {"toy": scene})
+
+
 def test_export_preserves_header_and_body_timings(tmp_path):
     import http.server
     import threading
