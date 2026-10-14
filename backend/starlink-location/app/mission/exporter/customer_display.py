@@ -1,5 +1,7 @@
 """Canonical plain-text table cells, shared by composition and PDF verification."""
 
+import re
+
 
 def display_row(row: dict) -> tuple[str, str, str, str]:
     def short(value: str) -> str:
@@ -7,8 +9,11 @@ def display_row(row: dict) -> tuple[str, str, str, str]:
             "X-Band MILSATCOM", "X-Band"
         )
 
+    clocks = re.findall(r"(?<!\d)(\d{2}:\d{2})(?::\d{2})?(?!\d)", row["et"])
+    if len(clocks) != 2:
+        raise ValueError("Expected two customer table clocks")
     return (
-        row["et"].replace(" ET", ""),
+        " - ".join(clocks),
         short(row["impact"]),
         short(row["remaining"].replace(" + ", ", ")),
         {

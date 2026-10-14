@@ -49,6 +49,44 @@ async function ready(page, budget) {
   if (!result.images) throw error('runtime', 'Image decode failed');
 }
 
+/** Keep full customer text on one line, with a common readable size per row. */
+export async function fitBriefingRows(page, budget) {
+  await within(
+    page.evaluate(() => {
+      for (const row of document.querySelectorAll('tbody tr')) {
+        row.style.fontSize = '';
+        const original = parseFloat(getComputedStyle(row).fontSize);
+        const fits = () =>
+          [...row.cells].every((cell) => {
+            const style = getComputedStyle(cell);
+            const available =
+              cell.clientWidth -
+              parseFloat(style.paddingLeft) -
+              parseFloat(style.paddingRight);
+            const range = document.createRange();
+            range.selectNodeContents(cell);
+            return range.getBoundingClientRect().width <= available;
+          });
+        if (fits()) continue;
+        // Measure actual glyphs: hinting at small sizes is not proportional.
+        // Keep at least 9pt; oversized input still fails the existing fit checks.
+        let low = 120,
+          high = Math.floor(original * 10);
+        row.style.fontSize = '12px';
+        if (!fits()) continue;
+        while (low < high) {
+          const middle = Math.ceil((low + high) / 2);
+          row.style.fontSize = middle / 10 + 'px';
+          if (fits()) low = middle;
+          else high = middle - 1;
+        }
+        row.style.fontSize = low / 10 + 'px';
+      }
+    }),
+    budget.workRemainingMs()
+  );
+}
+
 export function createMissionDocumentLoader({
   page,
   budget,
@@ -81,6 +119,7 @@ export function createMissionDocumentLoader({
       );
     }
     await ready(page, budget);
+    await fitBriefingRows(page, budget);
     if (isBlocked()) throw error('runtime', 'Remote asset rejected');
     check();
   };

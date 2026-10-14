@@ -224,42 +224,66 @@ test('continuous nominal posture gets one centered label across restriction chan
   assert.equal((svg.match(/data-posture="Nominal"/g) || []).length, 3);
 });
 
-test('down_spans_use_clipped_vector_hatching', async () => {
+test('even a one-second outage retains exact solid dark geometry without image or pattern resources', async () => {
   const p = structuredClone(payload);
   p.intervals[1].endUtc = '2026-10-25T16:25:01Z';
   p.intervals[2].startUtc = p.intervals[1].endUtc;
-  p.intervals[2].decisions = ['Up', '?', 'Up'];
-  const svg = (await renderer())(p, { idPrefix: 'page-1' });
-  assert.doesNotMatch(svg, /<pattern|<image|fill="url\(#down\)"/);
-  const clips = [
+  const svg = (await renderer())(p);
+  const bands = [
     ...svg.matchAll(
-      /<clipPath id="([^"]+)"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"\/><\/clipPath>/g
+      /<rect x="([^"]+)" y="([^"]+)" data-transport="(\d)" data-state="Down" width="([^"]+)" height="18" fill="([^"]+)"/g
     ),
   ];
-  assert.equal(clips.length, 3);
-  assert.equal(new Set(clips.map((c) => c[1])).size, 3);
-  assert.deepEqual(
-    clips.map((c) => Number(c[3])),
-    [119, 146, 173]
+  assert.equal(bands.length, 3);
+  for (const band of bands) {
+    assert.equal(Number(band[1]), 570);
+    assert.equal(Number(band[4]), 1 / 30);
+    assert.equal(band[5], '#899db9');
+  }
+  assert.doesNotMatch(svg, /clipPath|pattern|<image|stroke-dasharray/);
+});
+
+test('dark unavailable spans match SOF restrictions and light available spans match the quiet SOF lane, without hatching', async () => {
+  const svg = (await renderer())(payload);
+  const dark = svg.match(/data-restriction[^>]*fill="([^"]+)"/)[1];
+  assert.match(
+    svg,
+    new RegExp(`data-transport="0" data-state="Down"[^>]*fill="${dark}"`)
   );
-  for (const c of clips) {
-    assert.equal(Number(c[2]), 570);
-    assert.equal(Number(c[4]), 1 / 30);
-    assert.equal(Number(c[5]), 18);
-  }
-  assert.equal((svg.match(/fill="#d2d8df"/g) || []).length, 3);
-  const lines = [
-    ...svg.matchAll(
-      /<path d="M([^ ]+) ([^L]+)L([^ ]+) ([^"]+)" stroke="#99a4b0" stroke-width="1"\/>/g
-    ),
-  ];
-  assert.ok(lines.length > 0 && lines.length < 20);
-  for (const line of lines) {
-    const [x1, y1, x2, y2] = line.slice(1).map(Number);
-    assert.ok(Math.abs(x1 + y1 - (x2 + y2)) < 1e-8);
-    assert.ok(Math.abs((x1 + y1) / 8 - Math.round((x1 + y1) / 8)) < 1e-8);
-  }
-  const unknown = structuredClone(p);
-  unknown.intervals.forEach((i) => (i.decisions = ['Up', '?', 'Up']));
-  assert.doesNotMatch((await renderer())(unknown), /<clipPath/);
+  assert.match(svg, /data-transport="0" data-state="Up"[^>]*fill="#edf1f5"/);
+  assert.doesNotMatch(svg, /clipPath|pattern|stroke-dasharray|#99a4b0/);
+  assert.doesNotMatch(svg, />(Up|Down)<\/text>/);
+});
+
+test('a blocked X/Starshield conflict labels only the dark X-band run and preserves its exact width', async () => {
+  const p = structuredClone(payload);
+  p.intervals[0].decisions = ['Up', 'Up', 'Down'];
+  p.intervals[0].xStarshieldConflict = 'blocked';
+  const svg = (await renderer())(p);
+  assert.match(
+    svg,
+    /data-transport="2" data-state="Down" data-x-starshield-conflict="blocked" width="290"/
+  );
+  assert.match(svg, /data-conflict-label[^>]*>Starshield conflict<\/text>/);
+  assert.doesNotMatch(
+    svg,
+    /data-transport="[01]"[^>]*data-x-starshield-conflict/
+  );
+});
+
+test('released conflicts stay light and an independent X outage never gets a blocked-conflict label', async () => {
+  const p = structuredClone(payload);
+  p.intervals[0].xStarshieldConflict = 'released';
+  let svg = (await renderer())(p);
+  assert.match(
+    svg,
+    /data-transport="2" data-state="Up" data-x-starshield-conflict="released" width="290" height="18" fill="#edf1f5"/
+  );
+  assert.match(svg, /data-conflict-label[^>]*>Conflict released<\/text>/);
+  p.intervals[0].decisions[2] = 'Down';
+  svg = (await renderer())(p);
+  assert.doesNotMatch(
+    svg,
+    /data-conflict-label[^>]*>(Starshield conflict|Conflict released)<\/text>/
+  );
 });

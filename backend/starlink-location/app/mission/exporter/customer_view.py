@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.mission.models import Transport
+
 from .briefing_clocks import EASTERN
 from .customer_clocks import CustomerRange, format_customer_range
 from .customer_projection import TRANSPORT_NAMES, BriefingInterval, BriefingLeg
@@ -66,24 +68,68 @@ def restriction_labels(interval: BriefingInterval) -> tuple[str, ...]:
     return tuple(dict.fromkeys(labels))
 
 
-def _key(interval):
+def starshield_conflict(interval, source_by_id):
+    """Identify active X/Starshield concurrency evidence without changing usability."""
+    policy = False
+    found = False
+    for identity in interval.decisions[2].source_ids:
+        source = source_by_id.get(identity)
+        if source is None or source.transport not in {Transport.X, None}:
+            continue
+        metadata = source.metadata
+        if metadata.get("stale") is True:
+            continue
+        reasons = (
+            metadata.get("source_reasons")
+            or json.loads(source.original_json).get("reasons")
+            or [source.reason]
+        )
+        constraints = metadata.get("raw_constraints", [])
+        transport_constraints = metadata.get("transport_constraints", {})
+        if isinstance(transport_constraints, dict):
+            constraints = [*constraints, *transport_constraints.get("X", [])]
+        if (
+            "x_aft_cone" in constraints
+            or metadata.get("constraint") == "x_aft_cone"
+            or any(reason.startswith("X-Ku Conflict") for reason in reasons)
+        ):
+            found = True
+            policy |= source.source_type == "planning_policy" or bool(
+                metadata.get("planning_policy")
+            )
+    if not found:
+        return None
+    if policy and interval.decisions[1].value == "Down":
+        return "released"
+    return "blocked" if interval.decisions[2].value == "Down" else None
+
+
+def _key(interval, source_by_id):
     return (
-        tuple((d.value, bool(d.limitation)) for d in interval.decisions),
+        tuple(d.value for d in interval.decisions),
         restriction_labels(interval),
         tuple((r.kind, r.start_time, r.end_time) for r in interval.restrictions),
-        _impact(interval),
+        _impact(interval, source_by_id),
     )
 
 
-def _impact(interval):
+def _impact(interval, source_by_id):
     parts = list(restriction_labels(interval))
+    conflict = starshield_conflict(interval, source_by_id)
     down = [n for n, d in zip(TRANSPORT_NAMES, interval.decisions) if d.value == "Down"]
+    if conflict == "blocked":
+        down = [n for n in down if n != "X-Band MILSATCOM"]
     if len(down) == 3:
         parts.append("All transports unavailable")
     elif down:
         parts.append(" + ".join(down) + " unavailable")
-    elif interval.limitations and not any(d.value == "?" for d in interval.decisions):
-        parts.append("Transport coordination limitation")
+    if conflict:
+        parts.append(
+            {
+                "blocked": "X–Starshield conflict",
+                "released": "X–Starshield conflict released",
+            }[conflict]
+        )
     return "; ".join(parts) or "Assessment changed"
 
 
@@ -143,6 +189,7 @@ def project_customer_leg(
         for n in range(3)
         if len({i.decisions[n].value for i in projection.intervals}) > 1
     }
+    source_by_id = {source.source_id: source for source in projection.sources}
     groups = []
     previous = None
     for interval in projection.intervals:
@@ -150,17 +197,14 @@ def project_customer_leg(
             bool(interval.restrictions)
             or any(interval.decisions[n].value == "?" for n in varying_assessment)
             or any(d.value == "Down" for d in interval.decisions)
-            or (
-                bool(interval.limitations)
-                and not any(d.value == "?" for d in interval.decisions)
-            )
+            or starshield_conflict(interval, source_by_id) is not None
         )
         if selected:
             if (
                 groups
                 and previous is not None
                 and previous.end_time == interval.start_time
-                and _key(previous) == _key(interval)
+                and _key(previous, source_by_id) == _key(interval, source_by_id)
             ):
                 groups[-1].append(interval)
             else:
@@ -181,7 +225,7 @@ def project_customer_leg(
                 first.start_time,
                 last.end_time,
                 format_customer_range(first.start_time, last.end_time, departure),
-                _impact(first),
+                _impact(first, source_by_id),
                 remaining,
                 "Assessment incomplete" if uncertain else first.posture,
                 tuple(i.id for i in intervals),

@@ -299,6 +299,96 @@ def test_planning_preserves_captured_ka_coverage(monkeypatch):
     assert artifacts.planning_evaluation == result
 
 
+@pytest.mark.parametrize("current_coverage", ["same", "missing", "changed"])
+def test_planning_ka_events_use_the_same_coverage_boundaries_as_the_outage(
+    monkeypatch, current_coverage
+):
+    from app.mission import timeline_service
+    from app.mission.exporter.customer_projection import project_briefing_leg
+    from app.mission.exporter.customer_view import project_customer_leg
+    from app.mission.exporter.snapshot import LegSnapshot, _event_sources
+    from app.mission.planning.inputs import draft_to_mission_leg
+    from app.satellites.coverage import CoverageSampler
+    from app.satellites.rules import ConstraintConfig, EventType
+
+    # A gap whose physical edges fall between minute samples. Adding the
+    # estimated edges to the X grid must not move the Ka estimate a second time.
+    sampler = CoverageSampler.from_geojson(
+        {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {"satellite_id": "AOR"},
+                    "geometry": {
+                        "type": "MultiPolygon",
+                        "coordinates": [
+                            [[[-1, 9], [1, 9], [1, 10.00452], [-1, 10.00452], [-1, 9]]],
+                            [
+                                [
+                                    [-1, 10.00722],
+                                    [1, 10.00722],
+                                    [1, 11],
+                                    [-1, 11],
+                                    [-1, 10.00722],
+                                ]
+                            ],
+                        ],
+                    },
+                }
+            ],
+        }
+    )
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", sampler)
+    inputs, draft, context, _, manager, pois, _ = scenario(monkeypatch, seconds=3600)
+    draft.initial_x_satellite_id = "WEST"
+    leg = draft_to_mission_leg(inputs, draft, context, leg_id="coverage-boundaries")
+    artifacts = prepare_mission_timeline(
+        leg,
+        manager,
+        pois,
+        coverage_sampler=(
+            sampler
+            if current_coverage == "same"
+            else CoverageSampler() if current_coverage == "changed" else None
+        ),
+        discover_coverage=False,
+    )
+    (window,) = inputs.ka_coverage_windows
+    edges = [
+        e.timestamp
+        for e in artifacts.events
+        if e.event_type in {EventType.KA_COVERAGE_EXIT, EventType.KA_COVERAGE_ENTRY}
+    ]
+    assert edges == [window.start_time, window.end_time]
+    assert [
+        p.expected_arrival_time
+        for p in artifacts.generated_pois
+        if p.kind in {"ka_coverage_exit", "ka_coverage_entry"}
+    ] == edges
+    captured = LegSnapshot(
+        leg_id=leg.id,
+        leg_json=leg.model_dump_json().encode(),
+        effective_route_json=artifacts.route.model_dump_json().encode(),
+        timeline_json=artifacts.timeline.model_dump_json().encode(),
+        source_records=_event_sources(artifacts, ConstraintConfig()),
+        resolved_restrictions=(),
+        utc_bounds=(inputs.start_time, inputs.end_time),
+        preparation_origin="rebuilt",
+        warnings=(),
+    )
+    projection = project_briefing_leg(captured)
+    assert not any(
+        i.decisions[0].value == "Up" and i.decisions[0].limitation
+        for i in projection.intervals
+    )
+    view = project_customer_leg(captured, projection, leg_number=1, leg_count=1)
+    outage_rows = [row for row in view.rows if "Commercial Ka" in row.impact]
+    assert [(row.start_time, row.end_time) for row in outage_rows] == [
+        (window.start_time, window.end_time)
+    ]
+
+
 def test_selected_unavailable_splice_retains_legacy_no_overlay(monkeypatch):
     from app.mission.models import ManualAARTrack, ManualRouteSplice
 

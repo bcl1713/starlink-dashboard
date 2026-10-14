@@ -12,6 +12,7 @@ import { openRenderOwner, ownedPath } from './render-owner.mjs';
 import { renderMapInContext } from './map-stage.mjs';
 import { composeBriefing } from './briefing/document.mjs';
 import { buildPdfExpectations } from './briefing/pdf-expectations.mjs';
+import { fitBriefingRows } from './briefing-mission-layout.mjs';
 import { renderMissionBriefing } from './mission-briefing-render.mjs';
 export { renderMissionBriefing };
 
@@ -229,6 +230,7 @@ export async function renderBriefing({
       );
       if (blocked || fault === 'remote')
         throw error('resource', 'Remote assets rejected');
+      await fitBriefingRows(page, budget);
       if (!readiness.fonts) throw error('font', 'Intended fonts did not load');
       if (!readiness.images)
         throw error('image', 'Document image decode failed');

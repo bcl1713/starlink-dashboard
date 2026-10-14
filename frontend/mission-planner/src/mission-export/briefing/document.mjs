@@ -21,7 +21,7 @@ export function composeBriefing(
   const rows = payload.rows
     .map((r) => {
       const cells = r.displayCells ?? [
-        r.et.replaceAll(' ET', ''),
+        (r.et.match(/\d{2}:\d{2}/g) ?? []).join(' - '),
         short(r.impact),
         short(r.remaining.replaceAll(' + ', ', ')),
         {

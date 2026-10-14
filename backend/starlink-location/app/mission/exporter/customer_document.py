@@ -5,7 +5,12 @@ import json
 from .briefing_clocks import ensure_utc
 from .customer_display import display_row
 from .customer_projection import BriefingLeg, project_briefing_leg
-from .customer_view import CustomerLegView, project_customer_leg, restriction_labels
+from .customer_view import (
+    CustomerLegView,
+    project_customer_leg,
+    restriction_labels,
+    starshield_conflict,
+)
 from .map_inputs import prepare_map_input
 from .snapshot import ExportSnapshot
 
@@ -87,6 +92,7 @@ def _leg_payload(snapshot, captured, view, projection):
             "departure": leg.get("departure_airport") or "Departure",
             "arrival": leg.get("arrival_airport") or "Arrival",
         }
+    source_by_id = {source.source_id: source for source in projection.sources}
     payload = {
         "schemaVersion": 1,
         "snapshotFingerprint": snapshot.fingerprint,
@@ -106,6 +112,7 @@ def _leg_payload(snapshot, captured, view, projection):
                 "posture": i.posture,
                 "decisions": [d.value for d in i.decisions],
                 "restrictionLabels": list(restriction_labels(i)),
+                "xStarshieldConflict": starshield_conflict(i, source_by_id),
             }
             for i in projection.intervals
         ],
