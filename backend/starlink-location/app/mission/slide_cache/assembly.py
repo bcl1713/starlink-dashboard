@@ -11,6 +11,7 @@ from pypdf import PdfReader, PdfWriter
 from app.mission.exporter.customer_filename import customer_brief_filename
 from app.mission.exporter.export_cancel import check_cancelled
 from app.mission.exporter.snapshot_inputs import canonical_json
+from app.mission.slide_cache.pdf_resources import deduplicate_pdf_resources
 from app.mission.package.customer_artifacts import (
     WARNING_CODES,
     CustomerBriefingArtifacts,
@@ -66,8 +67,11 @@ def assemble_customer_pdf(snapshot, records, *, cancel=None, ordered_ids=None):
             {"legId": leg, "inputFingerprint": record["fingerprint"], "render": report}
         )
     output = io.BytesIO()
-    writer.write(output)
-    writer.close()
+    try:
+        deduplicate_pdf_resources(writer, cancel=cancel)
+        writer.write(output)
+    finally:
+        writer.close()
     pdf = output.getvalue()
     check_cancelled(cancel)
     proof = {
