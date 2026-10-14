@@ -60,8 +60,15 @@ export async function simulateReviewedLeg(
     await expect(dialog).not.toBeVisible();
     await page.goto(`${origin}/overview`);
     await expect(
-      page.getByLabel("Simulation run", { exact: true }),
+      page.getByLabel("Simulation clock", { exact: true }),
     ).toBeVisible();
+    const currentResponse = await context.request.get(
+      `${origin}/api/simulation/run`,
+    );
+    assert(currentResponse.ok(), await currentResponse.text());
+    const current = await currentResponse.json();
+    assert.equal(current.state, "running");
+    assert.equal(current.run.run_id, started.simulation_run.run.run_id);
     await page.screenshot({
       path: join(output, "reviewed-leg-simulation-running.png"),
       fullPage: true,
