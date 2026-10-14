@@ -113,9 +113,14 @@ export const planningApi = {
   previewDraft: async (
     mission: string,
     leg: string,
-    request: PreviewDraft
+    request: PreviewDraft,
+    signal?: AbortSignal
   ): Promise<PlanningEvaluation> =>
-    (await apiClient.post(`${legPath(mission, leg)}/preview`, request)).data,
+    (
+      await apiClient.post(`${legPath(mission, leg)}/preview`, request, {
+        signal,
+      })
+    ).data,
   generateProposal: async (
     mission: string,
     leg: string,

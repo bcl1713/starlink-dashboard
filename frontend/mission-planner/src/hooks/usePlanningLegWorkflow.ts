@@ -107,18 +107,25 @@ export function usePlanningLegWorkflow({
   useEffect(() => {
     if (!leg.route || !draft.initial_x_satellite_id) return;
     let current = true;
+    const abort = new AbortController();
     const token = controller.beginPreview(
       leg.id,
       JSON.stringify({ draft, section })
     );
     const timer = setTimeout(() => {
       planningApi
-        .previewDraft(view.mission.id, leg.id, {
-          expected_revision:
-            controller.currentView()?.revision ?? expectedRevision,
-          draft,
-          ar_section_status: section,
-        })
+        .previewDraft(
+          view.mission.id,
+          leg.id,
+          {
+            expected_revision:
+              controller.currentView()?.revision ?? expectedRevision,
+            input_identity: inputIdentity,
+            draft,
+            ar_section_status: section,
+          },
+          abort.signal
+        )
         .then((result) => {
           if (current && controller.acceptPreview(token, result)) {
             setEvaluation(result);
@@ -134,6 +141,7 @@ export function usePlanningLegWorkflow({
     }, 300);
     return () => {
       current = false;
+      abort.abort();
       clearTimeout(timer);
       controller.cancelPreview(leg.id);
     };
@@ -141,6 +149,7 @@ export function usePlanningLegWorkflow({
     controller,
     draft,
     expectedRevision,
+    inputIdentity,
     leg.id,
     leg.route,
     section,

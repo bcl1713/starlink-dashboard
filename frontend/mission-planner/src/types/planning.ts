@@ -434,6 +434,7 @@ export interface SaveDraft {
 
 export interface PreviewDraft {
   expected_revision: number;
+  input_identity?: string | null;
   draft: PlanningDraft;
   ar_section_status?: 'listed' | 'empty' | 'unrecognized' | null;
 }

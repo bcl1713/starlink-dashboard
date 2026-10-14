@@ -48,18 +48,24 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
       editEpoch,
     ],
     enabled: eligible && !unsaved,
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       Object.fromEntries(
         await Promise.all(
           selected.map(
             async (card) =>
               [
                 card.leg.id,
-                await planningApi.previewDraft(missionId, card.leg.id, {
-                  expected_revision: view.revision,
-                  draft: card.leg.draft!,
-                  ar_section_status: card.leg.ar_section_status,
-                }),
+                await planningApi.previewDraft(
+                  missionId,
+                  card.leg.id,
+                  {
+                    expected_revision: view.revision,
+                    input_identity: card.input_identity,
+                    draft: card.leg.draft!,
+                    ar_section_status: card.leg.ar_section_status,
+                  },
+                  signal
+                ),
               ] as const
           )
         )

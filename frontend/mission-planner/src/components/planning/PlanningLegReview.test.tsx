@@ -97,6 +97,25 @@ function setup(initial = view) {
   );
   return client;
 }
+it('binds the leg preview to its captured saved input identity', async () => {
+  const ready = structuredClone(view);
+  ready.expected_legs[0].leg.route = {
+    route_id: 'r',
+    source_id: 's',
+    content_hash: 'route',
+    filename: 'route.kml',
+  };
+  ready.expected_legs[0].leg.draft!.initial_x_satellite_id = 'X-eligible';
+  setup(ready);
+  await waitFor(() => expect(planningApi.previewDraft).toHaveBeenCalled());
+  expect(vi.mocked(planningApi.previewDraft).mock.calls[0][2]).toMatchObject({
+    input_identity: 'hash',
+  });
+  const signal = vi.mocked(planningApi.previewDraft).mock.calls[0][3];
+  expect(signal?.aborted).toBe(false);
+  cleanup();
+  expect(signal?.aborted).toBe(true);
+});
 it('uploads for selected expected leg and starts AR-first review after acceptance', async () => {
   const preview = vi.spyOn(planningApi, 'previewRoute').mockResolvedValue({
     preview_id: 'p',

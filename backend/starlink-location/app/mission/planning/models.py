@@ -618,7 +618,7 @@ class SaveDraft(RevisionRequest):
 
 
 class PreviewDraft(SaveDraft):
-    pass
+    input_identity: ContentHash | None = None
 
 
 class GenerateProposal(RevisionRequest):

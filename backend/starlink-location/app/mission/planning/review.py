@@ -62,9 +62,15 @@ def validate_review(leg, request, evaluation=None):
 
 def preview(service, mission_id, leg_id, request):
     store = service.store
+
     # Read-only work uses detached generations and optimistic rechecks. Holding
     # the write gate across full graph validation starves concurrent readers.
-    _, _, source = store.checked(mission_id, leg_id, request.expected_revision)
+    def check():
+        if request.input_identity is not None:
+            return store.checked_inputs(mission_id, leg_id, request.input_identity)
+        return store.checked(mission_id, leg_id, request.expected_revision)
+
+    _, _, source = check()
     leg = source.model_copy(deep=True)
     leg.draft = request.draft.model_copy(deep=True)
     if request.ar_section_status is not None:
@@ -97,7 +103,7 @@ def preview(service, mission_id, leg_id, request):
         evaluation.map_diagnostics = list(
             check_prepared_map(candidate, artifacts, constraints, store.poi_manager)
         )
-    store.checked(mission_id, leg_id, request.expected_revision)
+    check()
     if (
         environment_identity(store, leg, store.planning_constraints_provider())
         != environment

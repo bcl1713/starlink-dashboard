@@ -83,6 +83,14 @@ function setup(mapError = false) {
   );
   return { publish, client };
 }
+it('binds previews to each selected leg input identity', async () => {
+  setup();
+  await screen.findByText('Leg 2: 120 seconds of X-band outage');
+  const calls = vi.mocked(planningApi.previewDraft).mock.calls;
+  expect(calls).toHaveLength(2);
+  for (const [, legId, request] of calls)
+    expect(request).toMatchObject({ input_identity: legId });
+});
 it('requires explicit plan and gap decisions then publishes the selected batch once', async () => {
   const { publish, client } = setup();
   await screen.findByText('Leg 2: 120 seconds of X-band outage');

@@ -75,6 +75,37 @@ def test_preview_is_read_only_and_uses_shared_evaluation(prepared):
     assert service.store.read(view.mission.id).mission.legs == []
 
 
+@pytest.mark.parametrize("change_leg", [False, True])
+def test_preview_freshness_tracks_leg_inputs_across_parent_revisions(
+    prepared, change_leg
+):
+    from app.mission import storage
+
+    service, view = prepared
+    request = PreviewDraft(
+        expected_revision=view.revision,
+        input_identity=view.expected_legs[0].input_identity,
+        draft=view.expected_legs[0].leg.draft,
+    )
+    with storage.get_active_leg_lock():
+        mission, manifest = service.store._load(view.mission.id)
+        if change_leg:
+            draft = manifest.expected_legs[0].draft
+            draft.starshield_enabled = not draft.starshield_enabled
+        else:
+            mission.description = "Unrelated metadata edit"
+        manifest.revision += 1
+        service.store.persist(mission, manifest)
+    if change_leg:
+        with pytest.raises(PlanningFailure) as error:
+            service.preview(view.mission.id, "card-1", request)
+        assert error.value.status_code == 409
+    else:
+        before = snapshot(service)
+        assert service.preview(view.mission.id, "card-1", request).intervals
+        assert snapshot(service) == before
+
+
 @pytest.mark.parametrize("boundary,change", [(1, False), (2, False), (1, True)])
 def test_preview_checks_release_gate_and_reject_interleaved_edits(
     prepared, monkeypatch, boundary, change

@@ -1,6 +1,22 @@
-import { AxiosError } from 'axios';
-import { expect, it } from 'vitest';
+import { AxiosError, CanceledError } from 'axios';
+import { expect, it, vi } from 'vitest';
 import { apiClient } from './api-client';
+it('retains intentional cancellation without reporting an API failure', async () => {
+  const error = new CanceledError('obsolete preview');
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await expect(
+      apiClient.get('/preview', {
+        adapter: async () => {
+          throw error;
+        },
+      })
+    ).rejects.toBe(error);
+    expect(log).not.toHaveBeenCalled();
+  } finally {
+    log.mockRestore();
+  }
+});
 it.each([
   [
     [

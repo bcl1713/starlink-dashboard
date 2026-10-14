@@ -6,6 +6,21 @@ import type { RouteAnchor } from '../types/planning';
 
 afterEach(() => vi.restoreAllMocks());
 describe('planning wire contracts', () => {
+  it('forwards cancellation of obsolete preview requests', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: {} });
+    const controller = new AbortController();
+    await planningApi.previewDraft(
+      'm',
+      'l',
+      {
+        expected_revision: 7,
+        input_identity: 'hash',
+        draft: {},
+      },
+      controller.signal
+    );
+    expect(post.mock.calls[0][2]).toEqual({ signal: controller.signal });
+  });
   it('targets the selected stable expected leg with multipart revision', async () => {
     const post = vi
       .spyOn(apiClient, 'post')

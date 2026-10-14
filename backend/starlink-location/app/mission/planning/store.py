@@ -214,6 +214,28 @@ class PlanningStore:
         mission, manifest = self._load(mission_id)
         if manifest.revision != revision:
             raise conflict()
+        return self._checked_snapshot(
+            mission,
+            manifest,
+            leg_id,
+            identity,
+            mission_id=mission_id,
+            allow_active=allow_active,
+        )
+
+    def checked_inputs(self, mission_id, leg_id, identity):
+        """Read-only freshness by leg inputs; writes still require revision CAS."""
+        return self._checked_snapshot(
+            *self._load(mission_id),
+            leg_id,
+            identity,
+            mission_id=mission_id,
+            allow_active=False,
+        )
+
+    def _checked_snapshot(
+        self, mission, manifest, leg_id, identity, *, mission_id, allow_active
+    ):
         leg = next(
             (
                 leg
