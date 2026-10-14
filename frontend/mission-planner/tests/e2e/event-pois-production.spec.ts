@@ -131,7 +131,8 @@ test('AR boundaries render and each POI event layer can be toggled independently
         exact: true,
       });
       await expect(control).toBeChecked();
-      await control.uncheck();
+      await control.click();
+      await expect(control).not.toBeChecked();
       await expect
         .poll(
           async () => (await (await request.get(endpoint)).json())[group.field]
@@ -140,7 +141,8 @@ test('AR boundaries render and each POI event layer can be toggled independently
       await expect(names).toHaveCount(
         visible.filter((p) => !group.kinds.includes(p.kind)).length
       );
-      await control.check();
+      await control.click();
+      await expect(control).toBeChecked();
       await expect(names).toHaveCount(visible.length);
     }
     await overview.screenshot({
