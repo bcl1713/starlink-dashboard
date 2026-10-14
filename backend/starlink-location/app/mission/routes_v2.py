@@ -2152,6 +2152,7 @@ async def update_leg_route(
             await file.read(),
             expected_revision,
             file.filename or "route.kml",
+            serialize_response=False,
         )
         return preview.model_dump(mode="json")
 

@@ -1,6 +1,7 @@
 """Integration tests for mission v2 API endpoints."""
 
 import asyncio
+import json
 import io
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -851,8 +852,8 @@ class TestMissionV2ListEndpoint:
 
         page = asyncio.run(list_missions(response, limit=25, offset=25))
 
-        assert response.headers["X-Total-Count"] == "26"
-        assert [mission.id for mission in page] == ["mission-25"]
+        assert page.headers["X-Total-Count"] == "26"
+        assert [mission["id"] for mission in json.loads(page.body)] == ["mission-25"]
 
 
 class TestMissionV2UpdateEndpoint:

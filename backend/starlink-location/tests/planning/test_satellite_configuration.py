@@ -46,7 +46,7 @@ def test_api_configuration_change_stales_proposal_and_review(
         == 201
     )
     service, view = confirmed((service, view))
-    saved = service.save_reviewed(view.mission.id, "card-1", review(view))
+    saved = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     api, view, request = proposal_api((service, saved), monkeypatch)
     proposal = api.generate(view.mission.id, "card-1", request)
     assert resolve_positions(["SOUTH"], service.store.poi_manager)[0].longitude == 20
@@ -180,7 +180,7 @@ def test_api_position_changed_before_review_commit_does_not_publish(
 
     monkeypatch.setattr(review_module, "prepare_mission_timeline", interleaved)
     with pytest.raises(PlanningFailure):
-        service.save_reviewed(view.mission.id, "card-1", review(view))
+        service.save_reviewed(view.mission.id, "card-1", review(service, view))
     assert service.store._load(view.mission.id)[1].storage_record() == before
     assert service.store.read(view.mission.id).mission.legs == []
 

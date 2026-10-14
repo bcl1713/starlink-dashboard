@@ -49,10 +49,10 @@ def get_service(request: Request):
     return service
 
 
-async def invoke(fn, *args, status_code=200):
+async def invoke(fn, *args, status_code=200, serialize_response=True):
     def execute():
         value = fn(*args)
-        if isinstance(value, BaseModel):
+        if serialize_response and isinstance(value, BaseModel):
             return Response(
                 value.model_dump_json(),
                 status_code=status_code,

@@ -69,7 +69,7 @@ def test_changed_waypoint_names_retain_old_anchors_and_locks(prepared, tmp_path)
         "card-1",
         SaveDraft(expected_revision=view.revision, draft=draft),
     )
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     before = saved.mission.legs[0].model_copy(deep=True)
     staged = replacement(service, saved, tmp_path)
@@ -81,7 +81,7 @@ def test_changed_waypoint_names_retain_old_anchors_and_locks(prepared, tmp_path)
     assert accepted.expected_legs[0].leg.draft.locks == draft.locks
     assert accepted.expected_legs[0].leg.draft.swaps == draft.swaps
     with pytest.raises((PlanningFailure, ValueError)):
-        service.save_reviewed(view.mission.id, "card-1", review(accepted))
+        service.save_reviewed(view.mission.id, "card-1", review(service, accepted))
 
 
 def test_departure_adjustment_is_preserved_once(prepared, tmp_path):
@@ -96,7 +96,7 @@ def test_departure_adjustment_is_preserved_once(prepared, tmp_path):
         "card-1",
         SaveDraft(expected_revision=view.revision, draft=draft),
     )
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     preview = replacement(service, saved, tmp_path)
     assert preview.adjusted_departure_time == draft.adjusted_departure_time
@@ -116,7 +116,7 @@ def test_cancel_stale_and_failed_replacement_preserve_installed_state(
     prepared, tmp_path
 ):
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     before_preview = service.store.read(view.mission.id)
     staged = replacement(service, saved, tmp_path)
@@ -231,7 +231,7 @@ def test_retirement_archives_leg_but_cannot_retire_active_leg(prepared, monkeypa
     from app.mission import storage
 
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     preview = revision_preview(
         service,
@@ -312,7 +312,7 @@ def test_managed_delete_requires_captured_cas_and_retains_source_closure(prepare
     from app.mission.routes_v2 import router
 
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     app = FastAPI()
     app.state.planning_service = service
@@ -360,7 +360,7 @@ def test_managed_delete_requires_captured_cas_and_retains_source_closure(prepare
 
 def test_pure_reorder_preserves_review_context_and_stable_ids(prepared, monkeypatch):
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     old = saved.expected_legs[0]
     incoming = [
@@ -417,7 +417,7 @@ def test_retirement_rollback_preserves_plan_timeline_pois_and_sources(
     from app.mission.planning import journal
 
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     before = snapshot(service)
     pois = service.store.poi_manager.pois_file.read_bytes()
@@ -533,7 +533,7 @@ def test_managed_legacy_route_upload_stages_without_replacing_installed_plan(
     from app.mission.routes_v2 import router
 
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     app = FastAPI()
     app.state.planning_service = service
@@ -611,7 +611,7 @@ def test_retired_history_ids_never_reappear_as_unmanaged_order(prepared):
     from app.mission.planning.order import project_leg_order
 
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     installed = saved.mission.legs[0].id
     service.retire_managed_leg(
@@ -626,12 +626,14 @@ def test_retired_history_ids_never_reappear_as_unmanaged_order(prepared):
 
 def test_accepted_replacement_only_reviewed_save_installs_new_route(prepared, tmp_path):
     service, view = confirmed(prepared)
-    service.save_reviewed(view.mission.id, "card-1", review(view))
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
     saved = service.store.read(view.mission.id)
     preview = replacement(service, saved, tmp_path)
     accepted = accept(service, saved, preview)
     assert accepted.mission.legs[0].route_id == saved.mission.legs[0].route_id
-    installed = service.save_reviewed(view.mission.id, "card-1", review(accepted))
+    installed = service.save_reviewed(
+        view.mission.id, "card-1", review(service, accepted)
+    )
     assert installed.mission.legs[0].id == saved.mission.legs[0].id
     assert installed.mission.legs[0].route_id == preview.binding.route_id
     assert service.sources.path(

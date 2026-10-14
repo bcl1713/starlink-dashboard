@@ -257,7 +257,7 @@ def test_batch_replacement_retains_prior_installed_plan_and_corrections(
     from .test_reviewed_save import confirmed, review
 
     service, view = confirmed(prepared)
-    view = service.save_reviewed(view.mission.id, "card-1", review(view))
+    view = service.save_reviewed(view.mission.id, "card-1", review(service, view))
     before = view.mission.legs[0].model_copy(deep=True)
     from app.mission import storage
 
