@@ -202,39 +202,31 @@ def _save_mission_v2_unlocked(mission: Mission) -> dict:
 
 
 @planning_read_gate
-def load_mission_v2(mission_id: str) -> Mission | None:
-    """Load a hierarchical mission with all legs.
-
-    Args:
-        mission_id: ID of mission to load
-
-    Returns:
-        Mission object with legs loaded, or None if not found
-    """
+def _capture_mission_payloads(mission_id: str):
+    """Copy one complete stored generation, then release the repository gate."""
     mission_file = get_mission_file_path(mission_id)
-
     if not mission_file.exists():
         logger.warning(f"Mission {mission_id} not found at {mission_file}")
         return None
-
-    # Load mission metadata
-    with open(mission_file, "r") as f:
-        mission_data = json.load(f)
-
-    # Load all legs
     legs_dir = get_mission_legs_dir(mission_id)
-    legs = []
+    payloads = (
+        tuple(path.read_bytes() for path in _iter_mission_leg_files(legs_dir))
+        if legs_dir.exists()
+        else ()
+    )
+    return mission_file.read_bytes(), payloads
 
-    if legs_dir.exists():
-        for leg_file in _iter_mission_leg_files(legs_dir):
-            with open(leg_file, "r") as f:
-                leg_data = json.load(f)
-                legs.append(MissionLeg(**leg_data))
 
-    mission_data["legs"] = legs
-    mission = _ordered_mission(Mission(**mission_data))
-
-    logger.info(f"Mission {mission_id} loaded with {len(legs)} legs")
+def load_mission_v2(mission_id: str) -> Mission | None:
+    """Decode a detached whole-generation mission without retaining the gate."""
+    captured = _capture_mission_payloads(mission_id)
+    if captured is None:
+        return None
+    metadata, payloads = captured
+    mission_data = json.loads(metadata)
+    mission_data["legs"] = [MissionLeg.model_validate_json(data) for data in payloads]
+    mission = _ordered_mission(Mission.model_validate(mission_data))
+    logger.info(f"Mission {mission_id} loaded with {len(mission.legs)} legs")
     return mission
 
 

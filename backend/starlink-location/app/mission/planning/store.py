@@ -204,8 +204,9 @@ class PlanningStore:
         )
 
     def read(self, mission_id):
-        with storage.get_active_leg_lock():
-            return self._view(*self._load(mission_id))
+        # Storage detaches a coherent byte snapshot under the repository gate.
+        # Model validation and response-only dependency checks run after release.
+        return self._view(*self._load(mission_id))
 
     def checked(
         self, mission_id, leg_id, revision, identity=None, *, allow_active=False

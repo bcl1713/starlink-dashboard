@@ -759,7 +759,6 @@ def test_retry_preflight_io_failure_is_structured_and_recovers(
 def test_initial_owned_delete_preflight_io_failure_has_no_mutation(
     service, tmp_path, monkeypatch, resource
 ):
-    import builtins
     import sqlite3
     from pathlib import Path
 
@@ -793,14 +792,14 @@ def test_initial_owned_delete_preflight_io_failure_has_no_mutation(
     }
     with monkeypatch.context() as patch:
         if resource == "metadata":
-            original_open = builtins.open
+            original_read = Path.read_bytes
 
-            def fail(path, *args, **kwargs):
+            def fail(path):
                 if Path(path) == target:
                     raise PermissionError("temporary unreadable mission metadata")
-                return original_open(path, *args, **kwargs)
+                return original_read(path)
 
-            patch.setattr(builtins, "open", fail)
+            patch.setattr(Path, "read_bytes", fail)
         elif resource == "cache":
 
             def fail(store, owner):

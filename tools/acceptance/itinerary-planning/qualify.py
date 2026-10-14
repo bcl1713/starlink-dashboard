@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.cwd()))
 
 from app.mission import storage
+from app.mission.models import MissionLeg
 from app.mission.exporter.map_inputs import prepare_map_input
 from app.mission.exporter.customer_filename import customer_brief_filename
 from map_probe_inputs import package_snapshots
@@ -26,7 +27,9 @@ try:
         mission = storage.load_mission_v2(metadata["id"])
         assert len(mission.legs) == 3
         for leg in mission.legs:
-            actual = json.loads(archive.read(f"legs/{leg.id}.json"))
+            actual = MissionLeg.model_validate_json(
+                archive.read(f"legs/{leg.id}.json")
+            ).model_dump(mode="json")
             assert actual == leg.model_dump(
                 mode="json"
             ), "export changed reviewed leg inputs"

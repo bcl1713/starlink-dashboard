@@ -820,3 +820,88 @@ def test_expiry_sweep_bounds_work_and_rotates_past_unvisited_descriptors(service
         assert previous - remaining in (0, 1)
         previous = remaining
     assert remaining == 0
+
+
+def test_read_view_construction_does_not_hold_repository_gate(service, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from filelock import Timeout
+
+    from app.mission import storage
+
+    view, _ = create(service)
+    entered, release = Event(), Event()
+    original = service.store._view
+
+    def delayed(*args):
+        entered.set()
+        assert release.wait(5)
+        return original(*args)
+
+    monkeypatch.setattr(service.store, "_view", delayed)
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        result = workers.submit(service.store.read, view.mission.id)
+        try:
+            assert entered.wait(2)
+            try:
+                with storage.get_active_leg_lock().acquire(timeout=0.2):
+                    pass
+            except Timeout:
+                pytest.fail("Read-only view construction retained the repository gate")
+        finally:
+            release.set()
+        assert result.result(timeout=5).revision == view.revision
+
+
+def test_mission_validation_releases_gate_and_keeps_one_captured_generation(
+    service, monkeypatch
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from filelock import Timeout
+
+    from app.mission import storage
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+
+    mission = Mission(
+        id="raw-read",
+        name="original",
+        legs=[
+            MissionLeg(
+                id="leg",
+                name="original leg",
+                route_id="",
+                transports=TransportConfig(initial_x_satellite_id=""),
+            )
+        ],
+    )
+    storage.save_mission_v2(mission)
+    entered, release = Event(), Event()
+    original = storage._ordered_mission
+
+    def delayed(value):
+        if value.id == mission.id:
+            entered.set()
+            assert release.wait(5)
+        return original(value)
+
+    monkeypatch.setattr(storage, "_ordered_mission", delayed)
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        result = workers.submit(storage.load_mission_v2, mission.id)
+        try:
+            assert entered.wait(2)
+            try:
+                with storage.get_active_leg_lock().acquire(timeout=0.2):
+                    # Update both files while detached validation is paused.
+                    mission.name = "replacement"
+                    mission.legs[0].name = "replacement leg"
+                    storage._save_mission_v2_unlocked(mission)
+            except Timeout:
+                pytest.fail("Detached mission validation retained the repository gate")
+        finally:
+            release.set()
+        captured = result.result(timeout=5)
+    assert captured.name == "original"
+    assert captured.legs[0].name == "original leg"
