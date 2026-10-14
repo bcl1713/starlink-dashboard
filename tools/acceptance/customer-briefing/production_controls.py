@@ -201,7 +201,7 @@ def assert_scenario(case, report):
         if report.get("warning") != "data":
             raise ValueError("Missing route must retain legacy with data omission")
         return
-    count = {"two-page": 2, "three-page": 3, "five-leg": 5}.get(case)
+    count = {"two-page": 2, "three-page": 3, "five-leg": 5, "mission-pdf-resources": 5}.get(case)
     if count is not None and report.get("pageCount") != count:
         raise ValueError(
             f"Wrong actual page count for {case}: {report.get('pageCount')}"
@@ -880,6 +880,7 @@ def qualify(owner):
         "two-page",
         "three-page",
         "five-leg",
+        "mission-pdf-resources",
         "over-budget",
         "missing-map",
         "adjusted",

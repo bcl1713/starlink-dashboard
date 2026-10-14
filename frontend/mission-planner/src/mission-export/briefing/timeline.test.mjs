@@ -231,24 +231,35 @@ test('down_spans_use_clipped_vector_hatching', async () => {
   p.intervals[2].decisions = ['Up', '?', 'Up'];
   const svg = (await renderer())(p, { idPrefix: 'page-1' });
   assert.doesNotMatch(svg, /<pattern|<image|fill="url\(#down\)"/);
-  const clips = [...svg.matchAll(/<clipPath id="([^"]+)"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"\/><\/clipPath>/g)];
+  const clips = [
+    ...svg.matchAll(
+      /<clipPath id="([^"]+)"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"\/><\/clipPath>/g
+    ),
+  ];
   assert.equal(clips.length, 3);
-  assert.equal(new Set(clips.map(c => c[1])).size, 3);
-  assert.deepEqual(clips.map(c => Number(c[3])), [119, 146, 173]);
+  assert.equal(new Set(clips.map((c) => c[1])).size, 3);
+  assert.deepEqual(
+    clips.map((c) => Number(c[3])),
+    [119, 146, 173]
+  );
   for (const c of clips) {
     assert.equal(Number(c[2]), 570);
     assert.equal(Number(c[4]), 1 / 30);
     assert.equal(Number(c[5]), 18);
   }
   assert.equal((svg.match(/fill="#d2d8df"/g) || []).length, 3);
-  const lines = [...svg.matchAll(/<path d="M([^ ]+) ([^L]+)L([^ ]+) ([^"]+)" stroke="#99a4b0" stroke-width="1"\/>/g)];
+  const lines = [
+    ...svg.matchAll(
+      /<path d="M([^ ]+) ([^L]+)L([^ ]+) ([^"]+)" stroke="#99a4b0" stroke-width="1"\/>/g
+    ),
+  ];
   assert.ok(lines.length > 0 && lines.length < 20);
   for (const line of lines) {
     const [x1, y1, x2, y2] = line.slice(1).map(Number);
-    assert.ok(Math.abs((x1 + y1) - (x2 + y2)) < 1e-8);
+    assert.ok(Math.abs(x1 + y1 - (x2 + y2)) < 1e-8);
     assert.ok(Math.abs((x1 + y1) / 8 - Math.round((x1 + y1) / 8)) < 1e-8);
   }
   const unknown = structuredClone(p);
-  unknown.intervals.forEach(i => i.decisions = ['Up', '?', 'Up']);
+  unknown.intervals.forEach((i) => (i.decisions = ['Up', '?', 'Up']));
   assert.doesNotMatch((await renderer())(unknown), /<clipPath/);
 });

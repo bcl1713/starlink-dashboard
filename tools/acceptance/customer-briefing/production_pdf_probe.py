@@ -10,6 +10,7 @@ from pathlib import Path
 
 from PIL import Image
 from production_pdf_geometry import geometry_text_hash
+from pdf_resources import qualify_resources
 
 from app.mission.exporter.customer_display import display_row
 from app.mission.exporter.customer_filename import customer_brief_filename
@@ -110,6 +111,11 @@ text = subprocess.check_output(
     ["pdftotext", "-bbox-layout", str(pdf_path), "-"], text=True, timeout=20
 )
 result = {
+    "resources": qualify_resources(
+        pdf, evidence, fixture=mission["id"] == "briefing-mission-pdf-resources"
+    ),
+    "pdfBytes": len(pdf),
+    "zipBytes": source.stat().st_size,
     "pageCount": proof["pageCount"],
     "rowCount": len(proof["rows"]),
     "snapshotFingerprint": evidence["snapshotFingerprint"],

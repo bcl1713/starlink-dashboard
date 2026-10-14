@@ -24,12 +24,13 @@ with (satellites/'catalog.yaml').open('a') as catalog:
 """
 
 
-def kml(start, duration, wide=False, untimed_middle=False):
+def kml(start, duration, wide=False, untimed_middle=False, latitude_offset=0):
     coordinates = (
         [(-105, 35), (-102, 35), (-99, 35)]
         if not wide
         else [(-170, 35), (-100, 35), (-30, 35), (40, 35)]
     )
+    coordinates = [(lon, lat + latitude_offset) for lon, lat in coordinates]
     points = []
     for index, (longitude, latitude) in enumerate(coordinates):
         time = start + duration * index / (len(coordinates) - 1)
@@ -74,6 +75,11 @@ def seed_missions(api, root, *, names=None):
         "two-page": {"dense": 12},
         "three-page": {"dense": 28},
         "five-leg": {"legs": 5},
+        "mission-pdf-resources": {
+            "legs": 3,
+            "dense_by_leg": [12, 0, 12],
+            "distinct_maps": True,
+        },
         "over-budget": {"dense": 100},
         "missing-map": {"untimed_middle": True},
     }
@@ -100,7 +106,10 @@ def seed_missions(api, root, *, names=None):
                 ),
                 "initial_ka_satellite_ids": ["AOR"],
             }
-            if dense := recipe.get("dense"):
+            dense = recipe.get(
+                "dense_by_leg", [recipe.get("dense")] * recipe.get("legs", 1)
+            )[number]
+            if dense:
                 transports["ka_outages"] = [
                     {
                         "id": "dense-ka",
@@ -179,6 +188,7 @@ def seed_missions(api, root, *, names=None):
                         duration,
                         recipe.get("wide", False),
                         recipe.get("untimed_middle", False),
+                        number if recipe.get("distinct_maps") else 0,
                     ),
                 )
             )

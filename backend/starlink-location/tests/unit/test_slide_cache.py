@@ -398,9 +398,13 @@ def test_derivative_and_raster_policy_change_renderer_revision(tmp_path, monkeyp
     deployed.mkdir()
     monkeypatch.setattr(identity, "__file__", str(script))
     for renderer in (local, deployed):
-        monkeypatch.setattr(identity, "Path", lambda value: (
-            renderer if value == "/opt/customer-briefing/renderer" else Path(value)
-        ))
+        monkeypatch.setattr(
+            identity,
+            "Path",
+            lambda value: (
+                renderer if value == "/opt/customer-briefing/renderer" else Path(value)
+            ),
+        )
         policy = renderer / "raster-policy.mjs"
         policy.write_text("export const PRINT_RASTER_PPI = 300;")
         before = identity.renderer_revision(refresh=True)

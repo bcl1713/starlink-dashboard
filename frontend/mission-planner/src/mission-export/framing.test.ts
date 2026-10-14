@@ -150,10 +150,19 @@ it('preserves complete routes and marker identities at print sampling density', 
     const input = validateMapInput(raw);
     const reference = frameMissionRoute(input, { width: 1920, height: 1857 });
     const resized = frameMissionRoute(input, { width: 875, height: 844 });
-    expect(resized.map(v => [v.startIndex, v.endIndex])).toEqual(reference.map(v => [v.startIndex, v.endIndex]));
-    expect(resized.flatMap(v => v.markers.map(m => m.id))).toEqual(reference.flatMap(v => v.markers.map(m => m.id)));
+    expect(resized.map((v) => [v.startIndex, v.endIndex])).toEqual(
+      reference.map((v) => [v.startIndex, v.endIndex])
+    );
+    expect(resized.flatMap((v) => v.markers.map((m) => m.id))).toEqual(
+      reference.flatMap((v) => v.markers.map((m) => m.id))
+    );
     for (const view of resized) {
-      const camera = new PerspectiveCamera(38, view.width / view.height, 0.1, 100);
+      const camera = new PerspectiveCamera(
+        38,
+        view.width / view.height,
+        0.1,
+        100
+      );
       applyCameraFrame(camera, view);
       for (const point of view.points) {
         const projected = new Vector3(...point).project(camera);

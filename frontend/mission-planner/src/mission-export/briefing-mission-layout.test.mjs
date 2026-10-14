@@ -165,11 +165,21 @@ test('a body update lasting more than Playwright’s default timeout uses the re
   assert.equal(budget.workRemainingMs(), 7000);
 });
 test('map_raster_tracks_final_pagination', async () => {
-  const { mapViewportsForPlacements } = await import('./briefing-mission-layout.mjs');
-  assert.deepEqual(mapViewportsForPlacements({ leg: { width: 280, height: 270 } }), { leg: { width: 875, height: 844 } });
-  assert.deepEqual(mapViewportsForPlacements({ leg: { width: 280, height: 270.1 } }), { leg: { width: 875, height: 845 } });
+  const { mapViewportsForPlacements } = await import(
+    './briefing-mission-layout.mjs'
+  );
+  assert.deepEqual(
+    mapViewportsForPlacements({ leg: { width: 280, height: 270 } }),
+    { leg: { width: 875, height: 844 } }
+  );
+  assert.deepEqual(
+    mapViewportsForPlacements({ leg: { width: 280, height: 270.1 } }),
+    { leg: { width: 875, height: 845 } }
+  );
   assert.deepEqual(mapViewportsForPlacements({}), {});
   for (const width of [0, -1, NaN, Infinity]) {
-    assert.throws(() => mapViewportsForPlacements({ leg: { width, height: 270 } }));
+    assert.throws(() =>
+      mapViewportsForPlacements({ leg: { width, height: 270 } })
+    );
   }
 });

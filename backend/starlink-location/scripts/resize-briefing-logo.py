@@ -14,7 +14,10 @@ def resize_logo(source: Path, output: Path, size: int) -> None:
         with image.convert("RGB") as rgb:
             with rgb.resize((size, size), Image.Resampling.LANCZOS) as resized:
                 resized.save(
-                    output, format="PNG", compress_level=9, optimize=False,
+                    output,
+                    format="PNG",
+                    compress_level=9,
+                    optimize=False,
                     icc_profile=profile,
                 )
 

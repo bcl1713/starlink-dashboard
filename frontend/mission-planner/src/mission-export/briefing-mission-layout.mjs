@@ -119,7 +119,12 @@ export async function planWithMapFallback(plan, resolveUnavailableMaps) {
 }
 
 export function mapViewportsForPlacements(placements) {
-  return Object.fromEntries(Object.entries(placements).map(([id, placement]) => [id, rasterSizeForPlacement(placement)]));
+  return Object.fromEntries(
+    Object.entries(placements).map(([id, placement]) => [
+      id,
+      rasterSizeForPlacement(placement),
+    ])
+  );
 }
 
 async function measurePages(page, budget) {
@@ -317,12 +322,7 @@ export async function prepareMissionDocument({
               const card = element.querySelector('.map-card');
               if (!card) return [];
               const { width, height } = card.getBoundingClientRect();
-              return [
-                [
-                  element.dataset.legId,
-                  { width, height },
-                ],
-              ];
+              return [[element.dataset.legId, { width, height }]];
             }
           )
         )

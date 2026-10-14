@@ -88,12 +88,15 @@ def mission_snapshot(name):
                 a = start + (end - start) * index / count
                 b = start + (end - start) * (index + 1) / count
                 data["source_records"].append(outage("Ku", a, b, index))
+        if offset := recipe.get("routeLatitudeOffset"):
+            for point in data["route"]["points"]:
+                point["latitude"] += offset
         legs.append(snapshot(data))
         records.append(data)
     metadata = {
         "id": name,
         "name": "Synthetic mission continuation qualification",
-        "legs": [json.loads(l.leg_json) for l in legs],
+        "legs": [json.loads(leg.leg_json) for leg in legs],
     }
     return ExportSnapshot(
         name,

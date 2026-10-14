@@ -459,3 +459,57 @@ def test_spliced_input_cannot_pass_with_the_original_route_end_time():
     }
     with pytest.raises(ValueError, match="splice timing"):
         controls().assert_scenario("spliced", report)
+
+
+def comparison_module():
+    spec = importlib.util.spec_from_file_location(
+        "pdf_compare", ROOT / "tools/acceptance/customer-briefing/pdf_compare.py"
+    )
+    value = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(value)
+    return value
+
+
+def test_pdf_comparison_rejects_missing_pages_and_changed_text(tmp_path):
+    sys.path.insert(0, str(ROOT / "backend/starlink-location"))
+    from tests.unit.pdf_resource_fixtures import make_pdf_fragments
+
+    _, records = make_pdf_fragments()
+    baseline = tmp_path / "baseline.pdf"
+    baseline.write_bytes(records["a"]["pdf"])
+    missing = tmp_path / "missing.pdf"
+    missing.write_bytes(records["b"]["pdf"])
+    with pytest.raises(ValueError, match="page"):
+        comparison_module().compare_pdfs(
+            baseline, missing, tmp_path / "missing", dpis=(72,)
+        )
+    changed = tmp_path / "changed.pdf"
+    changed.write_bytes(records["c"]["pdf"])
+    with pytest.raises(ValueError, match="text"):
+        comparison_module().compare_pdfs(
+            baseline, changed, tmp_path / "changed", dpis=(72,)
+        )
+
+
+def test_lossless_assembly_comparison_has_zero_pixel_difference(tmp_path):
+    sys.path.insert(0, str(ROOT / "backend/starlink-location"))
+    from pypdf import PdfReader, PdfWriter
+    from app.mission.slide_cache.assembly import assemble_customer_pdf
+    from tests.unit.pdf_resource_fixtures import make_pdf_fragments
+
+    captured, records = make_pdf_fragments()
+    baseline = tmp_path / "baseline.pdf"
+    writer = PdfWriter()
+    for record in records.values():
+        writer.append(PdfReader(io.BytesIO(record["pdf"])))
+    writer.write(baseline)
+    writer.close()
+    candidate = tmp_path / "candidate.pdf"
+    candidate.write_bytes(assemble_customer_pdf(captured, records).artifacts.pdf)
+    proof = comparison_module().compare_pdfs(
+        baseline, candidate, tmp_path / "comparison", dpis=(72, 300)
+    )
+    assert proof["pageCount"] == 5
+    assert proof["textEqual"] and proof["geometryEqual"]
+    assert len(proof["pages"]) == 10
+    assert all(p["changedPixels"] == 0 for p in proof["pages"])

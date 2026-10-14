@@ -11,7 +11,7 @@ def deduplicate_pdf_resources(writer: PdfWriter, *, cancel=None) -> None:
     count = sum(obj is not None for obj in writer._objects)
     for _ in range(count + 1):
         check_cancelled(cancel)
-        writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+        writer.compress_identical_objects()
         check_cancelled(cancel)
         remaining = sum(obj is not None for obj in writer._objects)
         if remaining == count:

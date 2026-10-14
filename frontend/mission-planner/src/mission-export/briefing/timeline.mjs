@@ -15,7 +15,9 @@ export const COLORS = {
   'Posture uncertain': '#dce2e8',
 };
 export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
-  const prefix = Array.from(String(idPrefix), c => c.codePointAt(0).toString(16)).join('-');
+  const prefix = Array.from(String(idPrefix), (c) =>
+    c.codePointAt(0).toString(16)
+  ).join('-');
   let hatchIndex = 0;
   const start = Date.parse(payload.flight.startUtc),
     end = Date.parse(payload.flight.endUtc);
@@ -39,10 +41,16 @@ export function renderTimeline(payload, { idPrefix = 'timeline' } = {}) {
   }
   const narrowUnknown = unknownGroups.filter((i) => width(i) < 90);
   const hatch = (i, y) => {
-    const left = x(i.startUtc), right = left + width(i), bottom = y + 18;
+    const left = x(i.startUtc),
+      right = left + width(i),
+      bottom = y + 18;
     const id = `hatch-${prefix}-${hatchIndex++}`;
     let strokes = '';
-    for (let k = Math.floor((left + y) / 8); k <= Math.ceil((right + bottom) / 8); k++) {
+    for (
+      let k = Math.floor((left + y) / 8);
+      k <= Math.ceil((right + bottom) / 8);
+      k++
+    ) {
       strokes += `<path d="M${8 * k - y} ${y}L${8 * k - bottom} ${bottom}" stroke="#99a4b0" stroke-width="1"/>`;
     }
     return `<defs><clipPath id="${escapeText(id)}"><rect x="${left}" y="${y}" width="${width(i)}" height="18"/></clipPath></defs><g clip-path="url(#${escapeText(id)})">${strokes}</g>`;

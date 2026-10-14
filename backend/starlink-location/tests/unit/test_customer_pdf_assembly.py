@@ -91,9 +91,18 @@ def test_independent_nested_resources_are_shared_without_merging_unequal_semanti
     result = assemble_customer_pdf(captured, records)
     reader = PdfReader(io.BytesIO(result.artifacts.pdf))
     assert len(reader.pages) == 5
-    assert [p.extract_text() for p in reader.pages] == ["a page 1", "a page 2", "b page 1", "c page 1", "c page 2"]
+    assert [p.extract_text() for p in reader.pages] == [
+        "a page 1",
+        "a page 2",
+        "b page 1",
+        "c page 1",
+        "c page 2",
+    ]
     assert all(list(p.mediabox) == [0, 0, 960, 540] for p in reader.pages)
-    objects = [p["/Resources"]["/XObject"]["/Nested"]["/Resources"]["/XObject"] for p in reader.pages]
+    objects = [
+        p["/Resources"]["/XObject"]["/Nested"]["/Resources"]["/XObject"]
+        for p in reader.pages
+    ]
     assert len({o.raw_get("/Logo").idnum for o in objects}) == 1
     assert len({o.raw_get("/Map").idnum for o in objects}) == 3
     assert len({o.raw_get("/Masked").idnum for o in objects}) == 3
@@ -101,8 +110,14 @@ def test_independent_nested_resources_are_shared_without_merging_unequal_semanti
     assert len(result.artifacts.pdf) < len(stream.getvalue())
     assert b"orphan must disappear" not in result.artifacts.pdf
     evidence = json.loads(result.artifacts.evidence)
-    assert evidence["render"]["artifactHashes"]["pdfPath"] == sha256(result.artifacts.pdf).hexdigest()
-    assert [f["render"]["artifactHashes"]["pdfPath"] for f in evidence["render"]["fragments"]] == [sha256(r["pdf"]).hexdigest() for r in records.values()]
+    assert (
+        evidence["render"]["artifactHashes"]["pdfPath"]
+        == sha256(result.artifacts.pdf).hexdigest()
+    )
+    assert [
+        f["render"]["artifactHashes"]["pdfPath"]
+        for f in evidence["render"]["fragments"]
+    ] == [sha256(r["pdf"]).hexdigest() for r in records.values()]
     assert [p["page"] for p in evidence["pages"]] == [1, 2, 3, 4, 5]
 
 
