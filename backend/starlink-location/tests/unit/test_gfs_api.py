@@ -501,3 +501,43 @@ async def test_oversized_damaged_binary_is_rejected_before_allocation(tmp_path):
         assert peak < 2 * 1024**2
     await bridge.aclose()
     await service.aclose()
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+async def test_catalog_keeps_bulletins_when_gfs_control_lock_is_unavailable(
+    tmp_path, legacy
+):
+    from app.services.aviation_weather.gfs.store import control_lock
+
+    app, service, bridge, _products, _enabled, _now, _source = runtime(tmp_path)
+    from tests.unit.test_aviation_weather_runtime import snapshot
+
+    async def decode(layer, _body, instant):
+        return snapshot(layer, instant)
+
+    service.normalize = decode
+    settings = service.store.update({"metar": True})
+    if legacy:
+        raw = settings.model_dump()
+        raw.update(winds=True, temperature=True)
+        service.store.path.write_text(json.dumps(raw))
+    before = service.store.path.read_bytes()
+    try:
+        await service.products()
+        with control_lock(bridge.mailbox.root):
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app), base_url="http://test"
+            ) as client:
+                response = await client.get("/api/aviation-weather/v1/catalog")
+        assert response.status_code == 200
+        catalog = response.json()
+        assert catalog["settings_revision"] == settings.revision
+        assert (
+            next(p for p in catalog["products"] if p["layer_id"] == "metar")["state"]
+            == "ready"
+        )
+        assert [p["state"] for p in catalog["products"][-2:]] == ["unavailable", "off"]
+        assert service.store.path.read_bytes() == before
+    finally:
+        await bridge.aclose()
+        await service.aclose()
