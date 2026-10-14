@@ -8,12 +8,13 @@ import {
   type GfsSelection,
 } from '@/services/aviation-weather';
 import { fetchGrid, type GridLease } from '@/services/aviation-grid';
+import type { GfsFlags } from '@/services/gfs-mode';
+export type { GfsFlags } from '@/services/gfs-mode';
 import {
   abortable,
   optionalWeatherBudget,
   type WeatherBudget,
 } from './weather-budget';
-export type GfsFlags = { winds: boolean; temperature: boolean };
 export type GfsDrawing = {
   object: THREE.Object3D;
   bytes: { decoded: number; gpu: number };

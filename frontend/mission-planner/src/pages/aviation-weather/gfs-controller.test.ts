@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { GfsController } from './gfs-controller';
+import {
+  GfsController,
+  type GfsFlags,
+  type GfsDrawing,
+} from './gfs-controller';
 import { WeatherBudget } from './weather-budget';
 import {
   parseGridDescriptor,
@@ -61,7 +65,7 @@ function runtime() {
   };
   const api = { getCatalog: vi.fn(async () => catalog) };
   const load = vi.fn<typeof fetchGrid>(async () => lease);
-  const draw = vi.fn(() => ({
+  const draw = vi.fn<(lease: GridLease, flags: GfsFlags) => GfsDrawing>(() => ({
     object: new THREE.Group(),
     bytes: { decoded: 0, gpu: 0 },
     dispose,
@@ -82,6 +86,25 @@ function runtime() {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.useRealTimers();
+});
+it('legacy simultaneous mode admits and loads only wind', async () => {
+  fakeClock();
+  const r = runtime();
+  r.catalog.products.push(
+    gridFixture('b'.repeat(64), 'air-temperature').product
+  );
+  r.controller.setSettings({ ...settings, temperature: true });
+  r.controller.start();
+  await flush();
+  expect(r.load).toHaveBeenCalledTimes(1);
+  expect(r.controller.getSnapshot().products.winds).toBeDefined();
+  expect(r.controller.getSnapshot().products.temperature).toBeUndefined();
+  expect(r.draw.mock.calls[0]?.[1]).toEqual({
+    winds: true,
+    temperature: false,
+  });
+  r.controller.stop();
+  expect(vi.getTimerCount()).toBe(0);
 });
 describe('model generation and monotonic expiry', () => {
   it('rejects a grid after the target crosses the 48-hour run window even with delayed timers', async () => {

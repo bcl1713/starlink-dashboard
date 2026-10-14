@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolveGfsFlags } from './gfs-mode';
 import apiClient from './api-client';
 import { weatherManifestSchema } from './overview-weather';
 
@@ -407,7 +408,10 @@ export const parseAviationCatalog = (data: unknown): AviationCatalog =>
   catalogSchema.parse(data);
 export const parseAviationSettings = (
   data: unknown
-): ResolvedAviationSettings => settingsSchema.parse(data);
+): ResolvedAviationSettings => {
+  const settings = settingsSchema.parse(data);
+  return { ...settings, ...resolveGfsFlags(settings) };
+};
 export const aviationWeatherApi = {
   async getSettings(signal?: AbortSignal) {
     const { data } = await apiClient.get<unknown>(

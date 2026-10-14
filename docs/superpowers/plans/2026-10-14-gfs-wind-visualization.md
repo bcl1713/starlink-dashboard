@@ -182,11 +182,11 @@ true. Re-export `GfsFlags` from `gfs-controller.ts` for existing imports.
 `parseAviationSettings(data: unknown): ResolvedAviationSettings` retains its
 signature, normalizing the flags after strict parsing.
 
-- [ ] Write `gfs-mode.test.ts` with all four boolean combinations and tests that
+- [x] Write `gfs-mode.test.ts` with all four boolean combinations and tests that
       normalization never mutates the input. Extend parser tests with both-true
       revision 7: expect wind-only revision 7, unchanged level/horizon and
       non-GFS fields; malformed values still fail parsing.
-- [ ] Extend Configuration tests using the real shared QueryClient and existing
+- [x] Extend Configuration tests using the real shared QueryClient and existing
       API boundary fixtures. `enabling wind atomically replaces temperature`
       starts in temperature mode and asserts the exact request and confirmed
       switches:
@@ -206,7 +206,7 @@ signature, normalizing the flags after strict parsing.
   revision followed by polling reconciliation. Last confirmed cache data stays
   visible on rejection; a subsequent higher revision updates both switches.
 
-- [ ] Add `legacy mode admits only wind` in `gfs-controller.test.ts`: supply a
+- [x] Add `legacy mode admits only wind` in `gfs-controller.test.ts`: supply a
       both-true input and a catalog containing both entries; only wind is
       loaded, drawn, and published. Selection/horizon and incompatible-drawing
       removal are unchanged. Run these tests plus `aviation-weather.test.ts` and
@@ -217,13 +217,13 @@ signature, normalizing the flags after strict parsing.
   timeout --kill-after=10s 5m npm run test:unit -- src/services/gfs-mode.test.ts src/services/aviation-weather.test.ts src/pages/aviation-weather/AviationSettingsCard.test.tsx src/pages/aviation-weather/gfs-controller.test.ts
   ```
 
-- [ ] Implement the helper/parser and atomic toggle mutations. Turning either
+- [x] Implement the helper/parser and atomic toggle mutations. Turning either
       switch off never enables its counterpart. Add helper copy: **Only one GFS
       layer can be displayed at a time.** Keep the shared selection, Surface
       disabled, pending-control disable, error handling, and confirmed-cache
       behavior. The controller consumes normalized settings; Overview never
       writes preferences to repair old snapshots.
-- [ ] Rerun the named tests to PASS and commit
+- [x] Rerun the named tests to PASS and commit
       `feat: make GFS Configuration toggles mutually exclusive`.
 
 ## Task 3: Wind-Speed Raster and Matching Legend

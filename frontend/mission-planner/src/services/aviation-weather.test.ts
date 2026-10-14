@@ -119,6 +119,30 @@ describe('aviation catalog admission before acquisition', () => {
       })
     ).toThrow();
   });
+  it('normalizes simultaneous legacy GFS flags without changing revision or selection', () => {
+    const selection = { pressure_pa: 25000, horizon_hours: 6 };
+    expect(
+      parseAviationSettings({
+        metar: true,
+        taf: false,
+        sigmet: true,
+        winds: true,
+        temperature: true,
+        revision: 7,
+        gfs_selection: selection,
+      })
+    ).toMatchObject({
+      winds: true,
+      temperature: false,
+      metar: true,
+      sigmet: true,
+      revision: 7,
+      gfs_selection: {
+        vertical: { kind: 'pressure', pressure_pa: 25000 },
+        horizon_hours: 6,
+      },
+    });
+  });
   it('admits tagged pressure/flight levels and migrates saved pressure', () => {
     const base = { metar: false, taf: false, sigmet: false, revision: 2 };
     expect(
