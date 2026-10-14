@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { simulateReviewedLeg } from './itinerary-simulation.mjs';
 const require = createRequire(new URL('../../../frontend/mission-planner/package.json', import.meta.url));
 const { expect } = require('@playwright/test');
 
@@ -180,9 +181,10 @@ export async function batchJourney(context, origin, input, output) {
       await writeFile(join(output, 'synthetic-package.zip'), zip);
       await writeFile(join(output, 'collision-views.json'), JSON.stringify({ beforeClone: installed, cloneView }, null, 2));
     }
+    await simulateReviewedLeg(page, context, origin, mission, output);
     assert.equal(events.length, 0, JSON.stringify(events));
     return { passed: true, mission_id: mission, actions: actions.length, action_target_met: actions.length <= 20,
-      steps: [...(real ? [] : ['package-collision-roundtrip']), 'batch-intake', 'source-review', 'generate-apply', 'publish-reviewed', 'mission-list-three-legs', 'cold-warm-export', 'no-activation-or-terminal-side-effects'],
+      steps: [...(real ? [] : ['package-collision-roundtrip']), 'batch-intake', 'source-review', 'generate-apply', 'publish-reviewed', 'mission-list-three-legs', 'cold-warm-export', 'inactive-publication', 'reviewed-leg-simulation-preview-start'],
       candidate_sha: process.env.ACCEPTANCE_CANDIDATE_SHA, network_mode: networkMode };
   } finally {
     probing = false; await monitoring;
