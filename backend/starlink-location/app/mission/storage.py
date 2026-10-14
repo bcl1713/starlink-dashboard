@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import threading
 from datetime import datetime, timezone
 from functools import wraps
@@ -10,13 +11,14 @@ from pathlib import Path
 from filelock import FileLock
 
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline
+from app.mission.repository_gate import RepositoryGate
 
 logger = logging.getLogger(__name__)
 
 # Base directory for mission storage
 MISSIONS_DIR = Path("data/missions")
 TIMELINE_SUFFIX = ".timeline.json"
-_active_leg_locks: dict[str, FileLock] = {}
+_active_leg_locks: dict[str, RepositoryGate] = {}
 _active_leg_locks_guard = threading.Lock()
 
 
@@ -39,19 +41,20 @@ def get_mission_lock(mission_id: str) -> FileLock:
     return FileLock(str(lock_path))
 
 
-def get_active_leg_lock() -> FileLock:
+def get_active_leg_lock() -> RepositoryGate:
     """Get the canonical repository-wide v2 active-leg read/write lock.
 
     FileLock 3.12.0 re-enters only when the same instance is acquired again in
     a thread. Cache the lock by its canonical path rather than relying on the
-    newer ``is_singleton`` constructor option.
+    newer ``is_singleton`` constructor option. FIFO local admission prevents
+    short polling acquisitions from repeatedly overtaking a waiting reader.
     """
     ensure_missions_directory()
     lock_path = str((MISSIONS_DIR / ".active-leg.lock").resolve())
     with _active_leg_locks_guard:
         lock = _active_leg_locks.get(lock_path)
-        if lock is None:
-            lock = FileLock(lock_path)
+        if lock is None or lock.process_id != os.getpid():
+            lock = RepositoryGate(lock_path)
             _active_leg_locks[lock_path] = lock
         return lock
 

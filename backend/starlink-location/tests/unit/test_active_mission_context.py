@@ -150,6 +150,9 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
 
     class RecordingLock:
         def __init__(self, path: str):
+            import os
+
+            self.process_id = os.getpid()
             self.path = path
             self.depth = 0
             instances.append(self)
@@ -165,7 +168,7 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
             return False
 
     monkeypatch.setattr(storage, "_active_leg_locks", {})
-    monkeypatch.setattr(storage, "FileLock", RecordingLock)
+    monkeypatch.setattr(storage, "RepositoryGate", RecordingLock)
     real_list = active_context.list_mission_metadata_v2
     real_write = storage._save_mission_v2_unlocked
 
@@ -198,11 +201,13 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
 def test_active_leg_lock_uses_a_canonical_minimum_version_compatible_instance(
     monkeypatch,
 ) -> None:
-    from app.mission import storage
+    from app.mission import repository_gate, storage
 
     constructed_paths: list[str] = []
 
     class CompatibleFileLock:
+        timeout = -1
+
         def __init__(self, path: str):
             self.path = path
             self.depth = 0
@@ -216,8 +221,19 @@ def test_active_leg_lock_uses_a_canonical_minimum_version_compatible_instance(
             self.depth -= 1
             return False
 
+        def acquire(self, timeout=None, poll_interval=0.05):
+            self.depth += 1
+            return self
+
+        def release(self, force=False):
+            self.depth -= 1
+
+        @property
+        def is_locked(self):
+            return self.depth > 0
+
     monkeypatch.setattr(storage, "_active_leg_locks", {}, raising=False)
-    monkeypatch.setattr(storage, "FileLock", CompatibleFileLock)
+    monkeypatch.setattr(repository_gate, "FileLock", CompatibleFileLock)
 
     outer_lock = storage.get_active_leg_lock()
     inner_lock = storage.get_active_leg_lock()
