@@ -62,14 +62,15 @@ def validate_review(leg, request, evaluation=None):
 
 def preview(service, mission_id, leg_id, request):
     store = service.store
-    with storage.get_active_leg_lock():
-        _, _, source = store.checked(mission_id, leg_id, request.expected_revision)
-        leg = source.model_copy(deep=True)
-        leg.draft = request.draft.model_copy(deep=True)
-        if request.ar_section_status is not None:
-            leg.ar_section_status = request.ar_section_status
-        constraints = store.planning_constraints_provider()
-        environment = environment_identity(store, leg, constraints)
+    # Read-only work uses detached generations and optimistic rechecks. Holding
+    # the write gate across full graph validation starves concurrent readers.
+    _, _, source = store.checked(mission_id, leg_id, request.expected_revision)
+    leg = source.model_copy(deep=True)
+    leg.draft = request.draft.model_copy(deep=True)
+    if request.ar_section_status is not None:
+        leg.ar_section_status = request.ar_section_status
+    constraints = store.planning_constraints_provider()
+    environment = environment_identity(store, leg, constraints)
     inputs = build_inputs(
         leg, leg.draft, store.route_manager, store.poi_manager, constraints
     )
@@ -96,13 +97,12 @@ def preview(service, mission_id, leg_id, request):
         evaluation.map_diagnostics = list(
             check_prepared_map(candidate, artifacts, constraints, store.poi_manager)
         )
-    with storage.get_active_leg_lock():
-        store.checked(mission_id, leg_id, request.expected_revision)
-        if (
-            environment_identity(store, leg, store.planning_constraints_provider())
-            != environment
-        ):
-            raise conflict("Planning dependencies changed; preview again")
+    store.checked(mission_id, leg_id, request.expected_revision)
+    if (
+        environment_identity(store, leg, store.planning_constraints_provider())
+        != environment
+    ):
+        raise conflict("Planning dependencies changed; preview again")
     return evaluation
 
 

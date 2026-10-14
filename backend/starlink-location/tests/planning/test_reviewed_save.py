@@ -75,6 +75,61 @@ def test_preview_is_read_only_and_uses_shared_evaluation(prepared):
     assert service.store.read(view.mission.id).mission.legs == []
 
 
+@pytest.mark.parametrize("boundary,change", [(1, False), (2, False), (1, True)])
+def test_preview_checks_release_gate_and_reject_interleaved_edits(
+    prepared, monkeypatch, boundary, change
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from filelock import Timeout
+
+    from app.mission import storage
+
+    service, view = prepared
+    entered, release = Event(), Event()
+    original = service.store.checked
+    calls = 0
+
+    def delayed(*args, **kwargs):
+        nonlocal calls
+        result = original(*args, **kwargs)
+        calls += 1
+        if calls == boundary:
+            entered.set()
+            assert release.wait(5)
+        return result
+
+    monkeypatch.setattr(service.store, "checked", delayed)
+    request = PreviewDraft(
+        expected_revision=view.revision, draft=view.expected_legs[0].leg.draft
+    )
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        result = workers.submit(service.preview, view.mission.id, "card-1", request)
+        try:
+            assert entered.wait(2)
+            try:
+                with storage.get_active_leg_lock().acquire(timeout=0.2):
+                    if change:
+                        draft = request.draft.model_copy(deep=True)
+                        draft.starshield_enabled = not draft.starshield_enabled
+                        service.store.save_draft(
+                            view.mission.id,
+                            "card-1",
+                            SaveDraft(expected_revision=view.revision, draft=draft),
+                        )
+            except Timeout:
+                pytest.fail("Read-only preview checks retained the repository gate")
+        finally:
+            release.set()
+        if change:
+            with pytest.raises(PlanningFailure) as error:
+                result.result(timeout=5)
+            assert error.value.status_code == 409
+        else:
+            assert result.result(timeout=5).intervals
+
+
 def test_reviewed_save_creates_first_inactive_leg_and_canonical_timeline(prepared):
     service, view = confirmed(prepared)
     assert view.mission.legs == []

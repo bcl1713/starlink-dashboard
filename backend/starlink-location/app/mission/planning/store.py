@@ -229,13 +229,21 @@ class PlanningStore:
         # All referenced active legs, including another parent using a route,
         # prevent mutation of an active planning context.
         route_ids = {leg.route.route_id} if leg.route else set()
-        for parent in ([] if allow_active else storage.list_mission_metadata_v2()):
-            loaded = storage.load_mission_v2(parent.id)
+        parents = [] if allow_active else [mission]
+        if not allow_active:
+            for parent in storage.list_mission_metadata_v2(
+                exclude_mission_id=mission_id
+            ):
+                loaded = storage.load_mission_v2(parent.id)
+                if loaded is None:
+                    raise conflict("Mission inventory changed; retry the operation")
+                parents.append(loaded)
+        for loaded in parents:
             if any(
                 item.is_active
                 and (
                     item.id == leg.installed_leg_id
-                    and parent.id == mission_id
+                    and loaded.id == mission_id
                     or item.route_id in route_ids
                 )
                 for item in loaded.legs

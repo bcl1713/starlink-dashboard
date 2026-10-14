@@ -329,13 +329,13 @@ def _parse_persisted_timestamp(value: object) -> datetime | None:
 
 
 @planning_read_gate
-def list_mission_metadata_v2() -> list[Mission]:
+def list_mission_metadata_v2(*, exclude_mission_id: str | None = None) -> list[Mission]:
     """List hierarchical mission metadata newest-first with stable legacy fallback."""
     ensure_missions_directory()
     missions: list[tuple[datetime | None, str, Mission]] = []
 
     for mission_dir in sorted(MISSIONS_DIR.iterdir(), key=lambda path: path.name):
-        if not mission_dir.is_dir():
+        if mission_dir.name == exclude_mission_id or not mission_dir.is_dir():
             continue
 
         try:
