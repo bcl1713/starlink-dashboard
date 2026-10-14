@@ -88,7 +88,41 @@ def prepare_mission_timeline(
 
     from app.mission.effective_route import prepare_effective_route
 
-    route = prepare_effective_route(mission, route_manager, normalize_for_simulation)
+    # Planning snapshots describe the canonical effective route. Replay-only
+    # interpolation and speed recalculation must not look like a source edit.
+    route = prepare_effective_route(
+        mission,
+        route_manager,
+        normalize_for_simulation=(
+            normalize_for_simulation and mission.transports.planning_policy is None
+        ),
+    )
+
+    planning_evaluation = None
+    if mission.transports.planning_policy is not None:
+        from app.mission.planning.evaluate import evaluate_context
+        from app.mission.planning.inputs import canonical_inputs
+
+        if (
+            mission.transports.planning_inputs is None
+            or mission.transports.evaluation_context is None
+        ):
+            raise TimelineComputationError(
+                "Planning policy requires persisted inputs and evaluation context"
+            )
+        try:
+            inputs, draft, context = canonical_inputs(
+                mission, route, constraint_config, satellite_catalog, poi_manager
+            )
+            planning_evaluation = evaluate_context(inputs, draft, context)
+        except ValueError as exc:
+            raise TimelineComputationError(str(exc)) from exc
+
+        if normalize_for_simulation:
+            route = prepare_effective_route(
+                mission, route_manager, normalize_for_simulation=True
+            )
+
     splice = mission.transports.manual_route_splice
     selected_track = next(
         (
@@ -112,26 +146,6 @@ def prepare_mission_timeline(
     )
     mission_start, mission_end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
-
-    planning_evaluation = None
-    if mission.transports.planning_policy is not None:
-        from app.mission.planning.evaluate import evaluate_context
-        from app.mission.planning.inputs import canonical_inputs
-
-        if (
-            mission.transports.planning_inputs is None
-            or mission.transports.evaluation_context is None
-        ):
-            raise TimelineComputationError(
-                "Planning policy requires persisted inputs and evaluation context"
-            )
-        try:
-            inputs, draft, context = canonical_inputs(
-                mission, route, constraint_config, satellite_catalog, poi_manager
-            )
-            planning_evaluation = evaluate_context(inputs, draft, context)
-        except ValueError as exc:
-            raise TimelineComputationError(str(exc)) from exc
 
     coverage_path = Path("data/sat_coverage/commka.geojson")
     resolved_sampler = coverage_sampler or (

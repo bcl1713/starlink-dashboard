@@ -20,7 +20,13 @@ def prepare_effective_route(leg, route_manager, normalize_for_simulation=False):
         raise TimelineComputationError(f"Route {leg.route_id} not loaded")
 
     if normalize_for_simulation:
-        route = normalize_timed_route(route)
+        normalized = normalize_timed_route(route)
+        # Validate replay timing without changing the speed inputs used to
+        # estimate a persisted planning diversion or its accepted arrival.
+        if leg.transports.planning_policy is None:
+            route = normalized
+        else:
+            route = route.model_copy(deep=True)
     route = route_with_adjusted_departure(route, leg.adjusted_departure_time)
     splice = leg.transports.manual_route_splice
     selected_track = None
