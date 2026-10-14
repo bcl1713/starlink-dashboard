@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   aviationWeatherApi,
   type AviationSettings,
@@ -9,19 +9,30 @@ import {
 } from '@/pages/aviation-weather/gfs-controller';
 import { createGridDrawing } from '@/pages/aviation-weather/grid-renderer';
 import { useAviationSettings } from './api/useAviationSettings';
+import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 export function useGfsWeather() {
-  const settings = useAviationSettings().data,
-    binding = useMemo(() => createBinding(), []);
+  const settings = useAviationSettings().data;
+  const reducedMotion = usePrefersReducedMotion();
+  const [binding] = useState(() => createBinding(reducedMotion));
   const view = useSyncExternalStore(binding.subscribe, binding.snapshot);
   useEffect(() => binding.setSettings(settings), [binding, settings]);
+  useEffect(
+    () => binding.setReducedMotion(reducedMotion),
+    [binding, reducedMotion]
+  );
   return view;
 }
-function createBinding() {
+function createBinding(initialMotion: boolean) {
   let controller: GfsController | null = null,
     observed: AviationSettings | undefined,
     view = emptyGfsView;
+  let reducedMotion = initialMotion;
   return {
     snapshot: () => view,
+    setReducedMotion: (reduced: boolean) => {
+      reducedMotion = reduced;
+      controller?.setReducedMotion(reduced);
+    },
     setSettings: (next: AviationSettings | undefined) => {
       observed = next;
       if (next) controller?.setSettings(next);
@@ -31,6 +42,7 @@ function createBinding() {
         draw: createGridDrawing,
       });
       controller = owned;
+      owned.setReducedMotion(reducedMotion);
       const unsubscribe = owned.subscribe(() => {
         view = owned.getSnapshot();
         listener();

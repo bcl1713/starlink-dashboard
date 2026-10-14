@@ -106,6 +106,56 @@ it('legacy simultaneous mode admits and loads only wind', async () => {
   r.controller.stop();
   expect(vi.getTimerCount()).toBe(0);
 });
+it('applies the latest reduced-motion preference to a pending replacement without reloading it', async () => {
+  fakeClock();
+  const r = runtime();
+  let complete!: (value: GridLease) => void;
+  r.load.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      })
+  );
+  r.controller.setReducedMotion(false);
+  r.controller.setSettings(settings);
+  r.controller.start();
+  await flush();
+  r.controller.setReducedMotion(true);
+  complete(r.lease);
+  await flush();
+  expect(r.load).toHaveBeenCalledTimes(1);
+  expect(r.draw).toHaveBeenCalledWith(
+    r.lease,
+    { winds: true, temperature: false },
+    r.budget,
+    { reducedMotion: true }
+  );
+  r.controller.stop();
+  expect(vi.getTimerCount()).toBe(0);
+});
+it('removes a drawing if enabling particles cannot be admitted', async () => {
+  fakeClock();
+  const r = runtime();
+  const object = new THREE.Group();
+  r.draw.mockImplementation(() => ({
+    object,
+    bytes: { decoded: 0, gpu: 0 },
+    dispose: r.dispose,
+    setReducedMotion(reduced: boolean) {
+      if (!reduced) throw Error('Shared weather resource budget');
+    },
+  }));
+  r.controller.setReducedMotion(true);
+  r.controller.setSettings(settings);
+  r.controller.start();
+  await flush();
+  expect(r.controller.getSnapshot().drawing).toBeDefined();
+  expect(() => r.controller.setReducedMotion(false)).not.toThrow();
+  expect(r.controller.getSnapshot().drawing).toBeUndefined();
+  expect(r.dispose).toHaveBeenCalledTimes(1);
+  r.controller.stop();
+  expect(vi.getTimerCount()).toBe(0);
+});
 describe('model generation and monotonic expiry', () => {
   it('rejects a grid after the target crosses the 48-hour run window even with delayed timers', async () => {
     fakeClock();
