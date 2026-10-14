@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { planBriefingPages } from './briefing/pagination.mjs';
 import { planWithMapFallback } from './briefing-mission-layout.mjs';
+import { createRenderBudget } from './render-budget.mjs';
 
 test('an unavailable map reclaims its column even when provisional pagination exceeds three pages', async () => {
   let hasMap = true;
@@ -129,4 +130,37 @@ test('measurement keeps one loaded font head while updating candidate page bodie
   assert.equal(heads, 1);
   assert.deepEqual(bodies, ['continuation', 'final assembly']);
   assert.equal(checks, 6);
+});
+test('a body update lasting more than Playwright’s default timeout uses the remaining render allowance', async () => {
+  const { createMissionDocumentLoader } = await import(
+    './briefing-mission-layout.mjs'
+  );
+  let now = 0;
+  const budget = createRenderBudget({ clock: () => now });
+  let body;
+  const page = {
+    setContent: async () => {},
+    evaluate: async () => ({ fonts: true, images: true }),
+    locator: () => ({
+      evaluate: async (_fn, content, options = {}) => {
+        const duration = 45000;
+        if ((options.timeout ?? 30000) < duration)
+          throw new Error('locator.evaluate: Timeout exceeded');
+        now += duration;
+        body = content;
+      },
+    }),
+  };
+  const load = createMissionDocumentLoader({
+    page,
+    budget,
+    check: () => budget.workRemainingMs(),
+    isBlocked: () => false,
+  });
+  await load('<html><body>primary</body></html>');
+  now = 65000;
+  await load('<html><body>final assembly</body></html>');
+  assert.equal(body, 'final assembly');
+  assert.equal(budget.elapsedMs(), 110000);
+  assert.equal(budget.workRemainingMs(), 7000);
 });
