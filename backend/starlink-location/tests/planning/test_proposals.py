@@ -2,6 +2,8 @@
 
 import importlib.util
 
+import pytest
+
 
 def test_proposal_service_exists():
     assert importlib.util.find_spec(
@@ -18,7 +20,53 @@ def test_generation_accepts_optional_idempotency_key():
     assert request.idempotency_key == "once"
 
 
-import pytest
+@pytest.mark.parametrize("target_name", ["leg", "draft"])
+def test_client_input_copies_do_not_hold_repository_gate(
+    prepared, monkeypatch, target_name
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from filelock import Timeout
+
+    from app.mission import storage
+    from app.mission.planning.inputs import build_inputs
+
+    service, view = prepared
+    leg = view.expected_legs[0].leg
+    draft = leg.draft
+    target = leg if target_name == "leg" else draft
+    original = type(target).model_copy
+    entered, release = Event(), Event()
+
+    def delayed(self, *args, **kwargs):
+        value = original(self, *args, **kwargs)
+        if self is target:
+            entered.set()
+            assert release.wait(5)
+        return value
+
+    monkeypatch.setattr(type(target), "model_copy", delayed)
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        result = workers.submit(
+            build_inputs,
+            leg,
+            draft,
+            service.store.route_manager,
+            service.store.poi_manager,
+            service.store.planning_constraints_provider(),
+        )
+        try:
+            assert entered.wait(2)
+            try:
+                with storage.get_active_leg_lock().acquire(timeout=0.2):
+                    pass
+            except Timeout:
+                pytest.fail("Copying detached client inputs retained the gate")
+        finally:
+            release.set()
+        assert result.result(timeout=5).satellites
+
 
 from app.mission.planning.errors import PlanningFailure
 from app.mission.planning.models import (

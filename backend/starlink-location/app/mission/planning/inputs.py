@@ -100,10 +100,12 @@ def build_inputs(
         raise ValueError(
             "Resolve pending legacy X transitions and AR windows using accepted timed route occurrences before computing"
         )
-    # Copies alone are captured while sharing the activation/publication gate.
+    # These caller-owned records are already detached from canonical storage.
+    # Their potentially large evaluation contexts must not extend the gate.
+    leg = leg.model_copy(deep=True)
+    draft = draft.model_copy(deep=True)
+    # Only shared provider capture needs the activation/publication gate.
     with storage.get_active_leg_lock():
-        leg = leg.model_copy(deep=True)
-        draft = draft.model_copy(deep=True)
         if not leg.route:
             raise ValueError("A bound route is required")
         source = route_manager.get_route(leg.route.route_id)
