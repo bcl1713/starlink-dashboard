@@ -217,7 +217,8 @@ and `tools/acceptance/itinerary-planning/export_probes.py`. Extend
 `tools/tests/test_itinerary_planning_acceptance.py`.
 
 **Interfaces:**
-`probe_series(origin: str, mission_id: str, *, seconds: float, output: Path) -> dict`
+`probe_series(origin, mission_id, *, seconds, output) -> dict`
+accepts string origin/mission ID, floating-point seconds and a `Path` output.
 issues health/status/mission probes with a two-second request deadline and
 writes every request result/elapsed time. Reports include
 scenario/configuration, preparation stage times, headers/body completion,
