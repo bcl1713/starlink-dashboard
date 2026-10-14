@@ -9,6 +9,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { OverviewMapLegend } from './OverviewMapLegend';
+import { Group } from 'three';
 import { GfsStatus } from './aviation-weather/GfsStatus';
 import { gridFixture, GRID_RUN } from '@/test/gfs-grid';
 afterEach(cleanup);
@@ -77,6 +78,11 @@ it('discloses one list and restores focus on Escape', () => {
           state: 'current',
           now: GRID_RUN,
           products: { winds: gridFixture().product },
+          drawing: {
+            object: new Group(),
+            bytes: { decoded: 0, gpu: 0 },
+            dispose() {},
+          },
         }}
       />
     </OverviewMapLegend>

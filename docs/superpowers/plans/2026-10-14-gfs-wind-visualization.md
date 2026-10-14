@@ -241,18 +241,18 @@ Replace the obsolete `NativeGridDrawing` barb fields with
 direct calls return an empty owned drawing; the controller normally avoids
 drawing in off mode.
 
-- [ ] Write `wind-scale.test.ts`: exact stops and constant, 3/4 m/s magnitude
+- [x] Write `wind-scale.test.ts`: exact stops and constant, 3/4 m/s magnitude
       `9.719222462203` kt, halfway colors within floating tolerance, 150 and 250
       kt equal color, and 250 kt physical speed remains 250 kt. No wind
       rounding.
-- [ ] Replace barb-specific renderer assertions with wind/temperature cases. A
+- [x] Replace barb-specific renderer assertions with wind/temperature cases. A
       legacy both-true call must produce wind only. Signed U/V RGBA8 packing
       decodes -32768 and 32767 correctly; conservative masks use only
       positive-weight contributors. Retain geographic axes, seam/poles, triangle
       winding, day/night-independent materials, outward face, reservation
       rejection, and double-disposal checks. For opposite U samples at a
       midpoint, CPU/reference speed is zero, not the mean of magnitudes.
-- [ ] Extend `GfsStatus.test.tsx` and `OverviewMapLegend.test.tsx`:
+- [x] Extend `GfsStatus.test.tsx` and `OverviewMapLegend.test.tsx`:
       current/stale wind shows **Wind speed · kt** and 0/25/50/75/100/125/150+
       labels, temperature shows only its °C key, legacy both-entries selects
       wind, and off/loading/ unavailable without an admitted drawing has no
@@ -264,7 +264,7 @@ drawing in off mode.
   timeout --kill-after=10s 5m npm run test:unit -- src/pages/aviation-weather/wind-scale.test.ts src/pages/aviation-weather/grid-renderer.test.ts src/pages/aviation-weather/GfsStatus.test.tsx src/pages/OverviewMapLegend.test.tsx
   ```
 
-- [ ] Extract atmospheric mesh construction, winding, camera uniforms, and
+- [x] Extract atmospheric mesh construction, winding, camera uniforms, and
       resource disposal from `grid-renderer.ts` into `grid-raster.ts`.
       Temperature continues to use its existing packed T shader. Wind packs U
       and V into two nearest-filtered RGBA8 textures, carrying mask bytes, with
@@ -272,7 +272,7 @@ drawing in off mode.
       physical U/V before magnitude. Build palette uniforms from
       `WIND_COLOR_STOPS`, including correct sRGB output handling, rather than
       duplicating hex values in GLSL.
-- [ ] Keep raster radius 2.012, no raycast, transparent alpha 0.45, depth writes
+- [x] Keep raster radius 2.012, no raycast, transparent alpha 0.45, depth writes
       disabled, and existing below-marker render order. Reserve exact
       conversion, textures, geometry, and materials before allocation; dispose
       partial failures. Name meshes `GFS wind speed` and `GFS temperature`.
@@ -289,12 +289,12 @@ drawing in off mode.
       uses the same color calculation as normal rendering, with alpha 1 for
       valid cells. Ordinary rendering must independently obey the conservative
       mask and 0.45 opacity; diagnostic success alone is insufficient.
-- [ ] Build the wind key from the same palette definition, with visible labels
+- [x] Build the wind key from the same palette definition, with visible labels
       and accessible range/units text. Use responsive layout that permits a
       stacked key on narrow displays. Preserve temperature CSS, admission
       context, and the collapsed map legend. Remove production barb resources
       and their unit tests; keep historical proof support unchanged.
-- [ ] Rerun focused tests, production `npm run build`, and relevant lint with
+- [x] Rerun focused tests, production `npm run build`, and relevant lint with
       explicit limits; require PASS. Commit
       `feat: render a knots-scaled GFS wind gradient`.
 
