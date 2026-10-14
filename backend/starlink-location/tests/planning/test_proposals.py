@@ -46,6 +46,7 @@ def prepared(service, tmp_path, monkeypatch):
         satellite_ids=draft.permitted_satellite_ids, confirmed=True
     )
     draft.initial_x_satellite_id = "SOUTH"
+    draft.no_ars_confirmed = True
     view = service.store.save_draft(
         view.mission.id,
         "card-1",
@@ -619,3 +620,56 @@ def test_current_review_does_not_label_historical_applied_payload_stale(prepared
     current = service.store.read(view.mission.id).expected_legs[0]
     assert current.review_status == "reviewed"
     assert current.computation_status == "applied"
+
+
+def test_generation_requires_explicit_source_prerequisite_review(prepared, monkeypatch):
+    api, view, request = proposal_api(prepared, monkeypatch)
+    draft = view.expected_legs[0].leg.draft.model_copy(deep=True)
+    draft.no_ars_confirmed = False
+    changed = api.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(expected_revision=view.revision, draft=draft),
+    )
+    request = request.model_copy(
+        update={
+            "expected_revision": changed.revision,
+            "input_identity": changed.expected_legs[0].input_identity,
+        }
+    )
+    with pytest.raises(PlanningFailure) as error:
+        api.generate(view.mission.id, "card-1", request)
+    assert error.value.error.code == "source_review_required"
+
+
+def test_first_generation_does_not_require_a_manual_initial_satellite(
+    prepared, monkeypatch
+):
+    api, view, request = proposal_api(prepared, monkeypatch)
+    draft = view.expected_legs[0].leg.draft.model_copy(deep=True)
+    draft.initial_x_satellite_id = None
+    saved = api.store.save_draft(
+        view.mission.id,
+        "card-1",
+        SaveDraft(expected_revision=view.revision, draft=draft),
+    )
+    proposal = api.generate(
+        view.mission.id,
+        "card-1",
+        request.model_copy(
+            update={
+                "expected_revision": saved.revision,
+                "input_identity": saved.expected_legs[0].input_identity,
+            }
+        ),
+    )
+    assert proposal.state == "ready"
+    assert (
+        proposal.proposed_draft.initial_x_satellite_id in draft.permitted_satellite_ids
+    )
+    assert (
+        api.store.read(view.mission.id)
+        .expected_legs[0]
+        .leg.draft.initial_x_satellite_id
+        is None
+    )

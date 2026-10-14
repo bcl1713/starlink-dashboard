@@ -62,3 +62,19 @@ it('discloses retained current draft and prevents stale Apply', () => {
   expect(screen.getByText(/Current plan retained/)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Apply proposal' })).toBeDisabled();
 });
+
+it('identifies an applied persisted plan without a stale warning or second Apply', () => {
+  render(
+    <ProposalComparison
+      proposal={{
+        ...proposal,
+        state: 'applied',
+        applied_input_identity: 'current',
+      }}
+      onApply={vi.fn()}
+    />
+  );
+  expect(screen.getByText(/Applied to the saved draft/)).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Apply proposal' })).toBeNull();
+  expect(screen.queryByText(/Proposal is stale/)).toBeNull();
+});

@@ -142,6 +142,9 @@ class ProposalService:
         leg, constraints, environment, manifest = self._snapshot(
             mission_id, leg_id, request
         )
+        from .prerequisites import validate_generation
+
+        validate_generation(leg)
         key = (
             hashlib.sha256(request.idempotency_key.encode()).hexdigest()
             if request.idempotency_key
@@ -275,6 +278,11 @@ class ProposalService:
                     "applied_input_identity": ref.applied_input_identity,
                 }
             )
+
+    def apply_batch(self, mission_id, request):
+        from .proposal_application import apply_batch
+
+        return apply_batch(self, mission_id, request)
 
     def apply(self, mission_id, leg_id, request):
         # No optimizer call and no writes until all live identities are checked.

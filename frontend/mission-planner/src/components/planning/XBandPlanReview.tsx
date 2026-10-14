@@ -22,6 +22,8 @@ export function XBandPlanReview({
   proposal,
   onApply,
   onReoptimize,
+  generationDisabled = false,
+  generationLabel = 'Re-optimize',
   disabled = false,
   routePoints = [],
 }: {
@@ -33,6 +35,8 @@ export function XBandPlanReview({
   proposal?: PlanningProposal | null;
   onApply?: () => void;
   onReoptimize?: () => void;
+  generationDisabled?: boolean;
+  generationLabel?: string;
   disabled?: boolean;
   routePoints?: RoutePoint[];
 }) {
@@ -208,8 +212,12 @@ export function XBandPlanReview({
         </div>
       ))}
       {onReoptimize && (
-        <Button variant="outline" onClick={onReoptimize} disabled={disabled}>
-          Re-optimize
+        <Button
+          variant="outline"
+          onClick={onReoptimize}
+          disabled={disabled || generationDisabled}
+        >
+          {generationLabel}
         </Button>
       )}
       {proposal && onApply && (

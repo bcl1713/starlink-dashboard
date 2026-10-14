@@ -7,7 +7,7 @@ export function ProposalComparison({
   disabled = false,
 }: {
   proposal: PlanningProposal;
-  onApply: () => void;
+  onApply?: () => void;
   disabled?: boolean;
 }) {
   const labels = {
@@ -80,14 +80,19 @@ export function ProposalComparison({
           Proposal is stale. Re-optimize to compare current inputs.
         </p>
       )}
-      <Button
-        onClick={onApply}
-        disabled={
-          disabled || proposal.state !== 'ready' || !proposal.proposed_draft
-        }
-      >
-        Apply proposal
-      </Button>
+      {proposal.state === 'applied' && (
+        <p>Applied to the saved draft. This plan is retained across reload.</p>
+      )}
+      {proposal.state !== 'applied' && onApply && (
+        <Button
+          onClick={onApply}
+          disabled={
+            disabled || proposal.state !== 'ready' || !proposal.proposed_draft
+          }
+        >
+          Apply proposal
+        </Button>
+      )}
     </section>
   );
 }

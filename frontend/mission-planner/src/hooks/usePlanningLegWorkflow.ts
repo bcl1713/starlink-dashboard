@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { usePlanning } from './api/usePlanning';
 import { planningApi, planningErrorMessage } from '../services/planning';
+import { planningSourceReady } from '../services/planning-prerequisites';
 import type {
   ExpectedLegCard,
   PlanningView,
@@ -30,6 +31,8 @@ export function usePlanningLegWorkflow({
 }) {
   const leg = card.leg;
   const controller = planning.controller;
+  const editEpoch = useRef(0);
+  const autosavedEpoch = useRef(0);
   const [draft, setDraft] = useState<PlanningDraft>(() => ({
     ...leg.draft,
     ar_corrections: leg.draft?.ar_corrections?.length
@@ -86,6 +89,7 @@ export function usePlanningLegWorkflow({
   const [error, setError] = useState('');
   const change = (updates: Partial<PlanningDraft>) => {
     controller.cancelPreview(leg.id);
+    editEpoch.current++;
     setDraft((current) => ({ ...current, ...updates }));
     setDirty(true);
     setEvaluation(null);
@@ -251,33 +255,6 @@ export function usePlanningLegWorkflow({
           });
           receive(ready);
         }
-        const currentCard = ready.expected_legs.find(
-          (c) => c.leg.id === leg.id
-        )!;
-        const selected = currentCard.leg.draft;
-        if (
-          !selected?.access_confirmation?.confirmed ||
-          !selected.permitted_satellite_ids?.length ||
-          selected.unresolved_x_transitions?.length ||
-          selected.unresolved_aar_windows?.length
-        ) {
-          setMessage(
-            'Route accepted. Confirm satellite access and resolve pending inputs, then Re-optimize.'
-          );
-          return;
-        }
-        const initial = await planning.generateProposal.mutateAsync({
-          legId: leg.id,
-          request: {
-            expected_revision: ready.revision,
-            input_identity: currentCard.input_identity,
-            idempotency_key: `initial-route-${current.route!.source_id}`,
-          },
-        });
-        setProposal(initial);
-        setMessage(
-          'Route accepted. Review AR windows and compare the initial proposal before Apply.'
-        );
       }
     } catch (e) {
       setError(planningErrorMessage(e));
@@ -287,6 +264,7 @@ export function usePlanningLegWorkflow({
   };
 
   const save = async () => {
+    autosavedEpoch.current = editEpoch.current;
     setError('');
     setMessage('');
     try {
@@ -305,6 +283,7 @@ export function usePlanningLegWorkflow({
     }
   };
   const optimize = async () => {
+    if (!planningSourceReady(leg, draft, section)) return;
     setSequencePending(true);
     setError('');
     const saved = dirty ? await save() : view;
@@ -411,6 +390,7 @@ export function usePlanningLegWorkflow({
       setSequencePending(false);
     }
   };
+  const readyToGenerate = planningSourceReady(leg, draft, section);
   const invalid =
     !leg.route ||
     !draft.initial_x_satellite_id ||
@@ -444,6 +424,16 @@ export function usePlanningLegWorkflow({
     planning.generateProposal.isPending ||
     planning.applyProposal.isPending ||
     planning.saveReviewed.isPending;
+  const saveLatest = useRef(save);
+  saveLatest.current = save;
+  useEffect(() => {
+    if (!dirty || pending || autosavedEpoch.current === editEpoch.current)
+      return;
+    const timer = setTimeout(() => {
+      void saveLatest.current();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [dirty, draft, section, pending]);
   return {
     draft,
     section,
@@ -475,6 +465,7 @@ export function usePlanningLegWorkflow({
     reviewed,
     reload,
     invalid,
+    readyToGenerate,
     pending,
   };
 }

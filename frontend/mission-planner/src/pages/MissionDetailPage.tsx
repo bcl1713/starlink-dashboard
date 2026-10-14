@@ -28,6 +28,8 @@ import { RevisionReview } from '../components/planning/RevisionReview';
 import type { PlanningCAS } from '../services/missions';
 import { ExpectedLegCards } from '../components/planning/ExpectedLegCards';
 import { BatchRouteAttachments } from '../components/planning/BatchRouteAttachments';
+import { ItinerarySourceReview } from '../components/planning/ItinerarySourceReview';
+import { ItineraryPlans } from '../components/planning/ItineraryPlans';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
@@ -249,6 +251,11 @@ export function MissionDetailPage() {
                   void planning.refetch();
                 }}
               />
+              <ItinerarySourceReview
+                key={`source-${missionId}`}
+                view={planning.data}
+              />
+              <ItineraryPlans key={`plans-${missionId}`} view={planning.data} />
               <ExpectedLegCards
                 view={planning.data}
                 renderInstalledActions={renderInstalledActions}

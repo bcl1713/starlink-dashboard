@@ -522,3 +522,9 @@ export interface AcceptBatchRoutes {
     discrepancy_acknowledgments: string[];
   }[];
 }
+
+export interface ApplyBatchProposals {
+  expected_revision: number;
+  entries: { leg_id: string; proposal_id: string; input_identity: string }[];
+  idempotency_key: string;
+}

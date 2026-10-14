@@ -17,6 +17,7 @@ from .match import RouteAnchorError
 from .models import (
     AcceptBatchRoutes,
     AcceptRouteBinding,
+    ApplyBatchProposals,
     ApplyProposal,
     ApplyRevision,
     BatchRoutePreview,
@@ -330,3 +331,14 @@ async def discard_route_batch(
     from .intake import discard_routes
 
     await invoke(discard_routes, service, mission_id, preview_id)
+
+
+@router.post(
+    "/missions/{mission_id}/proposal-applications", response_model=PlanningView
+)
+async def apply_batch_proposals(
+    mission_id: str,
+    request: ApplyBatchProposals,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.proposals.apply_batch, mission_id, request)

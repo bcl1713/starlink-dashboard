@@ -404,6 +404,7 @@ class PlanningManifest(PlanningRecord):
     expected_legs: list[ExpectedLeg] = Field(default_factory=list)
     proposals: list[PlanningProposal] = Field(default_factory=list)
     proposal_refs: list[ProposalReference] = Field(default_factory=list)
+    proposal_applications: dict[str, ContentHash] = Field(default_factory=dict)
     review_records: list[ReviewRecord] = Field(default_factory=list)
     route_bindings: list[RouteBinding] = Field(default_factory=list)
     route_history: list[RouteBinding] = Field(default_factory=list)
@@ -687,3 +688,15 @@ class AcceptBatchRoutes(PlanningRecord):
     preview_id: str
     expected_revision: int = Field(ge=1)
     assignments: list[BatchRouteAssignment]
+
+
+class BatchProposalEntry(PlanningRecord):
+    leg_id: str
+    proposal_id: str
+    input_identity: ContentHash
+
+
+class ApplyBatchProposals(PlanningRecord):
+    expected_revision: int = Field(ge=1)
+    entries: list[BatchProposalEntry] = Field(min_length=1)
+    idempotency_key: str = Field(min_length=1, max_length=256)

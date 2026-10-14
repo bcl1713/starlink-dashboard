@@ -116,6 +116,7 @@ function ReviewEditor({
     reviewed,
     reload,
     invalid,
+    readyToGenerate,
     pending,
   } = usePlanningLegWorkflow({
     card,
@@ -332,6 +333,12 @@ function ReviewEditor({
             proposal={proposal}
             onApply={apply}
             onReoptimize={optimize}
+            generationDisabled={!readyToGenerate}
+            generationLabel={
+              proposal || leg.draft?.initial_x_satellite_id
+                ? 'Re-optimize'
+                : 'Generate plans'
+            }
             disabled={pending}
           />
         </TabsContent>
@@ -421,7 +428,7 @@ function ReviewEditor({
         />
         I acknowledge the X-band outages and backup gaps
       </label>
-      {dirty && <p>Save draft before confirming the reviewed plan.</p>}
+      {dirty && <p>Draft changes are pending save before final review.</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" onClick={returnToMission}>
           Cancel

@@ -4,6 +4,7 @@ import type {
   AcceptBatchRoutes,
   BatchRoutePreview,
   ApplyProposal,
+  ApplyBatchProposals,
   ApplyRevision,
   ConfirmItinerary,
   GenerateProposal,
@@ -132,6 +133,16 @@ export const planningApi = {
     (
       await apiClient.get(
         `${legPath(mission, leg)}/proposals/${encodeURIComponent(proposal)}`
+      )
+    ).data,
+  applyProposals: async (
+    mission: string,
+    request: ApplyBatchProposals
+  ): Promise<PlanningView> =>
+    (
+      await apiClient.post(
+        `${missionPath(mission)}/proposal-applications`,
+        request
       )
     ).data,
   applyProposal: async (
