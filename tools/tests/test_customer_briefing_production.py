@@ -513,3 +513,42 @@ def test_lossless_assembly_comparison_has_zero_pixel_difference(tmp_path):
     assert proof["textEqual"] and proof["geometryEqual"]
     assert len(proof["pages"]) == 10
     assert all(p["changedPixels"] == 0 for p in proof["pages"])
+
+
+def test_prepared_download_waits_for_ready_and_keeps_completed_job_identity():
+    value = module()
+    controls = (
+        Path(value.ROOT) / "tools/acceptance/customer-briefing/production_controls.py"
+    )
+    spec = importlib.util.spec_from_file_location("prepared_controls", controls)
+    implementation = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(implementation)
+
+    class Api:
+        def __init__(self):
+            self.statuses = iter(["preparing", "ready"])
+
+        def request(self, method, path, **kwargs):
+            if method == "POST":
+                assert path == "/api/v2/missions/m/export-preparations"
+                return (
+                    json.dumps({"id": "owned-job", "state": "queued"}).encode(),
+                    {},
+                    0.01,
+                )
+            if path.endswith("/download"):
+                assert (
+                    path == "/api/v2/missions/m/export-preparations/owned-job/download"
+                )
+                return b"PK-exact-ready", {"Content-Type": "application/zip"}, 0.02
+            return (
+                json.dumps({"id": "owned-job", "state": next(self.statuses)}).encode(),
+                {},
+                0.01,
+            )
+
+    content, headers, _elapsed, stages = implementation.download_prepared(
+        Api(), "m", timeout=5, poll_seconds=0
+    )
+    assert content == b"PK-exact-ready" and headers["Content-Type"] == "application/zip"
+    assert [stage["state"] for stage in stages] == ["queued", "preparing", "ready"]

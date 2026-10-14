@@ -68,11 +68,30 @@ def image_inventory(pdf_bytes: bytes) -> list[dict]:
                     visit(mask, page, active)
         resources = obj.get("/Resources")
         if resources is not None:
-            resources = resources.get_object()
-            xobjects = resources.get("/XObject")
-            if xobjects is not None:
-                for child in xobjects.get_object().values():
-                    visit(child, page, active)
+            walk(resources, page, active)
+
+    def walk(value, page, active):
+        # Tiling patterns and transparency groups can own Form/image resources
+        # just as page XObjects do. Follow the complete reachable resource graph.
+        obj = value.get_object() if isinstance(value, IndirectObject) else value
+        if not isinstance(obj, (dict, list)):
+            return
+        if isinstance(obj, dict) and (
+            obj.get("/Subtype") in ("/Image", "/Form")
+            or obj.get("/Resources") is not None
+        ):
+            visit(value, page, active)
+            return
+        key = (
+            (value.idnum, value.generation)
+            if isinstance(value, IndirectObject)
+            else (id(obj), 0)
+        )
+        if key in active:
+            return
+        active = active | {key}
+        for child in obj.values() if isinstance(obj, dict) else obj:
+            walk(child, page, active)
 
     for number, page in enumerate(reader.pages, 1):
         visit(page, number, set())

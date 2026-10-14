@@ -140,3 +140,49 @@ def test_resource_qualification_accepts_measured_distinct_maps_and_rejects_regre
             fixture=True,
             baseline_bytes=len(output.getvalue()),
         )
+
+
+def test_inventory_follows_tiling_pattern_resources():
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.generic import (
+        DictionaryObject,
+        NameObject,
+        NumberObject,
+        ArrayObject,
+        DecodedStreamObject,
+    )
+    from tests.unit.pdf_resource_fixtures import make_pdf_fragments
+
+    _, records = make_pdf_fragments()
+    writer = PdfWriter()
+    writer.append(PdfReader(io.BytesIO(records["a"]["pdf"])))
+    for page in writer.pages:
+        resources = page["/Resources"]
+        pattern = DecodedStreamObject()
+        pattern.set_data(b"/Nested Do")
+        pattern.update(
+            {
+                NameObject("/Type"): NameObject("/Pattern"),
+                NameObject("/PatternType"): NumberObject(1),
+                NameObject("/PaintType"): NumberObject(1),
+                NameObject("/TilingType"): NumberObject(1),
+                NameObject("/XStep"): NumberObject(8),
+                NameObject("/YStep"): NumberObject(8),
+                NameObject("/BBox"): ArrayObject(
+                    [NumberObject(v) for v in (0, 0, 8, 8)]
+                ),
+                NameObject("/Resources"): DictionaryObject(
+                    {NameObject("/XObject"): resources["/XObject"]}
+                ),
+            }
+        )
+        del resources["/XObject"]
+        resources[NameObject("/Pattern")] = DictionaryObject(
+            {NameObject("/P1"): writer._add_object(pattern)}
+        )
+    output = io.BytesIO()
+    writer.write(output)
+    writer.close()
+    images = inventory()(output.getvalue())
+    assert len(images) == 5
+    assert all(image["pages"] == [1, 2] for image in images)

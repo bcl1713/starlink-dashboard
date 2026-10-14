@@ -414,3 +414,40 @@ def test_derivative_and_raster_policy_change_renderer_revision(tmp_path, monkeyp
         policy.write_text("export const PRINT_RASTER_PPI = 301;")
         assert identity.renderer_revision(refresh=True) != after
         assert master.read_bytes() == b"master"
+
+
+def test_effective_bundled_derivative_changes_revision_with_source_bind_mount(
+    tmp_path, monkeypatch
+):
+    from pathlib import Path
+    from app.mission.slide_cache import identity
+
+    script = (
+        tmp_path
+        / "mounted/backend/starlink-location/app/mission/slide_cache/identity.py"
+    )
+    script.parent.mkdir(parents=True)
+    script.write_text("# preparation")
+    assets = script.parents[1] / "assets"
+    assets.mkdir()
+    source = assets / "apo-patch-briefing.png"
+    source.write_bytes(b"unchanged mounted asset")
+    renderer = tmp_path / "bundled/renderer"
+    renderer.mkdir(parents=True)
+    (renderer / "raster-policy.mjs").write_text("export const PRINT_RASTER_PPI = 300;")
+    bundled = renderer.parent / "apo-patch-briefing.png"
+    bundled.write_bytes(b"embedded derivative")
+    monkeypatch.setenv("BRIEFING_APO_PATH", str(bundled))
+    monkeypatch.setattr(identity, "__file__", str(script))
+    monkeypatch.setattr(
+        identity,
+        "Path",
+        lambda value: (
+            renderer if value == "/opt/customer-briefing/renderer" else Path(value)
+        ),
+    )
+    before = identity.renderer_revision(refresh=True)
+    bundled.write_bytes(b"changed embedded derivative")
+    assert identity.renderer_revision() != before
+    assert identity.renderer_revision(refresh=True) != before
+    assert source.read_bytes() == b"unchanged mounted asset"

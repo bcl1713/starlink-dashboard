@@ -201,7 +201,12 @@ def assert_scenario(case, report):
         if report.get("warning") != "data":
             raise ValueError("Missing route must retain legacy with data omission")
         return
-    count = {"two-page": 2, "three-page": 3, "five-leg": 5, "mission-pdf-resources": 5}.get(case)
+    count = {
+        "two-page": 2,
+        "three-page": 3,
+        "five-leg": 5,
+        "mission-pdf-resources": 5,
+    }.get(case)
     if count is not None and report.get("pageCount") != count:
         raise ValueError(
             f"Wrong actual page count for {case}: {report.get('pageCount')}"
@@ -1111,4 +1116,118 @@ def qualify(owner):
         "legacyComparison": legacy_comparison,
         "roundtripImports": imported,
         "customerAcceptance": "pending",
+    }
+
+
+def download_prepared(api, mission_id, *, timeout=600, poll_seconds=0.25):
+    """Exercise the current preparation API; never mistake job JSON for a ZIP."""
+    started = time.monotonic()
+    base = f"/api/v2/missions/{mission_id}/export-preparations"
+    content, _, _ = api.request("POST", base)
+    job = json.loads(content)
+    stages = [job]
+    path = base + "/" + job["id"]
+    while job["state"] != "ready":
+        if job["state"] in {"failed", "cancelled", "expired"}:
+            raise ValueError("Export preparation did not become ready: " + str(job))
+        if time.monotonic() - started >= timeout:
+            api.request("DELETE", path)
+            raise TimeoutError("Export preparation exceeded acceptance deadline")
+        time.sleep(poll_seconds)
+        content, _, _ = api.request("GET", path)
+        job = json.loads(content)
+        stages.append(job)
+    content, headers, _ = api.request("GET", path + "/download")
+    return content, headers, time.monotonic() - started, stages
+
+
+def qualify_pdf_resources(owner):
+    """Current prepared-export source controls; private browser journey is separate."""
+    from production_seed import provider_seed, seed_missions
+
+    owner.env["BRIEFING_ENABLED"] = "true"
+    owner.compose(
+        "run",
+        "--rm",
+        "--no-deps",
+        "starlink-location",
+        "python",
+        "-c",
+        provider_seed(),
+        timeout=30,
+    )
+    owner.compose("up", "-d", "--wait", "--wait-timeout", "150", timeout=180)
+    api = ProductionApi(owner)
+    tools = (
+        Path(owner.env["BRIEFING_SOURCE_ROOT"]) / "tools/acceptance/customer-briefing"
+    )
+    fixtures = seed_missions(api, owner.root)
+    reports = []
+    for case, mission in fixtures.items():
+        destination = owner.root / "downloads" / case
+        destination.mkdir(parents=True)
+        content, headers, elapsed, stages = download_prepared(api, mission["id"])
+        (destination / "download.zip").write_bytes(content)
+        (destination / "preparation-stages.json").write_text(
+            json.dumps(stages, indent=2)
+        )
+        status = (
+            "omitted" if case in {"over-budget", "cached-missing-route"} else "included"
+        )
+        report = inspect_download(content, headers, status)
+        report.update(case=case, proxyTotalSeconds=elapsed, zipBytes=len(content))
+        if status == "included":
+            archive, output = f"/tmp/briefing-{case}.zip", f"/tmp/briefing-pdf-{case}"
+            owner.compose(
+                "cp",
+                str(destination / "download.zip"),
+                f"starlink-location:{archive}",
+                timeout=30,
+            )
+            owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "root",
+                "starlink-location",
+                "chown",
+                "appuser:appuser",
+                archive,
+                timeout=30,
+            )
+            report["actualPdfInspection"] = json.loads(
+                owner.compose(
+                    "exec",
+                    "-T",
+                    "--user",
+                    "appuser",
+                    "-e",
+                    "PYTHONPATH=/acceptance:/app",
+                    "starlink-location",
+                    "python",
+                    "-c",
+                    (tools / "production_pdf_probe.py").read_text(),
+                    archive,
+                    output,
+                    timeout=180,
+                ).splitlines()[-1]
+            )
+            target = destination / "actual-pdf"
+            target.mkdir()
+            owner.compose(
+                "cp", f"starlink-location:{output}/.", str(target), timeout=30
+            )
+        if case == "mission-pdf-resources":
+            if status != "included" or report["actualPdfInspection"]["pageCount"] != 5:
+                raise ValueError("Five-page resource fixture was not delivered")
+            content_again, _, _, reused = download_prepared(api, mission["id"])
+            if content_again != content or reused[0]["id"] != stages[-1]["id"]:
+                raise ValueError("Ready resource export was not reused exactly")
+            report["readyReuse"] = True
+        (destination / "inspection.json").write_text(json.dumps(report, indent=2))
+        reports.append(report)
+    return {
+        "fixtureKind": "synthetic providers and supported API mission/KML inputs",
+        "mode": "prepared PDF resource controls",
+        "reports": reports,
     }

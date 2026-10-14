@@ -172,3 +172,18 @@ it('preserves complete routes and marker identities at print sampling density', 
     }
   }
 });
+
+it('preserves normalized camera framing when only raster sampling changes', () => {
+  const input = validateMapInput(fixture.legs[1]);
+  const [reference] = frameMissionRoute(input, { width: 1920, height: 1920 });
+  const [resized] = frameMissionRoute(input, { width: 875, height: 875 });
+  expect(resized.distance).toBeCloseTo(reference.distance, 10);
+  expect(resized.offsetX / resized.width).toBeCloseTo(
+    reference.offsetX / reference.width,
+    10
+  );
+  expect(resized.offsetY / resized.height).toBeCloseTo(
+    reference.offsetY / reference.height,
+    10
+  );
+});
