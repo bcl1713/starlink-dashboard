@@ -347,3 +347,23 @@ def test_declared_unit_revision_requires_resolution():
     assert applied.confirmed_units == "meters"
     assert applied.unit_origin == "source_declared"
     assert not applied.confirmed
+
+
+def test_explicit_unit_removal_uses_default_only_after_source_resolution():
+    from app.mission.planning.revisions import merge_source_row, row_signature
+
+    before = (
+        extract_itinerary(synthetic_pdf(altitude="200 ft"))
+        .parsed_values.expected_legs[0]
+        .ar_rows[0]
+    )
+    incoming = before.model_copy(
+        update={"confirmed_units": "flight_level", "unit_origin": "import_default"}
+    )
+    assert row_signature(before) != row_signature(incoming)
+    corrected = before.model_copy(update={"confirmed": True})
+    applied = merge_source_row(before, incoming, corrected)
+    assert applied.confirmed_units == "flight_level"
+    assert applied.unit_origin == "import_default"
+    assert not applied.confirmed
+    assert corrected.confirmed_units == "feet" and corrected.confirmed

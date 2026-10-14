@@ -153,12 +153,15 @@ def merge_source_row(previous, incoming, corrected):
         for field in AR_FIELDS
         if getattr(previous, field) != getattr(incoming, field)
     }
-    if incoming.unit_origin == "source_declared" and (
-        previous.unit_origin != "source_declared"
-        or previous.confirmed_units != incoming.confirmed_units
-    ):
+    previous_units = (
+        previous.confirmed_units if previous.unit_origin == "source_declared" else None
+    )
+    incoming_units = (
+        incoming.confirmed_units if incoming.unit_origin == "source_declared" else None
+    )
+    if previous_units != incoming_units:
         changes.update(
-            confirmed_units=incoming.confirmed_units, unit_origin="source_declared"
+            confirmed_units=incoming.confirmed_units, unit_origin=incoming.unit_origin
         )
     changes["confirmed"] = False
     start_changed = "entry_time" in changes or "source_time_precision" in changes
