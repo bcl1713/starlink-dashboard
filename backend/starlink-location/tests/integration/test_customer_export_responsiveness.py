@@ -224,3 +224,49 @@ def test_response_serialization_keeps_real_health_socket_responsive(tmp_path, pa
         assert b"serialized" in result["body"]
         assert health["status"] == 200 and not health["error"]
         assert health["elapsed_seconds"] < 2
+
+
+def test_prometheus_scrape_waiting_for_commit_does_not_block_core_sockets(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    module = probes()
+    with server(tmp_path) as origin, ThreadPoolExecutor(max_workers=1) as pool:
+        assert (
+            module.probe_request(origin + "/control/hold-mission-gate", method="POST")[
+                "status"
+            ]
+            == 200
+        )
+        scrape = pool.submit(module.probe_request, origin + "/metrics", seconds=10)
+        time.sleep(0.2)
+        health = module.probe_request(origin + "/health")
+        status = module.probe_request(origin + "/api/status")
+        assert scrape.result(timeout=10)["status"] == 200
+        assert not health["error"] and health["elapsed_seconds"] < 2
+        assert not status["error"] and status["elapsed_seconds"] < 2
+
+
+def test_metadata_save_waiting_for_gate_keeps_core_sockets_responsive(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    module = probes()
+    with server(tmp_path) as origin, ThreadPoolExecutor(max_workers=1) as pool:
+        assert (
+            module.probe_request(origin + "/control/hold-mission-gate", method="POST")[
+                "status"
+            ]
+            == 200
+        )
+        save = pool.submit(
+            module.probe_request,
+            origin + "/api/v2/missions/m",
+            method="PATCH",
+            payload={"description": "saved while gate is held"},
+            seconds=10,
+        )
+        time.sleep(0.2)
+        health = module.probe_request(origin + "/health")
+        status = module.probe_request(origin + "/api/status")
+        assert save.result(timeout=10)["status"] == 200
+        assert not health["error"] and health["elapsed_seconds"] < 2
+        assert not status["error"] and status["elapsed_seconds"] < 2

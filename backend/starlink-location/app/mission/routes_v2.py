@@ -254,6 +254,16 @@ async def get_mission(mission_id: str) -> Response:
 
 @router.patch("/{mission_id}", response_model=Mission)
 async def update_mission(
+    mission_id: str, updates: MissionUpdate, request: Request = None
+) -> Response:
+    def save_response():
+        mission = _update_mission_record(mission_id, updates, request)
+        return Response(mission.model_dump_json(), media_type="application/json")
+
+    return await asyncio.to_thread(save_response)
+
+
+def _update_mission_record(
     mission_id: str,
     updates: MissionUpdate,
     request: Request = None,

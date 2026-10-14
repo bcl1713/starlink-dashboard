@@ -205,6 +205,21 @@ if mode == "serialization":
     )
 
 
+@main.app.post("/control/hold-mission-gate")
+def hold_mission_gate():
+    entered = threading.Event()
+
+    def hold():
+        with storage.get_active_leg_lock():
+            entered.set()
+            time.sleep(3)
+
+    worker = threading.Thread(target=hold, name="owned-gate-control", daemon=True)
+    worker.start()
+    assert entered.wait(2)
+    return {"holding": True}
+
+
 listener = socket.socket(fileno=fd)
 server = uvicorn.Server(
     uvicorn.Config(main.app, log_level="warning", timeout_graceful_shutdown=5)

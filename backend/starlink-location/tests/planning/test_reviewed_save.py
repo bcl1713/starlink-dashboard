@@ -369,7 +369,9 @@ async def test_parent_metadata_edit_preserves_latest_draft_and_review(prepared):
         ),
     )
     current = service.store.read(view.mission.id)
-    assert parent.name == "Parent renamed"
+    import json
+
+    assert json.loads(parent.body)["name"] == "Parent renamed"
     assert current.revision == view.revision + 1
     assert current.expected_legs[0].review_status == "reviewed"
     assert current.expected_legs[0].leg.draft == view.expected_legs[0].leg.draft
@@ -700,6 +702,9 @@ def test_parent_patch_waiting_for_gate_preserves_interleaved_reviewed_draft(
             release_parent.set()
         parent = future.result(timeout=10)
     current = service.store.read(view.mission.id)
+    from app.mission.models import Mission
+
+    parent = Mission.model_validate_json(parent.body)
     assert parent.name == "Concurrent parent name"
     assert current.revision == latest.revision + 1
     assert current.expected_legs[0].leg == latest.expected_legs[0].leg
