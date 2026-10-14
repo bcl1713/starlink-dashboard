@@ -77,7 +77,7 @@ def setup(root):
     from app.services.aviation_weather.gfs.ipc import GfsMailbox
 
     settings = AviationSettingsStore(root / "settings.json")
-    enabled = settings.update({"winds": True, "temperature": True})
+    enabled = settings.update({"winds": True})
     (root / "clock.json").write_text(json.dumps(RUN))
     mailbox = GfsMailbox(root / "mailbox", settings)
     mailbox.renew(uuid.uuid4().hex, enabled, RUN)

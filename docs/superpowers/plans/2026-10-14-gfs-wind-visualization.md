@@ -21,9 +21,9 @@ acceptance runner. No new dependency or data provider.
 **Spec:**
 [Approved wind visualization design](../specs/2026-10-14-gfs-wind-visualization-design.md).
 
-**Status:** Draft for user review. No implementation is authorized by this
-document. The hardware benchmark target must be identified before execution;
-software browser acceptance and hardware performance approval are separate.
+**Status:** Approved for native implementation by the user on 2026-10-14.
+Hardware performance remains unverified until its target is identified; software
+browser acceptance and hardware performance approval are separate.
 
 ## Global Constraints
 
@@ -105,7 +105,7 @@ the flag reports an atomic persisted repair. Add
 `GfsBridge.read_settings() -> AviationSettings` (async) and its synchronous
 `_read_settings()` helper.
 
-- [ ] Add named failing tests in `test_gfs_settings.py`:
+- [x] Add named failing tests in `test_gfs_settings.py`:
       `test_partial_enable_disables_other_layer_in_one_revision`,
       `test_explicit_both_true_is_rejected_without_write`,
       `test_legacy_repair_is_atomic_and_idempotent`,
@@ -127,40 +127,40 @@ the flag reports an atomic persisted repair. Add
   bytes. Repeated concurrent saves must yield unique ordered committed revisions
   with no both-true snapshots. Empty/null/unsupported changes remain invalid.
 
-- [ ] Add route/bridge tests in `test_gfs_api.py` and startup coverage in
+- [x] Add route/bridge tests in `test_gfs_api.py` and startup coverage in
       `test_main_aviation_weather.py`: both-true PUT returns 422, file/demand
       stay unchanged, and GET/startup legacy repair clears old demand before
       returning the repaired revision. Test missing worker acknowledgement and
       lock contention with bounded deadlines. Use real stores/mailboxes and the
       existing child-worker fixtures; do not mock away revision invalidation.
-- [ ] Run from `B`, expecting the new exclusivity/repair assertions to FAIL:
+- [x] Run from `B`, expecting the new exclusivity/repair assertions to FAIL:
 
   ```sh
   timeout --kill-after=10s 5m uv run --with-requirements requirements-dev.txt --with-requirements requirements-gfs.txt pytest tests/unit/test_gfs_settings.py tests/unit/test_gfs_api.py tests/unit/test_main_aviation_weather.py -q
   ```
 
-- [ ] Implement effective normalization without changing raw `_read()` data.
+- [x] Implement effective normalization without changing raw `_read()` data.
       `AviationSettingsUpdate.changes()` rejects explicitly both true before
       guarded runtime operations; preserve route validation status 422.
       `update()` validates first, takes the file lock, combines legacy
       normalization with the requested change, clears the counterpart on enable,
       and persists at most one revision using the existing
       tempfile/fsync/replace sequence. Repeated saves are no-ops.
-- [ ] Implement `repair_legacy()` under the settings lock, refusing writes for
+- [x] Implement `repair_legacy()` under the settings lock, refusing writes for
       read-only stores. Bridge `_read_settings()` takes the mailbox control lock
       **before** the settings lock, repairs, then invalidates demand for the
       repaired revision before releasing control. `read_settings()` delegates
       through `asyncio.to_thread`; it does not wait for ingest. `_save()`
       continues to invalidate the single final update revision. Never acquire
       mailbox control from inside the settings lock.
-- [ ] Route settings GET and catalog settings reads through the bridge helper
+- [x] Route settings GET and catalog settings reads through the bridge helper
       when present; fallback to the writable store's repair when there is no
       bridge. Initialize repair after bridge construction and before startup
       completes, preserving optional-weather startup failure isolation. Product
       admission and read-only worker `get()` calls only normalize; they do not
       repair or nest control locks. Preserve PUT's existing
       worker-acknowledgement behavior.
-- [ ] Update both-true fixtures in `test_gfs_api.py`, `test_gfs_store.py`, and
+- [x] Update both-true fixtures in `test_gfs_api.py`, `test_gfs_store.py`, and
       `test_gfs_worker.py` to one admitted mode, parametrizing independent wind
       and temperature controls where necessary. In `check_foundation.py`,
       replace the combined enable with sequential modes: capture/verify wind
@@ -168,7 +168,7 @@ the flag reports an atomic persisted repair. Add
       identity/components, confirm old wind URLs are denied, then restore wind
       for cancellation controls. Retain all original hash, mask, expiry, worker
       and core-response evidence.
-- [ ] Run the focused command and `pytest tests/unit/test_gfs_*.py -q` through
+- [x] Run the focused command and `pytest tests/unit/test_gfs_*.py -q` through
       the same uv environment with a 10-minute limit; require PASS, no hangs,
       and no owned workers left. Commit
       `feat: enforce exclusive GFS settings and legacy repair`.
@@ -520,10 +520,7 @@ and legend. Task 4 implements physical flow direction, bounded animation,
 reduced motion, and ownership. Task 5 verifies real source/CPU/GPU agreement,
 production views, lifecycle, budgets, and separate hardware performance gates.
 
-Review this plan and identify H1 before implementation. Then choose either
-subagent-driven execution with a fresh implementer/reviewer per task, or native
-execution in this session with one independent whole-branch review. Native
-execution is recommended here because the five tasks share settings, drawing,
-and acceptance interfaces and can be implemented sequentially with focused
-tests. Neither spec approval nor this draft constitutes approval to start those
-tasks.
+The user approved this plan for native execution on 2026-10-14. Execute the five
+tasks sequentially with an independent whole-branch review. H1 remains a
+required input for hardware performance approval, rather than a software
+correctness claim.

@@ -12,7 +12,7 @@ def store(root):
     from app.services.aviation_weather.gfs.store import GfsProductStore
 
     settings = AviationSettingsStore(root / "settings.json")
-    enabled = settings.update({"winds": True, "temperature": True})
+    enabled = settings.update({"winds": True})
     return (
         GfsProductStore(
             root / "artifacts", root / "mailbox", settings, clock=lambda: RUN / 1000

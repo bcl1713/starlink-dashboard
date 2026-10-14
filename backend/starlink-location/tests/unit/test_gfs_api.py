@@ -17,12 +17,74 @@ from tests.unit.test_gfs_ipc import other_owner
 from tests.unit.test_gfs_worker import alive, worker_process
 
 
-def runtime(root, *, publish=True):
+async def test_both_true_put_is_422_without_settings_or_demand_changes(tmp_path):
+    app, service, bridge, _products, _enabled, _now, _source = runtime(tmp_path)
+    before = service.store.path.read_bytes()
+    bridge.mailbox.invalidate(17)
+    demand = (bridge.mailbox.root / "demand.json").read_bytes()
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app), base_url="http://test"
+        ) as client:
+            result = await client.put(
+                "/api/aviation-weather/v1/settings",
+                json={"winds": True, "temperature": True},
+            )
+        assert result.status_code == 422
+        assert service.store.path.read_bytes() == before
+        assert (bridge.mailbox.root / "demand.json").read_bytes() == demand
+    finally:
+        await bridge.aclose()
+        await service.aclose()
+
+
+async def test_settings_get_repairs_legacy_and_invalidates_live_demand(tmp_path):
+    app, service, bridge, _products, _enabled, _now, _source = runtime(tmp_path)
+    raw = service.store.get().model_dump()
+    raw.update(winds=True, temperature=True, revision=7)
+    service.store.path.write_text(json.dumps(raw))
+    owner = uuid.uuid4().hex
+    bridge.mailbox.renew(owner, service.store.get(), RUN)
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app), base_url="http://test"
+        ) as client:
+            result = await client.get("/api/aviation-weather/v1/settings")
+            assert result.status_code == 200
+            assert result.json()["revision"] == 8
+            assert result.json()["winds"] and not result.json()["temperature"]
+            demand = json.loads((bridge.mailbox.root / "demand.json").read_bytes())
+            assert demand["revision"] == 8 and demand["owners"] == {}
+            again = await client.get("/api/aviation-weather/v1/settings")
+            assert again.json() == result.json()
+    finally:
+        await bridge.aclose()
+        await service.aclose()
+
+
+async def test_legacy_read_respects_control_lock_deadline(tmp_path):
+    from app.services.aviation_weather.gfs.store import control_lock
+
+    _app, service, bridge, _products, _enabled, _now, _source = runtime(tmp_path)
+    raw = service.store.get().model_dump()
+    raw.update(winds=True, temperature=True, revision=7)
+    service.store.path.write_text(json.dumps(raw))
+    try:
+        with control_lock(bridge.mailbox.root), pytest.raises(TimeoutError):
+            async with asyncio.timeout(2):
+                await bridge.read_settings()
+        assert json.loads(service.store.path.read_bytes())["revision"] == 7
+    finally:
+        await bridge.aclose()
+        await service.aclose()
+
+
+def runtime(root, *, publish=True, layer="winds"):
     from app.services.aviation_weather.gfs.bridge import GfsBridge
     from app.services.aviation_weather.gfs.store import GfsProductStore
 
     settings = AviationSettingsStore(root / "settings.json")
-    enabled = settings.update({"winds": True, "temperature": True})
+    enabled = settings.update({layer: True})
     now = [RUN]
     source = Source()
     service = AviationWeatherService(settings, source, utc_ms=lambda: now[0])
@@ -39,8 +101,13 @@ def runtime(root, *, publish=True):
     return app, service, bridge, products, enabled, now, source
 
 
-async def test_same_origin_descriptor_binary_hashes_and_private_revalidation(tmp_path):
-    app, service, bridge, _products, enabled, now, source = runtime(tmp_path)
+@pytest.mark.parametrize("layer", ["winds", "temperature"])
+async def test_same_origin_descriptor_binary_hashes_and_private_revalidation(
+    tmp_path, layer
+):
+    app, service, bridge, _products, enabled, now, source = runtime(
+        tmp_path, layer=layer
+    )
     with other_owner(bridge.mailbox.root / "worker.lock"):
         bridge.mailbox.heartbeat(enabled.revision, uuid.uuid4().hex, now[0])
         async with httpx.AsyncClient(
@@ -51,7 +118,7 @@ async def test_same_origin_descriptor_binary_hashes_and_private_revalidation(tmp
             entry = next(
                 item
                 for item in catalog.json()["products"]
-                if item["product_type"] == "winds"
+                if item["layer_id"] == f"gfs-{layer}"
             )
             assert entry["state"] == "ready"
             descriptor = await client.get(entry["payload"]["path"])
@@ -87,7 +154,7 @@ async def test_missing_or_stale_worker_denies_models_without_awaiting_ingest(tmp
         async with asyncio.timeout(1):
             result = await client.get("/api/aviation-weather/v1/catalog")
         models = result.json()["products"][-2:]
-        assert [item["state"] for item in models] == ["unavailable", "unavailable"]
+        assert [item["state"] for item in models] == ["unavailable", "off"]
         assert (
             await client.get("/api/aviation-weather/v1/settings")
         ).status_code == 200
@@ -95,10 +162,10 @@ async def test_missing_or_stale_worker_denies_models_without_awaiting_ingest(tmp
         with other_owner(bridge.mailbox.root / "worker.lock"):
             bridge.mailbox.heartbeat(enabled.revision, uuid.uuid4().hex, now[0] - 15001)
             result = await client.get("/api/aviation-weather/v1/catalog")
-            assert all(
-                item["state"] == "unavailable"
-                for item in result.json()["products"][-2:]
-            )
+            assert [item["state"] for item in result.json()["products"][-2:]] == [
+                "unavailable",
+                "off",
+            ]
     await bridge.aclose()
     await service.aclose()
 
@@ -348,10 +415,9 @@ async def test_corrupted_binary_is_denied_and_clock_rollback_withdraws_demand(tm
         body = path.read_bytes()
         path.write_bytes(b"x" + body[1:])
         assert await bridge.response(model.instance_id, "u.bin", enabled, RUN) is None
-        assert all(
-            product.state == "unavailable"
-            for product in await bridge.products(enabled, RUN - 1)
-        )
+        assert [
+            product.state for product in await bridge.products(enabled, RUN - 1)
+        ] == ["unavailable", "off"]
         assert bridge.mailbox.current(RUN) is None
     await bridge.aclose()
     await service.aclose()
