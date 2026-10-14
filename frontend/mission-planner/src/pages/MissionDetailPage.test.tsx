@@ -30,6 +30,20 @@ vi.mock('../components/missions/AddLegDialog', () => ({
 vi.mock('../components/missions/SimulateLegDialog', () => ({
   SimulateLegDialog: () => null,
 }));
+// These page tests isolate mission-row actions; the composed planning panels
+// exercise their real QueryClient/controller in their own integration tests.
+vi.mock('../components/planning/BatchRouteAttachments', () => ({
+  BatchRouteAttachments: () => null,
+}));
+vi.mock('../components/planning/ItinerarySourceReview', () => ({
+  ItinerarySourceReview: () => null,
+}));
+vi.mock('../components/planning/ItineraryPlans', () => ({
+  ItineraryPlans: () => null,
+}));
+vi.mock('../components/planning/ItineraryFinalReview', () => ({
+  ItineraryFinalReview: () => null,
+}));
 import { useMission, useDeleteLeg } from '../hooks/api/useMissions';
 import { usePlanning } from '../hooks/api/usePlanning';
 import { MissionDetailPage } from './MissionDetailPage';

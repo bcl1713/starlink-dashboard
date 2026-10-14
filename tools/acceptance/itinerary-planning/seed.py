@@ -157,6 +157,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--skip-satellites", action="store_true")
     args = parser.parse_args()
     args.output.mkdir(parents=True)
     for name, data in [
@@ -168,6 +169,8 @@ def main() -> None:
         (args.output / name).write_bytes(data)
     for ordinal in (1, 2, 3):
         (args.output / f"leg-{ordinal}.kml").write_bytes(kml(ordinal))
+    if args.skip_satellites:
+        return
     records = []
     for identifier, longitude in [("X-SYNTH-A", -100), ("X-SYNTH-B", -60)]:
         payload = {

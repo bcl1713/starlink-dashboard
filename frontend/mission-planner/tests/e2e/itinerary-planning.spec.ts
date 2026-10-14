@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 test('itinerary review, locks, conflicts, revisions and package round-trip', async () => {
   test.setTimeout(660_000);
   expect(process.env.ACCEPTANCE_CANDIDATE_SHA).toMatch(/^[a-f0-9]{40}$/);
-  expect(process.env.ITINERARY_ORIGIN).toBe('http://127.0.0.1:15322');
+  expect(process.env.ITINERARY_ORIGIN).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
   const evidence = process.env.ITINERARY_EVIDENCE_DIR;
   expect(evidence).toBeTruthy();
   await promisify(execFile)(
@@ -23,6 +23,10 @@ test('itinerary review, locks, conflicts, revisions and package round-trip', asy
     await readFile(resolve(evidence!, 'browser-summary.json'), 'utf8')
   );
   expect(result.passed).toBe(true);
-  expect(result.steps).toContain('package-collision-roundtrip');
+  if (process.env.ITINERARY_INPUT_ROOT) {
+    expect(result.steps).toContain('batch-intake');
+    expect(result.steps).toContain('mission-list-three-legs');
+    expect(result.actions).toBeLessThanOrEqual(20);
+  } else expect(result.steps).toContain('package-collision-roundtrip');
   expect(result.steps).toContain('no-activation-or-terminal-side-effects');
 });

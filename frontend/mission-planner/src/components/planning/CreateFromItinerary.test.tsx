@@ -213,13 +213,11 @@ it('overrides only new unlabeled AR units while preserving declared feet', async
       ],
     },
   });
-  const create = vi
-    .spyOn(planningApi, 'create')
-    .mockResolvedValue({
-      mission: { id: 'created', legs: [] },
-      revision: 1,
-      expected_legs: [],
-    } as never);
+  const create = vi.spyOn(planningApi, 'create').mockResolvedValue({
+    mission: { id: 'created', legs: [] },
+    revision: 1,
+    expected_legs: [],
+  } as never);
   setup();
   fireEvent.change(screen.getByLabelText('Itinerary PDF'), {
     target: { files: [new File(['pdf'], 'itinerary.pdf')] },

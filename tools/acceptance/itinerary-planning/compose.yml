@@ -2,8 +2,11 @@ services:
   starlink-location:
     image: ${ITINERARY_BACKEND_IMAGE:?exact candidate image required}
     init: true
+    ports:
+      - "127.0.0.1:${ITINERARY_HEALTH_PORT:-15324}:8000"
     environment:
       STARLINK_MODE: simulation
+      STARLINK_EXPORTS_CUSTOMER_BRIEFING_ENABLED: "true"
       PROMETHEUS_URL: http://prometheus:9090
     volumes:
       - app-data:/app/data
@@ -17,7 +20,7 @@ services:
   mission-planner:
     image: ${ITINERARY_FRONTEND_IMAGE:?exact candidate image required}
     ports:
-      - "127.0.0.1:15322:80"
+      - "127.0.0.1:${ITINERARY_PORT:-15322}:80"
     depends_on:
       starlink-location:
         condition: service_healthy

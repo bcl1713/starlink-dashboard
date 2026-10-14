@@ -7,6 +7,8 @@ import base64
 import ctypes
 import errno
 import gzip
+import hashlib
+import re
 import json
 import logging
 import os
@@ -37,7 +39,21 @@ RESOURCE_COMMANDS = {
 class Owner:
     """Record intent before launch; reap entire owned groups on every outcome."""
 
-    def __init__(self, output: Path, sha: str):
+    def __init__(
+        self, output: Path, sha: str, *, project: str = PROJECT, port: int = PORT
+    ):
+        if (
+            not re.fullmatch(r"[a-z0-9][a-z0-9-]{3,90}", project)
+            or project in {"dev", "main", "starlink-dashboard"}
+            or not 1024 <= port <= 65533
+        ):
+            raise ValueError("Choose an isolated project and an unprivileged port")
+        self.project, self.port = project, port
+        self.claim_name = (
+            CLAIM_NAME
+            if (project, port) == (PROJECT, PORT)
+            else f"{project}-{os.getuid()}-{port}"
+        )
         self.output = output.resolve()
         self.output.mkdir(parents=True, exist_ok=True, mode=0o700)
         if (self.output / "ownership.json").exists():
@@ -45,14 +61,18 @@ class Owner:
         self.env = dict(os.environ)
         self.children: list[subprocess.Popen[str]] = []
         self.claim: socket.socket | None = None
+        self.scope_claims: list[socket.socket] = []
         self.record: dict = {
             "candidate_sha": sha,
             "pid": os.getpid(),
             "pgid": os.getpgrp(),
-            "compose_project": PROJECT,
+            "compose_project": self.project,
             "session_id": os.getsid(0),
-            "port": PORT,
-            "volumes": [f"{PROJECT}_{n}" for n in ("app-data", "poi-data", "metrics")],
+            "port": self.port,
+            "health_port": self.port + 2,
+            "volumes": [
+                f"{self.project}_{n}" for n in ("app-data", "poi-data", "metrics")
+            ],
             "temporary_paths": [],
             "commands": [],
             "cleanup": {},
@@ -70,13 +90,13 @@ class Owner:
     def acquire_claim(self) -> None:
         self.record["claim"] = {
             "kind": "linux-abstract-unix-socket",
-            "name": CLAIM_NAME,
+            "name": self.claim_name,
             "state": "requested",
         }
         self.persist()  # Record intent before the atomic, nonblocking acquisition.
         claim = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            claim.bind("\0" + CLAIM_NAME)
+            claim.bind("\0" + self.claim_name)
         except OSError as error:
             claim.close()
             self.record["claim"]["state"] = (
@@ -84,13 +104,37 @@ class Owner:
             )
             self.persist()
             raise RuntimeError(
-                f"Cannot acquire exclusive run claim {CLAIM_NAME}: {error}"
+                f"Cannot acquire exclusive run claim {self.claim_name}: {error}"
             ) from error
         self.claim = claim
+        names = [
+            f"itinerary-project-{os.getuid()}-{self.project}",
+            *[
+                f"itinerary-listener-{os.getuid()}-{p}"
+                for p in (self.port, self.port + 2)
+            ],
+        ]
+        self.record["claim"]["scopes"] = names
+        self.persist()
+        try:
+            for name in names:
+                scope = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.scope_claims.append(scope)
+                scope.bind("\0" + name)
+        except OSError as error:
+            self.release_claim()
+            self.record["claim"]["state"] = "contended"
+            self.persist()
+            raise RuntimeError(
+                f"Cannot acquire exclusive resource scope: {error}"
+            ) from error
         self.record["claim"]["state"] = "acquired"
         self.persist()
 
     def release_claim(self) -> None:
+        for scope in self.scope_claims:
+            scope.close()
+        self.scope_claims.clear()
         if self.claim is not None:
             self.claim.close()
             self.claim = None
@@ -201,7 +245,7 @@ class Owner:
                 "docker",
                 "compose",
                 "-p",
-                PROJECT,
+                self.project,
                 "-f",
                 str(
                     Path(self.env["ITINERARY_SOURCE_ROOT"])
@@ -216,22 +260,23 @@ class Owner:
 def resources(owner: Owner) -> dict[str, str]:
     return {
         key: owner.execute(
-            [*command, "--filter", f"label=com.docker.compose.project={PROJECT}"]
+            [*command, "--filter", f"label=com.docker.compose.project={owner.project}"]
         ).strip()
         for key, command in RESOURCE_COMMANDS.items()
     }
 
 
-def check_port() -> None:
+def check_port(port: int = PORT) -> None:
     with socket.socket() as listener:
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind(("127.0.0.1", PORT))
+        listener.bind(("127.0.0.1", port))
 
 
 def preflight(owner: Owner) -> None:
     if any(resources(owner).values()):
         raise RuntimeError("Existing project resources found; ownership not assumed")
-    check_port()
+    check_port() if owner.port == PORT else check_port(owner.port)
+    check_port(owner.port + 2)
     owner.execute(["docker", "info", "--format", "{{.ServerVersion}} {{.Driver}}"])
     context = owner.execute(["docker", "context", "show"]).strip()
     owner.record["docker"] = {
@@ -268,7 +313,7 @@ def cleanup(owner: Owner, owned: bool) -> list[dict[str, str]]:
                     [
                         *command,
                         "--filter",
-                        f"label=com.docker.compose.project={PROJECT}",
+                        f"label=com.docker.compose.project={owner.project}",
                     ]
                 ).strip(),
             )
@@ -284,7 +329,8 @@ def cleanup(owner: Owner, owned: bool) -> list[dict[str, str]]:
         owner.record["cleanup"]["port_free"] = False
 
         def audit_port():
-            check_port()
+            check_port() if owner.port == PORT else check_port(owner.port)
+            check_port(owner.port + 2)
             owner.record["cleanup"]["port_free"] = True
 
         attempt("audit_port", audit_port)
@@ -358,9 +404,41 @@ def verify_clone_snapshot(owner, source):
         assert actual["export_intervals_equal"]
 
 
+PRIVATE_NAMES = [
+    "Itinerary Rev 5.pdf",
+    "Leg 1 Rev 5.kml",
+    "Leg 2 Rev 5.kml",
+    "Leg 3 Rev 5.kml",
+    "package.zip",
+]
+
+
+def private_inputs(root: Path) -> dict:
+    root = root.resolve(strict=True)
+    return {
+        "root": str(root),
+        "hashes": {
+            name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+            for name in PRIVATE_NAMES
+        },
+    }
+
+
+def verify_private_inputs(root: Path, before: dict) -> None:
+    if private_inputs(root) != before:
+        raise RuntimeError("Private input files changed during acceptance")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--project", default=PROJECT)
+    parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument("--input-root", type=Path)
+    parser.add_argument(
+        "--network-mode", choices=["offline", "online"], default="offline"
+    )
+    parser.add_argument("--evidence", type=Path)
     args = parser.parse_args()
     sha = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -381,14 +459,22 @@ def main() -> None:
             ),
         )
     )
-    owner = Owner(output, sha)
+    output = args.evidence or output
+    owner = Owner(output, sha, project=args.project, port=args.port)
     previous = {
         n: signal.signal(n, owner.signal)
         for n in (signal.SIGINT, signal.SIGTERM, signal.SIGALRM)
     }
     signal.alarm(28 * 60)  # Reserve two minutes for teardown before the outer deadline.
     owned = False
-    summary: dict = {"candidate_sha": sha, "passed": False}
+    summary: dict = {
+        "candidate_sha": sha,
+        "passed": False,
+        "network_mode": args.network_mode,
+        "project": owner.project,
+        "port": owner.port,
+    }
+    original_inputs = private_inputs(args.input_root) if args.input_root else None
     primary_error: BaseException | None = None
     try:
         owner.acquire_claim()
@@ -405,10 +491,18 @@ def main() -> None:
         with tarfile.open(archive) as bundle:
             bundle.extractall(source, filter="data")
         owner.env.update(
-            ITINERARY_SOURCE_ROOT=str(source), ACCEPTANCE_CANDIDATE_SHA=sha
+            ITINERARY_SOURCE_ROOT=str(source),
+            ACCEPTANCE_CANDIDATE_SHA=sha,
+            ITINERARY_PORT=str(owner.port),
+            ITINERARY_HEALTH_PORT=str(owner.port + 2),
+            ITINERARY_NETWORK_MODE=args.network_mode,
         )
-        owner.env["ITINERARY_BACKEND_IMAGE"] = f"{PROJECT}-backend:{sha}"
-        owner.env["ITINERARY_FRONTEND_IMAGE"] = f"{PROJECT}-frontend:{sha}"
+        owner.env["ITINERARY_BACKEND_IMAGE"] = (
+            f"starlink-itinerary-planning-backend:{sha}"
+        )
+        owner.env["ITINERARY_FRONTEND_IMAGE"] = (
+            f"starlink-itinerary-planning-frontend:{sha}"
+        )
         owner.record["source_path"] = str(source)
         owner.persist()
         sys.path.insert(0, str(source))
@@ -454,14 +548,15 @@ def main() -> None:
             raise RuntimeError(
                 "Project resources appeared during build; ownership not assumed"
             )
-        check_port()
+        check_port() if owner.port == PORT else check_port(owner.port)
+        check_port(owner.port + 2)
         owned = True  # Record responsibility before any partial Compose launch.
         owner.record["compose_started"] = True
         owner.persist()
         owner.compose(
             "up", "--no-build", "-d", "--wait", "--wait-timeout", "180", timeout=210
         )
-        origin = f"http://127.0.0.1:{PORT}"
+        origin = f"http://127.0.0.1:{owner.port}"
         summary["api_status"] = json.loads(
             owner.execute(["curl", "--fail", "--silent", f"{origin}/api/status"])
         )
@@ -487,8 +582,24 @@ def main() -> None:
                 origin,
                 "--output",
                 str(owner.output / "seed"),
+                *(["--skip-satellites"] if original_inputs else []),
             ]
         )
+        if original_inputs:
+            owner.env["ITINERARY_INPUT_ROOT"] = original_inputs["root"]
+            (owner.output / "input-hashes.json").write_text(
+                json.dumps(original_inputs, indent=2)
+            )
+            owner.execute(
+                [
+                    "python3",
+                    str(source / "tools/acceptance/itinerary-planning/real_seed.py"),
+                    "--origin",
+                    origin,
+                    "--input-root",
+                    original_inputs["root"],
+                ]
+            )
         frontend = source / "frontend/mission-planner"
         browser_root = owner.output / "browsers"
         owner.record["temporary_paths"].append(str(browser_root))
@@ -518,6 +629,7 @@ def main() -> None:
         )
         owner.env.update(
             ITINERARY_ORIGIN=origin,
+            ITINERARY_HEALTH_ORIGIN=f"http://127.0.0.1:{owner.port + 2}",
             ITINERARY_EVIDENCE_DIR=str(owner.output),
             ITINERARY_SEED_DIR=str(owner.output / "seed"),
             ITINERARY_CHROME=json.loads(provenance.read_text())["executable"]["path"],
@@ -526,13 +638,75 @@ def main() -> None:
             ["node", str(source / "tools/acceptance/browser/itinerary-planning.mjs")],
             timeout=600,
         )
-        verify_clone_snapshot(owner, source)
+        if not original_inputs:
+            verify_clone_snapshot(owner, source)
+        else:
+            container = summary["backend"]["container"]
+            owner.execute(
+                [
+                    "docker",
+                    "cp",
+                    str(source / "tools/acceptance/itinerary-planning"),
+                    f"{container}:/tmp/itinerary-acceptance",
+                ]
+            )
+            owner.execute(
+                [
+                    "docker",
+                    "cp",
+                    str(owner.output / "input-hashes.json"),
+                    f"{container}:/tmp/input-hashes.json",
+                ]
+            )
+            for temperature in ("cold", "warm"):
+                owner.execute(
+                    [
+                        "docker",
+                        "cp",
+                        str(owner.output / f"{temperature}.zip"),
+                        f"{container}:/tmp/{temperature}.zip",
+                    ]
+                )
+                owner.compose(
+                    "exec",
+                    "-T",
+                    "starlink-location",
+                    "python",
+                    "/tmp/itinerary-acceptance/qualify.py",
+                    f"/tmp/{temperature}.zip",
+                    f"/tmp/{temperature}-proof",
+                    "/tmp/input-hashes.json",
+                    timeout=180,
+                )
+                owner.execute(
+                    [
+                        "docker",
+                        "cp",
+                        f"{container}:/tmp/{temperature}-proof",
+                        str(owner.output / f"{temperature}-proof"),
+                    ]
+                )
+            probes = json.loads((owner.output / "api-probes.json").read_text())
+            if probes["failures"]:
+                raise RuntimeError(
+                    "A real acceptance API probe missed its two-second deadline"
+                )
+            summary["maps_qualified"] = 6
+            verify_private_inputs(args.input_root, original_inputs)
+            summary["inputs_unchanged"] = True
         summary["passed"] = True
     except BaseException as error:
         primary_error = error
         summary["error"] = str(error)
         raise
     finally:
+        if original_inputs:
+            try:
+                verify_private_inputs(args.input_root, original_inputs)
+                summary["inputs_unchanged"] = True
+            except BaseException as error:
+                summary.update(passed=False, input_error=str(error))
+                primary_error = primary_error or error
         signal.alarm(0)
         for number in previous:
             signal.signal(number, signal.SIG_IGN)

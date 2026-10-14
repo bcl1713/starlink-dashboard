@@ -1,3 +1,4 @@
+import { batchJourney } from './itinerary-batch.mjs';
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -914,10 +915,10 @@ async function main() {
   process.once("SIGINT", interrupted);
   try {
     await context.tracing.start({ screenshots: true, snapshots: true });
-    const result = await journey(
+    const result = await (process.env.ITINERARY_LEGACY_REGRESSIONS ? journey : batchJourney)(
       context,
       process.env.ITINERARY_ORIGIN,
-      process.env.ITINERARY_SEED_DIR,
+      process.env.ITINERARY_INPUT_ROOT ?? process.env.ITINERARY_SEED_DIR,
       output,
     );
     await writeFile(

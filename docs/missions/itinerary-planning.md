@@ -23,30 +23,52 @@ Records with an unrecognized transport band are excluded from the selector;
 correct their configured band before selecting them. They cannot silently use a
 static default with the same identifier.
 
-## Review each leg
+## Review the itinerary
 
-1. Open the expected leg's **Upload KML** action. Preview its KML, check any
-   route timing or airport discrepancies, and explicitly acknowledge them before
-   accepting. Other legs keep their own route bindings. A KML without a usable
-   timing profile needs a replacement with named departure/arrival airports and
-   timed primary-route endpoints.
-2. Review **AR windows** first. Confirm altitude units, entry and exit UTC times
-   and route occurrences. An occurrence identifies a particular traversal of a
-   point, including repeated coordinates. The map shows selected spans. Correct
-   an unrecognized AR section explicitly; confirm **no AR windows** when the
-   checked source contains none. Excluding a row requires an explanation.
-3. Review **X-band plan**. Choose an initial satellite and add manual swaps at
-   timed occurrences. Lock the initial assignment or individual swaps to retain
-   them during optimization. Moving or resolving a swap requires a current route
-   occurrence. Manual AR Tracks remain independent overlays.
-4. **Save draft**, then **Re-optimize** to compare the current or feasible
-   locked baseline with the proposal. Review outage duration, longest outage and
-   swaps. **Apply proposal** explicitly accepts the selected schedule. Apply,
-   save and reload preserve its evaluation context and manual locks.
-5. Confirm the satellite plan and Starshield setting. Acknowledge X-band outages
-   and backup gaps when present, then **Save reviewed plan**. The installed leg
-   is inactive. **Save reviewed plan and upload next leg** opens the next leg
-   still awaiting a KML. Return to the mission to resume any saved draft.
+1. Select the itinerary PDF and initial route KMLs together, then **Extract
+   itinerary**. Correct airports and UTC values if necessary. Unlabeled source
+   AR altitudes default to flight level; explicitly labeled feet or meters are
+   preserved. Advanced import and per-row unit controls are available for
+   exceptional sources. Historical saved altitudes retain their interpretation.
+2. Confirm service access to the permitted satellites once at intake and review
+   the inherited Starshield setting. **Continue to route attachments** retains
+   a resumable mission draft. Check the suggested assignments, derived from
+   airports and UTC timing, and acknowledge each actual discrepancy before
+   **Accept route bindings**. Ambiguous sources require an explicit assignment.
+3. **Continue to source review**. Confirm the displayed AR intervals, heights
+   and occurrences, or explicitly confirm no ARs for a leg with none. Changes
+   save automatically. A failed save preserves edits and offers an explicit
+   retry. Resolve ambiguous occurrences, unrecognized sections and exclusions
+   before generating plans.
+4. **Generate plans** computes comparisons for all ready legs. Review outage
+   duration, longest outage, swaps and manual locks; failed legs can be retried
+   without discarding successful comparisons. **Apply selected plans** saves
+   the selected schedules to drafts in one action.
+5. In **Final itinerary review**, review each selected leg's canonical outages
+   and backup gaps. Approve the satellite plans and Starshield settings, and
+   acknowledge listed gaps when present. **Publish reviewed plans** installs
+   all selected legs atomically and leaves them inactive. Changing a reviewed
+   input requires new approval. The mission list counts the installed legs.
+
+Individual leg editors remain available for exceptional corrections, route
+replacement, locks and manual swaps. Route occurrence identities distinguish
+repeated traversals of the same coordinate. Excluding an AR row requires an
+explanation. No executable leg is installed by intake, generation or draft apply.
+
+## Export reviewed plans
+
+Export preparation returns a job immediately and displays its actual queued,
+preparing, ready or failed stage. Cancel stops that export request; another
+export can continue shared slide preparation. Downloads open an immutable ready
+package, which remains associated with the reviewed snapshot even after later
+edits and expires after 30 minutes. Failed or superseded preparation needs an
+explicit retry.
+
+Customer PDF overview maps preserve every canonical window anchor without
+numbered coordination markers. Unsupported geometry has a specific diagnostic
+before publication; correct the route timing, bounds, coordinates or stated
+capacity limit rather than approving an omitted map. Browser basemap tiles can
+require network access; packaged PDF maps render from local assets.
 
 ## Interpret availability
 
@@ -69,6 +91,9 @@ every possible continuous swap time. Generated swap buffers do not overlap; a
 valid current manual schedule is also considered. Computation has a 30-second
 deadline and never publishes a partial optimum after timeout.
 
+AR flight levels use pressure altitude × 30.48 meters as an approximate geometry
+height during the AR interval. KML heights remain meters and telemetry heights
+remain feet; those inputs do not share an implicit flight-level unit.
 AR heights use the confirmed source units; route interpolation supplies position
 and heading between occurrences. Repeated-track runtime projection retains the
 application's existing coordinate-based limitation: planning can distinguish

@@ -245,7 +245,9 @@ def test_topology_has_no_shims_and_uses_private_volumes():
     backend = config["services"]["starlink-location"]
     assert "command" not in backend
     assert all(":/acceptance" not in volume for volume in backend["volumes"])
-    assert config["services"]["mission-planner"]["ports"] == ["127.0.0.1:15322:80"]
+    assert config["services"]["mission-planner"]["ports"] == [
+        "127.0.0.1:${ITINERARY_PORT:-15322}:80"
+    ]
     assert all(
         not details or not details.get("external")
         for details in config["volumes"].values()
@@ -305,7 +307,7 @@ def main_run(monkeypatch, tmp_path):
     original_unlink = module.Path.unlink
 
     def run(fault):
-        def port():
+        def port(value=None):
             state["calls"].append("port")
             if fault == "port" and state["down"]:
                 raise RuntimeError("owned port still bound")
@@ -685,3 +687,76 @@ def test_clone_export_receipt_requires_rebuilt_equivalent_timeline(tmp_path, fau
     else:
         module.verify_clone_snapshot(owner, tmp_path)
     assert json.loads((tmp_path / "clone-export-rebuild.json").read_text()) == receipt
+
+
+def test_independent_run_ownership_uses_selected_project_port(tmp_path):
+    module = load_runner()
+    owners = [
+        module.Owner(tmp_path / mode, "a" * 40, project=f"pr323-test-{mode}", port=port)
+        for mode, port in [("offline", 15422), ("online", 15423)]
+    ]
+    for owner in owners:
+        owner.acquire_claim()
+    try:
+        assert owners[0].record["volumes"] != owners[1].record["volumes"]
+        assert owners[0].record["claim"]["name"] != owners[1].record["claim"]["name"]
+        assert [o.record["port"] for o in owners] == [15422, 15423]
+    finally:
+        for owner in owners:
+            owner.release_claim()
+
+
+def test_private_fixture_readback_is_hash_guarded_without_mutation(tmp_path):
+    module = load_runner()
+    root = tmp_path / "input"
+    root.mkdir()
+    names = [
+        "Itinerary Rev 5.pdf",
+        "Leg 1 Rev 5.kml",
+        "Leg 2 Rev 5.kml",
+        "Leg 3 Rev 5.kml",
+        "package.zip",
+    ]
+    for name in names:
+        (root / name).write_bytes(name.encode())
+    before = module.private_inputs(root)
+    assert len(before["hashes"]) == 5
+    module.verify_private_inputs(root, before)
+    assert {p.name for p in root.iterdir()} == set(names)
+    (root / names[0]).write_bytes(b"changed")
+    with pytest.raises(RuntimeError, match="changed"):
+        module.verify_private_inputs(root, before)
+
+
+@pytest.mark.parametrize(
+    "project,port", [("dev", 15422), ("unsafe/name", 15422), ("pr323-test", 80)]
+)
+def test_runner_rejects_shared_or_invalid_resource_scope(tmp_path, project, port):
+    module = load_runner()
+    with pytest.raises(ValueError):
+        module.Owner(tmp_path, "a" * 40, project=project, port=port)
+
+
+@pytest.mark.parametrize("collision", ["project", "port", "health-port"])
+def test_exclusive_scope_cannot_overlap_other_run(tmp_path, collision):
+    module = load_runner()
+    first = module.Owner(
+        tmp_path / "first", "a" * 40, project="pr323-first", port=15430
+    )
+    second = module.Owner(
+        tmp_path / "second",
+        "a" * 40,
+        project="pr323-first" if collision == "project" else "pr323-second",
+        port=(
+            15440
+            if collision == "project"
+            else (15430 if collision == "port" else 15432)
+        ),
+    )
+    first.acquire_claim()
+    try:
+        with pytest.raises(RuntimeError, match="exclusive"):
+            second.acquire_claim()
+    finally:
+        first.release_claim()
+        second.release_claim()

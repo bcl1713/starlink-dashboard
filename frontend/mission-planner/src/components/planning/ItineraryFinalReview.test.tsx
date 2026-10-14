@@ -68,16 +68,14 @@ function setup(mapError = false) {
         ]
       : [],
   });
-  const publish = vi
-    .spyOn(planningApi, 'publishReviewed')
-    .mockResolvedValue({
-      ...view,
-      revision: 4,
-      mission: {
-        ...view.mission,
-        legs: [{ id: 'installed-a' }, { id: 'installed-b' }] as never,
-      },
-    });
+  const publish = vi.spyOn(planningApi, 'publishReviewed').mockResolvedValue({
+    ...view,
+    revision: 4,
+    mission: {
+      ...view.mission,
+      legs: [{ id: 'installed-a' }, { id: 'installed-b' }] as never,
+    },
+  });
   render(
     <QueryClientProvider client={client}>
       <ItineraryFinalReview view={view} />
