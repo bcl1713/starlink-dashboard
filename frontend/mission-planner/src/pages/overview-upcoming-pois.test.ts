@@ -54,6 +54,36 @@ describe('urgencyColor', () => {
 });
 
 describe('overviewPoiView', () => {
+  it.each([
+    ['flight_events_enabled', ['x', 'ka', 'starshield']],
+    [
+      'x_band_events_enabled',
+      ['departure', 'ar-start', 'ar-end', 'ka', 'starshield'],
+    ],
+    [
+      'ka_events_enabled',
+      ['departure', 'ar-start', 'ar-end', 'x', 'starshield'],
+    ],
+    [
+      'starshield_events_enabled',
+      ['departure', 'ar-start', 'ar-end', 'x', 'ka'],
+    ],
+  ])('filters only the disabled %s map layer', (field, expected) => {
+    const records = [
+      poi('departure', { kind: 'departure' }),
+      poi('ar-start', { kind: 'aar_start' }),
+      poi('ar-end', { kind: 'aar_end' }),
+      poi('x', { kind: 'x_band_warning_start' }),
+      poi('ka', { kind: 'ka_coverage_exit' }),
+      poi('starshield', { kind: 'starshield_outage_start' }),
+    ];
+    expect(
+      overviewPoiView(records, undefined, { [field]: false }).markers.map(
+        (p) => p.poi_id
+      )
+    ).toEqual(expected);
+    expect(overviewPoiView(records).markers).toEqual(records);
+  });
   it('uses slate for unavailable timing and retains untimed operational markers', () => {
     const untimedXTransition = poi('untimed-x', {
       expected_arrival_time: '2026-09-22T12:01:00.000Z',

@@ -5,30 +5,20 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Sequence
 from datetime import datetime
+from typing import get_args
 
-from app.mission.models import MissionLeg
+from app.mission.models import ManualAARTrack, MissionLeg
 from app.mission.timeline_builder.aar import ResolvedAARWindow
 from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.mission.timeline_builder.coverage import CoverageAnalysisResult
-from app.mission.timeline_builder.utils import find_waypoint_coordinates
+from app.mission.timeline_builder.event_pois import create_ar_pois, create_outage_pois
 from app.mission.timeline_builder.warnings import XBandWarningBoundary
 from app.models.poi import MissionPoiKind
 from app.models.route import ParsedRoute, RoutePoint, RouteWaypoint
 from app.services.poi_manager import POICreate, POIManager
 
 MISSION_EVENT_CATEGORY = "mission-event"
-MISSION_POI_KINDS: set[MissionPoiKind] = {
-    "departure",
-    "arrival",
-    "aar_start",
-    "aar_end",
-    "x_band_transition",
-    "x_band_warning_start",
-    "x_band_warning_end",
-    "ka_coverage_exit",
-    "ka_coverage_entry",
-    "ka_transition",
-}
+MISSION_POI_KINDS: set[MissionPoiKind] = set(get_args(MissionPoiKind))
 
 
 def sync_mission_pois(
@@ -43,6 +33,7 @@ def sync_mission_pois(
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
     warning_boundaries: Sequence[XBandWarningBoundary] = (),
+    manual_tracks: Sequence[ManualAARTrack] | None = None,
 ) -> None:
     """Replace generated mission POIs while preserving manually managed POIs."""
     generated = construct_mission_pois(
@@ -55,6 +46,7 @@ def sync_mission_pois(
         coverage=coverage,
         parent_mission_id=parent_mission_id,
         warning_boundaries=warning_boundaries,
+        manual_tracks=manual_tracks,
     )
     if not mission.route_id:
         return
@@ -84,6 +76,7 @@ def construct_mission_pois(
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
     warning_boundaries: Sequence[XBandWarningBoundary] = (),
+    manual_tracks: Sequence[ManualAARTrack] | None = None,
 ) -> tuple[POICreate, ...]:
     """Construct generated POIs without touching stores or files."""
     effective_mission_id = parent_mission_id or mission.id
@@ -137,14 +130,25 @@ def construct_mission_pois(
         expected_arrival_time=mission_end,
     )
 
-    _create_aar_pois(create, mission, route, aar_windows)
+    projector = RouteTemporalProjector(route, mission_start, mission_end)
+    create_ar_pois(
+        create,
+        mission,
+        route,
+        aar_windows,
+        projector,
+        (
+            mission.transports.manual_aar_tracks
+            if manual_tracks is None
+            else manual_tracks
+        ),
+    )
+    create_outage_pois(create, mission.transports.ka_outages, projector, "ka", "Ka")
+    create_outage_pois(
+        create, mission.transports.ku_overrides, projector, "starshield", "Starshield"
+    )
     _create_x_transition_pois(create, mission, transition_schedule)
     _create_ka_pois(create, coverage)
-    projector = (
-        RouteTemporalProjector(route, mission_start, mission_end)
-        if warning_boundaries
-        else None
-    )
     for boundary in warning_boundaries:
         create(
             name="X-Band Shut Down" if boundary.warning else "X-Band Turn On",
@@ -197,41 +201,6 @@ def _endpoint(
         order=fallback.sequence,
         role=role,
     )
-
-
-def _create_aar_pois(
-    create, mission: MissionLeg, route: ParsedRoute, aar_windows
-) -> None:
-    source_windows = {
-        window.id or f"AAR-{index + 1}": window
-        for index, window in enumerate(mission.transports.aar_windows or [])
-    }
-    for resolved in aar_windows:
-        source = source_windows.get(resolved.name)
-        if source is None:
-            continue
-        start = find_waypoint_coordinates(route, source.start_waypoint_name)
-        if start:
-            create(
-                name="AAR\nStart",
-                latitude=start[0],
-                longitude=start[1],
-                icon="aar",
-                kind="aar_start",
-                expected_arrival_time=resolved.start_time,
-                description=f"AAR window start ({source.start_waypoint_name})",
-            )
-        end = find_waypoint_coordinates(route, source.end_waypoint_name)
-        if end:
-            create(
-                name="AAR\nEnd",
-                latitude=end[0],
-                longitude=end[1],
-                icon="aar",
-                kind="aar_end",
-                expected_arrival_time=resolved.end_time,
-                description=f"AAR window end ({source.end_waypoint_name})",
-            )
 
 
 def _create_x_transition_pois(create, mission: MissionLeg, transition_schedule) -> None:

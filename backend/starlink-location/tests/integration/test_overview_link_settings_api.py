@@ -21,6 +21,10 @@ VISIBLE_DEFAULTS = {
     "aircraft_marker_enabled": True,
     "planned_route_enabled": True,
     "poi_markers_enabled": True,
+    "flight_events_enabled": True,
+    "x_band_events_enabled": True,
+    "ka_events_enabled": True,
+    "starshield_events_enabled": True,
     "ground_entry_point_enabled": True,
     "configured_satellites_enabled": True,
 }
@@ -322,6 +326,10 @@ VISIBILITY_FIELDS = [
     "aircraft_marker_enabled",
     "planned_route_enabled",
     "poi_markers_enabled",
+    "flight_events_enabled",
+    "x_band_events_enabled",
+    "ka_events_enabled",
+    "starshield_events_enabled",
     "ground_entry_point_enabled",
     "configured_satellites_enabled",
 ]

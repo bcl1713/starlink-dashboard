@@ -11,7 +11,11 @@ export type OverviewPoiKind =
   | 'x_band_warning_end'
   | 'ka_coverage_exit'
   | 'ka_coverage_entry'
-  | 'ka_transition';
+  | 'ka_transition'
+  | 'ka_outage_start'
+  | 'ka_outage_end'
+  | 'starshield_outage_start'
+  | 'starshield_outage_end';
 
 export interface OverviewUpcomingPoi {
   poi_id: string;

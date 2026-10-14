@@ -33,6 +33,10 @@ class OverviewLinkSettingsUpdate(BaseModel):
     aircraft_marker_enabled: StrictBool | None = None
     planned_route_enabled: StrictBool | None = None
     poi_markers_enabled: StrictBool | None = None
+    flight_events_enabled: StrictBool | None = None
+    x_band_events_enabled: StrictBool | None = None
+    ka_events_enabled: StrictBool | None = None
+    starshield_events_enabled: StrictBool | None = None
     ground_entry_point_enabled: StrictBool | None = None
     configured_satellites_enabled: StrictBool | None = None
 
