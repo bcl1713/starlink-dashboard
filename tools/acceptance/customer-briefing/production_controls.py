@@ -1177,45 +1177,29 @@ def qualify_pdf_resources(owner):
         report = inspect_download(content, headers, status)
         report.update(case=case, proxyTotalSeconds=elapsed, zipBytes=len(content))
         if status == "included":
-            archive, output = f"/tmp/briefing-{case}.zip", f"/tmp/briefing-pdf-{case}"
-            owner.compose(
-                "cp",
-                str(destination / "download.zip"),
-                f"starlink-location:{archive}",
-                timeout=30,
-            )
-            owner.compose(
-                "exec",
-                "-T",
-                "--user",
-                "root",
-                "starlink-location",
-                "chown",
-                "appuser:appuser",
-                archive,
-                timeout=30,
-            )
+            # Rootless Docker cannot docker-cp into a container with a read-only
+            # bind mount. Inspect the exact downloaded ZIP in a disposable probe
+            # container from the same image, with its evidence directory mounted.
             report["actualPdfInspection"] = json.loads(
                 owner.compose(
-                    "exec",
-                    "-T",
+                    "run",
+                    "--rm",
+                    "--no-deps",
                     "--user",
-                    "appuser",
-                    "-e",
-                    "PYTHONPATH=/acceptance:/app",
-                    "starlink-location",
+                    "root",
+                    "--entrypoint",
                     "python",
+                    "-e",
+                    "PYTHONPATH=/acceptance:/app:/home/appuser/.local/lib/python3.11/site-packages",
+                    "-v",
+                    f"{destination}:/probe-evidence",
+                    "starlink-location",
                     "-c",
                     (tools / "production_pdf_probe.py").read_text(),
-                    archive,
-                    output,
+                    "/probe-evidence/download.zip",
+                    "/probe-evidence/actual-pdf",
                     timeout=180,
                 ).splitlines()[-1]
-            )
-            target = destination / "actual-pdf"
-            target.mkdir()
-            owner.compose(
-                "cp", f"starlink-location:{output}/.", str(target), timeout=30
             )
         if case == "mission-pdf-resources":
             if status != "included" or report["actualPdfInspection"]["pageCount"] != 5:

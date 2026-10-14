@@ -29,7 +29,7 @@ def make_pdf_fragments():
     for n, leg in enumerate(ids):
         writer = PdfWriter()
 
-        def stream(data, attrs):
+        def stream(data, attrs, writer=writer):
             value = DecodedStreamObject()
             value.set_data(data)
             value.update({NameObject(k): v for k, v in attrs.items()})

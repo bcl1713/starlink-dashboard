@@ -78,6 +78,7 @@ def test_failed_leg_does_not_publish_partial_mission_pdf():
 
 def test_independent_nested_resources_are_shared_without_merging_unequal_semantics():
     from pypdf import PdfReader, PdfWriter
+
     from app.mission.slide_cache.assembly import assemble_customer_pdf
     from tests.unit.pdf_resource_fixtures import make_pdf_fragments
 
@@ -124,6 +125,7 @@ def test_independent_nested_resources_are_shared_without_merging_unequal_semanti
 def test_resource_deduplication_checks_cancellation_before_and_between_passes():
     import pytest
     from pypdf import PdfWriter
+
     from app.mission.exporter.export_cancel import ExportCancelled
     from app.mission.slide_cache.pdf_resources import deduplicate_pdf_resources
 

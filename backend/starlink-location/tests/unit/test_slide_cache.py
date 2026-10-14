@@ -381,6 +381,7 @@ def test_unchanged_renderer_identity_does_not_reread_assets(monkeypatch):
 
 def test_derivative_and_raster_policy_change_renderer_revision(tmp_path, monkeypatch):
     from pathlib import Path
+
     from app.mission.slide_cache import identity
 
     script = tmp_path / "backend/starlink-location/app/mission/slide_cache/identity.py"
@@ -401,7 +402,7 @@ def test_derivative_and_raster_policy_change_renderer_revision(tmp_path, monkeyp
         monkeypatch.setattr(
             identity,
             "Path",
-            lambda value: (
+            lambda value, renderer=renderer: (
                 renderer if value == "/opt/customer-briefing/renderer" else Path(value)
             ),
         )
@@ -420,6 +421,7 @@ def test_effective_bundled_derivative_changes_revision_with_source_bind_mount(
     tmp_path, monkeypatch
 ):
     from pathlib import Path
+
     from app.mission.slide_cache import identity
 
     script = (

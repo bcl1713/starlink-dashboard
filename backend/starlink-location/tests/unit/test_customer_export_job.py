@@ -143,9 +143,10 @@ async def test_response_closes_zip_on_cancelled_send():
 def test_ready_assembly_preserves_package_contract():
     import json
     import zipfile
-    from app.mission.slide_cache.assembly import assemble_customer_pdf
-    from app.mission.package import customer_artifacts
+
     from app.mission.exporter.customer_filename import customer_brief_filename
+    from app.mission.package import customer_artifacts
+    from app.mission.slide_cache.assembly import assemble_customer_pdf
     from tests.unit.pdf_resource_fixtures import make_pdf_fragments
     from tests.unit.test_customer_package import data_package
 

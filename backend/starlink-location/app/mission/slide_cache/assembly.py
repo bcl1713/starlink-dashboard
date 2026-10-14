@@ -11,12 +11,12 @@ from pypdf import PdfReader, PdfWriter
 from app.mission.exporter.customer_filename import customer_brief_filename
 from app.mission.exporter.export_cancel import check_cancelled
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.slide_cache.pdf_resources import deduplicate_pdf_resources
 from app.mission.package.customer_artifacts import (
     WARNING_CODES,
     CustomerBriefingArtifacts,
     CustomerBriefingOutcome,
 )
+from app.mission.slide_cache.pdf_resources import deduplicate_pdf_resources
 
 
 def assemble_customer_pdf(snapshot, records, *, cancel=None, ordered_ids=None):
