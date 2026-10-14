@@ -337,3 +337,20 @@ def test_foreign_elected_worker_completion_releases_origin_capture(
             assert job.id not in follower.captures
         finally:
             follower.close()
+
+
+def test_renderer_revision_replaces_current_package(tmp_path, monkeypatch):
+    module = importlib.import_module("app.mission.package.preparation")
+    revision = ["old-renderer"]
+    monkeypatch.setattr(module, "renderer_revision", lambda: revision[0])
+    with runtime(tmp_path, monkeypatch) as (service, _):
+        first = wait_state(service, service.start("m"), {"ready"})
+        with service.open_download("m", first.id).stream as stream:
+            old_bytes = stream.read()
+        revision[0] = "print-renderer"
+        updated = wait_state(service, service.start("m"), {"ready"})
+        assert updated.fingerprint != first.fingerprint
+        assert updated.id != first.id
+        assert service.start("m").id == updated.id
+        with service.open_download("m", first.id).stream as stream:
+            assert stream.read() == old_bytes

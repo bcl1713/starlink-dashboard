@@ -138,3 +138,37 @@ async def test_response_closes_zip_on_cancelled_send():
     with pytest.raises(asyncio.CancelledError):
         await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
     assert stream.closed
+
+
+def test_ready_assembly_preserves_package_contract():
+    import json
+    import zipfile
+    from app.mission.slide_cache.assembly import assemble_customer_pdf
+    from app.mission.package import customer_artifacts
+    from app.mission.exporter.customer_filename import customer_brief_filename
+    from tests.unit.pdf_resource_fixtures import make_pdf_fragments
+    from tests.unit.test_customer_package import data_package
+
+    captured, records = make_pdf_fragments()
+    outcome = assemble_customer_pdf(captured, records)
+    name = customer_brief_filename(json.loads(captured.metadata_json)["name"])
+    path = "exports/mission/" + name
+    source = data_package()
+    with source:
+        result = customer_artifacts._publish_pair(source, outcome.artifacts, None, path)
+    with result, zipfile.ZipFile(result) as archive:
+        assert set(archive.namelist()) == {
+            "mission.json", "manifest.json", "exports/mission/mission-timeline.csv",
+            path, customer_artifacts.EVIDENCE_PATH,
+        }
+        assert archive.testzip() is None
+        assert all(i.compress_type == zipfile.ZIP_STORED for i in archive.infolist())
+        assert archive.read(path) == outcome.artifacts.pdf
+        evidence_bytes = archive.read(customer_artifacts.EVIDENCE_PATH)
+        assert evidence_bytes == outcome.artifacts.evidence
+        evidence = json.loads(evidence_bytes)
+        assert evidence["schemaVersion"] == 2
+        assert evidence["render"]["artifactHashes"]["pdfPath"] == sha256(archive.read(path)).hexdigest()
+        manifest = json.loads(archive.read("manifest.json"))
+        assert manifest["version"] == "2.0"
+        assert manifest["statistics"] == {"mission_export_files": 3, "total_files": 5}
