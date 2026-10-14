@@ -65,7 +65,7 @@ it.each(['winds', 'temperature'] as const)(
     d.dispose();
     d.dispose();
     expect(budget.snapshot()).toMatchObject({ decoded: 0, gpu: 0 });
-  expect(texture.image.data?.byteLength).toBe(0);
+    expect(texture.image.data?.byteLength).toBe(0);
   }
 );
 it('resolves a direct legacy both-layer request to wind only', () => {

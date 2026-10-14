@@ -1,215 +1,24 @@
+import { overviewCamera } from './support/overview-camera';
+import { captureGfsViews } from './support/gfs-presentation-views';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import type { RootState } from '@react-three/fiber';
-import type {
-  Mesh,
-  ShaderMaterial,
-  DataTexture,
-  Object3D,
-  Intersection,
-} from 'three';
+import {
+  windSnapshot as snapshot,
+  windReadbacks as samples,
+  windTrailPixels,
+  windDirection,
+} from './support/gfs-wind-probe';
 import {
   installWeatherProbe,
   weatherSnapshot,
 } from './support/overview-weather-probe';
 
-type NativeWindow = Window & {
-  __overviewEvidenceRoots?: {
-    containerInfo?: { getState?: () => RootState };
-  }[];
-};
 async function patchControl(changes: Record<string, unknown>) {
   const path = process.env.WEATHER_ACCEPTANCE_CONTROL_PATH!;
   const before = JSON.parse(await readFile(path, 'utf8'));
   await writeFile(path + '.new', JSON.stringify({ ...before, ...changes }));
   await rename(path + '.new', path);
 }
-async function snapshot(page: Page) {
-  return page.evaluate(() => {
-    const state = (window as NativeWindow).__overviewEvidenceRoots
-      ?.find((r) => r.containerInfo?.getState?.().gl.domElement.isConnected)
-      ?.containerInfo?.getState?.();
-    const object = state?.scene.getObjectByName('Native GFS atmosphere');
-    if (!state) return null;
-    // Disposal clears the native children/data before React detaches the group.
-    if (!object?.userData.gfs)
-      return { present: false, calls: state.gl.info.render.calls };
-    const g = object.userData.gfs;
-    const lines = state.scene.getObjectByName('GFS wind FROM barbs') as Mesh;
-    return {
-      present: true,
-      temperature: !!state.scene.getObjectByName('GFS temperature'),
-      bulletins: [
-        'Native METAR / SPECI observations',
-        'Native TAF terminal forecasts',
-        'Native international SIGMET advisories',
-      ].map((name) => !!state.scene.getObjectByName(name)),
-      calls: state.gl.info.render.calls,
-      vertical: g.grid.descriptor.vertical,
-      lead: g.grid.descriptor.lead_seconds,
-      valid: g.grid.descriptor.valid_at_ms,
-      budget: g.budget(),
-      bytes: g.bytes,
-      barbs: g.barbSamples.length / 9,
-      firstSample: Array.from(g.barbSamples.slice(0, 9)),
-      firstShaft: Array.from(
-        lines?.geometry.getAttribute('position').array.slice(0, 6) ?? []
-      ),
-    };
-  });
-}
-// Read the admitted packed raster's real shader and real WebGL framebuffer.
-// Diagnostic U/V reuses the same packed texture allocation in place; restore T
-// before returning. No test renderer/texture/geometry replaces the production one.
-async function samples(
-  page: Page,
-  coordinates: { latitude: number; longitude: number }[]
-) {
-  return page.evaluate((coordinates) => {
-    const state = (window as NativeWindow).__overviewEvidenceRoots
-      ?.find((r) => r.containerInfo?.getState?.().gl.domElement.isConnected)
-      ?.containerInfo?.getState?.();
-    if (!state) throw Error('Native renderer missing');
-    const object = state.scene.getObjectByName('Native GFS atmosphere');
-    if (!object) throw Error('Native grid missing');
-    const grid = object.userData.gfs.grid;
-    const mesh = state.scene.getObjectByName('GFS temperature') as Mesh<
-        import('three').BufferGeometry,
-        ShaderMaterial
-      >,
-      material = mesh.material;
-    const texture = material.uniforms.packedGrid.value as DataTexture,
-      packed = texture.image.data as Uint8Array;
-    const controls = state.controls as unknown as {
-      setLookAt: (...v: (number | boolean)[]) => void;
-      update: (n: number) => void;
-    };
-    const visibility: { node: Object3D; visible: boolean }[] = [];
-    state.scene.traverse((node) => {
-      if (['Mesh', 'LineSegments', 'Points'].includes(node.type)) {
-        visibility.push({ node, visible: node.visible });
-        node.visible = node === mesh;
-      }
-    });
-    const gl = state.gl.getContext(),
-      out = [];
-    try {
-      material.uniforms.diagnostic.value = 1;
-      for (const geo of coordinates) {
-        const lat = (geo.latitude * Math.PI) / 180,
-          lon = (geo.longitude * Math.PI) / 180;
-        controls.setLookAt(
-          3 * Math.cos(lat) * Math.cos(lon),
-          3 * Math.sin(lat),
-          -3 * Math.cos(lat) * Math.sin(lon),
-          0,
-          0,
-          0,
-          false
-        );
-        controls.update(0);
-        state.camera.updateMatrixWorld();
-        const x = Math.floor(gl.drawingBufferWidth / 2),
-          y = Math.floor(gl.drawingBufferHeight / 2);
-        state.raycaster.setFromCamera(
-          {
-            x: ((x + 0.5) / gl.drawingBufferWidth) * 2 - 1,
-            y: ((y + 0.5) / gl.drawingBufferHeight) * 2 - 1,
-          },
-          state.camera
-        );
-        const hits: Intersection[] = [];
-        Object.getPrototypeOf(mesh).raycast.call(mesh, state.raycaster, hits);
-        hits.sort((a, b) => a.distance - b.distance);
-        if (!hits.length) throw Error('No native triangle intersection');
-        const point = hits[0].point.clone().normalize(),
-          latitude = (Math.asin(point.y) * 180) / Math.PI,
-          longitude = (Math.atan2(-point.z, point.x) * 180) / Math.PI;
-        const qx = ((((longitude + 180) % 360) + 360) % 360) * 2,
-          qy = Math.max(0, Math.min(360, (90 - latitude) * 2)),
-          col = Math.floor(qx),
-          row = Math.floor(qy),
-          fx = qx - col,
-          fy = qy - row;
-        const contributors = [
-          [row * 720 + col, (1 - fx) * (1 - fy)],
-          [row * 720 + ((col + 1) % 720), fx * (1 - fy)],
-          [Math.min(360, row + 1) * 720 + col, (1 - fx) * fy],
-          [Math.min(360, row + 1) * 720 + ((col + 1) % 720), fx * fy],
-        ];
-        const result: { [key: string]: unknown } = {
-          ...geo,
-          sampledLatitude: latitude,
-          sampledLongitude: longitude,
-        };
-        for (const name of ['u', 'v', 't']) {
-          const values = grid[name] as Int16Array;
-          for (let i = 0; i < values.length; i++) {
-            packed[i * 4] = values[i] & 255;
-            packed[i * 4 + 1] = (values[i] >> 8) & 255;
-          }
-          texture.needsUpdate = true;
-          state.gl.render(state.scene, state.camera);
-          const bytes = new Uint8Array(4);
-          gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
-          let expected = 0,
-            mask = 0;
-          for (const [i, w] of contributors)
-            if (w > 0) {
-              expected += values[i] * w;
-              mask = Math.max(mask, grid.mask[i]);
-            }
-          const gpu = bytes[0] * 256 + bytes[1] - 32768;
-          result[name] = {
-            gpu: gpu * 0.01 + (name === 't' ? 273.15 : 0),
-            cpu: expected * 0.01 + (name === 't' ? 273.15 : 0),
-            gpuMask: bytes[2],
-            mask,
-            error: Math.abs(gpu - expected) * 0.01,
-          };
-        }
-        if (contributors.some(([i, w]) => w > 0 && grid.mask[i])) {
-          material.uniforms.diagnostic.value = 0;
-          state.gl.render(state.scene, state.camera);
-          const withMask = new Uint8Array(4);
-          gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, withMask);
-          mesh.visible = false;
-          state.gl.render(state.scene, state.camera);
-          const without = new Uint8Array(4);
-          gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, without);
-          mesh.visible = true;
-          material.uniforms.diagnostic.value = 1;
-          result.maskedTransparent = withMask.every(
-            (value, i) => value === without[i]
-          );
-        }
-        const node =
-          Math.round((90 - geo.latitude) * 2) * 720 +
-          (Math.round((geo.longitude + 180) * 2) % 720);
-        result.node = {
-          u: grid.u[node] * 0.01,
-          v: grid.v[node] * 0.01,
-          t: grid.t[node] * 0.01 + 273.15,
-          mask: grid.mask[node],
-        };
-        out.push(result);
-      }
-    } finally {
-      for (let i = 0; i < grid.t.length; i++) {
-        packed[i * 4] = grid.t[i] & 255;
-        packed[i * 4 + 1] = (grid.t[i] >> 8) & 255;
-      }
-      texture.needsUpdate = true;
-      material.uniforms.diagnostic.value = 0;
-      visibility.forEach(({ node, visible }) => {
-        node.visible = visible;
-      });
-      state.gl.render(state.scene, state.camera);
-    }
-    return out;
-  }, coordinates);
-}
-
 test('production GFS selection, source/CPU/GPU, native winds, combined views and cancellation', async ({
   browser,
   context,
@@ -235,16 +44,18 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     other = await secondary.newPage();
   const errors: string[] = [],
     providerRequests: string[] = [];
-  overview.on('pageerror', (e) => errors.push(e.message));
-  overview.on('request', (r) => {
-    if (
-      /noaa-gfs|aviationweather\.gov|rainviewer\.com/.test(
-        new URL(r.url()).hostname
+  for (const page of [overview, other, config]) {
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('request', (r) => {
+      if (
+        /noaa-gfs|aviationweather\.gov|rainviewer\.com/.test(
+          new URL(r.url()).hostname
+        )
       )
-    )
-      providerRequests.push(r.url());
-  });
-  await overview.clock.install();
+        providerRequests.push(r.url());
+    });
+  }
+  await overview.clock.setFixedTime(new Date('2026-10-06T06:00:00Z'));
   await installWeatherProbe(overview);
   await installWeatherProbe(other);
   const evidence: { [key: string]: unknown } = {},
@@ -261,7 +72,7 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       .poll(
         async () => {
           const v = await snapshot(page);
-          return v?.present && v.temperature && v.barbs > 0
+          return v?.present && v.wind && v.particleCount > 0
             ? `${v.vertical.kind}:${v.lead}`
             : '';
         },
@@ -272,6 +83,23 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
   try {
     await config.goto('/configuration');
     await config.getByRole('tab', { name: 'Weather', exact: true }).click();
+    const route = await request.post('/api/routes/upload', {
+      multipart: {
+        file: {
+          name: 'fabricated-wind-route.kml',
+          mimeType: 'application/vnd.google-earth.kml+xml',
+          buffer: Buffer.from(
+            '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Fabricated wind check</name><Placemark><name>KXXA</name><Point><coordinates>-80,35</coordinates></Point></Placemark><Placemark><name>KXXB</name><Point><coordinates>-70,40</coordinates></Point></Placemark><Placemark><LineString><coordinates>-80,35 -70,40</coordinates></LineString></Placemark></Document>'
+          ),
+        },
+      },
+    });
+    expect(route.status()).toBe(201);
+    expect(
+      (
+        await request.post(`/api/routes/${(await route.json()).id}/activate`)
+      ).ok()
+    ).toBe(true);
     await overview.goto('/overview');
     await other.goto('/overview');
     for (const name of [
@@ -280,7 +108,6 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       'International SIGMET advisories',
       'Precipitation radar',
       'GFS winds',
-      'GFS air temperature',
     ]) {
       const toggle = config.getByRole('switch', { name, exact: true });
       await expect(toggle).toBeEnabled();
@@ -300,8 +127,8 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       overview.getByLabel('Atmosphere legend').locator('time, details')
     ).toHaveCount(0);
     expect(first.bulletins).toEqual([true, true, true]);
-    expect(first.barbs).toBeGreaterThan(0);
-    expect(first.barbs).toBeLessThanOrEqual(2000);
+    expect(first.particleCount).toBeGreaterThan(0);
+    expect(first.particleCount).toBeLessThanOrEqual(2000);
     expect((await weatherSnapshot(overview)).radar).not.toBeNull();
     for (const [kind, lead] of [
       ['pressure', 6],
@@ -328,7 +155,10 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       }
       await ready(overview, kind === 'pressure-850' ? 'pressure' : kind, lead);
       await ready(other, kind === 'pressure-850' ? 'pressure' : kind, lead);
+      const previous = snapshots[snapshots.length - 1];
       const current = await remember();
+      if (kind !== 'pressure')
+        expect(current.instance).not.toBe(previous.instance);
       expect(current.valid).toBe(
         Date.parse('2026-10-06T00:00:00Z') + lead * 3600000
       );
@@ -348,53 +178,76 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
         JSON.stringify(readbacks, null, 2)
       );
       native.forEach((actual, i) => {
-        const node = actual.node as Record<string, number>;
+        const node = actual.node;
         expect(node.mask).toBe(reference[i].mask);
-        if (node.mask) expect(actual.maskedTransparent).toBe(true);
+        if (actual.mask) expect(actual.maskedTransparent).toBe(true);
         if (!node.mask)
-          for (const n of ['u', 'v', 't'])
+          for (const n of ['u', 'v', 't'] as const)
             expect(
               Math.abs(node[n] - reference[i].source_values[n])
             ).toBeLessThanOrEqual(0.01);
-        for (const n of ['u', 'v', 't']) {
-          const component = actual[n] as {
-            error: number;
-            gpuMask: number;
-            mask: number;
-          };
-          expect(component.gpuMask, JSON.stringify({ name: n, actual })).toBe(
-            component.mask
-          );
-          if (!component.mask)
+        if ('u' in actual) {
+          for (const component of [actual.u, actual.v]) {
+            expect(component.gpuMask).toBe(component.mask);
+            if (!component.mask)
+              expect(component.error).toBeLessThanOrEqual(0.02);
+          }
+          expect(actual.speedMask).toBe(actual.mask);
+          if (!node.mask) {
             expect(
-              component.error,
-              JSON.stringify({ name: n, actual })
-            ).toBeLessThanOrEqual(0.01);
+              Math.abs(actual.knots - actual.cpuKnots)
+            ).toBeLessThanOrEqual(0.06);
+            actual.expectedColor.forEach((c, j) =>
+              expect(Math.abs(actual.rgba[j] - c)).toBeLessThanOrEqual(2)
+            );
+            actual.expectedColor.forEach((c, j) =>
+              expect(
+                Math.abs(
+                  actual.productionRGBA[j] -
+                    (c * 0.45 + actual.hiddenRGBA[j] * 0.55)
+                )
+              ).toBeLessThanOrEqual(2)
+            );
+          }
         }
       });
-
-      // Independent tangent check against the first real glyph's actual shaft.
-      const s = current.firstSample as number[],
-        line = current.firstShaft as number[],
-        lat = (s[2] * Math.PI) / 180,
-        lon = (s[3] * Math.PI) / 180;
-      const shaft = [line[3] - line[0], line[4] - line[1], line[5] - line[2]],
-        length = Math.hypot(...shaft),
-        speed = Math.hypot(s[4], s[5]);
-      const east = [-Math.sin(lon), 0, -Math.cos(lon)],
-        north = [
-          -Math.sin(lat) * Math.cos(lon),
-          Math.cos(lat),
-          Math.sin(lat) * Math.sin(lon),
-        ];
-      if (speed > 2.5 / 1.9438444924406) {
-        expect(
-          shaft.reduce((v, x, i) => v + x * east[i], 0) / length
-        ).toBeCloseTo(-s[4] / speed, 4);
-        expect(
-          shaft.reduce((v, x, i) => v + x * north[i], 0) / length
-        ).toBeCloseTo(-s[5] / speed, 4);
+      await config
+        .getByRole('switch', { name: 'GFS air temperature', exact: true })
+        .click();
+      for (const page of [overview, other]) {
+        await expect
+          .poll(async () => (await snapshot(page))?.mode, { timeout: 180000 })
+          .toBe('temperature');
+        expect((await snapshot(page))?.particleCount).toBe(0);
+        await expect(page.getByLabel('Atmosphere legend')).not.toContainText(
+          'Wind speed'
+        );
       }
+      const thermal = await samples(overview, reference);
+      thermal.forEach((actual) => {
+        if ('t' in actual) {
+          expect(actual.t.gpuMask).toBe(actual.t.mask);
+          if (!actual.t.mask) expect(actual.t.error).toBeLessThanOrEqual(0.02);
+          else expect(actual.maskedTransparent).toBe(true);
+        }
+      });
+      readbacks.push({ kind, lead, thermal });
+      await config
+        .getByRole('switch', { name: 'GFS winds', exact: true })
+        .click();
+      await expect(
+        config.getByRole('switch', { name: 'GFS air temperature', exact: true })
+      ).not.toBeChecked();
+      await ready(overview, kind === 'pressure-850' ? 'pressure' : kind, lead);
+      await ready(other, kind === 'pressure-850' ? 'pressure' : kind, lead);
+      const moving = await remember();
+      expect(moving.finite).toBe(true);
+      expect(moving.particleCount).toBe(2000);
+      expect(moving.depthTest).toBe(true);
+      expect(moving.depthWrite).toBe(false);
+      await expect
+        .poll(async () => (await snapshot(overview))?.vertices)
+        .toBeGreaterThan(0);
     }
     expect(
       oracles.some((o) => o.vertical === 'pressure-850' && o.mask === 1)
@@ -408,6 +261,122 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await expect(overview.getByLabel('Atmosphere legend')).toContainText(
       'FL390 · +3 h'
     );
+    await overview
+      .getByRole('link', { name: 'Configuration', exact: true })
+      .click();
+    await expect(overview.locator('.overview-globe canvas')).toHaveCount(0);
+    await expect
+      .poll(() =>
+        overview.evaluate(() =>
+          (
+            window as unknown as { __gfsOwnedBytes?: () => unknown }
+          ).__gfsOwnedBytes?.()
+        )
+      )
+      .toEqual({ decoded: 0, gpu: 0 });
+    await overview.getByRole('link', { name: 'Overview', exact: true }).click();
+    await ready(overview, 'flight-level', 9);
+    await expect
+      .poll(() =>
+        overview.evaluate(() => {
+          const roots = (
+            window as unknown as {
+              __overviewEvidenceRoots: {
+                containerInfo?: {
+                  getState?: () => import('@react-three/fiber').RootState;
+                };
+              }[];
+            }
+          ).__overviewEvidenceRoots;
+          const scene = roots
+            .find(
+              (r) => r.containerInfo?.getState?.().gl.domElement.isConnected
+            )
+            ?.containerInfo?.getState?.().scene;
+          let count = 0;
+          scene?.traverse((node) => {
+            const mesh = node as import('three').Mesh<
+              import('three').BufferGeometry,
+              import('three').ShaderMaterial
+            >;
+            if (mesh.material?.uniforms?.uHalfWidthWorld) {
+              const a = mesh.geometry.getAttribute('position');
+              if (!Array.from(a.array).every(Number.isFinite))
+                throw Error('Nonfinite native route');
+              count++;
+            }
+          });
+          return count;
+        })
+      )
+      .toBeGreaterThan(0);
+    evidence.wind_raster = true;
+    const trailPixels = await windTrailPixels(overview);
+    expect(trailPixels.frontChanged).toBeGreaterThan(0);
+    expect(trailPixels.farControls).toBeGreaterThan(0);
+    expect(trailPixels.farChanged).toBe(0);
+    expect((await windDirection(overview)).alignment).toBeGreaterThan(0.98);
+    evidence.wind_particles = true;
+    evidence.exclusive_modes = true;
+    await captureGfsViews(overview, 'wind', info.outputPath.bind(info));
+    await config
+      .getByRole('switch', { name: 'GFS air temperature', exact: true })
+      .click();
+    for (const page of [overview, other]) {
+      await expect
+        .poll(async () => (await snapshot(page))?.mode, { timeout: 180000 })
+        .toBe('temperature');
+      expect((await snapshot(page))?.particleCount).toBe(0);
+    }
+    await captureGfsViews(overview, 'temperature', info.outputPath.bind(info));
+    await config
+      .getByRole('switch', { name: 'GFS winds', exact: true })
+      .click();
+    await ready(overview, 'flight-level', 9);
+    await ready(other, 'flight-level', 9);
+    await overview.emulateMedia({ reducedMotion: 'reduce' });
+    await expect
+      .poll(async () => (await snapshot(overview))?.particleCount)
+      .toBe(0);
+    expect((await snapshot(overview))?.wind).toBe(true);
+    await captureGfsViews(
+      overview,
+      'wind-reduced-motion',
+      info.outputPath.bind(info)
+    );
+    await overview.emulateMedia({ reducedMotion: 'no-preference' });
+    await expect
+      .poll(async () => (await snapshot(overview))?.particleCount)
+      .toBe(2000);
+    await overview.setViewportSize({ width: 1920, height: 1080 });
+    evidence.reduced_motion = true;
+    await overview.setViewportSize({ width: 390, height: 844 });
+    const explore = overview.getByRole('button', {
+      name: 'Explore map',
+      exact: true,
+    });
+    await explore.click();
+    const box = await overview.locator('.overview-globe canvas').boundingBox();
+    if (!box) throw Error('Missing globe gesture surface');
+    const cameraBefore = await overviewCamera(overview);
+    await overview.mouse.move(
+      box.x + box.width * 0.4,
+      box.y + box.height * 0.6
+    );
+    await overview.mouse.down();
+    await overview.mouse.move(
+      box.x + box.width * 0.6,
+      box.y + box.height * 0.5,
+      { steps: 10 }
+    );
+    await overview.mouse.up();
+    await expect
+      .poll(async () =>
+        JSON.stringify((await overviewCamera(overview)).position)
+      )
+      .not.toBe(JSON.stringify(cameraBefore.position));
+    await overview.keyboard.press('Escape');
+    await overview.setViewportSize({ width: 1920, height: 1080 });
     evidence.native_samples = true;
     evidence.configuration = true;
     await overview.screenshot({ path: info.outputPath('gfs-desktop.png') });
@@ -519,21 +488,19 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     await config
       .getByRole('switch', { name: 'GFS winds', exact: true })
       .click();
-    await config
-      .getByRole('switch', { name: 'GFS air temperature', exact: true })
-      .click();
     releases.forEach((resolve) => resolve());
     await overview.unroute('**/api/aviation-weather/v1/products/*/grid.json');
     await expect
       .poll(async () => (await snapshot(overview))?.present)
       .toBe(false);
+    expect((await snapshot(overview))?.ownedBytes).toEqual({
+      decoded: 0,
+      gpu: 0,
+    });
     expect((await request.get('/api/status')).ok()).toBe(true);
     await patchControl({ gfs_mismatch: true });
     await config
       .getByRole('switch', { name: 'GFS winds', exact: true })
-      .click();
-    await config
-      .getByRole('switch', { name: 'GFS air temperature', exact: true })
       .click();
     await expect(overview.getByLabel('Map status')).toContainText(
       'GFS unavailable',
@@ -559,6 +526,9 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
     });
     // Host/container monotonic authority is supplied by the runner control file;
     // advancing UTC must not be offset by a browser's unrelated monotonic epoch.
+    await overview.clock.install({
+      time: new Date(product.fresh_until_ms + 1000),
+    });
     await overview.reload();
     await expect(overview.getByLabel('Map status')).toContainText('GFS stale', {
       timeout: 180000,
@@ -583,6 +553,8 @@ test('production GFS selection, source/CPU/GPU, native winds, combined views and
       decoded_peak: peak('decoded'),
       gpu_peak: peak('gpu'),
       slot_peak: peak('slots'),
+      native_sample_count: oracles.length,
+      particle_count: Math.max(...snapshots.map((s) => s.particleCount ?? 0)),
     };
     expect(errors).toEqual([]);
     expect(providerRequests).toEqual([]);

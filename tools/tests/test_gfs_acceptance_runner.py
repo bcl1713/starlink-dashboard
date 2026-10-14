@@ -293,3 +293,61 @@ def test_presentation_bulletins_use_the_same_historical_clock(tmp_path):
         json.loads((tmp_path / "presentation-clock.json").read_bytes())["epoch_ms"]
         == clock["replay_utc_ms"]
     )
+
+
+def complete_wind_presentation(module):
+    evidence = complete_evidence(module)
+    evidence.update(
+        {
+            key: True
+            for key in (
+                "native_samples",
+                "configuration",
+                "lifecycle",
+                "combined_viewports",
+                "wind_raster",
+                "wind_particles",
+                "exclusive_modes",
+                "reduced_motion",
+            )
+        }
+    )
+    evidence["browser_metrics"] = {
+        "encoded_peak": 1,
+        "decoded_peak": 1,
+        "gpu_peak": 1,
+        "slot_peak": 1,
+        "native_sample_count": 1,
+        "particle_count": 2000,
+    }
+    return evidence
+
+
+@pytest.mark.parametrize(
+    "missing", ["wind_raster", "wind_particles", "exclusive_modes", "reduced_motion"]
+)
+def test_wind_presentation_requires_each_new_proof(missing):
+    module = runner()
+    evidence = complete_wind_presentation(module)
+    evidence.pop(missing)
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")
+
+
+@pytest.mark.parametrize("metric", ["native_sample_count", "particle_count"])
+@pytest.mark.parametrize("value", [0, float("nan"), float("inf"), None])
+def test_wind_presentation_requires_finite_nonzero_samples(metric, value):
+    module = runner()
+    evidence = complete_wind_presentation(module)
+    evidence["browser_metrics"][metric] = value
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")
+
+
+def test_complete_wind_presentation_passes_and_rejects_particle_overflow():
+    module = runner()
+    evidence = complete_wind_presentation(module)
+    module.require_pass(evidence, "presentation")
+    evidence["browser_metrics"]["particle_count"] = 2001
+    with pytest.raises(ValueError, match="presentation"):
+        module.require_pass(evidence, "presentation")

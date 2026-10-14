@@ -63,3 +63,6 @@ frontend/mission-planner/dist/
 .worktrees/
 
 frontend/mission-planner/dist-mission-export/
+
+/test-results/gfs-wind-synthetic/
+/test-results/gfs-presentation/
