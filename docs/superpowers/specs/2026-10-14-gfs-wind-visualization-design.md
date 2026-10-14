@@ -1,9 +1,8 @@
 # GFS wind gradient and particles
 
-Status: draft for user review. This document authorizes neither an
-implementation plan nor implementation. After spec approval, prepare a separate
-implementation plan for review; begin implementation only after that plan is
-approved.
+Status: approved by the user on 2026-10-14. Approval covers preparation of a
+separate implementation plan for review. Begin implementation only after that
+plan is approved and its execution method is selected.
 
 ## Intended outcome
 
@@ -18,8 +17,7 @@ GFS layers may be off. These preferences apply across Overview displays through
 the existing installation-wide settings and revision polling.
 
 The palette, legacy-settings precedence, particle limits, and reduced-motion
-behavior below are proposed design defaults for review, not additional user
-requirements.
+behavior below were proposed design defaults accepted with spec approval.
 
 ## Existing implementation and scope
 
