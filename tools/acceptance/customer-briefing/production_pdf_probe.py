@@ -112,7 +112,7 @@ text = subprocess.check_output(
 )
 result = {
     "resources": qualify_resources(
-        pdf, evidence, fixture=mission["id"] == "briefing-mission-pdf-resources"
+        pdf, evidence, fixture=mission["id"].endswith("mission-pdf-resources")
     ),
     "pdfBytes": len(pdf),
     "zipBytes": source.stat().st_size,

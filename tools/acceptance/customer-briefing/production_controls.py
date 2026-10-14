@@ -213,7 +213,7 @@ def assert_scenario(case, report):
         )
     evidence = report["evidence"]
     legs = evidence["legs"]
-    if len(legs) != (5 if case == "five-leg" else 1):
+    if len(legs) != ({"five-leg": 5, "mission-pdf-resources": 3}.get(case, 1)):
         raise ValueError("Wrong number of captured legs")
     maps = evidence["render"]["maps"]
     if case == "missing-map":
@@ -1161,21 +1161,45 @@ def qualify_pdf_resources(owner):
     tools = (
         Path(owner.env["BRIEFING_SOURCE_ROOT"]) / "tools/acceptance/customer-briefing"
     )
-    fixtures = seed_missions(api, owner.root)
+    # These two historical scenarios require destructive setup in qualify(),
+    # which is outside the focused PDF-resource matrix.
+    names = [
+        "mission-pdf-resources",
+        "normal",
+        "incomplete-x",
+        "short",
+        "midnight",
+        "dst",
+        "short-dst",
+        "subminute",
+        "uncertain-subminute",
+        "nested-outage",
+        "ar-sof",
+        "adjusted",
+        "spliced",
+        "two-page",
+        "three-page",
+        "five-leg",
+        "over-budget",
+        "missing-map",
+    ]
+    fixtures = seed_missions(api, owner.root, names=names)
     reports = []
-    for case, mission in fixtures.items():
-        destination = owner.root / "downloads" / case
+
+    def inspect_case(case, mission, label):
+        destination = owner.root / "downloads" / label
         destination.mkdir(parents=True)
         content, headers, elapsed, stages = download_prepared(api, mission["id"])
         (destination / "download.zip").write_bytes(content)
         (destination / "preparation-stages.json").write_text(
             json.dumps(stages, indent=2)
         )
-        status = (
-            "omitted" if case in {"over-budget", "cached-missing-route"} else "included"
-        )
+        status = "omitted" if case == "over-budget" else "included"
         report = inspect_download(content, headers, status)
-        report.update(case=case, proxyTotalSeconds=elapsed, zipBytes=len(content))
+        assert_scenario(case, report)
+        report.update(
+            case=case, attempt=label, proxyTotalSeconds=elapsed, zipBytes=len(content)
+        )
         if status == "included":
             # Rootless Docker cannot docker-cp into a container with a read-only
             # bind mount. Inspect the exact downloaded ZIP in a disposable probe
@@ -1210,6 +1234,33 @@ def qualify_pdf_resources(owner):
             report["readyReuse"] = True
         (destination / "inspection.json").write_text(json.dumps(report, indent=2))
         reports.append(report)
+
+    for case, mission in fixtures.items():
+        inspect_case(case, mission, case)
+    for attempt in (2, 3):
+        seed_root = owner.root / f"cold-resource-{attempt}"
+        seed_root.mkdir()
+        repeated = seed_missions(
+            api,
+            seed_root,
+            names=["mission-pdf-resources"],
+            id_prefix=f"briefing-cold-{attempt}-",
+        )
+        inspect_case(
+            "mission-pdf-resources",
+            repeated["mission-pdf-resources"],
+            f"mission-pdf-resources-cold-{attempt}",
+        )
+    cold = [
+        report["actualPdfInspection"]
+        for report in reports
+        if report["case"] == "mission-pdf-resources"
+    ]
+    for key in ("geometryTextHash", "rasters"):
+        if any(report[key] != cold[0][key] for report in cold[1:]):
+            raise ValueError(
+                "Cold resource exports changed page text/geometry or rendered pixels"
+            )
     return {
         "fixtureKind": "synthetic providers and supported API mission/KML inputs",
         "mode": "prepared PDF resource controls",

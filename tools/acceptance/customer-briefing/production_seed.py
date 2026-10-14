@@ -53,7 +53,7 @@ def kml(start, duration, wide=False, untimed_middle=False, latitude_offset=0):
     ).encode()
 
 
-def seed_missions(api, root, *, names=None):
+def seed_missions(api, root, *, names=None, id_prefix="briefing-"):
     recipes = {
         "normal": {},
         "incomplete-x": {"unknown": True},
@@ -87,7 +87,7 @@ def seed_missions(api, root, *, names=None):
         recipes = {name: recipes[name] for name in names}
     saved = {}
     for name, recipe in recipes.items():
-        mission_id = "briefing-" + name
+        mission_id = id_prefix + name
         legs, routes = [], []
         for number in range(recipe.get("legs", 1)):
             start = recipe.get("start", BASE) + timedelta(days=number)
