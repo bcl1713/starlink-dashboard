@@ -13,6 +13,7 @@ import type {
   PlanningProposal,
   PlanningSatelliteOptions,
   PlanningView,
+  PublishReviewedBatch,
   PreviewDraft,
   RevisionPreview,
   RouteAnchor,
@@ -151,6 +152,17 @@ export const planningApi = {
     request: ApplyProposal
   ): Promise<PlanningView> =>
     (await apiClient.post(`${legPath(mission, leg)}/apply`, request)).data,
+  publishReviewed: async (
+    mission: string,
+    request: PublishReviewedBatch
+  ): Promise<PlanningView> =>
+    (
+      await apiClient.post(
+        `${missionPath(mission)}/reviewed-publications`,
+        request,
+        { timeout: 180_000 }
+      )
+    ).data,
   saveReviewed: async (
     mission: string,
     leg: string,

@@ -49,6 +49,11 @@ class PlanningService:
 
         return save_reviewed(self, mission_id, leg_id, request)
 
+    def publish_reviewed_batch(self, mission_id, request):
+        from .publication import publish_reviewed_batch
+
+        return publish_reviewed_batch(self, mission_id, request)
+
     def update_managed_leg(self, mission_id, leg_id, updated_leg, revision, identity):
         from .legacy import update_leg
 

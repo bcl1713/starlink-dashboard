@@ -29,6 +29,7 @@ from .models import (
     PlanningSatelliteOptions,
     PlanningView,
     PreviewDraft,
+    PublishReviewedBatch,
     RevisionPreview,
     RouteBindingPreview,
     SaveDraft,
@@ -342,3 +343,14 @@ async def apply_batch_proposals(
     service: Annotated[PlanningService, Depends(get_service)],
 ):
     return await invoke(service.proposals.apply_batch, mission_id, request)
+
+
+@router.post(
+    "/missions/{mission_id}/reviewed-publications", response_model=PlanningView
+)
+async def publish_reviewed_batch(
+    mission_id: str,
+    request: PublishReviewedBatch,
+    service: Annotated[PlanningService, Depends(get_service)],
+):
+    return await invoke(service.publish_reviewed_batch, mission_id, request)

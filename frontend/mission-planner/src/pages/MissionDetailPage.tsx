@@ -30,6 +30,7 @@ import { ExpectedLegCards } from '../components/planning/ExpectedLegCards';
 import { BatchRouteAttachments } from '../components/planning/BatchRouteAttachments';
 import { ItinerarySourceReview } from '../components/planning/ItinerarySourceReview';
 import { ItineraryPlans } from '../components/planning/ItineraryPlans';
+import { ItineraryFinalReview } from '../components/planning/ItineraryFinalReview';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
@@ -256,6 +257,10 @@ export function MissionDetailPage() {
                 view={planning.data}
               />
               <ItineraryPlans key={`plans-${missionId}`} view={planning.data} />
+              <ItineraryFinalReview
+                key={`final-${missionId}`}
+                view={planning.data}
+              />
               <ExpectedLegCards
                 view={planning.data}
                 renderInstalledActions={renderInstalledActions}

@@ -343,6 +343,11 @@ class PlanningStore:
             manifest.revision += 1
             return self.persist(mission, manifest)
 
+    def commit_reviewed_batch(self, mission_id, request, prepared):
+        from .publication_commit import commit_reviewed_batch
+
+        return commit_reviewed_batch(self, mission_id, request, prepared)
+
     def commit_reviewed(
         self, mission_id, leg_id, request, artifacts, *, validate=None, environment=None
     ):

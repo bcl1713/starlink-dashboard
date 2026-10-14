@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { missionsApi, type PlanningCAS } from '../../services/missions';
+import {
+  missionsApi,
+  type MissionPage,
+  type PlanningCAS,
+} from '../../services/missions';
+import { newestMission } from '../../services/mission-cache';
 import type { SimulationStart } from '@/services/simulation-run';
 import { confirmSimulationRun } from './useSimulationRun';
 import type {
@@ -10,23 +15,51 @@ import type {
 } from '../../types/mission';
 
 export function useMissions() {
+  const client = useQueryClient();
   return useQuery({
     queryKey: ['missions'],
-    queryFn: missionsApi.list,
+    queryFn: async () => {
+      const received = await missionsApi.list();
+      return received.map((mission) =>
+        newestMission(mission, client.getQueryData(['missions', mission.id]))
+      );
+    },
   });
 }
 
 export function useMissionsPage(limit: number, offset: number) {
+  const client = useQueryClient();
   return useQuery({
     queryKey: ['missions', { limit, offset }],
-    queryFn: () => missionsApi.listPage(limit, offset),
+    queryFn: async () => {
+      const received = await missionsApi.listPage(limit, offset);
+      const cached = client.getQueryData<MissionPage>([
+        'missions',
+        { limit, offset },
+      ]);
+      return {
+        ...received,
+        missions: received.missions.map((mission) =>
+          newestMission(
+            mission,
+            client.getQueryData(['missions', mission.id]) ??
+              cached?.missions.find((row) => row.id === mission.id)
+          )
+        ),
+      };
+    },
   });
 }
 
 export function useMission(id: string) {
+  const client = useQueryClient();
   return useQuery({
     queryKey: ['missions', id],
-    queryFn: () => missionsApi.get(id),
+    queryFn: async () =>
+      newestMission(
+        await missionsApi.get(id),
+        client.getQueryData(['missions', id])
+      ),
     enabled: !!id,
   });
 }

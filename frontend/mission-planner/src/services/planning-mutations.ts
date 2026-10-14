@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { rememberMission } from './mission-cache';
 import type { PlanningEvaluation, PlanningView } from '../types/planning';
 
 /** One durable write queue per mission. A failed CAS is never retried. */
@@ -50,6 +51,7 @@ export class PlanningMissionController {
       const saved = committedView(value);
       if (saved && saved.revision >= (this.currentView()?.revision ?? 0)) {
         this.client.setQueryData(['planning', this.missionId], saved);
+        rememberMission(this.client, saved.mission);
         void this.client.invalidateQueries({ queryKey: ['missions'] });
       }
       return value;

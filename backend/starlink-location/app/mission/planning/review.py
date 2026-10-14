@@ -106,7 +106,7 @@ def preview(service, mission_id, leg_id, request):
     return evaluation
 
 
-def save_reviewed(service, mission_id, leg_id, request):
+def prepare_reviewed_leg(service, mission_id, leg_id, request):
     store = service.store
     leg, constraints, environment, _ = service.proposals._snapshot(
         mission_id, leg_id, request
@@ -166,15 +166,29 @@ def save_reviewed(service, mission_id, leg_id, request):
         raise PlanningFailure(422, problem.code, problem.message, action=problem.action)
     artifacts = replace(artifacts, validated_leg=installed)
 
-    def final_check(current):
-        service.proposals._recheck(mission_id, leg_id, request, environment)
-        validate_review(current, request, evaluation)
+    from .publication import PreparedReviewedLeg
 
-    return store.commit_reviewed(
-        mission_id,
+    return PreparedReviewedLeg(
         leg_id,
-        request,
+        request.model_copy(deep=True),
         artifacts,
-        validate=final_check,
-        environment=environment,
+        evaluation,
+        request.input_identity,
+        environment,
+        tuple(diagnostics),
+    )
+
+
+def save_reviewed(service, mission_id, leg_id, request):
+    from .models import PublishReviewedBatch, ReviewedLegRequest
+    from .publication import publish_reviewed_batch
+
+    return publish_reviewed_batch(
+        service,
+        mission_id,
+        PublishReviewedBatch(
+            expected_revision=request.expected_revision,
+            entries=[ReviewedLegRequest(leg_id=leg_id, review=request)],
+            idempotency_key=request.idempotency_key or str(uuid4()),
+        ),
     )

@@ -395,3 +395,34 @@ def test_v2_loads_exclude_scoped_timelines_from_full_and_metadata_legs(
     assert metadata is not None
     assert [leg.id for leg in full.legs] == ["leg-1", "leg-2"]
     assert [leg.id for leg in metadata.legs] == ["leg-1", "leg-2"]
+
+
+def test_mission_summary_preserves_leg_count_without_loading_leg_json(
+    temp_missions_dir,
+):
+    mission = Mission(
+        id="count-only",
+        name="Count only",
+        legs=[
+            MissionLeg(
+                id=f"leg-{number}",
+                name="Leg",
+                route_id="route",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+            for number in (1, 2, 3)
+        ],
+    )
+    save_mission_v2(mission)
+    save_mission_timeline(
+        "leg-1",
+        MissionLegTimeline(mission_leg_id="leg-1"),
+        parent_mission_id=mission.id,
+    )
+    for leg in mission.legs:
+        get_mission_leg_file_path(mission.id, leg.id).write_text(
+            "full leg loading would fail"
+        )
+    summary = load_mission_metadata_v2(mission.id)
+    assert summary is not None and len(summary.legs) == 3
+    assert {leg.id for leg in summary.legs} == {"leg-1", "leg-2", "leg-3"}

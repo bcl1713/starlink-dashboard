@@ -231,6 +231,7 @@ export interface BackupGap {
 }
 
 export interface PlanningEvaluation {
+  map_diagnostics?: PlanningError[];
   context: EvaluationContext;
   intervals?: EvaluationInterval[];
   outage_seconds: number;
@@ -526,5 +527,11 @@ export interface AcceptBatchRoutes {
 export interface ApplyBatchProposals {
   expected_revision: number;
   entries: { leg_id: string; proposal_id: string; input_identity: string }[];
+  idempotency_key: string;
+}
+
+export interface PublishReviewedBatch {
+  expected_revision: number;
+  entries: { leg_id: string; review: SaveReviewed }[];
   idempotency_key: string;
 }
