@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rasterSizeForPlacement } from './raster-policy.mjs';
 import { within } from './render-budget.mjs';
 import { ownedPath } from './render-owner.mjs';
 import {
@@ -115,6 +116,10 @@ export async function planWithMapFallback(plan, resolveUnavailableMaps) {
       throw cause;
     return plan();
   }
+}
+
+export function mapViewportsForPlacements(placements) {
+  return Object.fromEntries(Object.entries(placements).map(([id, placement]) => [id, rasterSizeForPlacement(placement)]));
 }
 
 async function measurePages(page, budget) {
@@ -304,7 +309,7 @@ export async function prepareMissionDocument({
     })),
   };
   const renderCurrentMaps = async () => {
-    const viewports = await within(
+    const placements = await within(
       page.evaluate(() =>
         Object.fromEntries(
           [...document.querySelectorAll('.briefing-page')].flatMap(
@@ -315,7 +320,7 @@ export async function prepareMissionDocument({
               return [
                 [
                   element.dataset.legId,
-                  { width: 1920, height: Math.round((1920 * height) / width) },
+                  { width, height },
                 ],
               ];
             }
@@ -324,7 +329,7 @@ export async function prepareMissionDocument({
       ),
       budget.workRemainingMs()
     );
-    const rendered = await renderMaps(viewports);
+    const rendered = await renderMaps(mapViewportsForPlacements(placements));
     const lostMap = payload.legs.some(
       (leg) => assets.maps[leg.legId] && !rendered[leg.legId]?.pngs[0]
     );
@@ -392,6 +397,13 @@ export async function prepareMissionDocument({
   if (html !== initialHtml) await load(html);
   if (await renderCurrentMaps()) {
     // Failed maps reclaim their column before pagination, as in the original path.
+    await load(composeMissionBriefing(payload, primaryPlan, assets));
+    pagePlan = await planPages(await measurePages(page, budget));
+  }
+  html = composeMissionBriefing(payload, pagePlan, assets);
+  await load(html);
+  // The final primary card owns the accepted viewport, including fallback reflow.
+  if (await renderCurrentMaps()) {
     await load(composeMissionBriefing(payload, primaryPlan, assets));
     pagePlan = await planPages(await measurePages(page, budget));
   }

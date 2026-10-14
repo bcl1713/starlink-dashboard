@@ -10,6 +10,7 @@ import {
 
 export const MAP_WIDTH = 1920;
 export const MAP_HEIGHT = 1080;
+export const mapFrameInset = (width: number): number => (64 * width) / 1920;
 export interface MissionMapView {
   id: string;
   width: number;
@@ -39,16 +40,17 @@ function fit(points: [number, number, number][], viewport: MapViewport) {
     )
   )
     return null;
+  const inset = mapFrameInset(viewport.width);
   const frame = overviewCameraFrame({
     width: viewport.width,
     height: viewport.height,
     fov: 38,
     // Leave a small inset for the stars at the actual PDF card aspect ratio.
     safeRect: {
-      x: 64,
-      y: 64,
-      width: viewport.width - 128,
-      height: viewport.height - 128,
+      x: inset,
+      y: inset,
+      width: viewport.width - 2 * inset,
+      height: viewport.height - 2 * inset,
     },
     route: points,
     direction,
