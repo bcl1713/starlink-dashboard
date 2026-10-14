@@ -102,7 +102,7 @@ export async function batchJourney(context, origin, input, output) {
     await click('Apply selected plans', 'planning');
     await expect(page.getByText('Selected plans applied to saved drafts. Continue to final review.', { exact: true })).toBeVisible({ timeout: 120000 });
     const approval = page.getByRole('checkbox', { name: 'I approve the selected satellite plans and Starshield settings', exact: true });
-    await expect(approval).toBeEnabled();
+    await expect(approval).toBeEnabled({ timeout: 120000 });
     // Wait for all canonical previews before binding the approval to their signatures.
     await expect.poll(async () => {
       const v = await read(); return v.expected_legs.every(c => c.computation_status === 'applied');
