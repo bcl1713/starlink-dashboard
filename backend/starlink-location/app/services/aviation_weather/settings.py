@@ -34,7 +34,16 @@ class AviationSettingsUpdate(Contract):
         values = self.model_dump(exclude_unset=True)
         if not values or any(value is None for value in values.values()):
             raise ValueError("At least one weather preference required")
+        if values.get("winds") and values.get("temperature"):
+            raise ValueError("Only one GFS layer may be enabled")
         return values
+
+
+def effective_settings(settings: AviationSettings) -> AviationSettings:
+    """Legacy simultaneous layers resolve to wind, without changing revision."""
+    if settings.winds and settings.temperature:
+        return settings.model_copy(update={"temperature": False})
+    return settings
 
 
 class AviationSettingsStore:
@@ -51,10 +60,24 @@ class AviationSettingsStore:
 
     def get(self):
         if self.readonly:
-            return self._read()
+            return effective_settings(self._read())
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.lock:
-            return self._read()
+            return effective_settings(self._read())
+
+    def repair_legacy(self) -> tuple[AviationSettings, bool]:
+        """Writable owner calls this while holding its outer GFS control lock."""
+        if self.readonly:
+            raise RuntimeError("Scientific worker settings are read-only")
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.lock:
+            old = self._read()
+            result = effective_settings(old)
+            if result == old:
+                return old, False
+            result = result.model_copy(update={"revision": old.revision + 1})
+            self._write(result)
+            return result, True
 
     def update(self, changes: dict):
         if self.readonly:
@@ -63,28 +86,35 @@ class AviationSettingsStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.lock:
             old = self._read()
-            values = {**old.model_dump(), **changes}
+            values = {**effective_settings(old).model_dump(), **changes}
+            if changes.get("winds"):
+                values["temperature"] = False
+            elif changes.get("temperature"):
+                values["winds"] = False
             if values == old.model_dump():
                 return old
             values["revision"] = old.revision + 1
             result = AviationSettings.model_validate(values)
-            temporary = None
-            try:
-                with tempfile.NamedTemporaryFile(
-                    mode="w",
-                    dir=self.path.parent,
-                    prefix=f".{self.path.name}.",
-                    suffix=".tmp",
-                    delete=False,
-                    encoding="utf-8",
-                ) as stream:
-                    temporary = Path(stream.name)
-                    json.dump(result.model_dump(), stream)
-                    stream.write("\n")
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                os.replace(temporary, self.path)
-            finally:
-                if temporary is not None:
-                    temporary.unlink(missing_ok=True)
+            self._write(result)
             return result
+
+    def _write(self, result: AviationSettings) -> None:
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                dir=self.path.parent,
+                prefix=f".{self.path.name}.",
+                suffix=".tmp",
+                delete=False,
+                encoding="utf-8",
+            ) as stream:
+                temporary = Path(stream.name)
+                json.dump(result.model_dump(), stream)
+                stream.write("\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.path)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)

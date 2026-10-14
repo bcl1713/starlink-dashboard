@@ -56,3 +56,44 @@ investigate failures but cannot write PASS; final acceptance builds all three
 candidate images with `--no-cache`. Historical replay and software rendering
 remain explicit; deployment hardware and live source availability need separate
 validation.
+
+## Wind gradient and particles
+
+Presentation now requires `wind_raster`, `wind_particles`, `exclusive_modes`
+and `reduced_motion` in addition to every existing foundation/presentation
+proof. Numeric shader readbacks check signed U/V, magnitude after vector
+interpolation, knots, masks and sRGB palette output. Finite positive native
+sample and particle counts and existing shared resource peaks are mandatory.
+Wind and temperature are exercised sequentially in both browser contexts.
+
+The optional `playwright.gfs-synthetic.config.ts` runs labeled synthetic
+controls against a loopback production build served by Nginx. It records
+software shader/color, mask, motion, toggle and responsive legend evidence.
+It cannot write the pinned-source presentation PASS.
+
+`playwright.gfs-hardware.config.ts` requires the six hardware inputs listed in
+[the approved plan](../../../docs/superpowers/plans/2026-10-14-gfs-wind-visualization.md),
+plus `GFS_HARDWARE_TARGET` (machine/OS/CPU/GPU/browser/refresh identity) and
+`GFS_HARDWARE_SOURCE_MANIFEST` (the readable pinned source manifest). It uses
+headed provisioned Chrome without software-rendering flags or service startup.
+Every paired run must meet p95 update ≤4 ms and p95 total-frame ≤1.2 times the
+barb baseline. Missing target/source inputs and software rendering leave H1
+unverified; synthetic and SwiftShader results cannot satisfy it.
+
+The H1 manifest is independently prepared from the two exact builds and pinned
+replay normalization. It must contain `source_root`, `clock_utc_ms` (the pinned
+2026-10-06 06Z replay epoch), `normalized_buffers` (U/V/T/mask SHA-256 digests),
+and `targets.BASELINE` / `targets.CANDIDATE`. Each target supplies its `sha`,
+`origin` and an `assets` map of origin paths to SHA-256 digests from that build,
+including `/index.html` and every referenced JS/CSS asset. Archive this manifest
+with build provenance; do not derive expected hashes from the served target.
+The harness hashes every local pinned presentation source, served build asset,
+and admitted model buffer. It requires F006 at 500 hPa, baseline barbs, matching
+admitted radar/bulletins when selected, and 2,000 candidate particles throughout
+each capture. The baseline is dev SHA
+`aef333d46a30c131f61a5de3bfe318c6a7618f43`; target origins and SHAs must differ.
+Use a 30-minute outer timeout for twelve paired warmup/capture periods and setup.
+The manifest also includes `overlay_products`: the ordered non-GFS catalog
+signatures `{layer, instance, payload}` from the pinned combined replay, where
+`payload` is its payload SHA-256 or radar product ID. Both served targets must
+match these signatures when overlays are enabled.

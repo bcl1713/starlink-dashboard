@@ -65,11 +65,13 @@ def bind_browser_source(candidate, installed, mode):
     return {
         "source": str(candidate),
         "package_lock_sha256": hashlib.sha256(lock).hexdigest(),
-        "test_sha256": hashlib.sha256(
-            (candidate / "tests/e2e/gfs-weather-production.spec.ts").read_bytes()
-        ).hexdigest()
-        if mode == "presentation"
-        else None,
+        "test_sha256": (
+            hashlib.sha256(
+                (candidate / "tests/e2e/gfs-weather-production.spec.ts").read_bytes()
+            ).hexdigest()
+            if mode == "presentation"
+            else None
+        ),
     }
 
 
@@ -103,6 +105,10 @@ def require_pass(proofs, mode="foundation"):
                 "lifecycle",
                 "combined_viewports",
                 "browser_metrics",
+                "wind_raster",
+                "wind_particles",
+                "exclusive_modes",
+                "reduced_motion",
             )
         ):
             raise ValueError("incomplete presentation controls")
@@ -112,6 +118,8 @@ def require_pass(proofs, mode="foundation"):
             "decoded_peak": 32 * 1024**2,
             "gpu_peak": 16 * 1024**2,
             "slot_peak": 4,
+            "native_sample_count": 10000,
+            "particle_count": 2000,
         }.items():
             value = browser.get(key)
             if (

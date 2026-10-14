@@ -1,10 +1,12 @@
 import type { GfsView } from './gfs-controller';
+import { WIND_COLOR_STOPS, windLegendGradient } from './wind-scale';
 import './AviationWeather.css';
 
 /** A compact key for admitted map layers; exceptions belong in Map status. */
 export function GfsStatus({ view }: { view: GfsView }) {
   const product = view.products.winds ?? view.products.temperature;
-  if (!product) return null;
+  if (!product || !view.drawing || !['current', 'stale'].includes(view.state))
+    return null;
   const vertical = product.vertical;
   const level =
     vertical.kind === 'pressure'
@@ -21,14 +23,35 @@ export function GfsStatus({ view }: { view: GfsView }) {
           ` · ${horizon === 0 ? 'Now' : `+${horizon} h`}`}
       </p>
       {view.products.winds && (
-        <p className="gfs-legend__wind">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M2 19h20M4 19V5M9 19V5M14 19v-7" />
-          </svg>
-          <span>Wind · kt</span>
-        </p>
+        <div className="gfs-legend__wind">
+          <p>Wind speed · kt</p>
+          <div
+            className="gfs-wind-legend"
+            role="img"
+            aria-label="Wind speed color scale, 0 to 150 or more knots"
+            style={{ background: windLegendGradient() }}
+          />
+          <div className="gfs-wind-legend__labels">
+            {WIND_COLOR_STOPS.map((s, i) => (
+              <span
+                key={s.knots}
+                style={{
+                  left: `${(s.knots / 150) * 100}%`,
+                  transform:
+                    i === 0
+                      ? 'none'
+                      : i === WIND_COLOR_STOPS.length - 1
+                        ? 'translateX(-100%)'
+                        : 'translateX(-50%)',
+                }}
+              >
+                {s.knots === 150 ? '150+' : s.knots}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
-      {view.products.temperature && (
+      {!view.products.winds && view.products.temperature && (
         <div className="gfs-legend__temperature">
           <p>Temperature · °C</p>
           <div className="gfs-temperature-legend" aria-hidden="true" />

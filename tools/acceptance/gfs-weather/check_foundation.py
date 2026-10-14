@@ -61,12 +61,12 @@ def run(check):
         assert status == 200
         return {p["layer_id"]: p for p in json.loads(body)["products"]}
 
-    def enabled():
+    def enabled(layer="winds"):
         result = request(
             "/api/aviation-weather/v1/settings",
             {
-                "winds": True,
-                "temperature": True,
+                "winds": layer == "winds",
+                "temperature": layer == "temperature",
             },
         )
         assert result[0] == 200
@@ -126,14 +126,13 @@ def run(check):
     control()
     enabled()
 
-    def admitted():
-        product = catalog()["gfs-winds"]
+    def admitted(layer="winds"):
+        product = catalog()[f"gfs-{layer}"]
         return product if product["state"] in {"ready", "stale"} else None
 
     product = wait(admitted)
-    temp = catalog()["gfs-temperature"]
-    assert temp["instance_id"] != product["instance_id"]
-    old_paths = [product["payload"]["path"], temp["payload"]["path"]]
+    assert catalog()["gfs-temperature"]["state"] == "off"
+    old_paths = [product["payload"]["path"]]
     status, headers, body, _ = request(old_paths[0])
     assert (
         status == 200
@@ -171,6 +170,29 @@ def run(check):
         assert max(errors.values()) <= 0.01
         samples.append({**oracle, "normalized": values, "errors": errors})
     (output / "samples.json").write_text(json.dumps(samples, indent=2))
+    # Both model products still require the same verified U/V/T generation,
+    # but installation preferences admit only one product at a time.
+    enabled("temperature")
+    temp = wait(lambda: admitted("temperature"))
+    assert temp["instance_id"] != product["instance_id"]
+    assert catalog()["gfs-winds"]["state"] == "off"
+    assert request(old_paths[0])[0] == 404
+    old_paths.append(temp["payload"]["path"])
+    status, _, body, _ = request(temp["payload"]["path"])
+    assert (
+        status == 200 and hashlib.sha256(body).hexdigest() == temp["payload"]["sha256"]
+    )
+    temperature_grid = json.loads(body)
+    (output / "temperature-grid.json").write_bytes(body)
+    for name, descriptor in temperature_grid["buffers"].items():
+        status, _, body, _ = request(descriptor["path"])
+        assert status == 200 and len(body) == descriptor["byte_length"]
+        assert hashlib.sha256(body).hexdigest() == descriptor["sha256"]
+        assert body == buffers[name]
+        old_paths.append(descriptor["path"])
+    enabled()
+    wait(admitted)
+    assert request(temp["payload"]["path"])[0] == 404
     decode_metrics = [
         json.loads(line)
         for line in (output / "control/decoder-metrics.jsonl").read_text().splitlines()

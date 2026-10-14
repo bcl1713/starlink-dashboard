@@ -14,6 +14,9 @@ vi.mock('./weather/OverviewWeatherLayer', () => ({
 vi.mock('./aviation-weather/AviationLayer', () => ({
   AviationLayer: () => null,
 }));
+vi.mock('./aviation-weather/GfsLayer', () => ({
+  GfsLayer: () => null,
+}));
 vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
   OverviewWeatherCameraObserver: () => null,
 }));

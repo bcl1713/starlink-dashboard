@@ -147,7 +147,7 @@ Phase 2 Configuration uses one tagged `gfs_selection` for both model layers:
 ```json
 {
   "winds": true,
-  "temperature": true,
+  "temperature": false,
   "gfs_selection": {
     "vertical": { "kind": "flight-level", "flight_level": 390 },
     "horizon_hours": 3
@@ -178,3 +178,27 @@ old/candidate generations. Model envelopes declare conservative 12 MiB decoded
 and 4 MiB GPU bounds. Admission failure removes or retains only an otherwise
 compatible, originally unexpired product; it never renews expiry. Visibility,
 offline, disable, superseding selection and the 45 second deadline cancel work.
+
+## Exclusive GFS visualization
+
+Winds and temperature are mutually exclusive; both may be off. Enabling either
+in Configuration saves the pair atomically. A partial API update that enables
+one turns the other off. Explicitly requesting both true returns HTTP 422.
+Legacy both-enabled settings are read as wind only and repaired once under the
+publication lock at startup or the next writable read. Repair increments the
+revision once and invalidates obsolete model demand; read-only worker reads
+normalize without writing. Selection and bulletin settings are preserved.
+
+Wind speed colors use interpolated physical U/V components, then magnitude in
+knots. The fixed scale is 0 blue, 25 cyan, 50 green, 75 yellow, 100 orange,
+125 red and 150+ purple. Values above 150 knots retain their physical speed;
+only their displayed color saturates. The atmosphere legend shows this scale.
+Unknown or below-terrain samples stay transparent.
+
+Wind trails show the direction air moves and move faster at higher speeds.
+Their motion is illustrative (12,000 times physical displacement), not travel
+time, route guidance or a forecast animation. At most 2,000 particles retain
+12 samples each; masked areas, resets and generation changes never connect
+trails across gaps. Temperature has no particles. Reduced motion keeps the
+wind raster and key while removing particle resources; changing the preference
+does not fetch another grid.

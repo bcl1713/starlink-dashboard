@@ -8,16 +8,19 @@ import {
   type GfsSelection,
 } from '@/services/aviation-weather';
 import { fetchGrid, type GridLease } from '@/services/aviation-grid';
+import type { GfsFlags } from '@/services/gfs-mode';
+export type { GfsFlags } from '@/services/gfs-mode';
 import {
   abortable,
   optionalWeatherBudget,
   type WeatherBudget,
 } from './weather-budget';
-export type GfsFlags = { winds: boolean; temperature: boolean };
 export type GfsDrawing = {
   object: THREE.Object3D;
   bytes: { decoded: number; gpu: number };
   dispose(): void;
+  update?(deltaSeconds: number): void;
+  setReducedMotion?(reduced: boolean): void;
 };
 export type GfsProducts = {
   winds?: AviationProduct;
@@ -38,7 +41,8 @@ type Options = {
   draw?: (
     lease: GridLease,
     flags: GfsFlags,
-    budget: WeatherBudget
+    budget: WeatherBudget,
+    options?: { reducedMotion?: boolean }
   ) => GfsDrawing;
 };
 type Record = {
@@ -53,6 +57,7 @@ export class GfsController {
   private live = false;
   private visible = true;
   private online = true;
+  private reducedMotion = false;
   private generation = 0;
   private cycle?: AbortController;
   private deadline?: ReturnType<typeof setTimeout>;
@@ -115,6 +120,15 @@ export class GfsController {
     this.view = { ...emptyGfsView, now: this.utc() };
     this.notify();
     this.listeners.clear();
+  }
+  setReducedMotion(reduced: boolean): void {
+    this.reducedMotion = reduced;
+    try {
+      this.record?.drawing?.setReducedMotion?.(reduced);
+    } catch {
+      this.remove();
+    }
+    this.publish();
   }
   setSettings(next: AviationSettings) {
     const settings = parseAviationSettings(next);
@@ -337,7 +351,8 @@ export class GfsController {
           winds: this.settings!.winds,
           temperature: this.settings!.temperature,
         },
-        this.budget
+        this.budget,
+        { reducedMotion: this.reducedMotion }
       );
       if (
         !current() ||

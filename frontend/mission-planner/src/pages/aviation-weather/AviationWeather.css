@@ -158,17 +158,22 @@
   color: var(--overview-secondary);
 }
 .gfs-legend .gfs-legend__wind {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   margin-top: 0.5rem;
 }
-.gfs-legend__wind svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
+.gfs-wind-legend {
+  height: 0.75rem;
+  margin-top: 0.25rem;
+}
+.gfs-wind-legend__labels {
+  position: relative;
+  height: 1.5em;
+  margin-top: 0.2rem;
+  min-width: 16rem;
+  font-size: 0.75em;
+}
+.gfs-wind-legend__labels span {
+  position: absolute;
+  white-space: nowrap;
 }
 .gfs-legend__temperature {
   margin-top: 0.5rem;

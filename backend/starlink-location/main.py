@@ -245,7 +245,7 @@ def initialize_aviation_weather_runtime() -> None:
         )
         return
     try:
-        app.state.aviation_gfs_bridge = GfsBridge(
+        bridge = GfsBridge(
             store,
             Path(
                 os.environ.get(
@@ -258,6 +258,8 @@ def initialize_aviation_weather_runtime() -> None:
                 )
             ),
         )
+        bridge._read_settings()
+        app.state.aviation_gfs_bridge = bridge
     except Exception:  # noqa: BLE001 - optional GFS must preserve bulletin/core startup
         logger.warning_json("GFS bridge initialization unavailable", exc_info=True)
 

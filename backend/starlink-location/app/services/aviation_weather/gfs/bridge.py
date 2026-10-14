@@ -11,6 +11,7 @@ from starlette.datastructures import Headers
 from starlette.responses import FileResponse, JSONResponse, Response
 
 from app.models.aviation_weather import WeatherProduct
+from app.services.aviation_weather.settings import AviationSettings
 from app.services.overview_weather.protocol import WeatherUnavailable
 
 from .ipc import GfsMailbox
@@ -164,6 +165,16 @@ class GfsBridge:
         if now_ms > expected:
             self._anchor = now_ms, mono
         return True
+
+    def _read_settings(self) -> AviationSettings:
+        with control_lock(self.mailbox.root, timeout=1):
+            settings, repaired = self.settings.repair_legacy()
+            if repaired:
+                self.mailbox.invalidate_locked(settings.revision)
+            return settings
+
+    async def read_settings(self) -> AviationSettings:
+        return await asyncio.to_thread(self._read_settings)
 
     def _save(self, changes):
         with control_lock(self.mailbox.root, timeout=1):

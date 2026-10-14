@@ -50,7 +50,10 @@ async def get_settings(request: Request, response: Response):
         store = getattr(request.app.state, "aviation_weather_settings_store", None)
         if store is None:
             raise ValueError()
-        return store.get()
+        bridge = getattr(request.app.state, "aviation_gfs_bridge", None)
+        if bridge:
+            return await bridge.read_settings()
+        return (await asyncio.to_thread(store.repair_legacy))[0]
     except (OSError, ValueError):
         raise HTTPException(503, "Aviation weather settings unavailable") from None
 
@@ -97,13 +100,24 @@ async def get_catalog(request: Request, response: Response):
 
         products, manifest = await asyncio.gather(service.products(), radar_frame())
         now = service.utc_ms()
-        settings = service.store.get()
         bridge = getattr(request.app.state, "aviation_gfs_bridge", None)
-        models = (
-            await bridge.products(settings, now)
-            if bridge
-            else unavailable_products(settings, now)
-        )
+        try:
+            settings = (
+                await bridge.read_settings()
+                if bridge
+                else (await asyncio.to_thread(service.store.repair_legacy))[0]
+            )
+        except (OSError, ValueError):
+            # A model publication/repair failure must not discard healthy radar
+            # or bulletins. Do not admit model payloads without the lock/ack.
+            settings = service.store.get()
+            models = unavailable_products(settings, now)
+        else:
+            models = (
+                await bridge.products(settings, now)
+                if bridge
+                else unavailable_products(settings, now)
+            )
         # Build all envelope states against one admission clock after acquisition.
         products = service.admitted_products(now)
         return AviationCatalog(

@@ -5,6 +5,7 @@ import {
 } from '@/hooks/api/useAviationSettings';
 import { ConfigurationSection } from '../ConfigurationSection';
 import type { AviationLayer, GfsSelection } from '@/services/aviation-weather';
+import { resolveGfsFlags } from '@/services/gfs-mode';
 const levels = [85000, 50000, 30000, 25000, 20000] as const;
 const flightLevels = [50, 100, 180, 240, 300, 340, 390, 450] as const;
 const horizons = [0, 3, 6, 9, 12, 18, 24, 36, 48] as const;
@@ -35,6 +36,10 @@ export function AviationSettingsCard() {
   const query = useAviationSettings(),
     save = useSaveAviationSettings();
   const selected = query.data?.gfs_selection;
+  const flags = resolveGfsFlags({
+    winds: query.data?.winds ?? false,
+    temperature: query.data?.temperature ?? false,
+  });
   const selection: GfsSelection =
     selected && 'vertical' in selected
       ? selected
@@ -54,6 +59,11 @@ export function AviationSettingsCard() {
             <legend className="mb-2 text-sm text-muted-foreground">
               {group}
             </legend>
+            {group === 'Flight-level atmosphere' && (
+              <p className="text-xs text-muted-foreground">
+                Only one GFS layer can be displayed at a time.
+              </p>
+            )}
             {options
               .filter((o) => o.group === group)
               .map((o) => (
@@ -64,11 +74,24 @@ export function AviationSettingsCard() {
                   {o.label}
                   <Switch
                     aria-label={o.label}
-                    checked={query.data?.[o.layer] ?? false}
-                    disabled={!query.data || query.isError || save.isPending}
-                    onChange={(e) =>
-                      save.mutate({ [o.layer]: e.target.checked })
+                    checked={
+                      o.layer === 'winds' || o.layer === 'temperature'
+                        ? flags[o.layer]
+                        : (query.data?.[o.layer] ?? false)
                     }
+                    disabled={!query.data || query.isError || save.isPending}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      save.mutate({
+                        [o.layer]: enabled,
+                        ...(enabled && o.layer === 'winds'
+                          ? { temperature: false }
+                          : {}),
+                        ...(enabled && o.layer === 'temperature'
+                          ? { winds: false }
+                          : {}),
+                      });
+                    }}
                   />
                 </label>
               ))}

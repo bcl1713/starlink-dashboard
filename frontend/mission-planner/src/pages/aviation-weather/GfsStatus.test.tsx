@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { Group } from 'three';
 import { GfsStatus } from './GfsStatus';
 import { gridFixture, GRID_RUN } from '@/test/gfs-grid';
 import { emptyGfsView, type GfsProducts } from './gfs-controller';
@@ -21,6 +22,11 @@ it.each([0, 6])(
     const r = render(
       <GfsStatus
         view={{
+          drawing: {
+            object: new Group(),
+            bytes: { decoded: 0, gpu: 0 },
+            dispose() {},
+          },
           state: 'current',
           now: GRID_RUN,
           selection: {
@@ -46,20 +52,31 @@ it.each(['winds', 'temperature', 'both'] as const)(
     const p = gridFixture().product;
     const products: GfsProducts = {};
     if (layer !== 'temperature') products.winds = p;
-    if (layer !== 'winds') products.temperature = p;
+    if (layer === 'temperature') products.temperature = p;
     const r = render(
-      <GfsStatus view={{ state: 'stale', now: GRID_RUN, products }} />
+      <GfsStatus
+        view={{
+          state: 'stale',
+          now: GRID_RUN,
+          products,
+          drawing: {
+            object: new Group(),
+            bytes: { decoded: 0, gpu: 0 },
+            dispose() {},
+          },
+        }}
+      />
     );
     expect(screen.getByLabelText('Atmosphere legend').textContent).toContain(
       'NOAA GFS'
     );
-    expect(Boolean(screen.queryByText('Wind · kt'))).toBe(
+    expect(Boolean(screen.queryByText('Wind speed · kt'))).toBe(
       layer !== 'temperature'
     );
     expect(Boolean(screen.queryByText('Temperature · °C'))).toBe(
-      layer !== 'winds'
+      layer === 'temperature'
     );
-    if (layer !== 'winds') {
+    if (layer === 'temperature') {
       expect(r.container.textContent).toContain('−80');
       expect(r.container.textContent).toContain('+40');
     }
@@ -79,7 +96,16 @@ it('identifies the admitted flight level without interpolation instructions', ()
   };
   render(
     <GfsStatus
-      view={{ state: 'current', now: GRID_RUN, products: { winds: p } }}
+      view={{
+        state: 'current',
+        now: GRID_RUN,
+        products: { winds: p },
+        drawing: {
+          object: new Group(),
+          bytes: { decoded: 0, gpu: 0 },
+          dispose() {},
+        },
+      }}
     />
   );
   expect(screen.getByLabelText('Atmosphere legend').textContent).toContain(
@@ -88,4 +114,31 @@ it('identifies the admitted flight level without interpolation instructions', ()
   expect(screen.getByLabelText('Atmosphere legend').textContent).not.toContain(
     'interpolation'
   );
+});
+
+it('keys the full fixed wind scale and hides unadmitted products', () => {
+  const p = gridFixture().product;
+  const r = render(
+    <GfsStatus
+      view={{
+        state: 'current',
+        now: GRID_RUN,
+        products: { winds: p },
+        drawing: {
+          object: new Group(),
+          bytes: { decoded: 0, gpu: 0 },
+          dispose() {},
+        },
+      }}
+    />
+  );
+  for (const value of ['0', '25', '50', '75', '100', '125', '150+'])
+    expect(screen.getByText(value)).toBeTruthy();
+  expect(screen.queryByText('Temperature · °C')).toBeNull();
+  r.rerender(
+    <GfsStatus
+      view={{ state: 'current', now: GRID_RUN, products: { winds: p } }}
+    />
+  );
+  expect(screen.queryByLabelText('Atmosphere legend')).toBeNull();
 });
