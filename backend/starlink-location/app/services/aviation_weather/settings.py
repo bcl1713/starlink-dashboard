@@ -5,10 +5,11 @@ import os
 import tempfile
 from pathlib import Path
 
-from app.models.aviation_grid import GfsSelection
-from app.models.aviation_weather import Contract
 from filelock import FileLock
 from pydantic import Field
+
+from app.models.aviation_grid import GfsSelection
+from app.models.aviation_weather import Contract
 
 
 class AviationSettings(Contract):
@@ -59,11 +60,15 @@ class AviationSettingsStore:
         except FileNotFoundError:
             return AviationSettings()
 
-    def get(self):
+    def get(self, *, timeout=None):
+        """Read preferences, optionally bounding this caller's lock wait.
+
+        Omitted timeout preserves the store's existing blocking semantics.
+        """
         if self.readonly:
             return effective_settings(self._read())
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.lock:
+        with self.lock.acquire(timeout=timeout):
             return effective_settings(self._read())
 
     def repair_legacy(self) -> tuple[AviationSettings, bool]:

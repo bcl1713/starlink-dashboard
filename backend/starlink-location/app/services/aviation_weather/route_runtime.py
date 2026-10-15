@@ -24,7 +24,8 @@ class RouteSigmetService:
         self.context_provider = context_provider
         self.worker = GeometryWorker()
         self._cache = OrderedDict()
-        self._evaluations = set()
+        self._evaluations = {}
+        self._selected_context_key = None
         self._closed = False
         self._closing = None
         self.weather.add_settings_listener(self.settings_changed)
@@ -52,11 +53,49 @@ class RouteSigmetService:
 
     def _select_context(self):
         with get_active_leg_lock().acquire(timeout=1):
-            return self.context_provider()
+            return self._observe_context()
+
+    def _observe_context(self):
+        """Called under the active-leg gate; publish the latest selection key.
+
+        Admission checks the key again after thread/cleanup awaits, so an older
+        capture cannot retire a more recently observed route's work.
+        """
+        context = self.context_provider()
+        self._selected_context_key = context.context_key if context else None
+        return context
+
+    async def _retire_incompatible(self, context):
+        key = context.context_key if context else None
+        if key != self._selected_context_key:
+            raise WeatherUnavailable()
+        tasks = [task for task, owner in self._evaluations.items() if owner != key]
+        for task in tasks:
+            task.cancel()
+        await await_owned(
+            asyncio.ensure_future(asyncio.gather(*tasks, return_exceptions=True))
+        )
+        if key != self._selected_context_key:
+            raise WeatherUnavailable()
+
+    async def _selection(self):
+        context = await self._thread(self._select_context)
+        await self._retire_incompatible(context)
+        return context
+
+    def _settings(self):
+        return self.weather.store.get(timeout=1)
 
     async def _geometry(self, context, collection, groups):
+        current = await self._selection()
         _, admitted = self.weather.admitted_layer("sigmet")
-        if self._closed or admitted is not collection:
+        if (
+            self._closed
+            or admitted is not collection
+            or current is None
+            or current.context_key != context.context_key
+            or context.context_key != self._selected_context_key
+        ):
             raise WeatherUnavailable()
         # Canonical semantic content ignores acquisition metadata, ring/feature
         # order and whitespace. Eligibility and acknowledgement stay outside the
@@ -69,11 +108,11 @@ class RouteSigmetService:
             self._cache.move_to_end(key)
             return self._cache[key]
         task = asyncio.create_task(self.worker.evaluate(context, collection))
-        self._evaluations.add(task)
+        self._evaluations[task] = context.context_key
         try:
             result = await task
         finally:
-            self._evaluations.discard(task)
+            self._evaluations.pop(task, None)
             await await_owned(
                 asyncio.ensure_future(asyncio.gather(task, return_exceptions=True))
             )
@@ -134,8 +173,8 @@ class RouteSigmetService:
             # Entire bounded lock/I/O operation runs off-loop. Route selection
             # and settings reads happen BEFORE taking the notice file lock.
             with get_active_leg_lock().acquire(timeout=1):
-                selected = self.context_provider()
-                settings = self.weather.store.get()
+                selected = self._observe_context()
+                settings = self._settings()
 
                 def validate():
                     self._validate(
@@ -195,13 +234,14 @@ class RouteSigmetService:
     def _capture(self):
         with get_active_leg_lock().acquire(timeout=1):
             return (
-                self.context_provider(),
-                self.weather.store.get(),
+                self._observe_context(),
+                self._settings(),
                 self.weather.admitted_layer("sigmet")[0],
             )
 
     async def _changed_snapshot(self, reason, status="evaluating"):
         current, settings, product = await self._thread(self._capture)
+        await self._retire_incompatible(current)
         if not settings.sigmet:
             status = "off"
         elif current is None:
@@ -209,16 +249,17 @@ class RouteSigmetService:
         return self._snapshot(settings, current, product, status, reason=reason), None
 
     async def _read(self):
-        settings = await self._thread(self.weather.store.get)
+        settings = await self._thread(self._settings)
         await self.weather.settings_changed(settings)
         product, _ = self.weather.admitted_layer("sigmet")
         if self._closed:
             raise WeatherUnavailable()
         if not settings.sigmet:
             return self._snapshot(settings, None, product, "off"), None
-        context = await self._thread(self._select_context)
+        context = await self._selection()
         product, collection = await self.weather.read_layer("sigmet")
         current, current_settings, current_product = await self._thread(self._capture)
+        await self._retire_incompatible(current)
         if (
             not current_settings.sigmet
             or (current.context_key if current else None)

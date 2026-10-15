@@ -462,7 +462,12 @@ class AviationWeatherService:
     async def read_layer(self, layer):
         if layer not in LAYERS:
             raise ValueError("Unknown aviation layer")
-        await self.settings_changed(self.store.get())
+        settings = asyncio.create_task(asyncio.to_thread(self.store.get, timeout=1))
+        try:
+            current = await asyncio.shield(settings)
+        finally:
+            await await_owned(settings)
+        await self.settings_changed(current)
         if self._closed:
             raise WeatherUnavailable()
         await self._acquire(layer)

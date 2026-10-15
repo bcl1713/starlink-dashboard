@@ -629,3 +629,134 @@ async def test_disable_during_grouping_cannot_start_late_matching_work(
         if read is not None:
             await asyncio.gather(read, return_exceptions=True)
         await close(service, weather)
+
+
+async def test_read_layer_settings_lock_does_not_block_event_loop(tmp_path):
+    import threading
+
+    from filelock import Timeout
+
+    service, weather, store, _, _, _, _, _ = setup_service(tmp_path)
+    entered, release = threading.Event(), threading.Event()
+
+    def hold():
+        with store.lock:
+            entered.set()
+            release.wait(3)
+
+    holder = threading.Thread(target=hold)
+    holder.start()
+    read = None
+    try:
+        assert await asyncio.to_thread(entered.wait, 1)
+        read = asyncio.create_task(weather.read_layer("sigmet"))
+        started = asyncio.get_running_loop().time()
+        await asyncio.sleep(0.02)
+        assert asyncio.get_running_loop().time() - started < 0.3
+        with pytest.raises(Timeout):
+            await read
+    finally:
+        release.set()
+        await asyncio.to_thread(holder.join, 1)
+        if read is not None:
+            await asyncio.gather(read, return_exceptions=True)
+        await close(service, weather)
+
+
+async def test_late_old_route_grouping_cannot_supersede_current_matching(
+    tmp_path, monkeypatch
+):
+    import threading
+
+    from app.services.aviation_weather import route_decode, route_runtime
+
+    original_groups, original_worker = (
+        route_runtime.group_bulletins,
+        route_decode.evaluate_in_worker,
+    )
+    grouped, release_group = threading.Event(), threading.Event()
+    matching, release_match, cleaned = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    grouping_count, admitted = [0], []
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    ordinary = context[0]
+    current_key = "b" * 64
+
+    def group(features):
+        grouping_count[0] += 1
+        if grouping_count[0] == 1:
+            grouped.set()
+            assert release_group.wait(4)
+        return original_groups(features)
+
+    async def evaluate(route, collection):
+        admitted.append(route.context_key)
+        if route.context_key == current_key:
+            matching.set()
+            try:
+                await release_match.wait()
+                return await original_worker(route, collection)
+            finally:
+                cleaned.set()
+        return await original_worker(route, collection)
+
+    monkeypatch.setattr(route_runtime, "group_bulletins", group)
+    monkeypatch.setattr(route_decode, "evaluate_in_worker", evaluate)
+    tasks = []
+    try:
+        store.update({"sigmet": True})
+        tasks.append(asyncio.create_task(service.read()))
+        async with asyncio.timeout(2):
+            while not grouped.is_set():
+                await asyncio.sleep(0.01)
+        context[0] = ordinary.model_copy(update={"context_key": current_key})
+        tasks.append(asyncio.create_task(service.read()))
+        await asyncio.wait_for(matching.wait(), 2)
+        release_group.set()
+        assert not (await tasks[0]).entries
+        assert admitted == [current_key]
+        assert not cleaned.is_set() and not tasks[1].done()
+        release_match.set()
+        assert (await tasks[1]).entries
+    finally:
+        release_group.set()
+        release_match.set()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        await close(service, weather)
+
+
+@pytest.mark.parametrize("selection", ["cached", "no-route"])
+async def test_selection_change_reaps_incompatible_worker_even_without_admission(
+    tmp_path, monkeypatch, owned_geometry_children, selection
+):
+    from app.services.aviation_weather import route_decode
+
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    original = context[0]
+    ready = tmp_path / "superseded-worker-ready"
+    read = None
+    try:
+        store.update({"sigmet": True})
+        assert (await service.read()).entries
+        program = (
+            f"import pathlib,time; pathlib.Path({str(ready)!r}).touch(); time.sleep(60)"
+        )
+        monkeypatch.setattr(
+            route_decode, "WORKER_COMMAND", (sys.executable, "-c", program)
+        )
+        context[0] = original.model_copy(update={"context_key": "f" * 64})
+        read = asyncio.create_task(service.read())
+        async with asyncio.timeout(2):
+            while not ready.exists():
+                await asyncio.sleep(0.01)
+        child = owned_geometry_children[-1]
+        assert child.returncode is None
+        context[0] = original if selection == "cached" else None
+        current = await service.read()
+        assert current.status == ("ready" if selection == "cached" else "no-route")
+        assert child.returncode is not None
+        assert not (await read).entries
+    finally:
+        if read is not None:
+            read.cancel()
+            await asyncio.gather(read, return_exceptions=True)
+        await close(service, weather)

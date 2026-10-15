@@ -158,3 +158,52 @@ async def test_deadline_cancels_source_lease_and_validation_errors_are_no_store(
             assert bad.status_code == 422 and bad.headers["cache-control"] == "no-store"
     finally:
         await close(service, weather)
+
+
+async def test_real_settings_lock_contention_finishes_request_and_keeps_health_responsive(
+    tmp_path, monkeypatch
+):
+    import asyncio
+    import threading
+    from types import SimpleNamespace
+
+    from app.api import health, route_sigmets
+
+    service, weather, store, _, _, _, _, _ = setup_service(tmp_path)
+    entered, release = threading.Event(), threading.Event()
+
+    def hold():
+        with store.lock:
+            entered.set()
+            release.wait(3)
+
+    holder = threading.Thread(target=hold)
+    holder.start()
+    monkeypatch.setattr(route_sigmets, "REQUEST_SECONDS", 0.05)
+    monkeypatch.setattr(
+        health,
+        "_coordinator",
+        SimpleNamespace(mode="simulation", get_uptime_seconds=lambda: 1),
+    )
+    try:
+        assert await asyncio.to_thread(entered.wait, 1)
+        app = app_for(service, weather)
+        app.include_router(health.router)
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app), base_url="http://test"
+        ) as client:
+            started = asyncio.get_running_loop().time()
+            pending = asyncio.create_task(
+                client.get("/api/aviation-weather/v1/route-sigmets")
+            )
+            await asyncio.sleep(0.02)
+            healthy = await client.get("/health")
+            assert healthy.status_code == 200
+            assert asyncio.get_running_loop().time() - started < 0.3
+            response = await pending
+            assert response.status_code == 503
+            assert asyncio.get_running_loop().time() - started < 1.6
+    finally:
+        release.set()
+        await asyncio.to_thread(holder.join, 1)
+        await close(service, weather)
