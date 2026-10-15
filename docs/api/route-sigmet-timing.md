@@ -7,8 +7,8 @@ selection request and confirmation bodies are unchanged.
 
 Each geographic entry includes `encounter.spans`, aligned with its existing
 geographic spans. Each passage provides `entry_ms`, `exit_ms`, `status`
-(`overlap`, `no-overlap`, `unknown`, `passed`) and a nullable `reason`. Unknown passages
-carry null times and a reason: `missing-timing`, `invalid-timing`,
+(`overlap`, `no-overlap`, `unknown`, `passed`) and a nullable `reason`. Unknown
+passages carry null times and a reason: `missing-timing`, `invalid-timing`,
 `ambiguous-association` or `unavailable-plan`. The aggregate supplies `status`,
 `unknown_count` and `reason`; any known overlap wins while unknown counts remain
 visible. Passed passages carry null projected times and no reason. An entirely
