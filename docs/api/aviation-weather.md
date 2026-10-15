@@ -12,6 +12,8 @@ Precipitation radar retains its existing settings and acquisition service.
 | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | GET    | `/api/aviation-weather/v1/settings`                         | Default-off bulletin/model preferences, `gfs_selection` and integer `revision` |
 | PUT    | `/api/aviation-weather/v1/settings`                         | Atomically save a nonempty subset of preferences and return confirmed settings |
+| GET    | `/api/aviation-weather/v1/route-sigmets`                    | Bound route context, current notice state and geographic intersection spans    |
+| PUT    | `/api/aviation-weather/v1/route-sigmets/acknowledgement`    | Confirm one exact notice acknowledgement or Show again                         |
 | GET    | `/api/aviation-weather/v1/catalog`                          | Versioned radar, bulletin, GFS wind and temperature envelopes                  |
 | GET    | `/api/aviation-weather/v1/products/{instance}/{layer}.json` | Immutable normalized GeoJSON for the currently admitted, enabled instance      |
 | GET    | `/api/aviation-weather/v1/products/{instance}/grid.json`    | Immutable scientific descriptor with same-origin component hashes              |
@@ -52,18 +54,62 @@ data. The current AWC station captures therefore show partial global coverage.
 ## Runtime and acceptance
 
 Overview shows compact feed status, counts and a legend. Click or tap a station
-marker, forecast diamond or advisory polygon to highlight it and inspect its
-matching report in a popup. Overlapping reports have a chooser. Polygon holes
-and the hidden side of the globe do not select a bulletin; globe drag and
-two-finger zoom do not open inspection.
+marker or forecast diamond to inspect its report. The keyboard-accessible
+**Inspect weather reports** chooser retains METAR/TAF inspection. SIGMET
+polygons and route notices are passive; full SIGMET reports and actions belong
+to **Configuration → Weather → Aviation weather**.
 
-The **Inspect weather reports** button provides keyboard access to the admitted
-reports, including unlocated advisories. The popup contains UTC validity,
-unknown values, source attribution, coverage omissions, forecast groups and the
-original bulletin. It closes when the selected report expires or its feed is
-disabled. Popup selection is local to that browser. Any future hover linking
-between Overview and Configuration must synchronize between browsers, as
-requested by the operator; it is outside this click-inspection increment.
+### Route SIGMET state
+
+`sigmet_intersecting_only` defaults to `false` and does not enable SIGMETs. When
+true, shading includes confirmed intersections with the entire selected ordinary
+or simulation route. Matching uses shortest spherical route segments, including
+current running/completed replay geometry. Weather eligibility uses actual UTC
+and `[valid_from, valid_to)`, independently of replay time. Altitude and route
+passage-time matching are not evaluated. Unknown/incomplete matches never become
+a definite zero or a clear-route claim.
+
+The no-store route snapshot uses `schema: route-sigmets-v1`. It carries server
+UTC, settings/state revisions, generation identity, route name/source/context,
+the original SIGMET product envelope, status/reason, complete/truncated flags,
+entries, unresolved feature references, future references and omission counts.
+Entries bind notice/bulletin/digest identities to the admitted feature IDs,
+acknowledgement, attention order, original validity and bounded segment
+fractions with entry/exit coordinates. Raw reports and polygons remain in the
+immutable product; the route response does not duplicate them.
+
+Clear and Show again send only this strict mutation:
+
+```json
+{
+  "context_key": "<64 lowercase hex characters>",
+  "notice_key": "<64 lowercase hex characters>",
+  "semantic_digest": "<64 lowercase hex characters>",
+  "acknowledged": true
+}
+```
+
+`acknowledged: false` requests Show again and advances attention order. A
+successful write returns confirmed state revision and attention order. Repeated
+identical writes are idempotent. Stale or unknown identities return 409; refresh
+before retrying. Invalid bodies return 422. Storage or optional-service failure
+returns sanitized 503 and cannot report a successful acknowledgement. All route
+responses, including errors, use `Cache-Control: no-store`.
+
+Both visible online screens poll every five seconds, even when unfocused.
+Healthy controlled saves propagate within eight seconds; hidden/offline screens
+catch up on return. Obsolete route/feed responses cannot replace a newer
+binding. Configuration alone can acquire reports. One shared source owner per
+query client avoids duplicate loops. Workers and browser owners release on
+cancellation, disable, hidden/offline, supersession and unmount.
+
+Acknowledgements persist separately in `data/settings/route-sigmet-notices.json`
+with atomic, process-locked writes. Retention is bounded to eight route
+contexts, 4,000 records and 2 MiB; expired records are removed.
+Least-recently-used inactive contexts can be evicted, so revisiting one may show
+notices pending again. Live current-context acknowledgements are never silently
+evicted; a full store rejects the write. Corrupt storage fails unavailable
+without overwriting evidence.
 
 Enabled readers share source acquisition and constrained disposable
 normalization workers. METAR/SIGMET refresh every five minutes and TAF every ten
@@ -75,14 +121,24 @@ and release native rendering resources.
 Run isolated production acceptance against a clean committed candidate:
 
 ```bash
-tools/acceptance/aviation-weather/run.sh <full-HEAD-SHA> <provisioned-browser>
+ROUTE_SIGMET_REAL_CAPTURE=/path/to/pinned-capture \
+  timeout --kill-after=10s 40m tools/acceptance/aviation-weather/run.sh \
+  <full-HEAD-SHA> <provisioned-browser>
 ```
 
 The runner builds the production images without cache, exercises the Nginx API
 and native WebGL renderer with source-shaped transport fixtures, retains
 screenshots/evidence under `test-results`, and tears down its private Compose
 project and volumes. Fixtures are deterministic controls, not live-weather
-claims. Source normalization also has dated live-capture controls.
+claims. Images and browser tests use the exact committed archive; reused browser
+dependencies must match its package lock. The runner reserves unique loopback
+ports, records ownership, and writes PASS only after browser assertions and
+verified teardown. A separate pinned AWC capture is replayed through production
+normalization and native rendering at its recorded UTC; this is dated evidence,
+not a current live-source claim. GFS production coverage retains its dedicated
+worker/field fixture stack, with existing source/hardware gaps reported
+separately. See the
+[route SIGMET evidence report](../reports/2026-10-15-route-linked-sigmets.md).
 
 Scientific model grids, satellite imagery, wind/cloud/humidity views and route
 weather decisions have separate delivery increments. The GFS foundation below
@@ -190,15 +246,15 @@ revision once and invalidates obsolete model demand; read-only worker reads
 normalize without writing. Selection and bulletin settings are preserved.
 
 Wind speed colors use interpolated physical U/V components, then magnitude in
-knots. The fixed scale is 0 blue, 25 cyan, 50 green, 75 yellow, 100 orange,
-125 red and 150+ purple. Values above 150 knots retain their physical speed;
-only their displayed color saturates. The atmosphere legend shows this scale.
-Unknown or below-terrain samples stay transparent.
+knots. The fixed scale is 0 blue, 25 cyan, 50 green, 75 yellow, 100 orange, 125
+red and 150+ purple. Values above 150 knots retain their physical speed; only
+their displayed color saturates. The atmosphere legend shows this scale. Unknown
+or below-terrain samples stay transparent.
 
-Wind trails show the direction air moves and move faster at higher speeds.
-Their motion is illustrative (12,000 times physical displacement), not travel
-time, route guidance or a forecast animation. At most 2,000 particles retain
-12 samples each; masked areas, resets and generation changes never connect
-trails across gaps. Temperature has no particles. Reduced motion keeps the
-wind raster and key while removing particle resources; changing the preference
-does not fetch another grid.
+Wind trails show the direction air moves and move faster at higher speeds. Their
+motion is illustrative (12,000 times physical displacement), not travel time,
+route guidance or a forecast animation. At most 2,000 particles retain 12
+samples each; masked areas, resets and generation changes never connect trails
+across gaps. Temperature has no particles. Reduced motion keeps the wind raster
+and key while removing particle resources; changing the preference does not
+fetch another grid.

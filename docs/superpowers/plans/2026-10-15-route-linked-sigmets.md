@@ -17,8 +17,9 @@ TypeScript/React/TanStack Query/Zod/Three.js, pytest/Vitest/Playwright and
 Docker. No new provider or product dependency.
 
 **Spec:** [Approved design](../specs/2026-10-15-route-linked-sigmets-design.md).
-**Status:** Proposed for plan review and execution-method selection.
-**Companion:**
+**Status:** Approved 2026-10-15; Tasks 1–8 implemented;
+[production acceptance and evidence](../../reports/2026-10-15-route-linked-sigmets.md)
+passed. Review and PR pending. **Companion:**
 [Technical contracts](2026-10-15-route-linked-sigmets-contracts.md) defines
 shared types, the geometry algorithm, ownership and acceptance commands. Read
 both documents; this is one implementation plan with eight sequential tasks.
@@ -268,24 +269,24 @@ Consume the exact route key, source view, confirmed filter and pending notices.
 tests, `docs/api/aviation-weather.md`, `docs/features/overview-weather.md`;
 create `docs/reports/2026-10-15-route-linked-sigmets.md` during execution.
 
-- [ ] Add failing runner controls proving unique project/ports, exact candidate
+- [x] Add failing runner controls proving unique project/ports, exact candidate
       archive/test provenance, cleanup after failed build/test/forced timeout,
       and refusal to claim PASS without browser assertions and verified
       teardown. Implement companion acceptance changes and run those controls
       green.
-- [ ] Add production-path tests using separate browser contexts for
+- [x] Add production-path tests using separate browser contexts for
       Configuration and Overview; assert saves/clears/Show again converge within
       eight seconds, current notices appear initially, and
       new/amended/cancelled/reused-series fixtures obey identity/expiry. Include
       matching route, simulation, incomplete evaluation, stale/empty/unlocated
       source and reversed-response controls.
-- [ ] Capture native polygon/span evidence and desktop 1920×1080, fullscreen,
+- [x] Capture native polygon/span evidence and desktop 1920×1080, fullscreen,
       mobile 390×844 views with three cards plus overflow. Verify no
       focus/camera change, no Overview SIGMET controls, readable core overlays
       and keyboard Configuration access. Record source-request counts,
       memory/slot peaks and repeated hide/offline/unmount disposal with existing
       weather layers enabled.
-- [ ] Run companion final gates and exact-SHA production acceptance. Preserve
+- [x] Run companion final gates and exact-SHA production acceptance. Preserve
       synthetic labels; pin a real normalized SIGMET capture and hashes for a
       separate source-shaped replay control. Missing real-source evidence stays
       unverified and prevents a complete acceptance claim. Document existing GFS

@@ -1,8 +1,10 @@
 # Route-linked SIGMETs for a passive dashboard
 
-**Status:** Written spec approved by the user on 2026-10-15. Approval permits a
-separate implementation plan, not application changes. Review that plan and
-select its execution method before implementation.
+**Status:** Written spec and subsequent implementation plan approved by the user
+on 2026-10-15. Subagent-driven implementation and
+[production acceptance](../../reports/2026-10-15-route-linked-sigmets.md) are
+complete. Whole-branch review and PR submission remain pending; design approval
+is separate from the measured acceptance scope.
 
 **Parent:**
 [Issue 290](https://github.com/bcl1713/starlink-dashboard/issues/290). Inspected
