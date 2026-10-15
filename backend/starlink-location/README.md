@@ -1,9 +1,9 @@
 # Starlink Location Backend
 
-A FastAPI-based Prometheus metrics exporter and telemetry API for simulating
-Starlink dish positioning, network performance, and environmental conditions.
-Includes realistic physics-based simulators for position tracking, network
-metrics, and obstruction detection.
+A FastAPI-based Prometheus metrics exporter and telemetry API for live and
+simulated Starlink dish positioning, network performance, and environmental
+conditions. Also serves Mission V2 planning, route/POI management, native
+Overview settings, aviation weather products and mission exports.
 
 ---
 
@@ -54,7 +54,7 @@ Run these commands from the repository root.
 ./scripts/compose.sh up -d --build
 
 # Verify services are running
-docker compose ps
+./scripts/compose.sh ps
 
 # Check backend health
 curl http://localhost:8000/health

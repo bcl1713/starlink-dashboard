@@ -91,8 +91,9 @@ protocols.
 1. **Check Mission Planner dashboard:**
    - Review the active mission-leg timeline for planned communication windows.
    - Check Overview for measured position and network performance.
-   - Check configured alert status in Prometheus at
-     <http://localhost:9090/alerts>.
+   - Check deployed alert status in Prometheus at
+     <http://localhost:9090/alerts>; verify rule labels and notification
+     delivery before relying on automated warnings.
    - Send a crew reminder if a planned window is less than 30 minutes away.
 
 2. **Cross-reference with timeline:**
@@ -149,7 +150,8 @@ protocols.
    artifacts produced during operations. The retired mission API has no
    supported post-flight timeline command.
 
-   Save the selected artifact as `mission-`name`-<date>-actual-timeline.json`.
+   Save the selected artifact as a filename containing the mission name and
+   date.
 
 2. **Compare predicted vs. actual:**
    - How close did predictions match?

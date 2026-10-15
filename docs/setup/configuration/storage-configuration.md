@@ -1,97 +1,37 @@
-# Storage Configuration
+# Storage and retention
 
-[Back to Configuration Guide](./README.md)
+The root Compose profile persists these categories:
 
----
+| Storage                                                      | Container path / purpose                                   |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| `./data/missions`                                            | `/app/data/missions`, mission records                      |
+| `./data/settings`                                            | `/app/data/settings`, operator preferences                 |
+| `./data/satellites`, `./data/sat_coverage`, `./data/orbital` | Matching `/app/data/` paths, satellite and orbital data    |
+| `route_data`                                                 | `/data/routes`                                             |
+| `sim_route_data`                                             | `/data/sim_routes`                                         |
+| `poi_data`                                                   | `/data`, including `pois.json`                             |
+| `prometheus_data`                                            | `/prometheus`, telemetry database                          |
+| `gfs_products`                                               | `/app/data/gfs`, worker writes and API reads               |
+| `gfs_mailbox`                                                | `/app/data/gfs-mailbox`, weather control/admission records |
 
-## Data Retention
+Named volumes receive the Compose project prefix; do not assume their engine
+names are the logical keys above. Inspect actual mounts with
+`docker compose ps -q` and `docker inspect <container-id>`. The nested route
+mounts are separate from the parent POI volume and need separate backups.
 
-### Storage Calculation
+Set `PROMETHEUS_RETENTION=30d` (or another supported duration) in `.env` and run
+`./scripts/compose.sh up -d prometheus` to change retained history. Storage use
+depends on time-series cardinality, active missions, sample rate, WAL, and
+compaction; an old 45-series estimate is not a capacity guarantee. Inspect
+actual usage before selecting retention.
 
-```text
-Number of metrics: 45
-Scrape interval: 1 second
-Retention period: 1 year (31,536,000 seconds)
-Size per sample: ~1.5 bytes (compressed)
-Compression overhead: ~1.2x
+`docker compose down` preserves named volumes and bind-mounted files. Keep the
+same project name on subsequent starts to reuse them. `down --volumes` deletes
+named-volume data; do not use it for an installation you intend to retain.
+Retain GFS mailbox/products across restarts to preserve quotas and admission
+clocks. Back up every relevant bind directory and resolved named volume using a
+consistent stopped-service backup or the database's snapshot procedure. Never
+reset a corrupt JSON file before preserving it for diagnosis and recovery.
 
-Storage = (45 × 31,536,000 × 1.5 × 1.2) / 1,073,741,824 ≈ 2.4 GB
-```
-
-### Common Retention Periods
-
-| Retention | Storage | Use Case            |
-| --------- | ------- | ------------------- |
-| `1y`      | ~2.4 GB | Long-term analysis  |
-| `90d`     | ~600 MB | Quarterly reviews   |
-| `30d`     | ~200 MB | Monthly monitoring  |
-| `15d`     | ~100 MB | Development/testing |
-| `7d`      | ~50 MB  | Minimal storage     |
-
-### Configure Retention
-
-Edit `.env`:
-
-```bash
-PROMETHEUS_RETENTION=30d  # Or your preferred retention
-```
-
-Apply:
-
-```bash
-docker compose down
-docker compose up -d
-```
-
----
-
-## Volume Management
-
-### View Volumes
-
-```bash
-docker volume ls | rg starlink
-```
-
-### Check Volume Size
-
-```bash
-docker volume inspect prometheus_data
-```
-
-### Clean Up Old Data
-
-```bash
-# Stop services
-docker compose down
-
-# Remove volumes (WARNING: deletes all data)
-docker volume rm starlink-dashboard-dev_prometheus_data
-
-# Restart
-docker compose up -d
-```
-
-### Backup Volumes
-
-```bash
-# Backup Prometheus data
-docker run --rm \
-  -v starlink-dashboard-dev_prometheus_data:/data \
-  -v $(pwd):/backup \
-  alpine tar czf /backup/prometheus-backup.tar.gz -C /data .
-```
-
-### Restore Volumes
-
-```bash
-# Restore Prometheus data
-docker run --rm \
-  -v starlink-dashboard-dev_prometheus_data:/data \
-  -v $(pwd):/backup \
-  alpine tar xzf /backup/prometheus-backup.tar.gz -C /data
-```
-
----
-
-[Back to Configuration Guide](./README.md)
+Portainer uses three supplied host-path categories and named GFS volumes
+instead; see its [deployment runbook](../../deployment/portainer-ghcr.md).

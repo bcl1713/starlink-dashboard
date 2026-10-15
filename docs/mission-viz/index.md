@@ -1,5 +1,11 @@
 # Mission Visualization Guide
 
+These are illustrative extraction patterns for a selected MissionLeg and its
+MissionLegTimeline, not standalone API client code. Helpers beginning with `_`
+are internal exporter functions; verify signatures in
+`backend/starlink-location/app/mission/exporter/` before reusing them. See
+[current model reference](../data-structures/mission-timeline-models.md).
+
 ## Data Structures and Implementation Patterns for Map/Chart Generation
 
 This guide provides comprehensive documentation for extracting and visualizing
@@ -13,7 +19,7 @@ two main sections:
 ## Visual Data Model Overview
 
 ```text
-Mission
+Mission.legs[] → MissionLeg
   ├── route_id ──> ParsedRoute
   │                  ├── metadata (name, point_count)
   │                  ├── points[RoutePoint]
@@ -30,7 +36,7 @@ Mission
   │                  ├── ka_outages[KaOutage]
   │                  └── aar_windows[AARWindow]
   │
-  └── (related) ──> MissionTimeline
+  └── (related) ──> MissionLegTimeline
                      ├── segments[TimelineSegment]
                      │    └── [start_time, end_time, status,
                      │         x_state, ka_state, ku_state,
@@ -95,7 +101,7 @@ TransportState.OFFLINE     "OFFLINE"
 
 ## Timezone Format Examples
 
-All examples use UTC input (as stored in database):
+All examples use UTC input (as stored in mission JSON):
 
 ```text
 Input datetime: 2025-10-27T18:25:00Z (UTC)

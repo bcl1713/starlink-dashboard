@@ -1,125 +1,27 @@
-# Waypoint ETA Endpoints
+# Waypoint and location ETA
 
-[Back to API Reference](../README.md) | [ETA Index](./README.md)
+| GET path                                               | Required query parameters                                                        |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `/api/routes/{route_id}/eta/waypoint/{waypoint_index}` | `current_position_lat`, `current_position_lon`                                   |
+| `/api/routes/{route_id}/eta/location`                  | `latitude`, `longitude` (target), `current_position_lat`, `current_position_lon` |
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
----
-
-## GET `/api/routes/{route_id}/eta/waypoint/{waypoint_index}`
-
-Calculate ETA to a specific waypoint on the active route.
-
-**Description:** Returns estimated time to arrive at a waypoint, considering
-current position and available timing data.
-
-**Parameters:**
-
-- `route_id` (path, required): Route identifier
-- `waypoint_index` (path, required): Index of waypoint (0-based)
-- `current_position_lat` (query, optional): Current latitude
-- `current_position_lon` (query, optional): Current longitude
-
-**Response:**
-
-```json
-{
-  "waypoint_index": 5,
-  "waypoint_name": "Departure Point",
-  "eta_seconds": 3600,
-  "eta_minutes": 60.0,
-  "distance_meters": 150000,
-  "distance_km": 150.0,
-  "estimated_speed_knots": 150.0,
-  "has_timing_data": true
-}
-```
-
-**Status Codes:**
-
-- `200 OK` - ETA calculated
-- `400 Bad Request` - Invalid parameters
-- `404 Not Found` - Route not found
-
-**Use Case:** Real-time waypoint ETAs, flight plan tracking, progress
-monitoring.
-
----
-
-## GET `/api/routes/{route_id}/eta/location`
-
-Calculate ETA to an arbitrary geographic location.
-
-**Description:** Returns estimated time to reach any specified coordinate,
-supporting routes with or without timing data.
-
-**Parameters:**
-
-- `route_id` (path, required): Route identifier
-- `target_lat` (query, required): Target latitude
-- `target_lon` (query, required): Target longitude
-- `current_position_lat` (query, optional): Current latitude
-- `current_position_lon` (query, optional): Current longitude
-
-**Response:**
-
-```json
-{
-  "target_location": { "latitude": 40.7128, "longitude": -74.006 },
-  "eta_seconds": 1800,
-  "eta_minutes": 30.0,
-  "distance_meters": 75000,
-  "distance_km": 75.0,
-  "estimated_speed_knots": 150.0,
-  "route_id": "route-001"
-}
-```
-
-**Status Codes:**
-
-- `200 OK` - ETA calculated
-- `400 Bad Request` - Invalid coordinates
-- `404 Not Found` - Route not found
-
-**Use Case:** POI arrival predictions, arbitrary destination ETAs, navigation
-planning.
-
----
-
-## Examples
-
-### cURL Examples
-
-**Get Waypoint ETA:**
+All query coordinates are numeric. `waypoint_index` is zero-based. These
+endpoints require explicit current position; they do not automatically read
+telemetry. Target parameters are `latitude` and `longitude`, not `target_lat`
+and `target_lon`.
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5?current_position_lat=40.7128&current_position_lon=-74.006"
+curl 'http://localhost:8000/api/routes/ROUTE_ID/eta/waypoint/0?current_position_lat=40.7&current_position_lon=-74.0' | jq .
+curl 'http://localhost:8000/api/routes/ROUTE_ID/eta/location?latitude=41&longitude=-73&current_position_lat=40.7&current_position_lon=-74.0' | jq .
 ```
 
-**Get Location ETA:**
+Responses are calculator dictionaries with ETA/distance and route-timing
+context. Consumers should handle missing timing and inspect the running schema
+and `app/services/route_eta/calculator.py` for the selected calculation mode. A
+published paced replay can augment the result with replay timing.
 
-```bash
-curl "http://localhost:8000/api/routes/route-001/eta/location?target_lat=40.7769&target_lon=-73.874"
-```
+A missing route returns 404, out-of-range waypoint is rejected with 400,
+missing/invalid query arguments return 422, and calculation failures or missing
+manager return 500. Source: `app/api/routes/eta.py`.
 
-### Python Examples
-
-```python
-import requests
-
-# Get waypoint ETA
-params = {
-    'current_position_lat': 40.7128,
-    'current_position_lon': -74.006
-}
-response = requests.get(
-    'http://localhost:8000/api/routes/route-001/eta/waypoint/5',
-    params=params
-)
-eta = response.json()
-print(f"ETA to waypoint: {eta['eta_minutes']} minutes")
-```
-
----
-
-[Back to API Reference](../README.md) | [ETA Index](./README.md)
+See [ETA index](README.md).

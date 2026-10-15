@@ -1,177 +1,67 @@
-# Starlink Dashboard Troubleshooting Guide
+# Troubleshooting
 
-**Purpose**: Help users diagnose and resolve problems **Audience**: Users,
-operators, support staff
+These checks describe the current repository-managed Compose profile. Use the
+documentation and configuration matching your checked-out release; current `dev`
+may include features added after v1.0.0.
 
-[Back to main docs](../index.md)
+## First checks
 
----
-
-## Quick Diagnostics
-
-**Start here first** - Run these checks before diving into specific issues:
-
-**[Quick Diagnostics Guide →](./quick-diagnostics.md)**
+Run from your installation directory; adjust URLs for configured host ports:
 
 ```bash
-# 1. Check all services running
 docker compose ps
-
-# 2. Check backend health
-curl http://localhost:8000/health
-
-# 3. Check logs for errors
-docker compose logs --tail=50
-
-# 4. Check resource usage
-docker stats --no-stream
+docker compose logs --tail=200 starlink-location
+docker compose logs --tail=100 prometheus mission-planner gfs-worker
+curl --fail --max-time 10 http://localhost:8000/health
+curl --fail --max-time 10 http://localhost:5173/api/status
+curl --fail --max-time 10 http://localhost:9090/-/ready
 ```
 
----
+Backend startup can take time; its healthcheck has a 90-second startup period.
+Prometheus waits for backend health. A running backend HTTP server does not
+prove dish connectivity; live health includes a separate `dish_connected` flag.
 
-## Troubleshooting by Symptom
+## Services fail to start
 
-### Services Won't Start
+Validate configuration with `./scripts/compose.sh config --quiet`. Ensure `.env`
+exists, the configured host ports are free, and Docker uses the intended daemon.
+Preserve `DOCKER_HOST` and active context; in managed environments follow
+[cloud Docker discovery](../development/cloud-docker.md).
 
-- **[Service Issues](./service-issues.md)** - Container startup, port conflicts,
-  Docker problems
-- **[Docker Services](./services/docker.md)** - Docker-specific configuration
-  and issues
-- **[Backend Service](./services/backend.md)** - Backend health, metrics,
-  configuration
-- **[Mission Planner Service](../features/overview.md)** - Native Overview usage
-- **[Prometheus Service](./services/prometheus.md)** - Prometheus targets and
-  scraping
+Use `./scripts/compose.sh up -d --build` when updating source or baked-in
+config. The wrapper supplies the commit SHA required by builds. After editing
+`.env`, use `./scripts/compose.sh up -d` to recreate services; `restart` keeps
+the old environment. Inspect logs before repeatedly rebuilding.
 
-### Connectivity Problems
+If port 8000 or 9090 conflicts, change `STARLINK_LOCATION_PORT` or
+`PROMETHEUS_PORT` in `.env`. The frontend's 5173 mapping is in Compose. Internal
+backend/Prometheus ports remain 8000/9090.
 
-- **[Live Mode](./connectivity/live-mode.md)** - Connection to Starlink dish
-- **[Data Issues](./connectivity/data.md)** - Network issues and data flow
-- **[Data Storage](./connectivity/data-storage.md)** - Persistence and storage
-  problems
-- **[POI Management](./connectivity/poi-management.md)** - Points of interest
-  issues
-- **[Performance](./connectivity/performance.md)** - Speed and resource issues
+## Dashboard loads but API requests fail
 
-### Data & Metrics
+Mission Planner at <http://localhost:5173> proxies `/api/...` to the backend.
+Compare `http://localhost:5173/api/status` with the direct backend status URL. A
+failed proxied call with a healthy direct backend points to frontend/proxy
+configuration. The frontend is a static Nginx image; rebuild after changing its
+build arguments or Nginx config. The backend retains legacy `/ui/routes` and
+`/ui/pois` pages; prefer the maintained route and POI screens in Mission
+Planner.
 
-- **[Data Issues](./data-issues.md)** - POI management, storage, persistence
-- **[Metrics & Monitoring](./metrics-monitoring.md)** - Prometheus and Mission
-  Planner data collection
+## Missing telemetry or history
 
-### Network & Performance
+See [live connectivity](connectivity/live-mode.md) and
+[metrics monitoring](metrics-monitoring.md). Simulation can deliberately freeze
+at replay completion, and live dish loss does not trigger simulation fallback.
+Check mode and freshness before interpreting a stationary position.
 
-- **[Network Configuration](./services/network.md)** - Network connectivity
-  between services
-- **[Performance Tuning](./services/performance.md)** - Resource usage and
-  optimization
+## Data and resource problems
 
----
+See [data recovery checks](data-issues.md),
+[storage layout](../setup/configuration/storage-configuration.md), and
+[performance tuning](../setup/configuration/performance-tuning.md). Do not reset
+JSON files, remove volumes, or run Docker prune as a first troubleshooting step.
+Preserve evidence and backups before repair.
 
-## Debug Logging
-
-### Enable debug mode
-
-```bash
-# Edit .env
-LOG_LEVEL=DEBUG
-JSON_LOGS=true
-
-# Restart
-docker compose down
-docker compose up -d
-
-# View detailed logs
-docker compose logs -f starlink-location
-```
-
-### View all component logs
-
-```bash
-# All services
-docker compose logs -f
-
-# Specific service with timestamps
-docker compose logs -f --timestamps starlink-location
-
-# Last N lines
-docker compose logs --tail=100 starlink-location
-
-# Search for errors
-docker compose logs | rg -i "error"
-```
-
-### Save logs to file
-
-```bash
-# Save all logs
-docker compose logs > logs.txt
-
-# Save specific service logs
-docker compose logs starlink-location > backend.log
-docker compose logs prometheus > prometheus.log
-docker compose logs mission-planner > mission-planner.log
-```
-
----
-
-## Getting Help
-
-### Before asking for help, gather
-
-1. **Log output:**
-
-   ```bash
-   docker compose logs > debug-logs.txt
-   ```
-
-2. **System info:**
-
-   ```bash
-   docker --version
-   docker compose version
-   uname -a
-   ```
-
-3. **Configuration:**
-
-   ```bash
-   cat .env | rg -v "PASSWORD"
-   docker compose config | head -50
-   ```
-
-4. **Current state:**
-
-   ```bash
-   docker compose ps
-   docker stats --no-stream
-   curl http://localhost:8000/health
-   curl http://localhost:9090/api/v1/targets
-   ```
-
-### Resources
-
-- [API Reference](../api/README.md)
-- [Setup Guide](../setup/README.md)
-- [Design Document](../architecture/design-document.md)
-- [Backend README](../../backend/starlink-location/README.md)
-- [Prometheus Documentation](https://prometheus.io/docs/)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-
----
-
-## Still Need Help?
-
-Check:
-
-1. Related documentation files
-2. Backend/Prometheus/Mission Planner container logs
-3. System resource usage
-4. Network connectivity between containers
-5. File permissions
-6. .env configuration values
-7. Docker version compatibility
-
----
-
-[Back to main docs](../index.md)
+For a support report include the checked-out commit/tag, service status,
+sanitized logs, mode, and failing request/response. Do not publish credentials
+or sensitive mission content.

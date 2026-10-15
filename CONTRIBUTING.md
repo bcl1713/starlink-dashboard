@@ -91,15 +91,11 @@ This project uses `pre-commit` to ensure code quality.
 
 ### Backend Changes (Python)
 
-**CRITICAL**: Backend Python changes require full Docker rebuild:
-
-```bash
-./scripts/compose.sh down && ./scripts/compose.sh build --no-cache && \
-  ./scripts/compose.sh up -d && ./scripts/compose.sh ps
-curl http://localhost:8000/health  # Verify changes took effect
-```
-
-See [development workflow](./docs/development/workflow.md) for details.
+Use the [three-tier development workflow](./docs/development/workflow.md) for
+focused feedback, isolated integration, and exact-SHA production acceptance.
+Ordinary source edits can use cached rebuilds; dependency or Dockerfile changes
+may require clean builds. Run only task-owned projects and stop their runtime
+resources when checks finish.
 
 ---
 
@@ -107,7 +103,7 @@ See [development workflow](./docs/development/workflow.md) for details.
 
 ### Documentation Structure
 
-All project documentation is organized in `docs/` with seven categories:
+Current guides live in `docs/`, with these core categories:
 
 - **setup/** - Installation and configuration guides
 - **api/** - API reference documentation
@@ -158,10 +154,13 @@ Content...
 - [Related Doc](../category/file.md)
 ```
 
-#### 3. Update Category Indexes
+#### 3. Update Category Indexes and Release Notes
 
 When adding new documentation, update the appropriate category's `README.md` to
-include your new file in the listing.
+include your new file in the listing. Update
+[release notes](./docs/release-notes.md) for release-visible changes.
+Distinguish released behavior from later `dev` changes. Preserve dated evidence
+as history; keep current operator instructions in the maintained guides.
 
 #### 4. Validate Links
 
@@ -171,18 +170,15 @@ Before committing, ensure all markdown links work correctly:
 # Manual validation
 rg '\[.*\]\((.*\.md[^)]*)\)' your-file.md
 
-# Or use markdown-link-check if installed
-markdown-link-check your-file.md
+# Repository link validation (also included in the static gate)
+timeout --kill-after=10s 5m lychee --no-progress docs/
 ```
 
 ### Documentation Quick Reference
 
-For detailed documentation structure and guidelines, see:
-
-- [Documentation Quick Start](./specs/002-docs-cleanup/quickstart.md) -
-  Contributor guide to documentation structure
-- [Documentation Taxonomy](./specs/002-docs-cleanup/data-model.md) - Complete
-  category definitions and rules
+Use the [documentation index](./docs/index.md) for maintained guides and the
+[release baseline](./docs/release-notes.md) to distinguish released behavior
+from current integration changes.
 
 ---
 

@@ -39,10 +39,11 @@ Mission creation, adding a leg, and package import accept legacy omitted or
 explicit flag values but persist every incoming leg inactive. A full `PUT` may
 update ordinary active-leg fields, but it preserves that leg's persisted route
 binding and active state; deactivate, replace the route, then activate again to
-change an active leg's route. Re-importing an existing mission with an active
-leg returns 409; deactivate it first. Deleting an active leg or a mission
-containing an active leg also returns 409: deactivate first, then repeat the
-deletion.
+change an active leg's route. Default package import creates a separate mission
+when the identifier collides, remapping retained references and keeping imported
+legs inactive. It does not replace or deactivate the original mission. Deleting
+an active leg or a mission containing one returns 409: deactivate first, then
+repeat deletion. See [package import](../../missions/mission-package-import.md).
 
 On service restart, every persisted Mission V2 `is_active` flag is cleared. No
 route, flight context, timeline, or clock lifecycle state is restored. An

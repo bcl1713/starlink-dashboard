@@ -1,5 +1,9 @@
 # POIs.py Refactoring Analysis - Complete Documentation
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 This directory contains comprehensive analysis and planning documentation for
 refactoring `app/api/pois.py` from a 1159-line monolithic file into modular
 components.

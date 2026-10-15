@@ -1,13 +1,16 @@
 # Mission Planner
 
 Frontend application for mission planning, route
-management, and real-time Starlink telemetry monitoring.
+management, and real-time Starlink telemetry monitoring. The native Overview
+provides maps, network history, clocks, coverage and weather; Grafana is not
+required. Mission editing uses Mission V2 containers and legs.
 
 ## Tech Stack
 
 - **React 19** + **TypeScript** + **Vite**
 - **Tailwind CSS** + **shadcn/ui** (Radix primitives)
-- **React-Leaflet** for map visualization
+- **Three.js / React Three Fiber** for the native Overview globe
+- **React-Leaflet** for planning map visualization
 - **TanStack React Query** for server state
 - **Zustand** for client state
 - **React Router** for navigation
@@ -16,9 +19,14 @@ management, and real-time Starlink telemetry monitoring.
 
 ## Development
 
+Use Node 22.22.2 or a newer Node 22 patch and the committed lockfile. Start
+with the [isolated development workflow](../../docs/development/workflow.md)
+for backend proxy setup and task-resource cleanup. Run the following from
+`frontend/mission-planner`:
+
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Start dev server
 npm run dev

@@ -42,8 +42,8 @@ metrics (position, speed, network), and route configuration (circular vs. KML).
 
 ### 2. [Testing & Tuning Simulation](simulation-mode/testing.md)
 
-Instructions for verifying simulation status, monitoring updates, and advanced
-configuration via `config.yaml` (speed, variation, smoothing).
+Instructions for verifying simulation status, monitoring updates, and
+configuration via the actual `config.yaml` route, position, and network fields.
 
 ### 3. [Troubleshooting & Best Practices](simulation-mode/troubleshooting.md)
 

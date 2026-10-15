@@ -4,19 +4,24 @@
 
 ---
 
+The health payload currently reports a hard-coded `version: "0.2.0"`; this field
+is not the v1.0.0 release identifier.
+
 ## HealthResponse
 
 Response from `/health` endpoint.
 
 ```json
 {
-  "status": "ok", // "ok" or "error"
+  "status": "ok", // "ok" or "degraded"
   "uptime_seconds": 3600.5, // float
   "mode": "simulation", // "simulation" or "live"
   "version": "0.2.0", // string
   "timestamp": "2025-10-31T10:30:00.000000", // ISO-8601
   "message": "Service is healthy", // string
-  "dish_connected": true // bool
+  "dish_connected": true, // live mode only
+  "prometheus_last_scrape": null, // ISO-8601 or null
+  "metrics_count": 45 // integer
 }
 ```
 
@@ -29,6 +34,11 @@ Response from `/health` endpoint.
 - `timestamp`: Current server time
 - `message`: Human-readable status message
 - `dish_connected`: Whether connected to Starlink dish (live mode only)
+- `prometheus_last_scrape`: Last scrape time, or null before the first scrape
+- `metrics_count`: Registered metric count
+
+Both `ok` and `degraded` return HTTP 200; an uninitialized coordinator
+returns 503. Optional flight-state metadata is included when available.
 
 ---
 
@@ -74,19 +84,19 @@ Response from `/api/status` endpoint.
 The four `network` values and `obstruction.obstruction_percent` are
 `number | null`: `null` means unavailable; a measured zero remains `0` with its
 availability flag `true`. `metric_availability` always contains five boolean
-flags, independently set for each source reading. Missing provenance defaults
-to five `false` flags, not inferred observations from internal numeric values.
-The example above shows partial loss of downlink, with valid zero packet loss.
+flags, independently set for each source reading. Missing provenance defaults to
+five `false` flags, not inferred observations from internal numeric values. The
+example above shows partial loss of downlink, with valid zero packet loss.
 Position, environmental fields (including signal quality), and units are
 unchanged by this contract.
 
 `timestamp` is the original acquisition time of the batch, **not request time**.
-A failed whole-batch collection does not renew it; cached telemetry may therefore
-be old. A fresh batch can still have unavailable individual metrics. Consumers
-must check both collection age and per-metric availability; availability alone
-does not establish freshness. An old response without `metric_availability`
-must be treated as unverified for all five metrics, even if its values are zero
-or its timestamp looks fresh.
+A failed whole-batch collection does not renew it; cached telemetry may
+therefore be old. A fresh batch can still have unavailable individual metrics.
+Consumers must check both collection age and per-metric availability;
+availability alone does not establish freshness. An old response without
+`metric_availability` must be treated as unverified for all five metrics, even
+if its values are zero or its timestamp looks fresh.
 
 ---
 
@@ -109,8 +119,8 @@ compatibility placeholders remain implementation details, not status readings.
 Simulation explicitly marks its generated five readings available.
 
 Verified against installed `starlink-grpc-core` 1.2.5: `status_data()` returns
-`(status, obstruction, alerts)` and supplies the five readings in `status`.
-No separate field-validity flag governs these readings in that response.
+`(status, obstruction, alerts)` and supplies the five readings in `status`. No
+separate field-validity flag governs these readings in that response.
 `obstruction.valid_s` is documented by the library as having unclear semantics,
 apparently describing completeness of obstruction-location detail. It is not a
 documented boolean validity veto on `status.fraction_obstructed`; a null

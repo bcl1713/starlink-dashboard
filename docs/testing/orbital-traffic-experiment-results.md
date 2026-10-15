@@ -1,5 +1,11 @@
 # Orbital traffic experiment results
 
+> Dated experiment/acceptance reference. Branch names, timings and hardware
+> observations below describe the original candidate, not current release
+> guarantees. Use [current feature guidance](../features/overview.md),
+> [release baseline](../release-notes.md), and the
+> [development workflow](../development/workflow.md) for new work.
+
 Local execution on `forge`, 2026-10-04. No cloud job or sync automation was
 started. The original checkout and its work remain intact; implementation uses
 `/tmp/starlink-261` on `experiment/261-orbital-traffic`.

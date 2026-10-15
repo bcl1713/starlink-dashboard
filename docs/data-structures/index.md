@@ -55,8 +55,8 @@ Enumeration types and utility functions used across the system:
 ```text
 backend/starlink-location/app/
 ├── mission/
-│   ├── models.py              # Mission, Timeline, Segment, Advisory models
-│   └── exporter.py            # Export helper functions and constants
+│   ├── models.py              # Mission, MissionLeg, timeline and advisory models
+│   └── exporter/             # Export helpers, maps and document rendering
 ├── models/
 │   ├── route.py               # ParsedRoute, RoutePoint, RouteWaypoint
 │   └── poi.py                 # POI, POIWithETA models
@@ -66,8 +66,8 @@ backend/starlink-location/app/
 
 **To Build a Map Visualization:**
 
-1. Get Mission from database
-2. Use mission.route_id to fetch ParsedRoute via route manager
+1. Load the persisted Mission container and choose a MissionLeg
+2. Use leg.route_id to fetch ParsedRoute via route manager
 3. Extract ParsedRoute.points for route geometry
 4. Get associated POIs (route_id filtering)
 5. Get MissionTimeline segments

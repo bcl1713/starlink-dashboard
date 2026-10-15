@@ -1,5 +1,9 @@
 # Export Module Analysis Documentation
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 This directory contains comprehensive analysis and refactoring plans for the
 mission export system (exporter.py and package_exporter.py).
 

@@ -1,5 +1,9 @@
 # Documentation Update Details
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 Detailed breakdown of content changes and recommendations from the documentation
 update session.
 

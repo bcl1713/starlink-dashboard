@@ -17,8 +17,8 @@ to show exactly when communication will be **nominal** (all systems working),
 - **Ku (StarShield):** LEO constellation backup system, always available unless
   manually flagged out
 
-The planner runs in your web browser and outputs three briefing formats: CSV
-(data), Excel (teams), and PDF (stakeholders).
+The planner runs in your browser. Mission export prepares a snapshot package
+with data and customer briefing artifacts; see [exports](outputs.md).
 
 ---
 
@@ -26,10 +26,11 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 
 ### Access the Planner
 
-1. Open your browser and navigate to:
-   `<http://<dashboard-url>/ui/mission-planner`>
-1. The interface loads a four-step form
-1. You do **not** need Prometheus experience—the planner is self-contained
+1. Open the configured frontend origin (development default
+   <http://localhost:5173>).
+2. Open **Missions** and create a mission, then add its legs. Alternatively use
+   [Create from itinerary](../itinerary-planning.md) for PDF/KML generation.
+3. Open the leg editor to review route, transports and timeline preview.
 
 ### Requirements
 

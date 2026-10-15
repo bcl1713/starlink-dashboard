@@ -1,71 +1,31 @@
-# Development
+# Development Guides
 
-**Purpose**: Guide developers on contributing, testing, and building the system
-**Audience**: Contributors, developers
+Start with [Contributing](../../CONTRIBUTING.md), the
+[development workflow](workflow.md), and
+[quality gates](../contributing/quality-gates.md). Use isolated worktrees based
+on `origin/dev`; submit PRs against `dev` and retain open-PR worktrees without
+keeping runtime resources alive.
 
-[Back to main docs](../index.md)
+## Current References
 
----
+- [Release policy](release-policy.md) and
+  [release baseline](../release-notes.md)
+- [Managed-cloud Docker and scoped teardown](cloud-docker.md)
+- [Architecture](../architecture/README.md) and
+  [API reference](../api-reference-index.md)
+- [Code quality](../code-quality-standards.md) and
+  [focused testing](../contributing/testing-guide.md)
+- [Acceptance platform](../operations/acceptance-platform.md)
+- [Mission export preparation](mission-export-preparation.md)
+- [Customer briefing exports](customer-briefing-exports.md) and
+  [acceptance](customer-briefing-acceptance.md)
+- [ADS-B provider acquisition](adsb-provider-acquisition.md) and
+  [orbital provider policy](orbital-provider-policy.md)
 
-## Documentation in This Category
+## Historical Assistant References
 
-### Core Development Guides
-
-- **[Workflow](./workflow.md)**: Development workflow, git practices, and Docker
-  rebuild process for Python backend changes
-- **[Release Policy](./release-policy.md)**: `dev` integration branch policy,
-  semantic versioning, and release flow
-- **[Cloud Docker Runtime](./cloud-docker.md)**: Find the actor-owned daemon and
-  run isolated acceptance checks
-- **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines, standards,
-  and code review process
-
-### AI-Assisted Development
-
-- **[Claude Code](./claude-code/README.md)**: Comprehensive guide to using
-  Claude Code for AI-assisted development
-  - [Agents](./claude-code/agents.md): Understanding and using Claude Code
-    agents
-  - [Commands](./claude-code/commands.md): Slash commands and custom commands
-  - [Skills](./claude-code/skills.md): Reusable skills and capabilities
-  - [Examples](./claude-code/examples.md): Real-world usage examples
-
-### Code Quality
-
-- **[Code Quality Standards](../code-quality-standards.md)**: Project
-  formatting, linting, and code style requirements
-
----
-
-## Overview
-
-This category provides guides for developers contributing to the Starlink
-Dashboard project, covering workflows, AI-assisted development, code quality,
-and development best practices.
-
----
-
-## Developer Journey
-
-1. **Onboarding**: Review [CONTRIBUTING.md](../../CONTRIBUTING.md) and
-   [workflow.md](./workflow.md)
-2. **Setup**: Follow [setup guide](../setup/README.md) for development
-   environment
-3. **Architecture**: Understand system design via
-   [architecture docs](../architecture/README.md)
-4. **AI Tools**: Learn [Claude Code](./claude-code/README.md) for AI-assisted
-   development
-5. **Contribute**: Submit changes following workflow guidelines
-
----
-
-## Related Documentation
-
-- [Architecture](../architecture/README.md) - System design and technical
-  decisions
-- [API Reference](../api/README.md) - API specifications for integration
-- [Setup Guide](../setup/README.md) - Development environment setup
-
----
-
-**Ready to contribute?** Start with [CONTRIBUTING.md](../../CONTRIBUTING.md)
+[Claude Code notes](claude-code/README.md) and
+[workflow examples](../workflows/index.md) describe earlier assistant
+configurations. Named agents, slash commands and skills are not installed by
+this repository; use the tools available in your session and the current
+repository workflow above.

@@ -1,5 +1,9 @@
 # Phased Development Plan: Mobile Starlink Monitoring Webapp
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 **Status:** Phase 0 Complete + Multiple Major Features Delivered
 
 This plan structures **incremental, LLM-assisted development**, ensuring each

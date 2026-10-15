@@ -1,85 +1,26 @@
-# Mission Export Formats
+# Mission exports
 
-## Export Formats
+Use **Export** for a mission to prepare its snapshot package. Preparation
+reports queued, preparing, ready or failed status. Cancel stops that request;
+other requests may continue shared slide preparation. Download opens an
+already-ready ZIP and does not start generation. Ready artifacts expire after 30
+minutes; prepare again after expiry or failure.
 
-### CSV Export
+The package contains mission and leg definitions, route KMLs, POIs, retained
+planning sources and generated briefing/timeline artifacts. CSV supports data
+analysis; customer PDF and PowerPoint support briefings. Use the package
+manifest to identify the files actually produced. Do not assume a fixed PDF page
+count, workbook sheet arrangement or hand-constructed filename.
 
-**File:** `mission-`name`-<timestamp>.csv`
+The snapshot remains associated with the captured inputs even if the editable
+mission changes later. Prepare a new export after corrections. Check UTC timing,
+leg order, route maps and transport-state explanations before sharing a
+briefing. A document's modeled outage does not establish measured terminal
+availability.
 
-**Format:**
-
-```csv
-segment_start_utc,segment_end_utc,segment_duration_seconds,status,x_band_state,ka_state,ku_state,segment_index
-2025-03-15T12:00:00Z,2025-03-15T12:15:00Z,900,NOMINAL,NOMINAL,NOMINAL,NOMINAL,1
-2025-03-15T12:15:00Z,2025-03-15T12:30:00Z,900,DEGRADED,DEGRADED,NOMINAL,NOMINAL,2
-```
-
-**Use cases:**
-
-- Import into flight operations database
-- Programmatic alerting (flag if CRITICAL segment > 10 min)
-- Statistical analysis (total degradation time, system reliability)
-
----
-
-### Excel Export
-
-**File:** `mission-`name`-<timestamp>.xlsx`
-
-### Sheet 1: Summary
-
-- Geographic map showing mission route with color-coded segments (green=NOMINAL,
-  yellow=DEGRADED, red=CRITICAL)
-- Map resolution: 3840×2880 pixels @ 300 DPI (12.8" × 9.6" for printing)
-- Labeled markers for departure airport (blue), arrival airport (purple), and
-  mission-event POIs (orange)
-- Route centered with 5% smart padding (5% on larger dimension, other dimension
-  auto-adjusted for aspect ratio)
-- Horizontal timeline bar chart showing X-Band, Ka, and Ku transport states over
-  time
-- Simplified summary table with columns: Start (UTC), Duration, Status, Systems
-  Down
-- Color-coded table rows matching segment status
-
-### Sheet 2: Detailed Breakdown
-
-- All three time zones (UTC, Eastern, T+)
-- System-by-system status per segment
-- Notes column for manual annotations
-
-### Sheet 3: Statistics
-
-- Total mission duration
-- Nominal time / Degraded time / Critical time (hours and percentage)
-- System availability chart (X-Band %, Ka %, Ku %)
-- Risk assessment summary
-
----
-
-### PDF Export
-
-**File:** `mission-`name`-<timestamp>.pdf`
-
-### Page 1: Executive Summary
-
-- Mission name, date, route overview
-- Key statistics (total time, degradation windows)
-- Risk rating (Green/Yellow/Red)
-
-### Page 2: Route Map
-
-- Flight path with color-coded segments
-- Satellite coverage overlays
-- AAR window markers
-
-### Page 3: Timeline Chart
-
-- Horizontal bar chart with three rows (X-Band, Ka, Ku)
-- Color-coded blocks showing each system's status over time
-- Vertical grid lines at 1-hour intervals
-
-### Page 4: System Behavior
-
-- Table with row per system (X-Band, Ka, Ku)
-- Columns: System Name, Total Nominal Time, Total Degraded Time, Root Cause,
-  Crew Implications
+The API starts preparation at
+`POST /api/v2/missions/{mission_id}/export-preparations`, polls the returned job
+at `GET /api/v2/missions/{mission_id}/export-preparations/{job_id}` and
+downloads from its `/download` path. See
+[mission endpoints](../../api/endpoints/README.md) and
+[package import](../mission-package-import.md).

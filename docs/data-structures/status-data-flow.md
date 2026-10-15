@@ -6,8 +6,8 @@ Key data flow patterns for map and chart generation using mission status data.
 
 ## Data Flow for Map Visualization
 
-1. Get Mission from database
-2. Use mission.route_id to fetch ParsedRoute via route manager
+1. Load the persisted Mission and select a MissionLeg
+2. Use leg.route_id to fetch ParsedRoute via route manager
 3. Extract ParsedRoute.points for route geometry
 4. Get associated POIs (route_id filtering)
 5. Get MissionTimeline segments

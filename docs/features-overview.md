@@ -1,90 +1,22 @@
 # Features Overview
 
-[Back to README](../README.md)
+The maintained [feature catalog](features/overview.md) describes current
+monitoring, navigation, mission planning, weather, traffic, and system features.
+See [release notes](release-notes.md) for the v1.0.0 baseline and later `dev`
+changes. Early phase/session counts are historical, not release status.
 
----
+## Repository Structure
 
-## Key Features
+- `backend/starlink-location/`: FastAPI service, simulation, planning, exports,
+  GFS processing, and backend tests
+- `frontend/mission-planner/`: React Mission Planner and native Overview globe
+- `monitoring/prometheus/`: scrape configuration and alert rules
+- `tools/`: verification and isolated acceptance runners
+- `scripts/`: Compose and development helpers
+- `docs/`: operator, API, architecture, and contributor guides
+- `docker-compose.yml`: backend, frontend, Prometheus, and GFS worker
+- `.env.example`: deployment configuration defaults
 
-- **Real-time Monitoring:** Live position tracking and metrics on interactive
-  maps
-- **Dual Mode:** Works with real hardware or in simulation mode
-- **Historical Data:** Full 1-year metrics retention (configurable)
-- **POI Management:** Create and track points of interest with real-time ETAs
-- **Network Analytics:** Detailed latency, throughput, and packet loss metrics
-- **Docker-based:** Single `docker compose up` for complete stack
-- **REST API:** Full API for programmatic access and integrations
-
-For a detailed list of completed and planned features, see
-[Development Plan](development-plan.md).
-
----
-
-## Project Structure
-
-```text
-starlink-dashboard/
-├── backend/                       # Python FastAPI backend
-│   └── starlink-location/
-│       ├── app/                   # Application code
-│       ├── tests/                 # Test suite
-│       ├── config.yaml            # Default configuration
-│       └── README.md              # Backend-specific docs
-├── monitoring/                    # Prometheus configuration
-│   └── prometheus/
-├── docs/                          # Comprehensive documentation
-│   ├── setup/                     # Setup instructions
-│   ├── api/                       # API endpoints
-│   ├── troubleshooting/           # Common issues
-│   └── architecture/              # Architecture details
-├── dev/                           # Development management
-│   ├── STATUS.md                  # Current development status
-│   ├── README.md                  # Workflow documentation
-│   ├── active/                    # Active tasks
-│   └── completed/                 # Completed tasks
-├── docker-compose.yml             # Service composition
-├── .env.example                   # Configuration template
-├── CONTRIBUTING.md                # Contribution guidelines
-└── README.md                      # This file
-```
-
----
-
-## Development Status
-
-**Current Phase:** Foundation Complete + Major Features Complete
-
-**Completed Work:**
-
-- Phase 0: Core infrastructure, metrics, dashboards ✅
-- POI Interactive Management: Complete ✅ (10 sessions)
-- KML Route Import and Management: Complete ✅ (16 sessions)
-- ETA Route Timing: Complete ✅ (24 sessions)
-- Mission Communication Planning: Complete ✅ (12 sessions)
-
-**Branch Status:** feature/mission-comm-planning (ready for merge to main)
-
-**Next Steps:** See the [Development Plan](development-plan.md) for timeline
-details.
-
----
-
-## Performance & Storage
-
-**Resource Requirements:**
-
-- Minimum RAM: 4 GB
-- Minimum Disk: 5 GB
-- Storage usage: ~2.4 GB per year (configurable)
-
-**Performance:**
-
-- Backend response time: <50ms
-- Prometheus query time: <1s
-
-**See:**
-[Setup Guide - Performance Tuning](./setup/installation.md#performance-tuning)
-
----
-
-[Back to README](../README.md)
+Start with [setup](setup/quick-start.md) or the [documentation index](index.md).
+Resource use depends on enabled layers, mission size, and metrics retention;
+historical estimates are not measured performance guarantees.

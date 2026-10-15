@@ -1,123 +1,34 @@
-# Route Progress Endpoints
-
-[Back to API Reference](../README.md) | [ETA Index](./README.md)
-
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
----
+# Route progress and timing
 
 ## GET `/api/routes/{route_id}/progress`
 
-Get overall route progress and timing metrics.
+Requires numeric query parameters `current_position_lat` and
+`current_position_lon`; this endpoint does not infer them from telemetry.
 
-**Description:** Returns current progress along the route, next waypoint
-information, and timing profile.
-
-**Parameters:**
-
-- `route_id` (path, required): Route identifier
-- `current_position_lat` (query, optional): Current latitude
-- `current_position_lon` (query, optional): Current longitude
-
-**Response:**
-
-```json
-{
-  "route_id": "route-001",
-  "progress_percent": 35.5,
-  "current_waypoint_index": 12,
-  "total_waypoints": 34,
-  "waypoints_remaining": 22,
-  "distance_traveled_meters": 45000,
-  "distance_remaining_meters": 84000,
-  "total_distance_meters": 129000,
-  "eta_to_destination_seconds": 2400,
-  "average_speed_knots": 150.0,
-  "has_timing_data": true,
-  "timing_profile": {
-    "departure_time": "2025-10-27T16:45:00Z",
-    "arrival_time": "2025-10-27T18:30:00Z",
-    "total_expected_duration_seconds": 6300,
-    "segment_count_with_timing": 28
-  }
-}
+```bash
+curl 'http://localhost:8000/api/routes/ROUTE_ID/progress?current_position_lat=40.7&current_position_lon=-74.0' | jq .
 ```
 
-**Status Codes:**
+The response contains `current_waypoint_index`, `current_waypoint_name`,
+`progress_percent`, `total_route_distance_meters`, `distance_completed_meters`,
+`distance_remaining_meters`, `expected_total_duration_seconds`,
+`expected_duration_remaining_seconds` and `average_speed_knots`. Handle nullable
+or unavailable timing values rather than assuming a destination ETA is present.
 
-- `200 OK` - Progress retrieved
-- `404 Not Found` - Route not found
-
-**Use Case:** Progress dashboards, ETA updates, route completion monitoring.
-
----
+Missing route returns 404; invalid/missing query arguments return 422; missing
+manager or calculation failures return 500.
 
 ## GET `/api/routes/active/timing`
 
-Get timing profile of the currently active route.
+Returns a flat timing dictionary, not a nested `timing_profile` or segment list.
+Available fields include `route_name`, `has_timing_data`, planned and actual
+`departure_time`/`arrival_time`, `flight_status`, `is_departed`, `is_in_flight`,
+`total_expected_duration_seconds` and `segment_count_with_timing`.
 
-**Description:** Returns detailed timing information for the active route, if
-available.
+No active route returns HTTP 200 with
+`{"has_timing_data":false,"message":"No active route"}`. An active route without
+a profile returns the same flag with `"Active route has no timing data"`. A
+missing route manager returns 500.
 
-**Response:**
-
-```json
-{
-  "route_id": "route-001",
-  "has_timing_data": true,
-  "timing_profile": {
-    "departure_time": "2025-10-27T16:45:00Z",
-    "arrival_time": "2025-10-27T18:30:00Z",
-    "total_expected_duration_seconds": 6300,
-    "segment_count_with_timing": 28
-  },
-  "segments": [
-    {
-      "waypoint_index": 0,
-      "waypoint_name": "Departure Point",
-      "expected_arrival_time": "2025-10-27T16:45:00Z",
-      "expected_segment_speed_knots": 150.0
-    }
-  ]
-}
-```
-
-**Status Codes:**
-
-- `200 OK` - Timing profile available
-- `404 Not Found` - No active route or no timing data
-
-**Use Case:** Timing visualization, speed profile analysis, flight plan review.
-
----
-
-## Examples
-
-### cURL Examples
-
-**Get Route Progress:**
-
-```bash
-curl "http://localhost:8000/api/routes/route-001/progress"
-```
-
-**Get Active Route Timing:**
-
-```bash
-curl "http://localhost:8000/api/routes/active/timing"
-```
-
-### Python Examples
-
-```python
-import requests
-
-# Get route progress
-response = requests.get('http://localhost:8000/api/routes/route-001/progress')
-progress = response.json()
-print(f"Progress: {progress['progress_percent']}%")
-```
-
----
-
-[Back to API Reference](../README.md) | [ETA Index](./README.md)
+Source: `app/api/routes/eta.py`, `app/api/routes/timing.py` and
+`app/services/route_eta/calculator.py`. See [ETA index](README.md).

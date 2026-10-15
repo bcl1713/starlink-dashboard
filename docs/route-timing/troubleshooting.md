@@ -13,14 +13,14 @@ how to resolve them.
 
 1. Verify timing format: `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`
 2. Check timezone: Must end with `Z` (UTC)
-3. Ensure timing marker is on same line as coordinates
+3. Place the timing marker in a waypoint Placemark description
 4. Check regex pattern matches your format
 
 **Test extraction:**
 
 ```bash
 # Check if timing was detected in route
-curl <http://localhost:8000/api/routes/{route_id}> | jq '.has_timing_data'
+curl http://localhost:8000/api/routes/ROUTE_ID | jq '.has_timing_data'
 ```
 
 ## ETA Calculations Returning Zeros
@@ -46,12 +46,11 @@ curl <http://localhost:8000/api/routes/{route_id}> | jq '.has_timing_data'
 
 1. Verify route has timing data: `GET /api/routes/active/timing`
 2. Check that route is activated (not just loaded)
-3. Ensure Docker container rebuilt after code changes
-4. Rebuild Docker:
-
-   ```bash
-   ./scripts/compose.sh down && ./scripts/compose.sh build --no-cache && ./scripts/compose.sh up -d
-   ```
+3. Distinguish paced simulation replay from live telemetry timing. Check the
+   selected mode and the mission clock before comparing UTC arrivals.
+4. If a rebuild is required, follow the
+   [development workflow](../development/workflow.md) using an isolated task
+   Compose project. Do not stop shared services.
 
 ## High ETA Calculation Times
 

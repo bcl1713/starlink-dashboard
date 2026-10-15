@@ -1,160 +1,99 @@
 # Starlink Dashboard
 
-A Docker-based monitoring system for Starlink terminals with real-time metrics
-visualization through Prometheus and Mission Planner. Supports both live
-monitoring of physical Starlink hardware and simulation mode for offline
-development.
+Starlink terminal monitoring and mission communication planning, with a native
+3D Overview, live telemetry, route simulation, and reviewed mission exports. The
+Docker stack runs Mission Planner, a FastAPI backend, Prometheus, and an
+optional-demand NOAA GFS processing worker.
 
-**Status:** Phase 0 Complete (Foundation) + ETA Route Timing Feature Complete
-**Version:** 0.2.0 **Last Updated:** 2026-02-28
-
----
-
-## Quick Navigation
-
-**For Users:**
-
-- [Quick Start](./docs/setup/quick-start.md) - Get up and running in 3 minutes
-- [Setup Guide](./docs/setup/README.md) - Detailed installation instructions
-- [Features Overview](./docs/features/overview.md) - Complete feature list
-- [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
-  and solutions
-
-**For Developers:**
-
-- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [API Reference](./docs/api-reference-index.md) - Complete API documentation
-- [Development Workflow](./docs/development/workflow.md) - Development practices
-- [Architecture](./docs/architecture/design-document.md) - System design and
-  architecture
-
----
+**Latest released baseline: v1.0.0.** These documents describe the checked-out
+branch. `dev` also includes changes after that release; see the
+[release baseline](docs/release-notes.md) before deploying or integrating.
 
 ## Quick Start
 
-### Prerequisites
-
-- Docker (version 20.10 or higher)
-- Docker Compose (version 2.0 or higher)
-- Git
-
-### 3-Minute Setup
+Install Git, Docker Engine or Docker Desktop, and Docker Compose v2. Start in
+simulation mode without a Starlink terminal:
 
 ```bash
-# 1. Clone and enter directory
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone https://github.com/bcl1713/starlink-dashboard.git
 cd starlink-dashboard
-
-# 2. Set up configuration
+git checkout v1.0.0
 cp .env.example .env
-
-# 3. Start services
 ./scripts/compose.sh up -d --build
-
-# 4. Verify and access
-curl http://localhost:8000/health        # Backend health
-open http://localhost:5173                # Mission Planner
+curl --fail http://localhost:8000/health
 ```
 
-**Detailed setup:** See [Quick Start Guide](./docs/setup/quick-start.md)
+Open Mission Planner at <http://localhost:5173>. Initial image builds and
+service readiness take time; follow the [setup guide](docs/setup/quick-start.md)
+for prerequisites, verification, live hardware, and troubleshooting. To try
+integration changes instead, check out `dev` before building.
 
-After `git pull`, use `./scripts/compose.sh up -d --build --remove-orphans`
-again. This removes the retired Grafana container from an existing local stack.
-Its old data volume is retained; remove it separately only if its data is no
-longer needed. Ordinary wrapper commands include the NOAA GFS worker, so
-`./scripts/compose.sh build` followed by `./scripts/compose.sh up -d` also
-starts model weather support. Winds and temperature remain disabled until
-enabled in Configuration. Local Compose overrides and custom file selection
-continue to work normally. The wrapper passes the full checked-out HEAD SHA
-to all three image builds. A dirty worktree is not an exact acceptance
-candidate; use a clean commit for acceptance.
+## What You Can Do
 
----
+- Monitor position, connectivity, latency, throughput, and telemetry history on
+  the responsive native Overview globe.
+- Import KML routes, manage POIs, inspect route-aware ETAs, and replay mission
+  legs at selectable simulation speeds.
+- Create missions and legs, plan X-band/Starshield availability, review outages
+  and backup gaps, and export mission packages and customer briefings.
+- Enable precipitation radar, aviation bulletins and METARs, GFS flight-level
+  winds/temperature, ADS-B aircraft, or orbital traffic in Configuration.
+  External layers have independent coverage, freshness, and network limits.
+- Keep multiple Overview displays aligned through shared persisted settings.
+
+See the [feature catalog](docs/features/overview.md) and
+[mission guide](docs/missions/mission-planning-guide.md) for workflows and
+limits.
 
 ## Access Points
 
-Once services are running:
+| Service         | Default URL                     | Purpose                              |
+| --------------- | ------------------------------- | ------------------------------------ |
+| Mission Planner | <http://localhost:5173>         | Overview, planning and configuration |
+| Backend API     | <http://localhost:8000/docs>    | Generated interactive API reference  |
+| Health          | <http://localhost:8000/health>  | Backend readiness                    |
+| Metrics         | <http://localhost:8000/metrics> | Prometheus exposition                |
+| Prometheus      | <http://localhost:9090>         | Metrics queries and retention        |
 
-| Service             | URL                             | Purpose                        |
-| ------------------- | ------------------------------- | ------------------------------ |
-| **Mission Planner** | <http://localhost:5173>         | Dashboard and mission planning |
-| **Prometheus**      | <http://localhost:9090>         | Metrics database               |
-| **Backend API**     | <http://localhost:8000/docs>    | Interactive API docs           |
-| **Health Check**    | <http://localhost:8000/health>  | Service status                 |
-| **Metrics**         | <http://localhost:8000/metrics> | Raw Prometheus metrics         |
+Ports above are defaults; backend and Prometheus mappings are configured in
+`.env`. Keep deployment access restricted to your intended network. See
+[deployment guidance](docs/deployment/portainer-ghcr.md) for hosted images.
 
----
+## Configuration and Updates
+
+Copy [.env.example](.env.example) for mode, hardware, ports, and retention.
+`STARLINK_MODE=simulation` is the default; use `live` for terminal telemetry.
+Operational clocks, weather, traffic, and display preferences are configured in
+Mission Planner Configuration and persisted by the backend.
+
+After moving to the desired reviewed commit or release, rebuild with:
+
+```bash
+./scripts/compose.sh up -d --build --remove-orphans
+```
+
+The wrapper supplies the checked-out commit SHA to image builds. It includes the
+GFS worker, which stays idle without model-weather demand. Winds and temperature
+start disabled. Updating an older stack removes the retired Grafana container;
+its old volume is retained. Back up persistent mission, settings, route, POI,
+and metrics data before updating; see
+[storage configuration](docs/setup/configuration/storage-configuration.md).
 
 ## Documentation
 
-Comprehensive documentation is organized by topic:
+- [Documentation index](docs/index.md): current guides and historical records
+- [Setup](docs/setup/README.md) and
+  [troubleshooting](docs/troubleshooting/quick-diagnostics.md)
+- [Mission planning](docs/missions/README.md),
+  [itinerary imports](docs/missions/itinerary-planning.md), and
+  [weather](docs/features/overview-weather.md)
+- [API reference](docs/api-reference-index.md) and
+  [architecture](docs/architecture/README.md)
+- [Contributing](CONTRIBUTING.md),
+  [quality gates](docs/contributing/quality-gates.md), and
+  [development workflow](docs/development/workflow.md)
+- [Release policy](docs/development/release-policy.md) and
+  [release baseline](docs/release-notes.md)
 
-### For Getting Started
-
-- [Quick Start](./docs/setup/quick-start.md) - 3-minute setup
-- [Setup Guide](./docs/setup/installation.md) - Installation and configuration
-
-### For Using the System
-
-- [Features Overview](./docs/features/overview.md) - Complete feature list
-- [API Reference](./docs/api-reference-index.md) - REST API endpoints
-- [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
-
-### For Development
-
-- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [Design Document](./docs/architecture/design-document.md) - Architecture
-
-### For Reference
-
-- [Backend README](./backend/starlink-location/README.md) - Service details
-
----
-
-## Getting Help
-
-**Setup Issues:**
-
-- See [Quick Start](./docs/setup/quick-start.md)
-- Check [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
-
-**API Questions:**
-
-- See [API Reference](./docs/api-reference-index.md)
-- Visit <http://localhost:8000/docs> (interactive documentation)
-
-**Development Questions:**
-
-- See [Contributing Guide](./CONTRIBUTING.md) **Specific Issues:**
-
-- See [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
-- Run diagnostic commands in [Quick Start](./docs/setup/quick-start.md)
-
----
-
-## Contributing
-
-Want to help improve Starlink Dashboard?
-
-- Read [Contributing Guide](./CONTRIBUTING.md)
-- Review [Architecture](./docs/architecture/design-document.md) before starting
-
----
-
-## License
-
-Part of the Starlink Dashboard project.
-
----
-
-## Related Resources
-
-- [Prometheus Documentation](https://prometheus.io/docs/)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Docker Documentation](https://docs.docker.com/)
-
----
-
-**Quick Links:** [Quick Start](./docs/setup/quick-start.md) |
-[Features](./docs/features/overview.md) |
-[API Docs](./docs/api-reference-index.md) | [Contributing](./CONTRIBUTING.md)
+Dated reports and implementation plans preserve historical evidence. They are
+not current installation or operator instructions.

@@ -1,5 +1,9 @@
 # Overview precipitation radar
 
+This guide describes current `dev`. Automatic itinerary creation/revisions and
+route SIGMET attention/live crossing timing were added after v1.0.0; see
+[release notes](../release-notes.md).
+
 Enable **Configuration → Weather → Precipitation radar** to show current
 precipitation on the native globe. It is off by default. The saved setting
 applies to every Overview display; visible windows read it every five seconds.
@@ -191,8 +195,8 @@ passed**. Before departure, crossings follow planned waypoint UTC times. In
 flight, they use current UTC, position and speed with the same segment speed
 blending as route-aware POIs. A delay or speed change can therefore change both
 the crossing window and whether it falls within advisory validity, without a
-flight plan edit. Stale or unavailable position/speed produces unknown timing.
-A crossing already entered retains a projected exit; completed crossings are
+flight plan edit. Stale or unavailable position/speed produces unknown timing. A
+crossing already entered retains a projected exit; completed crossings are
 marked passed. Simulation replay follows the published mission clock and route
 timing, consistent with replay POIs.
 

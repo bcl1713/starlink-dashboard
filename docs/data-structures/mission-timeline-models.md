@@ -5,29 +5,26 @@ timeline generation.
 
 ---
 
-## Mission Model
+## Mission and MissionLeg models
 
 **Location:** `backend/starlink-location/app/mission/models.py`
 
-### Mission Fields
+`Mission` is a container with `id`, `name`, optional `description`, an ordered
+`legs` list, UTC `created_at` and `updated_at`, and custom `metadata`. Each
+`MissionLeg` owns `route_id`, `transports`, timing overrides, constraints, notes
+and server-managed `is_active` state. A mission itself has no `route_id`,
+`transports` or `is_active` field.
 
 ```python
-class Mission(BaseModel):
-    id: str                              # Unique mission identifier
-    name: str                            # Human-readable name
-    description: Optional[str]           # Detailed description
-    route_id: str                        # Associated flight route ID
-    transports: TransportConfig          # Transport/satellite configuration
-    created_at: datetime                 # Creation timestamp (UTC)
-    updated_at: datetime                 # Last update timestamp (UTC)
-    is_active: bool                      # Currently active flag
-    notes: Optional[str]                 # Planner notes
+mission = Mission(id="mission-example", name="Example", legs=[])
+# For a populated mission, resolve the selected leg's route:
+# route = route_manager.get_route(mission.legs[0].route_id)
 ```
 
-### Key Relationships
-
-- **route_id** → Links to a ParsedRoute (via route manager)
-- **transports** → Contains transport configuration with satellite transitions
+Use `/api/v2/missions` for mission APIs and the
+[activation contract](../api/endpoints/README.md#mission-v2-activation) for
+lifecycle behavior. Incoming `is_active` values do not activate a leg. Exact
+optional leg fields are defined by the model and deployed OpenAPI schema.
 
 ---
 

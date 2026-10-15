@@ -47,7 +47,7 @@ class MissionPhase(str, Enum):
 
 ## Exporter Constants and Mappings
 
-**Location:** `backend/starlink-location/app/mission/exporter.py`
+**Location:** `backend/starlink-location/app/mission/exporter/`
 
 ### Color Constants (Lines 37-48)
 

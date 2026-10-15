@@ -2,8 +2,6 @@
 
 [Back to API Reference](../README.md) | [POI Index](./README.md)
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
 ---
 
 ## POST `/api/pois`
@@ -27,7 +25,7 @@ Create a new POI.
 
 - `201 Created` - POI created
 - `400 Bad Request` - Invalid data
-- `409 Conflict` - POI name already exists
+- `422 Unprocessable Entity` - Request schema validation failed
 
 **Use Case:** POI UI form submission, bulk POI import.
 
@@ -57,7 +55,7 @@ Update existing POI.
 - `200 OK` - POI updated
 - `404 Not Found` - POI not found
 - `400 Bad Request` - Invalid data
-- `409 Conflict` - POI name conflict
+- `422 Unprocessable Entity` - Request schema validation failed
 
 **Use Case:** POI editing, configuration updates.
 
@@ -71,21 +69,13 @@ Delete a POI.
 
 - `poi_id` (string) - POI identifier
 
-**Response:**
-
-```json
-{
-  "message": "POI deleted successfully",
-  "poi_id": "poi-1",
-  "name": "LaGuardia Airport"
-}
-```
+**Response:** HTTP 204 No Content, with no JSON body.
 
 **Status Codes:**
 
-- `200 OK` - POI deleted
+- `204 No Content` - POI deleted
 - `404 Not Found` - POI not found
-- `500 Internal Server Error` - Deletion error
+- `500 Internal Server Error` - POI manager unavailable
 
 **Use Case:** POI removal, cleanup operations.
 
@@ -122,7 +112,7 @@ curl -X PUT http://localhost:8000/api/pois/poi-1 \
 **Delete POI:**
 
 ```bash
-curl -X DELETE http://localhost:8000/api/pois/poi-1 | jq .
+curl -i -X DELETE http://localhost:8000/api/pois/poi-1
 ```
 
 ---
@@ -153,8 +143,8 @@ print(f"Updated: {updated_poi['name']}")
 
 # Delete POI
 response = requests.delete(f'http://localhost:8000/api/pois/{poi["id"]}')
-result = response.json()
-print(f"Deleted: {result['message']}")
+response.raise_for_status()
+print('Deleted (204 No Content)')
 ```
 
 ---

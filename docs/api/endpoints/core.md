@@ -1,9 +1,11 @@
 # Core API Endpoints
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0 **Base URL:**
-`http://localhost:8000`
+**Base URL:** `http://localhost:8000`
 
 ## Overview
+
+Backend metadata currently hard-codes `0.2.0` in root, health, OpenAPI and
+service-info output; use release/build provenance to identify v1.0.0.
 
 This document covers the core endpoints for service health, status, and metrics.
 
@@ -26,10 +28,19 @@ Returns welcome message and API documentation links.
 
 ```json
 {
-  "message": "Welcome to Starlink Location Backend",
-  "documentation": "API documentation available at /docs",
-  "mode": "simulation",
-  "version": "0.2.0"
+  "message": "Starlink Location Backend",
+  "version": "0.2.0",
+  "docs": "/docs",
+  "endpoints": {
+    "health": "/health",
+    "metrics": "/metrics",
+    "status": "/api/status",
+    "config": "/api/config",
+    "position.geojson": "/api/position.geojson",
+    "route.geojson": "/api/route.geojson",
+    "pois.geojson": "/api/pois.geojson",
+    "route.json": "/api/route.json"
+  }
 }
 ```
 
@@ -117,19 +128,19 @@ environmental metrics.
 The four `network` values and `obstruction.obstruction_percent` are
 `number | null`: `null` means unavailable; a measured zero remains `0` with its
 availability flag `true`. `metric_availability` always contains five boolean
-flags, independently set for each source reading. Missing provenance defaults
-to five `false` flags, not inferred observations from internal numeric values.
-The example above shows partial loss of downlink, with valid zero packet loss.
+flags, independently set for each source reading. Missing provenance defaults to
+five `false` flags, not inferred observations from internal numeric values. The
+example above shows partial loss of downlink, with valid zero packet loss.
 Position, environmental fields (including signal quality), and units are
 unchanged by this contract.
 
 `timestamp` is the original acquisition time of the batch, **not request time**.
-A failed whole-batch collection does not renew it; cached telemetry may therefore
-be old. A fresh batch can still have unavailable individual metrics. Consumers
-must check both collection age and per-metric availability; availability alone
-does not establish freshness. An old response without `metric_availability`
-must be treated as unverified for all five metrics, even if its values are zero
-or its timestamp looks fresh.
+A failed whole-batch collection does not renew it; cached telemetry may
+therefore be old. A fresh batch can still have unavailable individual metrics.
+Consumers must check both collection age and per-metric availability;
+availability alone does not establish freshness. An old response without
+`metric_availability` must be treated as unverified for all five metrics, even
+if its values are zero or its timestamp looks fresh.
 
 **Status Codes:**
 
@@ -140,9 +151,9 @@ or its timestamp looks fresh.
 The Prometheus updater honors each of the five availability flags independently:
 unavailable readings publish `NaN` to their current gauges and skip their
 corresponding histogram observations, where defined. Available finite readings,
-including measured zero, resume independently on recovery. Pre-change history
-is not retrospectively verified. Prometheus `query_range` timestamps are
-evaluation times, not acquisition times; see the
+including measured zero, resume independently on recovery. Pre-change history is
+not retrospectively verified. Prometheus `query_range` timestamps are evaluation
+times, not acquisition times; see the
 [Overview scrape/lookback boundary](../../features/overview.md#5-overview-metric-history)
 for history limitations and the
 [status model source mapping](../models/health-status-models.md#metricavailability-and-live-source-mapping)
@@ -187,72 +198,24 @@ starlink_network_latency_ms 45.2
 **Configuration:**
 
 - Scrape interval: 1 second (backend update)
-- Prometheus interval: 10 seconds (by default)
+- Prometheus interval: 1 second in the bundled scrape configuration
 
 **Use Case:** Prometheus scraping, time-series database collection.
 
 ---
 
-### GET `/api/metrics`
+### JSON telemetry
 
-Raw metrics data as JSON (alternative to Prometheus format).
-
-**Response:**
-
-```json
-{
-  "position": {
-    "latitude_degrees": 40.7128,
-    "longitude_degrees": -74.006,
-    "altitude_meters": 5000.0,
-    "speed_knots": 25.5,
-    "heading_degrees": 45.0
-  },
-  "network": {
-    "latency_ms": 45.2,
-    "throughput_down_mbps": 125.3,
-    "throughput_up_mbps": 25.1,
-    "packet_loss_percent": 0.5
-  },
-  "obstruction": {
-    "obstruction_percent": 15.0
-  },
-  "environmental": {
-    "signal_quality_percent": 85.0,
-    "uptime_seconds": 3600.5
-  }
-}
-```
-
-**Status Codes:**
-
-- `200 OK` - Metrics available
-
-**Use Case:** JSON API clients, custom integrations.
+Use `GET /api/status` for JSON telemetry. `/api/metrics` is not a registered
+endpoint; `/metrics` serves Prometheus/OpenMetrics text.
 
 ---
 
-## UI Endpoints
+## Operator interface
 
-### GET `/ui/pois`
-
-POI management web interface.
-
-**Description:** Returns a complete HTML page with interactive POI management
-UI, including:
-
-- Interactive map for click-to-place coordinates
-- POI creation/editing/deletion form
-- Real-time POI list with live ETAs
-- Responsive design suitable for Grafana HTML panel
-
-**Response:** HTML/CSS/JavaScript interface
-
-**Status Codes:**
-
-- `200 OK` - UI page loaded
-
-**Use Case:** Grafana HTML text panel, standalone POI management.
+POI management is part of Mission Planner at `http://localhost:5173/pois`. The
+backend also serves a legacy `/ui/pois` HTML interface. Use the
+[POI API](../poi/README.md) for programmatic access.
 
 ---
 

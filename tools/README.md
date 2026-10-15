@@ -2,6 +2,10 @@
 
 Utility scripts for testing, development, and operations.
 
+Use [quality gates](../docs/contributing/quality-gates.md) for `tools/verify`
+and [acceptance platform](../docs/operations/acceptance-platform.md) for
+isolated production evidence. The POI helper below is for disposable test data.
+
 ## Available Tools
 
 ### setup_pois.py
@@ -14,9 +18,9 @@ validating POI and ETA functionality without manual data entry.
 
 **Requirements:**
 
-- Python 3.7+
+- The project-supported Python runtime
 - `requests` library
-- Backend service running at `<http://localhost:8000`>
+- Backend service running at <http://localhost:8000>
 
 **Usage:**
 
@@ -70,7 +74,7 @@ Run these commands from the repository root.
 python3 tools/setup_pois.py
 
 # 3. Open the POI management interface
-# <http://localhost:8000/ui/pois>
+# http://localhost:5173/pois
 
 # 4. Observe ETA calculations as the simulated aircraft moves
 # around the circular path
@@ -83,7 +87,8 @@ python3 tools/setup_pois.py
 - **Evenly distributed** - Places POIs at 360°/N intervals around the center
   point
 - **REST API** - Creates POIs via FastAPI `/api/pois` endpoint
-- **Idempotent** - Safe to run multiple times; clears old POIs first
+- **Destructive test helper** - Each run clears existing POIs; use only an
+  isolated disposable backend, never an operational mission store
 
 **Troubleshooting:**
 
@@ -92,7 +97,7 @@ python3 tools/setup_pois.py
 ```bash
 # Ensure backend is running
 docker compose logs -f starlink-location
-curl <http://localhost:8000/health>
+curl --fail http://localhost:8000/health
 ```
 
 #### "No module named requests"
@@ -103,5 +108,6 @@ pip install requests
 
 #### POIs don't appear in the UI
 
-- Verify POI API endpoint returns data: `curl <http://localhost:8000/api/pois`>
+- Verify POI API endpoint returns data:
+  `curl --fail http://localhost:8000/api/pois`
 - Refresh the page (F5)

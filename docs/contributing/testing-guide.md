@@ -17,13 +17,13 @@ the repository-wide verification tiers.
 cd backend/starlink-location
 
 # Run tests with coverage
-pytest --cov=app tests/
+timeout --kill-after=10s 15m uv run --with-requirements requirements-dev.txt --with-requirements requirements-gfs.txt pytest --cov=app tests/
 
 # Run specific test file
-pytest tests/test_routes.py
+timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt pytest tests/unit/test_config.py
 
 # Run specific test
-pytest tests/test_routes.py::test_get_routes
+timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt pytest tests/integration/test_health.py
 ```
 
 **Test Requirements:**
@@ -40,10 +40,10 @@ pytest tests/test_routes.py::test_get_routes
 cd frontend/mission-planner
 
 # Run unit tests
-npm run test:unit
+timeout --kill-after=10s 10m npm run test:unit
 
 # Run tests with coverage
-npm run test:unit -- --coverage
+timeout --kill-after=10s 10m npm run test:unit -- --coverage
 ```
 
 Use `./tools/verify frontend` from the repository root for the canonical
@@ -68,7 +68,7 @@ expectations to accommodate that harness difference.
 Capture warnings directly when auditing a passing suite:
 
 ```bash
-npm run test:unit -- --disableConsoleIntercept
+timeout --kill-after=10s 10m npm run test:unit -- --disableConsoleIntercept
 NODE_OPTIONS=--trace-warnings npm run build
 ```
 
@@ -83,11 +83,12 @@ casing/recognition and shader-property attribute warnings from that file. The
 `AnimatedFlowLine` migration resolves its own DOM warnings; it does not make the
 entire frontend suite warning-free.
 
-The locked `@tailwindcss/node` 4.1.17 calls `module.register()` for its ESM
-cache loader. Node 26 emits DEP0205 for that call; the supported Node 22
-baseline does not. Vite 7.3.6 already prefers `registerHooks()` where available.
-Recheck Tailwind's loader when changing the supported Node major instead of
-patching Node's module API or suppressing the warning.
+The warning audit recorded `@tailwindcss/node` 4.1.17 calling
+`module.register()` for its ESM cache loader. Node 26 emits DEP0205 for that
+call; the supported Node 22 baseline does not. Vite 7.3.6 already prefers
+`registerHooks()` where available. Recheck Tailwind's loader when changing the
+supported Node major instead of patching Node's module API or suppressing the
+warning.
 
 The production build still reports a large JavaScript chunk. A chunk size
 advisory alone does not establish a runtime performance failure. Measure cold

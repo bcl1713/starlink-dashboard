@@ -1,16 +1,22 @@
 # Mission Data Helper Functions
 
+These are illustrative extraction patterns for a selected MissionLeg and its
+MissionLegTimeline, not standalone API client code. Helpers beginning with `_`
+are internal exporter functions; verify signatures in
+`backend/starlink-location/app/mission/exporter/` before reusing them. See
+[current model reference](../data-structures/mission-timeline-models.md).
+
 Reference guide for helper functions in the mission system exporter.
 
 ## Time Formatting Functions
 
-**Location:** `backend/starlink-location/app/mission/exporter.py`
+**Location:** `backend/starlink-location/app/mission/exporter/`
 
 ### \_ensure_timezone(value: datetime) -> datetime
 
 Ensures datetime is UTC-aware; converts to UTC if needed
 
-### \_mission_start_timestamp(timeline: MissionTimeline) -> datetime
+### \_mission_start_timestamp(timeline: MissionLegTimeline) -> datetime
 
 Returns mission's zero point (earliest segment start or timeline.created_at)
 
@@ -66,7 +72,7 @@ Converts Transport enums to display names, joined by ", "
 ### \_segment_at_time
 
 ```python
-_segment_at_time(timeline: MissionTimeline, timestamp: datetime)
+_segment_at_time(timeline: MissionLegTimeline, timestamp: datetime)
     -> TimelineSegment | None
 ```
 
@@ -84,7 +90,7 @@ Checks if segment represents X-Ku warning case (special warning case)
 
 ## Export Functions
 
-### \_segment_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+### \_segment_rows(timeline: MissionLegTimeline, mission: MissionLeg | None) -> pd.DataFrame
 
 **Lines 271-331** - Converts segments to exportable rows
 
@@ -103,14 +109,14 @@ Special handling for export:
 - Metadata serialized as JSON
 - AAR rows inserted in order
 
-### \_advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+### \_advisory_rows(timeline: MissionLegTimeline, mission: MissionLeg | None) -> pd.DataFrame
 
 Converts advisories to DataFrame with columns:
 
 - "Mission ID", "Timestamp (UTC)", "Timestamp (Eastern)", "T Offset"
 - "Transport", "Severity", "Event Type", "Message", "Metadata"
 
-### \_statistics_rows(timeline: MissionTimeline) -> pd.DataFrame
+### \_statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame
 
 Converts timeline.statistics to DataFrame, humanizing metric names. Skips keys
 starting with "\_" (internal only)

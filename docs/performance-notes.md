@@ -1,4 +1,9 @@
-# Performance Benchmarking Results
+# Historical Performance Benchmarking Results
+
+> These measurements describe an earlier timeline implementation and test
+> environment. They are not v1.0.0 performance guarantees. Use the
+> [quality gates](contributing/quality-gates.md) and measure your target
+> workload.
 
 ## Overview
 
