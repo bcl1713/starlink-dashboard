@@ -20,7 +20,7 @@ from filelock import FileLock, Timeout
 from pydantic import Field, ValidationError, model_validator
 
 from app.models.aviation_weather import Contract, Hash, Time
-from app.models.route_sigmets import NoticeConfirmation, NoticeMutation
+from app.models.route_sigmets import NoticeConfirmation, NoticeMutation, NoticeSelection
 from app.services.aviation_weather.route_identity import BulletinGroup, notice_key
 
 MAX_CONTEXTS = 8
@@ -51,12 +51,13 @@ class NoticeRecord(Contract):
     valid_from_ms: Time
     expires_at_ms: Time
     acknowledged: bool
+    selected: bool = False
     attention_order: Time
 
 
 class NoticeState(Contract):
-    schema_version: Literal["route-sigmet-state-v1"] = Field(
-        default="route-sigmet-state-v1", alias="schema"
+    schema_version: Literal["route-sigmet-state-v2"] = Field(
+        default="route-sigmet-state-v2", alias="schema"
     )
     state_revision: Time = 0
     attention_counter: Time = 0
@@ -127,7 +128,17 @@ class NoticeStore:
         raw = json.loads(body)
         if not isinstance(raw, dict) or set(raw) != required:
             raise ValueError("Incomplete notice state")
-        return NoticeState.model_validate_json(body)
+        if raw.get('schema') == 'route-sigmet-state-v1':
+            # Migration is validated before replacing the old file, under its lock.
+            # Old records must not contain fields added by a newer schema.
+            for record in raw.get('records', {}).values():
+                if 'selected' in record:
+                    raise ValueError('Invalid v1 notice record')
+            raw['schema'] = 'route-sigmet-state-v2'
+            migrated = NoticeState.model_validate(raw)
+            self._write(migrated)
+            return migrated
+        return NoticeState.model_validate(raw)
 
     @staticmethod
     def _prune(state: NoticeState, now_ms: int) -> NoticeState:
@@ -206,6 +217,7 @@ class NoticeStore:
         now_ms: int,
         *,
         validate: Validator | None = None,
+        selection_eligible: list[BulletinGroup] | None = None,
     ) -> NoticeState:
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -227,10 +239,25 @@ class NoticeStore:
                     )
                 records = dict(state.records)
                 counter = state.attention_counter
-                for group in eligible:
+                selected_keys = {
+                    record.bulletin_key for record in records.values()
+                    if record.context_key == context_key and record.selected
+                    and not record.acknowledged
+                }
+                selected_groups = {
+                    group.notice_key(context_key): group
+                    for group in (selection_eligible or [])
+                    if group.bulletin_key in selected_keys and not group.identity_uncertain
+                }
+                if selection_eligible is not None:
+                    for key, record in list(records.items()):
+                        if record.context_key == context_key and record.selected and key not in selected_groups:
+                            records[key] = record.model_copy(update={'selected': False})
+                candidates = {group.notice_key(context_key): group for group in eligible}
+                candidates.update(selected_groups)
+                for key, group in candidates.items():
                     if not group.valid_from_ms <= now_ms < group.expires_at_ms:
                         continue
-                    key = group.notice_key(context_key)
                     if key not in records:
                         counter += 1
                         records[key] = NoticeRecord(
@@ -240,8 +267,11 @@ class NoticeStore:
                             valid_from_ms=group.valid_from_ms,
                             expires_at_ms=group.expires_at_ms,
                             acknowledged=False,
+                            selected=key in selected_groups,
                             attention_order=counter,
                         )
+                    elif key in selected_groups and not records[key].selected:
+                        records[key] = records[key].model_copy(update={'selected': True})
                 state = state.model_copy(
                     update={
                         "contexts": contexts,
@@ -254,6 +284,42 @@ class NoticeStore:
             raise NoticeStoreUnavailable(
                 "Route SIGMET notice state unavailable"
             ) from exc
+
+    def select_sync(
+        self, change: NoticeSelection, group: BulletinGroup, now_ms: int,
+        *, validate: Validator | None = None,
+    ) -> NoticeState:
+        if (change.bulletin_key != group.bulletin_key
+            or change.semantic_digest != group.semantic_digest
+            or not group.valid_from_ms <= now_ms < group.expires_at_ms):
+            raise NoticeConflict('SIGMET selection is no longer current')
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with self.lock:
+                old = self._read()
+                if validate is not None:
+                    validate()
+                state = self._prune(old, now_ms)
+                contexts = dict(state.contexts)
+                contexts[change.context_key] = ContextRecord(last_used_revision=old.state_revision + 1)
+                key = group.notice_key(change.context_key)
+                record = state.records.get(key)
+                if record and record.selected and not record.acknowledged:
+                    return state
+                counter = state.attention_counter + (record is None or record.acknowledged)
+                record = NoticeRecord(
+                    context_key=change.context_key, bulletin_key=group.bulletin_key,
+                    semantic_digest=group.semantic_digest, valid_from_ms=group.valid_from_ms,
+                    expires_at_ms=group.expires_at_ms, acknowledged=False, selected=True,
+                    attention_order=counter if record is None or record.acknowledged else record.attention_order,
+                )
+                state = state.model_copy(update={
+                    'contexts': contexts, 'records': {**state.records, key: record},
+                    'attention_counter': counter,
+                })
+                return self._commit(old, state, change.context_key)
+        except (OSError, Timeout, ValueError, ValidationError) as exc:
+            raise NoticeStoreUnavailable('SIGMET selection state unavailable') from exc
 
     def set_ack_sync(
         self, change: NoticeMutation, now_ms: int, *, validate: Validator | None = None
@@ -278,6 +344,7 @@ class NoticeStore:
                     record = record.model_copy(
                         update={
                             "acknowledged": change.acknowledged,
+                            "selected": False if change.acknowledged else record.selected,
                             "attention_order": (
                                 counter
                                 if not change.acknowledged

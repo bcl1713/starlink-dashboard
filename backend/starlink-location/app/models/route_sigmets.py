@@ -114,14 +114,14 @@ class GeometryResult(Contract):
         return self
 
 
-class RouteSigmetEntry(Contract):
+class SelectedSigmetEntry(Contract):
     notice_key: Hash
     bulletin_key: Hash
     semantic_digest: Hash
     feature_ids: list[TextId] = Field(min_length=1, max_length=MAX_ADVISORIES)
-    spans: list[IntersectionSpan] = Field(min_length=1, max_length=MAX_SPANS)
     attention_order: Time
     acknowledged: bool
+    selected: bool = False
     valid_from_ms: Time
     expires_at_ms: Time
     identity_uncertain: bool
@@ -132,6 +132,10 @@ class RouteSigmetEntry(Contract):
         if self.valid_from_ms >= self.expires_at_ms:
             raise ValueError("Empty or reversed notice validity")
         return self
+
+
+class RouteSigmetEntry(SelectedSigmetEntry):
+    spans: list[IntersectionSpan] = Field(min_length=1, max_length=MAX_SPANS)
 
 
 class RouteSigmetSnapshot(Contract):
@@ -149,6 +153,7 @@ class RouteSigmetSnapshot(Contract):
     complete: bool
     truncated: Literal[False]
     entries: list[RouteSigmetEntry] = Field(max_length=MAX_ADVISORIES)
+    selected_entries: list[SelectedSigmetEntry] = Field(default_factory=list, max_length=MAX_ADVISORIES)
     unresolved: list[UnresolvedFeature] = Field(max_length=MAX_ADVISORIES)
     future_feature_ids: list[TextId] = Field(max_length=MAX_ADVISORIES)
     omitted_features: Time
@@ -162,17 +167,18 @@ class RouteSigmetSnapshot(Contract):
 
     @model_validator(mode="after")
     def limits(self) -> Self:
-        unique([entry.notice_key for entry in self.entries], "notice keys")
-        unique([entry.bulletin_key for entry in self.entries], "bulletin keys")
+        all_entries = [*self.entries, *self.selected_entries]
+        unique([entry.notice_key for entry in all_entries], "notice keys")
+        unique([entry.bulletin_key for entry in all_entries], "bulletin keys")
         unique(
-            [feature for entry in self.entries for feature in entry.feature_ids],
+            [feature for entry in all_entries for feature in entry.feature_ids],
             "entry feature IDs",
         )
         unique([item.feature_id for item in self.unresolved], "unresolved feature IDs")
         unique(self.future_feature_ids, "future feature IDs")
         if (
             len(
-                {feature for entry in self.entries for feature in entry.feature_ids}
+                {feature for entry in all_entries for feature in entry.feature_ids}
                 | {item.feature_id for item in self.unresolved}
                 | set(self.future_feature_ids)
             )
@@ -185,7 +191,7 @@ class RouteSigmetSnapshot(Contract):
             raise ValueError("Unknown or omitted features cannot be complete")
         if self.status == "ready" and not self.complete:
             raise ValueError("Ready requires complete evaluation")
-        if self.entries and self.context is None:
+        if all_entries and self.context is None:
             raise ValueError("Notices require a route context")
         if self.sigmet_product.product_type != "international-sigmet":
             raise ValueError("Route notices require a SIGMET product")
@@ -198,6 +204,12 @@ class NoticeMutation(Contract):
     notice_key: Hash
     semantic_digest: Hash
     acknowledged: bool
+
+
+class NoticeSelection(Contract):
+    context_key: Hash
+    bulletin_key: Hash
+    semantic_digest: Hash
 
 
 class NoticeConfirmation(NoticeMutation):
