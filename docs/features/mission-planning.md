@@ -151,4 +151,3 @@ browser resumes the saved operation. Upload limits are 10 MiB for the PDF and 16
 KMLs totaling 40 MiB. Operations have a 20-minute overall deadline and bounded
 worker execution. Existing itinerary missions are converted on server startup,
 preserving accepted legs and unfinished source records for revision recovery.
-
