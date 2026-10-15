@@ -1,9 +1,8 @@
 # Route-linked SIGMETs for a passive dashboard
 
-**Status:** Concept approved by the user on 2026-10-15; written spec proposed
-for review. Approval of this document permits a separate implementation plan,
-not application changes. Review that plan and select its execution method before
-implementation.
+**Status:** Written spec approved by the user on 2026-10-15. Approval permits a
+separate implementation plan, not application changes. Review that plan and
+select its execution method before implementation.
 
 **Parent:**
 [Issue 290](https://github.com/bcl1713/starlink-dashboard/issues/290). Inspected
@@ -23,7 +22,8 @@ The user approved intersecting-only filtering, automatic notices, highlighting,
 and clearing from Configuration. The agreed clearing behavior acknowledges the
 notice: remove its card and attention highlight while retaining the normal
 still-valid polygon. Acknowledgement synchronizes across screens and survives
-refresh. The limits, identity rules and API below are proposed design defaults.
+refresh. The limits, identity rules and API below were accepted with spec
+approval.
 
 Reuse the international SIGMET feed, normalization, raw bulletins, finite
 freshness, cancellation lineage and native renderer. No new provider, corridor
