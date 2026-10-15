@@ -90,8 +90,16 @@ function AdvisoryReport({ advisory }: { advisory: AviationAdvisory }) {
       </strong>
       <p>
         Issuer {p.issuer ?? 'unknown'} · FIR {p.fir ?? 'unknown'} · series{' '}
-        {p.series ?? 'unknown'} · revision {p.revision ?? 'unknown'}
+        {p.series ?? 'unknown'} · provider series{' '}
+        {p.bulletin_series ?? 'unknown'} · revision {p.revision ?? 'unknown'}
         {p.amends ? ` · amends ${p.amends}` : ''}
+      </p>
+      <p>
+        Issued {utc(p.issued_at_ms)} ·{' '}
+        {p.cancelled ? 'Cancelled' : 'Not cancelled'}
+        {p.cancellation_target
+          ? ` · cancellation target ${p.cancellation_target.series} [${utc(p.cancellation_target.valid_from_ms)}, ${utc(p.cancellation_target.valid_to_ms)})`
+          : ''}
       </p>
       <p>
         Valid [{utc(p.valid_from_ms)}, {utc(p.valid_to_ms)}) · vertical{' '}

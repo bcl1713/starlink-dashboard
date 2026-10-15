@@ -10,7 +10,8 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AviationSettingsCard } from './AviationSettingsCard';
 import { aviationWeatherApi } from '@/services/aviation-weather';
-vi.mock('@/services/aviation-weather', () => ({
+vi.mock('@/services/aviation-weather', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/aviation-weather')>()),
   aviationWeatherApi: { getSettings: vi.fn(), updateSettings: vi.fn() },
 }));
 afterEach(() => {
@@ -202,7 +203,7 @@ it('offers independent default-off switches and confirms server changes in share
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  expect(screen.getAllByRole('switch')).toHaveLength(5);
+  expect(screen.getAllByRole('switch')).toHaveLength(6);
   fireEvent.click(
     screen.getByRole('switch', { name: 'METAR / SPECI observations' })
   );

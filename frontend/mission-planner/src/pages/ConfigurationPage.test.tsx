@@ -1,9 +1,17 @@
-vi.mock('@/services/aviation-weather', () => ({
+vi.mock('@/services/aviation-weather', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/aviation-weather')>()),
   aviationWeatherApi: {
     getSettings: vi.fn().mockResolvedValue({
       metar: false,
       taf: false,
       sigmet: false,
+      sigmet_intersecting_only: false,
+      winds: false,
+      temperature: false,
+      gfs_selection: {
+        vertical: { kind: 'pressure', pressure_pa: 50000 },
+        horizon_hours: 0,
+      },
       revision: 0,
     }),
     updateSettings: vi.fn(),
