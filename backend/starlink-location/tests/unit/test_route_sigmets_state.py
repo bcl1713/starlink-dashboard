@@ -21,25 +21,29 @@ OTHER = "b" * 64
 def selection(group, context=CTX):
     from app.models.route_sigmets import NoticeSelection
 
-    return NoticeSelection(context_key=context, bulletin_key=group.bulletin_key,
-                           semantic_digest=group.semantic_digest)
+    return NoticeSelection(
+        context_key=context,
+        bulletin_key=group.bulletin_key,
+        semantic_digest=group.semantic_digest,
+    )
 
 
 def test_v1_migration_preserves_ack_and_revision(tmp_path):
     store = module().NoticeStore(tmp_path / "notices.json")
     group = groups()[0]
-    state = store.reconcile_sync(CTX, [group], 500)
+    store.reconcile_sync(CTX, [group], 500)
     store.set_ack_sync(mutation(group, True), 501)
     body = json.loads(store.path.read_text())
-    body['schema'] = 'route-sigmet-state-v1'
-    for record in body['records'].values():
-        record.pop('selected', None)
+    body["schema"] = "route-sigmet-state-v1"
+    for record in body["records"].values():
+        record.pop("selected", None)
+        record.pop("relation", None)
     store.path.write_text(json.dumps(body))
     migrated = store.reconcile_sync(CTX, [group], 502)
     assert migrated.records[group.notice_key(CTX)].selected is False
     assert migrated.records[group.notice_key(CTX)].acknowledged is True
-    assert migrated.state_revision == body['state_revision']
-    assert json.loads(store.path.read_text())['schema'] == 'route-sigmet-state-v2'
+    assert migrated.state_revision == body["state_revision"]
+    assert json.loads(store.path.read_text())["schema"] == "route-sigmet-state-v2"
 
 
 def test_selection_is_idempotent_and_survives_restart(tmp_path):
@@ -48,8 +52,11 @@ def test_selection_is_idempotent_and_survives_restart(tmp_path):
     state = store.select_sync(selection(group), group, 500)
     repeated = store.select_sync(selection(group), group, 501)
     assert repeated.state_revision == state.state_revision
-    restored = module().NoticeStore(store.path).reconcile_sync(
-        CTX, [], 502, selection_eligible=[group])
+    restored = (
+        module()
+        .NoticeStore(store.path)
+        .reconcile_sync(CTX, [], 502, selection_eligible=[group])
+    )
     record = restored.records[group.notice_key(CTX)]
     assert record.selected and not record.acknowledged
     assert record.attention_order == 1
@@ -69,14 +76,53 @@ def test_ack_ends_manual_selection(tmp_path):
     assert reopened.attention_counter == 2
 
 
+def test_partial_feed_absence_does_not_end_manual_selection(tmp_path):
+    store = module().NoticeStore(tmp_path / "notices.json")
+    group = groups()[0]
+    store.select_sync(selection(group), group, 500)
+    missing = store.reconcile_sync(CTX, [], 501, selection_eligible=[])
+    assert missing.records[group.notice_key(CTX)].selected
+    returned = store.reconcile_sync(CTX, [], 502, selection_eligible=[group])
+    assert returned.records[group.notice_key(CTX)].selected
+
+
+def test_cancellation_ends_selection_even_when_original_is_missing(tmp_path):
+    store = module().NoticeStore(tmp_path / "notices.json")
+    group = groups()[0]
+    store.select_sync(selection(group), group, 500)
+    cancellation = feature(
+        "cancel",
+        bulletin_series="CANCEL",
+        cancelled=True,
+        issued_at_ms=600,
+        cancellation_target={"series": "A0", "valid_from_ms": 200, "valid_to_ms": 2000},
+    )["properties"]
+    state = store.reconcile_sync(
+        CTX, [], 601, selection_eligible=[], selection_cancellations=[cancellation]
+    )
+    assert not state.records[group.notice_key(CTX)].selected
+    returned = store.reconcile_sync(CTX, [], 602, selection_eligible=[group])
+    assert not returned.records[group.notice_key(CTX)].selected
+
+
 def test_selected_lineage_amendment_starts_pending(tmp_path):
     from app.services.aviation_weather.route_identity import group_bulletins
 
     store = module().NoticeStore(tmp_path / "notices.json")
     group = groups()[0]
     store.select_sync(selection(group), group, 500)
-    amendment = group_bulletins([feature('amended', bulletin_series='A0',
-        revision='AMD', issued_at_ms=150, valid_to_ms=2000, expires_at_ms=2000)])[0]
+    amendment = group_bulletins(
+        [
+            feature(
+                "amended",
+                bulletin_series="A0",
+                revision="AMD",
+                issued_at_ms=150,
+                valid_to_ms=2000,
+                expires_at_ms=2000,
+            )
+        ]
+    )[0]
     assert amendment.bulletin_key == group.bulletin_key
     state = store.reconcile_sync(CTX, [], 501, selection_eligible=[amendment])
     record = state.records[amendment.notice_key(CTX)]
@@ -84,8 +130,18 @@ def test_selected_lineage_amendment_starts_pending(tmp_path):
     assert record.attention_order == 2
     assert not state.records[group.notice_key(CTX)].selected
     store.set_ack_sync(mutation(amendment, True), 502)
-    next_group = group_bulletins([feature('newer', bulletin_series='A0',
-        revision='AMD', issued_at_ms=160, valid_to_ms=2000, expires_at_ms=2000)])[0]
+    next_group = group_bulletins(
+        [
+            feature(
+                "newer",
+                bulletin_series="A0",
+                revision="AMD",
+                issued_at_ms=160,
+                valid_to_ms=2000,
+                expires_at_ms=2000,
+            )
+        ]
+    )[0]
     final = store.reconcile_sync(CTX, [], 503, selection_eligible=[next_group])
     assert next_group.notice_key(CTX) not in final.records
 
@@ -95,9 +151,13 @@ async def test_concurrent_select_ack_has_atomic_revision_order(tmp_path):
     store = module().NoticeStore(tmp_path / "notices.json")
     group = groups()[0]
     store.select_sync(selection(group), group, 500)
+
     async def select_again():
         return await asyncio.to_thread(store.select_sync, selection(group), group, 501)
-    results = await asyncio.gather(select_again(), store.set_ack(mutation(group, True), 501))
+
+    results = await asyncio.gather(
+        select_again(), store.set_ack(mutation(group, True), 501)
+    )
     state = store._read()
     record = state.records[group.notice_key(CTX)]
     assert record.selected != record.acknowledged

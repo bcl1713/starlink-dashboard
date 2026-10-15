@@ -12,6 +12,7 @@ import {
 } from './support/overview-camera';
 import {
   routeSigmetSnapshot,
+  sigmetMapPoint,
   setVisibility,
 } from './support/route-sigmets-probe';
 import {
@@ -165,16 +166,12 @@ test('independent Configuration and passive Overview: propagation, native spans,
       timeout: 8000,
     });
     elapsed.push(Date.now() - started);
-    await expect(notices).toContainText('4 pending route advisories');
-    await expect(notices).toContainText('1 additional in Configuration');
-    await expect(notices).toContainText(
-      'Altitude and passage-time match not evaluated'
-    );
-    await expect(notices.getByRole('button')).toHaveCount(0);
+    await expect(notices).toContainText('SIGMETS: 4');
+    await expect(notices).not.toContainText('Coverage unknown');
     await expect(overview.getByRole('switch')).toHaveCount(0);
     await expect(
       config.getByRole('region', { name: 'Route intersection unknown' })
-    ).toContainText('C1');
+    ).toHaveCount(0);
     const initial = await snapshot(request);
     expect(initial.entries).toHaveLength(4);
     expect(initial.unresolved.length).toBeGreaterThan(0);
@@ -225,7 +222,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
       (object) => object.name === 'Native international SIGMET advisories'
     )!.bytes;
     const filter = config.getByRole('switch', {
-      name: 'Intersecting route only',
+      name: 'Show intersecting polygons only',
       exact: true,
     });
     const filteredSave = config.waitForResponse(
@@ -293,7 +290,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
       .toBeGreaterThanOrEqual(3);
     const focus = await overview.evaluateHandle(() => document.activeElement);
     const clear = config.getByRole('button', {
-      name: /Clear advisory · KZNY R1 /,
+      name: /Clear advisory · KZNY R1$/,
     });
     const changed = config.waitForResponse(
       (r) =>
@@ -303,7 +300,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await config.keyboard.press('Enter');
     expect((await changed).ok()).toBe(true);
     started = Date.now();
-    await expect(notices).toContainText('3 pending route advisories', {
+    await expect(notices).toContainText('SIGMETS: 3', {
       timeout: 8000,
     });
     elapsed.push(Date.now() - started);
@@ -311,8 +308,9 @@ test('independent Configuration and passive Overview: propagation, native spans,
     expect(
       cleared.entries.filter((e: { acknowledged: boolean }) => e.acknowledged)
     ).toHaveLength(1);
+    await config.getByText('Cleared', { exact: true }).click();
     const reopen = config.getByRole('button', {
-      name: /Show again · KZNY R1 /,
+      name: /Show again · KZNY R1$/,
     });
     await expect(reopen).toBeEnabled();
     const again = config.waitForResponse(
@@ -470,7 +468,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect
       .poll(async () => (await snapshot(request)).entries.length)
       .toBe(5);
-    await expect(notices).toContainText('5 pending route advisories', {
+    await expect(notices).toContainText('SIGMETS: 5', {
       timeout: 8000,
     });
     const added = await snapshot(request);
@@ -569,18 +567,13 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect
       .poll(async () => (await snapshot(request)).context?.route_id)
       .toBe(noMatch);
-    await expect(notices).toContainText('Nonintersecting route', {
-      timeout: 8000,
-    });
-    await expect(notices.getByRole('article')).toHaveCount(0);
+    await expect(notices).toHaveCount(0, { timeout: 8000 });
     scenarios.reversed = { late, current: await snapshot(request) };
     await route(request, '0,0 180,0', 'Ambiguous antipodal route');
     await expect
       .poll(async () => (await snapshot(request)).complete)
       .toBe(false);
-    await expect(notices).toContainText(/incomplete|unavailable/, {
-      timeout: 8000,
-    });
+    await expect(notices).toHaveCount(0, { timeout: 8000 });
     scenarios.incomplete = await snapshot(request);
     expect((await request.post(`/api/routes/${routeId}/activate`)).ok()).toBe(
       true
@@ -589,7 +582,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect
       .poll(async () => (await snapshot(request)).entries.length)
       .toBe(0);
-    await expect(notices).toContainText('Coverage unknown or partial');
+    await expect(notices).toHaveCount(0, { timeout: 8000 });
     scenarios.empty = await snapshot(request);
     await feed('route');
     await expect(notices.getByRole('article')).toHaveCount(3, {
@@ -603,7 +596,9 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect
       .poll(async () => (await snapshot(request)).sigmet_product.state)
       .toBe('stale');
-    await expect(notices).toContainText('stale', { timeout: 8000 });
+    await expect(notices.getByRole('article')).toHaveCount(3, {
+      timeout: 8000,
+    });
     scenarios.stale = await snapshot(request);
     await control({
       replay_utc_ms:
@@ -616,9 +611,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect
       .poll(async () => (await snapshot(request)).entries.length)
       .toBe(0);
-    await expect(notices.getByRole('article')).toHaveCount(0, {
-      timeout: 8000,
-    });
+    await expect(notices).toHaveCount(0, { timeout: 8000 });
     scenarios.expired = await snapshot(request);
     await feed('route', { replay_utc_ms: null });
     // A fresh context resets its UTC anchor after this explicit time-control rewind.
@@ -860,5 +853,196 @@ test('pinned dated real AWC source passes normalization and the native route ren
     } finally {
       await context.close();
     }
+  }
+});
+
+test('shared manual SIGMET attention stays quiet and can be acknowledged from Overview', async ({
+  browser,
+  request,
+}, info) => {
+  test.setTimeout(180000);
+  const a = await browser.newContext({
+    baseURL: process.env.WEATHER_ACCEPTANCE_BASE_URL,
+    viewport: { width: 1920, height: 1080 },
+  });
+  const b = await browser.newContext({
+    baseURL: process.env.WEATHER_ACCEPTANCE_BASE_URL,
+    viewport: { width: 1920, height: 1080 },
+  });
+  const overview = await a.newPage(),
+    config = await b.newPage();
+  const errors: string[] = [];
+  overview.on('pageerror', (e) => errors.push(e.message));
+  config.on('pageerror', (e) => errors.push(e.message));
+  const proof = {
+    quiet_overview: false,
+    manual_selection: false,
+    shared_acknowledgement: false,
+    configuration_relevance: false,
+    screenshots_complete: false,
+  };
+  try {
+    await feed('route', { replay_utc_ms: null });
+    await route(request, '10,0 20,0', 'Quiet route');
+    expect(
+      (
+        await request.put('/api/aviation-weather/v1/settings', {
+          data: {
+            sigmet: true,
+            metar: false,
+            taf: false,
+            sigmet_intersecting_only: false,
+          },
+        })
+      ).ok()
+    ).toBe(true);
+    await installWeatherProbe(overview);
+    await overview.goto('/overview');
+    await config.goto('/configuration');
+    await config.getByRole('tab', { name: 'Weather', exact: true }).click();
+    await expect
+      .poll(async () => (await snapshot(request)).entries.length)
+      .toBe(0);
+    await expect
+      .poll(async () => (await routeSigmetSnapshot(overview)).present, {
+        timeout: 15000,
+      })
+      .toBe(true);
+    await expect(overview.getByLabel('Route SIGMET advisories')).toHaveCount(0);
+    await expect(overview.getByLabel('Aviation weather status')).toHaveCount(0);
+    await overview.screenshot({ path: info.outputPath('quiet-overview.png') });
+    proof.quiet_overview = true;
+    const point = await sigmetMapPoint(overview, 40, 179);
+    await overview.mouse.click(point.x, point.y);
+    await expect(overview.getByRole('dialog')).toBeVisible();
+    await expect
+      .poll(async () => (await snapshot(request)).selected_entries.length, {
+        timeout: 8000,
+      })
+      .toBe(1);
+    await expect(overview.getByText('SIGMETS: 1', { exact: true })).toBeVisible(
+      { timeout: 8000 }
+    );
+    await expect(config.getByText('Selected', { exact: true })).toBeVisible({
+      timeout: 8000,
+    });
+    await overview.reload();
+    await expect(overview.getByText('SIGMETS: 1', { exact: true })).toBeVisible(
+      { timeout: 15000 }
+    );
+    const region = overview.getByLabel('Route SIGMET advisories');
+    await expect(region.getByRole('article')).toHaveCount(1);
+    await expect(region).toContainText('Selected');
+    const color = await region
+      .locator('.sigmet-attention-count')
+      .evaluate((n) => getComputedStyle(n).color);
+    expect(color).toBe('rgb(226, 232, 240)');
+    await overview.emulateMedia({ reducedMotion: 'reduce' });
+    expect(
+      await region
+        .locator('.sigmet-attention-count')
+        .evaluate((n) => getComputedStyle(n).animationName)
+    ).toBe('none');
+    await overview.screenshot({
+      path: info.outputPath('selected-only-overview.png'),
+    });
+    proof.manual_selection = true;
+    await region.getByRole('button', { name: /Acknowledge/ }).click();
+    await expect(region).toHaveCount(0, { timeout: 8000 });
+    await expect
+      .poll(async () => (await snapshot(request)).selected_entries.length)
+      .toBe(0);
+    await expect(config.getByText('Selected', { exact: true })).toHaveCount(0, {
+      timeout: 8000,
+    });
+    const intersectingId = await route(
+      request,
+      '-82,35 -65,35',
+      'Relevant route'
+    );
+    await expect(overview.getByText('SIGMETS: 4', { exact: true })).toBeVisible(
+      { timeout: 8000 }
+    );
+    await expect(config.locator('.sigmet-settings-row')).toHaveCount(4, {
+      timeout: 8000,
+    });
+    await expect(config.getByText('B1', { exact: true })).toHaveCount(0);
+    await expect(
+      config.getByRole('region', { name: 'Route intersection unknown' })
+    ).toHaveCount(0);
+    const cards = overview.getByLabel('Route SIGMET advisories');
+    await cards
+      .getByRole('button', { name: /Acknowledge/ })
+      .first()
+      .click();
+    await expect(cards.getByText('SIGMETS: 3', { exact: true })).toBeVisible({
+      timeout: 8000,
+    });
+    await config.getByText('Cleared', { exact: true }).click();
+    await expect(
+      config.getByRole('button', { name: /Show again/ })
+    ).toHaveCount(1, { timeout: 8000 });
+    await config.screenshot({
+      path: info.outputPath('configuration-pending-cleared-desktop.png'),
+      fullPage: true,
+    });
+    await config.getByRole('button', { name: /Show again/ }).click();
+    await expect(cards.getByText('SIGMETS: 4', { exact: true })).toBeVisible({
+      timeout: 8000,
+    });
+    proof.shared_acknowledgement = true;
+    proof.configuration_relevance = true;
+    await cards.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(cards.getByRole('article')).toHaveCount(1);
+    await cards.getByRole('button', { name: 'Previous', exact: true }).click();
+    await overview.screenshot({
+      path: info.outputPath('pending-overview-desktop.png'),
+    });
+    const overlap = await sigmetMapPoint(overview, 35, -75);
+    const selectedBefore = (await snapshot(request)).entries.filter(
+      (e: { selected: boolean }) => e.selected
+    ).length;
+    await overview.mouse.click(overlap.x, overlap.y);
+    await expect(
+      overview.getByRole('combobox', { name: 'Weather report' })
+    ).toBeVisible();
+    expect(
+      (await snapshot(request)).entries.filter(
+        (e: { selected: boolean }) => e.selected
+      ).length
+    ).toBe(selectedBefore);
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
+      .click();
+    await config.setViewportSize({ width: 390, height: 844 });
+    await config.screenshot({
+      path: info.outputPath('configuration-pending-cleared-mobile.png'),
+      fullPage: true,
+    });
+    await overview.setViewportSize({ width: 390, height: 844 });
+    await cards.scrollIntoViewIfNeeded();
+    await overview.screenshot({
+      path: info.outputPath('pending-overview-mobile.png'),
+      fullPage: true,
+    });
+    expect(
+      await overview.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth
+      )
+    ).toBe(true);
+    expect((await snapshot(request)).context.route_id).toBe(intersectingId);
+    expect(errors).toEqual([]);
+    proof.screenshots_complete = true;
+    await writeFile(
+      output + '/sigmet-attention-evidence.json',
+      JSON.stringify({ ...proof, errors }, null, 2)
+    );
+  } finally {
+    await request.put('/api/aviation-weather/v1/settings', {
+      data: { sigmet: false, metar: false, taf: false },
+    });
+    await request.post('/api/routes/deactivate');
+    await a.close();
+    await b.close();
   }
 });

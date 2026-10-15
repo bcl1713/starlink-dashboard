@@ -87,7 +87,7 @@ async def put_acknowledgement(
     return await guarded(request, lambda service: service.acknowledge(change))
 
 
-@router.put('/selection')
+@router.put("/selection")
 async def put_selection(change: NoticeSelection, request: Request, response: Response):
     response.headers.update(HEADERS)
     return await guarded(request, lambda service: service.select(change))

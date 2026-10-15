@@ -347,11 +347,10 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     for (const text of [
       'METAR / SPECI observations · current',
       'TAF terminal forecasts · current',
-      'International SIGMET advisories · current',
     ])
       await expect(status).toContainText(text, { timeout: 30000 });
     await expect(status).toContainText('Coverage unknown');
-    await expect(status).toContainText('1 unlocated');
+    await expect(status).not.toContainText('unlocated');
     await expect(overview.getByLabel('METAR station reports')).toHaveCount(0);
     await expect(status).not.toContainText('METAR KJFK');
     await expect(overview.getByRole('switch')).toHaveCount(0);
@@ -454,25 +453,18 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     await expect(popup).toHaveCount(0);
     click = await aviationPoint(overview, 36, -78);
     await overview.mouse.click(click.x, click.y);
-    // SIGMETs are passive on Overview; full review belongs to Configuration.
-    await expect(popup).toHaveCount(0);
-    await config
-      .getByText('Full report · KZNY A1 · TURB', { exact: true })
+    await expect(popup).toHaveCount(1);
+    await expect(popup).toContainText('KZNY');
+    await overview
+      .getByRole('button', { name: 'Close weather report' })
       .click();
-    await config
-      .locator('details[open]')
-      .filter({
-        has: config.getByText('Full report · KZNY A1 · TURB', { exact: true }),
-      })
-      .getByText('Original bulletin', { exact: true })
-      .click();
-    await expect(
-      config.getByText('KZNY SIGMET A1 SEV TURB FL180/FL340', { exact: true })
-    ).toBeVisible();
     for (const lon of [179, -179]) {
       click = await aviationPoint(overview, 40, lon);
       await overview.mouse.click(click.x, click.y);
-      await expect(popup).toHaveCount(0);
+      await expect(popup).toHaveCount(1);
+      await overview
+        .getByRole('button', { name: 'Close weather report' })
+        .click();
     }
     click = await aviationPoint(overview, 36, -78);
     await overview.mouse.move(click.x, click.y);
@@ -639,7 +631,6 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     for (const text of [
       'METAR / SPECI observations · unavailable',
       'TAF terminal forecasts · unavailable',
-      'International SIGMET advisories · unavailable',
     ])
       await expect(status).toContainText(text, { timeout: 30000 });
     const failureEvents = (await sourceEvents()).slice(failureEventsStart);

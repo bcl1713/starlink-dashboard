@@ -6,6 +6,32 @@ import {
   parseNoticeConfirmation,
 } from './route-sigmets';
 
+it('bounds and deduplicates the map selection identity catalogue', () => {
+  const { snapshot } = routeSnapshot();
+  const candidate = {
+    bulletin_key: hash('a'),
+    semantic_digest: hash('b'),
+    feature_ids: ['off-route'],
+  };
+  expect(() =>
+    parseRouteSigmetSnapshot({
+      ...snapshot,
+      selection_candidates: [candidate, candidate],
+    })
+  ).toThrow();
+  expect(() =>
+    parseRouteSigmetSnapshot({
+      ...snapshot,
+      selection_candidates: [
+        {
+          ...candidate,
+          feature_ids: Array.from({ length: 500 }, (_, i) => 'candidate-' + i),
+        },
+      ],
+    })
+  ).toThrow();
+});
+
 it('strictly admits snapshot identity, original deadlines and known spans', () => {
   const { snapshot } = routeSnapshot();
   expect(

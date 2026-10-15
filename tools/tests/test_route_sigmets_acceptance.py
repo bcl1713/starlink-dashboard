@@ -29,6 +29,16 @@ def proof():
             "assertions_complete": True,
         },
         "real_source": {"replayed": True},
+        "attention": {
+            key: True
+            for key in [
+                "quiet_overview",
+                "manual_selection",
+                "shared_acknowledgement",
+                "configuration_relevance",
+                "screenshots_complete",
+            ]
+        },
         "cleanup": {
             "containers": [],
             "networks": [],
@@ -39,6 +49,23 @@ def proof():
             "errors": [],
         },
     }
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "quiet_overview",
+        "manual_selection",
+        "shared_acknowledgement",
+        "configuration_relevance",
+        "screenshots_complete",
+    ],
+)
+def test_missing_attention_proof_prevents_pass(missing):
+    evidence = proof()
+    evidence["attention"][missing] = False
+    with pytest.raises(ValueError):
+        runner().require_pass(evidence)
 
 
 @pytest.mark.parametrize("missing", ["browser", "route", "real_source", "cleanup"])
@@ -204,7 +231,7 @@ def test_source_removal_failure_is_recorded_and_cannot_pass(tmp_path, monkeypatc
         (
             "aviation",
             ["aviation-weather-production.spec.ts", "route-sigmets-production.spec.ts"],
-            3,
+            4,
         ),
         ("gfs", ["gfs-weather-production.spec.ts"], 1),
     ],

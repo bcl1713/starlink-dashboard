@@ -78,20 +78,20 @@ def snapshot():
 
 def test_selected_only_notice_has_no_manufactured_spans():
     payload = entry()
-    payload.pop('spans')
+    payload.pop("spans")
     selected = models().SelectedSigmetEntry(**payload)
-    assert 'spans' not in selected.model_dump()
+    assert "spans" not in selected.model_dump()
     with pytest.raises(ValidationError):
-        models().SelectedSigmetEntry(**(payload | {'spans': [span()]}))
+        models().SelectedSigmetEntry(**(payload | {"spans": [span()]}))
     with pytest.raises(ValidationError):
-        models().RouteSigmetEntry(**(payload | {'spans': []}))
+        models().RouteSigmetEntry(**(payload | {"spans": []}))
 
 
 def test_snapshot_cannot_duplicate_bulletins_across_selected_and_matched():
     payload = snapshot()
     selected = entry()
-    selected.pop('spans')
-    payload['selected_entries'] = [selected]
+    selected.pop("spans")
+    payload["selected_entries"] = [selected]
     with pytest.raises(ValidationError):
         models().RouteSigmetSnapshot(**payload)
 

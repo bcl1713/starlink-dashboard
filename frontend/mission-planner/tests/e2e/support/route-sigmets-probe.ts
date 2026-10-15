@@ -101,6 +101,56 @@ export async function routeSigmetSnapshot(page: Page, watch = false) {
   }, watch);
 }
 
+export async function sigmetMapPoint(
+  page: Page,
+  latitude: number,
+  longitude: number
+) {
+  await page.waitForFunction(() =>
+    (window as Probe).__overviewEvidenceRoots?.some(
+      (root) => root.containerInfo?.getState?.().gl.domElement.isConnected
+    )
+  );
+  return page.evaluate(
+    ({ latitude, longitude }) => {
+      const state = (window as Probe).__overviewEvidenceRoots!.find(
+        (root) => root.containerInfo?.getState?.().gl.domElement.isConnected
+      )!.containerInfo!.getState!();
+      const lat = (latitude * Math.PI) / 180,
+        lon = (longitude * Math.PI) / 180;
+      const controls = state.controls as unknown as {
+        setLookAt: (...v: (number | boolean)[]) => void;
+        update: (delta: number) => void;
+      };
+      controls.setLookAt(
+        3 * Math.cos(lat) * Math.cos(lon),
+        3 * Math.sin(lat),
+        -3 * Math.cos(lat) * Math.sin(lon),
+        0,
+        0,
+        0,
+        false
+      );
+      controls.update(0);
+      state.camera.updateMatrixWorld();
+      const point = state.camera.position
+        .clone()
+        .set(
+          2.026 * Math.cos(lat) * Math.cos(lon),
+          2.026 * Math.sin(lat),
+          -2.026 * Math.cos(lat) * Math.sin(lon)
+        )
+        .project(state.camera);
+      const rect = state.gl.domElement.getBoundingClientRect();
+      return {
+        x: rect.left + ((point.x + 1) * rect.width) / 2,
+        y: rect.top + ((1 - point.y) * rect.height) / 2,
+      };
+    },
+    { latitude, longitude }
+  );
+}
+
 export async function setVisibility(page: Page, hidden: boolean) {
   await page.evaluate((hidden) => {
     Object.defineProperty(document, 'hidden', {

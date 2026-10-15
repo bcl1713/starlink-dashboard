@@ -159,8 +159,12 @@ class RouteSigmetSnapshot(Contract):
     complete: bool
     truncated: Literal[False]
     entries: list[RouteSigmetEntry] = Field(max_length=MAX_ADVISORIES)
-    selected_entries: list[SelectedSigmetEntry] = Field(default_factory=list, max_length=MAX_ADVISORIES)
-    selection_candidates: list[SigmetSelectionCandidate] = Field(default_factory=list, max_length=MAX_ADVISORIES)
+    selected_entries: list[SelectedSigmetEntry] = Field(
+        default_factory=list, max_length=MAX_ADVISORIES
+    )
+    selection_candidates: list[SigmetSelectionCandidate] = Field(
+        default_factory=list, max_length=MAX_ADVISORIES
+    )
     unresolved: list[UnresolvedFeature] = Field(max_length=MAX_ADVISORIES)
     future_feature_ids: list[TextId] = Field(max_length=MAX_ADVISORIES)
     omitted_features: Time
@@ -177,8 +181,18 @@ class RouteSigmetSnapshot(Contract):
         all_entries = [*self.entries, *self.selected_entries]
         unique([entry.notice_key for entry in all_entries], "notice keys")
         unique([entry.bulletin_key for entry in all_entries], "bulletin keys")
-        unique([entry.bulletin_key for entry in self.selection_candidates], 'selection bulletin keys')
-        unique([feature for entry in self.selection_candidates for feature in entry.feature_ids], 'selection feature IDs')
+        unique(
+            [entry.bulletin_key for entry in self.selection_candidates],
+            "selection bulletin keys",
+        )
+        unique(
+            [
+                feature
+                for entry in self.selection_candidates
+                for feature in entry.feature_ids
+            ],
+            "selection feature IDs",
+        )
         unique(
             [feature for entry in all_entries for feature in entry.feature_ids],
             "entry feature IDs",
@@ -190,6 +204,11 @@ class RouteSigmetSnapshot(Contract):
                 {feature for entry in all_entries for feature in entry.feature_ids}
                 | {item.feature_id for item in self.unresolved}
                 | set(self.future_feature_ids)
+                | {
+                    feature
+                    for candidate in self.selection_candidates
+                    for feature in candidate.feature_ids
+                }
             )
             > MAX_ADVISORIES
         ):

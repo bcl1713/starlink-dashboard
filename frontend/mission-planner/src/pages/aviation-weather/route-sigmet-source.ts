@@ -454,6 +454,7 @@ export class RouteSigmetSource {
         ),
         ...snapshot.unresolved.map((u) => u.feature_id),
         ...snapshot.future_feature_ids,
+        ...snapshot.selection_candidates.flatMap((e) => e.feature_ids),
       ].every((id) => ids.has(id))
     );
   }

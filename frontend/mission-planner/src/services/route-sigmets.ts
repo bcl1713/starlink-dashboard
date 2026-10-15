@@ -113,14 +113,18 @@ export const routeSigmetSnapshotSchema = z
   .refine((s) => {
     const entries = [...s.entries, ...s.selected_entries];
     const features = entries.flatMap((e) => e.feature_ids);
+    const candidates = s.selection_candidates.flatMap((e) => e.feature_ids);
     return (
       unique(entries.map((e) => e.notice_key)) &&
       unique(entries.map((e) => e.bulletin_key)) &&
       unique(features) &&
+      unique(candidates) &&
+      unique(s.selection_candidates.map((e) => e.bulletin_key)) &&
       unique(s.unresolved.map((e) => e.feature_id)) &&
       unique(s.future_feature_ids) &&
       new Set([
         ...features,
+        ...candidates,
         ...s.unresolved.map((e) => e.feature_id),
         ...s.future_feature_ids,
       ]).size <= 500 &&

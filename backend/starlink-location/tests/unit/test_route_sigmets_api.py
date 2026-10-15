@@ -22,21 +22,30 @@ def app_for(service, weather):
 async def test_selection_endpoint_returns_snapshot_and_no_store_conflicts(tmp_path):
     service, weather, store, _, _, _, _, context = setup_service(tmp_path)
     try:
-        store.update({'sigmet': True})
+        store.update({"sigmet": True})
         first = await service.read()
         entry = first.entries[0]
-        change = dict(context_key=first.context.context_key,
-            bulletin_key=entry.bulletin_key, semantic_digest=entry.semantic_digest)
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app_for(service, weather)),
-                                    base_url='http://test') as client:
-            accepted = await client.put('/api/aviation-weather/v1/route-sigmets/selection', json=change)
+        change = dict(
+            context_key=first.context.context_key,
+            bulletin_key=entry.bulletin_key,
+            semantic_digest=entry.semantic_digest,
+        )
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app_for(service, weather)),
+            base_url="http://test",
+        ) as client:
+            accepted = await client.put(
+                "/api/aviation-weather/v1/route-sigmets/selection", json=change
+            )
             assert accepted.status_code == 200
-            assert accepted.headers['cache-control'] == 'no-store'
-            assert accepted.json()['entries'][0]['selected']
+            assert accepted.headers["cache-control"] == "no-store"
+            assert accepted.json()["entries"][0]["selected"]
             context[0] = None
-            obsolete = await client.put('/api/aviation-weather/v1/route-sigmets/selection', json=change)
+            obsolete = await client.put(
+                "/api/aviation-weather/v1/route-sigmets/selection", json=change
+            )
             assert obsolete.status_code == 409
-            assert obsolete.headers['cache-control'] == 'no-store'
+            assert obsolete.headers["cache-control"] == "no-store"
     finally:
         await close(service, weather)
 

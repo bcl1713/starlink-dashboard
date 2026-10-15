@@ -74,24 +74,34 @@ async def close(service, weather):
 async def test_select_nonintersection_shared_restart_ack_and_reopen(tmp_path):
     from app.models.route_sigmets import NoticeSelection
     from app.services.aviation_weather.route_identity import group_bulletins
+
     service, weather, store, _, _, _, reports, _ = setup_service(tmp_path)
-    reports[0]['geometry']['coordinates'] = [[[20,20],[23,20],[23,23],[20,23],[20,20]]]
+    reports[0]["geometry"]["coordinates"] = [
+        [[20, 20], [23, 20], [23, 23], [20, 23], [20, 20]]
+    ]
     try:
-        store.update({'sigmet': True})
+        store.update({"sigmet": True})
         first = await service.read()
         assert not first.entries
-        assert first.selection_candidates[0].feature_ids == ['a']
+        assert first.selection_candidates[0].feature_ids == ["a"]
         group = group_bulletins(reports)[0]
-        change = NoticeSelection(context_key=first.context.context_key,
-            bulletin_key=group.bulletin_key, semantic_digest=group.semantic_digest)
+        change = NoticeSelection(
+            context_key=first.context.context_key,
+            bulletin_key=group.bulletin_key,
+            semantic_digest=group.semantic_digest,
+        )
         selected = await service.select(change)
         assert not selected.entries and len(selected.selected_entries) == 1
         entry = selected.selected_entries[0]
         assert entry.selected and not entry.acknowledged
-        assert not hasattr(entry, 'spans')
+        assert not hasattr(entry, "spans")
         assert (await service.select(change)).state_revision == selected.state_revision
-        ack = NoticeMutation(context_key=first.context.context_key,
-            notice_key=entry.notice_key, semantic_digest=entry.semantic_digest, acknowledged=True)
+        ack = NoticeMutation(
+            context_key=first.context.context_key,
+            notice_key=entry.notice_key,
+            semantic_digest=entry.semantic_digest,
+            acknowledged=True,
+        )
         await service.acknowledge(ack)
         assert not (await service.read()).selected_entries
         reopened = await service.select(change)
@@ -102,13 +112,17 @@ async def test_select_nonintersection_shared_restart_ack_and_reopen(tmp_path):
 
 async def test_select_matched_is_deduplicated_and_stale_context_rejected(tmp_path):
     from app.models.route_sigmets import NoticeSelection
+
     service, weather, store, _, _, _, _, context = setup_service(tmp_path)
     try:
-        store.update({'sigmet': True})
+        store.update({"sigmet": True})
         first = await service.read()
         entry = first.entries[0]
-        change = NoticeSelection(context_key=first.context.context_key,
-            bulletin_key=entry.bulletin_key, semantic_digest=entry.semantic_digest)
+        change = NoticeSelection(
+            context_key=first.context.context_key,
+            bulletin_key=entry.bulletin_key,
+            semantic_digest=entry.semantic_digest,
+        )
         selected = await service.select(change)
         assert selected.entries[0].selected
         assert not selected.selected_entries
