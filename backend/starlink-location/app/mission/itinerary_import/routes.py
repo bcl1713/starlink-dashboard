@@ -43,10 +43,13 @@ def invoke(fn, *args):
 async def start(
     request: Request,
     pdf: Annotated[UploadFile, File()],
-    kmls: Annotated[list[UploadFile], File()],
+    kmls: Annotated[list[UploadFile] | None, File()] = None,
     idempotency_key: str = Form(...),
     mission_id: str | None = Form(None),
 ):
+    kmls = kmls or []
+    if not mission_id and not kmls:
+        raise HTTPException(422, "Upload route KMLs for a new mission")
     if len(kmls) > 16:
         raise HTTPException(422, "Upload at most 16 KMLs")
     data = await pdf.read(10 * 1024 * 1024 + 1)
@@ -74,3 +77,10 @@ def cancel(request: Request, operation_id: str):
 @router.post("/{operation_id}/resolutions", status_code=202)
 def resolve(request: Request, operation_id: str, body: ResolutionRequest):
     return invoke(service(request).resolve, operation_id, body.generation, body.choices)
+
+
+@router.post("/{operation_id}/commit")
+def commit(request: Request, operation_id: str, body: ResolutionRequest):
+    return invoke(
+        service(request).commit_revision, operation_id, body.generation, body.choices
+    )

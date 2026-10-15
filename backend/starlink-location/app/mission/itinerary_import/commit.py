@@ -31,56 +31,10 @@ def commit_initial(service, operation, prepared):
         if storage.load_mission_v2(mission.id):
             raise ValueError("Mission already exists")
         service.check_environment(prepared)
-        import hashlib
-
-        from app.mission.planning.models import SourceRevision
-        from app.mission.planning.sources import SourceStore
-
-        source_store = SourceStore(
-            service.mission_root, service.route_manager.routes_dir
-        )
-        source_files = {}
-        records = []
-        sources = [
-            (
-                operation.id,
-                "itinerary_pdf",
-                "itinerary.pdf",
-                (service.store.directory(operation.id) / "source.pdf").read_bytes(),
-            )
-        ]
-        sources.extend(
-            (
-                r["route_id"],
-                "route_kml",
-                Path(r["metadata"]["file_path"]).name,
-                (
-                    service.store.directory(operation.id) / f"{r['route_id']}.kml"
-                ).read_bytes(),
-            )
-            for r in prepared["routes"]
-        )
-        for id, kind, name, data in sources:
-            suffix = "pdf" if kind == "itinerary_pdf" else "kml"
-            source = SourceRevision(
-                id=id,
-                owner=mission.id,
-                kind=kind,
-                filename=name,
-                content_hash=hashlib.sha256(data).hexdigest(),
-                owned_relative_path=f"staging/{id}.{suffix}",
-            )
-            accepted, owned = source_store.acceptance_files(source, mission.id, data)
-            source_files.update(owned)
-            records.append(accepted.model_dump(mode="json"))
+        owned, records = source_files(service, operation, prepared)
         mission.metadata["itinerary_import"]["source_records"] = records
         files = mission_files(mission)
-        files.update(source_files)
-        for route in prepared["routes"]:
-            rid = route["route_id"]
-            files[service.route_manager.routes_dir / f"{rid}.kml"] = (
-                service.store.directory(operation.id) / f"{rid}.kml"
-            ).read_bytes()
+        files.update(owned)
         for item in prepared["artifacts"]:
             files[storage.get_leg_timeline_path(item["leg"]["id"], mission.id)] = (
                 json_bytes(item["timeline"])
@@ -101,3 +55,48 @@ def commit_initial(service, operation, prepared):
 
     saved_mission(None, mission)
     return current
+
+
+def source_files(service, operation, prepared):
+    import base64
+    import hashlib
+
+    from app.mission.planning.models import SourceRevision
+    from app.mission.planning.sources import SourceStore
+
+    source_store = SourceStore(service.mission_root, service.route_manager.routes_dir)
+    files = {}
+    records = []
+    sources = [
+        (
+            operation.id,
+            "itinerary_pdf",
+            "itinerary.pdf",
+            (service.store.directory(operation.id) / "source.pdf").read_bytes(),
+        )
+    ]
+    sources.extend(
+        (
+            r["route_id"],
+            "route_kml",
+            Path(r["metadata"]["file_path"]).name,
+            base64.b64decode(prepared["route_payloads"][r["route_id"]], validate=True),
+        )
+        for r in prepared["routes"]
+    )
+    for id, kind, name, data in sources:
+        suffix = "pdf" if kind == "itinerary_pdf" else "kml"
+        source = SourceRevision(
+            id=id,
+            owner=operation.mission_id,
+            kind=kind,
+            filename=name,
+            content_hash=hashlib.sha256(data).hexdigest(),
+            owned_relative_path=f"staging/{id}.{suffix}",
+        )
+        accepted, owned = source_store.acceptance_files(
+            source, operation.mission_id, data
+        )
+        files.update(owned)
+        records.append(accepted.model_dump(mode="json"))
+    return files, records

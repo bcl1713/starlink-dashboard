@@ -1,5 +1,6 @@
 """Prepare a detached ordinary mission; no canonical mission writes."""
 
+import base64
 import hashlib
 from pathlib import Path
 
@@ -150,6 +151,10 @@ def prepare(service, operation):
     return {
         "mission": mission.model_dump(mode="json"),
         "routes": [r.model_dump(mode="json") for r in routes.values()],
+        "route_payloads": {
+            rid: base64.b64encode((directory / f"{rid}.kml").read_bytes()).decode()
+            for rid in routes
+        },
         "artifacts": artifacts,
         "environment": environment,
         "identity": planning_identity(mission),

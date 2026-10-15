@@ -184,3 +184,53 @@ def test_cancelled_queued_operation_never_creates_mission(importer):
     service.run(op.id)
     assert value.state == "cancelled"
     assert storage.load_mission_v2(op.mission_id) is None
+
+
+def test_revision_keeps_identity_requires_review_and_records_history(importer):
+    client, service = importer
+    first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "rev-original")
+    wait(client, first.id)
+    before = storage.load_mission_v2(first.mission_id)
+    revision = service.start(
+        pdf_bytes(), [("r.kml", kml_bytes())], "rev-next", first.mission_id
+    )
+    ready = wait(client, revision.id)
+    assert ready["state"] == "ready", ready
+    assert storage.load_mission_v2(first.mission_id) == before
+    response = client.post(
+        f"/api/v2/missions/itinerary-imports/{revision.id}/commit",
+        json={"generation": ready["generation"], "choices": {}},
+    )
+    assert response.status_code == 200, response.text
+    after = storage.load_mission_v2(first.mission_id)
+    assert after.name == before.name and after.id == before.id
+    assert after.legs[0].id == before.legs[0].id
+    assert after.metadata["itinerary_import"]["revision"] == 2
+    assert after.metadata["itinerary_import"]["history"]
+
+
+def test_concurrent_takeoff_edit_invalidates_revision_preview(importer):
+    from datetime import datetime, timezone
+
+    client, service = importer
+    first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "concurrent-original")
+    wait(client, first.id)
+    revision = service.start(
+        pdf_bytes(), [("r.kml", kml_bytes())], "concurrent-next", first.mission_id
+    )
+    ready = wait(client, revision.id)
+    assert ready["state"] == "ready", ready
+    current = storage.load_mission_v2(first.mission_id)
+    current.legs[0].adjusted_departure_time = datetime(
+        2035, 1, 1, 11, tzinfo=timezone.utc
+    )
+    storage.save_mission_v2(current)
+    response = client.post(
+        f"/api/v2/missions/itinerary-imports/{revision.id}/commit",
+        json={"generation": ready["generation"], "choices": {}},
+    )
+    assert response.status_code == 409, response.text
+    assert (
+        storage.load_mission_v2(first.mission_id).legs[0].adjusted_departure_time.hour
+        == 11
+    )

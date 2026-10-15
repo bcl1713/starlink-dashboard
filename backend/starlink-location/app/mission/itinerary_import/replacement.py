@@ -62,6 +62,9 @@ def replace_route(service, mission_id, leg_id, data, filename):
         mission.metadata["itinerary_import"].setdefault("source_records", []).append(
             accepted.model_dump(mode="json")
         )
+        mission.metadata["itinerary_import"]["sources"]["routes"][
+            route.route_id
+        ] = route.content_hash
         files.update(mission_files(mission))
         files[storage.get_leg_timeline_path(leg_id, mission_id)] = json_bytes(
             artifacts.timeline.model_dump(mode="json")
