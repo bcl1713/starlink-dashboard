@@ -91,22 +91,9 @@ Additional implementation decisions:
 
 ## Live preview and ownership
 
-User-requested preview remains at:
-
-- <http://10.10.50.30:15279/overview>
-- <http://10.10.50.30:15279/configuration> (Weather tab)
-
-Frontend service `starlink-sigmet-live-frontend.service` belongs to the
-`oracle-worker` user. Private Compose project `starlink-sigmet-lan-review` owns
-the reloadable backend and its private data. Both follow the implementation
-worktree without resetting the user's acknowledgements. Ownership is recorded
-in `.worktrees/sigmet-lan-review/.review-runtime/owner.json`.
-
-Stop only this preview with:
-
-```bash
-/home/oracle-worker/Work/starlink-dashboard/.worktrees/sigmet-lan-review/.review-runtime/stop-live.sh
-```
+The user-requested preview follows the implementation worktree automatically.
+Its access details, owner and stop command remain in the local review runtime's
+ownership record. The reloadable frontend/backend preserve review state.
 
 The same-URL live preview replaces the plan's proposed second review instance,
 following the user's explicit request to watch ongoing changes. Only that
