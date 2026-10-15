@@ -287,17 +287,39 @@ test('independent Configuration and passive Overview: propagation, native spans,
       .toBe(true);
     await focus.dispose();
     const visibleCards = async (name: string) => {
-      const layout = await notices.evaluate((node) => ({
-        width: innerWidth,
-        height: innerHeight,
-        railBottom:
-          node.closest('.overview-right-overlays')?.getBoundingClientRect()
-            .bottom ?? innerHeight,
-        cards: [...node.querySelectorAll('article')].map((card) => {
-          const r = card.getBoundingClientRect();
-          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
-        }),
-      }));
+      const measure = () =>
+        notices.evaluate((node) => ({
+          width: innerWidth,
+          height: innerHeight,
+          railBottom:
+            node.closest('.overview-right-overlays')?.getBoundingClientRect()
+              .bottom ?? innerHeight,
+          cards: [...node.querySelectorAll('article')].map((card) => {
+            const r = card.getBoundingClientRect();
+            return {
+              top: r.top,
+              bottom: r.bottom,
+              left: r.left,
+              right: r.right,
+            };
+          }),
+        }));
+      // ResizeObserver and fullscreen layout updates can span several frames.
+      // Settle geometry independently of whether its bounds pass the assertions.
+      let previous = '';
+      let stableSamples = 0;
+      await expect
+        .poll(
+          async () => {
+            const current = JSON.stringify(await measure());
+            stableSamples = current === previous ? stableSamples + 1 : 0;
+            previous = current;
+            return stableSamples;
+          },
+          { timeout: 5000, intervals: [100] }
+        )
+        .toBeGreaterThanOrEqual(3);
+      const layout = await measure();
       scenarios['layout_' + name] = layout;
       for (const card of layout.cards) {
         expect.soft(card.left).toBeGreaterThanOrEqual(0);
