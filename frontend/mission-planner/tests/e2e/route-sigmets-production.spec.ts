@@ -49,7 +49,7 @@ async function route(
         name: 'route-sigmets.kml',
         mimeType: 'application/vnd.google-earth.kml+xml',
         buffer: Buffer.from(
-          `<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${name}</name><Placemark><LineString><coordinates>${coordinates}</coordinates></LineString></Placemark></Document>`
+          `<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${name}</name><Placemark><LineString><coordinates>${coordinates}</coordinates></LineString></Placemark></Document></kml>`
         ),
       },
     },

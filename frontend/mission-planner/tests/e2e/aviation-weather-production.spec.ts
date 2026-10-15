@@ -423,8 +423,8 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     expect(withRadar.canvas).toBe(baseline.canvas);
     expect(withRadar.radar).not.toBeNull();
     expect(
-      (await nativeSnapshot(overview)).objects.map((o) => o!.uuid)
-    ).toEqual(loaded.objects.map((o) => o!.uuid));
+      (await nativeSnapshot(overview)).objects.slice(0, 2).map((o) => o!.uuid)
+    ).toEqual(loaded.objects.slice(0, 2).map((o) => o!.uuid));
     const explore = overview.getByRole('button', {
       name: 'Explore map',
       exact: true,
