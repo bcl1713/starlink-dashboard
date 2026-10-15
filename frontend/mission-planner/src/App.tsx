@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
   BrowserRouter,
@@ -18,10 +18,11 @@ import { POIManagerPage } from './pages/POIManagerPage';
 import { DataExportPage } from './pages/DataExportPage';
 import { ConfigurationPage } from './pages/ConfigurationPage';
 import { OverviewPage } from './pages/OverviewPage';
+import { createQueryClient } from './lib/query-client';
 import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 
-const queryClient = new QueryClient();
+const queryClient = createQueryClient();
 
 const navigationItems = [
   { to: '/missions', label: 'Missions' },
