@@ -33,6 +33,7 @@ from app.api import (
     overview_upcoming_pois,
     overview_weather,
     pois,
+    route_sigmets,
     routes,
     status,
     ui,
@@ -59,6 +60,9 @@ from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
+from app.services.aviation_weather.route_context import select_route_context
+from app.services.aviation_weather.route_runtime import RouteSigmetService
+from app.services.aviation_weather.route_state import NoticeStore
 from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
 from app.services.aviation_weather.transport import AwcTransport
@@ -244,6 +248,21 @@ def initialize_aviation_weather_runtime() -> None:
             "Aviation weather initialization unavailable", exc_info=True
         )
         return
+    try:
+        app.state.route_sigmet_service = RouteSigmetService(
+            app.state.aviation_weather_service,
+            NoticeStore(store.path.parent / "route-sigmet-notices.json"),
+            lambda: (
+                select_route_context(
+                    getattr(app.state, "route_manager", None),
+                    getattr(app.state, "simulation_run_service", None),
+                )
+                if getattr(app.state, "route_manager", None) is not None
+                else None
+            ),
+        )
+    except Exception:  # noqa: BLE001 - optional notices preserve bulletin/core startup
+        logger.warning_json("Route SIGMET initialization unavailable", exc_info=True)
     try:
         bridge = GfsBridge(
             store,
@@ -591,6 +610,9 @@ async def shutdown_event():
             except (OSError, ValueError, TimeoutError):
                 logger.warning_json("GFS demand withdrawal unavailable")
             del app.state.aviation_gfs_bridge
+        if hasattr(app.state, "route_sigmet_service"):
+            await app.state.route_sigmet_service.aclose()
+            del app.state.route_sigmet_service
         if hasattr(app.state, "aviation_weather_service"):
             await app.state.aviation_weather_service.aclose()
             del app.state.aviation_weather_service
@@ -933,6 +955,7 @@ app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
 app.include_router(overview_weather.router, tags=["Overview Weather"])
 app.include_router(aviation_weather.router, tags=["Aviation Weather"])
+app.include_router(route_sigmets.router, tags=["Aviation Weather"])
 app.include_router(ui.router, tags=["UI"])
 
 
