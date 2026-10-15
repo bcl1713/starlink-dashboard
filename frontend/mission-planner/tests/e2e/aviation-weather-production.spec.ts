@@ -610,7 +610,8 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       await expect(toggle).not.toBeChecked();
       await expect(toggle).toBeEnabled();
       if (name === switches[0]) {
-        await expect(popup).toHaveCount(0);
+        // Cross-screen polling is five seconds; include the bounded response/render time.
+        await expect(popup).toHaveCount(0, { timeout: 8000 });
         expect((await nativeSnapshot(overview)).selected).toBeNull();
       }
     }
