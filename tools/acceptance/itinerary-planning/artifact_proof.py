@@ -33,7 +33,9 @@ def verify(package, receipt):
         )
         pdf = PdfReader(io.BytesIO(archive.read(pdf_name)))
         text = " ".join(page.extract_text() or "" for page in pdf.pages)
-        if mission["name"] not in text or len(pdf.pages) != len(evidence["pages"]):
+        if evidence["missionId"] != mission["id"] or len(pdf.pages) != len(
+            evidence["pages"]
+        ):
             raise ValueError("Rendered PDF does not match briefing evidence")
         for canonical in receipt["legs"]:
             id = canonical["leg_id"]
