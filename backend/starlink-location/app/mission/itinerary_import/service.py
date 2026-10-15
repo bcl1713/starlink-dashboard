@@ -40,7 +40,7 @@ class ImportService:
             "satellites": [
                 s.model_dump(mode="json")
                 for s in satellite_options(self.poi_manager)
-                if s.transport == "X"
+                if s.transport == "X" and s.eligible
             ],
             "constraints": asdict(ConstraintConfig()),
         }

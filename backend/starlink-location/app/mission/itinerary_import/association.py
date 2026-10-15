@@ -30,17 +30,16 @@ def _evidence(leg, route):
     ):
         return None
     dep, arr = timing.departure_time, timing.arrival_time
-    # Dates distinguish repeated daily flights; an adjacent UTC date is admitted
-    # only at the minute-equivalence boundary around midnight.
+    # Admit nearby service-day shifts across midnight. Repeated endpoint
+    # candidates still require a unique global assignment; clock proximity
+    # beyond minute equivalence never ranks them.
     minute = lambda t: t.replace(second=0, microsecond=0)
     deltas = [
         (minute(a) - minute(b)).total_seconds()
         for a, b in [(dep, leg.departure_time), (arr, leg.arrival_time)]
     ]
     close = all(abs(d) <= 60 for d in deltas)
-    if not close and (
-        dep.date() != leg.departure_time.date() or arr.date() != leg.arrival_time.date()
-    ):
+    if not close and any(abs(d) >= 12 * 3600 for d in deltas):
         return None
     return {
         "minute_equivalent": close,

@@ -329,3 +329,11 @@ def test_resume_pending_conversion_uses_retained_pdf_and_attachments(importer):
         )
         == 2
     )
+
+
+def test_unconfigured_catalog_placeholder_does_not_block_usable_satellites(importer):
+    from app.satellites import catalog
+
+    _client, service = importer
+    catalog.get_satellite_catalog().add_satellite(Satellite("X-placeholder", "X"))
+    assert [s["id"] for s in service.environment()["satellites"]] == ["X-invented"]

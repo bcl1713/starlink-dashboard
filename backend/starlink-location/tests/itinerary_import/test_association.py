@@ -111,3 +111,11 @@ def test_unassigned_extra_file_is_reported():
     result = associate([leg()], {"one": route(), "extra": route(departure="CCCC")})
     assert result.assignments == {"one": "one"}
     assert any(issue.code == "unassigned_route" for issue in result.issues)
+
+
+def test_unique_route_shift_across_midnight_uses_endpoint_evidence():
+    source = leg(start=START.replace(hour=23, minute=58))
+    r = route(source.departure_time + timedelta(minutes=5))
+    result = associate([source], {"route": r})
+    assert result.assignments == {source.id: "route"}
+    assert result.issues == []
