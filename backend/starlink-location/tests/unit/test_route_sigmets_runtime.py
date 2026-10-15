@@ -954,3 +954,41 @@ async def test_calculation_failure_preserves_geographic_notice(tmp_path, monkeyp
         )
     finally:
         await close(service, weather)
+
+
+async def test_changed_snapshot_captures_plan_and_observation_together(
+    tmp_path, monkeypatch
+):
+    from app.services.aviation_weather.route_encounters import capture_encounter_plan
+    from tests.unit.test_route_sigmets_encounters import route
+
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = service._retire_incompatible
+
+    async def paused(current):
+        entered.set()
+        await release.wait()
+        return await original(current)
+
+    monkeypatch.setattr(service, "_retire_incompatible", paused)
+    try:
+        store.update({"sigmet": True})
+        old = asyncio.create_task(service._changed_snapshot("Changed"))
+        await entered.wait()
+        context[0] = context[0].model_copy(
+            update={
+                "encounter_plan": capture_encounter_plan(
+                    route(), context[0].context_key, "ordinary", None
+                )
+            }
+        )
+        service._select_context()
+        release.set()
+        result, _ = await old
+        assert result.encounter_plan is not None
+        assert result.encounter_plan.revision == context[0].encounter_plan.revision
+        assert result.observation_revision == service._observation_revision
+    finally:
+        release.set()
+        await close(service, weather)

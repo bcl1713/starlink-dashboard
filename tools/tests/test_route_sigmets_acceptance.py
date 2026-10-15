@@ -327,3 +327,20 @@ def test_missing_encounter_proof_prevents_pass(missing):
     evidence["encounter"][missing] = False
     with pytest.raises(ValueError):
         runner().require_pass(evidence)
+
+
+def test_encounter_fixture_has_independent_bulletin_series(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "sigmet_fixtures",
+        ROOT / "tools/acceptance/aviation-weather/generate_fixtures.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.generate(tmp_path, now=1792060000000)
+    capture = json.loads((tmp_path / "encounter-sigmets.json").read_text())
+    assert {f["properties"]["seriesId"] for f in capture["features"]} == {
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+    }

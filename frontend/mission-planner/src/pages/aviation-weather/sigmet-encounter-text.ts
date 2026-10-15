@@ -29,7 +29,13 @@ export function formatSigmetEncounter(
     end = Math.max(end, span.exit_ms!);
   }
   const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-  const dates = day(start) !== day(nowMs) || day(end) !== day(nowMs);
+  const roundedStart = Math.round(start / 60000) * 60000;
+  const roundedEnd = Math.round(end / 60000) * 60000;
+  const dates =
+    day(start) !== day(nowMs) ||
+    day(end) !== day(nowMs) ||
+    day(roundedStart) !== day(nowMs) ||
+    day(roundedEnd) !== day(nowMs);
   const format = (ms: number) => {
     const iso = new Date(Math.round(ms / 60000) * 60000).toISOString();
     return dates ? iso.slice(0, 16).replace('T', ' ') : iso.slice(11, 16);

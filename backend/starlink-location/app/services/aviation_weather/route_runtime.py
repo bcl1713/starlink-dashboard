@@ -272,6 +272,7 @@ class RouteSigmetService:
         future=None,
         omitted=0,
         state_revision=0,
+        observation_revision=None,
         reason=None
     ):
         entries, unresolved = entries or [], unresolved or []
@@ -279,7 +280,11 @@ class RouteSigmetService:
         return RouteSigmetSnapshot(
             schema="route-sigmets-v2",
             service_instance_id=self._service_instance_id,
-            observation_revision=self._observation_revision,
+            observation_revision=(
+                self._observation_revision
+                if observation_revision is None
+                else observation_revision
+            ),
             encounter_plan=(
                 EncounterPlanSummary(
                     **context.encounter_plan.model_dump(
@@ -335,16 +340,37 @@ class RouteSigmetService:
                 self._observe_context(),
                 self._settings(),
                 self.weather.admitted_layer("sigmet")[0],
+                self._observation_revision,
             )
 
     async def _changed_snapshot(self, reason, status="evaluating"):
-        current, settings, product = await self._thread(self._capture)
-        await self._retire_incompatible(current)
-        if not settings.sigmet:
-            status = "off"
-        elif current is None:
-            status = "no-route"
-        return self._snapshot(settings, current, product, status, reason=reason), None
+        # The observation token belongs to the capture, never to a later global
+        # read after a cleanup await. Bound retries during a rapid edit storm.
+        for _ in range(3):
+            current, settings, product, revision = await self._thread(self._capture)
+            try:
+                await self._retire_incompatible(current)
+            except WeatherUnavailable:
+                continue
+            if revision != self._observation_revision:
+                continue
+            current_status = (
+                "off"
+                if not settings.sigmet
+                else "no-route" if current is None else status
+            )
+            return (
+                self._snapshot(
+                    settings,
+                    current,
+                    product,
+                    current_status,
+                    observation_revision=revision,
+                    reason=reason,
+                ),
+                None,
+            )
+        raise WeatherUnavailable()
 
     async def _read(self):
         settings = await self._thread(self._settings)
@@ -356,21 +382,28 @@ class RouteSigmetService:
             return self._snapshot(settings, None, product, "off"), None
         context = await self._selection()
         product, collection = await self.weather.read_layer("sigmet")
-        current, current_settings, current_product = await self._thread(self._capture)
+        current, current_settings, current_product, observation_revision = (
+            await self._thread(self._capture)
+        )
         await self._retire_incompatible(current)
         if (
-            not current_settings.sigmet
+            observation_revision != self._observation_revision
+            or not current_settings.sigmet
             or (current.context_key if current else None)
             != (context.context_key if context else None)
             or current_product.instance_id != product.instance_id
         ):
             return await self._changed_snapshot("Route or SIGMET input changed")
         context, settings, product = current, current_settings, current_product
-        observation_revision = self._observation_revision
         if context is None:
             return (
                 self._snapshot(
-                    settings, None, product, "no-route", reason="Route unavailable"
+                    settings,
+                    None,
+                    product,
+                    "no-route",
+                    observation_revision=observation_revision,
+                    reason="Route unavailable",
                 ),
                 None,
             )
@@ -381,6 +414,7 @@ class RouteSigmetService:
                     context,
                     product,
                     "unavailable",
+                    observation_revision=observation_revision,
                     reason="SIGMET source unavailable",
                 ),
                 None,
@@ -527,6 +561,7 @@ class RouteSigmetService:
             context,
             product,
             status,
+            observation_revision=observation_revision,
             entries=entries,
             selected_entries=selected_entries,
             selection_candidates=[

@@ -9,6 +9,7 @@ import { installWeatherProbe } from './support/overview-weather-probe';
 import {
   overviewCamera,
   settledOverviewCamera,
+  expectSameCamera,
 } from './support/overview-camera';
 import {
   routeSigmetSnapshot,
@@ -325,10 +326,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
     });
     elapsed.push(Date.now() - started);
     const afterCamera = await overviewCamera(overview);
-    for (const key of ['position', 'quaternion', 'target'] as const)
-      for (const [index, value] of afterCamera[key].entries())
-        expect.soft(value).toBeCloseTo(camera[key][index], 10);
-    expect.soft(afterCamera.zoom).toBe(camera.zoom);
+    expectSameCamera(camera, afterCamera);
     scenarios.camera = { before: camera, after: afterCamera };
     expect
       .soft(
@@ -1114,7 +1112,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       (await request.post('/api/__acceptance/route-encounter', { data })).ok()
     ).toBe(true);
   try {
-    await feed('route', { replay_utc_ms: null });
+    await feed('encounter', { replay_utc_ms: null });
     await upload();
     expect(
       (
@@ -1152,6 +1150,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
         })
       ).ok()
     ).toBe(true);
+    const start = Date.now();
     await edit({ offset_ms: 86400000 });
     const later: RouteSigmetSnapshot = await snapshot(request);
     expect(later.context!.context_key).toBe(initial.context!.context_key);
@@ -1169,7 +1168,6 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       later.entries.find((e) => e.notice_key === cleared.notice_key)
         ?.attention_order
     ).toBe(cleared.attention_order);
-    const start = Date.now();
     await expect(overview.getByText(/No time overlap/).first()).toBeVisible({
       timeout: 8000,
     });
@@ -1187,6 +1185,22 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       later.encounter_plan!.revision
     );
     expect(height.entries.length).toBe(count);
+    expect(height.entries).toEqual(later.entries);
+    // Change actual current-aircraft telemetry through the acceptance source,
+    // verify /api/status sees it, and compare complete notice/evidence state.
+    await control({ telemetry_altitude_ft: 1000 });
+    expect(
+      (await (await request.get('/api/status')).json()).position.altitude
+    ).toBe(1000);
+    const liveBefore: RouteSigmetSnapshot = await snapshot(request);
+    await control({ telemetry_altitude_ft: 40000 });
+    expect(
+      (await (await request.get('/api/status')).json()).position.altitude
+    ).toBe(40000);
+    const liveAfter: RouteSigmetSnapshot = await snapshot(request);
+    expect(liveAfter.entries).toEqual(liveBefore.entries);
+    expect(liveAfter.selected_entries).toEqual(liveBefore.selected_entries);
+    expect(liveAfter.encounter_plan).toEqual(liveBefore.encounter_plan);
     proof.no_altitude_filter = true;
     // The unchanged geographic route now has one missing timing endpoint.
     await edit({ missing_indices: [1] });
@@ -1211,9 +1225,27 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       path: info.outputPath('encounter-desktop.png'),
     });
     await overview.setViewportSize({ width: 390, height: 844 });
+    const timingRail = overview.getByLabel('Route SIGMET advisories');
+    await expect(async () => {
+      await timingRail.scrollIntoViewIfNeeded({ timeout: 1000 });
+      await expect(timingRail).toBeInViewport();
+    }).toPass({ timeout: 10000 });
     await expect(overview.getByText(/Planned passage/).first()).toBeVisible();
     await overview.screenshot({
       path: info.outputPath('encounter-mobile.png'),
+      fullPage: true,
+    });
+    await config.setViewportSize({ width: 390, height: 844 });
+    const reportSummary = config
+      .locator('.sigmet-settings-row details > summary')
+      .first();
+    await reportSummary.click();
+    await expect(
+      config.getByLabel('Planned passage details').first()
+    ).toBeVisible();
+    await config.screenshot({
+      path: info.outputPath('encounter-configuration-mobile.png'),
+      fullPage: true,
     });
     proof.responsive_details = true;
     // Exact bulletin boundaries are checked against unrounded UTC evidence.
@@ -1255,6 +1287,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     );
   } finally {
     try {
+      await control({ telemetry_altitude_ft: null });
       await request.put('/api/aviation-weather/v1/settings', {
         data: { sigmet: false },
       });

@@ -45,6 +45,7 @@ class FixtureAwcTransport:
                 "sigmets.json",
                 "route-sigmets.json",
                 "attention-sigmets.json",
+                "encounter-sigmets.json",
                 "new-sigmets.json",
                 "amended-sigmets.json",
                 "cancelled-sigmets.json",
@@ -110,3 +111,23 @@ async def edit_encounter_plan(request: Request):
         return {"edited": True}
 
     return await asyncio.to_thread(edit)
+
+
+class FixtureSimulationCoordinator(main.SimulationCoordinator):
+    def get_current_telemetry(self):
+        telemetry = super().get_current_telemetry()
+        altitude = json.loads(Path("/control/control.json").read_text()).get(
+            "telemetry_altitude_ft"
+        )
+        if altitude is None:
+            return telemetry
+        return telemetry.model_copy(
+            update={
+                "position": telemetry.position.model_copy(
+                    update={"altitude": float(altitude)}
+                )
+            }
+        )
+
+
+main.SimulationCoordinator = FixtureSimulationCoordinator

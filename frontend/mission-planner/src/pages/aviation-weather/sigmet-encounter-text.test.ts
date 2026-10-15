@@ -79,3 +79,10 @@ it('selected-only and missing timing never invent passage', () => {
     'Planned passage unavailable · Missing waypoint times',
   ]);
 });
+
+it('adds dates when rounded passage endpoints roll into tomorrow', () => {
+  const e = entry('2026-10-30T23:59:20Z', '2026-10-30T23:59:40Z');
+  expect(formatSigmetEncounter(e, now)[0]).toContain(
+    '2026-10-30 23:59–2026-10-31 00:00 UTC'
+  );
+});
