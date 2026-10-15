@@ -75,6 +75,7 @@ def require_pass(proofs):
     if (
         cleanup.get("errors")
         or not cleanup.get("ports_free")
+        or cleanup.get("source_absent") is not True
         or any(
             cleanup.get(key) != []
             for key in ("containers", "networks", "volumes", "processes")
@@ -373,6 +374,8 @@ class Runner:
                 "test",
                 "--config",
                 str(candidate / "playwright.aviation-acceptance.config.ts"),
+                "aviation-weather-production.spec.ts",
+                "route-sigmets-production.spec.ts",
             ],
             seconds=600,
             cwd=candidate,
@@ -425,11 +428,19 @@ class Runner:
             except OSError:
                 ports_free = False
         if not any(inventory.values()):
-            shutil.rmtree(self.source, ignore_errors=True)
+            try:
+                if self.source.exists():
+                    shutil.rmtree(self.source)
+            except OSError as error:
+                errors.append(f"Source cleanup failed: {error}")
+        source_absent = not self.source.exists() and not self.source.is_symlink()
+        if not source_absent:
+            errors.append(f"Owned source tree remains: {self.source}")
         self.proofs["cleanup"] = {
             **inventory,
             "processes": remaining,
             "ports_free": ports_free,
+            "source_absent": source_absent,
             "errors": errors,
         }
         self.record("cleanup.json", self.proofs["cleanup"])

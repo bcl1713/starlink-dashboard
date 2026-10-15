@@ -35,6 +35,7 @@ def proof():
             "volumes": [],
             "processes": [],
             "ports_free": True,
+            "source_absent": True,
             "errors": [],
         },
     }
@@ -153,3 +154,89 @@ def test_image_archive_is_not_polluted_by_browser_dependency_link(tmp_path):
     (installed / "node_modules").mkdir()
     runner().bind_browser_source(candidate, installed, link=False)
     assert not (candidate / "node_modules").exists()
+
+
+@pytest.mark.parametrize("source_absent", [False, None])
+def test_missing_or_failed_source_cleanup_proof_prevents_pass(source_absent):
+    evidence = proof()
+    if source_absent is not None:
+        evidence["cleanup"]["source_absent"] = source_absent
+    else:
+        del evidence["cleanup"]["source_absent"]
+    with pytest.raises(ValueError, match="cleanup"):
+        runner().require_pass(evidence)
+
+
+def test_source_removal_failure_is_recorded_and_cannot_pass(tmp_path, monkeypatch):
+    module = runner()
+    owner = module.Runner(
+        ROOT, "a" * 40, Path(sys.executable), output=tmp_path / "removal"
+    )
+    real_remove = module.shutil.rmtree
+
+    def denied(path, **kwargs):
+        if kwargs.get("ignore_errors"):
+            return
+        raise PermissionError("injected source removal denied")
+
+    try:
+        monkeypatch.setattr(module.shutil, "rmtree", denied)
+        owner.cleanup()
+        cleanup = json.loads((owner.output / "cleanup.json").read_text())
+        assert owner.source.exists()
+        assert cleanup["source_absent"] is False
+        assert any(
+            "injected source removal denied" in error for error in cleanup["errors"]
+        )
+        evidence = proof()
+        evidence["cleanup"] = cleanup
+        with pytest.raises(ValueError, match="cleanup"):
+            module.require_pass(evidence)
+    finally:
+        monkeypatch.setattr(module.shutil, "rmtree", real_remove)
+        owner.cleanup()
+        assert not owner.source.exists()
+
+
+@pytest.mark.parametrize(
+    ("label", "selection", "count"),
+    [
+        (
+            "aviation",
+            ["aviation-weather-production.spec.ts", "route-sigmets-production.spec.ts"],
+            3,
+        ),
+        ("gfs", ["gfs-weather-production.spec.ts"], 1),
+    ],
+)
+def test_shared_browser_config_lists_each_stack_owned_selection(
+    tmp_path, label, selection, count
+):
+    module = runner()
+    owner = module.Runner(ROOT, "a" * 40, Path(sys.executable), output=tmp_path / label)
+    frontend = ROOT / "frontend/mission-planner"
+    owner.env.update(
+        WEATHER_ACCEPTANCE_BASE_URL="http://127.0.0.1:43210",
+        AVIATION_ACCEPTANCE_BROWSER="/unused/list-only-browser",
+    )
+    try:
+        output = owner.command(
+            [
+                "node",
+                str(frontend / "node_modules/@playwright/test/cli.js"),
+                "test",
+                "--config",
+                "playwright.aviation-acceptance.config.ts",
+                *selection,
+                "--list",
+                "--reporter=line",
+            ],
+            cwd=frontend,
+            seconds=60,
+            name="list-" + label,
+        )
+        assert f"Total: {count} test" in output
+        assert ("gfs-weather-production.spec.ts" in output) == (label == "gfs")
+        assert ("route-sigmets-production.spec.ts" in output) == (label == "aviation")
+    finally:
+        owner.cleanup()

@@ -1,6 +1,10 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { expect, test, type APIRequestContext } from '@playwright/test';
+import type {
+  RouteSigmetEntry,
+  RouteSigmetSnapshot,
+} from '../../src/services/route-sigmets';
 import { installWeatherProbe } from './support/overview-weather-probe';
 import {
   overviewCamera,
@@ -38,6 +42,39 @@ async function snapshot(request: APIRequestContext) {
   expect(response.status(), await response.text()).toBe(200);
   expect(response.headers()['cache-control']).toBe('no-store');
   return response.json();
+}
+async function entryForSeries(
+  request: APIRequestContext,
+  state: RouteSigmetSnapshot,
+  series: string
+) {
+  expect(state.sigmet_product?.payload).toBeTruthy();
+  const response = await request.get(state.sigmet_product!.payload!.path);
+  expect(response.ok()).toBe(true);
+  const collection = await response.json();
+  const ids = collection.features
+    .filter(
+      (feature: {
+        id: string;
+        properties: { series: string; cancelled: boolean };
+      }) =>
+        feature.properties.series === series && !feature.properties.cancelled
+    )
+    .map((feature: { id: string }) => feature.id);
+  const entries = state.entries.filter((entry) =>
+    entry.feature_ids.some((id) => ids.includes(id))
+  );
+  expect(entries, `one active ${series} notice`).toHaveLength(1);
+  return entries[0];
+}
+function identity(entry: RouteSigmetEntry) {
+  return {
+    notice_key: entry.notice_key,
+    bulletin_key: entry.bulletin_key,
+    semantic_digest: entry.semantic_digest,
+    valid_from_ms: entry.valid_from_ms,
+    expires_at_ms: entry.expires_at_ms,
+  };
 }
 async function route(
   request: APIRequestContext,
@@ -93,7 +130,12 @@ test('independent Configuration and passive Overview: propagation, native spans,
     elapsed: number[] = [],
     snapshots = [],
     scenarios: Record<string, unknown> = {};
-  overview.on('pageerror', (error) => errors.push(error.message));
+  overview.on('pageerror', (error) =>
+    errors.push(`Overview: ${error.message}`)
+  );
+  config.on('pageerror', (error) =>
+    errors.push(`Configuration: ${error.message}`)
+  );
   await installWeatherProbe(overview);
   try {
     await feed('route', { replay_utc_ms: null });
@@ -137,6 +179,19 @@ test('independent Configuration and passive Overview: propagation, native spans,
     expect(initial.entries).toHaveLength(4);
     expect(initial.unresolved.length).toBeGreaterThan(0);
     scenarios.initial = initial;
+    const originalR1 = await entryForSeries(request, initial, 'R1');
+    const unaffected = initial.entries.filter(
+      (entry: RouteSigmetEntry) => entry.notice_key !== originalR1.notice_key
+    );
+    const assertUnaffected = (state: RouteSigmetSnapshot) => {
+      for (const old of unaffected) {
+        const current = state.entries.find(
+          (entry) => entry.bulletin_key === old.bulletin_key
+        );
+        expect(current).toBeDefined();
+        expect(identity(current!)).toEqual(identity(old));
+      }
+    };
     for (const name of [
       'METAR / SPECI observations',
       'TAF terminal forecasts',
@@ -418,30 +473,83 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect(notices).toContainText('5 pending route advisories', {
       timeout: 8000,
     });
+    const added = await snapshot(request);
+    scenarios.new = added;
+    const addedR5 = await entryForSeries(request, added, 'R5');
+    expect(
+      initial.entries.some(
+        (entry: RouteSigmetEntry) => entry.bulletin_key === addedR5.bulletin_key
+      )
+    ).toBe(false);
     await feed('amended');
     await expect
-      .poll(async () =>
-        (await snapshot(request)).entries.some(
-          (e: { semantic_digest: string }) =>
-            !initial.entries.some(
-              (old: { semantic_digest: string }) =>
-                old.semantic_digest === e.semantic_digest
-            )
-        )
-      )
+      .poll(async () => {
+        const current = await snapshot(request);
+        const amended = current.entries.find(
+          (entry: RouteSigmetEntry) =>
+            entry.bulletin_key === originalR1.bulletin_key
+        );
+        return (
+          !!amended &&
+          amended.semantic_digest !== originalR1.semantic_digest &&
+          amended.notice_key !== originalR1.notice_key
+        );
+      })
       .toBe(true);
-    scenarios.amended = await snapshot(request);
+    const amended = await snapshot(request);
+    const amendedR1 = await entryForSeries(request, amended, 'R1');
+    expect(amendedR1.bulletin_key).toBe(originalR1.bulletin_key);
+    expect(amendedR1.semantic_digest).not.toBe(originalR1.semantic_digest);
+    expect(amendedR1.notice_key).not.toBe(originalR1.notice_key);
+    expect(
+      amended.entries.some(
+        (entry: RouteSigmetEntry) => entry.notice_key === originalR1.notice_key
+      )
+    ).toBe(false);
+    expect(amended.entries).toHaveLength(4);
+    assertUnaffected(amended);
+    scenarios.amended = amended;
     await feed('cancelled');
     await expect
-      .poll(async () => (await snapshot(request)).entries.length)
-      .toBe(3);
-    scenarios.cancelled = await snapshot(request);
+      .poll(async () =>
+        (await snapshot(request)).entries
+          .map((entry: RouteSigmetEntry) => entry.bulletin_key)
+          .sort()
+      )
+      .toEqual(
+        unaffected.map((entry: RouteSigmetEntry) => entry.bulletin_key).sort()
+      );
+    const cancelled = await snapshot(request);
+    expect(
+      cancelled.entries.some(
+        (entry: RouteSigmetEntry) =>
+          entry.notice_key === amendedR1.notice_key ||
+          entry.bulletin_key === originalR1.bulletin_key
+      )
+    ).toBe(false);
+    assertUnaffected(cancelled);
+    scenarios.cancelled = cancelled;
     await feed('reused');
     await expect
       .poll(async () => (await snapshot(request)).entries.length)
       .toBe(4);
-    scenarios.reused = await snapshot(request);
-    expect(scenarios.reused).not.toEqual(scenarios.cancelled);
+    const reused = await snapshot(request);
+    const reusedR1 = await entryForSeries(request, reused, 'R1');
+    expect(reusedR1.valid_from_ms).toBeGreaterThan(originalR1.valid_from_ms);
+    expect(reusedR1.expires_at_ms).toBeGreaterThan(originalR1.expires_at_ms);
+    expect(reusedR1.bulletin_key).not.toBe(originalR1.bulletin_key);
+    expect(reusedR1.notice_key).not.toBe(originalR1.notice_key);
+    expect(reusedR1.notice_key).not.toBe(amendedR1.notice_key);
+    expect(reusedR1.semantic_digest).not.toBe(originalR1.semantic_digest);
+    expect(
+      reused.entries.some(
+        (entry: RouteSigmetEntry) =>
+          entry.bulletin_key === originalR1.bulletin_key
+      )
+    ).toBe(false);
+    assertUnaffected(reused);
+    scenarios.reused = reused;
+    scenarios.lineage = { originalR1, addedR5, amendedR1, reusedR1 };
     // Delayed old-source completion concurrent with a new active route.
     await feed('route', { aviation_delay_ms: 1500 });
     const delayed = request.get(endpoint);
@@ -657,6 +765,10 @@ test('pinned dated real AWC source passes normalization and the native route ren
     viewport: { width: 1920, height: 1080 },
   });
   const page = await context.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (error) =>
+    errors.push(`Dated replay: ${error.message}`)
+  );
   await installWeatherProbe(page);
   try {
     const manifest = JSON.parse(
@@ -721,12 +833,14 @@ test('pinned dated real AWC source passes normalization and the native route ren
       path: info.outputPath('dated-real-source.png'),
       fullPage: true,
     });
+    expect(errors).toEqual([]);
     await writeFile(
       output + '/real-source-evidence.json',
       JSON.stringify(
         {
           sha: process.env.ACCEPTANCE_CANDIDATE_SHA,
           replayed: true,
+          errors,
           label: 'Dated AWC capture replay; not current live weather',
           manifest,
           native,

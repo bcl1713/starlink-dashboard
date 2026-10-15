@@ -170,13 +170,15 @@ empty process, listener, container, network and disposable-volume inventories.
 ## Limits
 
 This acceptance does not close existing NOAA/GFS real-source validation or
-hardware/target-workstation performance gaps. GFS retains its dedicated browser
-configuration and worker/field fixture stack; the aviation stack does not supply
-those fields. GFS settings/API regressions remain in the backend gate. This is
-geographic intersection evidence only, with altitude and route passage-time
-matching explicitly unevaluated. Unknown coverage is never a clear-route claim.
-Backend/unit coverage verifies acknowledgement persistence and retention; this
-browser run does not restart the backend to claim restart durability itself.
+hardware/target-workstation performance gaps. GFS retains its own runner and
+worker/field fixture stack. Its production runner shares the aviation Playwright
+configuration; both runners explicitly select their own tests. The aviation
+stack does not supply GFS fields. GFS settings/API regressions remain in the
+backend gate. This is geographic intersection evidence only, with altitude and
+route passage-time matching explicitly unevaluated. Unknown coverage is never a
+clear-route claim. Backend/unit coverage verifies acknowledgement persistence
+and retention; this browser run does not restart the backend to claim restart
+durability itself.
 
 See the [operator workflow](../features/overview-weather.md) and
 [API/storage contract](../api/aviation-weather.md). Whole-branch review and PR

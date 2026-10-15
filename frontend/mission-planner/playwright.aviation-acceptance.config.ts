@@ -20,11 +20,12 @@ export default defineConfig({
   testMatch: [
     'aviation-weather-production.spec.ts',
     'route-sigmets-production.spec.ts',
+    'gfs-weather-production.spec.ts',
   ],
   workers: 1,
   retries: 0,
   timeout: 180000,
-  // GFS owns a separate worker/field fixture stack and dedicated config.
+  // Both runners share this config and explicitly select their own stack tests.
   reporter: [['line'], ['json']],
   outputDir: `${process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR ?? 'test-results/aviation-weather'}/playwright`,
   use: {
