@@ -100,8 +100,8 @@ def test_unsupported_provenance_version_rejected():
 
 @pytest.mark.parametrize("packaged_only", [False, True])
 def test_clone_resolves_satellites_from_current_global_configuration(
-    importer, monkeypatch, packaged_only
-):  # noqa: F811
+    importer, monkeypatch, packaged_only  # noqa: F811
+):
     from app.models.poi import POICreate
     from app.satellites.catalog import SatelliteCatalog
 
