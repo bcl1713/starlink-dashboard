@@ -122,6 +122,30 @@ export function ImportCorrections({
         itinerary?.expected_legs?.map((leg) => (
           <fieldset className="space-y-2 rounded border p-3" key={leg.id}>
             <legend>Leg {leg.ordinal}</legend>
+            {leg.ar_section_status === 'unrecognized' && (
+              <label>
+                AR section for leg {leg.ordinal}
+                <select
+                  aria-label={`AR section for leg ${leg.ordinal}`}
+                  className="block w-full rounded border p-2"
+                  value={leg.ar_section_status}
+                  onChange={(e) =>
+                    update(leg.id, {
+                      ar_section_status: e.target
+                        .value as ExpectedLeg['ar_section_status'],
+                    })
+                  }
+                >
+                  <option value="unrecognized">
+                    AR section could not be read
+                  </option>
+                  <option value="empty">I confirm this leg has no AR</option>
+                </select>
+                <p>
+                  If this leg includes AR, upload a corrected itinerary instead.
+                </p>
+              </label>
+            )}
             <label>
               Departure airport
               <Input
