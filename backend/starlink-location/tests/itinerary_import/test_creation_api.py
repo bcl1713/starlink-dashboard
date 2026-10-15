@@ -303,6 +303,13 @@ def test_resume_pending_conversion_uses_retained_pdf_and_attachments(importer):
     evidence = provenance["evidence"].pop(pending_id)
     pending = evidence["source_leg"]
     pending["departure_time"] = "2035-01-01T11:01:00Z"
+    attached = next(l for l in current.legs if l.id == pending_id)
+    pending["route"] = {
+        "route_id": attached.route_id,
+        "source_id": attached.route_id,
+        "content_hash": provenance["sources"]["routes"][attached.route_id],
+        "filename": "saved-attachment.kml",
+    }
     provenance["pending_legs"] = [pending]
     current.legs = [l for l in current.legs if l.id != pending_id]
     provenance["baseline"]["legs"] = [
@@ -337,3 +344,28 @@ def test_unconfigured_catalog_placeholder_does_not_block_usable_satellites(impor
     _client, service = importer
     catalog.get_satellite_catalog().add_satellite(Satellite("X-placeholder", "X"))
     assert [s["id"] for s in service.environment()["satellites"]] == ["X-invented"]
+
+
+def test_revision_reuses_current_route_after_ordinary_replacement(importer):
+    from app.mission.itinerary_import.replacement import replace_route
+
+    client, service = importer
+    first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "replace-original")
+    assert wait(client, first.id)["state"] == "committed"
+    mission = storage.load_mission_v2(first.mission_id)
+    replaced = replace_route(
+        service,
+        mission.id,
+        mission.legs[0].id,
+        kml_bytes().replace(b"1,0,10000", b"1.01,0,10000"),
+        "new.kml",
+    )
+    revision = service.start(pdf_bytes(), [], "replace-revision", mission.id)
+    ready = wait(client, revision.id)
+    assert ready["state"] == "ready", ready
+    import json
+
+    prepared = json.loads(
+        (service.store.directory(revision.id) / "prepared.json").read_bytes()
+    )
+    assert prepared["mission"]["legs"][0]["route_id"] == replaced["leg"]["route_id"]

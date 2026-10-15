@@ -16,8 +16,16 @@ def reuse_routes(service, operation, data, routes, payload, directory):
         current = storage.load_mission_v2(operation.mission_id)
         provenance = current.metadata["itinerary_import"]
         hashes = provenance["sources"]["routes"]
+        current_routes = {leg.route_id for leg in current.legs}
+        current_routes.update(
+            leg["route"]["route_id"]
+            for leg in provenance.get("pending_legs", [])
+            if leg.get("route")
+        )
         candidates = {}
         for rid, expected in hashes.items():
+            if rid not in current_routes:
+                continue
             path = service.route_manager.routes_dir / f"{rid}.kml"
             if not path.exists():
                 continue
