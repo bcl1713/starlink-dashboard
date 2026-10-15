@@ -459,6 +459,13 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     await config
       .getByText('Full report · KZNY A1 · TURB', { exact: true })
       .click();
+    await config
+      .locator('details[open]')
+      .filter({
+        has: config.getByText('Full report · KZNY A1 · TURB', { exact: true }),
+      })
+      .getByText('Original bulletin', { exact: true })
+      .click();
     await expect(
       config.getByText('KZNY SIGMET A1 SEV TURB FL180/FL340', { exact: true })
     ).toBeVisible();

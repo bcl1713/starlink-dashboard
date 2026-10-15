@@ -1,4 +1,5 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { installWeatherProbe } from './support/overview-weather-probe';
 import {
@@ -46,7 +47,7 @@ async function route(
   const uploaded = await request.post('/api/routes/upload', {
     multipart: {
       file: {
-        name: 'route-sigmets.kml',
+        name: `route-sigmets-${randomUUID()}.kml`,
         mimeType: 'application/vnd.google-earth.kml+xml',
         buffer: Buffer.from(
           `<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${name}</name><Placemark><LineString><coordinates>${coordinates}</coordinates></LineString></Placemark></Document></kml>`
@@ -96,6 +97,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
   await installWeatherProbe(overview);
   try {
     await feed('route', { replay_utc_ms: null });
+    const initialGeneration = generation;
     const routeId = await route(request, '-82,35 -65,35');
     await overview.goto('/overview');
     await config.goto('/configuration');
@@ -409,6 +411,14 @@ test('independent Configuration and passive Overview: propagation, native spans,
       expect(value.budget!.peaks.gpu).toBeLessThanOrEqual(16 * 1024 ** 2);
       expect(value.budget!.peaks.slots).toBeLessThanOrEqual(4);
     }
+    const sourceRequests = await events();
+    expect(
+      sourceRequests.filter(
+        (event) =>
+          event.layer === 'sigmet' &&
+          event.source_generation === initialGeneration
+      )
+    ).toHaveLength(1);
     expect(errors).toEqual([]);
     await writeFile(
       output + '/route-sigmet-evidence.json',
@@ -421,7 +431,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
           assertions_complete: true,
           scenarios,
           snapshots,
-          source_requests: await events(),
+          source_requests: sourceRequests,
           errors,
         },
         null,
@@ -429,20 +439,26 @@ test('independent Configuration and passive Overview: propagation, native spans,
       )
     );
   } finally {
-    await overviewContext.setOffline(false);
-    await request.put('/api/aviation-weather/v1/settings', {
-      data: { metar: false, taf: false, sigmet: false },
-    });
-    await request.put('/api/overview-weather/settings', {
-      data: { enabled: false },
-    });
-    await request.post('/api/routes/deactivate');
-    await control({
-      aviation_failure: false,
-      aviation_delay_ms: 0,
-      replay_utc_ms: null,
-    });
-    await Promise.allSettled([configContext.close(), overviewContext.close()]);
+    try {
+      await overviewContext.setOffline(false);
+      await request.put('/api/aviation-weather/v1/settings', {
+        data: { metar: false, taf: false, sigmet: false },
+      });
+      await request.put('/api/overview-weather/settings', {
+        data: { enabled: false },
+      });
+      await request.post('/api/routes/deactivate');
+      await control({
+        aviation_failure: false,
+        aviation_delay_ms: 0,
+        replay_utc_ms: null,
+      });
+    } finally {
+      await Promise.allSettled([
+        configContext.close(),
+        overviewContext.close(),
+      ]);
+    }
   }
 });
 
@@ -535,11 +551,14 @@ test('pinned dated real AWC source passes normalization and the native route ren
       )
     );
   } finally {
-    await request.put('/api/aviation-weather/v1/settings', {
-      data: { sigmet: false },
-    });
-    await request.post('/api/routes/deactivate');
-    await control({ replay_utc_ms: null });
-    await context.close();
+    try {
+      await request.put('/api/aviation-weather/v1/settings', {
+        data: { sigmet: false },
+      });
+      await request.post('/api/routes/deactivate');
+      await control({ replay_utc_ms: null });
+    } finally {
+      await context.close();
+    }
   }
 });

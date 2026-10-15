@@ -155,7 +155,8 @@ async function jsonLease<T>(
   max: number
 ) {
   const slot = await budget.acquire(signal);
-  let raw: Reservation | undefined, allocation: Reservation | undefined;
+  const raw: Reservation[] = [];
+  let allocation: Reservation | undefined;
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   let admitted = false;
   try {
@@ -179,29 +180,50 @@ async function jsonLease<T>(
     const length = response.headers.get('Content-Length');
     if (length !== null && (!/^\d+$/.test(length) || Number(length) > max))
       throw Error('Route SIGMET response size');
-    const limit = length === null ? max : Number(length);
-    raw = budget.reserve(weatherKey('route-transfer'), {
-      encoded: limit * 2,
-      decoded: limit * 2,
-      gpu: 0,
-    });
+    // Fetch exposes decompressed bytes; a compressed Content-Length is not
+    // their size. Nginx also omits length entirely on streamed gzip responses.
+    const exact = length !== null && !response.headers.get('Content-Encoding');
+    const limit = exact ? Number(length) : max;
     reader = response.body.getReader();
     const parts: Uint8Array[] = [];
-    let size = 0;
+    let size = 0,
+      used = 0;
     while (true) {
       const { done, value } = await abortable(reader.read(), signal);
       if (done) break;
-      size += value.byteLength;
-      if (size > limit) throw Error('Route SIGMET response size');
-      parts.push(value);
+      if (size + value.byteLength > limit)
+        throw Error('Route SIGMET response size');
+      let offset = 0;
+      while (offset < value.byteLength) {
+        if (!parts.length || used === parts[parts.length - 1].length) {
+          // Fixed slabs bound metadata even if the server emits tiny chunks.
+          // Reserve before allocation, including retained slabs plus final join.
+          const capacity = Math.min(65536, limit - size);
+          raw.push(
+            budget.reserve(weatherKey('route-transfer'), {
+              encoded: capacity * 2,
+              decoded: capacity * 2,
+              gpu: 0,
+            })
+          );
+          parts.push(new Uint8Array(capacity));
+          used = 0;
+        }
+        const block = parts[parts.length - 1];
+        const count = Math.min(value.byteLength - offset, block.length - used);
+        block.set(value.subarray(offset, offset + count), used);
+        used += count;
+        size += count;
+        offset += count;
+      }
     }
-    if (length !== null && size !== limit)
-      throw Error('Route SIGMET response size');
+    if (exact && size !== limit) throw Error('Route SIGMET response size');
     const bytes = new Uint8Array(size);
     let offset = 0;
     for (const part of parts) {
-      bytes.set(part, offset);
-      offset += part.length;
+      const count = Math.min(part.length, size - offset);
+      bytes.set(part.subarray(0, count), offset);
+      offset += count;
     }
     parts.length = 0;
     const key = weatherKey('route-data');
@@ -215,7 +237,7 @@ async function jsonLease<T>(
     return { data, allocation, retain: () => budget.reserve(key, amounts) };
   } finally {
     if (!admitted) allocation?.release();
-    raw?.release();
+    raw.forEach((reservation) => reservation.release());
     if (reader) {
       void reader.cancel().catch(() => {});
       reader.releaseLock();
