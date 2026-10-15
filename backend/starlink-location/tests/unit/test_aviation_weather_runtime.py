@@ -95,6 +95,7 @@ async def test_settings_default_off_and_invalid_updates_do_not_acquire(tmp_path)
             "metar": False,
             "taf": False,
             "sigmet": False,
+            "sigmet_intersecting_only": False,
             "winds": False,
             "temperature": False,
             "gfs_selection": {
@@ -139,6 +140,7 @@ async def test_admitted_immutable_snapshot_and_disable_invalidate_payload(tmp_pa
             "metar": True,
             "taf": False,
             "sigmet": False,
+            "sigmet_intersecting_only": False,
             "winds": False,
             "temperature": False,
             "gfs_selection": {

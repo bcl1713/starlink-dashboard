@@ -1,6 +1,10 @@
 import { expect, it } from 'vitest';
 import * as THREE from 'three';
-import { pickAviationFeatures } from './aviation-inspection';
+import {
+  pickAviationFeatures,
+  inspectionReports,
+  resolveAviationSelection,
+} from './aviation-inspection';
 import { createAviationDrawing, earthPoint } from './aviation-renderer';
 import { emptyAviationView, type AviationView } from './aviation-controller';
 import { parseAviationFeatures } from '@/services/aviation-features';
@@ -8,7 +12,7 @@ import { NOW, station, advisory, collection } from './fixtures';
 import type { AviationLayer } from '@/services/aviation-weather';
 
 const viewport = { width: 1000, height: 1000 };
-it('picks the production advisory interior at close zoom', () => {
+it('does not pick the production advisory interior at close zoom', () => {
   const report = advisory();
   report.geometry.coordinates = [
     [
@@ -33,7 +37,7 @@ it('picks the production advisory interior at close zoom', () => {
   try {
     expect(
       pickAviationFeatures(view, camera, { x: 500, y: 500 }, viewport)
-    ).toEqual([{ layer: 'sigmet', id: report.id }]);
+    ).toEqual([]);
   } finally {
     dispose(view);
   }
@@ -143,7 +147,7 @@ it('picks co-located station products in CSS pixels while excluding far-side sta
     dispose(view);
   }
 });
-it('picks each overlapping bulletin once, but never a polygon hole or the hidden hemisphere', () => {
+it('does not expose overlapping bulletins through Overview picking', () => {
   const first = advisory(),
     second = { ...advisory(), id: 'overlap' };
   const view = viewFor([first, second], 'sigmet');
@@ -157,7 +161,7 @@ it('picks each overlapping bulletin once, but never a polygon hole or the hidden
       )
         .map((f) => f.id)
         .sort()
-    ).toEqual(['overlap', 'test-advisory']);
+    ).toEqual([]);
     expect(
       pickAviationFeatures(view, cameraAt(2, 2), { x: 500, y: 500 }, viewport)
     ).toEqual([]);
@@ -173,7 +177,7 @@ it('picks each overlapping bulletin once, but never a polygon hole or the hidden
     dispose(view);
   }
 });
-it('associates both halves of an antimeridian advisory with the same bulletin', () => {
+it('excludes both halves of an antimeridian advisory from Overview picking', () => {
   const a = {
     ...advisory(),
     geometry: {
@@ -210,7 +214,19 @@ it('associates both halves of an antimeridian advisory with the same bulletin', 
           { x: 500, y: 500 },
           viewport
         )
-      ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
+      ).toEqual([]);
+  } finally {
+    dispose(view);
+  }
+});
+
+it('excludes SIGMETs from the Overview chooser and rejects a legacy local selection', () => {
+  const view = viewFor([advisory()], 'sigmet');
+  try {
+    expect(inspectionReports(view)).toEqual([]);
+    expect(
+      resolveAviationSelection(view, { layer: 'sigmet', id: 'test-advisory' })
+    ).toBeNull();
   } finally {
     dispose(view);
   }

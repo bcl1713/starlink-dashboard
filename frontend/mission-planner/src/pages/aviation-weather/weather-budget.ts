@@ -13,7 +13,12 @@ export async function abortable<T>(
   work: Promise<T>,
   signal: AbortSignal
 ): Promise<T> {
-  signal.throwIfAborted();
+  if (signal.aborted) {
+    // The caller has already started work (for example fetch with this signal).
+    // Observe its eventual rejection even though cancellation wins immediately.
+    void work.catch(() => {});
+    signal.throwIfAborted();
+  }
   let abort = () => {};
   const cancelled = new Promise<T>((_, reject) => {
     abort = () =>

@@ -47,6 +47,62 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('bounded aviation ownership', () => {
+  it('external SIGMET mode borrows its view without fetching or disposing its drawings', async () => {
+    const getCatalog = vi.fn(),
+      fetcher = vi.fn(),
+      dispose = vi.fn();
+    const controller = new AviationController(
+      { getCatalog },
+      fetcher,
+      new WeatherBudget(),
+      { externalSigmet: true }
+    );
+    const external = { state: 'current' as const, drawing: { dispose } };
+    controller.start();
+    controller.setSettings({ ...settings, metar: false, sigmet: true });
+    controller.setExternalSigmet(external as never);
+    await Promise.resolve();
+    expect(controller.snapshot().layers.sigmet).toBe(external);
+    expect(getCatalog).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+    controller.setVisible(false);
+    controller.dispose();
+    expect(dispose).not.toHaveBeenCalled();
+  });
+  it('external SIGMET mode preserves the owned METAR path with SIGMET also enabled', async () => {
+    const { bytes, product } = await payload();
+    const fetcher = vi.fn(
+      async () =>
+        new Response(bytes, {
+          headers: { 'Content-Type': 'application/geo+json' },
+        })
+    );
+    const getCatalog = vi.fn(async () => ({
+      schema: 'aviation-weather-v1' as const,
+      generated_at_ms: NOW,
+      settings_revision: 1,
+      products: [product],
+    }));
+    const controller = new AviationController(
+      { getCatalog },
+      fetcher,
+      new WeatherBudget(),
+      { externalSigmet: true }
+    );
+    try {
+      controller.start();
+      controller.setSettings({ ...settings, sigmet: true });
+      await vi.waitFor(() =>
+        expect(controller.snapshot().layers.metar.data?.features).toHaveLength(
+          1
+        )
+      );
+      expect(fetcher.mock.calls).toHaveLength(1);
+      expect(controller.snapshot().layers.sigmet.drawing).toBeUndefined();
+    } finally {
+      controller.dispose();
+    }
+  });
   it('checks exact bytes, content type and digest before JSON decoding', async () => {
     vi.stubGlobal('crypto', webcrypto);
     const { bytes, product } = await payload();

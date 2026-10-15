@@ -423,8 +423,8 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     expect(withRadar.canvas).toBe(baseline.canvas);
     expect(withRadar.radar).not.toBeNull();
     expect(
-      (await nativeSnapshot(overview)).objects.map((o) => o!.uuid)
-    ).toEqual(loaded.objects.map((o) => o!.uuid));
+      (await nativeSnapshot(overview)).objects.slice(0, 2).map((o) => o!.uuid)
+    ).toEqual(loaded.objects.slice(0, 2).map((o) => o!.uuid));
     const explore = overview.getByRole('button', {
       name: 'Explore map',
       exact: true,
@@ -454,24 +454,25 @@ test('exact production SHA: native station forecasts and advisory topology coexi
     await expect(popup).toHaveCount(0);
     click = await aviationPoint(overview, 36, -78);
     await overview.mouse.click(click.x, click.y);
-    await expect(popup).toContainText('series A1');
-    expect((await nativeSnapshot(overview)).selected).toBe('Mesh');
-    await expect(popup).toContainText('180 flight-level');
-    await overview.screenshot({
-      path: info.outputPath('aviation-advisory-inspection.png'),
-    });
-    await overview.keyboard.press('Escape');
+    // SIGMETs are passive on Overview; full review belongs to Configuration.
     await expect(popup).toHaveCount(0);
-    click = await aviationPoint(overview, 40, -74);
-    await overview.mouse.click(click.x, click.y);
-    await expect(popup).toHaveCount(0);
+    await config
+      .getByText('Full report · KZNY A1 · TURB', { exact: true })
+      .click();
+    await config
+      .locator('details[open]')
+      .filter({
+        has: config.getByText('Full report · KZNY A1 · TURB', { exact: true }),
+      })
+      .getByText('Original bulletin', { exact: true })
+      .click();
+    await expect(
+      config.getByText('KZNY SIGMET A1 SEV TURB FL180/FL340', { exact: true })
+    ).toBeVisible();
     for (const lon of [179, -179]) {
       click = await aviationPoint(overview, 40, lon);
       await overview.mouse.click(click.x, click.y);
-      await expect(popup).toContainText('series B1');
-      await overview
-        .getByRole('button', { name: 'Close weather report' })
-        .click();
+      await expect(popup).toHaveCount(0);
     }
     click = await aviationPoint(overview, 36, -78);
     await overview.mouse.move(click.x, click.y);
@@ -609,7 +610,8 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       await expect(toggle).not.toBeChecked();
       await expect(toggle).toBeEnabled();
       if (name === switches[0]) {
-        await expect(popup).toHaveCount(0);
+        // Cross-screen polling is five seconds; include the bounded response/render time.
+        await expect(popup).toHaveCount(0, { timeout: 8000 });
         expect((await nativeSnapshot(overview)).selected).toBeNull();
       }
     }

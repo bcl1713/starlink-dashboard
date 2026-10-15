@@ -1,5 +1,16 @@
 services:
   starlink-location:
+    # The production backend Dockerfile also builds the mission renderer from
+    # repository-root sources. Both images consume the same candidate archive.
+    build:
+      context: ${WEATHER_ACCEPTANCE_SOURCE_ROOT}
+      dockerfile: backend/starlink-location/Dockerfile
+      secrets:
+        - proxy_ca
+    init: true
     volumes:
       - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/aviation-weather:/acceptance:ro
       - ${WEATHER_ACCEPTANCE_SOURCE_ROOT}/tools/acceptance/overview-weather:/radar-acceptance:ro
+secrets:
+  proxy_ca:
+    file: ${WEATHER_ACCEPTANCE_CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}

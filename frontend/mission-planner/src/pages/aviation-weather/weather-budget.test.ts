@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { WeatherBudget } from './weather-budget';
+import { abortable, WeatherBudget } from './weather-budget';
 const MiB = 1024 ** 2;
 describe('shared optional-weather ownership', () => {
+  it('observes already-created work when cancellation precedes attachment', async () => {
+    const owner = new AbortController();
+    owner.abort();
+    // fetch(signal) already exists at call time and rejects independently.
+    const work = Promise.reject(owner.signal.reason);
+    await expect(abortable(work, owner.signal)).rejects.toBe(
+      owner.signal.reason
+    );
+    // Give unhandled-rejection reporting its turn; Vitest must report no errors.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
   it('accounts old, candidate and highlights together before allocation', () => {
     const budget = new WeatherBudget();
     const bulletin = budget.reserve('bulletin', {

@@ -140,16 +140,24 @@ export class AviationController {
   };
   private fetcher: Fetcher;
   private budget: WeatherBudget;
+  private externalSigmet: AviationLayerView = { state: 'off' };
+  private options: { externalSigmet?: boolean };
   constructor(
     api: { getCatalog: (signal?: AbortSignal) => Promise<AviationCatalog> },
     fetcher: Fetcher = fetch,
-    budget: WeatherBudget = optionalWeatherBudget
+    budget: WeatherBudget = optionalWeatherBudget,
+    options: { externalSigmet?: boolean } = {}
   ) {
     this.api = api;
     this.fetcher = fetcher;
     this.budget = budget;
+    this.options = options;
   }
   snapshot = () => this.view;
+  setExternalSigmet(view: AviationLayerView) {
+    this.externalSigmet = view;
+    this.publish();
+  }
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -201,7 +209,10 @@ export class AviationController {
       this.visible &&
       this.online &&
       !!this.settings &&
-      layers.some((l) => this.settings![l])
+      layers.some(
+        (l) =>
+          this.settings![l] && !(l === 'sigmet' && this.options.externalSigmet)
+      )
     );
   }
   private abort() {
@@ -240,6 +251,13 @@ export class AviationController {
     for (const l of layers) {
       if (!this.settings?.[l]) {
         next[l] = { state: 'off' };
+        continue;
+      }
+      if (l === 'sigmet' && this.options.externalSigmet) {
+        next[l] =
+          this.visible && this.online
+            ? this.externalSigmet
+            : { state: 'unavailable' };
         continue;
       }
       let record = this.records.get(l);
@@ -374,7 +392,11 @@ export class AviationController {
       // At most the three independently enabled Phase 1 layers; radar has its own owner.
       await Promise.all(
         layers
-          .filter((l) => this.settings![l])
+          .filter(
+            (l) =>
+              this.settings![l] &&
+              !(l === 'sigmet' && this.options.externalSigmet)
+          )
           .map(async (l) => {
             const p = catalog.products.find(
               (p) =>

@@ -16,6 +16,10 @@ import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
 import { useGfsWeather } from '@/hooks/useGfsWeather';
 import { GfsLayer } from './aviation-weather/GfsLayer';
 import { GfsStatus } from './aviation-weather/GfsStatus';
+import { useRouteSigmets } from '@/hooks/api/useRouteSigmets';
+import { useAviationSettings } from '@/hooks/api/useAviationSettings';
+import { useSigmetPresentation } from './aviation-weather/route-sigmet-presentation';
+import { RouteSigmetNotices } from './aviation-weather/RouteSigmetNotices';
 import { useAviationWeather } from '@/hooks/useAviationWeather';
 import { AviationStatus } from './aviation-weather/AviationStatus';
 import { AviationLayer } from './aviation-weather/AviationLayer';
@@ -33,6 +37,7 @@ import { OverviewAdsbLayer } from './adsb/OverviewAdsbLayer';
 import { OverviewAdsbDetails } from './adsb/OverviewAdsbDetails';
 import { type GlobeCoordinate } from './globe-route';
 import { activeRouteId } from './active-globe-route';
+import { routeContextKey } from '../services/route-sigmet-context';
 import { projectRouteArc } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
@@ -286,7 +291,6 @@ export function OverviewPage() {
   }, []);
   const adsb = useOverviewAdsbLayer();
   const weather = useOverviewWeatherLayer();
-  const aviation = useAviationWeather();
   const gfs = useGfsWeather();
   const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
   const [weatherCandidates, setWeatherCandidates] = useState<
@@ -296,8 +300,6 @@ export function OverviewPage() {
     useState<AviationSelection | null>(null);
   const weatherReturnFocus = useRef<HTMLElement | null>(null);
   const closeWeather = useCallback(() => setSelectedWeather(null), []);
-  if (selectedWeather && !resolveAviationSelection(aviation, selectedWeather))
-    setSelectedWeather(null);
   const inspectWeather = useCallback(
     (candidates: readonly AviationSelection[]) => {
       if (!candidates.length) return;
@@ -397,6 +399,55 @@ export function OverviewPage() {
     ['running', 'completed'].includes(simulationRun.state)
       ? replayGeometry.route
       : ordinaryRoute;
+  const localContextKey = useMemo(() => {
+    if (!activeRoute?.points) return null;
+    const isReplay = activeRoute === replayGeometry?.route;
+    const selectedId = isReplay ? activeRoute.id : routeId;
+    if (!selectedId) return null;
+    try {
+      return routeContextKey(
+        isReplay ? 'simulation' : 'ordinary',
+        selectedId,
+        isReplay ? replayGeometry!.runtime_id : null,
+        isReplay ? replayGeometry!.run_id : null,
+        activeRoute.points.map((point) => [point.longitude, point.latitude])
+      );
+    } catch {
+      return null;
+    }
+  }, [activeRoute, replayGeometry, routeId]);
+
+  const sigmetSource = useRouteSigmets();
+  const aviationSettings = useAviationSettings().data;
+  const sigmetInput = useMemo(
+    () => ({
+      source: sigmetSource,
+      localContextKey,
+      intersectingOnly: aviationSettings?.sigmet_intersecting_only ?? false,
+      nowMs: sigmetSource.nowMs,
+      routePoints: activeRoute?.points ?? [],
+    }),
+    [
+      sigmetSource,
+      localContextKey,
+      aviationSettings?.sigmet_intersecting_only,
+      activeRoute?.points,
+    ]
+  );
+  const sigmetPresentation = useSigmetPresentation(
+    sigmetInput,
+    !!aviationSettings?.sigmet
+  );
+  const sigmetView = useMemo(
+    () =>
+      aviationSettings?.sigmet
+        ? sigmetPresentation.view
+        : { state: 'off' as const },
+    [aviationSettings?.sigmet, sigmetPresentation.view]
+  );
+  const aviation = useAviationWeather(sigmetView);
+  if (selectedWeather && !resolveAviationSelection(aviation, selectedWeather))
+    setSelectedWeather(null);
 
   const routePoints = useMemo(
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
@@ -850,6 +901,7 @@ export function OverviewPage() {
       data-layout={layout.mode}
       data-map-exploring={exploring}
       data-paced-running={pacedRunning}
+      data-route-context-key={localContextKey ?? undefined}
       data-clocks-visible={showClocks}
       data-metrics-visible={showMetricPanels && !pacedRunning}
     >
@@ -905,9 +957,12 @@ export function OverviewPage() {
             <OverviewFullscreenControl />
           </div>
           <div className="overview-map-overlays">
+            {showMapStatus && <OverviewMapStatus messages={mapMessages} />}
+            {aviationSettings?.sigmet && layout.mode === 'desktop' && (
+              <RouteSigmetNotices presentation={sigmetPresentation} />
+            )}
             {showMapStatus && (
               <>
-                <OverviewMapStatus messages={mapMessages} />
                 <OverviewWeatherStatus weather={weather} />
                 <AviationStatus
                   view={aviation}
@@ -1214,17 +1269,23 @@ export function OverviewPage() {
           />
         </Canvas>
       </div>
-      {!pacedRunning && showMetricPanels && (
+      {((!pacedRunning && showMetricPanels) ||
+        (aviationSettings?.sigmet && layout.mode !== 'desktop')) && (
         <div className="overview-metrics-overlays">
-          <OverviewMetricHistoryPanels
-            settings={overviewLinkSettings}
-            status={status}
-            statusError={Boolean(statusError)}
-            history={overviewHistory}
-            error={isOverviewHistoryError}
-            selectedWindowSeconds={overviewHistorySettings?.window_seconds}
-            nowMs={currentTime}
-          />
+          {aviationSettings?.sigmet && layout.mode !== 'desktop' && (
+            <RouteSigmetNotices presentation={sigmetPresentation} />
+          )}
+          {!pacedRunning && showMetricPanels && (
+            <OverviewMetricHistoryPanels
+              settings={overviewLinkSettings}
+              status={status}
+              statusError={Boolean(statusError)}
+              history={overviewHistory}
+              error={isOverviewHistoryError}
+              selectedWindowSeconds={overviewHistorySettings?.window_seconds}
+              nowMs={currentTime}
+            />
+          )}
         </div>
       )}
     </main>

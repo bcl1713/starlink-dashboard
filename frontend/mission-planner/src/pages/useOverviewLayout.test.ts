@@ -4,9 +4,71 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useOverviewLayout } from './useOverviewLayout';
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.body.replaceChildren();
 });
+
+it.each(['contained', 'clipped', 'overlap'] as const)(
+  'measures the optional scroll viewport while preserving core %s checks',
+  (condition) => {
+    document.body.innerHTML =
+      '<div><main data-layout="desktop"><div class="overview-map-stage"><div class="overview-display-controls"></div><div class="overview-map-overlays" style="overflow-y:auto"><div class="globe-legend"></div></div></div></main></div>';
+    const host = document.body.firstElementChild as HTMLElement;
+    const page = host.firstElementChild as HTMLElement;
+    const stage = page.firstElementChild as HTMLDivElement;
+    const rail = page.querySelector<HTMLElement>('.overview-map-overlays')!;
+    const legend = page.querySelector<HTMLElement>('.globe-legend')!;
+    const controls = page.querySelector<HTMLElement>(
+      '.overview-display-controls'
+    )!;
+    Object.defineProperties(host, {
+      clientWidth: { value: 1920 },
+      clientHeight: { value: 1080 },
+      offsetWidth: { value: 1920 },
+      offsetHeight: { value: 1080 },
+    });
+    Object.defineProperties(stage, {
+      clientWidth: { value: 1920 },
+      clientHeight: { value: 1080 },
+    });
+    Object.defineProperties(rail, {
+      clientHeight: { value: 850 },
+      scrollHeight: { value: 1600 },
+      clientWidth: { value: 320 },
+      scrollWidth: { value: 320 },
+    });
+    vi.spyOn(page, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 1920, 1080)
+    );
+    vi.spyOn(stage, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 1920, 1080)
+    );
+    vi.spyOn(rail, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(1580, 210, 320, condition === 'clipped' ? 1000 : 850)
+    );
+    vi.spyOn(legend, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(1580, 1500, 320, 80)
+    );
+    vi.spyOn(controls, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(1580, condition === 'overlap' ? 200 : 100, 320, 60)
+    );
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    );
+    const { result, unmount } = renderHook(() =>
+      useOverviewLayout({ current: page }, { current: stage }, 'loaded', true)
+    );
+    expect(result.current.mode).toBe(
+      condition === 'contained' ? 'desktop' : 'stacked'
+    );
+    unmount();
+  }
+);
 
 it('keeps the landscape camera opening left of the map buttons as well as the satellite panel', () => {
   document.body.innerHTML =

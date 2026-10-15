@@ -91,16 +91,29 @@ export function useOverviewLayout(
       const current = page.dataset.layout;
       if (candidate === 'desktop' && current === 'desktop' && contentReady) {
         const pageBounds = page.getBoundingClientRect();
+        const scrollViewport = (node: HTMLElement) =>
+          node.matches('.overview-map-overlays') &&
+          /^(auto|scroll)$/.test(getComputedStyle(node).overflowY);
         const panels = [
-          ...page.querySelectorAll<HTMLElement>(
-            '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-display-controls, .overview-map-controls'
+          ...new Set(
+            [
+              ...page.querySelectorAll<HTMLElement>(
+                '.operational-clock, .overview-clock-panel--message, .overview-metric-history, .overview-metric-history-panels__header, .overview-planned-satellite, .globe-legend, .overview-map-status, .overview-arrival, .overview-display-controls, .overview-map-controls'
+              ),
+            ].map((node) => {
+              const rail = node.closest<HTMLElement>('.overview-map-overlays');
+              // Optional feed/legend content intentionally scrolls. Its viewport,
+              // not offscreen content, participates in core fit/overlap checks.
+              return rail && scrollViewport(rail) ? rail : node;
+            })
           ),
         ].filter((node) => node.getBoundingClientRect().height > 0);
         const bounds = panels.map((node) => node.getBoundingClientRect());
         const doesNotFit = panels.some((node, index) => {
           const box = bounds[index];
           return (
-            node.scrollHeight > node.clientHeight + 1 ||
+            (!scrollViewport(node) &&
+              node.scrollHeight > node.clientHeight + 1) ||
             node.scrollWidth > node.clientWidth + 1 ||
             box.left < pageBounds.left - 1 ||
             box.right > pageBounds.right + 1 ||

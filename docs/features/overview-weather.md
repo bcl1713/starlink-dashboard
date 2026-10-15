@@ -52,8 +52,8 @@ frame clears old detail atomically; source/schema changes also invalidate
 incompatible tiles. Human-readable provenance changes update metadata without
 forcing downloads. It does not display a forecast, cloud cover, wind,
 turbulence, icing, or an aviation hazard advisory. METAR flight categories and
-SIGMET polygons are possible future aviation layers; each needs its own data
-source, freshness rules, and approved scope.
+SIGMET polygons are separate aviation layers; each has its own data source,
+freshness rules, and approved scope.
 
 [RainViewer's API terms](https://www.rainviewer.com/api.html) target personal,
 educational, and small community use, require visible linked attribution, and
@@ -116,3 +116,46 @@ weather and preserve core globe, telemetry and planning controls. Shared
 settings confirm saves only after the server responds and refresh on visible
 displays every five seconds; model catalogs refresh each minute while visible
 and online.
+
+## Passive route SIGMET advisories
+
+Enable **International SIGMET advisories** in Configuration → Weather. Use
+**Intersecting route only** to limit shading to confirmed geographic matches
+with the selected route. The filter starts off and remains independent of layer
+enablement. It applies to the whole ordinary route or the current running or
+completed simulation route. Weather uses actual UTC during replay; altitude and
+passage-time matching are not evaluated.
+
+Overview automatically shows up to three pending advisories, newest attention
+first, with an overflow count directing the operator to Configuration. Each card
+links by a steady label/color to a polygon outline and confirmed route portions.
+The cards do not move the camera or focus. Desktop cards precede optional feed
+status in the map rail; on narrow screens they move into the scrollable
+telemetry rail outside the globe. Fullscreen retains both rails. There are no
+Overview SIGMET action controls or SIGMET entries in the station-report chooser.
+
+Configuration lists matches in route order with full bulletin text, source and
+validity, plus separate unknown, future and other reports. **Clear advisory**
+acknowledges one exact route/bulletin revision after the server confirms the
+save; its card and attention highlight disappear on connected displays, while
+ordinary eligible shading stays. **Show again** restores attention for that
+notice. Both controls support keyboard operation. A failed save retains
+confirmed state and shows feedback. Other visible displays normally catch up on
+their five-second poll; suspended displays catch up on return.
+
+A substantive revision may create a new pending notice. Identity includes
+issuer, series and original validity, so later series reuse is independent.
+Cancellation and expiry remove affected notices and shading. Route changes have
+their own acknowledgement scope. Temporary unavailable data does not erase
+acknowledgements; stale data retains its original expiry. Unknown locations or
+incomplete geometry remain explicit. Missing reports, empty feeds and no matches
+never establish a clear route.
+
+Acknowledgements persist across browser and backend restarts until bulletin
+expiry, subject to the documented eight-context / 4,000-record / 2 MiB retention
+limit. Revisiting an evicted inactive context starts pending. Keep the backend's
+settings volume persistent; recover corrupt notice storage from a known valid
+backup while the service is stopped.
+
+See the [API and storage contract](../api/aviation-weather.md) and
+[dated acceptance evidence](../reports/2026-10-15-route-linked-sigmets.md).

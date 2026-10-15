@@ -385,6 +385,7 @@ const settingsSchema = z.strictObject({
   metar: z.boolean(),
   taf: z.boolean(),
   sigmet: z.boolean(),
+  sigmet_intersecting_only: z.boolean().default(false),
   winds: z.boolean().default(false),
   temperature: z.boolean().default(false),
   gfs_selection: gfsSelectionSchema.default({
@@ -401,7 +402,11 @@ export type AviationLayer = 'metar' | 'taf' | 'sigmet';
 export type AviationSettingsChanges = Partial<
   Pick<
     ResolvedAviationSettings,
-    AviationLayer | 'winds' | 'temperature' | 'gfs_selection'
+    | AviationLayer
+    | 'winds'
+    | 'temperature'
+    | 'gfs_selection'
+    | 'sigmet_intersecting_only'
   >
 >;
 export const parseAviationCatalog = (data: unknown): AviationCatalog =>

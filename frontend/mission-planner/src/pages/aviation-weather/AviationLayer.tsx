@@ -9,7 +9,7 @@ import {
 } from './aviation-inspection';
 import { createBudgetedAviationDrawing } from './aviation-renderer';
 import { optionalWeatherBudget, type WeatherBudget } from './weather-budget';
-// Geometry/material ownership belongs to the controller; React only attaches
+// Geometry/material ownership belongs to the controller or SIGMET presentation; React only attaches
 // admitted objects. Fiber must not dispose objects retained between renders.
 export function AviationLayer({
   view,
