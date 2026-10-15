@@ -162,6 +162,8 @@ export function createSigmetPresentation(
   }
   const object = new THREE.Group();
   object.name = 'Native route SIGMET presentation';
+  // Read-only diagnostics follow the native GFS owner convention.
+  object.userData.routeSigmetBudget = () => budget.snapshot();
   try {
     const base = createBudgetedAviationDrawing(
       data,

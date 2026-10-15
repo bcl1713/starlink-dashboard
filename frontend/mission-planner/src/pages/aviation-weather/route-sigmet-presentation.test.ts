@@ -228,3 +228,17 @@ it('does not retain incompatible source data when intersecting-only has no drawi
     p.dispose();
   }
 });
+it('exposes copied budget observations that remain valid after disposal', () => {
+  const budget = new WeatherBudget();
+  const presentation = createSigmetPresentation(input(), budget);
+  const observe = presentation.view.drawing!.object.userData.routeSigmetBudget;
+  try {
+    const sample = observe();
+    expect(sample.gpu).toBeGreaterThan(0);
+    sample.gpu = 999;
+    expect(observe().gpu).toBe(budget.snapshot().gpu);
+  } finally {
+    presentation.dispose();
+  }
+  expect(observe()).toMatchObject({ gpu: 0, decoded: 0, slots: 0 });
+});

@@ -1,9 +1,10 @@
 """Production lifespan and normalizer; only fixed-source transport is substituted."""
 
+import asyncio
 import importlib.util
 import json
-import os
 import sys
+import time
 from pathlib import Path
 
 # Reuse radar controls with the actual optional-service lifecycle.
@@ -28,7 +29,9 @@ class FixtureAwcTransport:
             "layer": layer,
             "source_generation": control.get("aviation_generation", 0),
         }
-        with Path("/control/aviation-events.jsonl").open("a") as stream:
+        with Path("/control/aviation-events.jsonl").open(
+            "a"
+        ) as stream:  # noqa: ASYNC230 - tiny fixture ledger
             stream.write(json.dumps(event) + "\n")
         if control.get("aviation_failure"):
             raise WeatherUnavailable()
@@ -37,6 +40,21 @@ class FixtureAwcTransport:
             "taf": "tafs.xml.gz",
             "sigmet": "sigmets.json",
         }[layer]
+        if layer == "sigmet":
+            filename = control.get("sigmet_fixture", filename)
+            if filename not in {
+                "sigmets.json",
+                "route-sigmets.json",
+                "new-sigmets.json",
+                "amended-sigmets.json",
+                "cancelled-sigmets.json",
+                "reused-sigmets.json",
+                "empty-sigmets.json",
+                "real-sigmets.json",
+            }:
+                raise WeatherUnavailable()
+        if control.get("aviation_delay_ms"):
+            await asyncio.sleep(min(control["aviation_delay_ms"], 15000) / 1000)
         return (Path("/capture") / filename).read_bytes()
 
     async def aclose(self):
@@ -45,8 +63,16 @@ class FixtureAwcTransport:
 
 class FixtureAviationService(AviationWeatherService):
     def __init__(self, store, transport):
-        # Match replay clock only in this explicit test process.
-        super().__init__(store, transport, utc_ms=module.fixture_utc_ms)
+        # Fixture UTC is shared by acquisition and RouteSigmetService (which
+        # reads weather.utc_ms); it is independent of simulation replay time.
+        # Advance only refresh scheduling to exercise feed changes promptly.
+        def scheduling_clock():
+            control = json.loads(Path("/control/control.json").read_text())
+            return time.monotonic() + control.get("aviation_generation", 0) * 600
+
+        super().__init__(
+            store, transport, utc_ms=module.fixture_utc_ms, monotonic=scheduling_clock
+        )
 
 
 main.AwcTransport = FixtureAwcTransport
