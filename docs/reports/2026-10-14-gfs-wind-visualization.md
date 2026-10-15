@@ -28,19 +28,26 @@ mode switching, preference changes, responsive legends, and resource release.
 Its artifacts are under `test-results/gfs-wind-synthetic`; SwiftShader evidence
 is software rendering, not source validation or hardware performance approval.
 
-## Outstanding Gates
+## Acceptance closeout — 2026-10-15
 
-C1 pinned NOAA presentation acceptance is unverified: the saved 2026-10-06
-GRIB/oracle capture is absent, and this environment's proxy rejects NOAA S3
-with CONNECT 403. The user confirms GFS works on local dev. No substitute
-source or synthetic presentation PASS is claimed.
+The owner confirmed that they have used the new winds and that they work
+fine, and explicitly requested closure of the remaining tasks without further
+owner testing. Wind visualization is accepted for use; C1 and H1 are closed by
+owner acceptance, with their formal runs waived. No workstation, paired URLs,
+or additional source capture is required to close this work.
 
-H1 is unverified: no target workstation or paired production URLs were supplied.
-The headed hardware harness validates the independently archived build/source
-manifest, pinned replay buffers, F006/500 hPa, overlays, baseline barbs, and the
-full-cap candidate throughout capture. It rejects software rendering. Every
-paired run must meet p95 particle update ≤4 ms and total frame duration ≤1.2
-of the baseline. See the [runner guide](../../tools/acceptance/gfs-weather/README.md).
+The formal C1 pinned NOAA presentation run was not completed: the saved
+2026-10-06 GRIB/oracle capture was absent and the environment proxy rejected
+NOAA S3 with CONNECT 403. The formal H1 paired hardware benchmark was also not
+run. Owner acceptance does not establish measured source agreement or the
+specified p95 performance thresholds. Existing synthetic and software-rendered
+results retain their original scope and labels. The optional harness remains
+available for future diagnostics in the
+[runner guide](../../tools/acceptance/gfs-weather/README.md).
+
+These historical evidence limits are no longer open acceptance tasks or
+prerequisites for subsequent work. Revisit them only for a concrete regression
+or a new explicit requirement.
 
 The repository link checker `lychee` is not provisioned; GitHub release
 provisioning was denied by the proxy. Other static controls are available.

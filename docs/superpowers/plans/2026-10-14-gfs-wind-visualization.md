@@ -21,9 +21,10 @@ acceptance runner. No new dependency or data provider.
 **Spec:**
 [Approved wind visualization design](../specs/2026-10-14-gfs-wind-visualization-design.md).
 
-**Status:** Approved for native implementation by the user on 2026-10-14.
-Hardware performance remains unverified until its target is identified; software
-browser acceptance and hardware performance approval are separate.
+**Status:** Implementation delivered and accepted by the owner on 2026-10-15
+after using the new winds. Formal C1 and H1 runs are waived and no longer open
+tasks. The original procedures below remain historical; see the
+[acceptance closeout](../../reports/2026-10-14-gfs-wind-visualization.md#acceptance-closeout--2026-10-15).
 
 ## Global Constraints
 
@@ -242,6 +243,6 @@ reduced motion, and ownership. Task 5 verifies real source/CPU/GPU agreement,
 production views, lifecycle, budgets, and separate hardware performance gates.
 
 The user approved this plan for native execution on 2026-10-14. Execute the five
-tasks sequentially with an independent whole-branch review. H1 remains a
-required input for hardware performance approval, rather than a software
-correctness claim.
+tasks sequentially with an independent whole-branch review. This is the original
+execution handoff; the owner acceptance above supersedes its remaining C1/H1
+requirements without claiming a measured hardware benchmark.
