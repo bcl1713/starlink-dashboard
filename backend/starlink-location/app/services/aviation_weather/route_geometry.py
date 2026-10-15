@@ -84,6 +84,10 @@ def _covered(polygon, position):
 
 
 def _intervals(arc, polygon, visits):
+    if arc.numerically_uncertain:
+        # No interior samples or outside predicates can certify a numerically
+        # ambiguous arc. Other valid route segments may still retain matches.
+        return [], True
     prepared = prep(polygon)
     stack = [(0.0, 1.0, 0)]
     pieces, uncertain = [], False
@@ -107,6 +111,11 @@ def _intervals(arc, polygon, visits):
             if not witnesses:
                 uncertain = True
             else:
+                # A witness proves only its contact. Neither tail beyond the
+                # witness sequence has been certified outside; it may contain a
+                # separate component even within this short terminal interval.
+                if witnesses[0] > left or witnesses[-1] < right:
+                    uncertain = True
                 pieces.append((witnesses[0], witnesses[0], length))
                 for first, last in pairwise(witnesses):
                     # Point witnesses prove contact, not the intervening curve.

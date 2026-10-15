@@ -35,3 +35,37 @@ def test_pole_enclosure_and_antipodal_ambiguity():
     assert boxes[0][3] == 90
     with pytest.raises(ValueError, match="antipodal"):
         module.GreatCircleArc([0, 0], [180, 0])
+
+
+@pytest.mark.parametrize("longitude", [0, 30, -120, 179])
+def test_near_antipodal_enclosures_contain_independent_meridian(longitude):
+    module = arcs()
+    opposite = (longitude + 360) % 360 - 180
+    arc = module.GreatCircleArc([longitude, 45], [opposite, -44.99999999])
+    # Exact meridian: 45 degrees to the north pole, then 134.99999999 south.
+    # These expectations do not use the production vector/tangent/extrema.
+    pole_fraction = 45 / 179.99999999
+    for left, right in [(0, 1), (pole_fraction - 1e-7, pole_fraction + 1e-7)]:
+        boxes = arc.enclosures(left, right)
+        for fraction in [left, pole_fraction, right]:
+            angle = 45 + fraction * 179.99999999
+            lon, lat = (longitude, angle) if angle <= 90 else (opposite, 180 - angle)
+            assert any(
+                west <= lon <= east and south <= lat <= north
+                for west, south, east, north in boxes
+            )
+
+
+@pytest.mark.parametrize("gap_degrees", [0.03, 0.1])
+def test_resolved_meridian_enclosures_contain_independent_dense_samples(gap_degrees):
+    arc = arcs().GreatCircleArc([0, 45], [180, -45 + gap_degrees])
+    for left, right in [(0, 1), (0.24, 0.26), (0.1, 0.2), (0.3, 0.8)]:
+        boxes = arc.enclosures(left, right)
+        for index in range(101):
+            fraction = left + (right - left) * index / 100
+            angle = 45 + fraction * (180 - gap_degrees)
+            lon, lat = (0, angle) if angle <= 90 else (180, 180 - angle)
+            assert any(
+                west <= lon <= east and south <= lat <= north
+                for west, south, east, north in boxes
+            )

@@ -12,28 +12,47 @@ def _vector(point):
     return (math.cos(lat) * math.cos(lon), math.cos(lat) * math.sin(lon), math.sin(lat))
 
 
+def _cross(u, v):
+    return (
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+    )
+
+
+def _unit(vector):
+    length = math.hypot(*vector)
+    return tuple(value / length for value in vector)
+
+
 class GreatCircleArc:
     def __init__(self, start, end):
         self.start, self.end = list(start), list(end)
-        self.u, v = _vector(start), _vector(end)
-        cross = (
-            self.u[1] * v[2] - self.u[2] * v[1],
-            self.u[2] * v[0] - self.u[0] * v[2],
-            self.u[0] * v[1] - self.u[1] * v[0],
-        )
+        self.u, v = _unit(_vector(start)), _unit(_vector(end))
+        cross = _cross(self.u, v)
+        cross_length = math.hypot(*cross)
         dot = sum(x * y for x, y in zip(self.u, v))
-        self.angle = math.atan2(math.hypot(*cross), dot)
+        self.angle = math.atan2(cross_length, dot)
         if math.pi - self.angle <= 1e-10:
             raise ValueError("ambiguous antipodal route arc")
         self.length_m = self.angle * RADIUS_M
+        # Near antipodes, forming the great-circle plane amplifies endpoint
+        # roundoff by 1/|u x v|. Reserve a 32-ulp vector error allowance; if that
+        # amplification exceeds the existing angular enclosure guard, do not
+        # certify this arc. This is uncertainty, not an enlarged route corridor.
+        # Restrict the gate to obtuse arcs: small-angle legs do not traverse the
+        # unstable distant portion of their plane and must remain usable.
+        self.numerically_uncertain = dot < 0 and cross_length < 32 * math.ulp(
+            1.0
+        ) / math.radians(GUARD_DEGREES)
         if self.angle <= 1e-15:
             self.w = (0.0, 0.0, 0.0)
             self.length_m = 0.0
         else:
-            self.w = tuple(
-                (y - x * math.cos(self.angle)) / math.sin(self.angle)
-                for x, y in zip(self.u, v)
-            )
+            # Equivalent to (v-u*cos(a))/sin(a), avoiding that subtraction's
+            # loss of orthogonality for both short and near-antipodal arcs.
+            normal = _unit(cross)
+            self.w = _unit(_cross(normal, self.u))
         self.direction = self.u[0] * self.w[1] - self.u[1] * self.w[0]
 
     def point(self, fraction):
@@ -50,9 +69,19 @@ class GreatCircleArc:
 
     def enclosures(self, left, right):
         """Return boxes enclosing the curve, including interior latitude extrema."""
+        if self.numerically_uncertain:
+            return [(-180.0, -90.0, 180.0, 90.0)]
         p, q = self.point(left), self.point(right)
         latitudes = [p[1], q[1]]
-        root = math.atan2(self.w[2], self.u[2])
+        # Account for the remaining floating-point norm/dot residuals instead
+        # of assuming a mathematically exact orthonormal basis at an extremum.
+        uu = sum(value * value for value in self.u)
+        ww = sum(value * value for value in self.w)
+        uw = sum(u * w for u, w in zip(self.u, self.w))
+        root = math.atan2(
+            self.w[2] * uu - self.u[2] * uw,
+            self.u[2] * ww - self.w[2] * uw,
+        )
         for k in range(-2, 3):
             s = root + k * math.pi
             if left * self.angle <= s <= right * self.angle and self.angle:

@@ -246,3 +246,87 @@ def test_sub_tolerance_hole_is_never_bridged_by_witnesses():
     )
     assert not result.complete
     assert result.unresolved[0].reason == "boundary-uncertain"
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("first_right", [0.00001, 0.00006])
+def test_terminal_witness_tails_preserve_unseen_component(reverse, first_right):
+    # An 11.12 m arc has one/two sampled witnesses in the first component;
+    # the separate 0.7..0.8 component lies in the unchecked suffix (prefix
+    # when reversed). Its analytic contact must be matched or unresolved.
+    points = [[0, 0], [0.0001, 0]]
+    if reverse:
+        points.reverse()
+    result = geometry().intersect_route(
+        points,
+        [
+            {
+                "id": "two-pieces",
+                "geometry": {
+                    "type": "MultiPolygon",
+                    "coordinates": [
+                        [rectangle(-0.00001, first_right)],
+                        [rectangle(0.00007, 0.00008)],
+                    ],
+                },
+            }
+        ],
+    )
+    assert result.matches, "retain the legitimate observed component"
+    start, end = (0.2, 0.3) if reverse else (0.7, 0.8)
+    contact_preserved = any(
+        span.start_fraction <= end and span.end_fraction >= start
+        for match in result.matches
+        for span in match.spans
+    )
+    unknown = any(
+        u.feature_id == "two-pieces" and u.reason == "boundary-uncertain"
+        for u in result.unresolved
+    )
+    assert contact_preserved or unknown
+    if not contact_preserved:
+        assert not result.complete
+
+
+@pytest.mark.parametrize("normalized", [False, True])
+def test_near_antipodal_polar_cap_never_becomes_definite_zero(normalized):
+    cap = feature([rectangle(-180, 180, 89.999975, 90)], "polar-cap")
+    if normalized:
+        from app.services.aviation_weather.normalization import _split_geometry
+
+        # This narrow ring is admitted by the existing unwrap/split constraints.
+        # The exact shortest meridian at lon 0 passes through its interior.
+        raw = {"type": "Polygon", "coordinates": [rectangle(-1, 1, 89.999975, 90)]}
+        admitted, count = _split_geometry(raw, 100_000)
+        assert count == 5
+        cap["geometry"] = json.loads(json.dumps(admitted))
+    result = geometry().intersect_route([[0, 45], [180, -44.99999999]], [cap])
+    assert result.matches or (not result.complete and result.unresolved)
+    assert not (result.complete and not result.matches)
+
+
+@pytest.mark.parametrize("points", [[[0, 0], [0.0001, 0]], [[30, 70], [30, 70.00001]]])
+def test_short_legs_still_certify_containment(points):
+    lon, lat = points[0]
+    result = geometry().intersect_route(
+        points, [feature([rectangle(lon - 1, lon + 1, lat - 1, lat + 1)])]
+    )
+    assert result.complete and not result.unresolved
+    assert len(result.matches[0].spans) == 1
+    assert result.matches[0].spans[0].start_fraction == 0
+    assert result.matches[0].spans[0].end_fraction == 1
+
+
+@pytest.mark.parametrize("gap_degrees", [0.03, 0.1])
+def test_resolved_near_antipodal_meridian_retains_analytic_match(gap_degrees):
+    result = geometry().intersect_route(
+        [[0, 45], [180, -45 + gap_degrees]], [feature([rectangle(-1, 1, 60, 61)])]
+    )
+    assert result.matches
+    interior = max(
+        result.matches[0].spans,
+        key=lambda span: span.end_fraction - span.start_fraction,
+    )
+    length = math.radians(180 - gap_degrees) * 6371008.8
+    assert abs(interior.start_fraction - 15 / (180 - gap_degrees)) * length <= 18.52
+    assert abs(interior.end_fraction - 16 / (180 - gap_degrees)) * length <= 18.52
