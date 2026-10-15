@@ -1,7 +1,7 @@
 # Automatic itinerary import into ordinary missions
 
-Status: Draft for owner review. Product implementation is not authorized by this
-document alone.
+Status: Approved by the owner on 2026-10-15. Implementation awaits review of the
+implementation plan and selection of an execution method.
 
 ## Outcome and agreed requirements
 
