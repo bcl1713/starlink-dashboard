@@ -9,7 +9,7 @@ export function AviationStatus({
   view: AviationView;
   onInspect?: () => void;
 }) {
-  const enabled = (['metar', 'taf', 'sigmet'] as AviationLayer[]).filter(
+  const enabled = (['metar', 'taf'] as AviationLayer[]).filter(
     (l) => view.layers[l].state !== 'off'
   );
   if (!enabled.length) return null;

@@ -298,6 +298,18 @@ export function OverviewPage() {
   >([]);
   const [selectedWeather, setSelectedWeather] =
     useState<AviationSelection | null>(null);
+  const [weatherInspectionRevision, setWeatherInspectionRevision] = useState(0);
+  const [sigmetNavigation, setSigmetNavigation] = useState<{
+    contextKey: string | null;
+    page: number;
+  }>({ contextKey: null, page: 0 });
+  const [visibleSigmets, setVisibleSigmets] = useState<
+    readonly AviationSelection[]
+  >([]);
+  const updateVisibleSigmets = useCallback(
+    (items: readonly AviationSelection[]) => setVisibleSigmets(items),
+    []
+  );
   const weatherReturnFocus = useRef<HTMLElement | null>(null);
   const closeWeather = useCallback(() => setSelectedWeather(null), []);
   const inspectWeather = useCallback(
@@ -308,6 +320,7 @@ export function OverviewPage() {
         document.activeElement !== document.body
           ? document.activeElement
           : stageRef.current;
+      setWeatherInspectionRevision((revision) => revision + 1);
       setWeatherCandidates(candidates);
       setSelectedWeather(candidates[0]);
       setSelectedAdsbHex(null);
@@ -418,10 +431,18 @@ export function OverviewPage() {
   }, [activeRoute, replayGeometry, routeId]);
 
   const sigmetSource = useRouteSigmets();
+  const sigmetContext = sigmetSource.snapshot?.context?.context_key ?? null;
+  const sigmetPage =
+    sigmetNavigation.contextKey === sigmetContext ? sigmetNavigation.page : 0;
+  const changeSigmetPage = useCallback(
+    (page: number) => setSigmetNavigation({ contextKey: sigmetContext, page }),
+    [sigmetContext]
+  );
   const aviationSettings = useAviationSettings().data;
   const sigmetInput = useMemo(
     () => ({
       source: sigmetSource,
+      attentionPage: sigmetPage,
       localContextKey,
       intersectingOnly: aviationSettings?.sigmet_intersecting_only ?? false,
       nowMs: sigmetSource.nowMs,
@@ -429,6 +450,7 @@ export function OverviewPage() {
     }),
     [
       sigmetSource,
+      sigmetPage,
       localContextKey,
       aviationSettings?.sigmet_intersecting_only,
       activeRoute?.points,
@@ -437,6 +459,15 @@ export function OverviewPage() {
   const sigmetPresentation = useSigmetPresentation(
     sigmetInput,
     !!aviationSettings?.sigmet
+  );
+  const focusSigmet = useCallback(
+    (key: string) => {
+      const index = sigmetPresentation.attentionItems.findIndex(
+        (item) => item.entry.notice_key === key
+      );
+      if (index >= 0) changeSigmetPage(Math.floor(index / 3));
+    },
+    [sigmetPresentation.attentionItems, changeSigmetPage]
   );
   const sigmetView = useMemo(
     () =>
@@ -955,11 +986,24 @@ export function OverviewPage() {
           />
           <div className="overview-display-controls">
             <OverviewFullscreenControl />
+            {visibleSigmets.length > 0 && (
+              <button
+                type="button"
+                className="sr-only focus:not-sr-only"
+                onClick={() => inspectWeather(visibleSigmets)}
+              >
+                Inspect SIGMET on map
+              </button>
+            )}
           </div>
           <div className="overview-map-overlays">
             {showMapStatus && <OverviewMapStatus messages={mapMessages} />}
             {aviationSettings?.sigmet && layout.mode === 'desktop' && (
-              <RouteSigmetNotices presentation={sigmetPresentation} />
+              <RouteSigmetNotices
+                presentation={sigmetPresentation}
+                page={sigmetPage}
+                onPageChange={changeSigmetPage}
+              />
             )}
             {showMapStatus && (
               <>
@@ -1075,7 +1119,15 @@ export function OverviewPage() {
           view={aviation}
           candidates={weatherCandidates}
           selection={selectedWeather}
-          onSelectionChange={setSelectedWeather}
+          onSelectionChange={(selection) => {
+            setSelectedWeather(selection);
+            if (selection.layer === 'sigmet') {
+              setWeatherCandidates([selection]);
+              setWeatherInspectionRevision((revision) => revision + 1);
+            }
+          }}
+          onSigmetFocused={focusSigmet}
+          inspectionRevision={weatherInspectionRevision}
           onClose={closeWeather}
           returnFocusRef={weatherReturnFocus}
           portalContainer={document.body}
@@ -1139,6 +1191,7 @@ export function OverviewPage() {
             view={aviation}
             selection={selectedWeather}
             onSelect={inspectWeather}
+            onVisibleSigmets={updateVisibleSigmets}
           />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
@@ -1270,10 +1323,16 @@ export function OverviewPage() {
         </Canvas>
       </div>
       {((!pacedRunning && showMetricPanels) ||
-        (aviationSettings?.sigmet && layout.mode !== 'desktop')) && (
+        (aviationSettings?.sigmet &&
+          sigmetPresentation.pendingCount > 0 &&
+          layout.mode !== 'desktop')) && (
         <div className="overview-metrics-overlays">
           {aviationSettings?.sigmet && layout.mode !== 'desktop' && (
-            <RouteSigmetNotices presentation={sigmetPresentation} />
+            <RouteSigmetNotices
+              presentation={sigmetPresentation}
+              page={sigmetPage}
+              onPageChange={changeSigmetPage}
+            />
           )}
           {!pacedRunning && showMetricPanels && (
             <OverviewMetricHistoryPanels

@@ -57,6 +57,18 @@ def require_pass(proofs):
         proofs.get(key, {}) for key in ("browser", "route", "cleanup")
     )
     elapsed = route.get("elapsed_save_to_display_ms", [])
+    attention = proofs.get("attention", {})
+    if not all(
+        attention.get(key) is True
+        for key in (
+            "quiet_overview",
+            "manual_selection",
+            "shared_acknowledgement",
+            "configuration_relevance",
+            "screenshots_complete",
+        )
+    ):
+        raise ValueError("Incomplete SIGMET attention evidence")
     if (
         browser.get("passed", 0) < 2
         or browser.get("failed") != 0
@@ -394,6 +406,9 @@ class Runner:
         )
         self.proofs["real_source"] = json.loads(
             (self.output / "real-source-evidence.json").read_bytes()
+        )
+        self.proofs["attention"] = json.loads(
+            (self.output / "sigmet-attention-evidence.json").read_bytes()
         )
 
     def cleanup(self):

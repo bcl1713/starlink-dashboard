@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
-from app.models.route_sigmets import NoticeMutation
+from app.models.route_sigmets import NoticeMutation, NoticeSelection
 from app.services.aviation_weather.route_state import (
     NoticeConflict,
     NoticeStoreUnavailable,
@@ -85,3 +85,9 @@ async def put_acknowledgement(
 ):
     response.headers.update(HEADERS)
     return await guarded(request, lambda service: service.acknowledge(change))
+
+
+@router.put("/selection")
+async def put_selection(change: NoticeSelection, request: Request, response: Response):
+    response.headers.update(HEADERS)
+    return await guarded(request, lambda service: service.select(change))

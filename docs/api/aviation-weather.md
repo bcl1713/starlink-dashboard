@@ -258,3 +258,24 @@ samples each; masked areas, resets and generation changes never connect trails
 across gaps. Temperature has no particles. Reduced motion keeps the wind raster
 and key while removing particle resources; changing the preference does not
 fetch another grid.
+
+### Shared manual SIGMET selection
+
+`PUT /api/aviation-weather/v1/route-sigmets/selection` accepts `context_key`,
+`bulletin_key`, and `semantic_digest`, and returns the current route SIGMET
+snapshot. Selection is installation-wide, route-scoped and idempotent while
+pending. A stale context or report returns `409`; all responses use
+`Cache-Control: no-store`.
+
+Snapshots retain computed intersections in `entries` and add selected-only
+bulletins in `selected_entries`. Selected-only bulletins have no route spans.
+The `selected` flag identifies manual selection on either kind. Acknowledging
+through the existing `/acknowledgement` endpoint ends manual selection;
+selected-only bulletins then disappear. Expiry and cancellation also retire
+selection. Existing installation acknowledgements migrate without being reset.
+
+Snapshots also expose bounded `selection_candidates` metadata for currently
+eligible source bulletins (`bulletin_key`, `semantic_digest`, `feature_ids`).
+This lets map picking submit the server's authoritative identity for off-route
+polygons without duplicating canonicalization in the browser. Temporary absence
+from a partial feed does not end manual selection; explicit cancellation does.

@@ -139,6 +139,37 @@ import type { GfsView } from './aviation-weather/gfs-controller';
 import { NOW, collection, station } from './aviation-weather/fixtures';
 import { parseAviationFeatures } from '@/services/aviation-features';
 afterEach(cleanup);
+it('preserves the station chooser after changing from METAR to TAF', () => {
+  queries.aviation = {
+    ...emptyAviationView,
+    now: NOW,
+    layers: {
+      ...emptyAviationView.layers,
+      metar: {
+        state: 'current',
+        data: parseAviationFeatures(collection([station()]), 'metar'),
+      },
+      taf: {
+        state: 'current',
+        data: parseAviationFeatures(collection([station(true)]), 'taf'),
+      },
+    },
+  };
+  render(<OverviewPage />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Inspect weather reports' })
+  );
+  fireEvent.change(screen.getByRole('combobox', { name: 'Weather report' }), {
+    target: { value: 'taf:test-station' },
+  });
+  expect(
+    screen.getByRole('combobox', { name: 'Weather report' })
+  ).not.toBeNull();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Weather report' }), {
+    target: { value: 'metar:test-station' },
+  });
+  expect(screen.getByRole('dialog').textContent).toContain('METAR observation');
+});
 beforeEach(() => {
   queries.layoutMode = 'desktop';
   queries.aviation = emptyAviationView;
@@ -559,40 +590,15 @@ it.each([
   }
 );
 
-it('keeps passive SIGMET route-unavailable status visible when general map status is hidden', () => {
-  queries.aviationSettings = { sigmet: true, sigmet_intersecting_only: true };
-  queries.links = { data: { map_status_enabled: false } };
-  render(<OverviewPage />);
-  expect(
-    screen.getByLabelText('Route SIGMET advisories').textContent
-  ).toContain('Route unavailable');
-  expect(screen.queryByLabelText('Map status')).toBeNull();
-  expect(
-    within(screen.getByLabelText('Route SIGMET advisories')).queryAllByRole(
-      'button'
-    )
-  ).toHaveLength(0);
-});
-
-it('places mobile passive notices beside telemetry outside the globe overlay', () => {
-  queries.layoutMode = 'portrait';
-  queries.aviationSettings = { sigmet: true, sigmet_intersecting_only: true };
-  render(<OverviewPage />);
-  const notices = screen.getByLabelText('Route SIGMET advisories');
-  expect(notices.closest('.overview-map-stage')).toBeNull();
-  expect(notices.closest('.overview-metrics-overlays')).not.toBeNull();
-});
-it('places desktop route advisories before optional weather feed status', () => {
-  queries.aviationSettings = { sigmet: true, sigmet_intersecting_only: true };
-  queries.weather = {
-    ...queries.weather,
-    configuredEnabled: true,
-    state: 'unavailable',
-  };
-  render(<OverviewPage />);
-  const notices = screen.getByLabelText('Route SIGMET advisories');
-  const weather = screen.getByLabelText('Weather status');
-  expect(
-    notices.compareDocumentPosition(weather) & Node.DOCUMENT_POSITION_FOLLOWING
-  ).toBeTruthy();
-});
+it.each(['desktop', 'portrait'])(
+  'leaves no empty SIGMET box in %s layout',
+  (mode) => {
+    queries.layoutMode = mode;
+    queries.aviationSettings = {
+      sigmet: true,
+      sigmet_intersecting_only: false,
+    };
+    render(<OverviewPage />);
+    expect(screen.queryByLabelText('Route SIGMET advisories')).toBeNull();
+  }
+);

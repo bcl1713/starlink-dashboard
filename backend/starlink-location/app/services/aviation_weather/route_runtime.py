@@ -7,6 +7,8 @@ from app.mission.storage import get_active_leg_lock
 from app.models.route_sigmets import (
     RouteSigmetEntry,
     RouteSigmetSnapshot,
+    SelectedSigmetEntry,
+    SigmetSelectionCandidate,
     UnresolvedFeature,
 )
 from app.services.overview_weather.protocol import WeatherUnavailable
@@ -194,6 +196,8 @@ class RouteSigmetService:
         status,
         *,
         entries=None,
+        selected_entries=None,
+        selection_candidates=None,
         unresolved=None,
         future=None,
         omitted=0,
@@ -222,6 +226,8 @@ class RouteSigmetService:
             complete=complete,
             truncated=False,
             entries=entries,
+            selected_entries=selected_entries or [],
+            selection_candidates=selection_candidates or [],
             unresolved=unresolved,
             future_feature_ids=future or [],
             omitted_features=omitted,
@@ -308,7 +314,24 @@ class RouteSigmetService:
                 groups,
                 keys,
                 lambda validate, instant: self.store.reconcile_sync(
-                    context.context_key, matched, instant, validate=validate
+                    context.context_key,
+                    matched,
+                    instant,
+                    validate=validate,
+                    selection_eligible=eligible,
+                    selection_cancellations=[
+                        group.properties
+                        for group in groups
+                        if group.properties.get("cancelled")
+                        and group.valid_from_ms <= instant < group.expires_at_ms
+                    ],
+                    selection_retired={
+                        group.bulletin_key
+                        for group in groups
+                        if not group.properties.get("cancelled")
+                        and group.valid_from_ms <= instant < group.expires_at_ms
+                        and group.notice_key(context.context_key) not in eligibility
+                    },
                 ),
                 eligibility=eligibility,
             )
@@ -330,6 +353,7 @@ class RouteSigmetService:
                     spans=spans,
                     attention_order=record.attention_order,
                     acknowledged=record.acknowledged,
+                    selected=record.selected,
                     valid_from_ms=group.valid_from_ms,
                     expires_at_ms=group.expires_at_ms,
                     identity_uncertain=group.identity_uncertain,
@@ -342,6 +366,32 @@ class RouteSigmetService:
                 e.notice_key,
             )
         )
+        matched_keys = {group.notice_key(context.context_key) for group in matched}
+        selected_entries = []
+        for group in eligible:
+            key = group.notice_key(context.context_key)
+            record = state.records.get(key)
+            if (
+                key in matched_keys
+                or record is None
+                or not record.selected
+                or record.acknowledged
+            ):
+                continue
+            selected_entries.append(
+                SelectedSigmetEntry(
+                    notice_key=key,
+                    bulletin_key=group.bulletin_key,
+                    semantic_digest=group.semantic_digest,
+                    feature_ids=group.feature_ids,
+                    attention_order=record.attention_order,
+                    acknowledged=False,
+                    selected=True,
+                    valid_from_ms=group.valid_from_ms,
+                    expires_at_ms=group.expires_at_ms,
+                    identity_uncertain=group.identity_uncertain,
+                )
+            )
         eligible_ids = {f for g in eligible for f in g.feature_ids}
         unresolved = {
             u.feature_id: u for u in geometry.unresolved if u.feature_id in eligible_ids
@@ -377,6 +427,15 @@ class RouteSigmetService:
             product,
             status,
             entries=entries,
+            selected_entries=selected_entries,
+            selection_candidates=[
+                SigmetSelectionCandidate(
+                    bulletin_key=g.bulletin_key,
+                    semantic_digest=g.semantic_digest,
+                    feature_ids=g.feature_ids,
+                )
+                for g in eligible
+            ],
             unresolved=list(unresolved.values()),
             omitted=omitted,
             state_revision=state.state_revision,
@@ -403,6 +462,36 @@ class RouteSigmetService:
             return await self._changed_snapshot("Route or SIGMET input changed")
         return snapshot, (context, product, groups)
 
+    async def select(self, change):
+        snapshot, binding = await self._read()
+        if binding is None or snapshot.context.context_key != change.context_key:
+            raise NoticeConflict("SIGMET route is no longer current")
+        context, product, groups = binding
+        group = next(
+            (
+                group
+                for group in self._eligible(groups, self.weather.utc_ms())
+                if group.bulletin_key == change.bulletin_key
+                and group.semantic_digest == change.semantic_digest
+            ),
+            None,
+        )
+        if group is None:
+            raise NoticeConflict("SIGMET report is no longer current")
+        await self._operation(
+            context,
+            product,
+            groups,
+            {group.notice_key(context.context_key)},
+            lambda validate, instant: self.store.select_sync(
+                change, group, instant, validate=validate
+            ),
+        )
+        result = await self.read()
+        if result.context is None or result.context.context_key != change.context_key:
+            raise NoticeConflict("SIGMET route changed while selecting")
+        return result
+
     async def acknowledge(self, change):
         snapshot, binding = await self._read()
         if (
@@ -411,7 +500,7 @@ class RouteSigmetService:
             or not any(
                 e.notice_key == change.notice_key
                 and e.semantic_digest == change.semantic_digest
-                for e in snapshot.entries
+                for e in [*snapshot.entries, *snapshot.selected_entries]
             )
         ):
             raise NoticeConflict("Route SIGMET notice is no longer current")

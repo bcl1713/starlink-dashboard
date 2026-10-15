@@ -21,6 +21,20 @@ def runner():
     return module
 
 
+def test_attention_fixture_uses_fresh_bulletin_series(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "sigmet_fixtures",
+        ROOT / "tools/acceptance/aviation-weather/generate_fixtures.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.generate(tmp_path, now=1792060000000)
+    capture = json.loads((tmp_path / "attention-sigmets.json").read_text())
+    series = {feature["properties"]["seriesId"] for feature in capture["features"]}
+    assert {"T1", "T2", "T3", "T4", "B1"} <= series
+    assert not {"R1", "R2", "R3", "R4"} & series
+
+
 def proof():
     return {
         "browser": {"passed": 2, "failed": 0, "skipped": 0},
@@ -29,6 +43,16 @@ def proof():
             "assertions_complete": True,
         },
         "real_source": {"replayed": True},
+        "attention": {
+            key: True
+            for key in [
+                "quiet_overview",
+                "manual_selection",
+                "shared_acknowledgement",
+                "configuration_relevance",
+                "screenshots_complete",
+            ]
+        },
         "cleanup": {
             "containers": [],
             "networks": [],
@@ -39,6 +63,23 @@ def proof():
             "errors": [],
         },
     }
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "quiet_overview",
+        "manual_selection",
+        "shared_acknowledgement",
+        "configuration_relevance",
+        "screenshots_complete",
+    ],
+)
+def test_missing_attention_proof_prevents_pass(missing):
+    evidence = proof()
+    evidence["attention"][missing] = False
+    with pytest.raises(ValueError):
+        runner().require_pass(evidence)
 
 
 @pytest.mark.parametrize("missing", ["browser", "route", "real_source", "cleanup"])
@@ -204,7 +245,7 @@ def test_source_removal_failure_is_recorded_and_cannot_pass(tmp_path, monkeypatc
         (
             "aviation",
             ["aviation-weather-production.spec.ts", "route-sigmets-production.spec.ts"],
-            3,
+            4,
         ),
         ("gfs", ["gfs-weather-production.spec.ts"], 1),
     ],

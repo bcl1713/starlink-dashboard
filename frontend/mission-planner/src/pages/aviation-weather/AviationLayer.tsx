@@ -1,6 +1,7 @@
 import type { AviationView } from './aviation-controller';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
+import { visibleSigmetReports } from './sigmet-picking';
 import * as THREE from 'three';
 import {
   pickAviationFeatures,
@@ -16,13 +17,31 @@ export function AviationLayer({
   selection,
   onSelect,
   budget = optionalWeatherBudget,
+  onVisibleSigmets,
 }: {
   budget?: WeatherBudget;
   view: AviationView;
   selection: AviationSelection | null;
   onSelect: (candidates: readonly AviationSelection[]) => void;
+  onVisibleSigmets?: (selections: readonly AviationSelection[]) => void;
 }) {
   const { camera, gl } = useThree();
+  const visible = useRef('');
+  const sampleAt = useRef(0);
+  useFrame(({ clock }) => {
+    if (!onVisibleSigmets || clock.elapsedTime < sampleAt.current) return;
+    sampleAt.current = clock.elapsedTime + 0.3;
+    const rect = gl.domElement.getBoundingClientRect();
+    const reports = visibleSigmetReports(view, camera, {
+      width: rect.width,
+      height: rect.height,
+    });
+    const key = reports.map((r) => r.id).join('|');
+    if (key !== visible.current) {
+      visible.current = key;
+      onVisibleSigmets(reports);
+    }
+  });
   const gesture = useRef<{
     id: number;
     x: number;

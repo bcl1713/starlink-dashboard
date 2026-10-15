@@ -184,3 +184,29 @@ it('rejects excessive per-span native object overhead within the shared decoded 
   }
   expect(budget.snapshot()).toMatchObject({ decoded: 0, gpu: 0 });
 });
+
+it('highlights a selected polygon without route spans', () => {
+  const f = routeSnapshot();
+  const entry = JSON.parse(
+    JSON.stringify(routeSigmetSnapshotSchema.parse(f.snapshot).entries[0])
+  );
+  delete entry.spans;
+  const feature = parseAviationFeatures(f.data, 'sigmet').features[0];
+  const budget = new WeatherBudget();
+  const drawing = createSigmetHighlights(
+    { entry, reports: [feature], label: 'Selected', color: '#7dd3fc' },
+    [],
+    budget
+  );
+  try {
+    expect(
+      drawing.object.getObjectByName('Route advisory outline')
+    ).toBeDefined();
+    expect(
+      drawing.object.getObjectByName('Route advisory span')
+    ).toBeUndefined();
+  } finally {
+    drawing.dispose();
+  }
+  expect(budget.snapshot().gpu).toBe(0);
+});

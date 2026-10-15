@@ -42,18 +42,25 @@ export const intersectionSpanSchema = z
   })
   .refine((s) => s.start_fraction <= s.end_fraction);
 const unique = (values: string[]) => new Set(values).size === values.length;
+const entryFields = {
+  selected: z.boolean().default(false),
+  notice_key: hash,
+  bulletin_key: hash,
+  semantic_digest: hash,
+  feature_ids: z.array(id).min(1).max(500),
+  attention_order: integer,
+  acknowledged: z.boolean(),
+  valid_from_ms: integer,
+  expires_at_ms: integer,
+  identity_uncertain: z.boolean(),
+};
+export const selectedSigmetEntrySchema = z
+  .strictObject(entryFields)
+  .refine((e) => unique(e.feature_ids) && e.valid_from_ms < e.expires_at_ms);
 export const routeSigmetEntrySchema = z
   .strictObject({
-    notice_key: hash,
-    bulletin_key: hash,
-    semantic_digest: hash,
-    feature_ids: z.array(id).min(1).max(500),
+    ...entryFields,
     spans: z.array(intersectionSpanSchema).min(1).max(100000),
-    attention_order: integer,
-    acknowledged: z.boolean(),
-    valid_from_ms: integer,
-    expires_at_ms: integer,
-    identity_uncertain: z.boolean(),
   })
   .refine((e) => unique(e.feature_ids) && e.valid_from_ms < e.expires_at_ms);
 const unresolved = z.strictObject({
@@ -88,31 +95,54 @@ export const routeSigmetSnapshotSchema = z
     complete: z.boolean(),
     truncated: z.literal(false),
     entries: z.array(routeSigmetEntrySchema).max(500),
+    selected_entries: z.array(selectedSigmetEntrySchema).max(500).default([]),
+    selection_candidates: z
+      .array(
+        z.strictObject({
+          bulletin_key: hash,
+          semantic_digest: hash,
+          feature_ids: z.array(id).min(1).max(500),
+        })
+      )
+      .max(500)
+      .default([]),
     unresolved: z.array(unresolved).max(500),
     future_feature_ids: z.array(id).max(500),
     omitted_features: integer,
   })
   .refine((s) => {
-    const features = s.entries.flatMap((e) => e.feature_ids);
+    const entries = [...s.entries, ...s.selected_entries];
+    const features = entries.flatMap((e) => e.feature_ids);
+    const candidates = s.selection_candidates.flatMap((e) => e.feature_ids);
     return (
-      unique(s.entries.map((e) => e.notice_key)) &&
-      unique(s.entries.map((e) => e.bulletin_key)) &&
+      unique(entries.map((e) => e.notice_key)) &&
+      unique(entries.map((e) => e.bulletin_key)) &&
       unique(features) &&
+      unique(candidates) &&
+      unique(s.selection_candidates.map((e) => e.bulletin_key)) &&
       unique(s.unresolved.map((e) => e.feature_id)) &&
       unique(s.future_feature_ids) &&
       new Set([
         ...features,
+        ...candidates,
         ...s.unresolved.map((e) => e.feature_id),
         ...s.future_feature_ids,
       ]).size <= 500 &&
       s.entries.reduce((n, e) => n + e.spans.length, 0) <= 100000 &&
       (!s.complete || (!s.unresolved.length && !s.omitted_features)) &&
       (s.status !== 'ready' || s.complete) &&
-      (!s.entries.length || s.context !== null) &&
+      (!entries.length || s.context !== null) &&
       s.sigmet_product.product_type === 'international-sigmet' &&
       new TextEncoder().encode(JSON.stringify(s)).length <= 8 * 1024 ** 2
     );
   });
+export const noticeSelectionSchema = z.strictObject({
+  context_key: hash,
+  bulletin_key: hash,
+  semantic_digest: hash,
+});
+export type NoticeSelection = z.infer<typeof noticeSelectionSchema>;
+export type SelectedSigmetEntry = z.infer<typeof selectedSigmetEntrySchema>;
 export const noticeMutationSchema = z.strictObject({
   context_key: hash,
   notice_key: hash,
@@ -282,3 +312,46 @@ export async function setSigmetAcknowledgement(
   result.allocation.release();
   return result.data;
 }
+
+export async function setSigmetSelection(
+  change: NoticeSelection,
+  signal: AbortSignal,
+  budget: WeatherBudget,
+  fetcher: WeatherFetcher = fetch
+) {
+  const result = await jsonLease(
+    '/api/aviation-weather/v1/route-sigmets/selection',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(noticeSelectionSchema.parse(change)),
+    },
+    signal,
+    budget,
+    fetcher,
+    parseRouteSigmetSnapshot,
+    8 * 1024 ** 2
+  );
+  try {
+    const snapshot = result.data;
+    if (snapshot.context?.context_key !== change.context_key)
+      throw Error('Obsolete SIGMET selection context');
+    const selected = [...snapshot.entries, ...snapshot.selected_entries].find(
+      (entry) =>
+        entry.bulletin_key === change.bulletin_key &&
+        entry.semantic_digest === change.semantic_digest &&
+        !entry.acknowledged
+    );
+    return {
+      context_key: change.context_key,
+      state_revision: snapshot.state_revision,
+      notice_key: selected?.notice_key ?? null,
+    };
+  } finally {
+    result.allocation.release();
+  }
+}
+
+export type SigmetSelectionConfirmation = Awaited<
+  ReturnType<typeof setSigmetSelection>
+>;

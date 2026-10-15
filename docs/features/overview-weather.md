@@ -159,3 +159,26 @@ backup while the service is stopped.
 
 See the [API and storage contract](../api/aviation-weather.md) and
 [dated acceptance evidence](../reports/2026-10-15-route-linked-sigmets.md).
+
+### SIGMET attention and map review
+
+Overview shows `SIGMETS: N` only when unacknowledged route intersections or
+manually selected bulletins need attention. Unknown and unrelated reports do not
+create attention cards. When the count is zero, the entire SIGMET attention area
+is absent. Bright, matching card/map colors and a slow border pulse draw
+attention; reduced-motion preferences use steady borders. Previous/Next controls
+make every pending bulletin reachable, with at most three cards per page.
+
+Click a visible SIGMET polygon to inspect it and add it to shared attention.
+Overlapping polygons offer a chooser. Selected-only bulletins are labelled
+Selected, without claiming a route intersection. Acknowledge directly on
+Overview or in Configuration. Manual selections survive refreshes across
+displays and remain scoped to the route/run until acknowledged, expired or
+cancelled. Geometry uncertainty does not automatically create a selection.
+
+Configuration contains compact Pending and collapsed Cleared sections for
+relevant bulletins only. Full reports and diagnostics are collapsed. The Show
+intersecting polygons only switch affects map visibility, not relevance or
+acknowledgement. No bulletin catalogue is shown in Configuration; unrelated
+reports are inspected on the map. Geographic intersections do not imply an
+altitude or passage-time match.

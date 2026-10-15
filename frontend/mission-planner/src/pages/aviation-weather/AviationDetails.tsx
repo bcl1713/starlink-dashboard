@@ -9,6 +9,7 @@ import {
   type AviationSelection,
 } from './aviation-inspection';
 import './AviationWeather.css';
+import { SigmetInspectionActions } from './SigmetInspectionActions';
 
 export function AviationDetails({
   view,
@@ -18,6 +19,8 @@ export function AviationDetails({
   onClose,
   returnFocusRef,
   portalContainer,
+  onSigmetFocused,
+  inspectionRevision = 0,
 }: {
   view: AviationView;
   candidates: readonly AviationSelection[];
@@ -26,6 +29,8 @@ export function AviationDetails({
   onClose: () => void;
   returnFocusRef: RefObject<HTMLElement | null>;
   portalContainer: HTMLElement | null;
+  onSigmetFocused?: (key: string) => void;
+  inspectionRevision?: number;
 }) {
   const reports = useMemo(
     () =>
@@ -122,6 +127,15 @@ export function AviationDetails({
           )}
           {selected && (
             <AviationReport feature={selected.feature} now={view.now} />
+          )}
+          {selected?.selection.layer === 'sigmet' && (
+            <SigmetInspectionActions
+              key={`${inspectionRevision}:${selected.feature.id}`}
+              featureId={selected.feature.id}
+              autoSelect={choices.length === 1}
+              onFocused={onSigmetFocused}
+              onAcknowledged={onClose}
+            />
           )}
           {data && (
             <div className="aviation-report-source">

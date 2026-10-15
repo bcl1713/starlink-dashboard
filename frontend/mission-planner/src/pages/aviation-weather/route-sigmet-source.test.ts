@@ -66,6 +66,36 @@ function setup(
   source.setSettings(settings);
   return { source, client, budget, fetcher, ...fixture };
 }
+it('manual selection is confirmed by the shared source and released on disposal', async () => {
+  const fixture = routeSnapshot();
+  let selected = false;
+  const { source, budget } = setup(async (path, init) => {
+    if (String(path).endsWith('sigmet.json'))
+      return new Response(fixture.bytes, {
+        headers: { 'Content-Type': 'application/geo+json' },
+      });
+    if (String(path).endsWith('/selection') && init?.method === 'PUT')
+      selected = true;
+    return json({
+      ...fixture.snapshot,
+      state_revision: selected ? 2 : 1,
+      entries: fixture.snapshot.entries.map((e) => ({ ...e, selected })),
+    });
+  });
+  const unsubscribe = source.subscribe(() => {});
+  await settle();
+  const confirmation = await source.setSelection({
+    context_key: hash('c'),
+    bulletin_key: hash('e'),
+    semantic_digest: hash('f'),
+  });
+  expect(confirmation).not.toHaveProperty('entries');
+  expect(confirmation).not.toHaveProperty('sigmet_product');
+  expect(confirmation.notice_key).toBe(hash('d'));
+  expect(source.snapshot().snapshot?.entries[0].selected).toBe(true);
+  unsubscribe();
+  expect(budget.snapshot().decoded).toBe(0);
+});
 it('two_consumers_share_source_and_poll_while_visible_but_unfocused', async () => {
   const { source, client, budget, fetcher } = setup();
   expect(getRouteSigmetSource(client)).toBe(getRouteSigmetSource(client));
