@@ -126,3 +126,10 @@ Both this run and the cancelled earlier screenshot-only run have empty runtime
 inventories, free ports and removed disposable sources. An approved host check
 independently confirmed cleanup and absence of worktree runtime workers. The
 feature worktree and review evidence remain available for the open PR.
+
+## Live flight timing follow-up
+
+Active flights now use current UTC, route progress and speed rather than fixed
+planned passage times. Before departure, planned timestamps remain in use. See
+[live crossing acceptance](2026-10-15-sigmet-live-eta.md) for the final behavior,
+concurrent-display checks, production evidence and cleanup verification.
