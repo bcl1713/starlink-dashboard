@@ -318,6 +318,75 @@ it('keeps confirmed revisions monotonic across later reads and tied generations'
   expect(source.snapshot().snapshot?.generation_id).toBe(hash('4'));
   expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(true);
 });
+it('admits unavailable state without forgetting confirmed acknowledgement fences', async () => {
+  const { source, snapshot, fetcher, budget, bytes } = setup();
+  source.subscribe(() => {});
+  await settle();
+  const change = {
+    context_key: hash('c'),
+    notice_key: hash('d'),
+    semantic_digest: hash('f'),
+    acknowledged: true,
+  };
+  fetcher.mockImplementation(async () =>
+    json({ ...change, state_revision: 3, attention_order: 1 })
+  );
+  await source.setAcknowledgement(change);
+  const unavailable = {
+    ...snapshot,
+    state_revision: 0,
+    generation_id: hash('7'),
+    status: 'unavailable',
+    complete: false,
+    entries: [],
+    unresolved: [],
+    sigmet_product: {
+      ...snapshot.sigmet_product,
+      state: 'unavailable',
+      ...Object.fromEntries(
+        [
+          'instance_id',
+          'payload',
+          'radar',
+          'grid',
+          'coverage',
+          'observed_at_ms',
+          'issued_at_ms',
+          'scan_start_ms',
+          'scan_end_ms',
+          'valid_at_ms',
+          'valid_from_ms',
+          'valid_to_ms',
+          'run_at_ms',
+          'lead_seconds',
+          'retrieved_at_ms',
+          'fresh_until_ms',
+          'expires_at_ms',
+        ].map((key) => [key, null])
+      ),
+    },
+  };
+  fetcher.mockImplementation(async () => json(unavailable));
+  await source.refresh();
+  expect(source.snapshot().snapshot?.status).toBe('unavailable');
+  expect(source.snapshot().collection).toBeNull();
+  expect(source.snapshot().snapshot?.entries).toHaveLength(0);
+  expect(budget.snapshot().encoded).toBe(0);
+  fetcher.mockImplementation(async () => json(snapshot));
+  await source.refresh();
+  expect(source.snapshot().snapshot?.status).toBe('unavailable');
+  snapshot.state_revision = 3;
+  fetcher.mockImplementation(async (path) =>
+    String(path).endsWith('sigmet.json')
+      ? new Response(bytes, {
+          headers: { 'Content-Type': 'application/geo+json' },
+        })
+      : json(snapshot)
+  );
+  await source.refresh();
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(true);
+  expect(source.snapshot().available).toBe(true);
+});
 it('accounts immutable transfer bytes and releases them after cancellation', async () => {
   const fixture = routeSnapshot();
   const { source, budget } = setup(async (p) =>

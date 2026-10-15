@@ -259,9 +259,16 @@ export class RouteSigmetSource {
       route = admitted.allocation;
       let snapshot = admitted.data;
       if (!current()) return;
+      // Non-materialized states have no notice-store revision. They are still
+      // authoritative for this input epoch, but cannot reset acknowledgement
+      // fences or resurrect notice state from a later obsolete GET.
+      const noticeState = ['ready', 'stale', 'incomplete'].includes(
+        snapshot.status
+      );
       if (
         snapshot.settings_revision !== this.settings!.revision ||
-        snapshot.state_revision < this.revision
+        (noticeState && snapshot.state_revision < this.revision) ||
+        (!noticeState && snapshot.entries.length > 0)
       )
         throw Error('Obsolete route SIGMET snapshot');
       this.anchor = {
@@ -286,13 +293,14 @@ export class RouteSigmetSource {
       };
       for (const [key, confirmation] of this.confirmed) {
         if (
-          snapshot.state_revision > confirmation.state_revision ||
-          confirmation.context_key !== snapshot.context?.context_key ||
-          !snapshot.entries.some(
-            (e) =>
-              e.notice_key === key &&
-              e.semantic_digest === confirmation.semantic_digest
-          )
+          noticeState &&
+          (snapshot.state_revision > confirmation.state_revision ||
+            confirmation.context_key !== snapshot.context?.context_key ||
+            !snapshot.entries.some(
+              (e) =>
+                e.notice_key === key &&
+                e.semantic_digest === confirmation.semantic_digest
+            ))
         )
           this.confirmed.delete(key);
       }

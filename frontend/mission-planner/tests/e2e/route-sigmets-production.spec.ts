@@ -236,9 +236,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
         { timeout: 15000, intervals: [100] }
       )
       .toBeGreaterThanOrEqual(3);
-    const focus = await overview.evaluate(
-      () => document.activeElement?.outerHTML
-    );
+    const focus = await overview.evaluateHandle(() => document.activeElement);
     const clear = config.getByRole('button', {
       name: /Clear advisory · KZNY R1 /,
     });
@@ -280,8 +278,38 @@ test('independent Configuration and passive Overview: propagation, native spans,
     expect.soft(afterCamera.zoom).toBe(camera.zoom);
     scenarios.camera = { before: camera, after: afterCamera };
     expect
-      .soft(await overview.evaluate(() => document.activeElement?.outerHTML))
-      .toBe(focus);
+      .soft(
+        await overview.evaluate(
+          (element) => document.activeElement === element,
+          focus
+        )
+      )
+      .toBe(true);
+    await focus.dispose();
+    const visibleCards = async (name: string) => {
+      const layout = await notices.evaluate((node) => ({
+        width: innerWidth,
+        height: innerHeight,
+        railBottom:
+          node.closest('.overview-right-overlays')?.getBoundingClientRect()
+            .bottom ?? innerHeight,
+        cards: [...node.querySelectorAll('article')].map((card) => {
+          const r = card.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+        }),
+      }));
+      scenarios['layout_' + name] = layout;
+      for (const card of layout.cards) {
+        expect.soft(card.left).toBeGreaterThanOrEqual(0);
+        expect.soft(card.right).toBeLessThanOrEqual(layout.width);
+        if (name !== 'mobile') {
+          expect.soft(card.top).toBeGreaterThanOrEqual(0);
+          expect
+            .soft(card.bottom)
+            .toBeLessThanOrEqual(Math.min(layout.height, layout.railBottom));
+        }
+      }
+    };
     for (const [name, size] of [
       ['desktop', { width: 1920, height: 1080 }],
       ['mobile', { width: 390, height: 844 }],
@@ -312,6 +340,23 @@ test('independent Configuration and passive Overview: propagation, native spans,
         expect
           .soft(await notices.evaluate((n) => !n.closest('.overview-globe')))
           .toBe(true);
+      if (name === 'mobile') {
+        await overview.screenshot({
+          path: info.outputPath('route-sigmets-mobile-core.png'),
+        });
+        await notices.scrollIntoViewIfNeeded();
+        await expect
+          .soft(notices.getByRole('article').first())
+          .toBeInViewport();
+        expect
+          .soft(
+            await overview.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth
+            )
+          )
+          .toBe(true);
+      }
+      await visibleCards(name);
       await overview.screenshot({
         path: info.outputPath(`route-sigmets-${name}.png`),
         fullPage: true,
@@ -327,6 +372,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
     expect(
       await notices.evaluate((n) => !!document.fullscreenElement?.contains(n))
     ).toBe(true);
+    await visibleCards('fullscreen');
     await overview.screenshot({
       path: info.outputPath('route-sigmets-fullscreen.png'),
     });

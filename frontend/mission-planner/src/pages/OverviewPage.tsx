@@ -957,9 +957,12 @@ export function OverviewPage() {
             <OverviewFullscreenControl />
           </div>
           <div className="overview-map-overlays">
+            {showMapStatus && <OverviewMapStatus messages={mapMessages} />}
+            {aviationSettings?.sigmet && layout.mode === 'desktop' && (
+              <RouteSigmetNotices presentation={sigmetPresentation} />
+            )}
             {showMapStatus && (
               <>
-                <OverviewMapStatus messages={mapMessages} />
                 <OverviewWeatherStatus weather={weather} />
                 <AviationStatus
                   view={aviation}
@@ -984,9 +987,6 @@ export function OverviewPage() {
                   </p>
                 )}
               </>
-            )}
-            {aviationSettings?.sigmet && layout.mode === 'desktop' && (
-              <RouteSigmetNotices presentation={sigmetPresentation} />
             )}
             {showLegend ? (
               <OverviewMapLegend

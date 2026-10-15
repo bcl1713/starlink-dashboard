@@ -582,3 +582,17 @@ it('places mobile passive notices beside telemetry outside the globe overlay', (
   expect(notices.closest('.overview-map-stage')).toBeNull();
   expect(notices.closest('.overview-metrics-overlays')).not.toBeNull();
 });
+it('places desktop route advisories before optional weather feed status', () => {
+  queries.aviationSettings = { sigmet: true, sigmet_intersecting_only: true };
+  queries.weather = {
+    ...queries.weather,
+    configuredEnabled: true,
+    state: 'unavailable',
+  };
+  render(<OverviewPage />);
+  const notices = screen.getByLabelText('Route SIGMET advisories');
+  const weather = screen.getByLabelText('Weather status');
+  expect(
+    notices.compareDocumentPosition(weather) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy();
+});
