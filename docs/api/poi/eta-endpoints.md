@@ -114,7 +114,12 @@ Returns a wrapped response object (not a flat array).
 
 - **Distance:** Haversine formula (great-circle distance)
 - **Bearing:** Inverse bearing calculation
-- **ETA (estimated):** distance / (speed \* 0.51444) sec
+- **ETA (estimated, route-aware):** Remaining travel along route segments from
+  the current projected position to the POI's projected destination. The first
+  remaining segment blends measured speed with its planned speed; later
+  segments use planned speeds. All POI kinds and named waypoints share this
+  calculation. Stored destination geometry takes precedence over name matches.
+- **ETA (estimated, fallback):** distance / (speed \* 0.51444) sec
 - **ETA (anticipated):** Route-aware calculation using
   flight plan timing
 - **Speed Default:** 67 knots (fallback if not available)

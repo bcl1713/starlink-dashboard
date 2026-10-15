@@ -12,8 +12,19 @@ export interface Route {
   eta_mode?: string;
 }
 
+export interface RoutePoint {
+  latitude: number;
+  longitude: number;
+  altitude?: number | null;
+  occurrence_id?: string | null;
+  expected_arrival_time?: string | null;
+  timing_source?: 'waypoint' | 'interpolated' | null;
+  source_segment_order?: number | null;
+  source_vertex_index?: number | null;
+}
+
 export interface RouteDetail extends Route {
-  points?: Array<{ latitude: number; longitude: number }>;
+  points?: RoutePoint[];
   waypoints?: Waypoint[];
   timing_profile?: TimingProfile;
   statistics?: {
@@ -42,7 +53,7 @@ export interface TimingProfile {
 }
 
 interface RouteDetailResponse {
-  points?: Array<{ latitude: number; longitude: number }>;
+  points?: RoutePoint[];
   waypoints?: Waypoint[];
   timing_profile?: TimingProfile;
   flight_phase?: string;
@@ -54,14 +65,17 @@ interface RouteListResponse {
 }
 
 export const routesApi = {
-  async list(): Promise<Route[]> {
-    const response = await apiClient.get<RouteListResponse>('/api/routes');
+  async list(signal?: AbortSignal): Promise<Route[]> {
+    const response = await apiClient.get<RouteListResponse>('/api/routes', {
+      signal,
+    });
     return response.data.routes || [];
   },
 
-  async get(routeId: string): Promise<RouteDetail> {
+  async get(routeId: string, signal?: AbortSignal): Promise<RouteDetail> {
     const response = await apiClient.get<RouteDetailResponse>(
-      `/api/routes/${routeId}`
+      `/api/routes/${routeId}`,
+      { signal }
     );
     return response.data as RouteDetail;
   },

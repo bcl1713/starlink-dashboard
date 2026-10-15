@@ -78,6 +78,8 @@ def route_with_adjusted_departure(
         return route
 
     shifted = route.model_copy(deep=True)
+    if shifted.source_departure_time is None and route.timing_profile:
+        shifted.source_departure_time = route.timing_profile.departure_time
 
     if shifted.timing_profile:
         if shifted.timing_profile.departure_time:
@@ -127,6 +129,7 @@ class RouteTemporalProjector:
         self.calculator = RouteETACalculator(route)
         self.cumulative_distances = self._build_cumulative_distances()
         self.total_distance = max(self.cumulative_distances[-1], 1.0)
+        self.time_anchors = self._build_time_anchors()
 
     def _derive_original_start_time(self) -> datetime:
         """Return the unadjusted route start used to calculate time shifts."""
@@ -173,68 +176,56 @@ class RouteTemporalProjector:
             longitude=projection["projected_lon"],
         )
 
-    def timestamp_for_distance(self, distance: float) -> datetime:
-        if self.total_distance <= 0:
-            return self.start_time
-        distance = max(0.0, min(distance, self.total_distance))
-        for index in range(1, len(self.cumulative_distances)):
-            previous = self.route.points[index - 1]
-            current = self.route.points[index]
-            if (
-                previous.expected_arrival_time is None
-                or current.expected_arrival_time is None
-                or current.expected_arrival_time <= previous.expected_arrival_time
-                or distance > self.cumulative_distances[index]
-            ):
+    def _build_time_anchors(self) -> list[tuple[float, datetime]]:
+        """Bridge untimed vertices with monotonic distance/time anchors.
+
+        Mission endpoints bound both projections. Invalid interior timings are
+        ignored rather than allowing a later segment to extrapolate backwards.
+        No inferred timestamps are written to the cached route.
+        """
+        anchors = [(0.0, self.start_time)]
+        for index, point in enumerate(self.route.points[1:-1], start=1):
+            if point.expected_arrival_time is None:
                 continue
-            span = max(
-                self.cumulative_distances[index] - self.cumulative_distances[index - 1],
-                1e-6,
-            )
-            fraction = (distance - self.cumulative_distances[index - 1]) / span
-            return (
-                ensure_timezone(previous.expected_arrival_time)
-                + (
-                    ensure_timezone(current.expected_arrival_time)
-                    - ensure_timezone(previous.expected_arrival_time)
-                )
-                * fraction
-            )
-        ratio = max(0.0, min(1.0, distance / self.total_distance))
-        return self.start_time + timedelta(seconds=ratio * self.duration_seconds)
+            timestamp = self.shift_route_timestamp(point.expected_arrival_time)
+            distance = self.cumulative_distances[index]
+            previous_distance, previous_time = anchors[-1]
+            if (
+                previous_distance <= distance <= self.total_distance
+                and previous_time < timestamp < self.end_time
+            ):
+                anchors.append((distance, timestamp))
+        anchors.append((self.total_distance, self.end_time))
+        return anchors
+
+    def timestamp_for_distance(self, distance: float) -> datetime:
+        distance = max(0.0, min(distance, self.total_distance))
+        for (start_distance, start), (end_distance, end) in zip(
+            self.time_anchors, self.time_anchors[1:]
+        ):
+            if start_distance <= distance <= end_distance:
+                if end_distance == start_distance:
+                    return start
+                fraction = (distance - start_distance) / (end_distance - start_distance)
+                return start + (end - start) * fraction
+        return self.end_time
 
     def distance_for_timestamp(self, timestamp: datetime) -> float:
-        """Map a timestamp onto explicit monotonic route timings when available."""
-        timestamp = ensure_timezone(timestamp)
-        for index in range(1, len(self.cumulative_distances)):
-            previous = self.route.points[index - 1]
-            current = self.route.points[index]
-            if (
-                previous.expected_arrival_time is None
-                or current.expected_arrival_time is None
-                or current.expected_arrival_time <= previous.expected_arrival_time
-            ):
-                continue
-            start = ensure_timezone(previous.expected_arrival_time)
-            end = ensure_timezone(current.expected_arrival_time)
+        """Use the same bounded segments as the inverse time projection."""
+        timestamp = max(self.start_time, min(ensure_timezone(timestamp), self.end_time))
+        for (start_distance, start), (end_distance, end) in zip(
+            self.time_anchors, self.time_anchors[1:]
+        ):
             if start <= timestamp <= end:
-                fraction = (timestamp - start).total_seconds() / max(
-                    (end - start).total_seconds(), 1e-6
-                )
-                return self.cumulative_distances[index - 1] + fraction * (
-                    self.cumulative_distances[index]
-                    - self.cumulative_distances[index - 1]
-                )
-        ratio = max(
-            0.0,
-            min(
-                1.0,
-                (timestamp - self.start_time).total_seconds() / self.duration_seconds,
-            ),
-        )
-        return self.total_distance * ratio
+                fraction = (timestamp - start).total_seconds() / (
+                    end - start
+                ).total_seconds()
+                return start_distance + fraction * (end_distance - start_distance)
+        return self.total_distance
 
-    def sample_at_distance(self, distance: float) -> RouteSample:
+    def sample_at_distance(
+        self, distance: float, *, forward_heading: bool = False
+    ) -> RouteSample:
         distance = max(0.0, min(distance, self.total_distance))
         if len(self.route.points) == 1:
             point = self.route.points[0]
@@ -254,7 +245,9 @@ class RouteTemporalProjector:
         for idx in range(1, len(self.cumulative_distances)):
             prev_dist = self.cumulative_distances[idx - 1]
             next_dist = self.cumulative_distances[idx]
-            if distance <= next_dist or idx == len(self.cumulative_distances) - 1:
+            if (
+                distance < next_dist if forward_heading else distance <= next_dist
+            ) or idx == len(self.cumulative_distances) - 1:
                 segment_span = max(next_dist - prev_dist, 1e-6)
                 ratio = max(0.0, min(1.0, (distance - prev_dist) / segment_span))
                 prev_point = self.route.points[idx - 1]
@@ -351,6 +344,8 @@ def generate_timeline_samples(
     projector: RouteTemporalProjector,
     coverage_sampler: CoverageSampler | None,
     interval_seconds: int = TIMELINE_SAMPLE_INTERVAL_SECONDS,
+    *,
+    boundaries: Sequence[datetime] | None = None,
 ) -> list[RouteSample]:
     """Generate minute-level samples along the mission timeline."""
 
@@ -359,6 +354,29 @@ def generate_timeline_samples(
 
     samples: list[RouteSample] = []
     total_duration = max(projector.duration_seconds, 0.0)
+
+    if boundaries is not None:
+        if (
+            list(boundaries) != sorted(set(boundaries))
+            or boundaries[0] != projector.start_time
+            or boundaries[-1] != projector.end_time
+        ):
+            raise ValueError(
+                "Explicit boundaries must span the flight in increasing order"
+            )
+        for timestamp in boundaries:
+            sample = projector.sample_at_distance(
+                projector.distance_for_timestamp(timestamp), forward_heading=True
+            )
+            sample.timestamp = timestamp
+            if coverage_sampler:
+                sample.coverage = set(
+                    coverage_sampler.check_coverage_at_point(
+                        sample.latitude, sample.longitude
+                    )
+                )
+            samples.append(sample)
+        return samples
 
     step = 0
     while True:

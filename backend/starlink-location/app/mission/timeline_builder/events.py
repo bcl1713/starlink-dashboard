@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -23,9 +24,11 @@ from app.mission.timeline_builder.utils import (
     DEFAULT_CRUISE_ALTITUDE_M,
     nearest_waypoint_name,
 )
+from app.mission.timeline_builder.warnings import XBandWarningBoundary
 from app.models.route import ParsedRoute
-from app.satellites.catalog import get_satellite_catalog
-from app.satellites.rules import EventType, MissionEvent, RuleEngine
+from app.satellites.catalog import SatelliteCatalog, get_satellite_catalog
+from app.satellites.geometry import is_in_azimuth_range
+from app.satellites.rules import EventType, MissionEvent, RuleEngine, XConstraint
 from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
@@ -105,28 +108,73 @@ def apply_x_azimuth_events(
     route: ParsedRoute,
     samples: Sequence[RouteSample],
     aar_windows: list[ResolvedAARWindow],
-    transition_schedule: list[tuple[datetime, str]],
+    transition_schedule: list[tuple[datetime, str, str | None]],
     poi_manager: POIManager | None,
     mission_start: datetime,
     mission_end: datetime,
-) -> None:
-    """Apply X-band azimuth violation events."""
+    *,
+    satellite_catalog: SatelliteCatalog | None = None,
+    condition_events: list[MissionEvent] | None = None,
+    planning_evaluation=None,
+) -> list[XBandWarningBoundary]:
+    """Apply X constraints and return combined shutdown/turn-on boundaries."""
+    if planning_evaluation is not None:
+        boundaries = []
+        previous = False
+        for sample, interval in zip(samples, planning_evaluation.intervals):
+            warning = interval.policy_x_state != "available"
+            if warning != previous:
+                boundaries.append(
+                    XBandWarningBoundary(
+                        sample=sample,
+                        satellite_id=interval.satellite_id,
+                        warning=warning,
+                        reasons=tuple(
+                            interval.physical_reasons + interval.policy_reasons
+                        ),
+                    )
+                )
+            previous = warning
+        return boundaries
+
     if not mission.transports.initial_x_satellite_id:
-        return
+        return []
 
     if not samples:
-        return
+        return []
 
+    event_start = len(rule_engine.events)
     assignments = transition_schedule or []
     if not assignments:
-        assignments = [(mission_start, mission.transports.initial_x_satellite_id)]
+        assignments = [(mission_start, mission.transports.initial_x_satellite_id, None)]
     assignments = sorted(assignments, key=lambda item: item[0])
 
     schedule_idx = 0
     current_satellite = assignments[0][1]
-    violation_active = False
+    active_violations: dict[XConstraint, str] = {}
+    warning_active = False
+    warning_boundaries: list[XBandWarningBoundary] = []
+    manual_ar_events = sorted(
+        event
+        for event in rule_engine.events
+        if event.event_type
+        in {EventType.MANUAL_AAR_TRACK_START, EventType.MANUAL_AAR_TRACK_END}
+    )
+    manual_ar_index = 0
+    active_manual_ar: dict[str, str] = {}
 
     for sample in samples:
+        while (
+            manual_ar_index < len(manual_ar_events)
+            and manual_ar_events[manual_ar_index].timestamp <= sample.timestamp
+        ):
+            event = manual_ar_events[manual_ar_index]
+            track_id = event.metadata["track_id"]
+            if event.event_type == EventType.MANUAL_AAR_TRACK_START:
+                active_manual_ar[track_id] = event.reason
+            else:
+                active_manual_ar.pop(track_id, None)
+            manual_ar_index += 1
         if sample.heading is None:
             continue
         in_aar_window = _falls_within_window(sample.timestamp, aar_windows)
@@ -139,7 +187,7 @@ def apply_x_azimuth_events(
             current_satellite = assignments[schedule_idx][1]
 
         satellite_longitude = _resolve_satellite_longitude(
-            current_satellite, poi_manager
+            current_satellite, poi_manager, satellite_catalog
         )
         if satellite_longitude is None:
             continue
@@ -149,7 +197,7 @@ def apply_x_azimuth_events(
             if sample.altitude is not None
             else DEFAULT_CRUISE_ALTITUDE_M
         )
-        aft_violation, relative_azimuth, debug = rule_engine.evaluate_x_azimuth_window(
+        _, relative_azimuth, debug = rule_engine.evaluate_x_azimuth_window(
             aircraft_lat=sample.latitude,
             aircraft_lon=sample.longitude,
             aircraft_alt=altitude,
@@ -158,20 +206,46 @@ def apply_x_azimuth_events(
             heading_deg=sample.heading,
             is_aar_mode=False,
         )
-        forward_violation = False
-        if in_aar_window:
-            forward_violation, _, _ = rule_engine.evaluate_x_azimuth_window(
-                aircraft_lat=sample.latitude,
-                aircraft_lon=sample.longitude,
-                aircraft_alt=altitude,
-                satellite_lon=satellite_longitude,
-                timestamp=sample.timestamp,
-                heading_deg=sample.heading,
-                is_aar_mode=True,
-            )
+        # Interference matches the map link's azimuth-only warning. Combine it
+        # with elevation and AR to avoid a turn-on cue while another warning holds.
+        interference_warning = is_in_azimuth_range(
+            relative_azimuth,
+            rule_engine.config.normal_azimuth_min,
+            rule_engine.config.normal_azimuth_max,
+        )
+        forward_violation = in_aar_window and is_in_azimuth_range(
+            relative_azimuth,
+            rule_engine.config.aar_azimuth_min,
+            rule_engine.config.aar_azimuth_max,
+        )
 
         violation_reason = debug.get("violation_reason")
         is_elevation_blocked = violation_reason == "elevation"
+        warning_reasons: list[str] = []
+        warning_reasons.extend(active_manual_ar.values())
+        if interference_warning:
+            warning_reasons.append("Starlink interference")
+        if is_elevation_blocked:
+            warning_reasons.append(
+                f"Elevation below {rule_engine.config.elevation_min_degrees:g}°"
+            )
+        if in_aar_window and is_in_azimuth_range(
+            relative_azimuth,
+            rule_engine.config.aar_azimuth_min,
+            rule_engine.config.aar_azimuth_max,
+        ):
+            warning_reasons.append("AR forward-sector conflict")
+        warning = bool(warning_reasons)
+        if warning != warning_active:
+            warning_boundaries.append(
+                XBandWarningBoundary(
+                    sample=sample,
+                    satellite_id=current_satellite,
+                    warning=warning,
+                    reasons=tuple(warning_reasons),
+                )
+            )
+            warning_active = warning
 
         nearest_wp = nearest_waypoint_name(route, sample.latitude, sample.longitude)
         debug.update(
@@ -185,25 +259,54 @@ def apply_x_azimuth_events(
             }
         )
 
-        is_violation = forward_violation or aft_violation
-        if is_violation and not violation_active:
-            if is_elevation_blocked:
-                reason = _format_elevation_reason(
-                    current_satellite,
-                    float(debug.get("elevation_degrees", 0.0)),
-                    float(debug.get("min_elevation_degrees", 0.0)),
-                    debug_metadata=debug,
+        constraints: dict[XConstraint, str] = {}
+        if interference_warning:
+            constraints[XConstraint.AFT_CONE] = _format_azimuth_reason(
+                current_satellite,
+                False,
+                True,
+                relative_azimuth,
+                False,
+                debug_metadata=debug,
+            )
+        if is_elevation_blocked:
+            constraints[XConstraint.ELEVATION] = _format_elevation_reason(
+                current_satellite,
+                float(debug.get("elevation_degrees", 0.0)),
+                rule_engine.config.elevation_min_degrees,
+                debug_metadata=debug,
+            )
+        if forward_violation:
+            constraints[XConstraint.AR_CONE] = _format_azimuth_reason(
+                current_satellite,
+                True,
+                False,
+                relative_azimuth,
+                True,
+                debug_metadata=debug,
+            )
+
+        for constraint, previous_satellite in list(active_violations.items()):
+            if constraint not in constraints:
+                rule_engine.events.append(
+                    MissionEvent(
+                        timestamp=sample.timestamp,
+                        event_type=EventType.X_AZIMUTH_VIOLATION,
+                        transport=Transport.X,
+                        affected_transport=Transport.X,
+                        severity="info",
+                        reason=f"X constraint clear ({constraint.value})",
+                        satellite_id=previous_satellite,
+                        metadata={"constraint": constraint.value},
+                    )
                 )
-            else:
-                reason = _format_azimuth_reason(
-                    current_satellite,
-                    forward_violation,
-                    aft_violation,
-                    relative_azimuth,
-                    in_aar_window,
-                    debug_metadata=debug,
-                )
+                del active_violations[constraint]
+
+        for constraint, reason in constraints.items():
+            if active_violations.get(constraint) == current_satellite:
+                continue
             metadata: dict[str, float | bool | str | None] = {
+                "constraint": constraint.value,
                 "relative_azimuth_degrees": round(relative_azimuth, 1),
                 "absolute_azimuth_degrees": round(
                     float(debug.get("absolute_azimuth_degrees", relative_azimuth)), 1
@@ -241,22 +344,9 @@ def apply_x_azimuth_events(
                     metadata=metadata,
                 )
             )
-            violation_active = True
-        elif not is_violation and violation_active:
-            rule_engine.events.append(
-                MissionEvent(
-                    timestamp=sample.timestamp,
-                    event_type=EventType.X_AZIMUTH_VIOLATION,
-                    transport=Transport.X,
-                    affected_transport=Transport.X,
-                    severity="info",
-                    reason="X azimuth clear",
-                    satellite_id=current_satellite,
-                )
-            )
-            violation_active = False
+            active_violations[constraint] = current_satellite
 
-    if violation_active:
+    for constraint, satellite_id in active_violations.items():
         rule_engine.events.append(
             MissionEvent(
                 timestamp=mission_end,
@@ -264,10 +354,33 @@ def apply_x_azimuth_events(
                 transport=Transport.X,
                 affected_transport=Transport.X,
                 severity="info",
-                reason="X azimuth clear",
-                satellite_id=current_satellite,
+                reason=f"X constraint clear ({constraint.value})",
+                satellite_id=satellite_id,
+                metadata={"constraint": constraint.value},
             )
         )
+
+    if condition_events is not None:
+        # Export-only copies preserve dev's independent constraint boundaries.
+        # A simultaneous elevation blockage does not contaminate the aft/AR
+        # evidence; clearing elevation must restore its independent capability.
+        condition_events.extend(
+            replace(
+                event,
+                metadata={
+                    **event.metadata,
+                    "line_of_sight_blocked": event.metadata.get("constraint")
+                    == XConstraint.ELEVATION.value,
+                    "elevation_below_min": event.metadata.get("constraint")
+                    == XConstraint.ELEVATION.value,
+                },
+            )
+            for event in rule_engine.events[event_start:]
+            if event.event_type == EventType.X_AZIMUTH_VIOLATION
+        )
+
+    # Ending the mission does not imply the geometry cleared the warning.
+    return warning_boundaries
 
 
 def apply_manual_outages(
@@ -284,7 +397,9 @@ def apply_manual_outages(
         duration = getattr(outage, "duration_seconds", 0) or 0
         end_time = start_time + timedelta(seconds=duration)
         reason = getattr(outage, "reason", None) or f"{transport.value} outage"
-        rule_engine.add_manual_outage_events(start_time, end_time, transport, reason)
+        rule_engine.add_manual_outage_events(
+            start_time, end_time, transport, reason, outage_id=outage.id
+        )
 
 
 def _format_gap_reason(event: str, lost: str | None, regain: str | None) -> str:
@@ -374,10 +489,14 @@ def _format_elevation_reason(
 
 
 def _resolve_satellite_longitude(
-    satellite_id: str, poi_manager: POIManager | None
+    satellite_id: str,
+    poi_manager: POIManager | None,
+    satellite_catalog: SatelliteCatalog | None = None,
 ) -> float | None:
     """Resolve satellite longitude from catalog or POI manager."""
-    catalog = get_satellite_catalog()
+    catalog = (
+        satellite_catalog if satellite_catalog is not None else get_satellite_catalog()
+    )
     sat = catalog.get_satellite(satellite_id)
     if sat and sat.longitude is not None:
         return sat.longitude

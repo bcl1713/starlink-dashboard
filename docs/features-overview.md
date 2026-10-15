@@ -30,15 +30,13 @@ starlink-dashboard/
 │       ├── tests/                 # Test suite
 │       ├── config.yaml            # Default configuration
 │       └── README.md              # Backend-specific docs
-├── monitoring/                    # Prometheus & Grafana configs
-│   ├── prometheus/
-│   └── grafana/
+├── monitoring/                    # Prometheus configuration
+│   └── prometheus/
 ├── docs/                          # Comprehensive documentation
 │   ├── setup/                     # Setup instructions
 │   ├── api/                       # API endpoints
 │   ├── troubleshooting/           # Common issues
-│   ├── architecture/              # Architecture details
-│   └── grafana-configuration.md   # Dashboard configuration
+│   └── architecture/              # Architecture details
 ├── dev/                           # Development management
 │   ├── STATUS.md                  # Current development status
 │   ├── README.md                  # Workflow documentation
@@ -46,7 +44,6 @@ starlink-dashboard/
 │   └── completed/                 # Completed tasks
 ├── docker-compose.yml             # Service composition
 ├── .env.example                   # Configuration template
-├── AGENTS.md                      # AI development guide
 ├── CONTRIBUTING.md                # Contribution guidelines
 └── README.md                      # This file
 ```
@@ -84,7 +81,6 @@ details.
 
 - Backend response time: <50ms
 - Prometheus query time: <1s
-- Grafana dashboard load: <2s
 
 **See:**
 [Setup Guide - Performance Tuning](./setup/installation.md#performance-tuning)

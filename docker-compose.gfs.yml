@@ -1,0 +1,5 @@
+# Compatibility for existing explicit GFS overlay/profile startup commands.
+# The ordinary stack now includes the worker without a profile.
+services:
+  gfs-worker:
+    profiles: [gfs]

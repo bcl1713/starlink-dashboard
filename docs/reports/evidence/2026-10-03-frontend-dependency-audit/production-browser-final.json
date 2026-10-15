@@ -1,0 +1,215 @@
+{
+  "candidate_sha": "a1a3d05ff75bd9a20e74e2bf918902180ac559a2",
+  "origin": "http://127.0.0.1:18209",
+  "browser": "153.0.8010.12",
+  "observed_at": "2026-10-03T20:34:16.004Z",
+  "api_responses": [
+    {
+      "url": "http://127.0.0.1:18209/api/v2/missions?limit=25&offset=0",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/v2/missions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/v2/missions?limit=25&offset=0",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/v2/missions/issue-209-dependency-acceptance-1791059655929",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/v2/missions/issue-209-dependency-acceptance-1791059655929",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/v2/gps/config",
+      "method": "GET",
+      "status": 503
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-links/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-clocks/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/satellites",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/active-x-link",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "PUT",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "PUT",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/v2/gps/config",
+      "method": "GET",
+      "status": 503
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-links/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-clocks/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/satellites",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/active-x-link",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/routes",
+      "method": "GET",
+      "status": 307
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-clocks/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-links/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/satellites",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview/upcoming-pois",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/active-x-link",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/routes/",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/overview-history",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/active-x-link",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/active-x-link",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:18209/api/export/starlink-csv?start=2026-10-02T20%3A34%3A00.000Z&end=2026-10-03T20%3A34%3A00.000Z",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "page_errors": [],
+  "steps": [
+    "Root redirects to Missions and reads the real collection",
+    "Real Axios POST creates a mission, Router opens its detail, and reload reads persisted data",
+    "Configuration saves the history window through the real PUT API and restores it on reload",
+    "Overview paints its globe and five history panels with the persisted window, and enters native fullscreen",
+    "Export CSV downloads through the real same-origin API"
+  ],
+  "mission_detail_url": "http://127.0.0.1:18209/missions/issue-209-dependency-acceptance-1791059655929",
+  "download": "starlink-export-20261002-203400-20261003-203400.csv",
+  "expected_simulation_gps": {
+    "status": 503,
+    "body": {
+      "detail": "GPS configuration not available in simulation mode"
+    }
+  },
+  "result": "passed"
+}

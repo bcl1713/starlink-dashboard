@@ -104,6 +104,18 @@ Replace entire service configuration.
 
 ---
 
+## Overview Clock Settings
+
+See [Overview Clock Settings](./overview-clock-settings.md) for the persisted
+four-clock API and Mission V2 lifecycle behavior.
+
+## Planned X-band Satellite
+
+See [Manual X-band Satellite Selection](./manual-x-band-selection.md) for manual
+planning selection, persistent settings and mission ownership.
+
+---
+
 ## Configuration Structure
 
 ### Route Configuration

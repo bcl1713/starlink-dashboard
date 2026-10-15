@@ -5,6 +5,7 @@
 # Splitting would fragment the client implementation. Deferred to v0.4.0.
 
 import logging
+import math
 import os
 from datetime import datetime, timezone
 
@@ -13,13 +14,28 @@ from grpc import RpcError
 
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
     TelemetryData,
 )
+from app.services.position_freshness import valid_coordinate
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_observation(value: object, scale: float = 1.0) -> tuple[float, bool]:
+    """Normalize finite numeric readings, retaining zero without inventing it."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return 0.0, False
+    try:
+        normalized = float(value) * scale
+    except (OverflowError, ValueError):
+        return 0.0, False
+    if not math.isfinite(normalized):
+        return 0.0, False
+    return normalized, True
 
 
 def _get_dish_target() -> str:
@@ -332,6 +348,7 @@ class StarlinkClient:
             # Get all required data
             status, obstruction, _alerts = self.get_status_data()
             location = self.get_location_data()
+            position_collected_at = datetime.now(timezone.utc)
             _general, _drop, _run, _latency, _loaded, _usage, _power = (
                 self.get_history_stats(parse_samples=10)
             )
@@ -341,16 +358,18 @@ class StarlinkClient:
             lon = location.get("longitude")
             alt = location.get("altitude", 0.0)
 
-            # Handle missing GPS data
-            if lat is None or lon is None:
-                self.logger.warning("GPS location data not available from dish")
-                lat = lat or 0.0
-                lon = lon or 0.0
+            position_valid = valid_coordinate(lat, 90) and valid_coordinate(lon, 180)
+            if not position_valid:
+                self.logger.warning(
+                    "GPS location data unavailable or invalid from dish"
+                )
+                lat = lon = 0.0
 
             # Convert altitude from meters to feet (1 meter = 3.28084 feet)
             alt_feet = float(alt) * 3.28084 if alt else 0.0
 
             position = PositionData(
+                observed_at=position_collected_at if position_valid else None,
                 latitude=float(lat),
                 longitude=float(lon),
                 altitude=alt_feet,
@@ -359,18 +378,24 @@ class StarlinkClient:
             )
 
             # Extract network metrics
-            latency_ms = status.get("pop_ping_latency_ms", 0.0)
-            downlink_bps = status.get("downlink_throughput_bps", 0.0)
-            uplink_bps = status.get("uplink_throughput_bps", 0.0)
-            packet_loss = (
-                status.get("pop_ping_drop_rate", 0.0) * 100
-            )  # Convert to percentage
+            latency_ms, latency_available = _parse_observation(
+                status.get("pop_ping_latency_ms")
+            )
+            downlink_mbps, downlink_available = _parse_observation(
+                status.get("downlink_throughput_bps"), 1e-6
+            )
+            uplink_mbps, uplink_available = _parse_observation(
+                status.get("uplink_throughput_bps"), 1e-6
+            )
+            packet_loss, packet_loss_available = _parse_observation(
+                status.get("pop_ping_drop_rate"), 100.0
+            )
 
             network = NetworkData(
-                latency_ms=float(latency_ms),
-                throughput_down_mbps=float(downlink_bps / 1e6),
-                throughput_up_mbps=float(uplink_bps / 1e6),
-                packet_loss_percent=float(packet_loss),
+                latency_ms=latency_ms,
+                throughput_down_mbps=downlink_mbps,
+                throughput_up_mbps=uplink_mbps,
+                packet_loss_percent=packet_loss,
             )
 
             # Extract obstruction data.
@@ -380,11 +405,15 @@ class StarlinkClient:
             # dict for compatibility with older mocks.
             obstruction_fraction = status.get(
                 "fraction_obstructed",
-                obstruction.get("fraction_obstructed", 0.0),
+                obstruction.get("fraction_obstructed"),
             )
-            obstruction_pct = ObstructionData(
-                obstruction_percent=float((obstruction_fraction or 0.0) * 100)
+            # starlink-grpc-core 1.2.5 exposes no validity flag for these five
+            # readings. valid_s has unclear detail-completeness semantics in the
+            # library docs; it is not documented as a validity veto.
+            obstruction_percent, obstruction_available = _parse_observation(
+                obstruction_fraction, 100.0
             )
+            obstruction_pct = ObstructionData(obstruction_percent=obstruction_percent)
 
             # Extract environmental data
             uptime = status.get("uptime", 0.0)
@@ -401,6 +430,13 @@ class StarlinkClient:
                 position=position,
                 network=network,
                 obstruction=obstruction_pct,
+                metric_availability=MetricAvailability(
+                    latency_ms=latency_available,
+                    throughput_down_mbps=downlink_available,
+                    throughput_up_mbps=uplink_available,
+                    packet_loss_percent=packet_loss_available,
+                    obstruction_percent=obstruction_available,
+                ),
                 environmental=environmental,
             )
 

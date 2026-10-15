@@ -1,0 +1,398 @@
+{
+  "candidate_sha": "87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde",
+  "native_phase": {
+    "metadata": {
+      "sha": "87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde",
+      "images": [
+        "[starlink-224-backend:87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde] sha256:5f852e6d7fdd802ceb51c087eafc50933d08110c78d57ec7b1ad61cce718e97f",
+        "[starlink-224-frontend-1:87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde] sha256:7fe606cb763b1315b2dc35a87939ce406068d72ccb20f4e5a5f0600f264edbb0",
+        "[prom/prometheus:v3.5.0] sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ],
+      "hardware": {
+        "host": "forge",
+        "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+        "logical_cpus": 20,
+        "memory_bytes": 65915523072
+      },
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "window_seconds": 1800,
+      "viewers": 2,
+      "cadence_seconds": 1,
+      "mode": "incremental",
+      "fixture": "seed-v1-and-public-simulation",
+      "gc_mode": "controlled",
+      "warmup_seconds": 20,
+      "resource_interval_seconds": 5,
+      "cleanup": "passed",
+      "behavior": {
+        "shared_subscription": "passed",
+        "motion": "passed",
+        "masking": "passed",
+        "lifecycle": "passed"
+      },
+      "upstream_work": "recorded",
+      "browser_version": "153.0.8010.12",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "limitations": [
+        "Acceptance probes add counters and append-only I/O; cProfile is separate.",
+        "Synthetic historical density; public simulation current scrapes.",
+        "Configured delay is separate from actual request-start spacing.",
+        "Canvas clears are observed redraws, not an exact uPlot setData count."
+      ],
+      "phase": {
+        "status": "measured",
+        "requested_seconds": 60,
+        "measured_seconds": 60.01103953097481,
+        "warmup_seconds": 20,
+        "final_acceptance": false
+      },
+      "errors": []
+    },
+    "measured_duration_seconds": 60.01103953097481,
+    "max_resource_gap_seconds": 5.380644508055411,
+    "resource_count": 14,
+    "request_count": 106,
+    "request_errors": 0,
+    "request_ms": {
+      "p50": 138.872174,
+      "p95": 177.273697,
+      "p99": 191.640896
+    },
+    "request_start_spacing_seconds": {
+      "p50": 1.136875,
+      "p95": 1.176053,
+      "p99": 1.192037
+    },
+    "observed_viewers": 2,
+    "combined_cpu_percent_one_core": 17.831952393486844,
+    "combined_cpu_percent_host": 0.8915976196743423,
+    "backend_rss_growth_bytes": 8192,
+    "ordinary_heap_growth_bytes": -6348648,
+    "retained_heap_growth_bytes": -6348648,
+    "retained_heap_late_trend": {
+      "duration_seconds": 60.01103953097481,
+      "range_bytes": 6348648,
+      "slope_bytes_per_minute": -6347480.113277959
+    },
+    "upstream_trace": {
+      "whole_run": {
+        "queries": 2833,
+        "evaluation_points": 426194,
+        "span_counts": {
+          "1800": 64,
+          "13": 32,
+          "300": 32,
+          "11": 2513,
+          "900": 32,
+          "3600": 48,
+          "12": 80,
+          "15": 16,
+          "16": 16
+        },
+        "errors": 1
+      },
+      "measured_phase": {
+        "queries": 928,
+        "evaluation_points": 18122,
+        "span_counts": {
+          "11": 912,
+          "12": 16
+        },
+        "errors": 0
+      },
+      "filter": "upstream completion monotonic time within resource endpoints; excludes controls/warm-up"
+    },
+    "request_work_breakdown": {
+      "method": "Request interval overlaps full-window upstream query completion; includes shared concurrent readers; overall warm quantiles include every request",
+      "first_cold_backend_reader_ms": 151.1512789875269,
+      "cold_limit": "Single first HTTP-reader observation excludes JSON encoding, Nginx and browser; cold replay distributions recorded separately",
+      "groups": {
+        "overlapping_full_range_query": {
+          "requests": 0,
+          "request_ms": null
+        },
+        "ordinary_or_completed_result_reuse": {
+          "requests": 106,
+          "request_ms": {
+            "p50": 138.872174,
+            "p95": 177.273697,
+            "p99": 191.640896
+          }
+        }
+      }
+    },
+    "browser_probe_deltas": {
+      "viewers": [
+        {
+          "historyParseCount": 52,
+          "historyParseMs": 355.49999964237213,
+          "plotClears": 260,
+          "longTasks": 9,
+          "longTaskMs": 4852,
+          "frames": 351,
+          "frameMs": 60030.999999999985,
+          "page_id": "1",
+          "mean_history_parse_ms": 6.836538454661002,
+          "plot_clears_per_parse": 5.0
+        },
+        {
+          "historyParseCount": 52,
+          "historyParseMs": 322.5000001192093,
+          "plotClears": 260,
+          "longTasks": 9,
+          "longTaskMs": 3822,
+          "frames": 355,
+          "frameMs": 60047.59999999999,
+          "page_id": "2",
+          "mean_history_parse_ms": 6.201923079215563,
+          "plot_clears_per_parse": 5.0
+        }
+      ],
+      "method": "Endpoint counter differences only; lifetime maxima include controls/warm-up and are not healthy-phase maxima",
+      "limits": "Canvas clear is not exact uPlot setData; native software-rendered frames include scheduled GC and are not an undisturbed frame-continuity benchmark"
+    }
+  },
+  "short_control_only": true,
+  "sustained_gates": "Use qualified one/two-viewer original receipts at their actual SHAs. This 20+60 control run is incomplete for sustained acceptance.",
+  "default_build": {
+    "image_id": "sha256:095657adc22b3387615cfb73712d5f49516e0b974b0ae7fbda96306ba3d5bebc",
+    "omitted_cadence_build_argument": true,
+    "assets_sha256": "d23e0fdce3b408cef50a4c6e4b37a9bc83a4e70a34c940bda744cfe05ce8140c",
+    "byte_identical_to_native_explicit_1": true
+  },
+  "compose_cases": [
+    {
+      "case": "unset",
+      "configured_build_arg": "1",
+      "effective_interval_ms": 1000
+    },
+    {
+      "case": "rollback",
+      "configured_build_arg": "5",
+      "effective_interval_ms": 5000
+    },
+    {
+      "case": "empty",
+      "configured_build_arg": "",
+      "effective_interval_ms": 5000
+    },
+    {
+      "case": "invalid",
+      "configured_build_arg": "invalid",
+      "effective_interval_ms": 5000
+    }
+  ],
+  "canonical_checks": {
+    "backend": {
+      "tested_sha": "b93c8307fa767e55841d8f0ca947717c47fcc734",
+      "log_sha256": "f165df820cd949265e011fc4568184c8b3201654b2fd8f317ca0d8b6eb1c0cfb"
+    },
+    "frontend": {
+      "tested_sha": "87112f0a84ec6ee6fb56f5259c120cbe8a5f1cde",
+      "log_sha256": "526d225bf1425802c6b2a74d19fe885395678f37a3c4b687c43c5bc56626b787"
+    },
+    "static": {
+      "tested_sha": "b93c8307fa767e55841d8f0ca947717c47fcc734",
+      "log_sha256": "ec172281bae24c22aadce7b4410f110cf0fef4be2c91abb6be128b09fcb1b2eb"
+    },
+    "source_equivalence": "b93c8307..87112f0a changes only refresh integration test; backend and production sources unchanged."
+  },
+  "review_fix_controls": {
+    "candidate_sha": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+    "native_phase": {
+      "metadata": {
+        "sha": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+        "images": [
+          "[starlink-224-backend:fb43bc63a57cbc947ef18c83b49df280712f86ea] sha256:fb19060f5de22460e3385c47d5ffa89f63a7d799e144354f4c6200b9b85fcdc4",
+          "[starlink-224-frontend-1:fb43bc63a57cbc947ef18c83b49df280712f86ea] sha256:3e2b910dbea5b7524908f47e32580ffe26f233cc377e86578974c89e05ee663a",
+          "[prom/prometheus:v3.5.0] sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+        ],
+        "hardware": {
+          "host": "forge",
+          "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+          "logical_cpus": 20,
+          "memory_bytes": 65915523072
+        },
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "window_seconds": 1800,
+        "viewers": 2,
+        "cadence_seconds": 1,
+        "mode": "incremental",
+        "fixture": "seed-v1-and-public-simulation",
+        "gc_mode": "controlled",
+        "warmup_seconds": 20,
+        "resource_interval_seconds": 5,
+        "cleanup": "passed",
+        "behavior": {
+          "shared_subscription": "passed",
+          "motion": "passed",
+          "masking": "passed",
+          "lifecycle": "passed"
+        },
+        "upstream_work": "recorded",
+        "browser_version": "153.0.8010.12",
+        "viewport": [
+          1920,
+          1080
+        ],
+        "dpr": 1,
+        "limitations": [
+          "Acceptance probes add counters and append-only I/O; cProfile is separate.",
+          "Synthetic historical density; public simulation current scrapes.",
+          "Configured delay is separate from actual request-start spacing.",
+          "Canvas clears are observed redraws, not an exact uPlot setData count."
+        ],
+        "phase": {
+          "status": "measured",
+          "requested_seconds": 60,
+          "measured_seconds": 60.010047520976514,
+          "warmup_seconds": 20,
+          "final_acceptance": false
+        },
+        "errors": [],
+        "evaluation": {
+          "source_commit": "fb43bc63a57cbc947ef18c83b49df280712f86ea",
+          "source_sha256": "8b35a5de40ca0727ac2625ab1ada271ad27553169c2ad5b0e51153d710068915",
+          "method": "Corrected evaluator applied to retained raw rows; observed metadata is unchanged"
+        }
+      },
+      "measured_duration_seconds": 60.010047520976514,
+      "max_resource_gap_seconds": 5.180558084975928,
+      "resource_count": 14,
+      "request_count": 106,
+      "request_errors": 0,
+      "request_ms": {
+        "p50": 134.637905,
+        "p95": 157.573057,
+        "p99": 194.804346
+      },
+      "request_start_spacing_seconds": {
+        "p50": 1.132873,
+        "p95": 1.156412,
+        "p99": 1.191876
+      },
+      "observed_viewers": 2,
+      "request_coverage": {
+        "2": {
+          "requests": 53,
+          "first_start_offset_seconds": 0.7201990929897875,
+          "last_completion_gap_seconds": 0.33199056796729565,
+          "max_start_gap_seconds": 1.1738187631126493
+        },
+        "1": {
+          "requests": 53,
+          "first_start_offset_seconds": 1.16579878795892,
+          "last_completion_gap_seconds": 0.28217628598213196,
+          "max_start_gap_seconds": 1.2075208449969068
+        }
+      },
+      "memory_coverage": {
+        "backend_rss_bytes": {
+          "samples": 14,
+          "endpoints": true,
+          "max_gap_seconds": 5.180558084975928
+        },
+        "post_gc_heap_bytes": {
+          "samples": 2,
+          "endpoints": true,
+          "max_gap_seconds": 60.010047520976514
+        }
+      },
+      "combined_cpu_percent_one_core": 18.38040870763255,
+      "combined_cpu_percent_host": 0.9190204353816276,
+      "backend_rss_growth_bytes": 20480,
+      "ordinary_heap_growth_bytes": 1451860,
+      "retained_heap_growth_bytes": 1451860,
+      "retained_heap_late_trend": {
+        "duration_seconds": 60.010047520976514,
+        "range_bytes": 1451860,
+        "slope_bytes_per_minute": 1451616.9141434215
+      },
+      "upstream_trace": {
+        "whole_run": {
+          "queries": 2785,
+          "evaluation_points": 425388,
+          "span_counts": {
+            "1800": 64,
+            "13": 32,
+            "11": 2385,
+            "300": 32,
+            "12": 160,
+            "900": 32,
+            "3600": 48,
+            "15": 16,
+            "16": 16
+          },
+          "errors": 1
+        },
+        "measured_phase": {
+          "queries": 944,
+          "evaluation_points": 18434,
+          "span_counts": {
+            "11": 928,
+            "12": 16
+          },
+          "errors": 0
+        },
+        "filter": "upstream completion monotonic time within resource endpoints; excludes controls/warm-up"
+      },
+      "request_work_breakdown": {
+        "method": "Request interval overlaps full-window upstream query completion; includes shared concurrent readers; overall warm quantiles include every request",
+        "first_cold_backend_reader_ms": 147.10576995275915,
+        "cold_limit": "Single first HTTP-reader observation excludes JSON encoding, Nginx and browser; cold replay distributions recorded separately",
+        "groups": {
+          "overlapping_full_range_query": {
+            "requests": 0,
+            "request_ms": null
+          },
+          "ordinary_or_completed_result_reuse": {
+            "requests": 106,
+            "request_ms": {
+              "p50": 134.637905,
+              "p95": 157.573057,
+              "p99": 194.804346
+            }
+          }
+        }
+      },
+      "browser_probe_deltas": {
+        "viewers": [
+          {
+            "historyParseCount": 54,
+            "historyParseMs": 361.100000500679,
+            "plotClears": 270,
+            "longTasks": 9,
+            "longTaskMs": 4354,
+            "frames": 353,
+            "frameMs": 60014.299999999974,
+            "page_id": "1",
+            "mean_history_parse_ms": 6.687037046308871,
+            "plot_clears_per_parse": 5.0
+          },
+          {
+            "historyParseCount": 53,
+            "historyParseMs": 330.900000333786,
+            "plotClears": 265,
+            "longTasks": 7,
+            "longTaskMs": 3310,
+            "frames": 357,
+            "frameMs": 59997.60000000002,
+            "page_id": "2",
+            "mean_history_parse_ms": 6.243396232712944,
+            "plot_clears_per_parse": 5.0
+          }
+        ],
+        "method": "Endpoint counter differences only; lifetime maxima include controls/warm-up and are not healthy-phase maxima",
+        "limits": "Canvas clear is not exact uPlot setData; native software-rendered frames include scheduled GC and are not an undisturbed frame-continuity benchmark"
+      }
+    },
+    "default_build_assets_identical": true,
+    "default_asset_manifest_sha256": "d23e0fdce3b408cef50a4c6e4b37a9bc83a4e70a34c940bda744cfe05ce8140c",
+    "short_control_only": true,
+    "failed_pre_warm_attempt": "fb43bc63a57cbc947ef18c83b49df280712f86ea/default-native-2: native CFI/seccomp crash during hidden control, no measurement, owned cleanup passed; original preserved. Retry same candidate/flags passed."
+  }
+}

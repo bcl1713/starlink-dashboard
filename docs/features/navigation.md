@@ -35,7 +35,7 @@ Upload and manage flight routes in KML format.
 
 ### Route Visualization
 
-Display active routes on Grafana maps.
+Display active routes on Mission Planner maps.
 
 **Features:**
 
@@ -108,7 +108,7 @@ Calculate estimated time of arrival to all POIs.
 - ETA mode switching (anticipated vs estimated)
 - Multiple POI tracking
 - Prometheus metrics export
-- Grafana table visualization
+- Mission Planner table visualization
 
 **ETA Modes:**
 
@@ -130,16 +130,9 @@ Calculate estimated time of arrival to all POIs.
 
 ### POI Visualization
 
-Display POIs on Grafana maps with ETA information.
-
-**Features:**
-
-- POI markers on map
-- ETA countdown timers in table
-- Distance remaining
-- Status indicators (approaching, passed, etc.)
-- Color coding by proximity
-- Alert rules for approaching POIs
+The native Overview displays route-aware upcoming POIs and arrival timing. See
+[Overview features](overview.md) for map labels, event colors, countdowns, and
+freshness rules.
 
 ---
 
@@ -160,7 +153,7 @@ Track flight phases with automatic transitions.
 - Automatic phase detection (simulation mode)
 - Manual phase control (testing endpoints)
 - Phase-based ETA mode switching
-- Grafana phase indicators
+- Mission Planner phase indicators
 - Prometheus metrics
 
 **APIs:**

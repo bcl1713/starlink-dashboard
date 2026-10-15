@@ -212,3 +212,94 @@ def flatten_route_segments(
             combined.extend(segment.coordinates)
 
     return deduplicate_coordinates(combined)
+
+
+def build_planning_primary_route(route_segments, start_coord, end_coord, waypoints=()):
+    """Preserve a complete ordered primary chain and occurrence provenance.
+
+    A complete document-order chain is explicit visit evidence, including loops.
+    Otherwise require a unique geometric chain; branches never flatten. Same-
+    position/time aliases collapse, while source-timed dwell visits survive.
+    """
+    from app.services.kml.timing import extract_timestamp_from_description
+    from app.services.kml.validator import KMLParseError
+
+    if start_coord is None or end_coord is None:
+        raise KMLParseError("Planning primary route requires endpoint waypoints")
+    segments = [s for s in route_segments if s.coordinates]
+    main = [
+        s
+        for s in segments
+        if s.style and s.style.color and s.style.color.lower() == "ffddad05"
+    ]
+    if main:
+        segments = main
+    else:
+        segments = [
+            s
+            for s in segments
+            if not (s.style and s.style.color and s.style.color.lower() == "ffb3b3b3")
+        ]
+    ordered = []
+    current = start_coord
+    for segment in sorted(segments, key=lambda s: s.order):
+        if coordinates_match(segment.coordinates[0], current):
+            reverse = False
+        elif coordinates_match(segment.coordinates[-1], current):
+            reverse = True
+        else:
+            ordered = []
+            break
+        ordered.append((segment, reverse))
+        current = segment.coordinates[0] if reverse else segment.coordinates[-1]
+    if not ordered or not coordinates_match(current, end_coord):
+        remaining = list(segments)
+        ordered = []
+        current = start_coord
+        while remaining:
+            candidates = []
+            for i, segment in enumerate(remaining):
+                if coordinates_match(segment.coordinates[0], current):
+                    candidates.append((i, False))
+                elif coordinates_match(segment.coordinates[-1], current):
+                    candidates.append((i, True))
+            if len(candidates) != 1:
+                raise KMLParseError("Ambiguous or disconnected primary route chain")
+            i, reverse = candidates[0]
+            segment = remaining.pop(i)
+            ordered.append((segment, reverse))
+            current = segment.coordinates[0] if reverse else segment.coordinates[-1]
+    path, provenance = [], []
+    for segment, reverse in ordered:
+        coords = list(reversed(segment.coordinates)) if reverse else segment.coordinates
+        before = next((w for w in reversed(waypoints) if w.order < segment.order), None)
+        after = next((w for w in waypoints if w.order > segment.order), None)
+        before_time = (
+            extract_timestamp_from_description(before.description) if before else None
+        )
+        after_time = (
+            extract_timestamp_from_description(after.description) if after else None
+        )
+        dwell = (
+            len(coords) == 2
+            and coordinates_match(coords[0], coords[1])
+            and before_time
+            and after_time
+            and before_time != after_time
+            and before.coordinate
+            and after.coordinate
+            and coordinates_match(before.coordinate, coords[0])
+            and coordinates_match(after.coordinate, coords[1])
+        )
+        for j, coord in enumerate(coords):
+            if (
+                path
+                and coordinates_match(path[-1], coord, tolerance=1e-6)
+                and not (dwell and j == 1)
+            ):
+                continue
+            path.append(coord)
+            provenance.append((segment.order, len(coords) - 1 - j if reverse else j))
+    if len(path) < 2 or not coordinates_match(current, end_coord):
+        raise KMLParseError("Primary route does not reach its expected arrival")
+    return path, provenance

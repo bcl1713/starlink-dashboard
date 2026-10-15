@@ -1,6 +1,7 @@
 """Regression tests for mission package exports with adjusted takeoff times."""
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from app.mission.exporter import ExportArtifact
@@ -53,8 +54,8 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
 
     with (
         patch(
-            "app.mission.package.__main__.build_mission_timeline",
-            return_value=(rebuilt_timeline, MagicMock()),
+            "app.mission.package.__main__.prepare_mission_timeline",
+            return_value=SimpleNamespace(timeline=rebuilt_timeline),
         ) as mock_build,
         patch("app.mission.storage.save_mission_timeline") as mock_save,
         patch(
@@ -78,7 +79,7 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
     mock_build.assert_called_once()
     mock_save.assert_not_called()
     mock_load.assert_not_called()
-    assert mock_generate.call_count == 2
+    assert mock_generate.call_count == 1
     assert all(
         call.kwargs["timeline"] is rebuilt_timeline
         for call in mock_generate.call_args_list

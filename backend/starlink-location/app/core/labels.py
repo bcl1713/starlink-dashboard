@@ -14,7 +14,9 @@ def get_mode_label(config) -> str:
     return config.mode
 
 
-def get_status_label(latency_ms: float, packet_loss_percent: float) -> str:
+def get_status_label(
+    latency_ms: float | None, packet_loss_percent: float | None
+) -> str:
     """
     Get the connection status label based on network performance.
 
@@ -29,8 +31,11 @@ def get_status_label(latency_ms: float, packet_loss_percent: float) -> str:
         packet_loss_percent: Packet loss percentage (0-100)
 
     Returns:
-        str: One of "excellent", "good", "degraded", "poor"
+        str: One of "excellent", "good", "degraded", "poor", or "unknown"
+            when either input is unavailable (None).
     """
+    if latency_ms is None or packet_loss_percent is None:
+        return "unknown"
     if latency_ms < 50 and packet_loss_percent < 1:
         return "excellent"
     elif latency_ms < 100 and packet_loss_percent < 5:
@@ -39,6 +44,23 @@ def get_status_label(latency_ms: float, packet_loss_percent: float) -> str:
         return "degraded"
     else:
         return "poor"
+
+
+def get_telemetry_status_label(telemetry) -> str:
+    """Classify only verified health inputs; legacy telemetry fails closed."""
+    availability = getattr(telemetry, "metric_availability", None)
+    return get_status_label(
+        (
+            telemetry.network.latency_ms
+            if getattr(availability, "latency_ms", False)
+            else None
+        ),
+        (
+            telemetry.network.packet_loss_percent
+            if getattr(availability, "packet_loss_percent", False)
+            else None
+        ),
+    )
 
 
 def get_geographic_labels(latitude: float, longitude: float) -> dict:
@@ -99,9 +121,7 @@ def apply_common_labels(telemetry, config) -> dict:
               }
     """
     mode = get_mode_label(config)
-    status = get_status_label(
-        telemetry.network.latency_ms, telemetry.network.packet_loss_percent
-    )
+    status = get_telemetry_status_label(telemetry)
     geo_labels = get_geographic_labels(
         telemetry.position.latitude, telemetry.position.longitude
     )

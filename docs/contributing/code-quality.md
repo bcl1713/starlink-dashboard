@@ -49,22 +49,24 @@ ruff check --fix backend/starlink-location/app
 **Configuration:**
 
 - Prettier: `.prettierrc` (print width 80, prose wrap always)
-- ESLint: `frontend/mission-planner/.eslintrc.json`
-- Node version: 18.17.1
+- ESLint: `frontend/mission-planner/eslint.config.js`
+- Node runtime and dependency installation: follow the authoritative
+  [Quality Gates prerequisites](quality-gates.md#prerequisites).
 
 **Running Locally:**
 
 ```bash
 cd frontend/mission-planner
+npm ci
 
 # Format with Prettier
 npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
 
 # Lint with ESLint
-npx eslint src --ext .ts,.tsx
+npm run lint
 
 # Auto-fix ESLint violations
-npx eslint src --ext .ts,.tsx --fix
+npm run lint -- --fix
 ```
 
 ---
@@ -79,13 +81,16 @@ npx eslint src --ext .ts,.tsx --fix
 **Configuration:**
 
 - Prettier: `.prettierrc` (shared config)
-- Markdownlint: `.markdownlint.jsonc` (if present) or defaults
+- Markdownlint: `.markdownlint-cli2.jsonc`
 
 **Running Locally:**
 
+Run from the repository root after installing the tools listed in the
+[Quality Gates prerequisites](quality-gates.md#prerequisites).
+
 ```bash
 # Format with Prettier
-npx prettier --write "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --write "docs/**/*.md"
 
 # Lint with Markdownlint
 markdownlint-cli2 "docs/**/*.md"

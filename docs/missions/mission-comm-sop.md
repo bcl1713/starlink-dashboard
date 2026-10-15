@@ -16,7 +16,7 @@ delivery procedures (PDF, Excel, CSV) prior to flight.
 
 ### 2. [Monitoring & Alert Response](sop/monitoring.md)
 
-Instructions for configuring Grafana dashboards, setting up alert thresholds,
+Instructions for using the native Overview, setting up alert thresholds,
 monitoring routine during flight, and responding to DEGRADED or CRITICAL alerts.
 
 ### 3. [Incident Response & Appendices](sop/incident-response.md)

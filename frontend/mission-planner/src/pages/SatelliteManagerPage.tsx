@@ -31,11 +31,11 @@ export default function SatelliteManagerPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6 flex justify-between items-start">
+    <div className="app-page">
+      <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Satellite Manager</h1>
-          <p className="text-gray-600">
+          <h1 className="page-title mb-2">Satellite Manager</h1>
+          <p className="page-description">
             Manage X-Band, Ka-Band, and Ku-Band satellites. These are
             geostationary satellites at the equator (latitude = 0). Click on a
             satellite to edit.
@@ -60,7 +60,7 @@ export default function SatelliteManagerPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-3 status-critical border border-destructive/30 rounded">
           {error}
         </div>
       )}

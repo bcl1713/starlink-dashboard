@@ -1,8 +1,9 @@
 # Starlink Dashboard
 
 A Docker-based monitoring system for Starlink terminals with real-time metrics
-visualization through Prometheus and Grafana. Supports both live monitoring of
-physical Starlink hardware and simulation mode for offline development.
+visualization through Prometheus and Mission Planner. Supports both live
+monitoring of physical Starlink hardware and simulation mode for offline
+development.
 
 **Status:** Phase 0 Complete (Foundation) + ETA Route Timing Feature Complete
 **Version:** 0.2.0 **Last Updated:** 2026-02-28
@@ -48,14 +49,25 @@ cd starlink-dashboard
 cp .env.example .env
 
 # 3. Start services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
-open http://localhost:3000                # Grafana (admin/admin)
+open http://localhost:5173                # Mission Planner
 ```
 
 **Detailed setup:** See [Quick Start Guide](./docs/setup/quick-start.md)
+
+After `git pull`, use `./scripts/compose.sh up -d --build --remove-orphans`
+again. This removes the retired Grafana container from an existing local stack.
+Its old data volume is retained; remove it separately only if its data is no
+longer needed. Ordinary wrapper commands include the NOAA GFS worker, so
+`./scripts/compose.sh build` followed by `./scripts/compose.sh up -d` also
+starts model weather support. Winds and temperature remain disabled until
+enabled in Configuration. Local Compose overrides and custom file selection
+continue to work normally. The wrapper passes the full checked-out HEAD SHA
+to all three image builds. A dirty worktree is not an exact acceptance
+candidate; use a clean commit for acceptance.
 
 ---
 
@@ -63,13 +75,13 @@ open http://localhost:3000                # Grafana (admin/admin)
 
 Once services are running:
 
-| Service          | URL                             | Purpose                  |
-| ---------------- | ------------------------------- | ------------------------ |
-| **Grafana**      | <http://localhost:3000>         | Dashboards (admin/admin) |
-| **Prometheus**   | <http://localhost:9090>         | Metrics database         |
-| **Backend API**  | <http://localhost:8000/docs>    | Interactive API docs     |
-| **Health Check** | <http://localhost:8000/health>  | Service status           |
-| **Metrics**      | <http://localhost:8000/metrics> | Raw Prometheus metrics   |
+| Service             | URL                             | Purpose                        |
+| ------------------- | ------------------------------- | ------------------------------ |
+| **Mission Planner** | <http://localhost:5173>         | Dashboard and mission planning |
+| **Prometheus**      | <http://localhost:9090>         | Metrics database               |
+| **Backend API**     | <http://localhost:8000/docs>    | Interactive API docs           |
+| **Health Check**    | <http://localhost:8000/health>  | Service status                 |
+| **Metrics**         | <http://localhost:8000/metrics> | Raw Prometheus metrics         |
 
 ---
 
@@ -113,8 +125,7 @@ Comprehensive documentation is organized by topic:
 
 **Development Questions:**
 
-- See [Contributing Guide](./CONTRIBUTING.md)
-**Specific Issues:**
+- See [Contributing Guide](./CONTRIBUTING.md) **Specific Issues:**
 
 - See [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
 - Run diagnostic commands in [Quick Start](./docs/setup/quick-start.md)
@@ -138,7 +149,6 @@ Part of the Starlink Dashboard project.
 
 ## Related Resources
 
-- [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Docker Documentation](https://docs.docker.com/)

@@ -7,6 +7,7 @@ ETACalculator class with all methods integrated.
 DEPRECATED: Import from app.services.eta instead.
 """
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from app.models.flight_status import ETAMode, FlightPhase
@@ -44,6 +45,8 @@ class ETACalculator(_ETACalculator):
         active_route: Optional["ParsedRoute"] = None,
         eta_mode: ETAMode = ETAMode.ESTIMATED,
         flight_phase: FlightPhase | None = None,
+        *,
+        mission_now: datetime | None = None,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -58,6 +61,7 @@ class ETACalculator(_ETACalculator):
             active_route,
             eta_mode,
             flight_phase,
+            **({"mission_now": mission_now} if mission_now is not None else {}),
         )
 
     def _calculate_route_aware_eta(
@@ -95,10 +99,16 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
+        *,
+        mission_now: datetime | None = None,
     ) -> float | None:
         """Calculate ETA using expected times from flight plan (anticipated/pre-departure mode)."""
         return self._projection._calculate_route_aware_eta_anticipated(
-            current_lat, current_lon, poi, active_route
+            current_lat,
+            current_lon,
+            poi,
+            active_route,
+            **({"mission_now": mission_now} if mission_now is not None else {}),
         )
 
     def _calculate_on_route_eta_estimated(

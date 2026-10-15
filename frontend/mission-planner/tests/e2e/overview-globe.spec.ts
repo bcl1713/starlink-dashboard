@@ -1,0 +1,1273 @@
+import { expect, test } from '@playwright/test';
+import { waitForGlobeVisualReady } from './support/globe-visual-ready';
+
+test.describe('Globe overview', () => {
+  test.describe.configure({ mode: 'serial' });
+  test.use({ viewport: { width: 1920, height: 1080 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {},
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+        },
+      });
+    });
+    await page.route('**/api/overview-clocks/settings', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          clocks: [
+            { label: 'Zulu / UTC', time_zone: 'UTC' },
+            { label: 'Washington, DC', time_zone: 'America/New_York' },
+            { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+            { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+          ],
+        }),
+      });
+    });
+  });
+  test('hides primary navigation during native overview fullscreen', async ({
+    page,
+  }) => {
+    await page.goto('/overview');
+    const fullscreenControl = page.getByRole('button', {
+      name: 'Enter fullscreen overview',
+    });
+
+    await expect(fullscreenControl).toBeVisible();
+    await expect(fullscreenControl).toBeEnabled();
+
+    const fullscreenChange = page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          document.addEventListener('fullscreenchange', () => resolve(), {
+            once: true,
+          });
+        })
+    );
+
+    await fullscreenControl.click();
+    await fullscreenChange;
+    expect(
+      await page.evaluate(
+        () => document.fullscreenElement === document.documentElement
+      )
+    ).toBe(true);
+
+    await expect(
+      page.getByRole('navigation', {
+        name: 'Primary navigation',
+      })
+    ).toHaveCount(0);
+  });
+  test('offers native fullscreen for the overview', async ({ page }) => {
+    await page.goto('/overview');
+    await expect(
+      page.getByRole('button', {
+        name: 'Enter fullscreen overview',
+      })
+    ).toBeVisible();
+  });
+  test('renders four operational clocks from saved settings', async ({
+    page,
+  }) => {
+    await page.goto('/overview');
+    await expect(
+      page.getByRole('region', { name: 'Operational clocks' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /zulu \/ utc operational clock/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', {
+        name: /washington, dc operational clock/i,
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /omaha, ne operational clock/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /tokyo, jp operational clock/i })
+    ).toBeVisible();
+  });
+
+  test('renders a projectable configured X-band warning link', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [
+            {
+              id: 'warning-link-route',
+              name: 'Warning link validation route',
+              point_count: 2,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        },
+      });
+    });
+    await page.route('**/api/routes/warning-link-route', async (route) => {
+      await route.fulfill({
+        json: {
+          id: 'warning-link-route',
+          name: 'Warning link validation route',
+          points: [
+            { latitude: 12, longitude: -90 },
+            { latitude: 13, longitude: -89 },
+          ],
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: '2026-06-21T12:00:00.000Z',
+          position: { latitude: 12, longitude: -90, altitude: 35_000 },
+          network: {
+            latency_ms: 42.5,
+            throughput_down_mbps: 125.3,
+            throughput_up_mbps: 25.1,
+            packet_loss_percent: 0.5,
+          },
+          environmental: { signal_quality_percent: 85 },
+        },
+      });
+    });
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [{ satellite_id: 'X-Warning', transport: 'X', longitude: -90 }],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: { satellite_id: 'X-Warning', state: 'warning' },
+      });
+    });
+
+    await page.goto('/overview');
+
+    await expect(
+      page
+        .getByRole('region', { name: 'Planned satellite' })
+        .getByText('X-Warning', { exact: true })
+    ).toBeVisible();
+  });
+
+  test('refreshes status without overlapping requests', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-06-21T12:00:00.000Z') });
+    let statusRequestCount = 0;
+    let inFlightRequests = 0;
+    let maximumInFlightRequests = 0;
+    let releaseSlowRefresh: (() => void) | undefined;
+
+    const slowRefresh = new Promise<void>((resolve) => {
+      releaseSlowRefresh = resolve;
+    });
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [
+            {
+              id: 'stale-status-route',
+              name: 'Stale status validation route',
+              point_count: 2,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        },
+      });
+    });
+
+    await page.route('**/api/routes/stale-status-route', async (route) => {
+      await route.fulfill({
+        json: {
+          id: 'stale-status-route',
+          name: 'Stale status validation route',
+          points: [
+            { latitude: 0, longitude: 179 },
+            { latitude: 0, longitude: -179 },
+          ],
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      statusRequestCount += 1;
+      inFlightRequests += 1;
+      maximumInFlightRequests = Math.max(
+        maximumInFlightRequests,
+        inFlightRequests
+      );
+
+      try {
+        if (statusRequestCount > 1) {
+          await slowRefresh;
+        }
+
+        await route.fulfill({
+          json: {
+            timestamp: new Date().toISOString(),
+            position: {
+              latitude: 0,
+              longitude: 179,
+            },
+          },
+        });
+      } finally {
+        inFlightRequests -= 1;
+      }
+    });
+
+    await page.goto('/overview');
+    await page.bringToFront();
+
+    await expect.poll(() => statusRequestCount).toBe(1);
+
+    await page.clock.fastForward(1_000);
+
+    await expect.poll(() => statusRequestCount).toBeGreaterThanOrEqual(2);
+
+    expect(maximumInFlightRequests).toBe(1);
+
+    releaseSlowRefresh?.();
+  });
+  test('marks a previously fresh status sample as stale when refresh hangs', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T11:59:59.000Z';
+    let statusRequestCount = 0;
+
+    await page.clock.setFixedTime(new Date('2026-06-21T12:00:00.000Z'));
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [
+            {
+              id: 'stale-status-route',
+              name: 'Stale status validation route',
+              point_count: 2,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        },
+      });
+    });
+
+    await page.route('**/api/routes/stale-status-route', async (route) => {
+      await route.fulfill({
+        json: {
+          id: 'stale-status-route',
+          name: 'Stale status validation route',
+          points: [
+            { latitude: 0, longitude: 179 },
+            { latitude: 0, longitude: -179 },
+          ],
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      statusRequestCount += 1;
+
+      if (statusRequestCount === 1) {
+        await route.fulfill({
+          json: {
+            timestamp: observedAt,
+            metric_availability: {
+              latency_ms: true,
+              throughput_down_mbps: true,
+              throughput_up_mbps: true,
+              packet_loss_percent: true,
+              obstruction_percent: true,
+            },
+            network: {
+              latency_ms: 42.5,
+              throughput_down_mbps: 125.3,
+              throughput_up_mbps: 25.1,
+              packet_loss_percent: 0.5,
+            },
+            obstruction: { obstruction_percent: 15 },
+            position: {
+              latitude: 0,
+              longitude: 179,
+            },
+            ground_entry_point: null,
+          },
+        });
+
+        return;
+      }
+
+      await new Promise(() => {});
+    });
+
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    const panels = page.locator('[data-metric-panel]');
+    await expect(panels).toHaveCount(5);
+    await expect(
+      globeLegend.getByText('Aircraft', { exact: true })
+    ).toBeVisible();
+    for (const panel of await panels.all()) {
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).not.toHaveText('Unavailable');
+      await expect(panel.locator('.overview-metric-history__age')).toHaveText(
+        /^Observed 11:59:59 UTC; exact value /
+      );
+    }
+    // Both globe and metric freshness use the ten-second acquisition boundary.
+    await page.clock.setFixedTime(new Date('2026-06-21T12:00:06.000Z'));
+    await expect(
+      globeLegend.getByText('Aircraft', { exact: true })
+    ).toBeVisible();
+    for (const panel of await panels.all())
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).not.toHaveText('Unavailable');
+    await page.clock.setFixedTime(new Date('2026-06-21T12:00:10.000Z'));
+    await expect(
+      page
+        .getByLabel('Map status')
+        .getByText('Status stale · last known', { exact: true })
+    ).toBeVisible();
+    for (const panel of await panels.all()) {
+      await expect(
+        panel.locator('.overview-metric-history__latest')
+      ).toHaveText('Unavailable');
+      await expect(
+        panel.locator('.overview-metric-history__age')
+      ).toContainText(/Last observed .* · 11s old/);
+    }
+    await expect.poll(() => statusRequestCount).toBe(2);
+    await expect(page.getByLabel('Globe legend')).toBeVisible();
+    await expect(
+      page.getByText('GEP unavailable', { exact: true })
+    ).toBeVisible();
+  });
+  test('keeps aircraft and GEP context visible without an active route', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+    const satelliteRequests: string[] = [];
+    const activeXLinkRequests: string[] = [];
+
+    await page.addInitScript(`
+      const RealDate = Date;
+      const fixedTime = '${observedAt}';
+
+      class FixedDate extends RealDate {
+        constructor(...args) {
+          super(args.length === 0 ? fixedTime : args[0]);
+        }
+
+        static now() {
+          return new RealDate(fixedTime).getTime();
+        }
+      }
+
+      window.Date = FixedDate;
+    `);
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: {
+            latitude: 41.2565,
+            longitude: -95.9345,
+          },
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      satelliteRequests.push(route.request().url());
+
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: -60,
+            slot: 'Atlantic',
+            color: '#FF6B6B',
+          },
+          {
+            satellite_id: 'X-Pacific',
+            transport: 'X',
+            longitude: 150,
+            slot: 'Pacific',
+            color: '#FF6B6B',
+          },
+        ],
+      });
+    });
+
+    await page.route('**/api/active-x-link', async (route) => {
+      activeXLinkRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          satellite_id: null,
+        },
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      page.getByText('No active route.', { exact: true })
+    ).toBeVisible();
+    await expect(globeLegend).toBeVisible();
+    await expect.poll(() => satelliteRequests).toHaveLength(1);
+    await expect.poll(() => activeXLinkRequests.length).toBeGreaterThan(0);
+    expect(activeXLinkRequests).toEqual(
+      expect.arrayContaining([expect.stringMatching(/\/api\/active-x-link$/)])
+    );
+    expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
+    await expect(
+      page
+        .getByRole('list', { name: 'Configured map satellites' })
+        .locator('li')
+    ).toHaveCount(2);
+    await expect(
+      page.getByRole('region', { name: 'Planned satellite' })
+    ).toContainText('NO SATELLITE SELECTED');
+    await expect(
+      page.locator('.globe-marker-label').filter({ hasText: /^X-Atlantic$/ })
+    ).toBeVisible();
+    const satelliteLabelWhiteSpace = await page
+      .locator('.globe-marker-label')
+      .filter({ hasText: /^X-Atlantic$/ })
+      .evaluate((label) => getComputedStyle(label).whiteSpace);
+    expect(satelliteLabelWhiteSpace).toBe('nowrap');
+    const chartCanvases = page.locator('.overview-metric-history canvas');
+    await expect(chartCanvases).toHaveCount(5);
+    const globeCanvasSelector =
+      '.overview-page canvas:not(.overview-metric-history canvas)';
+    const globeCanvas = page.locator(globeCanvasSelector);
+    await expect(globeCanvas).toHaveCount(1);
+    expect(
+      await globeCanvas.evaluate((canvas) =>
+        Boolean((canvas as HTMLCanvasElement).getContext('webgl2'))
+      )
+    ).toBe(true);
+    expect(
+      await chartCanvases
+        .first()
+        .evaluate(
+          (chart, globe) =>
+            Boolean(
+              chart.compareDocumentPosition(globe) &
+                Node.DOCUMENT_POSITION_PRECEDING
+            ),
+          await globeCanvas.elementHandle()
+        )
+    ).toBe(true);
+    const overlayInteraction = await page
+      .locator('.overview-top-overlays')
+      .evaluate((topOverlay, selector) => {
+        const canvas = document.querySelector(selector);
+        const overlayBounds = canvas!.getBoundingClientRect();
+        const x = overlayBounds.left + overlayBounds.width / 2;
+        const y = overlayBounds.top + overlayBounds.height / 2;
+        const hitTarget = document.elementFromPoint(x, y);
+        return {
+          canvasIsHitTarget: hitTarget === canvas,
+          canvasRect: canvas?.getBoundingClientRect().toJSON(),
+          overlayPointerEvents: getComputedStyle(topOverlay).pointerEvents,
+          x,
+          y,
+        };
+      }, globeCanvasSelector);
+    expect(overlayInteraction.overlayPointerEvents).toBe('auto');
+    expect(overlayInteraction.canvasIsHitTarget).toBe(true);
+    expect(overlayInteraction.canvasRect).not.toBeNull();
+    const beforeDrag = await globeCanvas.screenshot();
+    await page.mouse.move(overlayInteraction.x, overlayInteraction.y);
+    await page.mouse.down();
+    await page.mouse.move(
+      overlayInteraction.x + 180,
+      overlayInteraction.y + 40,
+      {
+        steps: 12,
+      }
+    );
+    await page.mouse.up();
+    await expect
+      .poll(async () => (await globeCanvas.screenshot()).equals(beforeDrag))
+      .toBe(false);
+    await expect(
+      globeLegend.getByText('Aircraft', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Aircraft', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Ground entry point', { exact: true })
+    ).toBeVisible();
+    await expect(page.getByText('GEP', { exact: true })).toBeVisible();
+  });
+
+  test('reports unavailable satellite configuration without a marker', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        json: {
+          detail: 'Satellite configuration unavailable',
+        },
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      page
+        .getByLabel('Map status')
+        .getByText('Satellite configuration unavailable', {
+          exact: true,
+        })
+    ).toBeVisible();
+
+    await expect(
+      globeLegend.getByText('X-Atlantic', { exact: true })
+    ).toHaveCount(0);
+  });
+  test('hides invalid configured satellite records', async ({ page }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-invalid',
+            transport: 'X',
+            longitude: 181,
+            slot: 'Invalid slot',
+            color: '#FF6B7B',
+          },
+        ],
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      globeLegend.getByText('X-invalid', { exact: true })
+    ).toHaveCount(0);
+  });
+
+  test('reports a whitespace-only configured satellite ID as invalid without a marker', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: '   ',
+            transport: 'X',
+            longitude: -60,
+          },
+        ],
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    await expect(
+      page
+        .getByRole('list', { name: 'Configured map satellites' })
+        .locator('li')
+    ).toHaveCount(0);
+    await expect(
+      page.locator('.globe-marker-label', { hasText: /\S/ })
+    ).toHaveCount(0);
+  });
+  test('reports unavailable configured GEO geometry when the selected satellite is invalid', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: '2026-06-21T12:00:00.000Z',
+          position: {
+            latitude: 12,
+            longitude: -60,
+            altitude: 35_000,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: 181,
+          },
+        ],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: 'X-Atlantic',
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      page.getByRole('region', { name: 'Planned satellite' })
+    ).toContainText('X-Atlantic');
+    await expect(page.getByLabel('Map status')).toContainText(
+      'Planned link unavailable'
+    );
+    await expect(globeLegend.getByText('Planned satellite link')).toHaveCount(
+      0
+    );
+    await expect(
+      page.locator('.globe-marker-label').filter({ hasText: /^X-Atlantic$/ })
+    ).toHaveCount(0);
+  });
+  test('requests and reports a shared aircraft-history trail', async ({
+    page,
+  }) => {
+    const historyRequests: string[] = [];
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: 175,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      historyRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {
+            starlink_dish_latitude_degrees: [
+              [1_781_999_999, 10],
+              [1_782_000_000, 10],
+            ],
+            starlink_dish_longitude_degrees: [
+              [1_781_999_999, 175],
+              [1_782_000_000, -179],
+            ],
+          },
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Track history', { exact: true })
+    ).toBeVisible();
+    await expect(globeLegend.getByRole('combobox')).toHaveCount(0);
+    await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(1);
+    expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
+  });
+  test('reports unavailable aircraft history without replacing live telemetry', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        json: {
+          detail: 'Overview history is temporarily unavailable',
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Track history', { exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page
+        .getByLabel('Map status')
+        .getByText('Track history unavailable', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Aircraft', { exact: true })
+    ).toBeVisible();
+  });
+  test('updates the aircraft history window and refetches shared history', async ({
+    page,
+  }) => {
+    let selectedWindow = 1800;
+    const historyRequests: string[] = [];
+    const settingsUpdates: number[] = [];
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      historyRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          window_seconds: selectedWindow,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {},
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      const request = route.request();
+      if (request.method() === 'PUT') {
+        const update = request.postDataJSON() as {
+          window_seconds: number;
+        };
+        selectedWindow = update.window_seconds;
+        settingsUpdates.push(selectedWindow);
+      }
+      await route.fulfill({
+        json: {
+          window_seconds: selectedWindow,
+        },
+      });
+    });
+    await page.goto('/overview');
+    await page.goto('/configuration');
+    const historyWindow = page.getByLabel('Overview history window');
+    await expect(historyWindow).toHaveValue('1800');
+    await historyWindow.selectOption('900');
+    await expect.poll(() => settingsUpdates).toEqual([900]);
+    await expect(historyWindow).toHaveValue('900');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
+    await expect(page.getByLabel('Network history context')).toContainText(
+      'LAST 15 MIN'
+    );
+    await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(2);
+  });
+  test('renders retained POIs and the next-POI/landing panel at 1920x1080', async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(60_000);
+    const now = '2026-09-22T12:00:00.000Z';
+    const activeMissionPois = {
+      state: 'available' as const,
+      calculated_at: now,
+      flight_phase: 'in_flight',
+      scheduled_departure_time: null,
+      position_state: 'fresh',
+      position_observed_at: now,
+      pois: [
+        {
+          poi_id: 'departure-kadw',
+          projected_route_progress: 0,
+          flight_phase: 'in_flight',
+          name: 'KADW',
+          kind: 'departure' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T10:00:00.000Z',
+          eta_seconds: -7_200,
+          estimated_arrival_time: '2026-09-22T10:00:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: false,
+          map_retained: true,
+        },
+        {
+          poi_id: 'aar-passed',
+          projected_route_progress: 5,
+          flight_phase: 'in_flight',
+          name: 'AAR complete',
+          kind: 'aar_end' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T11:30:00.000Z',
+          eta_seconds: -1_800,
+          estimated_arrival_time: '2026-09-22T11:30:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: false,
+          map_retained: true,
+        },
+        {
+          poi_id: 'arrival-rkso',
+          projected_route_progress: 100,
+          flight_phase: 'in_flight',
+          name: 'RKSO',
+          kind: 'arrival' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T14:00:00.000Z',
+          eta_seconds: 7_200,
+          estimated_arrival_time: '2026-09-22T14:00:00.000Z',
+          eta_type: 'anticipated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'x-band',
+          projected_route_progress: 45,
+          flight_phase: 'in_flight',
+          name: 'X-band handoff',
+          kind: 'x_band_transition' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T12:45:00.000Z',
+          eta_seconds: 2_700,
+          estimated_arrival_time: '2026-09-22T12:45:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-entry',
+          projected_route_progress: 35,
+          flight_phase: 'in_flight',
+          name: 'Ka entry',
+          kind: 'ka_coverage_entry' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T12:35:00.000Z',
+          eta_seconds: 2_100,
+          estimated_arrival_time: '2026-09-22T12:35:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-swap',
+          projected_route_progress: 20,
+          flight_phase: 'in_flight',
+          name: 'Ka swap',
+          kind: 'ka_transition' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T12:20:00.000Z',
+          eta_seconds: 1_200,
+          estimated_arrival_time: '2026-09-22T12:20:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'aar-start',
+          projected_route_progress: 10,
+          flight_phase: 'in_flight',
+          name: 'AAR start',
+          kind: 'aar_start' as const,
+          latitude: 0,
+          longitude: -90,
+          expected_arrival_time: '2026-09-22T12:10:00.000Z',
+          eta_seconds: 600,
+          estimated_arrival_time: '2026-09-22T12:10:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-exit',
+          projected_route_progress: 60,
+          flight_phase: 'in_flight',
+          name: 'Ka exit',
+          kind: 'ka_coverage_exit' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T13:30:00.000Z',
+          eta_seconds: 5_400,
+          estimated_arrival_time: '2026-09-22T13:30:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+      ],
+    };
+
+    await page.addInitScript(`
+      const RealDate = Date;
+      const fixedTime = '${now}';
+
+      class FixedDate extends RealDate {
+        constructor(...args) {
+          super(args.length === 0 ? fixedTime : args[0]);
+        }
+
+        static now() {
+          return new RealDate(fixedTime).getTime();
+        }
+      }
+
+      window.Date = FixedDate;
+    `);
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({
+        json: {
+          ...activeMissionPois,
+          pois: [
+            activeMissionPois.pois[6],
+            activeMissionPois.pois[5],
+            activeMissionPois.pois[4],
+            activeMissionPois.pois[3],
+            activeMissionPois.pois[2],
+            activeMissionPois.pois[0],
+            activeMissionPois.pois[1],
+            activeMissionPois.pois[7],
+          ],
+        },
+      })
+    );
+
+    // Exercise retained POIs in a settled no-route/no-position state.
+    await page.route('**/api/routes', (route) =>
+      route.fulfill({ json: { routes: [], total: 0 } })
+    );
+    await page.route('**/api/status', (route) =>
+      route.fulfill({ json: { timestamp: now } })
+    );
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    // The fitted no-route fallback exposes the Americas; the old canvas-center
+    // sample is now on the dark Pacific at this fixed UTC time.
+    await waitForGlobeVisualReady(page, earthTexture, { x: 0.6, y: 0.5 });
+    await page.getByRole('button', { name: /fullscreen/i }).click();
+    await expect
+      .poll(
+        async () =>
+          (await page.locator('[data-metric-panel]').first().boundingBox())
+            ?.width
+      )
+      .toBe(440);
+
+    expect(
+      await page.evaluate(() => ({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        visualWidth: window.visualViewport?.width,
+        visualHeight: window.visualViewport?.height,
+        devicePixelRatio: window.devicePixelRatio,
+      }))
+    ).toEqual({
+      width: 1920,
+      height: 1080,
+      visualWidth: 1920,
+      visualHeight: 1080,
+      devicePixelRatio: 1,
+    });
+
+    const panel = page.getByLabel('Departure and arrival');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.overview-arrival__section')).toHaveCount(2);
+    await expect(
+      panel.getByRole('heading', { name: 'NEXT POI · AAR start' })
+    ).toBeVisible();
+    await expect(
+      panel.getByRole('heading', { name: 'LANDING · RKSO' })
+    ).toBeVisible();
+    await expect(panel).toContainText('10 MIN');
+    await expect(panel).toContainText('2 HR');
+    await expect(panel).toContainText('14:00Z');
+    await expect(panel).toContainText('anticipated');
+    await expect(page.getByLabel('Map POIs')).toContainText('AAR complete');
+    const clusteredPoiIds = [
+      'departure-kadw',
+      'aar-passed',
+      'arrival-rkso',
+      'x-band',
+      'ka-entry',
+      'ka-swap',
+      'aar-start',
+      'ka-exit',
+    ];
+    const fallback = page.locator('[data-poi-label-fallback="true"]');
+    if (await fallback.count()) {
+      await expect(fallback).toBeVisible();
+      await expect(fallback).toContainText(/POIs/);
+    } else {
+      const clusteredLabels = await Promise.all(
+        clusteredPoiIds.map(async (poiId) => {
+          const label = page.locator(`[data-poi-label="${poiId}"]`);
+          await expect(label).toBeVisible();
+          const box = await label.boundingBox();
+          expect(box).not.toBeNull();
+          return box!;
+        })
+      );
+      for (let index = 0; index < clusteredLabels.length; index += 1) {
+        for (
+          let other = index + 1;
+          other < clusteredLabels.length;
+          other += 1
+        ) {
+          const first = clusteredLabels[index];
+          const second = clusteredLabels[other];
+          expect(
+            first.x + first.width <= second.x ||
+              second.x + second.width <= first.x ||
+              first.y + first.height <= second.y ||
+              second.y + second.height <= first.y
+          ).toBe(true);
+        }
+      }
+    }
+    await expect(page.getByLabel('Map status')).toContainText(
+      'Position unavailable'
+    );
+    await expect(page.getByLabel('Map status')).not.toContainText('Loading');
+    // Keep a review artifact without comparing randomized WebGL pixels.
+    await page.screenshot({
+      path: testInfo.outputPath('retained-map-pois-and-arrival.png'),
+    });
+  });
+
+  test('retains a persisted custom aircraft history window', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1200,
+        },
+      });
+    });
+    await page.goto('/overview');
+    await page.goto('/configuration');
+    await expect(page.getByLabel('Overview history window')).toHaveValue(
+      '1200'
+    );
+  });
+});

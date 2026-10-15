@@ -1,5 +1,6 @@
 """Integration tests for POI ETA quick-reference behavior."""
 
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from app.mission.dependencies import get_route_manager
@@ -64,3 +65,45 @@ def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
 
     # Clear overrides
     test_client.app.dependency_overrides.clear()
+
+
+def test_public_poi_create_list_and_get_preserve_typed_schedule_metadata(test_client):
+    """Public CRUD responses must not discard persisted typed POI metadata."""
+    expected_arrival_time = datetime(2026, 9, 22, 14, 0, tzinfo=timezone.utc)
+    create_response = test_client.post(
+        "/api/pois",
+        json={
+            "name": "Typed transition",
+            "latitude": 41.0,
+            "longitude": -73.0,
+            "kind": "x_band_transition",
+            "expected_arrival_time": expected_arrival_time.isoformat(),
+        },
+    )
+
+    assert create_response.status_code == 201, create_response.text
+    created = create_response.json()
+    assert created["kind"] == "x_band_transition"
+    assert (
+        datetime.fromisoformat(created["expected_arrival_time"])
+        == expected_arrival_time
+    )
+
+    list_response = test_client.get("/api/pois", params={"active_only": "false"})
+    assert list_response.status_code == 200, list_response.text
+    listed = next(
+        poi for poi in list_response.json()["pois"] if poi["id"] == created["id"]
+    )
+    assert listed["kind"] == "x_band_transition"
+    assert (
+        datetime.fromisoformat(listed["expected_arrival_time"]) == expected_arrival_time
+    )
+
+    get_response = test_client.get(f"/api/pois/{created['id']}")
+    assert get_response.status_code == 200, get_response.text
+    fetched = get_response.json()
+    assert fetched["kind"] == "x_band_transition"
+    assert (
+        datetime.fromisoformat(fetched["expected_arrival_time"])
+        == expected_arrival_time
+    )

@@ -26,10 +26,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.dependencies import (
+    get_optional_simulation_run_service,
+    get_poi_manager,
+    get_route_manager,
+)
 from app.models.poi import POIETAListResponse, POIWithETA
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.simulation.run_service import SimulationRunService
+from app.simulation.run_timing import planned_poi_eta, published_replay
 
 from .helpers import (
     calculate_bearing,
@@ -100,6 +106,9 @@ async def get_pois_with_etas(
     ] = True,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> POIETAListResponse:
     """Get all POIs with real-time ETA and distance data.
 
@@ -179,6 +188,10 @@ async def get_pois_with_etas(
         if not active_route and route_manager:
             active_route = route_manager.get_active_route()
 
+        selection = published_replay(run_service)
+        if selection:
+            active_route = selection[0].artifacts.route
+            current_route_progress = selection[1].progress_percent
         active_route_id = None
         if active_route and active_route.metadata and active_route.metadata.file_path:
             try:
@@ -344,6 +357,10 @@ async def get_pois_with_etas(
                         distance, eta_calc.default_speed_knots
                     )
 
+            if selection and poi.route_id == selection[0].route_id:
+                planned_eta = planned_poi_eta(selection[0], selection[1], poi)
+                eta_seconds = planned_eta if planned_eta is not None else -1
+                eta_type = "estimated"
             # Calculate bearing
             bearing = calculate_bearing(
                 latitude, longitude, poi.latitude, poi.longitude

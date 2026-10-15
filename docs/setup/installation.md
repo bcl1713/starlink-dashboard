@@ -86,7 +86,7 @@ Common installation issues and solutions.
 - Can't access services
 - Port conflicts
 - Prometheus not scraping
-- Grafana shows no data
+- Mission Planner shows no data
 - Build failures
 
 **When to use:** When encountering installation problems.
@@ -103,14 +103,13 @@ Common installation issues and solutions.
 git clone https://github.com/your-repo/starlink-dashboard.git
 cd starlink-dashboard
 cp .env.example .env
-docker compose build
-docker compose up -d
+./scripts/compose.sh up -d --build
 curl http://localhost:8000/health
 ```
 
 **Access Points:**
 
-- Grafana: <http://localhost:3000> (admin/admin)
+- Mission Planner: <http://localhost:5173>
 - Prometheus: <http://localhost:9090>
 - Backend API: <http://localhost:8000/docs>
 

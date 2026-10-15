@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import ConfigManager
 from app.core.metrics import (
@@ -44,6 +45,10 @@ async def get_metrics(
     Returns:
     - Prometheus OpenMetrics format text
     """
+    return await run_in_threadpool(_prepare_metrics, route_manager, poi_manager)
+
+
+def _prepare_metrics(route_manager, poi_manager) -> str:
     try:
         # Get current telemetry to update POI metrics
         coordinator = SimulationCoordinator(config=config_manager.get_config())

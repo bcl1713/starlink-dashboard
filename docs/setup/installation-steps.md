@@ -37,7 +37,6 @@ backend/
 monitoring/
 docker-compose.yml
 .env.example
-AGENTS.md
 README.md
 ```
 
@@ -64,13 +63,10 @@ STARLINK_MODE=simulation
 # Service ports
 STARLINK_LOCATION_PORT=8000
 PROMETHEUS_PORT=9090
-GRAFANA_PORT=3000
 
 # Data retention
 PROMETHEUS_RETENTION=1y
 
-# Grafana credentials
-GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 **For now, the defaults are fine.** You can customize later in
@@ -83,7 +79,7 @@ GRAFANA_ADMIN_PASSWORD=admin
 Build all services (takes 2-3 minutes on first run):
 
 ```bash
-docker compose build
+./scripts/compose.sh build
 ```
 
 **Expected output:**
@@ -106,7 +102,6 @@ docker compose images
 CONTAINER           IMAGE                    SIZE
 starlink-location   starlink-location:latest 500MB
 prometheus          prom/prometheus:latest   200MB
-grafana             grafana/grafana:latest   300MB
 ```
 
 ---
@@ -126,7 +121,6 @@ docker compose up -d
  ✔ Network starlink-dashboard-dev_starlink-net  Created
  ✔ Container prometheus                         Started
  ✔ Container starlink-location                  Started
- ✔ Container grafana                            Started
 ```
 
 **Check status:**
@@ -141,7 +135,7 @@ docker compose ps
 NAME                STATUS              PORTS
 starlink-location   Up 10 seconds       0.0.0.0:8000->8000/tcp
 prometheus          Up 12 seconds       0.0.0.0:9090->9090/tcp
-grafana             Up 11 seconds       0.0.0.0:3000->3000/tcp
+mission-planner     Up 11 seconds       0.0.0.0:5173->80/tcp
 ```
 
 All services should show "Up" status.
@@ -188,20 +182,11 @@ docker compose logs -f starlink-location
 
 After successful installation:
 
-### Grafana (Dashboards)
+### Mission Planner (Dashboard and Mission Planning)
 
-**URL:** <http://localhost:3000>
+**URL:** <http://localhost:5173>
 
-**Login:**
-
-- Username: `admin`
-- Password: `admin` (or value from `.env`)
-
-**First login:**
-
-1. Enter credentials
-2. Skip password change prompt (or set new password)
-3. Navigate to Dashboards → Starlink Overview
+Open Overview for live position and network history, or Missions for planning.
 
 ---
 

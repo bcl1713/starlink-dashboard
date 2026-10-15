@@ -1,13 +1,24 @@
 """Pydantic telemetry data models for Starlink simulator."""
 
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, field_serializer
+
+PositionState = Literal["fresh", "stale", "unavailable"]
 
 
 class PositionData(BaseModel):
     """Position telemetry data."""
 
+    observed_at: datetime | None = Field(
+        default=None,
+        description="Collection time of verified coordinates; not receiver GPS fix time.",
+    )
+    speed_observed_at: datetime | None = Field(
+        default=None,
+        description="Collection time of measured speed; absent during GPS warmup.",
+    )
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
     longitude: float = Field(
         ..., description="Longitude in decimal degrees (-180 to 180)"
@@ -50,16 +61,33 @@ class EnvironmentalData(BaseModel):
     )
 
 
+class MetricAvailability(BaseModel):
+    """Per-metric source observation provenance; absent provenance fails closed."""
+
+    latency_ms: bool = False
+    throughput_down_mbps: bool = False
+    throughput_up_mbps: bool = False
+    packet_loss_percent: bool = False
+    obstruction_percent: bool = False
+
+
 class TelemetryData(BaseModel):
     """Complete telemetry data from simulator."""
-
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
 
     timestamp: datetime = Field(..., description="Timestamp of telemetry sample")
     position: PositionData = Field(..., description="Position information")
     network: NetworkData = Field(..., description="Network metrics")
     obstruction: ObstructionData = Field(..., description="Obstruction information")
+    metric_availability: MetricAvailability = Field(
+        default_factory=MetricAvailability,
+        description="Whether each metric has a usable source observation",
+    )
     environmental: EnvironmentalData = Field(
         default_factory=EnvironmentalData,
         description="Environmental and status information",
     )
+
+    @field_serializer("timestamp", when_used="json")
+    def serialize_timestamp(self, value: datetime) -> str:
+        """Serialize timestamps as ISO 8601 strings."""
+        return value.isoformat()

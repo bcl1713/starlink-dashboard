@@ -23,7 +23,8 @@ export function MapControls({
     mapRef.current = map;
     if (bounds && coordinateCount > 0) {
       try {
-        map.fitBounds(bounds, { padding: [50, 50] });
+        // Automatic fitting must complete before this route map can unmount.
+        map.fitBounds(bounds, { padding: [50, 50], animate: false });
       } catch (error) {
         logger.warn('Could not fit bounds to map:', error);
       }

@@ -1,0 +1,182 @@
+{
+  "reviewed_head": "77afa602c1306e1106bfcdbda50f2ff3a5bb7721",
+  "fix_base": "b6f6d1ab16719db43eb79c030d99d630fd430045",
+  "dev_base": "b2ea3341f78137c1409a618c8d8da5814a14dac2",
+  "clean_tracked_status": true,
+  "critical": [],
+  "important": [],
+  "minor": [
+    {
+      "id": "R3",
+      "file": "docs/features/overview.md",
+      "line": 154,
+      "effect": "Guide incorrectly describes background history fetching.",
+      "reproduction": "Compare line to background=true hook and passing unfocused history refresh unit case.",
+      "correction": "Distinguish continued polling, hidden-tab animation pause and suspended-tab catch-up.",
+      "severity": "Minor",
+      "status": "open"
+    }
+  ],
+  "r1": "independently closed",
+  "r2": "independently closed",
+  "technical_product_ready": true,
+  "merge_ready": "with documentation correction and remaining exact-head PR gates",
+  "step7_left_unchecked": true,
+  "unit_files": [
+    "src/pages/useOverviewLayout.test.ts",
+    "src/pages/overview-responsive-layout.test.ts",
+    "src/hooks/api/useOverviewRefresh.test.tsx",
+    "src/hooks/api/useUpdateOverviewClockSettings.test.ts",
+    "src/hooks/api/useUpdateOverviewHistorySettings.test.ts",
+    "src/services/overview-display-protocol.test.ts",
+    "src/services/overview-display-session.test.ts",
+    "src/hooks/useOverviewDisplayHost.test.tsx",
+    "src/hooks/useOverviewDisplayController.test.tsx",
+    "src/pages/OverviewDisplaySettingsCard.test.tsx",
+    "src/pages/OverviewFullscreenControl.test.tsx",
+    "src/pages/overview-fullscreen.test.ts"
+  ],
+  "tests": {
+    "units": {
+      "files": 12,
+      "tests": 177,
+      "duration_s": 1.7,
+      "exit": 0
+    },
+    "compact": {
+      "tests": 1,
+      "duration_s": 10.4,
+      "exit": 0
+    },
+    "headed_refresh_controls_native_os_escape": {
+      "tests": 8,
+      "duration_minutes": 3.9,
+      "exit": 0
+    },
+    "settled_local_feedback": {
+      "tests": 1,
+      "duration_s": 10.5,
+      "exit": 0
+    }
+  },
+  "production_assets_sha256_identical": true,
+  "asset_count": 10,
+  "max_controlled_latency_ms": 5019,
+  "ports_bind_available": [5278, 5280, 18257, 15257],
+  "no_docker_operations": true,
+  "scope": "Fresh independent review; no fixes or PR/merge",
+  "r1_bounds": {
+    "paused": {
+      "layout": "landscape",
+      "flow": "false",
+      "issues": [],
+      "display": {
+        "x": 24,
+        "y": 282.171875,
+        "width": 386.40625,
+        "height": 44,
+        "top": 282.171875,
+        "right": 410.40625,
+        "bottom": 326.171875,
+        "left": 24
+      },
+      "arrival": {
+        "x": 24,
+        "y": 333.203125,
+        "width": 554.40625,
+        "height": 32.796875,
+        "top": 333.203125,
+        "right": 578.40625,
+        "bottom": 366,
+        "left": 24
+      }
+    },
+    "rejected": {
+      "layout": "stacked",
+      "flow": "true",
+      "issues": [],
+      "display": {
+        "x": 12,
+        "y": 591.78125,
+        "width": 370.015625,
+        "height": 134,
+        "top": 591.78125,
+        "right": 382.015625,
+        "bottom": 725.78125,
+        "left": 12
+      },
+      "arrival": {
+        "x": 12,
+        "y": 733.78125,
+        "width": 820,
+        "height": 32.796875,
+        "top": 733.78125,
+        "right": 832,
+        "bottom": 766.578125,
+        "left": 12
+      }
+    }
+  },
+  "settled_local_feedback": [
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "layout": "stacked",
+      "flow": "true",
+      "issues": []
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "desktop",
+      "flow": "false",
+      "issues": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "layout": "stacked",
+      "flow": "true",
+      "issues": []
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "layout": "stacked",
+      "flow": "true",
+      "issues": []
+    }
+  ],
+  "prior_evidence_audit": {
+    "candidate_sha": "77afa602c1306e1106bfcdbda50f2ff3a5bb7721",
+    "audits": [
+      {
+        "manifest_candidate": "77afa602c1306e1106bfcdbda50f2ff3a5bb7721",
+        "directory": "integration",
+        "artifacts": 212,
+        "mismatches": []
+      },
+      {
+        "manifest_candidate": "2cf4da323956ebfd061974d7f07eca9dd275329a",
+        "directory": "task5-resume",
+        "artifacts": 100,
+        "mismatches": []
+      }
+    ],
+    "input_mismatches": []
+  },
+  "reviewer_manifest_audit": {
+    "artifacts": 53,
+    "mismatches": 0
+  },
+  "source_acceptance": "Audited recorded exact-77afa602 canonical/browser/production results, not rerun in review; later commits require corresponding exact-head gates.",
+  "full_environment_local_evidence": "/tmp/starlink-257/.superpowers/sdd/2026-10-04-overview-window-sync-acceptance/evidence/follow-up-review/reviewer-20261004-fresh"
+}

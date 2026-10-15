@@ -9,7 +9,7 @@
 
 ### Missing Metrics Symptoms
 
-- Grafana shows "No data"
+- Overview history is unavailable
 - Prometheus targets show "down"
 - Health endpoint returns empty metrics count
 
@@ -185,36 +185,19 @@ POIs haven't been created yet.
 
 ---
 
-## Grafana Shows No Data
+## Overview History Is Unavailable
 
-### Checking Grafana Data Source
-
-1. Go to <http://localhost:3000>
-2. Configuration → Data Sources → Prometheus
-3. Click "Test" button
-4. Should show green "Data source is working"
-
-### When Data Source Test Fails
+Verify Prometheus readiness and the same-origin backend API:
 
 ```bash
-# Check if Prometheus is running
-docker compose ps prometheus
-
-# Test from Grafana container
-docker compose exec grafana curl http://prometheus:9090
+curl --fail http://localhost:9090/-/ready
+curl --fail http://localhost:5173/api/status
+docker compose logs --tail=30 starlink-location prometheus mission-planner
 ```
 
-### Verifying Grafana Queries
-
-In Grafana dashboard, check PromQL queries:
-
-```promql
-# Simple test query
-starlink_service_info
-
-# If this works, issue is with specific query
-starlink_dish_latitude_degrees
-```
+See
+[Metrics and monitoring troubleshooting](../troubleshooting/metrics-monitoring.md)
+for target checks and query diagnostics.
 
 ---
 
@@ -279,4 +262,3 @@ docker compose restart starlink-location
 
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [PromQL Query Language](https://prometheus.io/docs/prometheus/latest/querying/basics/)
-- [Grafana Troubleshooting](https://grafana.com/docs/grafana/latest/troubleshooting/)

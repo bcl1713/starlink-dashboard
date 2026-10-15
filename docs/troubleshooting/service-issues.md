@@ -9,10 +9,9 @@
 Metrics collection failures, scrape configuration issues, high disk usage, and
 reload errors.
 
-### 2. [Grafana Troubleshooting](services/grafana.md)
+### 2. [Mission Planner Troubleshooting](metrics-monitoring.md#mission-planner-issues)
 
-Access problems, data source connection failures, empty dashboards, and password
-resets.
+Access problems, unavailable history, and same-origin backend API checks.
 
 ### 3. [Network & Connectivity Troubleshooting](services/network.md)
 

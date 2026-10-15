@@ -69,7 +69,7 @@ systeminfo | findstr Memory
 
 ```bash
 # Check all required ports
-for port in 3000 8000 9090; do
+for port in 5173 8000 9090; do
   if lsof -i :$port > /dev/null 2>&1; then
     echo "Port $port is in use"
   else
@@ -136,10 +136,10 @@ wsl -l -v
 
 ```bash
 # Linux/macOS
-lsof -i :3000
+lsof -i :5173
 
 # Windows
-netstat -ano | findstr :3000
+netstat -ano | findstr :5173
 ```
 
 **Options:**

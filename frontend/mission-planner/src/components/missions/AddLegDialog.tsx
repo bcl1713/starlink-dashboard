@@ -134,7 +134,7 @@ export function AddLegDialog({
                 required
                 disabled={isSubmitting}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Default: Leg {existingLegCount + 1}
               </p>
             </div>
@@ -215,7 +215,7 @@ export function AddLegDialog({
                       disabled={isSubmitting}
                     />
                     {uploadedFile && (
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Selected: {uploadedFile.name}
                       </p>
                     )}
@@ -225,7 +225,7 @@ export function AddLegDialog({
             </div>
 
             {uploadError && (
-              <p className="text-sm text-red-600">{uploadError}</p>
+              <p className="text-sm text-destructive">{uploadError}</p>
             )}
           </div>
 

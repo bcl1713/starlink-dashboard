@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"satellite_id":"PAC"},"geometry":{"type":"MultiPolygon","coordinates":[[[[170,-80],[181,-80],[181,80],[170,80],[170,-80]]],[[[-181,-80],[-170,-80],[-170,80],[-181,80],[-181,-80]]]]}}]}

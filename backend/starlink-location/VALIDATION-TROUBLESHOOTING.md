@@ -9,7 +9,8 @@ during validation of the Starlink Location Backend.
 
 1. Check logs: `docker compose logs starlink-location`
 2. Verify port 8000 is available
-3. Rebuild image: `docker compose build --no-cache starlink-location`
+3. From the repository root, rebuild the image:
+   `./scripts/compose.sh build --no-cache starlink-location`
 
 ### Metrics endpoint returns empty
 

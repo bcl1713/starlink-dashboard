@@ -14,6 +14,39 @@ consumers, integrators, developers
 - **[Core Endpoints](./core.md)** - Health, status, and system endpoints
 - **[Configuration Endpoints](./configuration.md)** - System configuration and
   settings
+- **[Overview Clock Settings](./overview-clock-settings.md)** - Persistent
+  dashboard clocks and Mission V2 lifecycle behavior
+- **[Overview History](./overview-history.md)** - Shared aircraft trail and five
+  network metric graphs, rolling five-minute traces, window and failure
+  semantics
+- **[Overview Upcoming POIs](./overview-upcoming-pois.md)** - Active-route
+  generated POI projection, timing provenance, retention, and Top 5 queue
+
+- **[Overview ADS-B aircraft](./overview-adsb.md)** - Optional shared global
+  aircraft settings, acquisition cache, freshness and source errors
+
+### Mission V2 activation
+
+See [paced mission simulation](simulation-run.md) for preview, explicit pacing,
+shared status, effective geometry and lifecycle errors.
+
+`/api/missions` has been removed and now returns 404. There are no supported
+operator or API commands under that retired path. The sole supported activation
+operation is `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
+
+`is_active` is returned server-managed lifecycle state on all other V2 writes.
+Mission creation, adding a leg, and package import accept legacy omitted or
+explicit flag values but persist every incoming leg inactive. A full `PUT` may
+update ordinary active-leg fields, but it preserves that leg's persisted route
+binding and active state; deactivate, replace the route, then activate again to
+change an active leg's route. Re-importing an existing mission with an active
+leg returns 409; deactivate it first. Deleting an active leg or a mission
+containing an active leg also returns 409: deactivate first, then repeat the
+deletion.
+
+On service restart, every persisted Mission V2 `is_active` flag is cleared. No
+route, flight context, timeline, or clock lifecycle state is restored. An
+operator must explicitly activate a leg after restart.
 
 ### Feature Endpoints
 

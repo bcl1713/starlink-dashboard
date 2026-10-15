@@ -1,0 +1,18 @@
+{
+  "description": "Synthetic circular Starlink-like OMM inputs; not a downloaded public catalog or real satellite telemetry. Expand 64 planes with evenly spaced anomalies at the run UTC epoch.",
+  "object": {
+    "NORAD_CAT_ID": "100000000",
+    "EPOCH": "2026-10-04T00:00:00Z",
+    "MEAN_MOTION": 15.1,
+    "ECCENTRICITY": 0.0001,
+    "INCLINATION": 53,
+    "RA_OF_ASC_NODE": 0,
+    "ARG_OF_PERICENTER": 0,
+    "MEAN_ANOMALY": 0,
+    "BSTAR": 0.00002,
+    "MEAN_MOTION_DOT": 0,
+    "MEAN_MOTION_DDOT": 0
+  },
+  "sizes": [2048, 16384],
+  "disconnected_pop_longitude": 120
+}

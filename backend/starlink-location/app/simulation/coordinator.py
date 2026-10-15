@@ -15,6 +15,7 @@ from app.core.metrics import (
 from app.models.config import SimulationConfig
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     TelemetryData,
 )
 from app.services.speed_tracker import SpeedTracker
@@ -22,6 +23,7 @@ from app.simulation.kml_follower import KMLRouteFollower
 from app.simulation.network import NetworkSimulator
 from app.simulation.obstructions import ObstructionSimulator
 from app.simulation.position import PositionSimulator
+from app.simulation.run_replay import ReplayFrame
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ class SimulationCoordinator:
         # Get initial telemetry
         self._last_valid_telemetry = self._generate_telemetry()
 
-    def update(self) -> TelemetryData:
+    def update(self, replay_frame: ReplayFrame | None = None) -> TelemetryData:
         """
         Update all simulators and return current telemetry.
 
@@ -69,9 +71,10 @@ class SimulationCoordinator:
         """
         try:
             # Check if route has changed (for KML route following)
-            self._update_route_following()
+            if replay_frame is None:
+                self._update_route_following()
 
-            telemetry = self._generate_telemetry()
+            telemetry = self._generate_telemetry(replay_frame)
             self._last_valid_telemetry = telemetry
             return telemetry
         except (
@@ -87,16 +90,12 @@ class SimulationCoordinator:
             ImportError,
             EOFError,
         ):
+            if replay_frame is not None:
+                raise
             # Graceful degradation: return last known good state
             if self._last_valid_telemetry:
-                # Update timestamp but return old data
-                return TelemetryData(
-                    timestamp=datetime.now(timezone.utc),
-                    position=self._last_valid_telemetry.position,
-                    network=self._last_valid_telemetry.network,
-                    obstruction=self._last_valid_telemetry.obstruction,
-                    environmental=self._last_valid_telemetry.environmental,
-                )
+                # A failed collection is not a fresh observation.
+                return self._last_valid_telemetry
             else:
                 # Re-raise if no fallback available
                 raise
@@ -163,7 +162,9 @@ class SimulationCoordinator:
             waypoint_index
         )
 
-    def _generate_telemetry(self) -> TelemetryData:
+    def _generate_telemetry(
+        self, replay_frame: ReplayFrame | None = None
+    ) -> TelemetryData:
         """
         Generate complete telemetry data from all simulators.
 
@@ -171,13 +172,19 @@ class SimulationCoordinator:
             TelemetryData with all current metrics
         """
         # Update position
-        position_data = self.position_sim.update()
+        position_data = (
+            replay_frame.position.model_copy(deep=True)
+            if replay_frame
+            else self.position_sim.update()
+        )
+        position_data.observed_at = datetime.now(timezone.utc)
+        position_data.speed_observed_at = None
 
         # Determine if we should use route timing data or GPS-based speed
         # Use route timing speed if:
         # 1. We're following a KML route, AND
         # 2. The route has timing data at current position
-        use_route_timing_speed = False
+        use_route_timing_speed = replay_frame is not None
         if self.position_sim.route_follower:
             expected_speed = (
                 self.position_sim.route_follower.get_segment_speed_at_progress(
@@ -192,16 +199,19 @@ class SimulationCoordinator:
             # Position simulator already set speed from route timing data
             # Keep it as-is, don't override with GPS calculation
             speed = position_data.speed
+            position_data.speed_observed_at = position_data.observed_at
         else:
             # No route timing data - use GPS-based speed calculation
             # This is for live mode or untimed routes
             speed = self.speed_tracker.update(
                 latitude=position_data.latitude,
                 longitude=position_data.longitude,
-                timestamp=time.time(),
+                timestamp=position_data.observed_at.timestamp(),
             )
             # Update position with calculated speed
             position_data.speed = speed
+            if self.speed_tracker.has_observation():
+                position_data.speed_observed_at = position_data.observed_at
 
         # Update network
         network_data = self.network_sim.update()
@@ -222,14 +232,34 @@ class SimulationCoordinator:
         )
 
         # Update route progress metrics if route following is active
-        self._update_route_metrics()
+        if replay_frame is None:
+            self._update_route_metrics()
 
         return TelemetryData(
             timestamp=datetime.now(timezone.utc),
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,
+            metric_availability=MetricAvailability(
+                latency_ms=True,
+                throughput_down_mbps=True,
+                throughput_up_mbps=True,
+                packet_loss_percent=True,
+                obstruction_percent=True,
+            ),
             environmental=environmental_data,
+        )
+
+    def checkpoint_telemetry(self) -> TelemetryData | None:
+        return (
+            self._last_valid_telemetry.model_copy(deep=True)
+            if self._last_valid_telemetry
+            else None
+        )
+
+    def restore_telemetry(self, checkpoint: TelemetryData | None) -> None:
+        self._last_valid_telemetry = (
+            checkpoint.model_copy(deep=True) if checkpoint else None
         )
 
     def get_current_telemetry(self) -> TelemetryData:

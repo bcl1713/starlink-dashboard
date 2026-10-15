@@ -1,0 +1,356 @@
+@import './OverviewVisualTokens.css';
+
+.overview-page {
+  height: 100%;
+  overflow: hidden;
+  background: #030307;
+  position: relative;
+}
+
+.overview-page canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.globe-legend {
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgb(3 3 7 / 82%);
+  color: #f8fafc;
+}
+
+.globe-legend__title {
+  margin: 0 0 0.625rem;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.globe-legend__items {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.globe-legend__items li {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.globe-legend__marker {
+  width: 0.625rem;
+  height: 0.625rem;
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 93%,
+    50% 71%,
+    21% 93%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+}
+
+.globe-legend__marker--aircraft {
+  background: #ffffff;
+  filter: drop-shadow(0 0 2px #72b7ff);
+}
+
+.globe-legend__route {
+  display: block;
+  width: 1.5rem;
+  height: 0.125rem;
+  border-radius: 999px;
+  background: #ffb000;
+}
+
+.globe-legend__route--history {
+  background: #22d3ee;
+}
+
+.globe-legend__route--planned-link,
+.globe-legend__route--traffic-path {
+  height: 0.25rem;
+}
+.overview-map-overlays {
+  display: grid;
+  gap: 8px;
+}
+.overview-map-status {
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.overview-map-status p {
+  margin: 0;
+}
+.globe-legend__marker--ground-entry {
+  background: #c084fc;
+  box-shadow: 0 0 6px rgb(192 132 252 / 90%);
+}
+
+.globe-marker-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  width: max-content;
+  max-width: min(220px, calc(100vw - 32px));
+  display: block;
+  position: absolute;
+  visibility: hidden;
+  padding: 4px 8px;
+  border: 1px solid #64758c;
+  border-radius: 7px;
+  background: rgb(14 24 38 / 92%);
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgb(3 3 7 / 95%);
+}
+.overview-callout-wrapper {
+  pointer-events: none !important;
+}
+.overview-callout-wrapper:has(.overview-label-group[open]) {
+  z-index: 1 !important;
+}
+.overview-map-callout {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.overview-label-stick {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: #bac9db;
+  stroke-width: 1.25;
+}
+.overview-label-stick-shadow {
+  stroke: rgb(3 7 14 / 75%);
+  stroke-width: 3;
+}
+.overview-label-group {
+  display: none;
+  position: absolute;
+  color: #f8fafc;
+  font-size: 0.75rem;
+  pointer-events: auto;
+}
+.overview-label-group summary {
+  box-sizing: border-box;
+  width: 96px;
+  height: 28px;
+  padding: 4px 8px;
+  background: #0e1826;
+  border: 1px solid #64758c;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.overview-label-group ul {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 12px 8px 24px;
+  width: min(220px, calc(100vw - 24px));
+  max-height: 180px;
+  max-height: min(180px, calc(100dvh - 24px));
+  overflow: auto;
+  overflow-wrap: anywhere;
+  background: #0e1826;
+  border: 1px solid #64758c;
+  border-radius: 7px;
+}
+.overview-label-group:focus-within {
+  outline: 2px solid #b8dce7;
+  outline-offset: 3px;
+}
+.overview-top-overlays {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 1;
+  display: grid;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+.overview-clock-panel {
+  width: 100%;
+}
+.overview-clock-panel--message {
+  padding: 12px 16px;
+  font-size: 18px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.overview-clock-panel--message p {
+  margin: 0;
+}
+.operational-clock-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+.operational-clock {
+  min-width: 0;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgb(3 3 7 / 82%);
+  color: #f8fafc;
+  text-align: center;
+}
+.operational-clock__label {
+  margin: 0;
+  overflow: hidden;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.operational-clock__time {
+  display: block;
+  margin-top: 0.375rem;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(1.5rem, 2.25vw, 2.25rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+.overview-display-controls {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.5rem;
+  min-width: 0;
+  pointer-events: none;
+}
+.overview-page[data-layout='desktop'] .overview-display-controls {
+  grid-row: 2;
+}
+.overview-page:not([data-layout='desktop']) .overview-display-controls {
+  grid-column: 1;
+  grid-row: 2;
+}
+.overview-fullscreen-controls {
+  max-width: 100%;
+  min-width: 0;
+}
+.overview-fullscreen-feedback {
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgb(3 3 7 / 90%);
+  color: #f8fafc;
+  font-size: 0.875rem;
+}
+.overview-fullscreen-feedback {
+  margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.overview-display-label {
+  display: block;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  color: var(--overview-secondary);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.overview-fullscreen-control {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: rgb(3 3 7 / 82%);
+  color: #f8fafc;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+.overview-fullscreen-control:hover {
+  background: rgb(15 23 42 / 90%);
+}
+.overview-fullscreen-control:focus-visible {
+  outline: 2px solid #72b7ff;
+  outline-offset: 2px;
+}
+
+.overview-page[data-layout='desktop'] .globe-legend__items li,
+.overview-page[data-layout='desktop'] .overview-map-status {
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.globe-legend__marker--orbital {
+  background: #a6b8d1;
+  width: 4px;
+  height: 4px;
+  opacity: 0.65;
+}
+
+.globe-legend__marker--aircraft,
+.globe-legend__marker--adsb {
+  clip-path: polygon(50% 0, 0 100%, 50% 67.5%, 100% 100%);
+}
+
+.globe-legend__marker--adsb {
+  background: #efb85b;
+  width: 8px;
+  height: 8px;
+}
+
+.overview-map-callout[data-label-in-view='false'] * {
+  visibility: hidden !important;
+}
+
+.globe-legend__route--countries {
+  height: 2px;
+  background: #dde4ee;
+}
+.globe-legend__route--subdivisions {
+  height: 1px;
+  background: #9aaebf;
+}
+.globe-legend__boundary-note,
+.overview-boundary-status {
+  max-width: 17rem;
+  color: #b8c5d4;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.globe-legend:has(.globe-legend__toggle) .overview-display-label {
+  margin: 0;
+  padding: 0 8px 8px;
+}

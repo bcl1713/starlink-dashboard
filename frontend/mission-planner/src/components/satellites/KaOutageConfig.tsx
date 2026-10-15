@@ -203,7 +203,7 @@ export function KaOutageConfig({
                       startTimeError ? 'ka-outage-start-time-error' : undefined
                     }
                     aria-invalid={Boolean(startTimeError)}
-                    className={startTimeError ? 'border-red-500' : ''}
+                    className={startTimeError ? 'border-destructive' : ''}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     24-hour format (HH:mm)
@@ -211,7 +211,7 @@ export function KaOutageConfig({
                   {startTimeError && (
                     <p
                       id="ka-outage-start-time-error"
-                      className="text-sm text-red-500 mt-1"
+                      className="text-sm text-destructive mt-1"
                       role="alert"
                     >
                       {startTimeError}
@@ -242,12 +242,12 @@ export function KaOutageConfig({
                     durationError ? 'ka-outage-duration-error' : undefined
                   }
                   aria-invalid={Boolean(durationError)}
-                  className={durationError ? 'border-red-500' : ''}
+                  className={durationError ? 'border-destructive' : ''}
                 />
                 {durationError && (
                   <p
                     id="ka-outage-duration-error"
-                    className="text-sm text-red-500 mt-1"
+                    className="text-sm text-destructive mt-1"
                     role="alert"
                   >
                     {durationError}

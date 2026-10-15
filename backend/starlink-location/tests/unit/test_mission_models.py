@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
+
 from app.mission.models import (
     AARWindow,
     KaOutage,

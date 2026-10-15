@@ -119,7 +119,6 @@ Essential project documentation at the repository root:
 
 - [README.md](../README.md) - Project overview and quick links
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines and standards
-- [AGENTS.md](../AGENTS.md) - Runtime guidance for AI-assisted development
 
 ### Backend-Specific Documentation
 

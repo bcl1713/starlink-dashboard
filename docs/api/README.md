@@ -19,11 +19,15 @@ The Starlink Dashboard backend provides a comprehensive REST API for:
 - ETA calculations and route timing
 - Mission planning and visualization
 - Real-time mission leg timeline preview
+- [Paced mission-leg simulation](endpoints/simulation-run.md)
 
 All endpoints return JSON unless otherwise specified (except `/metrics` which
 returns Prometheus text format).
 
 ---
+
+See [Aviation weather API](aviation-weather.md) for optional METAR/SPECI, TAF
+and international SIGMET layers.
 
 ## Quick Navigation
 

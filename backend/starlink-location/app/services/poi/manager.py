@@ -5,18 +5,51 @@
 # that are tightly coupled. Separation would split single responsibility across
 # multiple modules with reduced cohesion. Deferred to v0.4.0.
 
+import hashlib
 import json
 import logging
 import re
 import uuid
 from collections.abc import Sequence
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 
-from app.models.poi import POI, POICreate, POIUpdate
 from filelock import FileLock
 
+from app.mission.storage import planning_read_gate
+from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
+
 logger = logging.getLogger(__name__)
+
+
+def _file_signature(path):
+    try:
+        stat = path.stat()
+        return stat.st_dev, stat.st_ino, stat.st_mtime_ns, stat.st_size
+    except FileNotFoundError:
+        return None
+
+
+def _poi_access(fn):
+    @wraps(fn)
+    @planning_read_gate
+    def coherent(self, *args, **kwargs):
+        if _file_signature(self.pois_file) != getattr(
+            self, "_persisted_signature", None
+        ):
+            self._load_pois()
+        return fn(self, *args, **kwargs)
+
+    return coherent
+
+
+def _route_geometry_hash(route) -> str:
+    """Identify the projection geometry independently of route ID and timing."""
+    coordinates = [(point.latitude, point.longitude) for point in route.points]
+    return hashlib.sha256(
+        json.dumps(coordinates, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 class POIManager:
@@ -61,6 +94,7 @@ class POIManager:
             except OSError as e:
                 logger.error(f"Failed to create POI file: {e}")
 
+    @planning_read_gate
     def _load_pois(self) -> None:
         """Load POIs from JSON file with file locking.
 
@@ -73,6 +107,7 @@ class POIManager:
         try:
             with lock.acquire(timeout=5), open(self.pois_file, "r") as f:
                 data = json.load(f)
+                signature = _file_signature(self.pois_file)
         except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
@@ -110,6 +145,15 @@ class POIManager:
                     if updated_at.tzinfo is None:
                         updated_at = updated_at.replace(tzinfo=timezone.utc)
                     poi_data["updated_at"] = updated_at
+                if isinstance(poi_data.get("expected_arrival_time"), str):
+                    expected_arrival_time = datetime.fromisoformat(
+                        poi_data["expected_arrival_time"]
+                    )
+                    if expected_arrival_time.tzinfo is None:
+                        expected_arrival_time = expected_arrival_time.replace(
+                            tzinfo=timezone.utc
+                        )
+                    poi_data["expected_arrival_time"] = expected_arrival_time
 
                 poi = POI(**poi_data)
                 self._pois[poi_id] = poi
@@ -128,8 +172,10 @@ class POIManager:
             ) as e:
                 logger.warning(f"Failed to load POI {poi_id}: {e}")
 
+        self._persisted_signature = signature
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
+    @planning_read_gate
     def _save_pois(self) -> None:
         """Save POIs to JSON file with file locking and atomic writes.
 
@@ -150,11 +196,25 @@ class POIManager:
                 pois_section = {}
                 for poi_id, poi in self._pois.items():
                     poi_dict = poi.model_dump()
+                    if poi.generated_source is not None:
+                        poi_dict["generated_source"] = poi.generated_source
+                    if poi.planned_route_segment_index is not None:
+                        poi_dict["planned_route_segment_index"] = (
+                            poi.planned_route_segment_index
+                        )
                     # Convert datetime to ISO format for JSON serialization
+                    if poi.planned_route_geometry_hash is not None:
+                        poi_dict["planned_route_geometry_hash"] = (
+                            poi.planned_route_geometry_hash
+                        )
                     if isinstance(poi_dict.get("created_at"), datetime):
                         poi_dict["created_at"] = poi_dict["created_at"].isoformat()
                     if isinstance(poi_dict.get("updated_at"), datetime):
                         poi_dict["updated_at"] = poi_dict["updated_at"].isoformat()
+                    if isinstance(poi_dict.get("expected_arrival_time"), datetime):
+                        poi_dict["expected_arrival_time"] = poi_dict[
+                            "expected_arrival_time"
+                        ].isoformat()
                     pois_section[poi_id] = poi_dict
 
                 data["pois"] = pois_section
@@ -166,6 +226,7 @@ class POIManager:
                         json.dump(data, f, indent=2)
                     # Atomic rename (platform-specific but reliable on both Unix and Windows)
                     temp_file.replace(self.pois_file)
+                    self._persisted_signature = _file_signature(self.pois_file)
                     logger.debug(f"Saved {len(self._pois)} POIs to {self.pois_file}")
                 except OSError as e:
                     logger.error(f"Failed to save POI file: {e}")
@@ -200,6 +261,30 @@ class POIManager:
         ) as e:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
+    @_poi_access
+    def checkpoint(self) -> tuple[dict[str, POI], bytes | None]:
+        """Capture owned POIs and exact persisted state for mutation compensation."""
+        return (
+            {key: poi.model_copy(deep=True) for key, poi in self._pois.items()},
+            self.pois_file.read_bytes() if self.pois_file.exists() else None,
+        )
+
+    @_poi_access
+    def restore_checkpoint(
+        self, checkpoint: tuple[dict[str, POI], bytes | None]
+    ) -> None:
+        pois, data = checkpoint
+        with FileLock(self.lock_file, timeout=5):
+            if data is None:
+                self.pois_file.unlink(missing_ok=True)
+            else:
+                temporary = self.pois_file.with_suffix(".restore.tmp")
+                temporary.write_bytes(data)
+                temporary.replace(self.pois_file)
+            self._pois = {key: poi.model_copy(deep=True) for key, poi in pois.items()}
+            self._persisted_signature = _file_signature(self.pois_file)
+
+    @_poi_access
     def list_pois(
         self, route_id: str | None = None, mission_id: str | None = None
     ) -> list[POI]:
@@ -213,13 +298,14 @@ class POIManager:
         Returns:
             List of POI objects
         """
-        pois = list(self._pois.values())
+        pois = [poi.model_copy(deep=True) for poi in self._pois.values()]
         if route_id:
             pois = [poi for poi in pois if poi.route_id == route_id]
         if mission_id:
             pois = [poi for poi in pois if poi.mission_id == mission_id]
         return pois
 
+    @_poi_access
     def get_poi(self, poi_id: str) -> POI | None:
         """
         Get a specific POI by ID.
@@ -230,8 +316,11 @@ class POIManager:
         Returns:
             POI object or None if not found
         """
-        return self._pois.get(poi_id)
+        return (
+            self._pois[poi_id].model_copy(deep=True) if poi_id in self._pois else None
+        )
 
+    @_poi_access
     def find_poi_by_name(self, name: str) -> POI | None:
         """
         Find the first POI matching the provided name (case-insensitive).
@@ -248,6 +337,7 @@ class POIManager:
                 return poi
         return None
 
+    @_poi_access
     def find_global_poi_by_name(self, name: str) -> POI | None:
         """
         Find a global (non-scoped) POI by name.
@@ -268,6 +358,7 @@ class POIManager:
                 return poi
         return None
 
+    @_poi_access
     def delete_scoped_pois_by_names(self, names: set[str]) -> int:
         """
         Delete mission- or route-scoped POIs whose names match.
@@ -294,7 +385,14 @@ class POIManager:
             self._save_pois()
         return len(removed_ids)
 
-    def create_poi(self, poi_create: POICreate, active_route=None) -> POI:
+    def create_poi(
+        self,
+        poi_create: POICreate,
+        active_route=None,
+        *,
+        generated_source: GeneratedPoiSource | None = None,
+        route_segment_index: int | None = None,
+    ) -> POI:
         """
         Create a new POI.
 
@@ -308,6 +406,8 @@ class POIManager:
         Raises:
             ValueError: If POI creation fails
         """
+        original_route = active_route
+        poi_create, active_route = self._creation_inputs(poi_create, active_route)
         slug_source = poi_create.name.lower()
         slug_source = re.sub(r"\s+", "-", slug_source.strip())
         slug_source = re.sub(r"[^a-z0-9\-]+", "", slug_source)
@@ -318,13 +418,6 @@ class POIManager:
             poi_id = f"{poi_create.mission_id}-{base_slug}"
         else:
             poi_id = base_slug
-
-        # Ensure unique ID
-        counter = 1
-        original_id = poi_id
-        while poi_id in self._pois:
-            poi_id = f"{original_id}-{counter}"
-            counter += 1
 
         now = datetime.now(timezone.utc)
         poi = POI(
@@ -337,6 +430,19 @@ class POIManager:
             description=poi_create.description,
             route_id=poi_create.route_id,
             mission_id=poi_create.mission_id,
+            kind=poi_create.kind,
+            generated_source=generated_source,
+            planned_route_segment_index=(
+                route_segment_index if generated_source == "mission-timeline" else None
+            ),
+            expected_arrival_time=poi_create.expected_arrival_time,
+            planned_route_geometry_hash=(
+                _route_geometry_hash(active_route)
+                if active_route
+                and route_segment_index is not None
+                and generated_source == "mission-timeline"
+                else None
+            ),
             created_at=now,
             updated_at=now,
         )
@@ -348,7 +454,7 @@ class POIManager:
 
                 calculator = RouteETACalculator(active_route)
                 projection = calculator.project_poi_to_route(
-                    poi.latitude, poi.longitude
+                    poi.latitude, poi.longitude, route_segment_index=route_segment_index
                 )
 
                 poi.projected_latitude = projection["projected_lat"]
@@ -374,12 +480,36 @@ class POIManager:
                     f"Failed to project new POI {poi_id} onto active route: {e}"
                 )
 
-        self._pois[poi_id] = poi
+        return self._publish_created_poi(poi, original_route, active_route)
+
+    @planning_read_gate
+    def _creation_inputs(self, poi_create, route):
+        return (
+            poi_create.model_copy(deep=True),
+            route.model_copy(deep=True) if route is not None else None,
+        )
+
+    @_poi_access
+    def _publish_created_poi(self, poi, original_route, route_snapshot):
+        if original_route != route_snapshot:
+            # Creating the POI remains valid if its optional projection raced a
+            # route edit. Do not publish coordinates or provenance for old geometry.
+            poi.projected_latitude = None
+            poi.projected_longitude = None
+            poi.projected_waypoint_index = None
+            poi.projected_route_progress = None
+            poi.planned_route_geometry_hash = None
+        counter = 1
+        original_id = poi.id
+        while poi.id in self._pois:
+            poi.id = f"{original_id}-{counter}"
+            counter += 1
+        self._pois[poi.id] = poi
         self._save_pois()
+        logger.info(f"Created POI: {poi.id}")
+        return poi.model_copy(deep=True)
 
-        logger.info(f"Created POI: {poi_id}")
-        return poi
-
+    @_poi_access
     def update_poi(self, poi_id: str, poi_update: POIUpdate) -> POI | None:
         """
         Update an existing POI.
@@ -415,6 +545,7 @@ class POIManager:
         logger.info(f"Updated POI: {poi_id}")
         return poi
 
+    @_poi_access
     def delete_poi(self, poi_id: str) -> bool:
         """
         Delete a POI.
@@ -435,6 +566,7 @@ class POIManager:
         logger.info(f"Deleted POI: {poi_id}")
         return True
 
+    @_poi_access
     def count_pois(self, route_id: str | None = None) -> int:
         """
         Count POIs, optionally by route.
@@ -449,6 +581,7 @@ class POIManager:
             return len([poi for poi in self._pois.values() if poi.route_id == route_id])
         return len(self._pois)
 
+    @_poi_access
     def delete_route_pois(self, route_id: str) -> int:
         """
         Delete all POIs associated with a specific route.
@@ -472,6 +605,7 @@ class POIManager:
 
         return len(pois_to_delete)
 
+    @_poi_access
     def delete_mission_pois(self, mission_id: str) -> int:
         """
         Delete all POIs associated with a specific mission.
@@ -495,6 +629,7 @@ class POIManager:
 
         return len(pois_to_delete)
 
+    @_poi_access
     def delete_mission_pois_by_category(
         self, mission_id: str, categories: set[str]
     ) -> int:
@@ -529,6 +664,7 @@ class POIManager:
 
         return len(to_remove)
 
+    @_poi_access
     def delete_mission_pois_by_name_prefixes(
         self, mission_id: str, prefixes: Sequence[str]
     ) -> int:
@@ -562,6 +698,7 @@ class POIManager:
             )
         return len(to_remove)
 
+    @_poi_access
     def delete_route_mission_pois_with_prefixes(
         self,
         route_id: str,
@@ -602,12 +739,15 @@ class POIManager:
             )
         return len(to_remove)
 
+    @_poi_access
     def delete_leg_pois(
         self,
         route_id: str,
         mission_id: str,
         categories: set[str] | None = None,
         prefixes: Sequence[str] | None = None,
+        kinds: set[MissionPoiKind] | None = None,
+        generated_source: GeneratedPoiSource | None = None,
     ) -> int:
         """Delete POIs for a specific leg (route_id + mission_id combination).
 
@@ -616,6 +756,8 @@ class POIManager:
             mission_id: Mission ID for the leg
             categories: Optional set of categories to filter by
             prefixes: Optional name prefixes to filter by
+            kinds: Optional generated mission POI kinds to filter by
+            generated_source: Optional internal provenance marker to filter by
 
         Returns:
             Number of POIs deleted
@@ -634,6 +776,10 @@ class POIManager:
                     poi.name.startswith(prefix) for prefix in prefixes
                 ):
                     continue
+                if kinds and poi.kind not in kinds:
+                    continue
+                if generated_source and poi.generated_source != generated_source:
+                    continue
                 to_remove.append(poi_id)
 
         for poi_id in to_remove:
@@ -642,15 +788,18 @@ class POIManager:
         if to_remove:
             self._save_pois()
             logger.info(
-                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s)",
+                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s, kinds=%s, generated_source=%s)",
                 len(to_remove),
                 route_id,
                 mission_id,
                 categories,
                 prefixes,
+                kinds,
+                generated_source,
             )
         return len(to_remove)
 
+    @_poi_access
     def reload_pois(self) -> None:
         """Reload POIs from disk, discarding any unsaved changes.
 
@@ -674,6 +823,8 @@ class POIManager:
         if not route or not route.points:
             return 0
 
+        original_route = route
+        pois, route, signature = self._projection_inputs(route)
         from app.services.route_eta_calculator import RouteETACalculator
 
         try:
@@ -693,12 +844,23 @@ class POIManager:
             logger.error(f"Failed to create route ETA calculator: {e}")
             return 0
 
-        projected_count = 0
+        route_geometry_hash = _route_geometry_hash(route)
 
-        for poi_id, poi in list(self._pois.items()):
+        projected = {}
+        for poi_id, poi in pois.items():
             try:
+                # Generated timed cues know which visit to a repeated location
+                # they represent. Keep that segment when reactivating their route.
+                route_segment_index = (
+                    poi.planned_route_segment_index
+                    if poi.generated_source == "mission-timeline"
+                    and poi.planned_route_segment_index is not None
+                    and poi.route_id == Path(route.metadata.file_path).stem
+                    and poi.planned_route_geometry_hash == route_geometry_hash
+                    else None
+                )
                 projection = calculator.project_poi_to_route(
-                    poi.latitude, poi.longitude
+                    poi.latitude, poi.longitude, route_segment_index=route_segment_index
                 )
 
                 # Update POI with projection data
@@ -707,10 +869,7 @@ class POIManager:
                 poi.projected_waypoint_index = projection["projected_waypoint_index"]
                 poi.projected_route_progress = projection["projected_route_progress"]
 
-                # Ensure the POI object is updated in the dict
-                self._pois[poi_id] = poi
-
-                projected_count += 1
+                projected[poi_id] = poi
             except (
                 RuntimeError,
                 ValueError,
@@ -727,13 +886,33 @@ class POIManager:
                 logger.warning(f"Failed to project POI {poi_id} onto route: {e}")
                 continue
 
-        # Save POIs with projection data
-        if projected_count > 0:
+        return self._publish_projections(projected, signature, original_route, route)
+
+    @_poi_access
+    def _projection_inputs(self, route):
+        return (
+            {key: poi.model_copy(deep=True) for key, poi in self._pois.items()},
+            route.model_copy(deep=True),
+            self._persisted_signature,
+        )
+
+    @_poi_access
+    def _publish_projections(
+        self, projected, signature, original_route, route_snapshot
+    ):
+        # The access gate refreshes this manager before comparing. Any intervening
+        # write (including clearing projections) invalidates this batch rather
+        # than overwriting the newer POI coordinates, ownership or projection.
+        if signature != self._persisted_signature or original_route != route_snapshot:
+            logger.info("Discarded POI projections because snapshot inputs changed")
+            return 0
+        if projected:
+            self._pois.update(projected)
             self._save_pois()
-            logger.info(f"Calculated projections for {projected_count} POIs on route")
+            logger.info(f"Calculated projections for {len(projected)} POIs on route")
+        return len(projected)
 
-        return projected_count
-
+    @_poi_access
     def clear_poi_projections(self) -> int:
         """
         Clear all route projection data from POIs (typically on route deactivation).
@@ -756,9 +935,10 @@ class POIManager:
                 poi.projected_route_progress = None
                 cleared_count += 1
 
-        # Save POIs with cleared projections
+        # Persist even an empty clear so a projection already computing from a
+        # prior snapshot cannot republish after deactivation.
+        self._save_pois()
         if cleared_count > 0:
-            self._save_pois()
             logger.info(f"Cleared projections for {cleared_count} POIs")
 
         return cleared_count

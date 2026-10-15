@@ -235,15 +235,13 @@ starlink_distance_to_poi_meters{name=~"airport.*"}
 
 ---
 
-## Integration with Grafana
+## Native Overview and Prometheus
 
-All metrics are automatically available in Grafana dashboards. Use the
-Prometheus data source at `http://prometheus:9090` to create visualizations:
+Mission Planner displays network history through the backend API at
+<http://localhost:5173>. Query other exported metrics directly in Prometheus at
+<http://localhost:9090>.
 
-- **Gauges:** Position, altitude, speed, heading, network performance
-- **Graphs:** Throughput trends, latency over time, obstruction changes
-- **Heatmaps:** Latency distribution by status
-- **Stat panels:** Current uptime, last scrape time, error counts
+See the [Overview features](../features/overview.md) for supported displays.
 
 ---
 

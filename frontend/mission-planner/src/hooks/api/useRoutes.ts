@@ -1,17 +1,20 @@
+import { overviewRefreshOptions } from './overview-refresh-options';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { routesApi } from '../../services/routes';
 
-export function useRoutes() {
+export function useRoutes(live = false) {
   return useQuery({
     queryKey: ['routes'],
-    queryFn: routesApi.list,
+    queryFn: ({ signal }) => routesApi.list(signal),
+    ...overviewRefreshOptions(live),
   });
 }
 
-export function useRoute(routeId: string) {
+export function useRoute(routeId: string, live = false) {
   return useQuery({
     queryKey: ['routes', routeId],
-    queryFn: () => routesApi.get(routeId),
+    queryFn: ({ signal }) => routesApi.get(routeId, signal),
+    ...overviewRefreshOptions(live),
     enabled: !!routeId,
   });
 }

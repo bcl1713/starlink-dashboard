@@ -3,8 +3,10 @@
 import logging
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from hashlib import sha256
+from math import isfinite
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.kml.geometry import (
@@ -15,10 +17,12 @@ from app.services.kml.geometry import (
 )
 from app.services.kml.route_builder import (
     RouteSegmentData,
+    build_planning_primary_route,
     build_primary_route,
     flatten_route_segments,
 )
 from app.services.kml.timing import (
+    assign_planning_timestamps,
     assign_waypoint_timestamps_to_points,
     build_route_timing_profile,
     calculate_segment_speeds,
@@ -45,7 +49,9 @@ class PlacemarkData:
     order: int
 
 
-def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
+def parse_kml_file(
+    file_path: str | Path, *, profile: Literal["legacy", "planning_v1"] = "legacy"
+) -> ParsedRoute | None:
     """
     Parse a KML file and convert to ParsedRoute object.
 
@@ -58,6 +64,10 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
     Raises:
         KMLParseError: If the KML file is invalid or cannot be parsed
     """
+    if profile not in ("legacy", "planning_v1"):
+        raise KMLParseError(
+            "Unknown route ingestion profile; explicit migration required"
+        )
     file_path = Path(file_path)
 
     if not file_path.exists():
@@ -67,15 +77,39 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
         raise KMLParseError(f"File is not a KML file: {file_path}")
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except OSError as e:
+        if profile == "planning_v1":
+            source_bytes = file_path.read_bytes()
+            content = source_bytes.decode("utf-8")
+        else:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+    except (OSError, UnicodeError) as e:
         raise KMLParseError(f"Failed to read KML file: {e}")
 
     try:
         root = ET.fromstring(content)
     except ET.ParseError as e:
         raise KMLParseError(f"Failed to parse KML: {e}")
+
+    if profile == "planning_v1":
+        # Validate raw geometry before legacy parsing can discard invalid tokens.
+        for element in root.findall(".//kml:coordinates", KML_NS):
+            tokens = (element.text or "").split()
+            if not tokens:
+                raise KMLParseError("Planning route contains empty geometry")
+            for token in tokens:
+                try:
+                    values = [float(value) for value in token.split(",")]
+                    if len(values) not in (2, 3) or not all(
+                        isfinite(value) for value in values
+                    ):
+                        raise ValueError("Nonfinite or incomplete coordinate")
+                    if not -180 <= values[0] <= 180 or not -90 <= values[1] <= 90:
+                        raise ValueError("Coordinate out of bounds")
+                except ValueError as exc:
+                    raise KMLParseError(
+                        "Planning route contains invalid geometry"
+                    ) from exc
 
     # Extract name and description from document (could be in Document or Folder)
     doc_name = get_element_text(root, "kml:name")
@@ -105,35 +139,49 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
         len(route_segments),
     )
 
-    departure_wp, arrival_wp = identify_primary_waypoints(route_name, waypoints)
-
-    primary_coords = build_primary_route(
-        route_segments=route_segments,
-        start_coord=(
-            departure_wp.coordinate
-            if departure_wp and departure_wp.coordinate
-            else None
-        ),
-        end_coord=(
-            arrival_wp.coordinate if arrival_wp and arrival_wp.coordinate else None
-        ),
+    primary_waypoints = (
+        [wp for wp in waypoints if not (wp.style_url and "alt" in wp.style_url.lower())]
+        if profile == "planning_v1"
+        else waypoints
     )
+    departure_wp, arrival_wp = identify_primary_waypoints(route_name, primary_waypoints)
 
-    if not primary_coords:
-        logger.warning(
-            "Falling back to legacy route flattening for %s; "
-            "could not determine primary path from %d segments",
-            file_path.name,
-            len(route_segments),
+    provenance = []
+    if profile == "planning_v1":
+        primary_coords, provenance = build_planning_primary_route(
+            route_segments,
+            departure_wp.coordinate if departure_wp else None,
+            arrival_wp.coordinate if arrival_wp else None,
+            primary_waypoints,
         )
-        primary_coords = flatten_route_segments(route_segments)
     else:
-        logger.info(
-            "Identified primary route with %d coordinates (start=%s, end=%s)",
-            len(primary_coords),
-            departure_wp.name if departure_wp else "unknown",
-            arrival_wp.name if arrival_wp else "unknown",
+        primary_coords = build_primary_route(
+            route_segments=route_segments,
+            start_coord=(
+                departure_wp.coordinate
+                if departure_wp and departure_wp.coordinate
+                else None
+            ),
+            end_coord=(
+                arrival_wp.coordinate if arrival_wp and arrival_wp.coordinate else None
+            ),
         )
+
+        if not primary_coords:
+            logger.warning(
+                "Falling back to legacy route flattening for %s; "
+                "could not determine primary path from %d segments",
+                file_path.name,
+                len(route_segments),
+            )
+            primary_coords = flatten_route_segments(route_segments)
+        else:
+            logger.info(
+                "Identified primary route with %d coordinates (start=%s, end=%s)",
+                len(primary_coords),
+                departure_wp.name if departure_wp else "unknown",
+                arrival_wp.name if arrival_wp else "unknown",
+            )
 
     # Convert coordinates to RoutePoint list
     points: list[RoutePoint] = []
@@ -148,17 +196,29 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
                 longitude=coord.longitude,
                 altitude=coord.altitude,
                 sequence=point_sequence,
+                occurrence_id=(
+                    f"point:{point_sequence}" if profile == "planning_v1" else None
+                ),
+                source_segment_order=(
+                    provenance[point_sequence][0] if provenance else None
+                ),
+                source_vertex_index=(
+                    provenance[point_sequence][1] if provenance else None
+                ),
             )
         )
 
     route_waypoints = build_route_waypoints(
-        waypoints=waypoints,
+        waypoints=primary_waypoints,
         departure_wp=departure_wp,
         arrival_wp=arrival_wp,
     )
 
     # Map waypoint timestamps to route points based on proximity
-    assign_waypoint_timestamps_to_points(points, route_waypoints)
+    if profile == "planning_v1":
+        route_waypoints = assign_planning_timestamps(points, route_waypoints)
+    else:
+        assign_waypoint_timestamps_to_points(points, route_waypoints)
 
     # Calculate expected segment speeds from timestamps
     calculate_segment_speeds(points)
@@ -177,6 +237,14 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
     # Create ParsedRoute with timing profile
     parsed_route = ParsedRoute(
         metadata=metadata,
+        ingestion_profile=profile if profile == "planning_v1" else None,
+        content_hash=(
+            sha256(source_bytes).hexdigest() if profile == "planning_v1" else None
+        ),
+        route_id=file_path.stem if profile == "planning_v1" else None,
+        source_departure_time=(
+            points[0].expected_arrival_time if profile == "planning_v1" else None
+        ),
         points=points,
         waypoints=route_waypoints,
         timing_profile=timing_profile,

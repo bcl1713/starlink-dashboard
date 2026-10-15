@@ -2,13 +2,12 @@
 
 ## Project Root
 
-| File                                           | Purpose                                       | Audience     |
-| :--------------------------------------------- | :-------------------------------------------- | :----------- |
-| [README.md](../../README.md)                   | Project overview, quick start, navigation     | Everyone     |
-| [AGENTS.md](../../AGENTS.md)                   | AI development guide, configuration reference | Developers   |
-| [CONTRIBUTING.md](../../CONTRIBUTING.md)       | How to contribute, development workflow       | Contributors |
-| [.env.example](../../.env.example)             | Configuration template with defaults          | Everyone     |
-| [docker-compose.yml](../../docker-compose.yml) | Service definition and composition            | DevOps       |
+| File                                           | Purpose                                   | Audience     |
+| :--------------------------------------------- | :---------------------------------------- | :----------- |
+| [README.md](../../README.md)                   | Project overview, quick start, navigation | Everyone     |
+| [CONTRIBUTING.md](../../CONTRIBUTING.md)       | How to contribute, development workflow   | Contributors |
+| [.env.example](../../.env.example)             | Configuration template with defaults      | Everyone     |
+| [docker-compose.yml](../../docker-compose.yml) | Service definition and composition        | DevOps       |
 
 ## Documentation (docs/)
 
@@ -37,11 +36,11 @@
 
 ### Architecture & Design
 
-| File                                                                  | Purpose                                  | When to read                |
-| :-------------------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
-| [architecture/design-document.md](../architecture/design-document.md) | System architecture and design decisions | Understanding architecture  |
-| [Development Plan](../development-plan.md)                            | Implementation roadmap and phases        | Understanding plan          |
-| [Grafana Configuration](../grafana-configuration.md)                  | Dashboard configuration and usage        | Learning Grafana dashboards |
+| File                                                                  | Purpose                                  | When to read                        |
+| :-------------------------------------------------------------------- | :--------------------------------------- | :---------------------------------- |
+| [architecture/design-document.md](../architecture/design-document.md) | System architecture and design decisions | Understanding architecture          |
+| [Development Plan](../development-plan.md)                            | Implementation roadmap and phases        | Understanding plan                  |
+| [Overview Features](../features/overview.md)                          | Dashboard configuration and usage        | Learning Mission Planner dashboards |
 
 ### Development (development/)
 

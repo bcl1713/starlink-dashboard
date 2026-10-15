@@ -1,0 +1,78 @@
+{
+  "fixture": "F08-map",
+  "description": "Synthetic route-only captured effective routes; no Task 2 projection or IDs. Three independent planned takeoffs, >=4 primary views.",
+  "legs": [
+    {
+      "schemaVersion": 1,
+      "framingVersion": "mission-map-v1",
+      "legId": "f08-short",
+      "referenceUtc": "2026-10-07T08:00:00Z",
+      "route": [
+        {
+          "latitude": 38.95,
+          "longitude": -77.46,
+          "timestamp": "2026-10-07T08:00:00Z"
+        },
+        {
+          "latitude": 40.64,
+          "longitude": -73.78,
+          "timestamp": "2026-10-07T09:00:00Z"
+        }
+      ],
+      "markers": []
+    },
+    {
+      "schemaVersion": 1,
+      "framingVersion": "mission-map-v1",
+      "legId": "f08-polar-dateline",
+      "referenceUtc": "2026-10-10T08:00:00Z",
+      "route": [
+        {
+          "latitude": 64,
+          "longitude": 160,
+          "timestamp": "2026-10-10T08:00:00Z"
+        },
+        {
+          "latitude": 84,
+          "longitude": 179,
+          "timestamp": "2026-10-10T10:00:00Z"
+        },
+        {
+          "latitude": 72,
+          "longitude": -140,
+          "timestamp": "2026-10-10T12:00:00Z"
+        }
+      ],
+      "markers": []
+    },
+    {
+      "schemaVersion": 1,
+      "framingVersion": "mission-map-v1",
+      "legId": "f08-spanning",
+      "referenceUtc": "2026-10-13T08:00:00Z",
+      "route": [
+        { "latitude": 0, "longitude": 0, "timestamp": "2026-10-13T08:00:00Z" },
+        { "latitude": 0, "longitude": 90, "timestamp": "2026-10-13T12:00:00Z" },
+        {
+          "latitude": 0,
+          "longitude": 180,
+          "timestamp": "2026-10-13T16:00:00Z"
+        },
+        {
+          "latitude": 0,
+          "longitude": -90,
+          "timestamp": "2026-10-13T20:00:00Z"
+        },
+        { "latitude": 0, "longitude": 0, "timestamp": "2026-10-14T00:00:00Z" }
+      ],
+      "markers": []
+    }
+  ],
+  "expectedViewIds": [
+    "f08-short/view-1",
+    "f08-polar-dateline/view-1",
+    "f08-spanning/view-1",
+    "f08-spanning/view-2",
+    "f08-spanning/view-3"
+  ]
+}

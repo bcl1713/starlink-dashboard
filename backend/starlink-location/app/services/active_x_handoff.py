@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 from dataclasses import dataclass, field
-from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any
 
 from app.mission.models import MissionLeg, XTransition
 from app.models.route import ParsedRoute
 from app.models.telemetry import TelemetryData
-from app.services.route_eta_calculator import RouteETACalculator
+from app.services.position_freshness import position_observation
+from app.services.route_eta_calculator import (
+    RouteETACalculator,
+    project_point_to_line_segment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +27,9 @@ HANDOFF_ZONE_RADIUS_METERS = 200_000.0
 class XHandoffTracker:
     """In-process guard state for live X-band handoff transitions."""
 
-    armed_transition_ids: set[str] = field(default_factory=set)
     committed_transition_ids: set[str] = field(default_factory=set)
+    observed_at: datetime | None = None
+    furthest_observed_progress: float | None = None
 
 
 @dataclass(frozen=True)
@@ -35,7 +41,7 @@ class ActiveXContext:
     handoff: dict[str, Any]
 
 
-_HANDOFF_TRACKERS: dict[str, XHandoffTracker] = {}
+_HANDOFF_TRACKERS: dict[str, tuple[str, XHandoffTracker]] = {}
 
 
 def reset_x_handoff_state() -> None:
@@ -68,26 +74,62 @@ def resolve_active_x_context(
     leg: MissionLeg,
     route: ParsedRoute | None,
     telemetry: TelemetryData,
+    *,
+    paced_context: ActiveXContext | None = None,
 ) -> ActiveXContext:
-    """Resolve live active and pending X satellites from actual position."""
+    """Prepare inside the geographic zone and commit at projected route passage."""
 
+    if paced_context is not None:
+        return paced_context
     current_satellite = leg.transports.initial_x_satellite_id
     if not current_satellite:
+        _HANDOFF_TRACKERS.pop(leg.id, None)
         return ActiveXContext(None, None, empty_handoff_context())
     if route is None or not leg.transports.x_transitions:
+        _HANDOFF_TRACKERS.pop(leg.id, None)
         return ActiveXContext(current_satellite, None, empty_handoff_context())
 
-    current_progress = _project_progress(
-        route,
+    tracker = _tracker_for(leg, route)
+    transitions = _project_transitions(route, leg.transports.x_transitions)
+    _, position_state = position_observation(
         telemetry.position.latitude,
         telemetry.position.longitude,
+        telemetry.position.observed_at,
+        datetime.now(timezone.utc),
+    )
+    anchored = any(t.anchor is not None for t in leg.transports.x_transitions)
+    duplicate = (
+        anchored
+        and tracker.observed_at is not None
+        and telemetry.position.observed_at is not None
+        and position_state == "fresh"
+        and telemetry.position.observed_at <= tracker.observed_at
+    )
+    if position_state != "fresh" or duplicate:
+        handoff = empty_handoff_context()
+        for transition_progress, transition in transitions:
+            if transition.id in tracker.committed_transition_ids:
+                current_satellite = transition.target_satellite_id
+                handoff = {
+                    **handoff,
+                    "phase": "committed",
+                    "transition_id": transition.id,
+                    "transition_satellite_id": transition.target_satellite_id,
+                    "transition_progress_percent": round(transition_progress, 6),
+                }
+        return ActiveXContext(current_satellite, None, handoff)
+
+    current_progress = (
+        _observed_progress(route, telemetry, tracker)
+        if anchored
+        else _project_progress(
+            route, telemetry.position.latitude, telemetry.position.longitude
+        )
     )
     if current_progress is None:
         return ActiveXContext(current_satellite, None, empty_handoff_context())
 
-    tracker = _tracker_for(leg, route)
     latest_handoff = empty_handoff_context(route_progress=current_progress)
-    transitions = _project_transitions(route, leg.transports.x_transitions)
 
     for transition_progress, transition in transitions:
         if not transition.target_satellite_id:
@@ -105,18 +147,17 @@ def resolve_active_x_context(
 
         in_zone = bool(handoff["in_handoff_zone"])
         has_passed = current_progress >= transition_progress
+        if has_passed:
+            tracker.committed_transition_ids.add(transition.id)
+            current_satellite = transition.target_satellite_id
+            latest_handoff = {**handoff, "phase": "committed"}
+            continue
         if in_zone:
-            tracker.armed_transition_ids.add(transition.id)
             return ActiveXContext(
                 current_satellite,
                 transition.target_satellite_id,
                 {**handoff, "phase": "in_handoff_zone"},
             )
-        if has_passed and transition.id in tracker.armed_transition_ids:
-            tracker.committed_transition_ids.add(transition.id)
-            current_satellite = transition.target_satellite_id
-            latest_handoff = {**handoff, "phase": "committed"}
-            continue
         return ActiveXContext(current_satellite, None, {**handoff, "phase": "outside"})
 
     return ActiveXContext(current_satellite, None, latest_handoff)
@@ -128,25 +169,49 @@ def _project_transitions(
 ) -> list[tuple[float, XTransition]]:
     projected: list[tuple[float, XTransition]] = []
     for transition in transitions:
-        progress = _project_progress(route, transition.latitude, transition.longitude)
+        if transition.anchor is not None:
+            from app.mission.planning.match import resolve_anchor
+            from app.mission.timeline_builder.calculator import (
+                RouteTemporalProjector,
+                derive_mission_window,
+            )
+
+            resolve_anchor(transition.anchor, route)
+            projector = RouteTemporalProjector(route, *derive_mission_window(route))
+            index = transition.anchor.segment_index
+            distances = projector.cumulative_distances
+            distance = distances[index]
+            if index + 1 < len(distances):
+                distance += transition.anchor.fraction * (
+                    distances[index + 1] - distance
+                )
+            progress = 100.0 * distance / projector.total_distance
+        else:
+            progress = _project_progress(
+                route, transition.latitude, transition.longitude
+            )
         if progress is not None:
             projected.append((progress, transition))
     return sorted(projected, key=lambda item: item[0])
 
 
 def _tracker_for(leg: MissionLeg, route: ParsedRoute) -> XHandoffTracker:
-    transition_ids = ",".join(
-        transition.id for transition in leg.transports.x_transitions or []
+    # IDs alone survive route and configuration replacement. Scope all live
+    # memory to the actual route and selected X schedule, including anchors.
+    identity = hashlib.sha256(
+        route.model_dump_json(exclude={"metadata": {"imported_at"}}).encode()
     )
-    key = f"{leg.id}:{_route_id(route) or ''}:{transition_ids}"
-    return _HANDOFF_TRACKERS.setdefault(key, XHandoffTracker())
-
-
-def _route_id(route: ParsedRoute) -> str | None:
-    file_path = route.metadata.file_path
-    if not file_path:
-        return None
-    return Path(file_path).stem
+    identity.update((leg.transports.initial_x_satellite_id or "").encode())
+    for transition in leg.transports.x_transitions:
+        identity.update(transition.model_dump_json().encode())
+    digest = identity.hexdigest()
+    current = _HANDOFF_TRACKERS.get(leg.id)
+    if current is None or current[0] != digest:
+        # Keep only this leg's active identity. A restored configuration must
+        # establish new observed progress, never resume superseded history.
+        current = (digest, XHandoffTracker())
+        _HANDOFF_TRACKERS[leg.id] = current
+    return current[1]
 
 
 def _handoff_context(
@@ -172,6 +237,56 @@ def _handoff_context(
         "route_progress_percent": round(route_progress, 6),
         "transition_progress_percent": round(transition_progress, 6),
     }
+
+
+def _observed_progress(
+    route: ParsedRoute, telemetry: TelemetryData, tracker: XHandoffTracker
+) -> float | None:
+    """Disambiguate repeated geometry using only fresh observed route history.
+
+    Position chooses the nearest segments. Among coincident projections, choose
+    the occurrence nearest the prior observed progress; a tie advances forward.
+    Without prior evidence the earliest occurrence wins. Planned timestamps and
+    mission clock never resolve an ambiguous live position.
+    """
+    candidates = []
+    distance_along = 0.0
+    position = telemetry.position
+    for start, end in zip(route.points, route.points[1:]):
+        lat, lon, offset = project_point_to_line_segment(
+            position.latitude,
+            position.longitude,
+            start.latitude,
+            start.longitude,
+            end.latitude,
+            end.longitude,
+        )
+        distance = distance_along + _distance_meters(
+            start.latitude, start.longitude, lat, lon
+        )
+        candidates.append((offset, distance))
+        distance_along += _distance_meters(
+            start.latitude, start.longitude, end.latitude, end.longitude
+        )
+    if not candidates or distance_along <= 0:
+        return _project_progress(route, position.latitude, position.longitude)
+    # One metre absorbs floating point differences at shared vertices; it is
+    # not a geographic handoff zone or permission to jump to a distant leg.
+    nearest = min(offset for offset, _ in candidates)
+    distances = [distance for offset, distance in candidates if offset <= nearest + 1]
+    previous = tracker.furthest_observed_progress
+    if previous is None:
+        chosen = min(distances)
+    else:
+        previous_distance = previous * distance_along / 100
+        closest = min(abs(distance - previous_distance) for distance in distances)
+        contiguous = [d for d in distances if abs(d - previous_distance) <= closest + 1]
+        forward = [d for d in contiguous if d >= previous_distance]
+        chosen = min(forward) if forward else max(contiguous)
+    progress = 100 * chosen / distance_along
+    tracker.observed_at = position.observed_at
+    tracker.furthest_observed_progress = max(previous or 0, progress)
+    return progress
 
 
 def _project_progress(

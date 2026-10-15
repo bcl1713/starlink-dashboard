@@ -25,14 +25,13 @@ cd starlink-dashboard
 cp .env.example .env
 
 # Build and start
-docker compose build
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Verify
 curl http://localhost:8000/health
 ```
 
-**Access:** Grafana at <http://localhost:3000> (admin/admin)
+**Access:** Mission Planner at <http://localhost:5173>
 
 ---
 
@@ -44,7 +43,7 @@ curl http://localhost:8000/health
 NAME                STATUS              PORTS
 starlink-location   Up 10 seconds       0.0.0.0:8000->8000/tcp
 prometheus          Up 12 seconds       0.0.0.0:9090->9090/tcp
-grafana             Up 11 seconds       0.0.0.0:3000->3000/tcp
+mission-planner     Up 11 seconds       0.0.0.0:5173->80/tcp
 ```
 
 ### Health Check Response
@@ -74,13 +73,10 @@ STARLINK_MODE=simulation
 # Service ports
 STARLINK_LOCATION_PORT=8000
 PROMETHEUS_PORT=9090
-GRAFANA_PORT=3000
 
 # Data retention
 PROMETHEUS_RETENTION=1y
 
-# Grafana credentials
-GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 **For now, the defaults are fine.** You can customize later in

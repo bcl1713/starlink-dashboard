@@ -7,11 +7,13 @@
 
 import logging
 from datetime import datetime, timezone
+from math import isfinite
 from typing import TYPE_CHECKING, Optional
 
 from app.models.flight_status import ETAMode, FlightPhase
 from app.models.poi import POI
 from app.services.eta.calculator import ETACalculator
+from app.services.route_eta.calculator import RouteETACalculator
 
 if TYPE_CHECKING:
     from app.models.route import ParsedRoute, RouteWaypoint
@@ -47,6 +49,8 @@ class ETAProjection:
         active_route: Optional["ParsedRoute"] = None,
         eta_mode: ETAMode = ETAMode.ESTIMATED,
         flight_phase: FlightPhase | None = None,
+        *,
+        mission_now: datetime | None = None,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -94,7 +98,15 @@ class ETAProjection:
                 else:
                     # In anticipated mode, use planned route times
                     eta = self._calculate_route_aware_eta_anticipated(
-                        current_lat, current_lon, poi, active_route
+                        current_lat,
+                        current_lon,
+                        poi,
+                        active_route,
+                        **(
+                            {"mission_now": mission_now}
+                            if mission_now is not None
+                            else {}
+                        ),
                     )
 
             # Fall back to distance/speed calculation if route-aware failed
@@ -145,11 +157,11 @@ class ETAProjection:
         - Current segment: Blend current speed with expected segment speed
           Formula: blended_speed = (current_speed + expected_speed) / 2
         - Future segments: Use expected segment speeds from route timing data
-        - Off-route POIs: Project to route, then apply same logic
+        - All POI types: Use their destination projection with the same logic
 
         Handles two cases:
-        1. POI is on the active route (matches a waypoint by name)
-        2. POI is off-route but has projection data
+        1. POI has stored destination projection data
+        2. Legacy POI matches a named waypoint, projected by the same engine
 
         Args:
             current_lat: Current latitude
@@ -168,34 +180,31 @@ class ETAProjection:
         ):
             return None
 
-        # Try to find matching waypoint on route by name (on-route POI case)
-        matching_waypoint = None
-        for waypoint in active_route.waypoints:
-            if waypoint.name.upper() == poi.name.upper():
-                matching_waypoint = waypoint
-                break
-
-        # If POI is on the route, use direct route-aware calculation
-        if matching_waypoint:
-            return self._calculate_on_route_eta_estimated(
-                current_lat,
-                current_lon,
-                matching_waypoint,
-                active_route,
-                current_speed_knots,
+        # A stored destination projection is authoritative, even when its name
+        # matches a waypoint. Reject incomplete geometry rather than changing
+        # destinations. Progress alone also appears on legacy named POIs.
+        if any(
+            value is not None
+            for value in (
+                poi.projected_latitude,
+                poi.projected_longitude,
+                poi.projected_waypoint_index,
             )
-
-        # If POI is not on route but has projection data, use projection-based calculation
-        if (
-            poi.projected_latitude is not None
-            and poi.projected_longitude is not None
-            and poi.projected_route_progress is not None
         ):
-            return self._calculate_off_route_eta_with_projection_estimated(
+            return self._calculate_projected_eta_estimated(
                 current_lat, current_lon, poi, active_route, current_speed_knots
             )
 
-        # If neither on-route nor has projection, return None to fall back to distance/speed
+        for waypoint in active_route.waypoints:
+            if waypoint.name and waypoint.name.upper() == poi.name.upper():
+                return self._calculate_on_route_eta_estimated(
+                    current_lat,
+                    current_lon,
+                    waypoint,
+                    active_route,
+                    current_speed_knots,
+                )
+
         return None
 
     def _calculate_route_aware_eta_anticipated(
@@ -204,6 +213,8 @@ class ETAProjection:
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
+        *,
+        mission_now: datetime | None = None,
     ) -> float | None:
         """
         Calculate ETA using expected times from flight plan (anticipated/pre-departure mode).
@@ -226,55 +237,54 @@ class ETAProjection:
             ETA in seconds (time until expected arrival) if available, None to fall back
         """
         # Early return if no timing data on route
-        if (
-            not active_route.timing_profile
-            or not active_route.timing_profile.has_timing_data
-        ):
+        timing_profile = active_route.timing_profile
+        if not timing_profile or not timing_profile.has_timing_data:
             return None
 
-        # Check if route has departure time for reference
-        if not active_route.timing_profile.departure_time:
+        departure_time = timing_profile.departure_time
+        if not departure_time:
             return None
 
         try:
-            current_time = datetime.now(timezone.utc)
+            current_time = (
+                mission_now if mission_now is not None else datetime.now(timezone.utc)
+            )
 
-            # First, try to find matching waypoint on route by name
-            # This handles explicitly named waypoints in the KML
+            def anticipated_eta_for_waypoint(waypoint: "RouteWaypoint") -> float | None:
+                if not waypoint.expected_arrival_time:
+                    return None
+
+                planned_duration = waypoint.expected_arrival_time - departure_time
+                if planned_duration.total_seconds() < 0:
+                    return None
+
+                if mission_now is not None:
+                    return max(
+                        0.0,
+                        (waypoint.expected_arrival_time - current_time).total_seconds(),
+                    )
+
+                if departure_time > current_time:
+                    return (
+                        waypoint.expected_arrival_time - current_time
+                    ).total_seconds()
+
+                return planned_duration.total_seconds()
+
+            # First, try to find matching waypoint on route by name.
+            # This handles explicitly named waypoints in the KML.
             for waypoint in active_route.waypoints:
-                if (
-                    waypoint.name
-                    and waypoint.name.upper() == poi.name.upper()
-                    and waypoint.expected_arrival_time
-                ):
-                    # Found matching waypoint with expected arrival time
-                    time_until_arrival = waypoint.expected_arrival_time - current_time
-                    eta_seconds = time_until_arrival.total_seconds()
+                if waypoint.name and waypoint.name.upper() == poi.name.upper():
+                    return anticipated_eta_for_waypoint(waypoint)
 
-                    # Return positive ETA or -1 if time has passed
-                    if eta_seconds > 0:
-                        return eta_seconds
-                    else:
-                        return -1.0
-
-            # Second, try to use POI's projected waypoint index
-            # This is set by route-aware projection for off-route POIs
+            # Second, try to use POI's projected waypoint index.
+            # This is set by route-aware projection for off-route POIs.
             if poi.projected_waypoint_index is not None:
                 waypoint_idx = poi.projected_waypoint_index
                 if 0 <= waypoint_idx < len(active_route.waypoints):
-                    waypoint = active_route.waypoints[waypoint_idx]
-                    if waypoint.expected_arrival_time:
-                        # Calculate time until expected arrival at projected waypoint
-                        time_until_arrival = (
-                            waypoint.expected_arrival_time - current_time
-                        )
-                        eta_seconds = time_until_arrival.total_seconds()
-
-                        # Return positive ETA or -1 if time has passed
-                        if eta_seconds > 0:
-                            return eta_seconds
-                        else:
-                            return -1.0
+                    return anticipated_eta_for_waypoint(
+                        active_route.waypoints[waypoint_idx]
+                    )
 
             # If no waypoint found, return None to fall back to distance/speed
             return None
@@ -303,104 +313,35 @@ class ETAProjection:
         active_route: "ParsedRoute",
         current_speed_knots: float | None = None,
     ) -> float | None:
-        """
-        Calculate ETA for a waypoint with speed blending (estimated/in-flight mode).
-
-        Uses intelligent speed calculation:
-        - Current segment: Blend current speed with expected segment speed
-          Formula: blended_speed = (current_speed + expected_speed) / 2
-        - Future segments: Use expected segment speeds from route timing data
-
-        Args:
-            current_lat: Current latitude
-            current_lon: Current longitude
-            destination_waypoint: Destination waypoint on the route
-            active_route: ParsedRoute with timing data
-            current_speed_knots: Current speed for blending (uses smoothed speed if not provided)
-
-        Returns:
-            ETA in seconds if calculation succeeds, None otherwise
-        """
+        """Normalize a legacy named waypoint into the shared destination contract."""
         try:
-            speed = (
-                current_speed_knots
-                if current_speed_knots is not None
-                else self.calculator._smoothed_speed
+            latitude = destination_waypoint.latitude
+            longitude = destination_waypoint.longitude
+            if (
+                not isfinite(latitude)
+                or not isfinite(longitude)
+                or not -90 <= latitude <= 90
+                or not -180 <= longitude <= 180
+            ):
+                return None
+            projection = RouteETACalculator(active_route).project_poi_to_route(
+                latitude, longitude
             )
-
-            # Find nearest route point to current position
-            nearest_point_index = 0
-            nearest_distance = float("inf")
-
-            for idx, point in enumerate(active_route.points):
-                dist = self.calculator.calculate_distance(
-                    current_lat, current_lon, point.latitude, point.longitude
-                )
-                if dist < nearest_distance:
-                    nearest_distance = dist
-                    nearest_point_index = idx
-
-            # Calculate remaining distance and time segment by segment
-            total_eta_seconds = 0.0
-
-            # Walk through segments from nearest point to destination
-            for idx in range(nearest_point_index, len(active_route.points) - 1):
-                current_point = active_route.points[idx]
-                next_point = active_route.points[idx + 1]
-
-                # Check if we've reached the destination waypoint
-                if (
-                    current_point.latitude == destination_waypoint.latitude
-                    and current_point.longitude == destination_waypoint.longitude
-                ):
-                    break
-
-                # Calculate segment distance
-                segment_distance = self.calculator.calculate_distance(
-                    current_point.latitude,
-                    current_point.longitude,
-                    next_point.latitude,
-                    next_point.longitude,
-                )
-
-                # Determine speed for this segment with blending for current segment
-                if idx == nearest_point_index:
-                    # Current segment: blend current speed with expected speed
-                    expected_speed = current_point.expected_segment_speed_knots or speed
-                    blended_speed = (speed + expected_speed) / 2.0
-                    segment_speed_knots = blended_speed
-                else:
-                    # Future segments: use expected speed if available
-                    segment_speed_knots = (
-                        current_point.expected_segment_speed_knots or speed
-                    )
-
-                # Calculate time for this segment (avoid division by zero)
-                if segment_speed_knots > 0.5:
-                    distance_nm = segment_distance / 1852.0
-                    segment_time = (distance_nm / segment_speed_knots) * 3600.0
-                    total_eta_seconds += segment_time
-
-            # Return total ETA or None if calculation failed
-            if total_eta_seconds > 0:
-                return total_eta_seconds
-
-            return None
-
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            logger.debug(f"On-route estimated ETA calculation failed: {e}")
+            destination = POI(
+                id="route-waypoint",
+                name=destination_waypoint.name,
+                latitude=latitude,
+                longitude=longitude,
+                projected_latitude=projection["projected_lat"],
+                projected_longitude=projection["projected_lon"],
+                projected_waypoint_index=projection["projected_waypoint_index"],
+                projected_route_progress=projection["projected_route_progress"],
+            )
+            return self._calculate_projected_eta_estimated(
+                current_lat, current_lon, destination, active_route, current_speed_knots
+            )
+        except (ValueError, TypeError, AttributeError, LookupError) as exc:
+            logger.debug("Named waypoint ETA projection failed: %s", exc)
             return None
 
     def _calculate_off_route_eta_with_projection_estimated(
@@ -411,31 +352,24 @@ class ETAProjection:
         active_route: "ParsedRoute",
         current_speed_knots: float | None = None,
     ) -> float | None:
-        """
-        Calculate ETA for off-route POI with speed blending (estimated/in-flight mode).
+        """Compatibility entry point for callers with a projected destination."""
+        return self._calculate_projected_eta_estimated(
+            current_lat, current_lon, poi, active_route, current_speed_knots
+        )
 
-        Uses the same segment-walking logic as on-route POIs, but walks only
-        from current position to the POI's projection point on the route.
+    def _calculate_projected_eta_estimated(
+        self,
+        current_lat: float,
+        current_lon: float,
+        poi: POI,
+        active_route: "ParsedRoute",
+        current_speed_knots: float | None = None,
+    ) -> float | None:
+        """Walk remaining route segments for every POI kind and waypoint name.
 
-        Implements speed blending:
-        - Current segment: Blend current speed with expected segment speed
-        - Future segments: Use expected segment speeds
-
-        Strategy:
-        1. Find nearest route point to current position
-        2. Find which route segment contains the projection point
-        3. Walk segments from current position to the projection point
-        4. Use blended speed for current segment, expected speeds for subsequent segments
-
-        Args:
-            current_lat: Current latitude
-            current_lon: Current longitude
-            poi: POI with projection data (projected_latitude, projected_longitude)
-            active_route: ParsedRoute with timing data
-            current_speed_knots: Current speed for blending (uses smoothed speed if not provided)
-
-        Returns:
-            ETA in seconds if calculation succeeds, None otherwise
+        Project the current position continuously and stop at the destination's
+        projection. Blend measured speed with the end point's planned speed for
+        the first remaining segment; use planned speeds for future segments.
         """
         try:
             speed = (
@@ -443,84 +377,90 @@ class ETAProjection:
                 if current_speed_knots is not None
                 else self.calculator._smoothed_speed
             )
+            projection_latitude = poi.projected_latitude
+            projection_longitude = poi.projected_longitude
+            projection_segment_index = poi.projected_waypoint_index
+            projection_progress = poi.projected_route_progress
 
-            # Find nearest route point to current position
-            nearest_point_index = 0
-            nearest_distance = float("inf")
-
-            for idx, point in enumerate(active_route.points):
-                dist = self.calculator.calculate_distance(
-                    current_lat, current_lon, point.latitude, point.longitude
+            if (
+                projection_latitude is None
+                or projection_longitude is None
+                or projection_segment_index is None
+                or projection_progress is None
+                or not all(
+                    isfinite(value)
+                    for value in (
+                        current_lat,
+                        current_lon,
+                        speed,
+                        projection_latitude,
+                        projection_longitude,
+                        projection_progress,
+                    )
                 )
-                if dist < nearest_distance:
-                    nearest_distance = dist
-                    nearest_point_index = idx
-
-            # Find which route segment contains the projection point
-            projection_segment_index = None
-            for idx in range(len(active_route.points) - 1):
-                p1 = active_route.points[idx]
-                p2 = active_route.points[idx + 1]
-
-                # Check if projection point lies on this segment
-                dist_to_segment = self.calculator._distance_to_line_segment(
-                    poi.projected_latitude,
-                    poi.projected_longitude,
-                    p1.latitude,
-                    p1.longitude,
-                    p2.latitude,
-                    p2.longitude,
-                )
-
-                if (
-                    dist_to_segment < 1000
-                ):  # Within 1km of segment (projection tolerance)
-                    projection_segment_index = idx
-                    break
-
-            # If we couldn't find the projection segment, fall back to distance/speed
-            if projection_segment_index is None:
+                or not -90 <= current_lat <= 90
+                or not -180 <= current_lon <= 180
+                or not -90 <= projection_latitude <= 90
+                or not -180 <= projection_longitude <= 180
+                or not 0 <= projection_progress <= 100
+                or speed < 0
+                or not 0 <= projection_segment_index < len(active_route.points) - 1
+            ):
                 return None
 
-            # Calculate remaining distance and time segment by segment with speed blending
+            current_projection = RouteETACalculator(active_route).project_poi_to_route(
+                current_lat, current_lon
+            )
+            current_segment_index = current_projection["projected_waypoint_index"]
+            if (
+                current_projection["projected_route_progress"] >= projection_progress
+                or current_segment_index > projection_segment_index
+            ):
+                return None
+
             total_eta_seconds = 0.0
-
-            # Walk through segments from nearest point to projection point
-            for idx in range(nearest_point_index, projection_segment_index + 1):
+            first_remaining_segment = True
+            for idx in range(current_segment_index, projection_segment_index + 1):
                 current_point = active_route.points[idx]
-                next_point = active_route.points[idx + 1]
-
-                # Calculate segment distance
-                segment_distance = self.calculator.calculate_distance(
-                    current_point.latitude,
-                    current_point.longitude,
-                    next_point.latitude,
-                    next_point.longitude,
-                )
-
-                # Determine speed for this segment with blending for current segment
-                if idx == nearest_point_index:
-                    # Current segment: blend current speed with expected speed
-                    expected_speed = current_point.expected_segment_speed_knots or speed
-                    blended_speed = (speed + expected_speed) / 2.0
-                    segment_speed_knots = blended_speed
+                segment_timing_point = active_route.points[idx + 1]
+                if idx == projection_segment_index:
+                    segment_end_latitude = projection_latitude
+                    segment_end_longitude = projection_longitude
                 else:
-                    # Future segments: use expected speed if available
-                    segment_speed_knots = (
-                        current_point.expected_segment_speed_knots or speed
-                    )
+                    segment_end_latitude = segment_timing_point.latitude
+                    segment_end_longitude = segment_timing_point.longitude
+                segment_distance = self.calculator.calculate_distance(
+                    (
+                        current_projection["projected_lat"]
+                        if idx == current_segment_index
+                        else current_point.latitude
+                    ),
+                    (
+                        current_projection["projected_lon"]
+                        if idx == current_segment_index
+                        else current_point.longitude
+                    ),
+                    segment_end_latitude,
+                    segment_end_longitude,
+                )
+                if segment_distance <= 0.000001:
+                    continue
+                expected_speed = (
+                    segment_timing_point.expected_segment_speed_knots or speed
+                )
+                segment_speed_knots = (
+                    (speed + expected_speed) / 2.0
+                    if first_remaining_segment
+                    else expected_speed
+                )
+                if not isfinite(segment_speed_knots) or segment_speed_knots <= 0.5:
+                    return None
+                total_eta_seconds += (
+                    segment_distance / 1852.0 / segment_speed_knots * 3600.0
+                )
+                first_remaining_segment = False
 
-                # Calculate time for this segment (avoid division by zero)
-                if segment_speed_knots > 0.5:
-                    distance_nm = segment_distance / 1852.0
-                    segment_time = (distance_nm / segment_speed_knots) * 3600.0
-                    total_eta_seconds += segment_time
-
-            # Return total ETA or None if calculation failed
-            if total_eta_seconds > 0:
-                return total_eta_seconds
-
-            return None
+            return total_eta_seconds if total_eta_seconds > 0 else None
 
         except (
             RuntimeError,
@@ -536,6 +476,6 @@ class ETAProjection:
             EOFError,
         ) as e:
             logger.debug(
-                f"Off-route estimated ETA calculation with projection failed for {poi.name}: {e}"
+                f"Projected estimated ETA calculation failed for {poi.name}: {e}"
             )
             return None

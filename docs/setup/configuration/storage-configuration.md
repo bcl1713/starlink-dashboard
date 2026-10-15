@@ -80,12 +80,6 @@ docker run --rm \
   -v starlink-dashboard-dev_prometheus_data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/prometheus-backup.tar.gz -C /data .
-
-# Backup Grafana data
-docker run --rm \
-  -v starlink-dashboard-dev_grafana_data:/data \
-  -v $(pwd):/backup \
-  alpine tar czf /backup/grafana-backup.tar.gz -C /data .
 ```
 
 ### Restore Volumes
@@ -96,12 +90,6 @@ docker run --rm \
   -v starlink-dashboard-dev_prometheus_data:/data \
   -v $(pwd):/backup \
   alpine tar xzf /backup/prometheus-backup.tar.gz -C /data
-
-# Restore Grafana data
-docker run --rm \
-  -v starlink-dashboard-dev_grafana_data:/data \
-  -v $(pwd):/backup \
-  alpine tar xzf /backup/grafana-backup.tar.gz -C /data
 ```
 
 ---

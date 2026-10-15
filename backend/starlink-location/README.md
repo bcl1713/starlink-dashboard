@@ -19,6 +19,16 @@ metrics, and obstruction detection.
   environment variables
 - **Graceful Degradation**: Returns last known good values on errors
 - **Background Updates**: Continuous telemetry generation at 10 Hz
+- **Live Route Metrics**: Background telemetry uses the application's active
+  mission route in both live and simulation modes, including route-aware ETA and
+  automatic arrival evaluation. Activation, replacement and deactivation take
+  effect on the next telemetry update.
+
+Automatic arrival requires an active route and continuous fresh GPS and verified
+speed observations near its destination for the configured detection dwell.
+Without an active route, arrival cannot be detected automatically; operators can
+use the manual flight-phase controls. Missing or stale GPS/speed observations
+restart detection without changing an already confirmed phase.
 
 ---
 
@@ -37,9 +47,11 @@ metrics, and obstruction detection.
 
 ## Quick Start
 
+Run these commands from the repository root.
+
 ```bash
 # Build and start all services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Verify services are running
 docker compose ps
@@ -102,7 +114,7 @@ curl http://localhost:8000/api/status | jq .
 - Exports metrics in Prometheus format
 - 1-second scrape interval support
 - Comprehensive metric coverage
-- Compatible with Grafana dashboards
+- Provides metrics for Prometheus and the Mission Planner overview
 
 ### REST API
 
@@ -111,6 +123,15 @@ curl http://localhost:8000/api/status | jq .
 - Configuration management API
 - Real-time metric queries
 
+### Startup dependencies
+
+The POI manager is required by POI-dependent API endpoints. If its constructor
+fails, backend startup fails with the original error instead of reporting ready;
+this applies whether background updates are enabled or disabled. ETA service
+initialization is separate and optional: an ETA initialization failure is logged
+as a warning, while a successfully constructed POI manager remains available to
+the API.
+
 ---
 
 ## Contributing
@@ -118,11 +139,19 @@ curl http://localhost:8000/api/status | jq .
 When making changes:
 
 1. Update tests in `tests/`
-2. Ensure all tests pass: `pytest tests/`
-3. Run with coverage: `pytest tests/ --cov=app`
+2. Run the full canonical backend gate from the repository root:
+
+   ```bash
+   ./tools/verify backend
+   ```
+
+3. Use focused `pytest` commands from this backend directory while developing,
+   such as `pytest tests/` or `pytest tests/ --cov=app`
 4. Update documentation if adding features
 
-See [Testing Guide](./docs/TESTING.md) for more details.
+See [Testing Guide](./docs/TESTING.md) for focused examples and the
+[Quality Gates](../../docs/contributing/quality-gates.md) reference for all
+repository verification tiers.
 
 ---
 

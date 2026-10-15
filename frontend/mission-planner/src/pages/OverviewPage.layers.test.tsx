@@ -1,0 +1,496 @@
+vi.mock('@/hooks/useGfsWeather', () => ({ useGfsWeather: () => queries.gfs }));
+vi.mock('@/hooks/useAviationWeather', () => ({
+  useAviationWeather: () => queries.aviation,
+}));
+vi.mock('./weather/OverviewWeatherCameraObserver', () => ({
+  OverviewWeatherCameraObserver: () => null,
+}));
+/** @vitest-environment jsdom */
+import {
+  cleanup,
+  fireEvent,
+  render as renderTesting,
+  screen,
+  within,
+} from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+function render(node: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return renderTesting(node, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
+}
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+const queries = vi.hoisted(() => ({
+  status: {} as Record<string, unknown>,
+  history: {} as Record<string, unknown>,
+  satellites: {} as Record<string, unknown>,
+  selection: {} as Record<string, unknown>,
+  routes: {} as Record<string, unknown>,
+  route: {} as Record<string, unknown>,
+  pois: {} as Record<string, unknown>,
+  links: {} as Record<string, unknown>,
+  weather: {
+    configuredEnabled: false,
+    visible: true,
+    state: 'off',
+    frameTimeMs: null,
+    ageMs: null,
+    atlas: null,
+    detailContext: null,
+    detailPairs: [],
+    work: null,
+    onDemand: () => {},
+  } as WeatherLayerView,
+  adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
+  aviation: {} as AviationView,
+  gfs: { now: 0, state: 'off', products: {} } as GfsView,
+}));
+// WebGL is an external renderer; this suite exercises real DOM overlays with
+// independently controlled API states. Scene rendering has browser coverage.
+vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
+  useOverviewAdsbLayer: () => queries.adsb,
+}));
+vi.mock('@/hooks/useOverviewWeatherLayer', () => ({
+  useOverviewWeatherLayer: () => queries.weather,
+}));
+vi.mock('@react-three/fiber', () => ({ Canvas: () => null }));
+vi.mock('@react-three/drei', () => ({
+  Html: () => null,
+  CameraControls: () => null,
+  CameraControlsImpl: class {},
+  Stars: () => null,
+}));
+vi.mock('./OverviewMetricHistoryPanels', () => ({
+  OverviewMetricHistoryPanels: () => null,
+}));
+vi.mock('@/hooks/useCurrentTime', () => ({
+  useCurrentTime: () => Date.parse('2026-10-02T00:00:00Z'),
+}));
+vi.mock('../hooks/api/useRoutes', () => ({
+  useRoutes: () => queries.routes,
+  useRoute: () => queries.route,
+}));
+vi.mock('@/hooks/api/useStatus', () => ({ useStatus: () => queries.status }));
+vi.mock('@/hooks/api/useOverviewHistory', () => ({
+  useOverviewHistory: () => queries.history,
+}));
+vi.mock('@/hooks/api/useSatellites', () => ({
+  useSatellites: () => queries.satellites,
+}));
+vi.mock('@/hooks/api/useActiveXLink', () => ({
+  useActiveXLink: () => queries.selection,
+}));
+vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
+  useOverviewLinkSettings: () => queries.links,
+}));
+vi.mock('@/hooks/api/useOverviewClockSettings', () => ({
+  useOverviewClockSettings: () => ({ data: { clocks: [] } }),
+}));
+vi.mock('@/hooks/api/useOverviewHistorySettings', () => ({
+  useOverviewHistorySettings: () => ({ data: { window_seconds: 300 } }),
+}));
+vi.mock('@/hooks/api/useUpdateOverviewHistorySettings', () => ({
+  useUpdateOverviewHistorySettings: () => ({ mutate: vi.fn() }),
+}));
+vi.mock('@/hooks/api/useOverviewUpcomingPois', () => ({
+  useOverviewUpcomingPois: () => queries.pois,
+}));
+import type { WeatherLayerView } from './weather/weather-state';
+import { OverviewPage } from './OverviewPage';
+import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
+import { projectAdsbContacts } from './adsb/overview-adsb-state';
+import {
+  emptyAviationView,
+  type AviationView,
+} from './aviation-weather/aviation-controller';
+import type { GfsView } from './aviation-weather/gfs-controller';
+import { NOW, collection, station } from './aviation-weather/fixtures';
+import { parseAviationFeatures } from '@/services/aviation-features';
+afterEach(cleanup);
+beforeEach(() => {
+  queries.aviation = emptyAviationView;
+  queries.gfs = { now: 0, state: 'off', products: {} };
+  queries.weather = {
+    configuredEnabled: false,
+    visible: true,
+    state: 'off',
+    frameTimeMs: null,
+    ageMs: null,
+    atlas: null,
+    detailContext: null,
+    detailPairs: [],
+    work: null,
+    onDemand: () => {},
+  };
+  queries.adsb.contacts = [];
+  queries.links = {
+    data: { starshield_link_enabled: true, x_band_link_enabled: true },
+  };
+  queries.status = {
+    data: {
+      timestamp: '2026-10-02T00:00:00Z',
+      position: { latitude: 0, longitude: 0, altitude: 35000 },
+      ground_entry_point: { latitude: 0, longitude: 0 },
+    },
+  };
+  queries.history = { data: { series: {} } };
+  queries.satellites = {
+    data: [{ satellite_id: 'X-6', transport: 'X', longitude: 0 }],
+  };
+  queries.selection = { data: { satellite_id: 'X-6', state: 'warning' } };
+  queries.routes = { data: [] };
+  queries.route = {};
+  queries.pois = { data: { state: 'no_generated_pois', pois: [] } };
+});
+describe('Overview layer and exception integration', () => {
+  it('keeps unavailable atmosphere notices outside the legend without adding model selectors', () => {
+    queries.gfs = { now: 0, state: 'unavailable', products: {} };
+    render(<OverviewPage />);
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'GFS unavailable'
+    );
+    expect(screen.queryByLabelText('Atmosphere legend')).toBeNull();
+    expect(
+      screen.queryByRole('combobox', { name: 'Atmosphere level' })
+    ).toBeNull();
+    expect(screen.getByLabelText('Globe legend')).toBeTruthy();
+  });
+  it('opens weather inspection from the compact status and keeps the raw report out of the rail', () => {
+    queries.aviation = {
+      ...emptyAviationView,
+      now: NOW,
+      layers: {
+        ...emptyAviationView.layers,
+        metar: {
+          state: 'current',
+          data: parseAviationFeatures(collection([station()]), 'metar'),
+        },
+      },
+    };
+    render(<OverviewPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Inspect weather reports' })
+    );
+    const popup = screen.getByRole('dialog');
+    expect(popup.textContent).toContain('TEST METAR observation');
+    // Overview's size container establishes a fixed-position containing block.
+    // A report must escape that scrolling layout to remain in the viewport.
+    expect(popup.closest('.overview-page')).toBeNull();
+    expect(
+      screen.getByLabelText('Aviation weather status').textContent
+    ).not.toContain('TEST report');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Close weather report' })
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+  it('keeps aircraft, GEP and selected planning link with no route', () => {
+    render(<OverviewPage />);
+    const legend = screen.getByLabelText('Globe legend');
+    expect(
+      within(legend)
+        .getAllByRole('listitem')
+        .map((row) => row.textContent)
+    ).toEqual([
+      'Aircraft',
+      'Ground entry point',
+      'Traffic path',
+      'Planned satellite link',
+    ]);
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'No active route.'
+    );
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'Planned link warning'
+    );
+    expect(
+      screen.getByRole('region', { name: 'Planned satellite' }).textContent
+    ).toContain('X-6');
+    expect(screen.getAllByLabelText('Globe legend')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Departure and arrival')).toHaveLength(1);
+    expect(
+      screen.getAllByRole('button', { name: 'Enter fullscreen overview' })
+    ).toHaveLength(1);
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByRole('table')).toBeNull();
+  });
+  it('preserves the selected ID when its geometry is unavailable', () => {
+    queries.satellites = { data: [] };
+    render(<OverviewPage />);
+    expect(screen.queryByText('Planned satellite link')).toBeNull();
+    expect(
+      screen.getByRole('region', { name: 'Planned satellite' }).textContent
+    ).toContain('X-6');
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'Planned link unavailable'
+    );
+  });
+  it('keeps cached layer samples while clearly reporting query failures', () => {
+    queries.selection.error = new Error('refresh failed');
+    queries.status.error = new Error('refresh failed');
+    queries.satellites.error = new Error('refresh failed');
+    render(<OverviewPage />);
+    expect(screen.getByText('Planned satellite link')).not.toBeNull();
+    expect(screen.getByText('UNAVAILABLE')).not.toBeNull();
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'Satellite selection unavailable'
+    );
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'Last-known planned link warning'
+    );
+    expect(screen.getByLabelText('Map status').textContent).toContain(
+      'Status refresh unavailable'
+    );
+  });
+  it('retains configured satellite identity independently of occluded scene labels', () => {
+    render(<OverviewPage />);
+    expect(
+      within(
+        screen.getByRole('list', { name: 'Configured map satellites' })
+      ).getByText('X-6')
+    ).not.toBeNull();
+  });
+  it('omits invalid aircraft coordinates without affecting valid GEP', () => {
+    queries.status = {
+      data: {
+        timestamp: '2026-10-02T00:00:00Z',
+        position: { latitude: 91, longitude: 0 },
+        ground_entry_point: { latitude: 0, longitude: 0 },
+      },
+    };
+    render(<OverviewPage />);
+    expect(screen.queryByText('Aircraft', { exact: true })).toBeNull();
+    expect(
+      screen.getByText('Ground entry point', { exact: true })
+    ).not.toBeNull();
+    expect(screen.getByText('Position unavailable')).not.toBeNull();
+  });
+  it('matches route and history entries to renderable geometry', () => {
+    queries.routes = { data: [{ id: 'route', is_active: true }] };
+    queries.route = {
+      data: {
+        points: [
+          { latitude: 0, longitude: 0 },
+          { latitude: 1, longitude: 1 },
+        ],
+      },
+    };
+    queries.history = {
+      data: {
+        series: {
+          starlink_dish_latitude_degrees: [
+            [1, 0],
+            [2, 1],
+          ],
+          starlink_dish_longitude_degrees: [
+            [1, 0],
+            [2, 1],
+          ],
+        },
+      },
+    };
+    render(<OverviewPage />);
+    expect(
+      within(screen.getByLabelText('Globe legend')).getAllByRole('listitem')
+    ).toHaveLength(6);
+  });
+  it('keeps every retained POI name accessible without scene labels', () => {
+    queries.pois = {
+      data: {
+        state: 'available',
+        pois: [
+          {
+            poi_id: 'a',
+            name: 'First coincident POI',
+            latitude: 0,
+            longitude: 0,
+            map_retained: true,
+          },
+          {
+            poi_id: 'b',
+            name: 'Second coincident POI',
+            latitude: 0,
+            longitude: 0,
+            map_retained: true,
+          },
+        ],
+      },
+    };
+    render(<OverviewPage />);
+    expect(
+      within(screen.getByRole('list', { name: 'Map POIs' }))
+        .getAllByRole('listitem')
+        .map((item) => item.textContent)
+    ).toEqual(['First coincident POI', 'Second coincident POI']);
+  });
+});
+
+it.each([
+  ['flight_events_enabled', 'AR Start'],
+  ['x_band_events_enabled', 'X warning'],
+  ['ka_events_enabled', 'Ka loss'],
+  ['starshield_events_enabled', 'Starshield loss'],
+])('hides and restores only %s map POIs', (field, hidden) => {
+  queries.pois = {
+    data: {
+      state: 'available',
+      pois: [
+        {
+          poi_id: 'ar',
+          name: 'AR Start',
+          kind: 'aar_start',
+          latitude: 0,
+          longitude: 0,
+          map_retained: true,
+        },
+        {
+          poi_id: 'x',
+          name: 'X warning',
+          kind: 'x_band_warning_start',
+          latitude: 0,
+          longitude: 1,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka',
+          name: 'Ka loss',
+          kind: 'ka_coverage_exit',
+          latitude: 0,
+          longitude: 2,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ku',
+          name: 'Starshield loss',
+          kind: 'starshield_outage_start',
+          latitude: 0,
+          longitude: 3,
+          map_retained: true,
+        },
+      ],
+    },
+  };
+  const view = render(<OverviewPage />);
+  const names = () =>
+    within(screen.getByRole('list', { name: 'Map POIs' }))
+      .getAllByRole('listitem')
+      .map((item) => item.textContent);
+  expect(names()).toHaveLength(4);
+  queries.links = {
+    data: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      [field]: false,
+    },
+  };
+  view.rerender(<OverviewPage />);
+  expect(names()).toHaveLength(3);
+  expect(names()).not.toContain(hidden);
+  queries.links = {
+    data: {
+      starshield_link_enabled: true,
+      x_band_link_enabled: true,
+      [field]: true,
+    },
+  };
+  view.rerender(<OverviewPage />);
+  expect(names()).toContain(hidden);
+});
+
+it('uses active contacts for the ADS-B legend and clears it on expiry or disable', () => {
+  queries.adsb.contacts = projectAdsbContacts(
+    [adsbContact()],
+    adsbSettings(),
+    ADSB_NOW
+  );
+  const view = render(<OverviewPage />);
+  expect(screen.getByText('ADS-B aircraft')).not.toBeNull();
+  expect(
+    screen.getByRole('list', { name: 'Visible ADS-B aircraft' })
+  ).not.toBeNull();
+  queries.adsb.contacts = [];
+  view.rerender(<OverviewPage />);
+  expect(screen.queryByText('ADS-B aircraft')).toBeNull();
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it('keeps passive weather independent of core map failures and adds no controls', () => {
+  queries.weather = {
+    ...queries.weather,
+    configuredEnabled: true,
+    state: 'unavailable',
+  };
+  queries.status.error = new Error('core refresh failed');
+  render(<OverviewPage />);
+  expect(screen.getByLabelText('Weather status').textContent).toContain(
+    'Weather unavailable'
+  );
+  expect(screen.queryByRole('link', { name: 'RainViewer' })).toBeNull();
+  expect(screen.queryByRole('switch')).toBeNull();
+  expect(screen.getByLabelText('Globe legend')).not.toBeNull();
+});
+
+it.each([
+  ['operational_clocks_enabled', 'Operational clocks'],
+  ['arrival_panel_enabled', 'Departure and arrival'],
+  ['planned_satellite_panel_enabled', 'Planned satellite'],
+  ['map_status_enabled', 'Map status'],
+  ['legend_enabled', 'Globe legend'],
+])(
+  'hides and restores %s independently of the other panels',
+  (field, label) => {
+    const view = render(<OverviewPage />);
+    expect(screen.getAllByLabelText(label).length).toBeGreaterThan(0);
+    queries.links = {
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        [field]: false,
+      },
+    };
+    view.rerender(<OverviewPage />);
+    expect(screen.queryAllByLabelText(label)).toHaveLength(0);
+    expect(
+      screen.getByRole('button', { name: 'Enter fullscreen overview' })
+    ).not.toBeNull();
+    queries.links = {
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        [field]: true,
+      },
+    };
+    view.rerender(<OverviewPage />);
+    expect(screen.getAllByLabelText(label).length).toBeGreaterThan(0);
+  }
+);
+
+it.each([
+  ['aircraft_marker_enabled', 'Aircraft'],
+  ['ground_entry_point_enabled', 'Ground entry point'],
+])(
+  'removes the hidden %s layer from the legend without removing links',
+  (field, label) => {
+    queries.links = {
+      data: {
+        starshield_link_enabled: true,
+        x_band_link_enabled: true,
+        [field]: false,
+      },
+    };
+    render(<OverviewPage />);
+    expect(
+      within(screen.getByLabelText('Globe legend')).queryByText(label, {
+        exact: true,
+      })
+    ).toBeNull();
+    expect(screen.getByText('Traffic path')).not.toBeNull();
+    expect(screen.getByText('Planned satellite link')).not.toBeNull();
+  }
+);

@@ -29,8 +29,7 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 1. Open your browser and navigate to:
    `<http://<dashboard-url>/ui/mission-planner`>
 1. The interface loads a four-step form
-1. You do **not** need Grafana or Prometheus experience—the planner is
-   self-contained
+1. You do **not** need Prometheus experience—the planner is self-contained
 
 ### Requirements
 
@@ -48,9 +47,44 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 - **X transitions:** Manual coordination points where X-Band satellite handoff
   occurs
 
+In simulation and the active X-band link display, the current satellite changes
+when the aircraft reaches or passes the transition's projected position along
+the route. The 200 km geographic zone provides advance notice and a pending
+satellite; leaving that zone is not required to commit the change. If the first
+observation is already past a transition, the display catches up to its target.
+A committed change does not revert when position jitter crosses back over the
+transition. Only fresh, verified position observations can update the handoff;
+missing or stale GPS preserves the last committed satellite.
+
 ---
 
 ## Step-by-Step Workflow
+
+### Deterministic V2 Activation Acceptance Journey
+
+Use this five-step path to verify the deployed V2 mission workflow without
+introducing sample data into the running service:
+
+1. From **Missions**, select **Create Mission**. A successful create opens the
+   new mission's detail page.
+2. On Mission Detail, select **Add Leg** and complete the leg details.
+3. On the leg detail page, deliberately select and upload
+   [`v2-activation-route.kml`](../acceptance-assets/v2-activation-route.kml).
+   This small, sanitized file is a deterministic acceptance/operator sample; it
+   is documentation-only and is not deployed in `/data` or selected
+   automatically.
+4. Return to Mission Detail and select **Activate** for the uploaded leg.
+   Activation is a POST-only V2 operation:
+   `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
+5. Open **Overview** and confirm the active leg is represented there.
+
+The supplied asset includes fixed endpoint timing metadata because activation
+computes a timeline. Use Point placemark descriptions in the supported form:
+`Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`. KML can be parseable without that
+metadata, but a route without valid timeline timing is not activation-ready.
+
+The retired v1 mission endpoints are not a fallback for this flow and
+return 404. Use the V2 UI and V2 API only.
 
 ### Step 1: Upload Your Route
 

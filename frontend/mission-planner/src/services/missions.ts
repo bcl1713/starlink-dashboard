@@ -1,4 +1,18 @@
 import { apiClient } from './api-client';
+import {
+  parseSimulationRun,
+  type SimulationStart,
+  type SimulationRunStatus,
+} from './simulation-run';
+export interface PlanningCAS {
+  expected_revision: number;
+  input_identity: string;
+}
+export interface LegActivationResponse {
+  status: string;
+  active_leg_id: string;
+  simulation_run?: SimulationRunStatus;
+}
 import type {
   Mission,
   CreateMissionRequest,
@@ -72,26 +86,45 @@ export const missionsApi = {
   updateLeg: async (
     missionId: string,
     legId: string,
-    leg: MissionLeg
+    leg: MissionLeg,
+    planning?: PlanningCAS
   ): Promise<UpdateLegResponse> => {
     const response = await apiClient.put<UpdateLegResponse>(
       `/api/v2/missions/${missionId}/legs/${legId}`,
-      leg
+      leg,
+      ...(planning ? [{ params: planning }] : [])
     );
     return response.data;
   },
 
-  deleteLeg: async (missionId: string, legId: string) => {
+  deleteLeg: async (
+    missionId: string,
+    legId: string,
+    planning?: PlanningCAS
+  ) => {
     const response = await apiClient.delete(
-      `/api/v2/missions/${missionId}/legs/${legId}`
+      `/api/v2/missions/${missionId}/legs/${legId}`,
+      ...(planning ? [{ params: planning }] : [])
     );
     return response.data;
   },
 
-  activateLeg: async (missionId: string, legId: string): Promise<void> => {
-    await apiClient.post(
-      `/api/v2/missions/${missionId}/legs/${legId}/activate`
-    );
+  activateLeg: async (
+    missionId: string,
+    legId: string,
+    simulation?: SimulationStart
+  ): Promise<LegActivationResponse> => {
+    const url = `/api/v2/missions/${missionId}/legs/${legId}/activate`;
+    const response = simulation
+      ? await apiClient.post(url, { simulation })
+      : await apiClient.post(url);
+    const result = response.data as LegActivationResponse;
+    if (simulation)
+      return {
+        ...result,
+        simulation_run: parseSimulationRun(result.simulation_run),
+      };
+    return result;
   },
 
   deactivateAllLegs: async (missionId: string): Promise<void> => {

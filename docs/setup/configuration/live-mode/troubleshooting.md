@@ -115,7 +115,7 @@ Live mode requires minimal bandwidth:
 **Required:**
 
 - Allow outbound to `192.168.100.1:9200` (gRPC)
-- Allow inbound on configured service ports (8000, 9090, 3000)
+- Allow inbound on configured service ports (8000, 9090, 5173)
 
 ---
 
@@ -128,7 +128,6 @@ Live mode requires minimal bandwidth:
 STARLINK_MODE=live
 STARLINK_DISH_HOST=192.168.100.1
 PROMETHEUS_RETENTION=1y
-GRAFANA_ADMIN_PASSWORD=<strong-password>
 LOG_LEVEL=INFO
 JSON_LOGS=true
 ```

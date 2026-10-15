@@ -1,54 +1,37 @@
-"""
-Integration tests for FastAPI router configuration.
-
-These tests verify:
-1. Router precedence (v1 vs v2 routers)
-2. No route shadowing/overlap issues
-3. Critical endpoints are accessible
-"""
+"""Integration tests for mission router retirement."""
 
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 
 
 @pytest.fixture
 def client():
-    # Mock dependencies to avoid startup complexity/errors
+    """Use the real application router registration with lightweight state."""
     app.state.route_manager = MagicMock()
     app.state.poi_manager = MagicMock()
-
-    # Use context manager to trigger startup/shutdown events (though we mocked the state mostly)
-    with TestClient(app) as c:
-        yield c
+    with TestClient(app) as test_client:
+        yield test_client
 
 
-def test_router_ordering_missions_v1_priority(client):
-    """
-    Verify that /api/missions is handled by the v1 router.
-    """
-    response = client.get("/api/missions")
-    assert response.status_code != 404
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/missions",
+        "/api/missions/active",
+        "/api/missions/active/timeline",
+        "/api/missions/example/activate",
+        "/api/missions/example/export/pdf",
+    ],
+)
+def test_legacy_mission_routes_are_not_registered(client, path):
+    """Former v1 mission endpoints must be absent rather than redirected."""
+    assert client.get(path).status_code == 404
 
 
-def test_router_ordering_missions_v2_priority(client):
-    """
-    Verify that /api/v2/missions is handled by the v2 router.
-    """
-    response = client.get("/api/v2/missions")
-    assert response.status_code != 404
-
-
-def test_router_overlap_check(client):
-    """
-    Ensure that specific paths aren't shadowed.
-    """
-    paths = ["/api/missions", "/api/v2/missions", "/health", "/metrics", "/api/routes/"]
-    for path in paths:
-        response = client.get(path)
-        if response.status_code == 404:
-            print(f"\nFailed path: {path}")
-            # print(app.routes) # Too noisy
-        assert response.status_code != 404, f"Path {path} returned 404"
+def test_v2_route_remains_registered(client):
+    """Retiring v1 must not remove the scoped v2 API."""
+    assert client.get("/api/v2/missions").status_code != 404

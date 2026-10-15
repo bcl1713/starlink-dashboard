@@ -1,0 +1,378 @@
+{
+  "fixture": "F09",
+  "mission": {
+    "id": "f09-mission",
+    "name": "Dense multi-window customer briefing",
+    "created_at": "2026-10-07T08:00:00Z",
+    "updated_at": "2026-10-07T08:00:00Z",
+    "legs": [
+      {
+        "id": "f09",
+        "name": "Dense route with long customer reasons and destination names",
+        "route_id": "shared-route",
+        "adjusted_departure_time": "2026-10-07T08:00:00Z",
+        "created_at": "2026-10-07T08:00:00Z",
+        "updated_at": "2026-10-07T08:00:00Z",
+        "transports": {
+          "initial_x_satellite_id": "X-fixture",
+          "ka_outages": [],
+          "ku_overrides": [],
+          "aar_windows": [],
+          "manual_aar_tracks": [],
+          "x_transitions": []
+        }
+      }
+    ]
+  },
+  "route": {
+    "metadata": {
+      "name": "Synthetic route",
+      "file_path": "fixture.kml",
+      "point_count": 2
+    },
+    "points": [
+      {
+        "latitude": 0,
+        "longitude": 0,
+        "sequence": 0,
+        "expected_arrival_time": "2026-10-07T08:00:00Z",
+        "name": "Departure staging airfield with a long customer location name"
+      },
+      {
+        "latitude": 1,
+        "longitude": 0,
+        "sequence": 1,
+        "expected_arrival_time": "2026-10-07T14:00:00Z",
+        "name": "Arrival operating airfield with a long customer destination name"
+      }
+    ],
+    "waypoints": [],
+    "timing_profile": {
+      "departure_time": "2026-10-07T08:00:00Z",
+      "arrival_time": "2026-10-07T14:00:00Z",
+      "has_timing_data": true
+    }
+  },
+  "timeline": {
+    "mission_leg_id": "f09",
+    "created_at": "2026-10-07T14:00:00Z",
+    "segments": [
+      {
+        "id": "F01-normalized",
+        "start_time": "2026-10-07T08:00:00Z",
+        "end_time": "2026-10-07T14:00:00Z",
+        "status": "critical",
+        "x_state": "available",
+        "ka_state": "available",
+        "ku_state": "available",
+        "reasons": [],
+        "metadata": {
+          "call_posture": "Unavailable"
+        }
+      }
+    ],
+    "advisories": [],
+    "coverage_events": []
+  },
+  "source_records": [
+    {
+      "source_id": "F01-basis-Ka",
+      "source_type": "availability_basis",
+      "transport": "Ka",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T14:00:00Z",
+      "state": "available",
+      "reason": "",
+      "metadata": {
+        "prerequisites_available": true
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F01-basis-Ku",
+      "source_type": "availability_basis",
+      "transport": "Ku",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T14:00:00Z",
+      "state": "available",
+      "reason": "",
+      "metadata": {
+        "prerequisites_available": true
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F01-basis-X",
+      "source_type": "availability_basis",
+      "transport": "X",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T14:00:00Z",
+      "state": "available",
+      "reason": "",
+      "metadata": {
+        "prerequisites_available": true
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-01",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T08:20:00+00:00",
+      "end_time": "2026-10-07T08:28:30+00:00",
+      "state": "offline",
+      "reason": "Window 1: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-02",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T08:38:00+00:00",
+      "end_time": "2026-10-07T08:46:30+00:00",
+      "state": "offline",
+      "reason": "Window 2: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-03",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T08:56:00+00:00",
+      "end_time": "2026-10-07T09:04:30+00:00",
+      "state": "offline",
+      "reason": "Window 3: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-04",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T09:14:00+00:00",
+      "end_time": "2026-10-07T09:22:30+00:00",
+      "state": "offline",
+      "reason": "Window 4: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-05",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T09:32:00+00:00",
+      "end_time": "2026-10-07T09:40:30+00:00",
+      "state": "offline",
+      "reason": "Window 5: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-06",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T09:50:00+00:00",
+      "end_time": "2026-10-07T09:58:30+00:00",
+      "state": "offline",
+      "reason": "Window 6: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-07",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T10:08:00+00:00",
+      "end_time": "2026-10-07T10:16:30+00:00",
+      "state": "offline",
+      "reason": "Window 7: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-08",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T10:26:00+00:00",
+      "end_time": "2026-10-07T10:34:30+00:00",
+      "state": "offline",
+      "reason": "Window 8: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-09",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T10:44:00+00:00",
+      "end_time": "2026-10-07T10:52:30+00:00",
+      "state": "offline",
+      "reason": "Window 9: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-10",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T11:02:00+00:00",
+      "end_time": "2026-10-07T11:10:30+00:00",
+      "state": "offline",
+      "reason": "Window 10: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-11",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T11:20:00+00:00",
+      "end_time": "2026-10-07T11:28:30+00:00",
+      "state": "offline",
+      "reason": "Window 11: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-12",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T11:38:00+00:00",
+      "end_time": "2026-10-07T11:46:30+00:00",
+      "state": "offline",
+      "reason": "Window 12: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-13",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T11:56:00+00:00",
+      "end_time": "2026-10-07T12:04:30+00:00",
+      "state": "offline",
+      "reason": "Window 13: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-14",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T12:14:00+00:00",
+      "end_time": "2026-10-07T12:22:30+00:00",
+      "state": "offline",
+      "reason": "Window 14: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-15",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T12:32:00+00:00",
+      "end_time": "2026-10-07T12:40:30+00:00",
+      "state": "offline",
+      "reason": "Window 15: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-16",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T12:50:00+00:00",
+      "end_time": "2026-10-07T12:58:30+00:00",
+      "state": "offline",
+      "reason": "Window 16: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-17",
+      "source_type": "configured_outage",
+      "transport": "Ka",
+      "start_time": "2026-10-07T13:08:00+00:00",
+      "end_time": "2026-10-07T13:16:30+00:00",
+      "state": "offline",
+      "reason": "Window 17: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    },
+    {
+      "source_id": "F09-outage-18",
+      "source_type": "configured_outage",
+      "transport": "Ku",
+      "start_time": "2026-10-07T13:26:00+00:00",
+      "end_time": "2026-10-07T13:34:30+00:00",
+      "state": "offline",
+      "reason": "Window 18: scheduled service interruption. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. Customer coordination requires reviewing the captured service plan and remaining independent communications capability. ",
+      "metadata": {
+        "customer_note": "Synthetic long explanation for pagination and grayscale checks"
+      },
+      "source_revision": "fixture-r1"
+    }
+  ],
+  "resolved_restrictions": [
+    {
+      "source_id": "sof-takeoff",
+      "kind": "sof",
+      "label": "Safety-of-Flight (takeoff)",
+      "start_time": "2026-10-07T08:00:00Z",
+      "end_time": "2026-10-07T08:15:00Z"
+    },
+    {
+      "source_id": "sof-landing",
+      "kind": "sof",
+      "label": "Safety-of-Flight (landing)",
+      "start_time": "2026-10-07T13:45:00Z",
+      "end_time": "2026-10-07T14:00:00Z"
+    }
+  ],
+  "utc_bounds": [
+    "2026-10-07T08:00:00Z",
+    "2026-10-07T14:00:00Z"
+  ],
+  "preparation_origin": "rebuilt",
+  "warnings": [],
+  "expected": {
+    "outage_sources": 18,
+    "requires_pagination": true
+  }
+}

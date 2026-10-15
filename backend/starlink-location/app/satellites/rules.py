@@ -39,6 +39,14 @@ class EventType(str, Enum):
     MANUAL_AAR_TRACK_END = "manual_aar_track_end"
 
 
+class XConstraint(str, Enum):
+    """Stable identities for independently active sampled X constraints."""
+
+    AFT_CONE = "x_aft_cone"
+    ELEVATION = "x_elevation"
+    AR_CONE = "x_ar_cone"
+
+
 @dataclass
 class MissionEvent:
     """Represents an event affecting transport availability during mission."""
@@ -70,7 +78,7 @@ class ConstraintConfig:
     takeoff_buffer_minutes: int = 15  # Pre-departure blackout
     landing_buffer_minutes: int = 15  # Post-arrival blackout
 
-    elevation_min_degrees: float = 0.0  # Minimum elevation for visibility
+    elevation_min_degrees: float = 10.0  # Operational X-band planning minimum
 
 
 class RuleEngine:
@@ -222,6 +230,8 @@ class RuleEngine:
         end_time: datetime,
         transport: Transport,
         reason: str = "",
+        *,
+        outage_id: str | None = None,
     ) -> None:
         """Add manual outage window events (Ka/Ku).
 
@@ -241,6 +251,7 @@ class RuleEngine:
                 affected_transport=transport,
                 severity="warning",
                 reason=reason or f"{transport} outage",
+                metadata={"id": outage_id} if outage_id is not None else {},
             )
         )
 
@@ -252,6 +263,7 @@ class RuleEngine:
                 affected_transport=transport,
                 severity="info",
                 reason=f"{transport} outage ended",
+                metadata={"id": outage_id} if outage_id is not None else {},
             )
         )
 

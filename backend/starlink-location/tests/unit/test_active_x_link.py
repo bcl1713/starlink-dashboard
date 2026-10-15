@@ -6,13 +6,13 @@ from app.models.poi import POI
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
     TelemetryData,
 )
 from app.services.active_x_link import build_active_x_link
-from main import app
 
 
 class StaticCoordinator:
@@ -46,6 +46,13 @@ def _telemetry(
     timestamp: datetime | None = None,
 ) -> TelemetryData:
     return TelemetryData(
+        metric_availability=MetricAvailability(
+            latency_ms=True,
+            throughput_down_mbps=True,
+            throughput_up_mbps=True,
+            packet_loss_percent=True,
+            obstruction_percent=True,
+        ),
         timestamp=timestamp or datetime(2026, 1, 1, tzinfo=timezone.utc),
         position=PositionData(
             latitude=latitude,
@@ -91,10 +98,33 @@ def _satellite(name: str, longitude: float) -> POI:
     )
 
 
-def test_active_x_link_endpoint_is_registered() -> None:
-    assert any(
-        getattr(route, "path", None) == "/api/active-x-link" for route in app.routes
-    )
+def test_active_x_link_endpoint_returns_public_response(test_client) -> None:
+    response = test_client.get("/api/active-x-link")
+    assert response.status_code == 200
+    assert response.json() == {
+        "coordinates": [],
+        "links": [],
+        "total": 0,
+        "satellite_id": None,
+        "manual_satellite_id": None,
+        "selection_source": "none",
+        "manual_selection_invalid": False,
+        "pending_satellite_id": None,
+        "handoff": {
+            "phase": "outside",
+            "transition_id": None,
+            "transition_satellite_id": None,
+            "radius_meters": 200000.0,
+            "distance_to_transition_meters": None,
+            "in_handoff_zone": False,
+            "route_progress_percent": None,
+            "transition_progress_percent": None,
+        },
+        "state": None,
+        "color": None,
+        "relative_azimuth_degrees": None,
+        "in_forbidden_window": None,
+    }
 
 
 def test_active_x_link_prefers_active_leg_matching_active_route(tmp_path, monkeypatch):

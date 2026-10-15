@@ -16,6 +16,15 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.models.poi import MissionPoiKind
+
+from .planning.types import (
+    EvaluationContext,
+    PlanningInputSnapshot,
+    PlanningPolicy,
+    RouteAnchor,
+)
+
 
 class Transport(str, Enum):
     """Enumeration of available communication transports."""
@@ -69,6 +78,7 @@ class XTransition(BaseModel):
     target_satellite_id: str = Field(
         ..., description="Target satellite ID (e.g., 'X-1', 'X-2')"
     )
+    anchor: RouteAnchor | None = None
     target_beam_id: str | None = Field(
         default=None,
         description="Optional target beam ID for same-satellite transitions",
@@ -161,6 +171,8 @@ class AARWindow(BaseModel):
         ...,
         description="Name of the ending waypoint (from KML) for AAR segment",
     )
+    start_anchor: RouteAnchor | None = None
+    end_anchor: RouteAnchor | None = None
     override_start_time: datetime | None = Field(
         default=None,
         description="Optional pilot-projected AAR start override (UTC, ISO-8601)",
@@ -293,6 +305,11 @@ class KuOutageOverride(BaseModel):
 
 class TransportConfig(BaseModel):
     """Configuration for all three transports in the mission."""
+
+    starshield_enabled: bool | None = None
+    planning_policy: PlanningPolicy | None = None
+    evaluation_context: EvaluationContext | None = None
+    planning_inputs: PlanningInputSnapshot | None = None
 
     initial_x_satellite_id: str = Field(
         ...,
@@ -647,9 +664,33 @@ class RouteSampleData(BaseModel):
     )
 
 
+class KaCoverageEvent(BaseModel):
+    """Informational footprint sequence, separate from availability conditions."""
+
+    timestamp: datetime
+    event_type: str
+    reason: str
+    coverage: list[str] = Field(default_factory=list)
+    satellite_id: str | None = None
+
+
+class TimelineMapPoi(BaseModel):
+    """Public event cue without persistence-only projection provenance."""
+
+    name: str
+    kind: MissionPoiKind
+    latitude: float
+    longitude: float
+    expected_arrival_time: datetime | None = None
+    description: str | None = None
+
+
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
+    map_pois: list[TimelineMapPoi] | None = Field(
+        default=None, description="Resolved map POIs from the same timeline calculation"
+    )
     mission_leg_id: str = Field(..., description="Associated mission leg ID")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -666,6 +707,10 @@ class MissionLegTimeline(BaseModel):
     statistics: dict = Field(
         default_factory=dict,
         description="Summary statistics (e.g., degraded_seconds, critical_seconds)",
+    )
+    coverage_events: list[KaCoverageEvent] = Field(
+        default_factory=list,
+        description="Starting coverage, footprint boundaries and recommended Ka handoffs",
     )
     samples: list[RouteSampleData] | None = Field(
         default=None,

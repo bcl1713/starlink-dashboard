@@ -1,0 +1,103 @@
+{
+  "base_branch": "dev",
+  "base_commit": "744548cbe9b676e9425d0f44256d7d2e22ce5273",
+  "working_tree_changes": "uncommitted",
+  "node_version": "22.22.2",
+  "frontend_unit": {
+    "files": 122,
+    "tests": 942,
+    "passed": true,
+    "command": "npm run test:unit"
+  },
+  "lint": {
+    "passed": true,
+    "command": "npm run lint"
+  },
+  "typecheck_and_build": {
+    "passed": true,
+    "command": "npm run build",
+    "warnings": "Vite satellite.js browser externalization and existing large bundle warnings"
+  },
+  "browser": {
+    "unique_checks": 20,
+    "passed": true,
+    "main_run": {
+      "passed": 14,
+      "failed": 1
+    },
+    "isolated_recenter_rerun": {
+      "passed": 4,
+      "failed": 0
+    },
+    "additional_network_and_layout_run": {
+      "passed": 6,
+      "failed": 0
+    },
+    "note": "Popup recenter timed out during overlapping browser builds/test artifact use; all four display checks passed when rerun in isolation. Two layout checks overlap additional run.",
+    "data": "Existing repository API fixtures; no fixture fields added to production",
+    "final_toggle_and_layout_run": {
+      "passed": 7,
+      "failed": 0,
+      "coverage": "Reversible Include/Exclude membership, confirmation and exclusion precedence, hex-only persistence, desktop/mobile layouts, search/keyboard scrolling, cross-window convergence and disabled late responses."
+    }
+  },
+  "preview": {
+    "url": "http://10.10.50.30:5173/configuration",
+    "local_url": "http://localhost:5173/configuration",
+    "source_root": "/home/oracle-worker/Work/starlink-dashboard",
+    "backend": "Isolated simulation backend using dev source and cached backend dependencies",
+    "live_browser_smoke": "passed without API fixtures",
+    "settings_api": 200,
+    "history_api": 200,
+    "catalog_api": 200,
+    "dev_module_recovery": {
+      "url": "http://10.10.50.30:5173/configuration",
+      "before": {
+        "served_module_bytes": 191,
+        "component_export": false,
+        "page_rendered": false
+      },
+      "fix": "Restarted Vite to clear cached empty transform; dev server left running on port 5173.",
+      "after": {
+        "served_module_bytes": 35121,
+        "component_export": true,
+        "page_rendered": true,
+        "browser_errors": []
+      },
+      "verification": "Fresh browser at the user URL; Configuration heading and Aircraft Traffic search both rendered."
+    }
+  },
+  "screenshot": {
+    "file": "traffic-1920x1080.png",
+    "width": 1920,
+    "height": 1080,
+    "data": "Representative aircraft supplied by browser test fixtures"
+  },
+  "original_document_edits": "Preserved byte-for-byte",
+  "backend": {
+    "tests_passed": 1602,
+    "tests_skipped": 20,
+    "focused_catalog_tests": 28,
+    "ruff_and_formatting": "passed",
+    "schema_and_persistence": "unchanged"
+  },
+  "architecture": {
+    "sections": [
+      "Overview",
+      "Network Traffic",
+      "Aircraft Traffic",
+      "Displays",
+      "Terminal Controls",
+      "Diagnostics"
+    ],
+    "aircraft_catalog": "Existing AdsbContact/AdsbTrafficBundle and acquisition service; independent catalog read maintains a 30-second demand lease only while Configuration polls. Overview filtering is unchanged.",
+    "table": "Case-insensitive search over all contact fields; bounded scrollable panel with keyboard focus and sticky headers.",
+    "remote_recenter": "verified across ordinary, fullscreen and newly opened Overview displays",
+    "remote_fullscreen": "removed; local Overview fullscreen retained",
+    "include_exclude": "Independent accessible toggle buttons expose confirmed aria-pressed membership and add/remove only their own saved ICAO hex list; exclusion always wins."
+  },
+  "review": {
+    "result": "No outstanding actionable findings after scroll-container accessibility fix",
+    "verification": "Browser PageDown assertion passed"
+  }
+}

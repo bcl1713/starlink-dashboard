@@ -143,7 +143,15 @@ export function XBandConfig({
               <TableRow key={transition.id}>
                 <TableCell>{transition.latitude}</TableCell>
                 <TableCell>{transition.longitude}</TableCell>
-                <TableCell>{transition.target_satellite_id}</TableCell>
+                <TableCell>
+                  {transition.target_satellite_id}
+                  {transition.anchor && (
+                    <p className="break-words text-xs">
+                      UTC {transition.anchor.source_time} · occurrence{' '}
+                      {transition.anchor.occurrence_id}
+                    </p>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="destructive"
@@ -171,10 +179,12 @@ export function XBandConfig({
                       });
                       setLatitudeError(validateLatitude(lat));
                     }}
-                    className={latitudeError ? 'border-red-500' : ''}
+                    className={latitudeError ? 'border-destructive' : ''}
                   />
                   {latitudeError && (
-                    <p className="text-sm text-red-500 mt-1">{latitudeError}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {latitudeError}
+                    </p>
                   )}
                 </div>
               </TableCell>
@@ -193,10 +203,10 @@ export function XBandConfig({
                       });
                       setLongitudeError(validateLongitude(lon));
                     }}
-                    className={longitudeError ? 'border-red-500' : ''}
+                    className={longitudeError ? 'border-destructive' : ''}
                   />
                   {longitudeError && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {longitudeError}
                     </p>
                   )}
@@ -215,7 +225,7 @@ export function XBandConfig({
                     }}
                   >
                     <SelectTrigger
-                      className={satelliteIdError ? 'border-red-500' : ''}
+                      className={satelliteIdError ? 'border-destructive' : ''}
                     >
                       <SelectValue placeholder="Target satellite" />
                     </SelectTrigger>
@@ -228,7 +238,7 @@ export function XBandConfig({
                     </SelectContent>
                   </Select>
                   {satelliteIdError && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {satelliteIdError}
                     </p>
                   )}

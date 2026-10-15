@@ -1,158 +1,54 @@
+# Workspace instructions
 
-## CLAUDE.md
+## Git workflow
 
-Guidance for Claude Code when working with this repository.
+Start each task in an isolated Git worktree on its own feature branch, based on
+`origin/dev`. Keep the primary checkout on `dev` and use `.worktrees/` for local
+feature worktrees. Do not make feature changes in the primary checkout.
 
-**Project:** Docker-based Starlink terminal monitoring system with real-time
-metrics visualization and simulation mode.
+Push the feature branch and submit a pull request against `dev`. After the PR
+merges, remove the task worktree, delete its local and remote feature branches,
+and remove remaining task-owned temporary files. Keep worktrees for open PRs so
+review changes stay isolated. Stop task-owned runtime resources as soon as their
+checks finish; do not wait for PR merge. Preserve `dev`, `main`, shared runtime
+configuration, and credentials.
 
-**Tech Stack:** Python 3.13 (FastAPI) + Prometheus + Grafana + Docker Compose;
-TypeScript/React frontend; Markdown documentation.
+See [Development workflow](docs/development/workflow.md) for commands.
 
-**Key Docs:**
+## Workspace runtime
 
-- `docs/design-document.md` – architecture
-- `docs/phased-development-plan.md` – development roadmap
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-guide.md` – flight phases & ETA
-  modes
+In the managed cloud environment, use the actor's configured Docker daemon.
+Preserve `DOCKER_HOST` and the active context when checking `docker info`. The
+oracle-worker service uses `unix:///run/user/1002/docker.sock`; discover the
+current user's socket through `XDG_RUNTIME_DIR` or `/run/user/$(id -u)`. Failure
+at `/var/run/docker.sock` does not establish that this service is down. Do not
+clear the actor's configuration to force the root socket.
 
-## ⚠️ Backend Python Code Changes (CRITICAL)
+See [Cloud Docker runtime](docs/development/cloud-docker.md) for discovery,
+verification and isolated acceptance projects.
 
-**REQUIRED sequence for ANY .py file changes:**
+## Task resource lifecycle
 
-```bash
-docker compose down && docker compose build --no-cache && \
-  docker compose up -d && docker compose ps
-curl http://localhost:8000/health  # Verify changes took effect
-```
+Record ownership before starting temporary resources: command/session handles,
+PID and process group, Compose project, private volumes, and temporary paths.
+Use a task-specific Compose project, not a shared development project.
 
-**Why:** `docker compose up` alone serves cached code. Only the sequence above
-rebuilds images without layer caching.
+Run tests with a wall-clock limit and forced termination grace period, for
+example `timeout --kill-after=10s 10m <test command>`. A tool's output-yield
+limit and pytest's `faulthandler_timeout` do not terminate a hung test. Choose a
+larger explicit limit for builds or acceptance runs when needed. After a
+timeout, stop and verify the old process tree before starting another run.
 
-**Docker commands:** `up -d`, `down`, `logs -f`, `restart`, `ps`
+Use exit and signal cleanup handlers for resource-owning runners. Close browser
+contexts and stop their child processes, terminate and reap task-owned workers
+and development servers, and remove task-owned Compose containers, networks, and
+disposable volumes. Terminate gracefully first; force only verified owned
+survivors. Do not use broad `pkill`, `killall`, or Docker prune commands.
 
-## Access Points & Configuration
-
-**Service URLs:**
-
-- Grafana: `http://localhost:3000` (admin/admin)
-- Prometheus: `http://localhost:9090`
-- Backend: `http://localhost:8000/health` or `/docs`
-
-**Environment variables** (`.env`):
-
-- `STARLINK_MODE=simulation` (or `live`)
-- `STARLINK_DISH_HOST=192.168.100.1`
-- `STARLINK_DISH_PORT=9200`
-- `PROMETHEUS_RETENTION=1y` (~2.4 GB)
-- `GRAFANA_ADMIN_PASSWORD=admin`
-
-**Module Paths (Refactored - Phase 001-codebase-cleanup):**
-
-- Backend: `backend/starlink-location/` (main service)
-- API Layer:
-  - Routes: `app/api/routes/` (management, upload, download, stats, eta, timing,
-    cache)
-  - POIs: `app/api/pois/` (crud, etas, stats, helpers)
-  - UI: `app/api/ui/` (routes, templates)
-- Mission Layer:
-  - Routes: `app/mission/routes/` (missions, legs, waypoints, operations)
-  - Timeline: `app/mission/timeline_builder/` (calculator, state, validators)
-  - Exporter: `app/mission/exporter/` (formatting, excel_utils, transport_utils)
-  - Package: `app/mission/package/` (mission export/import)
-- Services:
-  - KML Parser: `app/services/kml/` (parser, geometry, validators)
-  - ETA: `app/services/eta/` (core calculations, bearing, distance)
-  - Route ETA: `app/services/route_eta/` (route-specific timing)
-  - POI Manager: `app/services/poi_manager.py` (consolidated)
-  - Flight State: `app/services/flight_state_manager.py` (flight tracking)
-- Core: `app/core/metrics/` (Prometheus metrics)
-- Config: `monitoring/prometheus/`, `monitoring/grafana/`
-- Data: `/data/routes/` (KML files), `/data/sim_routes/` (simulator)
-
-## Operating Modes
-
-**Simulation Mode (default):** Set `STARLINK_MODE=simulation`. Generates
-realistic Starlink telemetry (position, speed, latency, throughput,
-obstructions). No hardware required.
-
-**Live Mode:** Set `STARLINK_MODE=live`. Connects to real terminal at
-`STARLINK_DISH_HOST:STARLINK_DISH_PORT`. If dish unavailable on startup, service
-initializes without metrics and auto-reconnects on each cycle. Check
-`http://localhost:8000/health` for connection status.
-
-## Core Metrics & APIs
-
-**Prometheus Metrics:** Position (`starlink_dish_latitude_degrees`, longitude,
-altitude), Network (latency_ms, throughput_down/up_mbps), Status
-(obstruction_percent, speed_knots, heading_degrees), POI/ETA (eta_poi_seconds,
-distance_to_poi_meters).
-
-**Flight Status & ETA:**
-
-- Phases: `pre_departure`, `in_flight`, `post_arrival`
-- ETA modes auto-switch: `anticipated` (pre-flight) → `estimated` (airborne)
-- APIs: `/api/flight-status`, `/api/pois/etas`, `/api/routes/{id}`
-- Testing: `/api/flight-status/depart` and `/arrive` endpoints
-- See `dev/completed/eta-timing-modes/FLIGHT-STATUS-guide.md` for details
-
-## Storage & Route Management
-
-**Prometheus Storage:** Default 1-year retention (~2.4 GB). Adjust
-`PROMETHEUS_RETENTION` in `.env`: `1y` (2.4 GB), `90d` (600 MB), `30d` (200 MB),
-`15d` (100 MB).
-
-**Route APIs:**
-
-- Upload KML: `POST /api/routes/upload`
-- List: `GET /api/routes`
-- Get details: `GET /api/routes/{route_id}`
-- Activate: `POST /api/routes/{route_id}/activate`
-- Deactivate: `POST /api/routes/deactivate`
-- Delete: `DELETE /api/routes/{route_id}`
-- Download: `GET /api/routes/{route_id}/download`
-
-**Route Management UI:** `http://localhost:8000/ui/routes`
-
-**Sample Routes:** See `/data/sample_routes/` (simple-circular.kml,
-cross-country.kml, route-with-pois.kml)
-
-## KML Format & Route Features
-
-**KML Format:** Coordinate order: `longitude,latitude,altitude`. Longitude: -180
-to 180 (negative = West), Latitude: -90 to 90 (negative = South). Supports
-LineString (routes) and Point (POIs).
-
-**Route Features:** KML import with auto-discovery, Grafana visualization (dark
-orange), simulation following, progress metrics
-(`starlink_route_progress_percent`, `starlink_current_waypoint_index`), POI
-import from Point placemarks.
-
-**Monitoring:** View on Grafana dashboard (`http://localhost:3000/d/starlink`)
-or query Prometheus metrics.
-
-## Code Quality Standards
-
-**Formatting:** Prettier (80 char width, prose wrap always, auto line endings).
-Python: Black + ruff. Markdown: markdownlint-cli2.
-
-**Naming:** Status/session files → ALL CAPS (SESSION-NOTES.md). Task files →
-kebab-case (poi-management-plan.md). No underscores. See
-`.claude/NAMING-CONVENTIONS.md`.
-
-**File Size:** Target 300 lines max per file (FR-004 justification required if
-exceeded). Phase 001-codebase-cleanup: 88-92% backend compliance (23-24 of 26),
-100% frontend (3/3), 100% documentation refactored into subdirectories.
-
-**Type Safety:** Python (mypy strict), TypeScript (strict mode). All refactored
-code fully typed and documented.
-
-## Documentation & Architecture
-
-Refer to:
-
-- `docs/design-document.md` – full architecture (sections 1-7)
-- `docs/phased-development-plan.md` – implementation roadmap
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-guide.md` – testing flight modes
-
-**Docker Builds:** Delegate to sub-agents (expensive context).
+Before handing work back, including on failure or cancellation, verify that the
+task's processes, listeners, containers, networks, and disposable volumes are
+gone. Check host processes through an approved host command if the sandbox's PID
+namespace hides them. Preserve acceptance evidence and open-PR worktrees, but do
+not keep their runtime resources alive. Leave a temporary service running only
+when the user requests it, with its owner, purpose, and stop command reported.
+If cleanup is blocked, report the exact remaining resources.

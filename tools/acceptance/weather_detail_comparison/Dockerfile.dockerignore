@@ -1,0 +1,5 @@
+**
+!tools/
+!tools/acceptance/
+!tools/acceptance/**
+**/__pycache__/

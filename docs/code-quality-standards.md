@@ -25,7 +25,13 @@ formatting tools. All code must pass these checks before merge.
 
 ### Python Local Usage
 
+Black and Ruff versions are pinned for contributors and CI in
+`backend/starlink-location/requirements-dev.txt`. Install them from that
+committed manifest before running the checks:
+
 ```bash
+pip install --requirement backend/starlink-location/requirements-dev.txt
+
 # Format with Black
 black backend/starlink-location/app
 
@@ -48,22 +54,24 @@ ruff check --fix backend/starlink-location/app
 ### TypeScript Configuration
 
 - Prettier: `.prettierrc` (print width 80, prose wrap always)
-- ESLint: `frontend/mission-planner/.eslintrc.json`
-- Node version: 18.17.1
+- ESLint: `frontend/mission-planner/eslint.config.js`
+- Node runtime and dependency installation: follow the authoritative
+  [Quality Gates prerequisites](contributing/quality-gates.md#prerequisites).
 
 ### TypeScript Local Usage
 
 ```bash
 cd frontend/mission-planner
+npm ci
 
 # Format with Prettier
 npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
 
 # Lint with ESLint
-npx eslint src --ext .ts,.tsx
+npm run lint
 
 # Auto-fix ESLint violations
-npx eslint src --ext .ts,.tsx --fix
+npm run lint -- --fix
 ```
 
 ---
@@ -78,13 +86,16 @@ npx eslint src --ext .ts,.tsx --fix
 ### Markdown Configuration
 
 - Prettier: `.prettierrc` (shared config)
-- Markdownlint: `.markdownlint.jsonc` (if present) or defaults
+- Markdownlint: `.markdownlint-cli2.jsonc`
 
 ### Markdown Local Usage
 
+Run from the repository root after installing the tools listed in the
+[Quality Gates prerequisites](contributing/quality-gates.md#prerequisites).
+
 ```bash
 # Format with Prettier
-npx prettier --write "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --write "docs/**/*.md"
 
 # Lint with Markdownlint
 markdownlint-cli2 "docs/**/*.md"
@@ -191,24 +202,33 @@ cat .git/hooks/pre-commit
 
 ### Linting Failures Don't Match CI
 
+Use the supported runtime and tool prerequisites from the
+[Quality Gates guide](contributing/quality-gates.md#prerequisites). Run from the
+repository root:
+
 ```bash
-# Update tools to match CI versions
-pip install --upgrade black ruff
+# Install the committed backend formatter/linter versions used by CI
+pip install --requirement backend/starlink-location/requirements-dev.txt
 cd frontend/mission-planner
-npm update prettier eslint
-npm install -g markdownlint-cli2@latest
+npm ci
 ```
+
+The backend Black and Ruff versions are pinned in
+`backend/starlink-location/requirements-dev.txt`. Reinstall from that manifest
+instead of upgrading those tools independently. Frontend tooling versions come
+from `frontend/mission-planner/package-lock.json`; use `npm ci` to restore them
+instead of `npm update`.
 
 ### Black and Ruff Conflict
 
 Black and Ruff are configured to work together without conflicts. If you see
-conflicting suggestions, ensure both tools are up-to-date.
+conflicting suggestions, reinstall both from the committed dev-tool manifest.
 
 ### ESLint or Prettier Not Found
 
 ```bash
 cd frontend/mission-planner
-npm install
+npm ci
 ```
 
 ---
@@ -217,33 +237,37 @@ npm install
 
 ### Format All Code
 
+Run from the repository root after installing the documented prerequisites.
+
 ```bash
-# Python
+# Python (after installing backend/starlink-location/requirements-dev.txt)
 black backend/starlink-location/app
 ruff check --fix backend/starlink-location/app
 
 # JavaScript/TypeScript
-cd frontend/mission-planner
-npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
+npm --prefix frontend/mission-planner exec -- prettier --write "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 
 # Markdown
-npx prettier --write "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --write "docs/**/*.md"
 ```
 
 ### Check Linting Without Formatting
 
+For the complete local/CI checks, use `./tools/verify static` from the
+repository root as documented in [Quality Gates](contributing/quality-gates.md).
+The following focused commands also run from the repository root:
+
 ```bash
-# Python
+# Python (after installing backend/starlink-location/requirements-dev.txt)
 black --check backend/starlink-location/app
 ruff check backend/starlink-location/app
 
 # JavaScript/TypeScript
-cd frontend/mission-planner
-npx prettier --check "src/**/*.{ts,tsx,js,jsx}"
-npx eslint src
+npm --prefix frontend/mission-planner exec -- prettier --check "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
+npm --prefix frontend/mission-planner run lint
 
 # Markdown
-npx prettier --check "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --check "docs/**/*.md"
 markdownlint-cli2 "docs/**/*.md"
 ```
 

@@ -71,12 +71,6 @@ services:
       resources:
         limits:
           memory: 512M
-
-  grafana:
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 ```
 
 **Apply:**
@@ -131,7 +125,7 @@ update_interval_seconds: 2.0 # Instead of 1.0
 
 ```bash
 docker compose down
-docker compose build --no-cache starlink-location
+./scripts/compose.sh build --no-cache starlink-location
 docker compose up -d
 ```
 

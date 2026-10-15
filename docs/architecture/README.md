@@ -30,38 +30,18 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 - Support **KML route overlays**, POIs, and ETA calculations
 - Store all data for historical analysis
 - Run as a **self-contained Docker Compose stack**
-- Provide **web dashboard** (Grafana-based) for visualization
+- Provide **web dashboard** (Mission Planner) for visualization
 
 ### System Stack
 
 ```text
-┌────────────────────────────────────────────┐
-│                  Grafana                   │
-│  ├── Starlink Stats Dashboard              │
-│  ├── Map (Geomap / TrackMap)               │
-│  ├── POI + ETA Panels                      │
-│  └── (Optional) Control Buttons            │
-└──────────────┬─────────────────────────────┘
-               │ Prometheus Queries
-┌──────────────┴─────────────────────────────┐
-│               Prometheus                   │
-│  ├── Scrapes live/simulated metrics        │
-│  └── Stores all time-series data           │
-└──────────────┬─────────────────────────────┘
-               │ HTTP Metrics / API
-┌──────────────┴─────────────────────────────┐
-│   starlink-location (Python/FastAPI)       │
-│  ├── API Layer (routes, pois, missions)    │
-│  ├── Services (managers, calculators)      │
-│  ├── Core (metrics, config, models)        │
-│  ├── Simulation or Live Polling            │
-│  └── /metrics (Prometheus endpoint)        │
-└──────────────┬─────────────────────────────┘
-               │
-    ┌──────────┴──────────┐
-    │ Starlink Dish (Live)│
-    │ or Simulator Engine │
-    └─────────────────────┘
+Mission Planner (Nginx + native Overview)
+    | same-origin backend API
+    v
+starlink-location (FastAPI) <----> Prometheus (history queries / metric scraping)
+    |
+    v
+Starlink dish or simulator
 ```
 
 ---
@@ -69,3 +49,20 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 [Go to Full Architecture Documentation →](./design-document.md)
 
 [Back to main docs](../index.md)
+
+## Responsive native Overview
+
+See
+[responsive layout, camera and scroll ownership](./overview-responsive-layout.md)
+for the single-tree mobile/scaled-desktop implementation.
+
+## Aviation weather proposal
+
+See the
+[aviation weather architecture design](../superpowers/specs/2026-10-06-aviation-weather-design.md),
+[source inventory](../reports/2026-10-06-aviation-weather-source-inventory.md),
+and
+[local rendering proof design](../superpowers/specs/2026-10-06-aviation-weather-proof-design.md)
+for the proposed provider-neutral extension of the existing observed radar.
+Scientific decode and local-render evidence remain prerequisites for product
+implementation.

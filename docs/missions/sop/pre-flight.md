@@ -9,7 +9,7 @@ crew connectivity through predicted degradation windows.
 **Key Responsibilities:**
 
 - **Pre-flight:** Validate timeline predictions
-- **During-flight:** Monitor Grafana dashboards
+- **During-flight:** Monitor Mission Planner dashboards
 - **Alert:** Respond to degradation warnings
 - **Post-flight:** Document and archive mission results
 
@@ -116,13 +116,11 @@ Example: `mission-Leg6Rev6-2025-03-15-final.pdf`
 
 **After landing:**
 
-1. **Capture final metrics:**
+1. **Capture final metrics:** Retain the approved timeline and monitoring
+   artifacts produced during operations. The retired mission API has no
+   supported post-flight timeline command.
 
-   ```bash
-   curl <http://localhost:8000/api/missions/active/timeline>
-   ```
-
-   Save as `mission-`name`-<date>-actual-timeline.json`
+   Save the selected artifact as `mission-`name`-<date>-actual-timeline.json`.
 
 1. **Compare predicted vs. actual:**
    - How close did predictions match?
@@ -136,7 +134,7 @@ Example: `mission-Leg6Rev6-2025-03-15-final.pdf`
      ├── mission-brief.pdf
      ├── predicted-timeline.json
      ├── actual-timeline.json
-     ├── grafana-screenshots/
+     ├── overview-screenshots/
      └── ops-log.txt
    ```
 

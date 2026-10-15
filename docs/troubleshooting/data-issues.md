@@ -56,7 +56,7 @@ rg -A 5 "volumes:" docker-compose.yml
 # Verify volume exists
 docker volume ls | rg poi
 docker volume ls | rg prometheus
-docker volume ls | rg grafana
+docker volume ls | rg prometheus
 
 # Check volume content
 docker run -v poi_data:/data alpine ls -la /data
@@ -94,7 +94,7 @@ curl http://localhost:8000/api/routes/{route_id} | jq .
 docker compose logs starlink-location | tail -30
 ```
 
-### Issue: Route not displaying in Grafana
+### Issue: Route not displaying in Overview
 
 **Verify route data:**
 
@@ -105,28 +105,28 @@ curl http://localhost:8000/api/routes/active | jq .
 # Verify route metrics
 curl http://localhost:8000/metrics | rg route_progress
 
-# Check Grafana panel query
-# In Grafana > Edit panel > Query inspector
+# Check the frontend proxy
+curl --fail http://localhost:5173/api/routes/active
 ```
 
 ## Mission Planning Issues
 
-### Issue: Mission data not saving
+### Issue: Mission V2 data not available
 
-**Check mission storage:**
+The retired mission API has no supported create, export, or timeline procedure.
+Activate a prepared Mission V2 leg only with:
 
-```bash
-# Check if missions directory exists
-ls -la backend/starlink-location/data/missions/
-
-# Verify file permissions
-docker compose exec starlink-location ls -la /app/data/missions/
-
-# Test mission creation
-curl -X POST http://localhost:8000/api/missions \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test Mission", "route_id": "test"}'
+```text
+POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate
 ```
+
+If Overview reports `no_active_mission` while a route is active, the route is
+route-only and does not activate a Mission V2 leg. Verify the Mission V2 leg and
+its matching route rather than using a retired endpoint.
+
+Flat v1 mission artifacts are retained but inert. They receive no automatic
+migration or cleanup; preserve them unless an explicitly approved retention
+operation says otherwise.
 
 ### Issue: Timeline calculations slow
 
@@ -145,18 +145,13 @@ docker stats starlink-location
 
 ### Issue: Export generation failing
 
-**Check export endpoints:**
+Mission V2 does not publish a replacement export endpoint in this guide. Do not
+call retired mission API routes; inspect the archive workflow and backend logs
+for the approved export artifact instead.
 
 ```bash
-# Test PDF export
-curl -X GET http://localhost:8000/api/missions/{id}/export/pdf \
-  -o test-export.pdf
+# Check logs for export failures
 
-# Test CSV export
-curl -X GET http://localhost:8000/api/missions/{id}/export/csv \
-  -o test-export.csv
-
-# Check logs for errors
 docker compose logs starlink-location | rg -i "export|pdf|csv"
 ```
 
@@ -245,10 +240,6 @@ docker compose down
 tar -czf backup/prometheus-$(date +%Y%m%d).tar.gz \
   /var/lib/docker/volumes/starlink-dashboard-dev_prometheus_data/
 docker compose up -d
-
-# Backup Grafana dashboards
-docker compose exec grafana \
-  tar -czf - /var/lib/grafana > backup/grafana-$(date +%Y%m%d).tar.gz
 ```
 
 ### Restore from backup

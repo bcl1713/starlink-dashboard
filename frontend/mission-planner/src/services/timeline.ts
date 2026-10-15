@@ -1,5 +1,6 @@
 import { apiClient } from './api-client';
 import type { ManualRouteSplice } from '../types/aar';
+import type { OverviewPoiKind } from './overview-upcoming-pois';
 
 export interface TimelineSegment {
   id: string;
@@ -23,13 +24,30 @@ export interface RouteSample {
   coverage?: string[];
 }
 
+export interface KaCoverageEvent {
+  timestamp: string;
+  event_type: string;
+  reason: string;
+  coverage: string[];
+  satellite_id?: string | null;
+}
+
 export interface Timeline {
+  map_pois?: Array<{
+    name: string;
+    kind: OverviewPoiKind;
+    latitude: number;
+    longitude: number;
+    expected_arrival_time?: string | null;
+    description?: string | null;
+  }>;
   mission_leg_id: string;
   created_at: string;
   segments: TimelineSegment[];
   advisories?: unknown[];
   statistics?: Record<string, unknown>;
   samples?: RouteSample[] | null;
+  coverage_events?: KaCoverageEvent[];
   route_basis?: 'planned' | 'derived_estimate';
   derived_route_estimate?: DerivedRouteEstimate | null;
 }

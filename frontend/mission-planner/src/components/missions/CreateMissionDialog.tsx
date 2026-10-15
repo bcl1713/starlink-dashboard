@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useCreateMission } from '../../hooks/api/useMissions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -8,14 +14,18 @@ import { Label } from '../ui/label';
 interface CreateMissionDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess: (missionId: string) => void;
 }
 
 export function CreateMissionDialog({
   open,
   onClose,
+  onSuccess,
 }: CreateMissionDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const createMission = useCreateMission();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,24 +34,52 @@ export function CreateMissionDialog({
     if (!name.trim()) return;
 
     const id = name.toLowerCase().replace(/\s+/g, '-');
+    setCreateError(null);
 
-    await createMission.mutateAsync({
-      id,
-      name,
-      description: description || undefined,
-      legs: [],
-    });
+    try {
+      const mission = await createMission.mutateAsync({
+        id,
+        name,
+        description: description || undefined,
+        legs: [],
+      });
 
-    setName('');
-    setDescription('');
-    onClose();
+      setName('');
+      setDescription('');
+      onSuccess(mission.id);
+      onClose();
+    } catch (error) {
+      setCreateError(
+        error instanceof Error
+          ? `Unable to create mission: ${error.message}`
+          : 'Unable to create mission. Please try again.'
+      );
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent
+        onOpenAutoFocus={() => {
+          // This dialog is opened by MissionList, outside Radix DialogTrigger.
+          returnFocus.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (returnFocus.current?.isConnected) {
+            event.preventDefault();
+            returnFocus.current.focus({ preventScroll: true });
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Create New Mission</DialogTitle>
+          <DialogDescription>
+            Name your mission and optionally add a description. You can add legs
+            after creating it.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -63,6 +101,11 @@ export function CreateMissionDialog({
               placeholder="Multi-leg transcontinental mission"
             />
           </div>
+          {createError && (
+            <p role="alert" className="text-sm text-destructive">
+              {createError}
+            </p>
+          )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel

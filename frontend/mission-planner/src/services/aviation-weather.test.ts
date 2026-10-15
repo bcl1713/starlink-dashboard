@@ -1,0 +1,184 @@
+import { describe, expect, it } from 'vitest';
+import fixture from '@/test/aviation-catalog.json';
+import {
+  parseAviationCatalog,
+  parseAviationSettings,
+} from './aviation-weather';
+
+const copy = () => structuredClone(fixture);
+
+describe('aviation catalog admission before acquisition', () => {
+  it('retains observations and unknown coverage distinctly', () => {
+    const catalog = parseAviationCatalog(fixture);
+    expect(catalog.products[0].observed_at_ms).toBe(1791244200000);
+    expect(catalog.products[0].coverage?.missing_meaning).toBe(
+      'unknown-not-clear'
+    );
+  });
+  it.each([
+    { observed_at_ms: true },
+    { time_kind: 'analysis' },
+    { method_kind: 'numerical-model' },
+    { run_at_ms: 1791244800000 },
+    { observed_at_ms: 1791244860001 },
+    { fresh_until_ms: 1791245400001 },
+    { expires_at_ms: 1791244800000 },
+    { instance_id: null },
+    { representation: 'future-v2' },
+    { state: 'off' },
+    { extra: 0 },
+  ])('rejects incoherent product %j', (change) => {
+    const data = copy();
+    Object.assign(data.products[0], change);
+    expect(() => parseAviationCatalog(data)).toThrow();
+  });
+  it.each([
+    'https://evil.test/data',
+    '//evil.test/data',
+    '/api/private/data',
+    '/api/aviation-weather/v1/products/../data',
+    '/api/aviation-weather/v1/products/%2e%2e/data',
+    `/api/aviation-weather/v1/products/${'d'.repeat(64)}/stations.json`,
+  ])('rejects an unsafe or mismatched path %s', (path) => {
+    const data = copy();
+    data.products[0].payload.path = path;
+    expect(() => parseAviationCatalog(data)).toThrow();
+  });
+  it.each([
+    ['encoded_bytes', 16 * 1024 ** 2],
+    ['decoded_bytes', 32 * 1024 ** 2],
+    ['gpu_bytes', 16 * 1024 ** 2],
+  ] as const)('rejects excessive %s', (field, limit) => {
+    const data = copy();
+    data.products[0].payload[field] = limit + 1;
+    expect(() => parseAviationCatalog(data)).toThrow();
+  });
+  it('rejects duplicate layers and future schemas', () => {
+    const data = copy();
+    data.products.push(data.products[0]);
+    expect(() => parseAviationCatalog(data)).toThrow();
+    expect(() =>
+      parseAviationCatalog({ ...fixture, schema: 'future-v2' })
+    ).toThrow();
+  });
+  it('requires coherent model run and pressure identity', () => {
+    const data = copy();
+    Object.assign(data.products[0], {
+      time_kind: 'forecast',
+      method_kind: 'numerical-model',
+      observed_at_ms: null,
+      run_at_ms: 1791241200000,
+      lead_seconds: 7200,
+      valid_at_ms: 1791248400000,
+      vertical: { kind: 'pressure', pressure_pa: 50000 },
+    });
+    expect(parseAviationCatalog(data).products[0].time_kind).toBe('forecast');
+    data.products[0].valid_at_ms = 1791244800000;
+    expect(() => parseAviationCatalog(data)).toThrow();
+  });
+  it('accepts only strictly typed default-off settings', () => {
+    expect(
+      parseAviationSettings({
+        metar: false,
+        taf: false,
+        sigmet: false,
+        revision: 0,
+      }).metar
+    ).toBe(false);
+    expect(() =>
+      parseAviationSettings({
+        metar: 1,
+        taf: false,
+        sigmet: false,
+        revision: 0,
+      })
+    ).toThrow();
+  });
+  it('migrates old settings and accepts confirmed GFS selections', () => {
+    const old = { metar: true, taf: false, sigmet: false, revision: 4 };
+    expect(parseAviationSettings(old)).toMatchObject({
+      winds: false,
+      temperature: false,
+      gfs_selection: {
+        vertical: { kind: 'pressure', pressure_pa: 50000 },
+        horizon_hours: 0,
+      },
+    });
+    expect(
+      parseAviationSettings({
+        ...old,
+        winds: true,
+        temperature: true,
+        gfs_selection: { pressure_pa: 25000, horizon_hours: 6 },
+      }).winds
+    ).toBe(true);
+    expect(() =>
+      parseAviationSettings({
+        ...old,
+        gfs_selection: { pressure_pa: 80000, horizon_hours: 6 },
+      })
+    ).toThrow();
+  });
+  it('normalizes simultaneous legacy GFS flags without changing revision or selection', () => {
+    const selection = { pressure_pa: 25000, horizon_hours: 6 };
+    expect(
+      parseAviationSettings({
+        metar: true,
+        taf: false,
+        sigmet: true,
+        winds: true,
+        temperature: true,
+        revision: 7,
+        gfs_selection: selection,
+      })
+    ).toMatchObject({
+      winds: true,
+      temperature: false,
+      metar: true,
+      sigmet: true,
+      revision: 7,
+      gfs_selection: {
+        vertical: { kind: 'pressure', pressure_pa: 25000 },
+        horizon_hours: 6,
+      },
+    });
+  });
+  it('admits tagged pressure/flight levels and migrates saved pressure', () => {
+    const base = { metar: false, taf: false, sigmet: false, revision: 2 };
+    expect(
+      parseAviationSettings({
+        ...base,
+        gfs_selection: {
+          pressure_pa: 25000,
+          horizon_hours: 6,
+        },
+      }).gfs_selection
+    ).toEqual({
+      vertical: { kind: 'pressure', pressure_pa: 25000 },
+      horizon_hours: 6,
+    });
+    for (const flight_level of [50, 100, 180, 240, 300, 340, 390, 450]) {
+      const gfs_selection = {
+        vertical: { kind: 'flight-level', flight_level },
+        horizon_hours: 48,
+      };
+      expect(
+        parseAviationSettings({ ...base, gfs_selection }).gfs_selection
+      ).toEqual(gfs_selection);
+    }
+    for (const vertical of [
+      { kind: 'surface' },
+      { kind: 'flight-level', flight_level: 350 },
+      { kind: 'flight-level', flight_level: true },
+      { kind: 'pressure', pressure_pa: 80000 },
+      { kind: 'flight-level', flight_level: 390, pressure_pa: 20000 },
+    ]) {
+      expect(() =>
+        parseAviationSettings({
+          ...base,
+          gfs_selection: { vertical, horizon_hours: 0 },
+        })
+      ).toThrow();
+    }
+  });
+});

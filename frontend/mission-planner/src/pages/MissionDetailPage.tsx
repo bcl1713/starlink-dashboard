@@ -18,14 +18,30 @@ import {
   useUpdateMission,
 } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
+import { SimulateLegDialog } from '../components/missions/SimulateLegDialog';
+import { MissionSimulationStatus } from '../components/missions/MissionSimulationStatus';
 import { EditableField } from '../components/missions/EditableField';
+import { formatMissionDeletionError } from '../services/mission-deletion';
 import type { MissionLeg } from '../types/mission';
+import { usePlanning } from '../hooks/api/usePlanning';
+import { RevisionReview } from '../components/planning/RevisionReview';
+import type { PlanningCAS } from '../services/missions';
+import { ExpectedLegCards } from '../components/planning/ExpectedLegCards';
+import { BatchRouteAttachments } from '../components/planning/BatchRouteAttachments';
+import { ItinerarySourceReview } from '../components/planning/ItinerarySourceReview';
+import { ItineraryPlans } from '../components/planning/ItineraryPlans';
+import { ItineraryFinalReview } from '../components/planning/ItineraryFinalReview';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
+  const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
+  const managed = !!mission?.metadata?.itinerary_planning;
+  const planning = usePlanning(missionId || '', managed);
+  const planningResolved =
+    !managed || (!!planning.data && !planning.isLoading && !planning.error);
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
   const deleteMissionMutation = useDeleteMission();
@@ -35,7 +51,7 @@ export function MissionDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="app-page">
         <p className="text-muted-foreground">Loading mission...</p>
       </div>
     );
@@ -43,8 +59,8 @@ export function MissionDetailPage() {
 
   if (error || !mission) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-red-600">
+      <div className="app-page">
+        <p className="text-destructive">
           {error ? 'Error loading mission' : 'Mission not found'}
         </p>
         <Button onClick={() => navigate('/missions')} className="mt-4">
@@ -65,18 +81,24 @@ export function MissionDetailPage() {
         navigate('/missions');
       } catch (error) {
         console.error('Failed to delete mission:', error);
-        alert('Failed to delete mission. Please try again.');
+        alert(formatMissionDeletionError(error));
       }
     }
   };
 
-  const handleDeleteLeg = async (leg: MissionLeg, confirmed: boolean) => {
+  const handleDeleteLeg = async (
+    leg: MissionLeg,
+    confirmed: boolean,
+    captured?: PlanningCAS
+  ) => {
     if (confirmed) {
       try {
-        await deleteLegMutation.mutateAsync(leg.id);
+        await deleteLegMutation.mutateAsync(
+          captured ? { legId: leg.id, planning: captured } : leg.id
+        );
       } catch (error) {
         console.error('Failed to delete leg:', error);
-        alert('Failed to delete leg. Please try again.');
+        alert(formatMissionDeletionError(error));
       }
     }
   };
@@ -106,16 +128,67 @@ export function MissionDetailPage() {
     });
   };
 
+  const renderInstalledActions = (legId: string) => {
+    const leg = mission.legs.find((leg) => leg.id === legId);
+    if (!leg) return null;
+    const card = planning.data?.expected_legs.find(
+      (c) => c.leg.installed_leg_id === legId
+    );
+    const captured =
+      card && planning.data
+        ? {
+            expected_revision: planning.data.revision,
+            input_identity: card.input_identity,
+          }
+        : undefined;
+    return (
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={deleteLegMutation.isPending || !captured}
+          onClick={() => {
+            const confirmed = window.confirm(
+              `Delete leg ${leg.name}? Its planning history will be retained.`
+            );
+            void handleDeleteLeg(leg, confirmed, captured);
+          }}
+        >
+          Delete
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSimulationLegId(leg.id)}
+        >
+          Simulate leg…
+        </Button>
+        <Button
+          variant={leg.is_active ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleActivateLeg(leg.id)}
+          disabled={activateLeg.isPending}
+        >
+          {activateLeg.isPending
+            ? 'Activating...'
+            : leg.is_active
+              ? 'Active'
+              : 'Activate'}
+        </Button>
+      </div>
+    );
+  };
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-start">
-        <div className="flex-1 mr-4">
+    <div className="app-page space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+        <div className="min-w-0 flex-1">
           <EditableField
             value={mission.name}
             onSave={handleUpdateName}
             isLoading={updateMissionMutation.isPending}
             placeholder="Mission name"
-            className="text-3xl font-bold"
+            className="page-title"
           />
           <EditableField
             value={mission.description || 'No description'}
@@ -125,9 +198,9 @@ export function MissionDetailPage() {
             multiline
             className="text-muted-foreground mt-2"
           />
-          <p className="text-sm text-gray-500 mt-2">ID: {mission.id}</p>
+          <p className="text-sm text-muted-foreground mt-2">ID: {mission.id}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => navigate('/missions')}>
             Back to Missions
           </Button>
@@ -154,10 +227,60 @@ export function MissionDetailPage() {
         </div>
       </div>
 
+      <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
+      {managed && (
+        <div className="space-y-4">
+          <h2 className="text-base font-semibold">Itinerary legs</h2>
+          {planningResolved && planning.data ? (
+            <>
+              <RevisionReview
+                view={planning.data}
+                previewRevision={(file, expectedRevision) =>
+                  planning.previewRevision.mutateAsync({
+                    file,
+                    expectedRevision,
+                  })
+                }
+                applyRevision={(request) =>
+                  planning.applyRevision.mutateAsync(request)
+                }
+              />
+              <BatchRouteAttachments
+                key={missionId}
+                view={planning.data}
+                onAccepted={() => {
+                  void planning.refetch();
+                }}
+              />
+              <ItinerarySourceReview
+                key={`source-${missionId}`}
+                view={planning.data}
+              />
+              <ItineraryPlans key={`plans-${missionId}`} view={planning.data} />
+              <ItineraryFinalReview
+                key={`final-${missionId}`}
+                view={planning.data}
+              />
+              <ExpectedLegCards
+                view={planning.data}
+                renderInstalledActions={renderInstalledActions}
+              />
+            </>
+          ) : (
+            <p role={planning.error ? 'alert' : 'status'}>
+              {planning.error
+                ? 'Unable to load itinerary draft. Reload the mission to retry.'
+                : 'Loading itinerary draft…'}
+            </p>
+          )}
+        </div>
+      )}
       <div className="border-t pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">Mission Legs</h2>
-          <div className="flex gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold tracking-tight">
+            Mission Legs
+          </h2>
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleDeactivateAllLegs}
               disabled={
@@ -177,89 +300,123 @@ export function MissionDetailPage() {
             </Button>
           </div>
         </div>
-        {mission.legs.length === 0 ? (
+        {!planningResolved ? (
+          <p className="text-muted-foreground">
+            Leg actions are unavailable until the itinerary draft loads.
+          </p>
+        ) : mission.legs.length === 0 ? (
           <p className="text-muted-foreground">
             No legs configured for this mission
           </p>
         ) : (
           <div className="grid gap-4">
-            {mission.legs.map((leg) => (
-              <Card
-                key={leg.id}
-                className={`hover:shadow-lg transition-shadow cursor-pointer ${
-                  leg.is_active ? 'border-green-600 border-2' : ''
-                }`}
-                onClick={() =>
-                  navigate(`/missions/${mission.id}/legs/${leg.id}`)
-                }
-              >
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{leg.name}</CardTitle>
-                        {leg.is_active && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-600 text-white">
-                            Active
-                          </span>
+            {mission.legs
+              .filter(
+                (leg) =>
+                  !planning.data?.expected_legs.some(
+                    (card) => card.leg.installed_leg_id === leg.id
+                  )
+              )
+              .map((leg) => (
+                <Card
+                  key={leg.id}
+                  className={`hover:shadow-lg transition-shadow cursor-pointer ${
+                    leg.is_active
+                      ? 'border-[var(--status-nominal)] border-2'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    navigate(`/missions/${mission.id}/legs/${leg.id}`)
+                  }
+                >
+                  <CardHeader>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle>{leg.name}</CardTitle>
+                          {leg.is_active && (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold status-nominal">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        {leg.description && (
+                          <CardDescription>{leg.description}</CardDescription>
                         )}
                       </div>
-                      {leg.description && (
-                        <CardDescription>{leg.description}</CardDescription>
+                      <div className="flex flex-wrap gap-2 ml-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSimulationLegId(leg.id);
+                          }}
+                        >
+                          Simulate leg…
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleActivateLeg(leg.id);
+                          }}
+                          variant={leg.is_active ? 'default' : 'outline'}
+                          size="sm"
+                          disabled={activateLeg.isPending}
+                        >
+                          {activateLeg.isPending
+                            ? 'Activating...'
+                            : leg.is_active
+                              ? 'Active'
+                              : 'Activate'}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const confirmed = window.confirm(
+                              `Are you sure you want to delete leg "${leg.name}"?\n\n` +
+                                `This will permanently delete:\n` +
+                                `- The leg configuration\n` +
+                                `- Associated route (${leg.route_id || 'none'})\n` +
+                                `- All associated POIs\n\n` +
+                                `This action cannot be undone.`
+                            );
+                            if (confirmed) {
+                              handleDeleteLeg(leg, confirmed);
+                            }
+                          }}
+                          disabled={deleteLegMutation.isPending}
+                        >
+                          {deleteLegMutation.isPending
+                            ? 'Deleting...'
+                            : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        ID: {leg.id}
+                      </p>
+                      {leg.route_id && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Route: {leg.route_id}
+                        </p>
+                      )}
+                      {!planning.data?.expected_legs.some(
+                        (card) => card.leg.installed_leg_id === leg.id
+                      ) && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Review status not recorded
+                        </p>
                       )}
                     </div>
-                    <div className="flex gap-2 ml-2">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleActivateLeg(leg.id);
-                        }}
-                        variant={leg.is_active ? 'default' : 'outline'}
-                        size="sm"
-                        disabled={activateLeg.isPending}
-                      >
-                        {activateLeg.isPending
-                          ? 'Activating...'
-                          : leg.is_active
-                            ? 'Active'
-                            : 'Activate'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const confirmed = window.confirm(
-                            `Are you sure you want to delete leg "${leg.name}"?\n\n` +
-                              `This will permanently delete:\n` +
-                              `- The leg configuration\n` +
-                              `- Associated route (${leg.route_id || 'none'})\n` +
-                              `- All associated POIs\n\n` +
-                              `This action cannot be undone.`
-                          );
-                          if (confirmed) {
-                            handleDeleteLeg(leg, confirmed);
-                          }
-                        }}
-                        disabled={deleteLegMutation.isPending}
-                      >
-                        {deleteLegMutation.isPending ? 'Deleting...' : 'Delete'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <p className="text-sm text-gray-600">ID: {leg.id}</p>
-                    {leg.route_id && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        Route: {leg.route_id}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         )}
       </div>
@@ -270,6 +427,17 @@ export function MissionDetailPage() {
         existingLegCount={mission?.legs.length || 0}
         onAddLeg={handleAddLeg}
       />
+      {simulationLegId && (
+        <SimulateLegDialog
+          key={simulationLegId}
+          missionId={mission.id}
+          legId={simulationLegId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSimulationLegId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

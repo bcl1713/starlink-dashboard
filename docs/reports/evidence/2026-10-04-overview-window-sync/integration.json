@@ -1,0 +1,155 @@
+{
+  "kind": "controlled REST/native Chromium layout correction before fix commit",
+  "test": "tests/e2e/overview-window-compact.spec.ts",
+  "viewport": {
+    "width": 844,
+    "height": 390
+  },
+  "measurements": {
+    "paused": {
+      "layout": "landscape",
+      "flow": "false",
+      "panels": [
+        {
+          "selector": ".overview-satellite-overlays",
+          "rect": {
+            "x": 418.40625,
+            "y": 155.78125,
+            "width": 160,
+            "height": 73.171875,
+            "top": 155.78125,
+            "right": 578.40625,
+            "bottom": 228.953125,
+            "left": 418.40625
+          }
+        },
+        {
+          "selector": ".overview-map-controls",
+          "rect": {
+            "x": 250.40625,
+            "y": 155.78125,
+            "width": 160,
+            "height": 96,
+            "top": 155.78125,
+            "right": 410.40625,
+            "bottom": 251.78125,
+            "left": 250.40625
+          }
+        },
+        {
+          "selector": ".overview-display-controls",
+          "rect": {
+            "x": 24,
+            "y": 282.171875,
+            "width": 386.40625,
+            "height": 44,
+            "top": 282.171875,
+            "right": 410.40625,
+            "bottom": 326.171875,
+            "left": 24
+          }
+        },
+        {
+          "selector": ".overview-map-overlays",
+          "rect": {
+            "x": 24,
+            "y": 155.78125,
+            "width": 164.375,
+            "height": 118.390625,
+            "top": 155.78125,
+            "right": 188.375,
+            "bottom": 274.171875,
+            "left": 24
+          }
+        },
+        {
+          "selector": ".overview-arrival",
+          "rect": {
+            "x": 24,
+            "y": 333.203125,
+            "width": 554.40625,
+            "height": 32.796875,
+            "top": 333.203125,
+            "right": 578.40625,
+            "bottom": 366,
+            "left": 24
+          }
+        }
+      ],
+      "issues": []
+    },
+    "rejected": {
+      "layout": "stacked",
+      "flow": "true",
+      "panels": [
+        {
+          "selector": ".overview-satellite-overlays",
+          "rect": {
+            "x": 12,
+            "y": 505.78125,
+            "width": 323.953125,
+            "height": 73.171875,
+            "top": 505.78125,
+            "right": 335.953125,
+            "bottom": 578.953125,
+            "left": 12
+          }
+        },
+        {
+          "selector": ".overview-map-controls",
+          "rect": {
+            "x": 343.953125,
+            "y": 505.78125,
+            "width": 488.046875,
+            "height": 78,
+            "top": 505.78125,
+            "right": 832,
+            "bottom": 583.78125,
+            "left": 343.953125
+          }
+        },
+        {
+          "selector": ".overview-display-controls",
+          "rect": {
+            "x": 12,
+            "y": 591.78125,
+            "width": 370.015625,
+            "height": 134,
+            "top": 591.78125,
+            "right": 382.015625,
+            "bottom": 725.78125,
+            "left": 12
+          }
+        },
+        {
+          "selector": ".overview-map-overlays",
+          "rect": {
+            "x": 390.015625,
+            "y": 591.78125,
+            "width": 441.984375,
+            "height": 118.390625,
+            "top": 591.78125,
+            "right": 832,
+            "bottom": 710.171875,
+            "left": 390.015625
+          }
+        },
+        {
+          "selector": ".overview-arrival",
+          "rect": {
+            "x": 12,
+            "y": 733.78125,
+            "width": 820,
+            "height": 32.796875,
+            "top": 733.78125,
+            "right": 832,
+            "bottom": 766.578125,
+            "left": 12
+          }
+        }
+      ],
+      "issues": []
+    }
+  },
+  "starting_sha": "b6f6d1ab16719db43eb79c030d99d630fd430045"
+}

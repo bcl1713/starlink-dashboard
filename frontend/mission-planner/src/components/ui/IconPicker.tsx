@@ -43,7 +43,7 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
       </Button>
 
       {open && (
-        <div className="absolute z-50 w-48 bg-white border rounded-lg shadow-lg p-2 mt-2 grid grid-cols-4 gap-2">
+        <div className="absolute z-50 w-48 bg-background border rounded-lg shadow-lg p-2 mt-2 grid grid-cols-4 gap-2">
           {AVAILABLE_ICONS.map((icon) => (
             <button
               key={icon}
@@ -51,8 +51,8 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                 onChange(icon);
                 setOpen(false);
               }}
-              className={`p-2 text-2xl rounded hover:bg-gray-100 transition ${
-                value === icon ? 'bg-blue-100' : ''
+              className={`p-2 text-2xl rounded hover:bg-muted transition ${
+                value === icon ? 'bg-accent' : ''
               }`}
             >
               {icon}

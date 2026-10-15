@@ -1,0 +1,24 @@
+{
+  "candidate_sha": "a1a3d05ff75bd9a20e74e2bf918902180ac559a2",
+  "recorded_at": "2026-10-03T20:20:14.164475+00:00",
+  "docker_host": "unix:///run/user/1002/docker.sock",
+  "docker_context": "default",
+  "daemon": {
+    "server_version": "29.8.1",
+    "driver": "overlayfs"
+  },
+  "images": {
+    "frontend": {
+      "name": "starlink-issue209-frontend:a1a3d05f",
+      "id": "sha256:524f3add3b18e67270404442fc4e37cbc71e857f984fb3f6876d82cd19c83466"
+    },
+    "backend": {
+      "name": "starlink-issue209-backend:a1a3d05f",
+      "id": "sha256:fb275761e74a78aa6bbe903d44cd0a7bdca88e98acf0f103a42f9071a5d4c31c"
+    }
+  },
+  "manifest_sha256": {
+    "package.json": "c385398ebdea6f0d2acbc78214fd105a28b50a65ffb1f8ecf90242be75969ea0",
+    "package-lock.json": "fb32c80da7150099f7107c3db72f641be69d2f6cd74895f8da135d938d830156"
+  }
+}

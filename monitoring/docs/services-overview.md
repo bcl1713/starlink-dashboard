@@ -36,32 +36,14 @@ curl http://localhost:9090/-/healthy
 
 ---
 
-## Grafana
+## Mission Planner
 
-Grafana visualizes Prometheus metrics with interactive dashboards.
-
-### Grafana Configuration
-
-**Directory:** `grafana/provisioning/`
-
-**Access:** <http://localhost:3000> (default: admin/admin)
-
-### Grafana Features
-
-- Pre-configured Prometheus datasource
-- Fullscreen Overview dashboard with real-time tracking
-- Mission communication planning visualization
-
-### Grafana Operations
+Mission Planner provides the native Overview and mission planning interface at
+<http://localhost:5173>. Its Nginx proxy serves backend APIs from the same
+origin. The backend queries Prometheus for Overview network history.
 
 ```bash
-# Check Grafana health
-curl http://localhost:3000/api/health
-
-# Reset admin password
-docker compose exec grafana grafana-cli admin reset-admin-password newpassword
+curl --fail http://localhost:5173/api/status
 ```
-
----
 
 [Back to Monitoring Docs](./README.md)

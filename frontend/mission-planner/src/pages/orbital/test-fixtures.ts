@@ -1,0 +1,14 @@
+import type { CatalogObject } from './types';
+export const referenceOmm: CatalogObject = {
+  NORAD_CAT_ID: '5',
+  EPOCH: '2000-06-27T18:50:19.733Z',
+  MEAN_MOTION: 10.82419157,
+  ECCENTRICITY: 0.1859667,
+  INCLINATION: 34.2682,
+  RA_OF_ASC_NODE: 348.7242,
+  ARG_OF_PERICENTER: 331.7664,
+  MEAN_ANOMALY: 19.3264,
+  BSTAR: 0.000028098,
+  MEAN_MOTION_DOT: 0.00000023,
+  MEAN_MOTION_DDOT: 0,
+};

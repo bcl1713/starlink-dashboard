@@ -95,54 +95,65 @@ class CoverageSampler:
             with open(geojson_path, "r") as f:
                 self.coverage_data = json.load(f)
 
-            # Index polygons by satellite_id from feature properties
-            # Store as list of rings to handle MultiPolygon or split regions
-            satellite_rings = {}  # satellite_id -> list of polygon rings
-
-            for feature in self.coverage_data.get("features", []):
-                if feature.get("type") != "Feature":
-                    continue
-
-                props = feature.get("properties", {})
-                satellite_id = props.get("satellite_id")
-                geometry = feature.get("geometry", {})
-                geom_type = geometry.get("type")
-
-                if not satellite_id:
-                    continue
-
-                # Handle Polygon (single ring)
-                if geom_type == "Polygon":
-                    coords = geometry.get("coordinates", [])
-                    if coords:
-                        ring = [(lon, lat) for lon, lat in coords[0]]
-                        if satellite_id not in satellite_rings:
-                            satellite_rings[satellite_id] = []
-                        satellite_rings[satellite_id].append(ring)
-
-                # Handle MultiPolygon (e.g., PORB split by IDL)
-                elif geom_type == "MultiPolygon":
-                    coords_list = geometry.get("coordinates", [])
-                    if satellite_id not in satellite_rings:
-                        satellite_rings[satellite_id] = []
-
-                    for polygon_coords in coords_list:
-                        if polygon_coords:
-                            ring = [(lon, lat) for lon, lat in polygon_coords[0]]
-                            satellite_rings[satellite_id].append(ring)
-
-            # Convert to coverage format (store all rings for each satellite)
-            self.satellite_polygons = satellite_rings
-
-            logger.info(
-                f"Loaded coverage for {len(self.satellite_polygons)} satellites "
-                f"({sum(len(rings) for rings in self.satellite_polygons.values())} total rings)"
-            )
+            self._index_coverage()
 
         except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load coverage GeoJSON: {e}")
             self.coverage_data = None
             self.satellite_polygons = {}
+
+    @classmethod
+    def from_geojson(cls, data: dict) -> "CoverageSampler":
+        """Build a private sampler from already captured coverage, without I/O."""
+        sampler = cls()
+        sampler.coverage_data = data
+        sampler._index_coverage()
+        return sampler
+
+    def _index_coverage(self) -> None:
+        # Index polygons by satellite_id from feature properties
+        # Store as list of rings to handle MultiPolygon or split regions
+        satellite_rings = {}  # satellite_id -> list of polygon rings
+
+        for feature in self.coverage_data.get("features", []):
+            if feature.get("type") != "Feature":
+                continue
+
+            props = feature.get("properties", {})
+            satellite_id = props.get("satellite_id")
+            geometry = feature.get("geometry", {})
+            geom_type = geometry.get("type")
+
+            if not satellite_id:
+                continue
+
+            # Handle Polygon (single ring)
+            if geom_type == "Polygon":
+                coords = geometry.get("coordinates", [])
+                if coords:
+                    ring = [(lon, lat) for lon, lat in coords[0]]
+                    if satellite_id not in satellite_rings:
+                        satellite_rings[satellite_id] = []
+                    satellite_rings[satellite_id].append(ring)
+
+            # Handle MultiPolygon (e.g., PORB split by IDL)
+            elif geom_type == "MultiPolygon":
+                coords_list = geometry.get("coordinates", [])
+                if satellite_id not in satellite_rings:
+                    satellite_rings[satellite_id] = []
+
+                for polygon_coords in coords_list:
+                    if polygon_coords:
+                        ring = [(lon, lat) for lon, lat in polygon_coords[0]]
+                        satellite_rings[satellite_id].append(ring)
+
+        # Convert to coverage format (store all rings for each satellite)
+        self.satellite_polygons = satellite_rings
+
+        logger.info(
+            f"Loaded coverage for {len(self.satellite_polygons)} satellites "
+            f"({sum(len(rings) for rings in self.satellite_polygons.values())} total rings)"
+        )
 
     def check_coverage_at_point(self, latitude: float, longitude: float) -> list[str]:
         """Check which satellites cover a given point.

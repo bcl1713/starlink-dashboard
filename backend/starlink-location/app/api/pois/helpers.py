@@ -2,9 +2,8 @@
 
 import logging
 import math
-from pathlib import Path
 
-from app.mission.storage import load_mission
+from app.mission.active_context import resolve_active_mission_leg_context
 from app.models.poi import POI
 from app.services.route_manager import RouteManager
 
@@ -77,7 +76,7 @@ def calculate_poi_active_status(
     Logic:
     - Global POIs (no route_id/mission_id): always active
     - Route POIs: active if their route is the active route
-    - Mission POIs: active if their mission has is_active=true
+    - Mission POIs: active if their persisted v2 parent and optional leg route match
 
     Args:
         poi: The POI to check
@@ -90,59 +89,18 @@ def calculate_poi_active_status(
     if poi.route_id is None and poi.mission_id is None:
         return True
 
+    if poi.mission_id is not None:
+        if route_manager is None:
+            return False
+        resolution = resolve_active_mission_leg_context(route_manager)
+        if resolution.context is None:
+            return False
+        if poi.mission_id != resolution.context.parent_mission_id:
+            return False
+        return poi.route_id is None or poi.route_id == resolution.context.route_id
+
     # Check route-based POIs
     if poi.route_id is not None and route_manager:
-        active_route = route_manager.get_active_route()
-        if active_route is not None:
-            # Extract route ID from metadata file_path (e.g., "/data/routes/route-name.kml" -> "route-name")
-            try:
-                active_route_id = Path(active_route.metadata.file_path).stem
-                return active_route_id == poi.route_id
-            except (
-                RuntimeError,
-                ValueError,
-                OSError,
-                KeyError,
-                TypeError,
-                AttributeError,
-                LookupError,
-                ConnectionError,
-                TimeoutError,
-                ImportError,
-                EOFError,
-            ) as e:
-                logger.warning(
-                    "Failed to extract active route ID from path '%s': %s",
-                    active_route.metadata.file_path,
-                    e,
-                )
-                return False
-        return False
-
-    # Check mission-based POIs
-    if poi.mission_id is not None:
-        try:
-            mission = load_mission(poi.mission_id)
-            return mission.is_active if mission else False
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            # Mission not found or error loading
-            logger.warning(
-                "Failed to load mission '%s' for active status check: %s",
-                poi.mission_id,
-                e,
-            )
-            return False
+        return route_manager.get_active_route_id() == poi.route_id
 
     return False

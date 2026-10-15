@@ -191,14 +191,14 @@ export function KuOutageConfig({
                         setDurationError(validateDuration(dur));
                       }
                     }}
-                    className={startTimeError ? 'border-red-500' : ''}
+                    className={startTimeError ? 'border-destructive' : ''}
                   />
                   {/* Helper text guides users to enter time in 24-hour format */}
                   <p className="text-xs text-muted-foreground mt-1">
                     24-hour format (HH:mm)
                   </p>
                   {startTimeError && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {startTimeError}
                     </p>
                   )}
@@ -216,7 +216,7 @@ export function KuOutageConfig({
                       ).toFixed(2)}
                     </span>
                     {durationError && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {durationError}
                       </p>
                     )}
@@ -245,13 +245,15 @@ export function KuOutageConfig({
                         setDurationError(validateDuration(dur));
                       }
                     }}
-                    className={endTimeError ? 'border-red-500' : ''}
+                    className={endTimeError ? 'border-destructive' : ''}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     24-hour format (HH:mm)
                   </p>
                   {endTimeError && (
-                    <p className="text-sm text-red-500 mt-1">{endTimeError}</p>
+                    <p className="text-sm text-destructive mt-1">
+                      {endTimeError}
+                    </p>
                   )}
                 </div>
               </TableCell>

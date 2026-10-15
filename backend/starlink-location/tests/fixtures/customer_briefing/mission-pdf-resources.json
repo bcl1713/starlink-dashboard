@@ -1,0 +1,24 @@
+{
+  "fixture": "mission-pdf-resources",
+  "kind": "synthetic immutable DTO",
+  "legs": [
+    {
+      "base": "composition-assessed",
+      "departureShiftHours": 0,
+      "denseTransitions": 12,
+      "routeLatitudeOffset": 0
+    },
+    {
+      "base": "composition-assessed",
+      "departureShiftHours": 24,
+      "routeLatitudeOffset": 1
+    },
+    {
+      "base": "composition-assessed",
+      "departureShiftHours": 48,
+      "denseTransitions": 12,
+      "routeLatitudeOffset": 2
+    }
+  ],
+  "expectedPages": 5
+}

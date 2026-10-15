@@ -4,15 +4,20 @@ import asyncio
 import os
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api import (
     active_x_link,
+    aviation_weather,
     config,
     export,
     flight_status,
@@ -20,32 +25,75 @@ from app.api import (
     gps,
     health,
     metrics,
+    orbital_catalog,
+    overview_adsb,
+    overview_clock_settings,
+    overview_history,
+    overview_link_settings,
+    overview_upcoming_pois,
+    overview_weather,
     pois,
     routes,
     status,
     ui,
-    weather,
 )
-from app.mission import (
-    routes as mission_routes,
-    routes_v2 as mission_routes_v2,
-)
-from app.satellites import routes as satellite_routes
+from app.api.simulation_run import router as simulation_run_router
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
-from app.core.logging import setup_logging, get_logger
+from app.core.limiter import limiter
+from app.core.logging import get_logger, setup_logging
 from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
-from app.simulation.coordinator import SimulationCoordinator
-from app.services.poi_manager import POIManager
-from app.services.route_manager import RouteManager
+from app.mission import (
+    routes_v2 as mission_routes_v2,
+)
+from app.mission import storage as mission_storage
+from app.mission.package.preparation_routes import router as preparation_router
+from app.mission.planning.journal import Journal
+from app.mission.planning.routes import router as planning_router
+from app.mission.planning.service import PlanningService
+from app.mission.planning.sources import SourceStore
+from app.mission.planning.store import PlanningStore
+from app.mission.storage import reconcile_active_legs_on_startup
+from app.models.config import SimulationConfig
+from app.satellites import routes as satellite_routes
+from app.services.adsb_lol import AdsbLolProvider
+from app.services.aviation_weather.gfs.bridge import GfsBridge
+from app.services.aviation_weather.runtime import AviationWeatherService
+from app.services.aviation_weather.settings import AviationSettingsStore
+from app.services.aviation_weather.transport import AwcTransport
 from app.services.ground_entry_point import (
+    get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
+    publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
-from app.core.limiter import limiter
+from app.services.orbital_catalog import OrbitalCatalogService
+from app.services.overview_adsb_settings import AdsbSettingsStore
+from app.services.overview_adsb_traffic import AdsbTrafficService
+from app.services.overview_clock_settings import OverviewClockSettingsStore
+from app.services.overview_history_prometheus import (
+    OverviewHistoryReader,
+    resolve_overview_history_prometheus_url,
+)
+from app.services.overview_history_settings import (
+    OverviewHistorySettingsStore,
+    resolve_overview_history_window_default,
+)
+from app.services.overview_link_settings import OverviewLinkSettingsStore
+from app.services.overview_weather.acquisitions import WeatherAcquisitionPool
+from app.services.overview_weather.admission import WeatherAdmission
+from app.services.overview_weather.clock import WeatherClock
+from app.services.overview_weather.service import WeatherService
+from app.services.overview_weather.settings import WeatherSettingsStore
+from app.services.overview_weather.transport import PinnedWeatherTransport
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
+from app.services.x_band_selection import XBandSelectionStore
+from app.simulation.coordinator import SimulationCoordinator
+from app.simulation.run_runtime import SimulationRunRuntime
+from app.simulation.run_service import SimulationRunService
+from app.simulation.run_wakeup import ReplayWakeup
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -65,14 +113,180 @@ _coordinator: SimulationCoordinator | LiveCoordinator | None = None
 _background_task = None
 _simulation_config = None
 _route_manager: RouteManager | None = None
+OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
+OVERVIEW_CLOCK_SETTINGS_PATH = Path("data/settings/overview-clocks.json")
+OVERVIEW_ADSB_SETTINGS_PATH = Path("data/settings/overview-adsb.json")
+OVERVIEW_WEATHER_SETTINGS_PATH = Path("data/settings/overview-weather.json")
+OVERVIEW_LINK_SETTINGS_PATH = Path("data/settings/overview-links.json")
+X_BAND_SELECTION_PATH = Path("data/settings/x-band-selection.json")
+OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
+_overview_history_client: httpx.AsyncClient | None = None
+_overview_history_settings_store: OverviewHistorySettingsStore | None = None
+_overview_clock_settings_store: OverviewClockSettingsStore | None = None
+_overview_link_settings_store: OverviewLinkSettingsStore | None = None
+ORBITAL_CATALOG_PATH = Path("data/orbital")
+
+
+def initialize_orbital_catalog_runtime() -> None:
+    app.state.orbital_catalog = OrbitalCatalogService(ORBITAL_CATALOG_PATH)
+
+
+async def shutdown_orbital_catalog_runtime() -> None:
+    service = getattr(app.state, "orbital_catalog", None)
+    if service is not None:
+        await service.aclose()
+        del app.state.orbital_catalog
+
+
+def should_automatically_refresh_ground_entry_point(
+    config: SimulationConfig | None,
+) -> bool:
+    """Return whether this mode may perform external GEP discovery."""
+    return config is not None and config.mode == "live"
+
+
+def initialize_overview_history_runtime() -> None:
+    """Initialize the persistent settings and reader for overview history."""
+    global _overview_history_client, _overview_history_settings_store
+    _overview_history_settings_store = OverviewHistorySettingsStore(
+        OVERVIEW_HISTORY_SETTINGS_PATH,
+        default_window_seconds=resolve_overview_history_window_default(),
+    )
+    overview_history.set_overview_history_settings_store(
+        _overview_history_settings_store
+    )
+    _overview_history_client = httpx.AsyncClient(
+        base_url=resolve_overview_history_prometheus_url(),
+        timeout=OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS,
+    )
+    reader = OverviewHistoryReader(
+        _overview_history_client,
+        get_window_seconds=_overview_history_settings_store.get_window_seconds,
+        time_source=time.time,
+    )
+    app.state.overview_history_reader = reader
+    overview_history.set_overview_history_reader(reader.read, reader.invalidate)
+
+
+def initialize_overview_clock_settings_runtime() -> None:
+    """Initialize persistent operational-clock settings for the dashboard."""
+    global _overview_clock_settings_store
+    _overview_clock_settings_store = OverviewClockSettingsStore(
+        OVERVIEW_CLOCK_SETTINGS_PATH,
+    )
+    overview_clock_settings.set_overview_clock_settings_store(
+        _overview_clock_settings_store,
+    )
+    app.state.overview_clock_settings_store = _overview_clock_settings_store
+
+
+def initialize_overview_link_settings_runtime() -> None:
+    """Initialize persistent visibility settings for Overview data links."""
+    global _overview_link_settings_store
+    _overview_link_settings_store = OverviewLinkSettingsStore(
+        OVERVIEW_LINK_SETTINGS_PATH,
+    )
+    overview_link_settings.set_overview_link_settings_store(
+        _overview_link_settings_store,
+    )
+    app.state.overview_link_settings_store = _overview_link_settings_store
+
+
+def initialize_overview_adsb_runtime() -> None:
+    store = AdsbSettingsStore(OVERVIEW_ADSB_SETTINGS_PATH)
+    app.state.overview_adsb_settings_store = store
+    client = httpx.AsyncClient(
+        base_url="https://api.adsb.lol",
+        timeout=10,
+        headers={
+            "User-Agent": (
+                "starlink-dashboard "
+                "(+https://github.com/bcl1713/starlink-dashboard/issues)"
+            )
+        },
+    )
+    service = AdsbTrafficService(
+        store, AdsbLolProvider(client), time.time, time.monotonic
+    )
+    app.state.overview_adsb_client = client
+    app.state.overview_adsb_service = service
+    overview_adsb.set_overview_adsb_runtime(store, service)
+
+
+def initialize_overview_weather_runtime() -> None:
+    """Optional weather construction never connects to the provider."""
+    try:
+        store = WeatherSettingsStore(OVERVIEW_WEATHER_SETTINGS_PATH)
+        app.state.overview_weather_settings_store = store
+        clock = WeatherClock()
+        pool = WeatherAcquisitionPool(
+            PinnedWeatherTransport(clock), WeatherAdmission(clock), clock
+        )
+        app.state.overview_weather_service = WeatherService(store, pool, clock)
+    except Exception:  # noqa: BLE001 - optional weather must not block core startup
+        logger.warning_json(
+            "Overview weather initialization unavailable", exc_info=True
+        )
+
+
+def initialize_aviation_weather_runtime() -> None:
+    """Optional construction creates no provider work or normalization worker."""
+    try:
+        store = AviationSettingsStore(
+            OVERVIEW_WEATHER_SETTINGS_PATH.parent / "aviation-weather.json"
+        )
+        app.state.aviation_weather_settings_store = store
+        app.state.aviation_weather_service = AviationWeatherService(
+            store, AwcTransport()
+        )
+    except Exception:  # noqa: BLE001 - optional weather cannot block core startup
+        logger.warning_json(
+            "Aviation weather initialization unavailable", exc_info=True
+        )
+        return
+    try:
+        bridge = GfsBridge(
+            store,
+            Path(
+                os.environ.get(
+                    "GFS_ARTIFACT_PATH", str(store.path.parent.parent / "gfs")
+                )
+            ),
+            Path(
+                os.environ.get(
+                    "GFS_MAILBOX_PATH", str(store.path.parent.parent / "gfs-mailbox")
+                )
+            ),
+        )
+        bridge._read_settings()
+        app.state.aviation_gfs_bridge = bridge
+    except Exception:  # noqa: BLE001 - optional GFS must preserve bulletin/core startup
+        logger.warning_json("GFS bridge initialization unavailable", exc_info=True)
 
 
 async def startup_event():
     """Initialize application on startup."""
+    from app.mission.planning.deadlines import start_workers
+
+    start_workers()
     global _coordinator, _background_task, _simulation_config, _route_manager
 
     try:
         logger.info_json("Initializing Starlink Location Backend")
+
+        # Resolve interrupted writes before any mission, POI, route or runtime reader.
+        with mission_storage.get_active_leg_lock():
+            Journal(
+                mission_storage.MISSIONS_DIR,
+                Path("/data/routes"),
+                Path("/data/pois.json"),
+            ).recover()
+
+        reconciliation = reconcile_active_legs_on_startup()
+        logger.info_json(
+            "Reconciled persisted Mission V2 active legs at startup",
+            extra_fields=reconciliation,
+        )
 
         # Load configuration
         logger.info_json("Loading configuration")
@@ -87,26 +301,40 @@ async def startup_event():
             },
         )
 
+        initialize_overview_history_runtime()
+        initialize_overview_clock_settings_runtime()
+        initialize_overview_link_settings_runtime()
+        app.state.x_band_selection_store = XBandSelectionStore(X_BAND_SELECTION_PATH)
+        initialize_orbital_catalog_runtime()
+        initialize_overview_adsb_runtime()
+        initialize_overview_weather_runtime()
+        initialize_aviation_weather_runtime()
+        await app.state.overview_adsb_service.start()
+
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
 
-        try:
-            entry_point = refresh_ground_entry_point_metrics()
-            if entry_point is not None:
-                logger.info_json(
-                    "Ground entry point discovered",
-                    extra_fields={
-                        "city": entry_point.city,
-                        "country": entry_point.country,
-                    },
+        if should_automatically_refresh_ground_entry_point(_simulation_config):
+            try:
+                entry_point = refresh_ground_entry_point_metrics()
+                if entry_point is not None:
+                    logger.info_json(
+                        "Ground entry point discovered",
+                        extra_fields={
+                            "city": entry_point.city,
+                            "country": entry_point.country,
+                        },
+                    )
+            except Exception as e:  # noqa: BLE001
+                logger.warning_json(
+                    "Failed to publish ground entry point metrics",
+                    extra_fields={"error": str(e)},
+                    exc_info=True,
                 )
-        except Exception as e:  # pragma: no cover - defensive startup guard
-            logger.warning_json(
-                "Failed to publish ground entry point metrics",
-                extra_fields={"error": str(e)},
-                exc_info=True,
+        else:
+            publish_ground_entry_point_metrics(
+                get_cached_ground_entry_point(include_environment_override=True)
             )
-
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data
             logger.info_json("Initializing LiveCoordinator for live mode")
@@ -140,28 +368,20 @@ async def startup_event():
         config.set_coordinator(_coordinator)
         pois.set_coordinator(_coordinator)
 
-        # Initialize ETA service for POI calculations
+        # POI-dependent APIs require this state; constructor failure must abort startup.
+        logger.info_json("Initializing POIManager")
+        poi_manager = POIManager()
+        app.state.poi_manager = poi_manager
+        logger.info_json("POIManager injected successfully")
+
+        # ETA calculations are optional; their failure does not remove POI API state.
         logger.info_json("Initializing ETA service")
         try:
-            poi_manager = POIManager()
             initialize_eta_service(poi_manager)
             logger.info_json("ETA service initialized successfully")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - ETA is optional
             logger.warning_json(
                 "Failed to initialize ETA service",
-                extra_fields={"error": str(e)},
-                exc_info=True,
-            )
-
-        # Inject POIManager singleton into all API modules
-        logger.info_json("Injecting POIManager into API modules")
-        try:
-            # Note: metrics_export also gets POIManager but via route_manager injection below
-            app.state.poi_manager = poi_manager
-            logger.info_json("POIManager injected successfully")
-        except Exception as e:
-            logger.warning_json(
-                "Failed to inject POIManager",
                 extra_fields={"error": str(e)},
                 exc_info=True,
             )
@@ -169,7 +389,17 @@ async def startup_event():
         # Initialize Route Manager for KML route handling
         logger.info_json("Initializing Route Manager")
         try:
-            _route_manager = RouteManager()
+            owned_sources = SourceStore(
+                mission_storage.MISSIONS_DIR, Path("/data/routes")
+            )
+            _route_manager = RouteManager(
+                profile_resolver=owned_sources.resolve_profile
+            )
+            planning_store = PlanningStore(
+                mission_storage.MISSIONS_DIR, _route_manager, poi_manager
+            )
+            planning_store.recover()
+            app.state.planning_service = PlanningService(planning_store)
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
@@ -207,7 +437,7 @@ async def startup_event():
                         flight_state.update_route_context(
                             active_route, auto_reset=False, reason="startup"
                         )
-                except Exception as sync_exc:  # pragma: no cover - defensive guard
+                except Exception as sync_exc:  # noqa: BLE001 - optional flight sync
                     logger.debug_json(
                         "Failed to sync flight state with active route during startup",
                         extra_fields={"error": str(sync_exc)},
@@ -250,7 +480,7 @@ async def startup_event():
                     "CommKa KMZ file not found",
                     extra_fields={"expected_path": str(commka_kmz)},
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning_json(
                 "Failed to initialize CommKa coverage",
                 extra_fields={"error": str(e)},
@@ -272,7 +502,20 @@ async def startup_event():
             },
         )
 
+        run_service = SimulationRunService(
+            SimulationRunRuntime(
+                time.monotonic, lambda: datetime.now(timezone.utc), active_mode
+            ),
+            _route_manager,
+            poi_manager,
+        )
+        if isinstance(_coordinator, SimulationCoordinator):
+            run_service.coordinator = _coordinator
+        run_service.publish = _publish_replay_telemetry
+        app.state.simulation_run_service = run_service
+
         if _background_updates_enabled:
+            run_service.wakeup = ReplayWakeup()
             logger.info_json("Starting background update task")
             _background_task = asyncio.create_task(_background_update_loop(poi_manager))
         else:
@@ -280,6 +523,32 @@ async def startup_event():
                 "Background update task disabled via STARLINK_DISABLE_BACKGROUND_TASKS"
             )
 
+        if (
+            _simulation_config.exports.customer_briefing_enabled
+            and _background_updates_enabled
+        ):
+            import sqlite3
+
+            from app.mission.slide_cache.coordinator import start_runtime
+
+            try:
+                app.state.customer_pdf_coordinator = start_runtime(
+                    _route_manager, poi_manager
+                )
+            except (OSError, ValueError, RuntimeError, sqlite3.Error):
+                logger.warning_json(
+                    "Customer PDF background preparation unavailable", exc_info=True
+                )
+
+        from app.mission.package.preparation import ExportPreparationService
+
+        app.state.export_preparation_service = ExportPreparationService(
+            _route_manager,
+            poi_manager,
+            enabled=lambda: ConfigManager()
+            .get_config()
+            .exports.customer_briefing_enabled,
+        )
         logger.info_json("Starlink Location Backend ready")
     except Exception as e:
         logger.error_json(
@@ -292,11 +561,15 @@ async def startup_event():
 
 async def shutdown_event():
     """Cleanup on shutdown."""
-    global _background_task, _route_manager
+    from app.mission.planning.deadlines import shutdown_workers
+
+    await asyncio.to_thread(shutdown_workers)
+    global _background_task, _overview_history_client
+    global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
+    global _overview_link_settings_store
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
-
         if _background_task:
             logger.info_json("Cancelling background update task")
             _background_task.cancel()
@@ -305,6 +578,61 @@ async def shutdown_event():
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
             _background_task = None
+
+        if hasattr(app.state, "export_preparation_service"):
+            await asyncio.to_thread(app.state.export_preparation_service.close)
+            del app.state.export_preparation_service
+        if hasattr(app.state, "customer_pdf_coordinator"):
+            await asyncio.to_thread(app.state.customer_pdf_coordinator.close)
+            del app.state.customer_pdf_coordinator
+        if hasattr(app.state, "aviation_gfs_bridge"):
+            try:
+                await app.state.aviation_gfs_bridge.aclose()
+            except (OSError, ValueError, TimeoutError):
+                logger.warning_json("GFS demand withdrawal unavailable")
+            del app.state.aviation_gfs_bridge
+        if hasattr(app.state, "aviation_weather_service"):
+            await app.state.aviation_weather_service.aclose()
+            del app.state.aviation_weather_service
+        if hasattr(app.state, "aviation_weather_settings_store"):
+            del app.state.aviation_weather_settings_store
+        if hasattr(app.state, "overview_weather_service"):
+            await app.state.overview_weather_service.aclose()
+            del app.state.overview_weather_service
+        if hasattr(app.state, "overview_weather_settings_store"):
+            del app.state.overview_weather_settings_store
+        if hasattr(app.state, "simulation_run_service"):
+            app.state.simulation_run_service.close()
+            del app.state.simulation_run_service
+        if hasattr(app.state, "overview_adsb_service"):
+            await app.state.overview_adsb_service.aclose()
+            del app.state.overview_adsb_service
+        if hasattr(app.state, "overview_adsb_client"):
+            await app.state.overview_adsb_client.aclose()
+            del app.state.overview_adsb_client
+        overview_adsb.set_overview_adsb_runtime(None, None)
+        if hasattr(app.state, "overview_adsb_settings_store"):
+            del app.state.overview_adsb_settings_store
+        await shutdown_orbital_catalog_runtime()
+        overview_history.set_overview_history_reader(None)
+        overview_history.set_overview_history_settings_store(None)
+        overview_clock_settings.set_overview_clock_settings_store(None)
+        overview_link_settings.set_overview_link_settings_store(None)
+        if hasattr(app.state, "x_band_selection_store"):
+            del app.state.x_band_selection_store
+        _overview_link_settings_store = None
+        if hasattr(app.state, "overview_link_settings_store"):
+            del app.state.overview_link_settings_store
+        if hasattr(app.state, "overview_clock_settings_store"):
+            del app.state.overview_clock_settings_store
+        if hasattr(app.state, "overview_history_reader"):
+            await app.state.overview_history_reader.aclose()
+            del app.state.overview_history_reader
+        if _overview_history_client is not None:
+            await _overview_history_client.aclose()
+            _overview_history_client = None
+        _overview_history_settings_store = None
+        _overview_clock_settings_store = None
 
         if _route_manager:
             logger.info_json("Stopping Route Manager watcher")
@@ -316,16 +644,120 @@ async def shutdown_event():
         shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
 
 
+def _publish_replay_telemetry(telemetry, tick):
+    from app.core.metrics import update_metrics_from_telemetry
+    from app.simulation.run_timing import mission_time_context
+
+    update_metrics_from_telemetry(
+        telemetry,
+        _simulation_config,
+        tick.plan.artifacts.route,
+        app.state.poi_manager,
+        mission_context=mission_time_context(tick.status),
+        simulation_plan=tick.plan,
+        simulation_frame=tick.frame,
+    )
+
+
+def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
+    """One complete ordered telemetry/metric update, owned by the async loop."""
+    if should_automatically_refresh_ground_entry_point(_simulation_config):
+        maybe_refresh_ground_entry_point_metrics(
+            refresh_interval_seconds=refresh_interval
+        )
+
+    if _coordinator:
+        run_service = getattr(app.state, "simulation_run_service", None)
+        paced = (
+            run_service is not None and run_service.runtime.selected_plan() is not None
+        )
+        telemetry = (
+            run_service.collect(_coordinator, _publish_replay_telemetry)
+            if paced
+            else _coordinator.update()
+        )
+        update_count += 1
+
+        if telemetry is None:
+            from app.core.metrics import update_metrics_from_telemetry
+
+            update_metrics_from_telemetry(None)
+
+        # Only update metrics if telemetry is available
+        # In live mode, telemetry will be None when disconnected
+        if telemetry is not None and not paced:
+            # Track metric collection duration
+            from app.core.metrics import (
+                starlink_metrics_generation_errors_total,
+                starlink_metrics_last_update_timestamp_seconds,
+                starlink_metrics_scrape_duration_seconds,
+                update_metrics_from_telemetry,
+            )
+
+            scrape_start = time.time()
+            try:
+                # Both live and simulation metrics use the application's
+                # current route, independent of coordinator capabilities.
+                active_route = None
+                if _route_manager is not None:
+                    active_route = _route_manager.get_active_route()
+
+                update_metrics_from_telemetry(
+                    telemetry, _simulation_config, active_route, poi_manager
+                )
+                scrape_duration = time.time() - scrape_start
+                starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
+                starlink_metrics_last_update_timestamp_seconds.set(time.time())
+            except Exception as metric_error:  # noqa: BLE001
+                starlink_metrics_generation_errors_total.inc()
+                logger.warning_json(
+                    "Error updating metrics",
+                    extra_fields={"error": str(metric_error)},
+                    exc_info=True,
+                )
+
+            # Log periodic updates (every 60 seconds)
+            if update_count % 600 == 0:
+                logger.info_json(
+                    "Background updates running",
+                    extra_fields={
+                        "total_updates": update_count,
+                        "total_errors": error_count,
+                        "position": {
+                            "lat": telemetry.position.latitude,
+                            "lon": telemetry.position.longitude,
+                        },
+                        "network_latency_ms": telemetry.network.latency_ms,
+                    },
+                )
+        elif telemetry is None:
+            # Clear metrics when disconnected to prevent stale data
+            # This sets all telemetry metrics to NaN, which Prometheus won't store
+            from app.core.metrics import clear_telemetry_metrics
+
+            clear_telemetry_metrics()
+
+            # Log when disconnected (less frequently to avoid spam)
+            if update_count % 600 == 0:
+                logger.info_json(
+                    "Live mode: waiting for dish connection",
+                    extra_fields={
+                        "total_updates": update_count,
+                        "total_errors": error_count,
+                    },
+                )
+
+    return update_count
+
+
 async def _background_update_loop(poi_manager=None):
     """Background task that updates simulator every interval."""
-    global _coordinator, _simulation_config
-
     update_count = 0
     error_count = 0
     try:
@@ -344,86 +776,41 @@ async def _background_update_loop(poi_manager=None):
 
         while True:
             try:
-                maybe_refresh_ground_entry_point_metrics(
-                    refresh_interval_seconds=ground_entry_refresh_interval_seconds
+                work = asyncio.create_task(
+                    asyncio.to_thread(
+                        _background_update_tick,
+                        poi_manager,
+                        ground_entry_refresh_interval_seconds,
+                        update_count,
+                        error_count,
+                    )
                 )
-
-                if _coordinator:
-                    telemetry = _coordinator.update()
-                    update_count += 1
-
-                    # Only update metrics if telemetry is available
-                    # In live mode, telemetry will be None when disconnected
-                    if telemetry is not None:
-                        # Track metric collection duration
-                        from app.core.metrics import (
-                            update_metrics_from_telemetry,
-                            starlink_metrics_scrape_duration_seconds,
-                            starlink_metrics_last_update_timestamp_seconds,
-                            starlink_metrics_generation_errors_total,
-                        )
-
-                        scrape_start = time.time()
+                try:
+                    update_count = await asyncio.shield(work)
+                except asyncio.CancelledError:
+                    # Shield keeps the worker owned; drain before shutting down managers.
+                    while not work.done():
                         try:
-                            # Extract active route for route-aware ETA calculations
-                            active_route = None
-                            route_manager = getattr(_coordinator, "route_manager", None)
-                            if route_manager is not None:
-                                active_route = route_manager.get_active_route()
-
-                            update_metrics_from_telemetry(
-                                telemetry, _simulation_config, active_route, poi_manager
+                            await asyncio.gather(
+                                asyncio.shield(work), return_exceptions=True
                             )
-                            scrape_duration = time.time() - scrape_start
-                            starlink_metrics_scrape_duration_seconds.observe(
-                                scrape_duration
-                            )
-                            starlink_metrics_last_update_timestamp_seconds.set(
-                                time.time()
-                            )
-                        except Exception as metric_error:
-                            starlink_metrics_generation_errors_total.inc()
-                            logger.warning_json(
-                                "Error updating metrics",
-                                extra_fields={"error": str(metric_error)},
-                                exc_info=True,
-                            )
-
-                        # Log periodic updates (every 60 seconds)
-                        if update_count % 600 == 0:
-                            logger.info_json(
-                                "Background updates running",
-                                extra_fields={
-                                    "total_updates": update_count,
-                                    "total_errors": error_count,
-                                    "position": {
-                                        "lat": telemetry.position.latitude,
-                                        "lon": telemetry.position.longitude,
-                                    },
-                                    "network_latency_ms": telemetry.network.latency_ms,
-                                },
-                            )
-                    else:
-                        # Clear metrics when disconnected to prevent stale data
-                        # This sets all telemetry metrics to NaN, which Prometheus won't store
-                        from app.core.metrics import clear_telemetry_metrics
-
-                        clear_telemetry_metrics()
-
-                        # Log when disconnected (less frequently to avoid spam)
-                        if update_count % 600 == 0:
-                            logger.info_json(
-                                "Live mode: waiting for dish connection",
-                                extra_fields={
-                                    "total_updates": update_count,
-                                    "total_errors": error_count,
-                                },
-                            )
+                        except asyncio.CancelledError:
+                            continue
+                    raise
 
                 # Sleep for configured update interval
-                await asyncio.sleep(_simulation_config.update_interval_seconds)
+                run_service = getattr(app.state, "simulation_run_service", None)
+                delay = (
+                    run_service.runtime.seconds_until_next_tick()
+                    if run_service and run_service.status().state == "running"
+                    else _simulation_config.update_interval_seconds
+                )
+                if run_service and run_service.wakeup:
+                    await run_service.wakeup.wait(delay)
+                else:
+                    await asyncio.sleep(delay)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 error_count += 1
                 logger.warning_json(
                     "Error in background update",
@@ -493,7 +880,7 @@ try:
     logger.info_json(
         "Mounted static files for satellite coverage at /data/sat_coverage"
     )
-except Exception as e:
+except Exception as e:  # noqa: BLE001 - optional static mount must not block API import
     logger.warning_json(
         "Failed to mount satellite coverage static files",
         extra_fields={"error": str(e)},
@@ -522,21 +909,30 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # Register API routers
+app.include_router(simulation_run_router)
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
+app.include_router(overview_clock_settings.router, tags=["Overview Clocks"])
+app.include_router(overview_link_settings.router, tags=["Overview Links"])
+app.include_router(overview_adsb.router, tags=["ADS-B Aircraft"])
+app.include_router(orbital_catalog.router, tags=["Orbital Experiment"])
+app.include_router(overview_history.router, tags=["Overview History"])
+app.include_router(overview_upcoming_pois.router, tags=["Overview POIs"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
-app.include_router(mission_routes.router, tags=["Missions"])
+app.include_router(planning_router)
+app.include_router(preparation_router)
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
-app.include_router(weather.router, tags=["Weather"])
+app.include_router(overview_weather.router, tags=["Overview Weather"])
+app.include_router(aviation_weather.router, tags=["Aviation Weather"])
 app.include_router(ui.router, tags=["UI"])
 
 

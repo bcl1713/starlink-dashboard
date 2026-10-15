@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { formatUtc, formatDuration, formatElapsed } from './formatting';
 import { type Timeline, type TimelineSegment } from '../../services/timeline';
 
 interface TimelineTableProps {
@@ -21,38 +22,6 @@ const STATUS_BADGE_COLORS: Record<string, string> = {
   degraded: 'var(--status-degraded)',
   critical: 'var(--status-critical)',
 };
-
-function formatTime(isoString: string): string {
-  try {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-      timeZone: 'UTC',
-    });
-  } catch {
-    return isoString;
-  }
-}
-
-function calculateDuration(start: string, end: string): string {
-  try {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const durationMs = endDate.getTime() - startDate.getTime();
-    const minutes = Math.floor(durationMs / 60000);
-    const seconds = Math.floor((durationMs % 60000) / 1000);
-
-    if (minutes === 0) {
-      return `${seconds}s`;
-    }
-    return `${minutes}m ${seconds}s`;
-  } catch {
-    return 'N/A';
-  }
-}
 
 function metadataString(segment: TimelineSegment, key: string): string | null {
   const value = segment.metadata?.[key];
@@ -154,7 +123,7 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
               Duration
             </th>
             <th className="px-4 py-2 text-left font-semibold text-muted-foreground">
-              Systems Affected
+              Transport States
             </th>
             <th className="px-4 py-2 text-left font-semibold text-muted-foreground">
               Notes / Source Events
@@ -193,16 +162,37 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
                 </td>
                 <td className="px-4 py-2 text-xs">{primaryReason(segment)}</td>
                 <td className="px-4 py-2 font-mono text-xs">
-                  {formatTime(segment.start_time)}
+                  {formatUtc(segment.start_time)}
+                  <div className="text-muted-foreground">
+                    {formatElapsed(
+                      segment.start_time,
+                      displaySegments[0].start_time
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-2 font-mono text-xs">
-                  {formatTime(segment.end_time)}
+                  {formatUtc(segment.end_time)}
+                  <div className="text-muted-foreground">
+                    {formatElapsed(
+                      segment.end_time,
+                      displaySegments[0].start_time
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-2">
-                  {calculateDuration(segment.start_time, segment.end_time)}
+                  {formatDuration(
+                    (new Date(segment.end_time).getTime() -
+                      new Date(segment.start_time).getTime()) /
+                      1000
+                  )}
                 </td>
                 <td className="px-4 py-2 text-xs">
-                  {systemsAffected(segment)}
+                  <div>X: {segment.x_state?.toUpperCase() || 'UNKNOWN'}</div>
+                  <div>Ka: {segment.ka_state?.toUpperCase() || 'UNKNOWN'}</div>
+                  <div>Ku: {segment.ku_state?.toUpperCase() || 'UNKNOWN'}</div>
+                  <div className="text-muted-foreground">
+                    Affected: {systemsAffected(segment)}
+                  </div>
                 </td>
                 <td className="px-4 py-2 text-xs">
                   {sourceNotes.length > 0 ? (
@@ -215,11 +205,16 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
                           {note}
                         </div>
                       ))}
-                      {sourceNotes.length > 2 && (
-                        <div className="text-muted-foreground">
-                          +{sourceNotes.length - 2} more
-                        </div>
-                      )}
+                      <details>
+                        <summary className="cursor-pointer text-muted-foreground">
+                          Details ({sourceNotes.length})
+                        </summary>
+                        {sourceNotes.map((note, i) => (
+                          <div key={i} className="mt-1">
+                            {note}
+                          </div>
+                        ))}
+                      </details>
                     </div>
                   ) : (
                     '—'

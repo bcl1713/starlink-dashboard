@@ -1,0 +1,100 @@
+.overview-metric-history {
+  min-width: 0;
+  padding: 8px 12px;
+  color: var(--overview-text, #f8fafc);
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto minmax(28px, auto) minmax(48px, 1fr);
+  height: 100%;
+  box-sizing: border-box;
+}
+.overview-metric-history__header h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+.overview-metric-history__latest {
+  display: block;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.overview-metric-history__messages {
+  min-height: 28px;
+  color: var(--overview-secondary, #bdcbd9);
+  font-size: 13px;
+  line-height: 14px;
+}
+.overview-metric-history__age {
+  display: block;
+}
+.overview-metric-history__status {
+  margin: 0;
+}
+.overview-metric-history__chart {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 48px;
+}
+.overview-metric-history__value-axis {
+  min-width: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--overview-secondary, #bdcbd9);
+  font-size: 12px;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.overview-metric-history__viewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  overflow: hidden;
+  background-image: linear-gradient(
+    to bottom,
+    rgb(180 195 215 / 10%) 1px,
+    transparent 1px
+  );
+  background-size: 100% 50%;
+  border-bottom: 1px solid rgb(180 195 215 / 10%);
+}
+.overview-metric-history__surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+/* uPlot's CSS dimensions must not use its DPR-scaled bitmap dimensions. */
+.overview-page .overview-metric-history .uplot canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  inset: auto;
+  z-index: auto;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history {
+  padding-block: 4px;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history__header h3 {
+  font-size: 26px;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history__latest {
+  font-size: 36px;
+}
+
+.overview-page[data-layout='desktop'] .overview-metric-history__value-axis {
+  font-size: 16px;
+}

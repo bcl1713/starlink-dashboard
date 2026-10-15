@@ -99,7 +99,8 @@ def calculate_destination(
         - math.sin(lat1_rad) * math.sin(lat2_rad),
     )
 
-    return (radians_to_degrees(lat2_rad), radians_to_degrees(lon2_rad))
+    longitude = (radians_to_degrees(lon2_rad) + 180.0) % 360.0 - 180.0
+    return (radians_to_degrees(lat2_rad), longitude)
 
 
 class CircularRoute:
@@ -190,7 +191,9 @@ class CircularRoute:
 
         # Linear interpolation (good enough for adjacent points on circle)
         lat = lat1 + (lat2 - lat1) * factor
-        lon = lon1 + (lon2 - lon1) * factor
+        # Cross the dateline along the short arc, then publish valid coordinates.
+        longitude_delta = (lon2 - lon1 + 180.0) % 360.0 - 180.0
+        lon = (lon1 + longitude_delta * factor + 180.0) % 360.0 - 180.0
 
         # Handle heading wrap-around at 0/360
         if head2 < head1:

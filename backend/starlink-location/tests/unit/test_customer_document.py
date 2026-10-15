@@ -1,0 +1,417 @@
+"""Exact, safe document contract, independent of browser rendering."""
+
+import importlib
+import json
+from dataclasses import replace
+from hashlib import sha256
+
+import pytest
+
+from app.mission.exporter.customer_projection import project_briefing_leg
+from app.mission.exporter.customer_view import project_customer_leg
+from app.mission.exporter.snapshot import ExportSnapshot
+from app.mission.exporter.snapshot_inputs import canonical_json
+from tests.unit.customer_briefing_fixtures import fixture, snapshot
+
+
+def inputs(name="composition-assessed"):
+    data = fixture(name)
+    leg = snapshot(data)
+    captured = ExportSnapshot(
+        data["mission"]["id"],
+        sha256(canonical_json(data)).hexdigest(),
+        canonical_json(data["mission"]),
+        (leg,),
+        (),
+        (),
+    )
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    return captured, projection, view
+
+
+def build(*args):
+    name = "app.mission.exporter.customer_document"
+    assert importlib.util.find_spec(name), "document serialization contract absent"
+    return importlib.import_module(name).build_customer_document(*args)
+
+
+def test_document_preserves_geometry_and_safe_customer_fields():
+    captured, projection, view = inputs()
+    payload = build(captured, view, projection)
+    assert payload["flight"] == {
+        "startUtc": "2026-10-25T14:00:00Z",
+        "endUtc": "2026-10-25T22:00:00Z",
+    }
+    red = [
+        i for i in payload["intervals"] if i["posture"] == "Communications unavailable"
+    ]
+    assert len(red) == 1
+    assert [red[0]["startUtc"], red[0]["endUtc"]] == [
+        "2026-10-25T16:25:00Z",
+        "2026-10-25T16:30:00Z",
+    ]
+    assert payload["header"]["timing"] == "DEP 10:00 ET | ARR 18:00 ET | 8h 00m"
+    assert not any(
+        t in json.dumps({k: v for k, v in payload.items() if k != "mapInput"})
+        for t in ("PRIVATE", "rule-17", "abcdef123")
+    )
+    assert [r["id"] for r in payload["rows"]] == [r.id for r in view.rows]
+
+
+def test_document_rejects_identity_and_partition_mismatch():
+    captured, projection, view = inputs()
+    for bad in (
+        replace(captured, legs=captured.legs * 2),
+        replace(captured, legs=(replace(captured.legs[0], leg_id="other"),)),
+    ):
+        with pytest.raises(ValueError):
+            build(bad, view, projection)
+    bad = replace(projection, intervals=projection.intervals[1:])
+    with pytest.raises(ValueError):
+        build(captured, replace(view, intervals=bad.intervals), bad)
+    with pytest.raises(ValueError):
+        build(
+            captured,
+            view,
+            replace(
+                projection,
+                utc_bounds=(
+                    projection.utc_bounds[0].replace(tzinfo=None),
+                    projection.utc_bounds[1],
+                ),
+            ),
+        )
+
+
+def test_document_map_has_customer_endpoints_without_event_ordinals():
+    captured, projection, view = inputs()
+    payload = build(captured, view, projection)
+    assert payload["mapInput"]["endpointLabels"] == {
+        "departure": "KADW",
+        "arrival": "PAED",
+    }
+    assert payload["mapInput"]["markers"] == []
+    assert payload["rows"] and all(r["id"] for r in payload["rows"])
+
+
+@pytest.mark.parametrize("invalid", ["missing", "malformed", "timing", "density"])
+def test_map_input_diagnostics_survive_document_and_evidence(invalid):
+    from app.mission.exporter.map_inputs import build_map_input
+    from tests.unit.test_customer_evidence import build as evidence
+    from tests.unit.test_customer_evidence import report
+
+    captured, projection, view = inputs()
+    route = json.loads(captured.legs[0].effective_route_json)
+    if invalid == "missing":
+        route_json = None
+    elif invalid == "malformed":
+        route_json = canonical_json({"points": [{"latitude": "bad"}]})
+    elif invalid == "timing":
+        route["points"][0]["expected_arrival_time"] = "2026-10-25T13:00:00Z"
+        route_json = canonical_json(route)
+    else:
+        route["points"] = route["points"] * 501
+        route_json = canonical_json(route)
+    leg = replace(captured.legs[0], effective_route_json=route_json)
+    captured = replace(captured, legs=(leg,))
+    _, reasons = build_map_input(leg, projection)
+    assert reasons
+    payload = build(captured, view, projection)
+    assert payload.get("mapInputDiagnostics") == list(reasons)
+    raw = report(captured, view)
+    raw["map"] = {"status": "unavailable", "warnings": ["Runtime map failed"]}
+    result = json.loads(evidence(captured, projection, view, raw))
+    assert result["mapInputDiagnostics"] == list(reasons)
+    assert result["render"]["map"]["warnings"] == ["Runtime map failed"]
+    assert captured.legs[0].effective_route_json == route_json
+
+
+def test_successful_map_diagnostics_are_retained(monkeypatch):
+    import app.mission.exporter.customer_document as module
+    from app.mission.exporter.map_inputs import (
+        MapInputDiagnostic,
+        MapInputResult,
+        prepare_map_input,
+    )
+
+    captured, projection, view = inputs()
+    map_input = prepare_map_input(
+        captured.legs[0], projection, include_markers=False
+    ).scene
+    monkeypatch.setattr(
+        module,
+        "prepare_map_input",
+        lambda *args, **kwargs: MapInputResult(
+            map_input,
+            (
+                MapInputDiagnostic(
+                    "route_coincident_join", "Position advisory", severity="info"
+                ),
+            ),
+        ),
+    )
+    payload = build(captured, view, projection)
+    assert payload.get("mapInputDiagnostics") == ["Position advisory"]
+    assert payload["mapInput"]
+
+
+def test_customer_evidence_retains_specific_map_codes():
+    from dataclasses import replace
+
+    from tests.unit.test_customer_evidence import build as evidence
+    from tests.unit.test_customer_evidence import report
+
+    captured, projection, view = inputs()
+    captured = replace(
+        captured, legs=(replace(captured.legs[0], effective_route_json=None),)
+    )
+    payload = build(captured, view, projection)
+    raw = report(captured, view)
+    raw["map"] = {"status": "unavailable", "warnings": ["Unavailable route"]}
+    result = json.loads(evidence(captured, projection, view, raw))
+    assert result.get("mapInputDiagnosticCodes") == payload["mapInputDiagnosticCodes"]
+    assert result["mapInputDiagnosticCodes"][0]["code"] == "route_missing"
+    assert result["mapInputDiagnosticCodes"][0]["severity"] == "error"
+
+
+def test_document_rows_carry_exact_display_cells():
+    captured, projection, view = inputs()
+    payload = build(captured, view, projection)
+    assert payload["rows"][0].get("displayCells") == [
+        "10:00 - 10:15",
+        "Takeoff SOF",
+        "Ka, Starshield, X-Band",
+        "Nominal",
+    ]
+
+
+def mission_document(captured):
+    import app.mission.exporter.customer_document as module
+
+    assert hasattr(module, "build_customer_mission_document"), "Mission contract absent"
+    return module.build_customer_mission_document(captured)
+
+
+def test_mission_projects_ordered_legs_from_one_snapshot_without_mutation():
+    captured, _, _ = inputs()
+    legs = tuple(replace(captured.legs[0], leg_id=f"leg-{n}") for n in range(5))
+    captured = replace(captured, legs=legs)
+    payload = mission_document(captured)
+    assert payload["schemaVersion"] == 2
+    assert payload["missionId"] == captured.mission_id
+    assert payload["snapshotFingerprint"] == captured.fingerprint
+    assert [leg["legId"] for leg in payload["legs"]] == [leg.leg_id for leg in legs]
+    for number, leg in enumerate(payload["legs"], 1):
+        assert leg["snapshotFingerprint"] == captured.fingerprint
+        assert leg["header"]["title"].startswith(f"LEG {number} OF 5")
+        assert leg["flight"]["startUtc"] == "2026-10-25T14:00:00Z"
+        assert leg["rows"][0]["displayCells"][0] == "10:00 - 10:15"
+    assert captured.legs == legs
+
+
+@pytest.mark.parametrize("case", ["empty", "duplicate", "bounds"])
+def test_mission_rejects_unusable_identity_and_flight_data(case):
+    captured, _, _ = inputs()
+    legs = {
+        "empty": (),
+        "duplicate": captured.legs * 2,
+        "bounds": (replace(captured.legs[0], utc_bounds=None),),
+    }[case]
+    with pytest.raises(ValueError):
+        mission_document(replace(captured, legs=legs))
+
+
+def test_mission_missing_map_retains_reasons_and_transport_facts():
+    captured, _, _ = inputs()
+    captured = replace(
+        captured, legs=(replace(captured.legs[0], effective_route_json=None),)
+    )
+    leg = mission_document(captured)["legs"][0]
+    assert leg["mapInput"] is None
+    assert leg["mapInputDiagnostics"]
+    assert any(row["posture"] == "Communications unavailable" for row in leg["rows"])
+
+
+def test_document_rejects_reversed_and_duplicate_customer_rows():
+    captured, projection, view = inputs()
+    for rows in (view.rows[::-1], view.rows[:1] * 2):
+        with pytest.raises(ValueError):
+            build(captured, replace(view, rows=rows), projection)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "mission-two-page",
+        "mission-three-page",
+        "mission-over-budget",
+        "mission-five-leg",
+    ],
+)
+def test_mission_fixture_material_rows_and_per_leg_flight_axes(name):
+    from tests.unit.customer_briefing_fixtures import mission_snapshot
+
+    captured = mission_snapshot(name)
+    payload = mission_document(captured)
+    assert len(payload["legs"]) == (5 if name == "mission-five-leg" else 1)
+    for leg in payload["legs"]:
+        assert all(row["impact"] != "Assessment changed" for row in leg["rows"])
+        assert len({row["id"] for row in leg["rows"]}) == len(leg["rows"])
+        assert all(
+            a["endUtc"] <= b["startUtc"] for a, b in zip(leg["rows"], leg["rows"][1:])
+        )
+        assert all(
+            leg["flight"]["startUtc"]
+            <= row["startUtc"]
+            < row["endUtc"]
+            <= leg["flight"]["endUtc"]
+            for row in leg["rows"]
+        )
+    if name == "mission-five-leg":
+        assert all(
+            a["flight"]["endUtc"] < b["flight"]["startUtc"]
+            for a, b in zip(payload["legs"], payload["legs"][1:])
+        )
+
+
+def test_rounded_customer_times_omit_marks_without_losing_exact_bounds():
+    captured, projection, view = inputs()
+    first = view.rows[0]
+    start = first.start_time.replace(second=29)
+    from app.mission.exporter.customer_clocks import format_customer_range
+
+    row = replace(
+        first,
+        start_time=start,
+        clock=format_customer_range(start, first.end_time, projection.utc_bounds[0]),
+    )
+    payload = build(captured, replace(view, rows=(row,)), projection)
+    assert row.clock.approximate is True
+    assert payload["rows"][0]["et"] == "10:00 ET–10:15 ET"
+    assert payload["rows"][0]["displayCells"][0] == "10:00 - 10:15"
+    assert payload["rows"][0]["startUtc"] == "2026-10-25T14:00:29Z"
+
+
+def test_x_planning_condition_does_not_mark_available_ka_or_starshield():
+    data = fixture("composition-assessed")
+    data["source_records"] = []
+    data["timeline"]["segments"] = [
+        {
+            "start_time": data["utc_bounds"][0],
+            "end_time": data["utc_bounds"][1],
+            "metadata": {
+                "planning_interval": {
+                    "start_time": data["utc_bounds"][0],
+                    "end_time": data["utc_bounds"][1],
+                    "policy_x_state": "degraded",
+                    "policy_ka_state": "available",
+                    "policy_ku_state": "available",
+                    "raw_constraints": ["x_elevation"],
+                    "physical_reasons": ["x_elevation"],
+                    "policy_reasons": [],
+                }
+            },
+        }
+    ]
+    leg = replace(snapshot(data), preparation_origin="rebuilt")
+    captured = ExportSnapshot(
+        data["mission"]["id"],
+        "fingerprint",
+        canonical_json(data["mission"]),
+        (leg,),
+        (),
+        (),
+    )
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    payload = build(captured, view, projection)
+    assert all(i["decisions"] == ["Up", "Up", "Down"] for i in payload["intervals"])
+    assert all("operatingConstraints" not in i for i in payload["intervals"])
+
+
+@pytest.mark.parametrize(
+    "x_state,ku_state,raw_constraints,want",
+    [
+        ("offline", "available", ["x_aft_cone"], "blocked"),
+        ("available", "offline", ["x_aft_cone"], "released"),
+        ("degraded", "offline", ["x_aft_cone", "x_elevation"], "released"),
+        ("degraded", "available", ["x_elevation"], None),
+    ],
+)
+def test_customer_pdf_identifies_x_starshield_conflict_without_changing_availability(
+    x_state, ku_state, raw_constraints, want
+):
+    data = fixture("composition-assessed")
+    data["source_records"] = []
+    data["timeline"]["segments"] = [
+        {
+            "start_time": data["utc_bounds"][0],
+            "end_time": data["utc_bounds"][1],
+            "metadata": {
+                "planning_interval": {
+                    "start_time": data["utc_bounds"][0],
+                    "end_time": data["utc_bounds"][1],
+                    "policy_x_state": x_state,
+                    "policy_ka_state": "available",
+                    "policy_ku_state": ku_state,
+                    "raw_constraints": raw_constraints,
+                    "physical_reasons": (
+                        ["x_elevation"] if "x_elevation" in raw_constraints else []
+                    ),
+                    "policy_reasons": (
+                        ["prefer_starshield:x_aft_cone"] if want == "blocked" else []
+                    ),
+                }
+            },
+        }
+    ]
+    leg = replace(snapshot(data), preparation_origin="rebuilt")
+    captured = ExportSnapshot(
+        data["mission"]["id"],
+        "fingerprint",
+        canonical_json(data["mission"]),
+        (leg,),
+        (),
+        (),
+    )
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    payload = build(captured, view, projection)
+    assert all(i.get("xStarshieldConflict") == want for i in payload["intervals"])
+    assert all(
+        i["decisions"]
+        == [
+            "Up",
+            "Down" if ku_state == "offline" else "Up",
+            "Up" if x_state == "available" else "Down",
+        ]
+        for i in payload["intervals"]
+    )
+    if want:
+        assert all("Starshield conflict" in row["impact"] for row in payload["rows"])
+    else:
+        assert not any(
+            "Starshield conflict" in row["impact"] for row in payload["rows"]
+        )
+
+
+@pytest.mark.parametrize("metadata_reasons", [False, True])
+def test_customer_pdf_identifies_legacy_cached_starshield_conflict(metadata_reasons):
+    data = fixture("f10")
+    segment = data["timeline"]["segments"][0]
+    segment["x_state"] = "degraded"
+    segment["reasons"] = ["X-Ku Conflict az=180° el=35°"]
+    segment["metadata"].pop("source_reasons", None)
+    if metadata_reasons:
+        segment["metadata"]["source_reasons"] = segment["reasons"]
+    leg = snapshot(data)
+    projection = project_briefing_leg(leg)
+    view = project_customer_leg(leg, projection, leg_number=1, leg_count=1)
+    captured = ExportSnapshot(
+        data["mission"]["id"], "fixed", canonical_json(data["mission"]), (leg,), (), ()
+    )
+    payload = build(captured, view, projection)
+    assert all(i["decisions"][2] == "Down" for i in payload["intervals"])
+    assert all(i["xStarshieldConflict"] == "blocked" for i in payload["intervals"])
+    assert all("X–Starshield conflict" in row["impact"] for row in payload["rows"])

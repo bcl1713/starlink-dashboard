@@ -8,11 +8,12 @@ from unittest.mock import MagicMock
 
 os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 
-# Ensure /data directories exist for RouteManager and Missions
-Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
-Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
+# A caller can isolate import-time and subprocess bootstrap storage as well.
+TEST_DATA_DIR = Path(os.environ.get("STARLINK_TEST_DATA_DIR", "/tmp/test_data"))
+(TEST_DATA_DIR / "routes").mkdir(parents=True, exist_ok=True)
+(TEST_DATA_DIR / "sim_routes").mkdir(parents=True, exist_ok=True)
 Path("data/missions").mkdir(parents=True, exist_ok=True)
-TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
+TEST_MISSIONS_DIR = TEST_DATA_DIR / "missions"
 TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
@@ -21,13 +22,10 @@ import app.services.route_manager as route_manager_module
 original_route_init = route_manager_module.RouteManager.__init__
 
 
-def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
-    self.routes_dir = Path(routes_dir)
-    self.routes_dir.mkdir(parents=True, exist_ok=True)
-    self._routes = {}
-    self._active_route_id = None
-    self._observer = None
-    self._errors = {}
+def patched_route_init(
+    self, routes_dir=TEST_DATA_DIR / "routes", *, profile_resolver=None
+):
+    original_route_init(self, routes_dir, profile_resolver=profile_resolver)
 
 
 route_manager_module.RouteManager.__init__ = patched_route_init
@@ -39,7 +37,7 @@ import app.services.poi_manager as poi_manager_module
 original_poi_init = poi_manager_module.POIManager.__init__
 
 
-def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
+def patched_poi_init(self, pois_file=TEST_DATA_DIR / "pois.json"):
     self.pois_file = Path(pois_file)
     self.pois_file.parent.mkdir(parents=True, exist_ok=True)
     self.lock_file = str(self.pois_file) + ".lock"
@@ -58,6 +56,8 @@ def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
 poi_manager_module.POIManager.__init__ = patched_poi_init
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.core.config import ConfigManager
 from app.models.config import (
     NetworkConfig,
@@ -68,13 +68,13 @@ from app.models.config import (
 )
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
-from fastapi.testclient import TestClient
 from main import app
 
 
@@ -171,21 +171,6 @@ def client(test_client):
 
 
 @pytest.fixture(autouse=True)
-def reset_mission_active_state():
-    """Reset global _active_mission_id before each test to prevent state leakage."""
-    # Import here to avoid circular imports
-    import app.mission.routes as mission_routes
-
-    # Reset before test starts
-    mission_routes._active_mission_id = None
-
-    yield
-
-    # Reset after test completes
-    mission_routes._active_mission_id = None
-
-
-@pytest.fixture(autouse=True)
 def ensure_eta_service_initialized():
     """Ensure ETA service is initialized before each test.
 
@@ -242,8 +227,9 @@ def reset_prometheus_registry():
     """
     # Before each test, reset all gauge metrics to prevent pollution from NaN values
     try:
-        from app.core import metrics
         from prometheus_client.core import Gauge
+
+        from app.core import metrics
 
         # Reset the custom position collector data
         metrics._current_position["latitude"] = 0.0
@@ -343,26 +329,33 @@ def _clean_directory(directory: Path):
 
 
 @pytest.fixture(autouse=True)
-def isolate_mission_storage():
-    """Force mission storage to use a temp directory with full cleanup."""
+def isolate_mission_storage(tmp_path: Path):
+    """Use a per-test mission root so parallel workers never clear each other."""
     from app.mission import storage
 
     original_dir = storage.MISSIONS_DIR
-    storage.MISSIONS_DIR = TEST_MISSIONS_DIR
+    test_missions_dir = tmp_path / "missions"
+    storage.MISSIONS_DIR = test_missions_dir
     storage.ensure_missions_directory()
-    _clean_directory(TEST_MISSIONS_DIR)
 
     yield
 
-    _clean_directory(TEST_MISSIONS_DIR)
     storage.MISSIONS_DIR = original_dir
 
 
 def default_mock_telemetry():
     """Create default mock telemetry for tests."""
     return TelemetryData(
+        metric_availability=MetricAvailability(
+            latency_ms=True,
+            throughput_down_mbps=True,
+            throughput_up_mbps=True,
+            packet_loss_percent=True,
+            obstruction_percent=True,
+        ),
         timestamp=datetime.now(timezone.utc),
         position=PositionData(
+            observed_at=datetime.now(timezone.utc),
             latitude=40.7128,
             longitude=-74.0060,
             altitude=328.0,

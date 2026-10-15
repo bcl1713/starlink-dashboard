@@ -6,9 +6,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.logging import get_logger
-from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.dependencies import (
+    get_optional_simulation_run_service,
+    get_poi_manager,
+    get_route_manager,
+)
+from app.mission.storage import get_active_leg_lock
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.simulation.run_service import SimulationRunService
 
 logger = get_logger(__name__)
 
@@ -22,6 +28,9 @@ async def delete_route(
     route_id: str,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    run_service: Annotated[
+        SimulationRunService | None, Depends(get_optional_simulation_run_service)
+    ] = None,
 ) -> None:
     """Delete a route and its associated POIs.
 
@@ -43,43 +52,56 @@ async def delete_route(
             detail="Route manager not initialized",
         )
 
-    parsed_route = route_manager.get_route(route_id)
-    if not parsed_route:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Route not found: {route_id}",
-        )
+    with get_active_leg_lock():
+        from app.mission.planning.sources import guard_route_delete
 
-    try:
-        # Delete associated POIs (cascade delete)
-        if poi_manager:
-            deleted_pois = poi_manager.delete_route_pois(route_id)
-            logger.info(f"Deleted {deleted_pois} POIs for route {route_id}")
+        guard_route_delete(route_id, route_manager.routes_dir)
+        parsed_route = route_manager.get_route(route_id)
+        if not parsed_route:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Route not found: {route_id}",
+            )
 
-        # Delete KML file
-        file_path = Path(parsed_route.metadata.file_path)
-        if file_path.exists():
-            file_path.unlink()
-            logger.info(f"Deleted route file: {file_path} for route {route_id}")
+        if (
+            run_service
+            and run_service.status().run
+            and run_service.status().run.route_id == route_id
+        ):
+            run_service.runtime.cancel("Route deleted")
+        if route_manager.get_active_route_id() == route_id:
+            route_manager.deactivate_route(route_id)
 
-        # Remove from route manager cache
-        route_manager._routes.pop(route_id, None)
+        try:
+            # Delete associated POIs (cascade delete)
+            if poi_manager:
+                deleted_pois = poi_manager.delete_route_pois(route_id)
+                logger.info(f"Deleted {deleted_pois} POIs for route {route_id}")
 
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:
-        logger.error(f"Error deleting route {route_id}: {e!s}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error deleting route: {e!s}",
-        )
+            # Delete KML file
+            file_path = Path(parsed_route.metadata.file_path)
+            if file_path.exists():
+                file_path.unlink()
+                logger.info(f"Deleted route file: {file_path} for route {route_id}")
+
+            # Remove from route manager cache
+            route_manager._routes.pop(route_id, None)
+
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.error(f"Error deleting route {route_id}: {e!s}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error deleting route: {e!s}",
+            )

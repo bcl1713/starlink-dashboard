@@ -1,0 +1,25 @@
+{
+  "ac": [
+    {
+      "hex": "00ab12",
+      "lat": 38,
+      "lon": -90,
+      "seen_pos": 0,
+      "flight": "RCH123",
+      "r": "N123",
+      "t": "C17",
+      "alt_baro": 30000,
+      "gs": 450,
+      "track": 90,
+      "dbFlags": 1
+    },
+    {
+      "hex": "000001",
+      "lat": 39,
+      "lon": -91,
+      "seen_pos": 0,
+      "flight": "CIVIL",
+      "dbFlags": 0
+    }
+  ]
+}

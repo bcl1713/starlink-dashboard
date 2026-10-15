@@ -21,6 +21,14 @@ async function expectActionsVisible(page: import('@playwright/test').Page) {
   await expect(cancel).toBeVisible();
   await expect(save).toBeVisible();
 
+  await dialog.evaluate(async (element) => {
+    await Promise.allSettled(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished)
+    );
+  });
+
   const [dialogBox, cancelBox, saveBox] = await Promise.all([
     dialog.boundingBox(),
     cancel.boundingBox(),

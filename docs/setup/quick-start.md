@@ -23,11 +23,11 @@ cd starlink-dashboard
 cp .env.example .env
 
 # 3. Start services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
-open http://localhost:3000                # Grafana (admin/admin)
+open http://localhost:5173                # Mission Planner
 ```
 
 **Detailed setup:** See [Installation Guide](./installation.md)
@@ -38,13 +38,13 @@ open http://localhost:3000                # Grafana (admin/admin)
 
 Once services are running:
 
-| Service          | URL                             | Purpose                  |
-| ---------------- | ------------------------------- | ------------------------ |
-| **Grafana**      | <http://localhost:3000>         | Dashboards (admin/admin) |
-| **Prometheus**   | <http://localhost:9090>         | Metrics database         |
-| **Backend API**  | <http://localhost:8000/docs>    | Interactive API docs     |
-| **Health Check** | <http://localhost:8000/health>  | Service status           |
-| **Metrics**      | <http://localhost:8000/metrics> | Raw Prometheus metrics   |
+| Service             | URL                             | Purpose                        |
+| ------------------- | ------------------------------- | ------------------------------ |
+| **Mission Planner** | <http://localhost:5173>         | Dashboard and mission planning |
+| **Prometheus**      | <http://localhost:9090>         | Metrics database               |
+| **Backend API**     | <http://localhost:8000/docs>    | Interactive API docs           |
+| **Health Check**    | <http://localhost:8000/health>  | Service status                 |
+| **Metrics**         | <http://localhost:8000/metrics> | Raw Prometheus metrics         |
 
 ---
 
@@ -99,7 +99,7 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 
 ```bash
 # Start all services
-docker compose up -d
+./scripts/compose.sh up -d --build
 
 # Stop all services
 docker compose down
@@ -111,14 +111,14 @@ docker compose logs -f
 docker compose logs -f starlink-location
 
 # Rebuild images
-docker compose build
-docker compose build --no-cache
+./scripts/compose.sh build
+./scripts/compose.sh build --no-cache
 
 # Restart services
 docker compose restart
 
 # Full reset (rebuild and restart)
-docker compose down && docker compose build --no-cache && docker compose up -d
+./scripts/compose.sh down && ./scripts/compose.sh build --no-cache && ./scripts/compose.sh up -d
 ```
 
 ---

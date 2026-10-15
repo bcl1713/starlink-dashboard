@@ -1,0 +1,6 @@
+{
+  "fixture": "mission-over-budget",
+  "kind": "synthetic immutable DTO",
+  "legs": [{"base": "composition-assessed", "departureShiftHours": 0, "denseTransitions": 100}],
+  "expectedError": "page-budget"
+}

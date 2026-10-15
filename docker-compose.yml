@@ -1,8 +1,16 @@
 services:
   starlink-location:
-    build: ./backend/starlink-location/
+    build:
+      context: .
+      dockerfile: backend/starlink-location/Dockerfile
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
     container_name: starlink-location
+    init: true
     env_file: .env
+    environment:
+      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
+      GFS_ARTIFACT_PATH: /app/data/gfs
     ports:
       - "${STARLINK_LOCATION_PORT}:8000"
     restart: unless-stopped
@@ -11,7 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 90s
     # Network configuration for Starlink dish access
     # For live mode, the container needs to reach the Starlink dish at 192.168.100.1:9200
     #
@@ -29,9 +37,37 @@ services:
       - ./data/missions:/app/data/missions
       - ./data/satellites:/app/data/satellites
       - ./data/sat_coverage:/app/data/sat_coverage
+      - ./data/settings:/app/data/settings
+      - ./data/orbital:/app/data/orbital
+      - gfs_products:/app/data/gfs:ro
+      - gfs_mailbox:/app/data/gfs-mailbox
       - route_data:/data/routes
       - sim_route_data:/data/sim_routes
       - poi_data:/data
+    networks:
+      - starlink-net
+
+  # Always available to enabled weather layers; idle without catalog demand.
+  gfs-worker:
+    build:
+      context: ./backend/starlink-location
+      dockerfile: Dockerfile.gfs
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
+    user: "1000:1000"
+    cpus: 1.0
+    mem_limit: 1g
+    init: true
+    stop_grace_period: 15s
+    restart: unless-stopped
+    environment:
+      GFS_MAILBOX_PATH: /app/data/gfs-mailbox
+      GFS_ARTIFACT_PATH: /app/data/gfs
+      AVIATION_SETTINGS_PATH: /app/data/settings/aviation-weather.json
+    volumes:
+      - gfs_products:/app/data/gfs
+      - gfs_mailbox:/app/data/gfs-mailbox
+      - ./data/settings:/app/data/settings:ro
     networks:
       - starlink-net
 
@@ -55,31 +91,13 @@ services:
     networks:
       - starlink-net
 
-  grafana:
-    image: grafana/grafana:12.0.2
-    container_name: grafana
-    env_file: .env
-    ports:
-      - "${GRAFANA_PORT}:3000"
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1
-      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/custom-icons/chevron-up.svg:/usr/share/grafana/public/img/icons/marker/chevron-up.svg:ro
-    depends_on:
-      - prometheus
-    networks:
-      - starlink-net
-
   mission-planner:
     build:
       context: ./frontend/mission-planner
       dockerfile: Dockerfile
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA:-}
+        VITE_OVERVIEW_HISTORY_POLL_SECONDS: ${VITE_OVERVIEW_HISTORY_POLL_SECONDS-1}
     container_name: mission-planner
     ports:
       - "5173:80"
@@ -94,7 +112,8 @@ networks:
 
 volumes:
   prometheus_data:
-  grafana_data:
   route_data:
   sim_route_data:
   poi_data:
+  gfs_products:
+  gfs_mailbox:

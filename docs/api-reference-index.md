@@ -24,6 +24,9 @@ provides quick navigation to all endpoint categories.
 
 ---
 
+[Overview weather endpoints](api/endpoints/overview-weather.md) cover shared
+precipitation settings, frame manifests, and buffered tiles.
+
 ## Endpoint Categories
 
 ### Core Endpoints
@@ -253,10 +256,11 @@ API versioning strategy:
 ## Related Documentation
 
 - [Backend README](../backend/starlink-location/README.md) - Service overview
-- [AGENTS.md](../AGENTS.md) - Development workflow and configuration guidance
+- [Development Workflow](./development/workflow.md) - Development and testing
+  guidance
 - [Setup Guide](./setup/README.md) - Installation instructions
 - [Metrics Reference](./metrics/overview.md) - Prometheus metrics details
-- [Grafana Setup](./grafana-dashboards.md) - Dashboard configuration
+- [Overview Features](features/overview.md) - Dashboard configuration
 - [Route Timing Guide](./route-timing-guide.md) - Route timing features
 
 ---

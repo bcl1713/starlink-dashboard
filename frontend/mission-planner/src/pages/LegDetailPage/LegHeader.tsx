@@ -2,11 +2,25 @@ import { useRef } from 'react';
 import { Button } from '../../components/ui/button';
 import { useUpdateLegRoute } from '../../hooks/api/useMissions';
 
+const ACTIVE_ROUTE_REPLACEMENT_CODE = 'ACTIVE_LEG_ROUTE_REPLACEMENT_FORBIDDEN';
+const ACTIVE_ROUTE_REPLACEMENT_INSTRUCTION =
+  'Deactivate the leg, upload the replacement route, then activate the leg again.';
+
+function routeUploadErrorMessage(error: unknown): string | null {
+  const response = (
+    error as { response?: { data?: { detail?: { code?: string } } } }
+  )?.response;
+  return response?.data?.detail?.code === ACTIVE_ROUTE_REPLACEMENT_CODE
+    ? ACTIVE_ROUTE_REPLACEMENT_INSTRUCTION
+    : null;
+}
+
 interface LegHeaderProps {
   missionId: string;
   legId: string;
   routeId?: string;
   onBackClick: () => void;
+  onPlanningUpdateRoute?: () => void;
 }
 
 /**
@@ -17,6 +31,7 @@ export function LegHeader({
   legId,
   routeId,
   onBackClick,
+  onPlanningUpdateRoute,
 }: LegHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const updateRouteMutation = useUpdateLegRoute(missionId);
@@ -49,7 +64,10 @@ export function LegHeader({
       }
     } catch (error) {
       console.error('Failed to update route:', error);
-      alert('Failed to update route. Please try again.');
+      alert(
+        routeUploadErrorMessage(error) ??
+          'Failed to update route. Please try again.'
+      );
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -57,7 +75,8 @@ export function LegHeader({
   };
 
   const handleUpdateRouteClick = () => {
-    fileInputRef.current?.click();
+    if (onPlanningUpdateRoute) onPlanningUpdateRoute();
+    else fileInputRef.current?.click();
   };
 
   return (
@@ -67,8 +86,8 @@ export function LegHeader({
       </Button>
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold sm:text-3xl">Leg Configuration</h1>
-          <p className="text-muted-foreground">
+          <h1 className="page-title">Leg Configuration</h1>
+          <p className="page-description">
             Mission: {missionId} | Leg: {legId}
           </p>
           {routeId && (

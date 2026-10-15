@@ -1,0 +1,59 @@
+{
+  "schema": "aviation-weather-v1",
+  "generated_at_ms": 1791244800000,
+  "settings_revision": 0,
+  "products": [
+    {
+      "state": "ready",
+      "layer_id": "terminal-observations",
+      "product_type": "metar-speci",
+      "representation": "station-v1",
+      "source_id": "awc",
+      "provenance": "AWC station reports",
+      "attribution": [
+        {
+          "label": "NOAA AWC",
+          "url": "https://aviationweather.gov/"
+        }
+      ],
+      "time_kind": "observation",
+      "method_kind": "reported",
+      "observed_at_ms": 1791244200000,
+      "issued_at_ms": null,
+      "scan_start_ms": null,
+      "scan_end_ms": null,
+      "validity_kind": "instant",
+      "valid_at_ms": 1791244200000,
+      "valid_from_ms": null,
+      "valid_to_ms": null,
+      "run_at_ms": null,
+      "lead_seconds": null,
+      "vertical": {
+        "kind": "surface"
+      },
+      "coverage": {
+        "generation": "snapshot-1",
+        "expires_at_ms": 1791245400000,
+        "mask_encoding": "feature-collection-v1",
+        "missing_meaning": "unknown-not-clear",
+        "feed_completeness": "unknown"
+      },
+      "generated_at_ms": 1791244800000,
+      "retrieved_at_ms": 1791244800000,
+      "fresh_until_ms": 1791245100000,
+      "expires_at_ms": 1791245400000,
+      "product_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "instance_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "payload": {
+        "path": "/api/aviation-weather/v1/products/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/stations.json",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "content_type": "application/geo+json",
+        "encoded_bytes": 100,
+        "decoded_bytes": 1000,
+        "gpu_bytes": 1000
+      },
+      "radar": null,
+      "grid": null
+    }
+  ]
+}

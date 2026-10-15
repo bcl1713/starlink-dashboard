@@ -67,7 +67,7 @@ simulation:
 ```bash
 # Rebuild backend (required for config.yaml changes)
 docker compose down
-docker compose build --no-cache starlink-location
+./scripts/compose.sh build --no-cache starlink-location
 docker compose up -d
 ```
 

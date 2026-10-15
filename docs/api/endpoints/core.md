@@ -91,25 +91,62 @@ environmental metrics.
   },
   "network": {
     "latency_ms": 45.2,
-    "throughput_down_mbps": 125.3,
+    "throughput_down_mbps": null,
     "throughput_up_mbps": 25.1,
-    "packet_loss_percent": 0.5
+    "packet_loss_percent": 0
   },
   "obstruction": {
     "obstruction_percent": 15.0
+  },
+  "metric_availability": {
+    "latency_ms": true,
+    "throughput_down_mbps": false,
+    "throughput_up_mbps": true,
+    "packet_loss_percent": true,
+    "obstruction_percent": true
   },
   "environmental": {
     "signal_quality_percent": 85.0,
     "uptime_seconds": 3600.5,
     "temperature_celsius": null
-  }
+  },
+  "ground_entry_point": null
 }
 ```
+
+The four `network` values and `obstruction.obstruction_percent` are
+`number | null`: `null` means unavailable; a measured zero remains `0` with its
+availability flag `true`. `metric_availability` always contains five boolean
+flags, independently set for each source reading. Missing provenance defaults
+to five `false` flags, not inferred observations from internal numeric values.
+The example above shows partial loss of downlink, with valid zero packet loss.
+Position, environmental fields (including signal quality), and units are
+unchanged by this contract.
+
+`timestamp` is the original acquisition time of the batch, **not request time**.
+A failed whole-batch collection does not renew it; cached telemetry may therefore
+be old. A fresh batch can still have unavailable individual metrics. Consumers
+must check both collection age and per-metric availability; availability alone
+does not establish freshness. An old response without `metric_availability`
+must be treated as unverified for all five metrics, even if its values are zero
+or its timestamp looks fresh.
 
 **Status Codes:**
 
 - `200 OK` - Current status available
 - `500 Internal Server Error` - Cannot retrieve status
+
+**Publication contract:** The nullable projection is specific to `/api/status`.
+The Prometheus updater honors each of the five availability flags independently:
+unavailable readings publish `NaN` to their current gauges and skip their
+corresponding histogram observations, where defined. Available finite readings,
+including measured zero, resume independently on recovery. Pre-change history
+is not retrospectively verified. Prometheus `query_range` timestamps are
+evaluation times, not acquisition times; see the
+[Overview scrape/lookback boundary](../../features/overview.md#5-overview-metric-history)
+for history limitations and the
+[status model source mapping](../models/health-status-models.md#metricavailability-and-live-source-mapping)
+for acquisition and validity details.
 
 **Use Case:** Dashboard panels, status monitoring, API clients.
 

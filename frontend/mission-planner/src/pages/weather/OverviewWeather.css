@@ -1,0 +1,45 @@
+.overview-weather-status {
+  padding: 0.5rem 0.625rem;
+  border: var(--overview-border);
+  border-radius: 0.5rem;
+  background: var(--overview-glass-fallback);
+  color: var(--overview-text);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.overview-weather-status p {
+  margin: 0;
+}
+.overview-weather-status__state {
+  font-weight: 600;
+}
+.overview-weather-status a {
+  text-decoration: underline;
+  pointer-events: auto;
+}
+.overview-weather-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+.overview-weather-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.overview-weather-legend i {
+  width: 0.65rem;
+  height: 0.4rem;
+}
+.overview-weather-legend__radar {
+  background: #3498db;
+}
+.overview-weather-legend__uncovered {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 2px,
+    #a0a0a0 2px,
+    #a0a0a0 3px
+  );
+}

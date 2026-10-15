@@ -5,8 +5,27 @@
 # Splitting would fragment the POI domain model. Deferred to v0.4.0.
 
 from datetime import datetime, timezone
+from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator
+
+MissionPoiKind = Literal[
+    "departure",
+    "arrival",
+    "aar_start",
+    "aar_end",
+    "x_band_transition",
+    "x_band_warning_start",
+    "x_band_warning_end",
+    "ka_coverage_exit",
+    "ka_coverage_entry",
+    "ka_transition",
+    "ka_outage_start",
+    "ka_outage_end",
+    "starshield_outage_start",
+    "starshield_outage_end",
+]
+GeneratedPoiSource = Literal["mission-timeline"]
 
 
 class POI(BaseModel):
@@ -28,6 +47,27 @@ class POI(BaseModel):
     )
     mission_id: str | None = Field(
         default=None, description="Associated mission ID if mission-scoped"
+    )
+    kind: MissionPoiKind | None = Field(
+        default=None, description="Typed mission timeline event, when generated"
+    )
+    generated_source: GeneratedPoiSource | None = Field(
+        default=None,
+        exclude=True,
+        description="Internal provenance for server-generated mission POIs",
+    )
+    planned_route_segment_index: int | None = Field(
+        default=None,
+        exclude=True,
+        description="Internal canonical route visit for a generated planned cue",
+    )
+    planned_route_geometry_hash: str | None = Field(
+        default=None,
+        exclude=True,
+        description="Internal geometry identity for the planned route segment",
+    )
+    expected_arrival_time: datetime | None = Field(
+        default=None, description="Scheduled timeline time for this POI"
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -76,6 +116,10 @@ class POI(BaseModel):
 class POICreate(BaseModel):
     """Request model for creating a new POI."""
 
+    # Prepared mission cues retain their sampled route segment internally.
+    # This is neither an API input nor a serialized field.
+    _route_segment_index: int | None = PrivateAttr(default=None)
+
     name: str = Field(..., description="Name of the POI", min_length=1)
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
     longitude: float = Field(
@@ -86,6 +130,12 @@ class POICreate(BaseModel):
     description: str | None = Field(default=None, description="POI description")
     mission_id: str | None = Field(default=None, description="Associated mission ID")
     route_id: str | None = Field(default=None, description="Associated route ID")
+    kind: MissionPoiKind | None = Field(
+        default=None, description="Typed mission timeline event, when generated"
+    )
+    expected_arrival_time: datetime | None = Field(
+        default=None, description="Scheduled timeline time for this POI"
+    )
 
     @field_validator("latitude")
     @classmethod
@@ -175,6 +225,8 @@ class POIResponse(BaseModel):
     description: str | None
     route_id: str | None
     mission_id: str | None = None
+    kind: MissionPoiKind | None = None
+    expected_arrival_time: datetime | None = None
     created_at: datetime
     updated_at: datetime
     # Route projection fields (only populated when route is active)

@@ -7,6 +7,7 @@ to Prometheus.
 """
 
 import logging
+from datetime import datetime
 
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
@@ -89,6 +90,8 @@ def update_eta_metrics(
     eta_mode=None,
     flight_phase=None,
     poi_manager: POIManager | None = None,
+    *,
+    mission_now: datetime | None = None,
 ) -> dict:
     """Update ETA metrics for all POIs.
 
@@ -128,10 +131,24 @@ def update_eta_metrics(
         safe_speed = None
         if speed_knots is not None and speed_knots >= 0.5:
             safe_speed = speed_knots
-            eta_calculator.update_speed(speed_knots)
+            eta_calculator.update_speed(
+                speed_knots,
+                **(
+                    {"sample_time_seconds": mission_now.timestamp()}
+                    if mission_now is not None
+                    else {}
+                ),
+            )
         else:
             # Seed smoothing window with default cruise speed so pre-departure ETAs stay positive
-            eta_calculator.update_speed(eta_calculator.default_speed_knots)
+            eta_calculator.update_speed(
+                eta_calculator.default_speed_knots,
+                **(
+                    {"sample_time_seconds": mission_now.timestamp()}
+                    if mission_now is not None
+                    else {}
+                ),
+            )
 
         # Get all POIs
         pois = poi_manager.list_pois()
@@ -145,6 +162,7 @@ def update_eta_metrics(
             active_route=active_route,
             eta_mode=eta_mode,
             flight_phase=flight_phase,
+            **({"mission_now": mission_now} if mission_now is not None else {}),
         )
 
         return metrics

@@ -12,6 +12,7 @@ from ipaddress import AddressValueError, IPv4Address
 
 import dns.resolver
 import httpx
+
 from app.core.metrics.prometheus_metrics import (
     starlink_ground_entry_point_info,
     starlink_ground_entry_point_latitude_degrees,
@@ -29,6 +30,18 @@ _last_ground_entry_point_location_labels: (
 ) = None
 _last_ground_entry_point_info_labels: tuple[str, str, str, str, str] | None = None
 _last_ground_entry_point_refresh_monotonic: float | None = None
+
+
+def _has_valid_geographic_coordinates(
+    latitude: float,
+    longitude: float,
+) -> bool:
+    return (
+        math.isfinite(latitude)
+        and math.isfinite(longitude)
+        and -90 <= latitude <= 90
+        and -180 <= longitude <= 180
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,13 +85,19 @@ class GroundEntryPointResolver:
         self._current_entry: GroundEntryPoint | None = None
         self._entry_cache: dict[str, GroundEntryPoint] = {}
 
-    def current(self) -> GroundEntryPoint | None:
+    def current(
+        self,
+        *,
+        include_environment_override: bool = False,
+    ) -> GroundEntryPoint | None:
         """Return the most recently resolved ground entry point."""
-        configured = _entry_point_from_environment()
-        if configured is not None:
-            self._current_ip = configured.ip or self._current_ip
-            self._current_entry = configured
-            return configured
+        if include_environment_override:
+            configured = _entry_point_from_environment()
+            if configured is not None:
+                self._current_ip = configured.ip or self._current_ip
+                self._current_entry = configured
+                return configured
+
         return self._current_entry
 
     def invalidate(self, clear_geolocation_cache: bool = False) -> None:
@@ -91,11 +110,6 @@ class GroundEntryPointResolver:
 
     def refresh(self, force: bool = False) -> GroundEntryPoint | None:
         """Refresh public IP state and geolocate only when the IP changes."""
-        configured = _entry_point_from_environment()
-        if configured is not None:
-            self._current_ip = configured.ip or self._current_ip
-            self._current_entry = configured
-            return configured
 
         now = self._time_source()
         if (
@@ -259,6 +273,9 @@ def geolocate_public_ip(
         latitude_raw, longitude_raw = loc.split(",", maxsplit=1)
         latitude = float(latitude_raw)
         longitude = float(longitude_raw)
+        if not _has_valid_geographic_coordinates(latitude, longitude):
+            logger.warning("Ground entry point has invalid coordinates")
+            return None
     except (TypeError, ValueError):
         logger.warning("Ground entry point geolocation missing loc field")
         return None
@@ -285,9 +302,6 @@ def discover_ground_entry_point(
     timeout_seconds: float = 5.0,
 ) -> GroundEntryPoint | None:
     """Discover the public egress IP and geolocate it."""
-    configured = _entry_point_from_environment()
-    if configured is not None:
-        return configured
 
     resolver = GroundEntryPointResolver(
         ip_resolver=lambda: resolve_public_ip(
@@ -298,9 +312,12 @@ def discover_ground_entry_point(
     return resolver.refresh(force=True)
 
 
-def get_cached_ground_entry_point() -> GroundEntryPoint | None:
+def get_cached_ground_entry_point(
+    *,
+    include_environment_override: bool = False,
+) -> GroundEntryPoint | None:
     """Return the last-known ground entry point without forcing a network lookup."""
-    return _resolver.current()
+    return _resolver.current(include_environment_override=include_environment_override)
 
 
 def clear_ground_entry_point_metrics() -> None:
@@ -433,6 +450,9 @@ def _entry_point_from_environment() -> GroundEntryPoint | None:
     try:
         latitude = float(lat_raw)
         longitude = float(lon_raw)
+        if not _has_valid_geographic_coordinates(latitude, longitude):
+            logger.warning("Ground entry point has invalid coordinates")
+            return None
     except ValueError:
         logger.warning("Invalid STARLINK_GROUND_ENTRY latitude/longitude override")
         return None

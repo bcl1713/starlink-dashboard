@@ -16,13 +16,13 @@ Real-world workflows for common development tasks in this project.
 
 ---
 
-## Workflow 2: Creating a New Grafana Dashboard
+## Workflow 2: Updating the Native Overview
 
-1. Research: `"Research best practices for Grafana dashboards"`
-2. Plan: `/dev-docs Create satellite health monitoring dashboard`
-3. Create in `monitoring/grafana/provisioning/dashboards/`
-4. Test at `http://localhost:3000`
-5. Document: Update `docs/grafana-setup.md`
+1. Review the existing frontend under `frontend/mission-planner/src/pages/`.
+2. Plan the change against [Overview features](../../features/overview.md).
+3. Implement and run the relevant frontend unit tests.
+4. Verify the production Nginx API path in an isolated stack and browser.
+5. Update the feature documentation to match the supported behavior.
 
 ---
 

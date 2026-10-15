@@ -1,50 +1,16 @@
 # Monitoring & Alert Response
 
-## Grafana Monitoring Setup
+## Mission Planner Monitoring Setup
 
-### 1. Access Grafana Dashboard
+Open the native dashboard at <http://localhost:5173> (or its configured proxy
+origin). Use Overview for current position, upcoming POIs and network history,
+and Missions for the active mission leg and timeline. Configuration controls
+Overview visibility and history settings.
 
-**Dashboard Location:**
-
-```text
-<http://<dashboard>/d/starlink/fullscreen-overview>
-```
-
-**Login:** admin / `<configured-password>` (default: admin)
-
-### 2. Configure Mission Overview Panel
-
-The dashboard auto-updates with mission metrics. Key panels:
-
-#### Panel: Active Mission Status
-
-- **What it shows:** Current mission name, activation status, timeline state
-- **Metric:** `mission_is_active{mission_id="<id>"}`
-- **Update interval:** 1 second
-
-#### Panel: Communication Status (Real-time)
-
-- **What it shows:** Current status of X-Band, Ka, Ku (green/yellow/red)
-- **Metrics:**
-  - `mission_status{transport="x_band"}`
-  - `mission_status{transport="ka"}`
-  - `mission_status{transport="ku"}`
-- **Update interval:** 1 second
-- **Action:** If any system shows red unexpectedly, check timeline and
-  investigation log
-
-#### Panel: Next Degradation Window
-
-- **What it shows:** Time until next DEGRADED or CRITICAL status
-- **Metric:** `mission_next_conflict_seconds`
-- **Update interval:** 10 seconds
-- **Action:** When < 900 sec (15 min), alert crew per section below
-
-#### Panel: Metrics Gauges
-
-- **Total Nominal Time (minutes):** Time remaining in NOMINAL status
-- **Total Degraded Time (minutes):** Remaining degradation windows
-- **Total Critical Time (minutes):** Remaining high-risk windows (usually 0)
+For supported fields and freshness rules, see the
+[Overview features](../../features/overview.md). Query additional metrics and
+alert status directly in Prometheus; retired dashboard panels are no longer
+provisioned.
 
 ### 3. Set Alert Thresholds
 
@@ -160,10 +126,11 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
 ```
 
 1. **Ongoing Monitoring (during window):**
-   - Assign one operator to watch Grafana
+   - Assign one operator to watch Mission Planner
    - If Ku also degraded unexpectedly: Emergency escalation (call Flight Lead
      immediately)
-   - Ku should stay GREEN (always available) in timeline
+   - Ku remains nominal in the planned timeline; verify actual connectivity
+     independently using measured telemetry and crew reports.
 
 ---
 
@@ -173,13 +140,15 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
 
 **Every 15 minutes (or per SOP interval):**
 
-1. **Check Grafana dashboard:**
-   - Current status: X-Band, Ka, Ku (should match timeline prediction)
-   - Next degradation window (if < 30 min, send crew reminder)
-   - Alert panel: Any red alerts firing?
+1. **Check Mission Planner dashboard:**
+   - Review the active mission-leg timeline for planned communication windows.
+   - Check Overview for measured position and network performance.
+   - Check configured alert status in Prometheus at
+     <http://localhost:9090/alerts>.
+   - Send a crew reminder if a planned window is less than 30 minutes away.
 
 2. **Cross-reference with timeline:**
-   - If current status ≠ predicted: Investigate
+   - If observed connectivity differs from the planned timeline: Investigate
    - Check system logs: `docker logs -f starlink-location | grep mission`
    - Document discrepancy and notify lead
 
@@ -202,7 +171,7 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
    - Is it X-Band transition? Check transition duration (should be ±15 min).
    - Is it Ka gap? Check if route actually in coverage.
 1. **If deviation > 10 min:**
-   - Take screenshot of Grafana
+   - Take screenshot of Mission Planner
    - Check system logs: `docker compose logs starlink-location | tail -50`
    - Contact mission planner with screenshot + crew observations
    - Continue monitoring (do not abort)

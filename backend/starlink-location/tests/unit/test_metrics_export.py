@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
+
 from app.api import metrics_export
 from app.models.poi import POI
 from app.models.route import (
@@ -14,6 +15,7 @@ from app.models.route import (
 )
 from app.models.telemetry import (
     EnvironmentalData,
+    MetricAvailability,
     NetworkData,
     ObstructionData,
     PositionData,
@@ -24,6 +26,13 @@ from app.models.telemetry import (
 def _make_telemetry(speed_knots: float = 250.0) -> TelemetryData:
     """Helper to create consistent telemetry samples."""
     return TelemetryData(
+        metric_availability=MetricAvailability(
+            latency_ms=True,
+            throughput_down_mbps=True,
+            throughput_up_mbps=True,
+            packet_loss_percent=True,
+            obstruction_percent=True,
+        ),
         timestamp=datetime.now(timezone.utc),
         position=PositionData(
             latitude=40.0,

@@ -15,7 +15,7 @@ rg -A 5 "volumes:" docker-compose.yml
 # Verify volume exists
 docker volume ls | rg poi
 docker volume ls | rg prometheus
-docker volume ls | rg grafana
+docker volume ls | rg prometheus
 
 # Check volume content
 docker run -v poi_data:/data alpine ls -la /data

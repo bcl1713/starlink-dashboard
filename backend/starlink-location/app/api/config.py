@@ -1,6 +1,6 @@
 """Configuration management endpoint handler."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.models.config import SimulationConfig
 
@@ -88,7 +88,7 @@ async def get_config():
 
 
 @router.post("/api/config")
-async def update_config(new_config: SimulationConfig):
+async def update_config(new_config: SimulationConfig, request: Request):
     """
     Update configuration.
 
@@ -104,7 +104,14 @@ async def update_config(new_config: SimulationConfig):
 
     try:
         # Validate the new config (Pydantic will do this automatically)
-        _coordinator.update_config(new_config)
+        from app.mission.storage import get_active_leg_lock
+
+        with get_active_leg_lock():
+            _coordinator.update_config(new_config)
+            service = getattr(request.app.state, "simulation_run_service", None)
+            if service:
+                service.runtime.cancel("Configuration replaced")
+                service.runtime.set_service_mode(new_config.mode)
         return new_config.model_dump()
     except (
         RuntimeError,
@@ -125,7 +132,7 @@ async def update_config(new_config: SimulationConfig):
 
 
 @router.put("/api/config")
-async def replace_config(new_config: SimulationConfig):
+async def replace_config(new_config: SimulationConfig, request: Request):
     """
     Replace entire configuration.
 
@@ -139,7 +146,14 @@ async def replace_config(new_config: SimulationConfig):
 
     try:
         # Validate the new config (Pydantic will do this automatically)
-        _coordinator.update_config(new_config)
+        from app.mission.storage import get_active_leg_lock
+
+        with get_active_leg_lock():
+            _coordinator.update_config(new_config)
+            service = getattr(request.app.state, "simulation_run_service", None)
+            if service:
+                service.runtime.cancel("Configuration replaced")
+                service.runtime.set_service_mode(new_config.mode)
         return new_config.model_dump()
     except (
         RuntimeError,

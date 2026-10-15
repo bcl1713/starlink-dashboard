@@ -1,6 +1,7 @@
 """Unit tests for KML route follower."""
 
 import pytest
+
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.simulation.kml_follower import KMLRouteFollower
 

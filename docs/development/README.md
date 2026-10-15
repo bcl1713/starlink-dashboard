@@ -15,6 +15,8 @@
   rebuild process for Python backend changes
 - **[Release Policy](./release-policy.md)**: `dev` integration branch policy,
   semantic versioning, and release flow
+- **[Cloud Docker Runtime](./cloud-docker.md)**: Find the actor-owned daemon and
+  run isolated acceptance checks
 - **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines, standards,
   and code review process
 

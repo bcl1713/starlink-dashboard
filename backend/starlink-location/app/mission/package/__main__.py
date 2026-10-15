@@ -18,16 +18,32 @@ from app.mission.exporter import (
     TimelineExportFormat,
     generate_timeline_export,
 )
+from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
+from app.mission.exporter.plot_ownership import export_plot_context
+from app.mission.exporter.snapshot_views import SnapshotViews
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TimelineStatus
+from app.mission.package.streams import new_package_stream
 from app.mission.storage import (
     load_mission_timeline,
     load_mission_v2,
 )
-from app.mission.timeline_service import build_mission_timeline
+from app.mission.timeline_preparation import prepare_mission_timeline
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
+
+
+def _snapshot_kwargs(snapshot):
+    return {"snapshot": snapshot} if snapshot is not None else {}
+
+
+def _cancel_kwargs(cancel):
+    return {"cancel": cancel} if cancel is not None else {}
+
+
+def _export_kwargs(snapshot):
+    return {"export_snapshot": snapshot} if snapshot is not None else {}
 
 
 def _display_status(status_value: str) -> str:
@@ -47,6 +63,8 @@ def generate_mission_combined_csv(
     output_path: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
+    *,
+    snapshot=None,
 ) -> bytes | None:
     """Generate combined CSV timeline for all legs in mission.
 
@@ -56,11 +74,17 @@ def generate_mission_combined_csv(
     if output_path:
         with open(output_path, "w", newline="", encoding="utf-8") as output_file:
             _write_mission_combined_csv(
-                output_file, mission, route_manager, poi_manager
+                output_file,
+                mission,
+                route_manager,
+                poi_manager,
+                **_snapshot_kwargs(snapshot),
             )
         return None
 
-    _write_mission_combined_csv(f, mission, route_manager, poi_manager)
+    _write_mission_combined_csv(
+        f, mission, route_manager, poi_manager, **_snapshot_kwargs(snapshot)
+    )
     return f.getvalue().encode("utf-8")
 
 
@@ -69,6 +93,8 @@ def _write_mission_combined_csv(
     mission: Mission,
     route_manager: RouteManager | None,
     poi_manager: POIManager | None,
+    *,
+    snapshot=None,
 ) -> None:
     import csv
 
@@ -92,7 +118,9 @@ def _write_mission_combined_csv(
 
     for leg in mission.legs:
         try:
-            timeline = _load_export_timeline(mission, leg, route_manager, poi_manager)
+            timeline = _load_export_timeline(
+                mission, leg, route_manager, poi_manager, **_snapshot_kwargs(snapshot)
+            )
             if not timeline:
                 continue
 
@@ -160,180 +188,6 @@ def _write_mission_combined_csv(
             logger.error(f"Failed to include leg {leg.id} in combined CSV: {e}")
 
 
-def generate_mission_combined_pptx(
-    mission: Mission,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    output_path: str | None = None,
-    map_cache: dict[str, bytes] | None = None,
-) -> bytes | None:
-    """Generate combined PPTX slides for entire mission.
-
-    Creates presentation with:
-    - Title slide (mission overview)
-    - All slides from each leg (map + timeline tables) - generated using shared pptx_builder module
-
-    This function has been refactored to use the shared pptx_builder module,
-    eliminating code duplication with exporter/__main__.py::generate_pptx_export().
-
-    Args:
-        map_cache: Optional cache for generated maps (route_id -> bytes)
-    """
-    import io
-
-    try:
-        from pptx import Presentation
-        from pptx.enum.text import PP_ALIGN
-        from pptx.util import Inches, Pt
-    except ImportError:
-        logger.error("python-pptx not installed")
-        return b""
-
-    # Import shared functions
-    from pathlib import Path
-
-    from app.mission.exporter.__main__ import _cover_metadata_line
-    from app.mission.exporter.pptx_builder import add_mission_slides_to_presentation
-    from app.mission.exporter.pptx_styling import (
-        TEXT_BLACK,
-        add_footer_bar,
-        add_header_bar,
-        add_logo,
-    )
-
-    prs = Presentation()
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.62)
-
-    # Logo path
-    logo_path = Path(__file__).parent.parent.joinpath("assets").joinpath("logo.png")
-
-    # Mission metadata
-    mission_id = mission.id
-    mission_name = mission.name
-    leg_count = len(mission.legs)
-
-    # Title slide with styling
-    blank_slide_layout = prs.slide_layouts[6]
-    title_slide = prs.slides.add_slide(blank_slide_layout)
-
-    # Add header and footer bars
-    add_header_bar(title_slide, 0, 0, 10, 0.15)
-    add_footer_bar(title_slide, 0, 5.47, 10, 0.15)
-
-    # Add logo if available
-    add_logo(title_slide, logo_path, 0.2, 0.02, 0.6, 0.6)
-
-    # Add mission title
-    title_box = title_slide.shapes.add_textbox(
-        Inches(1.5), Inches(2.0), Inches(7.0), Inches(1.0)
-    )
-    text_frame = title_box.text_frame
-    text_frame.text = mission_name
-
-    paragraph = text_frame.paragraphs[0]
-    paragraph.alignment = PP_ALIGN.CENTER
-    paragraph.font.size = Pt(28)
-    paragraph.font.bold = True
-    paragraph.font.color.rgb = TEXT_BLACK
-
-    # Add mission ID
-    id_box = title_slide.shapes.add_textbox(
-        Inches(1.5), Inches(3.0), Inches(7.0), Inches(0.5)
-    )
-    id_frame = id_box.text_frame
-    id_frame.text = f"Mission ID: {mission_id}"
-
-    id_paragraph = id_frame.paragraphs[0]
-    id_paragraph.alignment = PP_ALIGN.CENTER
-    id_paragraph.font.size = Pt(14)
-    id_paragraph.font.color.rgb = TEXT_BLACK
-
-    # Add leg count and mission metadata
-    info_box = title_slide.shapes.add_textbox(
-        Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
-    )
-    info_frame = info_box.text_frame
-    info_frame.text = _cover_metadata_line(mission, leg_count)
-
-    info_paragraph = info_frame.paragraphs[0]
-    info_paragraph.alignment = PP_ALIGN.CENTER
-    info_paragraph.font.size = Pt(14)
-    info_paragraph.font.color.rgb = TEXT_BLACK
-
-    # For each leg, generate slides using shared builder
-    for leg_idx, leg in enumerate(mission.legs):
-        # Rebuild from the latest leg settings so adjusted departure times and
-        # derived AAR/event windows cannot be served from a stale timeline cache.
-        leg_timeline = _load_export_timeline(mission, leg, route_manager, poi_manager)
-        if not leg_timeline:
-            logger.warning(
-                f"No timeline found for leg {leg.id}, adding summary slide only"
-            )
-        else:
-            # Log timeline start time for debugging
-            if leg_timeline.segments:
-                first_segment_start = leg_timeline.segments[0].start_time
-                logger.info(
-                    f"Loaded timeline for leg {leg.id}: "
-                    f"first segment starts at {first_segment_start}, "
-                    f"leg.adjusted_departure_time={leg.adjusted_departure_time}"
-                )
-
-        if not leg_timeline:
-            # Add a summary slide for this leg
-            slide = prs.slides.add_slide(prs.slide_layouts[1])
-            title_shape = slide.shapes.title
-            content = slide.placeholders[1]
-            title_shape.text = leg.name
-            content.text = f"Leg ID: {leg.id}\nDescription: {leg.description or 'N/A'}\n\nNo timeline data available."
-            continue
-
-        try:
-            # Add slides for this leg directly to main presentation
-            add_mission_slides_to_presentation(
-                prs=prs,
-                mission=leg,
-                timeline=leg_timeline,
-                parent_mission_id=mission.id,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                logo_path=logo_path,
-                map_cache=map_cache,
-            )
-
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            logger.error(f"Failed to generate PPTX slides for leg {leg.id}: {e}")
-            # Add error slide
-            slide = prs.slides.add_slide(prs.slide_layouts[1])
-            title_shape = slide.shapes.title
-            content = slide.placeholders[1]
-            title_shape.text = f"{leg.name} - Export Error"
-            content.text = f"Leg ID: {leg.id}\n\nFailed to generate timeline: {e!s}"
-
-    # Save to bytes or file
-    if output_path:
-        prs.save(output_path)
-        return None
-
-    output = io.BytesIO()
-    prs.save(output)
-    output.seek(0)
-    return output.read()
-
-
 def _add_mission_metadata_to_zip(
     zf: zipfile.ZipFile, mission: Mission, manifest_files: dict
 ):
@@ -362,6 +216,8 @@ def _add_route_kmls_to_zip(
     mission: Mission,
     route_manager: RouteManager | None,
     manifest_files: dict,
+    *,
+    snapshot=None,
 ):
     """Add route KML files for all legs to zip archive.
 
@@ -374,8 +230,17 @@ def _add_route_kmls_to_zip(
     if not route_manager:
         return
 
+    seen = set()
     for leg in mission.legs:
-        if leg.route_id:
+        if leg.route_id and leg.route_id not in seen:
+            seen.add(leg.route_id)
+            if snapshot is not None:
+                content = SnapshotViews(snapshot).kml(leg.route_id)
+                if content is not None:
+                    route_path = f"routes/{leg.route_id}.kml"
+                    zf.writestr(route_path, content)
+                    manifest_files["routes"].append(route_path)
+                continue
             try:
                 route = route_manager.get_route(leg.route_id)
                 if route:
@@ -516,6 +381,8 @@ def _load_export_timeline(
     leg: MissionLeg,
     route_manager: RouteManager | None,
     poi_manager: POIManager | None,
+    *,
+    snapshot=None,
 ) -> MissionLegTimeline | None:
     """Return a timeline for export, rebuilding from current leg settings first.
 
@@ -524,15 +391,16 @@ def _load_export_timeline(
     departure times without turning a read-only package export into another
     timeline write path. If rebuild fails, fall back to the existing cache.
     """
+    if snapshot is not None:
+        return SnapshotViews(snapshot).timeline(leg.id)
     if route_manager and leg.route_id:
         try:
-            timeline, _summary = build_mission_timeline(
+            prepared = prepare_mission_timeline(
                 mission=leg,
                 route_manager=route_manager,
                 poi_manager=poi_manager,
-                parent_mission_id=mission.id,
             )
-            return timeline
+            return prepared.timeline
         except (
             RuntimeError,
             ValueError,
@@ -564,8 +432,11 @@ def _add_per_leg_exports_to_zip(
     poi_manager: POIManager | None,
     manifest_files: dict,
     map_cache: dict[str, bytes] | None = None,
+    *,
+    snapshot=None,
+    cancel=None,
 ):
-    """Generate and add per-leg exports (CSV, PPTX) to zip archive.
+    """Generate and add per-leg CSV exports to zip archive.
 
     Args:
         zf: ZipFile to add files to
@@ -576,9 +447,12 @@ def _add_per_leg_exports_to_zip(
         map_cache: Optional cache for generated maps (route_id -> bytes)
     """
     for leg in mission.legs:
+        check_cancelled(cancel)
         # Rebuild from the latest leg settings so adjusted departure times and
         # derived AAR/event windows cannot be served from a stale timeline cache.
-        leg_timeline = _load_export_timeline(mission, leg, route_manager, poi_manager)
+        leg_timeline = _load_export_timeline(
+            mission, leg, route_manager, poi_manager, **_snapshot_kwargs(snapshot)
+        )
         if not leg_timeline:
             logger.warning(
                 f"No timeline found for leg {leg.id}, skipping exports for this leg"
@@ -600,6 +474,7 @@ def _add_per_leg_exports_to_zip(
                 export_format=TimelineExportFormat.CSV,
                 mission=leg,  # Pass the leg as mission (MissionLeg has same fields)
                 timeline=leg_timeline,
+                **_export_kwargs(snapshot),
             )
             csv_path = f"exports/legs/{leg.id}/timeline.csv"
             zf.writestr(csv_path, csv_export.content)
@@ -620,36 +495,6 @@ def _add_per_leg_exports_to_zip(
         ) as e:
             logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
 
-        try:
-            # PPTX export
-            pptx_export = generate_timeline_export(
-                export_format=TimelineExportFormat.PPTX,
-                mission=leg,
-                timeline=leg_timeline,
-                parent_mission_id=mission.id,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                map_cache=map_cache,
-            )
-            pptx_path = f"exports/legs/{leg.id}/slides.pptx"
-            zf.writestr(pptx_path, pptx_export.content)
-            manifest_files["per_leg_exports"].append(pptx_path)
-            logger.info(f"Generated PPTX for leg {leg.id}")
-        except (
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as e:
-            logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
-
 
 def _add_combined_mission_exports_to_zip(
     zf: zipfile.ZipFile,
@@ -658,8 +503,11 @@ def _add_combined_mission_exports_to_zip(
     poi_manager: POIManager | None,
     manifest_files: dict,
     map_cache: dict[str, bytes] | None = None,
+    *,
+    snapshot=None,
+    cancel=None,
 ):
-    """Generate and add combined mission-level exports (CSV, PPTX) to zip archive.
+    """Generate and add the combined mission CSV export to zip archive.
 
     Args:
         zf: ZipFile to add files to
@@ -679,28 +527,18 @@ def _add_combined_mission_exports_to_zip(
                 output_path=tmp_csv.name,
                 route_manager=route_manager,
                 poi_manager=poi_manager,
+                **_snapshot_kwargs(snapshot),
             )
             zf.write(tmp_csv.name, "exports/mission/mission-timeline.csv")
             manifest_files["mission_exports"].append(
                 "exports/mission/mission-timeline.csv"
             )
 
-        # Combined PPTX - stream to temp file
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
-            generate_mission_combined_pptx(
-                mission,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                output_path=tmp_pptx.name,
-                map_cache=map_cache,
-            )
-            zf.write(tmp_pptx.name, "exports/mission/mission-slides.pptx")
-            manifest_files["mission_exports"].append(
-                "exports/mission/mission-slides.pptx"
-            )
-
+        check_cancelled(cancel)
         logger.info("Combined mission-level exports complete")
 
+    except ExportCancelled:
+        raise
     except (
         RuntimeError,
         ValueError,
@@ -760,10 +598,14 @@ def _create_export_manifest(mission: Mission, manifest_files: dict) -> dict:
     }
 
 
+@export_plot_context
 def export_mission_package(
     mission_id: str,
     route_manager: RouteManager,
     poi_manager: POIManager,
+    *,
+    snapshot=None,
+    cancel=None,
 ) -> IO[bytes]:
     """Export complete mission as zip archive.
 
@@ -782,15 +624,12 @@ def export_mission_package(
         │   └── {leg-id-2}-pois.json
         ├── exports/
         │   ├── mission/
-        │   │   ├── mission-timeline.csv
-        │   │   └── mission-slides.pptx
+        │   │   └── mission-timeline.csv
         │   └── legs/
         │       ├── {leg-id-1}/
-        │       │   ├── timeline.csv
-        │       │   └── slides.pptx
+        │       │   └── timeline.csv
         │       └── {leg-id-2}/
-        │           ├── timeline.csv
-        │           └── slides.pptx
+        │           └── timeline.csv
 
     Args:
         mission_id: Mission to export
@@ -800,13 +639,30 @@ def export_mission_package(
     Returns:
         File-like object containing the zip archive. Caller must close it to delete the temp file.
     """
-    mission = load_mission_v2(mission_id)
+    check_cancelled(cancel)
+    if snapshot is not None:
+        if snapshot.mission_id != mission_id:
+            raise ExportPackageError("Snapshot mission identity mismatch")
+        views = SnapshotViews(snapshot)
+        mission = views.mission()
+        route_manager = views.route_manager
+        poi_manager = views.poi_manager
+    else:
+        mission = load_mission_v2(mission_id)
+        if mission and mission.metadata.get("itinerary_planning") is not None:
+            from app.mission.exporter.snapshot import capture_export_snapshot
+
+            snapshot = capture_export_snapshot(mission_id, route_manager, poi_manager)
+            views = SnapshotViews(snapshot)
+            mission = views.mission()
+            route_manager = views.route_manager
+            poi_manager = views.poi_manager
 
     if not mission:
         raise ExportPackageError(f"Mission {mission_id} not found")
 
     # Create a temporary file for the zip archive. The caller owns closing it.
-    zip_temp = io.BytesIO()
+    zip_temp = new_package_stream()
 
     manifest_files = {
         "mission_data": ["mission.json", "manifest.json"],
@@ -822,24 +678,57 @@ def export_mission_package(
 
     try:
         with zipfile.ZipFile(zip_temp, "w", zipfile.ZIP_DEFLATED) as zf:
+            if snapshot is not None:
+                for payload in SnapshotViews(snapshot).package_payloads():
+                    if payload.name.startswith("package/"):
+                        zf.writestr(
+                            payload.name.removeprefix("package/"), payload.content
+                        )
+                    elif payload.name.startswith("kml/") and payload.name.removeprefix(
+                        "kml/"
+                    ) not in {leg.route_id for leg in mission.legs}:
+                        path = f"routes/{payload.name.removeprefix('kml/')}.kml"
+                        zf.writestr(path, payload.content)
+                        manifest_files["routes"].append(path)
             # Add mission metadata and leg files
             _add_mission_metadata_to_zip(zf, mission, manifest_files)
+            check_cancelled(cancel)
 
             # Add route KML files
-            _add_route_kmls_to_zip(zf, mission, route_manager, manifest_files)
+            _add_route_kmls_to_zip(
+                zf, mission, route_manager, manifest_files, **_snapshot_kwargs(snapshot)
+            )
+            check_cancelled(cancel)
 
             # Add POI data (leg-specific and satellites)
             _add_pois_to_zip(zf, mission, poi_manager, manifest_files)
+            check_cancelled(cancel)
 
             # Generate and add per-leg exports (will populate map_cache)
             _add_per_leg_exports_to_zip(
-                zf, mission, route_manager, poi_manager, manifest_files, map_cache
+                zf,
+                mission,
+                route_manager,
+                poi_manager,
+                manifest_files,
+                map_cache,
+                **_snapshot_kwargs(snapshot),
+                **_cancel_kwargs(cancel),
             )
+            check_cancelled(cancel)
 
             # Generate and add combined mission-level exports (will reuse cached maps)
             _add_combined_mission_exports_to_zip(
-                zf, mission, route_manager, poi_manager, manifest_files, map_cache
+                zf,
+                mission,
+                route_manager,
+                poi_manager,
+                manifest_files,
+                map_cache,
+                **_snapshot_kwargs(snapshot),
+                **_cancel_kwargs(cancel),
             )
+            check_cancelled(cancel)
 
             # Create and add manifest
             manifest = _create_export_manifest(mission, manifest_files)

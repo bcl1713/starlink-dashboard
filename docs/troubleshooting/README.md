@@ -39,8 +39,7 @@ docker stats --no-stream
   and issues
 - **[Backend Service](./services/backend.md)** - Backend health, metrics,
   configuration
-- **[Grafana Service](./services/grafana.md)** - Grafana configuration and
-  connectivity
+- **[Mission Planner Service](../features/overview.md)** - Native Overview usage
 - **[Prometheus Service](./services/prometheus.md)** - Prometheus targets and
   scraping
 
@@ -57,8 +56,8 @@ docker stats --no-stream
 ### Data & Metrics
 
 - **[Data Issues](./data-issues.md)** - POI management, storage, persistence
-- **[Metrics & Monitoring](./metrics-monitoring.md)** - Prometheus and Grafana
-  data collection
+- **[Metrics & Monitoring](./metrics-monitoring.md)** - Prometheus and Mission
+  Planner data collection
 
 ### Network & Performance
 
@@ -111,7 +110,7 @@ docker compose logs > logs.txt
 # Save specific service logs
 docker compose logs starlink-location > backend.log
 docker compose logs prometheus > prometheus.log
-docker compose logs grafana > grafana.log
+docker compose logs mission-planner > mission-planner.log
 ```
 
 ---
@@ -156,7 +155,6 @@ docker compose logs grafana > grafana.log
 - [Setup Guide](../setup/README.md)
 - [Design Document](../architecture/design-document.md)
 - [Backend README](../../backend/starlink-location/README.md)
-- [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 
@@ -167,7 +165,7 @@ docker compose logs grafana > grafana.log
 Check:
 
 1. Related documentation files
-2. Backend/Prometheus/Grafana container logs
+2. Backend/Prometheus/Mission Planner container logs
 3. System resource usage
 4. Network connectivity between containers
 5. File permissions

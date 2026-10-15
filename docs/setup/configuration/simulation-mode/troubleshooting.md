@@ -33,7 +33,7 @@
 
    ```bash
    docker compose down
-   docker compose build --no-cache starlink-location
+   ./scripts/compose.sh build --no-cache starlink-location
    docker compose up -d
    ```
 
@@ -42,7 +42,7 @@
 **Symptoms:**
 
 - Prometheus shows no data
-- Grafana dashboards empty
+- Mission Planner dashboards empty
 
 **Solutions:**
 

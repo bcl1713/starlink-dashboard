@@ -10,20 +10,26 @@ latency.
 **Coverage:** Point-to-point (not global). Coverage exists over specific
 geographic regions.
 
-**Constraint:** Your aircraft has an **azimuth dead zone**—a direction where the
-antenna cannot point at the satellite (typically 90° to 270° from North,
-adjustable per mission).
+**Constraints:** X-band planning requires satellite elevation of **at least
+10°** in both normal flight and AAR mode. Elevation below 10° produces an X
+line-of-sight warning showing the measured elevation and the 10° minimum in
+timeline previews and saved/recomputed timelines, including derived routes.
+Exactly 10° satisfies the elevation minimum; azimuth constraints still apply.
+
+Your aircraft also has an **azimuth dead zone** relative to its heading:
+135°–225° aft during normal flight. During AAR, the forward 315°–45° cone is
+also forbidden. X satellite transitions retain their ±15-minute buffers.
 
 **How it works:**
 
-1. **Nominal:** Satellite is in your antenna's azimuth window AND you have
-   line-of-sight
-1. **Degraded:** Satellite outside azimuth window (e.g., directly overhead) OR
-   aircraft performing aerobatic maneuver
+1. **Nominal:** Satellite is in your antenna's azimuth window AND elevation is
+   at least 10°
+1. **Degraded:** Satellite is in a forbidden azimuth cone OR elevation is below
+   10°
 1. **Transition:** Switching from X-1 to X-2 satellite (requires 15 min buffer
    pre/post)
-1. **AAR Window:** X-Band goes dark during air refueling (antenna points at
-   tanker)
+1. **AAR Window:** The forward azimuth cone also applies; the 10° elevation
+   minimum remains in effect
 
 **Typical behavior:**
 

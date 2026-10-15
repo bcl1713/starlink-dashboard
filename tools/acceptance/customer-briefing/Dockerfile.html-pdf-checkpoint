@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1
+FROM node:22.22.2-trixie-slim AS renderer-build
+WORKDIR /renderer/frontend/mission-planner
+COPY frontend/mission-planner/package.json frontend/mission-planner/package-lock.json ./
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    npm ci --strict-ssl=true --no-audit --no-fund
+COPY frontend/mission-planner/ ./
+RUN npm run build:mission-export
+
+FROM python:3.11-slim-trixie
+COPY --from=renderer-build /usr/local/bin/node /usr/local/bin/node
+COPY --from=renderer-build /renderer/frontend/mission-planner/node_modules/playwright /renderer/frontend/mission-planner/node_modules/playwright
+COPY --from=renderer-build /renderer/frontend/mission-planner/node_modules/playwright-core /renderer/frontend/mission-planner/node_modules/playwright-core
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/briefing-browsers
+WORKDIR /renderer/frontend/mission-planner
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    node node_modules/playwright/cli.js install --with-deps chromium --only-shell && \
+    apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core poppler-utils && \
+    dpkg-query -W > /opt/briefing-os-packages.txt && \
+    rm -rf /var/lib/apt/lists/* && useradd -m -u 1000 appuser
+COPY backend/starlink-location/requirements.txt /renderer/backend/starlink-location/requirements.txt
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    pip install --no-cache-dir -r /renderer/backend/starlink-location/requirements.txt && pip freeze > /opt/briefing-python-packages.txt
+COPY --from=renderer-build /renderer /renderer
+COPY backend/starlink-location/app /renderer/backend/starlink-location/app
+COPY backend/starlink-location/tests /renderer/backend/starlink-location/tests
+COPY tools/acceptance/customer-briefing /renderer/tools/acceptance/customer-briefing
+ENV PYTHONPATH=/renderer/backend/starlink-location
+RUN mkdir /evidence && chown appuser:appuser /evidence
+ARG ACCEPTANCE_CANDIDATE_SHA
+RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
+LABEL org.opencontainers.image.revision=$ACCEPTANCE_CANDIDATE_SHA
+USER appuser
+ENTRYPOINT ["python", "/renderer/tools/acceptance/customer-briefing/html_pdf_generate.py"]
+CMD ["/evidence"]

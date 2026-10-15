@@ -56,6 +56,54 @@ src/
 - **Playwright** for E2E tests
 - **Testing Library** for component tests
 
+### E2E command ladder
+
+Run these commands from `frontend/mission-planner`. Playwright owns the
+production build through its configured `webServer.command`; do not run a
+standalone `npm run build` immediately before a Playwright command.
+
+```bash
+# Confirm the Chromium E2E inventory before browser execution.
+npx playwright test --list --project=chromium
+
+# Exercise the focused same-origin fixture control.
+npx playwright test tests/e2e/api-origin.spec.ts --project=chromium --reporter=line
+
+# Run the affected fixture-origin spec after a harness change.
+npx playwright test tests/e2e/api-origin.spec.ts --project=chromium --reporter=line
+
+# Run the final Chromium inventory once for the candidate commit.
+npx playwright test --project=chromium --reporter=line
+```
+
+The project runs Chromium E2E tests with one worker and `fullyParallel: false` by
+default. A single display needs deterministic WebGL/browser resources more than
+worker concurrency; the hidden cost is a longer full-suite wall time (roughly
+the sum of individual tests, plus one production build). Do not interpret older
+multi-worker runs as acceptance of this serial configuration.
+
+The owned cold focused invocation measured 56.71 seconds end-to-end on the
+development host. The Playwright web-server startup budget is 120 seconds,
+providing headroom above that healthy measurement. E2E runs use no retries and
+retain Playwright traces for failures only (`trace: 'retain-on-failure'`), so a
+single failed attempt keeps bounded diagnostic evidence without retrying.
+
 ```bash
 npx playwright test
 ```
+
+### Dateline timeline regression
+
+The dateline planning test calculates its timeline from an entirely fabricated
+KML route and fake coverage boundaries using the backend Python dependencies.
+It intercepts HTTP delivery to the browser; it does not use operational coverage
+polygons. Install the backend development requirements in a virtual environment,
+then select that interpreter when running the test from this directory:
+
+```bash
+STARLINK_TEST_PYTHON=/path/to/backend-venv/bin/python \
+  npx playwright test tests/e2e/dateline-timeline.spec.ts --project=chromium
+```
+
+The interpreter defaults to `python3`. Listing tests with `--list` does not
+require backend dependencies.

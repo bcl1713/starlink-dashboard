@@ -1,57 +1,26 @@
 # Monitoring Stack Configuration
 
-**This document has been reorganized into multiple focused files.**
+Prometheus collects and stores backend telemetry. Mission Planner renders the
+Overview, including network history queried through the backend.
 
-Please see: **[Monitoring Documentation](./docs/README.md)**
+## Configuration
 
----
+- `monitoring/prometheus/prometheus.yml` defines scraping and evaluation.
+- `monitoring/prometheus/rules/` contains recording and alert rules.
+- `PROMETHEUS_RETENTION` controls stored history (default: one year).
 
-## Quick Links
+## Access and Verification
 
-- **[Monitoring Index](./docs/README.md)** - Complete documentation
-- **[Services Overview](./docs/services-overview.md)** - Prometheus and Grafana
-- **[Performance Tuning](./docs/performance-tuning.md)** - Optimization tips
-- **[Troubleshooting](./docs/troubleshooting.md)** - Common display issues
-
----
-
-## Directory Structure
-
-```text
-monitoring/
-├── prometheus/          # Prometheus configuration
-│   ├── prometheus.yml   # Main Prometheus config
-│   └── rules/           # Alert rules (if any)
-├── grafana/             # Grafana provisioning
-│   └── provisioning/    # Dashboard and datasource provisioning
-├── docs/                # Documentation
-└── README.md            # This file
-```
-
----
-
-## Quick Reference
-
-### Service Access
-
-- **Prometheus:** <http://localhost:9090>
-- **Grafana:** <http://localhost:3000> (default: admin/admin)
-
-### Verify Services
+- Prometheus: <http://localhost:9090>
+- Mission Planner: <http://localhost:5173>
 
 ```bash
-# Check all containers
 docker compose ps
-
-# Test Prometheus
-curl http://localhost:9090/-/healthy
-
-# Test Grafana
-curl http://localhost:3000/api/health
+curl --fail http://localhost:9090/-/ready
+curl --fail http://localhost:5173/api/status
 ```
 
----
-
-[Go to Full Monitoring Documentation →](./docs/README.md)
+See [Services Overview](./docs/services-overview.md) and
+[Overview features](../docs/features/overview.md).
 
 [Back to project root](../README.md)

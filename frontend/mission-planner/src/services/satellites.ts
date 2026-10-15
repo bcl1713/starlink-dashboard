@@ -28,8 +28,8 @@ export interface SatelliteUpdateRequest {
 }
 
 export const satelliteService = {
-  async getAll(): Promise<SatelliteResponse[]> {
-    const response = await apiClient.get('/api/satellites');
+  async getAll(signal?: AbortSignal): Promise<SatelliteResponse[]> {
+    const response = await apiClient.get('/api/satellites', { signal });
     return response.data;
   },
 

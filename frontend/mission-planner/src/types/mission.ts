@@ -1,3 +1,8 @@
+import type {
+  EvaluationContext,
+  PlanningPolicy,
+  PlanningInputSnapshot,
+} from './planning';
 import type { XBandTransition, KaOutage, KuOutageOverride } from './satellite';
 import type { AARSegment, ManualAARTrack, ManualRouteSplice } from './aar';
 
@@ -12,6 +17,10 @@ export interface Mission {
 }
 
 export interface TransportConfig {
+  starshield_enabled?: boolean | null;
+  planning_policy?: PlanningPolicy | null;
+  evaluation_context?: EvaluationContext | null;
+  planning_inputs?: PlanningInputSnapshot | null;
   initial_x_satellite_id: string;
   initial_ka_satellite_ids?: string[];
   x_transitions?: XBandTransition[];

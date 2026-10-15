@@ -22,7 +22,7 @@ predicted.
    - Any error messages at aircraft?
    - Aircraft position (lat/lon) if available
 
-1. **Check Grafana & logs:**
+1. **Check Mission Planner & logs:**
 
    ```bash
    # Check Prometheus for anomalies
@@ -130,7 +130,7 @@ transmitter hardware failure).
 
 **During Flight:**
 
-1. Monitor Grafana every 15 min
+1. Monitor Mission Planner every 15 min
 1. Match dashboard to timeline predictions
 1. Alert crew 15 min before any degradation
 1. Log status snapshots every 30 min
@@ -146,13 +146,13 @@ transmitter hardware failure).
 
 ## Appendix B: Useful URLs
 
-| Resource           | URL                                                        |
-| ------------------ | ---------------------------------------------------------- |
-| Mission Planner    | `<http://<dashboard>/ui/mission-planner`>                  |
-| Grafana Dashboard  | `<http://<dashboard>:3000/d/starlink/fullscreen-overview`> |
-| Prometheus Metrics | `<http://<dashboard>:9090`>                                |
-| API Documentation  | `<http://<dashboard>:8000/docs`>                           |
-| Health Check       | `<http://<dashboard>:8000/health`>                         |
+| Resource                  | URL                                       |
+| ------------------------- | ----------------------------------------- |
+| Mission Planner           | `<http://<dashboard>/ui/mission-planner`> |
+| Mission Planner Dashboard | `<http://<dashboard>:5173`>               |
+| Prometheus Metrics        | `<http://<dashboard>:9090`>               |
+| API Documentation         | `<http://<dashboard>:8000/docs`>          |
+| Health Check              | `<http://<dashboard>:8000/health`>        |
 
 ---
 

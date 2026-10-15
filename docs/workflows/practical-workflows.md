@@ -47,42 +47,13 @@ project.
 
 ---
 
-## Workflow 2: Creating a New Grafana Dashboard
+## Workflow 2: Updating the Native Overview
 
-**Scenario:** You want to create a new dashboard for satellite health
-monitoring.
-
-**Steps:**
-
-1. **Research best practices:**
-
-   ```text
-   "Research best practices for Grafana satellite monitoring dashboards"
-   ```
-
-   The `web-research-specialist` agent finds examples and patterns.
-
-1. **Plan the dashboard:**
-
-   ```text
-   /dev-docs Create satellite health monitoring dashboard
-   ```
-
-1. **Create the dashboard JSON:**
-
-   Edit a file in `monitoring/grafana/provisioning/dashboards/`
-
-   The `grafana-dashboard` skill auto-activates and provides guidance.
-
-1. **Test the dashboard:**
-
-   Load it in Grafana at <<http://localhost:3000>>
-
-1. **Document the dashboard:**
-
-   ```text
-   "Add documentation for the satellite health dashboard to docs/grafana-setup.md"
-   ```
+1. Review the existing frontend under `frontend/mission-planner/src/pages/`.
+2. Plan the change against [Overview features](../features/overview.md).
+3. Implement and run the relevant frontend unit tests.
+4. Verify the production Nginx API path in an isolated stack and browser.
+5. Update the feature documentation to match the supported behavior.
 
 ---
 
@@ -195,7 +166,7 @@ below a threshold.
 1. **Research implementation patterns:**
 
    ```text
-   "Research best practices for implementing alerting with Prometheus and Grafana"
+   "Research best practices for implementing alerting with Prometheus"
    ```
 
 1. **Implement in phases:**
@@ -235,14 +206,10 @@ When adding new metrics, always:
 3. Test scraping with `curl <http://localhost:8000/metrics`>
 4. Review with `code-architecture-reviewer`
 
-### Grafana Dashboards
+### Native Overview
 
-When creating dashboards:
-
-1. The `grafana-dashboard` skill auto-activates - use its guidance
-2. Test queries in Grafana's query builder first
-3. Export JSON and commit to `monitoring/grafana/provisioning/dashboards/`
-4. Document in `docs/grafana-setup.md`
+Review the frontend implementation, run unit tests, and verify the production
+Nginx API path and rendered Overview before documenting the change.
 
 ### Backend Development
 
