@@ -1,0 +1,156 @@
+"""Prepare a detached ordinary mission; no canonical mission writes."""
+
+import hashlib
+from pathlib import Path
+
+from app.mission.models import Mission
+from app.mission.planning.extract import _parse_itinerary
+from app.mission.planning.identity import planning_identity
+from app.mission.planning.journal import json_bytes
+from app.mission.planning.models import ItineraryData, RouteBinding
+
+from .ar import resolve_import_ars
+from .association import associate_routes
+from .models import ImportIssue
+from .worker import build_leg, parse_route
+
+
+def prepare(service, operation):
+    directory = service.store.directory(operation.id)
+    payload = service.store.payload(operation.id)
+    choices = payload.get("choices", {})
+    parsed_path = directory / "parsed.json"
+    if parsed_path.exists():
+        from app.mission.planning.models import ItineraryPreview
+
+        preview = ItineraryPreview.model_validate_json(parsed_path.read_bytes())
+    else:
+        preview = service.bounded(
+            _parse_itinerary, ((directory / "source.pdf").read_bytes(),), operation
+        )
+        from app.mission.planning.journal import atomic_write
+
+        atomic_write(parsed_path, json_bytes(preview.model_dump(mode="json")))
+    data = ItineraryData.model_validate(choices.get("itinerary", preview.parsed_values))
+    issues = [
+        ImportIssue(code=e.code, message=e.message, field=e.field)
+        for e in preview.field_errors
+    ]
+    if choices.get("itinerary"):
+        issues = []
+    if data is None or not data.expected_legs:
+        return None, issues or [
+            ImportIssue(
+                code="missing_itinerary", message="Correct the itinerary source."
+            )
+        ]
+    routes = {}
+    for item in payload["files"]:
+        route = service.bounded(
+            parse_route, (str(directory / f"{item['id']}.kml"),), operation
+        )
+        route.route_id = item["id"]
+        route.content_hash = hashlib.sha256(
+            (directory / f"{item['id']}.kml").read_bytes()
+        ).hexdigest()
+        route.metadata.file_path = str(
+            service.route_manager.routes_dir / f"{item['id']}.kml"
+        )
+        routes[item["id"]] = route
+    association = associate_routes(data.expected_legs, routes)
+    assignments = {**association.assignments, **choices.get("routes", {})}
+    if len(set(assignments.values())) != len(assignments):
+        raise ValueError("A route can belong to only one leg")
+    for leg_id, rid in assignments.items():
+        if leg_id not in {l.id for l in data.expected_legs} or rid not in routes:
+            raise ValueError("Invalid route correction")
+    issues.extend(
+        issue
+        for issue in association.issues
+        if issue.leg_id not in assignments
+        and not (issue.route_id in choices.get("ignored_routes", []))
+    )
+    environment = service.environment()
+    positions = environment["satellites"]
+    if not positions or any(not p["eligible"] for p in positions):
+        issues.append(
+            ImportIssue(
+                code="satellite_configuration",
+                message="Configure valid X-band satellite positions.",
+            )
+        )
+    expected = []
+    artifacts = []
+    evidence = {}
+    for source in data.expected_legs:
+        if source.id not in assignments:
+            continue
+        leg = source.model_copy(deep=True)
+        route = routes[assignments[leg.id]]
+        leg.route = RouteBinding(
+            route_id=route.route_id,
+            source_id=route.route_id,
+            content_hash=route.content_hash,
+            filename=Path(route.metadata.file_path).name,
+        )
+        ar = resolve_import_ars(leg, route)
+        leg.ar_rows = ar.rows
+        issues.extend(ar.issues)
+        if leg.ar_section_status == "unrecognized":
+            issues.append(
+                ImportIssue(
+                    code="ar_section_unrecognized",
+                    leg_id=leg.id,
+                    message="Correct the unrecognized AR section.",
+                )
+            )
+        expected.append(leg)
+        evidence[leg.id] = {
+            "association": association.evidence.get(leg.id, {}),
+            "ars": ar.evidence,
+            "source_leg": source.model_dump(mode="json"),
+        }
+    if issues:
+        return None, issues
+    for leg in expected:
+        artifacts.append(
+            service.bounded(
+                build_leg,
+                (
+                    leg.model_dump(mode="json"),
+                    routes[assignments[leg.id]].model_dump(mode="json"),
+                    positions,
+                    environment["constraints"],
+                    str(service.mission_root),
+                    operation.mission_id,
+                ),
+                operation,
+            )
+        )
+    mission = Mission(
+        id=operation.mission_id,
+        name=data.name,
+        legs=[item["leg"] for item in artifacts],
+    )
+    mission.metadata["itinerary_import"] = {
+        "version": 1,
+        "revision": 1,
+        "operation_id": operation.id,
+        "sources": {
+            "pdf": hashlib.sha256((directory / "source.pdf").read_bytes()).hexdigest(),
+            "routes": {id: r.content_hash for id, r in routes.items()},
+        },
+        "evidence": evidence,
+        "baseline": {
+            "name": mission.name,
+            "legs": [l.model_dump(mode="json") for l in mission.legs],
+        },
+        "history": [],
+    }
+    return {
+        "mission": mission.model_dump(mode="json"),
+        "routes": [r.model_dump(mode="json") for r in routes.values()],
+        "artifacts": artifacts,
+        "environment": environment,
+        "identity": planning_identity(mission),
+    }, []

@@ -1,5 +1,8 @@
 """Strict contracts shared by automatic import stages."""
 
+from datetime import datetime
+from typing import Literal
+
 from pydantic import Field
 
 from app.mission.planning.models import ItineraryAR
@@ -25,3 +28,17 @@ class ARResolution(PlanningRecord):
     rows: list[ItineraryAR] = Field(default_factory=list)
     issues: list[ImportIssue] = Field(default_factory=list)
     evidence: dict[str, dict] = Field(default_factory=dict)
+
+
+class ImportOperation(PlanningRecord):
+    id: str
+    generation: int = 1
+    state: Literal[
+        "queued", "running", "needs_input", "ready", "committed", "cancelled", "failed"
+    ] = "queued"
+    stage: str = "reading_documents"
+    mission_id: str
+    revision: bool = False
+    deadline: datetime
+    issues: list[ImportIssue] = Field(default_factory=list)
+    error: str | None = None

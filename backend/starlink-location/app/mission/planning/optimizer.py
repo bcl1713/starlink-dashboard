@@ -159,8 +159,12 @@ def _canonical(inputs, draft, context):
     ).planning_evaluation
 
 
-def optimize(inputs, draft, context):
-    if selection_errors(draft):
+def optimize(inputs, draft, context, *, configured_satellite_ids=None):
+    if configured_satellite_ids is not None and set(configured_satellite_ids) != set(
+        draft.permitted_satellite_ids
+    ):
+        raise ValueError("Configured satellite snapshot does not match planning inputs")
+    if configured_satellite_ids is None and selection_errors(draft):
         raise ValueError("Confirm access to a nonempty permitted satellite set")
     satellites = sorted(s.satellite_id for s in inputs.satellites)
     if set(satellites) != set(draft.permitted_satellite_ids):
