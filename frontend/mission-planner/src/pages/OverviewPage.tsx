@@ -33,6 +33,7 @@ import { OverviewAdsbLayer } from './adsb/OverviewAdsbLayer';
 import { OverviewAdsbDetails } from './adsb/OverviewAdsbDetails';
 import { type GlobeCoordinate } from './globe-route';
 import { activeRouteId } from './active-globe-route';
+import { routeContextKey } from '../services/route-sigmet-context';
 import { projectRouteArc } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
@@ -397,6 +398,23 @@ export function OverviewPage() {
     ['running', 'completed'].includes(simulationRun.state)
       ? replayGeometry.route
       : ordinaryRoute;
+  const localContextKey = useMemo(() => {
+    if (!activeRoute?.points) return null;
+    const isReplay = activeRoute === replayGeometry?.route;
+    const selectedId = isReplay ? activeRoute.id : routeId;
+    if (!selectedId) return null;
+    try {
+      return routeContextKey(
+        isReplay ? 'simulation' : 'ordinary',
+        selectedId,
+        isReplay ? replayGeometry!.runtime_id : null,
+        isReplay ? replayGeometry!.run_id : null,
+        activeRoute.points.map((point) => [point.longitude, point.latitude])
+      );
+    } catch {
+      return null;
+    }
+  }, [activeRoute, replayGeometry, routeId]);
 
   const routePoints = useMemo(
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
@@ -850,6 +868,7 @@ export function OverviewPage() {
       data-layout={layout.mode}
       data-map-exploring={exploring}
       data-paced-running={pacedRunning}
+      data-route-context-key={localContextKey ?? undefined}
       data-clocks-visible={showClocks}
       data-metrics-visible={showMetricPanels && !pacedRunning}
     >

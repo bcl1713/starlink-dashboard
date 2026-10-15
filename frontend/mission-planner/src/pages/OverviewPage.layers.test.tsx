@@ -300,6 +300,42 @@ describe('Overview layer and exception integration', () => {
       within(screen.getByLabelText('Globe legend')).getAllByRole('listitem')
     ).toHaveLength(6);
   });
+
+  it('exposes stable identity for the selected route through rename and ticking', () => {
+    queries.routes = { data: [{ id: 'route-a', is_active: true }] };
+    queries.route = {
+      data: {
+        id: 'route-a',
+        name: 'Route A',
+        points: [
+          { latitude: 0, longitude: 0 },
+          { latitude: 20, longitude: 10 },
+        ],
+      },
+    };
+    const { rerender } = render(<OverviewPage />);
+    expect(
+      screen.getByRole('main').getAttribute('data-route-context-key')
+    ).toBe('81b5005f4d0711b931d6b0853b6fc923729764774718cd3f1ec3a582b64534a7');
+    queries.route = {
+      data: {
+        id: 'route-a',
+        name: 'Renamed',
+        points: [
+          { latitude: 0, longitude: 0, altitude: 100 },
+          {
+            latitude: 20,
+            longitude: 10,
+            expected_arrival_time: '2030-01-01T00:00:00Z',
+          },
+        ],
+      },
+    };
+    rerender(<OverviewPage />);
+    expect(
+      screen.getByRole('main').getAttribute('data-route-context-key')
+    ).toBe('81b5005f4d0711b931d6b0853b6fc923729764774718cd3f1ec3a582b64534a7');
+  });
   it('keeps every retained POI name accessible without scene labels', () => {
     queries.pois = {
       data: {

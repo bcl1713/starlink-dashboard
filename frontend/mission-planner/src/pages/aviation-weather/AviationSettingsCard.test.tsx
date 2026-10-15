@@ -22,6 +22,7 @@ const modelSettings = {
   metar: false,
   taf: false,
   sigmet: false,
+  sigmet_intersecting_only: false,
   winds: false,
   temperature: false,
   revision: 1,
@@ -169,6 +170,7 @@ it('offers independent default-off switches and confirms server changes in share
     metar: false,
     taf: false,
     sigmet: false,
+    sigmet_intersecting_only: false,
     winds: false,
     temperature: false,
     gfs_selection: {
@@ -265,6 +267,7 @@ it('keeps the confirmed selection after a failed model save', async () => {
     metar: false,
     taf: false,
     sigmet: false,
+    sigmet_intersecting_only: false,
     winds: false,
     temperature: false,
     gfs_selection: {

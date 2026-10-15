@@ -5,17 +5,17 @@ import os
 import tempfile
 from pathlib import Path
 
-from filelock import FileLock
-from pydantic import Field
-
 from app.models.aviation_grid import GfsSelection
 from app.models.aviation_weather import Contract
+from filelock import FileLock
+from pydantic import Field
 
 
 class AviationSettings(Contract):
     metar: bool = False
     taf: bool = False
     sigmet: bool = False
+    sigmet_intersecting_only: bool = False
     winds: bool = False
     temperature: bool = False
     gfs_selection: GfsSelection = Field(default_factory=GfsSelection)
@@ -26,6 +26,7 @@ class AviationSettingsUpdate(Contract):
     metar: bool | None = None
     taf: bool | None = None
     sigmet: bool | None = None
+    sigmet_intersecting_only: bool | None = None
     winds: bool | None = None
     temperature: bool | None = None
     gfs_selection: GfsSelection | None = None
