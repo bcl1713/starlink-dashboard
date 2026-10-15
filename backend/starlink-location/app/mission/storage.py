@@ -92,7 +92,42 @@ def mission_leg_order(mission: Mission):
 
     raw = mission.metadata.get("itinerary_planning")
     manifest = PlanningManifest.model_validate(raw) if raw is not None else None
-    return project_leg_order(manifest, tuple(leg.id for leg in mission.legs))
+    ids = tuple(leg.id for leg in mission.legs)
+    provenance = mission.metadata.get("itinerary_import")
+    if manifest is None and isinstance(provenance, dict):
+        evidence = provenance.get("evidence", {})
+        ordinal = {
+            id: item.get("source_leg", {}).get("ordinal")
+            for id, item in evidence.items()
+        }
+        legs = {leg.id: leg for leg in mission.legs}
+
+        def chronological(id):
+            leg = legs[id]
+            inputs = leg.transports.planning_inputs
+            start = leg.adjusted_departure_time or (
+                inputs.start_time if inputs else None
+            )
+            if start is None:
+                raw = evidence.get(id, {}).get("source_leg", {}).get("departure_time")
+                try:
+                    start = (
+                        datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                        if raw
+                        else None
+                    )
+                except (ValueError, AttributeError):
+                    start = None
+            if start is not None and start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+            position = ordinal.get(id)
+            return (
+                start or datetime.max.replace(tzinfo=timezone.utc),
+                position if isinstance(position, int) else len(ids) + ids.index(id),
+            )
+
+        ids = tuple(sorted(ids, key=chronological))
+    return project_leg_order(manifest, ids)
 
 
 def _ordered_mission(mission: Mission) -> Mission:

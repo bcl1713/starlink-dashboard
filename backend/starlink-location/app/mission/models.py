@@ -459,6 +459,10 @@ class MissionLeg(BaseModel):
         default=False,
         description="Whether this mission is currently active",
     )
+    import_provenance: dict | None = Field(
+        default=None,
+        description="Source association for imported legs; ordinary fields remain authoritative",
+    )
     notes: str | None = Field(
         default=None,
         description="Planner notes or remarks",

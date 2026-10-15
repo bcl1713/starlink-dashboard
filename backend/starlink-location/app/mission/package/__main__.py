@@ -649,7 +649,10 @@ def export_mission_package(
         poi_manager = views.poi_manager
     else:
         mission = load_mission_v2(mission_id)
-        if mission and mission.metadata.get("itinerary_planning") is not None:
+        if mission and (
+            mission.metadata.get("itinerary_planning") is not None
+            or mission.metadata.get("itinerary_import")
+        ):
             from app.mission.exporter.snapshot import capture_export_snapshot
 
             snapshot = capture_export_snapshot(mission_id, route_manager, poi_manager)

@@ -60,8 +60,8 @@ from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
-from app.services.aviation_weather.route_context import select_route_context
 from app.services.aviation_weather.live_encounters import capture_flight_encounters
+from app.services.aviation_weather.route_context import select_route_context
 from app.services.aviation_weather.route_runtime import RouteSigmetService
 from app.services.aviation_weather.route_state import NoticeStore
 from app.services.aviation_weather.runtime import AviationWeatherService
@@ -423,6 +423,16 @@ async def startup_event():
             )
             planning_store.recover()
             app.state.planning_service = PlanningService(planning_store)
+            from app.mission.itinerary_import.migration import migrate_itinerary_mission
+
+            for existing_mission in mission_storage.list_mission_metadata_v2():
+                if existing_mission.metadata.get("itinerary_planning"):
+                    migrate_itinerary_mission(existing_mission.id, planning_store)
+            from app.mission.itinerary_import.service import ImportService
+
+            app.state.itinerary_import_service = ImportService(
+                mission_storage.MISSIONS_DIR, _route_manager, poi_manager
+            )
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
@@ -602,6 +612,9 @@ async def shutdown_event():
                 logger.info_json("Background task cancelled successfully")
             _background_task = None
 
+        if hasattr(app.state, "itinerary_import_service"):
+            await asyncio.to_thread(app.state.itinerary_import_service.close)
+            del app.state.itinerary_import_service
         if hasattr(app.state, "export_preparation_service"):
             await asyncio.to_thread(app.state.export_preparation_service.close)
             del app.state.export_preparation_service
@@ -953,6 +966,9 @@ app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
 app.include_router(planning_router)
 app.include_router(preparation_router)
+from app.mission.itinerary_import.routes import router as itinerary_import_router
+
+app.include_router(itinerary_import_router)
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
