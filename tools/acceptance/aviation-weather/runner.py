@@ -28,15 +28,16 @@ VOLUMES = [
 REAL_SHA = "8c4c65bb33a7ffb842538f4374029cf6df03a977443aa0fd8e7bd0073a22fc37"
 
 
-def bind_browser_source(candidate, installed):
+def bind_browser_source(candidate, installed, *, link=True):
     lock = (candidate / "package-lock.json").read_bytes()
     if lock != (installed / "package-lock.json").read_bytes():
         raise ValueError("Provisioned dependencies differ from candidate lock")
     if not (installed / "node_modules").is_dir():
         raise ValueError("Provisioned dependencies missing")
-    (candidate / "node_modules").symlink_to(
-        installed / "node_modules", target_is_directory=True
-    )
+    if link:
+        (candidate / "node_modules").symlink_to(
+            installed / "node_modules", target_is_directory=True
+        )
     files = [
         *candidate.glob("tests/e2e/**/*.ts"),
         *candidate.glob("playwright.aviation-acceptance.config.ts"),
@@ -290,7 +291,7 @@ class Runner:
         (self.source / "candidate.tar").unlink()
         candidate = self.source / "frontend/mission-planner"
         provenance = bind_browser_source(
-            candidate, self.root / "frontend/mission-planner"
+            candidate, self.root / "frontend/mission-planner", link=False
         )
         self.record(
             "candidate.json",
@@ -335,6 +336,7 @@ class Runner:
         self.command([*self.compose, "config"], name="compose")
         self.allocated = True
         self.command([*self.compose, "build", "--no-cache"], seconds=1200, name="build")
+        bind_browser_source(candidate, self.root / "frontend/mission-planner")
         self.release_ports()
         self.command(
             [

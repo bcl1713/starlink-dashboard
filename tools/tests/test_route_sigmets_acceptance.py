@@ -143,3 +143,13 @@ def test_failed_build_browser_and_timeout_cleanup_real_process_tree(tmp_path, ph
     assert cleanup["ports_free"] is True
     assert not owner.source.exists()
     assert not (owner.output / "PASS.json").exists()
+
+
+def test_image_archive_is_not_polluted_by_browser_dependency_link(tmp_path):
+    candidate, installed = tmp_path / "candidate", tmp_path / "installed"
+    for path in (candidate, installed):
+        path.mkdir()
+        (path / "package-lock.json").write_text("locked")
+    (installed / "node_modules").mkdir()
+    runner().bind_browser_source(candidate, installed, link=False)
+    assert not (candidate / "node_modules").exists()
