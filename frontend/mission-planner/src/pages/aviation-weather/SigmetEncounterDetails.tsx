@@ -1,49 +1,33 @@
 import type {
-  EncounterPlanSummary,
   RouteSigmetEntry,
   SelectedSigmetEntry,
 } from '@/services/route-sigmets';
-import { passageReasons } from './sigmet-encounter-text';
+import { crossingPassages, formatCrossingTime } from './sigmet-encounter-text';
 export function SigmetEncounterDetails({
   entry,
-  plan,
+  nowMs,
 }: {
   entry: RouteSigmetEntry | SelectedSigmetEntry;
-  plan: EncounterPlanSummary | null;
+  nowMs: number;
 }) {
-  if (!('encounter' in entry))
-    return <p>Encounter unavailable — no route intersection</p>;
+  if (!('encounter' in entry)) return <p>Crossing time unknown</p>;
+  const known = crossingPassages(entry).filter((p) => p.status !== 'unknown');
   return (
-    <section aria-label="Planned passage details">
-      <p>
-        Planned UTC · Constant planned speed within each route segment. Altitude
-        is not evaluated.
-      </p>
-      <p>
-        Timing source: {plan?.source ?? 'unavailable'} · Precision:{' '}
-        {plan?.precision ?? 'unknown'} · Method: {plan?.method ?? 'unavailable'}
-      </p>
-      {plan && (
+    <section aria-label="Crossing details">
+      {known.map((p, index) => (
+        <p key={index}>
+          {p.entry_ms === null || p.exit_ms === null
+            ? 'Crossing time unknown'
+            : `${p.status === 'overlap' ? 'Crossing expected' : 'Passage outside advisory validity'} · ${formatCrossingTime(p.entry_ms, p.exit_ms, nowMs)}`}
+        </p>
+      ))}
+      {entry.encounter.unknown_count > 0 && (
         <p>
-          Plan revision: {plan.revision} · Source revision:{' '}
-          {plan.source_revision ?? 'unavailable'}
+          {known.length
+            ? 'Some crossing times unavailable'
+            : 'Crossing time unknown'}
         </p>
       )}
-      <table>
-        <caption>Planned passage intervals</caption>
-        <tbody>
-          {entry.encounter.spans.map((p, i) => (
-            <tr key={i}>
-              <td>
-                Segment {entry.spans[i].segment_index + 1}:{' '}
-                {p.entry_ms !== null && p.exit_ms !== null
-                  ? `${new Date(p.entry_ms).toISOString()} – ${new Date(p.exit_ms).toISOString()} · ${p.status === 'overlap' ? 'Time overlap' : 'No time overlap'}`
-                  : passageReasons[p.reason ?? 'unavailable-plan']}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </section>
   );
 }

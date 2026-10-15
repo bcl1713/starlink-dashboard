@@ -1136,15 +1136,17 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       true
     );
     expect(initial.encounter_plan?.method).toBe('segment-linear-utc-v1');
-    await expect(
-      overview.getByText(/Planned passage .*Time overlap/).first()
-    ).toBeVisible({ timeout: 15000 });
+    await expect(overview.getByText(/Crossing expected ·/).first()).toBeVisible(
+      { timeout: 15000 }
+    );
     proof.altitude_free = true;
     // Preserve the positive state before deliberately shifting planned passage.
+    await expect(config.getByText(/Crossing expected ·/).first()).toBeVisible({
+      timeout: 8000,
+    });
     await expect(
-      config.getByText(/Planned passage .*· Time overlap$/).first()
-    ).toBeVisible({ timeout: 8000 });
-    await expect(overview.getByText(/No time overlap/)).toHaveCount(0);
+      overview.getByText(/No crossing expected while valid/)
+    ).toHaveCount(0);
     await overview.screenshot({
       path: info.outputPath('encounter-overlap-desktop.png'),
     });
@@ -1158,7 +1160,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       await expect(overlapRail).toBeInViewport();
     }).toPass({ timeout: 10000 });
     await expect(
-      overview.getByText(/Planned passage .*· Time overlap$/).first()
+      overview.getByText(/Crossing expected ·/).first()
     ).toBeVisible();
     await overview.screenshot({
       path: info.outputPath('encounter-overlap-mobile.png'),
@@ -1197,16 +1199,20 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       later.entries.find((e) => e.notice_key === cleared.notice_key)
         ?.attention_order
     ).toBe(cleared.attention_order);
-    await expect(overview.getByText(/No time overlap/).first()).toBeVisible({
+    await expect(
+      overview.getByText(/No crossing expected while valid/).first()
+    ).toBeVisible({
       timeout: 8000,
     });
-    await expect(config.getByText(/No time overlap/).first()).toBeVisible({
+    await expect(
+      config.getByText(/No crossing expected while valid/).first()
+    ).toBeVisible({
       timeout: 8000,
     });
     expect(Date.now() - start).toBeLessThan(8000);
     proof.plan_edit_ack_preserved = true;
     proof.two_screen_sync = true;
-    await expect(overview.getByText(/· Time overlap$/)).toHaveCount(0);
+    await expect(overview.getByText(/Crossing expected ·/)).toHaveCount(0);
     await overview.screenshot({
       path: info.outputPath('encounter-no-overlap-desktop.png'),
     });
@@ -1243,18 +1249,18 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       true
     );
     await expect(
-      config.getByText(/Missing waypoint times|passage.*unavailable/).first()
+      config
+        .getByText(/Crossing time unknown|Some crossing times unavailable/)
+        .first()
     ).toBeVisible({ timeout: 8000 });
     proof.partial_evidence = true;
     await overview
       .getByRole('article')
-      .filter({ hasText: 'Time overlap unknown' })
+      .filter({ hasText: 'Crossing time unknown' })
       .first()
       .getByText('Details', { exact: true })
       .click();
-    await expect(
-      overview.getByLabel('Planned passage details').first()
-    ).toBeVisible();
+    await expect(overview.getByLabel('Crossing details').first()).toBeVisible();
     await overview.screenshot({
       path: info.outputPath('encounter-unknown-desktop.png'),
     });
@@ -1266,7 +1272,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     }).toPass({ timeout: 10000 });
     const unknownCard = overview
       .getByRole('article')
-      .filter({ hasText: 'Time overlap unknown' })
+      .filter({ hasText: 'Crossing time unknown' })
       .first();
     await unknownCard.scrollIntoViewIfNeeded();
     await expect(unknownCard).toBeInViewport();
@@ -1279,9 +1285,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       .locator('.sigmet-settings-row details > summary')
       .first();
     await reportSummary.click();
-    await expect(
-      config.getByLabel('Planned passage details').first()
-    ).toBeVisible();
+    await expect(config.getByLabel('Crossing details').first()).toBeVisible();
     await config.screenshot({
       path: info.outputPath('encounter-unknown-configuration-mobile.png'),
       fullPage: true,
@@ -1327,9 +1331,9 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     quiet = await snapshot(request);
     expect(quiet.selected_entries).toHaveLength(1);
     expect(quiet.selected_entries[0]).not.toHaveProperty('encounter');
-    await expect(
-      overview.getByText('Encounter unavailable — no route intersection')
-    ).toBeVisible({ timeout: 8000 });
+    await expect(overview.getByText('Crossing time unknown')).toBeVisible({
+      timeout: 8000,
+    });
     proof.selected_only_unknown = true;
     expect(errors).toEqual([]);
     expect(Object.values(proof).every(Boolean)).toBe(true);

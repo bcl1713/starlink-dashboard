@@ -445,8 +445,8 @@ it('preserves every source variant under one matching notice and one acknowledge
   });
   const notices = within(list).getAllByRole('listitem');
   expect(notices).toHaveLength(1);
-  expect(notices[0]).toHaveTextContent('PROVIDER FIRST');
-  expect(notices[0]).toHaveTextContent('PROVIDER SECOND');
+  expect(notices[0]).not.toHaveTextContent('PROVIDER FIRST');
+  expect(notices[0]).not.toHaveTextContent('PROVIDER SECOND');
   const reports = within(notices[0]).getAllByRole('article');
   expect(reports).toHaveLength(2);
   expect(
@@ -470,7 +470,7 @@ it('preserves every source variant under one matching notice and one acknowledge
   expect(screen.getAllByRole('button', { name: /Show again/ })).toHaveLength(1);
 });
 
-it('distinguishes provider and canonical series in reports while using the canonical bulletin for actions', async () => {
+it('keeps identity bookkeeping out of flight details while acknowledging the canonical bulletin', async () => {
   const state = setup();
   const first = advisory();
   state.setReports([
@@ -488,8 +488,8 @@ it('distinguishes provider and canonical series in reports while using the canon
   const list = screen.getByRole('list', {
     name: 'Matching route SIGMET bulletins',
   });
-  expect(list).toHaveTextContent(
-    'provider series OSCAR55F · canonical series OSCAR55'
+  expect(list).not.toHaveTextContent(
+    /provider series|canonical series|revision/
   );
   expect(button).toHaveAccessibleName(/TEST OSCAR55/);
   fireEvent.click(button);
@@ -518,7 +518,7 @@ it.each(['no-route', 'unavailable'] as const)(
     state.mount();
     await screen.findByText('No pending SIGMETs.');
     expect(
-      screen.getByText('Diagnostics').closest('details')
+      screen.getByText('Weather status').closest('details')
     ).not.toHaveAttribute('open');
     expect(
       screen.queryByRole('button', { name: /Clear advisory|Show again/ })

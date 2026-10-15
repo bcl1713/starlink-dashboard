@@ -6,6 +6,16 @@ review.
 
 Base: `origin/dev` at `b373324d`. Branch: `feat/sigmet-encounter-context`.
 
+## In-flight presentation refinement
+
+The user's subsequent review supersedes the original technical-detail display.
+Show **Crossing expected** with readable UTC times, **No crossing expected while
+valid**, or **Crossing time unknown**. Keep advisory validity, reported hazard
+bounds and the expandable original bulletin. Remove method/version identifiers,
+revision hashes, source precision, route segment numbers and altitude comparison
+disclaimers from the flight display. Internal provenance and calculation
+contracts remain available to engineering tools through the API.
+
 ## Intent and selected approach
 
 Help operators interpret a geographic route intersection by showing when the

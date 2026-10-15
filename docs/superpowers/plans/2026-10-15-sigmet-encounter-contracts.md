@@ -54,7 +54,8 @@ an explicit fresh evaluating snapshot, never old evidence with a new token.
 size and aggregate span caps. Preserve mutation types and paths.
 `formatSigmetEncounter` takes `entry: RouteSigmetEntry | SelectedSigmetEntry`
 and `nowMs: number`, returning `string[]`. It returns concise lines;
-`SigmetEncounterDetails` accepts `{entry, plan}` from the same admitted snapshot
-and lists per-span exact ISO UTC, reasons, source precision and constant-speed
-assumption. Share these between Overview attention and Configuration
-rows/details.
+`SigmetEncounterDetails` accepts `{entry, nowMs}` from the same admitted
+snapshot and lists readable crossing windows without implementation metadata.
+Share these between Overview attention and Configuration rows/details. This
+supersedes the original technical-detail display following the user’s in-flight
+review.

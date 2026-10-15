@@ -2,56 +2,64 @@ import type {
   RouteSigmetEntry,
   SelectedSigmetEntry,
 } from '@/services/route-sigmets';
-export const passageReasons = {
-  'missing-timing': 'Missing waypoint times',
-  'invalid-timing': 'Invalid waypoint times',
-  'ambiguous-association': 'Route association unavailable',
-  'unavailable-plan': 'Plan timing unavailable',
-};
-export function formatSigmetEncounter(
-  entry: RouteSigmetEntry | SelectedSigmetEntry,
-  nowMs: number
-): string[] {
-  if (!('encounter' in entry))
-    return ['Encounter unavailable — no route intersection'];
-  const evidence = entry.encounter;
-  const known = evidence.spans.filter(
-    (p) => p.entry_ms !== null && p.exit_ms !== null
-  );
-  if (!known.length)
-    return [
-      `Planned passage unavailable · ${passageReasons[evidence.reason ?? 'unavailable-plan']}`,
-    ];
-  let start = Infinity,
-    end = -Infinity;
-  for (const span of known) {
-    start = Math.min(start, span.entry_ms!);
-    end = Math.max(end, span.exit_ms!);
+type Passage = RouteSigmetEntry['encounter']['spans'][number];
+
+/** Keep separate crossings separate; adjacent route segments share one window. */
+export function crossingPassages(entry: RouteSigmetEntry): Passage[] {
+  const windows: Passage[] = [];
+  for (const span of entry.encounter.spans) {
+    const previous = windows.at(-1);
+    if (
+      previous &&
+      previous.status === span.status &&
+      previous.entry_ms !== null &&
+      previous.exit_ms !== null &&
+      span.entry_ms !== null &&
+      span.exit_ms !== null &&
+      previous.entry_ms <= span.entry_ms &&
+      span.entry_ms <= previous.exit_ms
+    ) {
+      previous.exit_ms = Math.max(previous.exit_ms, span.exit_ms);
+    } else windows.push({ ...span });
   }
-  const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  return windows;
+}
+
+export function formatCrossingTime(
+  start: number,
+  end: number,
+  nowMs: number
+): string {
   const roundedStart = Math.round(start / 60000) * 60000;
   const roundedEnd = Math.round(end / 60000) * 60000;
-  const dates =
-    day(start) !== day(nowMs) ||
-    day(end) !== day(nowMs) ||
-    day(roundedStart) !== day(nowMs) ||
-    day(roundedEnd) !== day(nowMs);
+  const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const dates = [start, end, roundedStart, roundedEnd].some(
+    (ms) => day(ms) !== day(nowMs)
+  );
   const format = (ms: number) => {
     const iso = new Date(Math.round(ms / 60000) * 60000).toISOString();
     return dates ? iso.slice(0, 16).replace('T', ' ') : iso.slice(11, 16);
   };
-  const status =
-    evidence.status === 'overlap'
-      ? 'Time overlap'
-      : evidence.status === 'no-overlap'
-        ? 'No time overlap'
-        : 'Time overlap unknown';
+  return `${format(start)}–${format(end)} UTC`;
+}
+
+export function formatSigmetEncounter(
+  entry: RouteSigmetEntry | SelectedSigmetEntry,
+  nowMs: number
+): string[] {
+  if (!('encounter' in entry) || entry.encounter.status === 'unknown')
+    return ['Crossing time unknown'];
+  if (entry.encounter.status === 'no-overlap')
+    return ['No crossing expected while valid'];
+  const passages = crossingPassages(entry).filter(
+    (p) => p.status === 'overlap'
+  );
+  const first = passages[0];
   const lines = [
-    `Planned passage${evidence.spans.length > 1 ? ' summary' : ''} ${format(start)}–${format(end)} UTC · ${status}`,
+    `Crossing expected · ${formatCrossingTime(first.entry_ms!, first.exit_ms!, nowMs)}`,
   ];
-  if (evidence.unknown_count)
-    lines.push(
-      `${evidence.unknown_count} passage${evidence.unknown_count === 1 ? '' : 's'} unavailable`
-    );
+  if (passages.length > 1) lines.push(`${passages.length} separate crossings`);
+  if (entry.encounter.unknown_count)
+    lines.push('Some crossing times unavailable');
   return lines;
 }

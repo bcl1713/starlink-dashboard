@@ -185,13 +185,17 @@ altitude or passage-time match.
 
 ### Planned SIGMET passage timing
 
-Route-intersecting SIGMET notices include planned passage UTC and **Time
-overlap**, **No time overlap**, or an explicit unavailable/unknown result.
-Passage uses linear interpolation between the effective route's waypoint UTC
-times. Missing, equal, reversed or timezone-free times are not replaced with
-live aircraft speed or a replay clock. Details retain exact UTC intervals and
-timing provenance; multiple intervals and partial evidence are identified
-explicitly.
+Route-intersecting SIGMET notices show **Crossing expected** with UTC times,
+**No crossing expected while valid**, or **Crossing time unknown**. Passage uses
+linear interpolation between the effective route's waypoint UTC times. Missing,
+equal, reversed or timezone-free times are not replaced with live aircraft speed
+or a replay clock.
+
+The flight display keeps crossing windows, advisory validity, reported hazard
+bounds and the expandable original bulletin. Adjacent route segments share one
+window; separate crossings and unavailable times remain explicit. Revision
+hashes, method/version identifiers, source precision and altitude-comparison
+disclaimers are omitted from the display.
 
 Time comparison is informational: a nonoverlap does not hide a geographic
 advisory or acknowledge it. Weather eligibility still follows actual UTC, even

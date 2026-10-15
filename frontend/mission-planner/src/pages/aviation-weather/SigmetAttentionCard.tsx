@@ -19,12 +19,6 @@ export function SigmetAttentionCard({
     mutation = useSetSigmetAcknowledgement();
   const contextKey = view.snapshot?.context?.context_key;
   const p = item.reports[0].properties;
-  const segments =
-    item.kind === 'intersecting'
-      ? [...new Set(item.entry.spans.map((s) => s.segment_index + 1))].sort(
-          (a, b) => a - b
-        )
-      : [];
   return (
     <article
       className="route-sigmet-notice sigmet-attention-pulse"
@@ -35,22 +29,15 @@ export function SigmetAttentionCard({
       <p>
         {p.phenomenon ?? 'Unknown hazard'} · {p.severity ?? 'Unknown severity'}
       </p>
-      <p>
-        {item.kind === 'selected'
-          ? 'Selected'
-          : `Route segment${segments.length === 1 ? '' : 's'} ${segments.join(', ')}`}
-      </p>
-      {formatSigmetEncounter(item.entry, view.nowMs).map((line) => (
-        <p key={line}>{line}</p>
+      {item.kind === 'selected' && <p>Selected</p>}
+      {formatSigmetEncounter(item.entry, view.nowMs).map((line, index) => (
+        <p key={line}>{index === 0 ? <strong>{line}</strong> : line}</p>
       ))}
       <div className="sigmet-attention-actions">
         <details onToggle={(e) => setExpanded(e.currentTarget.open)}>
           <summary>Details</summary>
           {expanded && (
-            <SigmetEncounterDetails
-              entry={item.entry}
-              plan={view.snapshot?.encounter_plan ?? null}
-            />
+            <SigmetEncounterDetails entry={item.entry} nowMs={view.nowMs} />
           )}
           {expanded &&
             item.reports.map((r) => (
