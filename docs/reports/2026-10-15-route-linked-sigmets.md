@@ -3,7 +3,7 @@
 ## Result and provenance
 
 Production acceptance passed all three browser tests on committed candidate
-`8380280d8f1bb275e32ad8c346ed7aedadf57bf4`. The no-cache production images and
+`536cf006a7ed50f68a37b75ca5a3efaf53c9f174`. The no-cache production images and
 browser test sources used that same archive. The subsequent evidence commit
 changes documentation only; it does not claim a separate image run for its SHA.
 This report distinguishes deterministic controls from the dated real AWC replay;
@@ -107,31 +107,31 @@ a PASS file. Browser tests retain the zero-unhandled-error assertion.
 ## Gates and ownership
 
 Accepted evidence directory:
-`test-results/route-sigmets-e572a902d29a/8380280d8f1bb275e32ad8c346ed7aedadf57bf4/`.
+`test-results/route-sigmets-378840484cec/536cf006a7ed50f68a37b75ca5a3efaf53c9f174/`.
 `PASS.json` was written after `cleanup.json` verified teardown. The retained
 `candidate.json`, `images.log`, `proofs.json`, browser report, native snapshots,
 source-request ledger, raw capture, derived normalization and screenshots
 provide provenance. Archive SHA-256:
-`deb36bdc135447a2bb59de1d1578e92f7ff6c5cad529cc02b63069de1d2c3d13`.
+`0222405461f537d7cfee4f42000dfd7544457eb3a78df807cd934823db40ff2f`.
 
 | Gate                                                       | Result                                                  |
 | ---------------------------------------------------------- | ------------------------------------------------------- |
 | Required backend regression selection                      | 343 passed                                              |
-| Full frontend unit suite                                   | 218 files, 1,603 tests passed                           |
+| Full frontend unit suite                                   | 218 files, 1,610 tests passed                           |
 | Production build / ESLint                                  | Passed                                                  |
 | Runner failure, timeout, ownership and provenance controls | 25 passed                                               |
 | Changed Python Black / Ruff                                | Passed                                                  |
 | Changed-file Prettier / Markdown / filename checks         | Passed                                                  |
-| Production Nginx/native WebGL browser acceptance           | 3 passed in 2.7 minutes                                 |
+| Production Nginx/native WebGL browser acceptance           | 3 passed in 2.6 minutes                                 |
 | Dated real AWC replay                                      | 151 normalized features; native outlines/spans verified |
 | Unhandled browser errors                                   | Zero                                                    |
 
 | Successful Configuration save | Overview convergence |
 | ----------------------------- | -------------------- |
-| Enable                        | 5,340 ms             |
-| Intersecting-only filter      | 3,865 ms             |
-| Clear                         | 2,709 ms             |
-| Show again                    | 3,392 ms             |
+| Enable                        | 4,480 ms             |
+| Intersecting-only filter      | 3,469 ms             |
+| Clear                         | 1,383 ms             |
+| Show again                    | 4,960 ms             |
 
 All three cards fit within the actual viewport and rail. After three consecutive
 stable geometry samples, the third card ended at y=1044.1 on desktop and y=933.1
@@ -144,19 +144,20 @@ Observed shared-budget peaks were 140,178 encoded bytes, 12,197,124 decoded
 bytes, 1,615,716 GPU bytes and three slots, below the 16/32/16 MiB and four-slot
 caps. Both clients shared one initial-generation SIGMET source acquisition. Two
 hidden/offline cycles and unmount disposed all probed owned resources; after
-unmount GPU use was zero. The shared weather budget still recorded 7,612 encoded
-bytes, 3,648,920 decoded bytes and one slot while other shared work continued;
-zero total shared budget/cache use is not asserted. Three.js singleton Sprite
-geometry is recorded separately as library-owned, while its owned materials and
-textures remain disposal-gated.
+unmount encoded, decoded and GPU use were zero. The shared weather budget still
+recorded one slot while other shared work continued; zero total shared activity
+is not asserted. Three.js singleton Sprite geometry is recorded separately as
+library-owned, while its owned materials and textures remain disposal-gated.
 
 Approved host verification in
-`test-results/route-sigmet-verification/host-final-inventory.json` confirmed all
-twelve acceptance projects have no owned processes, listeners, containers,
-networks, disposable volumes or temporary source trees. The actor Docker
-endpoint remained `unix:///run/user/1002/docker.sock`, context `default`.
-Failed-run receipts remain retained separately, without PASS files. Unit,
-regression and formatting logs are retained under
+`test-results/route-sigmet-verification/final-fix/host-final-inventory.json`
+confirmed all thirteen acceptance projects and final-check ownership records
+have no owned processes, listeners, containers, networks, disposable volumes or
+temporary source trees. The two exact image tags from the final run were removed
+and their absence verified; shared images and build cache were preserved. The
+actor Docker endpoint remained `unix:///run/user/1002/docker.sock`, context
+`default`. Failed-run receipts remain retained separately, without PASS files.
+Unit, regression and formatting logs are retained under
 `test-results/route-sigmet-verification/`.
 
 Every check has a wall-clock timeout and forced termination grace. The runner
@@ -192,10 +193,37 @@ removal bound is now eight seconds; exact popup/selection/disposal assertions
 remain. The failed run and timing diagnosis are retained; the fresh candidate
 passed the complete suite.
 
-Frontend 1,603-test and backend 343-test results are retained from the unchanged
-product code. This review round changed acceptance tests, runner controls and
-documentation; focused ESLint, TypeScript, Python and formatting checks were
-rerun, followed by the exact-candidate production acceptance above.
+The preceding acceptance-only review retained frontend 1,603-test and backend
+343-test results while rerunning focused ESLint, TypeScript, Python and
+formatting checks. The final presentation changes below reran the full frontend
+suite; the backend and runner remain unchanged since their 343-test and
+25-control gates.
+
+## Final presentation review follow-up
+
+Detailed reports now label provider `series` and canonical `bulletin_series`
+accurately. Overview and Configuration prefer a stable canonical bulletin label,
+with a deterministic provider fallback when canonical metadata is absent. Source
+reports, raw bulletin text, feature order and acknowledgement identities stay
+intact.
+
+Configuration derives future and unlocated report review directly from its bound
+source collection and anchored actual UTC. These reports remain separately
+reviewable when no route exists or route geometry cannot be evaluated and route
+metadata arrays are empty. Cancelled and expired reports remain excluded; future
+and unknown reports expose no acknowledgement actions. Exact confirmed matching
+entries retain the existing Clear and Show again behavior.
+
+Seven added regression cases failed against the original production code and
+passed after the fixes. Focused checks passed 36 tests; the full frontend suite
+passed 1,610 tests across 218 files. Build, ESLint and changed-file formatting
+passed. A fresh no-cache production run on the exact committed candidate above
+passed all three browser tests, including every existing native, lineage,
+propagation, layout, disposal, simulation and dated replay gate. No acceptance
+gate was changed. Full fix evidence is retained in
+`test-results/route-sigmet-verification/final-fix-report.md`; the final
+input-equivalence receipt proves the following evidence commit changes only this
+Markdown report relative to the accepted candidate.
 
 ## Limits
 
