@@ -252,7 +252,6 @@ updates and existing-mission conversion. It adds no weather, operational data
 collection, new altitude inference or communications-model changes. Review this
 written design before producing the implementation plan and choosing execution.
 
-
 ## Owner feedback during manual testing, 2026-10-15
 
 The owner superseded the intermediate revision-review requirement: accept uploaded
