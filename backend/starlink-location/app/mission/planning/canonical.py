@@ -65,6 +65,12 @@ def canonical_inputs(
     """Reject changed route/transport payloads before using persisted geometry."""
     from .models import AnchoredSwap
 
+    if mission.import_provenance:
+        from app.mission.itinerary_import.editing import refresh_context
+
+        return refresh_context(
+            mission, route, constraints, satellite_catalog, poi_manager
+        )
     inputs = PlanningInputs.model_validate(
         mission.transports.planning_inputs.model_dump()
     )

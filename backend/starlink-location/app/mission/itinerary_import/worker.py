@@ -51,6 +51,12 @@ def build_leg(leg_data, route_data, positions, constraints, mission_root, missio
         leg_id=leg.id,
         name=f"{leg.departure_airport}–{leg.arrival_airport}",
     )
+    ordinary.import_provenance = {"version": 1}
+    for window, row in zip(ordinary.transports.aar_windows, leg.ar_rows):
+        window.start_anchor = row.start_anchor
+        window.end_anchor = row.end_anchor
+        window.override_start_time = None
+        window.override_end_time = None
     artifacts = prepare_mission_timeline(
         ordinary,
         manager,

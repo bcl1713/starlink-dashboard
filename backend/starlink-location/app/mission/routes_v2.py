@@ -1401,6 +1401,14 @@ async def update_leg(
             if stored_leg.is_active:
                 updated_leg.route_id = stored_leg.route_id
 
+            from app.mission.itinerary_import.editing import refresh_leg
+
+            if stored_leg.import_provenance:
+                updated_leg.import_provenance = stored_leg.import_provenance
+                try:
+                    refresh_leg(updated_leg, route_manager, poi_manager)
+                except ValueError as exc:
+                    raise HTTPException(422, str(exc)) from exc
             # Update leg
             mission.legs[leg_index] = updated_leg
 
@@ -2142,6 +2150,23 @@ async def update_leg_route(
             if raw
             else None
         )
+    if parent and parent.metadata.get("itinerary_import"):
+        service = getattr(request.app.state, "itinerary_import_service", None)
+        if service is None:
+            raise HTTPException(503, "Itinerary import service is unavailable")
+        from app.mission.itinerary_import.replacement import replace_route
+
+        try:
+            return await asyncio.to_thread(
+                replace_route,
+                service,
+                mission_id,
+                leg_id,
+                await file.read(),
+                file.filename or "route.kml",
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
     if card:
         if expected_revision is None:
             raise HTTPException(
