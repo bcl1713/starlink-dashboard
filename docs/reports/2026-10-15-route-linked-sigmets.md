@@ -3,7 +3,7 @@
 ## Result and provenance
 
 Production acceptance passed all three browser tests on committed candidate
-`d8ac846e9e71edbfbf8ccacac5bc8daa70d9eaba`. The no-cache production images and
+`8380280d8f1bb275e32ad8c346ed7aedadf57bf4`. The no-cache production images and
 browser test sources used that same archive. The subsequent evidence commit
 changes documentation only; it does not claim a separate image run for its SHA.
 This report distinguishes deterministic controls from the dated real AWC replay;
@@ -107,19 +107,19 @@ a PASS file. Browser tests retain the zero-unhandled-error assertion.
 ## Gates and ownership
 
 Accepted evidence directory:
-`test-results/route-sigmets-d640931bac6b/d8ac846e9e71edbfbf8ccacac5bc8daa70d9eaba/`.
+`test-results/route-sigmets-e572a902d29a/8380280d8f1bb275e32ad8c346ed7aedadf57bf4/`.
 `PASS.json` was written after `cleanup.json` verified teardown. The retained
 `candidate.json`, `images.log`, `proofs.json`, browser report, native snapshots,
 source-request ledger, raw capture, derived normalization and screenshots
 provide provenance. Archive SHA-256:
-`4b73858ca5cf326d693a6f5337bd36d6bfdd657ce71e3050eea4c867ebd0d06b`.
+`deb36bdc135447a2bb59de1d1578e92f7ff6c5cad529cc02b63069de1d2c3d13`.
 
 | Gate                                                       | Result                                                  |
 | ---------------------------------------------------------- | ------------------------------------------------------- |
 | Required backend regression selection                      | 343 passed                                              |
 | Full frontend unit suite                                   | 218 files, 1,603 tests passed                           |
 | Production build / ESLint                                  | Passed                                                  |
-| Runner failure, timeout, ownership and provenance controls | 20 passed                                               |
+| Runner failure, timeout, ownership and provenance controls | 25 passed                                               |
 | Changed Python Black / Ruff                                | Passed                                                  |
 | Changed-file Prettier / Markdown / filename checks         | Passed                                                  |
 | Production Nginx/native WebGL browser acceptance           | 3 passed in 2.7 minutes                                 |
@@ -128,10 +128,10 @@ provide provenance. Archive SHA-256:
 
 | Successful Configuration save | Overview convergence |
 | ----------------------------- | -------------------- |
-| Enable                        | 5,663 ms             |
-| Intersecting-only filter      | 3,892 ms             |
-| Clear                         | 2,733 ms             |
-| Show again                    | 4,832 ms             |
+| Enable                        | 5,340 ms             |
+| Intersecting-only filter      | 3,865 ms             |
+| Clear                         | 2,709 ms             |
+| Show again                    | 3,392 ms             |
 
 All three cards fit within the actual viewport and rail. After three consecutive
 stable geometry samples, the third card ended at y=1044.1 on desktop and y=933.1
@@ -144,14 +144,15 @@ Observed shared-budget peaks were 140,178 encoded bytes, 12,197,124 decoded
 bytes, 1,615,716 GPU bytes and three slots, below the 16/32/16 MiB and four-slot
 caps. Both clients shared one initial-generation SIGMET source acquisition. Two
 hidden/offline cycles and unmount disposed all probed owned resources; after
-unmount GPU and encoded use were zero. The remaining 3,633,696 decoded bytes
-remain in the shared weather budget; zero total decoded/cache use is not
-asserted. Three.js singleton Sprite geometry is recorded separately as
-library-owned, while its owned materials and textures remain disposal-gated.
+unmount GPU use was zero. The shared weather budget still recorded 7,612 encoded
+bytes, 3,648,920 decoded bytes and one slot while other shared work continued;
+zero total shared budget/cache use is not asserted. Three.js singleton Sprite
+geometry is recorded separately as library-owned, while its owned materials and
+textures remain disposal-gated.
 
 Approved host verification in
 `test-results/route-sigmet-verification/host-final-inventory.json` confirmed all
-ten acceptance projects have no owned processes, listeners, containers,
+twelve acceptance projects have no owned processes, listeners, containers,
 networks, disposable volumes or temporary source trees. The actor Docker
 endpoint remained `unix:///run/user/1002/docker.sock`, context `default`.
 Failed-run receipts remain retained separately, without PASS files. Unit,
@@ -166,6 +167,35 @@ Docker daemon. Failure, timeout and signals run scoped cleanup; Linux child
 subreaping and process identity checks prevent orphaned owned browsers/workers.
 Logs survive teardown. PASS is emitted only after browser proofs and verified
 empty process, listener, container, network and disposable-volume inventories.
+
+## Review follow-up
+
+Review fixes restore GFS selection in the shared Playwright configuration while
+both runners select their own test files. List-only controls verify aviation's
+three tests and GFS's one production test; the GFS stack itself was not rerun.
+Cleanup now records source-removal errors, verifies `source_absent: true`, and
+requires that proof before PASS. Failure injection and absent/false proof
+controls fail before the fix and pass afterward (25 runner controls total).
+
+Lineage assertions identify R1 through its normalized series, require a changed
+amendment digest and notice key with the same canonical bulletin key, retire the
+original notice, and preserve R2–R4 identities. Cancellation removes that exact
+R1 identity; reused R1 must have new validity and a different canonical
+identity. Named lineage records and complete snapshots are retained.
+Configuration, Overview and the separate real replay all collect page errors and
+assert zero.
+
+One rerun exposed a legacy assertion allowing only five seconds for five-second
+cross-screen polling. Its trace records the next GET starting 5.026 seconds
+after a successful disable save, then returning in 7.58 ms. The explicit popup
+removal bound is now eight seconds; exact popup/selection/disposal assertions
+remain. The failed run and timing diagnosis are retained; the fresh candidate
+passed the complete suite.
+
+Frontend 1,603-test and backend 343-test results are retained from the unchanged
+product code. This review round changed acceptance tests, runner controls and
+documentation; focused ESLint, TypeScript, Python and formatting checks were
+rerun, followed by the exact-candidate production acceptance above.
 
 ## Limits
 
