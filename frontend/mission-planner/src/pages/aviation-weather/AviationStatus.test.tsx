@@ -114,3 +114,24 @@ it('labels fractional-millisecond timestamps explicitly as UTC without losing pr
   expect(article.textContent).toContain('Observed 2026-10-06T11:59:00.123 UTC');
   expect(article.textContent).not.toContain('.123Z');
 });
+
+it('has no inert generic inspection action when only SIGMETs are enabled', () => {
+  render(
+    <AviationStatus
+      view={{
+        ...emptyAviationView,
+        now: NOW,
+        layers: {
+          ...emptyAviationView.layers,
+          sigmet: {
+            state: 'current',
+            data: parseAviationFeatures(collection([advisory()]), 'sigmet'),
+          },
+        },
+      }}
+      onInspect={() => {}}
+    />
+  );
+  expect(screen.queryByRole('button')).toBeNull();
+  expect(screen.queryByText(/tap a marker or advisory/)).toBeNull();
+});

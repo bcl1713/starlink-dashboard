@@ -35,7 +35,13 @@ export function useAviationWeather(externalSigmet?: AviationLayerView) {
     [externalSigmet, settings, source]
   );
   useEffect(() => binding.setExternalSigmet(sigmet), [binding, sigmet]);
-  return view;
+  return externalSigmet
+    ? {
+        ...view,
+        now: Math.max(view.now, source.nowMs ?? 0),
+        layers: { ...view.layers, sigmet: externalSigmet },
+      }
+    : view;
 }
 
 function createAviationBinding() {

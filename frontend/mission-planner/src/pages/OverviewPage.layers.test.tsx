@@ -1,3 +1,17 @@
+vi.mock('./useOverviewLayout', () => ({
+  useOverviewLayout: () => ({
+    mode: queries.layoutMode,
+    flow: false,
+    safeRect: { x: 0, y: 0, width: 0, height: 0 },
+    revision: 0,
+  }),
+}));
+vi.mock('@/hooks/api/useAviationSettings', () => ({
+  useAviationSettings: () => ({ data: queries.aviationSettings }),
+}));
+vi.mock('@/hooks/api/useRouteSigmets', () => ({
+  useRouteSigmets: () => queries.sigmetSource,
+}));
 vi.mock('@/hooks/useGfsWeather', () => ({ useGfsWeather: () => queries.gfs }));
 vi.mock('@/hooks/useAviationWeather', () => ({
   useAviationWeather: () => queries.aviation,
@@ -48,7 +62,19 @@ const queries = vi.hoisted(() => ({
     onDemand: () => {},
   } as WeatherLayerView,
   adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
+  layoutMode: 'desktop',
   aviation: {} as AviationView,
+  aviationSettings: undefined as
+    | { sigmet: boolean; sigmet_intersecting_only: boolean }
+    | undefined,
+  sigmetSource: {
+    snapshot: null,
+    collection: null,
+    dataLease: null,
+    available: false,
+    error: null,
+    nowMs: 0,
+  },
   gfs: { now: 0, state: 'off', products: {} } as GfsView,
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
@@ -114,6 +140,7 @@ import { NOW, collection, station } from './aviation-weather/fixtures';
 import { parseAviationFeatures } from '@/services/aviation-features';
 afterEach(cleanup);
 beforeEach(() => {
+  queries.layoutMode = 'desktop';
   queries.aviation = emptyAviationView;
   queries.gfs = { now: 0, state: 'off', products: {} };
   queries.weather = {
@@ -139,6 +166,7 @@ beforeEach(() => {
       ground_entry_point: { latitude: 0, longitude: 0 },
     },
   };
+  queries.aviationSettings = undefined;
   queries.history = { data: { series: {} } };
   queries.satellites = {
     data: [{ satellite_id: 'X-6', transport: 'X', longitude: 0 }],
@@ -530,3 +558,27 @@ it.each([
     expect(screen.getByText('Planned satellite link')).not.toBeNull();
   }
 );
+
+it('keeps passive SIGMET route-unavailable status visible when general map status is hidden', () => {
+  queries.aviationSettings = { sigmet: true, sigmet_intersecting_only: true };
+  queries.links = { data: { map_status_enabled: false } };
+  render(<OverviewPage />);
+  expect(
+    screen.getByLabelText('Route SIGMET advisories').textContent
+  ).toContain('Route unavailable');
+  expect(screen.queryByLabelText('Map status')).toBeNull();
+  expect(
+    within(screen.getByLabelText('Route SIGMET advisories')).queryAllByRole(
+      'button'
+    )
+  ).toHaveLength(0);
+});
+
+it('places mobile passive notices beside telemetry outside the globe overlay', () => {
+  queries.layoutMode = 'portrait';
+  queries.aviationSettings = { sigmet: true, sigmet_intersecting_only: true };
+  render(<OverviewPage />);
+  const notices = screen.getByLabelText('Route SIGMET advisories');
+  expect(notices.closest('.overview-map-stage')).toBeNull();
+  expect(notices.closest('.overview-metrics-overlays')).not.toBeNull();
+});

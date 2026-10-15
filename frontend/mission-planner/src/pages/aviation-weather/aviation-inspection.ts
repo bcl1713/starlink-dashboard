@@ -13,7 +13,7 @@ export const aviationSelectionKey = (selection: AviationSelection) =>
   `${selection.layer}:${selection.id}`;
 
 export function inspectionReports(view: AviationView) {
-  return (['metar', 'taf', 'sigmet'] as const).flatMap((layer) => {
+  return (['metar', 'taf'] as const).flatMap((layer) => {
     const item = view.layers[layer];
     if (!item.data || !['current', 'stale'].includes(item.state)) return [];
     return activeFeatures(item.data, layer, view.now).map((feature) => ({
@@ -26,7 +26,7 @@ export function resolveAviationSelection(
   view: AviationView,
   selection: AviationSelection | null
 ): AviationFeature | null {
-  if (!selection) return null;
+  if (!selection || selection.layer === 'sigmet') return null;
   const item = view.layers[selection.layer];
   if (!item.data || !['current', 'stale'].includes(item.state)) return null;
   return (
@@ -81,15 +81,7 @@ export function pickAviationFeatures(
     return [];
   camera.updateMatrixWorld();
   const picked: AviationSelection[] = [];
-  const ray = new THREE.Raycaster();
-  ray.setFromCamera(
-    new THREE.Vector2(
-      (2 * point.x) / viewport.width - 1,
-      1 - (2 * point.y) / viewport.height
-    ),
-    camera
-  );
-  for (const layer of ['metar', 'taf', 'sigmet'] as const) {
+  for (const layer of ['metar', 'taf'] as const) {
     const item = view.layers[layer];
     if (
       !item.data ||
@@ -98,17 +90,7 @@ export function pickAviationFeatures(
     )
       continue;
     const active = activeFeatures(item.data, layer, view.now);
-    if (layer === 'sigmet') {
-      item.drawing.object.updateWorldMatrix(true, false);
-      const ids = new Set<string>();
-      for (const hit of ray.intersectObject(item.drawing.object, false)) {
-        if (hit.faceIndex == null || !isStarMarkerVisible(hit.point, camera))
-          continue;
-        const id = item.drawing.featureAt(hit.faceIndex);
-        if (id && active.some((f) => f.id === id)) ids.add(id);
-      }
-      for (const id of ids) picked.push({ layer, id });
-    } else {
+    {
       const object = item.drawing.object as THREE.Points | THREE.LineSegments;
       const positions = object.geometry.getAttribute('position');
       const offsets = new Map<string, number>();

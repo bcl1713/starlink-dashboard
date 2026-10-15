@@ -16,6 +16,10 @@ import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
 import { useGfsWeather } from '@/hooks/useGfsWeather';
 import { GfsLayer } from './aviation-weather/GfsLayer';
 import { GfsStatus } from './aviation-weather/GfsStatus';
+import { useRouteSigmets } from '@/hooks/api/useRouteSigmets';
+import { useAviationSettings } from '@/hooks/api/useAviationSettings';
+import { useSigmetPresentation } from './aviation-weather/route-sigmet-presentation';
+import { RouteSigmetNotices } from './aviation-weather/RouteSigmetNotices';
 import { useAviationWeather } from '@/hooks/useAviationWeather';
 import { AviationStatus } from './aviation-weather/AviationStatus';
 import { AviationLayer } from './aviation-weather/AviationLayer';
@@ -287,7 +291,6 @@ export function OverviewPage() {
   }, []);
   const adsb = useOverviewAdsbLayer();
   const weather = useOverviewWeatherLayer();
-  const aviation = useAviationWeather();
   const gfs = useGfsWeather();
   const [selectedAdsbHex, setSelectedAdsbHex] = useState<string | null>(null);
   const [weatherCandidates, setWeatherCandidates] = useState<
@@ -297,8 +300,6 @@ export function OverviewPage() {
     useState<AviationSelection | null>(null);
   const weatherReturnFocus = useRef<HTMLElement | null>(null);
   const closeWeather = useCallback(() => setSelectedWeather(null), []);
-  if (selectedWeather && !resolveAviationSelection(aviation, selectedWeather))
-    setSelectedWeather(null);
   const inspectWeather = useCallback(
     (candidates: readonly AviationSelection[]) => {
       if (!candidates.length) return;
@@ -415,6 +416,38 @@ export function OverviewPage() {
       return null;
     }
   }, [activeRoute, replayGeometry, routeId]);
+
+  const sigmetSource = useRouteSigmets();
+  const aviationSettings = useAviationSettings().data;
+  const sigmetInput = useMemo(
+    () => ({
+      source: sigmetSource,
+      localContextKey,
+      intersectingOnly: aviationSettings?.sigmet_intersecting_only ?? false,
+      nowMs: sigmetSource.nowMs,
+      routePoints: activeRoute?.points ?? [],
+    }),
+    [
+      sigmetSource,
+      localContextKey,
+      aviationSettings?.sigmet_intersecting_only,
+      activeRoute?.points,
+    ]
+  );
+  const sigmetPresentation = useSigmetPresentation(
+    sigmetInput,
+    !!aviationSettings?.sigmet
+  );
+  const sigmetView = useMemo(
+    () =>
+      aviationSettings?.sigmet
+        ? sigmetPresentation.view
+        : { state: 'off' as const },
+    [aviationSettings?.sigmet, sigmetPresentation.view]
+  );
+  const aviation = useAviationWeather(sigmetView);
+  if (selectedWeather && !resolveAviationSelection(aviation, selectedWeather))
+    setSelectedWeather(null);
 
   const routePoints = useMemo(
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
@@ -952,6 +985,9 @@ export function OverviewPage() {
                 )}
               </>
             )}
+            {aviationSettings?.sigmet && layout.mode === 'desktop' && (
+              <RouteSigmetNotices presentation={sigmetPresentation} />
+            )}
             {showLegend ? (
               <OverviewMapLegend
                 displayLabel={displayHost.label}
@@ -1233,17 +1269,23 @@ export function OverviewPage() {
           />
         </Canvas>
       </div>
-      {!pacedRunning && showMetricPanels && (
+      {((!pacedRunning && showMetricPanels) ||
+        (aviationSettings?.sigmet && layout.mode !== 'desktop')) && (
         <div className="overview-metrics-overlays">
-          <OverviewMetricHistoryPanels
-            settings={overviewLinkSettings}
-            status={status}
-            statusError={Boolean(statusError)}
-            history={overviewHistory}
-            error={isOverviewHistoryError}
-            selectedWindowSeconds={overviewHistorySettings?.window_seconds}
-            nowMs={currentTime}
-          />
+          {aviationSettings?.sigmet && layout.mode !== 'desktop' && (
+            <RouteSigmetNotices presentation={sigmetPresentation} />
+          )}
+          {!pacedRunning && showMetricPanels && (
+            <OverviewMetricHistoryPanels
+              settings={overviewLinkSettings}
+              status={status}
+              statusError={Boolean(statusError)}
+              history={overviewHistory}
+              error={isOverviewHistoryError}
+              selectedWindowSeconds={overviewHistorySettings?.window_seconds}
+              nowMs={currentTime}
+            />
+          )}
         </div>
       )}
     </main>
