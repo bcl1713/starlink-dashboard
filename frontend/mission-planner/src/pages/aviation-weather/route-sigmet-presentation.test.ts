@@ -51,6 +51,9 @@ it('keeps the displayed page and highlighted notices in one projection', () => {
   const presentation = createSigmetPresentation(next, new WeatherBudget());
   try {
     expect(presentation.visibleItems).toHaveLength(1);
+    expect(presentation.mapLabels.map((l) => l.id)).toEqual(
+      presentation.visibleItems.map((i) => `sigmet:${i.entry.notice_key}`)
+    );
     expect(presentation.visibleItems[0].entry.attention_order).toBe(1);
     expect(presentation.notices.map((n) => n.entry.notice_key)).toEqual(
       presentation.visibleItems.map((n) => n.entry.notice_key)

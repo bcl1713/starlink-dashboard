@@ -992,9 +992,24 @@ test('shared manual SIGMET attention stays quiet and can be acknowledged from Ov
     });
     proof.shared_acknowledgement = true;
     proof.configuration_relevance = true;
+    const callouts = overview.locator('[data-label-kind="sigmet"]');
+    await expect(callouts).toHaveCount(3);
+    for (const label of await callouts.locator('[data-label-source]').all()) {
+      await expect(label).toHaveClass('globe-marker-label');
+      expect(
+        await label.evaluate((node) =>
+          parseFloat(getComputedStyle(node).fontSize)
+        )
+      ).toBeLessThanOrEqual(14);
+      expect(
+        await label.evaluate((node) => node.getBoundingClientRect().width)
+      ).toBeLessThan(150);
+    }
     await cards.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(cards.getByRole('article')).toHaveCount(1);
+    await expect(callouts).toHaveCount(1);
     await cards.getByRole('button', { name: 'Previous', exact: true }).click();
+    await expect(callouts).toHaveCount(3);
     await overview.screenshot({
       path: info.outputPath('pending-overview-desktop.png'),
     });

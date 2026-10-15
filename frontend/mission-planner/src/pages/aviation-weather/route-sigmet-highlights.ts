@@ -22,7 +22,6 @@ export type SigmetNotice = {
   intersectionUnknown?: boolean;
 };
 const radians = Math.PI / 180;
-const textureBytes = 512 * 64 * 4;
 
 /** Each span is evaluated on the original shortest spherical route arc. */
 function arc(a: SigmetRoutePoint | undefined, b: SigmetRoutePoint | undefined) {
@@ -47,12 +46,12 @@ function arc(a: SigmetRoutePoint | undefined, b: SigmetRoutePoint | undefined) {
   };
 }
 
-/** Owns one notice's outlines, separate witnessed spans and a depth-tested label. */
+/** Owns one notice's outlines, separate witnessed spans and a shared-callout anchor. */
 export function createSigmetHighlights(
   notice: SigmetNotice,
   points: readonly SigmetRoutePoint[],
   budget: WeatherBudget
-): AviationDrawing {
+): AviationDrawing & { labelPosition: [number, number, number] } {
   let ringCount = 0;
   for (const report of notice.reports as AviationAdvisory[]) {
     if (report.geometry?.type === 'Polygon')
@@ -122,21 +121,19 @@ export function createSigmetHighlights(
     if (scalars > 300000) throw Error('Highlight geometry budget');
     const allocation = budget.reserve(weatherKey('sigmet-highlight'), {
       encoded: 0,
-      decoded: scalars * 24 + textureBytes * 2 + 65536,
-      gpu: scalars * 4 + textureBytes + 4096,
+      decoded: scalars * 24 + 65536,
+      gpu: scalars * 4 + 4096,
     });
     const group = new THREE.Group();
     group.name = `Route advisory · ${notice.label}`;
     const geometries: THREE.BufferGeometry[] = [],
       materials: THREE.Material[] = [];
-    let texture: THREE.CanvasTexture | undefined,
-      owned = true;
+    let owned = true;
     const dispose = () => {
       if (!owned) return;
       owned = false;
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
-      texture?.dispose();
       allocation.release();
       overhead.release();
     };
@@ -195,32 +192,9 @@ export function createSigmetHighlights(
           );
         lines(positions, false, 'Confirmed route span');
       }
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 64;
-      const context = canvas.getContext('2d');
-      if (!context) throw Error('Highlight label unavailable');
-      context.fillStyle = '#101c2b';
-      context.fillRect(0, 0, 512, 64);
-      context.fillStyle = notice.color;
-      context.font = '24px sans-serif';
-      context.textBaseline = 'middle';
-      context.textAlign = 'center';
-      context.fillText(notice.label, 256, 32, 500);
-      texture = new THREE.CanvasTexture(canvas);
-      texture.generateMipmaps = false;
-      texture.minFilter = THREE.LinearFilter;
-      const spriteMaterial = new THREE.SpriteMaterial({
-        map: texture,
-        depthTest: true,
-        depthWrite: false,
-        toneMapped: false,
-      });
-      materials.push(spriteMaterial);
-      const label = new THREE.Sprite(spriteMaterial);
-      label.name = notice.label;
+      const anchor = new THREE.Vector3();
       if (spans.length) {
-        label.position.copy(
+        anchor.copy(
           spans[0].arc.at(
             (spans[0].span.start_fraction + spans[0].span.end_fraction) / 2
           )
@@ -232,14 +206,12 @@ export function createSigmetHighlights(
         );
         if (center.lengthSq() < 1e-12)
           center.copy(earthPoint(rings[0][0][1], rings[0][0][0], 1));
-        label.position.copy(center.normalize().multiplyScalar(2.033));
+        anchor.copy(center.normalize().multiplyScalar(2.033));
       }
-      label.scale.set(0.36, 0.045, 1);
-      label.renderOrder = 27;
-      group.add(label);
       return {
         object: group,
-        bytes: scalars * 4 + textureBytes,
+        bytes: scalars * 4,
+        labelPosition: [anchor.x, anchor.y, anchor.z],
         featureAt: () => undefined,
         dispose,
       };

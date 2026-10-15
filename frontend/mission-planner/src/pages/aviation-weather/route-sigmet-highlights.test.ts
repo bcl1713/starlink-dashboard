@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { createSigmetHighlights } from './route-sigmet-highlights';
 import { WeatherBudget } from './weather-budget';
@@ -7,17 +7,6 @@ import { parseAviationFeatures } from '@/services/aviation-features';
 import { routeSigmetSnapshotSchema } from '@/services/route-sigmets';
 import { routeSnapshot } from '@/test/route-sigmet-fixtures';
 import { earthPoint } from './aviation-renderer';
-beforeEach(() => {
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
-    clearRect() {},
-    fillRect() {},
-    fillText() {},
-    font: '',
-    fillStyle: '',
-    textAlign: '',
-    textBaseline: '',
-  } as unknown as CanvasRenderingContext2D);
-});
 afterEach(() => vi.restoreAllMocks());
 it('samples fractions on the original high-latitude great circle and never joins disjoint spans', () => {
   const f = routeSnapshot(),
@@ -56,20 +45,13 @@ it('samples fractions on the original high-latitude great circle and never joins
     2
   );
   expect((spans[0].material as THREE.LineBasicMaterial).depthTest).toBe(true);
-  const sprite = drawing.object.children.find(
-    (o) => o.type === 'Sprite'
-  ) as THREE.Sprite;
-  expect(sprite.name).toContain('TEST 1');
-  const sibling = new THREE.Sprite();
-  expect(sprite.geometry).toBe(sibling.geometry);
-  sibling.material.dispose();
-  expect(sprite.material.depthTest).toBe(true);
-  const texture = sprite.material.map!;
-  const disposed = vi.fn();
-  texture.addEventListener('dispose', disposed);
+  expect(drawing.object.children.some((o) => o.type === 'Sprite')).toBe(false);
+  expect(drawing.labelPosition).toHaveLength(3);
+  expect(new THREE.Vector3(...drawing.labelPosition).length()).toBeCloseTo(
+    2.033
+  );
   drawing.dispose();
   drawing.dispose();
-  expect(disposed).toHaveBeenCalledOnce();
   expect(budget.snapshot()).toMatchObject({ decoded: 0, gpu: 0 });
 });
 it('keeps an antimeridian span at the seam and a point contact finite', () => {
