@@ -713,6 +713,18 @@ def main() -> None:
         )
         if not original_inputs:
             verify_clone_snapshot(owner, source)
+            if getattr(args, "workflow", "legacy") == "ordinary":
+                from artifact_proof import verify
+
+                artifacts = verify(
+                    owner.output / "synthetic-package.zip",
+                    json.loads(
+                        (owner.output / "clone-export-rebuild.json").read_text()
+                    ),
+                )
+                (owner.output / "artifact-proof.json").write_text(
+                    json.dumps(artifacts, indent=2)
+                )
         else:
             container = summary["backend"]["container"]
             owner.execute(

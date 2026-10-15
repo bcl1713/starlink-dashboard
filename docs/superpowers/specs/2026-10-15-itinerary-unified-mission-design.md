@@ -1,7 +1,7 @@
 # Automatic itinerary import into ordinary missions
 
-Status: Approved by the owner on 2026-10-15. Implementation awaits review of the
-implementation plan and selection of an execution method.
+Status: Design and implementation plan approved by the owner on 2026-10-15.
+Native execution was selected.
 
 ## Outcome and agreed requirements
 
