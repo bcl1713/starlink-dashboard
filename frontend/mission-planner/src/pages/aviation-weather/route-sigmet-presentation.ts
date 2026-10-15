@@ -8,10 +8,8 @@ import type { RouteSigmetEntry } from '@/services/route-sigmets';
 import type { RouteSigmetSourceView } from './route-sigmet-source';
 import {
   sigmetAttentionItems,
-  sigmetNoticeColor,
   type SigmetAttentionItem,
 } from './sigmet-attention';
-import { sigmetReportLabel } from './sigmet-report-label';
 import { optionalWeatherBudget, type WeatherBudget } from './weather-budget';
 import type { AviationLayerView } from './aviation-controller';
 import {
@@ -31,11 +29,13 @@ export type SigmetPresentationInput = {
   nowMs: number;
   /** Borrowed from Overview's selected route; never a duplicate route buffer. */
   routePoints: readonly SigmetRoutePoint[];
+  attentionPage?: number;
 };
 export type SigmetPresentation = {
   view: AviationLayerView;
   notices: (SigmetNotice & { entry: RouteSigmetEntry })[];
   attentionItems: SigmetAttentionItem[];
+  visibleItems: SigmetAttentionItem[];
   pendingCount: number;
   unknownCount: number;
   statusText: string;
@@ -43,11 +43,6 @@ export type SigmetPresentation = {
   highlightUnavailable: boolean;
   dispose(): void;
 };
-const position = (entry: RouteSigmetEntry) =>
-  entry.spans.reduce(
-    (first, span) => Math.min(first, span.segment_index + span.start_fraction),
-    Infinity
-  );
 
 function describe(input: SigmetPresentationInput): SigmetPresentation {
   const { source, localContextKey, intersectingOnly, nowMs } = input;
@@ -87,28 +82,9 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
       )
     : [];
   const matched = new Set(entries.flatMap((entry) => entry.feature_ids));
-  const pending = entries
-    .filter((entry) => !entry.acknowledged)
-    .sort(
-      (a, b) =>
-        b.attention_order - a.attention_order ||
-        position(a) - position(b) ||
-        a.bulletin_key.localeCompare(b.bulletin_key) ||
-        a.notice_key.localeCompare(b.notice_key)
-    );
   const unknown = new Set(
     compatible ? snapshot!.unresolved.map((item) => item.feature_id) : []
   );
-  const notices = pending.slice(0, 3).map((entry) => {
-    const selected = entry.feature_ids.map((id) => byId.get(id)!);
-    return {
-      entry,
-      reports: selected,
-      label: `${sigmetReportLabel(selected)} · ${entry.bulletin_key.slice(0, 8)}`,
-      color: sigmetNoticeColor(entry.bulletin_key),
-      intersectionUnknown: entry.feature_ids.some((id) => unknown.has(id)),
-    };
-  });
   const stale =
     product?.state === 'stale' ||
     snapshot?.status === 'stale' ||
@@ -119,8 +95,27 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
     reports,
     nowMs
   );
+  const page = Math.min(
+    Math.max(0, input.attentionPage ?? 0),
+    Math.max(0, Math.ceil(attentionItems.length / 3) - 1)
+  );
+  const visibleItems = attentionItems.slice(page * 3, page * 3 + 3);
+  const notices = visibleItems
+    .filter(
+      (
+        item
+      ): item is SigmetAttentionItem & {
+        kind: 'intersecting';
+        entry: RouteSigmetEntry;
+      } => item.kind === 'intersecting'
+    )
+    .map((item) => ({
+      ...item,
+      intersectionUnknown: item.entry.feature_ids.some((id) => unknown.has(id)),
+    }));
   return {
     attentionItems,
+    visibleItems,
     view: bound
       ? {
           state: stale ? 'stale' : 'current',
@@ -176,6 +171,7 @@ export function createSigmetPresentation(
     presentation.highlightUnavailable = presentation.notices.length > 0;
     return presentation;
   }
+  let featureAt: AviationDrawing['featureAt'] = () => undefined;
   const object = new THREE.Group();
   object.name = 'Native route SIGMET presentation';
   // Read-only diagnostics follow the native GFS owner convention.
@@ -187,13 +183,14 @@ export function createSigmetPresentation(
       input.nowMs,
       budget
     );
+    featureAt = base.featureAt;
     drawings.push(base);
     object.add(base.object);
   } catch {
     presentation.highlightUnavailable = true;
     return presentation;
   }
-  for (const notice of presentation.attentionItems.slice(0, 3)) {
+  for (const notice of presentation.visibleItems) {
     try {
       const highlight = createSigmetHighlights(
         notice,
@@ -209,7 +206,7 @@ export function createSigmetPresentation(
   presentation.view.drawing = {
     object,
     bytes: drawings.reduce((sum, drawing) => sum + drawing.bytes, 0),
-    featureAt: () => undefined,
+    featureAt,
     dispose: presentation.dispose,
   };
   return presentation;

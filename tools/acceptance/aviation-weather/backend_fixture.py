@@ -44,6 +44,7 @@ class FixtureAwcTransport:
             if filename not in {
                 "sigmets.json",
                 "route-sigmets.json",
+                "attention-sigmets.json",
                 "new-sigmets.json",
                 "amended-sigmets.json",
                 "cancelled-sigmets.json",

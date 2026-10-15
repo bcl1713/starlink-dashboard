@@ -21,6 +21,20 @@ def runner():
     return module
 
 
+def test_attention_fixture_uses_fresh_bulletin_series(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "sigmet_fixtures",
+        ROOT / "tools/acceptance/aviation-weather/generate_fixtures.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.generate(tmp_path, now=1792060000000)
+    capture = json.loads((tmp_path / "attention-sigmets.json").read_text())
+    series = {feature["properties"]["seriesId"] for feature in capture["features"]}
+    assert {"T1", "T2", "T3", "T4", "B1"} <= series
+    assert not {"R1", "R2", "R3", "R4"} & series
+
+
 def proof():
     return {
         "browser": {"passed": 2, "failed": 0, "skipped": 0},

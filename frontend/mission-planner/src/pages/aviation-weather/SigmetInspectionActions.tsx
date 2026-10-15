@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   useRouteSigmets,
   useSelectSigmet,
@@ -28,21 +28,37 @@ export function SigmetInspectionActions({
   const candidate = snapshot?.selection_candidates.find((e) =>
     e.feature_ids.includes(featureId)
   );
-  const attempt = useRef('');
-  const key = `${contextKey}:${candidate?.bulletin_key}:${candidate?.semantic_digest}:${featureId}`;
+  const [origin] = useState(() => ({
+    contextKey,
+    bulletinKey: candidate?.bulletin_key,
+    digest: candidate?.semantic_digest,
+  }));
+  const attempted = useRef(false);
   const pending = !!entry && !entry.acknowledged;
+  const routeChanged = origin.contextKey !== contextKey;
+  const reportChanged =
+    !!origin.digest &&
+    (origin.digest !== candidate?.semantic_digest ||
+      origin.bulletinKey !== candidate?.bulletin_key);
   const mutate = select.mutate;
   useEffect(() => {
     if (
       !autoSelect ||
       !contextKey ||
       !candidate ||
-      pending ||
       !view.available ||
-      attempt.current === key
+      attempted.current ||
+      routeChanged ||
+      reportChanged
     )
       return;
-    attempt.current = key;
+    // One effect belongs to one explicit inspection gesture, even if the
+    // bulletin was already pending. Polling must never manufacture a new intent.
+    attempted.current = true;
+    if (pending && entry) {
+      onFocused?.(entry.notice_key);
+      return;
+    }
     mutate(
       {
         context_key: contextKey,
@@ -50,11 +66,8 @@ export function SigmetInspectionActions({
         semantic_digest: candidate.semantic_digest,
       },
       {
-        onSuccess: (result) => {
-          const added = [...result.entries, ...result.selected_entries].find(
-            (e) => e.feature_ids.includes(featureId)
-          );
-          if (added) onFocused?.(added.notice_key);
+        onSuccess: (confirmation) => {
+          if (confirmation.notice_key) onFocused?.(confirmation.notice_key);
         },
       }
     );
@@ -63,12 +76,17 @@ export function SigmetInspectionActions({
     contextKey,
     candidate,
     pending,
+    entry,
     view.available,
-    key,
+    routeChanged,
+    reportChanged,
     mutate,
-    featureId,
     onFocused,
   ]);
+  if (routeChanged)
+    return <p>Route changed. Select this SIGMET again on the map.</p>;
+  if (reportChanged)
+    return <p>Report changed. Select this SIGMET again on the map.</p>;
   if (!contextKey)
     return <p>Select a route to add this SIGMET to attention.</p>;
   if (!candidate || !view.available)

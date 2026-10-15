@@ -332,6 +332,26 @@ export async function setSigmetSelection(
     parseRouteSigmetSnapshot,
     8 * 1024 ** 2
   );
-  result.allocation.release();
-  return result.data;
+  try {
+    const snapshot = result.data;
+    if (snapshot.context?.context_key !== change.context_key)
+      throw Error('Obsolete SIGMET selection context');
+    const selected = [...snapshot.entries, ...snapshot.selected_entries].find(
+      (entry) =>
+        entry.bulletin_key === change.bulletin_key &&
+        entry.semantic_digest === change.semantic_digest &&
+        !entry.acknowledged
+    );
+    return {
+      context_key: change.context_key,
+      state_revision: snapshot.state_revision,
+      notice_key: selected?.notice_key ?? null,
+    };
+  } finally {
+    result.allocation.release();
+  }
 }
+
+export type SigmetSelectionConfirmation = Awaited<
+  ReturnType<typeof setSigmetSelection>
+>;

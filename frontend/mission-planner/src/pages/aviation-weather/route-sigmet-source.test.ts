@@ -84,11 +84,14 @@ it('manual selection is confirmed by the shared source and released on disposal'
   });
   const unsubscribe = source.subscribe(() => {});
   await settle();
-  await source.setSelection({
+  const confirmation = await source.setSelection({
     context_key: hash('c'),
     bulletin_key: hash('e'),
     semantic_digest: hash('f'),
   });
+  expect(confirmation).not.toHaveProperty('entries');
+  expect(confirmation).not.toHaveProperty('sigmet_product');
+  expect(confirmation.notice_key).toBe(hash('d'));
   expect(source.snapshot().snapshot?.entries[0].selected).toBe(true);
   unsubscribe();
   expect(budget.snapshot().decoded).toBe(0);

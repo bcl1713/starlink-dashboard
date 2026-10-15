@@ -45,6 +45,20 @@ it('exposes every pending item for navigation and keeps selection separate from 
     presentation.dispose();
   }
 });
+it('keeps the displayed page and highlighted notices in one projection', () => {
+  const next = multiple([1, 2, 3, 4]);
+  next.attentionPage = 1;
+  const presentation = createSigmetPresentation(next, new WeatherBudget());
+  try {
+    expect(presentation.visibleItems).toHaveLength(1);
+    expect(presentation.visibleItems[0].entry.attention_order).toBe(1);
+    expect(presentation.notices.map((n) => n.entry.notice_key)).toEqual(
+      presentation.visibleItems.map((n) => n.entry.notice_key)
+    );
+  } finally {
+    presentation.dispose();
+  }
+});
 it('keeps acknowledged intersections shaded while showing only the three newest attention notices', () => {
   const next = multiple([1, 5, 3, 2, 4]);
   next.source.snapshot!.entries[1].acknowledged = true;
@@ -307,7 +321,7 @@ it.each([true, false])(
       entry.feature_ids = ids;
       const presentation = createSigmetPresentation(next, new WeatherBudget());
       try {
-        expect(presentation.notices[0].label).toBe('TEST OSCAR55 · eeeeeeee');
+        expect(presentation.notices[0].label).toBe('TEST OSCAR55');
         expect(
           presentation.notices[0].reports.map((report) => report.id)
         ).toEqual(ids);

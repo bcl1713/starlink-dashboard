@@ -7,6 +7,7 @@ import {
   setSigmetAcknowledgement,
   setSigmetSelection,
   type NoticeSelection,
+  type SigmetSelectionConfirmation,
   RouteSigmetHttpError,
   routeSigmetsKey,
   type RouteSigmetSnapshot,
@@ -458,12 +459,14 @@ export class RouteSigmetSource {
       ].every((id) => ids.has(id))
     );
   }
-  setSelection(change: NoticeSelection): Promise<RouteSigmetSnapshot> {
+  setSelection(change: NoticeSelection): Promise<SigmetSelectionConfirmation> {
     const write = this.writes.then(() => this.select(change));
     this.writes = write.catch(() => {});
     return write;
   }
-  private async select(change: NoticeSelection): Promise<RouteSigmetSnapshot> {
+  private async select(
+    change: NoticeSelection
+  ): Promise<SigmetSelectionConfirmation> {
     const snapshot = this.view.snapshot;
     if (
       !this.active() ||
@@ -502,7 +505,7 @@ export class RouteSigmetSource {
       if (
         !this.active() ||
         epoch !== this.epoch ||
-        result.context?.context_key !== change.context_key ||
+        result.context_key !== change.context_key ||
         result.state_revision < this.revision
       )
         throw Error('Obsolete SIGMET selection');

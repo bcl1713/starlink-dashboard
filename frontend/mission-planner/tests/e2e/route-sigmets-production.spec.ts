@@ -882,7 +882,7 @@ test('shared manual SIGMET attention stays quiet and can be acknowledged from Ov
     screenshots_complete: false,
   };
   try {
-    await feed('route', { replay_utc_ms: null });
+    await feed('attention', { replay_utc_ms: null });
     await route(request, '10,0 20,0', 'Quiet route');
     expect(
       (

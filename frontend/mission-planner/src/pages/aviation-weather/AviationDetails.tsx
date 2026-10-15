@@ -20,6 +20,7 @@ export function AviationDetails({
   returnFocusRef,
   portalContainer,
   onSigmetFocused,
+  inspectionRevision = 0,
 }: {
   view: AviationView;
   candidates: readonly AviationSelection[];
@@ -29,6 +30,7 @@ export function AviationDetails({
   returnFocusRef: RefObject<HTMLElement | null>;
   portalContainer: HTMLElement | null;
   onSigmetFocused?: (key: string) => void;
+  inspectionRevision?: number;
 }) {
   const reports = useMemo(
     () =>
@@ -128,6 +130,7 @@ export function AviationDetails({
           )}
           {selected?.selection.layer === 'sigmet' && (
             <SigmetInspectionActions
+              key={`${inspectionRevision}:${selected.feature.id}`}
               featureId={selected.feature.id}
               autoSelect={choices.length === 1}
               onFocused={onSigmetFocused}

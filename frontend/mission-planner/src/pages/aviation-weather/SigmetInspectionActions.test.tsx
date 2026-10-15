@@ -48,3 +48,73 @@ it('adds a chosen report once while overlapping candidates wait for a choice', (
   rerender(<SigmetInspectionActions featureId="off-route" autoSelect />);
   expect(mocks.mutate).toHaveBeenCalledTimes(1);
 });
+
+it('does not undo acknowledgement on another display while inspection stays open', () => {
+  const entry = {
+    notice_key: 'n',
+    semantic_digest: 's',
+    feature_ids: ['off-route'],
+    acknowledged: false,
+  };
+  const state = {
+    context: { context_key: 'c' },
+    entries: [entry],
+    selected_entries: [],
+    selection_candidates: [
+      { bulletin_key: 'b', semantic_digest: 's', feature_ids: ['off-route'] },
+    ],
+  };
+  mocks.snapshot = state;
+  const { rerender } = render(
+    <SigmetInspectionActions featureId="off-route" autoSelect />
+  );
+  mocks.snapshot = { ...state, entries: [{ ...entry, acknowledged: true }] };
+  rerender(<SigmetInspectionActions featureId="off-route" autoSelect />);
+  expect(mocks.mutate).not.toHaveBeenCalled();
+});
+it('does not select into a replacement route without a fresh inspection gesture', () => {
+  const state = {
+    context: { context_key: 'old' },
+    entries: [],
+    selected_entries: [],
+    selection_candidates: [
+      { bulletin_key: 'b', semantic_digest: 's', feature_ids: ['off-route'] },
+    ],
+  };
+  mocks.snapshot = state;
+  const { rerender } = render(
+    <SigmetInspectionActions featureId="off-route" autoSelect />
+  );
+  expect(mocks.mutate).toHaveBeenCalledTimes(1);
+  mocks.snapshot = { ...state, context: { context_key: 'new' } };
+  rerender(<SigmetInspectionActions featureId="off-route" autoSelect />);
+  expect(mocks.mutate).toHaveBeenCalledTimes(1);
+  expect(screen.getByText(/Route changed/)).toBeDefined();
+});
+it('focuses an already pending bulletin without issuing another selection write', () => {
+  mocks.snapshot = {
+    context: { context_key: 'c' },
+    entries: [
+      {
+        notice_key: 'n',
+        semantic_digest: 's',
+        feature_ids: ['off-route'],
+        acknowledged: false,
+      },
+    ],
+    selected_entries: [],
+    selection_candidates: [
+      { bulletin_key: 'b', semantic_digest: 's', feature_ids: ['off-route'] },
+    ],
+  };
+  const focus = vi.fn();
+  render(
+    <SigmetInspectionActions
+      featureId="off-route"
+      autoSelect
+      onFocused={focus}
+    />
+  );
+  expect(focus).toHaveBeenCalledWith('n');
+  expect(mocks.mutate).not.toHaveBeenCalled();
+});

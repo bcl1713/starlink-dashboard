@@ -110,6 +110,9 @@ def generate(root, now=None):
         "new": route
         + [feature("R5", [[[-78, 33], [-70, 33], [-70, 38], [-78, 38], [-78, 33]]])],
     }
+    variants["attention"] = [
+        feature(f"T{i}", route[i - 1]["geometry"]["coordinates"]) for i in range(1, 5)
+    ] + copy.deepcopy(route[4:])
     amended = copy.deepcopy(route)
     amended[0]["properties"]["rawSigmet"] += " AMD SEV ICE"
     amended[0]["properties"]["hazard"] = "ICE"

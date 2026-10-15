@@ -441,7 +441,12 @@ test('exact production SHA: native station forecasts and advisory topology coexi
       .getByLabel('Weather report', { exact: true })
       .selectOption({ label: 'TAF · KJFK' });
     await expect(popup).toContainText('KJFK terminal forecast');
-    expect((await nativeSnapshot(overview)).selected).toBe('LineSegments');
+    await expect
+      .poll(async () => (await nativeSnapshot(overview)).selected)
+      .toBe('LineSegments');
+    await expect(
+      overview.getByLabel('Weather report', { exact: true })
+    ).toBeVisible();
     await popup.getByText('Forecast groups (2)', { exact: true }).click();
     await expect(popup).toContainText('future');
     await overview.screenshot({

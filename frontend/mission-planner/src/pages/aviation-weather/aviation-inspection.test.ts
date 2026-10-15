@@ -24,6 +24,34 @@ it('limits the keyboard inspection list to SIGMETs visible on the map', () => {
     dispose(view);
   }
 });
+it('includes a visible polygon crossing the viewport with no visible source vertices', () => {
+  const report = advisory();
+  report.geometry.coordinates = [
+    [
+      [-80, 6],
+      [80, 6],
+      [80, 8],
+      [-80, 8],
+      [-80, 6],
+    ],
+  ];
+  const view = viewFor([report], 'sigmet');
+  const camera = new THREE.PerspectiveCamera(40, 800 / 600, 0.1, 100);
+  camera.position.set(6, 0, 0);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+  const viewport = { width: 800, height: 600 };
+  try {
+    expect(
+      pickAviationFeatures(view, camera, { x: 400, y: 248.98 }, viewport)
+    ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
+    expect(visibleSigmetReports(view, camera, viewport)).toEqual([
+      { layer: 'sigmet', id: 'test-advisory' },
+    ]);
+  } finally {
+    dispose(view);
+  }
+});
 it('picks the visible advisory interior at close zoom', () => {
   const report = advisory();
   report.geometry.coordinates = [

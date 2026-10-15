@@ -5,7 +5,6 @@ import {
 } from '@/services/aviation-features';
 import type { AviationView } from './aviation-controller';
 import type { AviationSelection } from './aviation-inspection';
-import { earthPoint } from './aviation-renderer';
 import { isStarMarkerVisible } from '../overview-star-marker-rendering';
 
 type Viewport = { width: number; height: number };
@@ -94,46 +93,145 @@ export function pickSigmetFeatures(
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
+type ClipVertex = { world: THREE.Vector3; clip: THREE.Vector4 };
+const planes = [
+  (v: THREE.Vector4) => v.w + v.x,
+  (v: THREE.Vector4) => v.w - v.x,
+  (v: THREE.Vector4) => v.w + v.y,
+  (v: THREE.Vector4) => v.w - v.y,
+  (v: THREE.Vector4) => v.w + v.z,
+  (v: THREE.Vector4) => v.w - v.z,
+];
+function clipTriangle(vertices: ClipVertex[]): ClipVertex[] {
+  let polygon = vertices;
+  for (const distance of planes) {
+    const output: ClipVertex[] = [];
+    for (let i = 0; i < polygon.length; i++) {
+      const current = polygon[i],
+        previous = polygon[(i + polygon.length - 1) % polygon.length];
+      const a = distance(previous.clip),
+        b = distance(current.clip);
+      if (a >= 0 !== b >= 0) {
+        const t = a / (a - b);
+        output.push({
+          world: previous.world.clone().lerp(current.world, t),
+          clip: previous.clip.clone().lerp(current.clip, t),
+        });
+      }
+      if (b >= 0) output.push(current);
+    }
+    polygon = output;
+    if (!polygon.length) break;
+  }
+  return polygon;
+}
+const visibilityCache = new WeakMap<
+  object,
+  WeakMap<
+    THREE.Camera,
+    {
+      signature: string;
+      data: unknown;
+      state: string;
+      from: number;
+      until: number;
+      items: AviationSelection[];
+    }
+  >
+>();
 export function visibleSigmetReports(
   view: AviationView,
   camera: THREE.Camera,
   viewport: Viewport
 ): AviationSelection[] {
+  const layer = view.layers.sigmet,
+    drawing = layer.drawing;
+  if (
+    !drawing ||
+    !layer.data ||
+    !['current', 'stale'].includes(layer.state) ||
+    viewport.width <= 0 ||
+    viewport.height <= 0
+  )
+    return [];
   camera.updateMatrixWorld();
-  const visible = new Set<string>();
-  for (const x of [0, 0.25, 0.5, 0.75, 1])
-    for (const y of [0, 0.25, 0.5, 0.75, 1])
-      for (const selection of pickSigmetFeatures(
-        view,
-        camera,
-        { x: x * viewport.width, y: y * viewport.height },
-        viewport
-      ))
-        visible.add(selection.id);
-  for (const report of reports(view)) {
-    if (!report.geometry || visible.has(report.id)) continue;
-    const polygons =
-      report.geometry.type === 'Polygon'
-        ? [report.geometry.coordinates]
-        : report.geometry.coordinates;
+  const signature = [
+    ...camera.matrixWorld.elements,
+    ...camera.projectionMatrix.elements,
+    viewport.width,
+    viewport.height,
+  ].join(',');
+  const cache = visibilityCache.get(drawing)?.get(camera);
+  if (
+    cache &&
+    cache.signature === signature &&
+    cache.data === layer.data &&
+    cache.state === layer.state &&
+    view.now >= cache.from &&
+    view.now < cache.until
+  )
+    return cache.items;
+  const mesh = drawing.object.getObjectByName(
+    'Native international SIGMET advisories'
+  ) as THREE.Mesh | undefined;
+  if (!mesh?.geometry) return [];
+  drawing.object.updateMatrixWorld(true);
+  const positions = mesh.geometry.getAttribute('position'),
+    indices = mesh.geometry.getIndex();
+  const admitted = new Set(reports(view).map((report) => report.id)),
+    visible = new Set<string>();
+  const count = indices?.count ?? positions.count;
+  // Clip the same tessellated triangles that are drawn: holes, dateline splits,
+  // and polygons whose original vertices are all outside the viewport agree
+  // with the visible map. The cache avoids rescanning an unchanged scene.
+  for (let offset = 0; offset < count; offset += 3) {
+    const id = drawing.featureAt(offset / 3);
+    if (!id || !admitted.has(id) || visible.has(id)) continue;
+    const vertices: ClipVertex[] = [];
+    for (let j = 0; j < 3; j++) {
+      const index = indices ? indices.getX(offset + j) : offset + j;
+      const world = new THREE.Vector3()
+        .fromBufferAttribute(positions, index)
+        .applyMatrix4(mesh.matrixWorld);
+      const clip = new THREE.Vector4(world.x, world.y, world.z, 1)
+        .applyMatrix4(camera.matrixWorldInverse)
+        .applyMatrix4(camera.projectionMatrix);
+      vertices.push({ world, clip });
+    }
+    const polygon = clipTriangle(vertices);
+    if (!polygon.length) continue;
+    const center = polygon
+      .reduce((sum, vertex) => sum.add(vertex.world), new THREE.Vector3())
+      .divideScalar(polygon.length);
     if (
-      polygons.some((rings) =>
-        rings.some((ring) =>
-          ring.some(([lon, lat]) => {
-            const position = earthPoint(lat, lon);
-            if (!isStarMarkerVisible(position, camera)) return false;
-            const clip = position.project(camera);
-            return (
-              Math.abs(clip.x) <= 1 &&
-              Math.abs(clip.y) <= 1 &&
-              clip.z >= -1 &&
-              clip.z <= 1
-            );
-          })
-        )
-      )
+      isStarMarkerVisible(center, camera) ||
+      polygon.some((vertex) => isStarMarkerVisible(vertex.world, camera))
     )
-      visible.add(report.id);
+      visible.add(id);
   }
-  return [...visible].sort().map((id) => ({ layer: 'sigmet', id }));
+  const items = [...visible]
+    .sort()
+    .map((id) => ({ layer: 'sigmet' as const, id }));
+  let cameras = visibilityCache.get(drawing);
+  if (!cameras) {
+    cameras = new WeakMap();
+    visibilityCache.set(drawing, cameras);
+  }
+  let until = Infinity;
+  for (const feature of layer.data.features as AviationAdvisory[]) {
+    for (const time of [
+      feature.properties.valid_from_ms,
+      feature.properties.expires_at_ms,
+    ])
+      if (time > view.now) until = Math.min(until, time);
+  }
+  cameras.set(camera, {
+    signature,
+    data: layer.data,
+    state: layer.state,
+    from: view.now,
+    until,
+    items,
+  });
+  return items;
 }

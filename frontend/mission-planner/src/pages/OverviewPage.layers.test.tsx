@@ -139,6 +139,37 @@ import type { GfsView } from './aviation-weather/gfs-controller';
 import { NOW, collection, station } from './aviation-weather/fixtures';
 import { parseAviationFeatures } from '@/services/aviation-features';
 afterEach(cleanup);
+it('preserves the station chooser after changing from METAR to TAF', () => {
+  queries.aviation = {
+    ...emptyAviationView,
+    now: NOW,
+    layers: {
+      ...emptyAviationView.layers,
+      metar: {
+        state: 'current',
+        data: parseAviationFeatures(collection([station()]), 'metar'),
+      },
+      taf: {
+        state: 'current',
+        data: parseAviationFeatures(collection([station(true)]), 'taf'),
+      },
+    },
+  };
+  render(<OverviewPage />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Inspect weather reports' })
+  );
+  fireEvent.change(screen.getByRole('combobox', { name: 'Weather report' }), {
+    target: { value: 'taf:test-station' },
+  });
+  expect(
+    screen.getByRole('combobox', { name: 'Weather report' })
+  ).not.toBeNull();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Weather report' }), {
+    target: { value: 'metar:test-station' },
+  });
+  expect(screen.getByRole('dialog').textContent).toContain('METAR observation');
+});
 beforeEach(() => {
   queries.layoutMode = 'desktop';
   queries.aviation = emptyAviationView;
