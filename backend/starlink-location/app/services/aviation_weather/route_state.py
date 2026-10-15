@@ -247,7 +247,9 @@ class NoticeStore:
                 selected_groups = {
                     group.notice_key(context_key): group
                     for group in (selection_eligible or [])
-                    if group.bulletin_key in selected_keys and not group.identity_uncertain
+                    if group.bulletin_key in selected_keys and (
+                        not group.identity_uncertain or group.notice_key(context_key) in records
+                    )
                 }
                 if selection_eligible is not None:
                     for key, record in list(records.items()):
