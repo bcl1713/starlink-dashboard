@@ -117,8 +117,8 @@ class FixtureSimulationCoordinator(main.SimulationCoordinator):
     def get_current_telemetry(self):
         return self._controlled(super().get_current_telemetry())
 
-    def update(self):
-        return self._controlled(super().update())
+    def update(self, replay_frame=None):
+        return self._controlled(super().update(replay_frame=replay_frame))
 
     @staticmethod
     def _controlled(telemetry):
@@ -138,6 +138,8 @@ class FixtureSimulationCoordinator(main.SimulationCoordinator):
                 observed_at=now - timedelta(seconds=live.get("age", 0)),
                 speed_observed_at=now - timedelta(seconds=live.get("speed_age", 0)),
             )
+        if not updates:
+            return telemetry
         return telemetry.model_copy(
             update={"position": telemetry.position.model_copy(update=updates)}
         )

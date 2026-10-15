@@ -382,3 +382,42 @@ def test_missing_live_eta_proof_prevents_pass(missing):
     evidence["encounter"][missing] = False
     with pytest.raises(ValueError, match="encounter"):
         runner().require_pass(evidence)
+
+
+def test_telemetry_fixture_preserves_replay_update_contract(tmp_path):
+    """The source adapter must accept the real coordinator's replay keyword."""
+    import ast
+    from datetime import datetime, timedelta, timezone
+    from types import SimpleNamespace
+
+    class BaseCoordinator:
+        def update(self, replay_frame=None):
+            return replay_frame
+
+    control = tmp_path / "control.json"
+    control.write_text("{}")
+    source = ast.parse(
+        (ROOT / "tools/acceptance/aviation-weather/backend_fixture.py").read_text()
+    )
+    adapter = next(
+        node
+        for node in source.body
+        if isinstance(node, ast.ClassDef)
+        and node.name == "FixtureSimulationCoordinator"
+    )
+    namespace = {
+        "main": SimpleNamespace(SimulationCoordinator=BaseCoordinator),
+        "json": json,
+        "Path": lambda _: control,
+        "datetime": datetime,
+        "timedelta": timedelta,
+        "timezone": timezone,
+    }
+    exec(
+        compile(ast.Module(body=[adapter], type_ignores=[]), "fixture-adapter", "exec"),
+        namespace,
+    )
+    frame = object()
+    assert (
+        namespace["FixtureSimulationCoordinator"]().update(replay_frame=frame) is frame
+    )
