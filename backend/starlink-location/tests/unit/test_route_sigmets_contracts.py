@@ -46,6 +46,19 @@ def entry():
         "semantic_digest": "d" * 64,
         "feature_ids": ["f-1"],
         "spans": [span()],
+        "encounter": {
+            "spans": [
+                {
+                    "entry_ms": None,
+                    "exit_ms": None,
+                    "status": "unknown",
+                    "reason": "unavailable-plan",
+                }
+            ],
+            "status": "unknown",
+            "unknown_count": 1,
+            "reason": "unavailable-plan",
+        },
         "attention_order": 1,
         "acknowledged": False,
         "valid_from_ms": NOW - 1,
@@ -56,8 +69,11 @@ def entry():
 
 def snapshot():
     return {
-        "schema": "route-sigmets-v1",
+        "schema": "route-sigmets-v2",
         "generated_at_ms": NOW,
+        "service_instance_id": "a" * 32,
+        "observation_revision": 1,
+        "encounter_plan": None,
         "settings_revision": 0,
         "state_revision": 0,
         "generation_id": "e" * 64,
@@ -79,6 +95,7 @@ def snapshot():
 def test_selected_only_notice_has_no_manufactured_spans():
     payload = entry()
     payload.pop("spans")
+    payload.pop("encounter")
     selected = models().SelectedSigmetEntry(**payload)
     assert "spans" not in selected.model_dump()
     with pytest.raises(ValidationError):
@@ -91,6 +108,7 @@ def test_snapshot_cannot_duplicate_bulletins_across_selected_and_matched():
     payload = snapshot()
     selected = entry()
     selected.pop("spans")
+    selected.pop("encounter")
     payload["selected_entries"] = [selected]
     with pytest.raises(ValidationError):
         models().RouteSigmetSnapshot(**payload)
@@ -176,7 +194,7 @@ def test_snapshot_preserves_product_and_accepts_point_contact():
     admitted = models().RouteSigmetSnapshot.model_validate(payload)
     assert admitted.sigmet_product.coverage.missing_meaning == "unknown-not-clear"
     assert admitted.entries[0].spans[0].start_fraction == 0.25
-    assert admitted.model_dump(by_alias=True)["schema"] == "route-sigmets-v1"
+    assert admitted.model_dump(by_alias=True)["schema"] == "route-sigmets-v2"
 
 
 @pytest.mark.parametrize(
@@ -227,12 +245,16 @@ def test_worker_result_uses_features_and_enforces_aggregate_limits():
 
 def test_snapshot_rejects_aggregate_span_and_encoded_byte_overflow():
     first = entry() | {"spans": [span()] * 50001}
+    first["encounter"]["spans"] *= 50001
+    first["encounter"]["unknown_count"] = 50001
     second = entry() | {
         "notice_key": "1" * 64,
         "bulletin_key": "2" * 64,
         "feature_ids": ["f-2"],
         "spans": [span()] * 50000,
     }
+    second["encounter"]["spans"] *= 50000
+    second["encounter"]["unknown_count"] = 50000
     with pytest.raises(ValidationError, match="aggregate spans"):
         models().RouteSigmetSnapshot.model_validate(
             snapshot() | {"entries": [first, second]}
@@ -289,3 +311,26 @@ def test_partial_geometry_preserves_confirmed_matches_and_unknown_gaps():
     )
     assert admitted.matches[0].spans[0].start_fraction == 0.25
     assert admitted.unresolved[0].reason == "boundary-uncertain"
+
+
+@pytest.mark.parametrize(
+    "change",
+    [{"spans": []}, {"unknown_count": 0}, {"status": "overlap"}, {"reason": None}],
+)
+def test_encounter_evidence_rejects_inconsistent_aggregate(change):
+    payload = entry()
+    payload["encounter"].update(change)
+    with pytest.raises(ValidationError):
+        models().RouteSigmetEntry.model_validate(payload)
+
+
+def test_v2_requires_ordering_and_no_internal_timing_points():
+    for field in ("service_instance_id", "observation_revision", "encounter_plan"):
+        payload = snapshot()
+        payload.pop(field)
+        with pytest.raises(ValidationError):
+            models().RouteSigmetSnapshot.model_validate(payload)
+    with pytest.raises(ValidationError):
+        models().RouteSigmetSnapshot.model_validate(
+            snapshot() | {"schema": "route-sigmets-v1"}
+        )

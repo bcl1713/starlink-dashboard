@@ -5,6 +5,11 @@ from typing import Annotated, Literal, Self
 from pydantic import Field, field_validator, model_validator
 
 from app.models.aviation_weather import Contract, Hash, Time, WeatherProduct
+from app.models.sigmet_encounters import (
+    EncounterEvidence,
+    EncounterPlan,
+    EncounterPlanSummary,
+)
 
 MAX_ROUTE_POINTS = 20_000
 MAX_ADVISORIES = 500
@@ -51,6 +56,7 @@ class WireRouteContext(Contract):
 
 
 class RouteContext(WireRouteContext):
+    encounter_plan: EncounterPlan | None = Field(default=None, exclude=True)
     points: list[Position] = Field(max_length=MAX_ROUTE_POINTS, exclude=True)
     waypoint_occurrences: dict[str, int] = Field(default_factory=dict, exclude=True)
 
@@ -141,11 +147,30 @@ class SelectedSigmetEntry(Contract):
 
 
 class RouteSigmetEntry(SelectedSigmetEntry):
+    encounter: EncounterEvidence
+
+    @model_validator(mode="after")
+    def aligned_encounters(self) -> Self:
+        if len(self.encounter.spans) != len(self.spans):
+            raise ValueError("Encounter evidence must align with geographic spans")
+        for passage in self.encounter.spans:
+            if passage.status != "unknown":
+                overlap = (
+                    passage.exit_ms >= self.valid_from_ms
+                    and passage.entry_ms < self.expires_at_ms
+                )
+                if overlap != (passage.status == "overlap"):
+                    raise ValueError("Passage validity classification mismatch")
+        return self
+
     spans: list[IntersectionSpan] = Field(min_length=1, max_length=MAX_SPANS)
 
 
 class RouteSigmetSnapshot(Contract):
-    schema_version: Literal["route-sigmets-v1"] = Field(alias="schema")
+    schema_version: Literal["route-sigmets-v2"] = Field(alias="schema")
+    service_instance_id: Annotated[str, Field(pattern=r"^[a-f0-9]{32}$")]
+    observation_revision: Time
+    encounter_plan: EncounterPlanSummary | None
     generated_at_ms: Time
     settings_revision: Time
     state_revision: Time
@@ -178,6 +203,14 @@ class RouteSigmetSnapshot(Contract):
 
     @model_validator(mode="after")
     def limits(self) -> Self:
+        if self.context is None and self.encounter_plan is not None:
+            raise ValueError("Encounter plan requires a route context")
+        if (
+            self.context
+            and self.encounter_plan
+            and self.context.source != self.encounter_plan.source
+        ):
+            raise ValueError("Encounter plan source mismatch")
         all_entries = [*self.entries, *self.selected_entries]
         unique([entry.notice_key for entry in all_entries], "notice keys")
         unique([entry.bulletin_key for entry in all_entries], "bulletin keys")

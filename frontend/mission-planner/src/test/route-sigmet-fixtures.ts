@@ -40,7 +40,10 @@ export function routeSnapshot() {
     },
   };
   const snapshot = {
-    schema: 'route-sigmets-v1',
+    schema: 'route-sigmets-v2',
+    service_instance_id: 'a'.repeat(32),
+    observation_revision: 1,
+    encounter_plan: null,
     generated_at_ms: NOW,
     settings_revision: 1,
     state_revision: 1,
@@ -63,6 +66,19 @@ export function routeSnapshot() {
     omitted_features: 0,
     entries: [
       {
+        encounter: {
+          spans: [
+            {
+              entry_ms: null,
+              exit_ms: null,
+              status: 'unknown',
+              reason: 'missing-timing',
+            },
+          ],
+          status: 'unknown',
+          unknown_count: 1,
+          reason: 'missing-timing',
+        },
         notice_key: hash('d'),
         bulletin_key: hash('e'),
         semantic_digest: hash('f'),

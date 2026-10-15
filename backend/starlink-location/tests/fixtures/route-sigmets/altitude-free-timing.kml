@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Altitude-free timing control</name>
+<Placemark><name>Route</name><LineString><altitudeMode>clampToGround</altitudeMode><coordinates>-82,35 -78,35 -74,35 -70,35</coordinates></LineString></Placemark>
+<Placemark><name>START</name><description>Time Over Waypoint: 2026-10-30 00:00:00Z</description><Point><altitudeMode>clampToGround</altitudeMode><coordinates>-82,35</coordinates></Point></Placemark>
+<Placemark><name>FIRST</name><description>Time Over Waypoint: 2026-10-30 00:10:00Z</description><Point><altitudeMode>clampToGround</altitudeMode><coordinates>-78,35</coordinates></Point></Placemark>
+<Placemark><name>SECOND</name><description>Time Over Waypoint: 2026-10-30 00:20:00Z</description><Point><altitudeMode>clampToGround</altitudeMode><coordinates>-74,35</coordinates></Point></Placemark>
+<Placemark><name>END</name><description>Time Over Waypoint: 2026-10-30 00:30:00Z</description><Point><altitudeMode>clampToGround</altitudeMode><coordinates>-70,35</coordinates></Point></Placemark>
+</Document></kml>

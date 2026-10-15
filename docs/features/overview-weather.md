@@ -182,3 +182,24 @@ intersecting polygons only switch affects map visibility, not relevance or
 acknowledgement. No bulletin catalogue is shown in Configuration; unrelated
 reports are inspected on the map. Geographic intersections do not imply an
 altitude or passage-time match.
+
+### Planned SIGMET passage timing
+
+Route-intersecting SIGMET notices include planned passage UTC and **Time
+overlap**, **No time overlap**, or an explicit unavailable/unknown result.
+Passage uses linear interpolation between the effective route's waypoint UTC
+times. Missing, equal, reversed or timezone-free times are not replaced with
+live aircraft speed or a replay clock. Details retain exact UTC intervals and
+timing provenance; multiple intervals and partial evidence are identified
+explicitly.
+
+Time comparison is informational: a nonoverlap does not hide a geographic
+advisory or acknowledge it. Weather eligibility still follows actual UTC, even
+when the selected simulation route has historical planned dates. Timing edits
+refresh evidence without resetting acknowledgements. Manually selected reports
+without route intersections show encounter unavailable.
+
+Routes do not provide planned flight altitude. No altitude comparison or
+altitude filtering is performed, including during an active mission. The
+SIGMET's reported vertical bounds remain available for operator interpretation.
+An altitude-free KML with waypoint times supports passage timing normally.

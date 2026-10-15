@@ -20,6 +20,22 @@ def generate(root, now=None):
             .replace("+00:00", "Z")
         )
 
+    route_path = (
+        Path(__file__).resolve().parents[3]
+        / "backend/starlink-location/tests/fixtures/route-sigmets/altitude-free-timing.kml"
+    )
+    kml = route_path.read_text()
+    for index, minute in enumerate(("00", "10", "20", "30")):
+        kml = kml.replace(
+            f"2026-10-30 00:{minute}:00Z",
+            (
+                utc(index * 600000).replace("T", " ").split(".")[0] + "Z"
+                if "." in utc(index * 600000)
+                else utc(index * 600000).replace("T", " ")
+            ),
+        )
+    (root / "encounter-route.kml").write_text(kml)
+
     stations = [
         ("KJFK", 40.64, -73.78, "BKN", "700"),
         ("EGLL", 51.47, -0.45, "OVC", "300"),

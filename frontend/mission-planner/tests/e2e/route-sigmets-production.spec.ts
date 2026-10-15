@@ -1065,3 +1065,202 @@ test('shared manual SIGMET attention stays quiet and can be acknowledged from Ov
     await b.close();
   }
 });
+
+test('timing-only encounter context survives altitude-free routes and plan edits', async ({
+  browser,
+  request,
+}, info) => {
+  test.setTimeout(180000);
+  const contexts = await Promise.all([
+    browser.newContext({
+      baseURL: process.env.WEATHER_ACCEPTANCE_BASE_URL,
+      viewport: { width: 1920, height: 1080 },
+    }),
+    browser.newContext({ baseURL: process.env.WEATHER_ACCEPTANCE_BASE_URL }),
+  ]);
+  const overview = await contexts[0].newPage(),
+    config = await contexts[1].newPage();
+  const errors: string[] = [];
+  overview.on('pageerror', (e) => errors.push(e.message));
+  config.on('pageerror', (e) => errors.push(e.message));
+  const proof = {
+    altitude_free: false,
+    time_boundaries: false,
+    plan_edit_ack_preserved: false,
+    selected_only_unknown: false,
+    partial_evidence: false,
+    two_screen_sync: false,
+    responsive_details: false,
+    no_altitude_filter: false,
+  };
+  const upload = async () => {
+    const kml = await readFile(output + '/capture/encounter-route.kml');
+    expect(kml.toString()).toContain('clampToGround');
+    const response = await request.post('/api/routes/upload', {
+      multipart: {
+        file: {
+          name: `encounter-${randomUUID()}.kml`,
+          mimeType: 'application/vnd.google-earth.kml+xml',
+          buffer: kml,
+        },
+      },
+    });
+    expect(response.status(), await response.text()).toBe(201);
+    const id = (await response.json()).id;
+    expect((await request.post(`/api/routes/${id}/activate`)).ok()).toBe(true);
+  };
+  const edit = async (data: Record<string, unknown>) =>
+    expect(
+      (await request.post('/api/__acceptance/route-encounter', { data })).ok()
+    ).toBe(true);
+  try {
+    await feed('route', { replay_utc_ms: null });
+    await upload();
+    expect(
+      (
+        await request.put('/api/aviation-weather/v1/settings', {
+          data: { sigmet: true, metar: false, taf: false },
+        })
+      ).ok()
+    ).toBe(true);
+    await overview.goto('/overview');
+    await config.goto('/configuration');
+    await config.getByRole('tab', { name: 'Weather', exact: true }).click();
+    await expect
+      .poll(async () => (await snapshot(request)).entries.length)
+      .toBe(4);
+    const initial: RouteSigmetSnapshot = await snapshot(request);
+    expect(initial.schema).toBe('route-sigmets-v2');
+    expect(initial.entries.every((e) => e.encounter.status === 'overlap')).toBe(
+      true
+    );
+    expect(initial.encounter_plan?.method).toBe('segment-linear-utc-v1');
+    await expect(
+      overview.getByText(/Planned passage .*Time overlap/).first()
+    ).toBeVisible({ timeout: 15000 });
+    proof.altitude_free = true;
+    const cleared = initial.entries[0];
+    expect(
+      (
+        await request.put(endpoint + '/acknowledgement', {
+          data: {
+            context_key: initial.context!.context_key,
+            notice_key: cleared.notice_key,
+            semantic_digest: cleared.semantic_digest,
+            acknowledged: true,
+          },
+        })
+      ).ok()
+    ).toBe(true);
+    await edit({ offset_ms: 86400000 });
+    const later: RouteSigmetSnapshot = await snapshot(request);
+    expect(later.context!.context_key).toBe(initial.context!.context_key);
+    expect(later.encounter_plan!.revision).not.toBe(
+      initial.encounter_plan!.revision
+    );
+    expect(
+      later.entries.every((e) => e.encounter.status === 'no-overlap')
+    ).toBe(true);
+    expect(
+      later.entries.find((e) => e.notice_key === cleared.notice_key)
+        ?.acknowledged
+    ).toBe(true);
+    expect(
+      later.entries.find((e) => e.notice_key === cleared.notice_key)
+        ?.attention_order
+    ).toBe(cleared.attention_order);
+    const start = Date.now();
+    await expect(overview.getByText(/No time overlap/).first()).toBeVisible({
+      timeout: 8000,
+    });
+    await expect(config.getByText(/No time overlap/).first()).toBeVisible({
+      timeout: 8000,
+    });
+    expect(Date.now() - start).toBeLessThan(8000);
+    proof.plan_edit_ack_preserved = true;
+    proof.two_screen_sync = true;
+    // No-overlap still has geographic attention; height edits cannot hide it.
+    const count = later.entries.length;
+    await edit({ height: 12345 });
+    const height: RouteSigmetSnapshot = await snapshot(request);
+    expect(height.encounter_plan!.revision).toBe(
+      later.encounter_plan!.revision
+    );
+    expect(height.entries.length).toBe(count);
+    proof.no_altitude_filter = true;
+    // The unchanged geographic route now has one missing timing endpoint.
+    await edit({ missing_indices: [1] });
+    const partial: RouteSigmetSnapshot = await snapshot(request);
+    expect(partial.entries.some((e) => e.encounter.unknown_count > 0)).toBe(
+      true
+    );
+    await expect(
+      config.getByText(/Missing waypoint times|passage.*unavailable/).first()
+    ).toBeVisible({ timeout: 8000 });
+    proof.partial_evidence = true;
+    await overview
+      .getByRole('article')
+      .filter({ hasText: 'Planned passage' })
+      .first()
+      .getByText('Details', { exact: true })
+      .click();
+    await expect(
+      overview.getByLabel('Planned passage details').first()
+    ).toBeVisible();
+    await overview.screenshot({
+      path: info.outputPath('encounter-desktop.png'),
+    });
+    await overview.setViewportSize({ width: 390, height: 844 });
+    await expect(overview.getByText(/Planned passage/).first()).toBeVisible();
+    await overview.screenshot({
+      path: info.outputPath('encounter-mobile.png'),
+    });
+    proof.responsive_details = true;
+    // Exact bulletin boundaries are checked against unrounded UTC evidence.
+    for (const e of initial.entries)
+      for (const p of e.encounter.spans) {
+        if (p.entry_ms !== null && p.exit_ms !== null)
+          expect(p.status === 'overlap').toBe(
+            p.exit_ms >= e.valid_from_ms && p.entry_ms < e.expires_at_ms
+          );
+      }
+    proof.time_boundaries = true;
+    await route(request, '10,0 20,0', 'Encounter selected-only control');
+    let quiet: RouteSigmetSnapshot = await snapshot(request);
+    const candidate = quiet.selection_candidates[0];
+    expect(candidate).toBeTruthy();
+    expect(
+      (
+        await request.put(endpoint + '/selection', {
+          data: {
+            context_key: quiet.context!.context_key,
+            bulletin_key: candidate.bulletin_key,
+            semantic_digest: candidate.semantic_digest,
+          },
+        })
+      ).ok()
+    ).toBe(true);
+    quiet = await snapshot(request);
+    expect(quiet.selected_entries).toHaveLength(1);
+    expect(quiet.selected_entries[0]).not.toHaveProperty('encounter');
+    await expect(
+      overview.getByText('Encounter unavailable — no route intersection')
+    ).toBeVisible({ timeout: 8000 });
+    proof.selected_only_unknown = true;
+    expect(errors).toEqual([]);
+    expect(Object.values(proof).every(Boolean)).toBe(true);
+    await writeFile(
+      output + '/sigmet-encounter-evidence.json',
+      JSON.stringify(proof, null, 2)
+    );
+  } finally {
+    try {
+      await request.put('/api/aviation-weather/v1/settings', {
+        data: { sigmet: false },
+      });
+      await request.post('/api/routes/deactivate');
+    } finally {
+      await Promise.allSettled(contexts.map((c) => c.close()));
+    }
+  }
+});

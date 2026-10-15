@@ -822,3 +822,135 @@ async def test_selection_change_reaps_incompatible_worker_even_without_admission
             read.cancel()
             await asyncio.gather(read, return_exceptions=True)
         await close(service, weather)
+
+
+async def test_timing_edit_keeps_geometry_and_acknowledgement(tmp_path, monkeypatch):
+    from datetime import datetime, timezone
+
+    from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
+    from app.services.aviation_weather.route_encounters import capture_encounter_plan
+
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    value = ParsedRoute(
+        metadata=RouteMetadata(name="Timed", file_path="fixture", point_count=2),
+        points=[
+            RoutePoint(
+                longitude=1,
+                latitude=1,
+                expected_arrival_time=datetime.fromtimestamp(t, timezone.utc),
+            )
+            for t in (1, 2)
+        ],
+    )
+
+    def plan():
+        return capture_encounter_plan(value, context[0].context_key, "ordinary", None)
+
+    context[0] = context[0].model_copy(update={"encounter_plan": plan()})
+    calls = []
+    original = service.worker.evaluate
+
+    async def counted(*args):
+        calls.append(True)
+        return await original(*args)
+
+    monkeypatch.setattr(service.worker, "evaluate", counted)
+    try:
+        store.update({"sigmet": True})
+        first = await service.read()
+        assert first.schema_version == "route-sigmets-v2"
+        assert first.entries[0].encounter.status == "overlap"
+        entry = first.entries[0]
+        await service.acknowledge(
+            NoticeMutation(
+                context_key=first.context.context_key,
+                notice_key=entry.notice_key,
+                semantic_digest=entry.semantic_digest,
+                acknowledged=True,
+            )
+        )
+        value.points[1].expected_arrival_time = datetime.fromtimestamp(20, timezone.utc)
+        context[0] = context[0].model_copy(update={"encounter_plan": plan()})
+        second = await service.read()
+        assert second.encounter_plan.revision != first.encounter_plan.revision
+        assert second.observation_revision > first.observation_revision
+        assert second.entries[0].acknowledged
+        assert second.entries[0].attention_order == first.entries[0].attention_order
+        assert (
+            second.entries[0].encounter.spans[0].exit_ms
+            != first.entries[0].encounter.spans[0].exit_ms
+        )
+        assert len(calls) == 1
+        # ABA must get a new observation even when the old digest returns.
+        context[0] = context[0].model_copy(update={"encounter_plan": None})
+        unknown = await service.read()
+        assert unknown.entries[0].encounter.spans[0].reason == "unavailable-plan"
+        context[0] = context[0].model_copy(update={"encounter_plan": plan()})
+        third = await service.read()
+        assert (
+            third.observation_revision
+            > unknown.observation_revision
+            > second.observation_revision
+        )
+    finally:
+        await close(service, weather)
+
+
+async def test_timing_change_during_enrichment_cannot_publish_old_evidence(
+    tmp_path, monkeypatch
+):
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    from app.services.aviation_weather.route_encounters import capture_encounter_plan
+    from tests.unit.test_route_sigmets_encounters import route
+
+    first = context[0]
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = service._geometry
+
+    async def paused(*args):
+        result = await original(*args)
+        entered.set()
+        await release.wait()
+        return result
+
+    monkeypatch.setattr(service, "_geometry", paused)
+    try:
+        store.update({"sigmet": True})
+        old = asyncio.create_task(service.read())
+        await entered.wait()
+        context[0] = first.model_copy(
+            update={
+                "encounter_plan": capture_encounter_plan(
+                    route(), first.context_key, "ordinary", None
+                )
+            }
+        )
+        await service._selection()
+        release.set()
+        result = await old
+        assert result.status == "evaluating" and not result.entries
+        assert result.encounter_plan.revision == context[0].encounter_plan.revision
+    finally:
+        release.set()
+        await close(service, weather)
+
+
+async def test_calculation_failure_preserves_geographic_notice(tmp_path, monkeypatch):
+    service, weather, store, _, _, _, _, _ = setup_service(tmp_path)
+
+    def fail(*args):
+        raise ValueError("unusable plan")
+
+    monkeypatch.setattr(
+        importlib.import_module("app.services.aviation_weather.route_runtime"),
+        "evaluate_encounters",
+        fail,
+    )
+    try:
+        store.update({"sigmet": True})
+        result = await service.read()
+        assert (
+            result.entries and result.entries[0].encounter.reason == "unavailable-plan"
+        )
+    finally:
+        await close(service, weather)

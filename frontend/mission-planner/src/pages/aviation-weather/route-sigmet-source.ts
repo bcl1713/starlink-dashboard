@@ -54,6 +54,7 @@ export class RouteSigmetSource {
   private writing = false;
   private writes: Promise<unknown> = Promise.resolve();
   private revision = 0;
+  private observation: { instance: string; revision: number } | null = null;
   private confirmed = new Map<string, NoticeConfirmation>();
   private routeLease: Reservation | null = null;
   private payloadLease: Reservation | null = null;
@@ -272,11 +273,17 @@ export class RouteSigmetSource {
       );
       if (
         snapshot.settings_revision !== this.settings!.revision ||
+        (this.observation?.instance === snapshot.service_instance_id &&
+          snapshot.observation_revision < this.observation.revision) ||
         (noticeState && snapshot.state_revision < this.revision) ||
         (!noticeState &&
           (snapshot.entries.length > 0 || snapshot.selected_entries.length > 0))
       )
         throw Error('Obsolete route SIGMET snapshot');
+      this.observation = {
+        instance: snapshot.service_instance_id,
+        revision: snapshot.observation_revision,
+      };
       this.anchor = {
         utc: Math.max(this.nowMs(), snapshot.generated_at_ms),
         mono: performance.now(),

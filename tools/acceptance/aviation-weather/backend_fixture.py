@@ -78,3 +78,35 @@ class FixtureAviationService(AviationWeatherService):
 main.AwcTransport = FixtureAwcTransport
 main.AviationWeatherService = FixtureAviationService
 app = main.app
+
+
+# Only this acceptance image mounts this module. Exercise a same-geometry edit
+# through the real route capture; production exposes no fixture control API.
+from datetime import timedelta
+
+from fastapi import Request
+
+from app.mission.storage import get_active_leg_lock
+
+
+@app.post("/api/__acceptance/route-encounter")
+async def edit_encounter_plan(request: Request):
+    change = await request.json()
+
+    def edit():
+        with get_active_leg_lock():
+            route = request.app.state.route_manager.get_active_route()
+            if route is None:
+                raise ValueError("No active fixture route")
+            for index, point in enumerate(route.points):
+                if index in change.get("missing_indices", []):
+                    point.expected_arrival_time = None
+                elif point.expected_arrival_time is not None:
+                    point.expected_arrival_time += timedelta(
+                        milliseconds=change.get("offset_ms", 0)
+                    )
+                if "height" in change:
+                    point.altitude = change["height"]
+        return {"edited": True}
+
+    return await asyncio.to_thread(edit)

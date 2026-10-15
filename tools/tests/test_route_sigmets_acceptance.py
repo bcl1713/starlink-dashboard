@@ -37,6 +37,19 @@ def test_attention_fixture_uses_fresh_bulletin_series(tmp_path):
 
 def proof():
     return {
+        "encounter": {
+            key: True
+            for key in (
+                "altitude_free",
+                "time_boundaries",
+                "plan_edit_ack_preserved",
+                "selected_only_unknown",
+                "partial_evidence",
+                "two_screen_sync",
+                "responsive_details",
+                "no_altitude_filter",
+            )
+        },
         "browser": {"passed": 2, "failed": 0, "skipped": 0},
         "route": {
             "elapsed_save_to_display_ms": [10, 7999],
@@ -245,7 +258,7 @@ def test_source_removal_failure_is_recorded_and_cannot_pass(tmp_path, monkeypatc
         (
             "aviation",
             ["aviation-weather-production.spec.ts", "route-sigmets-production.spec.ts"],
-            4,
+            5,
         ),
         ("gfs", ["gfs-weather-production.spec.ts"], 1),
     ],
@@ -281,3 +294,36 @@ def test_shared_browser_config_lists_each_stack_owned_selection(
         assert ("route-sigmets-production.spec.ts" in output) == (label == "aviation")
     finally:
         owner.cleanup()
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "altitude_free",
+        "time_boundaries",
+        "plan_edit_ack_preserved",
+        "selected_only_unknown",
+        "partial_evidence",
+        "two_screen_sync",
+        "responsive_details",
+        "no_altitude_filter",
+    ],
+)
+def test_missing_encounter_proof_prevents_pass(missing):
+    evidence = proof()
+    evidence["encounter"] = {
+        key: True
+        for key in (
+            "altitude_free",
+            "time_boundaries",
+            "plan_edit_ack_preserved",
+            "selected_only_unknown",
+            "partial_evidence",
+            "two_screen_sync",
+            "responsive_details",
+            "no_altitude_filter",
+        )
+    }
+    evidence["encounter"][missing] = False
+    with pytest.raises(ValueError):
+        runner().require_pass(evidence)

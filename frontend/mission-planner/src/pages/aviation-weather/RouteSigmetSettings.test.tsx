@@ -529,6 +529,7 @@ it('acknowledging a selected-only bulletin removes its row entirely', async () =
   const state = setup();
   const entry = JSON.parse(JSON.stringify(state.fixture.snapshot.entries[0]));
   delete entry.spans;
+  delete entry.encounter;
   entry.selected = true;
   state.setSnapshot({
     ...state.fixture.snapshot,

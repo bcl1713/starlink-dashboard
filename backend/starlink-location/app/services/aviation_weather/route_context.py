@@ -6,6 +6,8 @@ import struct
 from app.mission.storage import get_active_leg_lock
 from app.models.route_sigmets import RouteContext
 
+from .route_encounters import capture_encounter_plan
+
 
 def route_context_key(source, route_id, runtime_id, run_id, points) -> str:
     # Validate before allocating the canonical byte stream.
@@ -53,8 +55,12 @@ def select_route_context(route_manager, simulation_service) -> RouteContext | No
             return None
         selected = route.model_copy(deep=True)
     points = [[point.longitude, point.latitude] for point in selected.points]
+    key = route_context_key(source, route_id, runtime_id, run_id, points)
     return RouteContext(
-        context_key=route_context_key(source, route_id, runtime_id, run_id, points),
+        context_key=key,
+        encounter_plan=capture_encounter_plan(
+            selected, key, source, selected.content_hash
+        ),
         source=source,
         route_id=route_id,
         route_name=selected.metadata.name,

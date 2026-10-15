@@ -5,6 +5,8 @@ import {
   useSetSigmetAcknowledgement,
 } from '@/hooks/api/useRouteSigmets';
 import { AviationReport } from './AviationReport';
+import { formatSigmetEncounter } from './sigmet-encounter-text';
+import { SigmetEncounterDetails } from './SigmetEncounterDetails';
 export function SigmetAttentionCard({
   item,
   onAcknowledged,
@@ -38,9 +40,18 @@ export function SigmetAttentionCard({
           ? 'Selected'
           : `Route segment${segments.length === 1 ? '' : 's'} ${segments.join(', ')}`}
       </p>
+      {formatSigmetEncounter(item.entry, view.nowMs).map((line) => (
+        <p key={line}>{line}</p>
+      ))}
       <div className="sigmet-attention-actions">
         <details onToggle={(e) => setExpanded(e.currentTarget.open)}>
           <summary>Details</summary>
+          {expanded && (
+            <SigmetEncounterDetails
+              entry={item.entry}
+              plan={view.snapshot?.encounter_plan ?? null}
+            />
+          )}
           {expanded &&
             item.reports.map((r) => (
               <AviationReport key={r.id} feature={r} now={view.nowMs} />

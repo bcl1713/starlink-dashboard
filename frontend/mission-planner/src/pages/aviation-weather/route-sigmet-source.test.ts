@@ -538,3 +538,24 @@ it('never admits a delayed immutable payload after its product has expired', asy
     waiting: 0,
   });
 });
+
+it('rejects older timing observations even when acknowledgement revision ties', async () => {
+  const fixture = routeSnapshot();
+  let observation = 2;
+  const { source } = setup(async (path) =>
+    String(path).endsWith('sigmet.json')
+      ? new Response(fixture.bytes, {
+          headers: { 'Content-Type': 'application/geo+json' },
+        })
+      : json({ ...fixture.snapshot, observation_revision: observation })
+  );
+  const off = source.subscribe(() => {});
+  await settle();
+  expect(source.snapshot().snapshot?.observation_revision).toBe(2);
+  observation = 1;
+  await vi.advanceTimersByTimeAsync(5000);
+  await settle();
+  expect(source.snapshot().snapshot?.observation_revision).toBe(2);
+  expect(source.snapshot().error?.message).toContain('Obsolete');
+  off();
+});

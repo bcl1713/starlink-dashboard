@@ -14,6 +14,8 @@ import {
   type SelectedSigmetEntry,
 } from '@/services/route-sigmets';
 import { AviationReport } from './AviationReport';
+import { formatSigmetEncounter } from './sigmet-encounter-text';
+import { SigmetEncounterDetails } from './SigmetEncounterDetails';
 import { sigmetReportLabel } from './sigmet-report-label';
 import './AviationWeather.css';
 const position = (e: RouteSigmetEntry | SelectedSigmetEntry) =>
@@ -116,8 +118,15 @@ export function RouteSigmetSettings({
             {entry.acknowledged ? 'Show again' : 'Acknowledge'}
           </button>
         </div>
+        {formatSigmetEncounter(entry, view.nowMs).map((line) => (
+          <p key={line}>{line}</p>
+        ))}
         <details>
           <summary>Full report · {label}</summary>
+          <SigmetEncounterDetails
+            entry={entry}
+            plan={snapshot?.encounter_plan ?? null}
+          />
           {bound.length ? (
             bound.map((r) => (
               <AviationReport key={r.id} feature={r} now={view.nowMs} />
@@ -185,8 +194,9 @@ export function RouteSigmetSettings({
               {snapshot?.reason ? ` · ${snapshot.reason}` : ''}
             </p>
             <p>
-              Geographic intersection · Altitude and passage-time match not
-              evaluated. Weather uses actual UTC, including simulation routes.
+              Geographic intersection · Planned passage uses route waypoint
+              times. Altitude is not evaluated. Weather eligibility uses actual
+              UTC, including simulation routes.
             </p>
             {view.error && (
               <p>

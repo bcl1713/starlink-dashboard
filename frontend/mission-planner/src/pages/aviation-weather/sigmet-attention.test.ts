@@ -19,6 +19,7 @@ it('joins selected-only reports without inventing spans or counting a bulletin t
   const s = routeSigmetSnapshotSchema.parse(f.snapshot);
   const selected = JSON.parse(JSON.stringify(s.entries[0]));
   delete selected.spans;
+  delete selected.encounter;
   selected.selected = true;
   const reports = parseAviationFeatures(f.data, 'sigmet')
     .features as AviationAdvisory[];
