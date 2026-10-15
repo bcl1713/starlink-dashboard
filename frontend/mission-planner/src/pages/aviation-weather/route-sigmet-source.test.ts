@@ -357,3 +357,85 @@ it('rechecks browser visibility when a previously idle source gains a subscriber
   await settle();
   expect(source.snapshot().available).toBe(true);
 });
+it('expires notices and the product while an acknowledgement PUT is still pending', async () => {
+  const { source, snapshot, fetcher, budget } = setup();
+  snapshot.entries[0].expires_at_ms = NOW + 1000;
+  snapshot.sigmet_product.fresh_until_ms = NOW + 1500;
+  snapshot.sigmet_product.expires_at_ms = NOW + 2000;
+  source.subscribe(() => {});
+  await settle();
+  let confirm!: (response: Response) => void;
+  fetcher.mockImplementation(
+    async () =>
+      new Promise((resolve) => {
+        confirm = resolve;
+      })
+  );
+  const change = {
+    context_key: hash('c'),
+    notice_key: hash('d'),
+    semantic_digest: hash('f'),
+    acknowledged: true,
+  };
+  const write = source.setAcknowledgement(change).then(
+    (data) => ({ data }),
+    (error) => ({ error })
+  );
+  await settle();
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(false);
+  await vi.advanceTimersByTimeAsync(1001);
+  expect(source.snapshot().snapshot?.entries).toHaveLength(0);
+  expect(source.snapshot().available).toBe(true);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(source.snapshot().snapshot).toBeNull();
+  expect(source.snapshot().collection).toBeNull();
+  expect(source.snapshot().available).toBe(false);
+  expect(budget.snapshot()).toMatchObject({
+    encoded: 0,
+    decoded: 0,
+    slots: 0,
+    waiting: 0,
+  });
+  confirm(json({ ...change, state_revision: 2, attention_order: 1 }));
+  expect(await write).toHaveProperty('error');
+  await settle();
+  expect(source.snapshot().snapshot).toBeNull();
+  expect(source.snapshot().collection).toBeNull();
+});
+it('never admits a delayed immutable payload after its product has expired', async () => {
+  const fixture = routeSnapshot();
+  fixture.snapshot.sigmet_product.fresh_until_ms = NOW + 500;
+  fixture.snapshot.sigmet_product.expires_at_ms = NOW + 1000;
+  fixture.snapshot.entries[0].expires_at_ms = NOW + 1000;
+  let deliver!: (response: Response) => void;
+  const { source, budget } = setup(async (p) =>
+    String(p).endsWith('.json')
+      ? new Promise((resolve) => {
+          deliver = resolve;
+        })
+      : json(fixture.snapshot)
+  );
+  source.subscribe(() => {});
+  await settle();
+  expect(source.snapshot().snapshot).not.toBeNull();
+  expect(budget.snapshot().slots).toBe(1);
+  await vi.advanceTimersByTimeAsync(1001);
+  expect(source.snapshot().snapshot).toBeNull();
+  deliver(
+    new Response(fixture.bytes, {
+      headers: { 'Content-Type': 'application/geo+json' },
+    })
+  );
+  await settle();
+  expect(source.snapshot().available).toBe(false);
+  expect(source.snapshot().snapshot).toBeNull();
+  expect(source.snapshot().collection).toBeNull();
+  expect(source.snapshot().error?.message).toContain('expired');
+  expect(budget.snapshot()).toMatchObject({
+    encoded: 0,
+    decoded: 0,
+    gpu: 0,
+    slots: 0,
+    waiting: 0,
+  });
+});

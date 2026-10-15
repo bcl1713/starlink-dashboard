@@ -146,15 +146,17 @@ export class RouteSigmetSource {
       this.reconcile();
     }
   }
-  private cancel() {
+  private cancel(preserveBoundary = false) {
     this.epoch++;
     this.readOwner?.abort();
     this.readOwner = null;
     this.writeOwner?.abort();
     this.writeOwner = null;
     void this.client.cancelQueries({ queryKey: routeSigmetsKey, exact: true });
-    if (this.boundary !== undefined) clearTimeout(this.boundary);
-    this.boundary = undefined;
+    if (!preserveBoundary) {
+      if (this.boundary !== undefined) clearTimeout(this.boundary);
+      this.boundary = undefined;
+    }
   }
   private release() {
     this.routeLease?.release();
@@ -184,6 +186,7 @@ export class RouteSigmetSource {
       snapshot.sigmet_product.expires_at_ms !== null &&
       now >= snapshot.sigmet_product.expires_at_ms
     ) {
+      this.cancel();
       this.release();
       this.view = {
         ...empty(),
@@ -450,7 +453,7 @@ export class RouteSigmetSource {
       )
     )
       throw Error('SIGMET notice is no longer current');
-    this.cancel();
+    this.cancel(true);
     this.writing = true;
     const epoch = this.epoch,
       owner = new AbortController();
