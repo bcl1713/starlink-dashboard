@@ -423,6 +423,11 @@ async def startup_event():
             )
             planning_store.recover()
             app.state.planning_service = PlanningService(planning_store)
+            from app.mission.itinerary_import.migration import migrate_itinerary_mission
+
+            for existing_mission in mission_storage.list_mission_metadata_v2():
+                if existing_mission.metadata.get("itinerary_planning"):
+                    migrate_itinerary_mission(existing_mission.id, planning_store)
             from app.mission.itinerary_import.service import ImportService
 
             app.state.itinerary_import_service = ImportService(

@@ -1,7 +1,5 @@
 """Three-way ordinary-field merge and immutable revision capture."""
 
-
-
 from app.mission import storage
 from app.mission.models import Mission
 from app.mission.planning.identity import planning_identity

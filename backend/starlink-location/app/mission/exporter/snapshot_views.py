@@ -99,8 +99,8 @@ class SnapshotViews:
             raise ValueError("Duplicate captured source paths")
         mission = self.mission()
         raw = mission.metadata.get("itinerary_planning")
-        if raw is not None:
-            manifest = PlanningManifest.model_validate(raw)
+        if raw is not None or mission.metadata.get("itinerary_import"):
+            manifest = PlanningManifest.model_validate(raw) if raw else None
             for source in source_closure(mission, manifest):
                 data = payloads.get(f"package/planning/{source.owned_relative_path}")
                 if data is None or sha256(data).hexdigest() != source.content_hash:
@@ -120,7 +120,7 @@ class SnapshotViews:
                         or payloads.get(f"kml/{source.id}") != data
                     ):
                         raise ValueError("Captured owned route profile is inconsistent")
-            for reference in manifest.proposal_refs:
+            for reference in (manifest.proposal_refs if manifest else []):
                 data = payloads.get(f"package/planning/proposals/{reference.id}.json")
                 if data is None or sha256(data).hexdigest() != reference.payload_hash:
                     raise ValueError("Captured proposal payload is missing or changed")

@@ -1,5 +1,6 @@
 """Revalidate, prepare and atomically install a reviewed ordinary revision."""
 
+import hashlib
 import json
 from datetime import datetime, timezone
 
@@ -78,7 +79,13 @@ def commit_prepared_revision(service, id, generation, resolutions):
     provenance["revision"] = previous["revision"] + 1
     provenance["history"] = [
         *previous.get("history", []),
-        {"revision": previous["revision"], "snapshot_id": id},
+        {
+            "revision": previous["revision"],
+            "snapshot_id": id,
+            "snapshot_hash": hashlib.sha256(
+                json_bytes(current.model_dump(mode="json"))
+            ).hexdigest(),
+        },
     ]
     provenance["baseline"] = {
         "name": mission.name,

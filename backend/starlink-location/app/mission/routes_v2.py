@@ -457,7 +457,7 @@ async def delete_mission_endpoint(
                 )
 
             raw = mission.metadata.get("itinerary_planning")
-            if raw is not None:
+            if raw is not None or mission.metadata.get("itinerary_import"):
                 if route_manager is None or poi_manager is None:
                     raise HTTPException(
                         503,
@@ -1117,7 +1117,7 @@ async def import_mission(
                     store.planning_constraints_provider = provider
             try:
                 plan = stage_package(zf, target, store.sources)
-                view = commit_package(plan, None)
+                view = commit_package(plan, None, convert_legacy=True)
             except PlanningFailure as exc:
                 raise HTTPException(
                     exc.status_code, detail=exc.error.model_dump(mode="json")

@@ -335,9 +335,10 @@ def test_api_import_uses_complete_planning_transaction(service):
         )
     )
     assert result["success"]
-    restored = service.store.read(result["mission_id"])
-    assert len(restored.expected_legs) == 3
-    assert restored.mission.legs == []
+    restored = storage.load_mission_v2(result["mission_id"])
+    assert len(restored.metadata["itinerary_import"]["pending_legs"]) == 3
+    assert restored.legs == []
+    assert "itinerary_planning" not in restored.metadata
     handle.close()
 
 

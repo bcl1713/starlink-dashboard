@@ -1,6 +1,5 @@
 """Source revisions merge against the accepted baseline, never over live edits."""
 
-
 from app.mission.models import Mission, MissionLeg, TransportConfig
 
 
