@@ -164,9 +164,10 @@ export function RouteSigmetSettings({
           {entries.length > 0 ? (
             <ol aria-label="Matching route SIGMET bulletins">
               {entries.map((entry) => {
-                const report = entry.feature_ids
+                const boundReports = entry.feature_ids
                   .map((id) => reports.get(id))
-                  .find(Boolean);
+                  .filter((report): report is AviationAdvisory => !!report);
+                const report = boundReports[0];
                 const bulletinLabel = `${report ? label(report) : 'SIGMET report unavailable'} · ${entry.bulletin_key.slice(0, 8)}`;
                 const segments = [
                   ...new Set(entry.spans.map((span) => span.segment_index + 1)),
@@ -187,8 +188,8 @@ export function RouteSigmetSettings({
                         ? ' · Some route intersections unknown'
                         : ''}
                     </p>
-                    {report ? (
-                      reportDetails(report)
+                    {boundReports.length > 0 ? (
+                      boundReports.map(reportDetails)
                     ) : (
                       <p>
                         Original report unavailable; advisory actions are

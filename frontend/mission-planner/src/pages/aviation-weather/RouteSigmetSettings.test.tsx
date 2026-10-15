@@ -513,3 +513,66 @@ it('loads reports without GPU drawings and releases report demand when SIGMET is
     })
   );
 });
+
+it('preserves every source variant under one matching notice and one acknowledgement action', async () => {
+  const state = setup();
+  const first = advisory();
+  state.setReports([
+    {
+      ...first,
+      properties: {
+        ...first.properties,
+        bulletin_series: 'PROVIDER FIRST',
+        raw_text: 'TEST SIGMET\nVALID 061200/061300',
+      },
+    },
+    {
+      ...first,
+      id: 'source-variant',
+      properties: {
+        ...first.properties,
+        bulletin_series: 'PROVIDER SECOND',
+        raw_text: 'TEST   SIGMET  VALID 061200/061300',
+      },
+    },
+  ]);
+  state.setSnapshot({
+    ...state.fixture.snapshot,
+    entries: [
+      {
+        ...state.fixture.snapshot.entries[0],
+        feature_ids: ['test-advisory', 'source-variant'],
+      },
+    ],
+  });
+  state.mount();
+  await screen.findByRole('button', { name: /Clear advisory.*TEST 1/ });
+  const list = screen.getByRole('list', {
+    name: 'Matching route SIGMET bulletins',
+  });
+  const notices = within(list).getAllByRole('listitem');
+  expect(notices).toHaveLength(1);
+  expect(notices[0]).toHaveTextContent('PROVIDER FIRST');
+  expect(notices[0]).toHaveTextContent('PROVIDER SECOND');
+  const reports = within(notices[0]).getAllByRole('article');
+  expect(reports).toHaveLength(2);
+  expect(
+    reports.map((report) => report.querySelector('pre')?.textContent)
+  ).toEqual([
+    'TEST SIGMET\nVALID 061200/061300',
+    'TEST   SIGMET  VALID 061200/061300',
+  ]);
+  expect(
+    screen.getAllByRole('button', { name: /Clear advisory/ })
+  ).toHaveLength(1);
+  expect(
+    screen.queryByRole('region', { name: 'Other current SIGMET reports' })
+  ).toBeNull();
+  fireEvent.click(
+    within(notices[0]).getByRole('button', { name: /Clear advisory/ })
+  );
+  await screen.findByRole('button', { name: /Show again.*TEST 1/ });
+  expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+  expect(within(list).getAllByRole('article')).toHaveLength(2);
+  expect(screen.getAllByRole('button', { name: /Show again/ })).toHaveLength(1);
+});
