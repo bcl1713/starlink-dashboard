@@ -2,6 +2,7 @@
 
 from pydantic import Field
 
+from app.mission.planning.models import ItineraryAR
 from app.mission.planning.types import PlanningRecord
 
 
@@ -16,5 +17,11 @@ class ImportIssue(PlanningRecord):
 
 class AssociationResult(PlanningRecord):
     assignments: dict[str, str] = Field(default_factory=dict)
+    issues: list[ImportIssue] = Field(default_factory=list)
+    evidence: dict[str, dict] = Field(default_factory=dict)
+
+
+class ARResolution(PlanningRecord):
+    rows: list[ItineraryAR] = Field(default_factory=list)
     issues: list[ImportIssue] = Field(default_factory=list)
     evidence: dict[str, dict] = Field(default_factory=dict)
