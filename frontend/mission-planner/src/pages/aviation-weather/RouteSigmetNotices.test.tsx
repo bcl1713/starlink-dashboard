@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { RouteSigmetNotices } from './RouteSigmetNotices';
 import { createSigmetPresentation } from './route-sigmet-presentation';
 import { WeatherBudget } from './weather-budget';
@@ -8,8 +8,19 @@ import { routeSnapshot, hash } from '@/test/route-sigmet-fixtures';
 import { routeSigmetSnapshotSchema } from '@/services/route-sigmets';
 import { parseAviationFeatures } from '@/services/aviation-features';
 import { NOW } from './fixtures';
+vi.mock('@/hooks/api/useRouteSigmets', () => ({
+  useRouteSigmets: () => ({
+    snapshot: { context: { context_key: 'c' } },
+    available: true,
+  }),
+  useSetSigmetAcknowledgement: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    error: null,
+  }),
+}));
 afterEach(cleanup);
-it('three_cards_and_overflow_without_dashboard_actions', () => {
+it('shows the concise count and lets users navigate every pending card', () => {
   const fixture = routeSnapshot();
   fixture.snapshot.entries = [1, 4, 2, 3].map((order) => ({
     ...fixture.snapshot.entries[0],
@@ -49,23 +60,24 @@ it('three_cards_and_overflow_without_dashboard_actions', () => {
   try {
     render(<RouteSigmetNotices presentation={presentation} />);
     expect(screen.getAllByRole('article')).toHaveLength(3);
-    expect(screen.getByText(/4 pending/)).toBeDefined();
-    expect(screen.getByText(/1 additional/)).toBeDefined();
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(
-      screen.getAllByText(/Altitude and passage-time match not evaluated/)
-    ).toHaveLength(3);
-    expect(screen.getAllByText(/Route segment 1/)).toHaveLength(3);
-    expect(screen.getAllByText(/Vertical bounds unknown/)).toHaveLength(3);
-    expect(screen.getByText(/Highlight unavailable/)).toBeDefined();
-    expect(screen.getAllByText(/2026-10-06T12:00:00.000 UTC/)).toHaveLength(3);
+    expect(screen.getByText('SIGMETS: 4')).toBeDefined();
+    expect(screen.queryByText(/pending route advisories/)).toBeNull();
+    expect(screen.queryByText(/Coverage unknown/)).toBeNull();
+    const first = screen.getAllByRole('article').map((n) => n.textContent);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Previous' })).not.toHaveProperty(
+      'disabled',
+      true
+    );
+    expect(first).toHaveLength(3);
+    expect(screen.getByRole('button', { name: /Acknowledge/ })).toBeDefined();
   } finally {
     presentation.dispose();
     occupied.release();
   }
 });
-it('states route unavailable and unknown coverage without claiming a clear route', () => {
+it('renders nothing for unavailable or unknown-only route results', () => {
   const presentation = createSigmetPresentation(
     {
       source: {
@@ -84,9 +96,7 @@ it('states route unavailable and unknown coverage without claiming a clear route
     new WeatherBudget()
   );
   render(<RouteSigmetNotices presentation={presentation} />);
-  expect(screen.getByText(/Route unavailable/)).toBeDefined();
-  expect(screen.queryByText(/^0 pending/)).toBeNull();
-  expect(screen.getByText(/Coverage unknown or partial/)).toBeDefined();
+  expect(screen.queryByLabelText('Route SIGMET advisories')).toBeNull();
   expect(screen.queryAllByRole('article')).toHaveLength(0);
   presentation.dispose();
 });

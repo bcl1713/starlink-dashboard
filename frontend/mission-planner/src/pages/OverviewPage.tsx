@@ -299,8 +299,13 @@ export function OverviewPage() {
   const [selectedWeather, setSelectedWeather] =
     useState<AviationSelection | null>(null);
   const [focusedSigmet, setFocusedSigmet] = useState<string | null>(null);
-  const [visibleSigmets, setVisibleSigmets] = useState<readonly AviationSelection[]>([]);
-  const updateVisibleSigmets = useCallback((items: readonly AviationSelection[]) => setVisibleSigmets(items), []);
+  const [visibleSigmets, setVisibleSigmets] = useState<
+    readonly AviationSelection[]
+  >([]);
+  const updateVisibleSigmets = useCallback(
+    (items: readonly AviationSelection[]) => setVisibleSigmets(items),
+    []
+  );
   const weatherReturnFocus = useRef<HTMLElement | null>(null);
   const closeWeather = useCallback(() => setSelectedWeather(null), []);
   const inspectWeather = useCallback(
@@ -958,13 +963,23 @@ export function OverviewPage() {
           />
           <div className="overview-display-controls">
             <OverviewFullscreenControl />
-            {visibleSigmets.length > 0 && <button type="button" className="sr-only focus:not-sr-only"
-              onClick={() => inspectWeather(visibleSigmets)}>Inspect SIGMET on map</button>}
+            {visibleSigmets.length > 0 && (
+              <button
+                type="button"
+                className="sr-only focus:not-sr-only"
+                onClick={() => inspectWeather(visibleSigmets)}
+              >
+                Inspect SIGMET on map
+              </button>
+            )}
           </div>
           <div className="overview-map-overlays">
             {showMapStatus && <OverviewMapStatus messages={mapMessages} />}
             {aviationSettings?.sigmet && layout.mode === 'desktop' && (
-              <RouteSigmetNotices presentation={sigmetPresentation} />
+              <RouteSigmetNotices
+                presentation={sigmetPresentation}
+                focusedNoticeKey={focusedSigmet}
+              />
             )}
             {showMapStatus && (
               <>
@@ -1080,7 +1095,10 @@ export function OverviewPage() {
           view={aviation}
           candidates={weatherCandidates}
           selection={selectedWeather}
-          onSelectionChange={(selection) => { setSelectedWeather(selection); setWeatherCandidates([selection]); }}
+          onSelectionChange={(selection) => {
+            setSelectedWeather(selection);
+            setWeatherCandidates([selection]);
+          }}
           onSigmetFocused={setFocusedSigmet}
           onClose={closeWeather}
           returnFocusRef={weatherReturnFocus}
@@ -1277,10 +1295,15 @@ export function OverviewPage() {
         </Canvas>
       </div>
       {((!pacedRunning && showMetricPanels) ||
-        (aviationSettings?.sigmet && layout.mode !== 'desktop')) && (
+        (aviationSettings?.sigmet &&
+          sigmetPresentation.pendingCount > 0 &&
+          layout.mode !== 'desktop')) && (
         <div className="overview-metrics-overlays">
           {aviationSettings?.sigmet && layout.mode !== 'desktop' && (
-            <RouteSigmetNotices presentation={sigmetPresentation} />
+            <RouteSigmetNotices
+              presentation={sigmetPresentation}
+              focusedNoticeKey={focusedSigmet}
+            />
           )}
           {!pacedRunning && showMetricPanels && (
             <OverviewMetricHistoryPanels

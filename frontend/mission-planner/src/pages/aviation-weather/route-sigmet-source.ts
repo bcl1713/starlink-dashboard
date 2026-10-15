@@ -203,7 +203,9 @@ export class RouteSigmetSource {
           ? {
               ...snapshot,
               entries: snapshot.entries.filter((e) => now < e.expires_at_ms),
-              selected_entries: snapshot.selected_entries.filter((e) => now < e.expires_at_ms),
+              selected_entries: snapshot.selected_entries.filter(
+                (e) => now < e.expires_at_ms
+              ),
             }
           : null,
       };
@@ -211,10 +213,9 @@ export class RouteSigmetSource {
         const boundaries = [
           snapshot.sigmet_product.fresh_until_ms,
           snapshot.sigmet_product.expires_at_ms,
-          ...[...snapshot.entries, ...snapshot.selected_entries].flatMap((e) => [
-            e.valid_from_ms,
-            e.expires_at_ms,
-          ]),
+          ...[...snapshot.entries, ...snapshot.selected_entries].flatMap(
+            (e) => [e.valid_from_ms, e.expires_at_ms]
+          ),
           ...(this.view.collection?.features.flatMap((f) => [
             f.properties.expires_at_ms,
             ...('valid_from_ms' in f.properties
@@ -271,7 +272,8 @@ export class RouteSigmetSource {
       if (
         snapshot.settings_revision !== this.settings!.revision ||
         (noticeState && snapshot.state_revision < this.revision) ||
-        (!noticeState && (snapshot.entries.length > 0 || snapshot.selected_entries.length > 0))
+        (!noticeState &&
+          (snapshot.entries.length > 0 || snapshot.selected_entries.length > 0))
       )
         throw Error('Obsolete route SIGMET snapshot');
       this.anchor = {
@@ -280,9 +282,13 @@ export class RouteSigmetSource {
       };
       snapshot = {
         ...snapshot,
-        selected_entries: snapshot.selected_entries.filter(entry => {
+        selected_entries: snapshot.selected_entries.filter((entry) => {
           const ack = this.confirmed.get(entry.notice_key);
-          return !(ack?.acknowledged && ack.context_key === snapshot.context?.context_key && ack.state_revision >= snapshot.state_revision);
+          return !(
+            ack?.acknowledged &&
+            ack.context_key === snapshot.context?.context_key &&
+            ack.state_revision >= snapshot.state_revision
+          );
         }),
         entries: snapshot.entries.map((entry) => {
           const confirmation = this.confirmed.get(entry.notice_key);
@@ -293,7 +299,7 @@ export class RouteSigmetSource {
             ? {
                 ...entry,
                 acknowledged: confirmation.acknowledged,
-                  selected: confirmation.acknowledged ? false : entry.selected,
+                selected: confirmation.acknowledged ? false : entry.selected,
                 attention_order: confirmation.attention_order,
               }
             : entry;
@@ -443,7 +449,9 @@ export class RouteSigmetSource {
       collection.retrieved_at_ms === snapshot.sigmet_product.retrieved_at_ms &&
       collection.source_id === snapshot.sigmet_product.source_id &&
       [
-        ...[...snapshot.entries, ...snapshot.selected_entries].flatMap((e) => e.feature_ids),
+        ...[...snapshot.entries, ...snapshot.selected_entries].flatMap(
+          (e) => e.feature_ids
+        ),
         ...snapshot.unresolved.map((u) => u.feature_id),
         ...snapshot.future_feature_ids,
       ].every((id) => ids.has(id))
@@ -456,20 +464,46 @@ export class RouteSigmetSource {
   }
   private async select(change: NoticeSelection): Promise<RouteSigmetSnapshot> {
     const snapshot = this.view.snapshot;
-    if (!this.active() || !snapshot || !this.view.available || snapshot.context?.context_key !== change.context_key)
+    if (
+      !this.active() ||
+      !snapshot ||
+      !this.view.available ||
+      snapshot.context?.context_key !== change.context_key
+    )
       throw Error('SIGMET route is no longer current');
     this.cancel(true);
     this.writing = true;
-    const epoch = this.epoch, owner = new AbortController();
+    const epoch = this.epoch,
+      owner = new AbortController();
     this.writeOwner = owner;
-    const deadline = setTimeout(() => owner.abort(new Error('SIGMET selection deadline')), 10000);
+    const deadline = setTimeout(
+      () => owner.abort(new Error('SIGMET selection deadline')),
+      10000
+    );
     let conflict = false;
     try {
-      await this.client.cancelQueries({queryKey: routeSigmetsKey, exact: true});
-      if (!this.active() || epoch !== this.epoch || this.view.snapshot !== snapshot)
+      await this.client.cancelQueries({
+        queryKey: routeSigmetsKey,
+        exact: true,
+      });
+      if (
+        !this.active() ||
+        epoch !== this.epoch ||
+        this.view.snapshot !== snapshot
+      )
         throw Error('SIGMET route is no longer current');
-      const result = await setSigmetSelection(change, owner.signal, this.budget, this.fetcher);
-      if (!this.active() || epoch !== this.epoch || result.context?.context_key !== change.context_key || result.state_revision < this.revision)
+      const result = await setSigmetSelection(
+        change,
+        owner.signal,
+        this.budget,
+        this.fetcher
+      );
+      if (
+        !this.active() ||
+        epoch !== this.epoch ||
+        result.context?.context_key !== change.context_key ||
+        result.state_revision < this.revision
+      )
         throw Error('Obsolete SIGMET selection');
       this.revision = result.state_revision;
       this.confirmed.clear();
@@ -482,7 +516,8 @@ export class RouteSigmetSource {
       if (this.writeOwner === owner) this.writeOwner = null;
       owner.abort();
       this.writing = false;
-      if (this.active() && (epoch === this.epoch || conflict)) await this.refresh();
+      if (this.active() && (epoch === this.epoch || conflict))
+        await this.refresh();
     }
   }
   setAcknowledgement(change: NoticeMutation): Promise<NoticeConfirmation> {
@@ -550,7 +585,10 @@ export class RouteSigmetSource {
         snapshot: {
           ...snapshot,
           state_revision: confirmation.state_revision,
-          selected_entries: snapshot.selected_entries.filter(e => !confirmation.acknowledged || e.notice_key !== change.notice_key),
+          selected_entries: snapshot.selected_entries.filter(
+            (e) =>
+              !confirmation.acknowledged || e.notice_key !== change.notice_key
+          ),
           entries: snapshot.entries.map((e) =>
             e.notice_key === change.notice_key
               ? {

@@ -1,87 +1,66 @@
-import type { AviationAdvisory } from '@/services/aviation-features';
+import { useState, type CSSProperties } from 'react';
 import type { SigmetPresentation } from './route-sigmet-presentation';
+import { SigmetAttentionCard } from './SigmetAttentionCard';
 import './AviationWeather.css';
-const utc = (value: number) =>
-  new Date(value).toISOString().replace(/Z$/, ' UTC');
 export function RouteSigmetNotices({
   presentation,
+  focusedNoticeKey,
 }: {
   presentation: SigmetPresentation;
+  focusedNoticeKey?: string | null;
 }) {
+  const items = presentation.attentionItems;
+  const [page, setPage] = useState(0);
+  const [lastFocus, setLastFocus] = useState<string | null | undefined>(
+    undefined
+  );
+  let current = Math.min(page, Math.max(0, Math.ceil(items.length / 3) - 1));
+  if (focusedNoticeKey !== lastFocus) {
+    setLastFocus(focusedNoticeKey);
+    const index = items.findIndex(
+      (i) => i.entry.notice_key === focusedNoticeKey
+    );
+    if (index >= 0) {
+      current = Math.floor(index / 3);
+      setPage(current);
+    }
+  }
+  if (!items.length) return null;
+  const pages = Math.ceil(items.length / 3);
   return (
     <section
-      className="route-sigmet-notices overview-weather-status"
+      className="route-sigmet-notices"
       aria-label="Route SIGMET advisories"
     >
-      <p>
-        {presentation.routeLabel || 'Selected route'} ·{' '}
-        {presentation.statusText}
+      <p
+        className="sigmet-attention-count sigmet-attention-pulse"
+        style={{ '--sigmet-color': items[0].color } as CSSProperties}
+      >
+        SIGMETS: {items.length}
       </p>
-      <p>
-        {presentation.routeLabel
-          ? `${presentation.pendingCount} pending route advisories${presentation.pendingCount > 3 ? ` · ${presentation.pendingCount - 3} additional in Configuration` : ''}`
-          : 'Pending route advisories unavailable'}
-      </p>
-      {presentation.unknownCount > 0 && (
-        <p>
-          {presentation.unknownCount} reports with route intersection unknown
-        </p>
-      )}
-      {presentation.highlightUnavailable && (
-        <p>Highlight unavailable · advisory details remain below</p>
-      )}
-      <div aria-live="polite" aria-relevant="additions text">
-        {presentation.notices.map((notice) => {
-          const p = (notice.reports[0] as AviationAdvisory).properties;
-          const segments = [
-            ...new Set(
-              notice.entry.spans.map((span) => span.segment_index + 1)
-            ),
-          ].sort((a, b) => a - b);
-          return (
-            <article
-              key={notice.entry.notice_key}
-              className="route-sigmet-notice"
-              style={{ borderColor: notice.color }}
-              aria-label={`Route advisory · ${notice.label}`}
-            >
-              <h3>Route advisory · {notice.label}</h3>
-              <p>
-                {p.phenomenon ?? 'Unknown phenomenon'} ·{' '}
-                {p.severity ?? 'Unknown severity'}
-              </p>
-              <p>
-                Route segment{segments.length === 1 ? '' : 's'}{' '}
-                {segments.join(', ') || 'unknown'}
-                {notice.intersectionUnknown
-                  ? ' · Some route intersections unknown'
-                  : ''}
-              </p>
-              <p>
-                {p.vertical.unit === 'unknown' ||
-                (p.vertical.lower === null && p.vertical.upper === null)
-                  ? 'Vertical bounds unknown'
-                  : `Reported vertical bounds ${p.vertical.lower ?? 'unknown'}–${p.vertical.upper ?? 'unknown'} ${p.vertical.unit} ${p.vertical.reference}`}{' '}
-                · FIR {p.fir ?? 'unknown'}
-              </p>
-              <p>
-                Valid {utc(notice.entry.valid_from_ms)} –{' '}
-                {utc(notice.entry.expires_at_ms)}
-              </p>
-              {notice.entry.identity_uncertain && (
-                <p>Bulletin identity uncertain</p>
-              )}
-              <p>
-                Geographic intersection · Altitude and passage-time match not
-                evaluated
-              </p>
-            </article>
-          );
-        })}
+      <div aria-live="polite" aria-relevant="additions removals">
+        {items.slice(current * 3, current * 3 + 3).map((item) => (
+          <SigmetAttentionCard key={item.entry.notice_key} item={item} />
+        ))}
       </div>
-      <p className="aviation-coverage-note">
-        Coverage unknown or partial · missing reports mean unknown weather
-      </p>
+      {pages > 1 && (
+        <nav aria-label="SIGMET attention navigation">
+          <button
+            type="button"
+            disabled={current === 0}
+            onClick={() => setPage(current - 1)}
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            disabled={current === pages - 1}
+            onClick={() => setPage(current + 1)}
+          >
+            Next
+          </button>
+        </nav>
+      )}
     </section>
   );
 }

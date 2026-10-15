@@ -126,10 +126,14 @@ export function AviationDetails({
           {selected && (
             <AviationReport feature={selected.feature} now={view.now} />
           )}
-          {selected?.selection.layer === 'sigmet' && <SigmetInspectionActions
-            featureId={selected.feature.id} autoSelect={choices.length === 1}
-            onFocused={onSigmetFocused} onAcknowledged={onClose}
-          />}
+          {selected?.selection.layer === 'sigmet' && (
+            <SigmetInspectionActions
+              featureId={selected.feature.id}
+              autoSelect={choices.length === 1}
+              onFocused={onSigmetFocused}
+              onAcknowledged={onClose}
+            />
+          )}
           {data && (
             <div className="aviation-report-source">
               <p>

@@ -81,7 +81,12 @@ export function pickAviationFeatures(
   )
     return [];
   camera.updateMatrixWorld();
-  const picked: AviationSelection[] = pickSigmetFeatures(view, camera, point, viewport);
+  const picked: AviationSelection[] = pickSigmetFeatures(
+    view,
+    camera,
+    point,
+    viewport
+  );
   for (const layer of ['metar', 'taf'] as const) {
     const item = view.layers[layer];
     if (

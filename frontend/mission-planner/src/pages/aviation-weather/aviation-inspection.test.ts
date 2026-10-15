@@ -16,9 +16,13 @@ const viewport = { width: 1000, height: 1000 };
 it('limits the keyboard inspection list to SIGMETs visible on the map', () => {
   const view = viewFor([advisory()], 'sigmet');
   try {
-    expect(visibleSigmetReports(view, cameraAt(0.5, 0.5), viewport)).toEqual([{layer:'sigmet',id:'test-advisory'}]);
-    expect(visibleSigmetReports(view, cameraAt(0,180), viewport)).toEqual([]);
-  } finally { dispose(view); }
+    expect(visibleSigmetReports(view, cameraAt(0.5, 0.5), viewport)).toEqual([
+      { layer: 'sigmet', id: 'test-advisory' },
+    ]);
+    expect(visibleSigmetReports(view, cameraAt(0, 180), viewport)).toEqual([]);
+  } finally {
+    dispose(view);
+  }
 });
 it('picks the visible advisory interior at close zoom', () => {
   const report = advisory();
@@ -222,7 +226,7 @@ it('picks both halves of an antimeridian advisory', () => {
           { x: 500, y: 500 },
           viewport
         )
-      ).toEqual([{layer: 'sigmet', id: 'test-advisory'}]);
+      ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
   } finally {
     dispose(view);
   }
@@ -231,9 +235,12 @@ it('picks both halves of an antimeridian advisory', () => {
 it('resolves admitted SIGMET report selection', () => {
   const view = viewFor([advisory()], 'sigmet');
   try {
-    expect(inspectionReports(view).map(r => r.selection)).toEqual([{layer: 'sigmet', id: 'test-advisory'}]);
+    expect(inspectionReports(view).map((r) => r.selection)).toEqual([
+      { layer: 'sigmet', id: 'test-advisory' },
+    ]);
     expect(
-      resolveAviationSelection(view, { layer: 'sigmet', id: 'test-advisory' })?.id
+      resolveAviationSelection(view, { layer: 'sigmet', id: 'test-advisory' })
+        ?.id
     ).toBe('test-advisory');
   } finally {
     dispose(view);

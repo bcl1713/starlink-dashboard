@@ -38,8 +38,12 @@ it('exposes every pending item for navigation and keeps selection separate from 
   const presentation = createSigmetPresentation(next, new WeatherBudget());
   try {
     expect(presentation.attentionItems).toHaveLength(4);
-    expect(presentation.attentionItems.every(item => item.kind === 'intersecting')).toBe(true);
-  } finally { presentation.dispose(); }
+    expect(
+      presentation.attentionItems.every((item) => item.kind === 'intersecting')
+    ).toBe(true);
+  } finally {
+    presentation.dispose();
+  }
 });
 it('keeps acknowledged intersections shaded while showing only the three newest attention notices', () => {
   const next = multiple([1, 5, 3, 2, 4]);

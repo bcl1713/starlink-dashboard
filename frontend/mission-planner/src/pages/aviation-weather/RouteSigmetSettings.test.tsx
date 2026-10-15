@@ -14,7 +14,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AviationSettingsCard } from './AviationSettingsCard';
 import { aviationWeatherApi } from '@/services/aviation-weather';
 import { routeSnapshot, hash } from '@/test/route-sigmet-fixtures';
-import { advisory, NOW } from './fixtures';
+import { advisory } from './fixtures';
 import { weatherDigest } from '@/services/aviation-grid';
 import {
   parseRouteSigmetSnapshot,
@@ -162,7 +162,7 @@ it('remembers the filter while SIGMET is off and changes it only after a confirm
   });
   state.mount();
   const filter = await screen.findByRole('switch', {
-    name: 'Intersecting route only',
+    name: 'Show intersecting polygons only',
   });
   await waitFor(() => expect(filter).toBeChecked());
   expect(filter).toBeDisabled();
@@ -205,11 +205,11 @@ it('keeps the confirmed filter and pending notice after a failed settings write'
   await screen.findByRole('button', { name: /Clear advisory/ });
   state.save.mockRejectedValue(new Error('save failed'));
   fireEvent.click(
-    screen.getByRole('switch', { name: 'Intersecting route only' })
+    screen.getByRole('switch', { name: 'Show intersecting polygons only' })
   );
   await screen.findByText('Aviation weather settings could not be saved');
   expect(
-    screen.getByRole('switch', { name: 'Intersecting route only' })
+    screen.getByRole('switch', { name: 'Show intersecting polygons only' })
   ).not.toBeChecked();
   expect(clear()).toBeEnabled();
 });
@@ -252,87 +252,37 @@ it('lists matching bulletins in route order rather than attention order and labe
     name: 'Matching route SIGMET bulletins',
   });
   const items = within(list).getAllByRole('listitem');
-  expect(items).toHaveLength(2);
-  expect(items[0]).toHaveTextContent('TEST 2');
-  expect(items[0]).toHaveTextContent('Acknowledged');
-  expect(items[1]).toHaveTextContent('Pending');
+  expect(items).toHaveLength(1);
+  expect(items[0]).toHaveTextContent('TEST 1');
   expect(screen.getByText(/Route A.*Simulation route/)).toBeTruthy();
+  fireEvent.click(screen.getByText('Cleared'));
   expect(
     screen.getByRole('button', { name: /Show again.*TEST 2/ })
   ).toBeEnabled();
 });
-it('separates unknown and future reports and preserves original UTC, source, bounds and bulletin details', async () => {
+it('does not catalogue unrelated, unknown, or future SIGMETs', async () => {
   const state = setup();
-  const a = advisory();
   state.setReports([
-    {
-      ...a,
-      properties: {
-        ...a.properties,
-        series: 'PROVIDER 7',
-        issued_at_ms: NOW - 1000,
-        revision: '2',
-        amends: 'previous',
-        vertical: {
-          lower: 180,
-          upper: 340,
-          unit: 'flight-level',
-          reference: 'FL',
-        },
-      },
-    },
-    {
-      ...a,
-      id: 'unknown',
-      geometry: null,
-      properties: { ...a.properties, series: 'U', raw_text: 'UNLOCATED RAW' },
-    },
-    {
-      ...a,
-      id: 'future',
-      properties: {
-        ...a.properties,
-        series: 'F',
-        valid_from_ms: NOW + 100000,
-        raw_text: 'FUTURE RAW',
-      },
-    },
+    state.fixture.data.features[0],
+    ...Array.from({ length: 200 }, (_, i) => ({
+      ...advisory(),
+      id: 'unrelated-' + i,
+      properties: { ...advisory().properties, series: 'UNRELATED-' + i },
+    })),
   ]);
-  state.setSnapshot({
-    ...state.fixture.snapshot,
-    complete: false,
-    status: 'incomplete',
-    reason: 'Some boundaries unknown',
-    unresolved: [{ feature_id: 'unknown', reason: 'unlocated' }],
-    future_feature_ids: ['future'],
-  });
   state.mount();
   await screen.findByRole('button', { name: /Clear advisory/ });
-  const unknown = screen.getByRole('region', {
-    name: 'Route intersection unknown',
-  });
-  const future = screen.getByRole('region', { name: 'Future SIGMET reports' });
-  expect(unknown).toHaveTextContent('UNLOCATED RAW');
-  expect(unknown).toHaveTextContent('unlocated');
-  expect(future).toHaveTextContent('FUTURE RAW');
-  expect(within(unknown).queryByRole('button')).toBeNull();
-  expect(within(future).queryByRole('button')).toBeNull();
-  const list = screen.getByRole('list', {
-    name: 'Matching route SIGMET bulletins',
-  });
-  expect(list).toHaveTextContent('PROVIDER 7');
-  expect(list).toHaveTextContent('2026-10-06T11:59:59.000 UTC');
-  expect(list).toHaveTextContent('180 flight-level');
-  expect(list).toHaveTextContent('340 flight-level FL');
-  expect(list).toHaveTextContent('TEST SIGMET');
-  expect(list).toHaveTextContent('amends previous');
+  expect(screen.queryByText(/UNRELATED-/)).toBeNull();
   expect(
-    screen.getByText(/Source AWC.*retrieved.*2026-10-06T12:00:00.000 UTC/)
-  ).toBeTruthy();
+    screen.queryByRole('region', { name: 'Route intersection unknown' })
+  ).toBeNull();
   expect(
-    screen.getByText(/Altitude and passage-time match not evaluated/)
-  ).toBeTruthy();
-  expect(screen.getByText(/Missing reports mean unknown weather/)).toBeTruthy();
+    screen.queryByRole('region', { name: 'Future SIGMET reports' })
+  ).toBeNull();
+  expect(screen.getByText('Pending')).toBeDefined();
+  expect(screen.getByText('Cleared').closest('details')).not.toHaveAttribute(
+    'open'
+  );
 });
 it('waits for confirmed Clear and Show again writes with the exact notice identity', async () => {
   const state = setup();
@@ -361,6 +311,7 @@ it('waits for confirmed Clear and Show again writes with the exact notice identi
       })
     )
   );
+  fireEvent.click(screen.getByText('Cleared'));
   const show = await screen.findByRole('button', {
     name: /Show again.*TEST 1/,
   });
@@ -412,47 +363,6 @@ it('refreshes stale identity after conflict without claiming the replacement was
   expect(clear()).toBeEnabled();
   expect(screen.queryByText(/Advisory state saved/)).toBeNull();
 });
-it('retains other current reports for review without creating notice actions or showing cancelled and expired reports', async () => {
-  const state = setup();
-  const a = advisory();
-  state.setReports([
-    a,
-    {
-      ...a,
-      id: 'other',
-      properties: { ...a.properties, series: 'O', raw_text: 'OTHER RAW' },
-    },
-    {
-      ...a,
-      id: 'cancelled',
-      properties: {
-        ...a.properties,
-        cancelled: true,
-        raw_text: 'CANCELLED RAW',
-      },
-    },
-    {
-      ...a,
-      id: 'expired',
-      properties: {
-        ...a.properties,
-        valid_from_ms: NOW - 10000,
-        valid_to_ms: NOW,
-        expires_at_ms: NOW,
-        raw_text: 'EXPIRED RAW',
-      },
-    },
-  ]);
-  state.mount();
-  const other = await screen.findByRole('region', {
-    name: 'Other current SIGMET reports',
-  });
-  expect(other).toHaveTextContent('OTHER RAW');
-  expect(within(other).queryByRole('button')).toBeNull();
-  expect(screen.queryByText('CANCELLED RAW')).toBeNull();
-  expect(screen.queryByText('EXPIRED RAW')).toBeNull();
-});
-
 it('keeps unavailable original reports explicit and disables notice actions instead of substituting report data', async () => {
   const state = setup();
   state.setPayloadStatus(503);
@@ -468,23 +378,6 @@ it('keeps unavailable original reports explicit and disables notice actions inst
   expect(screen.queryByText('TEST SIGMET')).toBeNull();
   expect(state.writes).toEqual([]);
 });
-it('shows route unavailable in intersecting mode without claiming clear weather', async () => {
-  const state = setup({ ...settings, sigmet_intersecting_only: true });
-  state.setSnapshot({
-    ...state.fixture.snapshot,
-    context: null,
-    entries: [],
-    status: 'no-route',
-    complete: false,
-    reason: 'No active route',
-  });
-  state.mount();
-  await screen.findByText(/No usable route/);
-  expect(screen.getByText('Route unavailable')).toBeTruthy();
-  expect(screen.queryByRole('button', { name: /Clear advisory/ })).toBeNull();
-  expect(screen.getByText(/Missing reports mean unknown weather/)).toBeTruthy();
-});
-
 it('loads reports without GPU drawings and releases report demand when SIGMET is confirmed off', async () => {
   const state = setup();
   state.mount();
@@ -501,7 +394,7 @@ it('loads reports without GPU drawings and releases report demand when SIGMET is
     ).not.toBeChecked()
   );
   expect(
-    screen.getByRole('switch', { name: 'Intersecting route only' })
+    screen.getByRole('switch', { name: 'Show intersecting polygons only' })
   ).toBeDisabled();
   expect(screen.queryByRole('button', { name: /Clear advisory/ })).toBeNull();
   await waitFor(() =>
@@ -598,8 +491,9 @@ it('distinguishes provider and canonical series in reports while using the canon
   expect(list).toHaveTextContent(
     'provider series OSCAR55F · canonical series OSCAR55'
   );
-  expect(button).toHaveAccessibleName(/TEST OSCAR55 ·/);
+  expect(button).toHaveAccessibleName(/TEST OSCAR55/);
   fireEvent.click(button);
+  fireEvent.click(screen.getByText('Cleared'));
   await screen.findByRole('button', { name: /Show again/ });
   expect(state.writes).toEqual([
     {
@@ -610,102 +504,44 @@ it('distinguishes provider and canonical series in reports while using the canon
     },
   ]);
 });
-it.each([
-  ['no-route', 'future'],
-  ['no-route', 'unlocated'],
-  ['unavailable', 'future'],
-  ['unavailable', 'unlocated'],
-] as const)(
-  'keeps %s %s source reports reviewable without route metadata',
-  async (status, kind) => {
+it.each(['no-route', 'unavailable'] as const)(
+  'keeps %s feed diagnostics collapsed without listing unrelated reports',
+  async (status) => {
     const state = setup();
-    const first = advisory();
-    const future = {
-      ...first,
-      id: 'future',
-      properties: {
-        ...first.properties,
-        valid_from_ms: NOW + 1000,
-        raw_text: 'FUTURE WITHOUT ROUTE',
-      },
-    };
-    state.setReports([
-      {
-        ...first,
-        id: 'unlocated',
-        geometry: null,
-        properties: {
-          ...first.properties,
-          raw_text: 'UNLOCATED WITHOUT ROUTE',
-        },
-      },
-      future,
-      {
-        ...future,
-        id: 'cancelled-future',
-        properties: {
-          ...future.properties,
-          cancelled: true,
-          raw_text: 'CANCELLED FUTURE',
-        },
-      },
-      {
-        ...first,
-        id: 'expired',
-        geometry: null,
-        properties: {
-          ...first.properties,
-          valid_from_ms: NOW - 1000,
-          valid_to_ms: NOW,
-          expires_at_ms: NOW,
-          raw_text: 'EXPIRED UNLOCATED',
-        },
-      },
-      {
-        ...first,
-        id: 'cancelled',
-        geometry: null,
-        properties: {
-          ...first.properties,
-          cancelled: true,
-          raw_text: 'CANCELLED UNLOCATED',
-        },
-      },
-    ]);
     state.setSnapshot({
       ...state.fixture.snapshot,
       context: status === 'no-route' ? null : state.fixture.snapshot.context,
       entries: [],
       status,
       complete: false,
-      unresolved: [],
-      future_feature_ids: [],
-      reason: 'Route geometry unavailable',
     });
     state.mount();
-    const reports = await screen.findByRole('region', {
-      name:
-        kind === 'future'
-          ? 'Future SIGMET reports'
-          : 'Route intersection unknown',
-    });
-    expect(reports).toHaveTextContent(
-      kind === 'future' ? 'FUTURE WITHOUT ROUTE' : 'UNLOCATED WITHOUT ROUTE'
-    );
-    if (kind === 'unlocated') expect(reports).toHaveTextContent('unlocated');
-    expect(within(reports).queryByRole('button')).toBeNull();
+    await screen.findByText('No pending SIGMETs.');
+    expect(
+      screen.getByText('Diagnostics').closest('details')
+    ).not.toHaveAttribute('open');
     expect(
       screen.queryByRole('button', { name: /Clear advisory|Show again/ })
     ).toBeNull();
-    expect(
-      screen.queryByRole('region', { name: 'Other current SIGMET reports' })
-    ).toBeNull();
-    for (const raw of [
-      'CANCELLED FUTURE',
-      'EXPIRED UNLOCATED',
-      'CANCELLED UNLOCATED',
-    ])
-      expect(screen.queryByText(raw)).toBeNull();
-    expect(state.writes).toEqual([]);
   }
 );
+it('acknowledging a selected-only bulletin removes its row entirely', async () => {
+  const state = setup();
+  const entry = JSON.parse(JSON.stringify(state.fixture.snapshot.entries[0]));
+  delete entry.spans;
+  entry.selected = true;
+  state.setSnapshot({
+    ...state.fixture.snapshot,
+    entries: [],
+    selected_entries: [entry],
+  });
+  state.mount();
+  await screen.findByRole('button', { name: /Clear advisory/ });
+  expect(screen.getByText('Selected')).toBeDefined();
+  fireEvent.click(clear());
+  await waitFor(() =>
+    expect(screen.queryByRole('button', { name: /Clear advisory/ })).toBeNull()
+  );
+  fireEvent.click(screen.getByText('Cleared'));
+  expect(screen.queryByRole('button', { name: /Show again/ })).toBeNull();
+});

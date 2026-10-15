@@ -28,13 +28,19 @@ export function AviationLayer({
   const { camera, gl } = useThree();
   const visible = useRef('');
   const sampleAt = useRef(0);
-  useFrame(({clock}) => {
+  useFrame(({ clock }) => {
     if (!onVisibleSigmets || clock.elapsedTime < sampleAt.current) return;
     sampleAt.current = clock.elapsedTime + 0.3;
     const rect = gl.domElement.getBoundingClientRect();
-    const reports = visibleSigmetReports(view, camera, {width:rect.width,height:rect.height});
-    const key = reports.map(r => r.id).join('|');
-    if (key !== visible.current) { visible.current = key; onVisibleSigmets(reports); }
+    const reports = visibleSigmetReports(view, camera, {
+      width: rect.width,
+      height: rect.height,
+    });
+    const key = reports.map((r) => r.id).join('|');
+    if (key !== visible.current) {
+      visible.current = key;
+      onVisibleSigmets(reports);
+    }
   });
   const gesture = useRef<{
     id: number;

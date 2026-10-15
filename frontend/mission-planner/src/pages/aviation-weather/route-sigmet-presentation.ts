@@ -6,7 +6,11 @@ import {
 } from '@/services/aviation-features';
 import type { RouteSigmetEntry } from '@/services/route-sigmets';
 import type { RouteSigmetSourceView } from './route-sigmet-source';
-import { sigmetAttentionItems, sigmetNoticeColor, type SigmetAttentionItem } from './sigmet-attention';
+import {
+  sigmetAttentionItems,
+  sigmetNoticeColor,
+  type SigmetAttentionItem,
+} from './sigmet-attention';
 import { sigmetReportLabel } from './sigmet-report-label';
 import { optionalWeatherBudget, type WeatherBudget } from './weather-budget';
 import type { AviationLayerView } from './aviation-controller';
@@ -30,7 +34,7 @@ export type SigmetPresentationInput = {
 };
 export type SigmetPresentation = {
   view: AviationLayerView;
-  notices: SigmetNotice[];
+  notices: (SigmetNotice & { entry: RouteSigmetEntry })[];
   attentionItems: SigmetAttentionItem[];
   pendingCount: number;
   unknownCount: number;
@@ -110,7 +114,11 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
     snapshot?.status === 'stale' ||
     !!source.error ||
     (product?.fresh_until_ms != null && nowMs >= product.fresh_until_ms);
-  const attentionItems = sigmetAttentionItems(compatible ? snapshot : null, reports, nowMs);
+  const attentionItems = sigmetAttentionItems(
+    compatible ? snapshot : null,
+    reports,
+    nowMs
+  );
   return {
     attentionItems,
     view: bound

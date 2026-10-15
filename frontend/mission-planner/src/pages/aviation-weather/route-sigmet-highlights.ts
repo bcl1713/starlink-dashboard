@@ -3,7 +3,10 @@ import type {
   AviationFeature,
   AviationAdvisory,
 } from '@/services/aviation-features';
-import type { RouteSigmetEntry, SelectedSigmetEntry } from '@/services/route-sigmets';
+import type {
+  RouteSigmetEntry,
+  SelectedSigmetEntry,
+} from '@/services/route-sigmets';
 import { earthPoint, type AviationDrawing } from './aviation-renderer';
 import { weatherKey, type WeatherBudget } from './weather-budget';
 
@@ -62,28 +65,34 @@ export function createSigmetHighlights(
   // point contacts use few vertices but still require independent Line owners.
   const overhead = budget.reserve(weatherKey('sigmet-highlight-objects'), {
     encoded: 0,
-    decoded: ('spans' in notice.entry ? notice.entry.spans : []).length * 4096 + ringCount * 32 + 65536,
+    decoded:
+      ('spans' in notice.entry ? notice.entry.spans : []).length * 4096 +
+      ringCount * 32 +
+      65536,
     gpu: 0,
   });
   try {
-    const spans = ('spans' in notice.entry ? notice.entry.spans : []).map((span) => {
-      const routeArc = arc(
-        points[span.segment_index],
-        points[span.segment_index + 1]
-      );
-      return {
-        span,
-        arc: routeArc,
-        steps: Math.max(
-          1,
-          Math.ceil(
-            (routeArc.angle * (span.end_fraction - span.start_fraction)) /
-              radians
-          )
-        ),
-      };
-    });
-    if (!spans.length && 'spans' in notice.entry) throw Error('Confirmed route spans unavailable');
+    const spans = ('spans' in notice.entry ? notice.entry.spans : []).map(
+      (span) => {
+        const routeArc = arc(
+          points[span.segment_index],
+          points[span.segment_index + 1]
+        );
+        return {
+          span,
+          arc: routeArc,
+          steps: Math.max(
+            1,
+            Math.ceil(
+              (routeArc.angle * (span.end_fraction - span.start_fraction)) /
+                radians
+            )
+          ),
+        };
+      }
+    );
+    if (!spans.length && 'spans' in notice.entry)
+      throw Error('Confirmed route spans unavailable');
     const rings = (notice.reports as AviationAdvisory[]).flatMap((report) => {
       const geometry = report.geometry;
       return !geometry
@@ -211,10 +220,18 @@ export function createSigmetHighlights(
       const label = new THREE.Sprite(spriteMaterial);
       label.name = notice.label;
       if (spans.length) {
-        label.position.copy(spans[0].arc.at((spans[0].span.start_fraction + spans[0].span.end_fraction) / 2));
+        label.position.copy(
+          spans[0].arc.at(
+            (spans[0].span.start_fraction + spans[0].span.end_fraction) / 2
+          )
+        );
       } else {
-        const center = rings[0].reduce((sum, point) => sum.add(earthPoint(point[1], point[0], 1)), new THREE.Vector3());
-        if (center.lengthSq() < 1e-12) center.copy(earthPoint(rings[0][0][1], rings[0][0][0], 1));
+        const center = rings[0].reduce(
+          (sum, point) => sum.add(earthPoint(point[1], point[0], 1)),
+          new THREE.Vector3()
+        );
+        if (center.lengthSq() < 1e-12)
+          center.copy(earthPoint(rings[0][0][1], rings[0][0][0], 1));
         label.position.copy(center.normalize().multiplyScalar(2.033));
       }
       label.scale.set(0.36, 0.045, 1);

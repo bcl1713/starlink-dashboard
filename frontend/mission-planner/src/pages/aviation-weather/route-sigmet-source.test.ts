@@ -70,14 +70,25 @@ it('manual selection is confirmed by the shared source and released on disposal'
   const fixture = routeSnapshot();
   let selected = false;
   const { source, budget } = setup(async (path, init) => {
-    if (String(path).endsWith('sigmet.json')) return new Response(fixture.bytes, {headers: {'Content-Type': 'application/geo+json'}});
-    if (String(path).endsWith('/selection') && init?.method === 'PUT') selected = true;
-    return json({...fixture.snapshot, state_revision: selected ? 2 : 1,
-      entries: fixture.snapshot.entries.map(e => ({...e, selected}))});
+    if (String(path).endsWith('sigmet.json'))
+      return new Response(fixture.bytes, {
+        headers: { 'Content-Type': 'application/geo+json' },
+      });
+    if (String(path).endsWith('/selection') && init?.method === 'PUT')
+      selected = true;
+    return json({
+      ...fixture.snapshot,
+      state_revision: selected ? 2 : 1,
+      entries: fixture.snapshot.entries.map((e) => ({ ...e, selected })),
+    });
   });
   const unsubscribe = source.subscribe(() => {});
   await settle();
-  await source.setSelection({context_key: hash('c'), bulletin_key: hash('e'), semantic_digest: hash('f')});
+  await source.setSelection({
+    context_key: hash('c'),
+    bulletin_key: hash('e'),
+    semantic_digest: hash('f'),
+  });
   expect(source.snapshot().snapshot?.entries[0].selected).toBe(true);
   unsubscribe();
   expect(budget.snapshot().decoded).toBe(0);

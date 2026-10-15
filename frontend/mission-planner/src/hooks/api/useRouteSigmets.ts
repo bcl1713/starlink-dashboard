@@ -25,5 +25,7 @@ export function useSetSigmetAcknowledgement() {
 
 export function useSelectSigmet() {
   const source = getRouteSigmetSource(useQueryClient());
-  return useMutation({mutationFn: (change: NoticeSelection) => source.setSelection(change)});
+  return useMutation({
+    mutationFn: (change: NoticeSelection) => source.setSelection(change),
+  });
 }
