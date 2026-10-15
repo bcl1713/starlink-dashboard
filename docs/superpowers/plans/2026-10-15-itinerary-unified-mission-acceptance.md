@@ -4,7 +4,7 @@ This is Task 8 of the
 [implementation plan](2026-10-15-itinerary-unified-mission.md). Read its global
 constraints, interfaces and the approved spec before execution.
 
-### Task 8: Production qualification, review and documentation
+## Task 8: Production qualification, review and documentation
 
 **Files:** Extend repository-root
 `tools/acceptance/itinerary-planning/{seed, runner,qualify,export_probes}.py`,
