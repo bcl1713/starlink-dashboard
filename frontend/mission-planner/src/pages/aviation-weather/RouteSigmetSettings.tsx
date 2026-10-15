@@ -14,6 +14,8 @@ import {
   type SelectedSigmetEntry,
 } from '@/services/route-sigmets';
 import { AviationReport } from './AviationReport';
+import { formatSigmetEncounter } from './sigmet-encounter-text';
+import { SigmetEncounterDetails } from './SigmetEncounterDetails';
 import { sigmetReportLabel } from './sigmet-report-label';
 import './AviationWeather.css';
 const position = (e: RouteSigmetEntry | SelectedSigmetEntry) =>
@@ -91,7 +93,7 @@ export function RouteSigmetSettings({
       .filter((r): r is AviationAdvisory => !!r);
     const label = bound.length
       ? sigmetReportLabel(bound)
-      : `SIGMET ${entry.bulletin_key.slice(0, 8)} · report unavailable`;
+      : 'SIGMET · report unavailable';
     return (
       <li key={entry.notice_key} className="sigmet-settings-row">
         <div className="sigmet-settings-summary">
@@ -116,8 +118,12 @@ export function RouteSigmetSettings({
             {entry.acknowledged ? 'Show again' : 'Acknowledge'}
           </button>
         </div>
+        {formatSigmetEncounter(entry, view.nowMs).map((line, index) => (
+          <p key={line}>{index === 0 ? <strong>{line}</strong> : line}</p>
+        ))}
         <details>
           <summary>Full report · {label}</summary>
+          <SigmetEncounterDetails entry={entry} nowMs={view.nowMs} />
           {bound.length ? (
             bound.map((r) => (
               <AviationReport key={r.id} feature={r} now={view.nowMs} />
@@ -126,14 +132,6 @@ export function RouteSigmetSettings({
             <p>
               Original report unavailable; advisory actions are disabled until
               reports refresh.
-            </p>
-          )}
-          {'spans' in entry && (
-            <p>
-              Route segments{' '}
-              {[...new Set(entry.spans.map((s) => s.segment_index + 1))].join(
-                ', '
-              )}
             </p>
           )}
         </details>
@@ -174,19 +172,11 @@ export function RouteSigmetSettings({
             )}
           </details>
           <details>
-            <summary>Diagnostics</summary>
+            <summary>Weather status</summary>
             <p>
               {snapshot?.context
                 ? `${snapshot.context.route_name || 'Unnamed route'} · ${snapshot.context.source === 'simulation' ? 'Simulation route' : 'Ordinary route'}`
                 : 'Route unavailable'}
-            </p>
-            <p>
-              Route SIGMET status: {snapshot?.status ?? 'unavailable'}
-              {snapshot?.reason ? ` · ${snapshot.reason}` : ''}
-            </p>
-            <p>
-              Geographic intersection · Altitude and passage-time match not
-              evaluated. Weather uses actual UTC, including simulation routes.
             </p>
             {view.error && (
               <p>
@@ -197,17 +187,6 @@ export function RouteSigmetSettings({
             {snapshot && !snapshot.complete && (
               <p>
                 Route evaluation incomplete; some intersections remain unknown.
-              </p>
-            )}
-            {collection && (
-              <p>
-                Source {collection.source_id.toUpperCase()} · retrieved{' '}
-                {new Date(collection.retrieved_at_ms)
-                  .toISOString()
-                  .replace(/Z$/, ' UTC')}{' '}
-                · Feed coverage {collection.feed_completeness} ·{' '}
-                {snapshot?.omitted_features ?? collection.omitted_features}{' '}
-                omitted
               </p>
             )}
             {snapshot?.sigmet_product.attribution.map((a) => (

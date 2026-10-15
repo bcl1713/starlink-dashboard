@@ -37,6 +37,25 @@ def test_attention_fixture_uses_fresh_bulletin_series(tmp_path):
 
 def proof():
     return {
+        "encounter": {
+            key: True
+            for key in (
+                "altitude_free",
+                "time_boundaries",
+                "plan_edit_ack_preserved",
+                "selected_only_unknown",
+                "partial_evidence",
+                "two_screen_sync",
+                "responsive_details",
+                "no_altitude_filter",
+                "overlap_screenshots",
+                "no_overlap_screenshots",
+                "unknown_screenshots",
+                "live_projection",
+                "live_stale_unknown",
+                "live_passed",
+            )
+        },
         "browser": {"passed": 2, "failed": 0, "skipped": 0},
         "route": {
             "elapsed_save_to_display_ms": [10, 7999],
@@ -245,7 +264,7 @@ def test_source_removal_failure_is_recorded_and_cannot_pass(tmp_path, monkeypatc
         (
             "aviation",
             ["aviation-weather-production.spec.ts", "route-sigmets-production.spec.ts"],
-            4,
+            5,
         ),
         ("gfs", ["gfs-weather-production.spec.ts"], 1),
     ],
@@ -281,3 +300,124 @@ def test_shared_browser_config_lists_each_stack_owned_selection(
         assert ("route-sigmets-production.spec.ts" in output) == (label == "aviation")
     finally:
         owner.cleanup()
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "altitude_free",
+        "time_boundaries",
+        "plan_edit_ack_preserved",
+        "selected_only_unknown",
+        "partial_evidence",
+        "two_screen_sync",
+        "responsive_details",
+        "no_altitude_filter",
+    ],
+)
+def test_missing_encounter_proof_prevents_pass(missing):
+    evidence = proof()
+    evidence["encounter"] = {
+        key: True
+        for key in (
+            "altitude_free",
+            "time_boundaries",
+            "plan_edit_ack_preserved",
+            "selected_only_unknown",
+            "partial_evidence",
+            "two_screen_sync",
+            "responsive_details",
+            "no_altitude_filter",
+            "overlap_screenshots",
+            "no_overlap_screenshots",
+            "unknown_screenshots",
+            "live_projection",
+            "live_stale_unknown",
+            "live_passed",
+        )
+    }
+    evidence["encounter"][missing] = False
+    with pytest.raises(ValueError):
+        runner().require_pass(evidence)
+
+
+def test_encounter_fixture_has_independent_bulletin_series(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "sigmet_fixtures",
+        ROOT / "tools/acceptance/aviation-weather/generate_fixtures.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.generate(tmp_path, now=1792060000000)
+    capture = json.loads((tmp_path / "encounter-sigmets.json").read_text())
+    assert {f["properties"]["seriesId"] for f in capture["features"]} == {
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+    }
+
+
+@pytest.mark.parametrize(
+    "missing", ["overlap_screenshots", "no_overlap_screenshots", "unknown_screenshots"]
+)
+def test_missing_encounter_state_screenshots_prevent_pass(missing):
+    evidence = proof()
+    evidence["encounter"].update(
+        overlap_screenshots=True, no_overlap_screenshots=True, unknown_screenshots=True
+    )
+    evidence["encounter"][missing] = False
+    with pytest.raises(ValueError, match="encounter"):
+        runner().require_pass(evidence)
+
+
+@pytest.mark.parametrize(
+    "missing", ["live_projection", "live_stale_unknown", "live_passed"]
+)
+def test_missing_live_eta_proof_prevents_pass(missing):
+    evidence = proof()
+    evidence["encounter"].update(
+        live_projection=True, live_stale_unknown=True, live_passed=True
+    )
+    evidence["encounter"][missing] = False
+    with pytest.raises(ValueError, match="encounter"):
+        runner().require_pass(evidence)
+
+
+def test_telemetry_fixture_preserves_replay_update_contract(tmp_path):
+    """The source adapter must accept the real coordinator's replay keyword."""
+    import ast
+    from datetime import datetime, timedelta, timezone
+    from types import SimpleNamespace
+
+    class BaseCoordinator:
+        def update(self, replay_frame=None):
+            return replay_frame
+
+    control = tmp_path / "control.json"
+    control.write_text("{}")
+    source = ast.parse(
+        (ROOT / "tools/acceptance/aviation-weather/backend_fixture.py").read_text()
+    )
+    adapter = next(
+        node
+        for node in source.body
+        if isinstance(node, ast.ClassDef)
+        and node.name == "FixtureSimulationCoordinator"
+    )
+    namespace = {
+        "main": SimpleNamespace(SimulationCoordinator=BaseCoordinator),
+        "json": json,
+        "Path": lambda _: control,
+        "datetime": datetime,
+        "timedelta": timedelta,
+        "timezone": timezone,
+    }
+    exec(
+        compile(ast.Module(body=[adapter], type_ignores=[]), "fixture-adapter", "exec"),
+        namespace,
+    )
+    frame = object()
+    assert (
+        namespace["FixtureSimulationCoordinator"]().update(replay_frame=frame) is frame
+    )

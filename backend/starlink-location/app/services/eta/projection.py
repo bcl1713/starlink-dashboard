@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Optional
 from app.models.flight_status import ETAMode, FlightPhase
 from app.models.poi import POI
 from app.services.eta.calculator import ETACalculator
+from app.services.eta.segment_timing import has_route_timing, segment_speed
 from app.services.route_eta.calculator import RouteETACalculator
 
 if TYPE_CHECKING:
@@ -174,10 +175,7 @@ class ETAProjection:
             ETA in seconds if route-aware calculation succeeds, None to fall back to distance/speed
         """
         # Early return if no timing data on route
-        if (
-            not active_route.timing_profile
-            or not active_route.timing_profile.has_timing_data
-        ):
+        if not has_route_timing(active_route):
             return None
 
         # A stored destination projection is authoritative, even when its name
@@ -445,13 +443,10 @@ class ETAProjection:
                 )
                 if segment_distance <= 0.000001:
                     continue
-                expected_speed = (
-                    segment_timing_point.expected_segment_speed_knots or speed
-                )
-                segment_speed_knots = (
-                    (speed + expected_speed) / 2.0
-                    if first_remaining_segment
-                    else expected_speed
+                segment_speed_knots = segment_speed(
+                    speed,
+                    segment_timing_point.expected_segment_speed_knots,
+                    first_remaining_segment,
                 )
                 if not isfinite(segment_speed_knots) or segment_speed_knots <= 0.5:
                     return None

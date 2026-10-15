@@ -53,6 +53,27 @@ def bind_browser_source(candidate, installed, *, link=True):
 
 
 def require_pass(proofs):
+    encounter = proofs.get("encounter", {})
+    if not all(
+        encounter.get(key) is True
+        for key in (
+            "altitude_free",
+            "time_boundaries",
+            "plan_edit_ack_preserved",
+            "selected_only_unknown",
+            "partial_evidence",
+            "two_screen_sync",
+            "responsive_details",
+            "no_altitude_filter",
+            "overlap_screenshots",
+            "no_overlap_screenshots",
+            "unknown_screenshots",
+            "live_projection",
+            "live_stale_unknown",
+            "live_passed",
+        )
+    ):
+        raise ValueError("Incomplete SIGMET encounter evidence")
     browser, route, cleanup = (
         proofs.get(key, {}) for key in ("browser", "route", "cleanup")
     )
@@ -406,6 +427,9 @@ class Runner:
         )
         self.proofs["real_source"] = json.loads(
             (self.output / "real-source-evidence.json").read_bytes()
+        )
+        self.proofs["encounter"] = json.loads(
+            (self.output / "sigmet-encounter-evidence.json").read_bytes()
         )
         self.proofs["attention"] = json.loads(
             (self.output / "sigmet-attention-evidence.json").read_bytes()

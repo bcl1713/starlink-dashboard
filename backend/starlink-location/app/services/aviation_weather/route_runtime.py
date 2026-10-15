@@ -1,6 +1,8 @@
 """Demand-owned route geometry joined to current UTC and persistent notices."""
 
 import asyncio
+import threading
+import uuid
 from collections import OrderedDict
 
 from app.mission.storage import get_active_leg_lock
@@ -11,21 +13,34 @@ from app.models.route_sigmets import (
     SigmetSelectionCandidate,
     UnresolvedFeature,
 )
+from app.models.sigmet_encounters import (
+    EncounterEvidence,
+    EncounterPlanSummary,
+    PassageEvidence,
+)
 from app.services.overview_weather.protocol import WeatherUnavailable
 
 from .decode import await_owned
 from .relations import cancellation_matches
 from .route_decode import GeometryWorker
+from .route_encounters import evaluate_encounters
 from .route_identity import digest, group_bulletins
 from .route_state import NoticeConflict
 
 
 class RouteSigmetService:
-    def __init__(self, weather, store, context_provider):
+    def __init__(self, weather, store, context_provider, encounter_provider=None):
         self.weather, self.store = weather, store
         self.context_provider = context_provider
+        self.encounter_provider = encounter_provider
         self.worker = GeometryWorker()
         self._cache = OrderedDict()
+        self._encounter_cache = OrderedDict()
+        self._encounter_lock = threading.Lock()
+        self._observation_key = None
+        self._observation_revision = 0
+        self._selection_epoch = 0
+        self._service_instance_id = uuid.uuid4().hex
         self._evaluations = {}
         self._selected_context_key = None
         self._closed = False
@@ -36,6 +51,8 @@ class RouteSigmetService:
         if not settings.sigmet:
             await self._stop_evaluations()
             self._cache.clear()
+            with self._encounter_lock:
+                self._encounter_cache.clear()
 
     async def _stop_evaluations(self):
         tasks = list(self._evaluations)
@@ -64,6 +81,22 @@ class RouteSigmetService:
         capture cannot retire a more recently observed route's work.
         """
         context = self.context_provider()
+        observation = (
+            (
+                context.context_key,
+                context.encounter_plan.revision if context.encounter_plan else None,
+            )
+            if context
+            else None
+        )
+        if observation != self._observation_key:
+            self._observation_key = observation
+            self._observation_revision += 1
+            self._selection_epoch += 1
+        if context is not None:
+            context = context.model_copy(
+                update={"selection_epoch": self._selection_epoch}
+            )
         self._selected_context_key = context.context_key if context else None
         return context
 
@@ -124,6 +157,49 @@ class RouteSigmetService:
             self._cache.popitem(last=False)
         return result
 
+    def _encounters(self, context, spans, valid_from, expires):
+        plan = context.encounter_plan
+        key = digest(
+            [
+                context.context_key,
+                plan.revision if plan else None,
+                [span.model_dump() for span in spans],
+                valid_from,
+                expires,
+            ]
+        )
+        with self._encounter_lock:
+            if key in self._encounter_cache:
+                self._encounter_cache.move_to_end(key)
+                return self._encounter_cache[key][0]
+        try:
+            result = evaluate_encounters(plan, spans, valid_from, expires)
+        except (ValueError, TypeError, ArithmeticError):
+            result = EncounterEvidence(
+                spans=[
+                    PassageEvidence(
+                        entry_ms=None,
+                        exit_ms=None,
+                        status="unknown",
+                        reason="unavailable-plan",
+                    )
+                    for _ in spans
+                ],
+                status="unknown",
+                unknown_count=len(spans),
+                reason="unavailable-plan",
+            )
+        size = len(result.model_dump_json().encode())
+        with self._encounter_lock:
+            if not self._closed and size <= 8 * 1024**2:
+                self._encounter_cache[key] = (result, size)
+                while (
+                    len(self._encounter_cache) > 2
+                    or sum(v[1] for v in self._encounter_cache.values()) > 8 * 1024**2
+                ):
+                    self._encounter_cache.popitem(last=False)
+        return result
+
     @staticmethod
     def _eligible(groups, now):
         cancellations = [
@@ -153,6 +229,8 @@ class RouteSigmetService:
             or not settings.sigmet
             or selected is None
             or selected.context_key != context.context_key
+            or selected.selection_epoch != context.selection_epoch
+            or selected.encounter_plan != context.encounter_plan
             or collection is None
             or current.instance_id != product.instance_id
             or current.state not in {"ready", "stale"}
@@ -202,18 +280,45 @@ class RouteSigmetService:
         future=None,
         omitted=0,
         state_revision=0,
+        observation_revision=None,
         reason=None
     ):
         entries, unresolved = entries or [], unresolved or []
         complete = status in {"ready", "stale"} and not unresolved and not omitted
         return RouteSigmetSnapshot(
-            schema="route-sigmets-v1",
+            schema="route-sigmets-v2",
+            service_instance_id=self._service_instance_id,
+            observation_revision=(
+                self._observation_revision
+                if observation_revision is None
+                else observation_revision
+            ),
+            encounter_plan=(
+                EncounterPlanSummary(
+                    **context.encounter_plan.model_dump(
+                        include={
+                            "revision",
+                            "method",
+                            "source",
+                            "source_revision",
+                            "precision",
+                        }
+                    )
+                )
+                if context and context.encounter_plan
+                else None
+            ),
             generated_at_ms=self.weather.utc_ms(),
             settings_revision=settings.revision,
             state_revision=state_revision,
             generation_id=digest(
                 [
                     context.context_key if context else None,
+                    (
+                        context.encounter_plan.revision
+                        if context and context.encounter_plan
+                        else None
+                    ),
                     settings.revision,
                     product.instance_id,
                     [(e.notice_key, e.semantic_digest) for e in entries],
@@ -243,16 +348,50 @@ class RouteSigmetService:
                 self._observe_context(),
                 self._settings(),
                 self.weather.admitted_layer("sigmet")[0],
+                self._observation_revision,
             )
 
     async def _changed_snapshot(self, reason, status="evaluating"):
-        current, settings, product = await self._thread(self._capture)
-        await self._retire_incompatible(current)
-        if not settings.sigmet:
-            status = "off"
-        elif current is None:
-            status = "no-route"
-        return self._snapshot(settings, current, product, status, reason=reason), None
+        # The observation token belongs to the capture, never to a later global
+        # read after a cleanup await. Bound retries during a rapid edit storm.
+        for _ in range(3):
+            current, settings, product, revision = await self._thread(self._capture)
+            try:
+                await self._retire_incompatible(current)
+            except WeatherUnavailable:
+                continue
+            if revision != self._observation_revision:
+                continue
+            current_status = (
+                "off"
+                if not settings.sigmet
+                else "no-route" if current is None else status
+            )
+            return (
+                self._snapshot(
+                    settings,
+                    current,
+                    product,
+                    current_status,
+                    observation_revision=revision,
+                    reason=reason,
+                ),
+                None,
+            )
+        raise WeatherUnavailable()
+
+    def _only_live_observation_changed(self, context, revision):
+        return (
+            self.encounter_provider is not None
+            and revision != self._observation_revision
+            and context is not None
+            and context.selection_epoch == self._selection_epoch
+            and self._observation_key
+            == (
+                context.context_key,
+                context.encounter_plan.revision if context.encounter_plan else None,
+            )
+        )
 
     async def _read(self):
         settings = await self._thread(self._settings)
@@ -264,10 +403,18 @@ class RouteSigmetService:
             return self._snapshot(settings, None, product, "off"), None
         context = await self._selection()
         product, collection = await self.weather.read_layer("sigmet")
-        current, current_settings, current_product = await self._thread(self._capture)
+        current, current_settings, current_product, observation_revision = (
+            await self._thread(self._capture)
+        )
         await self._retire_incompatible(current)
         if (
-            not current_settings.sigmet
+            (
+                observation_revision != self._observation_revision
+                and not self._only_live_observation_changed(
+                    current, observation_revision
+                )
+            )
+            or not current_settings.sigmet
             or (current.context_key if current else None)
             != (context.context_key if context else None)
             or current_product.instance_id != product.instance_id
@@ -277,7 +424,12 @@ class RouteSigmetService:
         if context is None:
             return (
                 self._snapshot(
-                    settings, None, product, "no-route", reason="Route unavailable"
+                    settings,
+                    None,
+                    product,
+                    "no-route",
+                    observation_revision=observation_revision,
+                    reason="Route unavailable",
                 ),
                 None,
             )
@@ -288,6 +440,7 @@ class RouteSigmetService:
                     context,
                     product,
                     "unavailable",
+                    observation_revision=observation_revision,
                     reason="SIGMET source unavailable",
                 ),
                 None,
@@ -337,28 +490,52 @@ class RouteSigmetService:
             )
         except NoticeConflict:
             return await self._changed_snapshot("Route or SIGMET input changed")
-        entries = []
-        for group in matched:
-            record = state.records[group.notice_key(context.context_key)]
-            spans = [span for f in group.feature_ids for span in matches.get(f, [])]
-            spans.sort(
-                key=lambda s: (s.segment_index, s.start_fraction, s.end_fraction)
+
+        evidence_context = context
+        if self.encounter_provider is not None and context.encounter_plan is not None:
+            # Reserve ordering BEFORE the owned worker reads live timing. Live
+            # samples do not invalidate geometry, acknowledgements or plan edits.
+            self._observation_revision += 1
+            observation_revision = self._observation_revision
+            effective_plan = await self._thread(
+                lambda: self.encounter_provider(context)
             )
-            entries.append(
-                RouteSigmetEntry(
-                    notice_key=group.notice_key(context.context_key),
-                    bulletin_key=group.bulletin_key,
-                    semantic_digest=group.semantic_digest,
-                    feature_ids=group.feature_ids,
-                    spans=spans,
-                    attention_order=record.attention_order,
-                    acknowledged=record.acknowledged,
-                    selected=record.selected,
-                    valid_from_ms=group.valid_from_ms,
-                    expires_at_ms=group.expires_at_ms,
-                    identity_uncertain=group.identity_uncertain,
+            evidence_context = context.model_copy(
+                update={"encounter_plan": effective_plan}
+            )
+
+        def build_entries():
+            entries = []
+            for group in matched:
+                record = state.records[group.notice_key(context.context_key)]
+                spans = [span for f in group.feature_ids for span in matches.get(f, [])]
+                spans.sort(
+                    key=lambda s: (s.segment_index, s.start_fraction, s.end_fraction)
                 )
-            )
+                entries.append(
+                    RouteSigmetEntry(
+                        notice_key=group.notice_key(context.context_key),
+                        bulletin_key=group.bulletin_key,
+                        semantic_digest=group.semantic_digest,
+                        feature_ids=group.feature_ids,
+                        spans=spans,
+                        encounter=self._encounters(
+                            evidence_context,
+                            spans,
+                            group.valid_from_ms,
+                            group.expires_at_ms,
+                        ),
+                        attention_order=record.attention_order,
+                        acknowledged=record.acknowledged,
+                        selected=record.selected,
+                        valid_from_ms=group.valid_from_ms,
+                        expires_at_ms=group.expires_at_ms,
+                        identity_uncertain=group.identity_uncertain,
+                    )
+                )
+            return entries
+
+        entries = await self._thread(build_entries)
         entries.sort(
             key=lambda e: (
                 e.spans[0].segment_index,
@@ -423,9 +600,10 @@ class RouteSigmetService:
         )
         snapshot = self._snapshot(
             settings,
-            context,
+            evidence_context,
             product,
             status,
+            observation_revision=observation_revision,
             entries=entries,
             selected_entries=selected_entries,
             selection_candidates=[
@@ -460,6 +638,15 @@ class RouteSigmetService:
             )
         except NoticeConflict:
             return await self._changed_snapshot("Route or SIGMET input changed")
+        if (
+            observation_revision != self._observation_revision
+            and not self._only_live_observation_changed(context, observation_revision)
+        ):
+            return await self._changed_snapshot("Route timing observation changed")
+        # Concurrent live estimates for the same static plan remain valid as
+        # captured. Each keeps its own token; clients reject an older result
+        # only if they have already received a newer one. Never emit an empty
+        # fallback solely because another display read its timing concurrently.
         return snapshot, (context, product, groups)
 
     async def select(self, change):
@@ -526,6 +713,8 @@ class RouteSigmetService:
         await self._stop_evaluations()
         await self.worker.aclose()
         self._cache.clear()
+        with self._encounter_lock:
+            self._encounter_cache.clear()
 
     async def aclose(self):
         if self._closing is None:

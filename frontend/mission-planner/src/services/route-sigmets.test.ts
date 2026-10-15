@@ -174,3 +174,18 @@ it.each(['oversize', 'abort'] as const)(
     });
   }
 );
+
+it('requires v2 observation ordering and aligned consistent timing evidence', () => {
+  const { snapshot } = routeSnapshot();
+  for (const change of [
+    { schema: 'route-sigmets-v1' },
+    { observation_revision: undefined },
+    { service_instance_id: 'invalid' },
+  ])
+    expect(() =>
+      parseRouteSigmetSnapshot({ ...snapshot, ...change })
+    ).toThrow();
+  const bad = structuredClone(snapshot);
+  bad.entries[0].encounter.unknown_count = 0;
+  expect(() => parseRouteSigmetSnapshot(bad)).toThrow();
+});

@@ -275,3 +275,8 @@ API versioning strategy:
 
 **Last Updated:** 2026-02-28 **Status:** Complete with ETA Route Timing
 endpoints
+
+### Route SIGMET timing response
+
+See [Route SIGMET timing](api/route-sigmet-timing.md) for the strict v2
+response, planned UTC evidence, ordering and deployment requirements.

@@ -182,3 +182,33 @@ intersecting polygons only switch affects map visibility, not relevance or
 acknowledgement. No bulletin catalogue is shown in Configuration; unrelated
 reports are inspected on the map. Geographic intersections do not imply an
 altitude or passage-time match.
+
+### SIGMET crossing timing
+
+Route-intersecting SIGMET notices show **Crossing expected** with UTC times,
+**No crossing expected while valid**, **Crossing time unknown**, or **Crossing
+passed**. Before departure, crossings follow planned waypoint UTC times. In
+flight, they use current UTC, position and speed with the same segment speed
+blending as route-aware POIs. A delay or speed change can therefore change both
+the crossing window and whether it falls within advisory validity, without a
+flight plan edit. Stale or unavailable position/speed produces unknown timing.
+A crossing already entered retains a projected exit; completed crossings are
+marked passed. Simulation replay follows the published mission clock and route
+timing, consistent with replay POIs.
+
+The flight display keeps crossing windows, advisory validity, reported hazard
+bounds and the expandable original bulletin. Adjacent route segments share one
+window; separate crossings and unavailable times remain explicit. Revision
+hashes, method/version identifiers, source precision and altitude-comparison
+disclaimers are omitted from the display.
+
+Time comparison is informational: a nonoverlap does not hide a geographic
+advisory or acknowledge it. Weather eligibility still follows actual UTC, even
+when the selected simulation route has historical planned dates. Timing edits
+refresh evidence without resetting acknowledgements. Manually selected reports
+without route intersections show crossing time unknown.
+
+Routes do not provide planned flight altitude. No altitude comparison or
+altitude filtering is performed, including during an active mission. The
+SIGMET's reported vertical bounds remain available for operator interpretation.
+An altitude-free KML with waypoint times supports passage timing normally.

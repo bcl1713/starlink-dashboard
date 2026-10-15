@@ -57,12 +57,85 @@ const entryFields = {
 export const selectedSigmetEntrySchema = z
   .strictObject(entryFields)
   .refine((e) => unique(e.feature_ids) && e.valid_from_ms < e.expires_at_ms);
+const passageReason = z.enum([
+  'missing-timing',
+  'invalid-timing',
+  'ambiguous-association',
+  'unavailable-plan',
+]);
+const passageStatus = z.enum(['overlap', 'no-overlap', 'unknown', 'passed']);
+const passageSchema = z
+  .strictObject({
+    entry_ms: integer.nullable(),
+    exit_ms: integer.nullable(),
+    status: passageStatus,
+    reason: passageReason.nullable(),
+  })
+  .refine((p) =>
+    p.status === 'unknown'
+      ? p.entry_ms === null && p.exit_ms === null && p.reason !== null
+      : p.status === 'passed'
+        ? p.entry_ms === null && p.exit_ms === null && p.reason === null
+        : p.entry_ms !== null &&
+          p.exit_ms !== null &&
+          p.entry_ms <= p.exit_ms &&
+          p.reason === null
+  );
+const encounterSchema = z
+  .strictObject({
+    spans: z.array(passageSchema).min(1).max(100000),
+    status: passageStatus,
+    unknown_count: integer,
+    reason: passageReason.nullable(),
+  })
+  .refine((e) => {
+    const unknown = e.spans.filter((p) => p.status === 'unknown').length;
+    const status = e.spans.some((p) => p.status === 'overlap')
+      ? 'overlap'
+      : unknown
+        ? 'unknown'
+        : e.spans.every((p) => p.status === 'passed')
+          ? 'passed'
+          : 'no-overlap';
+    const reason =
+      status === 'unknown'
+        ? (e.spans.find((p) => p.reason)?.reason ?? null)
+        : null;
+    return (
+      e.status === status && e.unknown_count === unknown && e.reason === reason
+    );
+  });
+export const encounterPlanSchema = z.strictObject({
+  revision: hash,
+  method: z.enum([
+    'segment-linear-utc-v1',
+    'route-estimated-utc-v1',
+    'mission-replay-utc-v1',
+  ]),
+  source: z.enum(['ordinary', 'simulation']),
+  source_revision: text(256).nullable(),
+  precision: z.enum(['minute', 'second', 'unknown']),
+});
+export type EncounterPlanSummary = z.infer<typeof encounterPlanSchema>;
 export const routeSigmetEntrySchema = z
   .strictObject({
     ...entryFields,
     spans: z.array(intersectionSpanSchema).min(1).max(100000),
+    encounter: encounterSchema,
   })
-  .refine((e) => unique(e.feature_ids) && e.valid_from_ms < e.expires_at_ms);
+  .refine(
+    (e) =>
+      unique(e.feature_ids) &&
+      e.valid_from_ms < e.expires_at_ms &&
+      e.spans.length === e.encounter.spans.length &&
+      e.encounter.spans.every(
+        (p) =>
+          p.status === 'unknown' ||
+          p.status === 'passed' ||
+          (p.exit_ms! >= e.valid_from_ms && p.entry_ms! < e.expires_at_ms) ===
+            (p.status === 'overlap')
+      )
+  );
 const unresolved = z.strictObject({
   feature_id: id,
   reason: z.enum([
@@ -75,7 +148,10 @@ const unresolved = z.strictObject({
 });
 export const routeSigmetSnapshotSchema = z
   .strictObject({
-    schema: z.literal('route-sigmets-v1'),
+    schema: z.literal('route-sigmets-v2'),
+    service_instance_id: z.string().regex(/^[a-f0-9]{32}$/),
+    observation_revision: integer,
+    encounter_plan: encounterPlanSchema.nullable(),
     generated_at_ms: integer,
     settings_revision: integer,
     state_revision: integer,
@@ -115,6 +191,8 @@ export const routeSigmetSnapshotSchema = z
     const features = entries.flatMap((e) => e.feature_ids);
     const candidates = s.selection_candidates.flatMap((e) => e.feature_ids);
     return (
+      (s.context !== null || s.encounter_plan === null) &&
+      (!s.encounter_plan || s.context?.source === s.encounter_plan.source) &&
       unique(entries.map((e) => e.notice_key)) &&
       unique(entries.map((e) => e.bulletin_key)) &&
       unique(features) &&

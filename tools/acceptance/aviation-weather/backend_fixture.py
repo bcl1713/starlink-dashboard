@@ -45,6 +45,7 @@ class FixtureAwcTransport:
                 "sigmets.json",
                 "route-sigmets.json",
                 "attention-sigmets.json",
+                "encounter-sigmets.json",
                 "new-sigmets.json",
                 "amended-sigmets.json",
                 "cancelled-sigmets.json",
@@ -78,3 +79,70 @@ class FixtureAviationService(AviationWeatherService):
 main.AwcTransport = FixtureAwcTransport
 main.AviationWeatherService = FixtureAviationService
 app = main.app
+
+
+# Only this acceptance image mounts this module. Exercise a same-geometry edit
+# through the real route capture; production exposes no fixture control API.
+from datetime import datetime, timedelta, timezone
+
+from fastapi import Request
+
+from app.mission.storage import get_active_leg_lock
+
+
+@app.post("/api/__acceptance/route-encounter")
+async def edit_encounter_plan(request: Request):
+    change = await request.json()
+
+    def edit():
+        with get_active_leg_lock():
+            route = request.app.state.route_manager.get_active_route()
+            if route is None:
+                raise ValueError("No active fixture route")
+            for index, point in enumerate(route.points):
+                if index in change.get("missing_indices", []):
+                    point.expected_arrival_time = None
+                elif point.expected_arrival_time is not None:
+                    point.expected_arrival_time += timedelta(
+                        milliseconds=change.get("offset_ms", 0)
+                    )
+                if "height" in change:
+                    point.altitude = change["height"]
+        return {"edited": True}
+
+    return await asyncio.to_thread(edit)
+
+
+class FixtureSimulationCoordinator(main.SimulationCoordinator):
+    def get_current_telemetry(self):
+        return self._controlled(super().get_current_telemetry())
+
+    def update(self, replay_frame=None):
+        return self._controlled(super().update(replay_frame=replay_frame))
+
+    @staticmethod
+    def _controlled(telemetry):
+        if telemetry is None:
+            return None
+        control = json.loads(Path("/control/control.json").read_text())
+        updates = {}
+        if control.get("telemetry_altitude_ft") is not None:
+            updates["altitude"] = float(control["telemetry_altitude_ft"])
+        if control.get("live_flight"):
+            live = control["live_flight"]
+            now = datetime.now(timezone.utc)
+            updates.update(
+                latitude=live["latitude"],
+                longitude=live["longitude"],
+                speed=live["speed"],
+                observed_at=now - timedelta(seconds=live.get("age", 0)),
+                speed_observed_at=now - timedelta(seconds=live.get("speed_age", 0)),
+            )
+        if not updates:
+            return telemetry
+        return telemetry.model_copy(
+            update={"position": telemetry.position.model_copy(update=updates)}
+        )
+
+
+main.SimulationCoordinator = FixtureSimulationCoordinator
