@@ -4,12 +4,12 @@ import copy
 import importlib
 
 import pytest
+from pydantic import ValidationError
+
 from app.services.aviation_weather.settings import (
     AviationSettings,
     AviationSettingsStore,
 )
-from pydantic import ValidationError
-
 from tests.unit.test_aviation_weather_models import NOW, product
 
 
