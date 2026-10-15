@@ -8,10 +8,10 @@ import ctypes
 import errno
 import gzip
 import hashlib
-import re
 import json
 import logging
 import os
+import re
 import shutil
 import signal
 import socket
@@ -444,6 +444,9 @@ def verify_private_inputs(root: Path, before: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--workflow", choices=["ordinary", "legacy"], default="ordinary"
+    )
     parser.add_argument("--project", default=PROJECT)
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument("--input-root", type=Path)
@@ -606,6 +609,53 @@ def main() -> None:
                 *(["--skip-satellites"] if original_inputs else []),
             ]
         )
+        if getattr(args, "workflow", "legacy") == "ordinary":
+            if original_inputs:
+                raise ValueError(
+                    "Ordinary qualification currently uses invented fixtures only"
+                )
+            owner.env["ITINERARY_WORKFLOW"] = "ordinary"
+            container = summary["backend"]["container"]
+            owner.execute(
+                [
+                    "docker",
+                    "cp",
+                    str(owner.output / "seed"),
+                    f"{container}:/tmp/ordinary-import-seed",
+                ]
+            )
+            owner.execute(
+                [
+                    "docker",
+                    "cp",
+                    str(source / "tools/acceptance/itinerary-planning/seed_legacy.py"),
+                    f"{container}:/tmp/seed_legacy.py",
+                ]
+            )
+            seeded = owner.compose(
+                "exec",
+                "-T",
+                "starlink-location",
+                "runuser",
+                "-u",
+                "appuser",
+                "--",
+                "python",
+                "/tmp/seed_legacy.py",
+                "/tmp/ordinary-import-seed",
+            )
+            record = json.loads(
+                next(
+                    line.removeprefix("MIGRATION_SEED=")
+                    for line in seeded.splitlines()
+                    if line.startswith("MIGRATION_SEED=")
+                )
+            )
+            (owner.output / "seed" / "migration.json").write_text(json.dumps(record))
+            owner.compose("restart", "starlink-location", timeout=180)
+            owner.compose(
+                "up", "--no-build", "-d", "--wait", "--wait-timeout", "180", timeout=210
+            )
         if original_inputs:
             owner.env["ITINERARY_INPUT_ROOT"] = original_inputs["root"]
             (owner.output / "input-hashes.json").write_text(
@@ -719,6 +769,12 @@ def main() -> None:
             summary["maps_qualified"] = 6
             verify_private_inputs(args.input_root, original_inputs)
             summary["inputs_unchanged"] = True
+        if getattr(args, "workflow", "legacy") == "ordinary":
+            from ordinary_proof import validate
+
+            validate(
+                json.loads((owner.output / "ordinary-proof.json").read_text()), sha
+            )
         summary["passed"] = True
     except BaseException as error:
         primary_error = error
@@ -729,7 +785,9 @@ def main() -> None:
             try:
                 verify_private_inputs(args.input_root, original_inputs)
                 summary["inputs_unchanged"] = True
-            except BaseException as error:
+            except (
+                BaseException
+            ) as error:  # noqa: BLE001 - cleanup must survive signals
                 summary.update(passed=False, input_error=str(error))
                 primary_error = primary_error or error
         signal.alarm(0)

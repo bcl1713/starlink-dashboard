@@ -60,14 +60,15 @@ def test_real_api_collision_and_roundtrip_with_relative_storage(
             imported = response.json()
             assert imported["success"] and imported["mission_id"] != identity
             identity = imported["mission_id"]
-            current = service.store.read(identity)
-            assert len(current.expected_legs) == 3
+            current = storage.load_mission_v2(identity)
+            pending = current.metadata["itinerary_import"]["pending_legs"]
+            assert len(pending) == 3
             assert (
-                current.expected_legs[0].leg.route.content_hash
+                pending[0]["route"]["content_hash"]
                 == original.expected_legs[0].leg.route.content_hash
             )
             assert (
-                current.expected_legs[0].leg.route.route_id
+                pending[0]["route"]["route_id"]
                 != original.expected_legs[0].leg.route.route_id
             )
     assert service.store.read(view.mission.id) == original

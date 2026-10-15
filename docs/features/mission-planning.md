@@ -115,3 +115,38 @@ Use Mission Planner at <http://localhost:5173> for mission and leg planning,
 timeline views, and the native Overview.
 
 **See:** [Overview features](overview.md)
+
+## Create or update from an itinerary
+
+Choose **Create from itinerary** on Missions, select the text-bearing PDF and
+all route KMLs, then choose **Generate mission**. The server extracts the legs,
+associates routes and AR windows, and generates an X-band plan using the
+configured satellite list. A completed import opens the ordinary mission page;
+legs remain inactive until explicitly activated. There is no separate access
+confirmation, proposal application or publication workflow.
+
+KML timestamps retain seconds. PDF times are matched at minute precision with
+one minute of tolerance. Larger differences can still match when route
+endpoints, dates and occurrence evidence identify one assignment. AR entry is
+derived from the PDF's takeoff-to-entry offset; AR exit uses its exit-to-landing
+offset on the KML timeline. Ambiguous route or AR associations appear as
+targeted corrections. Missing or contradictory evidence is not silently replaced
+with guessed values.
+
+Use the normal leg editor to adjust takeoff, edit transports or update a route.
+Updating an active route requires deactivation. A route-bound AR or handover
+must be uniquely associated with the new geometry before replacement can
+complete.
+
+Choose **Update from itinerary** on an imported mission to prepare a new source
+revision. Supply a new PDF, KMLs, or both; omitted sources are reused where
+valid. Review the proposed changes and apply the revision explicitly. The
+mission keeps its name and ID, manual-only changes survive, and conflicting
+edits require a choice. A concurrent mission edit invalidates the preview. Prior
+revisions and source documents are retained in the mission package.
+
+Imports continue on the server when the dialog closes. Reopening it in the same
+browser resumes the saved operation. Upload limits are 10 MiB for the PDF and 16
+KMLs totaling 40 MiB. Operations have a 20-minute overall deadline and bounded
+worker execution. Existing itinerary missions are converted on server startup,
+preserving accepted legs and unfinished source records for revision recovery.
