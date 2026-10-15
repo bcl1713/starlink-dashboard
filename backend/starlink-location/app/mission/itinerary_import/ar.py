@@ -58,7 +58,9 @@ def _boundary(route, time, track=None):
     return _candidates(time - delta, "second", route)
 
 
-def resolve_import_ars(leg: ExpectedLeg, route: ParsedRoute) -> ARResolution:
+def resolve_import_ars(
+    leg: ExpectedLeg, route: ParsedRoute, choices=None
+) -> ARResolution:
     result = ARResolution()
     timing = route.timing_profile
     for source in leg.ar_rows:
@@ -103,6 +105,23 @@ def resolve_import_ars(leg: ExpectedLeg, route: ParsedRoute) -> ARResolution:
             (a.segment_index, a.fraction, b.segment_index, b.fraction): (a, b)
             for a, b in pairs
         }
+        import json
+
+        options = [
+            {
+                "value": json.dumps([a.occurrence_id, b.occurrence_id]),
+                "label": f"{a.source_time.isoformat()} → {b.source_time.isoformat()}",
+            }
+            for a, b in unique.values()
+        ]
+        result.evidence.setdefault(row.id, {})["candidate_pairs"] = options
+        choice = (choices or {}).get(row.id)
+        if choice:
+            unique = {
+                key: (a, b)
+                for key, (a, b) in unique.items()
+                if json.dumps([a.occurrence_id, b.occurrence_id]) == choice
+            }
         if len(unique) == 1:
             row.start_anchor, row.end_anchor = next(iter(unique.values()))
             row.match_status = "matched"
@@ -114,6 +133,7 @@ def resolve_import_ars(leg: ExpectedLeg, route: ParsedRoute) -> ARResolution:
                     leg_id=leg.id,
                     field=row.id,
                     message="Resolve the AR boundary association for this route.",
+                    candidates=[o["value"] for o in options],
                 )
             )
         result.rows.append(row)

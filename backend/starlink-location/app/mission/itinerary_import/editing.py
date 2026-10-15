@@ -35,6 +35,11 @@ def refresh_context(
         mission.transports.initial_x_satellite_id,
         *[s.target_satellite_id for s in mission.transports.x_transitions],
     }
+    from app.mission.planning.satellites import satellite_options
+
+    ids.update(
+        s.id for s in satellite_options(poi_manager, satellite_catalog) if s.eligible
+    )
     ids.discard(None)
     ids.discard("")
     previous = {}

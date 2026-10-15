@@ -27,7 +27,10 @@ def prepare(service, operation):
         preview = ItineraryPreview.model_validate_json(parsed_path.read_bytes())
     else:
         preview = service.bounded(
-            _parse_itinerary, ((directory / "source.pdf").read_bytes(),), operation
+            _parse_itinerary,
+            ((directory / "source.pdf").read_bytes(),),
+            operation,
+            limit=10,
         )
         from app.mission.planning.journal import atomic_write
 
@@ -45,10 +48,11 @@ def prepare(service, operation):
                 code="missing_itinerary", message="Correct the itinerary source."
             )
         ]
+    service.stage(operation, "matching_routes")
     routes = {}
     for item in payload["files"]:
         route = service.bounded(
-            parse_route, (str(directory / f"{item['id']}.kml"),), operation
+            parse_route, (str(directory / f"{item['id']}.kml"),), operation, limit=60
         )
         route.route_id = item["id"]
         route.content_hash = hashlib.sha256(
@@ -58,6 +62,15 @@ def prepare(service, operation):
             service.route_manager.routes_dir / f"{item['id']}.kml"
         )
         routes[item["id"]] = route
+    from app.mission.planning.journal import atomic_write
+
+    review = {
+        "itinerary": data.model_dump(mode="json"),
+        "routes": [
+            {"id": item["id"], "name": item["name"]} for item in payload["files"]
+        ],
+    }
+    atomic_write(directory / "review.json", json_bytes(review))
     association = associate_routes(data.expected_legs, routes)
     assignments = {**association.assignments, **choices.get("routes", {})}
     if len(set(assignments.values())) != len(assignments):
@@ -94,7 +107,11 @@ def prepare(service, operation):
             content_hash=route.content_hash,
             filename=Path(route.metadata.file_path).name,
         )
-        ar = resolve_import_ars(leg, route)
+        ar = resolve_import_ars(leg, route, choices.get("ars", {}))
+        review.setdefault("ar_options", {}).update(
+            {id: entry.get("candidate_pairs", []) for id, entry in ar.evidence.items()}
+        )
+        atomic_write(directory / "review.json", json_bytes(review))
         leg.ar_rows = ar.rows
         issues.extend(ar.issues)
         if leg.ar_section_status == "unrecognized":
@@ -113,6 +130,7 @@ def prepare(service, operation):
         }
     if issues:
         return None, issues
+    service.stage(operation, "building_plans")
     for leg in expected:
         artifacts.append(
             service.bounded(
@@ -128,6 +146,7 @@ def prepare(service, operation):
                 operation,
             )
         )
+    service.stage(operation, "preparing_mission")
     mission = Mission(
         id=operation.mission_id,
         name=data.name,

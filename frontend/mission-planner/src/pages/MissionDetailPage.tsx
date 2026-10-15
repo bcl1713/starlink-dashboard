@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ImportDialog } from '../components/itinerary-import/ImportDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -36,6 +37,7 @@ export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
   const managed = !!mission?.metadata?.itinerary_planning;
@@ -227,6 +229,21 @@ export function MissionDetailPage() {
         </div>
       </div>
 
+      {!!mission.metadata?.itinerary_import && (
+        <div className="mb-4">
+          <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+            Update from itinerary
+          </Button>
+          <ImportDialog
+            open={showImportDialog}
+            missionId={mission.id}
+            onClose={() => setShowImportDialog(false)}
+            onSuccess={() => {
+              setShowImportDialog(false);
+            }}
+          />
+        </div>
+      )}
       <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
       {managed && (
         <div className="space-y-4">

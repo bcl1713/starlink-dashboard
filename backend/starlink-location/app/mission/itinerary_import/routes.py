@@ -42,7 +42,7 @@ def invoke(fn, *args):
 @router.post("", status_code=202)
 async def start(
     request: Request,
-    pdf: Annotated[UploadFile, File()],
+    pdf: Annotated[UploadFile | None, File()] = None,
     kmls: Annotated[list[UploadFile] | None, File()] = None,
     idempotency_key: str = Form(...),
     mission_id: str | None = Form(None),
@@ -52,7 +52,7 @@ async def start(
         raise HTTPException(422, "Upload route KMLs for a new mission")
     if len(kmls) > 16:
         raise HTTPException(422, "Upload at most 16 KMLs")
-    data = await pdf.read(10 * 1024 * 1024 + 1)
+    data = await pdf.read(10 * 1024 * 1024 + 1) if pdf else b""
     routes = []
     remaining = 40 * 1024 * 1024
     for file in kmls:

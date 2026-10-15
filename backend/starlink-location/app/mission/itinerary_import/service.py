@@ -1,5 +1,6 @@
 """Server-owned resumable orchestration; ordinary missions are the only output."""
 
+import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
@@ -52,6 +53,34 @@ class ImportService:
         with self.guard:
             if self.closed:
                 raise RuntimeError("Import service is shutting down")
+            if mission_id and not pdf:
+                import hashlib
+
+                from app.mission import storage
+
+                with storage.get_active_leg_lock():
+                    current = storage.load_mission_v2(mission_id)
+                    if not current:
+                        raise ValueError("Mission not found")
+                    records = current.metadata.get("itinerary_import", {}).get(
+                        "source_records", []
+                    )
+                    source = next(
+                        (s for s in reversed(records) if s["kind"] == "itinerary_pdf"),
+                        None,
+                    )
+                    if source is None:
+                        raise ValueError("Upload an itinerary PDF")
+                    from app.mission.itinerary_import.provenance import imported_sources
+
+                    reference = next(
+                        s for s in imported_sources(current) if s.id == source["id"]
+                    )
+                    pdf = (
+                        self.mission_root / ".planning" / reference.owned_relative_path
+                    ).read_bytes()
+                    if hashlib.sha256(pdf).hexdigest() != reference.content_hash:
+                        raise ValueError("Retained itinerary changed")
             if mission_id and not kmls:
                 from app.mission import storage
 
@@ -76,15 +105,31 @@ class ImportService:
     def submit(self, op):
         with self.guard:
             if op.id in self.futures and not self.futures[op.id].done():
+                self.futures[op.id].add_done_callback(lambda _: self.resubmit(op.id))
                 return
             self.events[op.id] = threading.Event()
             self.futures[op.id] = self.executor.submit(self.run, op.id)
 
-    def bounded(self, fn, args, op):
+    def resubmit(self, id):
+        with self.guard:
+            if not self.closed and self.store.read(id).state == "queued":
+                self.submit(self.store.read(id))
+
+    def stage(self, op, stage):
+        updated = self.store.update(op.id, op.generation, stage=stage)
+        op.generation = updated.generation
+        op.stage = stage
+
+    def bounded(self, fn, args, op, limit=None):
         remaining = (op.deadline - datetime.now(timezone.utc)).total_seconds()
         if remaining <= 0:
             raise TimeoutError("Import deadline exceeded")
-        return run_bounded(fn, args, remaining, cancel_event=self.events[op.id])
+        return run_bounded(
+            fn,
+            args,
+            min(remaining, limit) if limit else remaining,
+            cancel_event=self.events[op.id],
+        )
 
     def commit_revision(self, id, generation, resolutions):
         from .revisions import commit_revision
@@ -105,7 +150,19 @@ class ImportService:
             op = self.store.update(id, op.generation, state="running")
             prepared, issues = prepare(self, op)
             if issues:
-                self.store.update(id, op.generation, state="needs_input", issues=issues)
+                self.store.update(
+                    id,
+                    op.generation,
+                    state="needs_input",
+                    issues=issues,
+                    details=(
+                        json.loads(
+                            (self.store.directory(id) / "review.json").read_bytes()
+                        )
+                        if (self.store.directory(id) / "review.json").exists()
+                        else {}
+                    ),
+                )
                 return
             atomic_write(
                 self.store.directory(id) / "prepared.json", json_bytes(prepared)
@@ -117,6 +174,12 @@ class ImportService:
             else:
                 commit_initial(self, op, prepared)
         except Exception as exc:  # noqa: BLE001 - safe persisted operation boundary
+            import traceback
+
+            atomic_write(
+                self.store.directory(id) / "failure.txt",
+                traceback.format_exc().encode(),
+            )
             op = self.store.read(id)
             if op.state not in TERMINAL:
                 # Source contents and stack traces must never appear in the API.
