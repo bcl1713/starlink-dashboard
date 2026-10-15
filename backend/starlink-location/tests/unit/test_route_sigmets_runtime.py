@@ -1044,7 +1044,8 @@ async def test_live_sample_updates_timing_without_geometry_or_ack_reset(tmp_path
         await close(service, weather)
 
 
-async def test_superseded_live_read_cannot_clear_newer_timing(tmp_path):
+@pytest.mark.parametrize("static_aba", [False, True])
+async def test_superseded_live_read_cannot_clear_newer_timing(tmp_path, static_aba):
     import threading
     from datetime import datetime, timezone
 
@@ -1087,14 +1088,28 @@ async def test_superseded_live_read_cannot_clear_newer_timing(tmp_path):
                 "method": "route-estimated-utc-v1",
             }
         )
-        newer = await service.read()
-        assert newer.entries[0].encounter.status == "no-overlap"
-        release.set()
-        # An older live request must not publish an empty evaluating snapshot
-        # tagged with the newer successful result's observation revision.
-        obsolete = await older
-        assert obsolete.observation_revision < newer.observation_revision
-        assert obsolete.status == "evaluating"
+        if static_aba:
+            original_context = context[0]
+            context[0] = original_context.model_copy(
+                update={"encounter_plan": sample[0]}
+            )
+            await service._selection()
+            context[0] = original_context
+            await service._selection()
+            release.set()
+            obsolete = await older
+            assert obsolete.status == "evaluating"
+            assert not obsolete.entries
+        else:
+            newer = await service.read()
+            assert newer.entries[0].encounter.status == "no-overlap"
+            release.set()
+            # An older live request must not publish an empty evaluating snapshot
+            # tagged with the newer successful result's observation revision.
+            obsolete = await older
+            assert obsolete.observation_revision < newer.observation_revision
+            assert obsolete.status in {"ready", "stale", "incomplete"}
+            assert len(obsolete.entries) == 1
     finally:
         release.set()
         if older is not None:
@@ -1102,9 +1117,7 @@ async def test_superseded_live_read_cannot_clear_newer_timing(tmp_path):
         await close(service, weather)
 
 
-async def test_live_read_superseded_after_capture_keeps_older_token(
-    tmp_path, monkeypatch
-):
+async def test_live_read_delayed_before_sampling_gets_own_result(tmp_path, monkeypatch):
     from datetime import datetime, timezone
 
     from app.services.aviation_weather.route_encounters import capture_encounter_plan
@@ -1147,8 +1160,11 @@ async def test_live_read_superseded_after_capture_keeps_older_token(
         newer = await service.read()
         release.set()
         obsolete = await older
-        assert obsolete.observation_revision < newer.observation_revision
-        assert obsolete.status == "evaluating"
+        # This request captures its live sample after the newer HTTP request
+        # finishes; it gets its own later token and a materialized result.
+        assert obsolete.observation_revision > newer.observation_revision
+        assert obsolete.status in {"ready", "stale", "incomplete"}
+        assert len(obsolete.entries) == 1
     finally:
         release.set()
         if older is not None:

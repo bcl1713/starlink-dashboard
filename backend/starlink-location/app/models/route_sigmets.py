@@ -57,6 +57,7 @@ class WireRouteContext(Contract):
 
 
 class RouteContext(WireRouteContext):
+    selection_epoch: Time = Field(default=0, exclude=True)
     route: ParsedRoute | None = Field(default=None, exclude=True)
     encounter_plan: EncounterPlan | None = Field(default=None, exclude=True)
     points: list[Position] = Field(max_length=MAX_ROUTE_POINTS, exclude=True)

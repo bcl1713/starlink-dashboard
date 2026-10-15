@@ -39,6 +39,7 @@ class RouteSigmetService:
         self._encounter_lock = threading.Lock()
         self._observation_key = None
         self._observation_revision = 0
+        self._selection_epoch = 0
         self._service_instance_id = uuid.uuid4().hex
         self._evaluations = {}
         self._selected_context_key = None
@@ -91,6 +92,11 @@ class RouteSigmetService:
         if observation != self._observation_key:
             self._observation_key = observation
             self._observation_revision += 1
+            self._selection_epoch += 1
+        if context is not None:
+            context = context.model_copy(
+                update={"selection_epoch": self._selection_epoch}
+            )
         self._selected_context_key = context.context_key if context else None
         return context
 
@@ -223,6 +229,7 @@ class RouteSigmetService:
             or not settings.sigmet
             or selected is None
             or selected.context_key != context.context_key
+            or selected.selection_epoch != context.selection_epoch
             or selected.encounter_plan != context.encounter_plan
             or collection is None
             or current.instance_id != product.instance_id
@@ -373,30 +380,17 @@ class RouteSigmetService:
             )
         raise WeatherUnavailable()
 
-    def _superseded_live_snapshot(self, context, settings, product, revision):
-        if (
-            self.encounter_provider is None
-            or revision == self._observation_revision
-            or context is None
-            or self._observation_key
-            != (
+    def _only_live_observation_changed(self, context, revision):
+        return (
+            self.encounter_provider is not None
+            and revision != self._observation_revision
+            and context is not None
+            and context.selection_epoch == self._selection_epoch
+            and self._observation_key
+            == (
                 context.context_key,
                 context.encounter_plan.revision if context.encounter_plan else None,
             )
-        ):
-            return None
-        # A same-plan live read superseded this capture. Never borrow its
-        # newer token for an empty fallback that could clear the client view.
-        return (
-            self._snapshot(
-                settings,
-                context,
-                product,
-                "evaluating",
-                observation_revision=revision,
-                reason="Live timing observation superseded",
-            ),
-            None,
         )
 
     async def _read(self):
@@ -413,13 +407,13 @@ class RouteSigmetService:
             await self._thread(self._capture)
         )
         await self._retire_incompatible(current)
-        superseded = self._superseded_live_snapshot(
-            current, current_settings, current_product, observation_revision
-        )
-        if superseded is not None:
-            return superseded
         if (
-            observation_revision != self._observation_revision
+            (
+                observation_revision != self._observation_revision
+                and not self._only_live_observation_changed(
+                    current, observation_revision
+                )
+            )
             or not current_settings.sigmet
             or (current.context_key if current else None)
             != (context.context_key if context else None)
@@ -644,13 +638,15 @@ class RouteSigmetService:
             )
         except NoticeConflict:
             return await self._changed_snapshot("Route or SIGMET input changed")
-        if observation_revision != self._observation_revision:
-            superseded = self._superseded_live_snapshot(
-                context, settings, product, observation_revision
-            )
-            if superseded is not None:
-                return superseded
+        if (
+            observation_revision != self._observation_revision
+            and not self._only_live_observation_changed(context, observation_revision)
+        ):
             return await self._changed_snapshot("Route timing observation changed")
+        # Concurrent live estimates for the same static plan remain valid as
+        # captured. Each keeps its own token; clients reject an older result
+        # only if they have already received a newer one. Never emit an empty
+        # fallback solely because another display read its timing concurrently.
         return snapshot, (context, product, groups)
 
     async def select(self, change):
