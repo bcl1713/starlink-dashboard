@@ -166,6 +166,33 @@ test('independent Configuration and passive Overview: propagation, native spans,
         .every((o) => o.depthTest.every(Boolean))
     ).toBe(true);
     expect(loaded.calls).toBeGreaterThan(0);
+    const baseBytes = loaded.objects.find(
+      (object) => object.name === 'Native international SIGMET advisories'
+    )!.bytes;
+    const filter = config.getByRole('switch', {
+      name: 'Intersecting route only',
+      exact: true,
+    });
+    const filteredSave = config.waitForResponse(
+      (response) =>
+        response.url().endsWith('/aviation-weather/v1/settings') &&
+        response.request().method() === 'PUT'
+    );
+    await filter.click();
+    expect((await filteredSave).ok()).toBe(true);
+    started = Date.now();
+    await expect
+      .poll(
+        async () =>
+          (await routeSigmetSnapshot(overview)).objects.find(
+            (object) => object.name === 'Native international SIGMET advisories'
+          )?.bytes ?? baseBytes,
+        { timeout: 8000 }
+      )
+      .toBeLessThan(baseBytes);
+    elapsed.push(Date.now() - started);
+    await expect(notices.getByRole('article')).toHaveCount(3);
+    scenarios.filtered = await snapshot(request);
     const explore = overview.getByRole('button', {
       name: 'Explore map',
       exact: true,
@@ -209,7 +236,12 @@ test('independent Configuration and passive Overview: propagation, native spans,
       timeout: 8000,
     });
     elapsed.push(Date.now() - started);
-    expect(await overviewCamera(overview)).toEqual(camera);
+    const afterCamera = await overviewCamera(overview);
+    for (const key of ['position', 'quaternion', 'target'] as const)
+      for (const [index, value] of afterCamera[key].entries())
+        expect(value).toBeCloseTo(camera[key][index], 10);
+    expect(afterCamera.zoom).toBe(camera.zoom);
+    scenarios.camera = { before: camera, after: afterCamera };
     expect(
       await overview.evaluate(() => document.activeElement?.outerHTML)
     ).toBe(focus);
@@ -278,8 +310,18 @@ test('independent Configuration and passive Overview: propagation, native spans,
     // Delayed old-source completion concurrent with a new active route.
     await feed('route', { aviation_delay_ms: 1500 });
     const delayed = request.get(endpoint);
+    await expect
+      .poll(async () =>
+        (await events()).some(
+          (event) =>
+            event.layer === 'sigmet' && event.source_generation === generation
+        )
+      )
+      .toBe(true);
     const noMatch = await route(request, '10,0 20,0', 'Nonintersecting route');
-    await delayed;
+    const late = await (await delayed).json();
+    expect(late.context.route_id).toBe(noMatch);
+    expect(late.entries).toHaveLength(0);
     await control({ aviation_delay_ms: 0 });
     await expect
       .poll(async () => (await snapshot(request)).context?.route_id)
@@ -288,7 +330,7 @@ test('independent Configuration and passive Overview: propagation, native spans,
       timeout: 8000,
     });
     await expect(notices.getByRole('article')).toHaveCount(0);
-    scenarios.reversed = await snapshot(request);
+    scenarios.reversed = { late, current: await snapshot(request) };
     await route(request, '0,0 180,0', 'Ambiguous antipodal route');
     await expect
       .poll(async () => (await snapshot(request)).complete)
@@ -353,16 +395,21 @@ test('independent Configuration and passive Overview: propagation, native spans,
       await expect
         .poll(async () => (await routeSigmetSnapshot(overview)).present)
         .toBe(true);
+      const offlineOwned = await routeSigmetSnapshot(overview, true);
       await overviewContext.setOffline(true);
       await expect
         .poll(async () => (await routeSigmetSnapshot(overview)).present)
         .toBe(false);
+      const offline = await routeSigmetSnapshot(overview);
+      for (const id of offlineOwned.resources)
+        expect(offline.disposed).toContain(id);
       await overviewContext.setOffline(false);
       await expect
         .poll(async () => (await routeSigmetSnapshot(overview)).present)
         .toBe(true);
       snapshots.push(await routeSigmetSnapshot(overview));
     }
+    const unmountOwned = await routeSigmetSnapshot(overview, true);
     await config.goto('/overview');
     await overview
       .getByRole('link', { name: 'Configuration', exact: true })
@@ -370,7 +417,11 @@ test('independent Configuration and passive Overview: propagation, native spans,
     await expect
       .poll(async () => (await routeSigmetSnapshot(overview)).present)
       .toBe(false);
-    snapshots.push(await routeSigmetSnapshot(overview));
+    const unmounted = await routeSigmetSnapshot(overview);
+    for (const id of unmountOwned.resources)
+      expect(unmounted.disposed).toContain(id);
+    expect(unmounted.budget!.gpu).toBe(0);
+    snapshots.push(unmounted);
     // Running/completed simulation contexts use 2025 replay geometry and actual weather UTC.
     await feed('route');
     await control({ sigmet_fixture: 'sigmets.json' });

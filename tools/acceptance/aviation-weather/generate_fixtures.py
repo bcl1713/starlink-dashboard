@@ -103,6 +103,7 @@ def generate(root, now=None):
         )
         for i in range(1, 5)
     ]
+    route.append(features[1])  # located nonintersecting seam control
     route.append(features[2])  # explicitly unlocated report, never a false match
     variants = {
         "route": route,

@@ -242,3 +242,16 @@ it('exposes copied budget observations that remain valid after disposal', () => 
   }
   expect(observe()).toMatchObject({ gpu: 0, decoded: 0, slots: 0 });
 });
+it('reports an admitted unavailable source as unavailable rather than endless loading', () => {
+  const next = input();
+  next.source.available = false;
+  next.source.collection = null;
+  next.source.dataLease = null;
+  next.source.snapshot!.sigmet_product.state = 'unavailable';
+  next.source.snapshot!.sigmet_product.payload = null;
+  const presentation = createSigmetPresentation(next, new WeatherBudget());
+  expect(presentation.view.state).toBe('unavailable');
+  expect(presentation.notices).toEqual([]);
+  expect(presentation.view.drawing).toBeUndefined();
+  presentation.dispose();
+});

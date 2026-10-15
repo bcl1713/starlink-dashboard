@@ -121,7 +121,12 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
               : reports,
           },
         }
-      : { state: source.error ? 'unavailable' : 'loading' },
+      : {
+          state:
+            source.error || product?.state === 'unavailable'
+              ? 'unavailable'
+              : 'loading',
+        },
     notices,
     pendingCount: pending.length,
     unknownCount: unknown.size,
