@@ -33,6 +33,14 @@ export function input(): SigmetPresentationInput {
     ],
   };
 }
+it('exposes every pending item for navigation and keeps selection separate from route spans', () => {
+  const next = multiple([1, 2, 3, 4]);
+  const presentation = createSigmetPresentation(next, new WeatherBudget());
+  try {
+    expect(presentation.attentionItems).toHaveLength(4);
+    expect(presentation.attentionItems.every(item => item.kind === 'intersecting')).toBe(true);
+  } finally { presentation.dispose(); }
+});
 it('keeps acknowledged intersections shaded while showing only the three newest attention notices', () => {
   const next = multiple([1, 5, 3, 2, 4]);
   next.source.snapshot!.entries[1].acknowledged = true;

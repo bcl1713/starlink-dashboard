@@ -6,6 +6,7 @@ import {
 } from '@/services/aviation-features';
 import type { RouteSigmetEntry } from '@/services/route-sigmets';
 import type { RouteSigmetSourceView } from './route-sigmet-source';
+import { sigmetAttentionItems, sigmetNoticeColor, type SigmetAttentionItem } from './sigmet-attention';
 import { sigmetReportLabel } from './sigmet-report-label';
 import { optionalWeatherBudget, type WeatherBudget } from './weather-budget';
 import type { AviationLayerView } from './aviation-controller';
@@ -30,6 +31,7 @@ export type SigmetPresentationInput = {
 export type SigmetPresentation = {
   view: AviationLayerView;
   notices: SigmetNotice[];
+  attentionItems: SigmetAttentionItem[];
   pendingCount: number;
   unknownCount: number;
   statusText: string;
@@ -42,7 +44,6 @@ const position = (entry: RouteSigmetEntry) =>
     (first, span) => Math.min(first, span.segment_index + span.start_fraction),
     Infinity
   );
-const colors = ['#7dd3fc', '#f0abfc', '#fde68a'];
 
 function describe(input: SigmetPresentationInput): SigmetPresentation {
   const { source, localContextKey, intersectingOnly, nowMs } = input;
@@ -94,13 +95,13 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
   const unknown = new Set(
     compatible ? snapshot!.unresolved.map((item) => item.feature_id) : []
   );
-  const notices = pending.slice(0, 3).map((entry, index) => {
+  const notices = pending.slice(0, 3).map((entry) => {
     const selected = entry.feature_ids.map((id) => byId.get(id)!);
     return {
       entry,
       reports: selected,
       label: `${sigmetReportLabel(selected)} · ${entry.bulletin_key.slice(0, 8)}`,
-      color: colors[index],
+      color: sigmetNoticeColor(entry.bulletin_key),
       intersectionUnknown: entry.feature_ids.some((id) => unknown.has(id)),
     };
   });
@@ -109,7 +110,9 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
     snapshot?.status === 'stale' ||
     !!source.error ||
     (product?.fresh_until_ms != null && nowMs >= product.fresh_until_ms);
+  const attentionItems = sigmetAttentionItems(compatible ? snapshot : null, reports, nowMs);
   return {
+    attentionItems,
     view: bound
       ? {
           state: stale ? 'stale' : 'current',
@@ -128,7 +131,7 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
               : 'loading',
         },
     notices,
-    pendingCount: pending.length,
+    pendingCount: attentionItems.length,
     unknownCount: unknown.size,
     statusText: !localContextKey
       ? 'Route unavailable · route intersection unknown'
@@ -182,7 +185,7 @@ export function createSigmetPresentation(
     presentation.highlightUnavailable = true;
     return presentation;
   }
-  for (const notice of presentation.notices) {
+  for (const notice of presentation.attentionItems.slice(0, 3)) {
     try {
       const highlight = createSigmetHighlights(
         notice,
