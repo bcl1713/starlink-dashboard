@@ -2,6 +2,8 @@
 
 REQUIRED = (
     "automatic_import",
+    "automatic_revision",
+    "chronological_legs",
     "ordinary_editing",
     "precision_offsets",
     "migration",

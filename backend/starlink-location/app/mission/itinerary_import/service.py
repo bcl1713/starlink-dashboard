@@ -163,9 +163,9 @@ class ImportService:
                 self.store.directory(id) / "prepared.json", json_bytes(prepared)
             )
             if op.revision:
-                from .revisions import stage_revision
+                from .automatic_revision import apply_revision
 
-                stage_revision(self, op, prepared)
+                apply_revision(self, op, prepared)
             else:
                 commit_initial(self, op, prepared)
         except Exception as exc:  # noqa: BLE001 - safe persisted operation boundary
@@ -179,6 +179,14 @@ class ImportService:
             if op.state not in TERMINAL:
                 # Source contents and stack traces must never appear in the API.
                 code = getattr(exc, "code", "import_failed")
+                message = "Import could not complete. Correct the source or retry."
+                if getattr(exc, "status_code", None) == 409 and "Deactivate" in str(
+                    exc
+                ):
+                    code = "active_leg_change"
+                    message = (
+                        "Deactivate affected legs, then retry the itinerary update."
+                    )
                 state = (
                     "failed"
                     if isinstance(exc, TimeoutError) or "deadline" in code
@@ -191,7 +199,7 @@ class ImportService:
                     issues=[
                         ImportIssue(
                             code=code,
-                            message="Import could not complete. Correct the source or retry.",
+                            message=message,
                         )
                     ],
                     error=code,

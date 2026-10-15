@@ -55,3 +55,10 @@ def test_expired_operation_cannot_resume(tmp_path):
     )
     assert s.pending() == []
     assert s.read(op.id).state == "failed"
+
+
+def test_ready_revision_resumes_after_restart(tmp_path):
+    s = store(tmp_path)
+    op = s.create(b"pdf", [("r.kml", b"kml")], "ready", "existing")
+    s.update(op.id, op.generation, state="ready", stage="applying_changes")
+    assert [item.id for item in store(tmp_path).pending()] == [op.id]

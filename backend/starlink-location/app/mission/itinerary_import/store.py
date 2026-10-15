@@ -139,6 +139,6 @@ class ImportStore:
                         state="failed",
                         error="Import deadline exceeded",
                     )
-                elif op.state in {"running", "queued"}:
+                elif op.state in {"running", "queued", "ready"}:
                     result.append(op)
-            return result
+            return sorted(result, key=lambda operation: operation.deadline)

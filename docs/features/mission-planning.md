@@ -150,3 +150,10 @@ browser resumes the saved operation. Upload limits are 10 MiB for the PDF and 16
 KMLs totaling 40 MiB. Operations have a 20-minute overall deadline and bounded
 worker execution. Existing itinerary missions are converted on server startup,
 preserving accepted legs and unfinished source records for revision recovery.
+
+
+Itinerary updates apply automatically to the existing mission after processing.
+There is no JSON review or extra approval step. Uploaded changes take precedence
+when both the source and an earlier manual edit changed the same field; other
+manual edits remain. Previous revisions are retained. Legs appear in chronological
+departure order in the mission and exported briefing.

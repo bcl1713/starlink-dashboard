@@ -116,7 +116,7 @@ it('shows only unresolved route corrections', async () => {
     screen.queryByRole('checkbox', { name: /access/i })
   ).not.toBeInTheDocument();
 });
-it('requires explicit application of an itinerary revision', async () => {
+it('automatically accepts a revision without showing JSON review', async () => {
   localStorage.setItem('itinerary-import:m', 'operation');
   vi.mocked(itineraryImportApi.read).mockResolvedValue({
     ...operation,
@@ -129,10 +129,8 @@ it('requires explicit application of an itinerary revision', async () => {
   vi.mocked(itineraryImportApi.commit).mockResolvedValue(operation as never);
   const done = setup('m');
   expect(
-    await screen.findByRole('button', { name: 'Apply revision' })
-  ).toBeVisible();
-  expect(done).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Apply revision' }));
+    screen.queryByRole('button', { name: 'Apply revision' })
+  ).not.toBeInTheDocument();
   await waitFor(() => expect(done).toHaveBeenCalledWith('ordinary'));
 });
 
@@ -143,7 +141,7 @@ it('resumes an unfinished revision using retained sources without another upload
     revision: true,
   } as never);
   setup('ordinary');
-  const prepare = screen.getByRole('button', { name: 'Prepare revision' });
+  const prepare = screen.getByRole('button', { name: 'Update mission' });
   expect(prepare).toBeEnabled();
   fireEvent.click(prepare);
   await waitFor(() =>

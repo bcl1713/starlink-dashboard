@@ -135,25 +135,6 @@ def align_revision(current, prepared):
     return aligned
 
 
-def describe_change(field, current, incoming):
-    parts = field.split(".")
-    leg_id = parts[1]
-    old = next(
-        (l.model_dump(mode="json") for l in current.legs if l.id == leg_id), None
-    )
-    new = next(
-        (l.model_dump(mode="json") for l in incoming.legs if l.id == leg_id), None
-    )
-    name = (new or old or {}).get("name", leg_id)
-
-    def value(data):
-        for key in parts[2:]:
-            data = data.get(key) if isinstance(data, dict) else None
-        return data
-
-    return {"field": field, "leg": name, "current": value(old), "incoming": value(new)}
-
-
 def stage_revision(service, op, prepared):
     with storage.get_active_leg_lock():
         current = storage.load_mission_v2(op.mission_id)
@@ -176,20 +157,10 @@ def stage_revision(service, op, prepared):
             op.id,
             op.generation,
             state="ready",
-            stage="review_changes",
+            stage="applying_changes",
             details={
                 "revision": {
-                    "changes": preview.changes,
-                    "change_details": [
-                        describe_change(
-                            f, current, Mission.model_validate(prepared["mission"])
-                        )
-                        for f in preview.changes
-                    ],
-                    "leg_names": {
-                        l.id: l.name for l in [*current.legs, *preview.mission.legs]
-                    },
-                    "conflicts": [c.model_dump(mode="json") for c in preview.conflicts],
+                    "conflicts": [{"field": c.field} for c in preview.conflicts],
                 }
             },
         )

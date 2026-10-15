@@ -19,12 +19,7 @@ export async function ordinaryJourney(context, origin, seed, output) {
       timeout: 120000,
     });
     assert(r.ok(), await r.text());
-    const value = await r.json();
-    if (value.legs && value.metadata?.itinerary_import?.evidence) {
-      const evidence = value.metadata.itinerary_import.evidence;
-      value.legs.sort((a, b) => (evidence[a.id]?.source_leg.ordinal ?? 0) - (evidence[b.id]?.source_leg.ordinal ?? 0));
-    }
-    return value;
+    return r.json();
   };
   const save = async (name) => {
     await page.screenshot({
@@ -84,6 +79,8 @@ export async function ordinaryJourney(context, origin, seed, output) {
         .count(),
       0,
     );
+    assert.deepEqual(current.legs.map(l => l.name), ['AAAA–BBBB', 'BBBB–CCCC', 'CCCC–AAAA']);
+    proof.chronological_legs = true;
     proof.automatic_import = true;
     await save("ordinary-generated-mission");
     const first = current.legs[0];
@@ -142,18 +139,10 @@ export async function ordinaryJourney(context, origin, seed, output) {
     await dialog
       .getByLabel("Itinerary PDF", { exact: true })
       .setInputFiles(join(seed, "revision.pdf"));
-    await dialog
-      .getByRole("button", { name: "Prepare revision", exact: true })
-      .click();
-    await expect(
-      dialog.getByRole("button", { name: "Apply revision", exact: true }),
-    ).toBeVisible({ timeout: 180000 });
     const beforeRevision = await json(`/api/v2/missions/${mission}`);
-    await save("ordinary-revision-preview");
-    await dialog
-      .getByRole("button", { name: "Apply revision", exact: true })
-      .click();
-    await expect(dialog).not.toBeVisible({ timeout: 120000 });
+    await dialog.getByRole('button', {name: 'Update mission', exact: true}).click();
+    await expect(dialog).not.toBeVisible({timeout: 180000});
+    proof.automatic_revision = true;
     current = await json(`/api/v2/missions/${mission}`);
     assert.equal(current.id, beforeRevision.id);
     assert.equal(current.name, beforeRevision.name);

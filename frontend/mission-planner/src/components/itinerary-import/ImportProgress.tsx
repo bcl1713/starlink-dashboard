@@ -4,7 +4,8 @@ const labels: Record<string, string> = {
   matching_routes: 'Matching routes…',
   building_plans: 'Building satellite plans…',
   preparing_mission: 'Preparing mission…',
-  review_changes: 'Revision ready to review',
+  review_changes: 'Applying itinerary changes…',
+  applying_changes: 'Applying itinerary changes…',
   complete: 'Mission ready',
 };
 export function ImportProgress({ operation }: { operation: ImportOperation }) {

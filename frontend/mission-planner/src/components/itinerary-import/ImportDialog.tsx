@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
@@ -14,7 +14,6 @@ import { itineraryImportApi } from '../../services/itinerary-import';
 import type { ImportOperation } from '../../types/itinerary-import';
 import { ImportProgress } from './ImportProgress';
 import { ImportCorrections } from './ImportCorrections';
-import { RevisionPreview } from './RevisionPreview';
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -78,7 +77,9 @@ function ImportForm({ missionId, onClose, onSuccess }: Props) {
     queryFn: ({ signal }) => itineraryImportApi.read(id!, signal),
     retry: false,
     refetchInterval: (q) =>
-      ['queued', 'running'].includes(q.state.data?.state ?? '') ? 1000 : false,
+      ['queued', 'running', 'ready'].includes(q.state.data?.state ?? '')
+        ? 1000
+        : false,
   });
   const op = query.data;
   useEffect(() => {
@@ -91,22 +92,40 @@ function ImportForm({ missionId, onClose, onSuccess }: Props) {
       onClose();
     }
   }, [op, storageKey, client, onSuccess, onClose]);
-  const perform = async (action: () => Promise<ImportOperation>) => {
-    setBusy(true);
-    setError('');
-    try {
-      const value = await action();
-      setId(value.id);
-      remember(storageKey, value.id);
-      client.setQueryData(['itinerary-import', value.id], value);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : 'Import could not complete. Try again.'
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
+  const perform = useCallback(
+    async (action: () => Promise<ImportOperation>) => {
+      setBusy(true);
+      setError('');
+      try {
+        const value = await action();
+        setId(value.id);
+        remember(storageKey, value.id);
+        client.setQueryData(['itinerary-import', value.id], value);
+      } catch (e) {
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'Import could not complete. Try again.'
+        );
+      } finally {
+        setBusy(false);
+      }
+    },
+    [client, storageKey]
+  );
+  const automatic = useRef<string | null>(null);
+  useEffect(() => {
+    if (op?.state !== 'ready' || op.stage === 'applying_changes') return;
+    const token = `${op.id}:${op.generation}`;
+    if (automatic.current === token) return;
+    automatic.current = token;
+    const choices = Object.fromEntries(
+      (op.details.revision?.conflicts ?? []).map((c) => [c.field, 'replace'])
+    );
+    void perform(() =>
+      itineraryImportApi.commit(op.id, op.generation, choices)
+    );
+  }, [op, perform]);
   const reset = async () => {
     if (id) {
       try {
@@ -165,7 +184,7 @@ function ImportForm({ missionId, onClose, onSuccess }: Props) {
                 );
             }}
           >
-            {missionId ? 'Prepare revision' : 'Generate mission'}
+            {missionId ? 'Update mission' : 'Generate mission'}
           </Button>
         </fieldset>
       )}
@@ -182,17 +201,17 @@ function ImportForm({ missionId, onClose, onSuccess }: Props) {
           }
         />
       )}
-      {op?.state === 'ready' && (
-        <RevisionPreview
-          key={op.generation}
-          operation={op}
-          busy={busy}
-          onApply={(choices) =>
+      {op?.state === 'needs_input' && !op.details.itinerary && (
+        <Button
+          disabled={busy}
+          onClick={() =>
             void perform(() =>
-              itineraryImportApi.commit(op.id, op.generation, choices)
+              itineraryImportApi.resolve(op.id, op.generation, {})
             )
           }
-        />
+        >
+          Retry update
+        </Button>
       )}
       {(error || query.error) && (
         <p role="alert">

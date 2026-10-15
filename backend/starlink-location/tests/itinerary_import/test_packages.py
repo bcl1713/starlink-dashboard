@@ -56,8 +56,7 @@ def test_clone_preserves_retained_sources_and_revision_history(importer):  # noq
         pdf_bytes(), [("r.kml", kml_bytes())], "package-rev", op.mission_id
     )
     ready = wait(client, rev.id)
-    assert ready["state"] == "ready", ready
-    service.commit_revision(rev.id, ready["generation"], {})
+    assert ready["state"] == "committed", ready
     mission = storage.load_mission_v2(op.mission_id)
     assert len(source_closure(mission, None)) >= 3
     store = PlanningStore(

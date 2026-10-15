@@ -53,3 +53,47 @@ def test_unknown_conversion_version_fails_without_writes(service):  # noqa: F811
     with pytest.raises(ValueError, match="version"):
         convert_mission(mission)
     assert storage.get_mission_file_path(view.mission.id).read_bytes() == before
+
+
+def test_ordinary_import_retains_itinerary_leg_order():
+    from app.mission.models import Mission, MissionLeg
+
+    mission = Mission(
+        id="ordered",
+        name="Ordered",
+        legs=[
+            MissionLeg(
+                id="second",
+                name="BBBB–CCCC",
+                route_id="r2",
+                transports={"initial_x_satellite_id": "X"},
+            ),
+            MissionLeg(
+                id="first",
+                name="AAAA–BBBB",
+                route_id="r1",
+                transports={"initial_x_satellite_id": "X"},
+            ),
+        ],
+        metadata={
+            "itinerary_import": {
+                "version": 1,
+                "evidence": {
+                    "first": {"source_leg": {"ordinal": 1}},
+                    "second": {"source_leg": {"ordinal": 2}},
+                },
+            }
+        },
+    )
+    assert storage.mission_leg_order(mission).executable_ids == ("first", "second")
+
+    from datetime import datetime, timezone
+
+    evidence = mission.metadata["itinerary_import"]["evidence"]
+    evidence["first"]["source_leg"]["departure_time"] = "2035-01-01T12:00:00Z"
+    evidence["second"]["source_leg"]["departure_time"] = "2035-01-01T10:00:00Z"
+    assert storage.mission_leg_order(mission).executable_ids == ("second", "first")
+    mission.legs[1].adjusted_departure_time = datetime(
+        2035, 1, 1, 9, tzinfo=timezone.utc
+    )
+    assert storage.mission_leg_order(mission).executable_ids == ("first", "second")

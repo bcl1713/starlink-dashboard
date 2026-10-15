@@ -251,3 +251,13 @@ This scope covers automatic import, ordinary mission parity, source revision
 updates and existing-mission conversion. It adds no weather, operational data
 collection, new altitude inference or communications-model changes. Review this
 written design before producing the implementation plan and choosing execution.
+
+
+## Owner feedback during manual testing, 2026-10-15
+
+The owner superseded the intermediate revision-review requirement: accept uploaded
+itinerary changes automatically without a JSON review or approval. Incoming source
+changes take precedence on conflicting fields, compatible manual edits remain,
+and revision history is retained. Active-leg protection and concurrent-generation
+checks still apply. Present all resulting legs in chronological departure order,
+including in exported briefings.

@@ -106,7 +106,9 @@ def wait(client, id):
         result = client.get("/api/v2/missions/itinerary-imports/" + id)
         assert result.status_code == 200, result.text
         value = result.json()
-        if value["state"] not in ["queued", "running"]:
+        if value["state"] not in ["queued", "running"] and not (
+            value["state"] == "ready" and value["stage"] == "applying_changes"
+        ):
             return value
         time.sleep(0.05)
     pytest.fail("Import did not terminate within 45 seconds")
@@ -198,7 +200,7 @@ def test_cancelled_queued_operation_never_creates_mission(importer):
     assert storage.load_mission_v2(op.mission_id) is None
 
 
-def test_revision_keeps_identity_requires_review_and_records_history(importer):
+def test_revision_applies_automatically_and_records_history(importer):
     client, service = importer
     first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "rev-original")
     wait(client, first.id)
@@ -207,13 +209,7 @@ def test_revision_keeps_identity_requires_review_and_records_history(importer):
         pdf_bytes(), [("r.kml", kml_bytes())], "rev-next", first.mission_id
     )
     ready = wait(client, revision.id)
-    assert ready["state"] == "ready", ready
-    assert storage.load_mission_v2(first.mission_id) == before
-    response = client.post(
-        f"/api/v2/missions/itinerary-imports/{revision.id}/commit",
-        json={"generation": ready["generation"], "choices": {}},
-    )
-    assert response.status_code == 200, response.text
+    assert ready["state"] == "committed", ready
     after = storage.load_mission_v2(first.mission_id)
     assert after.name == before.name and after.id == before.id
     assert after.legs[0].id == before.legs[0].id
@@ -221,27 +217,36 @@ def test_revision_keeps_identity_requires_review_and_records_history(importer):
     assert after.metadata["itinerary_import"]["history"]
 
 
-def test_concurrent_takeoff_edit_invalidates_revision_preview(importer):
+def test_concurrent_takeoff_edit_is_preserved_during_automatic_revision(
+    importer, monkeypatch
+):
     from datetime import datetime, timezone
+
+    from app.mission.itinerary_import import automatic_revision
 
     client, service = importer
     first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "concurrent-original")
     wait(client, first.id)
+    original = automatic_revision.stage_revision
+    edited = False
+
+    def edit_once(*args):
+        nonlocal edited
+        ready = original(*args)
+        if not edited:
+            current = storage.load_mission_v2(first.mission_id)
+            current.legs[0].adjusted_departure_time = datetime(
+                2035, 1, 1, 11, tzinfo=timezone.utc
+            )
+            storage.save_mission_v2(current)
+            edited = True
+        return ready
+
+    monkeypatch.setattr(automatic_revision, "stage_revision", edit_once)
     revision = service.start(
         pdf_bytes(), [("r.kml", kml_bytes())], "concurrent-next", first.mission_id
     )
-    ready = wait(client, revision.id)
-    assert ready["state"] == "ready", ready
-    current = storage.load_mission_v2(first.mission_id)
-    current.legs[0].adjusted_departure_time = datetime(
-        2035, 1, 1, 11, tzinfo=timezone.utc
-    )
-    storage.save_mission_v2(current)
-    response = client.post(
-        f"/api/v2/missions/itinerary-imports/{revision.id}/commit",
-        json={"generation": ready["generation"], "choices": {}},
-    )
-    assert response.status_code == 409, response.text
+    assert wait(client, revision.id)["state"] == "committed"
     assert (
         storage.load_mission_v2(first.mission_id).legs[0].adjusted_departure_time.hour
         == 11
@@ -276,7 +281,7 @@ def test_partial_route_revision_reuses_other_legs(importer):
         first.mission_id,
     )
     ready = wait(client, revision.id)
-    assert ready["state"] == "ready", ready
+    assert ready["state"] == "committed", ready
     prepared = __import__("json").loads(
         (service.store.directory(revision.id) / "prepared.json").read_text()
     )
@@ -318,7 +323,7 @@ def test_resume_pending_conversion_uses_retained_pdf_and_attachments(importer):
     storage.save_mission_v2(current)
     resumed = service.start(None, [], "pending-resume", current.id)
     ready = wait(client, resumed.id)
-    assert ready["state"] == "ready", ready
+    assert ready["state"] == "committed", ready
     import json
 
     review = json.loads(
@@ -362,15 +367,73 @@ def test_revision_reuses_current_route_after_ordinary_replacement(importer):
     )
     revision = service.start(pdf_bytes(), [], "replace-revision", mission.id)
     ready = wait(client, revision.id)
-    assert ready["state"] == "ready", ready
+    assert ready["state"] == "committed", ready
     import json
 
     prepared = json.loads(
         (service.store.directory(revision.id) / "prepared.json").read_bytes()
     )
     assert prepared["mission"]["legs"][0]["route_id"] == replaced["leg"]["route_id"]
-    service.commit_revision(revision.id, ready["generation"], {})
     from app.mission.planning.sources import source_closure
 
     committed = storage.load_mission_v2(mission.id)
     assert source_closure(committed, None)
+
+
+def test_automatic_revision_prefers_uploaded_route_and_keeps_other_manual_edits(
+    importer,
+):
+    from app.mission.itinerary_import.replacement import replace_route
+
+    client, service = importer
+    first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "incoming-first")
+    wait(client, first.id)
+    current = storage.load_mission_v2(first.mission_id)
+    replace_route(
+        service,
+        current.id,
+        current.legs[0].id,
+        kml_bytes().replace(b"1,0,10000", b"1.01,0,10000"),
+        "manual.kml",
+    )
+    current = storage.load_mission_v2(current.id)
+    manual_route = current.legs[0].route_id
+    current.legs[0].notes = "Keep this note"
+    storage.save_mission_v2(current)
+    update = service.start(
+        pdf_bytes(),
+        [("new.kml", kml_bytes().replace(b"1,0,10000", b"1.02,0,10000"))],
+        "incoming-next",
+        current.id,
+    )
+    assert wait(client, update.id)["state"] == "committed"
+    after = storage.load_mission_v2(current.id)
+    assert after.legs[0].route_id != manual_route
+    assert after.legs[0].notes == "Keep this note"
+    assert after.metadata["itinerary_import"]["revision"] == 2
+
+
+def test_automatic_revision_of_active_leg_can_retry_after_deactivation(importer):
+    client, service = importer
+    first = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "active-first")
+    wait(client, first.id)
+    current = storage.load_mission_v2(first.mission_id)
+    current.legs[0].is_active = True
+    storage.save_mission_v2(current)
+    update = service.start(
+        pdf_bytes(),
+        [("new.kml", kml_bytes().replace(b"1,0,10000", b"1.02,0,10000"))],
+        "active-next",
+        current.id,
+    )
+    blocked = wait(client, update.id)
+    assert blocked["state"] == "needs_input"
+    assert blocked["issues"][0]["code"] == "active_leg_change"
+    assert (
+        storage.load_mission_v2(current.id).metadata["itinerary_import"]["revision"]
+        == 1
+    )
+    current.legs[0].is_active = False
+    storage.save_mission_v2(current)
+    service.resolve(update.id, blocked["generation"], {})
+    assert wait(client, update.id)["state"] == "committed"
