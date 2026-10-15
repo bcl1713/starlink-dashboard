@@ -115,7 +115,15 @@ async def edit_encounter_plan(request: Request):
 
 class FixtureSimulationCoordinator(main.SimulationCoordinator):
     def get_current_telemetry(self):
-        telemetry = super().get_current_telemetry()
+        return self._controlled(super().get_current_telemetry())
+
+    def update(self):
+        return self._controlled(super().update())
+
+    @staticmethod
+    def _controlled(telemetry):
+        if telemetry is None:
+            return None
         control = json.loads(Path("/control/control.json").read_text())
         updates = {}
         if control.get("telemetry_altitude_ft") is not None:

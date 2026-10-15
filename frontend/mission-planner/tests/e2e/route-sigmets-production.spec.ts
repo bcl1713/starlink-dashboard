@@ -1118,7 +1118,10 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       (await request.post('/api/__acceptance/route-encounter', { data })).ok()
     ).toBe(true);
   try {
-    await feed('encounter', { replay_utc_ms: null });
+    await feed('encounter', {
+      replay_utc_ms: null,
+      live_flight: { latitude: 35, longitude: -82, speed: 0 },
+    });
     await upload();
     expect(
       (
@@ -1326,7 +1329,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       JSON.stringify({ live, stale, passed }, null, 2)
     );
     await phase('pre_departure');
-    await control({ live_flight: null });
+    await control({ live_flight: { latitude: 35, longitude: -82, speed: 0 } });
     // The unchanged geographic route now has one missing timing endpoint.
     await edit({ missing_indices: [1] });
     const partial: RouteSigmetSnapshot = await snapshot(request);
