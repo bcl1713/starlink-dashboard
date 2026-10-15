@@ -203,20 +203,11 @@ export async function ordinaryJourney(context, origin, seed, output) {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(origin + "/missions");
     // Find this mission's export control, avoiding the separately migrated fixture.
-    const row = page
-      .locator('[data-slot="card"]')
-      .filter({ hasText: current.name })
-      .last();
-    const exportButton = row.getByRole("button", {
-      name: "Export",
-      exact: true,
-    });
-    if (await exportButton.count()) await exportButton.click();
-    else
-      await page
-        .getByRole("button", { name: "Export", exact: true })
-        .last()
-        .click();
+    const row = page.locator('.cursor-pointer')
+      .filter({ has: page.getByText(current.name, { exact: true }) })
+      .filter({ has: page.getByText('3 legs', { exact: true }) });
+    await expect(row).toHaveCount(1);
+    await row.getByRole('button', { name: 'Export', exact: true }).click();
     dialog = page.getByRole("dialog");
     const download = page.waitForEvent("download", { timeout: 660000 });
     await dialog.getByRole("button", { name: "Export", exact: true }).click();
