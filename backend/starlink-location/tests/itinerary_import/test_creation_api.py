@@ -369,3 +369,8 @@ def test_revision_reuses_current_route_after_ordinary_replacement(importer):
         (service.store.directory(revision.id) / "prepared.json").read_bytes()
     )
     assert prepared["mission"]["legs"][0]["route_id"] == replaced["leg"]["route_id"]
+    service.commit_revision(revision.id, ready["generation"], {})
+    from app.mission.planning.sources import source_closure
+
+    committed = storage.load_mission_v2(mission.id)
+    assert source_closure(committed, None)

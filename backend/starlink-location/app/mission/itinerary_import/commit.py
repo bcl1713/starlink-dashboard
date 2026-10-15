@@ -65,6 +65,14 @@ def source_files(service, operation, prepared):
     from app.mission.planning.sources import SourceStore
 
     source_store = SourceStore(service.mission_root, service.route_manager.routes_dir)
+    from .provenance import imported_sources
+
+    current = (
+        storage.load_mission_v2(operation.mission_id) if operation.revision else None
+    )
+    retained = (
+        {source.id: source for source in imported_sources(current)} if current else {}
+    )
     files = {}
     records = []
     sources = [
@@ -85,6 +93,16 @@ def source_files(service, operation, prepared):
         for r in prepared["routes"]
     )
     for id, kind, name, data in sources:
+        if id in retained:
+            existing = retained[id]
+            if (
+                existing.kind != kind
+                or existing.content_hash != hashlib.sha256(data).hexdigest()
+            ):
+                raise ValueError("Retained source identity changed")
+            # The existing accepted record and inventory remain authoritative.
+            # Reusing its route is not a new source revision or a filename edit.
+            continue
         suffix = "pdf" if kind == "itinerary_pdf" else "kml"
         source = SourceRevision(
             id=id,
