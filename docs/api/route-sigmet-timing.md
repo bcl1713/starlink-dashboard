@@ -32,7 +32,9 @@ bounded by the existing 8 MiB response and aggregate point/advisory/span limits.
 Before departure, timing interpolates planned UTC timestamps. In flight, it
 anchors at current UTC and current route progress, blends measured and planned
 speed on the first remaining segment, and uses planned speeds on future
-segments, matching route-aware POIs. Position and speed must both pass the
+segments, matching route-aware POIs. Timed points remain usable when optional
+timing-summary metadata is absent, regardless of route title. Position and
+speed must both pass the
 existing ten-second freshness policy; unusable live inputs produce unknown
 timing instead of a schedule fallback. A currently occupied passage starts at
 now and projects its exit. Already completed passages are marked passed.

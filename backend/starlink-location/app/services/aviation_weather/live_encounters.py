@@ -5,7 +5,7 @@ import json
 from math import isfinite
 
 from app.services.eta.calculator import ETACalculator
-from app.services.eta.segment_timing import segment_speed
+from app.services.eta.segment_timing import has_route_timing, segment_speed
 from app.services.position_freshness import position_observation, speed_is_fresh
 from app.services.route_eta.calculator import (
     RouteETACalculator,
@@ -34,8 +34,7 @@ def project_live_plan(route, planned, phase, telemetry, now):
             if (
                 fresh
                 and speed_is_fresh(position.speed, position.speed_observed_at, now)
-                and route.timing_profile
-                and route.timing_profile.has_timing_data
+                and has_route_timing(route)
             ):
                 current_position = _project_times(
                     route, position, reference, times, reasons

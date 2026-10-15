@@ -242,3 +242,37 @@ def test_replay_missing_times_and_progress_cannot_invent_completion(
         evaluate_encounters(result, [passage(segment=0)], MS, MS + 3600000).status
         == "unknown"
     )
+
+
+def test_timed_kml_without_airport_title_supports_live_and_poi_eta():
+    from pathlib import Path
+
+    from app.models.poi import POI
+    from app.services.aviation_weather.live_encounters import project_live_plan
+    from app.services.eta_calculator import ETACalculator
+    from app.services.kml_parser import parse_kml_file
+
+    value = parse_kml_file(
+        Path(__file__).parents[1] / "fixtures/route-sigmets/altitude-free-timing.kml"
+    )
+    # A summary object is optional; the point timing remains authoritative.
+    value.timing_profile = None
+    sample = telemetry(longitude=-81, speed=450)
+    sample.position.latitude = 35
+    planned = capture_encounter_plan(value, "a" * 64, "ordinary", None)
+    effective = project_live_plan(value, planned, "in_flight", sample, NOW)
+    crossing = evaluate_encounters(effective, [passage()], MS, MS + 7200000)
+    assert crossing.status == "overlap"
+    assert MS < crossing.spans[0].entry_ms < MS + 7200000
+    poi = POI(
+        id="timed-route",
+        name="Crossing",
+        latitude=35,
+        longitude=-77,
+        projected_latitude=35,
+        projected_longitude=-77,
+        projected_waypoint_index=1,
+        projected_route_progress=100 * 5 / 12,
+    )
+    eta = ETACalculator()._calculate_route_aware_eta_estimated(35, -81, poi, value, 450)
+    assert eta is not None and 0 < eta < 7200

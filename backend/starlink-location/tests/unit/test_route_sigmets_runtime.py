@@ -1042,3 +1042,115 @@ async def test_live_sample_updates_timing_without_geometry_or_ack_reset(tmp_path
         assert list(service._cache.values()) == cached_geometry
     finally:
         await close(service, weather)
+
+
+async def test_superseded_live_read_cannot_clear_newer_timing(tmp_path):
+    import threading
+    from datetime import datetime, timezone
+
+    from app.services.aviation_weather.route_encounters import capture_encounter_plan
+    from tests.unit.test_route_sigmets_encounters import route
+
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    value = route(
+        (
+            datetime.fromtimestamp(1, timezone.utc),
+            datetime.fromtimestamp(2, timezone.utc),
+        )
+    )
+    planned = capture_encounter_plan(value, context[0].context_key, "ordinary", None)
+    context[0] = context[0].model_copy(update={"encounter_plan": planned})
+    entered, release = threading.Event(), threading.Event()
+    sample = [planned]
+    blocked = [False]
+
+    def provider(_):
+        captured = sample[0]
+        if not blocked[0]:
+            blocked[0] = True
+            entered.set()
+            if not release.wait(10):
+                raise RuntimeError("Test live provider was not released")
+        return captured
+
+    older = None
+    try:
+        store.update({"sigmet": True})
+        await service.read()
+        service.encounter_provider = provider
+        older = asyncio.create_task(service.read())
+        assert await asyncio.to_thread(entered.wait, 5)
+        sample[0] = planned.model_copy(
+            update={
+                "revision": "b" * 64,
+                "times_ms": (10000, 20000),
+                "method": "route-estimated-utc-v1",
+            }
+        )
+        newer = await service.read()
+        assert newer.entries[0].encounter.status == "no-overlap"
+        release.set()
+        # An older live request must not publish an empty evaluating snapshot
+        # tagged with the newer successful result's observation revision.
+        obsolete = await older
+        assert obsolete.observation_revision < newer.observation_revision
+        assert obsolete.status == "evaluating"
+    finally:
+        release.set()
+        if older is not None:
+            await asyncio.gather(older, return_exceptions=True)
+        await close(service, weather)
+
+
+async def test_live_read_superseded_after_capture_keeps_older_token(
+    tmp_path, monkeypatch
+):
+    from datetime import datetime, timezone
+
+    from app.services.aviation_weather.route_encounters import capture_encounter_plan
+    from tests.unit.test_route_sigmets_encounters import route
+
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    value = route(
+        (
+            datetime.fromtimestamp(1, timezone.utc),
+            datetime.fromtimestamp(2, timezone.utc),
+        )
+    )
+    planned = capture_encounter_plan(value, context[0].context_key, "ordinary", None)
+    context[0] = context[0].model_copy(update={"encounter_plan": planned})
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = service._thread
+    older = None
+    paused = False
+
+    async def delayed(operation):
+        nonlocal paused
+        result = await original(operation)
+        if (
+            asyncio.current_task() is older
+            and getattr(operation, "__name__", None) == "_capture"
+            and not paused
+        ):
+            paused = True
+            entered.set()
+            await release.wait()
+        return result
+
+    try:
+        store.update({"sigmet": True})
+        await service.read()
+        service.encounter_provider = lambda _: planned
+        monkeypatch.setattr(service, "_thread", delayed)
+        older = asyncio.create_task(service.read())
+        await asyncio.wait_for(entered.wait(), 5)
+        newer = await service.read()
+        release.set()
+        obsolete = await older
+        assert obsolete.observation_revision < newer.observation_revision
+        assert obsolete.status == "evaluating"
+    finally:
+        release.set()
+        if older is not None:
+            await asyncio.gather(older, return_exceptions=True)
+        await close(service, weather)
