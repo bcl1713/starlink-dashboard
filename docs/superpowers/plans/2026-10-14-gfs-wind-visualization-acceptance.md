@@ -4,8 +4,9 @@ Continuation of the [approved implementation plan](2026-10-14-gfs-wind-visualiza
 
 ## Task 5: Native Browser Proof, Performance Evidence, and Delivery
 
-**Status:** Native implementation and labeled synthetic controls complete.
-Pinned-source C1 and hardware H1 remain unverified; see the
+**Status:** Closed by owner acceptance on 2026-10-15 after use of the new
+winds. Formal C1 and H1 runs are waived; the original procedure and unchecked
+steps below are historical, not pending work. See the
 [evidence report](../../reports/2026-10-14-gfs-wind-visualization.md).
 
 **Interfaces:** Retain the existing `run.sh <exact-SHA> <browser> presentation`
