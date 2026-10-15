@@ -41,7 +41,7 @@ class ImportStore:
             or len(key) > 200
             or not pdf
             or len(pdf) > 10 * 1024 * 1024
-            or not 1 <= len(kmls) <= 16
+            or not (0 if mission_id else 1) <= len(kmls) <= 16
             or sum(len(b) for _, b in kmls) > 40 * 1024 * 1024
         ):
             raise ValueError(

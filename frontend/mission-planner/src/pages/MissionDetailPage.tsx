@@ -72,6 +72,12 @@ export function MissionDetailPage() {
     );
   }
 
+  const pendingLegs = (
+    mission.metadata?.itinerary_import as
+      | { pending_legs?: unknown[] }
+      | undefined
+  )?.pending_legs;
+
   const handleAddLeg = async (leg: Partial<MissionLeg>) => {
     await addLegMutation.mutateAsync(leg);
   };
@@ -231,6 +237,13 @@ export function MissionDetailPage() {
 
       {!!mission.metadata?.itinerary_import && (
         <div className="mb-4">
+          {Array.isArray(pendingLegs) && pendingLegs.length > 0 && (
+            <p className="mb-2" role="status">
+              This itinerary has {pendingLegs.length} unfinished legs. Resume
+              with their KML files below. The retained PDF, saved corrections,
+              and attached routes will be reused.
+            </p>
+          )}
           <Button variant="outline" onClick={() => setShowImportDialog(true)}>
             Update from itinerary
           </Button>

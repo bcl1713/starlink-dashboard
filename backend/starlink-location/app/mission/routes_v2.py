@@ -1090,6 +1090,8 @@ async def import_mission(
                     if existing
                     and "itinerary_planning" not in existing.metadata
                     and "itinerary_planning" not in incoming.metadata
+                    and "itinerary_import" not in existing.metadata
+                    and "itinerary_import" not in incoming.metadata
                     else None
                 )
                 if target and any(leg.is_active for leg in target.legs):

@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path.cwd()))
+
 from app.mission import storage
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.planning.models import AcceptRouteBinding, ConfirmItinerary

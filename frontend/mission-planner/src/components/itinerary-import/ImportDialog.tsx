@@ -152,14 +152,12 @@ function ImportForm({ missionId, onClose, onSuccess }: Props) {
           </label>
           <p className="text-sm text-muted-foreground">
             PDF up to 10 MiB. Up to 16 KMLs, totaling 40 MiB.
-            {missionId ? ' Leave KMLs empty to reuse existing routes.' : ''}
+            {missionId
+              ? ' Omit unchanged files to reuse retained sources.'
+              : ''}
           </p>
           <Button
-            disabled={
-              busy ||
-              (!missionId && (!pdf || !kmls.length)) ||
-              (!pdf && !kmls.length)
-            }
+            disabled={busy || (!missionId && (!pdf || !kmls.length))}
             onClick={() => {
               if (pdf || missionId)
                 void perform(() =>

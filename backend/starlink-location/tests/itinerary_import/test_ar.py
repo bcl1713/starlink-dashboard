@@ -154,3 +154,50 @@ def test_missing_route_timing_returns_an_issue():
     l, r = fixture()
     r.timing_profile = None
     assert resolve(l, r).issues
+
+
+def test_excluded_row_before_valid_ar_does_not_supply_window_anchors(tmp_path):
+    from app.mission.itinerary_import.worker import build_leg
+    from app.mission.planning.models import RouteBinding
+
+    l, r = fixture()
+    l.ar_rows = resolve(l, r).rows
+    excluded = l.ar_rows[0].model_copy(
+        update={
+            "id": "excluded",
+            "match_status": "excluded",
+            "exclusion_note": "Not flown",
+            "start_anchor": None,
+            "end_anchor": None,
+        }
+    )
+    l.ar_rows.insert(0, excluded)
+    l.route = RouteBinding(
+        route_id=r.route_id,
+        source_id=r.route_id,
+        content_hash=r.content_hash,
+        filename="route.kml",
+    )
+    result = build_leg(
+        l.model_dump(mode="json"),
+        r.model_dump(mode="json"),
+        [{"id": "X-test", "longitude": 0}],
+        {},
+        str(tmp_path),
+        "m",
+    )
+    windows = result["leg"]["transports"]["aar_windows"]
+    assert len(windows) == 1
+    assert windows[0]["id"] == l.ar_rows[1].id
+    assert windows[0]["start_anchor"] == l.ar_rows[1].start_anchor.model_dump(
+        mode="json"
+    )
+
+
+def test_unrelated_nearby_waypoint_does_not_move_derived_boundary():
+    l, r = fixture()
+    r.waypoints[1].name = "UNRELATED"
+    r.points[1].expected_arrival_time += timedelta(seconds=60)
+    r.waypoints[1].expected_arrival_time = r.points[1].expected_arrival_time
+    row = resolve(l, r).rows[0]
+    assert row.start_anchor.source_time == START + timedelta(minutes=90, seconds=42)

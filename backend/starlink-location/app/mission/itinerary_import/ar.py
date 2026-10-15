@@ -45,15 +45,6 @@ def _boundary(route, time, track=None):
         nearby = [a for a in named if _near(a.source_time + delta, time)]
         if nearby or named:
             return nearby or named
-    points = [
-        _anchor(route, i, 0, p.expected_arrival_time, p.occurrence_id)
-        for i, p in enumerate(route.points)
-        if p.expected_arrival_time is not None
-        and p.timing_source != "interpolated"
-        and _near(p.expected_arrival_time, time)
-    ]
-    if points:
-        return points
     # Use the existing source-bound interpolation, not the closest named point.
     return _candidates(time - delta, "second", route)
 

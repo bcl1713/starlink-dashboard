@@ -52,7 +52,9 @@ def build_leg(leg_data, route_data, positions, constraints, mission_root, missio
         name=f"{leg.departure_airport}–{leg.arrival_airport}",
     )
     ordinary.import_provenance = {"version": 1}
-    for window, row in zip(ordinary.transports.aar_windows, leg.ar_rows):
+    rows = {row.id: row for row in leg.ar_rows}
+    for window in ordinary.transports.aar_windows:
+        row = rows[window.id]
         window.start_anchor = row.start_anchor
         window.end_anchor = row.end_anchor
         window.override_start_time = None

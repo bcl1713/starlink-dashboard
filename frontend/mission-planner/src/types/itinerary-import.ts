@@ -34,6 +34,16 @@ export interface ImportOperation {
     ar_options?: Record<string, { value: string; label: string }[]>;
     itinerary?: ItineraryData;
     routes?: { id: string; name: string }[];
-    revision?: { changes: string[]; conflicts: RevisionConflict[] };
+    revision?: {
+      changes: string[];
+      conflicts: RevisionConflict[];
+      change_details?: {
+        field: string;
+        leg: string;
+        current: unknown;
+        incoming: unknown;
+      }[];
+      leg_names?: Record<string, string>;
+    };
   };
 }

@@ -53,7 +53,8 @@ class ImportService:
         with self.guard:
             if self.closed:
                 raise RuntimeError("Import service is shutting down")
-            if mission_id and not pdf:
+            retained_pdf = bool(mission_id and not pdf)
+            if retained_pdf:
                 import hashlib
 
                 from app.mission import storage
@@ -81,23 +82,17 @@ class ImportService:
                     ).read_bytes()
                     if hashlib.sha256(pdf).hexdigest() != reference.content_hash:
                         raise ValueError("Retained itinerary changed")
-            if mission_id and not kmls:
-                from app.mission import storage
-
-                with storage.get_active_leg_lock():
-                    current = storage.load_mission_v2(mission_id)
-                    if not current:
-                        raise ValueError("Mission not found")
-                    kmls = [
-                        (
-                            f"{l.route_id}.kml",
-                            (
-                                self.route_manager.routes_dir / f"{l.route_id}.kml"
-                            ).read_bytes(),
-                        )
-                        for l in current.legs
-                    ]
             op = self.store.create(pdf, kmls, idempotency_key, mission_id)
+            if retained_pdf and current.metadata["itinerary_import"].get(
+                "pending_legs"
+            ):
+                payload = self.store.payload(op.id)
+                payload["pending_legs"] = current.metadata["itinerary_import"][
+                    "pending_legs"
+                ]
+                atomic_write(
+                    self.store.directory(op.id) / "input.json", json_bytes(payload)
+                )
             if op.state in {"queued", "running"}:
                 self.submit(op)
             return op

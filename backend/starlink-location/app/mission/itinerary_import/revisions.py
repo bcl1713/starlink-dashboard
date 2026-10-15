@@ -102,6 +102,16 @@ def align_revision(current, prepared):
                 "Repeated legs changed count; resolve the leg association before applying revision"
             )
         ids.update(zip(items, previous))
+    # Extraction UUIDs identify a parse, not a new AR occurrence. Align repeated
+    # tracks in source order only when their occurrence counts remain stable.
+    for new_id, old_id in list(ids.items()):
+        old_rows = old_evidence[old_id]["source_leg"].get("ar_rows", [])
+        new_rows = new_evidence[new_id]["source_leg"].get("ar_rows", [])
+        for track in {row["track"].strip().upper() for row in new_rows}:
+            previous = [r for r in old_rows if r["track"].strip().upper() == track]
+            incoming_rows = [r for r in new_rows if r["track"].strip().upper() == track]
+            if len(previous) == len(incoming_rows):
+                ids.update((n["id"], o["id"]) for n, o in zip(incoming_rows, previous))
     old_routes = {l.id: l.route_id for l in current.legs}
     for leg in incoming.legs:
         old_id = ids.get(leg.id)
@@ -123,6 +133,25 @@ def align_revision(current, prepared):
             Path(path).with_name(route["route_id"] + ".kml")
         )
     return aligned
+
+
+def describe_change(field, current, incoming):
+    parts = field.split(".")
+    leg_id = parts[1]
+    old = next(
+        (l.model_dump(mode="json") for l in current.legs if l.id == leg_id), None
+    )
+    new = next(
+        (l.model_dump(mode="json") for l in incoming.legs if l.id == leg_id), None
+    )
+    name = (new or old or {}).get("name", leg_id)
+
+    def value(data):
+        for key in parts[2:]:
+            data = data.get(key) if isinstance(data, dict) else None
+        return data
+
+    return {"field": field, "leg": name, "current": value(old), "incoming": value(new)}
 
 
 def stage_revision(service, op, prepared):
@@ -151,6 +180,15 @@ def stage_revision(service, op, prepared):
             details={
                 "revision": {
                     "changes": preview.changes,
+                    "change_details": [
+                        describe_change(
+                            f, current, Mission.model_validate(prepared["mission"])
+                        )
+                        for f in preview.changes
+                    ],
+                    "leg_names": {
+                        l.id: l.name for l in [*current.legs, *preview.mission.legs]
+                    },
                     "conflicts": [c.model_dump(mode="json") for c in preview.conflicts],
                 }
             },

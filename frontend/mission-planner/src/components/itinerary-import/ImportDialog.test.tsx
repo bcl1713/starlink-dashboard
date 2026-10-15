@@ -135,3 +135,23 @@ it('requires explicit application of an itinerary revision', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Apply revision' }));
   await waitFor(() => expect(done).toHaveBeenCalledWith('ordinary'));
 });
+
+it('resumes an unfinished revision using retained sources without another upload', async () => {
+  vi.mocked(itineraryImportApi.start).mockResolvedValue({
+    ...operation,
+    state: 'queued',
+    revision: true,
+  } as never);
+  setup('ordinary');
+  const prepare = screen.getByRole('button', { name: 'Prepare revision' });
+  expect(prepare).toBeEnabled();
+  fireEvent.click(prepare);
+  await waitFor(() =>
+    expect(itineraryImportApi.start).toHaveBeenCalledWith(
+      null,
+      [],
+      expect.any(String),
+      'ordinary'
+    )
+  );
+});

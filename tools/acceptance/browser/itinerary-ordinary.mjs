@@ -19,7 +19,12 @@ export async function ordinaryJourney(context, origin, seed, output) {
       timeout: 120000,
     });
     assert(r.ok(), await r.text());
-    return r.json();
+    const value = await r.json();
+    if (value.legs && value.metadata?.itinerary_import?.evidence) {
+      const evidence = value.metadata.itinerary_import.evidence;
+      value.legs.sort((a, b) => (evidence[a.id]?.source_leg.ordinal ?? 0) - (evidence[b.id]?.source_leg.ordinal ?? 0));
+    }
+    return value;
   };
   const save = async (name) => {
     await page.screenshot({

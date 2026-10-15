@@ -400,7 +400,9 @@ def verify_clone_snapshot(owner, source):
     assert receipt["stored_files_unchanged"]
     expected = views["cloneView"]["mission"]["legs"]
     assert len(receipt["legs"]) == len(expected)
-    for actual, baseline in zip(receipt["legs"], expected):
+    expected_by_id = {leg["id"]: leg for leg in expected}
+    for actual in receipt["legs"]:
+        baseline = expected_by_id[actual["leg_id"]]
         assert actual["leg_id"] == baseline["id"]
         assert actual["preparation_origins"] == ["rebuilt", "rebuilt"]
         assert actual["context"] == baseline["transports"]["evaluation_context"]
@@ -785,9 +787,7 @@ def main() -> None:
             try:
                 verify_private_inputs(args.input_root, original_inputs)
                 summary["inputs_unchanged"] = True
-            except (
-                BaseException
-            ) as error:  # noqa: BLE001 - cleanup must survive signals
+            except BaseException as error:  # noqa: BLE001
                 summary.update(passed=False, input_error=str(error))
                 primary_error = primary_error or error
         signal.alarm(0)

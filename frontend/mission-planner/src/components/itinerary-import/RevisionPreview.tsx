@@ -40,8 +40,32 @@ export function RevisionPreview({
       </p>
       {!!revision?.changes.length && (
         <ul>
-          {[...new Set(revision.changes.map(changeLabel))].map((label) => (
-            <li key={label}>{label}</li>
+          {(
+            revision.change_details ??
+            revision.changes.map((field) => ({
+              field,
+              leg: revision.leg_names?.[field.split('.')[1]] ?? 'Leg',
+              current: undefined,
+              incoming: undefined,
+            }))
+          ).map((change) => (
+            <li key={change.field} className="mb-3">
+              <strong>
+                {change.leg}: {changeLabel(change.field)}
+              </strong>
+              <div>
+                Current:{' '}
+                <pre className="whitespace-pre-wrap break-words">
+                  {JSON.stringify(change.current ?? 'Not present', null, 2)}
+                </pre>
+              </div>
+              <div>
+                Updated:{' '}
+                <pre className="whitespace-pre-wrap break-words">
+                  {JSON.stringify(change.incoming ?? 'Removed', null, 2)}
+                </pre>
+              </div>
+            </li>
           ))}
         </ul>
       )}
@@ -50,7 +74,20 @@ export function RevisionPreview({
       )}
       {conflicts.map((conflict) => (
         <label className="block" key={conflict.field}>
+          {revision?.leg_names?.[conflict.field.split('.')[1]] ?? 'Leg'}:{' '}
           {changeLabel(conflict.field)}
+          <div>
+            Current:{' '}
+            <pre className="whitespace-pre-wrap break-words">
+              {JSON.stringify(conflict.current, null, 2)}
+            </pre>
+          </div>
+          <div>
+            Updated:{' '}
+            <pre className="whitespace-pre-wrap break-words">
+              {JSON.stringify(conflict.incoming, null, 2)}
+            </pre>
+          </div>
           <select
             className="block w-full rounded border p-2"
             aria-label={`Resolve ${changeLabel(conflict.field)}`}

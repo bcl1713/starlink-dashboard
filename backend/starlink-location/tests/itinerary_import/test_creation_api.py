@@ -15,7 +15,7 @@ from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
 
-def pdf_bytes():
+def pdf_bytes(two_legs=False):
     writer = PdfWriter()
     page = writer.add_blank_page(width=800, height=600)
     font = DictionaryObject(
@@ -48,6 +48,18 @@ def pdf_bytes():
         (505, 250, "01-Jan-2035"),
         (505, 303, "1030"),
     ]
+    if two_legs:
+        cells.extend(
+            [
+                (480, 55, "2"),
+                (480, 70, "BBBB"),
+                (480, 250, "01-Jan-2035"),
+                (480, 303, "1100"),
+                (465, 70, "CCCC"),
+                (465, 250, "01-Jan-2035"),
+                (465, 303, "1130"),
+            ]
+        )
     stream = DecodedStreamObject()
     stream.set_data(
         "\n".join(
@@ -233,4 +245,87 @@ def test_concurrent_takeoff_edit_invalidates_revision_preview(importer):
     assert (
         storage.load_mission_v2(first.mission_id).legs[0].adjusted_departure_time.hour
         == 11
+    )
+
+
+def second_kml():
+    return (
+        kml_bytes()
+        .replace(b"AAAA", b"CCCC")
+        .replace(b"BBBB", b"AAAA")
+        .replace(b"CCCC", b"BBBB")
+        .replace(b"AAAA", b"CCCC")
+        .replace(b"10:", b"11:")
+    )
+
+
+def test_partial_route_revision_reuses_other_legs(importer):
+    client, service = importer
+    first = service.start(
+        pdf_bytes(True),
+        [("one.kml", kml_bytes()), ("two.kml", second_kml())],
+        "partial-original",
+    )
+    assert wait(client, first.id)["state"] == "committed"
+    old = storage.load_mission_v2(first.mission_id)
+    replacement = second_kml().replace(b"11:00:42", b"11:00:52")
+    revision = service.start(
+        pdf_bytes(True),
+        [("changed.kml", replacement)],
+        "partial-next",
+        first.mission_id,
+    )
+    ready = wait(client, revision.id)
+    assert ready["state"] == "ready", ready
+    prepared = __import__("json").loads(
+        (service.store.directory(revision.id) / "prepared.json").read_text()
+    )
+    retained_id = next(l.route_id for l in old.legs if l.name == "AAAA–BBBB")
+    assert any(l["route_id"] == retained_id for l in prepared["mission"]["legs"])
+    assert len(prepared["mission"]["legs"]) == 2
+
+
+def test_resume_pending_conversion_uses_retained_pdf_and_attachments(importer):
+    client, service = importer
+    first = service.start(
+        pdf_bytes(True),
+        [("one.kml", kml_bytes()), ("two.kml", second_kml())],
+        "pending-original",
+    )
+    assert wait(client, first.id)["state"] == "committed"
+    current = storage.load_mission_v2(first.mission_id)
+    provenance = current.metadata["itinerary_import"]
+    pending_id = next(
+        id
+        for id, e in provenance["evidence"].items()
+        if e["source_leg"]["ordinal"] == 2
+    )
+    evidence = provenance["evidence"].pop(pending_id)
+    pending = evidence["source_leg"]
+    pending["departure_time"] = "2035-01-01T11:01:00Z"
+    provenance["pending_legs"] = [pending]
+    current.legs = [l for l in current.legs if l.id != pending_id]
+    provenance["baseline"]["legs"] = [
+        l for l in provenance["baseline"]["legs"] if l["id"] != pending_id
+    ]
+    storage.save_mission_v2(current)
+    resumed = service.start(None, [], "pending-resume", current.id)
+    ready = wait(client, resumed.id)
+    assert ready["state"] == "ready", ready
+    import json
+
+    review = json.loads(
+        (service.store.directory(resumed.id) / "review.json").read_bytes()
+    )
+    assert (
+        review["itinerary"]["expected_legs"][1]["departure_time"]
+        == "2035-01-01T11:01:00Z"
+    )
+    assert (
+        len(
+            json.loads(
+                (service.store.directory(resumed.id) / "prepared.json").read_bytes()
+            )["mission"]["legs"]
+        )
+        == 2
     )

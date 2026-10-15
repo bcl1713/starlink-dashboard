@@ -80,3 +80,36 @@ def test_unmodified_active_leg_is_preserved():
     current = base.model_copy(deep=True)
     current.legs[0].is_active = True
     assert merge(base, current, base).mission.legs[0].is_active
+
+
+def test_revision_preserves_ar_occurrence_ids():
+    from app.mission.itinerary_import.revisions import align_revision
+
+    base = mission()
+    source = {
+        "departure_airport": "AAAA",
+        "arrival_airport": "BBBB",
+        "ordinal": 1,
+        "ar_rows": [
+            {
+                "id": "old-ar",
+                "track": "TRACK",
+                "entry_time": "10:10",
+                "exit_time": "10:20",
+            }
+        ],
+    }
+    base.metadata["itinerary_import"] = {
+        "evidence": {"leg": {"source_leg": source}},
+        "sources": {"routes": {"r": "hash"}},
+    }
+    incoming = base.model_copy(deep=True)
+    incoming.metadata["itinerary_import"]["evidence"]["leg"]["source_leg"]["ar_rows"][
+        0
+    ]["id"] = "new-ar"
+    prepared = {
+        "mission": incoming.model_dump(mode="json"),
+        "routes": [],
+        "probe": "new-ar",
+    }
+    assert align_revision(base, prepared)["probe"] == "old-ar"

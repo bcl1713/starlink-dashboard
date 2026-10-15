@@ -36,6 +36,29 @@ def prepare(service, operation):
 
         atomic_write(parsed_path, json_bytes(preview.model_dump(mode="json")))
     data = ItineraryData.model_validate(choices.get("itinerary", preview.parsed_values))
+    if data and not choices.get("itinerary"):
+        # Saved unfinished corrections belong to the retained PDF. Replacing the
+        # PDF deliberately starts from its new extraction instead.
+        for leg in data.expected_legs:
+            pending = [
+                p
+                for p in payload.get("pending_legs", [])
+                if p["ordinal"] == leg.ordinal
+                and p["departure_airport"] == leg.departure_airport
+                and p["arrival_airport"] == leg.arrival_airport
+            ]
+            if len(pending) == 1:
+                from app.mission.planning.models import ExpectedLeg
+
+                data.expected_legs[data.expected_legs.index(leg)] = (
+                    ExpectedLeg.model_validate(pending[0])
+                )
+    if data:
+        for leg in data.expected_legs:
+            if leg.draft and leg.draft.ar_corrections:
+                leg.ar_rows = [
+                    row.model_copy(deep=True) for row in leg.draft.ar_corrections
+                ]
     issues = [
         ImportIssue(code=e.code, message=e.message, field=e.field)
         for e in preview.field_errors
@@ -62,6 +85,9 @@ def prepare(service, operation):
             service.route_manager.routes_dir / f"{item['id']}.kml"
         )
         routes[item["id"]] = route
+    from .retained import reuse_routes
+
+    reuse_routes(service, operation, data, routes, payload, directory)
     from app.mission.planning.journal import atomic_write
 
     review = {

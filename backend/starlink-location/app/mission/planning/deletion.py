@@ -78,6 +78,8 @@ def load_record(sources, mission_id):
         raise ValueError("Deletion authority does not match its verified owner/root")
     try:
         raw = record.mission.metadata.get("itinerary_planning")
+        if not raw and not record.mission.metadata.get("itinerary_import"):
+            raise ValueError("Missing retained ownership metadata")
         manifest = PlanningManifest.model_validate(raw) if raw else None
         source_closure(record.mission, manifest)
     except ValueError as exc:

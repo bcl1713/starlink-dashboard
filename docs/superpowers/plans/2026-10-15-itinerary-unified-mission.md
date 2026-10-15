@@ -75,7 +75,8 @@ unless explicitly marked repository root. Keep each new file under 300 lines.
 `app/mission/planning/intake.py` and `tests/planning/cases.py` fixtures.
 
 **Interfaces:**
-`associate_routes(legs: Sequence[ExpectedLeg], routes: Mapping[str, ParsedRoute]) -> AssociationResult`.
+`associate_routes(legs: Sequence[ExpectedLeg], routes: Mapping[str,
+ParsedRoute]) -> AssociationResult`.
 Define `AssociationResult` with accepted `leg_id -> route_id`, typed unresolved
 issues and stored evidence. Accept an edge only if it is forced across all best
 admissible one-to-one assignments. Rank endpoint/date evidence before
@@ -89,7 +90,8 @@ must never settle ambiguity.
       missing times. Assert ambiguous repeated routes remain unresolved in
       either file order.
 - [ ] Run
-      `timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt pytest tests/itinerary_import/test_association.py -q`;
+      `timeout --kill-after=10s 10m uv run --with-requirements
+requirements-dev.txt pytest tests/itinerary_import/test_association.py -q`;
       expect the new behavior tests to fail before implementation.
 - [ ] Implement the result schema and pure global assignment; retain seconds in
       the source models. Do not mutate legacy intake behavior before
@@ -132,7 +134,8 @@ endpoint offsets, chosen occurrence and derivation remain recorded.
 `mission/timeline_preparation.py` and package preparation lifecycle patterns.
 
 **Interfaces:**
-`ImportService.start(pdf, kmls, idempotency_key, mission_id=None) -> ImportOperation`,
+`ImportService.start(pdf, kmls, idempotency_key, mission_id=None) ->
+ImportOperation`,
 `read(operation_id)`, `resolve(operation_id, generation, choices)`,
 `cancel(operation_id)` and `close()`. Persist strict `ImportOperation` with
 operation ID, generation, stage, issues, mission ID, deadline and state
@@ -183,7 +186,8 @@ same mission lock. UI branches into the legacy editor only for unconverted data.
       evidence or expose unresolved fields in the normal editor. Protect active
       route replacement and preserve ordinary activation/export behavior.
 - [ ] Run backend `tests/itinerary_import/test_ordinary_edits.py` and frontend
-      `timeout --kill-after=10s 10m npm run test:unit -- src/pages/MissionDetailPage.test.tsx src/pages/LegDetailPage.test.tsx`;
+      `timeout --kill-after=10s 10m npm run test:unit --
+src/pages/MissionDetailPage.test.tsx src/pages/LegDetailPage.test.tsx`;
       confirm new cases fail, then implement shared paths and provenance
       capture.
 - [ ] Rerun both selections and existing mission API/state/timeline regressions;
@@ -248,7 +252,8 @@ two competing authoritative copies. Startup resumes incomplete journals.
 
 **Files:** Create frontend `types/itinerary-import.ts`,
 `services/itinerary-import.ts`,
-`components/itinerary-import/{ImportDialog, ImportProgress,ImportCorrections,RevisionPreview}.tsx`
+`components/itinerary-import/{ImportDialog,
+ImportProgress,ImportCorrections,RevisionPreview}.tsx`
 and colocated tests. Modify `components/planning/CreateFromItinerary.tsx`,
 `pages/{MissionsPage,MissionDetailPage}.tsx`; retire obsolete panels only after
 conversion coverage passes. Add normal editor links for resumable import issues.
@@ -267,7 +272,9 @@ commit.
       commit once and preserve a concurrent edit on 409. Include keyboard/mobile
       correction focus and an active-leg explanation with ordinary deactivation.
 - [ ] Run
-      `timeout --kill-after=10s 10m npm run test:unit -- src/components/itinerary-import src/pages/MissionDetailPage.test.tsx src/pages/LegDetailPage.test.tsx`;
+      `timeout --kill-after=10s 10m npm run test:unit --
+src/components/itinerary-import src/pages/MissionDetailPage.test.tsx
+src/pages/LegDetailPage.test.tsx`;
       confirm red, then implement the UI with existing dialogs/forms/query
       patterns.
 - [ ] Rerun selections, full unit suite, lint and production build with wall
