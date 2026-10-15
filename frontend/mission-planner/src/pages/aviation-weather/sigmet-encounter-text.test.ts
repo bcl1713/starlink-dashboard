@@ -122,3 +122,22 @@ it('does not turn separate crossings into one continuous passage', async () => {
   });
   expect(crossingPassages(e)).toHaveLength(2);
 });
+it('never labels an already passed crossing as expected', () => {
+  const e = entry();
+  const passed = {
+    entry_ms: null,
+    exit_ms: null,
+    status: 'passed' as const,
+    reason: null,
+  };
+  const updated: RouteSigmetEntry = {
+    ...e,
+    encounter: {
+      spans: [passed],
+      status: 'passed',
+      unknown_count: 0,
+      reason: null,
+    },
+  };
+  expect(formatSigmetEncounter(updated, now)).toEqual(['Crossing passed']);
+});

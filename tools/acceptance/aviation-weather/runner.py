@@ -68,6 +68,9 @@ def require_pass(proofs):
             "overlap_screenshots",
             "no_overlap_screenshots",
             "unknown_screenshots",
+            "live_projection",
+            "live_stale_unknown",
+            "live_passed",
         )
     ):
         raise ValueError("Incomplete SIGMET encounter evidence")

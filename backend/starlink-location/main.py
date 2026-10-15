@@ -61,6 +61,7 @@ from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
 from app.services.aviation_weather.route_context import select_route_context
+from app.services.aviation_weather.live_encounters import capture_flight_encounters
 from app.services.aviation_weather.route_runtime import RouteSigmetService
 from app.services.aviation_weather.route_state import NoticeStore
 from app.services.aviation_weather.runtime import AviationWeatherService
@@ -259,6 +260,9 @@ def initialize_aviation_weather_runtime() -> None:
                 )
                 if getattr(app.state, "route_manager", None) is not None
                 else None
+            ),
+            encounter_provider=lambda context: capture_flight_encounters(
+                context, app.state
             ),
         )
     except Exception:  # noqa: BLE001 - optional notices preserve bulletin/core startup

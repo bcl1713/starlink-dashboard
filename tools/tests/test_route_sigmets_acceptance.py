@@ -51,6 +51,9 @@ def proof():
                 "overlap_screenshots",
                 "no_overlap_screenshots",
                 "unknown_screenshots",
+                "live_projection",
+                "live_stale_unknown",
+                "live_passed",
             )
         },
         "browser": {"passed": 2, "failed": 0, "skipped": 0},
@@ -328,6 +331,9 @@ def test_missing_encounter_proof_prevents_pass(missing):
             "overlap_screenshots",
             "no_overlap_screenshots",
             "unknown_screenshots",
+            "live_projection",
+            "live_stale_unknown",
+            "live_passed",
         )
     }
     evidence["encounter"][missing] = False
@@ -359,6 +365,19 @@ def test_missing_encounter_state_screenshots_prevent_pass(missing):
     evidence = proof()
     evidence["encounter"].update(
         overlap_screenshots=True, no_overlap_screenshots=True, unknown_screenshots=True
+    )
+    evidence["encounter"][missing] = False
+    with pytest.raises(ValueError, match="encounter"):
+        runner().require_pass(evidence)
+
+
+@pytest.mark.parametrize(
+    "missing", ["live_projection", "live_stale_unknown", "live_passed"]
+)
+def test_missing_live_eta_proof_prevents_pass(missing):
+    evidence = proof()
+    evidence["encounter"].update(
+        live_projection=True, live_stale_unknown=True, live_passed=True
     )
     evidence["encounter"][missing] = False
     with pytest.raises(ValueError, match="encounter"):

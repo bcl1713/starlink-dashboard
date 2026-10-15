@@ -49,6 +49,7 @@ export function formatSigmetEncounter(
 ): string[] {
   if (!('encounter' in entry) || entry.encounter.status === 'unknown')
     return ['Crossing time unknown'];
+  if (entry.encounter.status === 'passed') return ['Crossing passed'];
   if (entry.encounter.status === 'no-overlap')
     return ['No crossing expected while valid'];
   const passages = crossingPassages(entry).filter(

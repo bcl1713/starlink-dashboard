@@ -11,7 +11,10 @@ export function SigmetEncounterDetails({
   nowMs: number;
 }) {
   if (!('encounter' in entry)) return <p>Crossing time unknown</p>;
-  const known = crossingPassages(entry).filter((p) => p.status !== 'unknown');
+  if (entry.encounter.status === 'passed') return <p>Crossing passed</p>;
+  const known = crossingPassages(entry).filter(
+    (p) => p.status !== 'unknown' && p.status !== 'passed'
+  );
   return (
     <section aria-label="Crossing details">
       {known.map((p, index) => (

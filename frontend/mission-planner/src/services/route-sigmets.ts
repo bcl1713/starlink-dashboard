@@ -63,7 +63,7 @@ const passageReason = z.enum([
   'ambiguous-association',
   'unavailable-plan',
 ]);
-const passageStatus = z.enum(['overlap', 'no-overlap', 'unknown']);
+const passageStatus = z.enum(['overlap', 'no-overlap', 'unknown', 'passed']);
 const passageSchema = z
   .strictObject({
     entry_ms: integer.nullable(),
@@ -74,10 +74,12 @@ const passageSchema = z
   .refine((p) =>
     p.status === 'unknown'
       ? p.entry_ms === null && p.exit_ms === null && p.reason !== null
-      : p.entry_ms !== null &&
-        p.exit_ms !== null &&
-        p.entry_ms <= p.exit_ms &&
-        p.reason === null
+      : p.status === 'passed'
+        ? p.entry_ms === null && p.exit_ms === null && p.reason === null
+        : p.entry_ms !== null &&
+          p.exit_ms !== null &&
+          p.entry_ms <= p.exit_ms &&
+          p.reason === null
   );
 const encounterSchema = z
   .strictObject({
@@ -92,7 +94,9 @@ const encounterSchema = z
       ? 'overlap'
       : unknown
         ? 'unknown'
-        : 'no-overlap';
+        : e.spans.every((p) => p.status === 'passed')
+          ? 'passed'
+          : 'no-overlap';
     const reason =
       status === 'unknown'
         ? (e.spans.find((p) => p.reason)?.reason ?? null)
@@ -103,7 +107,11 @@ const encounterSchema = z
   });
 export const encounterPlanSchema = z.strictObject({
   revision: hash,
-  method: z.literal('segment-linear-utc-v1'),
+  method: z.enum([
+    'segment-linear-utc-v1',
+    'route-estimated-utc-v1',
+    'mission-replay-utc-v1',
+  ]),
   source: z.enum(['ordinary', 'simulation']),
   source_revision: text(256).nullable(),
   precision: z.enum(['minute', 'second', 'unknown']),
@@ -123,6 +131,7 @@ export const routeSigmetEntrySchema = z
       e.encounter.spans.every(
         (p) =>
           p.status === 'unknown' ||
+          p.status === 'passed' ||
           (p.exit_ms! >= e.valid_from_ms && p.entry_ms! < e.expires_at_ms) ===
             (p.status === 'overlap')
       )

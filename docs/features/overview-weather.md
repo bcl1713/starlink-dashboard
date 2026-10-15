@@ -183,13 +183,18 @@ acknowledgement. No bulletin catalogue is shown in Configuration; unrelated
 reports are inspected on the map. Geographic intersections do not imply an
 altitude or passage-time match.
 
-### Planned SIGMET passage timing
+### SIGMET crossing timing
 
 Route-intersecting SIGMET notices show **Crossing expected** with UTC times,
-**No crossing expected while valid**, or **Crossing time unknown**. Passage uses
-linear interpolation between the effective route's waypoint UTC times. Missing,
-equal, reversed or timezone-free times are not replaced with live aircraft speed
-or a replay clock.
+**No crossing expected while valid**, **Crossing time unknown**, or **Crossing
+passed**. Before departure, crossings follow planned waypoint UTC times. In
+flight, they use current UTC, position and speed with the same segment speed
+blending as route-aware POIs. A delay or speed change can therefore change both
+the crossing window and whether it falls within advisory validity, without a
+flight plan edit. Stale or unavailable position/speed produces unknown timing.
+A crossing already entered retains a projected exit; completed crossings are
+marked passed. Simulation replay follows the published mission clock and route
+timing, consistent with replay POIs.
 
 The flight display keeps crossing windows, advisory validity, reported hazard
 bounds and the expandable original bulletin. Adjacent route segments share one
@@ -201,7 +206,7 @@ Time comparison is informational: a nonoverlap does not hide a geographic
 advisory or acknowledge it. Weather eligibility still follows actual UTC, even
 when the selected simulation route has historical planned dates. Timing edits
 refresh evidence without resetting acknowledgements. Manually selected reports
-without route intersections show encounter unavailable.
+without route intersections show crossing time unknown.
 
 Routes do not provide planned flight altitude. No altitude comparison or
 altitude filtering is performed, including during an active mission. The

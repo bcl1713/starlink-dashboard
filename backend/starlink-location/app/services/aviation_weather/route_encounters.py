@@ -54,6 +54,18 @@ def evaluate_encounters(
     for span in spans:
         index = span.segment_index
         reason = None
+        if (
+            plan is not None
+            and plan.current_position is not None
+            and index + 1 < len(plan.times_ms)
+            and index + span.end_fraction <= plan.current_position
+        ):
+            passages.append(
+                PassageEvidence(
+                    entry_ms=None, exit_ms=None, status="passed", reason=None
+                )
+            )
+            continue
         if plan is None:
             reason = "unavailable-plan"
         elif index + 1 >= len(plan.times_ms):
@@ -72,6 +84,8 @@ def evaluate_encounters(
         start, end = plan.times_ms[index : index + 2]
         entry = start + round(span.start_fraction * (end - start))
         exit = start + round(span.end_fraction * (end - start))
+        if plan.reference_ms is not None:
+            entry = max(entry, plan.reference_ms)
         overlap = exit >= valid_from_ms and entry < expires_at_ms
         passages.append(
             PassageEvidence(
@@ -85,7 +99,15 @@ def evaluate_encounters(
     status = (
         "overlap"
         if any(p.status == "overlap" for p in passages)
-        else "unknown" if unknown else "no-overlap"
+        else (
+            "unknown"
+            if unknown
+            else (
+                "passed"
+                if all(p.status == "passed" for p in passages)
+                else "no-overlap"
+            )
+        )
     )
     return EncounterEvidence(
         spans=passages,

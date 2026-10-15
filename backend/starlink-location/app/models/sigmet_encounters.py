@@ -6,7 +6,7 @@ from pydantic import Field, model_validator
 
 from app.models.aviation_weather import Contract, Hash, Time
 
-Status = Literal["overlap", "no-overlap", "unknown"]
+Status = Literal["overlap", "no-overlap", "unknown", "passed"]
 Reason = Literal[
     "missing-timing", "invalid-timing", "ambiguous-association", "unavailable-plan"
 ]
@@ -14,7 +14,9 @@ Reason = Literal[
 
 class EncounterPlanSummary(Contract):
     revision: Hash
-    method: Literal["segment-linear-utc-v1"] = "segment-linear-utc-v1"
+    method: Literal[
+        "segment-linear-utc-v1", "route-estimated-utc-v1", "mission-replay-utc-v1"
+    ] = "segment-linear-utc-v1"
     source: Literal["ordinary", "simulation"]
     source_revision: Annotated[str, Field(max_length=256)] | None
     precision: Literal["minute", "second", "unknown"] = "unknown"
@@ -22,6 +24,8 @@ class EncounterPlanSummary(Contract):
 
 class EncounterPlan(EncounterPlanSummary):
     context_key: Hash
+    reference_ms: Time | None = None
+    current_position: float | None = Field(default=None, ge=0, le=20000)
     times_ms: tuple[Time | None, ...] = Field(max_length=20000)
     reasons: tuple[Reason | None, ...] = Field(max_length=20000)
 
@@ -50,6 +54,13 @@ class PassageEvidence(Contract):
                 or self.reason is None
             ):
                 raise ValueError("Unknown passage requires a reason and no times")
+        elif self.status == "passed":
+            if (
+                self.entry_ms is not None
+                or self.exit_ms is not None
+                or self.reason is not None
+            ):
+                raise ValueError("Passed passage has no projected times")
         elif (
             self.entry_ms is None
             or self.exit_ms is None
@@ -72,7 +83,15 @@ class EncounterEvidence(Contract):
         status = (
             "overlap"
             if any(s.status == "overlap" for s in self.spans)
-            else "unknown" if unknown else "no-overlap"
+            else (
+                "unknown"
+                if unknown
+                else (
+                    "passed"
+                    if all(s.status == "passed" for s in self.spans)
+                    else "no-overlap"
+                )
+            )
         )
         reason = (
             next((s.reason for s in self.spans if s.reason), None)

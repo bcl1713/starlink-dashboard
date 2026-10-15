@@ -58,6 +58,7 @@ def select_route_context(route_manager, simulation_service) -> RouteContext | No
     key = route_context_key(source, route_id, runtime_id, run_id, points)
     return RouteContext(
         context_key=key,
+        route=selected,
         encounter_plan=capture_encounter_plan(
             selected, key, source, selected.content_hash
         ),

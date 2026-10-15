@@ -29,9 +29,10 @@ from .route_state import NoticeConflict
 
 
 class RouteSigmetService:
-    def __init__(self, weather, store, context_provider):
+    def __init__(self, weather, store, context_provider, encounter_provider=None):
         self.weather, self.store = weather, store
         self.context_provider = context_provider
+        self.encounter_provider = encounter_provider
         self.worker = GeometryWorker()
         self._cache = OrderedDict()
         self._encounter_cache = OrderedDict()
@@ -465,6 +466,19 @@ class RouteSigmetService:
         except NoticeConflict:
             return await self._changed_snapshot("Route or SIGMET input changed")
 
+        evidence_context = context
+        if self.encounter_provider is not None and context.encounter_plan is not None:
+            # Reserve ordering BEFORE the owned worker reads live timing. Live
+            # samples do not invalidate geometry, acknowledgements or plan edits.
+            self._observation_revision += 1
+            observation_revision = self._observation_revision
+            effective_plan = await self._thread(
+                lambda: self.encounter_provider(context)
+            )
+            evidence_context = context.model_copy(
+                update={"encounter_plan": effective_plan}
+            )
+
         def build_entries():
             entries = []
             for group in matched:
@@ -481,7 +495,10 @@ class RouteSigmetService:
                         feature_ids=group.feature_ids,
                         spans=spans,
                         encounter=self._encounters(
-                            context, spans, group.valid_from_ms, group.expires_at_ms
+                            evidence_context,
+                            spans,
+                            group.valid_from_ms,
+                            group.expires_at_ms,
                         ),
                         attention_order=record.attention_order,
                         acknowledged=record.acknowledged,
@@ -558,7 +575,7 @@ class RouteSigmetService:
         )
         snapshot = self._snapshot(
             settings,
-            context,
+            evidence_context,
             product,
             status,
             observation_revision=observation_revision,

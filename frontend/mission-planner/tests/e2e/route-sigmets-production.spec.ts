@@ -1093,6 +1093,9 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     overlap_screenshots: false,
     no_overlap_screenshots: false,
     unknown_screenshots: false,
+    live_projection: false,
+    live_stale_unknown: false,
+    live_passed: false,
   };
   const upload = async () => {
     const kml = await readFile(output + '/capture/encounter-route.kml');
@@ -1242,6 +1245,88 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     expect(liveAfter.selected_entries).toEqual(liveBefore.selected_entries);
     expect(liveAfter.encounter_plan).toEqual(liveBefore.encounter_plan);
     proof.no_altitude_filter = true;
+    // An active aircraft uses the live ETA engine even though its stored
+    // schedule is now tomorrow. The route and acknowledgement remain unchanged.
+    const phase = async (value: string) => {
+      expect(
+        (
+          await request.post('/api/flight-status/transition', {
+            data: { phase: value, reason: 'Live SIGMET acceptance' },
+          })
+        ).ok()
+      ).toBe(true);
+    };
+    await control({
+      live_flight: { latitude: 35, longitude: -81, speed: 450 },
+    });
+    await phase('in_flight');
+    const live: RouteSigmetSnapshot = await snapshot(request);
+    expect(live.encounter_plan?.method).toBe('route-estimated-utc-v1');
+    expect(live.context?.context_key).toBe(later.context?.context_key);
+    expect(live.entries.every((e) => e.encounter.status === 'overlap')).toBe(
+      true
+    );
+    expect(
+      live.entries.find((e) => e.notice_key === cleared.notice_key)
+        ?.acknowledged
+    ).toBe(true);
+    for (const entry of live.entries) {
+      for (const passage of entry.encounter.spans) {
+        expect(passage.entry_ms!).toBeGreaterThan(Date.now() - 5000);
+        expect(passage.exit_ms!).toBeLessThan(Date.now() + 7200000);
+      }
+    }
+    await expect(overview.getByText(/Crossing expected ·/).first()).toBeVisible(
+      { timeout: 8000 }
+    );
+    await expect(config.getByText(/Crossing expected ·/).first()).toBeVisible({
+      timeout: 8000,
+    });
+    await overview
+      .getByRole('article')
+      .first()
+      .getByText('Details', { exact: true })
+      .click();
+    await overview.screenshot({
+      path: info.outputPath('encounter-live-desktop.png'),
+    });
+    await overview
+      .getByRole('article')
+      .first()
+      .getByText('Details', { exact: true })
+      .click();
+    proof.live_projection = true;
+    await control({
+      live_flight: { latitude: 35, longitude: -81, speed: 450, speed_age: 20 },
+    });
+    const stale: RouteSigmetSnapshot = await snapshot(request);
+    expect(stale.entries.every((e) => e.encounter.status === 'unknown')).toBe(
+      true
+    );
+    await expect(
+      overview.getByText('Crossing time unknown').first()
+    ).toBeVisible({ timeout: 8000 });
+    proof.live_stale_unknown = true;
+    await control({
+      live_flight: { latitude: 35, longitude: -70, speed: 450 },
+    });
+    const passed: RouteSigmetSnapshot = await snapshot(request);
+    expect(passed.entries.every((e) => e.encounter.status === 'passed')).toBe(
+      true
+    );
+    await expect(overview.getByText('Crossing passed').first()).toBeVisible({
+      timeout: 8000,
+    });
+    await expect(config.getByText('Crossing passed').first()).toBeVisible({
+      timeout: 8000,
+    });
+    proof.live_passed = true;
+    await writeFile(
+      info.outputPath('sigmet-live-states.json'),
+      JSON.stringify({ live, stale, passed }, null, 2)
+    );
+    await phase('pre_departure');
+    await control({ live_flight: null });
     // The unchanged geographic route now has one missing timing endpoint.
     await edit({ missing_indices: [1] });
     const partial: RouteSigmetSnapshot = await snapshot(request);
@@ -1343,7 +1428,8 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     );
   } finally {
     try {
-      await control({ telemetry_altitude_ft: null });
+      await control({ telemetry_altitude_ft: null, live_flight: null });
+      await request.post('/api/flight-status');
       await request.put('/api/aviation-weather/v1/settings', {
         data: { sigmet: false },
       });

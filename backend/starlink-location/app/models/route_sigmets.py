@@ -5,6 +5,7 @@ from typing import Annotated, Literal, Self
 from pydantic import Field, field_validator, model_validator
 
 from app.models.aviation_weather import Contract, Hash, Time, WeatherProduct
+from app.models.route import ParsedRoute
 from app.models.sigmet_encounters import (
     EncounterEvidence,
     EncounterPlan,
@@ -56,6 +57,7 @@ class WireRouteContext(Contract):
 
 
 class RouteContext(WireRouteContext):
+    route: ParsedRoute | None = Field(default=None, exclude=True)
     encounter_plan: EncounterPlan | None = Field(default=None, exclude=True)
     points: list[Position] = Field(max_length=MAX_ROUTE_POINTS, exclude=True)
     waypoint_occurrences: dict[str, int] = Field(default_factory=dict, exclude=True)
@@ -154,7 +156,7 @@ class RouteSigmetEntry(SelectedSigmetEntry):
         if len(self.encounter.spans) != len(self.spans):
             raise ValueError("Encounter evidence must align with geographic spans")
         for passage in self.encounter.spans:
-            if passage.status != "unknown":
+            if passage.status not in {"unknown", "passed"}:
                 overlap = (
                     passage.exit_ms >= self.valid_from_ms
                     and passage.entry_ms < self.expires_at_ms

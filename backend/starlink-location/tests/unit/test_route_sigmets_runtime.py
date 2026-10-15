@@ -992,3 +992,53 @@ async def test_changed_snapshot_captures_plan_and_observation_together(
     finally:
         release.set()
         await close(service, weather)
+
+
+async def test_live_sample_updates_timing_without_geometry_or_ack_reset(tmp_path):
+    from datetime import datetime, timezone
+
+    from app.services.aviation_weather.route_encounters import capture_encounter_plan
+    from tests.unit.test_route_sigmets_encounters import route
+
+    service, weather, store, _, _, _, _, context = setup_service(tmp_path)
+    value = route(
+        (
+            datetime.fromtimestamp(1, timezone.utc),
+            datetime.fromtimestamp(2, timezone.utc),
+        )
+    )
+    planned = capture_encounter_plan(value, context[0].context_key, "ordinary", None)
+    context[0] = context[0].model_copy(update={"encounter_plan": planned})
+    sample = [planned]
+    service.encounter_provider = lambda _: sample[0]
+    try:
+        store.update({"sigmet": True})
+        first = await service.read()
+        entry = first.entries[0]
+        await service.acknowledge(
+            NoticeMutation(
+                context_key=first.context.context_key,
+                notice_key=entry.notice_key,
+                semantic_digest=entry.semantic_digest,
+                acknowledged=True,
+            )
+        )
+        cached_geometry = list(service._cache.values())
+        sample[0] = planned.model_copy(
+            update={
+                "method": "route-estimated-utc-v1",
+                "revision": "b" * 64,
+                "times_ms": (10000, 20000),
+            }
+        )
+        second = await service.read()
+        assert second.entries[0].encounter.status == "no-overlap"
+        assert second.encounter_plan.method == "route-estimated-utc-v1"
+        assert second.encounter_plan.revision == "b" * 64
+        assert second.entries[0].acknowledged
+        assert second.entries[0].notice_key == entry.notice_key
+        assert second.observation_revision > first.observation_revision
+        assert second.generation_id != first.generation_id
+        assert list(service._cache.values()) == cached_geometry
+    finally:
+        await close(service, weather)

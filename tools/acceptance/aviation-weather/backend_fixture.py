@@ -83,7 +83,7 @@ app = main.app
 
 # Only this acceptance image mounts this module. Exercise a same-geometry edit
 # through the real route capture; production exposes no fixture control API.
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Request
 
@@ -116,17 +116,22 @@ async def edit_encounter_plan(request: Request):
 class FixtureSimulationCoordinator(main.SimulationCoordinator):
     def get_current_telemetry(self):
         telemetry = super().get_current_telemetry()
-        altitude = json.loads(Path("/control/control.json").read_text()).get(
-            "telemetry_altitude_ft"
-        )
-        if altitude is None:
-            return telemetry
+        control = json.loads(Path("/control/control.json").read_text())
+        updates = {}
+        if control.get("telemetry_altitude_ft") is not None:
+            updates["altitude"] = float(control["telemetry_altitude_ft"])
+        if control.get("live_flight"):
+            live = control["live_flight"]
+            now = datetime.now(timezone.utc)
+            updates.update(
+                latitude=live["latitude"],
+                longitude=live["longitude"],
+                speed=live["speed"],
+                observed_at=now - timedelta(seconds=live.get("age", 0)),
+                speed_observed_at=now - timedelta(seconds=live.get("speed_age", 0)),
+            )
         return telemetry.model_copy(
-            update={
-                "position": telemetry.position.model_copy(
-                    update={"altitude": float(altitude)}
-                )
-            }
+            update={"position": telemetry.position.model_copy(update=updates)}
         )
 
 
