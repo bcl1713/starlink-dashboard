@@ -48,6 +48,9 @@ def proof():
                 "two_screen_sync",
                 "responsive_details",
                 "no_altitude_filter",
+                "overlap_screenshots",
+                "no_overlap_screenshots",
+                "unknown_screenshots",
             )
         },
         "browser": {"passed": 2, "failed": 0, "skipped": 0},
@@ -322,6 +325,9 @@ def test_missing_encounter_proof_prevents_pass(missing):
             "two_screen_sync",
             "responsive_details",
             "no_altitude_filter",
+            "overlap_screenshots",
+            "no_overlap_screenshots",
+            "unknown_screenshots",
         )
     }
     evidence["encounter"][missing] = False
@@ -344,3 +350,16 @@ def test_encounter_fixture_has_independent_bulletin_series(tmp_path):
         "E3",
         "E4",
     }
+
+
+@pytest.mark.parametrize(
+    "missing", ["overlap_screenshots", "no_overlap_screenshots", "unknown_screenshots"]
+)
+def test_missing_encounter_state_screenshots_prevent_pass(missing):
+    evidence = proof()
+    evidence["encounter"].update(
+        overlap_screenshots=True, no_overlap_screenshots=True, unknown_screenshots=True
+    )
+    evidence["encounter"][missing] = False
+    with pytest.raises(ValueError, match="encounter"):
+        runner().require_pass(evidence)

@@ -65,6 +65,9 @@ def require_pass(proofs):
             "two_screen_sync",
             "responsive_details",
             "no_altitude_filter",
+            "overlap_screenshots",
+            "no_overlap_screenshots",
+            "unknown_screenshots",
         )
     ):
         raise ValueError("Incomplete SIGMET encounter evidence")

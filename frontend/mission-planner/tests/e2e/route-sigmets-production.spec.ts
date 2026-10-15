@@ -1090,6 +1090,9 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     two_screen_sync: false,
     responsive_details: false,
     no_altitude_filter: false,
+    overlap_screenshots: false,
+    no_overlap_screenshots: false,
+    unknown_screenshots: false,
   };
   const upload = async () => {
     const kml = await readFile(output + '/capture/encounter-route.kml');
@@ -1137,6 +1140,32 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       overview.getByText(/Planned passage .*Time overlap/).first()
     ).toBeVisible({ timeout: 15000 });
     proof.altitude_free = true;
+    // Preserve the positive state before deliberately shifting planned passage.
+    await expect(
+      config.getByText(/Planned passage .*· Time overlap$/).first()
+    ).toBeVisible({ timeout: 8000 });
+    await expect(overview.getByText(/No time overlap/)).toHaveCount(0);
+    await overview.screenshot({
+      path: info.outputPath('encounter-overlap-desktop.png'),
+    });
+    await config.screenshot({
+      path: info.outputPath('encounter-overlap-configuration.png'),
+    });
+    await overview.setViewportSize({ width: 390, height: 844 });
+    const overlapRail = overview.getByLabel('Route SIGMET advisories');
+    await expect(async () => {
+      await overlapRail.scrollIntoViewIfNeeded({ timeout: 1000 });
+      await expect(overlapRail).toBeInViewport();
+    }).toPass({ timeout: 10000 });
+    await expect(
+      overview.getByText(/Planned passage .*· Time overlap$/).first()
+    ).toBeVisible();
+    await overview.screenshot({
+      path: info.outputPath('encounter-overlap-mobile.png'),
+      fullPage: true,
+    });
+    await overview.setViewportSize({ width: 1920, height: 1080 });
+    proof.overlap_screenshots = true;
     const cleared = initial.entries[0];
     expect(
       (
@@ -1177,6 +1206,11 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     expect(Date.now() - start).toBeLessThan(8000);
     proof.plan_edit_ack_preserved = true;
     proof.two_screen_sync = true;
+    await expect(overview.getByText(/· Time overlap$/)).toHaveCount(0);
+    await overview.screenshot({
+      path: info.outputPath('encounter-no-overlap-desktop.png'),
+    });
+    proof.no_overlap_screenshots = true;
     // No-overlap still has geographic attention; height edits cannot hide it.
     const count = later.entries.length;
     await edit({ height: 12345 });
@@ -1214,7 +1248,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     proof.partial_evidence = true;
     await overview
       .getByRole('article')
-      .filter({ hasText: 'Planned passage' })
+      .filter({ hasText: 'Time overlap unknown' })
       .first()
       .getByText('Details', { exact: true })
       .click();
@@ -1222,7 +1256,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       overview.getByLabel('Planned passage details').first()
     ).toBeVisible();
     await overview.screenshot({
-      path: info.outputPath('encounter-desktop.png'),
+      path: info.outputPath('encounter-unknown-desktop.png'),
     });
     await overview.setViewportSize({ width: 390, height: 844 });
     const timingRail = overview.getByLabel('Route SIGMET advisories');
@@ -1230,9 +1264,14 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       await timingRail.scrollIntoViewIfNeeded({ timeout: 1000 });
       await expect(timingRail).toBeInViewport();
     }).toPass({ timeout: 10000 });
-    await expect(overview.getByText(/Planned passage/).first()).toBeVisible();
+    const unknownCard = overview
+      .getByRole('article')
+      .filter({ hasText: 'Time overlap unknown' })
+      .first();
+    await unknownCard.scrollIntoViewIfNeeded();
+    await expect(unknownCard).toBeInViewport();
     await overview.screenshot({
-      path: info.outputPath('encounter-mobile.png'),
+      path: info.outputPath('encounter-unknown-mobile.png'),
       fullPage: true,
     });
     await config.setViewportSize({ width: 390, height: 844 });
@@ -1244,10 +1283,23 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       config.getByLabel('Planned passage details').first()
     ).toBeVisible();
     await config.screenshot({
-      path: info.outputPath('encounter-configuration-mobile.png'),
+      path: info.outputPath('encounter-unknown-configuration-mobile.png'),
       fullPage: true,
     });
     proof.responsive_details = true;
+    proof.unknown_screenshots = true;
+    await writeFile(
+      output + '/sigmet-encounter-states.json',
+      JSON.stringify(
+        {
+          overlap: initial.entries,
+          no_overlap: later.entries,
+          unknown: partial.entries,
+        },
+        null,
+        2
+      )
+    );
     // Exact bulletin boundaries are checked against unrounded UTC evidence.
     for (const e of initial.entries)
       for (const p of e.encounter.spans) {
