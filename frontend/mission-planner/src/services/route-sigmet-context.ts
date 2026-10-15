@@ -12,11 +12,11 @@ export function routeContextKey(
   if (
     !['ordinary', 'simulation'].includes(source) ||
     !routeId ||
-    routeId.length > 256 ||
+    [...routeId].length > 256 ||
     (source === 'simulation'
       ? !runtimeId || !runId
       : runtimeId !== null || runId !== null) ||
-    [runtimeId, runId].some((id) => id !== null && id.length > 256) ||
+    [runtimeId, runId].some((id) => id !== null && [...id].length > 256) ||
     !Array.isArray(points) ||
     points.length > 20_000
   )

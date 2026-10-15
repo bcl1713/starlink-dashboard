@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace as NS
 
 import pytest
+
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 
 
@@ -51,6 +52,38 @@ def manager(value):
 )
 def test_cross_language_pinned_digest(args, want):
     assert module().route_context_key(*args) == want
+
+
+@pytest.mark.parametrize(
+    "length,want",
+    [
+        (129, "1cf1f14db6f2ccbab6fe6369c2ae67e841487e3132937ad66d54b1f2184eae84"),
+        (256, "462d97e780aee3c97127ed4cff77e80436d656f18465c0c26e84bceb905e6f99"),
+    ],
+)
+def test_astral_identifiers_match_browser_code_point_boundary(length, want):
+    assert (
+        module().route_context_key(
+            "ordinary", "🚀" * length, None, None, [[0, 0], [10, 20]]
+        )
+        == want
+    )
+    assert module().route_context_key(
+        "simulation", "r", "🚀" * length, "🚀" * length, [[0, 0], [10, 20]]
+    )
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("ordinary", "🚀" * 257, None, None),
+        ("simulation", "r", "🚀" * 257, "run"),
+        ("simulation", "r", "runtime", "🚀" * 257),
+    ],
+)
+def test_rejects_257_code_points_in_each_identifier(args):
+    with pytest.raises(ValueError):
+        module().route_context_key(*args, [])
 
 
 def test_zero_rename_and_ticking_do_not_change_identity():

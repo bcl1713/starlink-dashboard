@@ -3,6 +3,40 @@ import { routeContextKey } from './route-sigmet-context';
 
 describe('route context identity', () => {
   it.each([
+    [129, '1cf1f14db6f2ccbab6fe6369c2ae67e841487e3132937ad66d54b1f2184eae84'],
+    [256, '462d97e780aee3c97127ed4cff77e80436d656f18465c0c26e84bceb905e6f99'],
+  ] as const)('accepts %i astral code points like Python', (length, digest) => {
+    expect(
+      routeContextKey('ordinary', '🚀'.repeat(length), null, null, [
+        [0, 0],
+        [10, 20],
+      ])
+    ).toBe(digest);
+    expect(
+      routeContextKey(
+        'simulation',
+        'r',
+        '🚀'.repeat(length),
+        '🚀'.repeat(length),
+        [
+          [0, 0],
+          [10, 20],
+        ]
+      )
+    ).toMatch(/^[a-f0-9]{64}$/);
+  });
+  it('rejects 257 code points in each route identifier', () => {
+    expect(() =>
+      routeContextKey('ordinary', '🚀'.repeat(257), null, null, [])
+    ).toThrow();
+    expect(() =>
+      routeContextKey('simulation', 'r', '🚀'.repeat(257), 'run', [])
+    ).toThrow();
+    expect(() =>
+      routeContextKey('simulation', 'r', 'runtime', '🚀'.repeat(257), [])
+    ).toThrow();
+  });
+  it.each([
     [
       'ordinary',
       'route-a',

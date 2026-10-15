@@ -22,8 +22,9 @@ export function useAviationSettings() {
     queryFn: ({ signal }) => aviationWeatherApi.getSettings(signal),
     enabled: active,
     retry: false,
+    networkMode: 'always',
     refetchInterval: active ? 5000 : false,
-    refetchIntervalInBackground: false,
+    refetchIntervalInBackground: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     structuralSharing: (old, next) =>

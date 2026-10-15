@@ -1,0 +1,359 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { QueryClient, focusManager } from '@tanstack/react-query';
+import { RouteSigmetSource, getRouteSigmetSource } from './route-sigmet-source';
+import { WeatherBudget } from './weather-budget';
+import { routeSnapshot, hash } from '@/test/route-sigmet-fixtures';
+import { NOW } from './fixtures';
+import { weatherDigest } from '@/services/aviation-grid';
+const settings = { metar: false, taf: false, sigmet: true, revision: 1 };
+const json = (data: unknown, status = 200) => {
+  const text = JSON.stringify(data);
+  return new Response(text, {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': String(new TextEncoder().encode(text).length),
+    },
+  });
+};
+const settle = async () => {
+  for (let i = 0; i < 40; i++) await Promise.resolve();
+};
+const owned: { source: RouteSigmetSource; client: QueryClient }[] = [];
+beforeEach(() => {
+  vi.useFakeTimers({
+    toFake: [
+      'setTimeout',
+      'clearTimeout',
+      'setInterval',
+      'clearInterval',
+      'Date',
+      'performance',
+    ],
+  });
+  vi.setSystemTime(NOW);
+});
+afterEach(async () => {
+  for (const { source, client } of owned.splice(0)) {
+    source.dispose();
+    client.clear();
+  }
+  await settle();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(vi.getTimerCount()).toBe(0);
+  focusManager.setFocused(undefined);
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+function setup(
+  custom?: (path: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+) {
+  const fixture = routeSnapshot();
+  const fetcher = vi.fn(
+    custom ??
+      (async (path: RequestInfo | URL) =>
+        String(path).endsWith('sigmet.json')
+          ? new Response(fixture.bytes, {
+              headers: { 'Content-Type': 'application/geo+json' },
+            })
+          : json(fixture.snapshot))
+  );
+  const client = new QueryClient();
+  const budget = new WeatherBudget();
+  const source = new RouteSigmetSource(client, { fetcher, budget });
+  owned.push({ source, client });
+  source.setSettings(settings);
+  return { source, client, budget, fetcher, ...fixture };
+}
+it('two_consumers_share_source_and_poll_while_visible_but_unfocused', async () => {
+  const { source, client, budget, fetcher } = setup();
+  expect(getRouteSigmetSource(client)).toBe(getRouteSigmetSource(client));
+  focusManager.setFocused(false);
+  const one = source.subscribe(() => {}),
+    two = source.subscribe(() => {});
+  await settle();
+  expect(source.snapshot().collection?.features).toHaveLength(1);
+  expect(
+    fetcher.mock.calls.filter(([p]) => !String(p).endsWith('.json'))
+  ).toHaveLength(1);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(
+    fetcher.mock.calls.filter(([p]) => !String(p).endsWith('.json'))
+  ).toHaveLength(2);
+  expect(
+    fetcher.mock.calls.filter(([p]) => String(p).endsWith('.json'))
+  ).toHaveLength(1);
+  one();
+  expect(source.snapshot().available).toBe(true);
+  two();
+  expect(budget.snapshot()).toMatchObject({
+    encoded: 0,
+    decoded: 0,
+    gpu: 0,
+    slots: 0,
+    waiting: 0,
+  });
+  expect(
+    client
+      .getQueryCache()
+      .findAll({ queryKey: ['aviation-weather', 'route-sigmets'] })
+  ).toHaveLength(0);
+});
+it('cancels hidden/offline/disabled work and catches up immediately on resume', async () => {
+  const { source, fetcher, budget } = setup();
+  const off = source.subscribe(() => {});
+  await settle();
+  source.setVisible(false);
+  await settle();
+  expect(source.snapshot().collection).toBeNull();
+  expect(budget.snapshot().decoded).toBe(0);
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(
+    fetcher.mock.calls.filter(([p]) => !String(p).endsWith('.json'))
+  ).toHaveLength(1);
+  source.setVisible(true);
+  await settle();
+  expect(source.snapshot().available).toBe(true);
+  source.setOnline(false);
+  await settle();
+  source.setOnline(true);
+  await settle();
+  expect(source.snapshot().available).toBe(true);
+  source.setSettings({ ...settings, sigmet: false, revision: 2 });
+  await settle();
+  expect(source.snapshot().collection).toBeNull();
+  expect(budget.snapshot().decoded).toBe(0);
+  off();
+});
+it('fetches a new immutable product immediately and never binds a missing replacement to old reports', async () => {
+  const { source, fetcher, snapshot, budget } = setup();
+  source.subscribe(() => {});
+  await settle();
+  snapshot.sigmet_product.instance_id = hash('9');
+  snapshot.sigmet_product.payload.path = `/api/aviation-weather/v1/products/${hash('9')}/sigmet.json`;
+  snapshot.generation_id = hash('8');
+  fetcher.mockImplementation(async (p) =>
+    String(p).endsWith('.json')
+      ? new Response('', { status: 404 })
+      : json(snapshot)
+  );
+  await source.refresh();
+  await settle();
+  expect(fetcher.mock.calls.some(([p]) => String(p).includes(hash('9')))).toBe(
+    true
+  );
+  expect(source.snapshot().snapshot?.generation_id).toBe(hash('8'));
+  expect(source.snapshot().collection).toBeNull();
+  expect(source.snapshot().available).toBe(false);
+  expect(source.snapshot().error).toBeTruthy();
+  expect(budget.snapshot().slots).toBe(0);
+});
+it('confirmed clear survives an earlier GET with tied revision and changed generation', async () => {
+  const { source, fetcher, snapshot } = setup();
+  source.subscribe(() => {});
+  await settle();
+  let late!: (r: Response) => void;
+  fetcher.mockImplementation(async (p) =>
+    String(p).endsWith('acknowledgement')
+      ? json({
+          context_key: hash('c'),
+          notice_key: hash('d'),
+          semantic_digest: hash('f'),
+          acknowledged: true,
+          state_revision: 2,
+          attention_order: 1,
+        })
+      : new Promise((r) => {
+          late = r;
+        })
+  );
+  const read = source.refresh();
+  await settle();
+  const change = {
+    context_key: hash('c'),
+    notice_key: hash('d'),
+    semantic_digest: hash('f'),
+    acknowledged: true,
+  };
+  await source.setAcknowledgement(change);
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(true);
+  snapshot.state_revision = 2;
+  snapshot.generation_id = hash('7');
+  late(json(snapshot));
+  await read;
+  await settle();
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(true);
+  expect(source.snapshot().snapshot?.generation_id).toBe(hash('b'));
+});
+it('does not acknowledge failed writes and refetches current context after conflict', async () => {
+  const { source, fetcher, snapshot } = setup();
+  source.subscribe(() => {});
+  await settle();
+  const change = {
+    context_key: hash('c'),
+    notice_key: hash('d'),
+    semantic_digest: hash('f'),
+    acknowledged: true,
+  };
+  fetcher.mockImplementation(async () => json({}, 503));
+  await expect(source.setAcknowledgement(change)).rejects.toThrow();
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(false);
+  snapshot.context.context_key = hash('6');
+  snapshot.generation_id = hash('5');
+  fetcher.mockImplementation(async (p) =>
+    String(p).endsWith('acknowledgement') ? json({}, 409) : json(snapshot)
+  );
+  await expect(source.setAcknowledgement(change)).rejects.toThrow();
+  await settle();
+  expect(source.snapshot().snapshot?.context?.context_key).toBe(hash('6'));
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(false);
+});
+it('uses anchored UTC and expires locally even when browser wall time moves backwards', async () => {
+  const { source, snapshot, budget } = setup();
+  snapshot.entries[0].expires_at_ms = NOW + 1000;
+  source.subscribe(() => {});
+  await settle();
+  vi.setSystemTime(NOW - 86400000);
+  await vi.advanceTimersByTimeAsync(1001);
+  expect(source.snapshot().nowMs).toBeGreaterThanOrEqual(NOW + 1000);
+  expect(source.snapshot().snapshot?.entries).toHaveLength(0);
+  await vi.advanceTimersByTimeAsync(3600000);
+  expect(source.snapshot().collection).toBeNull();
+  expect(budget.snapshot().decoded).toBe(0);
+});
+it('times out hung route reads and releases operation slots', async () => {
+  const { source, budget } = setup(async () => new Promise(() => {}));
+  source.subscribe(() => {});
+  await settle();
+  expect(budget.snapshot().slots).toBe(1);
+  await vi.advanceTimersByTimeAsync(10001);
+  expect(budget.snapshot().slots).toBe(0);
+  expect(source.snapshot().error).toBeTruthy();
+});
+it('keeps old parsed data accounted until its presentation releases the retained lease', async () => {
+  const { source, budget, snapshot, fetcher } = setup();
+  const unsubscribe = source.subscribe(() => {});
+  await settle();
+  const retained = source.snapshot().dataLease!.retain();
+  const oldBytes = budget.snapshot().decoded;
+  snapshot.sigmet_product.instance_id = hash('2');
+  snapshot.sigmet_product.payload.path = `/api/aviation-weather/v1/products/${hash('2')}/sigmet.json`;
+  const bytes = routeSnapshot().bytes;
+  fetcher.mockImplementation(async (p) =>
+    String(p).endsWith('.json')
+      ? new Response(bytes, {
+          headers: { 'Content-Type': 'application/geo+json' },
+        })
+      : json(snapshot)
+  );
+  await source.refresh();
+  await settle();
+  expect(budget.snapshot().decoded).toBeGreaterThan(oldBytes);
+  unsubscribe();
+  await settle();
+  expect(budget.snapshot().decoded).toBe(oldBytes);
+  retained.release();
+  expect(budget.snapshot().decoded).toBe(0);
+});
+it('rejects same-instance report references that do not exist in the admitted collection', async () => {
+  const { source, snapshot } = setup();
+  source.subscribe(() => {});
+  await settle();
+  snapshot.entries[0].feature_ids = ['wrong-generation-feature'];
+  await source.refresh();
+  await settle();
+  expect(source.snapshot().available).toBe(false);
+  expect(source.snapshot().collection).toBeNull();
+});
+it('retains the exact old collection when retaining a previously observed view after replacement', async () => {
+  const { source, budget, snapshot, fetcher, data } = setup();
+  const unsubscribe = source.subscribe(() => {});
+  await settle();
+  const old = source.snapshot().dataLease!;
+  const oldSize = budget.snapshot().decoded;
+  data.features[0].properties.raw_text = 'large report '.repeat(1000);
+  const bytes = new TextEncoder().encode(JSON.stringify(data));
+  snapshot.sigmet_product.payload.sha256 = weatherDigest(bytes);
+  snapshot.sigmet_product.payload.encoded_bytes = bytes.length;
+  snapshot.sigmet_product.payload.decoded_bytes = bytes.length * 4;
+  snapshot.sigmet_product.instance_id = hash('2');
+  snapshot.sigmet_product.payload.path = `/api/aviation-weather/v1/products/${hash('2')}/sigmet.json`;
+  fetcher.mockImplementation(async (p) =>
+    String(p).endsWith('.json')
+      ? new Response(bytes, {
+          headers: { 'Content-Type': 'application/geo+json' },
+        })
+      : json(snapshot)
+  );
+  await source.refresh();
+  await settle();
+  const retained = old.retain();
+  unsubscribe();
+  await settle();
+  expect(budget.snapshot().decoded).toBe(oldSize);
+  retained.release();
+  expect(budget.snapshot().decoded).toBe(0);
+});
+it('keeps confirmed revisions monotonic across later reads and tied generations', async () => {
+  const { source, snapshot, fetcher } = setup();
+  source.subscribe(() => {});
+  await settle();
+  const change = {
+    context_key: hash('c'),
+    notice_key: hash('d'),
+    semantic_digest: hash('f'),
+    acknowledged: true,
+  };
+  fetcher.mockImplementation(async () =>
+    json({ ...change, state_revision: 3, attention_order: 1 })
+  );
+  await source.setAcknowledgement(change);
+  fetcher.mockImplementation(async () => json(snapshot));
+  await source.refresh();
+  expect(source.snapshot().snapshot?.state_revision).toBe(3);
+  snapshot.state_revision = 3;
+  snapshot.generation_id = hash('4');
+  await source.refresh();
+  expect(source.snapshot().snapshot?.generation_id).toBe(hash('4'));
+  expect(source.snapshot().snapshot?.entries[0].acknowledged).toBe(true);
+});
+it('accounts immutable transfer bytes and releases them after cancellation', async () => {
+  const fixture = routeSnapshot();
+  const { source, budget } = setup(async (p) =>
+    String(p).endsWith('.json') ? new Promise(() => {}) : json(fixture.snapshot)
+  );
+  const unsubscribe = source.subscribe(() => {});
+  await settle();
+  expect(budget.snapshot().encoded).toBeGreaterThanOrEqual(
+    fixture.bytes.length
+  );
+  unsubscribe();
+  await settle();
+  expect(budget.snapshot()).toMatchObject({
+    encoded: 0,
+    decoded: 0,
+    slots: 0,
+    waiting: 0,
+  });
+});
+it('rechecks browser visibility when a previously idle source gains a subscriber', async () => {
+  const { source, fetcher } = setup();
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+  const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+  source.subscribe(() => {});
+  await settle();
+  expect(fetcher).not.toHaveBeenCalled();
+  hidden.mockReturnValue(false);
+  document.dispatchEvent(new Event('visibilitychange'));
+  await settle();
+  expect(source.snapshot().available).toBe(true);
+  online.mockReturnValue(false);
+  window.dispatchEvent(new Event('offline'));
+  await settle();
+  expect(source.snapshot().collection).toBeNull();
+  online.mockReturnValue(true);
+  window.dispatchEvent(new Event('online'));
+  await settle();
+  expect(source.snapshot().available).toBe(true);
+});
