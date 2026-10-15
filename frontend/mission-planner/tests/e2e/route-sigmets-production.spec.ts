@@ -198,7 +198,44 @@ test('independent Configuration and passive Overview: propagation, native spans,
       exact: true,
     });
     if (await explore.isVisible()) await explore.click();
-    const camera = await settledOverviewCamera(overview);
+    // A real manual gesture freezes automatic aircraft/route reframing.
+    const canvas = (await overview
+      .locator('.overview-globe canvas')
+      .boundingBox())!;
+    await overview.mouse.move(
+      canvas.x + canvas.width * 0.65,
+      canvas.y + canvas.height * 0.6
+    );
+    await overview.mouse.down();
+    await overview.mouse.move(
+      canvas.x + canvas.width * 0.65 + 35,
+      canvas.y + canvas.height * 0.65,
+      { steps: 5 }
+    );
+    await overview.mouse.up();
+    await expect(
+      overview.getByText('Route overview', { exact: true })
+    ).toHaveCount(0);
+    let camera = await settledOverviewCamera(overview),
+      stableFrames = 0;
+    await expect
+      .poll(
+        async () => {
+          const current = await overviewCamera(overview);
+          const delta = Math.max(
+            ...(['position', 'quaternion', 'target'] as const).flatMap((key) =>
+              current[key].map((value, index) =>
+                Math.abs(value - camera[key][index])
+              )
+            )
+          );
+          stableFrames = delta < 1e-11 ? stableFrames + 1 : 0;
+          camera = current;
+          return stableFrames;
+        },
+        { timeout: 15000, intervals: [100] }
+      )
+      .toBeGreaterThanOrEqual(3);
     const focus = await overview.evaluate(
       () => document.activeElement?.outerHTML
     );

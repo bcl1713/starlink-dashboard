@@ -29,9 +29,8 @@ class FixtureAwcTransport:
             "layer": layer,
             "source_generation": control.get("aviation_generation", 0),
         }
-        with Path("/control/aviation-events.jsonl").open(
-            "a"
-        ) as stream:  # noqa: ASYNC230 - tiny fixture ledger
+        events_path = Path("/control/aviation-events.jsonl")
+        with events_path.open("a") as stream:  # noqa: ASYNC230 - tiny fixture ledger
             stream.write(json.dumps(event) + "\n")
         if control.get("aviation_failure"):
             raise WeatherUnavailable()
