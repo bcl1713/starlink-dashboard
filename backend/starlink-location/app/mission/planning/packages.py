@@ -468,10 +468,16 @@ def stage_package(
                 h.installed_leg for h in manifest.leg_history if h.installed_leg
             )
         route_view = SimpleNamespace(get_route=route_models.get)
+        from app.mission.exporter.snapshot_views import POIView
+
+        poi_view = POIView(
+            tuple(json_bytes(_poi_record(p)) for p in store.poi_manager.list_pois())
+            + tuple(pois.values())
+        )
         for leg in installed:
             if leg.transports.planning_inputs is not None:
                 effective = prepare_effective_route(leg, route_view)
-                canonical_inputs(leg, effective)
+                canonical_inputs(leg, effective, poi_manager=poi_view)
         for leg in mission.legs:
             route = route_models.get(leg.route_id)
             if route is None or not route.points:

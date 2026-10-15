@@ -96,3 +96,40 @@ def test_unsupported_provenance_version_rejected():
             Mission(id="m", name="M", metadata={"itinerary_import": {"version": 999}}),
             None,
         )
+
+
+@pytest.mark.parametrize("packaged_only", [False, True])
+def test_clone_resolves_satellites_from_current_global_configuration(
+    importer, monkeypatch, packaged_only
+):  # noqa: F811
+    from app.models.poi import POICreate
+    from app.satellites.catalog import SatelliteCatalog
+
+    client, service = importer
+    monkeypatch.setattr("app.satellites.catalog._catalog", SatelliteCatalog())
+    satellite = service.poi_manager.create_poi(
+        POICreate(
+            name="X-configured", latitude=0, longitude=0, category="satellite", icon="X"
+        )
+    )
+    op = service.start(pdf_bytes(), [("r.kml", kml_bytes())], "poi-configured")
+    assert wait(client, op.id)["state"] == "committed"
+    mission = storage.load_mission_v2(op.mission_id)
+    store = PlanningStore(
+        service.mission_root, service.route_manager, service.poi_manager
+    )
+    stream = archive(mission, service)
+    if packaged_only:
+        service.poi_manager.delete_poi(satellite.id)
+        from app.mission.planning.packages import _poi_record
+
+        with ZipFile(stream, "a") as zf:
+            zf.writestr(
+                "pois/satellites.json", json.dumps({"pois": [_poi_record(satellite)]})
+            )
+    with ZipFile(stream) as zf:
+        plan = stage_package(zf, None, store.sources)
+    assert (
+        commit_package(plan, None).mission.legs[0].transports.initial_x_satellite_id
+        == "X-configured"
+    )
