@@ -13,13 +13,14 @@ import {
   type RouteSigmetEntry,
 } from '@/services/route-sigmets';
 import { AviationReport } from './AviationReport';
+import { sigmetReportLabel } from './sigmet-report-label';
 import './AviationWeather.css';
 
 const utc = (value: number) =>
   new Date(value).toISOString().replace(/Z$/, ' UTC');
 function label(report: AviationAdvisory) {
   const p = report.properties;
-  return `${p.issuer ?? 'Unknown issuer'} ${p.series ?? 'unknown series'} · ${p.phenomenon ?? 'Unknown phenomenon'}`;
+  return `${sigmetReportLabel([report])} · ${p.phenomenon ?? 'Unknown phenomenon'}`;
 }
 function routePosition(entry: RouteSigmetEntry) {
   return entry.spans.reduce(
@@ -61,31 +62,24 @@ export function RouteSigmetSettings({
           a.bulletin_key.localeCompare(b.bulletin_key)
       ) ?? [];
   const matched = new Set(entries.flatMap((entry) => entry.feature_ids));
-  const futureIds = new Set(snapshot?.future_feature_ids ?? []);
-  const unknownIds = new Set(
-    snapshot?.unresolved.map((item) => item.feature_id) ?? []
-  );
+  const unknownIds = new Set([
+    ...(snapshot?.unresolved.map((item) => item.feature_id) ?? []),
+    ...active.filter((report) => !report.geometry).map((report) => report.id),
+  ]);
   const unknown = active.filter(
-    (report) =>
-      unknownIds.has(report.id) &&
-      !matched.has(report.id) &&
-      !futureIds.has(report.id)
+    (report) => unknownIds.has(report.id) && !matched.has(report.id)
   );
   const future =
     collection?.features.filter(
       (report): report is AviationAdvisory =>
         'cancelled' in report.properties &&
         !report.properties.cancelled &&
-        futureIds.has(report.id) &&
         !matched.has(report.id) &&
         view.nowMs < report.properties.valid_from_ms &&
         view.nowMs < report.properties.expires_at_ms
     ) ?? [];
   const other = active.filter(
-    (report) =>
-      !matched.has(report.id) &&
-      !unknownIds.has(report.id) &&
-      !futureIds.has(report.id)
+    (report) => !matched.has(report.id) && !unknownIds.has(report.id)
   );
   const reportDetails = (report: AviationAdvisory) => (
     <details key={report.id}>
@@ -168,7 +162,7 @@ export function RouteSigmetSettings({
                   .map((id) => reports.get(id))
                   .filter((report): report is AviationAdvisory => !!report);
                 const report = boundReports[0];
-                const bulletinLabel = `${report ? label(report) : 'SIGMET report unavailable'} · ${entry.bulletin_key.slice(0, 8)}`;
+                const bulletinLabel = `${sigmetReportLabel(boundReports)}${report ? ` · ${report.properties.phenomenon ?? 'Unknown phenomenon'}` : ''} · ${entry.bulletin_key.slice(0, 8)}`;
                 const segments = [
                   ...new Set(entry.spans.map((span) => span.segment_index + 1)),
                 ].sort((a, b) => a - b);
@@ -223,11 +217,9 @@ export function RouteSigmetSettings({
               {unknown.map((report) => (
                 <div key={report.id}>
                   <p>
-                    {
-                      snapshot?.unresolved.find(
-                        (item) => item.feature_id === report.id
-                      )?.reason
-                    }
+                    {snapshot?.unresolved.find(
+                      (item) => item.feature_id === report.id
+                    )?.reason ?? (!report.geometry ? 'unlocated' : 'unknown')}
                   </p>
                   {reportDetails(report)}
                 </div>

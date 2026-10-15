@@ -1,7 +1,10 @@
 import { expect, it } from 'vitest';
 import * as THREE from 'three';
 import { routeSnapshot, hash } from '@/test/route-sigmet-fixtures';
-import { parseAviationFeatures } from '@/services/aviation-features';
+import {
+  parseAviationFeatures,
+  type AviationAdvisory,
+} from '@/services/aviation-features';
 import { routeSigmetSnapshotSchema } from '@/services/route-sigmets';
 import { NOW, advisory } from './fixtures';
 import { WeatherBudget } from './weather-budget';
@@ -255,3 +258,55 @@ it('reports an admitted unavailable source as unavailable rather than endless lo
   expect(presentation.view.drawing).toBeUndefined();
   presentation.dispose();
 });
+
+it.each([true, false])(
+  'keeps canonical notice labels stable across provider variant order (canonical=%s)',
+  (canonical) => {
+    const next = input();
+    const first = next.source.collection!.features[0] as AviationAdvisory;
+    const variant = {
+      ...first,
+      id: 'provider-forecast',
+      properties: {
+        ...first.properties,
+        series: 'OSCAR55F',
+        bulletin_series: canonical ? 'OSCAR55' : null,
+      },
+    };
+    next.source.collection!.features = [
+      variant,
+      {
+        ...first,
+        properties: {
+          ...first.properties,
+          series: 'OSCAR55',
+          bulletin_series: canonical ? 'OSCAR55' : null,
+        },
+      },
+    ];
+    const entry = next.source.snapshot!.entries[0];
+    entry.feature_ids = ['provider-forecast', 'test-advisory'];
+    const originalEntry = structuredClone(entry);
+    const originalReports = structuredClone(next.source.collection!.features);
+    for (const ids of [
+      ['provider-forecast', 'test-advisory'],
+      ['test-advisory', 'provider-forecast'],
+    ]) {
+      entry.feature_ids = ids;
+      const presentation = createSigmetPresentation(next, new WeatherBudget());
+      try {
+        expect(presentation.notices[0].label).toBe('TEST OSCAR55 · eeeeeeee');
+        expect(
+          presentation.notices[0].reports.map((report) => report.id)
+        ).toEqual(ids);
+        expect(presentation.notices[0].entry).toEqual({
+          ...originalEntry,
+          feature_ids: ids,
+        });
+        expect(next.source.collection!.features).toEqual(originalReports);
+      } finally {
+        presentation.dispose();
+      }
+    }
+  }
+);

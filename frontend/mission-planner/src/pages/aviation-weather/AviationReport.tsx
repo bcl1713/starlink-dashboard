@@ -89,8 +89,8 @@ function AdvisoryReport({ advisory }: { advisory: AviationAdvisory }) {
         {advisory.geometry ? '' : ' · unlocated'}
       </strong>
       <p>
-        Issuer {p.issuer ?? 'unknown'} · FIR {p.fir ?? 'unknown'} · series{' '}
-        {p.series ?? 'unknown'} · provider series{' '}
+        Issuer {p.issuer ?? 'unknown'} · FIR {p.fir ?? 'unknown'} · provider
+        series {p.series ?? 'unknown'} · canonical series{' '}
         {p.bulletin_series ?? 'unknown'} · revision {p.revision ?? 'unknown'}
         {p.amends ? ` · amends ${p.amends}` : ''}
       </p>

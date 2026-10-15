@@ -6,6 +6,7 @@ import {
 } from '@/services/aviation-features';
 import type { RouteSigmetEntry } from '@/services/route-sigmets';
 import type { RouteSigmetSourceView } from './route-sigmet-source';
+import { sigmetReportLabel } from './sigmet-report-label';
 import { optionalWeatherBudget, type WeatherBudget } from './weather-budget';
 import type { AviationLayerView } from './aviation-controller';
 import {
@@ -95,11 +96,10 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
   );
   const notices = pending.slice(0, 3).map((entry, index) => {
     const selected = entry.feature_ids.map((id) => byId.get(id)!);
-    const p = selected[0].properties;
     return {
       entry,
       reports: selected,
-      label: `${p.issuer ?? 'Unknown issuer'} ${p.series ?? 'unknown series'} · ${entry.bulletin_key.slice(0, 8)}`,
+      label: `${sigmetReportLabel(selected)} · ${entry.bulletin_key.slice(0, 8)}`,
       color: colors[index],
       intersectionUnknown: entry.feature_ids.some((id) => unknown.has(id)),
     };

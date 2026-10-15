@@ -219,7 +219,7 @@ it('lists matching bulletins in route order rather than attention order and labe
   const second = {
     ...advisory(),
     id: 'second',
-    properties: { ...advisory().properties, series: '2' },
+    properties: { ...advisory().properties, series: '2', bulletin_series: '2' },
   };
   state.setReports([advisory(), second]);
   state.setSnapshot({
@@ -269,7 +269,7 @@ it('separates unknown and future reports and preserves original UTC, source, bou
       ...a,
       properties: {
         ...a.properties,
-        bulletin_series: 'PROVIDER 7',
+        series: 'PROVIDER 7',
         issued_at_ms: NOW - 1000,
         revision: '2',
         amends: 'previous',
@@ -522,7 +522,7 @@ it('preserves every source variant under one matching notice and one acknowledge
       ...first,
       properties: {
         ...first.properties,
-        bulletin_series: 'PROVIDER FIRST',
+        series: 'PROVIDER FIRST',
         raw_text: 'TEST SIGMET\nVALID 061200/061300',
       },
     },
@@ -531,7 +531,7 @@ it('preserves every source variant under one matching notice and one acknowledge
       id: 'source-variant',
       properties: {
         ...first.properties,
-        bulletin_series: 'PROVIDER SECOND',
+        series: 'PROVIDER SECOND',
         raw_text: 'TEST   SIGMET  VALID 061200/061300',
       },
     },
@@ -576,3 +576,136 @@ it('preserves every source variant under one matching notice and one acknowledge
   expect(within(list).getAllByRole('article')).toHaveLength(2);
   expect(screen.getAllByRole('button', { name: /Show again/ })).toHaveLength(1);
 });
+
+it('distinguishes provider and canonical series in reports while using the canonical bulletin for actions', async () => {
+  const state = setup();
+  const first = advisory();
+  state.setReports([
+    {
+      ...first,
+      properties: {
+        ...first.properties,
+        series: 'OSCAR55F',
+        bulletin_series: 'OSCAR55',
+      },
+    },
+  ]);
+  state.mount();
+  const button = await screen.findByRole('button', { name: /Clear advisory/ });
+  const list = screen.getByRole('list', {
+    name: 'Matching route SIGMET bulletins',
+  });
+  expect(list).toHaveTextContent(
+    'provider series OSCAR55F · canonical series OSCAR55'
+  );
+  expect(button).toHaveAccessibleName(/TEST OSCAR55 ·/);
+  fireEvent.click(button);
+  await screen.findByRole('button', { name: /Show again/ });
+  expect(state.writes).toEqual([
+    {
+      context_key: hash('c'),
+      notice_key: hash('d'),
+      semantic_digest: hash('f'),
+      acknowledged: true,
+    },
+  ]);
+});
+it.each([
+  ['no-route', 'future'],
+  ['no-route', 'unlocated'],
+  ['unavailable', 'future'],
+  ['unavailable', 'unlocated'],
+] as const)(
+  'keeps %s %s source reports reviewable without route metadata',
+  async (status, kind) => {
+    const state = setup();
+    const first = advisory();
+    const future = {
+      ...first,
+      id: 'future',
+      properties: {
+        ...first.properties,
+        valid_from_ms: NOW + 1000,
+        raw_text: 'FUTURE WITHOUT ROUTE',
+      },
+    };
+    state.setReports([
+      {
+        ...first,
+        id: 'unlocated',
+        geometry: null,
+        properties: {
+          ...first.properties,
+          raw_text: 'UNLOCATED WITHOUT ROUTE',
+        },
+      },
+      future,
+      {
+        ...future,
+        id: 'cancelled-future',
+        properties: {
+          ...future.properties,
+          cancelled: true,
+          raw_text: 'CANCELLED FUTURE',
+        },
+      },
+      {
+        ...first,
+        id: 'expired',
+        geometry: null,
+        properties: {
+          ...first.properties,
+          valid_from_ms: NOW - 1000,
+          valid_to_ms: NOW,
+          expires_at_ms: NOW,
+          raw_text: 'EXPIRED UNLOCATED',
+        },
+      },
+      {
+        ...first,
+        id: 'cancelled',
+        geometry: null,
+        properties: {
+          ...first.properties,
+          cancelled: true,
+          raw_text: 'CANCELLED UNLOCATED',
+        },
+      },
+    ]);
+    state.setSnapshot({
+      ...state.fixture.snapshot,
+      context: status === 'no-route' ? null : state.fixture.snapshot.context,
+      entries: [],
+      status,
+      complete: false,
+      unresolved: [],
+      future_feature_ids: [],
+      reason: 'Route geometry unavailable',
+    });
+    state.mount();
+    const reports = await screen.findByRole('region', {
+      name:
+        kind === 'future'
+          ? 'Future SIGMET reports'
+          : 'Route intersection unknown',
+    });
+    expect(reports).toHaveTextContent(
+      kind === 'future' ? 'FUTURE WITHOUT ROUTE' : 'UNLOCATED WITHOUT ROUTE'
+    );
+    if (kind === 'unlocated') expect(reports).toHaveTextContent('unlocated');
+    expect(within(reports).queryByRole('button')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Clear advisory|Show again/ })
+    ).toBeNull();
+    expect(
+      screen.queryByRole('region', { name: 'Other current SIGMET reports' })
+    ).toBeNull();
+    for (const raw of [
+      'CANCELLED FUTURE',
+      'EXPIRED UNLOCATED',
+      'CANCELLED UNLOCATED',
+    ])
+      expect(screen.queryByText(raw)).toBeNull();
+    expect(state.writes).toEqual([]);
+  }
+);
