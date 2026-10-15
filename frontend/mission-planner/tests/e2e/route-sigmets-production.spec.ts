@@ -276,23 +276,42 @@ test('independent Configuration and passive Overview: propagation, native spans,
     const afterCamera = await overviewCamera(overview);
     for (const key of ['position', 'quaternion', 'target'] as const)
       for (const [index, value] of afterCamera[key].entries())
-        expect(value).toBeCloseTo(camera[key][index], 10);
-    expect(afterCamera.zoom).toBe(camera.zoom);
+        expect.soft(value).toBeCloseTo(camera[key][index], 10);
+    expect.soft(afterCamera.zoom).toBe(camera.zoom);
     scenarios.camera = { before: camera, after: afterCamera };
-    expect(
-      await overview.evaluate(() => document.activeElement?.outerHTML)
-    ).toBe(focus);
+    expect
+      .soft(await overview.evaluate(() => document.activeElement?.outerHTML))
+      .toBe(focus);
     for (const [name, size] of [
       ['desktop', { width: 1920, height: 1080 }],
       ['mobile', { width: 390, height: 844 }],
     ] as const) {
       await overview.setViewportSize(size);
       await expect(notices.getByRole('article')).toHaveCount(3);
-      await expect(overview.getByLabel('Map status')).toBeVisible();
+      // Map status is exception-only; a valid route can have no exceptions.
+      await expect
+        .soft(overview.getByLabel('Planned satellite', { exact: true }))
+        .toBeVisible();
+      await expect
+        .soft(
+          overview.getByRole('complementary', {
+            name: 'Operational clocks',
+            exact: true,
+          })
+        )
+        .toBeVisible();
+      await expect
+        .soft(
+          overview.getByRole('region', {
+            name: 'Aviation weather status',
+            exact: true,
+          })
+        )
+        .toBeVisible();
       if (name === 'mobile')
-        expect(
-          await notices.evaluate((n) => !n.closest('.overview-globe'))
-        ).toBe(true);
+        expect
+          .soft(await notices.evaluate((n) => !n.closest('.overview-globe')))
+          .toBe(true);
       await overview.screenshot({
         path: info.outputPath(`route-sigmets-${name}.png`),
         fullPage: true,
