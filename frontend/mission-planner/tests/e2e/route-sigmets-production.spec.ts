@@ -1290,6 +1290,7 @@ test('timing-only encounter context survives altitude-free routes and plan edits
       .first()
       .getByText('Details', { exact: true })
       .click();
+    await expect(overview.getByLabel('Crossing details').first()).toBeVisible();
     await overview.screenshot({
       path: info.outputPath('encounter-live-desktop.png'),
     });
@@ -1419,9 +1420,13 @@ test('timing-only encounter context survives altitude-free routes and plan edits
     quiet = await snapshot(request);
     expect(quiet.selected_entries).toHaveLength(1);
     expect(quiet.selected_entries[0]).not.toHaveProperty('encounter');
-    await expect(overview.getByText('Crossing time unknown')).toBeVisible({
-      timeout: 8000,
+    const selectedOnly = overview.getByRole('article').filter({
+      has: overview.getByText('Selected', { exact: true }),
     });
+    await expect(selectedOnly).toHaveCount(1, { timeout: 8000 });
+    await expect(
+      selectedOnly.getByText('Crossing time unknown', { exact: true })
+    ).toBeVisible();
     proof.selected_only_unknown = true;
     expect(errors).toEqual([]);
     expect(Object.values(proof).every(Boolean)).toBe(true);
