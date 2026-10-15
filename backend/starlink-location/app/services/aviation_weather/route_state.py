@@ -26,8 +26,8 @@ from app.models.route_sigmets import (
     NoticeSelection,
     TextId,
 )
-from app.services.aviation_weather.route_identity import BulletinGroup, notice_key
 from app.services.aviation_weather.relations import cancellation_matches
+from app.services.aviation_weather.route_identity import BulletinGroup, notice_key
 
 MAX_CONTEXTS = 8
 MAX_RECORDS = 4000

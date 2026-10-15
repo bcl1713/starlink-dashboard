@@ -25,11 +25,11 @@ async def test_selection_endpoint_returns_snapshot_and_no_store_conflicts(tmp_pa
         store.update({"sigmet": True})
         first = await service.read()
         entry = first.entries[0]
-        change = dict(
-            context_key=first.context.context_key,
-            bulletin_key=entry.bulletin_key,
-            semantic_digest=entry.semantic_digest,
-        )
+        change = {
+            "context_key": first.context.context_key,
+            "bulletin_key": entry.bulletin_key,
+            "semantic_digest": entry.semantic_digest,
+        }
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app_for(service, weather)),
             base_url="http://test",
