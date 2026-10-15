@@ -5,13 +5,14 @@ import { positionOverviewDisclosure } from './overview-label-dom';
 
 interface ContentProps {
   id: string;
-  kind: 'poi' | 'adsb' | 'gep' | 'satellite';
+  kind: 'poi' | 'adsb' | 'gep' | 'satellite' | 'sigmet';
   text: string;
   priority?: number;
   poiId?: string;
   hex?: string;
   title?: string;
   markerRadiusPixels?: number;
+  color?: string;
 }
 
 export function OverviewMapLabelContent({
@@ -23,6 +24,7 @@ export function OverviewMapLabelContent({
   hex,
   title,
   markerRadiusPixels = 17,
+  color,
 }: ContentProps) {
   const label = text.replace(/\s+/g, ' ').trim();
   const root = useRef<HTMLDivElement>(null);
@@ -53,13 +55,17 @@ export function OverviewMapLabelContent({
         height="1"
       >
         <path className="overview-label-stick-shadow" />
-        <path data-label-leader="true" />
+        <path
+          data-label-leader="true"
+          style={color ? { stroke: color } : undefined}
+        />
       </svg>
       <span
         className="globe-marker-label"
         data-label-source="true"
         data-poi-label={poiId}
         data-adsb-label={hex}
+        style={color ? { borderColor: color } : undefined}
         title={title ?? label}
       >
         {label}

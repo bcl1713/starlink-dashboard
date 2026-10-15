@@ -22,6 +22,7 @@ import { useSigmetPresentation } from './aviation-weather/route-sigmet-presentat
 import { RouteSigmetNotices } from './aviation-weather/RouteSigmetNotices';
 import { useAviationWeather } from '@/hooks/useAviationWeather';
 import { AviationStatus } from './aviation-weather/AviationStatus';
+import { SigmetMapLabels } from './aviation-weather/SigmetMapLabels';
 import { AviationLayer } from './aviation-weather/AviationLayer';
 import { AviationDetails } from './aviation-weather/AviationDetails';
 import {
@@ -1193,6 +1194,12 @@ export function OverviewPage() {
             onSelect={inspectWeather}
             onVisibleSigmets={updateVisibleSigmets}
           />
+          {aviationSettings?.sigmet && (
+            <SigmetMapLabels
+              labels={sigmetPresentation.mapLabels}
+              globeOccluder={globeOccluder}
+            />
+          )}
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
               kind="countries"

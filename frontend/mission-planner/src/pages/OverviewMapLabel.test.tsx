@@ -266,3 +266,21 @@ it('protects against the fractional painted size of an open disclosure', () => {
   view.unmount();
   stage.remove();
 });
+
+it('gives SIGMET callouts the shared POI treatment with the advisory color', () => {
+  const { container } = render(
+    <OverviewMapLabelContent
+      id="sigmet:one"
+      kind="sigmet"
+      text="KZNY R1"
+      color="#7dd3fc"
+    />
+  );
+  const label = screen.getByText('KZNY R1');
+  expect(label.className).toBe('globe-marker-label');
+  expect(label.style.borderColor).toBe('rgb(125, 211, 252)');
+  expect(
+    container.querySelector<SVGElement>('[data-label-leader]')!.style.stroke
+  ).toBe('rgb(125, 211, 252)');
+  expect(container.querySelector('[data-label-kind="sigmet"]')).not.toBeNull();
+});

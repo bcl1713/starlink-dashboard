@@ -31,7 +31,14 @@ export type SigmetPresentationInput = {
   routePoints: readonly SigmetRoutePoint[];
   attentionPage?: number;
 };
+export type SigmetMapLabel = {
+  id: string;
+  text: string;
+  color: string;
+  position: [number, number, number];
+};
 export type SigmetPresentation = {
+  mapLabels: SigmetMapLabel[];
   view: AviationLayerView;
   notices: (SigmetNotice & { entry: RouteSigmetEntry })[];
   attentionItems: SigmetAttentionItem[];
@@ -114,6 +121,7 @@ function describe(input: SigmetPresentationInput): SigmetPresentation {
       intersectionUnknown: item.entry.feature_ids.some((id) => unknown.has(id)),
     }));
   return {
+    mapLabels: [],
     attentionItems,
     visibleItems,
     view: bound
@@ -197,6 +205,12 @@ export function createSigmetPresentation(
         input.routePoints,
         budget
       );
+      presentation.mapLabels.push({
+        id: `sigmet:${notice.entry.notice_key}`,
+        text: notice.label,
+        color: notice.color,
+        position: highlight.labelPosition,
+      });
       drawings.push(highlight);
       object.add(highlight.object);
     } catch {
