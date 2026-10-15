@@ -8,6 +8,7 @@ from app.models.route_sigmets import (
     RouteSigmetEntry,
     RouteSigmetSnapshot,
     SelectedSigmetEntry,
+    SigmetSelectionCandidate,
     UnresolvedFeature,
 )
 from app.services.overview_weather.protocol import WeatherUnavailable
@@ -196,6 +197,7 @@ class RouteSigmetService:
         *,
         entries=None,
         selected_entries=None,
+        selection_candidates=None,
         unresolved=None,
         future=None,
         omitted=0,
@@ -225,6 +227,7 @@ class RouteSigmetService:
             truncated=False,
             entries=entries,
             selected_entries=selected_entries or [],
+            selection_candidates=selection_candidates or [],
             unresolved=unresolved,
             future_feature_ids=future or [],
             omitted_features=omitted,
@@ -397,6 +400,9 @@ class RouteSigmetService:
             status,
             entries=entries,
             selected_entries=selected_entries,
+            selection_candidates=[SigmetSelectionCandidate(
+                bulletin_key=g.bulletin_key, semantic_digest=g.semantic_digest,
+                feature_ids=g.feature_ids) for g in eligible],
             unresolved=list(unresolved.values()),
             omitted=omitted,
             state_revision=state.state_revision,

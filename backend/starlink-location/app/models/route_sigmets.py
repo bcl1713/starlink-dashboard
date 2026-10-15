@@ -114,6 +114,12 @@ class GeometryResult(Contract):
         return self
 
 
+class SigmetSelectionCandidate(Contract):
+    bulletin_key: Hash
+    semantic_digest: Hash
+    feature_ids: list[TextId] = Field(min_length=1, max_length=MAX_ADVISORIES)
+
+
 class SelectedSigmetEntry(Contract):
     notice_key: Hash
     bulletin_key: Hash
@@ -154,6 +160,7 @@ class RouteSigmetSnapshot(Contract):
     truncated: Literal[False]
     entries: list[RouteSigmetEntry] = Field(max_length=MAX_ADVISORIES)
     selected_entries: list[SelectedSigmetEntry] = Field(default_factory=list, max_length=MAX_ADVISORIES)
+    selection_candidates: list[SigmetSelectionCandidate] = Field(default_factory=list, max_length=MAX_ADVISORIES)
     unresolved: list[UnresolvedFeature] = Field(max_length=MAX_ADVISORIES)
     future_feature_ids: list[TextId] = Field(max_length=MAX_ADVISORIES)
     omitted_features: Time
@@ -170,6 +177,8 @@ class RouteSigmetSnapshot(Contract):
         all_entries = [*self.entries, *self.selected_entries]
         unique([entry.notice_key for entry in all_entries], "notice keys")
         unique([entry.bulletin_key for entry in all_entries], "bulletin keys")
+        unique([entry.bulletin_key for entry in self.selection_candidates], 'selection bulletin keys')
+        unique([feature for entry in self.selection_candidates for feature in entry.feature_ids], 'selection feature IDs')
         unique(
             [feature for entry in all_entries for feature in entry.feature_ids],
             "entry feature IDs",

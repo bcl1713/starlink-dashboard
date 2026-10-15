@@ -7,13 +7,14 @@ import {
 } from '@/services/aviation-features';
 import { earthPoint } from './aviation-renderer';
 import { isStarMarkerVisible } from '../overview-star-marker-rendering';
+import { pickSigmetFeatures } from './sigmet-picking';
 
 export type AviationSelection = { layer: AviationLayer; id: string };
 export const aviationSelectionKey = (selection: AviationSelection) =>
   `${selection.layer}:${selection.id}`;
 
 export function inspectionReports(view: AviationView) {
-  return (['metar', 'taf'] as const).flatMap((layer) => {
+  return (['metar', 'taf', 'sigmet'] as const).flatMap((layer) => {
     const item = view.layers[layer];
     if (!item.data || !['current', 'stale'].includes(item.state)) return [];
     return activeFeatures(item.data, layer, view.now).map((feature) => ({
@@ -26,7 +27,7 @@ export function resolveAviationSelection(
   view: AviationView,
   selection: AviationSelection | null
 ): AviationFeature | null {
-  if (!selection || selection.layer === 'sigmet') return null;
+  if (!selection) return null;
   const item = view.layers[selection.layer];
   if (!item.data || !['current', 'stale'].includes(item.state)) return null;
   return (
@@ -80,7 +81,7 @@ export function pickAviationFeatures(
   )
     return [];
   camera.updateMatrixWorld();
-  const picked: AviationSelection[] = [];
+  const picked: AviationSelection[] = pickSigmetFeatures(view, camera, point, viewport);
   for (const layer of ['metar', 'taf'] as const) {
     const item = view.layers[layer];
     if (

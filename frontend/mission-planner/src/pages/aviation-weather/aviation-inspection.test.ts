@@ -10,9 +10,17 @@ import { emptyAviationView, type AviationView } from './aviation-controller';
 import { parseAviationFeatures } from '@/services/aviation-features';
 import { NOW, station, advisory, collection } from './fixtures';
 import type { AviationLayer } from '@/services/aviation-weather';
+import { visibleSigmetReports } from './sigmet-picking';
 
 const viewport = { width: 1000, height: 1000 };
-it('does not pick the production advisory interior at close zoom', () => {
+it('limits the keyboard inspection list to SIGMETs visible on the map', () => {
+  const view = viewFor([advisory()], 'sigmet');
+  try {
+    expect(visibleSigmetReports(view, cameraAt(0.5, 0.5), viewport)).toEqual([{layer:'sigmet',id:'test-advisory'}]);
+    expect(visibleSigmetReports(view, cameraAt(0,180), viewport)).toEqual([]);
+  } finally { dispose(view); }
+});
+it('picks the visible advisory interior at close zoom', () => {
   const report = advisory();
   report.geometry.coordinates = [
     [
@@ -37,7 +45,7 @@ it('does not pick the production advisory interior at close zoom', () => {
   try {
     expect(
       pickAviationFeatures(view, camera, { x: 500, y: 500 }, viewport)
-    ).toEqual([]);
+    ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
   } finally {
     dispose(view);
   }
@@ -147,7 +155,7 @@ it('picks co-located station products in CSS pixels while excluding far-side sta
     dispose(view);
   }
 });
-it('does not expose overlapping bulletins through Overview picking', () => {
+it('exposes overlapping bulletins while excluding holes and the far side', () => {
   const first = advisory(),
     second = { ...advisory(), id: 'overlap' };
   const view = viewFor([first, second], 'sigmet');
@@ -161,7 +169,7 @@ it('does not expose overlapping bulletins through Overview picking', () => {
       )
         .map((f) => f.id)
         .sort()
-    ).toEqual([]);
+    ).toEqual(['overlap', 'test-advisory']);
     expect(
       pickAviationFeatures(view, cameraAt(2, 2), { x: 500, y: 500 }, viewport)
     ).toEqual([]);
@@ -177,7 +185,7 @@ it('does not expose overlapping bulletins through Overview picking', () => {
     dispose(view);
   }
 });
-it('excludes both halves of an antimeridian advisory from Overview picking', () => {
+it('picks both halves of an antimeridian advisory', () => {
   const a = {
     ...advisory(),
     geometry: {
@@ -214,19 +222,19 @@ it('excludes both halves of an antimeridian advisory from Overview picking', () 
           { x: 500, y: 500 },
           viewport
         )
-      ).toEqual([]);
+      ).toEqual([{layer: 'sigmet', id: 'test-advisory'}]);
   } finally {
     dispose(view);
   }
 });
 
-it('excludes SIGMETs from the Overview chooser and rejects a legacy local selection', () => {
+it('resolves admitted SIGMET report selection', () => {
   const view = viewFor([advisory()], 'sigmet');
   try {
-    expect(inspectionReports(view)).toEqual([]);
+    expect(inspectionReports(view).map(r => r.selection)).toEqual([{layer: 'sigmet', id: 'test-advisory'}]);
     expect(
-      resolveAviationSelection(view, { layer: 'sigmet', id: 'test-advisory' })
-    ).toBeNull();
+      resolveAviationSelection(view, { layer: 'sigmet', id: 'test-advisory' })?.id
+    ).toBe('test-advisory');
   } finally {
     dispose(view);
   }

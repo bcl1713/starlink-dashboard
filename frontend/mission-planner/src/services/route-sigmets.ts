@@ -92,6 +92,8 @@ export const routeSigmetSnapshotSchema = z
     truncated: z.literal(false),
     entries: z.array(routeSigmetEntrySchema).max(500),
     selected_entries: z.array(selectedSigmetEntrySchema).max(500).default([]),
+    selection_candidates: z.array(z.strictObject({bulletin_key: hash, semantic_digest: hash,
+      feature_ids: z.array(id).min(1).max(500)})).max(500).default([]),
     unresolved: z.array(unresolved).max(500),
     future_feature_ids: z.array(id).max(500),
     omitted_features: integer,

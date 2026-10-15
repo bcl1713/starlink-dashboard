@@ -80,6 +80,7 @@ async def test_select_nonintersection_shared_restart_ack_and_reopen(tmp_path):
         store.update({'sigmet': True})
         first = await service.read()
         assert not first.entries
+        assert first.selection_candidates[0].feature_ids == ['a']
         group = group_bulletins(reports)[0]
         change = NoticeSelection(context_key=first.context.context_key,
             bulletin_key=group.bulletin_key, semantic_digest=group.semantic_digest)

@@ -298,6 +298,9 @@ export function OverviewPage() {
   >([]);
   const [selectedWeather, setSelectedWeather] =
     useState<AviationSelection | null>(null);
+  const [focusedSigmet, setFocusedSigmet] = useState<string | null>(null);
+  const [visibleSigmets, setVisibleSigmets] = useState<readonly AviationSelection[]>([]);
+  const updateVisibleSigmets = useCallback((items: readonly AviationSelection[]) => setVisibleSigmets(items), []);
   const weatherReturnFocus = useRef<HTMLElement | null>(null);
   const closeWeather = useCallback(() => setSelectedWeather(null), []);
   const inspectWeather = useCallback(
@@ -955,6 +958,8 @@ export function OverviewPage() {
           />
           <div className="overview-display-controls">
             <OverviewFullscreenControl />
+            {visibleSigmets.length > 0 && <button type="button" className="sr-only focus:not-sr-only"
+              onClick={() => inspectWeather(visibleSigmets)}>Inspect SIGMET on map</button>}
           </div>
           <div className="overview-map-overlays">
             {showMapStatus && <OverviewMapStatus messages={mapMessages} />}
@@ -1075,7 +1080,8 @@ export function OverviewPage() {
           view={aviation}
           candidates={weatherCandidates}
           selection={selectedWeather}
-          onSelectionChange={setSelectedWeather}
+          onSelectionChange={(selection) => { setSelectedWeather(selection); setWeatherCandidates([selection]); }}
+          onSigmetFocused={setFocusedSigmet}
           onClose={closeWeather}
           returnFocusRef={weatherReturnFocus}
           portalContainer={document.body}
@@ -1139,6 +1145,7 @@ export function OverviewPage() {
             view={aviation}
             selection={selectedWeather}
             onSelect={inspectWeather}
+            onVisibleSigmets={updateVisibleSigmets}
           />
           {countryBoundaries.data && (
             <OverviewBoundaryLayer
