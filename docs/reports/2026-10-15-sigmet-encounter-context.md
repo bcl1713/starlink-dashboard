@@ -80,3 +80,49 @@ Production acceptance uses synthetic controls and a pinned dated upstream
 capture with software WebGL. It does not establish current upstream availability
 or target-workstation performance. Subsequent documentation-only commits cite
 the tested product candidate; they claim no separate production image run.
+
+## Operator presentation follow-up
+
+Product candidate `823f2d08827ab01bb9e0dcbdc550851598cb5159` replaces the
+technical details presentation described above with direct flight information:
+“Crossing expected” with UTC times, “No crossing expected while valid”, or
+“Crossing time unknown”. Adjacent passage intervals are grouped; separate
+crossings and unavailable timing remain explicit. Details retain readable
+validity, hazard, reported vertical bounds and an expandable original bulletin.
+Delivery versions, revision hashes, calculation metadata and explanatory
+altitude disclaimers are removed from the operator display.
+
+The original screenshots were taken after a deliberate next-day timing edit,
+so they showed only the negative result despite positive assertions earlier in
+the scenario. The new run captures positive overlap before that edit, negative
+results after it, and unknown timing after removing a waypoint time. Separate
+fail-closed proof flags require these captures. Desktop and mobile screenshots
+were visually inspected, including expanded Details.
+
+Validation for this candidate:
+
+- Frontend: 223 files / 1,640 tests passed; lint and production build passed.
+- Acceptance-runner tests: 43 passed, including missing-screenshot-proof failures.
+- Canonical static gate passed, including documentation links and typing policy.
+- All five production browser scenarios passed in 3.6 minutes; all eleven
+  encounter proof flags passed.
+- Independent scoped review found no concrete correctness issues.
+- Backend product code is unchanged from the scientific-suite result above.
+
+Preserved evidence, relative to the retained feature worktree:
+
+```text
+test-results/route-sigmets-dcf301fd8838/823f2d08827ab01bb9e0dcbdc550851598cb5159/
+```
+
+The timing scenario directory contains `encounter-overlap-desktop.png`,
+`encounter-overlap-mobile.png`, `encounter-overlap-configuration.png`,
+`encounter-no-overlap-desktop.png`, and desktop/mobile unknown screenshots.
+`sigmet-encounter-states.json` records the corresponding underlying states.
+Follow-up test logs and the independent host cleanup verification remain in
+`test-results/sigmet-encounter-visual-review/`.
+
+Both this run and the cancelled earlier screenshot-only run have empty runtime
+inventories, free ports and removed disposable sources. An approved host check
+independently confirmed cleanup and absence of worktree runtime workers. The
+feature worktree and review evidence remain available for the open PR.
