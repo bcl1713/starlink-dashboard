@@ -363,12 +363,23 @@ test('independent Configuration and passive Overview: propagation, native spans,
       });
     }
     await overview.setViewportSize({ width: 1920, height: 1080 });
+    await expect(overview.locator('.overview-page')).toHaveAttribute(
+      'data-layout',
+      'desktop'
+    );
     await overview
       .getByRole('button', { name: 'Enter fullscreen overview' })
       .click();
     await expect
       .poll(() => overview.evaluate(() => !!document.fullscreenElement))
       .toBe(true);
+    await expect(overview.locator('.overview-page')).toHaveAttribute(
+      'data-layout',
+      'desktop'
+    );
+    expect(await overview.evaluate(() => [innerWidth, innerHeight])).toEqual([
+      1920, 1080,
+    ]);
     expect(
       await notices.evaluate((n) => !!document.fullscreenElement?.contains(n))
     ).toBe(true);

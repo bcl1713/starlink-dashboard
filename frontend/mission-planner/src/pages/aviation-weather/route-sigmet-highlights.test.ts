@@ -60,6 +60,9 @@ it('samples fractions on the original high-latitude great circle and never joins
     (o) => o.type === 'Sprite'
   ) as THREE.Sprite;
   expect(sprite.name).toContain('TEST 1');
+  const sibling = new THREE.Sprite();
+  expect(sprite.geometry).toBe(sibling.geometry);
+  sibling.material.dispose();
   expect(sprite.material.depthTest).toBe(true);
   const texture = sprite.material.map!;
   const disposed = vi.fn();

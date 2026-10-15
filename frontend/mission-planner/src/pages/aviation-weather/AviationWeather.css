@@ -244,11 +244,11 @@
   line-height: 1.35;
 }
 .route-sigmet-notices p {
-  margin: 0.15rem 0;
+  margin: 0.1rem 0;
 }
 .route-sigmet-notice {
   margin-top: 0.35rem;
-  padding: 0.3rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   border-left: 3px solid;
   background: #101c2be8;
 }

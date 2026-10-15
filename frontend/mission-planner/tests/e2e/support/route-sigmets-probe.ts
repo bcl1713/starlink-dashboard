@@ -30,6 +30,7 @@ export async function routeSigmetSnapshot(page: Page, watch = false) {
       points: number[];
     }[] = [];
     const resources: string[] = [];
+    const sharedResources: string[] = [];
     owner?.traverse((node) => {
       const drawable = node as Object3D & {
         geometry?: BufferGeometry;
@@ -48,7 +49,11 @@ export async function routeSigmetSnapshot(page: Page, watch = false) {
             target.__sigmetDisposed!.push(resource.uuid)
           );
       };
-      if (geometry) observe(geometry);
+      // THREE.Sprite.geometry is the module-wide singleton (_geometry in
+      // three/src/objects/Sprite.js). Materials and label textures are owned.
+      if (geometry && node.type === 'Sprite')
+        sharedResources.push(geometry.uuid);
+      else if (geometry) observe(geometry);
       for (const material of materials) {
         observe(material);
         const map = (material as Material & { map?: Texture }).map;
@@ -76,6 +81,7 @@ export async function routeSigmetSnapshot(page: Page, watch = false) {
       present: !!owner,
       objects,
       resources,
+      sharedResources,
       disposed: [...target.__sigmetDisposed],
       budget: target.__sigmetBudget?.(),
       calls: state?.gl.info.render.calls ?? 0,
