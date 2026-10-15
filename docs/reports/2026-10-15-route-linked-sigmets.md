@@ -3,7 +3,7 @@
 ## Result and provenance
 
 Production acceptance passed all three browser tests on committed candidate
-`536cf006a7ed50f68a37b75ca5a3efaf53c9f174`. The no-cache production images and
+`9d7d99c9abebc1169fe87d05d4142a353943c9d4`. The no-cache production images and
 browser test sources used that same archive. The subsequent evidence commit
 changes documentation only; it does not claim a separate image run for its SHA.
 This report distinguishes deterministic controls from the dated real AWC replay;
@@ -107,12 +107,12 @@ a PASS file. Browser tests retain the zero-unhandled-error assertion.
 ## Gates and ownership
 
 Accepted evidence directory:
-`test-results/route-sigmets-378840484cec/536cf006a7ed50f68a37b75ca5a3efaf53c9f174/`.
+`test-results/route-sigmets-2245397b17dc/9d7d99c9abebc1169fe87d05d4142a353943c9d4/`.
 `PASS.json` was written after `cleanup.json` verified teardown. The retained
 `candidate.json`, `images.log`, `proofs.json`, browser report, native snapshots,
 source-request ledger, raw capture, derived normalization and screenshots
 provide provenance. Archive SHA-256:
-`0222405461f537d7cfee4f42000dfd7544457eb3a78df807cd934823db40ff2f`.
+`d07fbb769d493e41f9ae7bd56d15352e20f2e76d37688f805dd10bba55f569bc`.
 
 | Gate                                                       | Result                                                  |
 | ---------------------------------------------------------- | ------------------------------------------------------- |
@@ -122,16 +122,16 @@ provide provenance. Archive SHA-256:
 | Runner failure, timeout, ownership and provenance controls | 25 passed                                               |
 | Changed Python Black / Ruff                                | Passed                                                  |
 | Changed-file Prettier / Markdown / filename checks         | Passed                                                  |
-| Production Nginx/native WebGL browser acceptance           | 3 passed in 2.6 minutes                                 |
+| Production Nginx/native WebGL browser acceptance           | 3 passed in 2.7 minutes                                 |
 | Dated real AWC replay                                      | 151 normalized features; native outlines/spans verified |
 | Unhandled browser errors                                   | Zero                                                    |
 
 | Successful Configuration save | Overview convergence |
 | ----------------------------- | -------------------- |
-| Enable                        | 4,480 ms             |
-| Intersecting-only filter      | 3,469 ms             |
-| Clear                         | 1,383 ms             |
-| Show again                    | 4,960 ms             |
+| Enable                        | 4,615 ms             |
+| Intersecting-only filter      | 3,911 ms             |
+| Clear                         | 901 ms               |
+| Show again                    | 6,274 ms             |
 
 All three cards fit within the actual viewport and rail. After three consecutive
 stable geometry samples, the third card ended at y=1044.1 on desktop and y=933.1
@@ -144,14 +144,15 @@ Observed shared-budget peaks were 140,178 encoded bytes, 12,197,124 decoded
 bytes, 1,615,716 GPU bytes and three slots, below the 16/32/16 MiB and four-slot
 caps. Both clients shared one initial-generation SIGMET source acquisition. Two
 hidden/offline cycles and unmount disposed all probed owned resources; after
-unmount encoded, decoded and GPU use were zero. The shared weather budget still
-recorded one slot while other shared work continued; zero total shared activity
-is not asserted. Three.js singleton Sprite geometry is recorded separately as
-library-owned, while its owned materials and textures remain disposal-gated.
+unmount encoded and GPU use and operation slots were zero. The shared weather
+budget retained 3,633,696 decoded bytes for other shared work; zero total shared
+cache use is not asserted. Three.js singleton Sprite geometry is recorded
+separately as library-owned, while its owned materials and textures remain
+disposal-gated.
 
 Approved host verification in
-`test-results/route-sigmet-verification/final-fix/host-final-inventory.json`
-confirmed all thirteen acceptance projects and final-check ownership records
+`test-results/route-sigmet-verification/ci-fix/host-final-inventory.json`
+confirmed all fourteen acceptance projects and final-check ownership records
 have no owned processes, listeners, containers, networks, disposable volumes or
 temporary source trees. The two exact image tags from the final run were removed
 and their absence verified; shared images and build cache were preserved. The
@@ -224,6 +225,25 @@ gate was changed. Full fix evidence is retained in
 `test-results/route-sigmet-verification/final-fix-report.md`; the final
 input-equivalence receipt proves the following evidence commit changes only this
 Markdown report relative to the accepted candidate.
+
+## CI import-order follow-up
+
+CI Ruff runs from `backend/starlink-location`, where it detects `app` as a
+first-party package. The preceding repository-root invocation missed one
+import-order error in `tests/unit/test_route_sigmets_contracts.py`. Reproduction
+confirmed the exact backend command failed with I001 while the unchanged file
+passed from the repository root. The fix moves the third-party Pydantic import
+before the first-party group; no test assertion or runtime behavior changes.
+
+The exact backend-directory Ruff check passes, Black reports all 538 backend
+files unchanged, and all 41 focused contract tests pass. Frontend inputs are
+identical to the preceding accepted presentation candidate; the 1,610-test suite
+was not repeated in this import-only follow-up. The backend Dockerfile copies
+tests into the image, so the candidate received another full no-cache production
+build and all three browser acceptance tests above. Existing acceptance gates
+were unchanged. The report and final documentation-only input-equivalence proof
+are retained under `test-results/route-sigmet-verification/ci-fix-report.md` and
+`test-results/route-sigmet-verification/ci-fix/input-equivalence.json`.
 
 ## Limits
 
