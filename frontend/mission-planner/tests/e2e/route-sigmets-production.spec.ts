@@ -1020,7 +1020,11 @@ test('shared manual SIGMET attention stays quiet and can be acknowledged from Ov
       fullPage: true,
     });
     await overview.setViewportSize({ width: 390, height: 844 });
-    await cards.scrollIntoViewIfNeeded();
+    // The responsive layout remounts the rail; reacquire it after that commit.
+    await expect(async () => {
+      await cards.scrollIntoViewIfNeeded({ timeout: 1000 });
+      await expect(cards).toBeInViewport();
+    }).toPass({ timeout: 10000 });
     await overview.screenshot({
       path: info.outputPath('pending-overview-mobile.png'),
       fullPage: true,
