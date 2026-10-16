@@ -30,7 +30,10 @@ export function renderTimeline(payload) {
   const unknownGroups = [];
   for (const i of payload.intervals) {
     if (i.posture !== 'Posture uncertain') continue;
-    const count = i.decisions.filter((v) => v === 'Up').length;
+    const count =
+      i.callClassification === 'unknown'
+        ? 'Unresolved'
+        : i.decisions.filter((v) => v === 'Up').length;
     const last = unknownGroups.at(-1);
     if (last && last.endUtc === i.startUtc && last.count === count)
       last.endUtc = i.endUtc;
@@ -75,7 +78,7 @@ export function renderTimeline(payload) {
     out += text(
       x(i.startUtc) + width(i) / 2,
       93,
-      `${i.count} confirmed`,
+      i.count === 'Unresolved' ? 'Unresolved' : `${i.count} confirmed`,
       'text-anchor="middle" class="band-label" data-svg-label'
     );
   }
@@ -90,7 +93,9 @@ export function renderTimeline(payload) {
         text(
           labelX,
           54,
-          `${i.decisions.filter((v) => v === 'Up').length} confirmed`,
+          i.callClassification === 'unknown'
+            ? 'Unresolved'
+            : `${i.decisions.filter((v) => v === 'Up').length} confirmed`,
           'text-anchor="middle" class="confirmed-callout" data-callout data-svg-label'
         );
     });

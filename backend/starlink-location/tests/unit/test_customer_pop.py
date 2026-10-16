@@ -54,7 +54,7 @@ def with_forecast(captured, centers):
     return captured, projection, view
 
 
-def test_nominal_advisories_partition_and_preserve_simultaneous_occurrences():
+def test_missing_continuity_partitions_simultaneous_occurrences_without_inventing_nominal():
     data = fixture("f01")
     captured, _, _ = inputs()
     leg = snapshot(data)
@@ -74,7 +74,9 @@ def test_nominal_advisories_partition_and_preserve_simultaneous_occurrences():
         ("one", "two", "three"),
         ("two", "three"),
     ]
-    assert all(i.posture == "Nominal" and i.decisions[1].value == "Up" for i in pop)
+    assert all(
+        i.posture == "Posture uncertain" and i.decisions[1].value == "Up" for i in pop
+    )
     assert projection.intervals[0].start_time == start
     assert projection.intervals[-1].end_time == end
     assert all(
@@ -84,7 +86,9 @@ def test_nominal_advisories_partition_and_preserve_simultaneous_occurrences():
     rows = [r for r in view.rows if r.pop_transition_ids]
     assert len(rows) == 3
     assert all(
-        r.impact == EVENT and "Starshield" in r.remaining and r.posture == "Nominal"
+        r.impact == EVENT
+        and r.remaining == "Call continuity unresolved"
+        and r.posture == "Assessment incomplete"
         for r in rows
     )
     assert len({i.id for i in projection.intervals}) == len(projection.intervals)
@@ -158,8 +162,8 @@ def test_sanitized_dst_fixture_retains_both_impacts_and_canonical_bounds():
     assert "Takeoff SOF" in overlap["impact"]
     assert "Commercial Ka unavailable" in overlap["impact"]
     assert EVENT in overlap["impact"]
-    assert overlap["posture"] == "Degraded"
-    assert "Starshield" in overlap["remaining"]
+    assert overlap["posture"] == "Assessment incomplete"
+    assert overlap["remaining"] == "Call continuity unresolved"
     assert overlap["et"] == "01:58 EDT–01:02 EST"
     assert overlap["displayCells"][0] == "01:58 - 01:02"
     record = next(r for r in evidence["customerRows"] if r["id"] == overlap["id"])

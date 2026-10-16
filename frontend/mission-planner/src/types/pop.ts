@@ -42,3 +42,25 @@ export interface PopLiveAdvisory {
   transition_id?: string | null;
   observed_pop_id?: string | null;
 }
+
+export interface CallContinuityInterval {
+  start_utc: string;
+  end_utc: string;
+  classification:
+    | 'ordinary'
+    | 'advisory'
+    | 'x_fallback'
+    | 'planned_outage'
+    | 'existing_outage'
+    | 'unknown';
+  transition_ids: string[];
+  usable_alternatives: string[];
+  source_ids: string[];
+}
+export interface CallContinuityProjection {
+  revision: string;
+  intervals: CallContinuityInterval[];
+  planned_communications_outage_seconds: number;
+  pop_call_outage_seconds: number;
+  longest_call_outage_seconds: number;
+}

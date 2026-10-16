@@ -81,3 +81,99 @@ it('does not invent city matches for unknown or unfamiliar observed locations', 
     }).observation
   ).toContain('Unlisted City');
 });
+
+it('keeps unknown continuity unresolved even when numeric totals are zero', () => {
+  expect(projectPopAdvisories({ call_continuity: null }).continuity).toContain(
+    'unresolved'
+  );
+  const continuity = {
+    revision: 'route-one',
+    intervals: [
+      {
+        start_utc: '2035-03-01T23:55:00Z',
+        end_utc: '2035-03-02T00:05:00Z',
+        classification: 'unknown' as const,
+        transition_ids: ['route-one:crossing'],
+        usable_alternatives: [],
+        source_ids: [],
+      },
+    ],
+    planned_communications_outage_seconds: 0,
+    pop_call_outage_seconds: 0,
+    longest_call_outage_seconds: 0,
+  };
+  const view = projectPopAdvisories({
+    pop_forecast: popForecast(),
+    call_continuity: continuity,
+  });
+  expect(view.continuity).toContain('unresolved');
+  expect(view.continuity).not.toContain('0s');
+});
+it('presents backend full or remaining totals and planned fallback explicitly', () => {
+  const continuity = {
+    revision: 'route-one',
+    intervals: [
+      {
+        start_utc: '2035-03-01T23:55:00Z',
+        end_utc: '2035-03-02T00:05:00Z',
+        classification: 'x_fallback' as const,
+        transition_ids: ['route-one:crossing'],
+        usable_alternatives: ['X'],
+        source_ids: [],
+      },
+    ],
+    planned_communications_outage_seconds: 0,
+    pop_call_outage_seconds: 0,
+    longest_call_outage_seconds: 0,
+  };
+  const view = projectPopAdvisories({
+    pop_forecast: popForecast(),
+    call_continuity: continuity,
+  });
+  expect(view.continuity).toContain('Planned communications outage: 0s');
+  expect(view.transitionDetails['route-one:crossing'].join(' ')).toContain(
+    'Planned X-Band fallback'
+  );
+  const outage = projectPopAdvisories({
+    pop_forecast: popForecast(),
+    call_continuity: {
+      ...continuity,
+      planned_communications_outage_seconds: 600,
+      pop_call_outage_seconds: 600,
+      longest_call_outage_seconds: 600,
+      intervals: [
+        {
+          ...continuity.intervals[0],
+          classification: 'planned_outage',
+          usable_alternatives: [],
+        },
+      ],
+    },
+  });
+  expect(outage.continuity).toContain('600s');
+  expect(outage.transitionDetails['route-one:crossing'].join(' ')).toContain(
+    'No secure-call transport'
+  );
+});
+it('rejects a stale continuity revision instead of displaying confirmed zero', () => {
+  const view = projectPopAdvisories({
+    pop_forecast: popForecast(),
+    call_continuity: {
+      revision: 'obsolete',
+      intervals: [
+        {
+          start_utc: '2035-03-01T23:55:00Z',
+          end_utc: '2035-03-02T00:05:00Z',
+          classification: 'ordinary',
+          transition_ids: [],
+          usable_alternatives: [],
+          source_ids: [],
+        },
+      ],
+      planned_communications_outage_seconds: 0,
+      pop_call_outage_seconds: 0,
+      longest_call_outage_seconds: 0,
+    },
+  });
+  expect(view.continuity).toContain('unresolved');
+});

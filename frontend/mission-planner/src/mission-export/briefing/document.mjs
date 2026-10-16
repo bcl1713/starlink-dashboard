@@ -46,9 +46,10 @@ export function composeBriefing(
   const popLegend = payload.popTransitions?.length
     ? '<span class="pop-legend">Starshield Transition</span>'
     : '';
-  const popNote = payload.popTransitions?.length
-    ? '<span class="pop-note"> PoP transitions may briefly interrupt calls (typically 1–2 seconds). Marked windows indicate possible transition timing.</span>'
-    : '';
+  const popNote =
+    payload.popTransitions?.length && payload.popNote
+      ? `<span class="pop-note"> ${e(payload.popNote)}</span>`
+      : '';
   const map =
     mapDataUrl && page?.kind !== 'continuation'
       ? `<aside class="map-card" data-fit><img src="${dataAsset(mapDataUrl, 'image/')}" alt="Mission route between departure and arrival airports" data-fit></aside>`

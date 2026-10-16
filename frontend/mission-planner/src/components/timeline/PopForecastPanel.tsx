@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import type { PopForecast } from '@/types/pop';
+import type { CallContinuityProjection, PopForecast } from '@/types/pop';
 import type { TimelineSegment } from '@/services/timeline';
 import {
   POP_NOTE,
@@ -12,17 +12,29 @@ import { formatUtc } from './formatting';
 
 interface Props {
   forecast?: PopForecast | null;
+  continuity?: CallContinuityProjection | null;
+  continuityBasis?: 'Full mission' | 'Remaining mission';
   segments?: TimelineSegment[];
   nowMs?: number;
 }
 /** Shared planner/live view. Exact backend bounds remain the canonical evidence. */
-export function PopForecastPanel({ forecast, segments = [], nowMs }: Props) {
+export function PopForecastPanel({
+  forecast,
+  continuity,
+  continuityBasis = 'Full mission',
+  segments = [],
+  nowMs,
+}: Props) {
   const selectId = useId();
   const [selection, setSelection] = useState<{
     revision: string;
     id: string;
   } | null>(null);
   if (forecast?.status === 'disabled') return null;
+  const view = projectPopAdvisories({
+    pop_forecast: forecast,
+    call_continuity: continuity,
+  });
   const transitions = forecast?.status === 'ready' ? forecast.transitions : [];
   const selected =
     transitions.find(
@@ -47,7 +59,10 @@ export function PopForecastPanel({ forecast, segments = [], nowMs }: Props) {
       className="min-w-0 rounded border border-border bg-card p-3 text-sm space-y-2"
     >
       <h4 className="font-semibold">Starshield PoP predictions</h4>
-      <p>{projectPopAdvisories({ pop_forecast: forecast }).summary}</p>
+      <p>{view.summary}</p>
+      <p>
+        {continuityBasis}: {view.continuity}
+      </p>
       {transitions.length > 0 && (
         <>
           <p>{POP_NOTE}</p>
@@ -137,6 +152,13 @@ export function PopForecastPanel({ forecast, segments = [], nowMs }: Props) {
                 {formatUtc(selected.window_end_utc)}
               </p>
               <p>{POP_CAUTION}</p>
+              {(
+                view.transitionDetails[selected.crossing.id] ?? [
+                  'Call continuity unresolved.',
+                ]
+              ).map((message) => (
+                <p key={message}>{message}</p>
+              ))}
             </div>
           )}
         </>

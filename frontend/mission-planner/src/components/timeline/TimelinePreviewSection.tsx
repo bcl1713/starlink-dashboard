@@ -85,6 +85,7 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
           {!isCalculating && timeline?.pop_forecast && (
             <PopForecastPanel
               forecast={timeline.pop_forecast}
+              continuity={timeline.call_continuity}
               segments={timeline.segments}
             />
           )}

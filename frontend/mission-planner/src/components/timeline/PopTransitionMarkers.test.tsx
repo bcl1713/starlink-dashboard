@@ -113,7 +113,7 @@ it.each(['available', 'unavailable'])(
       screen.getByText(/Estimated crossing.*2035-03-02 00:00:00/)
     ).not.toBeNull();
     expect(
-      screen.getByText(/PoP transitions may briefly interrupt calls/)
+      screen.getByText(/PoP changes may drop calls and require reestablishment/)
     ).not.toBeNull();
     expect(container.querySelector('[data-pop-track]')?.textContent).toBe('');
     expect(timeline).toEqual(original);

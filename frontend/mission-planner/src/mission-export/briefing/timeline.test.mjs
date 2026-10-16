@@ -303,3 +303,20 @@ test('PoP markers clip display only and contain no timeline text', async () => {
   assert.doesNotMatch(svg, /<text[^>]*>[^<]*PoP/);
   assert.equal(p.popTransitions[0].windowStartUtc, '2026-10-25T13:55:00Z');
 });
+
+test('conditional call posture remains separate from connected physical Starshield', async () => {
+  const p = structuredClone(payload);
+  p.intervals[0].posture = 'Communications unavailable';
+  p.intervals[0].callClassification = 'planned_outage';
+  p.intervals[0].decisions = ['Down', 'Up', 'Down'];
+  let svg = (await renderer())(p);
+  assert.match(
+    svg,
+    /data-posture="Communications unavailable"[^>]*fill="#b72e36"/
+  );
+  assert.match(svg, /data-transport="1" data-state="Up"/);
+  p.intervals[0].posture = 'Posture uncertain';
+  p.intervals[0].callClassification = 'unknown';
+  svg = (await renderer())(p);
+  assert.match(svg, />Unresolved<\/text>/);
+});

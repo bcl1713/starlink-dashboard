@@ -58,3 +58,26 @@ it('marks cached status stale on refresh failure without asserting completion', 
   expect(screen.getByText(/last known/)).not.toBeNull();
   expect(screen.getByText(/Overdue/)).not.toBeNull();
 });
+it('exposes unresolved ordinary live continuity while preserving forecast and mismatch advice', () => {
+  render(
+    <OverviewPopAdvisories
+      status={{
+        timestamp: new Date().toISOString(),
+        pop_forecast: popForecast(),
+        call_continuity: null,
+        pop_advisories: [{ kind: 'mismatch' }],
+      }}
+      nowMs={Date.parse('2035-03-02T00:00:00Z')}
+      realNowMs={Date.now()}
+      refreshFailed={false}
+    />
+  );
+  expect(
+    screen.getAllByText(/Remaining mission: Call continuity unresolved/).length
+  ).toBeGreaterThan(0);
+  expect(screen.getByText(/any time; calls may be interrupted/)).not.toBeNull();
+  expect(
+    screen.getByRole('button', { name: /Los Angeles.*Dallas.*UTC/ })
+  ).not.toBeNull();
+  expect(screen.queryByText(/Planned communications outage: 0s/)).toBeNull();
+});

@@ -107,6 +107,11 @@ def _leg_payload(snapshot, captured, view, projection):
         },
         "flight": {"startUtc": stamp(start), "endUtc": stamp(end)},
         "popTransitions": transition_records(projection.pop_forecast),
+        "callContinuity": (
+            projection.call_continuity.model_dump(mode="json")
+            if projection.call_continuity
+            else None
+        ),
         "popNote": (
             POP_NOTE
             if projection.pop_forecast and projection.pop_forecast.transitions
@@ -117,7 +122,12 @@ def _leg_payload(snapshot, captured, view, projection):
                 "startUtc": stamp(i.start_time),
                 "endUtc": stamp(i.end_time),
                 "posture": i.posture,
+                "physicalPosture": i.physical_posture,
+                "physicalRemainingTransports": list(i.physical_remaining_transports),
                 "popTransitionIds": list(i.pop_transition_ids),
+                "callClassification": i.call_classification,
+                "callSourceIds": list(i.call_source_ids),
+                "callAlternatives": list(i.call_alternatives),
                 "decisions": [d.value for d in i.decisions],
                 "restrictionLabels": list(restriction_labels(i)),
                 "xStarshieldConflict": starshield_conflict(i, source_by_id),
@@ -128,6 +138,7 @@ def _leg_payload(snapshot, captured, view, projection):
             {
                 "id": r.id,
                 "popTransitionIds": list(r.pop_transition_ids),
+                "callClassification": r.call_classification,
                 "startUtc": stamp(r.start_time),
                 "endUtc": stamp(r.end_time),
                 "et": r.clock.start + "–" + r.clock.end,

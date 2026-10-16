@@ -1,8 +1,8 @@
 import type { StatusResponse } from '@/services/status';
-import type { PopTransition } from '@/types/pop';
+import type { CallContinuityProjection, PopTransition } from '@/types/pop';
 
 export const POP_NOTE =
-  'PoP transitions may briefly interrupt calls (typically 1–2 seconds). Marked windows indicate possible transition timing.';
+  'PoP changes may drop calls and require reestablishment. RF may remain connected. Full windows are planned outages only without an alternative; coordinate X fallback when available.';
 export const POP_CAUTION =
   'Starshield PoP transition possible — brief call interruption.';
 export function popCities(transition: PopTransition) {
@@ -25,6 +25,11 @@ export function projectPopAdvisories(
         ? 'Starshield disabled.'
         : `PoP forecast ${forecast.status}${forecast.reason ? `: ${forecast.reason}` : '.'}`;
   return {
+    ...presentCallContinuity(
+      status?.call_continuity?.revision === forecast?.revision
+        ? status?.call_continuity
+        : null
+    ),
     summary,
     observation:
       observation?.status === 'known' && observation.entry
@@ -46,5 +51,40 @@ export function projectPopAdvisories(
           return 'Current PoP unknown; observed completion and stability cannot be confirmed.';
       }
     }),
+  };
+}
+
+/** Display the shared classification; never infer capabilities from lane defaults. */
+export function presentCallContinuity(
+  projection?: CallContinuityProjection | null
+) {
+  const unresolved =
+    !projection ||
+    !projection.intervals.length ||
+    projection.intervals.some((i) => i.classification === 'unknown');
+  const transitionDetails: Record<string, string[]> = {};
+  for (const interval of projection?.intervals ?? []) {
+    const label = {
+      planned_outage:
+        'Planned communications outage — No secure-call transport.',
+      existing_outage:
+        'Existing communications outage — No secure-call transport.',
+      x_fallback:
+        'Planned X-Band fallback — coordinate before use; activation is not automatic.',
+      advisory: `Transition advisory — alternative available: ${interval.usable_alternatives.join(', ')}.`,
+      ordinary: 'No additional transition outage.',
+      unknown:
+        'Call continuity unresolved — alternative capability unavailable.',
+    }[interval.classification];
+    for (const id of interval.transition_ids) {
+      const details = (transitionDetails[id] ??= []);
+      if (!details.includes(label)) details.push(label);
+    }
+  }
+  return {
+    continuity: unresolved
+      ? 'Call continuity unresolved — complete planned outage totals unavailable.'
+      : `Planned communications outage: ${projection!.planned_communications_outage_seconds}s · PoP contribution: ${projection!.pop_call_outage_seconds}s · Longest call outage: ${projection!.longest_call_outage_seconds}s.`,
+    transitionDetails,
   };
 }

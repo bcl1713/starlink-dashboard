@@ -16,6 +16,7 @@ from itertools import groupby, pairwise
 from typing import Literal
 
 from app.mission.models import Transport, TransportState
+from app.services.pop.continuity_models import CallContinuityProjection
 from app.services.pop.models import PopForecast
 
 from .briefing_clocks import ensure_utc, format_clocks
@@ -88,6 +89,19 @@ class BriefingInterval:
     limitations: tuple[str, ...]
     remaining_transports: tuple[str, ...]
     pop_transition_ids: tuple[str, ...] = ()
+    call_classification: str | None = None
+    call_source_ids: tuple[str, ...] = ()
+    call_alternatives: tuple[str, ...] = ()
+
+    @property
+    def physical_remaining_transports(self) -> tuple[str, ...]:
+        return tuple(
+            n for n, d in zip(TRANSPORT_NAMES, self.decisions) if d.value == "Up"
+        )
+
+    @property
+    def physical_posture(self) -> str:
+        return _posture(self.decisions)
 
 
 @dataclass(frozen=True)
@@ -102,6 +116,7 @@ class BriefingLeg:
     quiet_summary: str | None
     prediction_caveat: str = PREDICTION_CAVEAT
     pop_forecast: PopForecast | None = None
+    call_continuity: CallContinuityProjection | None = None
 
 
 def _unique(values) -> tuple:
@@ -687,6 +702,9 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         if timeline.get("pop_forecast")
         else None
     )
+    from .customer_pop import captured_continuity
+
+    continuity = captured_continuity(timeline, forecast, leg.utc_bounds)
     sources = _collect_sources(leg, committed, timeline)
     notes = list(leg.warnings)
     guidance = "Absolute conditions can shift relative to the aircraft after departure changes; re-export when assumptions or predictions change."
@@ -812,7 +830,13 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         replace(i, id=f"{leg.leg_id}-window-{n:03d}", window_number=n)
         for n, i in enumerate(intervals, 1)
     )
-    full = partition_pop_windows(full, forecast)
+    full = partition_pop_windows(
+        full,
+        forecast,
+        continuity,
+        starshield_enabled=committed.get("transports", {}).get("starshield_enabled")
+        is not False,
+    )
     rows = tuple(
         i
         for i in full
@@ -841,4 +865,5 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         basis,
         QUIET_SUMMARY if quiet else None,
         pop_forecast=forecast,
+        call_continuity=continuity,
     )

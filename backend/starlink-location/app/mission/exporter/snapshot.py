@@ -374,6 +374,14 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
                 f"Leg {leg.id}: canonical events and resolved AR restrictions unavailable."
             )
         if timeline is not None and origin != "rebuilt":
+            # A rebased forecast cannot inherit classifications from stale inputs.
+            timeline.call_continuity = None
+            for metric in (
+                "planned_communications_outage_seconds",
+                "pop_call_outage_seconds",
+                "longest_call_outage_seconds",
+            ):
+                timeline.statistics.pop(metric, None)
             from app.mission.pop_forecast import (
                 forecast_for_mission,
                 mission_forecast_revision,

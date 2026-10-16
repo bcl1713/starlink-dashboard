@@ -27,6 +27,7 @@ export function OverviewPopAdvisories({
         <p role="status">PoP status last known · refresh unavailable.</p>
       )}
       <p>{view.observation}</p>
+      <p>Remaining mission: {view.continuity}</p>
       {view.advisories.length > 0 && (
         <div role="status" className="space-y-2">
           {view.advisories.map((message, index) => (
@@ -43,7 +44,12 @@ export function OverviewPopAdvisories({
         <summary className="min-h-11 cursor-pointer">
           PoP forecast · {view.summary}
         </summary>
-        <PopForecastPanel forecast={status?.pop_forecast} nowMs={nowMs} />
+        <PopForecastPanel
+          forecast={status?.pop_forecast}
+          continuity={status?.call_continuity}
+          continuityBasis="Remaining mission"
+          nowMs={nowMs}
+        />
       </details>
     </section>
   );

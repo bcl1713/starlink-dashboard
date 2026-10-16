@@ -86,6 +86,17 @@ def test_worker_uses_immutable_captured_catalog_without_current_configuration(
     snapshot = prepare_export_snapshot(metadata, sources, warnings)
     timeline = SnapshotViews(snapshot).timeline("l")
     assert timeline.pop_forecast.catalog_fingerprint == original.fingerprint
+    assert timeline.call_continuity is not None
+    assert timeline.call_continuity.revision == timeline.pop_forecast.revision
+    from app.mission.pop_continuity import capabilities_from_timeline
+    from app.services.pop.continuity import project_call_continuity
+
+    assert timeline.call_continuity == project_call_continuity(
+        timeline.pop_forecast,
+        capabilities_from_timeline(timeline),
+        start_utc=snapshot.legs[0].utc_bounds[0],
+        end_utc=snapshot.legs[0].utc_bounds[1],
+    )
     assert snapshot.legs[0].preparation_origin == "rebuilt"
     assert captured_pop_catalog(snapshot.source_payloads) == original
 
@@ -156,6 +167,9 @@ def test_cached_timeline_forecast_rebases_to_captured_planned_inputs(
     cached = MissionLegTimeline(
         mission_leg_id="l", pop_forecast=forecast([("live-obsolete", BASE)])
     )
+    cached.statistics["pop_call_outage_seconds"] = 600
+    cached.statistics["planned_communications_outage_seconds"] = 600
+    cached.statistics["longest_call_outage_seconds"] = 600
     sources = tuple(
         (
             replace(s, content=cached.model_dump_json().encode())
@@ -171,7 +185,12 @@ def test_cached_timeline_forecast_rebases_to_captured_planned_inputs(
     monkeypatch.setattr(module, "prepare_mission_timeline", fail)
     result = module.prepare_export_snapshot(metadata, sources, warnings)
     assert result.legs[0].preparation_origin == "cached"
-    rebuilt_forecast = SnapshotViews(result).timeline("l").pop_forecast
+    rebuilt_timeline = SnapshotViews(result).timeline("l")
+    assert rebuilt_timeline.call_continuity is None
+    assert "pop_call_outage_seconds" not in rebuilt_timeline.statistics
+    assert "planned_communications_outage_seconds" not in rebuilt_timeline.statistics
+    assert "longest_call_outage_seconds" not in rebuilt_timeline.statistics
+    rebuilt_forecast = rebuilt_timeline.pop_forecast
     assert rebuilt_forecast.status == "ready"
     assert (
         rebuilt_forecast.catalog_fingerprint

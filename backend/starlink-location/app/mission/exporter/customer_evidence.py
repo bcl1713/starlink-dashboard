@@ -244,6 +244,11 @@ def _leg_records(captured, projection, view):
     return {
         "canonical": {
             "utcBounds": [stamp(v) for v in projection.utc_bounds],
+            "callContinuity": (
+                projection.call_continuity.model_dump(mode="json")
+                if projection.call_continuity
+                else None
+            ),
             "popForecast": (
                 projection.pop_forecast.model_dump(mode="json")
                 if projection.pop_forecast
@@ -253,6 +258,9 @@ def _leg_records(captured, projection, view):
                 {
                     "id": i.id,
                     "popTransitionIds": i.pop_transition_ids,
+                    "callClassification": i.call_classification,
+                    "callSourceIds": i.call_source_ids,
+                    "callAlternatives": i.call_alternatives,
                     "startUtc": stamp(i.start_time),
                     "endUtc": stamp(i.end_time),
                     "clocks": {
@@ -260,6 +268,8 @@ def _leg_records(captured, projection, view):
                         "end": clocks(i.end_time),
                     },
                     "posture": i.posture,
+                    "physicalPosture": i.physical_posture,
+                    "physicalRemainingTransports": i.physical_remaining_transports,
                     "decisions": [asdict(d) for d in i.decisions],
                     "restrictions": [asdict(r) for r in i.restrictions],
                     "sourceIds": i.active_source_ids,
@@ -287,6 +297,7 @@ def _leg_records(captured, projection, view):
             {
                 "id": r.id,
                 "popTransitionIds": r.pop_transition_ids,
+                "callClassification": r.call_classification,
                 "startUtc": stamp(r.start_time),
                 "endUtc": stamp(r.end_time),
                 "clock": asdict(r.clock),

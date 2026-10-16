@@ -1,8 +1,14 @@
 import apiClient from './api-client';
-import type { PopForecast, PopObservation, PopLiveAdvisory } from '@/types/pop';
+import type {
+  CallContinuityProjection,
+  PopForecast,
+  PopObservation,
+  PopLiveAdvisory,
+} from '@/types/pop';
 
 export interface StatusResponse {
   pop_forecast?: PopForecast | null;
+  call_continuity?: CallContinuityProjection | null;
   pop_observation?: PopObservation | null;
   pop_advisories?: PopLiveAdvisory[];
   timestamp: string;

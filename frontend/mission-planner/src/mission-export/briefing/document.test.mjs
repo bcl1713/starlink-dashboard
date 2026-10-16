@@ -182,7 +182,7 @@ test('transport availability has no separate key', async () => {
   );
 });
 
-test('PoP documents include exact advisory note without changing table cells', async () => {
+test('PoP documents use the canonical captured note exactly once', async () => {
   const p = structuredClone(payload);
   p.popTransitions = [
     {
@@ -191,11 +191,16 @@ test('PoP documents include exact advisory note without changing table cells', a
       windowEndUtc: '2026-10-25T15:10:00Z',
     },
   ];
+  p.popNote =
+    'Calls may drop & require reestablishment. Conditional outage / coordinated fallback.';
   const html = (await composer())(p, assets);
-  assert.match(
-    html,
-    /PoP transitions may briefly interrupt calls \(typically 1–2 seconds\). Marked windows indicate possible transition timing\./
+  assert.equal(
+    html.split(
+      'Calls may drop &amp; require reestablishment. Conditional outage / coordinated fallback.'
+    ).length - 1,
+    1
   );
+  assert.doesNotMatch(html, /typically 1–2 seconds/);
   assert.match(html, /class="pop-legend">Starshield Transition<\/span>/);
 });
 

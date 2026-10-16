@@ -44,7 +44,9 @@ def test_document_preserves_geometry_and_safe_customer_fields():
         "endUtc": "2026-10-25T22:00:00Z",
     }
     red = [
-        i for i in payload["intervals"] if i["posture"] == "Communications unavailable"
+        i
+        for i in payload["intervals"]
+        if i["physicalPosture"] == "Communications unavailable"
     ]
     assert len(red) == 1
     assert [red[0]["startUtc"], red[0]["endUtc"]] == [
@@ -181,8 +183,8 @@ def test_document_rows_carry_exact_display_cells():
     assert payload["rows"][0].get("displayCells") == [
         "10:00 - 10:15",
         "Takeoff SOF",
-        "Ka, Starshield, X-Band",
-        "Nominal",
+        "Call continuity unresolved",
+        "Incomplete",
     ]
 
 
@@ -230,7 +232,10 @@ def test_mission_missing_map_retains_reasons_and_transport_facts():
     leg = mission_document(captured)["legs"][0]
     assert leg["mapInput"] is None
     assert leg["mapInputDiagnostics"]
-    assert any(row["posture"] == "Communications unavailable" for row in leg["rows"])
+    assert all(row["posture"] == "Assessment incomplete" for row in leg["rows"])
+    assert any(
+        i["physicalPosture"] == "Communications unavailable" for i in leg["intervals"]
+    )
 
 
 def test_document_rejects_reversed_and_duplicate_customer_rows():
