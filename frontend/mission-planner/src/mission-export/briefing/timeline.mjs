@@ -83,23 +83,32 @@ export function renderTimeline(payload) {
     );
   }
   if (narrowUnknown.length) {
-    const center =
-      (x(narrowUnknown[0].startUtc) + x(narrowUnknown.at(-1).endUtc)) / 2;
-    narrowUnknown.forEach((i, n) => {
-      const anchor = x(i.startUtc) + width(i) / 2;
-      const labelX = center + (n - (narrowUnknown.length - 1) / 2) * 180;
-      out +=
-        `<path d="M${anchor} 68L${labelX} 58" fill="none" stroke="#526678"/>` +
-        text(
-          labelX,
-          54,
-          i.callClassification === 'unknown'
-            ? 'Unresolved'
-            : `${i.decisions.filter((v) => v === 'Up').length} confirmed`,
-          'text-anchor="middle" class="confirmed-callout" data-callout data-svg-label'
-        );
+    // Share repeated assessments while keeping a leader to every exact portion.
+    // There are at most five labels: Unresolved and zero through three confirmed.
+    const groups = [...Map.groupBy(narrowUnknown, (i) => i.count).entries()];
+    const halfSpan = ((groups.length - 1) * 180) / 2;
+    const center = Math.max(
+      370 + halfSpan,
+      Math.min(
+        1150 - halfSpan,
+        (x(narrowUnknown[0].startUtc) + x(narrowUnknown.at(-1).endUtc)) / 2
+      )
+    );
+    groups.forEach(([count, portions], n) => {
+      const labelX = center + (n - (groups.length - 1) / 2) * 180;
+      for (const i of portions) {
+        const anchor = x(i.startUtc) + width(i) / 2;
+        out += `<path d="M${anchor} 68L${labelX} 58" fill="none" stroke="#526678"/>`;
+      }
+      out += text(
+        labelX,
+        54,
+        count === 'Unresolved' ? 'Unresolved' : `${count} confirmed`,
+        'text-anchor="middle" class="confirmed-callout" data-callout data-svg-label'
+      );
     });
   }
+
   ['Commercial Ka', 'Starshield', 'X-Band MILSATCOM'].forEach((name, n) => {
     const y = 119 + n * 27;
     out += text(0, y + 15, name, 'class="lane-label"');

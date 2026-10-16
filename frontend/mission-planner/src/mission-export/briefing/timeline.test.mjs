@@ -155,9 +155,10 @@ test('narrow incomplete intervals expose one and zero confirmed without definiti
     restrictionLabels: [],
   }));
   const svg = (await renderer())(p);
-  assert.equal((svg.match(/>1 confirmed<\/text>/g) || []).length, 2);
+  assert.equal((svg.match(/>1 confirmed<\/text>/g) || []).length, 1);
   assert.match(svg, />0 confirmed<\/text>/);
-  assert.equal((svg.match(/data-callout/g) || []).length, 3);
+  assert.equal((svg.match(/data-callout/g) || []).length, 2);
+  assert.equal((svg.match(/ 68L/g) || []).length, 3);
   assert.equal((svg.match(/>2 confirmed<\/text>/g) || []).length, 2);
   assert.doesNotMatch(svg, /fill="#b72e36"/);
 });
@@ -319,4 +320,39 @@ test('conditional call posture remains separate from connected physical Starshie
   p.intervals[0].callClassification = 'unknown';
   svg = (await renderer())(p);
   assert.match(svg, />Unresolved<\/text>/);
+});
+
+test('many separated incomplete portions share bounded assessment labels and retain every exact leader', async () => {
+  const p = structuredClone(payload);
+  const start = Date.parse(p.flight.startUtc);
+  p.intervals = Array.from({ length: 40 }, (_, n) => ({
+    startUtc: new Date(start + n * 12 * 60000).toISOString(),
+    endUtc: new Date(start + (n + 1) * 12 * 60000).toISOString(),
+    posture: n % 2 ? 'Degraded' : 'Posture uncertain',
+    decisions: n % 4 ? ['Up', 'Down', '?'] : ['Down', 'Down', '?'],
+    callClassification: n % 6 ? 'existing_outage' : 'unknown',
+    restrictionLabels: [],
+  }));
+  const before = structuredClone(p);
+  const svg = (await renderer())(p);
+  const labels = [
+    ...svg.matchAll(
+      /<text x="([^"]+)" y="54"[^>]*data-callout[^>]*>([^<]+)<\/text>/g
+    ),
+  ];
+  assert.deepEqual(labels.map((m) => m[2]).sort(), [
+    '0 confirmed',
+    '1 confirmed',
+    'Unresolved',
+  ]);
+  assert.ok(labels.every((m) => Number(m[1]) >= 370 && Number(m[1]) <= 1150));
+  const leaders = [...svg.matchAll(/<path d="M([\d.]+) 68L/g)].map((m) =>
+    Number(m[1])
+  );
+  assert.deepEqual(
+    leaders.sort((a, b) => a - b),
+    Array.from({ length: 20 }, (_, n) => 292 + n * 48)
+  );
+  assert.equal((svg.match(/data-posture=/g) || []).length, 40);
+  assert.deepEqual(p, before);
 });
