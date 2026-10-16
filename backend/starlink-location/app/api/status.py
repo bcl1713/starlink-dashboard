@@ -73,11 +73,28 @@ async def status():
 
     try:
         telemetry = _coordinator.get_current_telemetry()
-        ground_entry_point = get_cached_ground_entry_point()
+        pop_payload = _pop_service.status_payload(telemetry)
+        if pop_payload["pop_observation"]["source"] == "simulation":
+            entry = pop_payload["pop_observation"]["entry"]
+            ground_entry_position = (
+                {"latitude": entry["latitude"], "longitude": entry["longitude"]}
+                if entry
+                else None
+            )
+        else:
+            ground_entry_point = get_cached_ground_entry_point()
+            ground_entry_position = (
+                {
+                    "latitude": ground_entry_point.latitude,
+                    "longitude": ground_entry_point.longitude,
+                }
+                if ground_entry_point
+                else None
+            )
         availability = telemetry.metric_availability
 
         return {
-            **_pop_service.status_payload(telemetry),
+            **pop_payload,
             "timestamp": telemetry.timestamp.isoformat(),
             "position": {
                 "latitude": telemetry.position.latitude,
@@ -119,14 +136,7 @@ async def status():
                 "uptime_seconds": telemetry.environmental.uptime_seconds,
                 "temperature_celsius": telemetry.environmental.temperature_celsius,
             },
-            "ground_entry_point": (
-                {
-                    "latitude": ground_entry_point.latitude,
-                    "longitude": ground_entry_point.longitude,
-                }
-                if ground_entry_point is not None
-                else None
-            ),
+            "ground_entry_point": ground_entry_position,
         }
     except (
         RuntimeError,

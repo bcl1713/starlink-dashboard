@@ -39,6 +39,7 @@ class SimulationCoordinator:
             config: Simulation configuration
         """
         self.config = config
+        self.pop_lifecycle_token = 0
         self.start_time = time.time()
 
         # Initialize all simulators
@@ -275,6 +276,7 @@ class SimulationCoordinator:
 
     def reset(self) -> None:
         """Reset all simulators to initial state."""
+        self.pop_lifecycle_token += 1
         self.start_time = time.time()
         self.position_sim.reset()
         self.network_sim.reset()
@@ -290,6 +292,7 @@ class SimulationCoordinator:
             progress: Progress value
         """
         self.position_sim.set_progress(progress)
+        self.pop_lifecycle_token += 1
 
     def get_uptime_seconds(self) -> float:
         """
@@ -327,6 +330,7 @@ class SimulationCoordinator:
             new_config: New simulation configuration
         """
         self.config = new_config
+        self.pop_lifecycle_token += 1
 
         # Reinitialize simulators with new config
         self.position_sim = PositionSimulator(new_config.route, new_config.position)

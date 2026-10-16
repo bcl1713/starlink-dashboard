@@ -6,6 +6,7 @@ import random
 from typing import TYPE_CHECKING, Optional
 
 from app.models.route import ParsedRoute
+from app.services.aviation_weather.route_arcs import GreatCircleArc
 
 if TYPE_CHECKING:
     from app.models.route import RouteTimingProfile
@@ -85,8 +86,9 @@ class KMLRouteFollower:
                     segment_progress = 0.0
 
                 # Interpolate position
-                lat = p1.latitude + (p2.latitude - p1.latitude) * segment_progress
-                lon = p1.longitude + (p2.longitude - p1.longitude) * segment_progress
+                lon, lat = GreatCircleArc(
+                    (p1.longitude, p1.latitude), (p2.longitude, p2.latitude)
+                ).point(segment_progress)
 
                 # Interpolate altitude if available
                 alt = None
@@ -111,8 +113,8 @@ class KMLRouteFollower:
                 )
 
                 return {
-                    "latitude": lat + lat_dev,
-                    "longitude": lon + lon_dev,
+                    "latitude": max(-90.0, min(90.0, lat + lat_dev)),
+                    "longitude": (lon + lon_dev + 180) % 360 - 180,
                     "altitude": alt,
                     "heading": heading,
                     "sequence": i,

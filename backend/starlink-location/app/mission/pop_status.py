@@ -25,7 +25,7 @@ from app.services.pop.models import (
 )
 from app.services.position_freshness import position_observation, speed_is_fresh
 
-# Task 4 supplies simulation position/IP evidence here, never through real discovery.
+# Observation providers are local reads; simulation never uses real discovery.
 ObservationProvider = Callable[[str, object, PopCatalog | None], PopObservation]
 
 
@@ -46,10 +46,12 @@ class PopStatusService:
         config_provider=None,
         *,
         observation_provider: ObservationProvider | None = None,
+        snapshot_context_provider=None,
     ):
         self.route_manager = route_manager
         self.config_provider = config_provider or (lambda: ConfigManager().get_config())
         self.observation_provider = observation_provider or _observation
+        self.snapshot_context_provider = snapshot_context_provider
         self.state = PopLiveState(revision="")
         self._revision = ""
         self._epoch = 0
@@ -84,6 +86,7 @@ class PopStatusService:
         flight_phase="in_flight",
         observed_now=None,
         unavailable_reason=None,
+        projector=None,
     ):
         """Capture one local sample, with separate mission and observation clocks.
 
@@ -93,6 +96,7 @@ class PopStatusService:
         Providers receive (mode, telemetry, captured catalog), and must return
         matching-source evidence without external calls. Live default is cached;
         simulation default is unknown until its position provider is installed.
+        A captured replay `projector` uses its authoritative mission timing.
         """
         lifecycle = (mode, lifecycle_token, enabled, flight_phase)
         if lifecycle != self._last_lifecycle or (
@@ -160,6 +164,21 @@ class PopStatusService:
                     status="unavailable" if enabled else "disabled",
                     reason=str(exc),
                 )
+        elif projector is not None and valid:
+            forecast = forecast_for_mission(
+                route,
+                projector,
+                catalog,
+                revision=revision,
+                starshield_enabled=enabled,
+            )
+            forecast = forecast.model_copy(
+                update={
+                    "transitions": tuple(
+                        t for t in forecast.transitions if t.crossing_utc > now
+                    )
+                }
+            )
         else:
             forecast = forecast_for_live(
                 route,
@@ -201,7 +220,12 @@ class PopStatusService:
         }
 
     def status_payload(self, telemetry, *, now=None):
-        """Resolve the active effective route and configured catalog without network I/O."""
+        """Resolve local inputs; optional simulation callback supplies snapshot kwargs.
+
+        `snapshot_context_provider() -> dict` is simulation-only. Replay supplies
+        route/projector, mission `now`, real `observed_now`, lifecycle token,
+        enabled flag and flight phase from one published replay selection.
+        """
         from app.services.flight_state import get_flight_state_manager
 
         now = now or datetime.now(timezone.utc)
@@ -232,14 +256,16 @@ class PopStatusService:
         except (OSError, ValueError) as exc:
             reason = f"Unavailable PoP catalog: {exc}"
         flight = get_flight_state_manager().get_status()
-        return self.snapshot(
-            telemetry,
-            route=route,
-            catalog=catalog,
-            enabled=enabled,
-            mode=config.mode,
-            now=now,
-            lifecycle_token=(token, flight.departure_time),
-            flight_phase=flight.phase.value,
-            unavailable_reason=reason,
-        )
+        context = {
+            "route": route,
+            "catalog": catalog,
+            "enabled": enabled,
+            "mode": config.mode,
+            "now": now,
+            "lifecycle_token": (token, flight.departure_time),
+            "flight_phase": flight.phase.value,
+            "unavailable_reason": reason,
+        }
+        if config.mode == "simulation" and self.snapshot_context_provider is not None:
+            context.update(self.snapshot_context_provider())
+        return self.snapshot(telemetry, **context)
