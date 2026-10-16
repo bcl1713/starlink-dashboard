@@ -101,31 +101,31 @@ component.
 
 ## Task 1: Establish the live evidence contract and reproduce arrival failure
 
-- [ ] Execute the
+- [x] Execute the
       [detailed task steps](2026-10-16-flight-events-telemetry-task-1.md) and
       record verification.
 
 ## Task 2: Persistent event ledger and conservative movement detection
 
-- [ ] Execute the
+- [x] Execute the
       [detailed task steps](2026-10-16-flight-events-telemetry-task-2.md) and
       record verification.
 
 ## Task 3: Additive API and departure/arrival presentation
 
-- [ ] Execute the
+- [x] Execute the
       [detailed task steps](2026-10-16-flight-events-telemetry-task-3.md) and
       record verification.
 
 ## Task 4: Durable rolling buffer and resumable capture
 
-- [ ] Execute the
+- [x] Execute the
       [detailed task steps](2026-10-16-flight-events-telemetry-task-4.md) and
       record verification.
 
 ## Task 5: Versioned CSVs and mission telemetry packages
 
-- [ ] Execute the
+- [x] Execute the
       [detailed task steps](2026-10-16-flight-events-telemetry-task-5.md) and
       record verification.
 
