@@ -17,7 +17,8 @@ operators.
 
 ## Published Baseline
 
-`v1.0.0` is the published baseline. Maintained guides on `dev` can describe
+`v2.0.0` is the release baseline; `v1.0.0` remains the prior stable release.
+Maintained guides on `dev` can describe
 subsequent changes; [release notes](../release-notes.md) distinguish these.
 Every release PR must update its version scope, operator workflows,
 compatibility notes, and installation commands before tagging. API example
