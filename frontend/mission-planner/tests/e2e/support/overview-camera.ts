@@ -42,6 +42,7 @@ export async function overviewCamera(page: Page) {
           containerInfo?: {
             getState?: () => {
               gl: { domElement: HTMLCanvasElement };
+              size: { width: number; height: number };
               camera: {
                 position: { toArray: () => number[] };
                 quaternion: { toArray: () => number[] };
@@ -60,7 +61,13 @@ export async function overviewCamera(page: Page) {
     )?.containerInfo;
     if (!store?.getState) throw new Error('Renderer store not observed');
     const state = store.getState();
+    const bounds = (
+      state.gl.domElement.closest('.overview-globe') ?? state.gl.domElement
+    ).getBoundingClientRect();
     return {
+      geometryReady:
+        Math.abs(state.size.width - bounds.width) < 1 &&
+        Math.abs(state.size.height - bounds.height) < 1,
       position: state.camera.position.toArray(),
       quaternion: state.camera.quaternion.toArray(),
       zoom: state.camera.zoom,
@@ -80,7 +87,9 @@ export async function settledOverviewCamera(page: Page) {
             Math.abs(value - previous.position[index])
           )
         );
-        stable = delta < 0.00001 ? stable + 1 : 0;
+        // R3F debounces renderer resizing. An unchanged pose before its size
+        // catches up is not evidence that the resized route frame has settled.
+        stable = current.geometryReady && delta < 0.00001 ? stable + 1 : 0;
         previous = current;
         return stable;
       },
