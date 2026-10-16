@@ -19,6 +19,8 @@ class PositionData(BaseModel):
         default=None,
         description="Collection time of measured speed; absent during GPS warmup.",
     )
+    altitude_observed_at: datetime | None = None
+    altitude_validity_source: str | None = None
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
     longitude: float = Field(
         ..., description="Longitude in decimal degrees (-180 to 180)"

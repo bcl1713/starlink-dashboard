@@ -21,17 +21,17 @@ and wait for explicit activation before binding new observations.
 ## Signal limits
 
 Position times are collection times, not receiver fix timestamps. Speed is
-inferred from sequential GPS positions. Altitude lacks validity provenance today;
-missing zero must not establish ground state. Add altitude-specific collection
-time and finite-value validity at the live source. No weight-on-wheels signal or
-verified runway elevation is available. A 10-km route endpoint vicinity is only
-an engineering proxy, not a surveyed airport boundary. Missing or conflicting
-altitude/context requires uncertainty and manual events.
+inferred from sequential GPS positions. Altitude lacks validity provenance
+today; missing zero must not establish ground state. Add altitude-specific
+collection time and finite-value validity at the live source. No
+weight-on-wheels signal or verified runway elevation is available. A 10-km route
+endpoint vicinity is only an engineering proxy, not a surveyed airport boundary.
+Missing or conflicting altitude/context requires uncertainty and manual events.
 
 ## Initial policy for synthetic acceptance
 
-Use configurable defaults: movement above 3 knots for 15 seconds; airborne
-above 80 knots for 20 seconds with a 200-foot climb relative to observed parked
+Use configurable defaults: movement above 3 knots for 15 seconds; airborne above
+80 knots for 20 seconds with a 200-foot climb relative to observed parked
 altitude; landing after descent of at least 200 feet from observed airborne
 maximum, below 35 knots with altitude stable within 75 feet for 20 seconds;
 parking below 1 knot within 50 metres for 300 seconds. Destination vicinity is
@@ -42,8 +42,8 @@ operating limits. Unknown initial state cannot invent an off-blocks event.
 ## Storage and acceptance
 
 Use data/flight-events for ledger and capture data on the existing backend data
-volume. Event/outbox/candidate-pin commits are atomic. Capture ownership survives
-mission active-flag reset. Keep operational and simulated sources separate.
-Synthetic replay establishes algorithm behavior only; field accuracy remains
-unvalidated. The first confirmed destination park includes DV offload and is
-terminal for automatic arrival even if subsequent repositioning occurs.
+volume. Event/outbox/candidate-pin commits are atomic. Capture ownership
+survives mission active-flag reset. Keep operational and simulated sources
+separate. Synthetic replay establishes algorithm behavior only; field accuracy
+remains unvalidated. The first confirmed destination park includes DV offload
+and is terminal for automatic arrival even if subsequent repositioning occurs.
