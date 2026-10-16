@@ -24,6 +24,33 @@ def _digest(value):
     ).hexdigest()
 
 
+def _effective_leg_record(leg):
+    record = leg.model_dump(
+        mode="json",
+        exclude={
+            "created_at",
+            "updated_at",
+            "is_active",
+            "name",
+            "description",
+            "notes",
+        },
+    )
+    transports = record["transports"]
+    splice = transports.get("manual_route_splice")
+    if splice and transports.get("planning_policy") is None:
+        # Selected legacy splice effects are represented by the effective route
+        # geometry/timing. An unavailable selection contributes no overlay.
+        # Keep every unselected independent manual track in the input identity.
+        transports["manual_aar_tracks"] = [
+            track
+            for track in transports["manual_aar_tracks"]
+            if track["id"] != splice["enabled_track_id"]
+        ]
+        transports["manual_route_splice"] = None
+    return record
+
+
 _CURRENT_COVERAGE = object()
 
 
@@ -35,24 +62,14 @@ def capability_input_revision(
     *,
     ka_snapshot=_CURRENT_COVERAGE
 ):
-    """Identify leg/config/geometry/timing inputs without rebuilding a mission."""
+    """Identify execution inputs using the already prepared effective route."""
     catalog = satellite_catalog or get_satellite_catalog(read_only=True)
     if ka_snapshot is _CURRENT_COVERAGE:
         ka_snapshot = current_coverage_snapshot()
     return _digest(
         [
             ka_snapshot,
-            leg.model_dump(
-                mode="json",
-                exclude={
-                    "created_at",
-                    "updated_at",
-                    "is_active",
-                    "name",
-                    "description",
-                    "notes",
-                },
-            ),
+            _effective_leg_record(leg),
             route.model_dump(mode="json"),
             asdict(constraint_config or ConstraintConfig()),
             sorted(

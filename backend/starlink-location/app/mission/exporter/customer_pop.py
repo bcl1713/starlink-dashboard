@@ -70,6 +70,17 @@ def partition_pop_windows(
             )
             call = next((c for c in calls if c.start_utc <= low < c.end_utc), None)
             classification = call.classification if call else "unknown"
+            call_sources = call.source_ids if call else ()
+            alternatives = call.usable_alternatives if call else ()
+            if (
+                interval.physical_posture == "Communications unavailable"
+                and classification != "existing_outage"
+            ):
+                classification = "existing_outage"
+                alternatives = ()
+                call_sources = tuple(
+                    dict.fromkeys((*call_sources, *interval.active_source_ids))
+                )
             posture = interval.posture
             remaining = interval.remaining_transports
             if classification in {"planned_outage", "existing_outage"}:
@@ -87,8 +98,8 @@ def partition_pop_windows(
                     end_time=high,
                     pop_transition_ids=identities,
                     call_classification=classification,
-                    call_source_ids=call.source_ids if call else (),
-                    call_alternatives=call.usable_alternatives if call else (),
+                    call_source_ids=call_sources,
+                    call_alternatives=alternatives,
                     posture=posture,
                     remaining_transports=remaining,
                 )

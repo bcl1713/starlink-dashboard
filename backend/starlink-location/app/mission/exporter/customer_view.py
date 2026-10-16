@@ -115,7 +115,6 @@ def _key(interval, source_by_id):
         _impact(interval, source_by_id),
         interval.pop_transition_ids,
         interval.call_classification,
-        interval.call_source_ids,
         interval.call_alternatives,
     )
 
@@ -256,7 +255,16 @@ def project_customer_leg(
                 remaining,
                 posture,
                 tuple(i.id for i in intervals),
-                tuple(dict.fromkeys(s for i in intervals for s in i.active_source_ids)),
+                tuple(
+                    dict.fromkeys(
+                        source
+                        for interval in intervals
+                        for source in (
+                            *interval.active_source_ids,
+                            *interval.call_source_ids,
+                        )
+                    )
+                ),
                 first.pop_transition_ids,
                 first.call_classification,
             )

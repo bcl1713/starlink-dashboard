@@ -211,8 +211,9 @@ def test_catalog_only_change_reuses_transport_capability_with_new_windows():
 
 
 @pytest.mark.parametrize("source", ["x", "ka"])
+@pytest.mark.parametrize("inherited_catalog", ["default", "empty"])
 def test_saved_capability_rejects_changed_independent_source(
-    tmp_path, monkeypatch, source
+    tmp_path, monkeypatch, source, inherited_catalog
 ):
     import copy
     import json
@@ -220,11 +221,18 @@ def test_saved_capability_rejects_changed_independent_source(
     from app.mission import pop_capabilities, storage, timeline_service
     from app.mission.models import MissionLeg, TransportConfig
     from app.mission.timeline_preparation import prepare_mission_timeline
-    from app.satellites.catalog import get_satellite_catalog
+    from app.satellites.catalog import Satellite, SatelliteCatalog
     from app.services.route_manager import RouteManager
     from tests.unit.test_mission_pop_forecast import route
     from tests.unit.test_pop_coverage_evidence import footprints
 
+    if inherited_catalog == "empty":
+        monkeypatch.setattr("app.satellites.catalog._catalog", SatelliteCatalog())
+    owned_catalog = SatelliteCatalog()
+    owned_catalog.add_satellite(Satellite("X-1", "X", longitude=0))
+    monkeypatch.setattr(
+        pop_capabilities, "get_satellite_catalog", lambda **kwargs: owned_catalog
+    )
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", None)
     coverage = tmp_path / "data/sat_coverage/commka.geojson"
@@ -239,14 +247,16 @@ def test_saved_capability_rejects_changed_independent_source(
         route_id="r",
         transports=TransportConfig(initial_x_satellite_id="X-1"),
     )
-    artifacts = prepare_mission_timeline(leg, manager, discover_coverage=True)
+    artifacts = prepare_mission_timeline(
+        leg, manager, discover_coverage=True, satellite_catalog=owned_catalog
+    )
     storage.save_mission_timeline(leg.id, artifacts.timeline, "mission")
     assert (
         pop_capabilities.saved_call_capabilities(leg, "mission", artifacts.route)
         is not None
     )
     if source == "x":
-        changed = copy.deepcopy(get_satellite_catalog(read_only=True))
+        changed = copy.deepcopy(owned_catalog)
         changed.get_satellite("X-1").longitude = 5
         monkeypatch.setattr(
             pop_capabilities, "get_satellite_catalog", lambda **kwargs: changed

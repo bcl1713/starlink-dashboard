@@ -232,7 +232,22 @@ def test_mission_missing_map_retains_reasons_and_transport_facts():
     leg = mission_document(captured)["legs"][0]
     assert leg["mapInput"] is None
     assert leg["mapInputDiagnostics"]
-    assert all(row["posture"] == "Assessment incomplete" for row in leg["rows"])
+    proven = [
+        row for row in leg["rows"] if row["callClassification"] == "existing_outage"
+    ]
+    assert [(row["startUtc"], row["endUtc"]) for row in proven] == [
+        ("2026-10-25T16:25:00Z", "2026-10-25T16:30:00Z")
+    ]
+    assert all(
+        row["posture"] == "Communications unavailable"
+        and row["remaining"] == "No secure-call transport"
+        for row in proven
+    )
+    assert all(
+        row["posture"] == "Assessment incomplete"
+        for row in leg["rows"]
+        if row not in proven
+    )
     assert any(
         i["physicalPosture"] == "Communications unavailable" for i in leg["intervals"]
     )
