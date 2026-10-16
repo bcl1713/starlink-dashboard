@@ -1,8 +1,6 @@
 """Sanitized source missions uploaded through supported production APIs."""
 
-import base64
 import json
-import runpy
 from datetime import datetime, timedelta, timezone
 
 START = datetime(2026, 10, 25, 14, tzinfo=timezone.utc)
@@ -133,7 +131,10 @@ def seed(api, root):
 
 def capture_conditional(api, owner, tools, fixtures):
     """Persist real image-generated planning records through the ordinary leg API."""
+    from planning_sources import accept_sources
+
     records = {name: fixtures[name] for name in CONDITIONAL}
+    accept_sources(api, tools, records, route_kml, ROUTES)
     # Ka recovery is aligned to the independently captured geometric crossing.
     item = records["partial-ka"]
     transition = item["timeline"]["pop_forecast"]["transitions"][0]
@@ -157,21 +158,19 @@ def capture_conditional(api, owner, tools, fixtures):
             "-c",
             (tools / "capture.py").read_text(),
             json.dumps(records),
-            base64.b64encode(
-                runpy.run_path(str(tools.parent / "itinerary-planning/seed.py"))["pdf"](
-                    1, 1
-                )
-            ).decode(),
             timeout=120,
         ).splitlines()[-1]
     )
     for name, leg in captured.items():
         item = fixtures[name]
-        api.request(
+        updated, _, _ = api.request(
             "PUT",
             f"/api/v2/missions/{item['missionId']}/legs/{item['legId']}",
             data=leg,
         )
+        item["updateResponse"] = json.loads(updated)
+        (owner.root / "source-fixtures.json").write_text(json.dumps(fixtures, indent=2))
+        validate_update(item["updateResponse"])
         raw, _, _ = api.request(
             "GET", f"/api/v2/missions/{item['missionId']}/legs/{item['legId']}/timeline"
         )
@@ -203,12 +202,22 @@ def capture_conditional(api, owner, tools, fixtures):
             spans,
         )
         for segment in item["timeline"]["segments"]:
+            assert "planning_interval" in segment["metadata"], (
+                name,
+                "Missing captured planning interval",
+                segment,
+            )
             measured = segment["metadata"]["planning_interval"]
             assert segment["x_state"] == measured["policy_x_state"]
             assert segment["ka_state"] == measured["policy_ka_state"]
             assert segment["ku_state"] == measured["policy_ku_state"] == "available"
         if name in {"x-fallback", "concurrency-hard"}:
             for segment in item["timeline"]["segments"]:
+                assert "planning_interval" in segment["metadata"], (
+                    name,
+                    "Missing captured planning interval",
+                    segment,
+                )
                 measured = segment["metadata"]["planning_interval"]
                 assert "x_aft_cone" in measured["raw_constraints"]
                 assert measured["policy_x_state"] == "offline"
@@ -222,3 +231,12 @@ def capture_conditional(api, owner, tools, fixtures):
     assert any(span["classification"] == "unknown" for span in unknown["intervals"])
     (owner.root / "source-fixtures.json").write_text(json.dumps(fixtures, indent=2))
     return fixtures
+
+
+def validate_update(response):
+    if any(
+        "Timeline regeneration failed" in warning
+        for warning in response.get("warnings") or ()
+    ):
+        raise ValueError(f"Source timeline regeneration failed: {response['warnings']}")
+    return response["leg"]

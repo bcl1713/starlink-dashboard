@@ -235,3 +235,18 @@ def test_conditional_hero_and_physical_starshield_lane_are_independent(damage):
         assert value.verify_bands(rectangles, canonical, marker)[
             "physicalStarshieldVerified"
         ]
+
+
+@pytest.mark.parametrize(
+    "warning", [None, "Timeline regeneration failed: Route source not loaded"]
+)
+def test_source_update_cannot_silently_retain_a_stale_timeline(warning):
+    import runpy
+
+    value = runpy.run_path(str(ROOT / "tools/acceptance/pop-transitions/seed.py"))
+    response = {"leg": {"id": "leg"}, "warnings": [warning] if warning else None}
+    if warning:
+        with pytest.raises(ValueError, match="regeneration"):
+            value["validate_update"](response)
+    else:
+        assert value["validate_update"](response)["id"] == "leg"
