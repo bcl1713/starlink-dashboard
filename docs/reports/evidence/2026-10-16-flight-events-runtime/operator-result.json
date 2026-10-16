@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "candidate": "4bd49cf06b7130a5dcdf752cc51e3140cdfdc940",
+  "browser": "153.0.8010.12",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "source": "real production Nginx and backend; synthetic operator events; no aircraft telemetry",
+  "event_count": 5,
+  "movement_state": "parked",
+  "capture_state": "recovering",
+  "gap_count": 2,
+  "page_errors": []
+}

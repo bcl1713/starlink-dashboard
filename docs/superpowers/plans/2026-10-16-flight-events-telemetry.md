@@ -131,7 +131,7 @@ component.
 
 ## Task 6: End-to-end acceptance and execution handoff
 
-- [ ] Execute the
+- [x] Execute the
       [detailed task steps](2026-10-16-flight-events-telemetry-task-6.md) and
       record verification.
 
