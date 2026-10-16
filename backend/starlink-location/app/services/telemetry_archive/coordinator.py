@@ -1,33 +1,35 @@
-"""Replay ledger events into idempotent capture work before acknowledging them."""
+"""Idempotent capture snapshots with independent, bounded raw extraction."""
 
 import hashlib
 import json
-import os
 from datetime import datetime, timedelta
-from uuid import uuid4
-
-import httpx
 
 from app.services.flight_events.store import FlightEventStore
-from app.services.telemetry_archive.store import ArchiveStore
+from app.services.telemetry_archive.coverage import (
+    coverage_gaps,
+    iso,
+    merge_ranges,
+    uncovered,
+)
+from app.services.telemetry_archive.store import METRICS, ArchiveStore
 
 
 class CaptureCoordinator:
     def __init__(self, events: FlightEventStore, archive: ArchiveStore):
         self.events, self.archive = events, archive
+        self.max_retries = 12
 
     def recover(self, now: datetime):
         pending = self.events.pending_events()
         keys = {(event.mission_id, event.leg_id) for event in pending}
         keys.update(
-            (capture["mission_id"], capture["leg_id"])
-            for capture in self.archive.all_captures()
-            if capture["state"] != "sealed"
+            (item["mission_id"], item["leg_id"])
+            for item in self.archive.all_captures()
+            if item["state"] != "sealed"
         )
-        for mission_id, leg_id in sorted(keys):
-            self.refresh(mission_id, leg_id, now)
+        for key in sorted(keys):
+            self.refresh(*key, now)
         self.publish_sealed()
-        # Capture work committed first. A crash here replays it harmlessly.
         for event in pending:
             self.events.acknowledge(event.event_id, event.revision)
         return [self.archive.capture_summary(*key) for key in sorted(keys)]
@@ -43,7 +45,7 @@ class CaptureCoordinator:
             for event in events
             if event.kind == "stop_classified"
         }
-        destination_stops = [
+        stops = [
             event
             for event in events
             if event.kind == "on_blocks"
@@ -57,43 +59,125 @@ class CaptureCoordinator:
             )
             == "destination_complete"
         ]
-        stop = (
-            min(destination_stops, key=lambda event: event.occurred_at)
-            if destination_stops
-            else None
-        )
+        stop = min(stops, key=lambda event: event.occurred_at) if stops else None
         end = stop.occurred_at + timedelta(minutes=30) if stop else None
         event_payload = [event.model_dump(mode="json") for event in events]
         revision = hashlib.sha256(
             json.dumps(event_payload, sort_keys=True).encode()
         ).hexdigest()
+        current = self.archive.capture_summary(mission_id, leg_id)
+        if current and current["revision"] == revision and current["state"] == "sealed":
+            return current
+        preserved, inherited = self.archive.preserved(mission_id, leg_id)
+        inherited_ranges = [
+            (
+                datetime.fromisoformat(span["start"]).timestamp(),
+                datetime.fromisoformat(span["end"]).timestamp(),
+            )
+            for span in inherited
+        ]
+        until = min(now, end) if end else now
+        # Leave enough time for the final raw scrape to arrive. The capture's
+        # declared end remains fixed; only confirmation is delayed.
+        horizon = min(until, now - timedelta(seconds=10))
         with self.archive.ledger.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            existing = db.execute(
-                "SELECT payload FROM captures WHERE mission=? AND leg=? AND revision=?",
+            db.execute(
+                "DELETE FROM raw_windows WHERE mission=? AND leg=? AND revision!=?",
                 (mission_id, leg_id, revision),
-            ).fetchone()
-            if existing and json.loads(existing[0])["state"] == "sealed":
-                return json.loads(existing[0])
-            until = min(now, end) if end else now
-            points = db.execute(
-                "SELECT DISTINCT ts FROM samples WHERE ts>=? AND ts<=? AND mode='live' ORDER BY ts",
-                (start.timestamp(), until.timestamp()),
-            ).fetchall()
-            gaps = coverage_gaps(
-                start,
-                until,
-                [
-                    {
-                        "timestamp": datetime.fromtimestamp(
-                            row[0], now.tzinfo
-                        ).isoformat()
-                    }
-                    for row in points
-                ],
             )
-            sealed = end is not None and now >= end and not gaps
-            samples = self.archive._samples(db, start, until) if sealed else []
+            windows = db.execute(
+                "SELECT start, end, status, attempts FROM raw_windows WHERE mission=? AND leg=? AND revision=? ORDER BY start",
+                (mission_id, leg_id, revision),
+            ).fetchall()
+            scheduled = inherited_ranges + [(row[0], row[1]) for row in windows]
+            for left, right in uncovered(
+                start.timestamp(), horizon.timestamp(), scheduled
+            ):
+                while left < right:
+                    boundary = min(left + 300, right)
+                    db.execute(
+                        "INSERT OR IGNORE INTO raw_windows(mission, leg, revision, start, end) VALUES (?, ?, ?, ?, ?)",
+                        (mission_id, leg_id, revision, left, boundary),
+                    )
+                    left = boundary
+            windows = db.execute(
+                "SELECT start, end, status, attempts FROM raw_windows WHERE mission=? AND leg=? AND revision=? ORDER BY start",
+                (mission_id, leg_id, revision),
+            ).fetchall()
+            done_ranges = inherited_ranges + [
+                (row[0], row[1]) for row in windows if row[2] == "done"
+            ]
+            terminal = horizon >= until and all(
+                row[2] in ("done", "failed") for row in windows
+            )
+            sealed = end is not None and now >= end + timedelta(seconds=10) and terminal
+            # Do not treat live rows as proof that all raw metric series have
+            # been extracted. Native and raw collection coverage are separate.
+            rolling = self.archive._samples(db, start, until) if sealed else []
+            retained = [
+                sample
+                for sample in preserved
+                if start <= datetime.fromisoformat(sample["timestamp"]) <= until
+            ]
+            if sealed:
+                combined = {
+                    (
+                        sample["timestamp"],
+                        sample["metric"],
+                        json.dumps(sample["labels"], sort_keys=True),
+                    ): sample
+                    for sample in retained + rolling
+                }
+                samples = [combined[key] for key in sorted(combined)]
+                gaps = coverage_gaps(start, until, samples)
+            else:
+                samples = []
+                points = db.execute(
+                    "SELECT DISTINCT ts FROM samples WHERE ts>=? AND ts<=? ORDER BY ts",
+                    (start.timestamp(), until.timestamp()),
+                ).fetchall()
+                gaps = coverage_gaps(
+                    start,
+                    until,
+                    retained
+                    + [
+                        {
+                            "timestamp": datetime.fromtimestamp(
+                                row[0], now.tzinfo
+                            ).isoformat()
+                        }
+                        for row in points
+                    ],
+                )
+            for left, right in uncovered(
+                start.timestamp(), until.timestamp(), done_ranges
+            ):
+                exhausted = any(
+                    row[2] == "failed" and row[0] < right and row[1] > left
+                    for row in windows
+                )
+                gaps.append(
+                    {
+                        "start": iso(left, now),
+                        "end": iso(right, now),
+                        "reason": (
+                            "raw_recovery_exhausted"
+                            if exhausted
+                            else "raw_extraction_pending"
+                        ),
+                    }
+                )
+            present = {
+                sample["metric"]
+                for sample in samples
+                if sample.get("value") is not None
+            }
+            missing_metrics = (
+                [metric for metric in METRICS if metric not in present]
+                if sealed
+                else []
+            )
             payload = {
                 "schema_version": 1,
                 "mission_id": mission_id,
@@ -104,17 +188,22 @@ class CaptureCoordinator:
                 "state": (
                     "sealed"
                     if sealed
-                    else (
-                        "recovering" if end is not None and now >= end else "recording"
-                    )
+                    else ("recovering" if end and now >= end else "recording")
                 ),
                 "source_mode": "live",
                 "events": event_payload,
                 "gaps": gaps,
-                "complete": sealed and not gaps,
-                "samples": samples if sealed else [],
+                "complete": sealed and not gaps and not missing_metrics,
+                "samples": samples,
                 "available_until": until.isoformat(),
-                "metric_provenance": "Prometheus raw scrape samples and accepted live source observations; timestamps retain source semantics",
+                "metric_allowlist": list(METRICS),
+                "missing_metrics": missing_metrics,
+                "raw_coverage": [
+                    {"start": iso(left, now), "end": iso(right, now)}
+                    for left, right in merge_ranges(done_ranges)
+                    if right >= start.timestamp() and left <= until.timestamp()
+                ],
+                "metric_provenance": "Raw Prometheus scrape samples and accepted live observations retain distinct source labels and timestamp semantics",
             }
             db.execute(
                 "INSERT OR REPLACE INTO captures VALUES (?, ?, ?, ?)",
@@ -124,122 +213,14 @@ class CaptureCoordinator:
                 "INSERT OR REPLACE INTO capture_heads VALUES (?, ?, ?)",
                 (mission_id, leg_id, revision),
             )
-            db.execute(
-                "DELETE FROM recovery_jobs WHERE mission=? AND leg=? AND revision!=?",
-                (mission_id, leg_id, revision),
-            )
-            if gaps:
-                db.execute(
-                    "INSERT OR IGNORE INTO recovery_jobs(mission, leg, revision, cursor, until) VALUES (?, ?, ?, ?, ?)",
-                    (
-                        mission_id,
-                        leg_id,
-                        revision,
-                        start.timestamp(),
-                        until.timestamp(),
-                    ),
-                )
-                db.execute(
-                    "UPDATE recovery_jobs SET until=MAX(until, ?) WHERE mission=? AND leg=? AND revision=?",
-                    (until.timestamp(), mission_id, leg_id, revision),
-                )
             return payload
 
-    def publish_sealed(self):
-        from app.services.telemetry_archive.package import build_telemetry_package
-
-        directory = self.archive.ledger.path.parent / "sealed"
-        directory.mkdir(parents=True, exist_ok=True)
-        for summary in self.archive.all_captures():
-            if summary["state"] != "sealed":
-                continue
-            identity = json.dumps(
-                [summary["mission_id"], summary["leg_id"], summary["revision"]]
-            )
-            target = directory / (
-                hashlib.sha256(identity.encode()).hexdigest() + ".zip"
-            )
-            if target.exists():
-                continue
-            capture = self.archive.capture(
-                summary["mission_id"], summary["leg_id"], summary["revision"]
-            )
-            temporary = directory / (target.name + "." + str(uuid4()) + ".tmp")
-            try:
-                with temporary.open("wb") as stream:
-                    stream.write(
-                        build_telemetry_package(
-                            summary["mission_id"], [capture], allow_partial=True
-                        )
-                    )
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                temporary.replace(target)
-            finally:
-                temporary.unlink(missing_ok=True)
-
     def backfill_one(self, reader, now: datetime):
-        """One bounded query per tick; durable cursor and capped retry backoff."""
-        with self.archive.ledger.connect() as db:
-            row = db.execute(
-                "SELECT mission, leg, revision, cursor, until, attempts FROM recovery_jobs WHERE cursor<=until AND retry_after<=? ORDER BY cursor LIMIT 1",
-                (now.timestamp(),),
-            ).fetchone()
-        if row is None:
-            return
-        mission, leg, revision, cursor, until, attempts = row
-        begin = datetime.fromtimestamp(cursor, now.tzinfo)
-        end = datetime.fromtimestamp(min(cursor + 300, until), now.tzinfo)
-        try:
-            samples = reader.read(begin, end)
-            self.archive.append_many(samples)
-        except (httpx.HTTPError, ValueError, OSError) as error:
-            with self.archive.ledger.connect() as db:
-                db.execute(
-                    "UPDATE recovery_jobs SET attempts=?, retry_after=?, error=? WHERE mission=? AND leg=? AND revision=?",
-                    (
-                        attempts + 1,
-                        now.timestamp() + min(300, 2 ** min(attempts + 1, 8)),
-                        type(error).__name__,
-                        mission,
-                        leg,
-                        revision,
-                    ),
-                )
-            return
-        with self.archive.ledger.connect() as db:
-            db.execute(
-                "UPDATE recovery_jobs SET cursor=?, attempts=0, error=NULL WHERE mission=? AND leg=? AND revision=?",
-                (
-                    end.timestamp() if end.timestamp() < until else end.timestamp() + 1,
-                    mission,
-                    leg,
-                    revision,
-                ),
-            )
-        self.refresh(mission, leg, now)
+        from app.services.telemetry_archive.recovery import backfill_one
 
+        backfill_one(self, reader, now)
 
-def coverage_gaps(start, end, samples):
-    points = sorted({datetime.fromisoformat(row["timestamp"]) for row in samples})
-    if not points:
-        return [
-            {
-                "start": start.isoformat(),
-                "end": end.isoformat(),
-                "reason": "source_unavailable",
-            }
-        ]
-    gaps = []
-    previous = start
-    for point in points + [end]:
-        if (point - previous).total_seconds() > 10:
-            gaps.append(
-                {
-                    "start": previous.isoformat(),
-                    "end": point.isoformat(),
-                    "reason": "missing_observations",
-                }
-            )
-        previous = point
-    return gaps
+    def publish_sealed(self):
+        from app.services.telemetry_archive.publication import publish_sealed
+
+        publish_sealed(self.archive)

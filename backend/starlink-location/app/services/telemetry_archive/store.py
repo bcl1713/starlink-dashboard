@@ -58,6 +58,11 @@ class ArchiveStore:
                     PRIMARY KEY(mission, leg, revision));
                 CREATE TABLE IF NOT EXISTS capture_heads (
                     mission TEXT, leg TEXT, revision TEXT, PRIMARY KEY(mission, leg));
+                CREATE TABLE IF NOT EXISTS raw_windows (
+                    mission TEXT, leg TEXT, revision TEXT, start REAL, end REAL,
+                    status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0,
+                    next_retry REAL DEFAULT 0, lease_until REAL DEFAULT 0, error TEXT,
+                    PRIMARY KEY(mission, leg, revision, start));
                 CREATE TABLE IF NOT EXISTS recovery_jobs (
                     mission TEXT, leg TEXT, revision TEXT, cursor REAL, until REAL,
                     retry_after REAL DEFAULT 0, attempts INTEGER DEFAULT 0, error TEXT,
@@ -140,6 +145,26 @@ class ArchiveStore:
                 (mission_id, leg_id, revision),
             ).fetchone()
             return json.loads(row[0]) if row else None
+
+    def preserved(self, mission_id: str, leg_id: str):
+        """Sealed revisions are the durable source after rolling cleanup."""
+        with self.ledger.connect() as db:
+            rows = db.execute(
+                "SELECT payload FROM captures WHERE mission=? AND leg=? AND json_extract(payload, '$.state')='sealed'",
+                (mission_id, leg_id),
+            ).fetchall()
+        samples, coverage = {}, []
+        for row in rows:
+            capture = json.loads(row[0])
+            for sample in capture.get("samples", []):
+                key = (
+                    sample["timestamp"],
+                    sample["metric"],
+                    json.dumps(sample["labels"], sort_keys=True),
+                )
+                samples[key] = sample
+            coverage.extend(capture.get("raw_coverage", []))
+        return list(samples.values()), coverage
 
     def capture_summary(self, mission_id: str, leg_id: str):
         with self.ledger.connect() as db:

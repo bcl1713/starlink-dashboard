@@ -225,7 +225,7 @@ async def test_telemetry_updates_remain_ordered(background_runtime, monkeypatch)
 
 @pytest.mark.parametrize("background_runtime", ["live"], indirect=True)
 @pytest.mark.parametrize("active_route", [False, True])
-async def test_live_background_loop_confirms_arrival_only_with_active_route(
+async def test_live_background_does_not_invent_arrival_without_bound_mission(
     background_runtime, monkeypatch, active_route
 ):
     runtime = background_runtime
@@ -251,9 +251,7 @@ async def test_live_background_loop_confirms_arrival_only_with_active_route(
     assert all(status.phase == FlightPhase.IN_FLIGHT for status in statuses[:-1])
     assert all(status.arrival_time is None for status in statuses[:-1])
     final = statuses[-1]
-    assert final.phase == (
-        FlightPhase.POST_ARRIVAL if active_route else FlightPhase.IN_FLIGHT
-    )
-    assert final.arrival_time == (
-        runtime.origin + timedelta(seconds=61) if active_route else None
-    )
+    # A selected route and a singleton phase do not establish a bound mission
+    # or verified airborne/landing evidence. Endpoint dwell alone must not land.
+    assert final.phase == FlightPhase.IN_FLIGHT
+    assert final.arrival_time is None

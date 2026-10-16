@@ -78,6 +78,12 @@ from app.simulation.coordinator import SimulationCoordinator
 from main import app
 
 
+@pytest.fixture(autouse=True)
+def isolated_flight_archive_root(tmp_path, monkeypatch):
+    """Synthetic live tests must never leave telemetry in application storage."""
+    monkeypatch.setenv("FLIGHT_ARCHIVE_ROOT", str(tmp_path / "flight-events"))
+
+
 @pytest.fixture
 def default_config():
     """Provide default simulation configuration for tests."""

@@ -35,3 +35,12 @@ Operational packages contain live sources only. Each leg contains versioned
 order. The outer manifest records completeness and file checksums. Missing
 values and unknown source freshness remain explicit, separate from measured
 zero.
+
+Raw extraction has its own persisted interval jobs; regular live samples do not
+prove that all Prometheus label series were captured. Empty, partial and failed
+queries retry with capped backoff. After twelve unsuccessful attempts for an
+interval, finalization preserves all available data in an explicitly incomplete
+sealed revision and releases its rolling-data retention pin. The manifest names
+unresolved raw intervals and missing metrics. A later explicit event correction
+creates a new revision and retries missing source history, reusing observations
+from prior sealed revisions even after the rolling buffer has expired.
