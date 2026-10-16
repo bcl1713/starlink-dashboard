@@ -178,10 +178,13 @@ class PopStatusService:
                 starshield_enabled=enabled,
             )
             continuity_forecast = forecast
+            # A fresh replay lifecycle may start after a crossing center. Retain
+            # its still-open window for observation reconciliation; ended history
+            # must not block a later occurrence after a seek or region re-entry.
             forecast = forecast.model_copy(
                 update={
                     "transitions": tuple(
-                        t for t in forecast.transitions if t.crossing_utc > now
+                        t for t in forecast.transitions if t.window_end_utc > now
                     )
                 }
             )
@@ -197,12 +200,16 @@ class PopStatusService:
                 speed_knots=position.speed,
                 telemetry_valid=valid,
             )
-        continuity_forecast = continuity_forecast or forecast
         nearest = None
         if forecast.status == "ready" and valid and flight_phase != "pre_departure":
             nearest = nearest_pop(position.latitude, position.longitude, catalog)
-        next_id = (
-            forecast.transitions[0].crossing.to_pop_id if forecast.transitions else None
+        next_id = next(
+            (
+                t.crossing.to_pop_id
+                for t in forecast.transitions
+                if t.crossing_utc > now
+            ),
+            None,
         )
         # Planned geometry starts at the route origin. Ground egress remains
         # truthful display evidence, but cannot reconcile future flight crossings.
@@ -220,6 +227,17 @@ class PopStatusService:
             )
         else:
             advisories = ()
+        if continuity_forecast is not None:
+            # Only presentation drops crossed centers. Reconciliation above has
+            # already completed or retained each relevant captured occurrence.
+            forecast = forecast.model_copy(
+                update={
+                    "transitions": tuple(
+                        t for t in forecast.transitions if t.crossing_utc > now
+                    )
+                }
+            )
+        continuity_forecast = continuity_forecast or forecast
         from app.mission.pop_capabilities import status_call_continuity
 
         # Include still bounded tracked windows after their crossing center.

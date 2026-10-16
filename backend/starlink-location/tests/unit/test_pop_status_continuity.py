@@ -5,13 +5,14 @@ import pytest
 from tests.unit.test_mission_pop_continuity import timeline
 
 
-def prepared_status_inputs():
+def prepared_status_inputs(captured_route=None):
     from app.mission.pop_capabilities import capture_call_capabilities
+    from app.mission.pop_continuity import attach_call_continuity
     from app.mission.pop_forecast import forecast_for_mission, mission_forecast_revision
     from app.mission.timeline_builder.calculator import RouteTemporalProjector
     from tests.unit.test_mission_pop_forecast import route, sites
 
-    r, catalog = route(), sites(("a", 0, -5), ("b", 0, 15))
+    r, catalog = captured_route or route(), sites(("a", 0, -5), ("b", 0, 15))
     p = RouteTemporalProjector(
         r, r.timing_profile.departure_time, r.timing_profile.arrival_time
     )
@@ -26,6 +27,7 @@ def prepared_status_inputs():
     t.segments[0].start_time, t.segments[0].end_time = p.start_time, p.end_time
     i = t.segments[0].metadata["planning_interval"]
     i.update(start_time=p.start_time.isoformat(), end_time=p.end_time.isoformat())
+    attach_call_continuity(t)
     return r, catalog, p, t, capture_call_capabilities(t, r, p)
 
 
@@ -102,25 +104,143 @@ def test_status_missing_capabilities_does_not_report_confirmed_zero():
     assert payload["call_continuity"] is None
 
 
-def test_replay_late_entry_preserves_post_center_window():
+@pytest.mark.parametrize("observation_known", [True, False])
+@pytest.mark.parametrize("entry", ["fresh", "forward_seek", "backward_seek", "reset"])
+def test_replay_post_center_entry_reconciles_before_display_filter(
+    observation_known, entry
+):
     from datetime import timedelta
 
     from app.mission.pop_status import PopStatusService
+    from app.simulation.pop import (
+        SimulationPopObservationProvider,
+        unknown_simulation_observation,
+    )
     from tests.integration.test_pop_status import telemetry
 
-    r, catalog, p, _, captured = prepared_status_inputs()
-    payload = PopStatusService().snapshot(
-        telemetry(),
-        route=r,
-        catalog=catalog,
-        enabled=True,
-        mode="simulation",
-        now=p.start_time + timedelta(minutes=26),
-        observed_now=p.start_time,
-        projector=p,
-        call_capabilities=captured,
+    r, catalog, p, saved, captured = prepared_status_inputs()
+    original = saved.model_dump()
+    assert saved.call_continuity.pop_call_outage_seconds == 600
+    assert saved.statistics["pop_call_outage_seconds"] == 600
+    service = PopStatusService(observation_provider=SimulationPopObservationProvider())
+    kwargs = {
+        "route": r,
+        "catalog": catalog,
+        "enabled": True,
+        "mode": "simulation",
+        "observed_now": p.start_time,
+        "projector": p,
+        "call_capabilities": captured,
+        "lifecycle_token": "run",
+    }
+    if entry != "fresh":
+        minute = {"forward_seek": 0, "backward_seek": 31, "reset": 26}[entry]
+        service.snapshot(
+            telemetry(lon=6), now=p.start_time + timedelta(minutes=minute), **kwargs
+        )
+        if entry != "backward_seek":
+            kwargs["lifecycle_token"] = entry
+    if not observation_known:
+        service.observation_provider = lambda *args: unknown_simulation_observation()
+    payload = service.snapshot(
+        telemetry(lon=6), now=p.start_time + timedelta(minutes=26), **kwargs
     )
-    assert payload["call_continuity"]["pop_call_outage_seconds"] == 240
+    assert payload["pop_forecast"]["transitions"] == []
+    assert payload["call_continuity"]["pop_call_outage_seconds"] == (
+        0 if observation_known else 240
+    )
+    assert len(service.state.tracked_transitions) == 1
+    assert len(service.state.completed_ids) == int(observation_known)
+    assert {a["kind"] for a in payload["pop_advisories"]} == (
+        set() if observation_known else {"observation_unknown", "window"}
+    )
+    assert saved.model_dump() == original
+    assert saved.pop_forecast.transitions[
+        0
+    ].window_start_utc == p.start_time + timedelta(minutes=20)
+    assert saved.pop_forecast.transitions[0].window_end_utc == p.start_time + timedelta(
+        minutes=30
+    )
+
+
+def test_replay_repeated_seeks_and_reset_rebase_remaining_outage():
+    from datetime import timedelta
+
+    from app.mission.pop_status import PopStatusService
+    from app.simulation.pop import (
+        SimulationPopObservationProvider,
+        unknown_simulation_observation,
+    )
+    from tests.integration.test_pop_status import telemetry
+
+    r, catalog, p, saved, captured = prepared_status_inputs()
+    original = saved.model_dump()
+    provider = SimulationPopObservationProvider()
+    service = PopStatusService(observation_provider=provider)
+    for minute, lon, token, known, seconds, kinds in [
+        (26, 6, "run", True, 0, set()),
+        (24, 4, "run", False, 360, {"observation_unknown", "window"}),
+        (26, 6, "forward", True, 0, set()),
+        (26, 6, "reset", False, 240, {"observation_unknown", "window"}),
+        (31, 6, "reset", False, 0, {"observation_unknown", "overdue"}),
+    ]:
+        service.observation_provider = (
+            provider if known else lambda *args: unknown_simulation_observation()
+        )
+        payload = service.snapshot(
+            telemetry(lon=lon),
+            route=r,
+            catalog=catalog,
+            enabled=True,
+            mode="simulation",
+            now=p.start_time + timedelta(minutes=minute),
+            observed_now=p.start_time,
+            projector=p,
+            call_capabilities=captured,
+            lifecycle_token=token,
+        )
+        assert payload["call_continuity"]["pop_call_outage_seconds"] == seconds
+        assert {a["kind"] for a in payload["pop_advisories"]} == kinds
+        assert len(service.state.completed_ids) == int(known)
+    assert saved.model_dump() == original
+
+
+def test_replay_reentry_skips_ended_history_and_completes_only_current_occurrence():
+    from datetime import timedelta
+
+    from app.mission.pop_status import PopStatusService
+    from app.simulation.pop import SimulationPopObservationProvider
+    from tests.integration.test_pop_status import telemetry
+    from tests.unit.test_mission_pop_forecast import route
+
+    r, catalog, p, saved, captured = prepared_status_inputs(
+        route((-10, 10, -10, 10), (0, 20, 40, 60))
+    )
+    original = saved.model_dump()
+    service = PopStatusService(observation_provider=SimulationPopObservationProvider())
+    for minute, lon, remaining, destination in [(26, 4, 600, "a"), (56, 6, 0, "b")]:
+        payload = service.snapshot(
+            telemetry(lon=lon),
+            route=r,
+            catalog=catalog,
+            enabled=True,
+            mode="simulation",
+            now=p.start_time + timedelta(minutes=minute),
+            observed_now=p.start_time,
+            projector=p,
+            call_capabilities=captured,
+            lifecycle_token=minute,
+        )
+        assert payload["call_continuity"]["pop_call_outage_seconds"] == remaining
+        completed = [
+            t
+            for t in service.state.tracked_transitions
+            if t.crossing.id in service.state.completed_ids
+        ]
+        assert len(completed) == 1
+        assert completed[0].crossing.to_pop_id == destination
+        assert payload["pop_advisories"] == []
+    assert saved.model_dump() == original
 
 
 def test_overdue_advice_never_extends_fixed_communications_outage():

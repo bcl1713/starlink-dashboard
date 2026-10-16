@@ -40,3 +40,37 @@ def test_replay_status_reuses_immutable_prepared_capabilities(pop_api, monkeypat
             == payload["pop_forecast"]["revision"]
         )
     assert artifacts.timeline.call_continuity.model_dump() == saved
+
+
+@pytest.mark.parametrize("observation_known", [True, False])
+def test_first_status_after_replay_crossing_reconciles_captured_occurrence(
+    pop_api, monkeypatch, observation_known
+):
+    from app.simulation.pop import unknown_simulation_observation
+
+    client, service, clocks, pops, _ = pop_api
+    monkeypatch.setattr(
+        ConfigManager, "get_config", lambda self: service.coordinator.config
+    )
+    start_paced(client, 10)
+    artifacts = service.runtime.selected_plan().artifacts
+    saved = artifacts.timeline.model_dump()
+    clocks.advance(21)  # Crossing at mission second 150; first status at T + 60.
+    service.collect(service.coordinator, service.publish)
+    if not observation_known:
+        pops.observation_provider = lambda *args: unknown_simulation_observation()
+    response = client.get("/api/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["pop_forecast"]["transitions"] == []
+    assert payload["pop_observation"]["status"] == (
+        "known" if observation_known else "unknown"
+    )
+    assert len(pops.state.completed_ids) == int(observation_known)
+    assert {a["kind"] for a in payload["pop_advisories"]} == (
+        set() if observation_known else {"observation_unknown", "window"}
+    )
+    assert payload["call_continuity"] is not None
+    assert artifacts.timeline.model_dump() == saved
+    assert payload["network"]["packet_loss_percent"] == 0
+    assert service.status().run.transport_states["Ku"] == "available"
