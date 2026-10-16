@@ -86,9 +86,17 @@ class KMLRouteFollower:
                     segment_progress = 0.0
 
                 # Interpolate position
-                lon, lat = GreatCircleArc(
-                    (p1.longitude, p1.latitude), (p2.longitude, p2.latitude)
-                ).point(segment_progress)
+                try:
+                    lon, lat = GreatCircleArc(
+                        (p1.longitude, p1.latitude), (p2.longitude, p2.latitude)
+                    ).point(segment_progress)
+                except ValueError:
+                    # Antipodal endpoints have no unique minor arc. Preserve
+                    # legacy position emission; forecasts remain indeterminate.
+                    lat = p1.latitude + (p2.latitude - p1.latitude) * segment_progress
+                    lon = (
+                        p1.longitude + (p2.longitude - p1.longitude) * segment_progress
+                    )
 
                 # Interpolate altitude if available
                 alt = None

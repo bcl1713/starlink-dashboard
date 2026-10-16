@@ -54,10 +54,17 @@ def project_run_frame(
             start_distance = projector.cumulative_distances[i - 1]
             if distance <= end_distance and end_distance > start_distance:
                 prior, current = plan.artifacts.route.points[i - 1 : i + 1]
-                longitude, latitude = GreatCircleArc(
-                    (prior.longitude, prior.latitude),
-                    (current.longitude, current.latitude),
-                ).point((distance - start_distance) / (end_distance - start_distance))
+                try:
+                    longitude, latitude = GreatCircleArc(
+                        (prior.longitude, prior.latitude),
+                        (current.longitude, current.latitude),
+                    ).point(
+                        (distance - start_distance) / (end_distance - start_distance)
+                    )
+                except ValueError:
+                    # Keep the existing projector sample for antipodal geometry;
+                    # advisory ambiguity must not stop accepted replay telemetry.
+                    pass
                 break
     speed = 0.0
     for i, current in enumerate(plan.artifacts.route.points[1:], 1):
