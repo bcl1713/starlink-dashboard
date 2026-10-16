@@ -1,7 +1,8 @@
 # Flight events and durable mission telemetry
 
 Status: design approved for planning; parking rule updated following user
-clarification. No product implementation has begun.
+clarification. Native implementation is committed locally; final checks and
+rendered acceptance are tracked in the evidence report.
 
 ## Purpose and agreed behavior
 
