@@ -2,8 +2,6 @@
 
 [Back to API Reference](../README.md) | [Back to main docs](../../index.md)
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
 ---
 
 ## Overview
@@ -65,7 +63,7 @@ Real-time position integration:
 ### Get Waypoint ETA (cURL)
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5"
+curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5?current_position_lat=40.7&current_position_lon=-74.0"
 ```
 
 ### Get Route Progress (Python)
@@ -73,7 +71,12 @@ curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5"
 ```python
 import requests
 
-response = requests.get('http://localhost:8000/api/routes/route-001/progress')
+response = requests.get(
+    'http://localhost:8000/api/routes/route-001/progress',
+    params={'current_position_lat': 40.7, 'current_position_lon': -74.0},
+    timeout=10,
+)
+response.raise_for_status()
 progress = response.json()
 print(f"Progress: {progress['progress_percent']}%")
 ```

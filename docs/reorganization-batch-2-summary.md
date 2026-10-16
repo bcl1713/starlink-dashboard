@@ -1,5 +1,9 @@
 # Documentation Reorganization Summary - Batch 2
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 **Date:** 2025-12-04 **Branch:** 001-codebase-cleanup **Files Processed:** 9
 files (318-416 lines each) **Total Lines Reorganized:** 3,324 lines → 3,606
 lines (18 new files)

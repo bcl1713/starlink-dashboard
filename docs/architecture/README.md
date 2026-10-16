@@ -28,7 +28,7 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
   obstructions)
 - Plot terminal's **position and trajectory** on a live map
 - Support **KML route overlays**, POIs, and ETA calculations
-- Store all data for historical analysis
+- Retain telemetry in Prometheus for configured history windows
 - Run as a **self-contained Docker Compose stack**
 - Provide **web dashboard** (Mission Planner) for visualization
 
@@ -42,6 +42,8 @@ starlink-location (FastAPI) <----> Prometheus (history queries / metric scraping
     |
     v
 Starlink dish or simulator
+
+Weather providers -> gfs-worker -> shared products -> starlink-location
 ```
 
 ---
@@ -56,13 +58,15 @@ See
 [responsive layout, camera and scroll ownership](./overview-responsive-layout.md)
 for the single-tree mobile/scaled-desktop implementation.
 
-## Aviation weather proposal
+## Aviation weather
 
 See the
 [aviation weather architecture design](../superpowers/specs/2026-10-06-aviation-weather-design.md),
 [source inventory](../reports/2026-10-06-aviation-weather-source-inventory.md),
 and
 [local rendering proof design](../superpowers/specs/2026-10-06-aviation-weather-proof-design.md)
-for the proposed provider-neutral extension of the existing observed radar.
-Scientific decode and local-render evidence remain prerequisites for product
-implementation.
+for dated design rationale. Aviation weather is implemented: see the
+[current API contract](../api/aviation-weather.md) for catalog, settings and
+artifact behavior. Compose runs a demand-driven `gfs-worker` with a mailbox and
+shared product artifacts; the backend serves those products read-only.
+Historical proposals describe intent and are not the current endpoint contract.

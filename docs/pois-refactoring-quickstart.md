@@ -1,5 +1,9 @@
 # POIs Refactoring - Quick Start Guide
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 This document provides a quick reference for the pois.py refactoring task.
 
 ## Problem Statement

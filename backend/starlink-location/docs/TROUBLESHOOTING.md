@@ -1,40 +1,25 @@
-# Troubleshooting Guide
+# Backend Troubleshooting
 
-[Back to Backend README](../README.md)
-
----
-
-## Port Already in Use
-
-```bash
-lsof -i :8000
-kill -9 <PID>
-```
-
----
-
-## Configuration Not Loading
+Use the
+[current diagnostics](../../../docs/troubleshooting/quick-diagnostics.md) for
+service readiness, configuration, network access, and telemetry issues. From
+repository root, inspect the intended Compose project:
 
 ```bash
-# Check config file path
-ls -la config.yaml
-
-# Test with environment variable
-STARLINK_MODE=live uvicorn main:app --host 0.0.0.0 --port 8000
+docker compose ps
+docker compose logs --tail=100 starlink-location
+curl --fail http://localhost:8000/health
+curl --fail http://localhost:8000/api/status
 ```
 
----
+For a port conflict, identify the listener and its owner before changing ports
+or stopping a process. Stop only resources you own, gracefully first. Do not use
+blanket process-kill or Docker prune commands.
 
-## Metrics Not Updating
+For managed cloud environments, preserve the actor's Docker configuration and
+follow
+[daemon discovery and scoped cleanup](../../../docs/development/cloud-docker.md).
+A failure at `/var/run/docker.sock` alone does not prove the actor daemon is
+down.
 
-```bash
-# Check logs for background update errors
-docker compose logs starlink-location | rg -i error
-
-# Verify health endpoint
-curl http://localhost:8000/health
-```
-
----
-
-[Back to Backend README](../README.md)
+[Back to backend](../README.md)

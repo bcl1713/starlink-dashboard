@@ -23,7 +23,7 @@ complex file
   Reference split
 - [Reorganization Summary](../../reorganization-batch-2-summary.md) - 18 files
   to split
-- [Quality Standards](../../reorganization-batch-2-summary.md#quality-standards-applied)
+- [Quality Standards](../../reorganization-batch-2-summary.md)
   - Methodology and approach
 
 ---

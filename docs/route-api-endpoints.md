@@ -9,7 +9,7 @@ with support for route timing profiles, waypoint extraction, and POI
 integration. The system uses FastAPI endpoints to expose route functionality and
 integrates with the Prometheus metrics system.
 
-## Current Route API Endpoints (17 Total)
+## Route management and ETA endpoints
 
 ### 1. List Routes
 
@@ -35,8 +35,11 @@ timing profile.
 **Endpoint:** `POST /api/routes/{route_id}/activate` **Response Model:**
 `RouteResponse`
 
-Activates a route for tracking and simulation. Only one route can be active at a
-time.
+Selects a standalone route for tracking. Only one route can be active at a time.
+Direct route selection cancels a paced simulation run; it does not activate a
+Mission V2 leg. Use the
+[Mission V2 activation contract](api/endpoints/README.md#mission-v2-activation)
+for mission context and paced simulation.
 
 ### 4. Deactivate Route
 
@@ -77,8 +80,7 @@ Deletes route and cascades deletion of associated POIs.
 
 ### 9. Get Route ETA
 
-**Endpoint:** `GET /api/routes/{route_id}/eta`
-**Response Model:** `dict`
+**Endpoint:** `GET /api/routes/{route_id}/eta` **Response Model:** `dict`
 
 Returns ETA calculations for a specific route.
 
@@ -151,25 +153,22 @@ Clears all ETA cache entries.
 ### API Endpoints
 
 - **Directory:** `app/api/routes/`
-- Split across 8 modules: management, upload, download,
-  delete, stats, eta, timing, cache
-- See [route-api-implementation.md](./route-api-implementation.md)
-  for file structure details
-- Uses dependency injection for route_manager and
-  poi_manager instances
+- Split across 8 modules: management, upload, download, delete, stats, eta,
+  timing, cache
+- See [route-api-implementation.md](./route-api-implementation.md) for file
+  structure details
+- Uses dependency injection for route_manager and poi_manager instances
 
 ### Response Model Definitions
 
-- **File:**
-  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/models/route.py`
+- **File:** `backend/starlink-location/app/models/route.py`
 - RouteResponse, RouteListResponse, RouteDetailResponse
 - RoutePoint, RouteWaypoint, RouteMetadata
 - RouteTimingProfile, ParsedRoute, RouteStatsResponse
 
 ### Route Manager Service
 
-- **File:**
-  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/services/route_manager.py`
+- **File:** `backend/starlink-location/app/services/route_manager.py`
 - RouteManager class: File watching, route caching, active route tracking
 - Methods: start_watching(), stop_watching(), list_routes(), get_route(),
   activate_route(), deactivate_route()
@@ -177,8 +176,7 @@ Clears all ETA cache entries.
 
 ### KML Parser Service
 
-- **File:**
-  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/services/kml_parser.py`
+- **File:** `backend/starlink-location/app/services/kml_parser.py`
 - parse_kml_file(): Main parsing entry point
 - Handles LineString (route segments) and Point (waypoints) geometries
 - Extracts timing data from waypoint descriptions
@@ -195,15 +193,13 @@ Clears all ETA cache entries.
 
 ### POI Manager Service
 
-- **File:**
-  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/services/poi_manager.py`
+- **File:** `backend/starlink-location/app/services/poi_manager.py`
 - Methods: delete_route_pois(), count_pois(route_id=...)
 - Used for route POI management and cascade deletion
 
 ### Metrics Export Integration
 
-- **File:**
-  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/api/metrics_export.py`
+- **File:** `backend/starlink-location/app/api/metrics_export.py`
 - GET /metrics endpoint
 - Integrates active route with ETA calculation
 - Updates Prometheus gauges for POI distance/ETA metrics
@@ -218,32 +214,31 @@ Clears all ETA cache entries.
 ```bash
 curl -X POST \
   -F "file=@flight-plan.kml" \
-  -F "import_pois=true" \
-  <http://localhost:8000/api/routes/upload>
+  "http://localhost:8000/api/routes/upload?import_pois=true"
 ```
 
 ### List Active Routes
 
 ```bash
-curl "<http://localhost:8000/api/routes?active=true">
+curl "http://localhost:8000/api/routes/?active=true"
 ```
 
 ### Get Detailed Route with Timing
 
 ```bash
-curl <http://localhost:8000/api/routes/{route_id}>
+curl "http://localhost:8000/api/routes/ROUTE_ID"
 ```
 
 ### Activate Route for Simulation
 
 ```bash
-curl -X POST <http://localhost:8000/api/routes/{route_id}/activate>
+curl -X POST "http://localhost:8000/api/routes/ROUTE_ID/activate"
 ```
 
 ### Download Route KML
 
 ```bash
-curl -O <http://localhost:8000/api/routes/{route_id}/download>
+curl -O "http://localhost:8000/api/routes/ROUTE_ID/download"
 ```
 
 ---

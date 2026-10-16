@@ -1,6 +1,7 @@
 # Mission Package Import
 
-[Back to Mission Planning](mission-planning-guide.md) | [Import upload limit](../setup/configuration/mission-package-upload-limits.md)
+[Back to Mission Planning](mission-planning-guide.md) |
+[Import upload limit](../setup/configuration/mission-package-upload-limits.md)
 
 ---
 
@@ -13,19 +14,19 @@ and packaged POIs. The Mission Planner imports the package through:
 POST /api/v2/missions/import
 ```
 
-The uploaded ZIP is limited to 100 MiB. See the [mission-package upload
-limit](../setup/configuration/mission-package-upload-limits.md) for proxy and
-application-limit details.
+The uploaded ZIP is limited to 100 MiB. See the
+[mission-package upload limit](../setup/configuration/mission-package-upload-limits.md)
+for proxy and application-limit details.
 
 ## Lifecycle Safety
 
 Imported `is_active` values are accepted for package compatibility but are
 server-managed returned state: every imported leg is persisted inactive. The
-activation endpoint remains the only way to activate a V2 leg. If the package
-targets an existing mission with an active leg, import returns 409 without
-changing mission, route, POI, or timeline data. Deactivate that leg, re-import,
-and activate it again when ready. Likewise, replacing an active leg route
-requires deactivate → upload → activate.
+activation endpoint remains the only way to activate a V2 leg. A default import
+with an existing mission identifier creates a new parent mission and remaps
+colliding route/source references. It does not replace the existing mission or
+deactivate its running legs. Likewise, replacing an active leg route requires
+deactivate → upload → activate.
 
 ## Endpoint POIs Restored During Import
 
@@ -65,10 +66,10 @@ counts plus `endpoint_pois_restored` and `warnings`.
 }
 ```
 
-`endpoint_pois_restored` is the number of departure and arrival POIs created
-by this import request. A leg with a resolvable route normally contributes `2`.
-It can be lower when one or more referenced routes are unavailable or have no
-route points.
+`endpoint_pois_restored` is the number of departure and arrival POIs created by
+this import request. A leg with a resolvable route normally contributes `2`. It
+can be lower when one or more referenced routes are unavailable or have no route
+points.
 
 ## Warnings and Operator Action
 
@@ -85,17 +86,13 @@ Route-import and packaged-POI warnings can also appear in the same array. A
 nonzero `routes_imported` count alone is not sufficient evidence that endpoint
 POIs were restored; use both `endpoint_pois_restored` and `warnings`.
 
-## Re-import and Idempotency
+## Re-import and identity
 
-Re-importing the same package is safe for endpoint POIs. For every resolvable
-leg, the importer reconciles its two owned endpoint markers and recreates one
-departure and one arrival POI at the current route endpoints. The result may
-again report `2` restored POIs for that leg; that count describes work performed
-by the request, not newly accumulated records.
-
-After a successful re-import, there remains one owned departure POI and one
-owned arrival POI per resolvable imported leg. Re-import does not duplicate
-those endpoint markers and does not remove unrelated POIs.
+Default re-import creates a separate mission when the identifier already exists.
+Endpoint restoration is scoped to the returned mission and route identities; do
+not treat it as an in-place restore of the original mission. Compare the
+returned `mission_id` and warnings, and remove unwanted inactive copies through
+the normal mission controls.
 
 ## Verification Checklist
 
@@ -106,9 +103,10 @@ After an import:
    with resolvable routes and route endpoints.
 3. In the POI view, confirm each restored departure and arrival marker belongs
    to the expected mission and route and is at the first and last route point.
-4. Re-import a representative package and confirm the same endpoint markers are
-   reconciled rather than duplicated, while unrelated POIs remain present.
+4. For a re-import, inspect the returned mission ID and confirm the new copy
+   remains inactive with the expected endpoint markers.
 
 ---
 
-[Back to Mission Planning](mission-planning-guide.md) | [Import upload limit](../setup/configuration/mission-package-upload-limits.md)
+[Back to Mission Planning](mission-planning-guide.md) |
+[Import upload limit](../setup/configuration/mission-package-upload-limits.md)

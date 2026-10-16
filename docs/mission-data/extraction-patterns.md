@@ -1,5 +1,11 @@
 # Mission Data Extraction Patterns
 
+These are illustrative extraction patterns for a selected MissionLeg and its
+MissionLegTimeline, not standalone API client code. Helpers beginning with `_`
+are internal exporter functions; verify signatures in
+`backend/starlink-location/app/mission/exporter/` before reusing them. See
+[current model reference](../data-structures/mission-timeline-models.md).
+
 Common patterns for extracting and processing mission data for visualization and
 export.
 
@@ -56,16 +62,16 @@ stats = {
 
 ### To Build a Map Visualization
 
-1. Get Mission from database
-2. Use mission.route_id to fetch ParsedRoute via route manager
+1. Load the persisted Mission container and select a MissionLeg
+2. Use leg.route_id to fetch ParsedRoute via route manager
 3. Extract ParsedRoute.points for route geometry
 4. Get associated POIs (route_id filtering)
-5. Get MissionTimeline segments
+5. Get MissionLegTimeline segments
 6. Project timeline segments onto route via time-distance analysis
 
 ### To Build a Timeline Chart
 
-1. Get MissionTimeline with segments and advisories
+1. Get MissionLegTimeline with segments and advisories
 2. Use `_mission_start_timestamp()` to establish timeline zero
 3. Process segments:
    - Extract start_time, end_time, status, transport states
@@ -90,9 +96,10 @@ stats = {
 
 ```python
 # Get route and timeline
-route = route_manager.get_route(mission.route_id)
-timeline = get_mission_timeline(mission.id)
-pois = get_pois_for_route(mission.route_id)
+leg = mission.legs[0]  # Choose the relevant leg in the operator workflow.
+route = route_manager.get_route(leg.route_id)
+timeline = get_mission_leg_timeline(mission.id, leg.id)
+pois = get_pois_for_route(leg.route_id)
 
 # Extract route geometry
 route_coords = [

@@ -27,8 +27,7 @@ implementation demonstrates significant code quality improvements through:
   breakdowns
 - [Metrics and Results](../implementation-results.md) - Key metrics and
   deliverables
-- [Outstanding Issues](../implementation-results.md#outstanding-issues) -
-  Follow-up work
+- [Outstanding Issues](../implementation-results.md) - Follow-up work
 
 ---
 
@@ -177,7 +176,7 @@ compliance verified.
 3. **Add LOG_LEVEL/JSON_LOGS to .env.example** (30 minutes)
 
 **Complete recommendations**: See
-[Results and Recommendations](../implementation-results.md#outstanding-issues)
+[Results and Recommendations](../implementation-results.md)
 
 ---
 

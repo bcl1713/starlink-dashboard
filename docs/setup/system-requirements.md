@@ -1,279 +1,32 @@
-# System Requirements
+# System requirements
 
-System requirements and software installation for the Starlink Dashboard.
-
-[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
-
----
-
-## Table of Contents
-
-1. [Hardware Requirements](#hardware-requirements)
-2. [Required Software](#required-software)
-3. [OS-Specific Notes](#os-specific-notes)
-4. [Network Requirements](#network-requirements)
-
----
-
-## Hardware Requirements
-
-### Minimum Hardware
-
-- **CPU:** 2 cores
-- **RAM:** 4 GB
-- **Disk Space:** 5 GB free
-  - Docker images: ~1 GB
-  - Prometheus data (1 year): ~2.4 GB
-  - Development/caching: ~1 GB
-
-### Recommended Hardware
-
-- **CPU:** 4+ cores
-- **RAM:** 8 GB
-- **Disk Space:** 10 GB free
-- **SSD Storage:** Recommended for better performance
-
----
-
-## Required Software
-
-### Docker
-
-**Version:** 20.10 or higher
-
-Docker is required to run all services in containers.
-
-**Check installed version:**
-
-```bash
-docker --version
-```
-
-**Expected output:**
-
-```text
-Docker version 20.10.x, build xxxxx
-```
-
-**Installation:**
-
-- **Linux:** [Install Docker Engine](https://docs.docker.com/engine/install/)
-- **macOS:**
-  [Install Docker Desktop](https://docs.docker.com/desktop/install/mac-install/)
-- **Windows:**
-  [Install Docker Desktop](https://docs.docker.com/desktop/install/windows-install/)
-
----
-
-### Docker Compose
-
-**Version:** 2.0 or higher
-
-Docker Compose orchestrates multiple containers.
-
-**Check installed version:**
-
-```bash
-docker compose version
-```
-
-**Expected output:**
-
-```text
-Docker Compose version v2.x.x
-```
-
-**Note:** Docker Compose v2 is included with Docker Desktop. On Linux, you may
-need to install it separately.
-
-**Installation (Linux):**
-
-```bash
-sudo apt-get update
-sudo apt-get install docker-compose-plugin
-```
-
----
-
-### Git
-
-**Version:** Any recent version
-
-Required to clone the repository.
-
-**Check installed version:**
+Use Git, Docker Engine or Docker Desktop, and Docker Compose v2. Verify the
+installed daemon and Compose implementation rather than relying on an old
+minimum-version claim:
 
 ```bash
 git --version
+docker version
+docker info
+docker compose version
 ```
 
-**Installation:**
+Keep the configured Docker context and `DOCKER_HOST`. In the managed cloud
+runtime, follow [cloud Docker discovery](../development/cloud-docker.md);
+failure at `/var/run/docker.sock` alone does not establish a daemon outage.
 
-- **Linux:** `sudo apt-get install git`
-- **macOS:** Included with Xcode Command Line Tools
-- **Windows:** [Git for Windows](https://git-scm.com/download/win)
+Allow enough memory and disk for image builds, scientific Python dependencies,
+weather products, and retained telemetry. The GFS worker alone has a 1 GiB
+memory limit and one CPU; the complete stack and builds require additional
+resources. No fixed RAM or disk minimum is validated for every mission size and
+retention policy. Measure usage with `docker stats --no-stream` and
+`docker system df`.
 
----
+Default host ports are 5173 (Mission Planner), 8000 (backend), and 9090
+(Prometheus). The GFS worker publishes no port. Avoid exposing unauthenticated
+APIs or metrics publicly; select access rules for your deployment.
 
-### Optional: jq
-
-**Purpose:** JSON parsing for testing
-
-While not required, jq makes testing API endpoints much easier.
-
-**Installation:**
-
-- **Linux:** `sudo apt-get install jq`
-- **macOS:** `brew install jq`
-- **Windows:** [Download from GitHub](https://stedolan.github.io/jq/download/)
-
-**Test:**
-
-```bash
-curl <http://localhost:8000/health> | jq .
-```
-
----
-
-## OS-Specific Notes
-
-### Linux
-
-**Advantages:**
-
-- ✅ Full feature support
-- ✅ Best performance
-- ✅ Host network mode available
-
-**Additional Setup:**
-
-1. **Add user to docker group** (avoid sudo):
-
-   ```bash
-   sudo usermod -aG docker $USER
-   newgrp docker
-   ```
-
-2. **Start Docker service:**
-
-   ```bash
-   sudo systemctl start docker
-   sudo systemctl enable docker  # Start on boot
-   ```
-
-3. **Firewall configuration:**
-
-   Open ports if using firewall:
-
-   ```bash
-   sudo ufw allow 5173  # Mission Planner
-   sudo ufw allow 8000  # Backend
-   sudo ufw allow 9090  # Prometheus
-   ```
-
----
-
-### macOS (Intel or Apple Silicon)
-
-**Advantages:**
-
-- ✅ Full feature support via Docker Desktop
-- ✅ Uses bridge network mode (cross-platform compatible)
-
-**Additional Setup:**
-
-1. **Install Docker Desktop** from official website
-
-2. **Configure Docker Desktop:**
-   - Resources → Memory: Allocate at least 4 GB
-   - Resources → Disk: Allocate at least 10 GB
-
-3. **Ensure Docker Desktop is running** before starting services
-
----
-
-### Windows
-
-**Advantages:**
-
-- ✅ Full feature support via Docker Desktop
-- ✅ WSL 2 provides near-native Linux performance
-
-**Additional Setup:**
-
-1. **Install WSL 2:**
-
-   ```powershell
-   wsl --install
-   ```
-
-2. **Install Docker Desktop** with WSL 2 backend enabled
-
-3. **Configure Docker Desktop:**
-   - Settings → Resources → WSL Integration
-   - Enable integration with your WSL distribution
-
-4. **Run commands from WSL terminal** for best experience
-
----
-
-## Network Requirements
-
-### Internet Access
-
-Required for:
-
-- Pulling Docker images
-- Initial setup
-
-### Ports
-
-The following ports must be available on localhost:
-
-| Port | Service         | Protocol |
-| ---- | --------------- | -------- |
-| 5173 | Mission Planner | HTTP     |
-| 8000 | Backend API     | HTTP     |
-| 9090 | Prometheus      | HTTP     |
-
-**Check port availability:**
-
-```bash
-# Linux/macOS
-lsof -i :5173
-lsof -i :8000
-lsof -i :9090
-
-# Windows
-netstat -ano | findstr :5173
-netstat -ano | findstr :8000
-netstat -ano | findstr :9090
-```
-
-If ports are in use, either free them or configure different ports in `.env`.
-
----
-
-### Live Mode Requirements
-
-**Additional requirements for connecting to Starlink terminal:**
-
-1. **Network Access:**
-   - Terminal accessible at `192.168.100.1` (default)
-   - Port `9200` open for gRPC communication
-
-2. **Network Mode:**
-   - **Bridge mode:** Cross-platform, configured by default
-   - **Host mode:** Linux only, best performance
-
----
-
-## Next Steps
-
-Once software is installed, proceed to verification:
-
-**[Verification Steps →](./prerequisites-verification.md)**
-
----
-
-[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
+Simulation needs no Starlink hardware. Live mode needs a reachable dish gRPC
+endpoint, normally `192.168.100.1:9200`. Internet access is required for initial
+image builds and enabled external data sources; simulation telemetry itself can
+run offline. See [live setup](configuration/live-mode/setup.md).

@@ -1,8 +1,8 @@
 # Release Policy
 
 **Purpose**: Define branch usage, semantic versioning, and release discipline
-for Starlink Dashboard.
-**Audience**: Contributors, release managers, mission operators.
+for Starlink Dashboard. **Audience**: Contributors, release managers, mission
+operators.
 
 ## Branch Policy
 
@@ -14,6 +14,15 @@ for Starlink Dashboard.
   an urgent stable-branch hotfix.
 - Do not merge experimental timeline/export work directly to `main`. Integrate
   and test it on `dev` first.
+
+## Published Baseline
+
+`v1.0.0` is the published baseline. Maintained guides on `dev` can describe
+subsequent changes; [release notes](../release-notes.md) distinguish these.
+Every release PR must update its version scope, operator workflows,
+compatibility notes, and installation commands before tagging. API example
+payloads must be checked against the actual schema, not relabeled from an older
+release.
 
 ## Semantic Versioning
 
@@ -45,9 +54,9 @@ rather tiresome gift to future us.
 
 ## Hotfixes
 
-Urgent fixes for active mission use may branch from `main`, then merge back
-into both `main` and `dev` after review. Record the patch version and the
-reason for bypassing the normal `dev` validation path in the release notes.
+Urgent fixes for active mission use may branch from `main`, then merge back into
+both `main` and `dev` after review. Record the patch version and the reason for
+bypassing the normal `dev` validation path in the release notes.
 
 ## Related Documentation
 

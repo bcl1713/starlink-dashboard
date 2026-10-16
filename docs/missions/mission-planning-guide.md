@@ -2,11 +2,6 @@
 
 # Mission Communication Planning Guide
 
-**Last Updated:** 2025-11-16 **Phase:** 5.3 (Comprehensive Documentation)
-**Status:** Production Ready
-
----
-
 ## Guide Sections
 
 For timed Mission V2 replay, see
@@ -28,8 +23,7 @@ calculated.
 
 ### 3. [Mission Export Formats](planning/outputs.md)
 
-Breakdown of available export formats (CSV, Excel, PDF) and their intended
-audience (data integration, team briefing, stakeholder brief).
+Snapshot preparation, downloadable packages and customer briefing artifacts.
 
 ### 4. [Mission Package Import](mission-package-import.md)
 

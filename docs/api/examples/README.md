@@ -2,8 +2,6 @@
 
 [Back to API Reference](../README.md) | [Back to main docs](../../index.md)
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
 ---
 
 ## Overview

@@ -8,7 +8,8 @@ Detailed implementation information for the Route Management system.
 
 1. File uploaded via `POST /api/routes/upload`
 2. File saved to `/data/routes/` directory
-3. Watchdog detects file creation event
+3. Upload explicitly loads the saved file; Watchdog also observes filesystem
+   changes
 4. RouteManager.\_load_route_file() calls parse_kml_file()
 5. parse_kml_file() returns ParsedRoute with:
    - Parsed route points (coordinates)
@@ -45,15 +46,14 @@ Detailed implementation information for the Route Management system.
 
 ## File Structure
 
-The route API is split across 8 modules in
-`app/api/routes/`:
+The route API is split across 8 modules in `app/api/routes/`:
 
 ```text
 app/api/routes/
 ├── __init__.py     # Main router, includes all sub-routers
 ├── management.py   # List, get, activate/deactivate routes
 ├── upload.py       # POST /upload endpoint
-├── download.py     # GET /download/{route_id} endpoint
+├── download.py     # GET /{route_id}/download endpoint
 ├── delete.py       # DELETE /{route_id} endpoint
 ├── stats.py        # Route statistics endpoints
 ├── eta.py          # Route ETA calculation endpoints
@@ -61,8 +61,7 @@ app/api/routes/
 └── cache.py        # Route cache management endpoints
 ```
 
-All sub-routers are mounted under the `/api/routes` prefix
-via `__init__.py`.
+All sub-routers are mounted under the `/api/routes` prefix via `__init__.py`.
 
 ---
 
@@ -117,7 +116,7 @@ KML Upload via /api/routes/upload
     ↓
 File saved to /data/routes/
     ↓
-Watchdog detects file creation
+Upload loads file / Watchdog observes changes
     ↓
 RouteManager._load_route_file()
     ↓

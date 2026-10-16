@@ -99,7 +99,7 @@ transmitter hardware failure).
 2. **Verify metrics:**
 
    ```bash
-   curl <http://localhost:8000/metrics> | rg mission
+   curl http://localhost:8000/metrics | rg mission
    ```
 
 3. **Escalate to:**

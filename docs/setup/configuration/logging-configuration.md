@@ -1,119 +1,21 @@
-# Logging Configuration
+# Logging configuration
 
-[Back to Configuration Guide](./README.md)
-
----
-
-## Log Levels
-
-Available levels: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
-
-### In `.env`
+The backend reads `LOG_LEVEL` (default `INFO`), `JSON_LOGS` (default `true`),
+and optional `LOG_FILE` at startup. Supported standard levels include `DEBUG`,
+`INFO`, `WARNING`, `ERROR`, and `CRITICAL`. For temporary diagnosis, add
+`LOG_LEVEL=DEBUG` to `.env` and recreate the backend:
 
 ```bash
-# Development: detailed logs
-LOG_LEVEL=DEBUG
-
-# Production: standard logs
-LOG_LEVEL=INFO
-
-# Quiet: errors only
-LOG_LEVEL=ERROR
+./scripts/compose.sh up -d starlink-location
+docker compose logs --tail=200 starlink-location
+docker compose logs --tail=200 gfs-worker prometheus mission-planner
 ```
 
-**Apply:**
+Set `JSON_LOGS=false` for text application logs. These options do not change
+Prometheus or Nginx logging. Restore the desired level after diagnosis and avoid
+sharing secrets or sensitive mission data in captured logs.
 
-```bash
-docker compose restart starlink-location
-```
-
----
-
-## Log Format
-
-### JSON Logs (default)
-
-Machine-readable format for log aggregation:
-
-```bash
-JSON_LOGS=true
-```
-
-**Example output:**
-
-```json
-{
-  "timestamp": "2025-12-04T10:30:00Z",
-  "level": "INFO",
-  "message": "Backend started",
-  "service": "starlink-location"
-}
-```
-
-### Human-Readable Logs
-
-Plain text format for development:
-
-```bash
-JSON_LOGS=false
-```
-
-**Example output:**
-
-```text
-2025-12-04 10:30:00 INFO Backend started
-```
-
----
-
-## View Logs
-
-### All Services
-
-```bash
-docker compose logs -f
-```
-
-### Specific Service
-
-```bash
-docker compose logs -f starlink-location
-docker compose logs -f prometheus
-docker compose logs -f mission-planner
-```
-
-### Filter by Level
-
-```bash
-docker compose logs starlink-location | rg -i error
-docker compose logs starlink-location | rg -i warning
-```
-
-### Save Logs to File
-
-```bash
-docker compose logs > logs.txt
-docker compose logs starlink-location > backend.log
-```
-
----
-
-## Log Rotation
-
-Docker automatically rotates logs. Configure in `docker-compose.yml`:
-
-```yaml
-services:
-  starlink-location:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-```
-
-This keeps the last 3 files of 10MB each (30MB total per container).
-
----
-
-[Back to Configuration Guide](./README.md)
+Docker log rotation depends on the daemon/logging driver; this Compose file does
+not set a rotation policy. If required, configure supported driver options such
+as `max-size` and `max-file` in your deployment and recreate affected
+containers.

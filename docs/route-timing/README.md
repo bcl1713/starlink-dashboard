@@ -1,108 +1,24 @@
-# Route Timing Feature Guide
+# Route timing
 
-**Version:** 0.4.0 **Last Updated:** 2026-02-28 **Status:** Complete
+Timed KML routes provide expected waypoint arrivals and segment speeds for
+planning, route-aware ETAs and simulation. Missing timing falls back to
+position/speed estimates where supported; it does not establish a planned UTC
+arrival.
 
-This guide covers the comprehensive ETA Route Timing feature that enables
-realistic simulation and tracking of timed flight paths with expected waypoint
-arrival times.
+- [Concepts](concepts.md): timing profiles, flight phases and ETA modes
+- [KML and API examples](implementation.md): valid waypoint descriptions
+- [Troubleshooting](troubleshooting.md): missing timing and unavailable
+  estimates
+- [Navigation](../features/navigation.md): route and POI operator workflow
+- [Weather](../features/overview-weather.md#sigmet-crossing-timing): live SIGMET
+  crossing estimates and simulation clock behavior
 
----
+Mission operators activate a leg through Missions. Standalone route activation
+is available for route testing but does not establish mission context. See the
+[V2 activation contract](../missions/v2-mission-retirement-acceptance.md).
 
-## Documentation Topics
-
-See [Route Timing Guide](../route-timing-guide.md) for details.
-
----
-
-## Quick Start
-
-### 1. Prepare a KML File with Timing Data
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <Placemark>
-      <name>Flight Route KADW-PHNL</name>
-      <LineString>
-        <coordinates>
-          -76.9,38.8,1000 Time Over Waypoint: 2025-10-27 16:45:00Z
-          -75.0,38.0,2000 Time Over Waypoint: 2025-10-27 16:51:00Z
-          -74.0,37.5,2500 Time Over Waypoint: 2025-10-27 17:05:00Z
-        </coordinates>
-      </LineString>
-    </Placemark>
-  </Document>
-</kml>
-```
-
-### 2. Upload and Activate
-
-```bash
-# Upload route
-curl -X POST -F "file=@your-timed-route.kml" \
-  http://localhost:8000/api/routes/upload
-
-# Activate route
-curl -X POST http://localhost:8000/api/routes/{route_id}/activate
-
-# Check timing profile
-curl http://localhost:8000/api/routes/active/timing | jq .
-```
-
----
-
-## Key Features
-
-- **Automatic Timing Extraction:** Parse expected waypoint arrival times from
-  KML files
-- **Speed Calculations:** Calculate expected segment speeds between consecutive
-  waypoints
-- **Real-time ETAs:** Get accurate estimates to waypoints and arbitrary
-  locations
-- **Realistic Simulation:** Simulator respects timing data and expected speeds
-  for authentic movement
-- **Performance Optimization:** Intelligent caching reduces calculation load
-- **Accuracy Tracking:** Monitor how accurate your ETA predictions are
-
----
-
-## Performance Considerations
-
-### Cache Statistics
-
-```bash
-curl http://localhost:8000/api/routes/metrics/eta-cache
-```
-
-Typical output:
-
-```json
-{
-  "cache_enabled": true,
-  "ttl_seconds": 5,
-  "total_cache_hits": 1250,
-  "total_cache_misses": 342,
-  "hit_rate_percent": 78.5
-}
-```
-
-### Large Route Handling
-
-For routes with 1000+ waypoints:
-
-1. **Upload time:** <2 seconds (parsing is efficient)
-2. **Calculation time:** <50ms per ETA query
-3. **Storage:** ~100KB per 1000 waypoints
-4. **Memory:** Cache limited to 100 entries by default
-
----
-
-## Feature Status
-
-**Last Updated:** 2026-02-28 **Feature Status:** Complete and Production Ready
-**Test Coverage:** 850+ tests passing
-
----
-
-[Back to main docs](../index.md)
+Timing endpoints are described in the
+[route API reference](../api/endpoints/routes.md). Network and position displays
+use the native [Overview](../features/overview.md). Performance depends on route
+size, timing coverage and deployment resources; old test totals and example
+cache hit rates are not service guarantees.

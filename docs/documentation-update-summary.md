@@ -1,5 +1,9 @@
 # Documentation Update Summary - Starlink Dashboard
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 **Date:** 2025-11-04 **Session:** Documentation Audit and Comprehensive Update
 **Updated By:** Claude Code (AI Assistant)
 

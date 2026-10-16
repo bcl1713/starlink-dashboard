@@ -11,7 +11,7 @@ how timing data works, ETA modes, and flight phases.
 
 When you upload a KML file, the parser:
 
-1. **Finds timing markers** in coordinate descriptions
+1. **Finds timing markers** in waypoint descriptions
 2. **Extracts timestamps** using regex pattern:
    `Time Over Waypoint:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})Z`
 3. **Maps timestamps to waypoints** using haversine distance (within 1000m
@@ -28,7 +28,7 @@ Speed (knots) = Distance (meters) / Time (seconds) * (3600 / 1852)
 Example: If a point is 74,600 meters away and takes 600 seconds:
 
 ```text
-Speed = 74,600 / 600 * (3600 / 1852) = 124.33 / 1.852 = 200 knots
+Speed = 74,600 / 600 * (3600 / 1852) = approximately 242 knots
 ```
 
 ### 3. ETA Calculation
@@ -36,7 +36,7 @@ Speed = 74,600 / 600 * (3600 / 1852) = 124.33 / 1.852 = 200 knots
 For routes with timing data:
 
 ```text
-ETA = Distance to waypoint (meters) / Speed (knots) * (1852 / 3600)
+ETA = Distance to waypoint (meters) / (Speed (knots) * 1852 / 3600)
 ```
 
 ### 4. Simulator Behavior
@@ -62,7 +62,7 @@ estimated mode reacts to real performance.
   are labelled `is_pre_departure: true`
 - **Surfaces:** `/api/flight-status` (`"eta_mode": "anticipated"`),
   `/api/pois/etas` (`"eta_type": "anticipated"`), Prometheus
-  (`eta_type="anticipated"`), Grafana badges (**PLANNED**)
+  (`eta_type="anticipated"`)
 
 ```json
 {
@@ -83,7 +83,7 @@ estimated mode reacts to real performance.
   depart/arrive triggers
 - **Surfaces:** `/api/flight-status` (`"eta_mode": "estimated"`),
   `/api/pois/etas` (`"eta_type": "estimated"`), Prometheus
-  (`eta_type="estimated"`), Grafana badges (**LIVE**)
+  (`eta_type="estimated"`)
 
 ### Automatic Switching Rules
 
@@ -143,55 +143,17 @@ When connected to a real Starlink terminal:
 
 Use the `/api/routes/live-mode/active-route-eta` endpoint to:
 
-- Feed real position data
+- Query using current position and speed
 - Get up-to-date progress metrics
 - Track against expected timing
 
-## Grafana Dashboard Visualization
+## Native Overview
 
-The route timing feature adds four new panels to the Fullscreen Overview
-dashboard:
+The native [Overview](../features/overview.md) displays route-aware POI
+arrivals, route context and aircraft telemetry. Prometheus remains available for
+metrics; there are no bundled Grafana panels.
 
-### 1. Route Timing Profile Table
-
-Displays:
-
-- Route ID
-- Departure time
-- Arrival time
-- Expected duration
-- Segment count with timing
-
-**Data Source:** `starlink_route_timing_*` metrics
-
-### 2. Route Speed Analysis Chart
-
-Shows:
-
-- Expected segment speeds (from timing data)
-- Actual speeds (calculated from position changes)
-- Speed deviation from planned
-
-**Data Source:** Prometheus queries on speed metrics
-
-### 3. Route Progress Gauge
-
-Displays:
-
-- Overall route progress (0-100%)
-- Color-coded thresholds:
-  - 0-25%: Green (just starting)
-  - 25-75%: Blue (in progress)
-  - 75-100%: Orange (nearing completion)
-
-**Data Source:** `starlink_route_progress_percent`
-
-### 4. Distance to Destination Chart
-
-Shows:
-
-- Remaining distance (km)
-- Estimated arrival time countdown
-- Distance traveled vs planned
-
-**Data Source:** `starlink_distance_to_waypoint_meters`
+Route SIGMET crossing estimates use planned times before departure and live
+position/speed timing in flight. See
+[SIGMET crossing timing](../features/overview-weather.md#sigmet-crossing-timing)
+for unavailable telemetry, passed crossings and simulation replay behavior.

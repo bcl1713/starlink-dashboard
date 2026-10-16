@@ -9,26 +9,26 @@ feature set.
 
 ### Planning & Operations
 
-- **[Itinerary communications planning](./itinerary-planning.md)** - PDF-first
-  drafts, AR review, X-band policy, manual locks and revision handling
+- **[Itinerary communications planning](./itinerary-planning.md)** - PDF/KML
+  creation, ordinary editable legs and automatic source revisions
 
-- **[PLANNING-guide.md](./mission-planning-guide.md)** (470 lines) - Complete
-  mission planning guide
-- **[COMM-SOP.md](./mission-comm-sop.md)** (562 lines) - Communication standard
-  operating procedures
-- **[VISUALIZATION-guide.md](./mission-visualization-guide.md)** (573 lines) -
-  Dashboard visualization guide
+- **[PLANNING-guide.md](./mission-planning-guide.md)** - Complete mission
+  planning guide
+- **[COMM-SOP.md](./mission-comm-sop.md)** - Communication standard operating
+  procedures
+- **[VISUALIZATION-guide.md](./mission-visualization-guide.md)** - Dashboard
+  visualization guide
 - **[V2 acceptance contract](./v2-mission-retirement-acceptance.md)** - Public
   controls and visible Mission V2 activation journey
 
 ### Data Reference
 
-- **[DATA-STRUCTURES.md](./mission-data-structures.md)** (526 lines) - Complete
-  data structure reference
-- **[DATA-STRUCTURES-index.md](./mission-data-structures-index.md)** (275 lines)
+- **[DATA-STRUCTURES.md](./mission-data-structures.md)** - Complete data
+  structure reference
+- **[DATA-STRUCTURES-index.md](./mission-data-structures-index.md)**
   - Quick index
-- **[DATA-QUICK-reference.md](./mission-data-quick-reference.md)** (213 lines) -
-  Quick reference guide
+- **[DATA-QUICK-reference.md](./mission-data-quick-reference.md)** - Quick
+  reference guide
 
 ---
 

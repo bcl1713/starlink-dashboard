@@ -1,5 +1,9 @@
 # Portainer GHCR Deployment Runbook
 
+Use the template and images from the same reviewed release or source revision.
+Current `dev` documentation can describe features newer than v1.0.0; consult
+[release notes](../release-notes.md) when selecting a version.
+
 This runbook defines the supported deployment contract for the dedicated
 Portainer/GitHub Container Registry (GHCR) profile tracked by
 [issue #121](https://github.com/bcl1713/starlink-dashboard/issues/121).
@@ -64,9 +68,11 @@ create, delete, relocate, or disclose live paths while following this runbook.
 Other stack settings remain Portainer-managed. For non-live work, retain
 `STARLINK_MODE=simulation`.
 
-`STARLINK_PROMETHEUS_URL` defaults to `http://prometheus:9090`, the stable
-Prometheus service alias in this profile. `STARLINK_HISTORY_WINDOW_SECONDS` is
-an optional bootstrap default for the Mission Planner overview query lookback.
+The backend uses `http://prometheus:9090`, the stable Prometheus service alias,
+for Overview history by default. The current Portainer template does not pass
+`STARLINK_PROMETHEUS_URL` or `STARLINK_HISTORY_WINDOW_SECONDS` through its
+explicit service environment; adding those keys to Portainer alone will not
+override them. The backend bootstrap history lookback defaults to 1800 seconds.
 After an operator selects a window in the dashboard, the persisted dashboard
 selection takes precedence and is stored under
 `STARLINK_APP_DATA_PATH/settings/overview-history.json`. This display/query
@@ -117,12 +123,12 @@ The **Aircraft history** switch defaults to `true` and controls the flown track
 and its legend entry without disabling history collection or network graphs.
 Existing saved files missing `aircraft_history_enabled` default to enabled.
 
-Same-origin `GET /api/overview-links/settings` returns all 21 boolean fields;
-partial `PUT` merges only supplied fields. Missing saved fields use defaults;
-unfamiliar saved fields survive reads and partial saves, preserving preferences
-across compatible schema upgrades and future rollbacks. A deployed version must
-include this compatibility reader to accept fields introduced by a newer
-version. Retain the settings file when redeploying; manual removal is
+Same-origin `GET /api/overview-links/settings` returns the supported boolean
+fields; partial `PUT` merges only supplied fields. Missing saved fields use
+defaults; unfamiliar saved fields survive reads and partial saves, preserving
+preferences across compatible schema upgrades and future rollbacks. A deployed
+version must include this compatibility reader to accept fields introduced by a
+newer version. Retain the settings file when redeploying; manual removal is
 unnecessary for additive schema changes. Malformed JSON or invalid recognized
 values still require repair and are never silently reset.
 
@@ -214,7 +220,9 @@ host paths, or making manual DNS/proxy changes.
 An authorized non-live deployment may proceed only when all of these are true:
 
 1. The implementation and this documentation have passed independent review.
-2. The docs PR has merged to `dev` before the implementation PR is merged.
+2. The selected template revision and image set have passed their deployment
+   contract checks; use the matching release documentation, not an unrelated
+   current development template.
 3. An immutable selection and rollback selection are recorded.
 4. Required host-path keys are present and persistent storage is expected to be
    retained.

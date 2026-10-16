@@ -8,10 +8,12 @@ exports.
 ## Example: Build Map Visualization Data
 
 ```python
+# Select a leg from the Mission container (illustrative helper calls below).
+leg = mission.legs[0]
 # Get route and timeline
-route = route_manager.get_route(mission.route_id)
-timeline = get_mission_timeline(mission.id)
-pois = get_pois_for_route(mission.route_id)
+route = route_manager.get_route(leg.route_id)
+timeline = get_mission_leg_timeline(mission.id, leg.id)
+pois = get_pois_for_route(leg.route_id)
 
 # Extract route geometry
 route_coords = [

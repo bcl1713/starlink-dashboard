@@ -2,8 +2,6 @@
 
 [Back to API Reference](../README.md) | [Examples Index](./README.md)
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
 ---
 
 ## Health & Status
@@ -23,7 +21,7 @@ curl http://localhost:8000/api/status | jq .
 **Get Metrics (JSON):**
 
 ```bash
-curl http://localhost:8000/api/metrics | jq .
+curl http://localhost:8000/api/status | jq .
 ```
 
 **Get Prometheus Metrics:**
@@ -75,7 +73,7 @@ curl -X PUT http://localhost:8000/api/pois/poi-1 \
 **Delete POI:**
 
 ```bash
-curl -X DELETE http://localhost:8000/api/pois/poi-1 | jq .
+curl -i -X DELETE http://localhost:8000/api/pois/poi-1
 ```
 
 ---
@@ -97,13 +95,13 @@ curl "http://localhost:8000/api/pois/etas?latitude=40.7128&longitude=-74.0060&sp
 **Get Route Progress:**
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/progress" | jq .
+curl "http://localhost:8000/api/routes/route-001/progress?current_position_lat=40.7&current_position_lon=-74.0" | jq .
 ```
 
 **Get Waypoint ETA:**
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5" | jq .
+curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5?current_position_lat=40.7&current_position_lon=-74.0" | jq .
 ```
 
 ---
@@ -116,16 +114,8 @@ curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5" | jq .
 curl http://localhost:8000/api/config | jq .
 ```
 
-**Update Configuration:**
-
-```bash
-curl -X POST http://localhost:8000/api/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "route": {"pattern": "straight"},
-    "network": {"latency_max_ms": 100.0}
-  }' | jq .
-```
+For updates, use the [configuration contract](../endpoints/configuration.md).
+POST and PUT both replace a complete configuration; neither is a partial merge.
 
 ---
 
@@ -134,7 +124,7 @@ curl -X POST http://localhost:8000/api/config \
 **Get Route GeoJSON:**
 
 ```bash
-curl http://localhost:8000/route.geojson | jq .
+curl http://localhost:8000/api/route.geojson | jq .
 ```
 
 ---

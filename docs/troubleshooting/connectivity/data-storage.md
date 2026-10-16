@@ -1,22 +1,5 @@
-# Data Storage Troubleshooting
+# Data troubleshooting
 
-Troubleshooting guide for data persistence and storage issues.
+Persistence and API diagnostics are maintained with the current storage layout.
 
----
-
-## Data Not Persisting After Restart
-
-**Verify volumes mounted:**
-
-```bash
-# Check volume mounts in docker-compose.yml
-rg -A 5 "volumes:" docker-compose.yml
-
-# Verify volume exists
-docker volume ls | rg poi
-docker volume ls | rg prometheus
-docker volume ls | rg prometheus
-
-# Check volume content
-docker run -v poi_data:/data alpine ls -la /data
-```
+See [Data troubleshooting](../data-issues.md) for the maintained instructions.

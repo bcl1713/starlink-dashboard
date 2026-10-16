@@ -7,6 +7,15 @@
 
 ---
 
+## Historical Scope
+
+These records describe their dated implementation or exact tested candidate.
+They are not current setup instructions, release notes, performance guarantees,
+or evidence of today's upstream provider availability. Start with the
+[documentation index](../index.md) and [release baseline](../release-notes.md)
+for maintained guidance. Plans and specifications under `docs/superpowers/` also
+preserve historical decisions and may be superseded by later work.
+
 ## Report Organization
 
 All files in this category **MUST**:
@@ -29,6 +38,8 @@ Reports are organized in two subdirectories:
 ### Feature Implementation Summaries
 
 Completed feature implementation reports:
+
+- [2026-10-15: Documentation refresh after v1.0.0](2026-10-15-documentation-refresh.md)
 
 - [2026-10-03: Overview ADS-B aircraft layer](./2026-10-03-overview-adsb-aircraft-layer.md)
 

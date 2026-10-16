@@ -1,269 +1,59 @@
-# Starlink Prometheus Metrics: Overview
+# Metrics overview
 
-**Complete Reference:** [Metrics Reference](./reference.md)
+The backend exposes `/metrics` at <http://localhost:8000/metrics>. It returns
+Prometheus text with the OpenMetrics content type and EOF marker. Use the
+[reference](reference.md) for verified names, units and labels; the actual
+registry and updater define the checked-out version's behavior.
 
----
+The bundled Prometheus configuration scrapes `starlink-location:8000` every **1
+second**, with a **1-second timeout**. Both the global and job-specific
+intervals are in `monitoring/prometheus/prometheus.yml`. There is no
+`PROMETHEUS_SCRAPE_INTERVAL` or `METRICS_UPDATE_INTERVAL` environment setting.
+Backend updates default to 1 second and can be configured independently with
+`STARLINK_UPDATE_INTERVAL_SECONDS`. Stored history uses `PROMETHEUS_RETENTION`
+(example default `1y`). Changing frontend history polling or the displayed
+lookback does not change scraping or retention.
 
-## Overview
+Mission Planner renders Overview history through backend queries to Prometheus;
+Grafana is not required. Use <http://localhost:9090> for direct queries. Adjust
+host URLs if `.env` maps different ports.
 
-This document describes all Prometheus metrics exposed by the Starlink Location
-Backend. The metrics are available at `http://localhost:8000/metrics` in
-Prometheus text format.
-
-**Metrics Scrape Configuration:**
-
-- Interval: 10 seconds (configurable via `PROMETHEUS_SCRAPE_INTERVAL` in `.env`)
-- Timeout: 5 seconds
-- Format: OpenMetrics 1.0.0
-
----
-
-## Metric Categories
-
-### Position Metrics
-
-Track the physical location and movement of the Starlink dish.
-
-**Key metrics:**
-
-- `starlink_dish_latitude_degrees` - Latitude position (-90 to 90)
-- `starlink_dish_longitude_degrees` - Longitude position (-180 to 180)
-- `starlink_dish_altitude_meters` - Altitude above sea level
-- `starlink_dish_speed_knots` - Movement speed (0 to 1000+ knots)
-- `starlink_dish_heading_degrees` - Direction of travel (0-360°)
-
----
-
-### Network Performance Metrics
-
-Monitor network quality and throughput in real-time.
-
-#### Current Values (Gauges)
-
-Instantaneous network performance values:
-
-- `starlink_network_latency_ms_current` - Current round-trip latency
-- `starlink_network_throughput_down_mbps_current` - Current download speed
-- `starlink_network_throughput_up_mbps_current` - Current upload speed
-- `starlink_network_packet_loss_percent` - Packet loss percentage
-
-#### Histograms (for Percentile Analysis)
-
-Enable calculation of p50, p95, p99 using PromQL:
-
-- `starlink_network_latency_ms` - Latency distribution with status labels
-- `starlink_network_throughput_down_mbps` - Download throughput distribution
-- `starlink_network_throughput_up_mbps` - Upload throughput distribution
-
----
-
-### Obstruction and Signal Quality Metrics
-
-Track dish obstructions and signal quality:
-
-- `starlink_dish_obstruction_percent` - Sky obstruction (0-100%)
-- `starlink_signal_quality_percent` - Signal quality (0-100%, higher is better)
-
----
-
-### Status and Uptime Metrics
-
-Monitor service health and availability:
-
-- `starlink_service_info` - Service metadata (version, mode)
-- `starlink_uptime_seconds` - Service uptime
-- `starlink_dish_uptime_seconds` - Dish connection uptime
-- `starlink_dish_thermal_throttle` - Thermal throttle state (0/1)
-- `starlink_dish_outage_active` - Outage state (0/1)
-
----
-
-### Event Counter Metrics
-
-Track cumulative events (monotonically increasing):
-
-- `starlink_connection_attempts_total` - Total connection attempts
-- `starlink_connection_failures_total` - Failed connection attempts
-- `starlink_outage_events_total` - Total outage events
-- `starlink_thermal_events_total` - Thermal throttle events
-
----
-
-### Simulation Metrics
-
-Track simulation system health:
-
-- `simulation_updates_total` - Total simulation updates
-- `simulation_errors_total` - Simulation errors encountered
-
----
-
-### POI/ETA Metrics
-
-Track estimated time of arrival to points of interest:
-
-- `starlink_eta_poi_seconds{name="..."}` - ETA in seconds to named POI
-- `starlink_distance_to_poi_meters{name="..."}` - Distance to named POI
-
----
-
-### Meta-Metrics (System Health)
-
-Monitor the metrics system itself:
-
-- `starlink_metrics_scrape_duration_seconds` - Metrics collection time
-- `starlink_metrics_generation_errors_total` - Metric generation errors
-- `starlink_metrics_last_update_timestamp_seconds` - Last successful update
-
----
-
-## Metric Labels
-
-Labels enable filtering and aggregation in PromQL queries.
-
-### Mode Label
-
-- **Values:** `simulation`, `live`
-- **Usage:** Filter queries by operation mode
-- **Example:** `starlink_network_latency_ms{mode="simulation"}`
-
-### Status Label
-
-Automatic status classification based on performance:
-
-- **excellent:** latency < 50ms AND packet loss < 1%
-- **good:** latency < 100ms AND packet loss < 5%
-- **degraded:** latency < 150ms OR packet loss < 10%
-- **poor:** latency >= 150ms OR packet loss >= 10%
-
-**Example:** `starlink_network_latency_ms{status="excellent"}`
-
-### POI Name Label
-
-- **Values:** Custom POI names/identifiers
-- **Applies to:** ETA and distance metrics
-- **Example:** `starlink_eta_poi_seconds{name="NYC"}`
-
----
-
-## Common PromQL Queries
-
-### Current Network Status
+## Example queries
 
 ```promql
-# Current latency
+# Prometheus can scrape the backend (1 means success)
+up{job="starlink-location"}
+
+# Current latency in milliseconds
 starlink_network_latency_ms_current
 
-# Current download throughput
-starlink_network_throughput_down_mbps_current
+# Average speed in knots over five minutes (speed is a gauge)
+avg_over_time(starlink_dish_speed_knots[5m])
 
-# Current upload throughput
-starlink_network_throughput_up_mbps_current
-```
+# Position gauges in one selector
+{__name__=~"starlink_dish_(latitude|longitude)_degrees"}
 
-### Percentile Analysis
+# Latency p95 per operating mode, combining status buckets
+histogram_quantile(0.95, sum by (le, mode) (rate(starlink_network_latency_ms_bucket[5m])))
 
-```promql
-# 95th percentile latency over last 5 minutes
-histogram_quantile(0.95, rate(starlink_network_latency_ms_bucket[5m]))
+# Mean observed latency per mode (no samples can produce NaN)
+sum by (mode) (rate(starlink_network_latency_ms_sum[5m])) / sum by (mode) (rate(starlink_network_latency_ms_count[5m]))
 
-# 50th percentile (median) latency
-histogram_quantile(0.50, rate(starlink_network_latency_ms_bucket[5m]))
-
-# 99th percentile download throughput
-histogram_quantile(0.99, rate(starlink_network_throughput_down_mbps_bucket[5m]))
-```
-
-### Network Performance by Status
-
-```promql
-# Average latency for "good" status connections
-rate(starlink_network_latency_ms_sum{status="good"}[5m]) / rate(starlink_network_latency_ms_count{status="good"}[5m])
-
-# Download throughput for "excellent" connections
-rate(starlink_network_throughput_down_mbps_sum{status="excellent"}[5m]) / rate(starlink_network_throughput_down_mbps_count{status="excellent"}[5m])
-```
-
-### Availability and Reliability
-
-```promql
-# Connection failure rate
-rate(starlink_connection_failures_total[1h]) / rate(starlink_connection_attempts_total[1h])
-
-# Outage frequency (events per hour)
-rate(starlink_outage_events_total[1h])
-
-# Uptime percentage
-starlink_dish_uptime_seconds / (24 * 3600)  # For 24-hour window
-```
-
-### Service Health
-
-```promql
-# Is metrics collection active? (should be 1 for healthy systems)
-time() - starlink_metrics_last_update_timestamp_seconds < 30
-
-# Metrics generation error rate
-rate(starlink_metrics_generation_errors_total[1h])
-
-# Metric collection duration (should be < 5 seconds)
-starlink_metrics_scrape_duration_seconds
-```
-
-### Position Tracking
-
-```promql
-# Current position
-{starlink_dish_latitude_degrees, starlink_dish_longitude_degrees}
-
-# Average speed over last 5 minutes
-rate(starlink_dish_speed_knots[5m])
-
-# Obstruction percentage
-starlink_dish_obstruction_percent
-```
-
-### POI Navigation
-
-```promql
-# ETA to New York
+# POI ETA; additional category and eta_type labels remain in the result
 starlink_eta_poi_seconds{name="NYC"}
-
-# Distance to nearest airport
-starlink_distance_to_poi_meters{name=~"airport.*"}
 ```
 
----
+Histogram quantiles describe observations over the query window, not an
+instantaneous value. Histograms retain observations from earlier status labels;
+aggregate away `status` when you want the combined distribution. Gauges do not
+inherit histogram `mode`/`status` labels. Prometheus adds scrape labels such as
+`job` and `instance` separately.
 
-## Native Overview and Prometheus
+Unavailable verified network measurements are exported as `NaN`, and do not
+create histogram observations. Live dish loss clears telemetry gauges to `NaN`;
+this preserves existing Prometheus history and does not simulate replacement
+measurements. A scrape can succeed while no valid telemetry is available.
 
-Mission Planner displays network history through the backend API at
-<http://localhost:5173>. Query other exported metrics directly in Prometheus at
-<http://localhost:9090>.
-
-See the [Overview features](../features/overview.md) for supported displays.
-
----
-
-## Configuration
-
-Metrics are configurable via environment variables in `.env`:
-
-```bash
-# Prometheus scrape interval (how often Prometheus collects metrics)
-PROMETHEUS_SCRAPE_INTERVAL=10s
-
-# Metrics update interval (how often backend updates collected metrics)
-METRICS_UPDATE_INTERVAL=3s
-
-# Retention period for Prometheus
-PROMETHEUS_RETENTION=15d
-```
-
----
-
-## See Also
-
-- [Metrics Reference](./reference.md) - Complete metric specifications
-- [Health Monitoring](./health-monitoring.md) - Health check details
-- [Troubleshooting](./troubleshooting.md) - Common metrics issues
+See [health monitoring](health-monitoring.md) and
+[troubleshooting](troubleshooting.md) before interpreting zeros, missing series,
+or stale-looking graphs as real-world measurements.

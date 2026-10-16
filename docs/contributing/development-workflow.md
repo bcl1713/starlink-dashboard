@@ -34,11 +34,8 @@ git add .
 git commit -m "feat: description of changes"
 ```
 
-If linting fails, pre-commit will:
-
-1. Show violations and attempted fixes
-2. Stage the fixed code
-3. Require you to commit again
+If a hook modifies files, inspect and stage its fixes before retrying. Hooks do
+not automatically stage those changes.
 
 ---
 

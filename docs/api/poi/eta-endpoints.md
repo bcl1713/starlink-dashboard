@@ -6,26 +6,24 @@
 
 ## GET `/api/pois/etas`
 
-Get all POIs with real-time ETA and distance data.
-Returns a wrapped response object (not a flat array).
+Get all POIs with real-time ETA and distance data. Returns a wrapped response
+object (not a flat array).
 
 **Query Parameters:**
 
 - `route_id` (string, optional) - Filter by route ID
-- `latitude` (float, optional) - Current latitude
-  (default: from telemetry)
-- `longitude` (float, optional) - Current longitude
-  (default: from telemetry)
-- `speed_knots` (float, optional) - Current speed
-  (default: from telemetry)
-- `status_filter` (string, optional) - Filter by course
-  status (comma-separated: `on_course`, `slightly_off`,
-  `off_track`, `behind`)
-- `category` (string, optional) - Filter by POI category
-  (comma-separated: `departure`, `arrival`, `waypoint`,
-  `alternate`)
-- `active_only` (bool, optional, default: true) - Filter
-  to show only active POIs
+- `latitude` (float, optional) - Current latitude (see telemetry precedence
+  below)
+- `longitude` (float, optional) - Current longitude (see telemetry precedence
+  below)
+- `speed_knots` (float, optional) - Current speed (see telemetry precedence
+  below)
+- `status_filter` (string, optional) - Filter by course status (comma-separated:
+  `on_course`, `slightly_off`, `off_track`, `behind`)
+- `category` (string, optional) - Filter by POI category (comma-separated:
+  `departure`, `arrival`, `waypoint`, `alternate`)
+- `active_only` (bool, optional, default: true) - Filter to show only active
+  POIs
 
 **Response:**
 
@@ -79,34 +77,25 @@ Returns a wrapped response object (not a flat array).
 - `active` (bool) - Whether POI is currently active
 - `eta_seconds` (float) - ETA in seconds (-1 if no speed)
 - `eta_type` (string) - `anticipated` or `estimated`
-- `is_pre_departure` (bool) - True when flight has not
-  yet departed
-- `flight_phase` (string?) - `pre_departure`,
-  `in_flight`, or `post_arrival`
+- `is_pre_departure` (bool) - True when flight has not yet departed
+- `flight_phase` (string?) - `pre_departure`, `in_flight`, or `post_arrival`
 - `distance_meters` (float) - Distance to POI in meters
-- `bearing_degrees` (float?) - Bearing in degrees
-  (0=North)
-- `course_status` (string?) - `on_course`,
-  `slightly_off`, `off_track`, or `behind`
-- `is_on_active_route` (bool) - Whether POI projects to
-  active route
-- `projected_latitude` (float?) - Projected point on
-  route
-- `projected_longitude` (float?) - Projected point on
-  route
-- `projected_waypoint_index` (int?) - Index of closest
-  route point
-- `projected_route_progress` (float?) - Progress % where
-  POI projects on route
-- `route_aware_status` (string?) - `ahead_on_route`,
-  `already_passed`, `not_on_route`, or `pre_departure`
+- `bearing_degrees` (float?) - Bearing in degrees (0=North)
+- `course_status` (string?) - `on_course`, `slightly_off`, `off_track`, or
+  `behind`
+- `is_on_active_route` (bool) - Whether POI projects to active route
+- `projected_latitude` (float?) - Projected point on route
+- `projected_longitude` (float?) - Projected point on route
+- `projected_waypoint_index` (int?) - Index of closest route point
+- `projected_route_progress` (float?) - Progress % where POI projects on route
+- `route_aware_status` (string?) - `ahead_on_route`, `already_passed`,
+  `not_on_route`, or `pre_departure`
 
 **Status Codes:**
 
 - `200 OK` - ETAs calculated
 - `400 Bad Request` - Failed to calculate ETA
-- `500 Internal Server Error` - POI manager not
-  initialized
+- `500 Internal Server Error` - POI manager not initialized
 
 ---
 
@@ -116,24 +105,27 @@ Returns a wrapped response object (not a flat array).
 - **Bearing:** Inverse bearing calculation
 - **ETA (estimated, route-aware):** Remaining travel along route segments from
   the current projected position to the POI's projected destination. The first
-  remaining segment blends measured speed with its planned speed; later
-  segments use planned speeds. All POI kinds and named waypoints share this
-  calculation. Stored destination geometry takes precedence over name matches.
+  remaining segment blends measured speed with its planned speed; later segments
+  use planned speeds. All POI kinds and named waypoints share this calculation.
+  Stored destination geometry takes precedence over name matches.
 - **ETA (estimated, fallback):** distance / (speed \* 0.51444) sec
-- **ETA (anticipated):** Route-aware calculation using
-  flight plan timing
-- **Speed Default:** 67 knots (fallback if not available)
+- **ETA (anticipated):** Route-aware calculation using flight plan timing
+- **Telemetry precedence and fallback:** A configured coordinator overwrites
+  position and speed query values with its current telemetry. If coordinator
+  acquisition fails, those values are cleared; the request can fail rather than
+  inventing a live position. Only when no coordinator exists do missing or
+  unparseable values fall back to latitude 41.6, longitude -74.0 and speed 67
+  knots. Query coordinates/speed are strings converted in the handler, so
+  callers must validate their own bounds. Custom-position query examples below
+  are effective only without a coordinator. Do not rely on them as a live-mode
+  override.
 
-**Dual-mode ETA:** The endpoint supports two ETA modes
-based on flight phase:
+**Dual-mode ETA:** The endpoint supports two ETA modes based on flight phase:
 
-- **Anticipated** (pre-departure): ETAs based on flight
-  plan schedule
-- **Estimated** (in-flight): ETAs based on current
-  telemetry speed/position
+- **Anticipated** (pre-departure): ETAs based on flight plan schedule
+- **Estimated** (in-flight): ETAs based on current telemetry speed/position
 
-**Use Case:** Real-time navigation, POI tracking, mission
-monitoring.
+**Use Case:** Real-time navigation, POI tracking, mission monitoring.
 
 ---
 
@@ -199,5 +191,4 @@ data = response.json()
 
 ---
 
-[Back to API Reference](../README.md) |
-[POI Index](./README.md)
+[Back to API Reference](../README.md) | [POI Index](./README.md)

@@ -1,84 +1,32 @@
-# Metrics & Monitoring Troubleshooting
+# Metrics and history troubleshooting
 
-This guide covers Prometheus and Mission Planner issues related to metrics
-collection and visualization.
-
-## Prometheus Issues
-
-### Prometheus Not Collecting Metrics
-
-**Check Prometheus targets:**
+Prometheus scrapes `starlink-location:8000/metrics` at 1-second intervals. The
+backend queries Prometheus for Overview history; Mission Planner renders it.
+Grafana is not a dependency of this deployment.
 
 ```bash
-# Open browser
-open <http://localhost:9090/targets>
-# Or use curl
-curl <http://localhost:9090/api/v1/targets> | jq '.data.activeTargets'
+curl --fail --max-time 10 http://localhost:8000/metrics
+curl --fail --max-time 10 http://localhost:9090/-/ready
+curl --fail --max-time 10 http://localhost:9090/api/v1/targets
+curl --fail --max-time 10 'http://localhost:9090/api/v1/query?query=up'
+docker compose logs --tail=100 prometheus
 ```
 
-**Verify backend is reachable:**
+Use the configured host ports. Inspect `health` and `lastError` for the backend
+target. A failed target may indicate backend health, the bridge network, or
+invalid scrape config. Use host curl or backend-container curl for diagnostics;
+do not assume the Prometheus image includes curl.
 
-```bash
-# From Prometheus container
-docker compose exec prometheus curl <http://starlink-location:8000/health>
+The config is bind-mounted locally; restart Prometheus after changing it. Both
+global and job-specific scrape intervals are set to 1 second, with a 1-second
+job timeout. The rules file is mounted under `/etc/prometheus/rules/`.
 
-# From host
-curl <http://localhost:8000/health>
-```
+If samples exist but Overview history is absent, check backend logs and
+`STARLINK_PROMETHEUS_URL` (default `http://prometheus:9090`), selected history
+window, and sample freshness. History lookback does not increase database
+retention. A fresh database cannot provide older samples, and live connectivity
+loss does not create synthetic history. During paced replay the Overview network
+cards are intentionally hidden.
 
-**Check scrape config:**
-
-```bash
-# View prometheus.yml
-cat monitoring/prometheus/prometheus.yml
-
-# Verify backend URL is correct
-rg "static_configs:" -A 3 monitoring/prometheus/prometheus.yml
-```
-
-### Issue: "Failed to reload config"
-
-```bash
-# Check YAML syntax
-docker run --rm -v $(pwd)/monitoring/prometheus:/config \
-  prom/prometheus:latest \
-  promtool check config /config/prometheus.yml
-
-# Fix errors and restart
-docker compose restart prometheus
-```
-
-### High Disk Usage
-
-**Check storage:**
-
-```bash
-# Size of prometheus volume
-docker volume inspect prometheus_data
-# Or see size
-du -sh /var/lib/docker/volumes/starlink-dashboard-dev_prometheus_data
-
-# Reduce retention in .env
-PROMETHEUS_RETENTION=15d  # Instead of 1y
-docker compose down
-docker compose up -d
-
-# Check if cleaning up
-docker compose logs prometheus | tail -20
-```
-
-## Mission Planner Issues
-
-Open <http://localhost:5173> and check the Overview. Verify the same-origin
-backend proxy and Prometheus readiness:
-
-```bash
-docker compose ps mission-planner starlink-location prometheus
-docker compose logs --tail=30 mission-planner starlink-location
-curl --fail http://localhost:5173/api/status
-curl --fail http://localhost:9090/-/ready
-```
-
-For empty history graphs, inspect Prometheus targets at
-<http://localhost:9090/targets> and the backend metrics at
-<http://localhost:8000/metrics>.
+See [monitoring services](../../monitoring/docs/services-overview.md) and
+[history configuration](../setup/configuration/environment-variables.md).
