@@ -11,6 +11,7 @@ from app.mission.effective_route import prepare_effective_route
 from app.mission.pop_forecast import forecast_for_live, forecast_for_mission
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
+    TimelineComputationError,
     derive_mission_window,
 )
 from app.services.pop.catalog import load_catalog
@@ -124,7 +125,13 @@ class PopStatusService:
         valid = position_state == "fresh" and speed_is_fresh(
             position.speed, position.speed_observed_at, observed_now
         )
-        if unavailable_reason or catalog is None:
+        if not enabled:
+            forecast = PopForecast(
+                revision=revision,
+                catalog_fingerprint=catalog.fingerprint if catalog else "",
+                status="disabled",
+            )
+        elif unavailable_reason or catalog is None:
             forecast = PopForecast(
                 revision=revision,
                 catalog_fingerprint=catalog.fingerprint if catalog else "",
@@ -141,7 +148,12 @@ class PopStatusService:
                     revision=revision,
                     starshield_enabled=enabled,
                 )
-            except (ValueError, TypeError, AttributeError) as exc:
+            except (
+                TimelineComputationError,
+                ValueError,
+                TypeError,
+                AttributeError,
+            ) as exc:
                 forecast = PopForecast(
                     revision=revision,
                     catalog_fingerprint=catalog.fingerprint,
@@ -161,16 +173,14 @@ class PopStatusService:
                 telemetry_valid=valid,
             )
         nearest = None
-        if forecast.status == "ready":
-            if flight_phase == "pre_departure":
-                point = route.points[0]
-                nearest = nearest_pop(point.latitude, point.longitude, catalog)
-            elif valid:
-                nearest = nearest_pop(position.latitude, position.longitude, catalog)
+        if forecast.status == "ready" and valid and flight_phase != "pre_departure":
+            nearest = nearest_pop(position.latitude, position.longitude, catalog)
         next_id = (
             forecast.transitions[0].crossing.to_pop_id if forecast.transitions else None
         )
-        if catalog is not None:
+        # Planned geometry starts at the route origin. Ground egress remains
+        # truthful display evidence, but cannot reconcile future flight crossings.
+        if catalog is not None and flight_phase != "pre_departure":
             advisories = (
                 self.reconcile(
                     forecast,
@@ -205,7 +215,12 @@ class PopStatusService:
                 token = (context.parent_mission_id, context.route_id)
                 try:
                     route = prepare_effective_route(context.leg, self.route_manager)
-                except (ValueError, TypeError, AttributeError) as exc:
+                except (
+                    TimelineComputationError,
+                    ValueError,
+                    TypeError,
+                    AttributeError,
+                ) as exc:
                     reason = str(exc)
             elif resolution.state == "no_active_mission":
                 route = self.route_manager.get_active_route()
