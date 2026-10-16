@@ -47,8 +47,9 @@ compact menu below 1024px to avoid crowding windowed headers.
 
 For non-desktop compositions, the camera's safe rectangle comes from the
 opening's measured bounds relative to the full canvas. Desktop derives the
-opening from actual visible panel bounds, preserving the wider fullscreen route
-opening. Automatic and Reset/route-overview framing respond to changes in
+opening from actual visible panel bounds. Fullscreen compares the central
+opening with the wider gap between right-side controls and legend, choosing
+the larger limiting dimension to avoid excessive zoom-out into a shallow gap. Automatic and Reset/route-overview framing respond to changes in
 position and size, including small resizes. Existing smooth rotation,
 dolly/projection transitions and manual-intent preservation remain intact.
 

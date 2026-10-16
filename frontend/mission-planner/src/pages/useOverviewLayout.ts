@@ -47,8 +47,7 @@ export function useOverviewLayout(
         clockHeight: 0,
         overlayHeight: 0,
       });
-      // The canvas occupies its own grid cell outside the large-screen overlay
-      // composition. Its parent stage also contains panels and is not its size.
+      // The canvas fills the dashboard; panel-free bounds determine camera fit.
       const globe = page.querySelector<HTMLElement>('.overview-globe');
       const bounds = (globe ?? stage).getBoundingClientRect();
       const padding = mode === 'desktop' ? 20 : 12;
@@ -116,14 +115,25 @@ export function useOverviewLayout(
           ]
             .map((node) => node.getBoundingClientRect())
             .filter((box) => box.width > 0 && box.height > 0);
-          top = Math.max(
+          const wideTop = Math.max(
             top,
             ...upper.map((box) => box.bottom - bounds.top + padding)
           );
-          right = bounds.width - padding;
+          const wideRight = bounds.width - padding;
           const lower = panel('.overview-map-overlays');
-          if (lower)
-            bottom = Math.min(bottom, lower.top - bounds.top - padding);
+          const wideBottom = lower
+            ? Math.min(bottom, lower.top - bounds.top - padding)
+            : bottom;
+          // A wider but shallow gap can force a dramatic zoom-out. Prefer the
+          // opening with the larger limiting dimension for a readable globe.
+          if (
+            Math.min(wideRight - left, wideBottom - wideTop) >
+            Math.min(right - left, bottom - top)
+          ) {
+            top = wideTop;
+            right = wideRight;
+            bottom = wideBottom;
+          }
         }
       }
       const safeRect = {

@@ -5,6 +5,7 @@ import { useOverviewLayout } from './useOverviewLayout';
 
 afterEach(() => {
   vi.restoreAllMocks();
+  Reflect.deleteProperty(document, 'fullscreenElement');
   vi.unstubAllGlobals();
   document.body.replaceChildren();
 });
@@ -202,5 +203,42 @@ it('positions the globe in the opening while the renderer covers the entire dash
     y: 92,
     width: 536,
     height: 96,
+  });
+});
+
+it('fullscreen keeps the taller center opening when the right-side gap would shrink the globe', () => {
+  const { page, stage, globe } = setup(1920, 1080);
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    value: document.documentElement,
+  });
+  vi.mocked(globe.getBoundingClientRect).mockReturnValue(
+    new DOMRect(0, 0, 1920, 1080)
+  );
+  const panels: Record<string, DOMRect> = {
+    'overview-metrics-overlays': new DOMRect(20, 136, 440, 924),
+    'overview-top-overlays': new DOMRect(20, 20, 1880, 104),
+    'overview-arrival-overlays': new DOMRect(699, 915, 642, 145),
+    'overview-map-controls': new DOMRect(1580, 280, 320, 44),
+    'overview-map-overlays': new DOMRect(1580, 660, 320, 400),
+  };
+  for (const [className, box] of Object.entries(panels)) {
+    const node = document.createElement('div');
+    node.className = className;
+    page.append(node);
+    vi.spyOn(node, 'getBoundingClientRect').mockReturnValue(box);
+  }
+  vi.spyOn(
+    page.querySelector('.overview-right-overlays')!,
+    'getBoundingClientRect'
+  ).mockReturnValue(new DOMRect(1580, 136, 320, 924));
+  const { result } = renderHook(() =>
+    useOverviewLayout({ current: page }, { current: stage }, 'loaded', true)
+  );
+  expect(result.current.safeRect).toEqual({
+    x: 480,
+    y: 144,
+    width: 1080,
+    height: 751,
   });
 });

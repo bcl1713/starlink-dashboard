@@ -11,10 +11,11 @@ import {
 } from './support/overview-camera';
 
 for (const viewport of [
+  { width: 1920, height: 1080 },
   { width: 1920, height: 1280 },
   { width: 2560, height: 1440 },
 ]) {
-  test(`synthetic dateline route remains visible through fullscreen and repeated resets at ${viewport.width}`, async ({
+  test(`synthetic dateline route remains visible through fullscreen and repeated resets at ${viewport.width}x${viewport.height}`, async ({
     page,
     request,
   }, testInfo) => {
@@ -85,6 +86,8 @@ for (const viewport of [
     const checkRoute = async (stage: string, fullscreen: boolean) => {
       await settledOverviewCamera(page);
       const geometry = await routeGeometry(page, route);
+      if (fullscreen && viewport.height === 1080)
+        expect(geometry.earthDiameter).toBeGreaterThan(500);
       for (const {
         screen: [x, y],
         surfaceDot,
@@ -144,7 +147,7 @@ for (const viewport of [
   });
 }
 
-test('fullscreen keeps Earth centered and fits a coast-to-coast route in the right opening', async ({
+test('fullscreen fits a coast-to-coast route in the taller central opening', async ({
   page,
 }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -222,14 +225,15 @@ async function routeGeometry(page: Page, route: [number, number, number][]) {
     const metrics = document
       .querySelector('.overview-metrics-overlays')!
       .getBoundingClientRect();
-    const upper = [
-      ...document.querySelectorAll(
-        '.overview-satellite-overlays, .overview-map-controls, .overview-top-overlays'
-      ),
-    ].map((el) => el.getBoundingClientRect().bottom);
-    const lower = [
-      ...document.querySelectorAll('.overview-map-overlays, .overview-arrival'),
-    ].map((el) => el.getBoundingClientRect().top);
+    const controls = document
+      .querySelector('.overview-right-overlays')!
+      .getBoundingClientRect();
+    const clocks = document
+      .querySelector('.overview-top-overlays')!
+      .getBoundingClientRect();
+    const arrival = document
+      .querySelector('.overview-arrival-overlays')!
+      .getBoundingClientRect();
     camera.updateMatrixWorld();
     const project = (p: number[]) => {
       const vector = camera.position
@@ -243,6 +247,10 @@ async function routeGeometry(page: Page, route: [number, number, number][]) {
     };
     return {
       earth: project([0, 0, 0]),
+      earthDiameter:
+        (2 * stage.height) /
+        (Math.tan((camera.fov * Math.PI) / 360) *
+          Math.sqrt(camera.position.lengthSq() - 4)),
       route: route.map((p) => ({
         screen: project(p),
         surfaceDot: camera.position
@@ -253,9 +261,9 @@ async function routeGeometry(page: Page, route: [number, number, number][]) {
       stage: stage.toJSON(),
       opening: {
         left: metrics.right + 20,
-        right: stage.right - 20,
-        top: Math.max(...upper) + 20,
-        bottom: Math.min(...lower) - 20,
+        right: controls.left - 20,
+        top: clocks.bottom + 20,
+        bottom: arrival.top - 20,
       },
     };
   }, route);
