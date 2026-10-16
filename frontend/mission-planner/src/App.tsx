@@ -55,14 +55,14 @@ function AppNavigation() {
         </NavLink>
         <button
           type="button"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input text-foreground md:hidden"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input text-foreground lg:hidden"
           aria-label="Toggle navigation"
           aria-expanded={isOpen}
           onClick={() => setIsOpen((open) => !open)}
         >
           <Menu className="size-5" aria-hidden="true" />
         </button>
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-1 lg:flex">
           {navigationItems.map(({ to, label }) => (
             <NavLink
               key={to}
@@ -81,7 +81,7 @@ function AppNavigation() {
         </div>
       </div>
       {isOpen && (
-        <div className="border-t bg-card px-4 py-2 md:hidden">
+        <div className="border-t bg-card px-4 py-2 lg:hidden">
           <div className="mx-auto grid max-w-[1440px] gap-1">
             {navigationItems.map(({ to, label }) => (
               <NavLink

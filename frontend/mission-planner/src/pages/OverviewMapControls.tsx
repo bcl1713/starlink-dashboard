@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import type { OverviewCameraIntent } from './overview-camera-frame';
 interface Props {
+  children?: ReactNode;
   exploring: boolean;
   intent: OverviewCameraIntent;
   followUnavailable: string | null;
@@ -8,6 +9,7 @@ interface Props {
   onReset: () => void;
 }
 export function OverviewMapControls({
+  children,
   exploring,
   intent,
   followUnavailable,
@@ -40,17 +42,31 @@ export function OverviewMapControls({
   }, [exploring, onExploreChange]);
   return (
     <div className="overview-map-controls" aria-label="Map interaction">
-      <button
-        ref={toggle}
-        type="button"
-        aria-pressed={exploring}
-        onClick={() => onExploreChange(!exploring)}
+      <div
+        className="overview-map-toolbar"
+        role="group"
+        aria-label="Map actions"
       >
-        {exploring ? 'Exit map exploration' : 'Explore map'}
-      </button>
-      <button type="button" onClick={onReset}>
-        Reset map view
-      </button>
+        <button
+          ref={toggle}
+          type="button"
+          aria-label={exploring ? 'Exit map exploration' : 'Explore map'}
+          title={exploring ? 'Exit map exploration' : 'Explore map'}
+          aria-pressed={exploring}
+          onClick={() => onExploreChange(!exploring)}
+        >
+          {exploring ? 'Exit' : 'Explore'}
+        </button>
+        <button
+          type="button"
+          aria-label="Reset map view"
+          title="Reset map view"
+          onClick={onReset}
+        >
+          Reset
+        </button>
+        {children}
+      </div>
       {intent === 'overview' && <p role="status">Route overview</p>}
       {intent === 'follow' && (
         <p role="status" id="overview-follow-status">

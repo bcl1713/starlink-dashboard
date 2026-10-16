@@ -537,3 +537,23 @@ it('eases projection changes instead of jumping when the layout changes', () => 
   expect(camera.view!.offsetX).toBeLessThan(before);
   expect(camera.view!.offsetX).toBeGreaterThan(39);
 });
+
+it.each(['automatic', 'overview'] as const)(
+  'reframes %s when the clear opening moves without changing size',
+  (intent) => {
+    const { camera, props } = setup();
+    const view = render(
+      <OverviewMapController {...props} intent={intent} reducedMotion />
+    );
+    const before = camera.view!.offsetX;
+    view.rerender(
+      <OverviewMapController
+        {...props}
+        intent={intent}
+        reducedMotion
+        safeRect={{ ...props.safeRect, x: 100 }}
+      />
+    );
+    expect(camera.view!.offsetX).not.toBe(before);
+  }
+);

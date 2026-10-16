@@ -10,6 +10,7 @@ import {
   applyOverviewLabelLayout,
   positionOverviewDisclosure,
   protectOverviewLabels,
+  visibleOverviewOverlayBounds,
 } from './overview-label-dom';
 import {
   projectOverviewAircraftBounds,
@@ -223,17 +224,8 @@ export function OverviewLabelLayout({
             '.overview-planned-satellite,.overview-arrival,.globe-legend,.overview-fullscreen-control,.overview-map-status,.overview-map-controls,.overview-top-overlays,.overview-metrics-overlays,.overview-display-label,.overview-marker-debug'
           ),
         ].flatMap((node) => {
-          const box = node.getBoundingClientRect();
-          return box.width && box.height
-            ? [
-                {
-                  x: box.x - viewport.x,
-                  y: box.y - viewport.y,
-                  width: box.width,
-                  height: box.height,
-                },
-              ]
-            : [];
+          const box = visibleOverviewOverlayBounds(node, viewport);
+          return box ? [box] : [];
         });
         reserved.push(...popupBounds);
         const geometry = {

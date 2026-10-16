@@ -7,33 +7,61 @@ no mobile copies or extra polling are introduced.
 
 ## Available space and scrolling
 
-`useOverviewLayout` observes the bounded `.app-route-content` shell, not the
-Overview's growing scroll content. ResizeObserver tracks the stage and overlay
-sizes; root font changes and legend disclosure also schedule measurement. Mode
-is exposed through `data-layout` for CSS and browser verification.
+The Three.js canvas always covers the complete Overview viewport behind all
+translucent panels, including the scrolling sidebar. It remains fixed while
+panels scroll. The globe's camera, rather than the canvas, is positioned and
+scaled into the open area left by those panels.
 
-- Desktop requires at least `max(1500px, 93.75rem)` width and
-  `max(1012px, 63.25rem)` height. Its five-card rail remains 440px wide.
-  Measured panel overflow, overlap, or insufficient clear map height selects
-  stacked page flow, latched until viewport/root or saved visibility changes.
-- Landscape requires at least 800px usable width, a readable 210–240px rail,
-  560px map width, 220px stage height and 120px height clear of arrival content.
-  Readability minima scale upward with enlarged root text. Very tall viewports
-  use stacked or desktop composition rather than the landscape strip.
-- Other sizes use stacked flow. The shell owns vertical page scrolling; metric
-  cards have no nested scroller. In landscape, only the metrics rail scrolls.
-- When overlays cannot fit, panels move below a 360px renderer. Expanded legend,
-  root font over 20px or measured oversized content triggers this escape. Within
-  a settled viewport, the flow decision stays stable until a resize/root or
-  visibility change; loading-induced decisions reset when initial queries
-  settle.
+`useOverviewLayout` observes the bounded `.app-route-content` shell, the canvas,
+and an invisible `.overview-map-opening` layout area. Available width, height
+and root font size choose composition; legend disclosure and changing feed
+content cannot switch modes. Mode is exposed through `data-layout` for browser
+verification.
 
-Semantic content keys exclude changing observation timestamps/countdowns.
-Observed size changes still update the reserved rectangle. This avoids feedback
-between reflowed panel height and the decision to reflow it. Safe-area insets
-and `dvh` are used with a `vh` fallback. Actual CSS dimensions select layout;
-system scaling, browser zoom and DPR are recorded separately in acceptance
-evidence.
+- Desktop requires at least 1500 × 1012 CSS pixels at the default root font
+  size. It retains the full-bleed globe, clocks above, metrics at left and
+  controls/legend at right. Optional status/legend content has bounded
+  scrolling.
+- Windowed desktop (`landscape`) requires at least 1100 × 500 CSS pixels. Clocks
+  stay above the camera opening and arrival below it. A single 240–320px right
+  sidebar contains controls, legend and metrics and owns their scrolling. The
+  canvas continues behind the sidebar.
+- Portrait and taller narrow windows place clocks at the top, the camera opening
+  below them, then arrival information and a bounded lower sidebar. Only that
+  sidebar scrolls; neither the canvas nor the clock/arrival groups scroll out of
+  view. Unusually long arrival content scrolls within its bounded band so short
+  screens retain an opening for the globe.
+- Mobile landscape (at least 640px wide and at most 600px tall) places clocks,
+  the opening and arrival in the left column, with a scrolling right column for
+  all controls and metrics. The canvas fills both columns. Fullscreen releases
+  navigation height to the dashboard.
+
+Explore, Reset and Fullscreen share one toolbar with equal-width, 44px-high
+buttons. Short visible labels and a fullscreen icon keep narrow toolbars from
+wrapping into orphaned rows; full accessible names and tooltips remain. Hiding
+the fullscreen action or optional panel groups releases their space.
+
+The renderer and plots stay mounted across composition changes. Safe-area insets
+and dynamic viewport units account for mobile browser chrome. Navigation uses a
+compact menu below 1024px to avoid crowding windowed headers.
+
+For non-desktop compositions, the camera's safe rectangle comes from the
+opening's measured bounds relative to the full canvas. Desktop derives the
+opening from actual visible panel bounds. Fullscreen compares the central
+opening with the wider gap between right-side controls and legend, choosing
+the larger limiting dimension to avoid excessive zoom-out into a shallow gap.
+Automatic and Reset/route-overview framing respond to changes in
+position and size, including small resizes. Existing smooth rotation,
+dolly/projection transitions and manual-intent preservation remain intact.
+
+Label placement clips reserved panel rectangles to their visible scrollports;
+scrolled-off metric or legend content cannot incorrectly reserve the map
+opening. Legend disclosure and sidebar scrolling leave the canvas and opening
+stationary.
+
+Panels use a blue glass tint at 35% opacity (45% without backdrop-filter
+support)
+and a light 3px blur so the globe remains visible behind the interface.
 
 ## Visibility and configuration
 
@@ -49,10 +77,11 @@ Shared visibility is saved through `/api/overview-links/settings` and reaches
 open Overview displays through the existing refresh cadence. Additive panel and
 core-layer preferences default on; older saved files preserve their existing
 appearance. Each graph can be hidden independently, and hiding all graphs
-removes the rail. Hidden clocks, arrival information and metrics release their
-layout space. Visibility changes recheck panel fit without waiting for a
-viewport resize. Layer switches hide their markers, labels and legend keys while
-keeping source data available for camera behavior and other independent layers.
+removes the metrics group while retaining controls in the sidebar. Hidden
+clocks, arrival information and metrics release their layout space. Visibility
+changes recheck panel fit without waiting for a viewport resize. Layer switches
+hide their markers, labels and legend keys while keeping source data available
+for camera behavior and other independent layers.
 
 The Overview display identity is a small footer below the legend, visible even
 when its compact disclosure is closed. With the legend hidden, the same quiet
@@ -62,13 +91,13 @@ display. Fullscreen and camera controls stay reachable.
 ## Camera and input
 
 A controller within the existing Canvas owns one Drei CameraControls instance.
-Default responsive input allows browser scrolling. Landscape wheel events on
-stage/gaps forward to the rail only when it can scroll; rail events stay native,
-and Ctrl/Meta wheel is untouched. Explore enables gestures only within the
-globe. Exit, Escape, blur and mode changes release gesture state and preserve
-the pose. Desktop retains deliberate orbit/zoom without an Explore control.
-Reset and configured-follow status remain available beneath the fullscreen
-control.
+Default responsive input allows native sidebar scrolling. Windowed-desktop wheel
+events on stage/gaps forward to the sidebar only when it can scroll; sidebar
+events stay native, and Ctrl/Meta wheel is untouched. Explore enables gestures
+only within the globe. Exit, Escape, blur and mode changes release gesture state
+and preserve the pose. Desktop retains deliberate orbit/zoom without an Explore
+control. Reset, fullscreen and configured-follow status remain reachable in the
+controls group.
 
 Initial automatic framing prefers valid projected route points. Its orientation
 uses a containing spherical cap determined by route extremes, so densely sampled
@@ -101,12 +130,12 @@ default false and storage-failure feedback. Following uses only the same map
 status coordinates and timestamp; stale/error/missing sources pause it.
 Arrival/GPS provenance remains independently derived.
 
-Desktop fullscreen keeps the globe centered on the screen when that preserves a
-useful route angle and scale. A panel-aware projection offset is used when
-forcing exact screen centering would make the route small or push the aircraft
-toward the horizon. The route is centered in the opening to the right of the
-metrics, below the upper cards and above the legend. Other views use the same
-measured panel-aware framing.
+Desktop fullscreen prefers a screen-centered globe when that preserves a useful
+route angle and scale. A panel-aware projection offset is used when forcing
+exact screen centering would make the route small or push the aircraft toward
+the horizon. The route is centered in the opening to the right of the metrics,
+below the upper cards and above the legend. Other views use the same measured
+panel-aware framing.
 
 Automatic route framing and following use camera-controls damping with a
 1.2-second smoothing parameter and a 1.5 scene-units/second dolly speed cap.
@@ -136,9 +165,11 @@ complete accessible name lists when visual labels cannot fit.
 ## Verification
 
 See the
-[implementation plan](../superpowers/plans/2026-10-02-overview-responsive-mobile.md)
+[implementation plan](../superpowers/plans/2026-10-02-overview-responsive-
+mobile.md)
 and
-[source contract](../superpowers/plans/2026-10-02-overview-responsive-mobile-source-contract.md).
+[source contract](../superpowers/plans/2026-10-02-overview-responsive-mobile-
+source-contract.md).
 Browser tests drive wheel, touch and interrupted pointers; read-only renderer
 observation checks pose, while DOM handles verify retained renderer/plot
 identity. Software emulation cannot establish physical system scaling or device

@@ -153,10 +153,12 @@ export function OverviewMapController({
       previous.centerGlobe !== centerGlobe ||
       previous.routeKey !== routeKey ||
       aircraftEscaped ||
-      Math.abs(previous.width - size.width) >= 48 ||
-      Math.abs(previous.height - size.height) >= 48 ||
-      Math.abs(previous.safeRect.width - safeRect.width) >= 48 ||
-      Math.abs(previous.safeRect.height - safeRect.height) >= 48;
+      Math.abs(previous.safeRect.x - safeRect.x) >= 1 ||
+      Math.abs(previous.safeRect.y - safeRect.y) >= 1 ||
+      Math.abs(previous.width - size.width) >= 1 ||
+      Math.abs(previous.height - size.height) >= 1 ||
+      Math.abs(previous.safeRect.width - safeRect.width) >= 1 ||
+      Math.abs(previous.safeRect.height - safeRect.height) >= 1;
     if (
       !meaningful &&
       (intent === 'automatic' ||
