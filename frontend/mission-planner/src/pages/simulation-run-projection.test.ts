@@ -38,3 +38,14 @@ it('does not rewind same-run corrections and returns to real terminal clocks', (
     real
   );
 });
+it('keeps PoP timeline cursors on the mission clock through replay completion', async () => {
+  const { popDisplayTime } = await import('./simulation-run-projection');
+  expect(popDisplayTime(runningStatus(), simulated + 5000, real)).toBe(
+    simulated + 5000
+  );
+  const completed = completedStatus();
+  expect(popDisplayTime(completed, real, real)).toBe(
+    Date.parse(completed.run!.simulation_time)
+  );
+  expect(popDisplayTime(undefined, real, real)).toBe(real);
+});

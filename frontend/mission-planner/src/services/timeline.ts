@@ -1,3 +1,4 @@
+import type { PopForecast } from '@/types/pop';
 import { apiClient } from './api-client';
 import type { ManualRouteSplice } from '../types/aar';
 import type { OverviewPoiKind } from './overview-upcoming-pois';
@@ -33,6 +34,7 @@ export interface KaCoverageEvent {
 }
 
 export interface Timeline {
+  pop_forecast?: PopForecast | null;
   map_pois?: Array<{
     name: string;
     kind: OverviewPoiKind;

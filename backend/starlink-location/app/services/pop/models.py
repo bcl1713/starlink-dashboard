@@ -64,6 +64,8 @@ class PopCrossing(ImmutableRecord):
     id: str
     from_pop_id: str
     to_pop_id: str
+    from_city: str | None = None
+    to_city: str | None = None
     segment_index: int = Field(ge=0)
     fraction: float = Field(ge=0, le=1, allow_inf_nan=False)
     latitude: Latitude

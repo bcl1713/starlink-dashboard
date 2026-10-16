@@ -141,3 +141,24 @@ def test_curved_high_latitude_leg_crosses_on_great_circle():
 def test_invalid_query_position_cannot_select_a_pop(lat, lon):
     with pytest.raises(ValueError):
         nearest_pop(lat, lon, two_sites())
+
+
+def test_crossing_carries_captured_catalog_display_cities_and_old_wire_defaults():
+    from app.services.pop.models import PopCrossing
+
+    sites = two_sites()
+    sites = sites.model_copy(
+        update={
+            "sites": (
+                sites.sites[0].model_copy(update={"city": "City Alpha"}),
+                sites.sites[1].model_copy(update={"city": "City Beta"}),
+            )
+        }
+    )
+    (crossing,) = find_crossings(route((0, -5), (0, 5)), sites, "r")
+    payload = crossing.model_dump(mode="json")
+    assert payload["from_city"] == "City Alpha"
+    assert payload["to_city"] == "City Beta"
+    del payload["from_city"], payload["to_city"]
+    old = PopCrossing.model_validate(payload)
+    assert old.from_city is None and old.to_city is None

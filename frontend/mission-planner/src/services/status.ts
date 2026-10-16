@@ -1,6 +1,10 @@
 import apiClient from './api-client';
+import type { PopForecast, PopObservation, PopLiveAdvisory } from '@/types/pop';
 
 export interface StatusResponse {
+  pop_forecast?: PopForecast | null;
+  pop_observation?: PopObservation | null;
+  pop_advisories?: PopLiveAdvisory[];
   timestamp: string;
   position?: {
     latitude: number;

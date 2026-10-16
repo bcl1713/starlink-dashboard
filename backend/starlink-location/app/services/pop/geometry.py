@@ -97,6 +97,7 @@ def find_crossings(
     Distances use the same spherical radius as mission timing's haversine.
     """
     sites = tuple((s.id, _unit(s.latitude, s.longitude)) for s in catalog.sites)
+    cities = {site.id: site.city for site in catalog.sites}
     crossings = []
     previous = None
     distance = 0.0
@@ -138,6 +139,8 @@ def find_crossings(
                         id=sha256(identity.encode()).hexdigest(),
                         from_pop_id=previous,
                         to_pop_id=winner,
+                        from_city=cities[previous],
+                        to_city=cities[winner],
                         segment_index=index,
                         fraction=fraction,
                         latitude=latitude,

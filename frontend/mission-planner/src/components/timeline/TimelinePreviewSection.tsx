@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Timeline } from '../../services/timeline';
+import { PopForecastPanel } from './PopForecastPanel';
 import { TimelineTable } from './TimelineTable';
 import { CoverageSequence } from './CoverageSequence';
 import { formatDuration } from './formatting';
@@ -79,6 +80,13 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
             >
               {error.message}
             </div>
+          )}
+
+          {!isCalculating && timeline?.pop_forecast && (
+            <PopForecastPanel
+              forecast={timeline.pop_forecast}
+              segments={timeline.segments}
+            />
           )}
 
           {planningEvaluation ? (
