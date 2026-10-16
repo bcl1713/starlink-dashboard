@@ -6,6 +6,7 @@ import {
   test,
   type Browser,
   type BrowserContext,
+  type APIRequestContext,
 } from '@playwright/test';
 
 import type { StatusResponse } from '../../src/services/status';
@@ -13,8 +14,38 @@ import type { SimulationRunStatus } from '../../src/services/simulation-run';
 
 const root = process.env.POP_EVIDENCE_ROOT!;
 let launched: Browser, browser: Browser, context: BrowserContext;
+let replayBaselines: Record<
+  string,
+  {
+    frames: {
+      startUtc: string;
+      endUtc: string | null;
+      transportStates: Record<string, string>;
+    }[];
+  }
+>;
+function physicalAt(name: string, utc: string) {
+  const at = Date.parse(utc);
+  return replayBaselines[name].frames.find(
+    (frame) =>
+      Date.parse(frame.startUtc) <= at &&
+      (!frame.endUtc || at < Date.parse(frame.endUtc))
+  )!.transportStates;
+}
+const activatedLegs = new Set<string>();
+async function deactivateOwned(request: APIRequestContext) {
+  for (const missionId of activatedLegs)
+    await request.post(`/api/v2/missions/${missionId}/legs/deactivate`);
+  activatedLegs.clear();
+}
+test.afterEach(async ({ request }) => {
+  await deactivateOwned(request);
+});
 const recorded: unknown[] = [];
 test.beforeAll(async () => {
+  replayBaselines = JSON.parse(
+    await readFile(root + '/physical-replay-baselines.json', 'utf8')
+  ).cases;
   const port = process.env.POP_CDP_PORT!;
   launched = await chromium.launch({
     headless: true,
@@ -30,7 +61,7 @@ test.afterAll(async () => {
   await browser?.close();
   await launched?.close();
   await writeFile(
-    root + '/browser-responses.json',
+    root + `/browser-responses-${process.pid}.json`,
     JSON.stringify(recorded, null, 2)
   );
   await writeFile(
@@ -120,7 +151,8 @@ test('planner and Overview retain source windows and position drives synthetic I
 
   // Accelerated replay still traverses the supported captured route/mission clock.
   const base = `/api/v2/missions/${crossing.missionId}/legs/${crossing.legId}`;
-  const pacing = { mode: 'target_runtime', runtime_seconds: 80 };
+  test.setTimeout(400_000);
+  const pacing = { mode: 'target_runtime', runtime_seconds: 300 };
   const preview = await (
     await request.post(base + '/simulation/preview', { data: pacing })
   ).json();
@@ -128,6 +160,7 @@ test('planner and Overview retain source windows and position drives synthetic I
     data: { simulation: { pacing, plan_token: preview.plan_token } },
   });
   expect(activated.ok(), await activated.text()).toBeTruthy();
+  activatedLegs.add(crossing.missionId);
   await page.goto(process.env.POP_ORIGIN + '/overview');
   const overview = page.getByRole('region', {
     name: 'Starshield PoP advisories',
@@ -137,35 +170,36 @@ test('planner and Overview retain source windows and position drives synthetic I
   await page.screenshot({ path: root + '/overview-upcoming-1920x1080.png' });
   let activeCaptured = false;
   const samples: { status: StatusResponse; run: SimulationRunStatus }[] = [];
-  const deadline = Date.now() + 100_000;
+  recorded.push({ actualNormalReplay: samples });
+  const deadline = Date.now() + 350_000;
   while (Date.now() < deadline) {
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
     samples.push({ status, run });
-    const at = Date.parse(run.run.simulation_time);
-    const physical =
-      crossing.timeline.segments.find(
-        (segment: { start_time: string; end_time: string }) =>
-          Date.parse(segment.start_time) <= at &&
-          at < Date.parse(segment.end_time)
-      ) ?? crossing.timeline.segments.at(-1);
-    expect(run.run.transport_states).toEqual({
-      X: physical.x_state,
-      Ka: physical.ka_state,
-      Ku: physical.ku_state,
-    });
+    expect(run.run.transport_states).toEqual(
+      physicalAt('crossing', run.run.simulation_time)
+    );
     if (
       !activeCaptured &&
       status.pop_advisories?.some(
         (item: { kind: string }) => item.kind === 'window'
       )
     ) {
+      await expect(overview.getByRole('status')).toContainText(
+        'Starshield PoP transition possible'
+      );
       await overview.scrollIntoViewIfNeeded();
       await expect(overview.locator('[data-pop-track] button')).toHaveCount(2);
       await overview.screenshot({
         path: root + '/overview-active-markers-details.png',
       });
-      await page.screenshot({ path: root + '/overview-active-1920x1080.png' });
+      await page.screenshot({
+        path: root + '/overview-active-1920x1080.png',
+        animations: 'disabled',
+      });
+      await expect(overview.getByRole('status')).toContainText(
+        'Starshield PoP transition possible'
+      );
       activeCaptured = true;
     }
     if (run.state === 'completed') break;
@@ -263,24 +297,17 @@ test('actual dateline replay changes Tokyo IP to Los Angeles without an availabi
     data: { simulation: { pacing, plan_token: preview.plan_token } },
   });
   expect(activated.ok(), await activated.text()).toBeTruthy();
+  activatedLegs.add(fixture.missionId);
   const samples = [];
+  recorded.push({ actualReplaySamples: samples });
   const deadline = Date.now() + 35_000;
   while (Date.now() < deadline) {
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
     samples.push({ status, run });
-    const at = Date.parse(run.run.simulation_time);
-    const expected =
-      fixture.timeline.segments.find(
-        (segment: { start_time: string; end_time: string }) =>
-          Date.parse(segment.start_time) <= at &&
-          at < Date.parse(segment.end_time)
-      ) ?? fixture.timeline.segments.at(-1);
-    expect(run.run.transport_states).toEqual({
-      X: expected.x_state,
-      Ka: expected.ka_state,
-      Ku: expected.ku_state,
-    });
+    expect(run.run.transport_states).toEqual(
+      physicalAt('dateline', run.run.simulation_time)
+    );
     if (run.state === 'completed') break;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
@@ -365,17 +392,17 @@ test('captured conditional missions preserve call bounds, preference and physica
     data: { simulation: { pacing, plan_token: preview.plan_token } },
   });
   expect(activation.ok(), await activation.text()).toBeTruthy();
+  activatedLegs.add(fixture.missionId);
   const samples = [];
+  recorded.push({ actualReplaySamples: samples });
   const deadline = Date.now() + 35_000;
   while (Date.now() < deadline) {
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
     samples.push({ status, run });
-    expect(run.run.transport_states).toEqual({
-      X: 'offline',
-      Ka: 'offline',
-      Ku: 'available',
-    });
+    expect(run.run.transport_states).toEqual(
+      physicalAt('x-fallback', run.run.simulation_time)
+    );
     expect(status.call_continuity.pop_call_outage_seconds).toBe(0);
     if (run.state === 'completed') break;
     await page.waitForTimeout(200);
@@ -389,6 +416,10 @@ test('captured conditional missions preserve call bounds, preference and physica
       )
     )
   ).toBeTruthy();
+  const after = await (
+    await request.get(`/api/v2/missions/${fixture.missionId}`)
+  ).json();
+  expect(after.legs[0].transports).toEqual(fixture.capturedLeg.transports);
   recorded.push({
     capturedPreferenceReplay: samples,
     fixtureKind:

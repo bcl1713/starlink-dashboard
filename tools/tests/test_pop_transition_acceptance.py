@@ -250,3 +250,52 @@ def test_source_update_cannot_silently_retain_a_stale_timeline(warning):
             value["validate_update"](response)
     else:
         assert value["validate_update"](response)["id"] == "leg"
+
+
+def test_browser_failure_still_runs_delivered_pdf_checks_and_fails_overall(tmp_path):
+    import runpy
+
+    checks = runpy.run_path(
+        str(ROOT / "tools/acceptance/pop-transitions/qualification_checks.py")
+    )
+
+    def browser():
+        raise RuntimeError("real browser failed")
+
+    def pdf():
+        (tmp_path / "actual-pdf-inspected").write_text("delivered artifact checked")
+        return {"pageCount": 2}
+
+    with pytest.raises(RuntimeError, match="browser"):
+        checks["check_all"](tmp_path, browser, {"conditional": pdf})
+    assert (tmp_path / "actual-pdf-inspected").exists()
+    report = json.loads((tmp_path / "qualification-results.json").read_text())
+    assert not report["checksPassed"]
+    assert report["pdfs"]["conditional"]["pageCount"] == 2
+    assert report["errors"]["browser"] == "real browser failed"
+
+
+def test_pdf_failure_does_not_skip_other_delivered_pdfs(tmp_path):
+    import runpy
+
+    checks = runpy.run_path(
+        str(ROOT / "tools/acceptance/pop-transitions/qualification_checks.py")
+    )
+
+    def bad_pdf():
+        raise ValueError("conditional hero differs")
+
+    def later_pdf():
+        (tmp_path / "continuation-inspected").write_text("complete cells checked")
+        return {"pageCount": 3}
+
+    with pytest.raises(RuntimeError, match="sole"):
+        checks["check_all"](
+            tmp_path,
+            lambda: {"passed": True},
+            {"sole": bad_pdf, "continuation": later_pdf},
+        )
+    assert (tmp_path / "continuation-inspected").exists()
+    report = json.loads((tmp_path / "qualification-results.json").read_text())
+    assert report["errors"]["sole"] == "conditional hero differs"
+    assert not report["checksPassed"]

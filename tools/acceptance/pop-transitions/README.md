@@ -67,3 +67,20 @@ coordination table. Every measured table cell must remain one line. Dense
 continuation pages retain the existing complete-cell, font and fit checks. The
 actual normal/dateline/route-free simulation responses remain separate from the
 explicitly intercepted early/late/mismatch presentation fixtures.
+
+Physical replay is compared at the HTTP response's exact mission clock against
+actual-image prepared replay frames. This differs from the saved planner's
+availability projection: legacy concurrency advisories can retain planner X
+availability, and the replay retains terminal physical landing blackouts. A
+second preparation with an unavailable PoP catalog must produce identical
+physical events. The captured planning transport configuration and Starshield
+preference must also remain unchanged after replay; a physical X capability
+value does not imply operator activation.
+
+Normal replay runs for 300 seconds so the real active-window Overview can be
+captured with its active UI status visible before and after the screenshot.
+Browser commands have a 480-second bound; per-test deactivation and
+worker-specific response evidence preserve cleanup and failures. Independent PDF
+checks continue after a browser or another PDF failure, with per-check failure
+JSON and incremental `qualification-results.json`. Any failed check still fails
+the overall runner.

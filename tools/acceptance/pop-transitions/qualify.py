@@ -7,6 +7,7 @@ from pathlib import Path
 from production import ROOT, free_loopback_port
 from production_controls import ProductionApi, download_prepared, inspect_download
 from production_seed import provider_seed
+from qualification_checks import check_all
 from seed import CONDITIONAL, capture_conditional, seed
 
 
@@ -31,6 +32,28 @@ with (satellites / 'catalog.yaml').open('a') as catalog:
     owner.compose("up", "-d", "--wait", "--wait-timeout", "150", timeout=180)
     api = ProductionApi(owner)
     fixtures = capture_conditional(api, owner, tools, seed(api, owner.root))
+    replay = json.loads(
+        owner.compose(
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            (tools / "replay_probe.py").read_text(),
+            json.dumps(
+                {
+                    name: {key: fixtures[name][key] for key in ("missionId", "legId")}
+                    for name in ("crossing", "dateline", "x-fallback")
+                }
+            ),
+            timeout=60,
+        ).splitlines()[-1]
+    )
+    (owner.root / "physical-replay-baselines.json").write_text(
+        json.dumps(replay, indent=2)
+    )
     provider = json.loads(
         owner.compose(
             "exec",
@@ -59,51 +82,49 @@ with (satellites / 'catalog.yaml').open('a') as catalog:
     browser_root = Path(
         os.environ.get("PLAYWRIGHT_BROWSERS_PATH", Path.home() / ".cache/ms-playwright")
     )
-    owner.execute(
-        [
-            "node",
-            str(
-                source
-                / "tools/acceptance/browser/provision-v2-mission-retirement-chromium.mjs"
-            ),
-            "--mode",
-            "verify",
-            "--project-dir",
-            str(ROOT / "frontend/mission-planner"),
-            "--browser-root",
-            str(browser_root),
-            "--task-root",
-            str(owner.root),
-            "--provenance-file",
-            str(owner.root / "browser-provenance.json"),
-        ],
-        timeout=30,
-    )
-    owner.execute(
-        [
-            "npm",
-            "--prefix",
-            "frontend/mission-planner",
-            "exec",
-            "--",
-            "playwright",
-            "test",
-            "--config",
-            "frontend/mission-planner/playwright.pop-transitions.config.ts",
-        ],
-        timeout=240,
-        env=browser_env,
-    )
-    reports = {}
-    for name in (
-        "crossing",
-        "no-crossing",
-        "dateline",
-        "overlap",
-        "continuation",
-        *sorted(CONDITIONAL),
-        "unknown",
-    ):
+
+    def browser_check():
+        owner.execute(
+            [
+                "node",
+                str(
+                    source
+                    / "tools/acceptance/browser/provision-v2-mission-retirement-chromium.mjs"
+                ),
+                "--mode",
+                "verify",
+                "--project-dir",
+                str(ROOT / "frontend/mission-planner"),
+                "--browser-root",
+                str(browser_root),
+                "--task-root",
+                str(owner.root),
+                "--provenance-file",
+                str(owner.root / "browser-provenance.json"),
+            ],
+            timeout=30,
+        )
+        owner.execute(
+            [
+                "npm",
+                "--prefix",
+                "frontend/mission-planner",
+                "exec",
+                "--",
+                "playwright",
+                "test",
+                "--config",
+                "frontend/mission-planner/playwright.pop-transitions.config.ts",
+            ],
+            timeout=480,
+            env=browser_env,
+        )
+        return {
+            "passed": True,
+            "basis": "real production CDP plus explicitly labelled response fixture",
+        }
+
+    def pdf_check(name):
         destination = owner.root / "downloads" / name
         destination.mkdir(parents=True)
         content, headers, seconds, stages = download_prepared(
@@ -157,9 +178,26 @@ with (satellites / 'catalog.yaml').open('a') as catalog:
             )
         if name == "continuation":
             assert proof["pageCount"] > 1, "Continuation control did not continue"
-        reports[name] = {"seconds": seconds, "pdf": proof}
+        return {"seconds": seconds, "pdf": proof}
+
+    checks = check_all(
+        owner.root,
+        browser_check,
+        {
+            name: (lambda name=name: pdf_check(name))
+            for name in (
+                "crossing",
+                "no-crossing",
+                "dateline",
+                "overlap",
+                "continuation",
+                *sorted(CONDITIONAL),
+                "unknown",
+            )
+        },
+    )
     return {
-        "browser": "CDP 1920x1080 real production API",
-        "pdfs": reports,
+        "browser": checks["browser"],
+        "pdfs": checks["pdfs"],
         "providerFixtures": provider,
     }
