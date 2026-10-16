@@ -7,6 +7,20 @@ import {
 
 const copy = () => structuredClone(fixture);
 
+it('migrates the route filter as false and admits only a confirmed boolean', () => {
+  const legacy = { metar: false, taf: false, sigmet: true, revision: 7 };
+  expect(parseAviationSettings(legacy).sigmet_intersecting_only).toBe(false);
+  expect(
+    parseAviationSettings({ ...legacy, sigmet_intersecting_only: true })
+      .sigmet_intersecting_only
+  ).toBe(true);
+  for (const value of [null, 1, 'true']) {
+    expect(() =>
+      parseAviationSettings({ ...legacy, sigmet_intersecting_only: value })
+    ).toThrow();
+  }
+});
+
 describe('aviation catalog admission before acquisition', () => {
   it('retains observations and unknown coverage distinctly', () => {
     const catalog = parseAviationCatalog(fixture);

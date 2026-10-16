@@ -457,7 +457,7 @@ async def delete_mission_endpoint(
                 )
 
             raw = mission.metadata.get("itinerary_planning")
-            if raw is not None:
+            if raw is not None or mission.metadata.get("itinerary_import"):
                 if route_manager is None or poi_manager is None:
                     raise HTTPException(
                         503,
@@ -1090,6 +1090,8 @@ async def import_mission(
                     if existing
                     and "itinerary_planning" not in existing.metadata
                     and "itinerary_planning" not in incoming.metadata
+                    and "itinerary_import" not in existing.metadata
+                    and "itinerary_import" not in incoming.metadata
                     else None
                 )
                 if target and any(leg.is_active for leg in target.legs):
@@ -1117,7 +1119,7 @@ async def import_mission(
                     store.planning_constraints_provider = provider
             try:
                 plan = stage_package(zf, target, store.sources)
-                view = commit_package(plan, None)
+                view = commit_package(plan, None, convert_legacy=True)
             except PlanningFailure as exc:
                 raise HTTPException(
                     exc.status_code, detail=exc.error.model_dump(mode="json")
@@ -1401,6 +1403,14 @@ async def update_leg(
             if stored_leg.is_active:
                 updated_leg.route_id = stored_leg.route_id
 
+            from app.mission.itinerary_import.editing import refresh_leg
+
+            if stored_leg.import_provenance:
+                updated_leg.import_provenance = stored_leg.import_provenance
+                try:
+                    refresh_leg(updated_leg, route_manager, poi_manager)
+                except ValueError as exc:
+                    raise HTTPException(422, str(exc)) from exc
             # Update leg
             mission.legs[leg_index] = updated_leg
 
@@ -2142,6 +2152,23 @@ async def update_leg_route(
             if raw
             else None
         )
+    if parent and parent.metadata.get("itinerary_import"):
+        service = getattr(request.app.state, "itinerary_import_service", None)
+        if service is None:
+            raise HTTPException(503, "Itinerary import service is unavailable")
+        from app.mission.itinerary_import.replacement import replace_route
+
+        try:
+            return await asyncio.to_thread(
+                replace_route,
+                service,
+                mission_id,
+                leg_id,
+                await file.read(),
+                file.filename or "route.kml",
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
     if card:
         if expected_revision is None:
             raise HTTPException(

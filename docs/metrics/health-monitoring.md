@@ -1,148 +1,72 @@
-# Metrics Health Monitoring
+# Metrics health monitoring
 
-**See also:** [Metrics Overview](./overview.md) |
-[Troubleshooting](./troubleshooting.md)
+`GET /health` checks backend initialization and recent requests to `/metrics`.
+It is distinct from Prometheus target health and from valid dish telemetry.
 
----
-
-## Health Endpoint
-
-The `/health` endpoint returns:
-
-```json
-{
-  "status": "ok",
-  "uptime_seconds": 3600.5,
-  "mode": "simulation",
-  "version": "0.2.0",
-  "timestamp": "2024-10-23T16:30:00.000000",
-  "prometheus_last_scrape": "2024-10-23T16:29:50.000000",
-  "metrics_count": 45,
-  "detail": null
-}
+```bash
+curl --fail --max-time 10 http://localhost:8000/health
+curl --fail --max-time 10 http://localhost:9090/api/v1/targets
 ```
 
-**Status values:**
+## Response semantics
 
-- `"ok"`: Prometheus is actively scraping (last scrape < 30 seconds ago)
-- `"degraded"`: Prometheus hasn't scraped in > 30 seconds (includes initial
-  startup)
+Before the coordinator is initialized, health returns HTTP 503. An initialized
+server returns HTTP 200 for both `status: "ok"` and `status: "degraded"`:
 
----
+- `ok`: `/metrics` was requested less than 30 seconds ago.
+- `degraded`: no metrics request yet, or the most recent request is at least 30
+  seconds old. A `detail` string explains this state.
 
-## Prometheus Scrape Status
+Any `/metrics` request updates the scrape timestamp, including a manual curl;
+this is not proof that Prometheus scraped or stored the response successfully.
+Use Prometheus `up{job="starlink-location"}` and target `lastError` for that.
 
-### Check if Prometheus is Scraping
+Common fields include `status`, `uptime_seconds`, `mode`, `message`, `version`,
+`timestamp`, `prometheus_last_scrape`, and `metrics_count`.
+`prometheus_last_scrape` is null before the first metrics request.
+`metrics_count` counts collected metric families, not individual samples, and is
+not fixed at 45. `detail` is omitted when there is no explanation to report.
+
+`dish_connected` is present only in live mode. An `ok` health response can still
+have `dish_connected: false`. Check connectivity and measurement freshness
+separately. Flight phase, ETA mode, active route identifiers, timing flags,
+scheduled/actual timestamps and countdowns are attached when the corresponding
+state is available; do not assume every field exists or has a non-null value.
+
+The current handler's `version` string is hard-coded to `0.2.0`; it does not
+identify the deployed v1.0.0 release or current source revision. Use reviewed
+image tags and image revision labels for deployment provenance.
+
+## Useful Prometheus checks
 
 ```promql
-# Check if Prometheus is scraping the endpoint
-time() - starlink_metrics_last_update_timestamp_seconds < 30
+# Successful Prometheus HTTP scrape
+up{job="starlink-location"}
 
-# Alert if metrics collection is stalled (no update for 2 minutes)
-ALERT MetricsCollectionStalled IF time() - starlink_metrics_last_update_timestamp_seconds > 120
+# Seconds since an ordinary successful background metric update
+time() - starlink_metrics_last_update_timestamp_seconds
+
+# Metric-update errors per second
+rate(starlink_metrics_generation_errors_total[5m])
+
+# Mean metric-update duration in seconds
+rate(starlink_metrics_scrape_duration_seconds_sum[5m]) / rate(starlink_metrics_scrape_duration_seconds_count[5m])
 ```
 
----
+The update timestamp is separate from the health endpoint's last scrape time. A
+stalled timestamp can indicate unavailable telemetry, stopped background
+updates, or a different replay update path. Avoid treating one expression as a
+complete connectivity or replay-health alarm. PromQL comparisons without `bool`
+filter matching samples; they do not automatically return a 0/1 health gauge.
 
-## Health Monitoring Queries
+## Alert limitations
 
-### Service Health
+The bundled `monitoring/prometheus/rules/mission-alerts.yml` contains mission
+window rules. Its current `mission_next_conflict_seconds{status="degraded"}` and
+`{status="critical"}` selectors require a `status` label that the registry does
+not define for that family (it defines only `mission_id`). Do not rely on those
+rules for operational notification until the exporter/rule contract is aligned
+and verified. The local Compose stack does not configure Alertmanager or a
+notification receiver.
 
-```promql
-# Is metrics collection active? (should be 1 for healthy systems)
-time() - starlink_metrics_last_update_timestamp_seconds < 30
-
-# Metrics generation error rate
-rate(starlink_metrics_generation_errors_total[1h])
-
-# Metric collection duration (should be < 5 seconds)
-starlink_metrics_scrape_duration_seconds
-```
-
-### Network Health
-
-```promql
-# Current latency
-starlink_network_latency_ms_current
-
-# Connection failure rate
-rate(starlink_connection_failures_total[1h]) / rate(starlink_connection_attempts_total[1h])
-
-# Active outage
-starlink_dish_outage_active
-```
-
-### System Health
-
-```promql
-# Service uptime
-starlink_uptime_seconds
-
-# Dish uptime
-starlink_dish_uptime_seconds
-
-# Thermal throttle active
-starlink_dish_thermal_throttle
-```
-
----
-
-## Native Overview and Prometheus
-
-Mission Planner displays network history through the backend API at
-<http://localhost:5173>. Query other exported metrics directly in Prometheus at
-<http://localhost:9090>.
-
-See the [Overview features](../features/overview.md) for supported displays.
-
----
-
-## Alert Rules
-
-### Recommended Alerts
-
-```yaml
-groups:
-  - name: starlink_alerts
-    rules:
-      - alert: MetricsCollectionStalled
-        expr: time() - starlink_metrics_last_update_timestamp_seconds > 120
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Metrics collection has stalled"
-          description: "No metrics updates in {{ $value }} seconds"
-
-      - alert: HighLatency
-        expr: starlink_network_latency_ms_current > 200
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High network latency detected"
-          description: "Latency is {{ $value }}ms"
-
-      - alert: DishOutage
-        expr: starlink_dish_outage_active == 1
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Dish outage active"
-
-      - alert: ThermalThrottle
-        expr: starlink_dish_thermal_throttle == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Dish is thermally throttled"
-```
-
----
-
-## See Also
-
-- [Metrics Overview](./overview.md) - Complete metrics reference
-- [Troubleshooting](./troubleshooting.md) - Common issues and solutions
+See [metrics reference](reference.md) and [troubleshooting](troubleshooting.md).

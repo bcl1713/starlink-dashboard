@@ -1,113 +1,32 @@
-# Route & Geographic API Endpoints
+# Route and geographic endpoints
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
+For KML upload, listing, download, deletion, statistics and route activation,
+see the [route management reference](../../route-api-endpoints.md). For mission
+lifecycle activation, use the
+[Mission V2 contract](./README.md#mission-v2-activation).
 
-## Overview
+## GET `/api/route.geojson`
 
-Endpoints for route data, GeoJSON export, and geographic visualization.
+Returns a GeoJSON `FeatureCollection` containing the selected route and optional
+POIs. This is planned route geometry, rather than a recording of position
+history. Mission Planner uses native maps; Grafana is not part of the deployed
+stack.
 
-**Related Documentation:**
+| Query parameter    | Default | Meaning                                           |
+| ------------------ | ------- | ------------------------------------------------- |
+| `route_id`         | omitted | Select this route; otherwise use the active route |
+| `include_pois`     | `true`  | Include POI point features                        |
+| `include_position` | `false` | Attempt to include current position               |
 
-- [Core Endpoints](./core.md) - Health and metrics
-- [POI Endpoints](./poi.md) - POI management
-- [ETA Endpoints](./eta.md) - ETA calculations
-
----
-
-## GeoJSON Endpoints
-
-### GET `/route.geojson`
-
-Get route history as GeoJSON for map display.
-
-**Description:** Returns the position history (route) as a GeoJSON LineString,
-suitable for rendering on Grafana Geomap panels.
-
-**Response:**
-
-```json
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [-74.006, 40.7128],
-          [-74.005, 40.7138],
-          [-74.004, 40.7148]
-        ]
-      },
-      "properties": {
-        "name": "Position History"
-      }
-    }
-  ]
-}
-```
-
-**Status Codes:**
-
-- `200 OK` - Route data available
-- `204 No Content` - No route data yet
-
-**Use Case:** Grafana Geomap layer, position history visualization.
-
----
-
-### GET `/geojson`
-
-Alias for `/route.geojson` (for compatibility).
-
-**Response:** Same as `/route.geojson`
-
----
-
-## Examples
-
-### cURL Examples
-
-**Get Route GeoJSON:**
+Coordinates use `[longitude, latitude]` order. A successful request returns HTTP
+200, including when the collection has no route feature. Position inclusion is
+best effort; unavailable telemetry can omit the position feature.
 
 ```bash
-curl http://localhost:8000/route.geojson | jq .
+curl 'http://localhost:8000/api/route.geojson?include_pois=true' | jq .
 ```
 
-**Get GeoJSON (Alias):**
-
-```bash
-curl http://localhost:8000/geojson | jq .
-```
-
-### Python Examples
-
-```python
-import requests
-
-# Get route history
-response = requests.get('http://localhost:8000/route.geojson')
-geojson = response.json()
-print(f"Route has {len(geojson['features'][0]['geometry']['coordinates'])} points")
-```
-
----
-
-## Grafana Integration
-
-The GeoJSON endpoints are designed for use with Grafana Geomap panels:
-
-1. Add a new Geomap panel
-2. Configure data source as "Infinity" or "JSON API"
-3. Set URL to `http://localhost:8000/route.geojson`
-4. Configure refresh interval (e.g., 10 seconds)
-5. Style the LineString layer with color and width
-
----
-
-## Related Documentation
-
-- [API Reference Index](../README.md) - Complete API overview
-- [Core Endpoints](./core.md) - Health and metrics
-- See [ETA Endpoints](eta.md) for timing details.
-- See [Overview Features](../../features/overview.md) for visualization details.
+There is no supported `/geojson` alias or root `/route.geojson` endpoint. For
+tabular exports and additional GeoJSON variants, see
+[additional endpoints](./additional.md). The exact live schema is available at
+`http://localhost:8000/docs`.

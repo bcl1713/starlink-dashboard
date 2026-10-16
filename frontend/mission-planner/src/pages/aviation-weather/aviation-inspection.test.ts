@@ -1,14 +1,58 @@
 import { expect, it } from 'vitest';
 import * as THREE from 'three';
-import { pickAviationFeatures } from './aviation-inspection';
+import {
+  pickAviationFeatures,
+  inspectionReports,
+  resolveAviationSelection,
+} from './aviation-inspection';
 import { createAviationDrawing, earthPoint } from './aviation-renderer';
 import { emptyAviationView, type AviationView } from './aviation-controller';
 import { parseAviationFeatures } from '@/services/aviation-features';
 import { NOW, station, advisory, collection } from './fixtures';
 import type { AviationLayer } from '@/services/aviation-weather';
+import { visibleSigmetReports } from './sigmet-picking';
 
 const viewport = { width: 1000, height: 1000 };
-it('picks the production advisory interior at close zoom', () => {
+it('limits the keyboard inspection list to SIGMETs visible on the map', () => {
+  const view = viewFor([advisory()], 'sigmet');
+  try {
+    expect(visibleSigmetReports(view, cameraAt(0.5, 0.5), viewport)).toEqual([
+      { layer: 'sigmet', id: 'test-advisory' },
+    ]);
+    expect(visibleSigmetReports(view, cameraAt(0, 180), viewport)).toEqual([]);
+  } finally {
+    dispose(view);
+  }
+});
+it('includes a visible polygon crossing the viewport with no visible source vertices', () => {
+  const report = advisory();
+  report.geometry.coordinates = [
+    [
+      [-80, 6],
+      [80, 6],
+      [80, 8],
+      [-80, 8],
+      [-80, 6],
+    ],
+  ];
+  const view = viewFor([report], 'sigmet');
+  const camera = new THREE.PerspectiveCamera(40, 800 / 600, 0.1, 100);
+  camera.position.set(6, 0, 0);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+  const viewport = { width: 800, height: 600 };
+  try {
+    expect(
+      pickAviationFeatures(view, camera, { x: 400, y: 248.98 }, viewport)
+    ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
+    expect(visibleSigmetReports(view, camera, viewport)).toEqual([
+      { layer: 'sigmet', id: 'test-advisory' },
+    ]);
+  } finally {
+    dispose(view);
+  }
+});
+it('picks the visible advisory interior at close zoom', () => {
   const report = advisory();
   report.geometry.coordinates = [
     [
@@ -33,7 +77,7 @@ it('picks the production advisory interior at close zoom', () => {
   try {
     expect(
       pickAviationFeatures(view, camera, { x: 500, y: 500 }, viewport)
-    ).toEqual([{ layer: 'sigmet', id: report.id }]);
+    ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
   } finally {
     dispose(view);
   }
@@ -143,7 +187,7 @@ it('picks co-located station products in CSS pixels while excluding far-side sta
     dispose(view);
   }
 });
-it('picks each overlapping bulletin once, but never a polygon hole or the hidden hemisphere', () => {
+it('exposes overlapping bulletins while excluding holes and the far side', () => {
   const first = advisory(),
     second = { ...advisory(), id: 'overlap' };
   const view = viewFor([first, second], 'sigmet');
@@ -173,7 +217,7 @@ it('picks each overlapping bulletin once, but never a polygon hole or the hidden
     dispose(view);
   }
 });
-it('associates both halves of an antimeridian advisory with the same bulletin', () => {
+it('picks both halves of an antimeridian advisory', () => {
   const a = {
     ...advisory(),
     geometry: {
@@ -211,6 +255,21 @@ it('associates both halves of an antimeridian advisory with the same bulletin', 
           viewport
         )
       ).toEqual([{ layer: 'sigmet', id: 'test-advisory' }]);
+  } finally {
+    dispose(view);
+  }
+});
+
+it('resolves admitted SIGMET report selection', () => {
+  const view = viewFor([advisory()], 'sigmet');
+  try {
+    expect(inspectionReports(view).map((r) => r.selection)).toEqual([
+      { layer: 'sigmet', id: 'test-advisory' },
+    ]);
+    expect(
+      resolveAviationSelection(view, { layer: 'sigmet', id: 'test-advisory' })
+        ?.id
+    ).toBe('test-advisory');
   } finally {
     dispose(view);
   }

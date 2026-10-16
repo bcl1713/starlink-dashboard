@@ -1,5 +1,9 @@
 # Overview precipitation radar
 
+This guide describes current `dev`. Automatic itinerary creation/revisions and
+route SIGMET attention/live crossing timing were added after v1.0.0; see
+[release notes](../release-notes.md).
+
 Enable **Configuration → Weather → Precipitation radar** to show current
 precipitation on the native globe. It is off by default. The saved setting
 applies to every Overview display; visible windows read it every five seconds.
@@ -52,8 +56,8 @@ frame clears old detail atomically; source/schema changes also invalidate
 incompatible tiles. Human-readable provenance changes update metadata without
 forcing downloads. It does not display a forecast, cloud cover, wind,
 turbulence, icing, or an aviation hazard advisory. METAR flight categories and
-SIGMET polygons are possible future aviation layers; each needs its own data
-source, freshness rules, and approved scope.
+SIGMET polygons are separate aviation layers; each has its own data source,
+freshness rules, and approved scope.
 
 [RainViewer's API terms](https://www.rainviewer.com/api.html) target personal,
 educational, and small community use, require visible linked attribution, and
@@ -116,3 +120,99 @@ weather and preserve core globe, telemetry and planning controls. Shared
 settings confirm saves only after the server responds and refresh on visible
 displays every five seconds; model catalogs refresh each minute while visible
 and online.
+
+## Passive route SIGMET advisories
+
+Enable **International SIGMET advisories** in Configuration → Weather. Use
+**Intersecting route only** to limit shading to confirmed geographic matches
+with the selected route. The filter starts off and remains independent of layer
+enablement. It applies to the whole ordinary route or the current running or
+completed simulation route. Weather uses actual UTC during replay; altitude and
+passage-time matching are not evaluated.
+
+Overview automatically shows up to three pending advisories, newest attention
+first, with an overflow count directing the operator to Configuration. Each card
+links by a steady label/color to a polygon outline and confirmed route portions.
+The cards do not move the camera or focus. Desktop cards precede optional feed
+status in the map rail; on narrow screens they move into the scrollable
+telemetry rail outside the globe. Fullscreen retains both rails. There are no
+Overview SIGMET action controls or SIGMET entries in the station-report chooser.
+
+Configuration lists matches in route order with full bulletin text, source and
+validity, plus separate unknown, future and other reports. **Clear advisory**
+acknowledges one exact route/bulletin revision after the server confirms the
+save; its card and attention highlight disappear on connected displays, while
+ordinary eligible shading stays. **Show again** restores attention for that
+notice. Both controls support keyboard operation. A failed save retains
+confirmed state and shows feedback. Other visible displays normally catch up on
+their five-second poll; suspended displays catch up on return.
+
+A substantive revision may create a new pending notice. Identity includes
+issuer, series and original validity, so later series reuse is independent.
+Cancellation and expiry remove affected notices and shading. Route changes have
+their own acknowledgement scope. Temporary unavailable data does not erase
+acknowledgements; stale data retains its original expiry. Unknown locations or
+incomplete geometry remain explicit. Missing reports, empty feeds and no matches
+never establish a clear route.
+
+Acknowledgements persist across browser and backend restarts until bulletin
+expiry, subject to the documented eight-context / 4,000-record / 2 MiB retention
+limit. Revisiting an evicted inactive context starts pending. Keep the backend's
+settings volume persistent; recover corrupt notice storage from a known valid
+backup while the service is stopped.
+
+See the [API and storage contract](../api/aviation-weather.md) and
+[dated acceptance evidence](../reports/2026-10-15-route-linked-sigmets.md).
+
+### SIGMET attention and map review
+
+Overview shows `SIGMETS: N` only when unacknowledged route intersections or
+manually selected bulletins need attention. Unknown and unrelated reports do not
+create attention cards. When the count is zero, the entire SIGMET attention area
+is absent. Bright, matching card/map colors and a slow border pulse draw
+attention; reduced-motion preferences use steady borders. Previous/Next controls
+make every pending bulletin reachable, with at most three cards per page.
+
+Click a visible SIGMET polygon to inspect it and add it to shared attention.
+Overlapping polygons offer a chooser. Selected-only bulletins are labelled
+Selected, without claiming a route intersection. Acknowledge directly on
+Overview or in Configuration. Manual selections survive refreshes across
+displays and remain scoped to the route/run until acknowledged, expired or
+cancelled. Geometry uncertainty does not automatically create a selection.
+
+Configuration contains compact Pending and collapsed Cleared sections for
+relevant bulletins only. Full reports and diagnostics are collapsed. The Show
+intersecting polygons only switch affects map visibility, not relevance or
+acknowledgement. No bulletin catalogue is shown in Configuration; unrelated
+reports are inspected on the map. Geographic intersections do not imply an
+altitude or passage-time match.
+
+### SIGMET crossing timing
+
+Route-intersecting SIGMET notices show **Crossing expected** with UTC times,
+**No crossing expected while valid**, **Crossing time unknown**, or **Crossing
+passed**. Before departure, crossings follow planned waypoint UTC times. In
+flight, they use current UTC, position and speed with the same segment speed
+blending as route-aware POIs. A delay or speed change can therefore change both
+the crossing window and whether it falls within advisory validity, without a
+flight plan edit. Stale or unavailable position/speed produces unknown timing. A
+crossing already entered retains a projected exit; completed crossings are
+marked passed. Simulation replay follows the published mission clock and route
+timing, consistent with replay POIs.
+
+The flight display keeps crossing windows, advisory validity, reported hazard
+bounds and the expandable original bulletin. Adjacent route segments share one
+window; separate crossings and unavailable times remain explicit. Revision
+hashes, method/version identifiers, source precision and altitude-comparison
+disclaimers are omitted from the display.
+
+Time comparison is informational: a nonoverlap does not hide a geographic
+advisory or acknowledge it. Weather eligibility still follows actual UTC, even
+when the selected simulation route has historical planned dates. Timing edits
+refresh evidence without resetting acknowledgements. Manually selected reports
+without route intersections show crossing time unknown.
+
+Routes do not provide planned flight altitude. No altitude comparison or
+altitude filtering is performed, including during an active mission. The
+SIGMET's reported vertical bounds remain available for operator interpretation.
+An altitude-free KML with waypoint times supports passage timing normally.

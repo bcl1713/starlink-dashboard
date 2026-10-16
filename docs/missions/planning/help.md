@@ -14,8 +14,8 @@
 
 1. Open KML file in text editor
 2. Search for `<LineString>` (must be present)
-3. Check sample route: `simple-circular.kml` works 100% of the time
-4. If repairing manually, use an online KML validator.
+3. Compare with a known-good route fixture from the repository
+4. Validate XML locally and retry with the corrected KML.
 
 ---
 
@@ -42,7 +42,7 @@ time).
 1. Review timeline carefully—this is valid and important
 2. If unexpected, check:
    - X transition timing (should be ±15 min only)
-   - Ka coverage dates (coverage maps updated quarterly)
+   - Ka outage dates and configured satellite positions
    - AAR window placement (may overlap with other degradation)
 3. Contact mission planning if result seems wrong
 
@@ -66,8 +66,9 @@ time).
 becomes CRITICAL (red). This is rare but possible. Use Ka as primary during X
 transition, keeping Ku as fallback.
 
-**Q: How accurate are coverage maps?** A: Ka and Ku coverage updated quarterly.
-Predictions valid within ±5 minutes (weather/propagation effects not modeled).
+**Q: How accurate are coverage maps?** A: Coverage depends on configured
+geometry and operating constraints. Predictions valid within ±5 minutes
+(weather/propagation effects not modeled).
 
 **Q: Can I add multiple AAR windows?** A: Yes, click **Add AAR Window** multiple
 times. Each blocks X-Band independently.
@@ -76,7 +77,8 @@ times. Each blocks X-Band independently.
 DST-aware). Controllers use UTC. System outputs both in exports.
 
 **Q: How long does planning take?** A: 5-10 minutes per mission (routes,
-transports, AAR windows). Timeline computation instant.
+transports, AAR windows). The preview recalculates after a short debounce;
+inspect any calculation errors.
 
 ---
 

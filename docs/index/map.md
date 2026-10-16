@@ -1,70 +1,17 @@
-# Complete Documentation Map
+# Documentation Map
 
-## Project Root
+Use the [documentation index](../index.md) for maintained navigation. This entry
+point is retained for older links; fixed page counts and file-size inventories
+have been retired.
 
-| File                                           | Purpose                                   | Audience     |
-| :--------------------------------------------- | :---------------------------------------- | :----------- |
-| [README.md](../../README.md)                   | Project overview, quick start, navigation | Everyone     |
-| [CONTRIBUTING.md](../../CONTRIBUTING.md)       | How to contribute, development workflow   | Contributors |
-| [.env.example](../../.env.example)             | Configuration template with defaults      | Everyone     |
-| [docker-compose.yml](../../docker-compose.yml) | Service definition and composition        | DevOps       |
-
-## Documentation (docs/)
-
-### Setup & Installation
-
-| File                                              | Purpose                                   | When to read                |
-| :------------------------------------------------ | :---------------------------------------- | :-------------------------- |
-| [setup/installation.md](../setup/installation.md) | Complete setup instructions for all modes | Setting up the project      |
-| [api/README.md](../api/README.md)                 | All REST API endpoints with examples      | Using the API               |
-| [route-timing-guide.md](../route-timing-guide.md) | Route timing feature complete guide       | Using route timing features |
-
-### Mission Communication Planning
-
-| File                                                               | Purpose                                                    | When to read                              |
-| :----------------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------- |
-| [mission-planning-guide.md](../missions/mission-planning-guide.md) | Mission planning interface and workflow guide              | Using mission planner                     |
-| [mission-comm-sop.md](../missions/mission-comm-sop.md)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
-| [performance-notes.md](../performance-notes.md)                    | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
-
-### Reference
-
-| File                                                                            | Purpose                                   | When to read          |
-| :------------------------------------------------------------------------------ | :---------------------------------------- | :-------------------- |
-| [METRICS](../metrics/overview.md)                                               | Complete Prometheus metrics documentation | Understanding metrics |
-| [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md) | Problem diagnosis and solutions           | Troubleshooting       |
-
-### Architecture & Design
-
-| File                                                                  | Purpose                                  | When to read                        |
-| :-------------------------------------------------------------------- | :--------------------------------------- | :---------------------------------- |
-| [architecture/design-document.md](../architecture/design-document.md) | System architecture and design decisions | Understanding architecture          |
-| [Development Plan](../development-plan.md)                            | Implementation roadmap and phases        | Understanding plan                  |
-| [Overview Features](../features/overview.md)                          | Dashboard configuration and usage        | Learning Mission Planner dashboards |
-
-### Development (development/)
-
-| File                                                                          | Purpose                                  | When to read               |
-| :---------------------------------------------------------------------------- | :--------------------------------------- | :------------------------- |
-| [development/claude-code/README.md](../development/claude-code/)              | Claude Code workflows guide (main entry) | AI-assisted development    |
-| [development/claude-code/agents.md](../development/claude-code/agents.md)     | Complete agent reference                 | Using Claude Code agents   |
-| [development/claude-code/commands.md](../development/claude-code/commands.md) | Slash commands reference                 | Using development commands |
-| [development/claude-code/skills.md](../development/claude-code/skills.md)     | Skills system reference                  | Using Claude Code skills   |
-| [development/claude-code/examples.md](../development/claude-code/examples.md) | Practical workflows                      | Learning by example        |
-
-## Backend (backend/starlink-location/)
-
-| File                                                                             | Purpose                          | When to read           |
-| :------------------------------------------------------------------------------- | :------------------------------- | :--------------------- |
-| [README.md](../../backend/starlink-location/README.md)                           | Backend service overview and API | Developing backend     |
-| [VALIDATION.md](../../backend/starlink-location/VALIDATION.md)                   | Testing and validation guide     | Testing                |
-| [Validating Maps](../../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md) | Validation troubleshooting       | Debugging tests        |
-| [config.yaml](../../backend/starlink-location/config.yaml)                       | Default configuration            | Understanding defaults |
-| [requirements.txt](../../backend/starlink-location/requirements.txt)             | Python dependencies              | Dependency management  |
-
-## Development (dev/)
-
-| File                                       | Purpose                                  | When to read               |
-| :----------------------------------------- | :--------------------------------------- | :------------------------- |
-| [Development Plan](../development-plan.md) | Current development status and progress  | Understanding current work |
-| [README.md](../development/README.md)      | Development workflow and task management | Starting development       |
+| Task                              | Guide                                                  |
+| --------------------------------- | ------------------------------------------------------ |
+| Install or update                 | [Quick start](../setup/quick-start.md)                 |
+| Configure live or simulation mode | [Configuration](../setup/configuration.md)             |
+| Monitor telemetry and layers      | [Features](../features/overview.md)                    |
+| Plan or import missions           | [Mission guide](../missions/mission-planning-guide.md) |
+| Integrate APIs                    | [API reference](../api-reference-index.md)             |
+| Fix a problem                     | [Troubleshooting](../troubleshooting/README.md)        |
+| Contribute and test               | [Workflow](../development/workflow.md)                 |
+| Understand releases               | [Release baseline](../release-notes.md)                |
+| Review historical evidence        | [Reports](../reports/README.md)                        |

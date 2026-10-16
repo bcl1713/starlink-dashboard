@@ -1,3 +1,17 @@
+vi.mock('./useOverviewLayout', () => ({
+  useOverviewLayout: () => ({
+    mode: queries.layoutMode,
+    flow: false,
+    safeRect: { x: 0, y: 0, width: 0, height: 0 },
+    revision: 0,
+  }),
+}));
+vi.mock('@/hooks/api/useAviationSettings', () => ({
+  useAviationSettings: () => ({ data: queries.aviationSettings }),
+}));
+vi.mock('@/hooks/api/useRouteSigmets', () => ({
+  useRouteSigmets: () => queries.sigmetSource,
+}));
 vi.mock('@/hooks/useGfsWeather', () => ({ useGfsWeather: () => queries.gfs }));
 vi.mock('@/hooks/useAviationWeather', () => ({
   useAviationWeather: () => queries.aviation,
@@ -48,7 +62,19 @@ const queries = vi.hoisted(() => ({
     onDemand: () => {},
   } as WeatherLayerView,
   adsb: { contacts: [] as ReturnType<typeof projectAdsbContacts> },
+  layoutMode: 'desktop',
   aviation: {} as AviationView,
+  aviationSettings: undefined as
+    | { sigmet: boolean; sigmet_intersecting_only: boolean }
+    | undefined,
+  sigmetSource: {
+    snapshot: null,
+    collection: null,
+    dataLease: null,
+    available: false,
+    error: null,
+    nowMs: 0,
+  },
   gfs: { now: 0, state: 'off', products: {} } as GfsView,
 }));
 // WebGL is an external renderer; this suite exercises real DOM overlays with
@@ -113,7 +139,39 @@ import type { GfsView } from './aviation-weather/gfs-controller';
 import { NOW, collection, station } from './aviation-weather/fixtures';
 import { parseAviationFeatures } from '@/services/aviation-features';
 afterEach(cleanup);
+it('preserves the station chooser after changing from METAR to TAF', () => {
+  queries.aviation = {
+    ...emptyAviationView,
+    now: NOW,
+    layers: {
+      ...emptyAviationView.layers,
+      metar: {
+        state: 'current',
+        data: parseAviationFeatures(collection([station()]), 'metar'),
+      },
+      taf: {
+        state: 'current',
+        data: parseAviationFeatures(collection([station(true)]), 'taf'),
+      },
+    },
+  };
+  render(<OverviewPage />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Inspect weather reports' })
+  );
+  fireEvent.change(screen.getByRole('combobox', { name: 'Weather report' }), {
+    target: { value: 'taf:test-station' },
+  });
+  expect(
+    screen.getByRole('combobox', { name: 'Weather report' })
+  ).not.toBeNull();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Weather report' }), {
+    target: { value: 'metar:test-station' },
+  });
+  expect(screen.getByRole('dialog').textContent).toContain('METAR observation');
+});
 beforeEach(() => {
+  queries.layoutMode = 'desktop';
   queries.aviation = emptyAviationView;
   queries.gfs = { now: 0, state: 'off', products: {} };
   queries.weather = {
@@ -139,6 +197,7 @@ beforeEach(() => {
       ground_entry_point: { latitude: 0, longitude: 0 },
     },
   };
+  queries.aviationSettings = undefined;
   queries.history = { data: { series: {} } };
   queries.satellites = {
     data: [{ satellite_id: 'X-6', transport: 'X', longitude: 0 }],
@@ -299,6 +358,42 @@ describe('Overview layer and exception integration', () => {
     expect(
       within(screen.getByLabelText('Globe legend')).getAllByRole('listitem')
     ).toHaveLength(6);
+  });
+
+  it('exposes stable identity for the selected route through rename and ticking', () => {
+    queries.routes = { data: [{ id: 'route-a', is_active: true }] };
+    queries.route = {
+      data: {
+        id: 'route-a',
+        name: 'Route A',
+        points: [
+          { latitude: 0, longitude: 0 },
+          { latitude: 20, longitude: 10 },
+        ],
+      },
+    };
+    const { rerender } = render(<OverviewPage />);
+    expect(
+      screen.getByRole('main').getAttribute('data-route-context-key')
+    ).toBe('81b5005f4d0711b931d6b0853b6fc923729764774718cd3f1ec3a582b64534a7');
+    queries.route = {
+      data: {
+        id: 'route-a',
+        name: 'Renamed',
+        points: [
+          { latitude: 0, longitude: 0, altitude: 100 },
+          {
+            latitude: 20,
+            longitude: 10,
+            expected_arrival_time: '2030-01-01T00:00:00Z',
+          },
+        ],
+      },
+    };
+    rerender(<OverviewPage />);
+    expect(
+      screen.getByRole('main').getAttribute('data-route-context-key')
+    ).toBe('81b5005f4d0711b931d6b0853b6fc923729764774718cd3f1ec3a582b64534a7');
   });
   it('keeps every retained POI name accessible without scene labels', () => {
     queries.pois = {
@@ -492,5 +587,18 @@ it.each([
     ).toBeNull();
     expect(screen.getByText('Traffic path')).not.toBeNull();
     expect(screen.getByText('Planned satellite link')).not.toBeNull();
+  }
+);
+
+it.each(['desktop', 'portrait'])(
+  'leaves no empty SIGMET box in %s layout',
+  (mode) => {
+    queries.layoutMode = mode;
+    queries.aviationSettings = {
+      sigmet: true,
+      sigmet_intersecting_only: false,
+    };
+    render(<OverviewPage />);
+    expect(screen.queryByLabelText('Route SIGMET advisories')).toBeNull();
   }
 );

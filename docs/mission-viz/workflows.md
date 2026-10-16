@@ -1,5 +1,11 @@
 # Mission Visualization Workflows
 
+These are illustrative extraction patterns for a selected MissionLeg and its
+MissionLegTimeline, not standalone API client code. Helpers beginning with `_`
+are internal exporter functions; verify signatures in
+`backend/starlink-location/app/mission/exporter/` before reusing them. See
+[current model reference](../data-structures/mission-timeline-models.md).
+
 This guide covers complete workflows for extracting and aligning mission data
 for visualization purposes.
 
@@ -9,7 +15,7 @@ To overlay timeline information on a map:
 
 ```python
 def align_timeline_to_route(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     route: ParsedRoute
 ) -> list[dict]:
     """Align timeline segments to route points for map visualization."""
@@ -66,8 +72,8 @@ def align_timeline_to_route(
 
 ```python
 def extract_advisories_for_timeline(
-    timeline: MissionTimeline,
-    mission: Mission | None
+    timeline: MissionLegTimeline,
+    mission: MissionLeg | None
 ) -> list[dict]:
     """Extract advisories for overlay on timeline chart."""
 
@@ -166,8 +172,8 @@ async def generate_mission_visualization(mission_id: str) -> dict:
     # 1. Fetch core data
     mission = await mission_service.get_mission(mission_id)
     timeline = await mission_service.get_timeline(mission_id)
-    route = await route_manager.get_route(mission.route_id)
-    pois = await poi_service.list_pois(route_id=mission.route_id)
+    route = route_manager.get_route(leg.route_id)
+    pois = await poi_service.list_pois(route_id=leg.route_id)
 
     # 2. Prepare timeline base
     mission_start = _mission_start_timestamp(timeline)

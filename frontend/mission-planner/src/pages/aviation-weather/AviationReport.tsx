@@ -4,6 +4,7 @@ import {
   type AviationStation,
   type AviationAdvisory,
 } from '@/services/aviation-features';
+import { formatCrossingTime } from './sigmet-encounter-text';
 const utc = (n: number | null) =>
   n === null ? 'unknown' : new Date(n).toISOString().replace(/Z$/, ' UTC');
 const measured = (v: number | null, unit: string) =>
@@ -79,26 +80,47 @@ function StationReport({
     </article>
   );
 }
-function AdvisoryReport({ advisory }: { advisory: AviationAdvisory }) {
+function AdvisoryReport({
+  advisory,
+  now,
+}: {
+  advisory: AviationAdvisory;
+  now: number;
+}) {
   const p = advisory.properties,
     v = p.vertical;
+  const lower =
+    v.lower === null
+      ? null
+      : v.reference === 'FL'
+        ? `FL${v.lower}`
+        : measured(v.lower, 'm');
+  const upper =
+    v.upper === null
+      ? null
+      : v.reference === 'FL'
+        ? `FL${v.upper}`
+        : measured(v.upper, 'm');
+  const bounds =
+    lower && upper
+      ? `${lower}–${upper}`
+      : lower
+        ? `Above ${lower}`
+        : upper
+          ? `Below ${upper}`
+          : null;
+  const height =
+    v.reference === 'unknown' || !bounds
+      ? null
+      : `${bounds}${v.reference === 'FL' ? '' : ` ${v.reference}`}`;
   return (
     <article>
       <strong>
-        {p.phenomenon ?? 'Unknown phenomenon'} {p.severity ?? ''} advisory
-        {advisory.geometry ? '' : ' · unlocated'}
+        {p.issuer ?? ''} {p.phenomenon ?? 'Unknown hazard'} {p.severity ?? ''}
       </strong>
-      <p>
-        Issuer {p.issuer ?? 'unknown'} · FIR {p.fir ?? 'unknown'} · series{' '}
-        {p.series ?? 'unknown'} · revision {p.revision ?? 'unknown'}
-        {p.amends ? ` · amends ${p.amends}` : ''}
-      </p>
-      <p>
-        Valid [{utc(p.valid_from_ms)}, {utc(p.valid_to_ms)}) · vertical{' '}
-        {v.reference === 'unknown'
-          ? 'unknown'
-          : `${measured(v.lower, v.unit)} – ${measured(v.upper, v.unit)} ${v.reference}`}
-      </p>
+      {p.cancelled && <p>Cancelled</p>}
+      <p>Valid {formatCrossingTime(p.valid_from_ms, p.valid_to_ms, now)}</p>
+      {height && <p>{height}</p>}
       <details>
         <summary>Original bulletin</summary>
         <pre className="aviation-bulletin">{p.raw_text}</pre>
@@ -117,6 +139,6 @@ export function AviationReport({
   return 'station_id' in feature.properties ? (
     <StationReport station={feature as AviationStation} now={now} />
   ) : (
-    <AdvisoryReport advisory={feature as AviationAdvisory} />
+    <AdvisoryReport advisory={feature as AviationAdvisory} now={now} />
   );
 }

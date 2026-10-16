@@ -33,11 +33,14 @@
 
 /* Keep operational controls and the legend visible alongside optional status. */
 .overview-page[data-layout='desktop']
-  .overview-right-overlays:has(.aviation-weather-status) {
+  .overview-right-overlays:has(
+    .aviation-weather-status,
+    .route-sigmet-notices
+  ) {
   grid-template-rows: auto auto minmax(min-content, 1fr) minmax(0, auto);
 }
 .overview-page[data-layout='desktop']
-  .overview-map-overlays:has(.aviation-weather-status) {
+  .overview-map-overlays:has(.aviation-weather-status, .route-sigmet-notices) {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -45,7 +48,7 @@
   pointer-events: auto;
 }
 .overview-page[data-layout='desktop']
-  .overview-map-overlays:has(.aviation-weather-status)
+  .overview-map-overlays:has(.aviation-weather-status, .route-sigmet-notices)
   > :not(.aviation-weather-status) {
   flex: 0 0 auto;
 }
@@ -194,4 +197,178 @@
 .overview-page[data-layout='desktop'] .gfs-legend {
   font-size: 18px;
   line-height: 24px;
+}
+
+.route-sigmet-settings {
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+}
+.route-sigmet-settings :is(p, details, section) {
+  margin-top: 0.5rem;
+}
+.route-sigmet-settings ol {
+  padding-left: 1.5rem;
+}
+.route-sigmet-settings li,
+.route-sigmet-settings section,
+.route-sigmet-source {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.route-sigmet-settings :is(button, summary) {
+  min-height: 44px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+.route-sigmet-settings button {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+}
+.route-sigmet-settings button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.route-sigmet-settings :is(button, summary):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.route-sigmet-settings .aviation-bulletin {
+  color: inherit;
+}
+
+.route-sigmet-notices {
+  pointer-events: none;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+.route-sigmet-notices p {
+  margin: 0.1rem 0;
+}
+.route-sigmet-notice {
+  margin-top: 0.125rem;
+  padding: 0.125rem 0.5rem;
+  border-left: 3px solid;
+  background: #101c2be8;
+}
+.route-sigmet-notice h3 {
+  font-size: inherit;
+  font-weight: 650;
+}
+@media (max-width: 600px) {
+  .route-sigmet-notices {
+    font-size: 0.65rem;
+  }
+  .route-sigmet-notice {
+    padding: 0.3rem;
+  }
+}
+
+.overview-metrics-overlays > .route-sigmet-notices {
+  margin-bottom: 0.75rem;
+}
+
+/* Pending attention is readable across the room; details stay behind a click. */
+.route-sigmet-notices {
+  color: #e2e8f0;
+  pointer-events: auto;
+  font-size: 1rem;
+  line-height: 1.3;
+  max-height: 56vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.sigmet-attention-count {
+  font-size: 1.5rem;
+  font-weight: 750;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--sigmet-color);
+  border-radius: 0.375rem;
+  background: #081321f5;
+}
+.route-sigmet-notice {
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border: 2px solid var(--sigmet-color);
+  border-radius: 0.375rem;
+}
+.sigmet-attention-pulse {
+  animation: sigmet-attention 2.5s ease-in-out infinite;
+}
+@keyframes sigmet-attention {
+  0%,
+  100% {
+    box-shadow: 0 0 2px var(--sigmet-color);
+  }
+  50% {
+    box-shadow:
+      0 0 12px var(--sigmet-color),
+      inset 0 0 4px var(--sigmet-color);
+  }
+}
+.sigmet-attention-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+.sigmet-attention-actions details {
+  min-width: 0;
+}
+.sigmet-attention-actions details[open] {
+  flex: 1;
+}
+.route-sigmet-notices :is(button, summary) {
+  cursor: pointer;
+  min-height: 36px;
+  padding: 0.3rem;
+}
+.route-sigmet-notices button {
+  border: 1px solid #94a3b8;
+  border-radius: 0.3rem;
+}
+.route-sigmet-notices button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.route-sigmet-notices nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+.route-sigmet-notices :is(button, summary):focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+.sigmet-settings-summary {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sigmet-settings-summary button {
+  margin-left: auto;
+}
+.sigmet-settings-row details {
+  font-size: 0.8rem;
+}
+.route-sigmet-settings .sigmet-settings-row {
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sigmet-attention-pulse {
+    animation: none;
+    box-shadow: 0 0 6px var(--sigmet-color);
+  }
+}
+@media (max-width: 600px) {
+  .route-sigmet-notices {
+    max-height: none;
+    font-size: 0.95rem;
+  }
+  .sigmet-settings-summary {
+    gap: 0.4rem;
+  }
 }

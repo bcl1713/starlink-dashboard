@@ -49,9 +49,13 @@ snapshots = [
 ]
 receipt = {"original_mission_id": original.id, "mission_id": clone.id, "legs": []}
 assert len(original.legs) == len(clone.legs) > 0
-for original_leg, cloned_leg, original_export, clone_export in zip(
-    original.legs, clone.legs, snapshots[0].legs, snapshots[1].legs
-):
+cloned_by_id = {leg.id: leg for leg in clone.legs}
+original_exports = {leg.leg_id: leg for leg in snapshots[0].legs}
+clone_exports = {leg.leg_id: leg for leg in snapshots[1].legs}
+for original_leg in original.legs:
+    cloned_leg = cloned_by_id[original_leg.id]
+    original_export = original_exports[original_leg.id]
+    clone_export = clone_exports[original_leg.id]
     assert (
         original_leg.id
         == cloned_leg.id

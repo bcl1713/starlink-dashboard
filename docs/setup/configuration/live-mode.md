@@ -1,22 +1,11 @@
-# Live Mode Configuration
+# Live mode configuration
 
-[Back to Configuration Guide](../README.md)
+Use [live setup](live-mode/setup.md) for environment settings, container-to-dish
+routing, and bounded connectivity checks. See
+[live troubleshooting](../../troubleshooting/connectivity/live-mode.md) when the
+HTTP API is healthy but acquisition fails.
 
----
-
-## Configuration Sections
-
-### 1. [Live Mode Setup](live-mode/setup.md)
-
-Prerequisites, basic configuration via `.env`, and network mode selection
-(Bridge vs. Host).
-
-### 2. [Connection Testing & Verification](live-mode/testing.md)
-
-Understanding connection behavior, health checks, and verifying connectivity to
-the Starlink dish.
-
-### 3. [Troubleshooting & Best Practices](live-mode/troubleshooting.md)
-
-Solutions for connection issues, stale metrics, network requirements
-(bandwidth/firewall), and best practices for production deployment.
+Live mode remains live during dish outages; it does not generate simulation
+fallback telemetry. Check `dish_connected` and freshness separately from HTTP
+health. The local bridge profile and Portainer deployment are distinct; use the
+[deployment runbook](../../deployment/portainer-ghcr.md) for managed stacks.

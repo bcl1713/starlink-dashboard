@@ -1,12 +1,12 @@
 .overview-page {
-  --overview-glass: rgb(7 18 30 / 80%);
-  --overview-glass-fallback: rgb(7 18 30 / 90%);
+  --overview-glass: rgb(12 42 72 / 35%);
+  --overview-glass-fallback: rgb(12 42 72 / 45%);
   --overview-border: 1px solid rgb(172 201 226 / 28%);
   --overview-radius: 14px;
-  --overview-shadow: 0 4px 18px rgb(0 0 0 / 24%);
+  --overview-shadow: 0 4px 18px rgb(0 0 0 / 12%);
   --overview-text: #f8fafc;
   --overview-secondary: #bdcbd9;
-  --overview-blur: blur(10px);
+  --overview-blur: blur(3px);
 }
 
 .overview-page
@@ -18,6 +18,7 @@
     .overview-clock-panel--message,
     .overview-arrival,
     .overview-fullscreen-control,
+    .overview-map-toolbar button,
     .overview-metric-history,
     .overview-metric-history-panels__header
   ) {
@@ -26,6 +27,7 @@
   background: var(--overview-glass-fallback);
   box-shadow: var(--overview-shadow);
   color: var(--overview-text);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
 }
 
 @supports (backdrop-filter: blur(1px)) {
@@ -38,6 +40,7 @@
       .overview-clock-panel--message,
       .overview-arrival,
       .overview-fullscreen-control,
+      .overview-map-toolbar button,
       .overview-metric-history,
       .overview-metric-history-panels__header
     ) {

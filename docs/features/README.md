@@ -16,9 +16,18 @@
 - **[Monitoring](monitoring.md)**: Real-time telemetry monitoring and
   visualization
 - **[Navigation](navigation.md)**: Route-based navigation and tracking
-- **[Mission Planning](./mission-planning.md)**: Mission management, planning tools,
-  and real-time timeline preview
+- **[Mission Planning](./mission-planning.md)**: Mission management, planning
+  tools, and real-time timeline preview
 - **[System Features](system.md)**: System-level capabilities and configuration
+
+### Overview Layers and Layout
+
+- [Weather](overview-weather.md): radar, aviation reports, SIGMETs and
+  flight-level winds/temperature
+- [ADS-B aircraft](overview-adsb.md): optional traffic acquisition and freshness
+- [Map labels](overview-labels.md): POI and operational label behavior
+- [Boundaries](overview-boundaries.md): native globe geographic boundaries
+- [Release baseline](../release-notes.md): distinguish v1.0.0 from later `dev`
 
 ### Feature Areas
 

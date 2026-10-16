@@ -184,7 +184,7 @@ Default service ports:
 
 - Backend API: `8000`
 - Prometheus: `9090`
-- Grafana: `3000`
+- Mission Planner: `5173`
 
 Change in `.env` file if needed.
 
@@ -201,8 +201,11 @@ deployments, implement authentication at the reverse proxy level.
 
 ## API Versioning
 
-The API currently uses implicit versioning. Breaking changes will be
-communicated via version updates in this documentation.
+Core telemetry and route APIs use `/api/...`; mission lifecycle and GPS
+configuration use `/api/v2/...`. The v1.0.0 application release does not rename
+these paths. `/api/missions` is retired. See
+[endpoint categories](./endpoints/README.md) for Mission V2 lifecycle rules and
+the running `/openapi.json` for exact schemas.
 
 ---
 

@@ -19,10 +19,11 @@ def source_closure(
     mission: Mission, manifest: PlanningManifest | None
 ) -> tuple[SourceRevision, ...]:
     """All accepted revisions remain live provenance, including retired history."""
-    if manifest is None:
-        return ()
+    from app.mission.itinerary_import.provenance import imported_sources
+
     sources = {}
-    for source in manifest.source_revisions:
+    retained = manifest.source_revisions if manifest else imported_sources(mission)
+    for source in retained:
         if source.owner != mission.id or source.expires_at is not None:
             raise ValueError("Accepted source ownership is inconsistent")
         suffix = "pdf" if source.kind == "itinerary_pdf" else "kml"
@@ -31,7 +32,11 @@ def source_closure(
         if source.id in sources and sources[source.id] != source:
             raise ValueError("Conflicting source revisions")
         sources[source.id] = source
-    for record in _records(manifest.storage_record()):
+    for record in _records(
+        manifest.storage_record()
+        if manifest
+        else mission.metadata.get("itinerary_import", {})
+    ):
         if "source_id" in record and "content_hash" in record:
             source = sources.get(record["source_id"])
             if source is None or source.content_hash != record["content_hash"]:
@@ -102,7 +107,7 @@ def _reference_graphs(sources):
             authorities[record.owner] = record.mission.model_dump(mode="json")
     graphs = list(authorities.items())
     for directory in _inventory_io(root, lambda: list(root.iterdir())):
-        if directory.name in {".planning", ".slide-cache"}:
+        if directory.name in {".planning", ".slide-cache", ".itinerary-imports"}:
             _inventory_path(directory)
             continue
         _inventory_path(directory)
@@ -424,11 +429,17 @@ class SourceStore:
         from .deletion import _io, _read_bytes, ownership_mission
 
         mission = ownership_mission(self, mission_id)
-        if mission is None or "itinerary_planning" not in mission.metadata:
+        if mission is None or not any(
+            k in mission.metadata for k in ("itinerary_planning", "itinerary_import")
+        ):
             raise ValueError("Owned source release requires its persisted mission")
         accepted = source_closure(
             mission,
-            PlanningManifest.model_validate(mission.metadata["itinerary_planning"]),
+            (
+                PlanningManifest.model_validate(mission.metadata["itinerary_planning"])
+                if mission.metadata.get("itinerary_planning")
+                else None
+            ),
         )
         if any(source not in accepted for source in references):
             raise ValueError(

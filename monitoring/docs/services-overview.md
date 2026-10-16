@@ -11,14 +11,14 @@ Prometheus scrapes metrics from the backend service on a configurable interval
 
 ### Configuration
 
-**File:** `prometheus/prometheus.yml`
+**File:** `monitoring/prometheus/prometheus.yml` (from the repository root)
 
 **Access:** <http://localhost:9090>
 
 ### Key Features
 
 - 1-second scrape interval for real-time data
-- Configurable retention period (default: 1 year, ~2.4 GB)
+- Configurable retention period (default: 1 year; measure actual disk use)
 - Alert rules support for mission-critical windows
 
 ### Common Operations

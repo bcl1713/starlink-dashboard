@@ -1,127 +1,67 @@
 # Installation
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
+Run these commands from a checkout of the version you intend to deploy. For
+contributions, follow the isolated-worktree
+[development workflow](../development/workflow.md).
 
----
+## Requirements
 
-## Overview
-
-Complete installation guide for Starlink Dashboard. This documentation has been
-split into focused sections for easier navigation.
-
----
-
-## Installation Guides
-
-### [Quick Installation](./installation-quick-start.md)
-
-For experienced users - get running in 3 minutes.
-
-**Contents:**
-
-- Quick start commands
-- Expected results
-- Default configuration
-- Next steps
-
-**When to use:** You're familiar with Docker and just need the commands.
-
----
-
-### [Installation Steps](./installation-steps.md)
-
-Detailed step-by-step installation guide.
-
-**Contents:**
-
-- Clone repository
-- Create environment file
-- Build Docker images
-- Start services
-- Verify services
-- Access points
-
-**When to use:** First-time setup or need detailed instructions.
-
----
-
-### [Installation Verification](./installation-verification.md)
-
-Verify that all services are running correctly.
-
-**Contents:**
-
-- Service health checks
-- Data flow verification
-- Quick diagnostics
-- Troubleshooting next steps
-
-**When to use:** After installation to confirm everything works.
-
----
-
-### [First-Time Configuration](./installation-first-time.md)
-
-Optional configuration steps after installation.
-
-**Contents:**
-
-- Upload sample routes
-- Create POIs
-- View dashboards
-- Next steps
-
-**When to use:** To enhance your setup with sample data and configuration.
-
----
-
-### [Installation Troubleshooting](./installation-troubleshooting.md)
-
-Common installation issues and solutions.
-
-**Contents:**
-
-- Services won't start
-- Container exits immediately
-- Can't access services
-- Port conflicts
-- Prometheus not scraping
-- Mission Planner shows no data
-- Build failures
-
-**When to use:** When encountering installation problems.
-
----
-
-## Quick Reference
-
-**Prerequisites:** [System Requirements](./system-requirements.md)
-
-**Quick Start:**
+Use Git, a working Docker Engine or Docker Desktop, and Docker Compose v2
+(`docker compose version`). Docker must support the Compose options in the
+checked-out file. Check [system requirements](system-requirements.md) first.
 
 ```bash
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone https://github.com/bcl1713/starlink-dashboard.git
 cd starlink-dashboard
+git checkout v2.0.0
 cp .env.example .env
+./scripts/compose.sh config --quiet
 ./scripts/compose.sh up -d --build
-curl http://localhost:8000/health
 ```
 
-**Access Points:**
+The example pins the v2.0.0 release. Choose `dev` explicitly for newer
+features and use its matching documentation; see
+[release notes](../release-notes.md).
 
-- Mission Planner: <http://localhost:5173>
-- Prometheus: <http://localhost:9090>
-- Backend API: <http://localhost:8000/docs>
+Keep `.env` local. The supplied example selects simulation and requires no dish.
+The wrapper supplies the checked-out commit SHA required by image builds; use it
+for build commands rather than bare `docker compose build`.
 
----
+The backend and GFS worker build scientific Python dependencies; the frontend
+builds its static bundle. Initial image builds need network access and can take
+several minutes. The GFS worker is included automatically and remains idle when
+there is no weather catalog demand.
 
-## Navigation
+## Access and verify
 
-- [Back to Setup Guide](./README.md)
-- [System Requirements](./system-requirements.md)
-- [Configuration](./configuration.md)
-- [Back to main docs](../index.md)
+Default local URLs (backend and Prometheus host ports can change in `.env`):
 
----
+| Service                   | URL                            |
+| ------------------------- | ------------------------------ |
+| Mission Planner           | <http://localhost:5173>        |
+| Backend API documentation | <http://localhost:8000/docs>   |
+| Backend health            | <http://localhost:8000/health> |
+| Prometheus                | <http://localhost:9090>        |
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
+Follow [installation verification](installation-verification.md). The backend
+healthcheck permits a 90-second startup period; Prometheus waits for backend
+health. A running container alone does not establish dish connectivity.
+
+## Apply changes and stop
+
+After changing `.env`, recreate the affected services; `restart` does not reload
+container environment variables:
+
+```bash
+./scripts/compose.sh up -d
+```
+
+After pulling code or editing baked-in configuration, rebuild:
+
+```bash
+./scripts/compose.sh up -d --build
+```
+
+Stop this installation with `docker compose down`. Do not add `--volumes` when
+you need retained routes, POIs, weather records, or metrics. See
+[storage configuration](configuration/storage-configuration.md).

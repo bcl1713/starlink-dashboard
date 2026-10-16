@@ -1,13 +1,18 @@
 # Monitoring Stack Configuration
 
 Prometheus collects and stores backend telemetry. Mission Planner renders the
-Overview, including network history queried through the backend.
+Overview, including network history queried through the backend. Grafana is not
+bundled or required.
 
 ## Configuration
 
 - `monitoring/prometheus/prometheus.yml` defines scraping and evaluation.
 - `monitoring/prometheus/rules/` contains recording and alert rules.
-- `PROMETHEUS_RETENTION` controls stored history (default: one year).
+- `PROMETHEUS_RETENTION` controls stored history (example default: one year).
+- Overview history lookback and frontend polling cadence are separate from
+  retention; see
+  [environment settings](../docs/setup/configuration/environment-variables.md).
+- Local host port 9090 can be overridden with `PROMETHEUS_PORT`.
 
 ## Access and Verification
 

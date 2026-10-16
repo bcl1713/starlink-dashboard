@@ -169,6 +169,18 @@ def main() -> None:
         (args.output / name).write_bytes(data)
     for ordinal in (1, 2, 3):
         (args.output / f"leg-{ordinal}.kml").write_bytes(kml(ordinal))
+    import re
+
+    def seconds(match):
+        time = datetime.strptime(match.group(0), "%Y-%m-%d %H:%M:%SZ").replace(
+            tzinfo=timezone.utc
+        ) + timedelta(seconds=42)
+        return time.strftime("%Y-%m-%d %H:%M:%SZ")
+
+    (args.output / "leg-1-seconds.kml").write_text(
+        re.sub(r"2026-10-25 \d{2}:\d{2}:00Z", seconds, kml(1).decode())
+    )
+    (args.output / "replacement-2.kml").write_bytes(kml(2, True))
     if args.skip_satellites:
         return
     records = []

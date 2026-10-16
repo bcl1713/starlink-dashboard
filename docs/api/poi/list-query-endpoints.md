@@ -2,8 +2,6 @@
 
 [Back to API Reference](../README.md) | [POI Index](./README.md)
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
 ---
 
 ## GET `/api/pois`
@@ -13,24 +11,7 @@ List all Points of Interest.
 **Response:**
 
 ```json
-[
-  {
-    "id": "poi-1",
-    "name": "LaGuardia Airport",
-    "latitude": 40.7769,
-    "longitude": -73.874,
-    "description": "LGA - Major NYC airport",
-    "created_at": "2025-10-30T10:00:00",
-    "updated_at": "2025-10-30T10:00:00"
-  },
-  {
-    "id": "poi-2",
-    "name": "Newark Airport",
-    "latitude": 40.6895,
-    "longitude": -74.1745,
-    "description": "EWR - Regional airport"
-  }
-]
+{ "pois": [], "total": 0, "route_id": null, "mission_id": null }
 ```
 
 **Status Codes:**
@@ -38,9 +19,11 @@ List all Points of Interest.
 - `200 OK` - POI list retrieved
 - `500 Internal Server Error` - Cannot read POI file
 
-**Query Parameters:** None
+**Query Parameters:** `route_id` and `mission_id` optionally filter IDs;
+`active_only` defaults to `true`. Set `active_only=false` to include inactive
+POIs. The `pois` array contains POI objects; `total` is the returned count.
 
-**Use Case:** POI display, Grafana dashboard queries.
+**Use Case:** POI display and API clients.
 
 ---
 
@@ -127,7 +110,8 @@ import requests
 
 # List all POIs
 response = requests.get('http://localhost:8000/api/pois')
-pois = response.json()
+response.raise_for_status()
+pois = response.json()["pois"]
 print(f"Total POIs: {len(pois)}")
 
 # Get specific POI

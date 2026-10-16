@@ -1,5 +1,9 @@
 # Completed Features Beyond Phase 0
 
+> Historical record. This document describes an earlier implementation or
+> documentation effort. For current behavior and release status, use the
+> [documentation index](index.md) and [release baseline](release-notes.md).
+
 **Status:** Foundation Complete + Major Features Delivered **Last Updated:**
 2025-11-04
 
@@ -222,5 +226,5 @@ arrival times and calculating realistic ETAs.
 
 ---
 
-**End Status:** Production-ready system with mission
-planning, real-time monitoring, and export capabilities.
+**End Status:** Production-ready system with mission planning, real-time
+monitoring, and export capabilities.

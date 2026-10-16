@@ -30,11 +30,8 @@ git add .
 git commit -m "feat: description of changes"
 ```
 
-If linting fails, pre-commit will:
-
-1. Show violations and attempted fixes
-2. Stage the fixed code
-3. Require you to commit again
+If a hook changes files, inspect and stage those changes before retrying the
+commit. Hooks do not automatically stage their fixes.
 
 ### 4. Push and Create PR
 
@@ -177,7 +174,9 @@ docker compose -p starlink-dashboard-dev-your-feature-name \
 ### 3. Production-Path Controls and Final Acceptance
 
 For an ordinary backend-only source change with unchanged dependency manifests
-and Dockerfiles, run this cached narrow rebuild from repository root:
+and Dockerfiles, use a task-specific Compose project and its private overrides
+for a cached narrow rebuild. For the ordinary operator stack, the equivalent
+repository-root command is:
 
 ```bash
 ./scripts/compose.sh up -d --build --no-deps starlink-location
@@ -188,12 +187,12 @@ isolated exact-SHA production-image verification, the Nginx proxy path, required
 CI, or rendered-browser evidence.
 
 After `git pull`, run `./scripts/compose.sh up -d --build` for the ordinary
-stack, including the NOAA GFS worker from the base Compose configuration.
-The wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out HEAD before
+stack, including the NOAA GFS worker from the base Compose configuration. The
+wrapper sets `ACCEPTANCE_CANDIDATE_SHA` to the full checked-out HEAD before
 forwarding Compose flags. Local overrides and custom file selection retain
 Docker's normal behavior. The targeted development backend command above still
-starts only `starlink-location`; a full-stack `up` also starts GFS.
-Raw `docker compose build` requires an explicit SHA, for example:
+starts only `starlink-location`; a full-stack `up` also starts GFS. Raw
+`docker compose build` requires an explicit SHA, for example:
 
 ```bash
 ACCEPTANCE_CANDIDATE_SHA=$(git rev-parse HEAD) docker compose build
@@ -243,9 +242,9 @@ How was this tested? Include manual smoke tests or automated test commands.
 
 ---
 
-## Common Tasks
-
 ### Format All Code
+
+Run these commands from repository root.
 
 ```bash
 # Python
@@ -253,14 +252,16 @@ black backend/starlink-location/app
 ruff check --fix backend/starlink-location/app
 
 # JavaScript/TypeScript
-cd frontend/mission-planner
-npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
+npm --prefix frontend/mission-planner exec -- prettier --write "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 
 # Markdown
-npx prettier --write "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --write "docs/**/*.md"
 ```
 
 ### Check Linting Without Formatting
+
+Run from repository root; use the
+[quality gates](../contributing/quality-gates.md) for the full canonical checks.
 
 ```bash
 # Python
@@ -268,12 +269,11 @@ black --check backend/starlink-location/app
 ruff check backend/starlink-location/app
 
 # JavaScript/TypeScript
-cd frontend/mission-planner
-npx prettier --check "src/**/*.{ts,tsx,js,jsx}"
-npx eslint src
+npm --prefix frontend/mission-planner exec -- prettier --check "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
+npm --prefix frontend/mission-planner run lint
 
 # Markdown
-npx prettier --check "docs/**/*.md"
+npm --prefix frontend/mission-planner exec -- prettier --check "docs/**/*.md"
 markdownlint-cli2 "docs/**/*.md"
 ```
 
@@ -291,9 +291,6 @@ pre-commit run black --all-files
 ```
 
 ---
-
-For questions about development process, code quality standards, or tooling,
-open an issue or discussion on the project repository.
 
 Mission ZIP preparation and cancellation APIs are documented in
 [Mission export preparation](mission-export-preparation.md).

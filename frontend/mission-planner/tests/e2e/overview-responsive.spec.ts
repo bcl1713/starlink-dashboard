@@ -24,21 +24,16 @@ for (const [width, height, columns] of [
       'data-layout',
       'stacked'
     );
-    // The responsive frame intentionally places Earth beside the planning card.
-    // Check the center of that measured clear area, rather than the canvas center.
     const point = await page.evaluate(() => {
       const globe = document
         .querySelector('.overview-globe')!
         .getBoundingClientRect();
-      const planning = document
-        .querySelector('.overview-satellite-overlays')!
-        .getBoundingClientRect();
-      const arrival = document
-        .querySelector('.overview-arrival')!
+      const opening = document
+        .querySelector('.overview-map-opening')!
         .getBoundingClientRect();
       return {
-        x: (12 + (globe.width - planning.width - 36) / 2) / globe.width,
-        y: (12 + (globe.height - arrival.height - 24) / 2) / globe.height,
+        x: (opening.x - globe.x + opening.width / 2) / globe.width,
+        y: (opening.y - globe.y + opening.height / 2) / globe.height,
       };
     });
     await waitForGlobeVisualReady(page, texture, point);
@@ -83,12 +78,11 @@ for (const [width, height, columns] of [
         outer:
           document.querySelector('.app-route-content')!.scrollHeight >
           document.querySelector('.app-route-content')!.clientHeight,
-        rail: getComputedStyle(
-          document.querySelector('.overview-metrics-overlays')!
-        ).overflowY,
+        rail: getComputedStyle(document.querySelector('.overview-sidebar')!)
+          .overflowY,
         horizontal: document.documentElement.scrollWidth > innerWidth,
       }))
-    ).toEqual({ outer: true, rail: 'visible', horizontal: false });
+    ).toEqual({ outer: false, rail: 'auto', horizontal: false });
     await page.screenshot({
       path: info.outputPath('portrait.png'),
       fullPage: true,
@@ -98,7 +92,7 @@ for (const [width, height, columns] of [
 test('landscape keeps stage visible while rail scrolls', async ({
   page,
 }, info) => {
-  await page.setViewportSize({ width: 844, height: 390 });
+  await page.setViewportSize({ width: 1366, height: 768 });
   await compositionFixture(page);
   await page.goto('/overview');
   await expect(page.locator('[data-metric-panel] .uplot')).toHaveCount(5);
@@ -107,11 +101,11 @@ test('landscape keeps stage visible while rail scrolls', async ({
     'landscape'
   );
   const stage = await page.locator('.overview-map-stage').boundingBox();
-  const rail = await page.locator('.overview-metrics-overlays').boundingBox();
+  const rail = await page.locator('.overview-sidebar').boundingBox();
   expect(stage!.width).toBeGreaterThanOrEqual(560);
   expect(stage!.height).toBeGreaterThanOrEqual(220);
   expect(rail!.width).toBeGreaterThanOrEqual(210);
-  expect(rail!.width).toBeLessThanOrEqual(240);
+  expect(rail!.width).toBeLessThanOrEqual(320);
   for (const card of await page.locator('[data-metric-panel]').all()) {
     await card.scrollIntoViewIfNeeded();
     await expect(card).toBeInViewport();
@@ -158,7 +152,7 @@ test('scaled desktop chooses measured readable layout and preserves nodes', asyn
   await page.evaluate(() => (document.documentElement.style.fontSize = '24px'));
   await expect(page.locator('.overview-page')).toHaveAttribute(
     'data-layout',
-    'stacked'
+    'landscape'
   );
   expect(
     (await page.locator('.overview-metrics-overlays').boundingBox())!.width
@@ -211,10 +205,26 @@ for (const variant of [
     else await expect(page.locator('.uplot')).toHaveCount(5);
     for (const viewport of [
       { width: 390, height: 844 },
+      { width: 390, height: 568 },
       { width: 844, height: 390 },
       { width: 360, height: 800 },
     ]) {
       await page.setViewportSize(viewport);
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('.overview-map-opening').boundingBox())!.height
+        )
+        .toBeGreaterThanOrEqual(64);
+      if (viewport.width === 844) {
+        const clocks = await page
+          .locator('.overview-top-overlays')
+          .boundingBox();
+        const arrival = await page
+          .locator('.overview-arrival-overlays')
+          .boundingBox();
+        expect(clocks!.y + clocks!.height).toBeLessThanOrEqual(arrival!.y);
+      }
       for (const selector of [
         '.overview-arrival',
         '.overview-planned-satellite',
@@ -258,7 +268,7 @@ for (const variant of [
       );
   });
 }
-test('desktop boundary width escapes overflowing arrival content without replacing charts', async ({
+test('desktop boundary width contains growing arrival content without replacing charts', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1500, height: 1080 });
@@ -279,11 +289,11 @@ test('desktop boundary width escapes overflowing arrival content without replaci
   );
   await expect(page.locator('.overview-page')).toHaveAttribute(
     'data-layout',
-    'stacked'
+    'desktop'
   );
   await expect(page.locator('.overview-map-stage')).toHaveAttribute(
     'data-flow',
-    'true'
+    'false'
   );
   for (const selector of [
     '.overview-arrival',
@@ -307,7 +317,7 @@ test('desktop boundary width escapes overflowing arrival content without replaci
   await page.waitForTimeout(500);
   await expect(page.locator('.overview-page')).toHaveAttribute(
     'data-layout',
-    'stacked'
+    'desktop'
   );
   expect(
     await canvas!.evaluate(
@@ -334,7 +344,7 @@ test('landscape rotation, enlarged text and legend use a stable reachable tree',
   await page.setViewportSize({ width: 844, height: 390 });
   await expect(page.locator('.overview-page')).toHaveAttribute(
     'data-layout',
-    'landscape'
+    'stacked'
   );
   const toggle = page.getByRole('button', { name: 'Legend', exact: true });
   await toggle.click();

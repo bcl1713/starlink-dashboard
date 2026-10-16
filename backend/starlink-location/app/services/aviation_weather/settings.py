@@ -16,6 +16,7 @@ class AviationSettings(Contract):
     metar: bool = False
     taf: bool = False
     sigmet: bool = False
+    sigmet_intersecting_only: bool = False
     winds: bool = False
     temperature: bool = False
     gfs_selection: GfsSelection = Field(default_factory=GfsSelection)
@@ -26,6 +27,7 @@ class AviationSettingsUpdate(Contract):
     metar: bool | None = None
     taf: bool | None = None
     sigmet: bool | None = None
+    sigmet_intersecting_only: bool | None = None
     winds: bool | None = None
     temperature: bool | None = None
     gfs_selection: GfsSelection | None = None
@@ -58,11 +60,15 @@ class AviationSettingsStore:
         except FileNotFoundError:
             return AviationSettings()
 
-    def get(self):
+    def get(self, *, timeout=None):
+        """Read preferences, optionally bounding this caller's lock wait.
+
+        Omitted timeout preserves the store's existing blocking semantics.
+        """
         if self.readonly:
             return effective_settings(self._read())
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.lock:
+        with self.lock.acquire(timeout=timeout):
             return effective_settings(self._read())
 
     def repair_legacy(self) -> tuple[AviationSettings, bool]:

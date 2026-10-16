@@ -90,7 +90,7 @@ def _read_dependencies(
     closure = source_closure(mission, manifest)
     if closure and route_manager is None:
         raise SnapshotCaptureError("Planning source storage is unavailable")
-    if manifest is not None:
+    if closure:
         store = SourceStore(storage.MISSIONS_DIR, route_manager.routes_dir)
         for source in closure:
             content = store.path(source).read_bytes()
@@ -107,7 +107,7 @@ def _read_dependencies(
                         store.descriptor_path(source.id).read_bytes(),
                     )
                 )
-        for reference in manifest.proposal_refs:
+        for reference in (manifest.proposal_refs if manifest else []):
             content = (
                 store.root.parent
                 / mission.id
@@ -122,12 +122,21 @@ def _read_dependencies(
                     f"package/planning/proposals/{reference.id}.json", content
                 )
             )
+    from app.mission.itinerary_import.history import capture_history
+
+    sources.extend(
+        SourcePayload(name, content) for name, content in capture_history(mission)
+    )
     route_ids = dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id)
-    if manifest:
+    if closure:
         route_ids.update(
             {
                 record["route_id"]: None
-                for record in _records(manifest.storage_record())
+                for record in _records(
+                    manifest.storage_record()
+                    if manifest
+                    else mission.metadata.get("itinerary_import", {})
+                )
                 if record.get("route_id")
             }
         )

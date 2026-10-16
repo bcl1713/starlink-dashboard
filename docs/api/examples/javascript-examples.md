@@ -1,138 +1,42 @@
-# API JavaScript Examples
+# JavaScript API examples
 
-[Back to API Reference](../README.md) | [Examples Index](./README.md)
-
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
----
-
-## Fetch API (Browser)
+Mission Planner uses origin-relative `/api/...` paths through its proxy. A Node
+client can prepend its configured backend origin. Check HTTP status explicitly;
+`fetch` does not reject on HTTP errors.
 
 ```javascript
-const BASE_URL = "http://localhost:8000";
-
-// Get service health
-async function checkHealth() {
-  const response = await fetch(`${BASE_URL}/health`);
-  const health = await response.json();
-  console.log("Service status:", health.status);
-  return health;
-}
-
-// Get current status
-async function getCurrentStatus() {
-  const response = await fetch(`${BASE_URL}/api/status`);
-  const status = await response.json();
-  console.log("Position:", status.position);
-  console.log("Network:", status.network);
-  return status;
-}
-
-// Create POI
-async function createPOI(poiData) {
-  const response = await fetch(`${BASE_URL}/api/pois`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(poiData),
+async function request(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    signal: AbortSignal.timeout(10000),
   });
-  const poi = await response.json();
-  console.log("Created POI:", poi);
-  return poi;
+  const text = await response.text();
+  let data = text;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    /* proxy text */
+  }
+  if (!response.ok)
+    throw new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`);
+  return data;
 }
 
-// Get ETAs
-async function getETAs() {
-  const response = await fetch(`${BASE_URL}/api/pois/etas`);
-  const etas = await response.json();
+const listing = await request("/api/pois/?active_only=false");
+listing.pois.forEach((poi) => console.log(poi.id, poi.name));
 
-  etas.forEach((poi) => {
-    const etaMinutes = poi.eta_seconds / 60;
-    const distanceKm = poi.distance_meters / 1000;
-    console.log(
-      `${poi.name}: ${etaMinutes.toFixed(1)} min (${distanceKm.toFixed(1)} km)`,
-    );
-  });
+const etas = await request("/api/pois/etas");
+etas.pois.forEach((poi) => console.log(poi.name, poi.eta_seconds));
 
-  return etas;
-}
-
-// Monitor route progress
-async function monitorProgress(routeId) {
-  setInterval(async () => {
-    const response = await fetch(`${BASE_URL}/api/routes/${routeId}/progress`);
-    const progress = await response.json();
-
-    console.log(`Progress: ${progress.progress_percent.toFixed(1)}%`);
-    console.log(
-      `Waypoint: ${progress.current_waypoint_index}/${progress.total_waypoints}`,
-    );
-  }, 10000); // Update every 10 seconds
-}
+const poi = await request("/api/pois/", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ name: "Example", latitude: 40.7, longitude: -74.0 }),
+});
+await request(`/api/pois/${encodeURIComponent(poi.id)}`, { method: "DELETE" });
+// Successful DELETE returns null (HTTP 204).
 ```
 
----
-
-## Node.js with axios
-
-```javascript
-const axios = require("axios");
-
-const BASE_URL = "http://localhost:8000";
-
-// Get service health
-async function checkHealth() {
-  try {
-    const response = await axios.get(`${BASE_URL}/health`);
-    console.log("Service status:", response.data.status);
-    return response.data;
-  } catch (error) {
-    console.error("Error:", error.message);
-  }
-}
-
-// Create POI
-async function createPOI(poiData) {
-  try {
-    const response = await axios.post(`${BASE_URL}/api/pois`, poiData);
-    console.log("Created POI:", response.data);
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      console.error("Error:", error.response.data);
-    } else {
-      console.error("Error:", error.message);
-    }
-  }
-}
-
-// Get ETAs
-async function getETAs(params = {}) {
-  try {
-    const response = await axios.get(`${BASE_URL}/api/pois/etas`, { params });
-    return response.data;
-  } catch (error) {
-    console.error("Error:", error.message);
-  }
-}
-
-// Example usage
-(async () => {
-  await checkHealth();
-
-  const poi = await createPOI({
-    name: "Central Park",
-    latitude: 40.7829,
-    longitude: -73.9654,
-    description: "NYC Central Park",
-  });
-
-  const etas = await getETAs();
-  console.log("ETAs:", etas);
-})();
-```
-
----
-
-[Back to API Reference](../README.md) | [Examples Index](./README.md)
+See [error handling](../errors-handling.md),
+[POI ETA limitations](../poi/eta-endpoints.md) and
+[required route query parameters](../eta/waypoint-endpoints.md).

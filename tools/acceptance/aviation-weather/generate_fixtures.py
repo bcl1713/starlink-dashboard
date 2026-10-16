@@ -1,5 +1,6 @@
 """Source-shaped bulletin controls consumed by the real production normalizer."""
 
+import copy
 import gzip
 import json
 import sys
@@ -18,6 +19,22 @@ def generate(root, now=None):
             .isoformat()
             .replace("+00:00", "Z")
         )
+
+    route_path = (
+        Path(__file__).resolve().parents[3]
+        / "backend/starlink-location/tests/fixtures/route-sigmets/altitude-free-timing.kml"
+    )
+    kml = route_path.read_text()
+    for index, minute in enumerate(("00", "10", "20", "30")):
+        kml = kml.replace(
+            f"2026-10-30 00:{minute}:00Z",
+            (
+                utc(index * 600000).replace("T", " ").split(".")[0] + "Z"
+                if "." in utc(index * 600000)
+                else utc(index * 600000).replace("T", " ")
+            ),
+        )
+    (root / "encounter-route.kml").write_text(kml)
 
     stations = [
         ("KJFK", 40.64, -73.78, "BKN", "700"),
@@ -86,6 +103,54 @@ def generate(root, now=None):
     (root / "sigmets.json").write_text(
         json.dumps({"type": "FeatureCollection", "features": features})
     )
+    # Separate route controls preserve the original hole/seam station suite.
+    route = [
+        feature(
+            f"R{i}",
+            [
+                [
+                    [-80 + i, 33],
+                    [-71 + i, 33],
+                    [-71 + i, 38],
+                    [-80 + i, 38],
+                    [-80 + i, 33],
+                ]
+            ],
+        )
+        for i in range(1, 5)
+    ]
+    route.append(features[1])  # located nonintersecting seam control
+    route.append(features[2])  # explicitly unlocated report, never a false match
+    variants = {
+        "route": route,
+        "new": route
+        + [feature("R5", [[[-78, 33], [-70, 33], [-70, 38], [-78, 38], [-78, 33]]])],
+    }
+    variants["attention"] = [
+        feature(f"T{i}", route[i - 1]["geometry"]["coordinates"]) for i in range(1, 5)
+    ] + copy.deepcopy(route[4:])
+    variants["encounter"] = [
+        feature(f"E{i}", route[i - 1]["geometry"]["coordinates"]) for i in range(1, 5)
+    ]
+    amended = copy.deepcopy(route)
+    amended[0]["properties"]["rawSigmet"] += " AMD SEV ICE"
+    amended[0]["properties"]["hazard"] = "ICE"
+    amended[0]["properties"]["issueTime"] = utc(1000)
+    variants["amended"] = amended
+    cancelled = copy.deepcopy(amended)
+    cancelled[0]["properties"]["rawSigmet"] = "KZNY SIGMET R1 CNL SIGMET R1"
+    cancelled[0]["properties"]["cancelled"] = True
+    variants["cancelled"] = cancelled
+    reused = copy.deepcopy(cancelled)
+    reused.append(feature("R1", route[0]["geometry"]["coordinates"]))
+    reused[-1]["properties"]["validTimeFrom"] = utc(2000)
+    reused[-1]["properties"]["validTimeTo"] = utc(10800000)
+    variants["reused"] = reused
+    variants["empty"] = []
+    for name, records in variants.items():
+        (root / f"{name}-sigmets.json").write_text(
+            json.dumps({"type": "FeatureCollection", "features": records})
+        )
     (root / "fixture-manifest.json").write_text(
         json.dumps(
             {

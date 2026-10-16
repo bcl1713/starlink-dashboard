@@ -1,5 +1,12 @@
 # Skills and Commands Reference
 
+> Historical assistant-workflow reference. The named agents, slash commands,
+> skills, and `dev/active` layout are not installed by this repository. Grafana
+> examples describe the retired UI. Use the current
+> [development workflow](../development/workflow.md) and
+> [quality gates](../contributing/quality-gates.md); assistant capabilities
+> depend on the tools and skills actually available in your session.
+
 This document provides a complete reference for Claude Code skills and slash
 commands.
 

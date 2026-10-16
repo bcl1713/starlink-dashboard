@@ -33,6 +33,7 @@ from app.api import (
     overview_upcoming_pois,
     overview_weather,
     pois,
+    route_sigmets,
     routes,
     status,
     ui,
@@ -59,6 +60,10 @@ from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
+from app.services.aviation_weather.live_encounters import capture_flight_encounters
+from app.services.aviation_weather.route_context import select_route_context
+from app.services.aviation_weather.route_runtime import RouteSigmetService
+from app.services.aviation_weather.route_state import NoticeStore
 from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
 from app.services.aviation_weather.transport import AwcTransport
@@ -245,6 +250,24 @@ def initialize_aviation_weather_runtime() -> None:
         )
         return
     try:
+        app.state.route_sigmet_service = RouteSigmetService(
+            app.state.aviation_weather_service,
+            NoticeStore(store.path.parent / "route-sigmet-notices.json"),
+            lambda: (
+                select_route_context(
+                    getattr(app.state, "route_manager", None),
+                    getattr(app.state, "simulation_run_service", None),
+                )
+                if getattr(app.state, "route_manager", None) is not None
+                else None
+            ),
+            encounter_provider=lambda context: capture_flight_encounters(
+                context, app.state
+            ),
+        )
+    except Exception:  # noqa: BLE001 - optional notices preserve bulletin/core startup
+        logger.warning_json("Route SIGMET initialization unavailable", exc_info=True)
+    try:
         bridge = GfsBridge(
             store,
             Path(
@@ -400,6 +423,16 @@ async def startup_event():
             )
             planning_store.recover()
             app.state.planning_service = PlanningService(planning_store)
+            from app.mission.itinerary_import.migration import migrate_itinerary_mission
+
+            for existing_mission in mission_storage.list_mission_metadata_v2():
+                if existing_mission.metadata.get("itinerary_planning"):
+                    migrate_itinerary_mission(existing_mission.id, planning_store)
+            from app.mission.itinerary_import.service import ImportService
+
+            app.state.itinerary_import_service = ImportService(
+                mission_storage.MISSIONS_DIR, _route_manager, poi_manager
+            )
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
@@ -579,6 +612,9 @@ async def shutdown_event():
                 logger.info_json("Background task cancelled successfully")
             _background_task = None
 
+        if hasattr(app.state, "itinerary_import_service"):
+            await asyncio.to_thread(app.state.itinerary_import_service.close)
+            del app.state.itinerary_import_service
         if hasattr(app.state, "export_preparation_service"):
             await asyncio.to_thread(app.state.export_preparation_service.close)
             del app.state.export_preparation_service
@@ -591,6 +627,9 @@ async def shutdown_event():
             except (OSError, ValueError, TimeoutError):
                 logger.warning_json("GFS demand withdrawal unavailable")
             del app.state.aviation_gfs_bridge
+        if hasattr(app.state, "route_sigmet_service"):
+            await app.state.route_sigmet_service.aclose()
+            del app.state.route_sigmet_service
         if hasattr(app.state, "aviation_weather_service"):
             await app.state.aviation_weather_service.aclose()
             del app.state.aviation_weather_service
@@ -927,12 +966,16 @@ app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
 app.include_router(planning_router)
 app.include_router(preparation_router)
+from app.mission.itinerary_import.routes import router as itinerary_import_router
+
+app.include_router(itinerary_import_router)
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
 app.include_router(overview_weather.router, tags=["Overview Weather"])
 app.include_router(aviation_weather.router, tags=["Aviation Weather"])
+app.include_router(route_sigmets.router, tags=["Aviation Weather"])
 app.include_router(ui.router, tags=["UI"])
 
 

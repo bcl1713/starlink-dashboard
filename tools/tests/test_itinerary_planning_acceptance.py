@@ -286,7 +286,7 @@ def main_run(monkeypatch, tmp_path):
     sha = "a" * 40
     state = {"calls": [], "builds": 0, "started": False, "down": False}
     monkeypatch.setenv("ITINERARY_EVIDENCE_DIR", str(output))
-    monkeypatch.setattr(sys, "argv", [str(RUNNER)])
+    monkeypatch.setattr(sys, "argv", [str(RUNNER), "--workflow", "legacy"])
     monkeypatch.setattr(
         module,
         "CLAIM_NAME",

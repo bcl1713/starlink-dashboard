@@ -77,9 +77,10 @@ def load_record(sources, mission_id):
     ):
         raise ValueError("Deletion authority does not match its verified owner/root")
     try:
-        manifest = PlanningManifest.model_validate(
-            record.mission.metadata.get("itinerary_planning")
-        )
+        raw = record.mission.metadata.get("itinerary_planning")
+        if not raw and not record.mission.metadata.get("itinerary_import"):
+            raise ValueError("Missing retained ownership metadata")
+        manifest = PlanningManifest.model_validate(raw) if raw else None
         source_closure(record.mission, manifest)
     except ValueError as exc:
         raise conflict(f"Invalid retained authority: {mission_id}") from exc
@@ -143,10 +144,11 @@ def _cache_hash(record):
 def _owned_pois(mission, records):
     from app.mission.routes_v2 import _endpoint_marker
 
-    manifest = PlanningManifest.model_validate(mission.metadata["itinerary_planning"])
+    raw = mission.metadata.get("itinerary_planning")
+    manifest = PlanningManifest.model_validate(raw) if raw else None
     legs = mission.legs + [
         history.installed_leg
-        for history in manifest.leg_history
+        for history in (manifest.leg_history if manifest else [])
         if history.installed_leg
     ]
     endpoints = {
@@ -232,7 +234,8 @@ def delete_owned(store, mission_id, run_service=None):
     mission = ownership_mission(sources, mission_id)
     if mission is None:
         raise ValueError("Owned deletion authority is unavailable")
-    manifest = PlanningManifest.model_validate(mission.metadata["itinerary_planning"])
+    raw = mission.metadata.get("itinerary_planning")
+    manifest = PlanningManifest.model_validate(raw) if raw else None
     references = source_closure(mission, manifest)
     active = store.route_manager.get_active_route_id()
     if any(leg.is_active for leg in mission.legs) or (

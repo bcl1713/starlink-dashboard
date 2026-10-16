@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ImportDialog } from '../components/itinerary-import/ImportDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -36,6 +37,7 @@ export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
   const [showAddLegDialog, setShowAddLegDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [simulationLegId, setSimulationLegId] = useState<string | null>(null);
   const { data: mission, isLoading, error } = useMission(missionId || '');
   const managed = !!mission?.metadata?.itinerary_planning;
@@ -69,6 +71,12 @@ export function MissionDetailPage() {
       </div>
     );
   }
+
+  const pendingLegs = (
+    mission.metadata?.itinerary_import as
+      | { pending_legs?: unknown[] }
+      | undefined
+  )?.pending_legs;
 
   const handleAddLeg = async (leg: Partial<MissionLeg>) => {
     await addLegMutation.mutateAsync(leg);
@@ -227,6 +235,28 @@ export function MissionDetailPage() {
         </div>
       </div>
 
+      {!!mission.metadata?.itinerary_import && (
+        <div className="mb-4">
+          {Array.isArray(pendingLegs) && pendingLegs.length > 0 && (
+            <p className="mb-2" role="status">
+              This itinerary has {pendingLegs.length} unfinished legs. Resume
+              with their KML files below. The retained PDF, saved corrections,
+              and attached routes will be reused.
+            </p>
+          )}
+          <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+            Update from itinerary
+          </Button>
+          <ImportDialog
+            open={showImportDialog}
+            missionId={mission.id}
+            onClose={() => setShowImportDialog(false)}
+            onSuccess={() => {
+              setShowImportDialog(false);
+            }}
+          />
+        </div>
+      )}
       <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
       {managed && (
         <div className="space-y-4">

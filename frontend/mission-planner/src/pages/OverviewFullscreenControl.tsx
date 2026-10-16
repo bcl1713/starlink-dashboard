@@ -23,6 +23,7 @@ export function OverviewFullscreenControl() {
         type="button"
         className="overview-fullscreen-control"
         aria-label="Enter fullscreen overview"
+        title="Fullscreen"
         onClick={enterFullscreen}
       >
         <Expand aria-hidden="true" size={20} />

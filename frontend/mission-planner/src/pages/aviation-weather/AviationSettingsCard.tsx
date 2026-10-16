@@ -1,3 +1,4 @@
+import { RouteSigmetSettings } from './RouteSigmetSettings';
 import { Switch } from '@/components/ui/switch';
 import {
   useAviationSettings,
@@ -95,6 +96,16 @@ export function AviationSettingsCard() {
                   />
                 </label>
               ))}
+            {group === 'Hazards' && (
+              <RouteSigmetSettings
+                enabled={query.data?.sigmet ?? false}
+                intersectingOnly={query.data?.sigmet_intersecting_only ?? false}
+                disabled={disabled}
+                onFilterChange={(enabled) =>
+                  save.mutate({ sigmet_intersecting_only: enabled })
+                }
+              />
+            )}
           </fieldset>
         )
       )}

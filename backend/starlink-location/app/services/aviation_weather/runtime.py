@@ -33,6 +33,7 @@ class Snapshot:
     revision: int
     decoded_bytes: int
     gpu_bytes: int
+    collection: dict
 
 
 @dataclass
@@ -62,6 +63,13 @@ class AviationWeatherService:
         self._closed = False
         self._closing = None
         self._settings_lock = asyncio.Lock()
+        self._settings_listeners = []
+
+    def add_settings_listener(self, listener):
+        self._settings_listeners.append(listener)
+
+    def remove_settings_listener(self, listener):
+        self._settings_listeners.remove(listener)
 
     @property
     def pending_count(self):
@@ -101,6 +109,8 @@ class AviationWeatherService:
             await await_owned(
                 asyncio.ensure_future(asyncio.gather(*stopped, return_exceptions=True))
             )
+            for listener in tuple(self._settings_listeners):
+                await listener(settings)
 
     def _enabled(self, layer):
         return (
@@ -271,6 +281,7 @@ class AviationWeatherService:
                     if layer == "sigmet"
                     else len(features) * (192 if layer == "taf" else 24)
                 ),
+                collection,
             )
             self._prune()
             snapshots = self._snapshots.setdefault(layer, OrderedDict())
@@ -384,7 +395,11 @@ class AviationWeatherService:
         if not snapshots:
             return WeatherProduct(state="unavailable", **base)
         snapshot = snapshots.get(self._current.get(layer))
-        if snapshot is None:
+        if (
+            snapshot is None
+            or now >= snapshot.expires
+            or now < snapshot.retrieved - 60000
+        ):
             return WeatherProduct(state="unavailable", **base)
         return WeatherProduct(
             **base,
@@ -422,6 +437,42 @@ class AviationWeatherService:
         self._prune()
         now = self.utc_ms()
         return self.admitted_products(now)
+
+    def admitted_layer(self, layer, now=None):
+        """Read-only current admission; no locks, acquisition or unrelated layers.
+
+        Collections are owned by their immutable snapshots. Consumers must never
+        mutate them; keeping this instance also coalesces worker admission.
+        """
+        if layer not in LAYERS:
+            raise ValueError("Unknown aviation layer")
+        now = self.utc_ms() if now is None else now
+        product = self._product(layer, now)
+        snapshot = self._snapshots.get(layer, {}).get(product.instance_id)
+        if (
+            snapshot is None
+            or now >= snapshot.expires
+            or now < snapshot.retrieved - 60000
+        ):
+            # _product normally follows _prune; this accessor is also used by
+            # lock-held validators, which must not mutate snapshot ownership.
+            return product, None
+        return product, snapshot.collection
+
+    async def read_layer(self, layer):
+        if layer not in LAYERS:
+            raise ValueError("Unknown aviation layer")
+        settings = asyncio.create_task(asyncio.to_thread(self.store.get, timeout=1))
+        try:
+            current = await asyncio.shield(settings)
+        finally:
+            await await_owned(settings)
+        await self.settings_changed(current)
+        if self._closed:
+            raise WeatherUnavailable()
+        await self._acquire(layer)
+        self._prune()
+        return self.admitted_layer(layer)
 
     def payload(self, instance, filename):
         self._prune()

@@ -2,8 +2,6 @@
 
 [Back to API Reference](../README.md) | [Back to Document Index](../../index.md)
 
-**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
-
 ---
 
 ## Reorganization Notice
@@ -33,13 +31,13 @@ documentation.**
 ### Get Waypoint ETA
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5"
+curl "http://localhost:8000/api/routes/route-001/eta/waypoint/5?current_position_lat=40.7&current_position_lon=-74.0"
 ```
 
 ### Get Route Progress
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/progress"
+curl "http://localhost:8000/api/routes/route-001/progress?current_position_lat=40.7&current_position_lon=-74.0"
 ```
 
 ### Clear ETA Cache

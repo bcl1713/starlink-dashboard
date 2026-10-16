@@ -7,7 +7,7 @@
 Run the complete backend suite with the repository-root command:
 
 ```bash
-./tools/verify backend
+timeout --kill-after=10s 15m ./tools/verify backend
 ```
 
 Use the focused `pytest` examples below while working in
@@ -19,7 +19,7 @@ Use the focused `pytest` examples below while working in
 ## Unit Tests
 
 ```bash
-pytest tests/unit/ -v
+timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt --with-requirements requirements-gfs.txt pytest tests/unit/ -v
 ```
 
 Tests included for:
@@ -36,7 +36,7 @@ Tests included for:
 ## Integration Tests
 
 ```bash
-pytest tests/integration/ -v
+timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt --with-requirements requirements-gfs.txt pytest tests/integration/ -v
 ```
 
 Tests included for:
@@ -52,7 +52,7 @@ Tests included for:
 ## Run All Tests with Coverage
 
 ```bash
-pytest tests/ --cov=app --cov-report=html
+timeout --kill-after=10s 15m uv run --with-requirements requirements-dev.txt --with-requirements requirements-gfs.txt pytest tests/ --cov=app --cov-report=html
 ```
 
 ---
@@ -71,8 +71,9 @@ When making changes:
 ## Warning provenance
 
 The backend test suite leaves residual third-party warnings visible rather than
-suppressing them. A fresh dependency inventory identifies the following
-vendor-owned sources:
+suppressing them. Earlier warning audits recorded the following vendor-owned
+sources; recheck the installed dependency versions before attributing a current
+warning to these exact lines:
 
 - Starlette 1.6.0 / AnyIO 4.15.1: `testclient.py:53` uses the deprecated
   `anyio.abc.BlockingPortal` alias.

@@ -1,264 +1,34 @@
-# Metrics Troubleshooting
-
-**See also:** [Metrics Overview](./overview.md) |
-[Health Monitoring](./health-monitoring.md)
-
----
-
-## Metrics Not Appearing
-
-### Missing Metrics Symptoms
-
-- Overview history is unavailable
-- Prometheus targets show "down"
-- Health endpoint returns empty metrics count
-
-### Missing Metrics Diagnosis
-
-1. Check if backend is running:
-
-   ```bash
-   curl http://localhost:8000/health
-   ```
-
-2. Check metrics endpoint:
-
-   ```bash
-   curl http://localhost:8000/metrics
-   ```
-
-3. Check Prometheus targets:
-
-   ```bash
-   open http://localhost:9090/targets
-   ```
-
-4. Check last scrape time:
-
-   ```bash
-   curl http://localhost:8000/health | jq .prometheus_last_scrape
-   ```
-
-### Missing Metrics Solutions
-
-**Backend not responding:**
-
-```bash
-docker compose ps
-docker compose logs starlink-location
-docker compose restart starlink-location
-```
-
-**Prometheus not scraping:**
-
-```bash
-docker compose logs prometheus
-# Check prometheus.yml configuration
-cat monitoring/prometheus/prometheus.yml
-```
-
----
-
-## High Latency or Packet Loss
-
-### Using Status Labels
-
-Filter metrics by network quality status:
-
-```promql
-# Queries when network is degraded
-starlink_network_latency_ms{status="degraded"}
-starlink_network_throughput_down_mbps{status="poor"}
-```
-
-### Performance Analysis
-
-```promql
-# 95th percentile latency over time
-histogram_quantile(0.95, rate(starlink_network_latency_ms_bucket[5m]))
-
-# Connection failure rate
-rate(starlink_connection_failures_total[1h]) / rate(starlink_connection_attempts_total[1h])
-```
-
----
-
-## Memory Usage Concerns
-
-### Check Collection Performance
-
-Meta-metrics help identify collection issues:
-
-```promql
-# Collection duration (should be < 1 second typically)
-starlink_metrics_scrape_duration_seconds
-
-# Is collection healthy?
-rate(starlink_metrics_generation_errors_total[5m]) == 0
-```
-
-### Reduce Memory Usage
-
-1. **Reduce retention period** in `.env`:
-
-   ```bash
-   PROMETHEUS_RETENTION=7d  # Instead of 1y
-   ```
-
-2. **Increase scrape interval** in `.env`:
-
-   ```bash
-   PROMETHEUS_SCRAPE_INTERVAL=30s  # Instead of 10s
-   ```
-
-3. **Restart services:**
-
-   ```bash
-   docker compose down
-   docker compose up -d
-   ```
-
----
-
-## Stale Metrics
-
-### Stale Metrics Symptoms
-
-- Metrics show old timestamps
-- `starlink_metrics_last_update_timestamp_seconds` is stale
-
-### Stale Metrics Diagnosis
-
-```promql
-# Check how old the last update is
-time() - starlink_metrics_last_update_timestamp_seconds
-```
-
-### Stale Metrics Solutions
-
-```bash
-# Restart backend service
-docker compose restart starlink-location
-
-# Check logs for errors
-docker compose logs -f starlink-location
-```
-
----
-
-## Missing POI Metrics
-
-### POI Metrics Symptoms
-
-- No `starlink_eta_poi_seconds` metrics
-- No `starlink_distance_to_poi_meters` metrics
-
-### POI Metrics Cause
-
-POIs haven't been created yet.
-
-### POI Metrics Solutions
-
-1. **Create POIs via UI:**
-
-   ```bash
-   open http://localhost:8000/ui/pois
-   ```
-
-2. **Create POIs via API:**
-
-   ```bash
-   curl -X POST http://localhost:8000/api/pois \
-     -H "Content-Type: application/json" \
-     -d '{
-       "name": "NYC",
-       "latitude": 40.7128,
-       "longitude": -74.0060
-     }'
-   ```
-
-3. **Verify POI metrics:**
-
-   ```bash
-   curl http://localhost:8000/metrics | grep poi
-   ```
-
----
-
-## Overview History Is Unavailable
-
-Verify Prometheus readiness and the same-origin backend API:
-
-```bash
-curl --fail http://localhost:9090/-/ready
-curl --fail http://localhost:5173/api/status
-docker compose logs --tail=30 starlink-location prometheus mission-planner
-```
-
-See
-[Metrics and monitoring troubleshooting](../troubleshooting/metrics-monitoring.md)
-for target checks and query diagnostics.
-
----
-
-## High Cardinality Warnings
-
-### Cardinality Warning Symptoms
-
-- Prometheus logs show "series churn" warnings
-- Memory usage increases over time
-
-### Cardinality Warning Cause
-
-Too many unique label combinations (especially POI names).
-
-### Cardinality Warning Solutions
-
-1. **Limit POI count** - Keep under 100 POIs
-2. **Use consistent naming** - Avoid dynamic POI names
-3. **Increase Prometheus memory:**
-
-   ```yaml
-   # In docker-compose.yml
-   prometheus:
-     command:
-       - "--storage.tsdb.retention.time=15d"
-       - "--storage.tsdb.retention.size=2GB"
-   ```
-
----
-
-## Simulation Metrics Not Updating
-
-### Simulation Update Symptoms
-
-- `simulation_updates_total` not increasing
-- Position metrics frozen
-
-### Simulation Update Diagnosis
-
-```bash
-# Check simulation errors
-curl http://localhost:8000/metrics | grep simulation_errors_total
-
-# Check backend logs
-docker compose logs -f starlink-location
-```
-
-### Simulation Update Solutions
-
-```bash
-# Verify simulation mode enabled
-grep STARLINK_MODE .env
-# Should show: STARLINK_MODE=simulation
-
-# Restart services
-docker compose restart starlink-location
-```
-
----
-
-## References
-
-- [Prometheus Documentation](https://prometheus.io/docs/)
-- [PromQL Query Language](https://prometheus.io/docs/prometheus/latest/querying/basics/)
+# Metrics troubleshooting
+
+Start with the maintained
+[metrics and history diagnostics](../troubleshooting/metrics-monitoring.md).
+They cover endpoint reachability, Prometheus targets, same-origin API checks,
+and the configured 1-second scrape cadence.
+
+A successful HTTP scrape does not prove that measurements are available. Inspect
+`/health` mode and live-only `dish_connected`, then examine `/metrics` for
+`NaN`, missing labeled samples, or valid values. Live outages clear telemetry
+gauges instead of publishing simulated replacements; historical samples remain.
+A manual `/metrics` request also refreshes the health scrape timestamp.
+
+Missing POI/route series can reflect absent active data, unavailable timing,
+freshness validation, or no instantiated label set. Check Mission Planner and
+backend logs before creating replacement data. POI metrics have `name`,
+`category` and `eta_type` labels; histogram families use their own labels. Use
+[verified names and units](reference.md), especially altitude in feet and
+histogram `_bucket`, `_sum`, `_count` samples.
+
+For stationary simulation positions, check active route/replay completion and
+configured mode. `simulation_updates_total` is a shared-updater counter and
+cannot prove simulation mode. Ordinary update metadata does not track every
+paced-replay path; see [health semantics](health-monitoring.md).
+
+If series churn or storage grows, measure actual series cardinality and resource
+usage. Avoid unbounded dynamic label values. No fixed 100-POI capacity limit is
+established here. Retention bounds history, not Prometheus RAM; a storage-size
+flag is not a memory limit. Preserve the existing config-file argument when
+changing Prometheus command options, and see
+[storage configuration](../setup/configuration/storage-configuration.md).
+
+Do not reset files, prune Docker data, or delete volumes as a metrics repair.
+Capture sanitized logs and the checked-out version before changing settings.

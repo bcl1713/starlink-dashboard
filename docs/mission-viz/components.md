@@ -1,5 +1,11 @@
 # Mission Visualization Components
 
+These are illustrative extraction patterns for a selected MissionLeg and its
+MissionLegTimeline, not standalone API client code. Helpers beginning with `_`
+are internal exporter functions; verify signatures in
+`backend/starlink-location/app/mission/exporter/` before reusing them. See
+[current model reference](../data-structures/mission-timeline-models.md).
+
 This guide covers the data models, status hierarchies, and display patterns used
 in mission visualization.
 
@@ -52,7 +58,7 @@ The exporter's `_segment_rows()` function (lines 271-331) demonstrates the
 proper way to extract timeline data:
 
 ```python
-def extract_timeline_data(timeline: MissionTimeline, mission: Mission | None):
+def extract_timeline_data(timeline: MissionLegTimeline, mission: MissionLeg | None):
     """Template for extracting timeline data for visualization."""
 
     mission_start = _mission_start_timestamp(timeline)  # Get zero point
@@ -103,7 +109,7 @@ def extract_timeline_data(timeline: MissionTimeline, mission: Mission | None):
 
 ```python
 def extract_timeline_statistics(
-    timeline: MissionTimeline
+    timeline: MissionLegTimeline
 ) -> dict:
     """Extract summary statistics for dashboard display."""
 

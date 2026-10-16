@@ -80,13 +80,13 @@ Comprehensive incident handling procedures:
 
 ## Useful URLs
 
-| Resource                  | URL                                       |
-| ------------------------- | ----------------------------------------- |
-| Mission Planner           | `<http://<dashboard>/ui/mission-planner`> |
-| Mission Planner Dashboard | `<http://<dashboard>:5173`>               |
-| Prometheus Metrics        | `<http://<dashboard>:9090`>               |
-| API Documentation         | `<http://<dashboard>:8000/docs`>          |
-| Health Check              | `<http://<dashboard>:8000/health`>        |
+| Resource                  | URL                            |
+| ------------------------- | ------------------------------ |
+| Mission Planner           | Configured frontend origin     |
+| Mission Planner Dashboard | <http://localhost:5173>        |
+| Prometheus Metrics        | <http://localhost:9090>        |
+| API Documentation         | <http://localhost:8000/docs>   |
+| Health Check              | <http://localhost:8000/health> |
 
 (\* = fullscreen-overview)
 

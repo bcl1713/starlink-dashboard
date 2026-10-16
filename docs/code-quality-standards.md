@@ -21,7 +21,8 @@ formatting tools. All code must pass these checks before merge.
 
 - Black configuration: Project-level defaults (88 char limit)
 - Ruff configuration: `.ruff.toml` (if present) or project defaults
-- Python version: 3.13
+- CI bootstrap: Python 3.13; backend `uv` selection and production runtime:
+  Python 3.11. See [quality gates](contributing/quality-gates.md).
 
 ### Python Local Usage
 

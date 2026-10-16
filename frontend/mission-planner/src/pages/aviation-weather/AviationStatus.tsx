@@ -9,15 +9,17 @@ export function AviationStatus({
   view: AviationView;
   onInspect?: () => void;
 }) {
-  const enabled = (['metar', 'taf', 'sigmet'] as AviationLayer[]).filter(
+  const enabled = (['metar', 'taf'] as AviationLayer[]).filter(
     (l) => view.layers[l].state !== 'off'
   );
   if (!enabled.length) return null;
-  const hasReports = enabled.some(
-    (l) =>
-      view.layers[l].data &&
-      activeFeatures(view.layers[l].data!, l, view.now).length
-  );
+  const hasReports = enabled
+    .filter((layer) => layer !== 'sigmet')
+    .some(
+      (l) =>
+        view.layers[l].data &&
+        activeFeatures(view.layers[l].data!, l, view.now).length
+    );
   return (
     <section
       className="overview-weather-status aviation-weather-status"
@@ -58,17 +60,21 @@ export function AviationStatus({
       <p className="aviation-coverage-note">
         Coverage unknown or partial · missing reports mean unknown weather
       </p>
-      <button
-        type="button"
-        className="aviation-inspect-button"
-        disabled={!hasReports}
-        onClick={onInspect}
-      >
-        Inspect weather reports
-      </button>
-      <p className="aviation-inspect-hint">
-        Click or tap a marker or advisory to inspect.
-      </p>
+      {hasReports && onInspect && (
+        <>
+          <button
+            type="button"
+            className="aviation-inspect-button"
+            disabled={!hasReports}
+            onClick={onInspect}
+          >
+            Inspect weather reports
+          </button>
+          <p className="aviation-inspect-hint">
+            Click or tap a station marker to inspect.
+          </p>
+        </>
+      )}
       <p
         className="overview-weather-legend"
         aria-label="Aviation weather legend"

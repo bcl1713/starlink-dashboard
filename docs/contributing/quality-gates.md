@@ -5,7 +5,9 @@ continuous integration. Run the commands from the repository root.
 
 ## Prerequisites
 
-- Use the project-supported Python 3.13 and `uv`; the Python tiers load
+- CI bootstraps Python 3.13 and `uv`. The backend context currently pins Python
+  3.11 in `.python-version`, matching its production Docker runtime; `uv run`
+  respects that tracked selection. The Python tiers load
   `backend/starlink-location/requirements-dev.txt` through `uv run`.
 - Use Node 22.22.2 or a newer Node 22 patch. CI uses 22.22.2, and the frontend
   package declares that Node 22 range. Older patches do not satisfy the locked
@@ -18,11 +20,19 @@ continuous integration. Run the commands from the repository root.
 ## Canonical Commands
 
 ```bash
-./tools/verify static
+ACCEPTANCE_POLICY_BASE_SHA=$(git merge-base origin/dev HEAD) ./tools/verify static
 ./tools/verify backend
 ./tools/verify frontend
 ./tools/verify all
 ```
+
+`ACCEPTANCE_POLICY_BASE_SHA` must be an exact reachable 40-hex ancestor SHA;
+static/all use it to inspect the candidate delta for typing-policy violations.
+Supply the same variable for `./tools/verify all`. CI provides its reviewed
+base. For task runs, wrap commands in a wall-clock bound, for example
+`timeout --kill-after=10s 10m ./tools/verify static` with that variable set.
+Record task ownership before starting workers and verify teardown afterward; see
+[resource lifecycle](../development/workflow.md#resource-lifecycle-for-every-tier).
 
 Use the narrowest tier that covers the change while developing. Before a pull
 request is ready, run the applicable tier or `./tools/verify all`.

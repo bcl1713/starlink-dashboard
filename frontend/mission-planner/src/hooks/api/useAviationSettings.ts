@@ -14,16 +14,15 @@ function accept(
 }
 export function useAviationSettings() {
   const client = useQueryClient();
-  const [active, setActive] = useState(
-    () => !document.hidden && navigator.onLine
-  );
+  const [active, setActive] = useState(() => !document.hidden);
   const query = useQuery({
     queryKey: aviationSettingsKey,
     queryFn: ({ signal }) => aviationWeatherApi.getSettings(signal),
     enabled: active,
     retry: false,
+    networkMode: 'always',
     refetchInterval: active ? 5000 : false,
-    refetchIntervalInBackground: false,
+    refetchIntervalInBackground: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     structuralSharing: (old, next) =>
@@ -32,7 +31,7 @@ export function useAviationSettings() {
   const { refetch } = query;
   useEffect(() => {
     const sync = () => {
-      const available = !document.hidden && navigator.onLine;
+      const available = !document.hidden;
       setActive(available);
       if (!available)
         void client.cancelQueries({ queryKey: aviationSettingsKey });
@@ -40,11 +39,9 @@ export function useAviationSettings() {
     };
     document.addEventListener('visibilitychange', sync);
     window.addEventListener('online', sync);
-    window.addEventListener('offline', sync);
     return () => {
       document.removeEventListener('visibilitychange', sync);
       window.removeEventListener('online', sync);
-      window.removeEventListener('offline', sync);
     };
   }, [client, refetch]);
   return query;

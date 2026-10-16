@@ -7,6 +7,7 @@ import {
 } from '@/services/aviation-features';
 import { earthPoint } from './aviation-renderer';
 import { isStarMarkerVisible } from '../overview-star-marker-rendering';
+import { pickSigmetFeatures } from './sigmet-picking';
 
 export type AviationSelection = { layer: AviationLayer; id: string };
 export const aviationSelectionKey = (selection: AviationSelection) =>
@@ -80,16 +81,13 @@ export function pickAviationFeatures(
   )
     return [];
   camera.updateMatrixWorld();
-  const picked: AviationSelection[] = [];
-  const ray = new THREE.Raycaster();
-  ray.setFromCamera(
-    new THREE.Vector2(
-      (2 * point.x) / viewport.width - 1,
-      1 - (2 * point.y) / viewport.height
-    ),
-    camera
+  const picked: AviationSelection[] = pickSigmetFeatures(
+    view,
+    camera,
+    point,
+    viewport
   );
-  for (const layer of ['metar', 'taf', 'sigmet'] as const) {
+  for (const layer of ['metar', 'taf'] as const) {
     const item = view.layers[layer];
     if (
       !item.data ||
@@ -98,17 +96,7 @@ export function pickAviationFeatures(
     )
       continue;
     const active = activeFeatures(item.data, layer, view.now);
-    if (layer === 'sigmet') {
-      item.drawing.object.updateWorldMatrix(true, false);
-      const ids = new Set<string>();
-      for (const hit of ray.intersectObject(item.drawing.object, false)) {
-        if (hit.faceIndex == null || !isStarMarkerVisible(hit.point, camera))
-          continue;
-        const id = item.drawing.featureAt(hit.faceIndex);
-        if (id && active.some((f) => f.id === id)) ids.add(id);
-      }
-      for (const id of ids) picked.push({ layer, id });
-    } else {
+    {
       const object = item.drawing.object as THREE.Points | THREE.LineSegments;
       const positions = object.geometry.getAttribute('position');
       const offsets = new Map<string, number>();

@@ -36,7 +36,7 @@ it('keeps report bodies out of the Overview while exposing inspection', () => {
     ).disabled
   ).toBe(false);
 });
-it('keeps unknown coverage and unlocated hazards visible in the compact status', () => {
+it('keeps station status separate from SIGMET attention', () => {
   const taf = station(true);
   taf.properties.forecast_groups.push({
     ...weatherValues,
@@ -78,7 +78,7 @@ it('keeps unknown coverage and unlocated hazards visible in the compact status',
   ).not.toContain('TEST report');
   expect(
     screen.getByLabelText('Aviation weather status').textContent
-  ).toContain('1 unlocated');
+  ).not.toContain('unlocated');
   expect(screen.queryByRole('switch')).toBeNull();
 });
 it('uses later active FM values instead of the expired initial TAF group', () => {
@@ -113,4 +113,25 @@ it('labels fractional-millisecond timestamps explicitly as UTC without losing pr
   const article = screen.getByRole('article');
   expect(article.textContent).toContain('Observed 2026-10-06T11:59:00.123 UTC');
   expect(article.textContent).not.toContain('.123Z');
+});
+
+it('renders no generic status box when only SIGMETs are enabled', () => {
+  render(
+    <AviationStatus
+      view={{
+        ...emptyAviationView,
+        now: NOW,
+        layers: {
+          ...emptyAviationView.layers,
+          sigmet: {
+            state: 'current',
+            data: parseAviationFeatures(collection([advisory()]), 'sigmet'),
+          },
+        },
+      }}
+      onInspect={() => {}}
+    />
+  );
+  expect(screen.queryByRole('button')).toBeNull();
+  expect(screen.queryByLabelText('Aviation weather status')).toBeNull();
 });

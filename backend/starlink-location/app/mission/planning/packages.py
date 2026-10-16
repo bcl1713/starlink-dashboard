@@ -89,15 +89,14 @@ def _safe_archive(zf):
 def _remap(value, routes, old_owner, new_owner, key=None):
     if isinstance(value, dict):
         result = {
-            k: _remap(v, routes, old_owner, new_owner, k) for k, v in value.items()
+            routes.get(k, k): _remap(v, routes, old_owner, new_owner, k)
+            for k, v in value.items()
         }
-        if (
-            value.get("kind") in {"route_kml", "itinerary_pdf"}
-            and "owned_relative_path" in value
-        ):
+        if value.get("kind") in {"route_kml", "itinerary_pdf"} and "id" in value:
             result["id"] = routes.get(value["id"], value["id"])
             suffix = "kml" if value["kind"] == "route_kml" else "pdf"
-            result["owned_relative_path"] = f"sources/{result['id']}.{suffix}"
+            if "owned_relative_path" in value:
+                result["owned_relative_path"] = f"sources/{result['id']}.{suffix}"
         return result
     if isinstance(value, list):
         return [_remap(v, routes, old_owner, new_owner, key) for v in value]
@@ -120,7 +119,13 @@ def _remap(value, routes, old_owner, new_owner, key=None):
                 raise ValueError(
                     f"Invalid embedded planning {key}; restore a valid package"
                 ) from exc
-        if key in {"route_id", "source_id", "source_ids"}:
+        if key in {
+            "route_id",
+            "source_id",
+            "source_ids",
+            "snapshot_id",
+            "operation_id",
+        }:
             return routes.get(value, value)
         if key in {"mission_id", "owner"} and value == old_owner:
             return new_owner
@@ -233,6 +238,7 @@ def stage_package(
     if store.root != storage.MISSIONS_DIR.resolve():
         raise ValueError("Package commit context root changed")
     mission = Mission.model_validate_json(zf.read("mission.json"))
+    original_import_mission = mission.model_copy(deep=True)
     _selector(mission.id)
     for leg in mission.legs:
         _selector(leg.id)
@@ -364,7 +370,7 @@ def stage_package(
             route.route_id = new_id
             route.metadata.file_path = str(path)
             remapped_routes.append(route.model_dump_json().encode())
-        for source in (manifest.source_revisions if manifest else []):
+        for source in source_closure(mission, manifest):
             old_id = next(
                 (old for old, new in remaps.items() if new == source.id), source.id
             )
@@ -386,6 +392,11 @@ def stage_package(
             files[
                 store.root / mission.id / "planning" / "proposals" / f"{identity}.json"
             ] = data
+        from app.mission.itinerary_import.history import stage_history
+
+        files.update(
+            stage_history(zf, original_import_mission, mission, remaps, old_owner)
+        )
         files[storage.get_mission_file_path(mission.id)] = json_bytes(
             mission.model_copy(update={"legs": []}).model_dump(mode="json")
         )
@@ -457,10 +468,16 @@ def stage_package(
                 h.installed_leg for h in manifest.leg_history if h.installed_leg
             )
         route_view = SimpleNamespace(get_route=route_models.get)
+        from app.mission.exporter.snapshot_views import POIView
+
+        poi_view = POIView(
+            tuple(json_bytes(_poi_record(p)) for p in store.poi_manager.list_pois())
+            + tuple(pois.values())
+        )
         for leg in installed:
             if leg.transports.planning_inputs is not None:
                 effective = prepare_effective_route(leg, route_view)
-                canonical_inputs(leg, effective)
+                canonical_inputs(leg, effective, poi_manager=poi_view)
         for leg in mission.legs:
             route = route_models.get(leg.route_id)
             if route is None or not route.points:
@@ -511,7 +528,10 @@ def stage_package(
 
 
 def commit_package(
-    plan: PackageImportPlan, expected_revision: int | None
+    plan: PackageImportPlan,
+    expected_revision: int | None,
+    *,
+    convert_legacy: bool = False,
 ) -> PlanningView:
     sources = plan._sources
     store = sources._store
@@ -589,9 +609,17 @@ def commit_package(
                 for key, poi in {**replaced, **pois}.items()
             }
         }
+        writes = {Path(path): data for path, data in plan.files}
+        if convert_legacy and manifest:
+            from app.mission.itinerary_import.commit import mission_files
+            from app.mission.itinerary_import.migration import convert_mission
+
+            mission = convert_mission(mission)
+            writes.update(mission_files(mission))
+            manifest = None
         try:
             store.journal.commit(
-                {Path(path): data for path, data in plan.files},
+                writes,
                 poi_scope=scope if pois else None,
                 pois=pois,
             )
