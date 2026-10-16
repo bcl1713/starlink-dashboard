@@ -437,6 +437,12 @@ async def startup_event():
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
+            from app.mission.pop_status import PopStatusService
+
+            app.state.pop_status_service = PopStatusService(
+                _route_manager, lambda: _coordinator.get_config()
+            )
+            status.set_pop_service(app.state.pop_status_service)
 
             # Inject into metrics_export as well
             # from app.api import metrics_export
@@ -575,8 +581,6 @@ async def startup_event():
             _simulation_config.exports.customer_briefing_enabled
             and _background_updates_enabled
         ):
-            import sqlite3
-
             from app.mission.slide_cache.coordinator import start_runtime
 
             try:

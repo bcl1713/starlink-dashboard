@@ -2,18 +2,26 @@
 
 from fastapi import APIRouter, HTTPException
 
+from app.mission.pop_status import PopStatusService
 from app.services.ground_entry_point import get_cached_ground_entry_point
 
 router = APIRouter()
 
 # Global status state
 _coordinator: object | None = None
+_pop_service: PopStatusService = PopStatusService()
 
 
 def set_coordinator(coordinator):
     """Set the simulation coordinator reference."""
     global _coordinator
     _coordinator = coordinator
+
+
+def set_pop_service(service: PopStatusService):
+    """Inject the active-route advisory lifecycle alongside the coordinator."""
+    global _pop_service
+    _pop_service = service
 
 
 @router.get("/api/status")
@@ -69,6 +77,7 @@ async def status():
         availability = telemetry.metric_availability
 
         return {
+            **_pop_service.status_payload(telemetry),
             "timestamp": telemetry.timestamp.isoformat(),
             "position": {
                 "latitude": telemetry.position.latitude,
