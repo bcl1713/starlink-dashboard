@@ -1407,6 +1407,12 @@ async def update_leg(
 
             if stored_leg.import_provenance:
                 updated_leg.import_provenance = stored_leg.import_provenance
+                # Older editors replace transports without sending this field.
+                # Preserve the installed choice instead of validating null.
+                if "starshield_enabled" not in updated_leg.transports.model_fields_set:
+                    updated_leg.transports.starshield_enabled = (
+                        stored_leg.transports.starshield_enabled
+                    )
                 try:
                     refresh_leg(updated_leg, route_manager, poi_manager)
                 except ValueError as exc:
