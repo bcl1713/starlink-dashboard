@@ -5,6 +5,7 @@ from datetime import timedelta
 from app.services.flight_events.live_adapter import FlightEventRuntime
 from app.services.telemetry_archive.coordinator import CaptureCoordinator
 from app.services.telemetry_archive.store import ArchiveStore
+from tests.unit.test_archive_review_regressions import CompleteReader, drain
 from tests.unit.test_flight_events import START
 
 
@@ -36,6 +37,9 @@ def test_window_and_restart_idempotence(tmp_path):
         "m", "l", park.event_id, "destination_complete", "DV offloaded", "operator"
     )
     capture.recover(START + timedelta(seconds=4000))
+    for _ in range(30):
+        capture.backfill_one(CompleteReader(), START + timedelta(seconds=4000))
+        capture.recover(START + timedelta(seconds=4000))
     first = archive.capture("m", "l")
     assert first["start"] == (START - timedelta(seconds=1800)).isoformat()
     assert first["end"] == (START + timedelta(seconds=3800)).isoformat()
@@ -110,19 +114,33 @@ def test_recovery_retry_replays_without_losing_pending_work(tmp_path):
 
     coordinator.backfill_one(Offline(), START)
     with archive.ledger.connect() as db:
-        job = db.execute("SELECT cursor, attempts, error FROM recovery_jobs").fetchone()
+        job = db.execute(
+            "SELECT start, attempts, error FROM raw_windows ORDER BY start LIMIT 1"
+        ).fetchone()
     assert job[1] == 1
     assert job[2] == "ConnectError"
 
     class Online:
         def read(self, begin, end):
-            return [(begin, "starlink_dish_speed_knots", {}, 0, "live", begin)]
+            return [
+                (
+                    begin + timedelta(seconds=second),
+                    "starlink_dish_speed_knots",
+                    {},
+                    0,
+                    "live",
+                    begin,
+                )
+                for second in range(int((end - begin).total_seconds()) + 1)
+            ]
 
     coordinator.backfill_one(Online(), START + timedelta(seconds=10))
     with archive.ledger.connect() as db:
-        recovered = db.execute("SELECT cursor, attempts FROM recovery_jobs").fetchone()
-    assert recovered[0] > job[0]
-    assert recovered[1] == 0
+        recovered = db.execute(
+            "SELECT start, attempts FROM raw_windows ORDER BY start LIMIT 1"
+        ).fetchone()
+    assert recovered[0] == job[0]
+    assert recovered[1] == 2
     runtime.close()
 
 
@@ -156,6 +174,7 @@ def test_sealed_csv_archive_survives_raw_retention(tmp_path):
         "m", "l", park.event_id, "destination_complete", "DV stop", "operator"
     )
     runtime.capture.recover(START + timedelta(seconds=4000))
+    drain(runtime, START + timedelta(seconds=4000))
     paths = list((tmp_path / "sealed").glob("*.zip"))
     assert len(paths) == 1
     before = paths[0].read_bytes()

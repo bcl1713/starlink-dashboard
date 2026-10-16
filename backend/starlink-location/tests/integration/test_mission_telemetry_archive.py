@@ -9,6 +9,7 @@ import pytest
 
 from app.services.flight_events.live_adapter import FlightEventRuntime
 from app.services.telemetry_archive.package import build_telemetry_package
+from tests.unit.test_archive_review_regressions import CompleteReader
 from tests.unit.test_flight_events import START
 
 
@@ -81,6 +82,11 @@ def test_two_legs_fuel_stop_crash_replay_and_retention(tmp_path, monkeypatch):
     runtime = FlightEventRuntime(tmp_path)
     try:
         runtime.capture.recover(START + timedelta(seconds=11000))
+        for _ in range(80):
+            runtime.capture.backfill_one(
+                CompleteReader(), START + timedelta(seconds=11000)
+            )
+            runtime.capture.recover(START + timedelta(seconds=11000))
         assert not runtime.events.pending_events()
         captures = [runtime.archive.capture("m", leg) for leg in ["first", "second"]]
         assert captures[0]["end"] == (START + timedelta(seconds=5800)).isoformat()

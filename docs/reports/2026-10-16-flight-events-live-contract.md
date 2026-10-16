@@ -47,3 +47,20 @@ survives mission active-flag reset. Keep operational and simulated sources
 separate. Synthetic replay establishes algorithm behavior only; field accuracy
 remains unvalidated. The first confirmed destination park includes DV offload
 and is terminal for automatic arrival even if subsequent repositioning occurs.
+
+## Independent code review and regression fixes
+
+The independent branch review identified three important archive defects. New
+regressions first reproduced each failure, then passed after correction:
+post-retention event corrections reuse preserved sealed samples; raw extraction
+has independent leased interval jobs even with uninterrupted native telemetry;
+and incomplete successful query responses retry before a bounded, explicitly
+incomplete finalization. Sealed snapshots preserve data while releasing rolling
+retention. Missing metrics and raw coverage remain separate manifest fields.
+
+The broad suite exposed a legacy background test that expected route-endpoint
+dwell to land without a bound mission. Its assertion now requires uncertainty
+rather than inventing an arrival. Synthetic live tests use isolated archive
+roots. Rendered/browser acceptance has not been performed: the current execution
+environment lacks its provisioned acceptance browser. Field calibration of
+inference thresholds also remains outside synthetic verification.
