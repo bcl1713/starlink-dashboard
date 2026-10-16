@@ -27,7 +27,7 @@ export async function compositionFixture(page: Page) {
     arrival: 'intermediate' as 'intermediate' | 'destination' | 'departure',
     windowSeconds: 300,
   };
-  await page.route('**/api/**', async (route) => {
+  await page.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
     const endpoint = new URL(route.request().url()).pathname;
     const now = state.now ?? Date.now();
     const observed = new Date(

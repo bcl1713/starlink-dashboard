@@ -6,6 +6,7 @@ export async function observeOverviewCamera(page: Page) {
       __overviewEvidenceRoots: roots,
       __REACT_DEVTOOLS_GLOBAL_HOOK__: {
         supportsFiber: true,
+        renderers: new Map(),
         inject: () => 1,
         onCommitFiberRoot: (_id: number, root: (typeof roots)[number]) => {
           if (!roots.includes(root)) roots.push(root);

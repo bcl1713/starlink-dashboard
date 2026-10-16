@@ -7,33 +7,43 @@ no mobile copies or extra polling are introduced.
 
 ## Available space and scrolling
 
-`useOverviewLayout` observes the bounded `.app-route-content` shell, not the
-Overview's growing scroll content. ResizeObserver tracks the stage and overlay
-sizes; root font changes and legend disclosure also schedule measurement. Mode
-is exposed through `data-layout` for CSS and browser verification.
+`useOverviewLayout` observes the bounded `.app-route-content` shell and the
+actual globe viewport. Mode is exposed through `data-layout` for CSS and browser
+verification. Available width, height and root font size choose composition;
+legend disclosure and changing feed content cannot switch modes.
 
-- Desktop requires at least `max(1500px, 93.75rem)` width and
-  `max(1012px, 63.25rem)` height. Its five-card rail remains 440px wide.
-  Measured panel overflow, overlap, or insufficient clear map height selects
-  stacked page flow, latched until viewport/root or saved visibility changes.
-- Landscape requires at least 800px usable width, a readable 210–240px rail,
-  560px map width, 220px stage height and 120px height clear of arrival content.
-  Readability minima scale upward with enlarged root text. Very tall viewports
-  use stacked or desktop composition rather than the landscape strip.
-- Other sizes use stacked flow. The shell owns vertical page scrolling; metric
-  cards have no nested scroller. In landscape, only the metrics rail scrolls.
-- When overlays cannot fit, panels move below a 360px renderer. Expanded legend,
-  root font over 20px or measured oversized content triggers this escape. Within
-  a settled viewport, the flow decision stays stable until a resize/root or
-  visibility change; loading-induced decisions reset when initial queries
-  settle.
+- Desktop requires at least 1500 × 1012 CSS pixels at the default root font
+  size. It retains the full-bleed globe, clocks above, metrics at left and
+  controls at right. The optional status/legend rail scrolls within the
+  remaining height; unusually long arrival content has a bounded scroll area.
+- Windowed desktop (`landscape`) requires at least 1100 × 500 CSS pixels. Clocks
+  occupy a top row. The map fills the remaining height, with arrival information
+  underneath and controls alongside it. A 220–300px metrics rail scrolls
+  independently; controls can also scroll without covering the map.
+- Narrower or shorter windows use stacked page flow in either orientation. The
+  globe has a dedicated viewport that scales with screen height, followed by
+  arrival information, controls/legend and wrapping metric cards. The shell owns
+  scrolling. Expanding the legend extends normal flow below the map and leaves
+  the map's size and position in the document unchanged.
 
-Semantic content keys exclude changing observation timestamps/countdowns.
-Observed size changes still update the reserved rectangle. This avoids feedback
-between reflowed panel height and the decision to reflow it. Safe-area insets
-and `dvh` are used with a `vh` fallback. Actual CSS dimensions select layout;
-system scaling, browser zoom and DPR are recorded separately in acceptance
-evidence.
+Readability minima scale upward with enlarged root text. Optional groups are
+removed from layout, including their grid tracks; hiding all metrics lets the
+map expand. The globe and plot DOM trees remain mounted across composition
+changes. The navigation uses a compact menu below 1024px to avoid crowding the
+windowed header. Safe-area insets and dynamic viewport units account for mobile
+browser chrome.
+
+The camera uses the actual renderer's CSS dimensions, rather than the larger
+stage that also contains controls. In the desktop overlay composition its safe
+rectangle is measured between the visible clock, metrics, controls and arrival
+groups. Other compositions keep panels outside the canvas, so the entire canvas
+is available with a small edge inset. ResizeObserver tracks both the globe and
+panel groups; DOM visibility and fullscreen changes also schedule measurement.
+Automatic and Reset/route-overview framing react to changes in the opening's
+position as well as its width and height, including small resizes. Existing
+smooth rotation/dolly/projection transitions and manual-intent preservation are
+retained. Legend disclosure does not change composition or reframe a separate
+map cell.
 
 ## Visibility and configuration
 
@@ -101,12 +111,12 @@ default false and storage-failure feedback. Following uses only the same map
 status coordinates and timestamp; stale/error/missing sources pause it.
 Arrival/GPS provenance remains independently derived.
 
-Desktop fullscreen keeps the globe centered on the screen when that preserves a
-useful route angle and scale. A panel-aware projection offset is used when
-forcing exact screen centering would make the route small or push the aircraft
-toward the horizon. The route is centered in the opening to the right of the
-metrics, below the upper cards and above the legend. Other views use the same
-measured panel-aware framing.
+Desktop fullscreen prefers a screen-centered globe when that preserves a useful
+route angle and scale. A panel-aware projection offset is used when forcing
+exact screen centering would make the route small or push the aircraft toward
+the horizon. The route is centered in the opening to the right of the metrics,
+below the upper cards and above the legend. Other views use the same measured
+panel-aware framing.
 
 Automatic route framing and following use camera-controls damping with a
 1.2-second smoothing parameter and a 1.5 scene-units/second dolly speed cap.

@@ -19,29 +19,11 @@ export function resolveOverviewLayout({
   width,
   height,
   rootFontSize,
-  clockHeight,
-  overlayHeight,
-  overflow,
-  fullscreen = false,
 }: OverviewLayoutInput): OverviewLayoutMode {
-  if (overflow) return 'stacked';
   const scale = Math.max(1, rootFontSize / 16);
-  if (
-    width >= Math.max(1500, 93.75 * rootFontSize) &&
-    height >= Math.max(1012, 63.25 * rootFontSize)
-  )
-    return 'desktop';
-  const usable = width - 24;
-  const rail = Math.min(240 * scale, Math.max(210 * scale, usable * 0.28));
-  const stageHeight = height - clockHeight - 34;
-  if (
-    usable >= 800 * scale &&
-    height >= 300 * scale &&
-    (height <= 600 || fullscreen) &&
-    usable - rail - 12 >= 560 * scale &&
-    stageHeight >= 220 * scale &&
-    stageHeight - overlayHeight - 24 >= 120 * scale
-  )
-    return 'landscape';
+  if (width >= 1500 * scale && height >= 1012 * scale) return 'desktop';
+  // Keep enough room for readable metrics, a map and its controls. Short or
+  // narrow windows use page flow in either orientation, without content latches.
+  if (width >= 1100 * scale && height >= 500 * scale) return 'landscape';
   return 'stacked';
 }
