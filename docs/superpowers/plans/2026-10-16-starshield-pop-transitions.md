@@ -7,6 +7,12 @@
 **Goal:** Add advisory PoP transition forecasts to mission planning, live
 flight, simulation, and customer PDFs without changing transport availability.
 
+**Revision status:** Subsequent user clarification supersedes the original
+advisory-only outage rule. The linked spec now defines conditional full-window
+planned call outages and concurrency-only X fallback. Tasks 1–6 have initial
+implementations; Task 7 is paused. Review the revised written spec before
+writing the implementation amendment and resuming qualification.
+
 **Architecture:** A backend catalog and pure spherical geometry engine produce
 crossing records. Existing timing adapters attach UTC estimates; a separate live
 evaluator reconciles observations. Simulation derives synthetic observations
@@ -21,11 +27,11 @@ calculations; no additional runtime dependency is required.
 
 ## Global Constraints
 
-- “Every transition gets the same advisory, regardless of other service
-  availability.”
-- “Preserve existing transport availability, outage counters, availability-based
-  posture, and the planning preference for Starshield over X during concurrency
-  conflicts.”
+- Every transition remains visible; full-window planned call outages apply only
+  where no usable alternative exists, as defined in the revised spec.
+- Preserve measured physical transport states and default Starshield preference.
+  X blocked solely by Starshield concurrency counts as a planned fallback;
+  independent AR/geometry and other hard blocks still disqualify X.
 - “Each planning window is fixed at estimated crossing time minus five minutes
   through plus five minutes.”
 - “Timeline rows contain no added text labels for transition windows.”
@@ -207,8 +213,9 @@ distance/time callback; do not substitute planned timestamps for current ETA.
       marker.
 - [ ] Add a regression comparing transport states, statistics, and planning
       preference before/after forecasting, including a real Ka outage and X
-      conflict. Recompute after effective-route and timing revisions; discard
-      obsolete results.
+      conflict. Revised planned call-outage metrics are defined separately in
+      the subsequent spec amendment. Recompute after effective-route and timing
+      revisions; discard obsolete results.
 - [ ] Run focused tests plus `tests/unit/test_mission_timeline.py` and
       `tests/unit/test_dateline_timeline.py`; expect pass. Commit as
       `feat: publish timed PoP advisories alongside mission timelines`.

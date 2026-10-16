@@ -10,13 +10,13 @@ forecast into mission planning alongside X and Ka, simulated routes, live
 flight, and the customer briefing PDF. Enable it automatically whenever
 Starshield is enabled, without a separate prediction toggle.
 
-A public egress IP change can interrupt a VPN/voice session for roughly one or
-two seconds. A predicted transition is an advisory, never an outage or a claim
-of measured impairment. Every transition gets the same advisory, regardless of
-other service availability. Preserve existing transport availability, outage
-counters, availability-based posture, and the planning preference for Starshield
-over X during concurrency conflicts. Independent real outages still apply
-normally.
+A public egress IP change can interrupt a secure call and require the call to be
+reestablished. Show every predicted transition, but classify its full 10-minute
+window as a planned communications outage only where Starshield is the sole
+usable call transport. This supersedes the initial advisory-only outage rule.
+Preserve measured transport telemetry and independent real outages; the planning
+outage describes call continuity, not ten minutes of disconnected RF. Keep the
+normal Starshield preference without automatically switching services.
 
 Use geography for predictions and existing public-IP geolocation for observed
 PoPs. Geography does not prove the active PoP or guarantee an IP change. Each
@@ -38,8 +38,8 @@ simulation, and exports. Keep four responsibilities separate:
 2. A pure geometry/timing service produces route crossing records.
 3. A live observation evaluator reconciles those crossings with the observed
    PoP.
-4. Presentation adapters render advisory records without changing service
-   states.
+4. A shared call-continuity projection classifies transition impact using other
+   usable transports; presentation adapters retain measured service states.
 
 Existing integration points include:
 
@@ -117,6 +117,33 @@ telemetry freshness criteria rather than inventing a PoP-specific timeout.
 Distinguish unavailable prediction inputs from a valid route with no upcoming
 crossing. An aircraft can still have an observed PoP without a route forecast.
 
+## Conditional planned outage and X-band fallback
+
+Evaluate the entire T−5 to T+5 interval against transport capability, splitting
+at independent service/constraint changes. Keep all transition markers visible.
+
+| Other usable call transport              | Transition classification                                          |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| Ka available                             | Advisory; no transition-related outage.                            |
+| X available independently                | Advisory; no transition-related outage.                            |
+| X blocked only by Starshield concurrency | Planned X fallback; no transition-related outage.                  |
+| Neither Ka nor X usable                  | Full overlapping window counts as a planned communications outage. |
+
+X is a fallback only if removing the Starshield concurrency restriction would
+make it usable. Independent aerial-refueling, geometry/elevation, swap, manual,
+or other hard constraints still disqualify X. Do not remove those restrictions
+or automatically bring X up. The operator would coordinate a fallback only for a
+scheduled call; the planning calculation does not require a call schedule or
+infer that a switch occurred. Unknown capability remains unresolved rather than
+fabricating confirmed availability or a confirmed all-service outage.
+
+Intersect windows with flight and capability bounds and union overlapping
+outages; do not double-count simultaneous windows or existing outages. Keep
+X-specific optimizer costs distinct from overall planned communications outage
+metrics. Use one projection for planning, simulation, dashboard, and export.
+Live completion clears active vulnerability as already specified; persistent
+mismatch/overdue advice must not invent an unbounded saved planning outage.
+
 ## Live observations and advisory lifecycle
 
 Continue using public-IP geolocation for the observed PoP; do not substitute the
@@ -184,21 +211,24 @@ resolution. Speed changes and seek/reset recompute from position and clock.
 
 Without a route, simulated current PoP still follows aircraft position, but no
 route-based crossing windows are invented. A simulated transition does not
-inject an outage, transport degradation, or guaranteed call failure.
+inject measured packet loss or RF downtime. Its planned call-outage projection
+uses the same conditional window rule as planning.
 
 ## Planning, Overview, and PDF presentation
 
 Show predicted windows automatically when Starshield is enabled. Keep observed
 PoP information visibly distinct from predictions. Planner details expose the
 two cities, estimated UTC crossing, and the ten-minute planning interval. Every
-transition receives the same cautionary treatment. Known live mismatches and
-overdue transitions expose their persistent active advisory separately.
+transition remains visible; only no-alternative portions become planned
+communications outages. Known live mismatches and overdue transitions expose
+their persistent active advisory separately.
 
 Timeline rows contain no added text labels for transition windows. Use an
 outlined advisory marker aligned with Starshield, distinguishable from existing
 unavailable-service shading; put its meaning in the surrounding legend/details.
-Keep the underlying availability and overall posture bands intact. Provide an
-accessible description and details without requiring text inside a timeline row.
+Keep measured transport lanes intact. Reflect conditional planned call outages
+in the overall posture band, and expose planned X fallback in details. Provide
+an accessible description without text inside a timeline row.
 
 The customer PDF retains its existing timeline and Coordination windows table.
 Use unlabeled timeline markers and Eastern-time table bounds consistent with the
@@ -208,14 +238,14 @@ Transition”. Keep the existing one-line event cells. Preserve exact UTC bounds
 in canonical evidence. City names and center timestamps are available in planner
 details rather than required in the customer table.
 
-Keep Starshield in Remaining comms whenever it is otherwise available. Preserve
-the existing availability-based Posture. If another event overlaps a transition,
-retain both impacts and actual remaining services; do not overwrite independent
-outages or restrictions. Preserve existing table pagination and fit checks.
+The PDF posture and Remaining comms describe call continuity: no-alternative
+portions show Communications unavailable with no usable secure-call transport;
+concurrency-only X fallback prevents an outage and is identified as planned.
+Preserve physical transport evidence separately, plus independent outage/SOF
+impacts, exact event/legend copy, one-line cells, pagination, and fit checks.
 
-Include a short explanatory note: “PoP transitions may briefly interrupt calls
-(typically 1–2 seconds). Marked windows indicate possible transition timing.”
-The fixed band indicates uncertainty about timing, not ten minutes of downtime.
+The explanatory note must distinguish possible call drops/reestablishment from
+physical transport downtime and explain conditional outage/fallback planning.
 Forecast-only exports use captured route/timing/catalog inputs; they must not
 inherit unrelated current aircraft mismatch advisories. PDF preparation and
 evidence must capture the same forecast revision that is rendered.
@@ -237,18 +267,19 @@ Implementation verification must cover:
 - Simulated nearest-PoP/IP/geolocation consistency with and without a route,
   replay centers, anti-meridian motion, timing changes, seeks, and mode
   isolation.
-- Unchanged transport decisions, outage counts, and Starshield preference when
-  adding advisories; preservation of real independent outages.
+- Unchanged measured transport decisions and default Starshield preference;
+  conditional full-window planned outage totals, concurrency-only X fallback,
+  independent AR/geometry blocks, partial overlap, and union/no double-counting.
 - Rendered planner/Overview and actual customer PDF examples proving unlabeled
-  timeline markers, correct ET table bounds, preserved posture/remaining comms,
-  overlapping events, and continuation-page readability.
+  timeline markers, correct ET table bounds, conditional posture/remaining
+  comms, overlapping events, and continuation-page readability.
 - Catalog-driven cache invalidation and consistent captured export evidence.
 
 Use focused unit/contract tests plus the repository-required isolated production
 and browser/PDF acceptance for implementation. All runtime-owning checks must
 have wall-clock limits, task-specific resource ownership, cleanup, and verified
-teardown. This documentation-only task requires document checks, not application
-builds or runtime provisioning.
+teardown. Earlier advisory-only acceptance is insufficient for the revised
+conditional-outage behavior; rerun its affected integration/production checks.
 
 ## Deferred work
 

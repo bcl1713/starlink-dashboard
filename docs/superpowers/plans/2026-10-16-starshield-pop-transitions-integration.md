@@ -18,7 +18,11 @@ them.
 ## Global Constraints
 
 All constraints, Review Focus cases, path prefixes, and shared contracts from
-the main plan apply. Execute Tasks 4–7 after Tasks 1–3, in order.
+the main plan apply. Execute Tasks 4–7 after Tasks 1–3, in order. Subsequent
+user clarification supersedes advisory-only outage/posture expectations below:
+all windows remain visible, but no-alternative portions count as planned call
+outages, with concurrency-only X counted as a possible fallback. Task 7 is
+paused pending revised spec review and a corresponding implementation amendment.
 
 ## Review Focus
 
