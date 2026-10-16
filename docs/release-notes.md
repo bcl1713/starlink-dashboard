@@ -13,7 +13,15 @@ review/publication workflow. Incoming source fields win when they conflict with
 manual edits; compatible edits and revision history are retained. KML timestamps
 are authoritative and AR windows follow departure/arrival offsets. Review the
 [import workflow](missions/itinerary-planning.md) before updating saved imports.
-Imported missions remain inactive until normal leg activation.
+Newly imported missions remain inactive until normal leg activation.
+
+At startup, existing itinerary-planning missions are persistently converted to
+ordinary missions with import provenance; installed legs and source records are
+retained, and unfinished legs are retained as pending evidence. Back up mission
+storage before the first v2 start. An image-only downgrade does not restore the
+v1 itinerary workflow: rollback requires the matching pre-upgrade mission-data
+backup as well as the old images. Preserve newer data separately before any
+restore; no reverse conversion is supplied.
 
 Deploy backend and frontend together: the strict SIGMET read contract is
 `route-sigmets-v2`. Back up persistent application, route and monitoring data,
@@ -55,6 +63,9 @@ Wind acceptance was closed by owner confirmation in PR #342. Synthetic/pinned
 weather controls do not establish current provider availability or workstation
 hardware performance. This release preparation adds no new aircraft validation
 or live deployment; backend version metadata still contains historical values.
+
+Use a consistent stopped-service backup; see
+[storage backup guidance](setup/configuration/storage-configuration.md).
 
 ## v1.0.0
 

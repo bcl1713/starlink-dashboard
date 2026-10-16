@@ -201,6 +201,17 @@ repository.
 
 ## Rollback
 
+Before the first v2.0.0 backend start, back up mission storage. Startup converts
+existing itinerary-planning metadata to ordinary-mission import provenance and
+persists it. Returning to v1.0.0 images alone does not restore the old itinerary
+workflow. A downgrade requires the matching pre-upgrade mission-data backup;
+preserve post-upgrade data separately before restoring it. There is no automatic
+reverse migration. Persistent-storage restores remain separately authorized
+operations under the live rollout gate below.
+
+Use a consistent stopped-service backup; see
+[storage backup guidance](../setup/configuration/storage-configuration.md).
+
 If an authorized non-live update fails, set `STARLINK_IMAGE_TAG` back to the
 recorded prior immutable selection and use the matching Git-stack template
 revision. Tags published before GFS worker support have only three images;
