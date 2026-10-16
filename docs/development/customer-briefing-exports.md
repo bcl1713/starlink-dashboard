@@ -117,3 +117,26 @@ Maps already render directly at the measured printed dimensions using 300 DPI: a
 280 CSS-pixel column needs `ceil(280 * 300 / 96) = 875` raster pixels. The
 1920-pixel framing reference does not create a 1920-pixel intermediate raster.
 Preserve that output density when investigating further improvements.
+
+## PoP coordination windows
+
+Customer briefs capture the validated PoP catalog and its fingerprint with the
+other immutable preparation inputs. Detached render workers use that capture;
+a changed catalog invalidates preparation through the normal publication guard.
+An invalid or unavailable catalog never produces a silently reduced forecast.
+
+Starshield outlines contain no text labels inside the timeline row. The
+coordination table uses the existing compact Eastern-time cells and clock/axis
+context, retaining exact UTC bounds in machine evidence. Overlapping SOF, outage
+and PoP impacts remain together; PoP windows preserve availability and Remaining
+comms. Full canonical windows remain intact when display edges are clipped.
+
+Only impact cells in rows with PoP occurrence IDs wrap (`td.pop-impact`). The
+approved advisory sentence needs that space; other cell styling, measured
+whole-row pagination, fonts and PDF text/geometry validation remain unchanged.
+Continuation pages repeat the timeline and explanatory note. Catalog editing
+and discovery management screens remain outside this feature.
+
+Run the exact-candidate production control described in
+[PoP acceptance](../../tools/acceptance/pop-transitions/README.md) to verify real
+Nginx/API browser journeys and actual delivered PDF cells, outlines and rasters.

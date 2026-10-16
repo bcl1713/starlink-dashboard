@@ -154,3 +154,30 @@ browser resumes the saved operation. Upload limits are 10 MiB for the PDF and 16
 KMLs totaling 40 MiB. Operations have a 20-minute overall deadline and bounded
 worker execution. Existing itinerary missions are converted on server startup,
 preserving accepted legs and unfinished source records for revision recovery.
+
+## Starshield PoP transition advisories
+
+With Starshield enabled, the planner automatically shows outlined transition
+windows and city-to-city UTC details. Each window is the estimated geographic
+crossing time minus five minutes through plus five minutes. The outline is an
+advisory: transport availability, outage totals, service posture and the existing
+preference for Starshield during X concurrency conflicts continue independently.
+Every transition receives the same caution, including when other comms remain.
+
+Overview distinguishes the observed public-IP city from the geographic forecast.
+An early observation of the expected destination completes that occurrence; a
+late observation keeps its advisory active. An unexpected known city warns that
+a transition can happen at any time. A failed lookup after an IP change leaves
+the current observation unknown. An unchanged public IP retains its cached city.
+
+Simulation selects the nearest configured PoP from current aircraft position,
+including without an activated route. Each catalog identity has a stable
+simulation-only documentation IP. Replay uses the mission clock; changing speed
+or resetting recomputes the observation from position. Synthetic observations
+do not establish operational Starshield behavior or inject an outage.
+
+The configured catalog seeds Los Angeles, Ashburn, Dallas, Sydney, Frankfurt and
+Tokyo, using city centers. Its fingerprint participates in forecasts and export
+preparation identity. Update the supported catalog configuration to maintain
+entries. A catalog editor, discovery management UI, automatic catalog updates,
+window calibration and real IP-range matching are deferred.
