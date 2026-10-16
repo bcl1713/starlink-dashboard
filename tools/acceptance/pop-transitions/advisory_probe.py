@@ -62,6 +62,7 @@ for name, city, country, offset, expected in [
     if name == "early":
         assert state.completed_ids == {"sanitized-occurrence"}
     reports[name] = {
+        "observation": observation.model_dump(mode="json"),
         "state": state.model_dump(mode="json"),
         "advisories": [item.model_dump(mode="json") for item in advisory],
     }
@@ -70,6 +71,7 @@ print(
         {
             "fixtureKind": "deterministic provider observation fixtures, independent of real HTTP simulation observations",
             "cases": reports,
+            "forecast": forecast.model_dump(mode="json"),
         }
     )
 )

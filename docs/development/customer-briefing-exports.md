@@ -134,7 +134,7 @@ comms. Full canonical windows remain intact when display edges are clipped.
 Only impact cells in rows with PoP occurrence IDs wrap (`td.pop-impact`). The
 approved advisory sentence needs that space; other cell styling, measured
 whole-row pagination, fonts and PDF text/geometry validation remain unchanged.
-Continuation pages repeat the timeline and explanatory note. Catalog editing
+Continuation pages retain the explanatory note and measured whole-row layout. Catalog editing
 and discovery management screens remain outside this feature.
 
 Run the exact-candidate production control described in

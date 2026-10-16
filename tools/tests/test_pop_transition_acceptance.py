@@ -127,3 +127,38 @@ def test_failed_qualification_always_removes_runtime_and_retains_failure(
     report = json.loads((tmp_path / "evidence/summary.json").read_text())
     assert not report["checksPassed"] and boundary in report["error"]
     assert report["cleanup"]["composeRemoved"] and len(removed) == 1
+
+
+def geometry():
+    entry = ROOT / "tools/acceptance/pop-transitions/pdf_geometry.py"
+    assert entry.exists(), "Independent canonical marker geometry check is missing"
+    spec = importlib.util.spec_from_file_location("pop_pdf_geometry", entry)
+    value = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(value)
+    return value
+
+
+@pytest.mark.parametrize("shift", [0, 6])
+def test_actual_pdf_markers_must_align_with_canonical_utc_window(shift):
+    value = geometry()
+    forecast = {
+        "transitions": [
+            {
+                "window_start_utc": "2026-10-25T14:55:00Z",
+                "window_end_utc": "2026-10-25T15:05:00Z",
+            }
+        ]
+    }
+    bounds = ["2026-10-25T14:00:00Z", "2026-10-25T18:00:00Z"]
+    scale = 921 / 1240
+    box = [
+        19.5 + (280 + 960 * 55 / 240) * scale + shift,
+        200,
+        19.5 + (280 + 960 * 65 / 240) * scale + shift,
+        216.34,
+    ]
+    if shift:
+        with pytest.raises(ValueError, match="canonical UTC"):
+            value.verify_markers([box], forecast, bounds)
+    else:
+        assert value.verify_markers([box], forecast, bounds)[0]["matched"]

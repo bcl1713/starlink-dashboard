@@ -66,10 +66,15 @@ test('planner and Overview retain source windows and position drives synthetic I
   await expect(panel.getByLabel('PoP transition details')).toHaveCount(1);
   await expect(panel).toContainText('Los Angeles');
   await expect(panel).toContainText('Dallas');
-  await page.screenshot({
-    path: root + '/planner-1920x1080.png',
-    fullPage: true,
-  });
+  await panel.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: root + '/planner-visible-1920x1080.png' });
+  await panel.screenshot({ path: root + '/planner-markers-details.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await panel.getByLabel('PoP transition details').selectOption({ index: 1 });
+  await expect(panel).toContainText('Ashburn');
+  await panel.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: root + '/planner-mobile-selector.png' });
+  await page.setViewportSize({ width: 1920, height: 1080 });
 
   // Config reset is the ordinary route-free simulation API, with no activated route.
   const configuration = await (await request.get('/api/config')).json();
@@ -126,12 +131,29 @@ test('planner and Overview retain source windows and position drives synthetic I
     name: 'Starshield PoP advisories',
   });
   await expect(overview).toBeVisible();
+  await expect(overview.getByLabel('PoP transition details')).toBeVisible();
+  await page.screenshot({ path: root + '/overview-upcoming-1920x1080.png' });
+  let activeCaptured = false;
   const samples: { status: StatusResponse; run: SimulationRunStatus }[] = [];
   const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
     samples.push({ status, run });
+    expect(run.run.transport_states).toEqual({
+      X: 'available',
+      Ka: 'available',
+      Ku: 'available',
+    });
+    if (
+      !activeCaptured &&
+      status.pop_advisories?.some(
+        (item: { kind: string }) => item.kind === 'window'
+      )
+    ) {
+      await page.screenshot({ path: root + '/overview-active-1920x1080.png' });
+      activeCaptured = true;
+    }
     if (run.state === 'completed') break;
     await page.waitForTimeout(300);
   }
@@ -158,4 +180,111 @@ test('planner and Overview retain source windows and position drives synthetic I
   recorded.push({ replay: samples });
   await page.screenshot({ path: root + '/overview-1920x1080.png' });
   await request.post(`/api/v2/missions/${crossing.missionId}/legs/deactivate`);
+  await page.close();
+});
+
+test('explicit synthetic response fixtures render early, late and mismatch evaluator results', async ({
+  request,
+}) => {
+  const fixtures = JSON.parse(
+    await readFile(root + '/provider-fixtures.json', 'utf8')
+  );
+  const baseline = await (await request.get('/api/status')).json();
+  const page = await context.newPage();
+  for (const name of ['early', 'late', 'mismatch']) {
+    const fixture = fixtures.cases[name];
+    const payload = {
+      ...baseline,
+      timestamp: new Date().toISOString(),
+      pop_forecast: fixtures.forecast,
+      pop_observation: fixture.observation,
+      pop_advisories: fixture.advisories,
+    };
+    await page.route('**/api/status', (route) =>
+      route.fulfill({ json: payload })
+    );
+    await page.goto(process.env.POP_ORIGIN + '/overview', {
+      waitUntil: 'domcontentloaded',
+    });
+    const panel = page.getByRole('region', {
+      name: 'Starshield PoP advisories',
+    });
+    await expect(panel).toContainText(
+      'Observed PoP: ' + fixture.observation.entry.city
+    );
+    if (name === 'early')
+      await expect(panel.getByRole('status')).toHaveCount(0);
+    if (name === 'late')
+      await expect(panel).toContainText('Overdue PoP transition');
+    if (name === 'mismatch')
+      await expect(panel).toContainText('A transition is possible at any time');
+    await page.screenshot({
+      path: root + `/synthetic-response-${name}-1920x1080.png`,
+    });
+    recorded.push({
+      fixtureKind:
+        'explicit page.route response fixture against shipped frontend; evaluator output from actual image; not backend HTTP observation proof',
+      name,
+      payload,
+    });
+    await page.unroute('**/api/status');
+  }
+  await page.close();
+});
+
+test('actual dateline replay changes Tokyo IP to Los Angeles without an availability change', async ({
+  request,
+}) => {
+  const fixtures = JSON.parse(
+    await readFile(root + '/source-fixtures.json', 'utf8')
+  );
+  const fixture = fixtures.dateline;
+  const base = `/api/v2/missions/${fixture.missionId}/legs/${fixture.legId}`;
+  const pacing = { mode: 'target_runtime', runtime_seconds: 20 };
+  const preview = await (
+    await request.post(base + '/simulation/preview', { data: pacing })
+  ).json();
+  const activated = await request.post(base + '/activate', {
+    data: { simulation: { pacing, plan_token: preview.plan_token } },
+  });
+  expect(activated.ok(), await activated.text()).toBeTruthy();
+  const samples = [];
+  const deadline = Date.now() + 35_000;
+  while (Date.now() < deadline) {
+    const status = await (await request.get('/api/status')).json();
+    const run = await (await request.get('/api/simulation/run')).json();
+    samples.push({ status, run });
+    const at = Date.parse(run.run.simulation_time);
+    const expected =
+      fixture.timeline.segments.find(
+        (segment: { start_time: string; end_time: string }) =>
+          Date.parse(segment.start_time) <= at &&
+          at < Date.parse(segment.end_time)
+      ) ?? fixture.timeline.segments.at(-1);
+    expect(run.run.transport_states).toEqual({
+      X: expected.x_state,
+      Ka: expected.ka_state,
+      Ku: expected.ku_state,
+    });
+    if (run.state === 'completed') break;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  expect(samples.at(-1)!.run.state).toBe('completed');
+  const cities = samples.map((item) => item.status.pop_observation.entry.city);
+  expect(cities).toContain('Tokyo');
+  expect(cities).toContain('Los Angeles');
+  expect(
+    new Set(samples.map((item) => item.status.pop_observation.ip)).size
+  ).toBe(2);
+  const first = samples.find(
+    (item) => item.status.pop_observation.entry.city === 'Los Angeles'
+  )!;
+  expect(
+    Math.abs(
+      Date.parse(first.run.run.simulation_time) -
+        Date.parse(fixture.timeline.pop_forecast.transitions[0].crossing_utc)
+    )
+  ).toBeLessThan(360_000);
+  recorded.push({ actualDatelineReplay: samples });
+  await request.post(`/api/v2/missions/${fixture.missionId}/legs/deactivate`);
 });

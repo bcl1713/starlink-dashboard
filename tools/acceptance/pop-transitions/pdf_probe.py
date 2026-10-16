@@ -6,6 +6,7 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from pdf_geometry import verify_markers
 from pypdf import PdfReader
 
 # Reuse canonical full-cell, page-overflow, PDF resource and 240-DPI raster checks.
@@ -64,6 +65,16 @@ for page, marker in zip(pages, markers):
         ), "PoP text added inside timeline row"
 
 forecasts = [leg["canonical"]["popForecast"] for leg in evidence["legs"]]
+legs = {leg["legId"]: leg for leg in evidence["legs"]}
+for index, page in enumerate(evidence["pages"]):
+    canonical = legs[page["legId"]]["canonical"]
+    # Continuation pages carry measured whole rows, with no duplicated timeline.
+    if markers[index]["outlinesPt"]:
+        markers[index]["canonicalAlignment"] = verify_markers(
+            markers[index]["outlinesPt"],
+            canonical["popForecast"],
+            canonical["utcBounds"],
+        )
 expected = sum(len(forecast["transitions"]) for forecast in forecasts if forecast)
 actual = sum(len(page["outlinesPt"]) for page in markers)
 assert actual >= expected, ("Missing PDF outline markers", expected, markers)

@@ -19,13 +19,15 @@ remove owned runtime resources and retain the cleanup receipt, logs and hashes.
 Supported mission/KML APIs seed crossing, no-crossing, anti-meridian, overlapping
 SOF/outage and continuation controls. A real 1920x1080 CDP browser exercises
 planner, Overview, route-free simulation configuration and mission-clock replay
-through production Nginx. No responses are intercepted. Browser provenance is
+through production Nginx. Those primary checks do not intercept responses. A
+separate labelled browser control intercepts status responses with synthetic
+early/late/mismatch evaluator results to check presentation only. Browser provenance is
 checked against the installed locked Playwright metadata. Contexts and browsers
 close immediately after the journey, including failure.
 
 Actual prepared ZIPs retain stage responses, PDFs, canonical evidence, 240-DPI
 color/grayscale rasters and independent full-cell/overflow/geometry checks.
-Additional vector checks locate Starshield outline markers, verify page bounds
+Additional vector checks locate Starshield outline markers, verify page bounds and canonical UTC x-position/width
 and reject PoP text within their row. Snapshot/catalog fingerprints and evidence
 SHA-256 hashes connect observations to their immutable candidate.
 
