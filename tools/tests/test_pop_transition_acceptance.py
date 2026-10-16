@@ -162,3 +162,76 @@ def test_actual_pdf_markers_must_align_with_canonical_utc_window(shift):
             value.verify_markers([box], forecast, bounds)
     else:
         assert value.verify_markers([box], forecast, bounds)[0]["matched"]
+
+
+@pytest.mark.parametrize("damage", [None, "table-only", "long-label", "wrong-region"])
+def test_legend_requires_exact_label_above_coordination_table(damage):
+    import xml.etree.ElementTree as ET
+
+    value = geometry()
+    words = ["Starshield", "Transition"]
+    if damage == "long-label":
+        words.append("Window")
+    y = 260 if damage != "wrong-region" else 340
+    legend = (
+        ""
+        if damage == "table-only"
+        else "<line>"
+        + "".join(f'<word yMin="{y}" yMax="{y+10}">{word}</word>' for word in words)
+        + "</line>"
+    )
+    page = ET.fromstring(
+        "<page>"
+        + legend
+        + '<line><word yMin="300" yMax="310">COORDINATION</word></line><line><word yMin="340" yMax="350">Starshield</word><word yMin="340" yMax="350">Transition</word><word yMin="340" yMax="350">Window</word></line></page>'
+    )
+    if damage:
+        with pytest.raises(ValueError, match="legend"):
+            value.verify_legend(page, [[400, 205, 430, 222]])
+    else:
+        assert (
+            value.verify_legend(page, [[400, 205, 430, 222]])["text"]
+            == "Starshield Transition"
+        )
+
+
+@pytest.mark.parametrize("damage", [None, "hero", "physical-lane"])
+def test_conditional_hero_and_physical_starshield_lane_are_independent(damage):
+    value = geometry()
+    scale = 921 / 1240
+    x = 19.5 + 280 * scale
+    marker = [x, 200, x + 960 * scale, 200 + 22 * scale]
+    rectangles = [
+        {
+            "bounds": [x, 200 - 76 * scale, x + 960 * scale, 200 - 38 * scale],
+            "fill": (
+                [0.718, 0.180, 0.212] if damage != "hero" else [0.212, 0.467, 0.333]
+            ),
+        },
+        {
+            "bounds": [x, 200 + 2 * scale, x + 960 * scale, 200 + 20 * scale],
+            "fill": (
+                [0.929, 0.945, 0.961]
+                if damage != "physical-lane"
+                else [0.537, 0.616, 0.725]
+            ),
+        },
+    ]
+    canonical = {
+        "utcBounds": ["2026-10-25T14:00:00Z", "2026-10-25T18:00:00Z"],
+        "intervals": [
+            {
+                "startUtc": "2026-10-25T14:00:00Z",
+                "endUtc": "2026-10-25T18:00:00Z",
+                "posture": "Communications unavailable",
+                "decisions": [{}, {"value": "Up"}, {}],
+            }
+        ],
+    }
+    if damage:
+        with pytest.raises(ValueError, match="band"):
+            value.verify_bands(rectangles, canonical, marker)
+    else:
+        assert value.verify_bands(rectangles, canonical, marker)[
+            "physicalStarshieldVerified"
+        ]

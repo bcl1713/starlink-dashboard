@@ -7,12 +7,17 @@ from pathlib import Path
 from production import ROOT, free_loopback_port
 from production_controls import ProductionApi, download_prepared, inspect_download
 from production_seed import provider_seed
-from seed import seed
+from seed import CONDITIONAL, capture_conditional, seed
 
 
 def qualify(owner):
     source = Path(owner.env["BRIEFING_SOURCE_ROOT"])
     tools = source / "tools/acceptance/pop-transitions"
+    provider_sources = provider_seed() + r"""
+with (satellites / 'catalog.yaml').open('a') as catalog:
+ for name, longitude in [('X-Concurrency', -160), ('X-Concurrency-Hard', -179)]:
+  catalog.write(f'  - id: {name}\n    transport: X\n    longitude: {longitude}\n    slot: Synthetic concurrency acceptance provider\n')
+"""
     owner.compose(
         "run",
         "--rm",
@@ -20,12 +25,12 @@ def qualify(owner):
         "starlink-location",
         "python",
         "-c",
-        provider_seed(),
+        provider_sources,
         timeout=30,
     )
     owner.compose("up", "-d", "--wait", "--wait-timeout", "150", timeout=180)
     api = ProductionApi(owner)
-    fixtures = seed(api, owner.root)
+    fixtures = capture_conditional(api, owner, tools, seed(api, owner.root))
     provider = json.loads(
         owner.compose(
             "exec",
@@ -90,7 +95,15 @@ def qualify(owner):
         env=browser_env,
     )
     reports = {}
-    for name in ("crossing", "no-crossing", "dateline", "overlap", "continuation"):
+    for name in (
+        "crossing",
+        "no-crossing",
+        "dateline",
+        "overlap",
+        "continuation",
+        *sorted(CONDITIONAL),
+        "unknown",
+    ):
         destination = owner.root / "downloads" / name
         destination.mkdir(parents=True)
         content, headers, seconds, stages = download_prepared(
@@ -125,6 +138,23 @@ def qualify(owner):
             timeout=240,
         )
         proof = json.loads(result.splitlines()[-1])
+        if name in CONDITIONAL:
+            captured = fixtures[name]["timeline"]["call_continuity"]
+            delivered = proof["callContinuity"][0]
+            for field in (
+                "planned_communications_outage_seconds",
+                "pop_call_outage_seconds",
+                "longest_call_outage_seconds",
+            ):
+                assert abs(delivered[field] - captured[field]) < 0.001, (name, field)
+            assert {span["classification"] for span in delivered["intervals"]} == {
+                span["classification"] for span in captured["intervals"]
+            }, name
+        if name == "unknown":
+            assert any(
+                span["classification"] == "unknown"
+                for span in proof["callContinuity"][0]["intervals"]
+            )
         if name == "continuation":
             assert proof["pageCount"] > 1, "Continuation control did not continue"
         reports[name] = {"seconds": seconds, "pdf": proof}

@@ -121,23 +121,34 @@ Preserve that output density when investigating further improvements.
 ## PoP coordination windows
 
 Customer briefs capture the validated PoP catalog and its fingerprint with the
-other immutable preparation inputs. Detached render workers use that capture;
-a changed catalog invalidates preparation through the normal publication guard.
-An invalid or unavailable catalog never produces a silently reduced forecast.
+other immutable preparation inputs. Detached render workers use that capture; a
+changed catalog invalidates preparation through the normal publication guard. An
+invalid or unavailable catalog never produces a silently reduced forecast.
 
 Starshield outlines contain no text labels inside the timeline row. The
 coordination table uses the existing compact Eastern-time cells and clock/axis
 context, retaining exact UTC bounds in machine evidence. Overlapping SOF, outage
-and PoP impacts remain together; PoP windows preserve availability and Remaining
-comms. Full canonical windows remain intact when display edges are clipped.
+and PoP impacts remain together. Physical transport decisions remain unchanged;
+the call assessment can show a planned communications outage, coordinated X-Band
+fallback, an alternative transport, or unresolved capability. Full canonical
+windows remain intact when display edges are clipped.
+
+The full ten-minute window counts as a planned outage only where no usable
+alternative exists. Ka recovery splits the assessment at its exact UTC bound.
+Concurrency-only X can be a fallback; an independent AR or geometry block
+prevents that classification. Fallback requires coordination and never activates
+X automatically. Missing or stale capability evidence remains unresolved.
+Existing confirmed outages and transition outages use union accounting. The
+physical Starshield lane can remain connected throughout a planned call outage.
 
 The Event / impact entry reads exactly “Starshield Transition Window”; the
 outlined legend reads exactly “Starshield Transition”. Event cells retain their
-existing one-line layout, including combined SOF/outage impacts. Measured whole-row
-pagination, fonts and PDF text/geometry validation remain unchanged. Continuation
-pages retain the explanatory note and measured whole-row layout. Catalog editing
-and discovery management screens remain outside this feature.
+existing one-line layout, including combined SOF/outage impacts. Measured
+whole-row pagination, fonts and PDF text/geometry validation remain unchanged.
+Continuation pages retain the explanatory note and measured whole-row layout.
+Catalog editing and discovery management screens remain outside this feature.
 
 Run the exact-candidate production control described in
-[PoP acceptance](../../tools/acceptance/pop-transitions/README.md) to verify real
-Nginx/API browser journeys and actual delivered PDF cells, outlines and rasters.
+[PoP acceptance](../../tools/acceptance/pop-transitions/README.md) to verify
+real Nginx/API browser journeys and actual delivered PDF cells, outlines and
+rasters.

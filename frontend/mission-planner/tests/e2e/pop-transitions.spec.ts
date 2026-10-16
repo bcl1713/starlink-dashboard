@@ -1,4 +1,4 @@
-/** Real production Nginx/API journey over CDP. No response interception. */
+/** Production CDP journeys. The response-fixture test is explicitly synthetic. */
 import { readFile, writeFile } from 'node:fs/promises';
 import {
   chromium,
@@ -66,6 +66,8 @@ test('planner and Overview retain source windows and position drives synthetic I
   await expect(panel.getByLabel('PoP transition details')).toHaveCount(1);
   await expect(panel).toContainText('Los Angeles');
   await expect(panel).toContainText('Dallas');
+  await expect(panel.locator('[data-pop-track] button')).toHaveCount(2);
+  await expect(panel.locator('[data-pop-track] button').first()).toHaveText('');
   await panel.scrollIntoViewIfNeeded();
   await page.screenshot({ path: root + '/planner-visible-1920x1080.png' });
   await panel.screenshot({ path: root + '/planner-markers-details.png' });
@@ -118,7 +120,7 @@ test('planner and Overview retain source windows and position drives synthetic I
 
   // Accelerated replay still traverses the supported captured route/mission clock.
   const base = `/api/v2/missions/${crossing.missionId}/legs/${crossing.legId}`;
-  const pacing = { mode: 'target_runtime', runtime_seconds: 40 };
+  const pacing = { mode: 'target_runtime', runtime_seconds: 80 };
   const preview = await (
     await request.post(base + '/simulation/preview', { data: pacing })
   ).json();
@@ -135,15 +137,22 @@ test('planner and Overview retain source windows and position drives synthetic I
   await page.screenshot({ path: root + '/overview-upcoming-1920x1080.png' });
   let activeCaptured = false;
   const samples: { status: StatusResponse; run: SimulationRunStatus }[] = [];
-  const deadline = Date.now() + 60_000;
+  const deadline = Date.now() + 100_000;
   while (Date.now() < deadline) {
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
     samples.push({ status, run });
+    const at = Date.parse(run.run.simulation_time);
+    const physical =
+      crossing.timeline.segments.find(
+        (segment: { start_time: string; end_time: string }) =>
+          Date.parse(segment.start_time) <= at &&
+          at < Date.parse(segment.end_time)
+      ) ?? crossing.timeline.segments.at(-1);
     expect(run.run.transport_states).toEqual({
-      X: 'available',
-      Ka: 'available',
-      Ku: 'available',
+      X: physical.x_state,
+      Ka: physical.ka_state,
+      Ku: physical.ku_state,
     });
     if (
       !activeCaptured &&
@@ -151,12 +160,18 @@ test('planner and Overview retain source windows and position drives synthetic I
         (item: { kind: string }) => item.kind === 'window'
       )
     ) {
+      await overview.scrollIntoViewIfNeeded();
+      await expect(overview.locator('[data-pop-track] button')).toHaveCount(2);
+      await overview.screenshot({
+        path: root + '/overview-active-markers-details.png',
+      });
       await page.screenshot({ path: root + '/overview-active-1920x1080.png' });
       activeCaptured = true;
     }
     if (run.state === 'completed') break;
     await page.waitForTimeout(300);
   }
+  expect(activeCaptured).toBeTruthy();
   const observations = samples.map((sample) => sample.status.pop_observation);
   expect(
     new Set(observations.map((item) => item!.ip)).size
@@ -287,4 +302,98 @@ test('actual dateline replay changes Tokyo IP to Los Angeles without an availabi
   ).toBeLessThan(360_000);
   recorded.push({ actualDatelineReplay: samples });
   await request.post(`/api/v2/missions/${fixture.missionId}/legs/deactivate`);
+});
+
+test('captured conditional missions preserve call bounds, preference and physical replay', async ({
+  request,
+}) => {
+  const fixtures = JSON.parse(
+    await readFile(root + '/source-fixtures.json', 'utf8')
+  );
+  const page = await context.newPage();
+  for (const [name, seconds, classification] of [
+    ['sole', 600, 'planned_outage'],
+    ['ka-alternative', 0, 'advisory'],
+    ['x-fallback', 0, 'x_fallback'],
+    ['concurrency-hard', 600, 'planned_outage'],
+    ['partial-ka', 300, 'planned_outage'],
+    ['unknown', 0, 'unknown'],
+  ] as const) {
+    const fixture = fixtures[name];
+    const timeline = fixture.timeline;
+    expect(timeline.call_continuity.pop_call_outage_seconds).toBeCloseTo(
+      seconds,
+      3
+    );
+    expect(
+      timeline.call_continuity.intervals.some(
+        (span: { classification: string }) =>
+          span.classification === classification
+      )
+    ).toBeTruthy();
+    await page.goto(
+      process.env.POP_ORIGIN +
+        `/missions/${fixture.missionId}/legs/${fixture.legId}`
+    );
+    const panel = page.getByRole('region', {
+      name: 'Starshield PoP predictions',
+    });
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-pop-track] button')).toHaveCount(1);
+    await expect(panel.locator('[data-pop-track] button')).toHaveText('');
+    await expect(panel).toContainText(
+      name === 'unknown'
+        ? 'Call continuity unresolved'
+        : `PoP contribution: ${seconds}s`
+    );
+    if (name === 'x-fallback')
+      await expect(panel).toContainText('activation is not automatic');
+    if (name === 'partial-ka') {
+      await expect(panel).toContainText('Planned communications outage');
+      await expect(panel).toContainText('Transition advisory');
+    }
+    await panel.scrollIntoViewIfNeeded();
+    await panel.screenshot({ path: root + `/conditional-${name}-planner.png` });
+  }
+  const fixture = fixtures['x-fallback'];
+  const base = `/api/v2/missions/${fixture.missionId}/legs/${fixture.legId}`;
+  const pacing = { mode: 'target_runtime', runtime_seconds: 20 };
+  const preview = await (
+    await request.post(base + '/simulation/preview', { data: pacing })
+  ).json();
+  const activation = await request.post(base + '/activate', {
+    data: { simulation: { pacing, plan_token: preview.plan_token } },
+  });
+  expect(activation.ok(), await activation.text()).toBeTruthy();
+  const samples = [];
+  const deadline = Date.now() + 35_000;
+  while (Date.now() < deadline) {
+    const status = await (await request.get('/api/status')).json();
+    const run = await (await request.get('/api/simulation/run')).json();
+    samples.push({ status, run });
+    expect(run.run.transport_states).toEqual({
+      X: 'offline',
+      Ka: 'offline',
+      Ku: 'available',
+    });
+    expect(status.call_continuity.pop_call_outage_seconds).toBe(0);
+    if (run.state === 'completed') break;
+    await page.waitForTimeout(200);
+  }
+  expect(samples.at(-1)!.run.state).toBe('completed');
+  expect(
+    samples.some((sample) =>
+      sample.status.call_continuity.intervals.some(
+        (span: { classification: string }) =>
+          span.classification === 'x_fallback'
+      )
+    )
+  ).toBeTruthy();
+  recorded.push({
+    capturedPreferenceReplay: samples,
+    fixtureKind:
+      'actual unmocked planning-policy replay; no automatic activation',
+  });
+  await request.post(`/api/v2/missions/${fixture.missionId}/legs/deactivate`);
+  await page.close();
 });
