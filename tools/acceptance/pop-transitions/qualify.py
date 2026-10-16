@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+from download_evidence import download_with_evidence
 from production import ROOT, free_loopback_port
 from production_controls import ProductionApi, download_prepared, inspect_download
 from production_seed import provider_seed
@@ -127,12 +128,8 @@ with (satellites / 'catalog.yaml').open('a') as catalog:
     def pdf_check(name):
         destination = owner.root / "downloads" / name
         destination.mkdir(parents=True)
-        content, headers, seconds, stages = download_prepared(
-            api, fixtures[name]["missionId"], timeout=600
-        )
-        (destination / "download.zip").write_bytes(content)
-        (destination / "preparation-stages.json").write_text(
-            json.dumps(stages, indent=2)
+        content, headers, seconds, _stages = download_with_evidence(
+            api, fixtures[name]["missionId"], destination, download_prepared
         )
         report = inspect_download(content, headers, "included")
         (destination / "download-inspection.json").write_text(

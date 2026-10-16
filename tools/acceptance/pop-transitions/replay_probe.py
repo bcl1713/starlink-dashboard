@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from app.mission import storage
+from app.mission.exporter.snapshot_pop import capture_pop_catalog, captured_pop_catalog
 from app.mission.planning.sources import SourceStore
 from app.mission.timeline_preparation import prepare_mission_timeline
 from app.mission.timeline_service import _get_default_coverage_sampler
@@ -25,6 +26,8 @@ def main():
     routes._load_existing_routes()
     pois = POIManager(data_root / "pois.json")
     sampler = _get_default_coverage_sampler()
+    catalog = captured_pop_catalog(capture_pop_catalog())
+    assert catalog is not None, "Physical probe requires captured ready catalog"
     results = {}
     for name, item in records.items():
         mission = storage.load_mission_v2(item["missionId"])
@@ -94,7 +97,17 @@ def main():
                     },
                 }
             )
+        assert (
+            plan.artifacts.timeline.pop_forecast.catalog_fingerprint
+            == catalog.fingerprint
+        )
+        endpoint = plan.artifacts.route.points[-1]
         results[name] = {
+            "catalogSites": [site.model_dump(mode="json") for site in catalog.sites],
+            "endpoint": {
+                "latitude": endpoint.latitude,
+                "longitude": endpoint.longitude,
+            },
             "frames": frames,
             "physicalEventsUnchangedWithUnavailablePopCatalog": True,
             "physicalEvents": json.loads(actual_events),

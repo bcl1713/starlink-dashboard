@@ -56,8 +56,8 @@ constraints and evaluation context are then persisted through the ordinary leg
 API. The sole-Starshield, Ka-alternative, concurrency-only X and concurrency
 plus independent elevation controls assert 600/0/0/600 seconds respectively. A
 Ka recovery at the crossing asserts 300 seconds; an unspecified X capability
-remains unresolved. The replay verifies that the Prefer Starshield policy keeps
-X offline through fallback windows: qualification does not activate another
+remains unresolved. The replay preserves the captured Prefer Starshield policy
+and all physical transport events; qualification does not activate another
 transport.
 
 Each conditional mission has a visible planner screenshot and an actual prepared
@@ -84,3 +84,24 @@ worker-specific response evidence preserve cleanup and failures. Independent PDF
 checks continue after a browser or another PDF failure, with per-check failure
 JSON and incremental `qualification-results.json`. Any failed check still fails
 the overall runner.
+
+Observed IP switches use the actual last-old/first-new publication bracket:
+the true crossing must lie between matched telemetry/run mission timestamps,
+and the bracket must span exactly one published revision. Every observed
+position independently selects the nearest site from the captured catalog.
+Sparse accelerated publications do not establish positions at unobserved times.
+The active UI screenshot is one clipped image between its status assertions.
+Null call continuity is accepted only for a completed replay at its exact
+captured endpoint; it cannot become confirmed zero during flight.
+
+Run the independent observation checker regressions with:
+
+```sh
+timeout --kill-after=10s 1m node \
+  frontend/mission-planner/tests/e2e/pop-replay-evidence.test.mjs
+```
+
+Each export records public preparation responses incrementally, including failed
+job error codes, download headers and the exact ZIP, before PDF assertions and
+runtime teardown. The owner also retains Compose service logs in its numbered
+command log.

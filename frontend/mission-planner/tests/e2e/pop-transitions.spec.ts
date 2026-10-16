@@ -1,5 +1,6 @@
 /** Production CDP journeys. The response-fixture test is explicitly synthetic. */
 import { readFile, writeFile } from 'node:fs/promises';
+import { verifyCrossing, verifyContinuity } from './pop-replay-evidence.mjs';
 import {
   chromium,
   expect,
@@ -17,6 +18,8 @@ let launched: Browser, browser: Browser, context: BrowserContext;
 let replayBaselines: Record<
   string,
   {
+    catalogSites: { city: string; latitude: number; longitude: number }[];
+    endpoint: { latitude: number; longitude: number };
     frames: {
       startUtc: string;
       endUtc: string | null;
@@ -169,13 +172,18 @@ test('planner and Overview retain source windows and position drives synthetic I
   await expect(overview.getByLabel('PoP transition details')).toBeVisible();
   await page.screenshot({ path: root + '/overview-upcoming-1920x1080.png' });
   let activeCaptured = false;
-  const samples: { status: StatusResponse; run: SimulationRunStatus }[] = [];
+  const samples: {
+    status: StatusResponse;
+    run: SimulationRunStatus;
+    runBefore: SimulationRunStatus;
+  }[] = [];
   recorded.push({ actualNormalReplay: samples });
   const deadline = Date.now() + 350_000;
   while (Date.now() < deadline) {
+    const runBefore = await (await request.get('/api/simulation/run')).json();
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
-    samples.push({ status, run });
+    samples.push({ status, run, runBefore });
     expect(run.run.transport_states).toEqual(
       physicalAt('crossing', run.run.simulation_time)
     );
@@ -192,10 +200,6 @@ test('planner and Overview retain source windows and position drives synthetic I
       await expect(overview.locator('[data-pop-track] button')).toHaveCount(2);
       await overview.screenshot({
         path: root + '/overview-active-markers-details.png',
-      });
-      await page.screenshot({
-        path: root + '/overview-active-1920x1080.png',
-        animations: 'disabled',
       });
       await expect(overview.getByRole('status')).toContainText(
         'Starshield PoP transition possible'
@@ -215,16 +219,13 @@ test('planner and Overview retain source windows and position drives synthetic I
   expect(samples.at(-1)!.run.state).toBe('completed');
   const transitions = crossing.timeline.pop_forecast.transitions;
   for (const transition of transitions) {
-    const city =
-      transition.crossing.to_pop_id === 'dallas' ? 'Dallas' : 'Ashburn';
-    const switched = samples.find(
-      (sample) => sample.status.pop_observation?.entry?.city === city
-    );
-    expect(switched).toBeTruthy();
-    const at = Date.parse(switched!.run.run!.simulation_time);
-    expect(Math.abs(at - Date.parse(transition.crossing_utc))).toBeLessThan(
-      240_000
-    );
+    recorded.push({
+      normalCrossingBracket: verifyCrossing(
+        samples,
+        transition,
+        replayBaselines.crossing.catalogSites
+      ),
+    });
   }
   recorded.push({ replay: samples });
   await page.screenshot({ path: root + '/overview-1920x1080.png' });
@@ -302,9 +303,10 @@ test('actual dateline replay changes Tokyo IP to Los Angeles without an availabi
   recorded.push({ actualReplaySamples: samples });
   const deadline = Date.now() + 35_000;
   while (Date.now() < deadline) {
+    const runBefore = await (await request.get('/api/simulation/run')).json();
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
-    samples.push({ status, run });
+    samples.push({ status, run, runBefore });
     expect(run.run.transport_states).toEqual(
       physicalAt('dateline', run.run.simulation_time)
     );
@@ -318,15 +320,13 @@ test('actual dateline replay changes Tokyo IP to Los Angeles without an availabi
   expect(
     new Set(samples.map((item) => item.status.pop_observation.ip)).size
   ).toBe(2);
-  const first = samples.find(
-    (item) => item.status.pop_observation.entry.city === 'Los Angeles'
-  )!;
-  expect(
-    Math.abs(
-      Date.parse(first.run.run.simulation_time) -
-        Date.parse(fixture.timeline.pop_forecast.transitions[0].crossing_utc)
-    )
-  ).toBeLessThan(360_000);
+  recorded.push({
+    datelineCrossingBracket: verifyCrossing(
+      samples,
+      fixture.timeline.pop_forecast.transitions[0],
+      replayBaselines.dateline.catalogSites
+    ),
+  });
   recorded.push({ actualDatelineReplay: samples });
   await request.post(`/api/v2/missions/${fixture.missionId}/legs/deactivate`);
 });
@@ -397,20 +397,21 @@ test('captured conditional missions preserve call bounds, preference and physica
   recorded.push({ actualReplaySamples: samples });
   const deadline = Date.now() + 35_000;
   while (Date.now() < deadline) {
+    const runBefore = await (await request.get('/api/simulation/run')).json();
     const status = await (await request.get('/api/status')).json();
     const run = await (await request.get('/api/simulation/run')).json();
-    samples.push({ status, run });
+    samples.push({ status, run, runBefore });
     expect(run.run.transport_states).toEqual(
       physicalAt('x-fallback', run.run.simulation_time)
     );
-    expect(status.call_continuity.pop_call_outage_seconds).toBe(0);
+    verifyContinuity({ status, run }, replayBaselines['x-fallback'].endpoint);
     if (run.state === 'completed') break;
     await page.waitForTimeout(200);
   }
   expect(samples.at(-1)!.run.state).toBe('completed');
   expect(
     samples.some((sample) =>
-      sample.status.call_continuity.intervals.some(
+      sample.status.call_continuity?.intervals.some(
         (span: { classification: string }) =>
           span.classification === 'x_fallback'
       )
