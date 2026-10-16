@@ -145,7 +145,26 @@ for (const [width, height, mode] of [
         '.overview-planned-satellite, .overview-arrival, .overview-map-controls, .overview-display-controls, .globe-legend'
       )
       .evaluateAll((nodes) =>
-        nodes.map((el) => el.getBoundingClientRect().toJSON())
+        nodes.flatMap((el) => {
+          const rect = el.getBoundingClientRect();
+          let { left, right, top, bottom } = rect;
+          for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+            const style = getComputedStyle(parent);
+            if (style.display === 'contents') continue;
+            const clip = parent.getBoundingClientRect();
+            if (/auto|scroll|hidden|clip/.test(style.overflowX)) {
+              left = Math.max(left, clip.left);
+              right = Math.min(right, clip.right);
+            }
+            if (/auto|scroll|hidden|clip/.test(style.overflowY)) {
+              top = Math.max(top, clip.top);
+              bottom = Math.min(bottom, clip.bottom);
+            }
+          }
+          return right > left && bottom > top
+            ? [{ left, right, top, bottom }]
+            : [];
+        })
       );
     for (let i = 0; i < boxes.length; i++) {
       const a = boxes[i];

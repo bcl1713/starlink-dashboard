@@ -216,7 +216,11 @@ export async function desktopGeometry(page: Page) {
     const satellite = box('.overview-planned-satellite');
     const arrival = box('.overview-arrival');
     const legend = box('.globe-legend');
-    const bounds = panels.map((node) => node.getBoundingClientRect());
+    // The fullscreen action is inside the map-controls group. Compare sibling
+    // panel areas, rather than reporting their intentional containment as overlap.
+    const bounds = panels
+      .filter((node) => !node.matches('.overview-map-controls .overview-fullscreen-control'))
+      .map((node) => node.getBoundingClientRect());
     return {
       fits: panels.every(
         (node) =>
