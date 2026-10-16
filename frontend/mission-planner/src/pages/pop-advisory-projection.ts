@@ -62,7 +62,10 @@ export function presentCallContinuity(
     !projection ||
     !projection.intervals.length ||
     projection.intervals.some((i) => i.classification === 'unknown');
-  const transitionDetails: Record<string, string[]> = {};
+  const transitionDetails: Record<
+    string,
+    { startUtc: string; endUtc: string; message: string }[]
+  > = {};
   for (const interval of projection?.intervals ?? []) {
     const label = {
       planned_outage:
@@ -78,7 +81,11 @@ export function presentCallContinuity(
     }[interval.classification];
     for (const id of interval.transition_ids) {
       const details = (transitionDetails[id] ??= []);
-      if (!details.includes(label)) details.push(label);
+      details.push({
+        startUtc: interval.start_utc,
+        endUtc: interval.end_utc,
+        message: label,
+      });
     }
   }
   return {

@@ -1,4 +1,4 @@
-import type { PopForecast } from '@/types/pop';
+import type { CallContinuityProjection, PopForecast } from '@/types/pop';
 export const popForecast = (revision = 'route-one'): PopForecast => ({
   revision,
   catalog_fingerprint: 'catalog-one',
@@ -23,4 +23,30 @@ export const popForecast = (revision = 'route-one'): PopForecast => ({
       window_end_utc: '2035-03-02T00:05:00Z',
     },
   ],
+});
+
+/** Captured no-alternative interval followed by Ka recovery inside one marker. */
+export const partialKaContinuity = (): CallContinuityProjection => ({
+  revision: 'route-one',
+  intervals: [
+    {
+      start_utc: '2035-03-01T23:55:00Z',
+      end_utc: '2035-03-02T00:00:00Z',
+      classification: 'planned_outage',
+      transition_ids: ['route-one:crossing'],
+      usable_alternatives: [],
+      source_ids: ['sole-Starshield'],
+    },
+    {
+      start_utc: '2035-03-02T00:00:00Z',
+      end_utc: '2035-03-02T00:05:00Z',
+      classification: 'advisory',
+      transition_ids: ['route-one:crossing'],
+      usable_alternatives: ['Ka'],
+      source_ids: ['Ka-recovered'],
+    },
+  ],
+  planned_communications_outage_seconds: 300,
+  pop_call_outage_seconds: 300,
+  longest_call_outage_seconds: 300,
 });

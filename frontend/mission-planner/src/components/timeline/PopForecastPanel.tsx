@@ -152,13 +152,20 @@ export function PopForecastPanel({
                 {formatUtc(selected.window_end_utc)}
               </p>
               <p>{POP_CAUTION}</p>
-              {(
-                view.transitionDetails[selected.crossing.id] ?? [
-                  'Call continuity unresolved.',
-                ]
-              ).map((message) => (
-                <p key={message}>{message}</p>
-              ))}
+              {view.transitionDetails[selected.crossing.id]?.length ? (
+                view.transitionDetails[selected.crossing.id].map((detail) => (
+                  <p
+                    key={`${detail.startUtc}/${detail.endUtc}/${detail.message}`}
+                  >
+                    UTC {formatUtc(detail.startUtc)} →{' '}
+                    {formatUtc(detail.endUtc)}
+                    {' · '}
+                    {detail.message}
+                  </p>
+                ))
+              ) : (
+                <p>Call continuity unresolved.</p>
+              )}
             </div>
           )}
         </>

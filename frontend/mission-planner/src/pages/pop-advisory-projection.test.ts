@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { popForecast } from '@/test/pop-fixtures';
+import { popForecast, partialKaContinuity } from '@/test/pop-fixtures';
 import { projectPopAdvisories } from './pop-advisory-projection';
 it('distinguishes old absent fields, unknown observations and a valid empty forecast', () => {
   expect(projectPopAdvisories({}).summary).toContain('unavailable');
@@ -131,9 +131,11 @@ it('presents backend full or remaining totals and planned fallback explicitly', 
     call_continuity: continuity,
   });
   expect(view.continuity).toContain('Planned communications outage: 0s');
-  expect(view.transitionDetails['route-one:crossing'].join(' ')).toContain(
-    'Planned X-Band fallback'
-  );
+  expect(
+    view.transitionDetails['route-one:crossing']
+      .map((detail) => detail.message)
+      .join(' ')
+  ).toContain('Planned X-Band fallback');
   const outage = projectPopAdvisories({
     pop_forecast: popForecast(),
     call_continuity: {
@@ -151,9 +153,11 @@ it('presents backend full or remaining totals and planned fallback explicitly', 
     },
   });
   expect(outage.continuity).toContain('600s');
-  expect(outage.transitionDetails['route-one:crossing'].join(' ')).toContain(
-    'No secure-call transport'
-  );
+  expect(
+    outage.transitionDetails['route-one:crossing']
+      .map((detail) => detail.message)
+      .join(' ')
+  ).toContain('No secure-call transport');
 });
 it('rejects a stale continuity revision instead of displaying confirmed zero', () => {
   const view = projectPopAdvisories({
@@ -176,4 +180,34 @@ it('rejects a stale continuity revision instead of displaying confirmed zero', (
     },
   });
   expect(view.continuity).toContain('unresolved');
+});
+
+it('preserves every timed portion when Ka availability changes repeatedly within a window', () => {
+  const continuity = partialKaContinuity();
+  continuity.intervals = [
+    { ...continuity.intervals[0], end_utc: '2035-03-01T23:57:00Z' },
+    {
+      ...continuity.intervals[1],
+      start_utc: '2035-03-01T23:57:00Z',
+      end_utc: '2035-03-02T00:00:00Z',
+    },
+    {
+      ...continuity.intervals[0],
+      start_utc: '2035-03-02T00:00:00Z',
+      end_utc: '2035-03-02T00:03:00Z',
+    },
+    { ...continuity.intervals[1], start_utc: '2035-03-02T00:03:00Z' },
+  ];
+  const view = projectPopAdvisories({
+    pop_forecast: popForecast(),
+    call_continuity: continuity,
+  });
+  const details = view.transitionDetails['route-one:crossing'];
+  expect(details).toHaveLength(4);
+  expect(details.map((detail) => [detail.startUtc, detail.endUtc])).toEqual(
+    continuity.intervals.map((interval) => [
+      interval.start_utc,
+      interval.end_utc,
+    ])
+  );
 });

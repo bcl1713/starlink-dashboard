@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { popForecast } from '@/test/pop-fixtures';
+import { popForecast, partialKaContinuity } from '@/test/pop-fixtures';
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 afterEach(cleanup);
 it('renders backend active advisories and observed PoP separately from predicted UTC windows', () => {
@@ -80,4 +80,39 @@ it('exposes unresolved ordinary live continuity while preserving forecast and mi
     screen.getByRole('button', { name: /Los Angeles.*Dallas.*UTC/ })
   ).not.toBeNull();
   expect(screen.queryByText(/Planned communications outage: 0s/)).toBeNull();
+});
+
+it('shows remaining outage and recovered Ka intervals under the full forecast window', () => {
+  render(
+    <OverviewPopAdvisories
+      status={{
+        timestamp: new Date().toISOString(),
+        pop_forecast: popForecast(),
+        call_continuity: partialKaContinuity(),
+      }}
+      nowMs={Date.parse('2035-03-01T23:55:00Z')}
+      realNowMs={Date.now()}
+      refreshFailed={false}
+    />
+  );
+  expect(
+    screen.getByText(
+      /UTC 2035-03-01 23:55:00 → 2035-03-02 00:00:00.*No secure-call transport/
+    )
+  ).not.toBeNull();
+  expect(
+    screen.getByText(
+      /UTC 2035-03-02 00:00:00 → 2035-03-02 00:05:00.*alternative available: Ka/
+    )
+  ).not.toBeNull();
+  expect(
+    screen.getAllByText(
+      /Remaining mission: Planned communications outage: 300s/
+    ).length
+  ).toBeGreaterThan(0);
+  expect(
+    screen.getByRole('button', {
+      name: /Window UTC 2035-03-01 23:55:00 to 2035-03-02 00:05:00/,
+    })
+  ).not.toBeNull();
 });

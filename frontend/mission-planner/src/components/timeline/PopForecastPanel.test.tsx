@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { popForecast } from '@/test/pop-fixtures';
+import { popForecast, partialKaContinuity } from '@/test/pop-fixtures';
 import type {
   CallContinuityProjection,
   CallContinuityInterval,
@@ -56,3 +56,36 @@ it.each([
     expect(continuity).toEqual(original);
   }
 );
+
+it('shows the exact outage and recovered Ka ranges without shrinking the forecast marker', () => {
+  const forecast = popForecast();
+  const continuity = partialKaContinuity();
+  const original = structuredClone({ forecast, continuity });
+  const { container } = render(
+    <PopForecastPanel forecast={forecast} continuity={continuity} />
+  );
+  expect(
+    screen.getByText(
+      /UTC 2035-03-01 23:55:00 → 2035-03-02 00:00:00.*No secure-call transport/
+    )
+  ).not.toBeNull();
+  expect(
+    screen.getByText(
+      /UTC 2035-03-02 00:00:00 → 2035-03-02 00:05:00.*alternative available: Ka/
+    )
+  ).not.toBeNull();
+  expect(
+    screen.getByText(
+      /Planning window UTC 2035-03-01 23:55:00 → 2035-03-02 00:05:00/
+    )
+  ).not.toBeNull();
+  expect(
+    screen.getByText(/Full mission: Planned communications outage: 300s/)
+  ).not.toBeNull();
+  const marker = screen.getByRole('button', {
+    name: /Los Angeles.*Dallas.*UTC/,
+  });
+  expect(marker.style.width).toBe('100%');
+  expect(container.querySelector('[data-pop-track]')?.textContent).toBe('');
+  expect({ forecast, continuity }).toEqual(original);
+});
