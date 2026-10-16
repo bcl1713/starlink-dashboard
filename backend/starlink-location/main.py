@@ -744,6 +744,7 @@ def _simulation_pop_context():
         leg = plan.artifacts.validated_leg
         context.update(
             route=plan.artifacts.route,
+            call_capabilities=plan.artifacts.call_capabilities,
             projector=plan.artifacts.projector,
             now=frame.simulation_time,
             observed_now=datetime.now(timezone.utc),

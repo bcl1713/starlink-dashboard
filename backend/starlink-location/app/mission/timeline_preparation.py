@@ -17,6 +17,7 @@ from app.mission.derived_route import (
     build_derived_route_estimate,
 )
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
+from app.mission.pop_capabilities import CapturedCallCapabilities
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
 from app.mission.timeline_builder.aar import (
@@ -69,6 +70,7 @@ class TimelineArtifacts:
     export_x_conditions: tuple[MissionEvent, ...] | None = None
     validated_leg: MissionLeg | None = None
     planning_evaluation: PlanningEvaluation | None = None
+    call_capabilities: CapturedCallCapabilities | None = None
 
 
 def prepare_mission_timeline(
@@ -331,6 +333,27 @@ def prepare_mission_timeline(
             starshield_enabled=mission.transports.starshield_enabled is not False,
         )
 
+    from app.mission.pop_capabilities import (
+        capability_input_revision,
+        capture_call_capabilities,
+        capture_source_evidence,
+    )
+    from app.mission.pop_continuity import attach_call_continuity
+
+    timeline.call_capability_revision = capability_input_revision(
+        mission, route, constraint_config, satellite_catalog
+    )
+    timeline.statistics["_call_capability_evidence"] = capture_source_evidence(
+        mission,
+        samples,
+        transition_schedule,
+        coverage_enabled,
+        planning_evaluation,
+        satellite_catalog,
+    )
+    attach_call_continuity(timeline)
+    call_capabilities = capture_call_capabilities(timeline, route, projector)
+
     # Attach route samples if requested (for preview rendering)
     if include_samples:
         from app.mission.models import RouteSampleData
@@ -379,6 +402,7 @@ def prepare_mission_timeline(
         tuple(transition_schedule),
         tuple(export_x_conditions) if export_x_conditions is not None else None,
         planning_evaluation=planning_evaluation,
+        call_capabilities=call_capabilities,
     )
 
 

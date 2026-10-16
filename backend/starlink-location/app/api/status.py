@@ -1,9 +1,11 @@
 """JSON status endpoint handler."""
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, ConfigDict
 
 from app.mission.pop_status import PopStatusService
 from app.services.ground_entry_point import get_cached_ground_entry_point
+from app.services.pop.continuity_models import CallContinuityProjection
 
 router = APIRouter()
 
@@ -24,7 +26,14 @@ def set_pop_service(service: PopStatusService):
     _pop_service = service
 
 
-@router.get("/api/status")
+class StatusResponse(BaseModel):
+    """Retain telemetry wire fields and publish typed optional call evidence."""
+
+    model_config = ConfigDict(extra="allow")
+    call_continuity: CallContinuityProjection | None = None
+
+
+@router.get("/api/status", response_model=StatusResponse)
 async def status():
     """
     Get current telemetry status as JSON.

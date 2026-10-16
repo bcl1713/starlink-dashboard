@@ -47,11 +47,14 @@ class PopStatusService:
         *,
         observation_provider: ObservationProvider | None = None,
         snapshot_context_provider=None,
+        capability_provider=None,
     ):
         self.route_manager = route_manager
         self.config_provider = config_provider or (lambda: ConfigManager().get_config())
         self.observation_provider = observation_provider or _observation
         self.snapshot_context_provider = snapshot_context_provider
+        # Optional local producer for one route/config/clock-aligned sample.
+        self.capability_provider = capability_provider
         self.state = PopLiveState(revision="")
         self._revision = ""
         self._epoch = 0
@@ -87,6 +90,7 @@ class PopStatusService:
         observed_now=None,
         unavailable_reason=None,
         projector=None,
+        call_capabilities=None,
     ):
         """Capture one local sample, with separate mission and observation clocks.
 
@@ -129,6 +133,7 @@ class PopStatusService:
         valid = position_state == "fresh" and speed_is_fresh(
             position.speed, position.speed_observed_at, observed_now
         )
+        continuity_forecast = None
         if not enabled:
             forecast = PopForecast(
                 revision=revision,
@@ -172,6 +177,7 @@ class PopStatusService:
                 revision=revision,
                 starshield_enabled=enabled,
             )
+            continuity_forecast = forecast
             forecast = forecast.model_copy(
                 update={
                     "transitions": tuple(
@@ -191,6 +197,7 @@ class PopStatusService:
                 speed_knots=position.speed,
                 telemetry_valid=valid,
             )
+        continuity_forecast = continuity_forecast or forecast
         nearest = None
         if forecast.status == "ready" and valid and flight_phase != "pre_departure":
             nearest = nearest_pop(position.latitude, position.longitude, catalog)
@@ -213,7 +220,37 @@ class PopStatusService:
             )
         else:
             advisories = ()
+        from app.mission.pop_capabilities import status_call_continuity
+
+        # Include still bounded tracked windows after their crossing center.
+        by_id = {t.crossing.id: t for t in continuity_forecast.transitions}
+        by_id.update(
+            {
+                t.crossing.id: t
+                for t in self.state.tracked_transitions
+                if t.window_end_utc > now
+            }
+        )
+        continuity_forecast = continuity_forecast.model_copy(
+            update={"transitions": tuple(by_id.values())}
+        )
+        if call_capabilities is None and self.capability_provider is not None:
+            call_capabilities = self.capability_provider(
+                route=route, forecast=continuity_forecast, now=now
+            )
+        continuity = status_call_continuity(
+            call_capabilities,
+            continuity_forecast,
+            route,
+            now=now,
+            flight_phase=flight_phase,
+            projector=projector,
+            completed_ids=self.state.completed_ids,
+        )
         return {
+            "call_continuity": (
+                continuity.model_dump(mode="json") if continuity else None
+            ),
             "pop_forecast": forecast.model_dump(mode="json"),
             "pop_observation": observation.model_dump(mode="json"),
             "pop_advisories": [a.model_dump(mode="json") for a in advisories],
@@ -231,10 +268,12 @@ class PopStatusService:
         now = now or datetime.now(timezone.utc)
         config = self.config_provider()
         route, enabled, token, reason = None, True, None, None
+        active_context = None
         if self.route_manager is not None:
             resolution = resolve_active_mission_leg_context(self.route_manager)
             if resolution.context is not None:
                 context = resolution.context
+                active_context = context
                 enabled = context.leg.transports.starshield_enabled is not False
                 token = (context.parent_mission_id, context.route_id)
                 try:
@@ -268,4 +307,17 @@ class PopStatusService:
         }
         if config.mode == "simulation" and self.snapshot_context_provider is not None:
             context.update(self.snapshot_context_provider())
+        if (
+            active_context is not None
+            and context["flight_phase"] == "pre_departure"
+            and "call_capabilities" not in context
+        ):
+            from app.mission.pop_capabilities import saved_call_capabilities
+
+            try:
+                context["call_capabilities"] = saved_call_capabilities(
+                    active_context.leg, active_context.parent_mission_id, route
+                )
+            except (OSError, ValueError, TypeError, AttributeError):
+                context["call_capabilities"] = None
         return self.snapshot(telemetry, **context)

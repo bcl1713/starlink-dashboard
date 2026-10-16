@@ -17,6 +17,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.poi import MissionPoiKind
+from app.services.pop.continuity_models import CallContinuityProjection
 from app.services.pop.models import PopForecast
 
 from .planning.types import (
@@ -693,6 +694,8 @@ class TimelineMapPoi(BaseModel):
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
+    call_continuity: CallContinuityProjection | None = None
+    call_capability_revision: str | None = None
     pop_forecast: PopForecast | None = Field(
         default=None,
         description="Advisory PoP transitions from the same effective route",
