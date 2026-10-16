@@ -35,6 +35,7 @@ services:
       - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
     volumes:
       - ./data/missions:/app/data/missions
+      - ./data/flight-events:/app/data/flight-events
       - ./data/satellites:/app/data/satellites
       - ./data/sat_coverage:/app/data/sat_coverage
       - ./data/settings:/app/data/settings

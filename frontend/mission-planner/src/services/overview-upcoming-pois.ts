@@ -39,6 +39,14 @@ export type OverviewFlightPhase =
   | 'post_arrival';
 
 export interface OverviewUpcomingPoisResponse {
+  movement_state?: string | null;
+  movement_uncertain?: boolean;
+  movement_observed_at?: string | null;
+  off_blocks_at?: string | null;
+  takeoff_at?: string | null;
+  landed_at?: string | null;
+  on_blocks_at?: string | null;
+  capture_state?: string | null;
   mission_time?: MissionTimeContext | null;
   state:
     | 'available'

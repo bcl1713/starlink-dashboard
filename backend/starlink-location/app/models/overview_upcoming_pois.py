@@ -51,6 +51,14 @@ class OverviewUpcomingPoi(BaseModel):
 class OverviewUpcomingPoisResponse(BaseModel):
     """Overview POIs and their availability state."""
 
+    movement_state: str | None = None
+    movement_uncertain: bool = True
+    movement_observed_at: datetime | None = None
+    off_blocks_at: datetime | None = None
+    takeoff_at: datetime | None = None
+    landed_at: datetime | None = None
+    on_blocks_at: datetime | None = None
+    capture_state: str | None = None
     mission_time: MissionTimeContext | None = None
 
     state: OverviewUpcomingPoisState
