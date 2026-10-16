@@ -40,12 +40,17 @@ def dependency_token(mission_id, route_manager, poi_manager):
                 stat.st_ctime_ns,
             )
         )
+    from app.mission.exporter.snapshot_pop import catalog_dependency_token
     from app.satellites.rules import ConstraintConfig
     from app.services.ground_entry_point import get_cached_ground_entry_point
 
     ground = get_cached_ground_entry_point()
     return tuple(tokens), canonical_json(
-        [asdict(ConstraintConfig()), asdict(ground) if ground else None]
+        [
+            asdict(ConstraintConfig()),
+            asdict(ground) if ground else None,
+            catalog_dependency_token(),
+        ]
     )
 
 

@@ -261,3 +261,12 @@ tbody td {
 .conflict-label.light {
   fill: #fff;
 }
+
+/* Advisory copy is preserved verbatim and measured by the existing fit pass. */
+tbody td.pop-impact {
+  white-space: normal;
+}
+.legend .pop-legend {
+  border: 2px solid #735124;
+  padding: 0 4px;
+}

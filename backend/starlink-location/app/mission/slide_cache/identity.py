@@ -110,6 +110,7 @@ def leg_inputs(metadata, sources, leg_id, revision):
     )
     # Cached predictions are fallback inputs, but successful preparation does not
     # use their volatile generation timestamps. Strip only known bookkeeping.
+    # Include PoP catalog raw bytes and validated fingerprint, even with no crossings.
     dependencies = []
     for source in selected:
         try:

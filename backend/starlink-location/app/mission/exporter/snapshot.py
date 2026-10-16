@@ -16,6 +16,7 @@ from app.mission.derived_route import (
 from app.mission.models import Mission, MissionLegTimeline
 from app.mission.timeline_builder.aar import resolve_aar_windows
 from app.mission.timeline_builder.calculator import (
+    RouteTemporalProjector,
     derive_mission_window,
     route_with_adjusted_departure,
 )
@@ -249,7 +250,10 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
 
     order = mission_leg_order(mission)
     routes, pois = RouteView(sources), captured_pois(sources)
+    from .snapshot_views import captured_pop_catalog
+
     catalog = captured_catalog(sources)
+    pop_catalog = captured_pop_catalog(sources)
     config = ConstraintConfig(**json.loads(source_content(sources, "constraints")))
     try:
         sampler = captured_coverage(sources)
@@ -276,6 +280,7 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
                 capture_x_conditions=True,
                 satellite_catalog=catalog,
                 constraint_config=config,
+                pop_catalog=pop_catalog,
             )
             timeline, effective_route = artifacts.timeline, artifacts.route
             bounds = (
@@ -368,6 +373,31 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
             notes.append(
                 f"Leg {leg.id}: canonical events and resolved AR restrictions unavailable."
             )
+        if timeline is not None and origin != "rebuilt":
+            from app.mission.pop_forecast import (
+                forecast_for_mission,
+                mission_forecast_revision,
+            )
+            from app.services.pop.models import PopForecast
+
+            if effective_route is not None and bounds:
+                projector = RouteTemporalProjector(effective_route, *bounds)
+                timeline.pop_forecast = forecast_for_mission(
+                    effective_route,
+                    projector,
+                    pop_catalog,
+                    revision=mission_forecast_revision(
+                        effective_route, projector, pop_catalog
+                    ),
+                    starshield_enabled=leg.transports.starshield_enabled is not False,
+                )
+            else:
+                timeline.pop_forecast = PopForecast(
+                    revision="",
+                    catalog_fingerprint=pop_catalog.fingerprint if pop_catalog else "",
+                    status="unavailable",
+                    reason="Captured route timing unavailable",
+                )
         if effective_route is None:
             notes.append(f"Leg {leg.id}: effective route data missing.")
         legs.append(

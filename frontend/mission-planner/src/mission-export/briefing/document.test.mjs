@@ -181,3 +181,49 @@ test('transport availability has no separate key', async () => {
     /transport-key|Unavailable transport|Operating constraint<\/span>/
   );
 });
+
+test('PoP documents include exact advisory note without changing table cells', async () => {
+  const p = structuredClone(payload);
+  p.popTransitions = [
+    {
+      id: 'one',
+      windowStartUtc: '2026-10-25T15:00:00Z',
+      windowEndUtc: '2026-10-25T15:10:00Z',
+    },
+  ];
+  const html = (await composer())(p, assets);
+  assert.match(
+    html,
+    /PoP transitions may briefly interrupt calls \(typically 1–2 seconds\). Marked windows indicate possible transition timing\./
+  );
+  assert.match(html, /PoP transition/);
+});
+
+test('exact PoP impact can wrap inside its measured cell and has an outlined legend', async () => {
+  const p = structuredClone(payload);
+  p.popTransitions = [
+    {
+      id: 'one',
+      windowStartUtc: '2026-10-25T15:00:00Z',
+      windowEndUtc: '2026-10-25T15:10:00Z',
+    },
+  ];
+  p.rows = [
+    {
+      id: 'row',
+      popTransitionIds: ['one'],
+      displayCells: [
+        '11:00 - 11:10',
+        'Starshield PoP transition possible — brief call interruption.',
+        'Ka, Starshield, X-Band',
+        'Nominal',
+      ],
+    },
+  ];
+  const html = (await composer())(p, assets);
+  assert.match(
+    html,
+    /class="pop-impact" data-fit>Starshield PoP transition possible — brief call interruption\.<\/td>/
+  );
+  assert.match(html, /class="pop-legend"[^>]*>PoP transition/);
+});

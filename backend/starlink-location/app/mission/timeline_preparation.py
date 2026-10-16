@@ -54,6 +54,7 @@ from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
+_CONFIGURED_POP_CATALOG = object()
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,7 @@ def prepare_mission_timeline(
     discover_coverage: bool = True,
     satellite_catalog: SatelliteCatalog | None = None,
     constraint_config: ConstraintConfig | None = None,
+    pop_catalog=_CONFIGURED_POP_CATALOG,
 ) -> TimelineArtifacts:
     """Prepare effective geometry, canonical events and POIs without publishing."""
 
@@ -309,11 +311,25 @@ def prepare_mission_timeline(
     # Forecasts are attached only after transport evaluation and statistics.
     from app.mission.pop_forecast import configured_forecast_for_mission
 
-    timeline.pop_forecast = configured_forecast_for_mission(
-        route,
-        projector,
-        starshield_enabled=mission.transports.starshield_enabled is not False,
-    )
+    if pop_catalog is _CONFIGURED_POP_CATALOG:
+        timeline.pop_forecast = configured_forecast_for_mission(
+            route,
+            projector,
+            starshield_enabled=mission.transports.starshield_enabled is not False,
+        )
+    else:
+        from app.mission.pop_forecast import (
+            forecast_for_mission,
+            mission_forecast_revision,
+        )
+
+        timeline.pop_forecast = forecast_for_mission(
+            route,
+            projector,
+            pop_catalog,
+            revision=mission_forecast_revision(route, projector, pop_catalog),
+            starshield_enabled=mission.transports.starshield_enabled is not False,
+        )
 
     # Attach route samples if requested (for preview rendering)
     if include_samples:

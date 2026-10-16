@@ -81,7 +81,9 @@ def _coverage_inputs(*, persisted: bool = False) -> tuple[SourcePayload, ...]:
 def _read_dependencies(
     mission: Mission, route_manager, poi_manager, *, persisted: bool = False
 ) -> tuple[SourcePayload, ...]:
-    sources = []
+    from .snapshot_pop import capture_pop_catalog
+
+    sources = list(capture_pop_catalog())
     from app.mission.planning.models import PlanningManifest
     from app.mission.planning.sources import SourceStore, _records, source_closure
 

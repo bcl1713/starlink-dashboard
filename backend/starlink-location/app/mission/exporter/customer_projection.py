@@ -16,8 +16,10 @@ from itertools import groupby, pairwise
 from typing import Literal
 
 from app.mission.models import Transport, TransportState
+from app.services.pop.models import PopForecast
 
 from .briefing_clocks import ensure_utc, format_clocks
+from .customer_pop import partition_pop_windows
 from .snapshot import LegSnapshot
 from .snapshot_inputs import canonical_json
 
@@ -85,6 +87,7 @@ class BriefingInterval:
     causes: tuple[str, ...]
     limitations: tuple[str, ...]
     remaining_transports: tuple[str, ...]
+    pop_transition_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -98,6 +101,7 @@ class BriefingLeg:
     planned_departure_basis: str
     quiet_summary: str | None
     prediction_caveat: str = PREDICTION_CAVEAT
+    pop_forecast: PopForecast | None = None
 
 
 def _unique(values) -> tuple:
@@ -678,6 +682,11 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
     """Freeze full flight partition first; filter its exact objects afterward."""
     committed = json.loads(leg.leg_json)
     timeline = json.loads(leg.timeline_json) if leg.timeline_json else {}
+    forecast = (
+        PopForecast.model_validate(timeline["pop_forecast"])
+        if timeline.get("pop_forecast")
+        else None
+    )
     sources = _collect_sources(leg, committed, timeline)
     notes = list(leg.warnings)
     guidance = "Absolute conditions can shift relative to the aircraft after departure changes; re-export when assumptions or predictions change."
@@ -803,12 +812,19 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         replace(i, id=f"{leg.leg_id}-window-{n:03d}", window_number=n)
         for n, i in enumerate(intervals, 1)
     )
+    full = partition_pop_windows(full, forecast)
     rows = tuple(
-        i for i in full if i.restrictions or i.posture != "Nominal" or i.limitations
+        i
+        for i in full
+        if i.restrictions
+        or i.posture != "Nominal"
+        or i.limitations
+        or i.pop_transition_ids
     )
     quiet = (
         all(
             i.posture == "Nominal"
+            and not i.pop_transition_ids
             and not i.limitations
             and all(r.kind == "sof" for r in i.restrictions)
             for i in full
@@ -824,4 +840,5 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         _unique(notes),
         basis,
         QUIET_SUMMARY if quiet else None,
+        pop_forecast=forecast,
     )

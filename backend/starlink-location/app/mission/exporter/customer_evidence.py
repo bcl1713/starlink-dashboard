@@ -244,9 +244,15 @@ def _leg_records(captured, projection, view):
     return {
         "canonical": {
             "utcBounds": [stamp(v) for v in projection.utc_bounds],
+            "popForecast": (
+                projection.pop_forecast.model_dump(mode="json")
+                if projection.pop_forecast
+                else None
+            ),
             "intervals": [
                 {
                     "id": i.id,
+                    "popTransitionIds": i.pop_transition_ids,
                     "startUtc": stamp(i.start_time),
                     "endUtc": stamp(i.end_time),
                     "clocks": {
@@ -280,6 +286,7 @@ def _leg_records(captured, projection, view):
         "customerRows": [
             {
                 "id": r.id,
+                "popTransitionIds": r.pop_transition_ids,
                 "startUtc": stamp(r.start_time),
                 "endUtc": stamp(r.end_time),
                 "clock": asdict(r.clock),

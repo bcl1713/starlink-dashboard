@@ -63,3 +63,39 @@ test('PDF expectations reject omitted and duplicate measured rows', async () => 
     /row/
   );
 });
+
+test('wrapped PoP overlap expectations preserve the complete canonical event cell', async () => {
+  const event =
+    'Takeoff SOF; Ka unavailable; Starshield PoP transition possible — brief call interruption.';
+  const payload = {
+    legId: 'leg',
+    rows: [
+      {
+        id: 'overlap',
+        popTransitionIds: ['one', 'two'],
+        displayCells: [
+          '01:58 - 01:02',
+          event,
+          'Starshield, X-Band',
+          'Degraded',
+        ],
+      },
+    ],
+  };
+  const result = (await builder())(payload, {
+    rows: [
+      {
+        id: 'overlap',
+        cellBoundsPx: [
+          [0, 0, 100, 60],
+          [100, 0, 500, 60],
+          [500, 0, 800, 60],
+          [800, 0, 1000, 60],
+        ],
+      },
+    ],
+  });
+  assert.equal(result.rows[0].displayCells[1], event);
+  assert.deepEqual(result.rows[0].cellBoundsPt[1], [75, 0, 375, 45]);
+  assert.deepEqual(payload.rows[0].popTransitionIds, ['one', 'two']);
+});

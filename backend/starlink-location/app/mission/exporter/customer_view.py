@@ -8,6 +8,7 @@ from app.mission.models import Transport
 
 from .briefing_clocks import EASTERN
 from .customer_clocks import CustomerRange, format_customer_range
+from .customer_pop import POP_EVENT
 from .customer_projection import TRANSPORT_NAMES, BriefingInterval, BriefingLeg
 from .snapshot import LegSnapshot
 
@@ -27,6 +28,7 @@ class CustomerRow:
     posture: str
     interval_ids: tuple[str, ...]
     source_ids: tuple[str, ...]
+    pop_transition_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -110,6 +112,7 @@ def _key(interval, source_by_id):
         restriction_labels(interval),
         tuple((r.kind, r.start_time, r.end_time) for r in interval.restrictions),
         _impact(interval, source_by_id),
+        interval.pop_transition_ids,
     )
 
 
@@ -130,6 +133,8 @@ def _impact(interval, source_by_id):
                 "released": "X–Starshield conflict released",
             }[conflict]
         )
+    if interval.pop_transition_ids:
+        parts.append(POP_EVENT)
     return "; ".join(parts) or "Assessment changed"
 
 
@@ -195,6 +200,7 @@ def project_customer_leg(
     for interval in projection.intervals:
         selected = (
             bool(interval.restrictions)
+            or bool(interval.pop_transition_ids)
             or any(interval.decisions[n].value == "?" for n in varying_assessment)
             or any(d.value == "Down" for d in interval.decisions)
             or starshield_conflict(interval, source_by_id) is not None
@@ -230,6 +236,7 @@ def project_customer_leg(
                 "Assessment incomplete" if uncertain else first.posture,
                 tuple(i.id for i in intervals),
                 tuple(dict.fromkeys(s for i in intervals for s in i.active_source_ids)),
+                first.pop_transition_ids,
             )
         )
     return CustomerLegView(

@@ -20,7 +20,12 @@ class _CatalogFile(BaseModel):
 
 def load_catalog(path: Path) -> PopCatalog:
     """Reject the whole catalog on invalid entries; hash canonical validated data."""
-    parsed = _CatalogFile.model_validate_json(path.read_text(encoding="utf-8"))
+    return parse_catalog(path.read_bytes())
+
+
+def parse_catalog(content: bytes) -> PopCatalog:
+    """Validate captured bytes without consulting mutable configuration or disk."""
+    parsed = _CatalogFile.model_validate_json(content)
     ids, identities, locations = set(), set(), set()
     for site in parsed.sites:
         identity = (site.city.casefold(), site.country.casefold())

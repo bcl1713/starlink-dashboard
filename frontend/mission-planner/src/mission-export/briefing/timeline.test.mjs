@@ -287,3 +287,19 @@ test('released conflicts stay light and an independent X outage never gets a blo
     /data-conflict-label[^>]*>(Starshield conflict|Conflict released)<\/text>/
   );
 });
+
+test('PoP markers clip display only and contain no timeline text', async () => {
+  const p = structuredClone(payload);
+  p.popTransitions = [
+    {
+      id: 'occurrence',
+      windowStartUtc: '2026-10-25T13:55:00Z',
+      windowEndUtc: '2026-10-25T14:05:00Z',
+    },
+  ];
+  const svg = (await renderer())(p);
+  assert.match(svg, /data-pop-transition="occurrence"/);
+  assert.match(svg, /x="280" y="144"[^>]*width="10"[^>]*fill="none"/);
+  assert.doesNotMatch(svg, /<text[^>]*>[^<]*PoP/);
+  assert.equal(p.popTransitions[0].windowStartUtc, '2026-10-25T13:55:00Z');
+});

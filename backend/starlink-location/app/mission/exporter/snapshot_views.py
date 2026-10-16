@@ -14,6 +14,9 @@ from app.satellites.catalog import Satellite, SatelliteCatalog
 if TYPE_CHECKING:
     from .snapshot import ExportSnapshot
 from .snapshot_inputs import SourcePayload
+from .snapshot_pop import (
+    captured_pop_catalog as captured_pop_catalog,  # noqa: PLC0414 — explicit re-export
+)
 
 
 @dataclass(frozen=True)

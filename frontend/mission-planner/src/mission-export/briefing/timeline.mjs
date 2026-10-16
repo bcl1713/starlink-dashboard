@@ -173,6 +173,22 @@ export function renderTimeline(payload) {
         );
     }
   });
+  for (const transition of payload.popTransitions ?? []) {
+    const low = Math.max(start, Date.parse(transition.windowStartUtc));
+    const high = Math.min(end, Date.parse(transition.windowEndUtc));
+    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low)
+      continue;
+    out += rect(
+      {
+        startUtc: new Date(low).toISOString(),
+        endUtc: new Date(high).toISOString(),
+      },
+      144,
+      22,
+      'none',
+      `data-pop-transition="${escapeText(transition.id)}" stroke="#735124" stroke-width="2" role="img" aria-label="Starshield PoP transition possible — brief call interruption."`
+    );
+  }
   out += text(0, 216, 'SOF / AR', 'class="lane-label"');
   out += '<rect x="280" y="202" width="960" height="18" fill="#edf1f5"/>';
   // Join identical restriction segments, but never their quiet gaps.
