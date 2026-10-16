@@ -439,14 +439,15 @@ async def startup_event():
 
             app.state.pop_status_service = PopStatusService(
                 _route_manager,
-                lambda: _coordinator.get_config(),
+                _current_runtime_config,
                 observation_provider=SimulationPopObservationProvider(
                     _pop_lifecycle_token
                 ),
                 snapshot_context_provider=_simulation_pop_context,
             )
             status.set_pop_service(app.state.pop_status_service)
-            _publish_pop_observation(_coordinator.get_current_telemetry())
+            if _simulation_config.mode == "simulation":
+                _publish_pop_observation(_coordinator.get_current_telemetry())
 
             # Inject into metrics_export as well
             # from app.api import metrics_export
@@ -716,6 +717,13 @@ async def shutdown_event():
         )
 
 
+def _current_runtime_config():
+    """Prefer validated current config; legacy adapters use application config."""
+    getter = getattr(_coordinator, "get_config", None)
+    candidate = getter() if callable(getter) else None
+    return candidate if isinstance(candidate, SimulationConfig) else _simulation_config
+
+
 def _pop_lifecycle_token(run_id=None):
     service = getattr(app.state, "simulation_run_service", None)
     run = service.status().run if service is not None else None
@@ -748,11 +756,7 @@ def _simulation_pop_context():
 
 def _publish_pop_observation(telemetry, tick=None):
     """Publish synthetic legacy metrics from the same emitted observation as status."""
-    config = (
-        _coordinator.get_config()
-        if hasattr(_coordinator, "get_config")
-        else _simulation_config
-    )
+    config = _current_runtime_config()
     if config is None or config.mode != "simulation":
         return
     from app.services.pop.catalog import load_catalog
@@ -763,7 +767,7 @@ def _publish_pop_observation(telemetry, tick=None):
         publish_ground_entry_point_metrics(None)
         return
     try:
-        catalog = load_catalog(_coordinator.get_config().pop.catalog_path)
+        catalog = load_catalog(config.pop.catalog_path)
     except (OSError, ValueError):
         catalog = None
     provider = service.observation_provider
@@ -786,7 +790,7 @@ def _publish_replay_telemetry(telemetry, tick):
 
     update_metrics_from_telemetry(
         telemetry,
-        _coordinator.get_config(),
+        _current_runtime_config(),
         tick.plan.artifacts.route.model_copy(deep=True),
         app.state.poi_manager,
         mission_context=mission_time_context(tick.status),
@@ -798,11 +802,7 @@ def _publish_replay_telemetry(telemetry, tick):
 
 def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
     """One complete ordered telemetry/metric update, owned by the async loop."""
-    current_config = (
-        _coordinator.get_config()
-        if hasattr(_coordinator, "get_config")
-        else _simulation_config
-    )
+    current_config = _current_runtime_config()
     if should_automatically_refresh_ground_entry_point(current_config):
         publish_ground_entry_point_metrics(
             maybe_refresh_ground_entry_point_metrics(

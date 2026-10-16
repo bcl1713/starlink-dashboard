@@ -104,7 +104,14 @@ async def background_runtime(monkeypatch, tmp_path, request):
     flight_state = get_flight_state_manager()
     flight_state.reset()
     flight_state.reset_detection()
-    await main.startup_event()
+    try:
+        await main.startup_event()
+    except Exception:
+        # Failed startup still owns clients/tasks created before the failure.
+        await main.shutdown_event()
+        if config.mode == "live" and main._coordinator is not None:
+            main._coordinator.shutdown()
+        raise
     route_manager = main._route_manager
     assert isinstance(route_manager, RouteManager)
     assert main.app.state.route_manager is route_manager
