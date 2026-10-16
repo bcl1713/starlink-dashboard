@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from pdf_geometry import verify_bands, verify_legend, verify_markers
+from pdf_paint import painted_rectangles
 from pypdf import PdfReader
 
 # Reuse canonical full-cell, page-overflow, PDF resource and 240-DPI raster checks.
@@ -17,44 +18,7 @@ pdf_path = next(root.glob("*.pdf"))
 reader = PdfReader(pdf_path)
 markers = []
 for page_number, page in enumerate(reader.pages, 1):
-    color = [0, 0, 0]
-    fill = [0, 0, 0]
-    stack = []
-    rectangles = []
-    candidates = []
-
-    def visit(
-        operator,
-        operands,
-        cm,
-        _tm,
-        stack=stack,
-        candidates=candidates,
-        rectangles=rectangles,
-    ):
-        global color, fill
-        if operator == b"q":
-            stack.append((color[:], fill[:]))
-        elif operator == b"Q" and stack:
-            color, fill = stack.pop()
-        elif operator == b"RG":
-            color = list(map(float, operands))
-        elif operator == b"rg":
-            fill = list(map(float, operands))
-        elif operator == b"re":
-            x, y, width, height = map(float, operands)
-            a, b, c, d, e, f = map(float, cm)
-            corners = [
-                (a * px + c * py + e, b * px + d * py + f)
-                for px, py in [(x, y), (x + width, y + height)]
-            ]
-            xs, ys = zip(*corners)
-            box = [min(xs), 540 - max(ys), max(xs), 540 - min(ys)]
-            rectangles.append({"bounds": box, "fill": fill[:]})
-            if all(abs(a - b) < 0.015 for a, b in zip(color, [0.451, 0.318, 0.141])):
-                candidates.append(box)
-
-    page.extract_text(visitor_operand_before=visit)
+    rectangles, candidates = painted_rectangles(page)
     # The tiny legend outline is outside the row and has a different height.
     outlines = [box for box in candidates if 15 <= box[3] - box[1] <= 18]
     for box in outlines:
