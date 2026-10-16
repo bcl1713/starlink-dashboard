@@ -11,7 +11,10 @@ flight, simulation, and customer PDFs without changing transport availability.
 advisory-only outage rule. The linked spec now defines conditional full-window
 planned call outages and concurrency-only X fallback. Tasks 1–6 have initial
 implementations; Task 7 is paused. Review the revised written spec before
-writing the implementation amendment and resuming qualification.
+executing the
+[implementation amendment](2026-10-16-starshield-call-outage-amendment.md) and
+resuming qualification. The revised spec is approved; the amendment awaits
+written-plan review.
 
 **Architecture:** A backend catalog and pure spherical geometry engine produce
 crossing records. Existing timing adapters attach UTC estimates; a separate live
