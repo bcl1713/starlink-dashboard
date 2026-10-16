@@ -92,3 +92,25 @@ def test_foreign_anchor_cannot_be_reused_on_replacement():
     new.points[1].longitude = 40
     with pytest.raises(ValueError, match="uniquely remapped"):
         rebind(anchor, old, new)
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_initial_satellite_edit_preserves_omitted_starshield(ordinary, enabled):
+    """Older leg editors omit Starshield while replacing transport fields."""
+    from app.satellites.catalog import Satellite, get_satellite_catalog
+
+    api, _service, mission = ordinary
+    get_satellite_catalog().add_satellite(Satellite("WGS8", "X", longitude=10))
+    leg = mission.legs[0]
+    leg.transports.starshield_enabled = enabled
+    storage.save_mission_v2(mission)
+    payload = leg.model_dump(mode="json")
+    payload["transports"]["initial_x_satellite_id"] = "WGS8"
+    del payload["transports"]["starshield_enabled"]
+    response = api.put(f"/api/v2/missions/{mission.id}/legs/{leg.id}", json=payload)
+    assert response.status_code == 200, response.text
+    saved = storage.load_mission_v2(mission.id).legs[0]
+    assert saved.transports.initial_x_satellite_id == "WGS8"
+    assert saved.transports.starshield_enabled is enabled
+    assert not response.json().get("warnings"), response.json()
+    assert storage.load_mission_timeline(leg.id, parent_mission_id=mission.id)

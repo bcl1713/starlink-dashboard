@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 vi.mock('../hooks/api/useMissions', () => ({
   useMission: vi.fn(),
-  useUpdateLeg: () => ({ isPending: false }),
+  useUpdateLeg: () => ({ isPending: false, mutateAsync: saveLeg }),
   useUpdateLegRoute: () => ({ isPending: false }),
 }));
 vi.mock('../hooks/api/useTimeline', () => ({
@@ -45,6 +45,7 @@ vi.mock('../components/planning/PlanningLegReview', () => ({
 import { useMission } from '../hooks/api/useMissions';
 import { usePlanning } from '../hooks/api/usePlanning';
 import { LegDetailPage } from './LegDetailPage';
+const saveLeg = vi.hoisted(() => vi.fn());
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -174,3 +175,49 @@ it('keeps editing unavailable when the initial planning load fails without data'
     screen.queryByLabelText('Local managed correction')
   ).not.toBeInTheDocument();
 });
+
+it.each([false, true])(
+  'preserves Starshield enablement %s when saving an imported leg',
+  async (enabled) => {
+    saveLeg.mockResolvedValue({});
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    vi.mocked(useMission).mockReturnValue({
+      data: {
+        id: 'm',
+        metadata: {},
+        legs: [
+          {
+            id: 'imported',
+            route_id: 'r',
+            name: 'Imported',
+            transports: {
+              initial_x_satellite_id: 'WGS4',
+              starshield_enabled: enabled,
+            },
+          },
+        ],
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(usePlanning).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    } as never);
+    render(
+      <MemoryRouter initialEntries={['/missions/m/legs/imported']}>
+        <Routes>
+          <Route
+            path="/missions/:missionId/legs/:legId"
+            element={<LegDetailPage />}
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByText('Save Changes'));
+    expect(saveLeg).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transports: expect.objectContaining({ starshield_enabled: enabled }),
+      })
+    );
+  }
+);

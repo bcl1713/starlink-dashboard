@@ -110,6 +110,7 @@ function ManualLegDetailPage() {
 
     return {
       transports: {
+        starshield_enabled: leg.transports.starshield_enabled,
         initial_x_satellite_id:
           satelliteConfig.xband_starting_satellite || 'X-1',
         initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
@@ -196,6 +197,7 @@ function ManualLegDetailPage() {
     await updateLegMutation.mutateAsync({
       ...leg,
       transports: {
+        starshield_enabled: leg.transports.starshield_enabled,
         initial_x_satellite_id:
           satelliteConfig.xband_starting_satellite || 'X-1',
         initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
@@ -232,6 +234,7 @@ function ManualLegDetailPage() {
       const result = await updateLegMutation.mutateAsync({
         ...leg,
         transports: {
+          starshield_enabled: leg.transports.starshield_enabled,
           initial_x_satellite_id:
             satelliteConfig.xband_starting_satellite || 'X-1',
           initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
