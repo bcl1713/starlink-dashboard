@@ -1,8 +1,9 @@
 # Portainer GHCR Deployment Runbook
 
 Use the template and images from the same reviewed release or source revision.
-Current `dev` documentation can describe features newer than v1.0.0; consult
-[release notes](../release-notes.md) when selecting a version.
+For v2.0.0, select `STARLINK_IMAGE_TAG=v2.0.0` only after its four-image
+publishing workflow succeeds. Consult [release notes](../release-notes.md)
+for compatibility requirements and validation scope.
 
 This runbook defines the supported deployment contract for the dedicated
 Portainer/GitHub Container Registry (GHCR) profile tracked by

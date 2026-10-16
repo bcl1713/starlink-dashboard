@@ -1,11 +1,66 @@
-# Release Baseline and Development Changes
+# Release Notes
+
+## v2.0.0
+
+This release promotes the validated SIGMET, itinerary import, offline
+Configuration and responsive Overview changes from `dev` since v1.0.0.
+
+### Compatibility and Upgrade
+
+This is a major release because itinerary imports now create ordinary editable
+missions and automatically apply source revisions, replacing the separate JSON
+review/publication workflow. Incoming source fields win when they conflict with
+manual edits; compatible edits and revision history are retained. KML timestamps
+are authoritative and AR windows follow departure/arrival offsets. Review the
+[import workflow](missions/itinerary-planning.md) before updating saved imports.
+Imported missions remain inactive until normal leg activation.
+
+Deploy backend and frontend together: the strict SIGMET read contract is
+`route-sigmets-v2`. Back up persistent application, route and monitoring data,
+including GFS volumes, before upgrading. Pin all four GHCR images to
+`STARLINK_IMAGE_TAG=v2.0.0` after tag publishing succeeds, or check out `v2.0.0`
+and run `./scripts/compose.sh up -d --build --remove-orphans`.
+
+The v1 compatibility boundary still applies: `/api/missions` returns 404; use
+`/api/v2/missions` and route-bound leg activation. Flat v1 mission artifacts
+remain retained but inert, with no automatic migration or cleanup. Customer PDF
+enablement remains a separate operator decision.
+
+### Highlights
+
+- Route-linked SIGMET advisories, shared acknowledgements/manual selections,
+  POI-style globe labels, planned passage windows and live crossing estimates.
+- Ordinary editable itinerary missions, automatic revisions, revision history,
+  chronological legs and consistent CSV/PDF exports.
+- Local Configuration remains usable when optional online resources fail.
+- Overview fills the viewport with translucent panels, responsive scrolling,
+  route-aware globe framing and corrected fullscreen zoom.
+- Documentation refreshed for current APIs, deployment and operator workflows.
+
+### Validation and Limits
+
+The merged feature records include production Docker/Nginx browser acceptance
+for SIGMETs, ordinary itinerary imports and responsive/fullscreen Overview.
+PR #343 records 3,412 passing backend tests (20 skips), 1,652 passing frontend
+tests, a production build and exact-commit import/edit/revision/export controls.
+PR #345 records 1,652 passing frontend tests and responsive/fullscreen production
+browser checks. The documentation refresh passed all three CI quality gates.
+Release PR checks rerun the full CI gates before promotion.
+
+See the [SIGMET evidence](reports/2026-10-15-sigmet-live-eta.md),
+[itinerary PR](https://github.com/bcl1713/starlink-dashboard/pull/343),
+[Overview PR](https://github.com/bcl1713/starlink-dashboard/pull/345) and
+[documentation audit](reports/2026-10-15-documentation-refresh.md).
+Wind acceptance was closed by owner confirmation in PR #342. Synthetic/pinned
+weather controls do not establish current provider availability or workstation
+hardware performance. This release preparation adds no new aircraft validation
+or live deployment; backend version metadata still contains historical values.
 
 ## v1.0.0
 
 The `v1.0.0` tag points to `3728280a` (release PR #335). Use the versioned
-repository documentation and generated `/docs` for the version you run. This
-documentation refresh corrects stale pre-release guidance; it does not create a
-new application release.
+repository documentation and generated `/docs` for the version you run. The
+documentation refresh corrects stale pre-release guidance.
 
 The release includes the native Mission Planner Overview, telemetry history, KML
 routes and POIs, Mission V2 leg planning and simulation, itinerary planning,
@@ -20,9 +75,7 @@ automatic migration or cleanup. Use `/api/v2/missions` and leg activation; see
 data. Grafana is retired from the bundled stack; Mission Planner is the operator
 interface.
 
-## Changes on `dev` After v1.0.0
-
-These changes require a later checked-out commit or image than the v1.0.0 tag:
+## Changes Included Since v1.0.0
 
 - **#337–339:** route-linked SIGMET matching, shared acknowledgements and manual
   selections, concise attention and globe review, and POI-style callout labels.
@@ -34,6 +87,8 @@ These changes require a later checked-out commit or image than the v1.0.0 tag:
   resources.
 - **#342:** wind acceptance documentation closed by owner confirmation; this is
   a verification record, not a new wind feature.
+- **#345:** responsive full-viewport Overview, scrolling panels, route framing
+  and fullscreen zoom corrections.
 - **#343:** itinerary intake creates ordinary editable missions. Source updates
   apply conflicting incoming source fields automatically while retaining
   compatible manual edits; mission views and exports use effective departure
