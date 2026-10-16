@@ -253,3 +253,39 @@ export function protectOverviewLabels(
         : 'hidden';
   }
 }
+
+/** Scrolled-off panel content must not reserve the map opening for labels. */
+export function visibleOverviewOverlayBounds(
+  node: Element,
+  viewport: DOMRectReadOnly
+): LabelBounds | null {
+  const box = node.getBoundingClientRect();
+  let left = Math.max(box.left, viewport.left);
+  let right = Math.min(box.right, viewport.right);
+  let top = Math.max(box.top, viewport.top);
+  let bottom = Math.min(box.bottom, viewport.bottom);
+  for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+    const style = getComputedStyle(parent);
+    if (style.display === 'contents') continue;
+    const clipX = /^(auto|scroll|hidden|clip)$/.test(style.overflowX);
+    const clipY = /^(auto|scroll|hidden|clip)$/.test(style.overflowY);
+    if (!clipX && !clipY) continue;
+    const bounds = parent.getBoundingClientRect();
+    if (clipX) {
+      left = Math.max(left, bounds.left);
+      right = Math.min(right, bounds.right);
+    }
+    if (clipY) {
+      top = Math.max(top, bounds.top);
+      bottom = Math.min(bottom, bounds.bottom);
+    }
+  }
+  return right > left && bottom > top
+    ? {
+        x: left - viewport.left,
+        y: top - viewport.top,
+        width: right - left,
+        height: bottom - top,
+      }
+    : null;
+}

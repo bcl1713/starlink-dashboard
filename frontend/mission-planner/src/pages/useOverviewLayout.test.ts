@@ -180,3 +180,27 @@ it('reserves fixed clocks and arrival inside the compact landscape map', () => {
     height: 141,
   });
 });
+
+it('positions the globe in the opening while the renderer covers the entire dashboard', () => {
+  const { page, stage, globe } = setup(844, 325);
+  vi.mocked(globe.getBoundingClientRect).mockReturnValue(
+    new DOMRect(0, 65, 844, 325)
+  );
+  page.insertAdjacentHTML(
+    'beforeend',
+    '<div class="overview-map-opening"></div>'
+  );
+  vi.spyOn(
+    page.querySelector('.overview-map-opening')!,
+    'getBoundingClientRect'
+  ).mockReturnValue(new DOMRect(12, 145, 560, 120));
+  const { result } = renderHook(() =>
+    useOverviewLayout({ current: page }, { current: stage }, 'loaded', true)
+  );
+  expect(result.current.safeRect).toEqual({
+    x: 24,
+    y: 92,
+    width: 536,
+    height: 96,
+  });
+});

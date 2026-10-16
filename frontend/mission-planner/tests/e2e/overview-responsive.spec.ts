@@ -24,7 +24,18 @@ for (const [width, height, columns] of [
       'data-layout',
       'stacked'
     );
-    const point = { x: 0.5, y: 0.5 };
+    const point = await page.evaluate(() => {
+      const globe = document
+        .querySelector('.overview-globe')!
+        .getBoundingClientRect();
+      const opening = document
+        .querySelector('.overview-map-opening')!
+        .getBoundingClientRect();
+      return {
+        x: (opening.x - globe.x + opening.width / 2) / globe.width,
+        y: (opening.y - globe.y + opening.height / 2) / globe.height,
+      };
+    });
     await waitForGlobeVisualReady(page, texture, point);
     await info.attach('geometry', {
       body: JSON.stringify(
@@ -67,12 +78,11 @@ for (const [width, height, columns] of [
         outer:
           document.querySelector('.app-route-content')!.scrollHeight >
           document.querySelector('.app-route-content')!.clientHeight,
-        rail: getComputedStyle(
-          document.querySelector('.overview-metrics-overlays')!
-        ).overflowY,
+        rail: getComputedStyle(document.querySelector('.overview-sidebar')!)
+          .overflowY,
         horizontal: document.documentElement.scrollWidth > innerWidth,
       }))
-    ).toEqual({ outer: true, rail: 'visible', horizontal: false });
+    ).toEqual({ outer: false, rail: 'auto', horizontal: false });
     await page.screenshot({
       path: info.outputPath('portrait.png'),
       fullPage: true,
@@ -195,10 +205,17 @@ for (const variant of [
     else await expect(page.locator('.uplot')).toHaveCount(5);
     for (const viewport of [
       { width: 390, height: 844 },
+      { width: 390, height: 568 },
       { width: 844, height: 390 },
       { width: 360, height: 800 },
     ]) {
       await page.setViewportSize(viewport);
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('.overview-map-opening').boundingBox())!.height
+        )
+        .toBeGreaterThanOrEqual(64);
       if (viewport.width === 844) {
         const clocks = await page
           .locator('.overview-top-overlays')

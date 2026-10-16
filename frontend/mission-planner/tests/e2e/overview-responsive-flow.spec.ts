@@ -13,6 +13,7 @@ for (const [width, height, mode] of [
   [1024, 768, 'stacked'],
   [844, 390, 'stacked'],
   [390, 844, 'stacked'],
+  [390, 568, 'stacked'],
   [360, 800, 'stacked'],
 ] as const) {
   test(`${width}x${height} keeps the map stable through legend disclosure`, async ({
@@ -40,6 +41,23 @@ for (const [width, height, mode] of [
       });
     const before = await geometry();
     const canvas = await globe.locator('canvas').elementHandle();
+    const dashboard = await main.boundingBox();
+    expect(before.width).toBeCloseTo(dashboard!.width, 0);
+    expect(before.height).toBeCloseTo(dashboard!.height, 0);
+    const actions = await page
+      .locator('.overview-map-toolbar button')
+      .evaluateAll((nodes) =>
+        nodes
+          .filter((node) => node.getBoundingClientRect().width > 0)
+          .map((node) => node.getBoundingClientRect().toJSON())
+      );
+    expect(actions).toHaveLength(mode === 'desktop' ? 2 : 3);
+    for (const action of actions) {
+      expect(action.height).toBeCloseTo(actions[0].height, 0);
+      expect(action.width).toBeCloseTo(actions[0].width, 0);
+      expect(action.y).toBeCloseTo(actions[0].y, 0);
+    }
+
     expect(before!.width).toBeGreaterThan(250);
     expect(before!.height).toBeGreaterThan(200);
     if (width === 844 && height === 390) {
@@ -47,9 +65,9 @@ for (const [width, height, mode] of [
         .locator('.overview-right-overlays')
         .boundingBox();
       const map = await globe.boundingBox();
-      expect(map!.width).toBeLessThan(width * 0.75);
-      expect(controls!.x).toBeGreaterThanOrEqual(map!.x + map!.width);
-      expect(controls!.y).toBeCloseTo(map!.y, 0);
+      const opening = await page.locator('.overview-map-opening').boundingBox();
+      expect(controls!.x).toBeGreaterThanOrEqual(opening!.x + opening!.width);
+      expect(map!.width).toBe(width);
       await expect(
         page.locator('.overview-sidebar [data-metric-panel]')
       ).toHaveCount(5);
@@ -70,10 +88,10 @@ for (const [width, height, mode] of [
     if (mode === 'desktop') {
       const reset = await page.locator('.overview-map-controls').boundingBox();
       const fullscreen = await page
-        .locator('.overview-display-controls')
+        .locator('.overview-fullscreen-control')
         .boundingBox();
       const legend = await page.locator('.overview-map-overlays').boundingBox();
-      expect(fullscreen!.y + fullscreen!.height).toBeLessThanOrEqual(reset!.y);
+      expect(fullscreen!.y).toBeCloseTo(reset!.y, 0);
       expect(reset!.y + reset!.height).toBeLessThanOrEqual(legend!.y);
       const stage = await page.locator('.overview-map-stage').boundingBox();
       expect(legend!.y + legend!.height).toBeCloseTo(
@@ -164,6 +182,7 @@ test('automatic and reset views retain route framing through rotation and resizi
     for (const viewport of [
       { width: 1440, height: 900 },
       { width: 390, height: 844 },
+      { width: 390, height: 568 },
       { width: 844, height: 390 },
       { width: 1920, height: 1080 },
     ]) {

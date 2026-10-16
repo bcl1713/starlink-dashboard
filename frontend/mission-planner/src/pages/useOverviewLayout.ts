@@ -74,6 +74,21 @@ export function useOverviewLayout(
         top = Math.max(top, fixedClock.bottom - bounds.top + padding);
       if (fixedArrival)
         bottom = Math.min(bottom, fixedArrival.top - bounds.top - padding);
+      const opening = page
+        .querySelector('.overview-map-opening')
+        ?.getBoundingClientRect();
+      if (mode !== 'desktop' && opening && opening.width > 0) {
+        left = Math.max(padding, opening.left - bounds.left + padding);
+        top = Math.max(padding, opening.top - bounds.top + padding);
+        right = Math.min(
+          bounds.width - padding,
+          opening.right - bounds.left - padding
+        );
+        bottom = Math.min(
+          bounds.height - padding,
+          opening.bottom - bounds.top - padding
+        );
+      }
       if (mode === 'desktop') {
         const panel = (selector: string) => {
           const box = page.querySelector(selector)?.getBoundingClientRect();
@@ -134,7 +149,7 @@ export function useOverviewLayout(
       host,
       stage,
       ...page.querySelectorAll<HTMLElement>(
-        '.overview-globe, .overview-globe-viewport, .overview-top-overlays, .overview-arrival-overlays, .overview-sidebar, .overview-right-overlays, .overview-metrics-overlays'
+        '.overview-map-opening, .overview-overlay-layout, .overview-globe, .overview-globe-viewport, .overview-top-overlays, .overview-arrival-overlays, .overview-sidebar, .overview-right-overlays, .overview-metrics-overlays'
       ),
     ].forEach((node) => observer.observe(node));
     const mutations = new MutationObserver(schedule);
