@@ -17,6 +17,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.poi import MissionPoiKind
+from app.services.pop.models import PopForecast
 
 from .planning.types import (
     EvaluationContext,
@@ -692,6 +693,10 @@ class TimelineMapPoi(BaseModel):
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
+    pop_forecast: PopForecast | None = Field(
+        default=None,
+        description="Advisory PoP transitions from the same effective route",
+    )
     map_pois: list[TimelineMapPoi] | None = Field(
         default=None, description="Resolved map POIs from the same timeline calculation"
     )

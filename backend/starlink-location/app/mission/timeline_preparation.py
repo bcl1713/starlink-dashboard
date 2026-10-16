@@ -306,6 +306,15 @@ def prepare_mission_timeline(
     normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
 
+    # Forecasts are attached only after transport evaluation and statistics.
+    from app.mission.pop_forecast import configured_forecast_for_mission
+
+    timeline.pop_forecast = configured_forecast_for_mission(
+        route,
+        projector,
+        starshield_enabled=mission.transports.starshield_enabled is not False,
+    )
+
     # Attach route samples if requested (for preview rendering)
     if include_samples:
         from app.mission.models import RouteSampleData

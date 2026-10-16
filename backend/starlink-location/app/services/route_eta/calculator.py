@@ -73,7 +73,8 @@ def project_point_to_line_segment(
 
     # Linear interpolation for projected point
     proj_lat = seg_start_lat + t * (seg_end_lat - seg_start_lat)
-    proj_lon = seg_start_lon + t * (seg_end_lon - seg_start_lon)
+    longitude_delta = (seg_end_lon - seg_start_lon + 180) % 360 - 180
+    proj_lon = (seg_start_lon + t * longitude_delta + 180) % 360 - 180
 
     # Distance from point to projected point
     dist_to_proj = haversine(
