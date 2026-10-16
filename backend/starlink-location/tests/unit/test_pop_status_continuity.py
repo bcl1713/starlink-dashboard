@@ -167,7 +167,7 @@ def test_saved_predeparture_inputs_reject_transport_edits(tmp_path, monkeypatch)
         route_id="r",
         transports=TransportConfig(initial_x_satellite_id="X-1"),
     )
-    artifacts = prepare_mission_timeline(leg, manager, discover_coverage=False)
+    artifacts = prepare_mission_timeline(leg, manager, discover_coverage=True)
     storage.save_mission_timeline(leg.id, artifacts.timeline, "mission")
     captured = saved_call_capabilities(leg, "mission", artifacts.route)
     assert captured is not None
@@ -215,16 +215,21 @@ def test_saved_capability_rejects_changed_independent_source(
     tmp_path, monkeypatch, source
 ):
     import copy
+    import json
 
-    from app.mission import pop_capabilities, storage
+    from app.mission import pop_capabilities, storage, timeline_service
     from app.mission.models import MissionLeg, TransportConfig
     from app.mission.timeline_preparation import prepare_mission_timeline
     from app.satellites.catalog import get_satellite_catalog
     from app.services.route_manager import RouteManager
     from tests.unit.test_mission_pop_forecast import route
+    from tests.unit.test_pop_coverage_evidence import footprints
 
-    coverage = tmp_path / "coverage.json"
-    monkeypatch.setattr(pop_capabilities, "Path", lambda path: coverage)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", None)
+    coverage = tmp_path / "data/sat_coverage/commka.geojson"
+    coverage.parent.mkdir(parents=True)
+    coverage.write_text(json.dumps(footprints()))
     monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")
     manager = RouteManager(routes_dir=tmp_path / "routes")
     manager.add_route("r", route())
@@ -234,7 +239,7 @@ def test_saved_capability_rejects_changed_independent_source(
         route_id="r",
         transports=TransportConfig(initial_x_satellite_id="X-1"),
     )
-    artifacts = prepare_mission_timeline(leg, manager, discover_coverage=False)
+    artifacts = prepare_mission_timeline(leg, manager, discover_coverage=True)
     storage.save_mission_timeline(leg.id, artifacts.timeline, "mission")
     assert (
         pop_capabilities.saved_call_capabilities(leg, "mission", artifacts.route)

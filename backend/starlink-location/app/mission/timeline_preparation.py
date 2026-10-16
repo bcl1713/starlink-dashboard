@@ -218,6 +218,7 @@ def prepare_mission_timeline(
         ),
     )
 
+    capability_ka_sampler = resolved_sampler
     coverage_samples = samples
     coverage_enabled = resolved_sampler is not None
     if planning_evaluation is not None:
@@ -233,6 +234,7 @@ def prepare_mission_timeline(
             ka_sampler = CoverageSampler()
             ka_sampler.coverage_data = captured_coverage["data"]
             ka_sampler.satellite_polygons = captured_coverage["polygons"]
+        capability_ka_sampler = ka_sampler
         coverage_enabled = ka_sampler is not None
         coverage_samples = generate_timeline_samples(projector, ka_sampler)
     coverage_result = analyze_ka_coverage(
@@ -339,17 +341,28 @@ def prepare_mission_timeline(
         capture_source_evidence,
     )
     from app.mission.pop_continuity import attach_call_continuity
+    from app.mission.pop_coverage_evidence import coverage_source_kind
 
-    timeline.call_capability_revision = capability_input_revision(
-        mission, route, constraint_config, satellite_catalog
-    )
-    timeline.statistics["_call_capability_evidence"] = capture_source_evidence(
+    evidence = capture_source_evidence(
         mission,
         samples,
         transition_schedule,
-        coverage_enabled,
+        capability_ka_sampler,
         planning_evaluation,
         satellite_catalog,
+        coverage_source_kind(
+            capability_ka_sampler,
+            injected=coverage_sampler is not None,
+            planning=planning_evaluation is not None,
+        ),
+    )
+    timeline.statistics["_call_capability_evidence"] = evidence
+    timeline.call_capability_revision = capability_input_revision(
+        mission,
+        route,
+        constraint_config,
+        satellite_catalog,
+        ka_snapshot=evidence["ka_snapshot"],
     )
     attach_call_continuity(timeline)
     call_capabilities = capture_call_capabilities(timeline, route, projector)

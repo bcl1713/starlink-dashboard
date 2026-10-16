@@ -174,7 +174,9 @@ def test_prepared_timeline_publishes_totals_and_capability_input_identity(tmp_pa
     result = artifacts.timeline
     assert result.call_continuity is not None
     assert result.call_capability_revision == capability_input_revision(
-        leg, artifacts.route
+        leg,
+        artifacts.route,
+        ka_snapshot=result.statistics["_call_capability_evidence"]["ka_snapshot"],
     )
     assert (
         result.statistics["pop_call_outage_seconds"]
@@ -182,7 +184,9 @@ def test_prepared_timeline_publishes_totals_and_capability_input_identity(tmp_pa
     )
     leg.transports.starshield_enabled = False
     assert result.call_capability_revision != capability_input_revision(
-        leg, artifacts.route
+        leg,
+        artifacts.route,
+        ka_snapshot=result.statistics["_call_capability_evidence"]["ka_snapshot"],
     )
 
 

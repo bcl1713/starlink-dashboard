@@ -1,6 +1,7 @@
 """Extract call capability without changing transport decisions or X optimizer costs."""
 
 from app.mission.models import MissionLegTimeline
+from app.mission.pop_coverage_evidence import manual_ka_unavailable
 from app.services.pop.continuity import project_call_continuity
 from app.services.pop.continuity_models import CapabilitySpan
 
@@ -124,8 +125,10 @@ def capabilities_from_timeline(
         else:
             ka, starshield = _state(segment.ka_state), _state(segment.ku_state)
         evidence = timeline.statistics.get("_call_capability_evidence", {})
-        if ka == "available" and evidence.get("ka") is False:
-            ka = "unknown"
+        if evidence.get("ka") is False:
+            ka = (
+                "unavailable" if manual_ka_unavailable(segment, evidence) else "unknown"
+            )
         if (x == "available" or fallback) and evidence.get("x") is False:
             x, fallback = "unknown", False
         if evidence.get("starshield_enabled") is False:

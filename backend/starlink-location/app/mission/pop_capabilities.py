@@ -4,10 +4,13 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import Literal
 
 from app.mission.pop_continuity import capabilities_from_timeline
+from app.mission.pop_coverage_evidence import (
+    coverage_snapshot,
+    current_coverage_snapshot,
+)
 from app.mission.pop_forecast import mission_forecast_revision
 from app.satellites.catalog import get_satellite_catalog
 from app.satellites.rules import ConstraintConfig
@@ -21,20 +24,24 @@ def _digest(value):
     ).hexdigest()
 
 
+_CURRENT_COVERAGE = object()
+
+
 def capability_input_revision(
-    leg, route, constraint_config=None, satellite_catalog=None
+    leg,
+    route,
+    constraint_config=None,
+    satellite_catalog=None,
+    *,
+    ka_snapshot=_CURRENT_COVERAGE
 ):
     """Identify leg/config/geometry/timing inputs without rebuilding a mission."""
     catalog = satellite_catalog or get_satellite_catalog(read_only=True)
-    coverage = Path("data/sat_coverage/commka.geojson")
-    stamp = (
-        (coverage.stat().st_mtime_ns, coverage.stat().st_size)
-        if coverage.exists()
-        else None
-    )
+    if ka_snapshot is _CURRENT_COVERAGE:
+        ka_snapshot = current_coverage_snapshot()
     return _digest(
         [
-            stamp,
+            ka_snapshot,
             leg.model_dump(
                 mode="json",
                 exclude={
@@ -176,9 +183,17 @@ def saved_call_capabilities(leg, parent_id, route):
     )
 
     timeline = load_mission_timeline(leg.id, parent_id)
+    if timeline is None:
+        return None
+    evidence = timeline.statistics.get("_call_capability_evidence", {})
+    current = current_coverage_snapshot()
     if (
-        timeline is None
-        or timeline.call_capability_revision != capability_input_revision(leg, route)
+        current is None
+        or evidence.get("ka_source")
+        not in ("default_file", "application_cache", "planning_snapshot", "missing")
+        or evidence.get("ka_snapshot") != current
+        or timeline.call_capability_revision
+        != capability_input_revision(leg, route, ka_snapshot=current)
     ):
         return None
     start, end = derive_mission_window(route)
@@ -191,9 +206,10 @@ def capture_source_evidence(
     mission,
     samples,
     assignments,
-    coverage_enabled,
+    coverage_sampler,
     planning_evaluation,
     satellite_catalog,
+    coverage_source,
 ):
     """Do not equate default available transport states with measured capability.
 
@@ -211,8 +227,23 @@ def capture_source_evidence(
             for sid in assigned
         )
     )
+    from datetime import timedelta
+
+    snapshot = coverage_snapshot(coverage_sampler)
     return {
-        "ka": coverage_enabled,
+        "ka": snapshot["valid"],
+        "ka_snapshot": snapshot,
+        "ka_source": coverage_source,
+        "ka_manual_outages": [
+            {
+                "id": outage.id,
+                "start_utc": outage.start_time.isoformat(),
+                "end_utc": (
+                    outage.start_time + timedelta(seconds=outage.duration_seconds)
+                ).isoformat(),
+            }
+            for outage in mission.transports.ka_outages
+        ],
         "x": planning_evaluation is not None
         or (known and all(s.heading is not None for s in samples)),
         "starshield_enabled": mission.transports.starshield_enabled is not False,
