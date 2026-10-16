@@ -227,3 +227,25 @@ it.each([
 ])('formats duration %i', (ms, expected) => {
   expect(formatCountdown(ms)).toBe(expected);
 });
+
+it('shows taxi out and arrival ground phases independently of legacy phase', () => {
+  for (const [movement, label] of [
+    ['taxi_out', 'TAXI OUT'],
+    ['probable_landed_rollout', 'LANDED · INFERRED'],
+    ['taxi_in', 'TAXI IN'],
+    ['parked', 'PARKED'],
+  ] as const) {
+    const state = deriveArrivalPanel(
+      response({
+        movement_state: movement,
+        movement_uncertain: false,
+        movement_observed_at: new Date(now).toISOString(),
+        on_blocks_at:
+          movement === 'parked' ? new Date(now).toISOString() : null,
+      }),
+      now
+    );
+    expect(state.sections[0].label).toBe(label);
+    expect(state.sections[0].timing).toBeNull();
+  }
+});

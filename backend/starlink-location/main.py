@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import sqlite3
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -490,6 +491,20 @@ async def startup_event():
             )
             raise
 
+        if active_mode == "live":
+            from app.services.flight_events.live_adapter import FlightEventRuntime
+
+            try:
+                app.state.flight_event_runtime = FlightEventRuntime(
+                    Path(os.getenv("FLIGHT_ARCHIVE_ROOT", "data/flight-events"))
+                )
+            except (OSError, sqlite3.Error, ValueError) as archive_error:
+                app.state.flight_event_runtime = None
+                logger.warning_json(
+                    "Live recording unavailable",
+                    extra_fields={"error": type(archive_error).__name__},
+                )
+
         # Initialize CommKa coverage for Grafana static file serving
         logger.info_json("Initializing CommKa satellite coverage")
         try:
@@ -667,6 +682,10 @@ async def shutdown_event():
         if hasattr(app.state, "overview_history_reader"):
             await app.state.overview_history_reader.aclose()
             del app.state.overview_history_reader
+        flight_event_runtime = getattr(app.state, "flight_event_runtime", None)
+        if flight_event_runtime is not None:
+            flight_event_runtime.close()
+            app.state.flight_event_runtime = None
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None
@@ -711,6 +730,15 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             refresh_interval_seconds=refresh_interval
         )
 
+    runtime = getattr(app.state, "flight_event_runtime", None)
+    if runtime is not None:
+        try:
+            runtime.tick()
+        except (OSError, sqlite3.Error, ValueError) as archive_error:
+            logger.warning_json(
+                "Telemetry archive recovery pending",
+                extra_fields={"error": type(archive_error).__name__},
+            )
     if _coordinator:
         run_service = getattr(app.state, "simulation_run_service", None)
         paced = (
@@ -747,8 +775,36 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 if _route_manager is not None:
                     active_route = _route_manager.get_active_route()
 
+                flight_events_managed = False
+                runtime = getattr(app.state, "flight_event_runtime", None)
+                if runtime is not None and _simulation_config.mode == "live":
+                    from app.mission.active_context import (
+                        resolve_active_mission_leg_context,
+                    )
+                    from app.services.flight_state import get_flight_state_manager
+
+                    resolution = resolve_active_mission_leg_context(_route_manager)
+                    flight_events_managed = True
+                    try:
+                        runtime.record_live(telemetry)
+                        if resolution.context is not None:
+                            runtime.observe_live(telemetry, resolution.context)
+                            runtime.sync_legacy_phase(
+                                get_flight_state_manager(),
+                                resolution.context.parent_mission_id,
+                                resolution.context.leg.id,
+                            )
+                    except (OSError, sqlite3.Error, ValueError) as archive_error:
+                        logger.warning_json(
+                            "Live recording pending recovery",
+                            extra_fields={"error": type(archive_error).__name__},
+                        )
                 update_metrics_from_telemetry(
-                    telemetry, _simulation_config, active_route, poi_manager
+                    telemetry,
+                    _simulation_config,
+                    active_route,
+                    poi_manager,
+                    flight_events_managed=flight_events_managed,
                 )
                 scrape_duration = time.time() - scrape_start
                 starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
@@ -948,6 +1004,9 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # Register API routers
+from app.api.flight_events import router as flight_events_router
+
+app.include_router(flight_events_router)
 app.include_router(simulation_run_router)
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])

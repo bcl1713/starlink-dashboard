@@ -1,19 +1,34 @@
 """Typed, serializable evidence and movement contracts."""
-from datetime import datetime
+
 from math import isfinite
 from typing import Literal
 from uuid import uuid4
 
 from pydantic import AwareDatetime, BaseModel, Field
 
-from app.services.position_freshness import observation_time, position_observation, speed_is_fresh
+from app.services.position_freshness import (
+    observation_time,
+    position_observation,
+    speed_is_fresh,
+)
 
-EventKind = Literal["off_blocks", "takeoff", "landed", "on_blocks", "correction", "stop_classified"]
-MovementState = Literal["unknown", "parked", "taxi_out", "airborne", "probable_landed_rollout", "taxi_in", "parked_at_stop"]
+EventKind = Literal[
+    "off_blocks", "takeoff", "landed", "on_blocks", "correction", "stop_classified"
+]
+MovementState = Literal[
+    "unknown",
+    "parked",
+    "taxi_out",
+    "airborne",
+    "probable_landed_rollout",
+    "taxi_in",
+    "parked_at_stop",
+]
 
 
 class DetectionPolicy(BaseModel):
     """Engineering defaults, not calibrated aircraft operating limits."""
+
     movement_knots: float = Field(default=3, gt=0)
     movement_dwell: float = Field(default=15, gt=0)
     airborne_knots: float = Field(default=80, gt=0)
@@ -30,6 +45,7 @@ class DetectionPolicy(BaseModel):
 
 class FlightObservation(BaseModel):
     observed_at: AwareDatetime
+    received_at: AwareDatetime | None = None
     position_observed_at: AwareDatetime | None = None
     speed_observed_at: AwareDatetime | None = None
     altitude_observed_at: AwareDatetime | None = None
@@ -47,11 +63,29 @@ class FlightObservation(BaseModel):
 
     @property
     def usable_motion(self) -> bool:
-        return position_observation(self.latitude, self.longitude, self.position_observed_at, self.observed_at)[1] == "fresh" and speed_is_fresh(self.speed_knots, self.speed_observed_at, self.observed_at)
+        return position_observation(
+            self.latitude,
+            self.longitude,
+            self.position_observed_at,
+            self.received_at or self.observed_at,
+        )[1] == "fresh" and speed_is_fresh(
+            self.speed_knots,
+            self.speed_observed_at,
+            self.received_at or self.observed_at,
+        )
 
     @property
     def usable_altitude(self) -> bool:
-        return bool(self.altitude_usable and self.altitude_validity_source and self.altitude_feet is not None and isfinite(self.altitude_feet) and observation_time(self.altitude_observed_at, self.observed_at)[1] == "fresh")
+        return bool(
+            self.altitude_usable
+            and self.altitude_validity_source
+            and self.altitude_feet is not None
+            and isfinite(self.altitude_feet)
+            and observation_time(
+                self.altitude_observed_at, self.received_at or self.observed_at
+            )[1]
+            == "fresh"
+        )
 
 
 class FlightEvent(BaseModel):

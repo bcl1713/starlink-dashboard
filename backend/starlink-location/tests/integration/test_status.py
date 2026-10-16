@@ -50,7 +50,13 @@ def test_status_projects_availability_without_mutating_batch(
     assert data["position"] == {
         key: value
         for key, value in payload["position"].items()
-        if key not in {"observed_at", "speed_observed_at"}
+        if key
+        not in {
+            "observed_at",
+            "speed_observed_at",
+            "altitude_observed_at",
+            "altitude_validity_source",
+        }
     }
     assert "observed_at" not in data["position"]
     assert data["environmental"] == payload["environmental"]
