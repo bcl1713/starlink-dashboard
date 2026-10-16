@@ -64,9 +64,8 @@ test('PDF expectations reject omitted and duplicate measured rows', async () => 
   );
 });
 
-test('wrapped PoP overlap expectations preserve the complete canonical event cell', async () => {
-  const event =
-    'Takeoff SOF; Ka unavailable; Starshield PoP transition possible — brief call interruption.';
+test('PoP overlap expectations preserve the complete canonical event cell', async () => {
+  const event = 'Takeoff SOF; Ka unavailable; Starshield Transition Window';
   const payload = {
     legId: 'leg',
     rows: [

@@ -202,10 +202,11 @@ accessible description and details without requiring text inside a timeline row.
 
 The customer PDF retains its existing timeline and Coordination windows table.
 Use unlabeled timeline markers and Eastern-time table bounds consistent with the
-present PDF. Suggested event copy: “Starshield PoP transition possible — brief
-call interruption.” Preserve exact UTC bounds in canonical evidence. City names
-and center timestamps are available in planner details rather than required in
-the customer table.
+present PDF. Per the subsequent user copy revision, the event text is exactly
+“Starshield Transition Window” and the outlined legend reads exactly “Starshield
+Transition”. Keep the existing one-line event cells. Preserve exact UTC bounds
+in canonical evidence. City names and center timestamps are available in planner
+details rather than required in the customer table.
 
 Keep Starshield in Remaining comms whenever it is otherwise available. Preserve
 the existing availability-based Posture. If another event overlaps a transition,

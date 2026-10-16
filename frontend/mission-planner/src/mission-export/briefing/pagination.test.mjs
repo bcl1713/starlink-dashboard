@@ -143,7 +143,7 @@ test('measurement consumes the caller budget without resetting it', async () => 
   );
 });
 
-test('wrapped PoP overlaps continue at whole-row boundaries with unchanged copy and IDs', async () => {
+test('PoP overlaps continue at whole-row boundaries with unchanged one-line copy and IDs', async () => {
   const { composeMissionPage } = await import('./document.mjs');
   const payload = mission(1, 8);
   const leg = payload.legs[0];
@@ -165,7 +165,7 @@ test('wrapped PoP overlaps continue at whole-row boundaries with unchanged copy 
     },
   ];
   const event =
-    'Takeoff SOF; Commercial Ka unavailable; Starshield PoP transition possible — brief call interruption.';
+    'Takeoff SOF; Commercial Ka unavailable; Starshield Transition Window';
   leg.rows.forEach((row) => {
     row.popTransitionIds = ['crossing'];
     row.displayCells = [
@@ -194,14 +194,11 @@ test('wrapped PoP overlaps continue at whole-row boundaries with unchanged copy 
   };
   for (const page of plan.pages) {
     const html = composeMissionPage(leg, page, assets);
-    assert.equal(
-      (html.match(/class="pop-impact"/g) ?? []).length,
-      page.rowIds.length
-    );
+    assert.doesNotMatch(html, /pop-impact/);
     assert.equal(
       (
         html.match(
-          /Takeoff SOF; Commercial Ka unavailable; Starshield PoP transition possible — brief call interruption\./g
+          /Takeoff SOF; Commercial Ka unavailable; Starshield Transition Window/g
         ) ?? []
       ).length,
       page.rowIds.length

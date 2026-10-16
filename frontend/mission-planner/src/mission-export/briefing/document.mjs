@@ -36,7 +36,7 @@ export function composeBriefing(
         cells.some((cell) => typeof cell !== 'string')
       )
         throw new Error('Expected four display cells');
-      return `<tr data-row-id="${e(r.id)}" data-fit><td class="et" data-fit>${e(cells[0])}</td><td${r.popTransitionIds?.length ? ' class="pop-impact"' : ''} data-fit>${e(cells[1])}</td><td class="remaining-cell" data-fit>${e(cells[2])}</td><td class="posture-cell" data-fit>${e(cells[3])}</td></tr>`;
+      return `<tr data-row-id="${e(r.id)}" data-fit><td class="et" data-fit>${e(cells[0])}</td><td data-fit>${e(cells[1])}</td><td class="remaining-cell" data-fit>${e(cells[2])}</td><td class="posture-cell" data-fit>${e(cells[3])}</td></tr>`;
     })
     .join('');
   const pageCopy =
@@ -44,7 +44,7 @@ export function composeBriefing(
       ? `<p class="page-copy" data-fit>${page.kind === 'continuation' ? 'Coordination windows continued · ' : ''}Page ${page.legPage} of ${page.legPageCount}${payload.rows.length ? ` · Windows ${e(payload.rows[0].displayCells[0])} through ${e(payload.rows.at(-1).displayCells[0])}` : ''}${page.continued ? ' · continues on next page' : ''}</p>`
       : '';
   const popLegend = payload.popTransitions?.length
-    ? '<span class="pop-legend">PoP transition</span>'
+    ? '<span class="pop-legend">Starshield Transition</span>'
     : '';
   const popNote = payload.popTransitions?.length
     ? '<span class="pop-note"> PoP transitions may briefly interrupt calls (typically 1–2 seconds). Marked windows indicate possible transition timing.</span>'

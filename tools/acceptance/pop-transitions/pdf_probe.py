@@ -57,7 +57,9 @@ xml = ET.fromstring(text)
 pages = [element for element in xml.iter() if element.tag.endswith("}page")]
 for page, marker in zip(pages, markers):
     for word in page.iter():
-        if not word.tag.endswith("}word") or "PoP" not in (word.text or ""):
+        if not word.tag.endswith("}word") or not any(
+            label in (word.text or "") for label in ("PoP", "Transition", "Window")
+        ):
             continue
         low, high = float(word.attrib["yMin"]), float(word.attrib["yMax"])
         assert not any(
@@ -80,6 +82,15 @@ actual = sum(len(page["outlinesPt"]) for page in markers)
 assert actual >= expected, ("Missing PDF outline markers", expected, markers)
 if expected:
     assert "typically" in text, "Missing advisory explanatory note"
+    for leg in evidence["legs"]:
+        for row in leg["customerRows"]:
+            if row.get("popTransitionIds"):
+                assert "Starshield Transition Window" in row["impact"], row
+    words = " ".join(
+        word.text or "" for word in xml.iter() if word.tag.endswith("}word")
+    )
+    assert "Starshield Transition Window" in words, "Missing transition event copy"
+    assert "Starshield Transition" in words, "Missing transition legend copy"
 proof = {
     "markers": markers,
     "expectedTransitions": expected,

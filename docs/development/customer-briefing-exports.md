@@ -131,10 +131,11 @@ context, retaining exact UTC bounds in machine evidence. Overlapping SOF, outage
 and PoP impacts remain together; PoP windows preserve availability and Remaining
 comms. Full canonical windows remain intact when display edges are clipped.
 
-Only impact cells in rows with PoP occurrence IDs wrap (`td.pop-impact`). The
-approved advisory sentence needs that space; other cell styling, measured
-whole-row pagination, fonts and PDF text/geometry validation remain unchanged.
-Continuation pages retain the explanatory note and measured whole-row layout. Catalog editing
+The Event / impact entry reads exactly “Starshield Transition Window”; the
+outlined legend reads exactly “Starshield Transition”. Event cells retain their
+existing one-line layout, including combined SOF/outage impacts. Measured whole-row
+pagination, fonts and PDF text/geometry validation remain unchanged. Continuation
+pages retain the explanatory note and measured whole-row layout. Catalog editing
 and discovery management screens remain outside this feature.
 
 Run the exact-candidate production control described in

@@ -28,7 +28,10 @@ close immediately after the journey, including failure.
 Actual prepared ZIPs retain stage responses, PDFs, canonical evidence, 240-DPI
 color/grayscale rasters and independent full-cell/overflow/geometry checks.
 Additional vector checks locate Starshield outline markers, verify page bounds and canonical UTC x-position/width
-and reject PoP text within their row. Snapshot/catalog fingerprints and evidence
+and reject transition text within their row. The table event is exactly
+`Starshield Transition Window` and the outlined legend is `Starshield Transition`;
+event cells keep the established one-line layout and all fit limits.
+Snapshot/catalog fingerprints and evidence
 SHA-256 hashes connect observations to their immutable candidate.
 
 Early/late/mismatch cases are explicitly labelled deterministic provider

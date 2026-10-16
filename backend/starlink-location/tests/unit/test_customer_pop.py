@@ -12,7 +12,7 @@ from app.mission.exporter.snapshot_inputs import canonical_json
 from tests.unit.customer_briefing_fixtures import fixture, snapshot, utc
 from tests.unit.test_customer_document import inputs
 
-EVENT = "Starshield PoP transition possible — brief call interruption."
+EVENT = "Starshield Transition Window"
 
 
 def forecast(centers):

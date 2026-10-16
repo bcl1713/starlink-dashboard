@@ -196,10 +196,10 @@ test('PoP documents include exact advisory note without changing table cells', a
     html,
     /PoP transitions may briefly interrupt calls \(typically 1–2 seconds\). Marked windows indicate possible transition timing\./
   );
-  assert.match(html, /PoP transition/);
+  assert.match(html, /class="pop-legend">Starshield Transition<\/span>/);
 });
 
-test('exact PoP impact can wrap inside its measured cell and has an outlined legend', async () => {
+test('exact Starshield transition copy keeps a standard one-line cell and clear outlined legend', async () => {
   const p = structuredClone(payload);
   p.popTransitions = [
     {
@@ -214,16 +214,14 @@ test('exact PoP impact can wrap inside its measured cell and has an outlined leg
       popTransitionIds: ['one'],
       displayCells: [
         '11:00 - 11:10',
-        'Starshield PoP transition possible — brief call interruption.',
+        'Starshield Transition Window',
         'Ka, Starshield, X-Band',
         'Nominal',
       ],
     },
   ];
   const html = (await composer())(p, assets);
-  assert.match(
-    html,
-    /class="pop-impact" data-fit>Starshield PoP transition possible — brief call interruption\.<\/td>/
-  );
-  assert.match(html, /class="pop-legend"[^>]*>PoP transition/);
+  assert.match(html, /<td data-fit>Starshield Transition Window<\/td>/);
+  assert.match(html, /class="pop-legend">Starshield Transition<\/span>/);
+  assert.doesNotMatch(html, /pop-impact/);
 });

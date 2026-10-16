@@ -147,9 +147,10 @@ Expect relevant failures.
       exports.
 - [ ] Integrate advisory partition/row selection without calling outage
       classifiers with advisory reasons. Add unlabeled outlined PDF markers and
-      exact event copy “Starshield PoP transition possible — brief call
-      interruption.” Add explanatory note “PoP transitions may briefly interrupt
-      calls (typically 1–2 seconds). Marked windows indicate possible transition
+      exact event copy “Starshield Transition Window” and legend “Starshield
+      Transition” (subsequent user copy revision). Keep existing one-line event
+      cells. Add explanatory note “PoP transitions may briefly interrupt calls
+      (typically 1–2 seconds). Marked windows indicate possible transition
       timing.” Preserve ET table formatting, exact UTC evidence, pagination, and
       remaining-comms/posture semantics.
 - [ ] Repeat focused commands plus existing customer pagination and cache tests;

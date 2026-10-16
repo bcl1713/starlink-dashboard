@@ -5,7 +5,7 @@ from itertools import pairwise
 
 from app.services.pop.models import PopForecast
 
-POP_EVENT = "Starshield PoP transition possible — brief call interruption."
+POP_EVENT = "Starshield Transition Window"
 POP_NOTE = (
     "PoP transitions may briefly interrupt calls (typically 1–2 seconds). "
     "Marked windows indicate possible transition timing."
