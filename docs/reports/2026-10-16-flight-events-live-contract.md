@@ -61,6 +61,8 @@ retention. Missing metrics and raw coverage remain separate manifest fields.
 The broad suite exposed a legacy background test that expected route-endpoint
 dwell to land without a bound mission. Its assertion now requires uncertainty
 rather than inventing an arrival. Synthetic live tests use isolated archive
-roots. Rendered/browser acceptance has not been performed: the current execution
-environment lacks its provisioned acceptance browser. Field calibration of
-inference thresholds also remains outside synthetic verification.
+roots. Local headed CDP browser checks have now passed using the existing cached
+Chromium and production Docker/Nginx stack. The earlier missing-runtime
+diagnosis was incorrect; the placeholder default platform descriptor was not
+used or modified. Field calibration of inference thresholds also remains outside
+synthetic verification.

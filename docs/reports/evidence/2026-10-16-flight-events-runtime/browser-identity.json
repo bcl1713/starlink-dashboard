@@ -1,0 +1,13 @@
+{
+  "executable_source": "existing actor-owned Playwright cache; no browser installation or replacement",
+  "version": "153.0.8010.12",
+  "bytes": 293285184,
+  "sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+  "display": "Xvfb 1920x1080x24",
+  "transport": "local CDP",
+  "renderer_flags": [
+    "--use-gl=angle",
+    "--use-angle=swiftshader"
+  ],
+  "formal_default_platform_descriptor_used": false
+}
