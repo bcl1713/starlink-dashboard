@@ -42,6 +42,25 @@ for (const [width, height, mode] of [
     const canvas = await globe.locator('canvas').elementHandle();
     expect(before!.width).toBeGreaterThan(250);
     expect(before!.height).toBeGreaterThan(200);
+    if (width === 844 && height === 390) {
+      const controls = await page
+        .locator('.overview-right-overlays')
+        .boundingBox();
+      const map = await globe.boundingBox();
+      expect(map!.width).toBeLessThan(width * 0.75);
+      expect(controls!.x).toBeGreaterThanOrEqual(map!.x + map!.width);
+      expect(controls!.y).toBeCloseTo(map!.y, 0);
+      await expect(
+        page.locator('.overview-sidebar [data-metric-panel]')
+      ).toHaveCount(5);
+      const arrival = await page
+        .locator('.overview-arrival-overlays')
+        .boundingBox();
+      const clocks = await page.locator('.overview-top-overlays').boundingBox();
+      expect(arrival!.y + arrival!.height).toBeLessThanOrEqual(height);
+      expect(clocks!.y).toBeGreaterThanOrEqual(0);
+      expect(map!.height).toBeGreaterThan(height * 0.75);
+    }
     if (mode !== 'stacked') {
       expect(before!.height).toBeGreaterThan(height * 0.45);
       expect(
@@ -80,6 +99,22 @@ for (const [width, height, mode] of [
         await expect(main).toHaveAttribute('data-layout', mode);
         expect(await geometry()).toEqual(before);
         expect(await canvas!.evaluate((el) => el.isConnected)).toBe(true);
+        if (width === 844 && expanded === 'true') {
+          const rail = page.locator('.overview-sidebar');
+          await rail.hover();
+          await page.mouse.wheel(0, 600);
+          await expect
+            .poll(() => rail.evaluate((el) => el.scrollTop))
+            .toBeGreaterThan(0);
+          await page
+            .locator('.globe-legend li')
+            .last()
+            .scrollIntoViewIfNeeded();
+          await expect(
+            page.locator('.globe-legend li').last()
+          ).toBeInViewport();
+          expect(await geometry()).toEqual(before);
+        }
       }
     }
     expect(
@@ -210,6 +245,7 @@ test('automatic and reset views retain route framing through rotation and resizi
 for (const viewport of [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
+  { width: 844, height: 390 },
   { width: 1920, height: 1080 },
 ]) {
   test(`hidden groups release their space at ${viewport.width}`, async ({
@@ -253,13 +289,18 @@ for (const viewport of [
     await expect(
       page.getByRole('button', { name: 'Enter fullscreen overview' })
     ).toBeVisible();
+    if (viewport.width === 844) {
+      const stage = await page.locator('.overview-map-stage').boundingBox();
+      const globe = await page.locator('.overview-globe').boundingBox();
+      expect(stage!.height).toBeCloseTo(globe!.height, 0);
+    }
     if (viewport.width === 1440) {
       await expect
         .poll(
           async () =>
             (await page.locator('.overview-globe').boundingBox())!.width
         )
-        .toBeGreaterThan(initialWidth + 200);
+        .toBeGreaterThanOrEqual(initialWidth);
       expect(
         (await page.locator('.overview-map-stage').boundingBox())!.y
       ).toBeLessThan(90);

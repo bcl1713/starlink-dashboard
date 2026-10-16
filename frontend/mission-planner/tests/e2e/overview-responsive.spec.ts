@@ -91,11 +91,11 @@ test('landscape keeps stage visible while rail scrolls', async ({
     'landscape'
   );
   const stage = await page.locator('.overview-map-stage').boundingBox();
-  const rail = await page.locator('.overview-metrics-overlays').boundingBox();
+  const rail = await page.locator('.overview-sidebar').boundingBox();
   expect(stage!.width).toBeGreaterThanOrEqual(560);
   expect(stage!.height).toBeGreaterThanOrEqual(220);
   expect(rail!.width).toBeGreaterThanOrEqual(210);
-  expect(rail!.width).toBeLessThanOrEqual(300);
+  expect(rail!.width).toBeLessThanOrEqual(320);
   for (const card of await page.locator('[data-metric-panel]').all()) {
     await card.scrollIntoViewIfNeeded();
     await expect(card).toBeInViewport();
@@ -199,6 +199,15 @@ for (const variant of [
       { width: 360, height: 800 },
     ]) {
       await page.setViewportSize(viewport);
+      if (viewport.width === 844) {
+        const clocks = await page
+          .locator('.overview-top-overlays')
+          .boundingBox();
+        const arrival = await page
+          .locator('.overview-arrival-overlays')
+          .boundingBox();
+        expect(clocks!.y + clocks!.height).toBeLessThanOrEqual(arrival!.y);
+      }
       for (const selector of [
         '.overview-arrival',
         '.overview-planned-satellite',

@@ -18,32 +18,40 @@ legend disclosure and changing feed content cannot switch modes.
   remaining height; unusually long arrival content has a bounded scroll area.
 - Windowed desktop (`landscape`) requires at least 1100 × 500 CSS pixels. Clocks
   occupy a top row. The map fills the remaining height, with arrival information
-  underneath and controls alongside it. A 220–300px metrics rail scrolls
-  independently; controls can also scroll without covering the map.
-- Narrower or shorter windows use stacked page flow in either orientation. The
-  globe has a dedicated viewport that scales with screen height, followed by
-  arrival information, controls/legend and wrapping metric cards. The shell owns
-  scrolling. Expanding the legend extends normal flow below the map and leaves
-  the map's size and position in the document unchanged.
+  underneath. A single 240–320px right sidebar contains controls, legend and
+  metrics and owns their scrolling.
+- Portrait and taller narrow windows use page flow. The globe has a dedicated
+  viewport that scales with screen height, followed by arrival information and
+  the controls/metrics sidebar in normal flow. The shell owns scrolling.
+- Mobile landscape (at least 640px wide and at most 600px tall) fills the
+  shell's available viewport height. The globe fills the left column, with
+  clocks fixed over its top and next-POI/arrival information fixed over its
+  bottom. Controls, legend and all metric cards share one scrolling column on
+  the right. Neither legend disclosure nor scrolling that column moves the map,
+  clocks or arrival. The shell already accounts for navigation and dynamic
+  mobile browser chrome; fullscreen releases the navigation's height to the map.
 
 Readability minima scale upward with enlarged root text. Optional groups are
-removed from layout, including their grid tracks; hiding all metrics lets the
-map expand. The globe and plot DOM trees remain mounted across composition
-changes. The navigation uses a compact menu below 1024px to avoid crowding the
-windowed header. Safe-area insets and dynamic viewport units account for mobile
-browser chrome.
+removed from layout, including their grid tracks. Hiding desktop metrics
+releases their map space; the shared sidebar retains its controls when its
+metric group is hidden. The globe and plot DOM trees remain mounted across
+composition changes. The navigation uses a compact menu below 1024px to avoid
+crowding the windowed header. Safe-area insets and dynamic viewport units
+account for mobile browser chrome.
 
 The camera uses the actual renderer's CSS dimensions, rather than the larger
-stage that also contains controls. In the desktop overlay composition its safe
-rectangle is measured between the visible clock, metrics, controls and arrival
-groups. Other compositions keep panels outside the canvas, so the entire canvas
-is available with a small edge inset. ResizeObserver tracks both the globe and
-panel groups; DOM visibility and fullscreen changes also schedule measurement.
-Automatic and Reset/route-overview framing react to changes in the opening's
-position as well as its width and height, including small resizes. Existing
-smooth rotation/dolly/projection transitions and manual-intent preservation are
-retained. Legend disclosure does not change composition or reframe a separate
-map cell.
+stage that also contains arrival information. In the desktop overlay composition
+its safe rectangle is measured between the visible clock, metrics, controls and
+arrival groups. Other compositions keep panels outside the canvas, except
+compact landscape's fixed clocks and arrival panels. Any overlapping
+clock/arrival bounds are subtracted before automatic route framing; otherwise
+the full canvas is available with a small edge inset. ResizeObserver tracks both
+the globe and panel groups; DOM visibility and fullscreen changes also schedule
+measurement. Automatic and Reset/route-overview framing react to changes in the
+opening's position as well as its width and height, including small resizes.
+Existing smooth rotation/dolly/projection transitions and manual-intent
+preservation are retained. Legend disclosure does not change composition or
+reframe a separate map cell.
 
 ## Visibility and configuration
 
@@ -59,10 +67,11 @@ Shared visibility is saved through `/api/overview-links/settings` and reaches
 open Overview displays through the existing refresh cadence. Additive panel and
 core-layer preferences default on; older saved files preserve their existing
 appearance. Each graph can be hidden independently, and hiding all graphs
-removes the rail. Hidden clocks, arrival information and metrics release their
-layout space. Visibility changes recheck panel fit without waiting for a
-viewport resize. Layer switches hide their markers, labels and legend keys while
-keeping source data available for camera behavior and other independent layers.
+removes the metrics group while retaining controls in the sidebar. Hidden
+clocks, arrival information and metrics release their layout space. Visibility
+changes recheck panel fit without waiting for a viewport resize. Layer switches
+hide their markers, labels and legend keys while keeping source data available
+for camera behavior and other independent layers.
 
 The Overview display identity is a small footer below the legend, visible even
 when its compact disclosure is closed. With the legend hidden, the same quiet
@@ -72,13 +81,13 @@ display. Fullscreen and camera controls stay reachable.
 ## Camera and input
 
 A controller within the existing Canvas owns one Drei CameraControls instance.
-Default responsive input allows browser scrolling. Landscape wheel events on
-stage/gaps forward to the rail only when it can scroll; rail events stay native,
-and Ctrl/Meta wheel is untouched. Explore enables gestures only within the
-globe. Exit, Escape, blur and mode changes release gesture state and preserve
-the pose. Desktop retains deliberate orbit/zoom without an Explore control.
-Reset and configured-follow status remain available beneath the fullscreen
-control.
+Default responsive input allows browser scrolling. Windowed-desktop wheel events
+on stage/gaps forward to the sidebar only when it can scroll; sidebar events
+stay native, and Ctrl/Meta wheel is untouched. Explore enables gestures only
+within the globe. Exit, Escape, blur and mode changes release gesture state and
+preserve the pose. Desktop retains deliberate orbit/zoom without an Explore
+control. Reset, fullscreen and configured-follow status remain reachable in the
+controls group.
 
 Initial automatic framing prefers valid projected route points. Its orientation
 uses a containing spherical cap determined by route extremes, so densely sampled

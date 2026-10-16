@@ -22,12 +22,20 @@
   min-width: 0;
   pointer-events: auto;
 }
+.overview-workspace,
+.overview-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
 .overview-map-stage {
   position: relative;
   isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'globe' 'arrival' 'controls';
+  grid-template-areas: 'globe' 'arrival';
   gap: 12px;
   min-width: 0;
   min-height: 0;
@@ -56,10 +64,9 @@
 }
 /* An absent optional group does not leave an empty named row. */
 .overview-map-stage:not(:has(> .overview-arrival-overlays)) {
-  grid-template-areas: 'globe' 'controls';
+  grid-template-areas: 'globe';
 }
 .overview-page .overview-right-overlays {
-  grid-area: controls;
   position: relative;
   inset: auto;
   width: auto;
@@ -236,51 +243,47 @@
   font-size: max(12px, 0.75rem);
 }
 
-/* Windowed desktop: metrics and controls scroll independently of the map. */
+/* Windowed desktop: one sidebar owns controls, legend and metrics scrolling. */
 .overview-page[data-layout='landscape'] {
   height: 100%;
   min-height: 0;
-  grid-template-columns: minmax(0, 1fr) clamp(220px, 21vw, 300px);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
   overflow: hidden;
 }
-.overview-page[data-layout='landscape'] .overview-top-overlays {
-  grid-column: 1 / -1;
+.overview-page[data-layout='landscape'] .overview-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(240px, 24vw, 320px);
 }
 .overview-page[data-layout='landscape'] .overview-map-stage {
-  grid-template-columns: minmax(0, 1fr) clamp(180px, 16vw, 240px);
   grid-template-rows: minmax(0, 1fr) auto;
-  grid-template-areas: 'globe controls' 'arrival controls';
 }
 .overview-page[data-layout='landscape']
   .overview-map-stage:not(:has(> .overview-arrival-overlays)) {
   grid-template-rows: minmax(0, 1fr);
-  grid-template-areas: 'globe controls';
 }
 .overview-page[data-layout='landscape'] .overview-globe-viewport {
   height: auto;
   min-height: 0;
 }
-.overview-page[data-layout='landscape'] .overview-right-overlays {
+.overview-page[data-layout='landscape'] .overview-sidebar {
   overflow-y: auto;
   scrollbar-gutter: stable;
+  pointer-events: auto;
 }
-.overview-page[data-layout='landscape'] .overview-metrics-overlays {
-  overflow-y: auto;
-  min-height: 0;
-  scrollbar-gutter: stable;
+.overview-page[data-layout='landscape'] .overview-sidebar > * {
+  flex-shrink: 0;
 }
 .overview-page[data-layout='landscape'] .overview-metric-history-panels {
   grid-template-columns: minmax(0, 1fr);
 }
-.overview-page[data-layout='landscape']:not(
-    :has(> .overview-metrics-overlays)
-  ) {
-  grid-template-columns: minmax(0, 1fr);
-}
 .overview-page[data-layout='landscape']:not(:has(> .overview-top-overlays)) {
   grid-template-rows: minmax(0, 1fr);
+}
+.overview-page[data-layout='desktop']
+  :is(.overview-workspace, .overview-sidebar) {
+  display: contents;
 }
 
 .overview-metric-history-panels__header {
@@ -534,4 +537,60 @@
 }
 .overview-page[data-layout='desktop'] .overview-map-controls {
   order: 2;
+}
+
+/* Mobile landscape: viewport-height map, fixed clocks/arrival, one right scroller. */
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 600px) {
+  .overview-page[data-layout='stacked'] {
+    height: 100%;
+    min-height: 0;
+    padding: max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    grid-template-columns: minmax(0, 1fr) clamp(220px, 30%, 280px);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    overflow: hidden;
+    gap: 8px;
+  }
+  .overview-page[data-layout='stacked'] .overview-workspace {
+    display: contents;
+  }
+  .overview-page[data-layout='stacked'] .overview-top-overlays {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 2;
+  }
+  .overview-page[data-layout='stacked'] .overview-map-stage {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    display: block;
+  }
+  .overview-page[data-layout='stacked'] .overview-globe-viewport {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    min-height: 0;
+  }
+  .overview-page[data-layout='stacked'] .overview-arrival-overlays {
+    position: absolute;
+    inset: auto 0 0;
+  }
+  .overview-page[data-layout='stacked'] .overview-sidebar {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    pointer-events: auto;
+  }
+  .overview-page[data-layout='stacked'] .overview-sidebar > * {
+    flex-shrink: 0;
+  }
+  .overview-page[data-layout='stacked'] .overview-right-overlays {
+    display: flex;
+    flex-direction: column;
+  }
+  .overview-page[data-layout='stacked'] .overview-metric-history-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

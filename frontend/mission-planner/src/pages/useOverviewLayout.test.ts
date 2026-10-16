@@ -152,3 +152,31 @@ it('reserves only visible desktop panels and releases their camera space when hi
   expect(result.current.safeRect.x).toBe(20);
   expect(result.current.safeRect.width).toBe(1540);
 });
+
+it('reserves fixed clocks and arrival inside the compact landscape map', () => {
+  const { page, stage, globe } = setup(844, 325);
+  vi.mocked(globe.getBoundingClientRect).mockReturnValue(
+    new DOMRect(12, 65, 570, 301)
+  );
+  page.insertAdjacentHTML(
+    'beforeend',
+    '<div class="overview-top-overlays"></div><div class="overview-arrival-overlays"></div>'
+  );
+  vi.spyOn(
+    page.querySelector('.overview-top-overlays')!,
+    'getBoundingClientRect'
+  ).mockReturnValue(new DOMRect(12, 65, 570, 56));
+  vi.spyOn(
+    page.querySelector('.overview-arrival-overlays')!,
+    'getBoundingClientRect'
+  ).mockReturnValue(new DOMRect(12, 286, 570, 80));
+  const { result } = renderHook(() =>
+    useOverviewLayout({ current: page }, { current: stage }, 'loaded', true)
+  );
+  expect(result.current.safeRect).toEqual({
+    x: 12,
+    y: 68,
+    width: 546,
+    height: 141,
+  });
+});
