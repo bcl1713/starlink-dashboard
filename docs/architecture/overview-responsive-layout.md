@@ -49,7 +49,8 @@ For non-desktop compositions, the camera's safe rectangle comes from the
 opening's measured bounds relative to the full canvas. Desktop derives the
 opening from actual visible panel bounds. Fullscreen compares the central
 opening with the wider gap between right-side controls and legend, choosing
-the larger limiting dimension to avoid excessive zoom-out into a shallow gap. Automatic and Reset/route-overview framing respond to changes in
+the larger limiting dimension to avoid excessive zoom-out into a shallow gap.
+Automatic and Reset/route-overview framing respond to changes in
 position and size, including small resizes. Existing smooth rotation,
 dolly/projection transitions and manual-intent preservation remain intact.
 
@@ -58,7 +59,8 @@ scrolled-off metric or legend content cannot incorrectly reserve the map
 opening. Legend disclosure and sidebar scrolling leave the canvas and opening
 stationary.
 
-Panels use a blue glass tint at 35% opacity (45% without backdrop-filter support)
+Panels use a blue glass tint at 35% opacity (45% without backdrop-filter
+support)
 and a light 3px blur so the globe remains visible behind the interface.
 
 ## Visibility and configuration
@@ -163,9 +165,11 @@ complete accessible name lists when visual labels cannot fit.
 ## Verification
 
 See the
-[implementation plan](../superpowers/plans/2026-10-02-overview-responsive-mobile.md)
+[implementation plan](../superpowers/plans/2026-10-02-overview-responsive-
+mobile.md)
 and
-[source contract](../superpowers/plans/2026-10-02-overview-responsive-mobile-source-contract.md).
+[source contract](../superpowers/plans/2026-10-02-overview-responsive-mobile-
+source-contract.md).
 Browser tests drive wheel, touch and interrupted pointers; read-only renderer
 observation checks pose, while DOM handles verify retained renderer/plot
 identity. Software emulation cannot establish physical system scaling or device
