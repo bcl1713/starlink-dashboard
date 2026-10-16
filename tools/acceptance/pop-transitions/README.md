@@ -105,3 +105,15 @@ Each export records public preparation responses incrementally, including failed
 job error codes, download headers and the exact ZIP, before PDF assertions and
 runtime teardown. The owner also retains Compose service logs in its numbered
 command log.
+
+Normal replay HTTP sampling runs in a separate async loop from every Overview
+navigation, assertion, scroll and screenshot. A single clipped active screenshot
+cannot pause observation collection. `normal-replay-sampler.json` records sampler
+start/end, each read, publication revisions and all sample gaps. UI/read/physical
+validation failures propagate after the sampler stops and its timer is cleared.
+The delayed-UI and cleanup regressions run with:
+
+```sh
+timeout --kill-after=10s 1m node \
+  frontend/mission-planner/tests/e2e/pop-replay-sampler.test.mjs
+```

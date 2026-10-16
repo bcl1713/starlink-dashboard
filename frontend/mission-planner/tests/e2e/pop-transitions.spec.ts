@@ -1,6 +1,7 @@
 /** Production CDP journeys. The response-fixture test is explicitly synthetic. */
 import { readFile, writeFile } from 'node:fs/promises';
 import { verifyCrossing, verifyContinuity } from './pop-replay-evidence.mjs';
+import { sampleWhileRendering } from './pop-replay-sampler.mjs';
 import {
   chromium,
   expect,
@@ -164,50 +165,81 @@ test('planner and Overview retain source windows and position drives synthetic I
   });
   expect(activated.ok(), await activated.text()).toBeTruthy();
   activatedLegs.add(crossing.missionId);
-  await page.goto(process.env.POP_ORIGIN + '/overview');
-  const overview = page.getByRole('region', {
-    name: 'Starshield PoP advisories',
-  });
-  await expect(overview).toBeVisible();
-  await expect(overview.getByLabel('PoP transition details')).toBeVisible();
-  await page.screenshot({ path: root + '/overview-upcoming-1920x1080.png' });
   let activeCaptured = false;
   const samples: {
     status: StatusResponse;
     run: SimulationRunStatus;
     runBefore: SimulationRunStatus;
   }[] = [];
-  recorded.push({ actualNormalReplay: samples });
-  const deadline = Date.now() + 350_000;
-  while (Date.now() < deadline) {
-    const runBefore = await (await request.get('/api/simulation/run')).json();
-    const status = await (await request.get('/api/status')).json();
-    const run = await (await request.get('/api/simulation/run')).json();
-    samples.push({ status, run, runBefore });
-    expect(run.run.transport_states).toEqual(
-      physicalAt('crossing', run.run.simulation_time)
+  const receipt = {};
+  recorded.push({ actualNormalReplay: samples, normalReplaySampler: receipt });
+  try {
+    await sampleWhileRendering({
+      samples,
+      receipt,
+      read: async () => {
+        const runBefore = await (
+          await request.get('/api/simulation/run')
+        ).json();
+        const status = await (await request.get('/api/status')).json();
+        const run = await (await request.get('/api/simulation/run')).json();
+        return { status, run, runBefore };
+      },
+      validate: (sample: (typeof samples)[number]) => {
+        expect(sample.run.run!.transport_states).toEqual(
+          physicalAt('crossing', sample.run.run!.simulation_time)
+        );
+      },
+      isComplete: (sample: (typeof samples)[number]) =>
+        sample.run.state === 'completed',
+      render: async (state: {
+        samples: typeof samples;
+        ended: boolean;
+        error?: unknown;
+      }) => {
+        await page.goto(process.env.POP_ORIGIN + '/overview');
+        const overview = page.getByRole('region', {
+          name: 'Starshield PoP advisories',
+        });
+        await expect(overview).toBeVisible();
+        await expect(
+          overview.getByLabel('PoP transition details')
+        ).toBeVisible();
+        await page.screenshot({
+          path: root + '/overview-upcoming-1920x1080.png',
+        });
+        while (!state.ended) {
+          if (
+            state.samples
+              .at(-1)
+              ?.status.pop_advisories?.some((item) => item.kind === 'window')
+          ) {
+            await expect(overview.getByRole('status')).toContainText(
+              'Starshield PoP transition possible'
+            );
+            await overview.scrollIntoViewIfNeeded();
+            await expect(
+              overview.locator('[data-pop-track] button')
+            ).toHaveCount(2);
+            await overview.screenshot({
+              path: root + '/overview-active-markers-details.png',
+            });
+            await expect(overview.getByRole('status')).toContainText(
+              'Starshield PoP transition possible'
+            );
+            activeCaptured = true;
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        if (state.error) throw state.error;
+      },
+    });
+  } finally {
+    await writeFile(
+      root + '/normal-replay-sampler.json',
+      JSON.stringify(receipt, null, 2)
     );
-    if (
-      !activeCaptured &&
-      status.pop_advisories?.some(
-        (item: { kind: string }) => item.kind === 'window'
-      )
-    ) {
-      await expect(overview.getByRole('status')).toContainText(
-        'Starshield PoP transition possible'
-      );
-      await overview.scrollIntoViewIfNeeded();
-      await expect(overview.locator('[data-pop-track] button')).toHaveCount(2);
-      await overview.screenshot({
-        path: root + '/overview-active-markers-details.png',
-      });
-      await expect(overview.getByRole('status')).toContainText(
-        'Starshield PoP transition possible'
-      );
-      activeCaptured = true;
-    }
-    if (run.state === 'completed') break;
-    await page.waitForTimeout(300);
   }
   expect(activeCaptured).toBeTruthy();
   const observations = samples.map((sample) => sample.status.pop_observation);
