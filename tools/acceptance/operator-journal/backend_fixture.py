@@ -17,7 +17,7 @@ if os.getenv("STARLINK_MODE") != "simulation":
 
 scenario_clock = ScenarioClock()
 root = Path(os.environ["OPERATOR_ACCEPTANCE_ROOT"])
-seed = seed_demo(root, clock=scenario_clock, mode="simulation")
+seed = seed_demo(root, clock=scenario_clock, mode="simulation", include_shell=True)
 storage.MISSIONS_DIR = root / "missions"
 os.environ["OPERATOR_ROOT"] = seed["roots"]["operator"]
 os.environ["OPERATOR_SIMULATION_RUN_ID"] = seed["run_id"]

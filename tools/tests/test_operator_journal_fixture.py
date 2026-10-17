@@ -128,6 +128,8 @@ def test_acceptance_wrapper_and_private_production_compose():
 def test_shell_scenarios_cover_preflight_leg_and_between_leg_records():
     scenario = importlib.import_module("scenario")
     demo = scenario.make_demo(scenario.ScenarioClock())
+    assert len(demo["commands"]) == 6
+    demo = scenario.make_demo(scenario.ScenarioClock(), include_shell=True)
     for scope in ("preflight", "leg", "between_legs"):
         mission = f"synthetic-shell-{scope.replace('_', '-')}"
         rows = [c for c in demo["commands"] if c.mission_id == mission]

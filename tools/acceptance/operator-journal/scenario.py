@@ -36,7 +36,7 @@ class ScenarioClock:
         self.elapsed += seconds
 
 
-def make_demo(clock: Clock) -> dict:
+def make_demo(clock: Clock, *, include_shell: bool = False) -> dict:
     missions = [
         Mission(
             id=f"synthetic-mission-{letter}",
@@ -78,7 +78,7 @@ def make_demo(clock: Clock) -> dict:
                 )
             )
     # Separate missions leave the journal regression fixture untouched.
-    for scope in ("preflight", "leg", "between_legs"):
+    for scope in (("preflight", "leg", "between_legs") if include_shell else ()):
         mission_id = f"synthetic-shell-{scope.replace('_', '-')}"
         missions.append(
             Mission(
