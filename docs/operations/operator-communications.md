@@ -65,3 +65,7 @@ preserving the newer store separately. Restore rotates the epoch and may lose
 later entries; reconcile clients as documented in journal maintenance. Do not
 initialize a new store or delete the volume to silence a compatibility error.
 Existing retention, soft-removal and export boundaries apply unchanged.
+
+Reusable conference sessions and independent customer connection intervals are
+covered in [Operator conferences](operator-conferences.md). Call completion and
+schedule changes never automatically close a conference or customer interval.

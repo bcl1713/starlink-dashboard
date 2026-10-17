@@ -152,6 +152,27 @@ def communications_proof(root):
     return proof
 
 
+def conferences_proof(root):
+    proof = json.loads((root / "conferences-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "reuse",
+        "overlap",
+        "joiningOrders",
+        "interruptRestore",
+        "discrepancy",
+        "twoClients",
+        "retryFrozenTime",
+        "restart",
+        "sourceCoverage",
+    ):
+        if proof.get(field) is not True:
+            raise ValueError(f"Missing conference evidence: {field}")
+    if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
+        raise ValueError("Missing conference viewport evidence")
+    return proof
+
+
 def qualify(owner):
     from failures import run_failure_suite
 
@@ -197,6 +218,7 @@ def qualify(owner):
             "shell": json.loads((owner.root / "shell-proof.json").read_text()),
             "displays": json.loads((owner.root / "displays-proof.json").read_text()),
             "communications": communications_proof(owner.root),
+            "conferences": conferences_proof(owner.root),
         }
 
     def probe(script, destination):
@@ -222,6 +244,9 @@ def qualify(owner):
             "failures": lambda: run_failure_suite(owner, origin=origin),
             "communications": lambda: probe(
                 "communications_probe", "communications-projections.json"
+            ),
+            "conferences": lambda: probe(
+                "conferences_probe", "conferences-projections.json"
             ),
             "projections": lambda: probe("projection_probe", "projections.json"),
             "exports": lambda: probe("export_probe", "exports.json"),

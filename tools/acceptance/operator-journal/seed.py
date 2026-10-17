@@ -12,7 +12,7 @@ from app.operator.references import MissionReferences
 from app.operator.service import OperatorService
 from app.operator.settings import OperatorSettings
 from app.operator.store import OperatorStore
-from scenario import ScenarioClock, make_demo
+from scenario import ScenarioClock, make_demo, pop_inputs
 
 
 def seed_demo(
@@ -42,6 +42,17 @@ def seed_demo(
         for mission in demo["missions"]:
             if storage.load_mission_v2(mission.id) is None:
                 storage.save_mission_v2(mission)
+        from app.mission.pop_continuity import attach_call_continuity
+
+        for mission in demo["missions"]:
+            for leg in mission.legs:
+                timeline = pop_inputs(seed_clock)["timeline"].model_copy(
+                    update={"mission_leg_id": leg.id, "created_at": seed_clock.now()}
+                )
+                attach_call_continuity(timeline)
+                storage.save_mission_timeline(
+                    leg.id, timeline, parent_mission_id=mission.id
+                )
         store = OperatorStore.open(settings, initialize=True, clock=clock)
         service = OperatorService(
             store,

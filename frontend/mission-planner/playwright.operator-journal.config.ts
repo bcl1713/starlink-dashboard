@@ -10,6 +10,7 @@ export default defineConfig({
     'operator-shell.spec.ts',
     'operator-displays.spec.ts',
     'operator-communications.spec.ts',
+    'operator-conferences.spec.ts',
   ],
   workers: 1,
   retries: 0,
