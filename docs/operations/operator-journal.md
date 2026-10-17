@@ -2,16 +2,16 @@
 
 Operator is disabled by default. Its database, immutable revisions and command
 receipts live separately from mission/planning storage. Disabling Operator
-preserves its files. A binary that does not support the stored schema refuses
-to open it; disabling the feature is the safe binary rollback path.
+preserves its files. A binary that does not support the stored schema refuses to
+open it; disabling the feature is the safe binary rollback path.
 
 Compose forwards `OPERATOR_ENABLED` with a default of `false` and retains the
 store in the independent `operator_data` volume mounted at `/app/data/operator`.
 Container recreation preserves that volume; removing it removes its retained
 history and receipts. The image and entrypoint give only the mount root to
 `appuser` with mode `0700`, without recursively changing retained history.
-Initialize the chosen namespace explicitly before enabling the API. Startup
-only opens existing initialized stores; failure leaves status, configuration,
+Initialize the chosen namespace explicitly before enabling the API. Startup only
+opens existing initialized stores; failure leaves status, configuration,
 Overview and Missions available.
 
 Runtime uses the actual coordinator mode, regardless of `OPERATOR_SOURCE_MODE`.
@@ -33,15 +33,16 @@ python -m app.operator backup --root data/operator --mode live
 python -m app.operator restore --root data/operator --mode live --manifest PATH
 ```
 
-`initialize` is explicit first enablement. `check`, `backup`, and runtime startup
-never create a missing replacement database. An interrupted initialization marker
-requires administrator recovery. `check` returns JSON health and a nonzero exit
-status when unavailable. It takes exclusive maintenance admission for WAL,
-integrity, schema, complete typed revision/receipt and derived-link checks.
-Concurrent access produces a bounded, retryable `store_busy`; it is not evidence
-of corruption. Internal maintenance scans and the SQLite online-backup loop have
-two-second deadlines. Large stores may therefore require maintenance tuning in a
-future release; a timeout never silently skips validation.
+`initialize` is explicit first enablement. `check`, `backup`, and runtime
+startup never create a missing replacement database. An interrupted
+initialization marker requires administrator recovery. `check` returns JSON
+health and a nonzero exit status when unavailable. It takes exclusive
+maintenance admission for WAL, integrity, schema, complete typed
+revision/receipt and derived-link checks. Concurrent access produces a bounded,
+retryable `store_busy`; it is not evidence of corruption. Internal maintenance
+scans and the SQLite online-backup loop have two-second deadlines. Large stores
+may therefore require maintenance tuning in a future release; a timeout never
+silently skips validation.
 
 Backups use SQLite's online backup API, including committed WAL changes. Use
 `backup --directory PATH` to choose a destination; the default is the store's
@@ -56,21 +57,22 @@ for protection from disk failure; same-disk backups cannot provide that.
 
 Stop Operator access before restore. The tool rejects restore while any
 cooperating Operator transaction is active and prevents new transactions during
-replacement. It validates the backup and store/mode/run identity first, preserves
-the old database, WAL, shared-memory file and identity in a private
-`preserved-UUID/` directory, then installs the whole backup. It never automatically
-chooses or restores a backup. Restore requires the existing identity marker and a
-matching backup; it is not an import into a new root or a cross-mode conversion.
-An interrupted replacement leaves a non-ready marker for explicit recovery.
-Do not open or alter the preserved SQLite files while investigating; work on a
-copy so SQLite recovery cannot change the evidence.
+replacement. It validates the backup and store/mode/run identity first,
+preserves the old database, WAL, shared-memory file and identity in a private
+`preserved-UUID/` directory, then installs the whole backup. It never
+automatically chooses or restores a backup. Restore requires the existing
+identity marker and a matching backup; it is not an import into a new root or a
+cross-mode conversion. An interrupted replacement leaves a non-ready marker for
+explicit recovery. Do not open or alter the preserved SQLite files while
+investigating; work on a copy so SQLite recovery cannot change the evidence.
 
-Restore rotates the durable API epoch. Old client writes and cached store handles
-receive `store_epoch_changed`. Restart the Operator runtime, reset clients, inspect
-saved state, and reconcile uncertain writes before resubmitting. Receipts and
-entries newer than the backup may be lost. `restore-report.json` records
-`restored_H`, the previous `H` when readable, backup time and the preserved set.
-An unreadable previous high-water mark is `null`, never a claim of zero loss.
+Restore rotates the durable API epoch. Old client writes and cached store
+handles receive `store_epoch_changed`. Restart the Operator runtime, reset
+clients, inspect saved state, and reconcile uncertain writes before
+resubmitting. Receipts and entries newer than the backup may be lost.
+`restore-report.json` records `restored_H`, the previous `H` when readable,
+backup time and the preserved set. An unreadable previous high-water mark is
+`null`, never a claim of zero loss.
 
 Capacity includes database plus WAL, excluding backups. Operator settings can
 surface the 80% advisory from `capacity_status`; at the configured limit
@@ -82,15 +84,53 @@ read-only or failed media rolls back the command and disables the affected store
 until reopened and checked. A non-busy I/O failure during write commit returns
 `commit_outcome_unknown` with retryable status: it may already be saved. Reopen
 and check before retrying the identical command/key; the receipt returns its
-original saved result if commit completed. A busy commit with successful rollback
-remains `store_busy` and does not poison readiness. Passive checkpoints leave WAL frames pinned by
-readers intact.
+original saved result if commit completed. A busy commit with successful
+rollback remains `store_busy` and does not poison readiness. Passive checkpoints
+leave WAL frames pinned by readers intact.
 
 Soft removal is not erasure. Current-state exports omit removed records; default
 activity retains their changes/removals, while requested audit exports and
 backups retain original bodies. Per-record hard deletion is not supported. An
 administrative whole-store purge, including backup sets, is an offline retention
 decision after export/backup; this CLI intentionally has no purge command.
+
+The internal `capture_projection(store, mission_id=..., include_audit=False)`
+contract returns canonical UTF-8 `operations/current.json` and
+`operations/activity.jsonl` bytes with SHA-256 checksums. Current contains one
+latest active record per ID. Activity contains one item per accepted revision,
+ordered by acceptance sequence even when actual or recording clocks go
+backwards. It keeps reported versus recorded times, typed before/after changes,
+removal and restoration, generated descriptions, reason attribution and
+revision-local titles. Changed note fields are named without copying historical
+note bodies. Request `operations/audit.jsonl` explicitly for original full-state
+revisions. No automatic retention limit erases any of these revisions from the
+store.
+
+Call lifecycle status is `scheduled`, `completed` or `cancelled`; issue status
+is `open` or `resolved` (and may return to `open`). These internal typed fields
+do not enable public call/issue editing. Older payloads parse with their model
+defaults, but projections and recovery preserve persisted historical content and
+receipt bytes. Missing old statuses stay absent in audit and become null
+before-values when first introduced; a default is not evidence of historical
+knowledge.
+
+All Operator files share one pinned high-water sequence H. Mission moves include
+the same revision identity at both boundaries, with before/after associations;
+later edits in the new mission do not leak into the old mission. Mission-only,
+preflight, between-leg and postflight records remain at the mission root.
+Serialization and planning association resolution run after the read transaction
+closes. Missing planning references retain their Operator IDs and appear in the
+manifest. Planning association labels are derived and unpinned, with null
+capture revision/time; no cross-store atomic capture is claimed. The Operator
+capture timestamp is the retained `recorded_at` at H, explicitly labeled as
+revision time, not a fresh wall-clock preparation timestamp.
+
+Issue #370 must persist these frozen bytes, checksums and manifest with its
+preparation job before acknowledgment, and reuse them after restart. It must add
+the actual component capture times and mission/archive capture revisions through
+the existing preparation boundary. This contract adds no ZIP builder, export
+route or job; planning-only and telemetry-only artifact contracts remain
+unchanged.
 
 Process-kill tests verify atomic old-or-complete commands and exact receipt
 retries, including committed uncheckpointed WAL. Conservative WAL preflight

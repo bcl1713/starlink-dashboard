@@ -258,3 +258,32 @@ def test_read_contracts_bound_filters_and_keep_unknown_source_time():
         ready=False, source_mode="live", error_code="store_unavailable"
     )
     assert health.error_code == "store_unavailable"
+
+
+@pytest.mark.parametrize(
+    "kind,default,statuses",
+    [
+        ("call", "scheduled", ["scheduled", "completed", "cancelled"]),
+        ("issue", "open", ["open", "resolved"]),
+    ],
+)
+def test_internal_lifecycle_statuses(record_data, kind, default, statuses):
+    # Legacy payloads parse, while invalid domain lifecycle states are rejected.
+    from app.operator.models import RecordInput
+
+    data = record_data | {
+        "record_type": kind,
+        "payload": {"entry_type": kind, "title": "Fixture"},
+    }
+    assert RecordInput.model_validate(data).payload.status == default
+    for status in statuses:
+        assert (
+            RecordInput.model_validate(
+                data | {"payload": data["payload"] | {"status": status}}
+            ).payload.status
+            == status
+        )
+    with pytest.raises(ValidationError):
+        RecordInput.model_validate(
+            data | {"payload": data["payload"] | {"status": "invalid"}}
+        )

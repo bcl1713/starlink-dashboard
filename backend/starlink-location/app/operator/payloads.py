@@ -32,6 +32,7 @@ class CallObservationPayload(PayloadBase):
 
 class CallPayload(PayloadBase):
     entry_type: Literal["call"] = "call"
+    status: Literal["scheduled", "completed", "cancelled"] = "scheduled"
     conference_id: RecordId | None = None
 
 
@@ -53,6 +54,7 @@ class ParticipationPayload(PayloadBase):
 
 class IssuePayload(PayloadBase):
     entry_type: Literal["issue"] = "issue"
+    status: Literal["open", "resolved"] = "open"
 
 
 class RiskPayload(PayloadBase):

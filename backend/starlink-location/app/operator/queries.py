@@ -9,12 +9,17 @@ from .errors import OperatorError
 from .models import HistoryPage, RecordPage, SavedRecord
 
 
-def decode_record(row, columns):
+def decode_document(row, columns):
+    """Read persisted content without synthesizing newer payload defaults."""
     data = dict(zip(columns, row))
     for field in ("author", "time", "provenance", "payload"):
         data[field] = json.loads(data.pop(field + "_json"))
     data["deleted"] = bool(data["deleted"])
-    return SavedRecord.model_validate(data)
+    return data
+
+
+def decode_record(row, columns):
+    return SavedRecord.model_validate(decode_document(row, columns))
 
 
 def select_records(connection, sql, parameters=()):

@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from .errors import OperatorError
 from .maintenance import admission, bounded, storage_error
 from .models import CommandReceipt
-from .queries import decode_record, select_records
+from .queries import decode_document, decode_record, select_records
 from .references import derive_links, validate_dependencies
 from .schema import apply_migrations, validate_integrity
 
@@ -44,11 +44,16 @@ def validate_connection(connection, *, clock):
                     or receipt.saved_records != revisions
                 ):
                     raise OperatorError("store_corrupt")
+                raw = connection.execute(
+                    "SELECT * FROM revisions WHERE command_id=? ORDER BY journal_seq",
+                    (command_id,),
+                )
+                raw_columns = [column[0] for column in raw.description]
                 expected = {
                     "schema_version": 1,
                     "command_id": command_id,
                     "saved_records": [
-                        record.model_dump(mode="json") for record in revisions
+                        decode_document(row, raw_columns) for row in raw.fetchall()
                     ],
                 }
                 if receipt.canonical_response != expected:
