@@ -134,7 +134,9 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
           `${origin}/operator?mission_id=synthetic-shell-preflight`
         );
         await expect(
-          page.getByText('Synthetic customer coordination', { exact: true })
+          page
+            .getByRole('region', { name: 'Next requirement', exact: true })
+            .getByText('Synthetic customer coordination', { exact: true })
         ).toBeVisible();
         let reads = 0;
         page.on('request', (r) => {
@@ -158,7 +160,9 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
         await page.unroute(block);
         await page.getByRole('button', { name: 'Refresh summary' }).click();
         await expect(
-          page.getByText('Synthetic customer coordination', { exact: true })
+          page
+            .getByRole('region', { name: 'Next requirement', exact: true })
+            .getByText('Synthetic customer coordination', { exact: true })
         ).toBeVisible();
         const before = await (
           await page.request.get(
@@ -177,7 +181,9 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
           .toBe(200);
         await page.reload();
         await expect(
-          page.getByText('Synthetic customer coordination', { exact: true })
+          page
+            .getByRole('region', { name: 'Next requirement', exact: true })
+            .getByText('Synthetic customer coordination', { exact: true })
         ).toBeVisible();
         const after = await (
           await page.request.get(

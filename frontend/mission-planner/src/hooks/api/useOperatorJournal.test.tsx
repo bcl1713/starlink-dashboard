@@ -240,3 +240,52 @@ it('retains the conflict target after failed latest reads until a targeted rerea
   ]);
   expect(result.current.blocked).toBe(false);
 });
+it('partitions calls from journal reads and refreshes independently loaded summaries after a call save', async () => {
+  vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
+  const call = {
+    ...record,
+    record_type: 'call' as const,
+    payload: {
+      ...record.payload,
+      entry_type: 'call' as const,
+      status: 'completed' as const,
+      conference_id: null,
+      prep_lead_minutes: null,
+    },
+  };
+  const reads = vi
+    .spyOn(api, 'readOperatorRecords')
+    .mockResolvedValue(page([call]));
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([call]).items[0]);
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'call-receipt',
+    saved_records: [call],
+  });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  clients.push(client);
+  client.setQueryData(
+    ['operator-brief', 'mission-a', 'independent'],
+    page([call])
+  );
+  const hook = renderHook(() => useOperatorJournal('mission-a', 'call'), {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
+  await waitFor(() => expect(hook.result.current.records.data).toBeTruthy());
+  expect(reads.mock.calls[0][0].record_type).toBe('call');
+  await act(async () => {
+    await hook.result.current.save({
+      operation: 'create',
+      body: { ...input, record_type: 'call', payload: call.payload },
+    });
+  });
+  expect(hook.result.current.saved).toBe(true);
+  expect(
+    client.getQueryState(['operator-brief', 'mission-a', 'independent'])
+      ?.isInvalidated
+  ).toBe(true);
+});

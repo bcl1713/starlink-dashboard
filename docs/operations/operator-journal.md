@@ -106,13 +106,14 @@ note bodies. Request `operations/audit.jsonl` explicitly for original full-state
 revisions. No automatic retention limit erases any of these revisions from the
 store.
 
-Call lifecycle status is `scheduled`, `completed` or `cancelled`; issue status
-is `open` or `resolved` (and may return to `open`). These internal typed fields
-do not enable public call/issue editing. Older payloads parse with their model
-defaults, but projections and recovery preserve persisted historical content and
-receipt bytes. Missing old statuses stay absent in audit and become null
-before-values when first introduced; a default is not evidence of historical
-knowledge.
+Call status is `tentative`, `scheduled`, `delayed`, `completed` or `cancelled`;
+issue status is `open` or `resolved` (and may return to `open`). Calls and
+journal entries support public editing; conference and issue editing remain
+private. See [communications workflows](operator-communications.md). Older
+payloads parse with their model defaults, but projections and recovery preserve
+persisted historical content and receipt bytes. Missing old statuses stay absent
+in audit and become null before-values when first introduced; a default is not
+evidence of historical knowledge.
 
 All Operator files share one pinned high-water sequence H. Mission moves include
 the same revision identity at both boundaries, with before/after associations;
@@ -196,11 +197,12 @@ artifacts are foundation contracts; mission-package integration remains #370.
 ## Operator workspace shell
 
 The gated `/operator` workspace keeps the existing journal and adds read-only
-mission summaries: the earliest future scheduled call, next recorded risk and
-open issues. Overdue scheduled calls stay separately visible under Attention
-needed, so an unconfirmed earlier call cannot obscure a future commitment. It
-reads the existing schema-v1 records API; there is no new schema, migration,
-transport-health inference or writable call, conference or issue API. Missing
+mission summaries: the earliest future active call, next recorded risk and open
+issues. Active calls include tentative, scheduled and delayed requirements.
+Overdue active calls stay separately visible under Attention needed, so an
+unconfirmed earlier call cannot obscure a future commitment. It reads the
+existing schema-v1 records API; there is no new schema, migration,
+transport-health inference or writable conference or issue API. Missing
 associations and unknown/stale freshness remain explicit. Record scope describes
 its association, not measured flight phase. The snapshot time is backend UTC,
 including the injected clock in simulation. Refresh summaries explicitly; the

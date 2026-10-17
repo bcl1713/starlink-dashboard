@@ -112,6 +112,16 @@ class OperatorService:
                 )
             if current and current.version != command.expected_version:
                 raise OperatorError("version_conflict", current_version=current.version)
+            if (
+                writable_types is not None
+                and current is not None
+                and command.operation == "update"
+                and current.record_type != command.record_type
+            ):
+                raise OperatorError(
+                    "validation_error",
+                    fields={"record_type": "Cannot change record type"},
+                )
             target = command if command.operation in ("create", "update") else current
             if command.operation != "remove":
                 self.references.validate(

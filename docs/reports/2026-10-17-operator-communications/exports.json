@@ -1,0 +1,43 @@
+{
+  "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
+  "telemetryZipSha256Before": "3e4dd7ff83c0f9948ce9f2485e503202f3333343c376a666894806a358a7872e",
+  "telemetryZipSha256After": "3e4dd7ff83c0f9948ce9f2485e503202f3333343c376a666894806a358a7872e",
+  "captureIdentitiesAndRevisionsUnchanged": true,
+  "telemetryManifest": {
+    "artifact_kind": "telemetry",
+    "legs": [
+      {
+        "checksum": {
+          "events.csv": "8f705455b1c98bf0d3d9619427930f587e04e1ec69b1b2e0855c4ab7bfae4a46",
+          "observations.csv": "f8e3d4a98b515fd9bc529dc224496f71cd453fcd7cb36a3befaeb4f36a292551"
+        },
+        "complete": false,
+        "end": "2026-10-17T16:36:41+00:00",
+        "leg_id": "synthetic-leg-1",
+        "path": "legs/001",
+        "revision": "635b3fa81cfa16ad3d65277b4e481cce31ab38d779c9ca67115b13f705fe8be1",
+        "start": "2026-10-17T15:35:01+00:00"
+      },
+      {
+        "checksum": {
+          "events.csv": "65feb83abc4035ba6231bbadc0e1097105bcae30d9ea03a159c6b30f93f72857",
+          "observations.csv": "e102208ec97220e15c79fab2b9bf6f83c4a6fa8ec44b8ee97f8fe764906a1926"
+        },
+        "complete": false,
+        "end": "2026-10-17T17:26:41+00:00",
+        "leg_id": "synthetic-leg-2",
+        "path": "legs/002",
+        "revision": "864ce9e324fcc12ba04c8e4672697c8cd7592fce687621ea0f481fb0e8685c7b",
+        "start": "2026-10-17T16:25:01+00:00"
+      }
+    ],
+    "mission_id": "synthetic-mission-a",
+    "partial": true,
+    "schema_version": 1,
+    "source_mode": "live"
+  },
+  "planningCsvSemanticSha256Before": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+  "planningCsvSemanticSha256After": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+  "planningComparison": "existing combined timeline CSV; generated-at header excluded",
+  "simulationExportRejected": true
+}

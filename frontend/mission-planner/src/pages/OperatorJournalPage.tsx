@@ -1,3 +1,4 @@
+import { OperatorCommunications } from '@/components/operator/OperatorCommunications';
 import { OperatorDisplayTools } from '@/components/operator/OperatorDisplayTools';
 import { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -31,7 +32,9 @@ export function OperatorJournalPage() {
   });
   const [selected, setSelected] = useState<SavedRecord>();
   const [editorVersion, setEditorVersion] = useState(0);
-  const [dirty, setDirty] = useState(false);
+  const [journalDirty, setDirty] = useState(false);
+  const [callDirty, setCallDirty] = useState(false);
+  const dirty = journalDirty || callDirty;
   const [createFromDraft, setCreateFromDraft] = useState(false);
   const [historyId, setHistoryId] = useState<string>();
   const locked = journal.saving || !!journal.pending;
@@ -76,6 +79,12 @@ export function OperatorJournalPage() {
             className="inline-flex min-h-11 items-center rounded-md border px-3"
           >
             Upcoming
+          </a>
+          <a
+            href="#operator-communications"
+            className="inline-flex min-h-11 items-center rounded-md border px-3"
+          >
+            Communications
           </a>
           <a
             href="#operator-journal"
@@ -145,6 +154,13 @@ export function OperatorJournalPage() {
         )}
       </div>
       <OperatorDisplayTools missionId={missionId} />
+      {missionId && (
+        <OperatorCommunications
+          key={missionId}
+          missionId={missionId}
+          onDirty={setCallDirty}
+        />
+      )}
       <section
         id="operator-journal"
         aria-label="Operator journal"
