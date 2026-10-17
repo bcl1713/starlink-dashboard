@@ -45,16 +45,51 @@ export interface CallInput
   record_type: 'call';
   payload: CallPayload & { prep_lead_minutes: number | null };
 }
-export type OperatorInput = JournalInput | CallInput;
+export type Transport = 'Starshield' | 'Ka' | 'X';
+export interface ConferencePayload extends PayloadBase {
+  entry_type: 'conference';
+  status?:
+    | 'unknown'
+    | 'preparing'
+    | 'established'
+    | 'interrupted'
+    | 'closed'
+    | null;
+  coordinator?: string | null;
+  verified_at?: string | null;
+  intended_transport?: Transport | null;
+  configured_transport?: Transport | null;
+  configuration_reported_at?: string | null;
+}
+export interface ParticipationPayload extends PayloadBase {
+  entry_type: 'participation';
+  call_id: string | null;
+  conference_id: string | null;
+  participant?: string | null;
+  state?: 'unknown' | 'connected' | 'interrupted' | 'left' | null;
+  resumes_participation_id?: string | null;
+}
+export interface ConferenceInput
+  extends Omit<JournalInput, 'record_type' | 'payload'> {
+  record_type: 'conference';
+  payload: ConferencePayload;
+}
+export interface ParticipationInput
+  extends Omit<JournalInput, 'record_type' | 'payload'> {
+  record_type: 'participation';
+  payload: ParticipationPayload;
+}
+export type OperatorInput =
+  | JournalInput
+  | CallInput
+  | ConferenceInput
+  | ParticipationInput;
 export type OperatorPayload =
   | JournalPayload
   | CallPayload
-  | (PayloadBase & { entry_type: 'conference' | 'risk' })
-  | (PayloadBase & {
-      entry_type: 'participation';
-      call_id: string | null;
-      conference_id: string | null;
-    })
+  | ConferencePayload
+  | ParticipationPayload
+  | (PayloadBase & { entry_type: 'risk' })
   | (PayloadBase & { entry_type: 'issue'; status: 'open' | 'resolved' })
   | (PayloadBase & {
       entry_type: 'transport_report';

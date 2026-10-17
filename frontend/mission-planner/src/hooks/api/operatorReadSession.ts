@@ -26,7 +26,11 @@ export function operatorIdentity(health?: OperatorHealth) {
 export function operatorRecordsOptions(
   missionId: string,
   identity: string | null,
-  recordType: 'journal_entry' | 'call' = 'journal_entry'
+  recordType:
+    | 'journal_entry'
+    | 'call'
+    | 'conference'
+    | 'participation' = 'journal_entry'
 ) {
   return infiniteQueryOptions({
     queryKey: ['operator-records', missionId, identity, recordType],
