@@ -25,7 +25,10 @@ interface Pending {
   epoch: string;
   identity: string;
 }
-export function useOperatorJournal(missionId: string) {
+export function useOperatorJournal(
+  missionId: string,
+  recordType: 'journal_entry' | 'call' = 'journal_entry'
+) {
   const client = useQueryClient();
   const health = useOperatorHealth();
   const identity = operatorIdentity(health.data);
@@ -33,7 +36,7 @@ export function useOperatorJournal(missionId: string) {
   if (session.current === null && identity) session.current = identity;
   const identityChanged = !!identity && session.current !== identity;
   const records = useInfiniteQuery({
-    ...operatorRecordsOptions(missionId, identity),
+    ...operatorRecordsOptions(missionId, identity, recordType),
     enabled: !!missionId && !!identity && !health.isError,
   });
   const [pending, setPending] = useState<Pending | null>(null);
@@ -226,7 +229,7 @@ export function useOperatorJournal(missionId: string) {
       const freshIdentity = operatorIdentity(fresh.data);
       try {
         await client.fetchInfiniteQuery({
-          ...operatorRecordsOptions(missionId, freshIdentity),
+          ...operatorRecordsOptions(missionId, freshIdentity, recordType),
           staleTime: 0,
         });
       } catch {

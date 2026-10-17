@@ -12,6 +12,22 @@ export function RevisionDetails({ record, association }: ReadRecord) {
       <p>
         Actual end: {revisionUtc(time.ended_at)} · end state: {time.end_state}
       </p>
+      {payload.entry_type === 'call' && (
+        <>
+          <p>
+            Party / participant: {payload.party ?? 'Unknown'} · Coordinator:{' '}
+            {payload.coordinator ?? 'Unknown'}
+          </p>
+          <p>
+            Call status: {payload.status} · Type:{' '}
+            {payload.communications_kind ?? 'Unknown'} · Preparation lead:{' '}
+            {payload.prep_lead_minutes == null
+              ? 'Unknown'
+              : `${payload.prep_lead_minutes} minutes`}
+          </p>
+          <p>Conference: {payload.conference_id ?? 'None'}</p>
+        </>
+      )}
       <p>Planned start: {revisionUtc(time.planned_start_at)}</p>
       <p>Planned end: {revisionUtc(time.planned_end_at)}</p>
       <p>

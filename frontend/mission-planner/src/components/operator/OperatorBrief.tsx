@@ -1,3 +1,4 @@
+import { preparationAt } from './callTiming';
 import { Link } from 'react-router-dom';
 import type { ReadRecord, RecordPage } from '@/types/operator';
 interface Props {
@@ -17,6 +18,7 @@ function operatorUtc(value: string | null | undefined) {
 }
 function SummaryRecord({ item, now }: { item: ReadRecord; now: number }) {
   const { record, freshness, association } = item;
+  const prep = preparationAt(record);
   const source = {
     modeled: 'Modeled',
     observed: 'Observed',
@@ -28,6 +30,12 @@ function SummaryRecord({ item, now }: { item: ReadRecord; now: number }) {
       <p className="text-sm">
         {operatorUtc(record.time.planned_start_at ?? record.time.occurred_at)}
       </p>
+      {prep && (
+        <p className="text-sm">
+          Prepare: {operatorUtc(prep)} ·{' '}
+          {Date.parse(prep) <= now ? 'Due at snapshot' : 'Upcoming at snapshot'}
+        </p>
+      )}
       {record.payload.entry_type === 'call' &&
         record.payload.status === 'scheduled' &&
         Date.parse(record.time.planned_start_at ?? '') < now && (
@@ -97,7 +105,9 @@ export function OperatorBrief({
     .filter(
       (i) =>
         i.record.payload.entry_type === 'call' &&
-        i.record.payload.status === 'scheduled' &&
+        ['tentative', 'scheduled', 'delayed'].includes(
+          i.record.payload.status
+        ) &&
         Number.isFinite(Date.parse(i.record.time.planned_start_at ?? ''))
     )
     .sort(
@@ -121,7 +131,9 @@ export function OperatorBrief({
     (i) =>
       (i.record.record_type === 'risk' ||
         (i.record.payload.entry_type === 'call' &&
-          i.record.payload.status === 'scheduled')) &&
+          ['tentative', 'scheduled', 'delayed'].includes(
+            i.record.payload.status
+          ))) &&
       !Number.isFinite(Date.parse(i.record.time.planned_start_at ?? ''))
   );
   const problem =

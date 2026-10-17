@@ -206,3 +206,31 @@ it('treats a scheduled call at the snapshot instant as next rather than overdue'
   ).toBeTruthy();
   expect(screen.queryByRole('region', { name: 'Attention needed' })).toBeNull();
 });
+it('shows delayed preparation from saved lead and excludes terminal call reminders', () => {
+  const delayed = {
+    ...record,
+    record_type: 'call' as const,
+    payload: {
+      ...record.payload,
+      entry_type: 'call' as const,
+      status: 'delayed' as const,
+      conference_id: null,
+      prep_lead_minutes: 10,
+    },
+    time: { ...record.time, planned_start_at: '2026-10-17T11:15:00Z' },
+  };
+  render(
+    <OperatorBrief
+      missionId="mission-a"
+      pages={[page([delayed])]}
+      unavailable={false}
+      loading={false}
+      failed={false}
+      incomplete={false}
+    />
+  );
+  expect(
+    screen.getByRole('region', { name: 'Next requirement' }).textContent
+  ).toContain('Original');
+  expect(screen.getByText(/Prepare:.*11:05:00 UTC/)).toBeTruthy();
+});
