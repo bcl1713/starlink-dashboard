@@ -83,7 +83,7 @@ test('independent conferences and customers survive overlaps, retry and restart'
         record_type: 'call',
         time: {
           planned_start_at: '2026-10-17T16:00:00Z',
-          planned_end_at: '2026-10-17T16:10:00Z',
+          planned_end_at: '2026-10-17T16:30:00Z',
         },
         payload: {
           entry_type: 'call',
@@ -103,7 +103,7 @@ test('independent conferences and customers survive overlaps, retry and restart'
         ...callBody,
         time: {
           planned_start_at: '2026-10-17T16:05:00Z',
-          planned_end_at: '2026-10-17T16:15:00Z',
+          planned_end_at: '2026-10-17T16:35:00Z',
         },
         payload: {
           ...callBody.payload,
@@ -244,6 +244,21 @@ test('independent conferences and customers survive overlaps, retry and restart'
       ).toBeVisible();
       await expect(
         region.getByText(/Coverage: (partial|available)/)
+      ).toBeVisible();
+      const advisoryPanel = region.getByRole('complementary', {
+        name: 'Protected call advisories',
+      });
+      await expect(
+        advisoryPanel
+          .getByRole('listitem')
+          .filter({ hasText: /^advisory · unknown transport relevance/ })
+          .first()
+      ).toBeVisible();
+      await expect(
+        advisoryPanel
+          .getByRole('listitem')
+          .filter({ hasText: /^planned outage/ })
+          .first()
       ).toBeVisible();
       proof.sourceCoverage = true;
       if (viewport.width === 1920) {
