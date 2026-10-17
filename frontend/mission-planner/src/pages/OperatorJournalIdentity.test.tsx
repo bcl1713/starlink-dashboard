@@ -153,4 +153,7 @@ it('announces saving while acknowledgment is held, and saved only after receipt'
   await waitFor(() =>
     expect(screen.getByRole('status').textContent).toMatch(/Saved/)
   );
+  click('New entry');
+  expect(title().value).toBe('');
+  expect(screen.getByRole('status').textContent).not.toMatch(/Saved/);
 });

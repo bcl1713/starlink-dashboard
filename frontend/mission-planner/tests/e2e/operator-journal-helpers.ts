@@ -43,14 +43,19 @@ export async function save(page: Page, holdReceipt = false) {
   const realResponse = new Promise<void>((resolve) => {
     received = resolve;
   });
+  let holdNext = true;
   const handler = async (route: Route) => {
-    if (!mutation(route.request())) return route.fallback();
+    if (!holdNext || !mutation(route.request())) return route.continue();
+    holdNext = false;
     const result = await route.fetch();
     received();
     await held;
     await route.fulfill({ response: result });
   };
-  if (holdReceipt) await page.route('**/api/v2/operator/records**', handler);
+  // Keep this same-origin handler until context close: removing interception
+  // during the acknowledgment's refresh can race an in-flight read route.
+  if (holdReceipt)
+    await page.route(`${origin}/api/v2/operator/records**`, handler);
   const response = page.waitForResponse((r) => mutation(r.request()));
   await page.getByRole('button', { name: 'Save entry', exact: true }).click();
   if (holdReceipt) {
@@ -65,7 +70,6 @@ export async function save(page: Page, holdReceipt = false) {
     }
   }
   const result = await response;
-  if (holdReceipt) await page.unroute('**/api/v2/operator/records**', handler);
   expect(result.ok()).toBeTruthy();
   const receipt = await result.json();
   await expect(

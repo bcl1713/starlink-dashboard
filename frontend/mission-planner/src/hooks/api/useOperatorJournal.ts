@@ -62,8 +62,9 @@ export function useOperatorJournal(missionId: string) {
       });
     }
   }, [identityChanged]);
-  function openEditor(record?: SavedRecord) {
+  function openEditor(record?: SavedRecord, acknowledged = false) {
     if (blocked || identityChanged || !session.current) return;
+    setSaved(acknowledged);
     reconciliationTarget.current = {
       recordId: record?.record_id,
       identity: session.current,
@@ -121,9 +122,7 @@ export function useOperatorJournal(missionId: string) {
     } catch (caught) {
       const failure = operatorFailure(caught);
       setError(failure);
-      if (failure.status && failure.status < 500) {
-        keep(null);
-      }
+      if (failure.status && failure.status < 500) keep(null);
       if (failure.status === 409) {
         setBlocked(true);
         if ('record_id' in request.command) {

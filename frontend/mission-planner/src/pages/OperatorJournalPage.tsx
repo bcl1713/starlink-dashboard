@@ -19,8 +19,8 @@ export function OperatorJournalPage() {
   const locked = journal.saving || !!journal.pending;
   const unavailable = journal.health.isError || !journal.health.data?.ready;
   const disabled = unavailable || locked || journal.blocked;
-  function select(record?: SavedRecord) {
-    journal.openEditor(record);
+  function select(record?: SavedRecord, acknowledged = false) {
+    journal.openEditor(record, acknowledged);
     setSelected(record);
     setCreateFromDraft(false);
     setEditorVersion((n) => n + 1);
@@ -28,7 +28,7 @@ export function OperatorJournalPage() {
   }
   async function save(command: OperatorCommand) {
     const receipt = await journal.save(command);
-    if (receipt) select(receipt.current);
+    if (receipt) select(receipt.current, true);
   }
   if (journal.health.isPending)
     return <main className="p-6">Loading Operator journal…</main>;
@@ -120,7 +120,7 @@ export function OperatorJournalPage() {
                 disabled={journal.saving}
                 onClick={async () => {
                   const receipt = await journal.retry();
-                  if (receipt) select(receipt.current);
+                  if (receipt) select(receipt.current, true);
                 }}
               >
                 Retry exact save
