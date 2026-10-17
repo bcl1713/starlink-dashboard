@@ -152,6 +152,7 @@ export function OverviewLinkSettingsCard({
     isPending,
     isSuccess,
     isError: saveError,
+    error,
   } = useUpdateOverviewLinkSettings();
   const id = useId();
   const { title, description, controls } = groups[group];
@@ -187,7 +188,9 @@ export function OverviewLinkSettingsCard({
       {isPending && <p role="status">Saving layer settings…</p>}
       {isSuccess && <p role="status">Layer settings saved</p>}
       {saveError && (
-        <p role="alert">Unable to save layer settings. Please try again.</p>
+        <p role="alert">
+          Unable to save layer settings. {error?.message} Please try again.
+        </p>
       )}
     </ConfigurationSection>
   );

@@ -1,0 +1,130 @@
+{
+  "candidateSha": "bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6",
+  "project": "starlink-operator-364-qualified",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-364-qualified-backend:bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6",
+      "id": "sha256:cbcfe24ce27c26d579dedaa15db1d3c8430856349c5097f3d9c0e29492cb787b",
+      "revision": "bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6"
+    },
+    "frontend": {
+      "tag": "starlink-operator-364-qualified-frontend:bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6",
+      "id": "sha256:e8db0d39645ff51fc5d7b0e9fd7515f46ad7f51465e06ae0d9971006f21a26bc",
+      "revision": "bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6"
+    }
+  },
+  "sourceArchiveSha256": "390abdb944333f627e1a0e711766d3a96b8048ff3680f68671603948765b4fc0",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  },
+  "browserVersion": {
+    "protocolVersion": "1.3",
+    "product": "HeadlessChrome/153.0.8010.12",
+    "revision": "@971a7443b0c9b0a9b2860529b33331b76077ec62",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "jsVersion": "15.3.76.4"
+  },
+  "hostNodeVersion": "v22.12.0",
+  "runtimeNetwork": "private internal-only Compose network; browser external requests aborted",
+  "traversal": "loopback relay to production Nginx and production backend images",
+  "failureChecks": {
+    "crashes": [
+      {
+        "barrier": "before_commit",
+        "beforeRetryCounts": [6, 6, 6],
+        "afterRetryCounts": [7, 7, 7],
+        "walBytes": 0,
+        "childReaped": true
+      },
+      {
+        "barrier": "after_commit",
+        "beforeRetryCounts": [7, 7, 7],
+        "afterRetryCounts": [7, 7, 7],
+        "walBytes": 49472,
+        "childReaped": true
+      }
+    ],
+    "recovery": {
+      "backupH": 6,
+      "preRestoreH": 7,
+      "restoredH": 6,
+      "epochRotated": true,
+      "oldEpochRejected": true,
+      "failClosed": {
+        "missing": "store_recovery_required",
+        "schema": "unsupported_schema"
+      }
+    },
+    "media": [
+      {
+        "physicalFailure": "read-only",
+        "error": "store_unavailable",
+        "countsUnchanged": [6, 6, 6],
+        "reopenReady": true,
+        "filesystem": "private 4 MiB tmpfs"
+      },
+      {
+        "physicalFailure": "full",
+        "error": "commit_outcome_unknown",
+        "countsUnchanged": [6, 6, 6],
+        "reopenReady": true,
+        "filesystem": "private 4 MiB tmpfs"
+      }
+    ],
+    "baselinePagesAfterFailures": true
+  },
+  "exportChecks": {
+    "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
+    "telemetryZipSha256Before": "26123e2239acbafcd4da8e9435d947d9dff68834ee691ad5d41546afa818de7b",
+    "telemetryZipSha256After": "26123e2239acbafcd4da8e9435d947d9dff68834ee691ad5d41546afa818de7b",
+    "captureIdentitiesAndRevisionsUnchanged": true,
+    "telemetryManifest": {
+      "artifact_kind": "telemetry",
+      "legs": [
+        {
+          "checksum": {
+            "events.csv": "6f346484a65172bea99bf66982bf14ac16cbc9a6257e89dd790d768e6e77052a",
+            "observations.csv": "f8e3d4a98b515fd9bc529dc224496f71cd453fcd7cb36a3befaeb4f36a292551"
+          },
+          "complete": false,
+          "end": "2026-10-17T16:36:41+00:00",
+          "leg_id": "synthetic-leg-1",
+          "path": "legs/001",
+          "revision": "cb532d788b0f1a76e5402f346ed2e8025d05f82ba4e5ad8559f847e2db4ae915",
+          "start": "2026-10-17T15:35:01+00:00"
+        },
+        {
+          "checksum": {
+            "events.csv": "0d47e9d335abb784764d13fb8c585be4276001a018fb8db7c30a32f163e5f8da",
+            "observations.csv": "e102208ec97220e15c79fab2b9bf6f83c4a6fa8ec44b8ee97f8fe764906a1926"
+          },
+          "complete": false,
+          "end": "2026-10-17T17:26:41+00:00",
+          "leg_id": "synthetic-leg-2",
+          "path": "legs/002",
+          "revision": "47a14736e180438f20e86c7b8633b6be906a775e987d592ba2d38238854de23d",
+          "start": "2026-10-17T16:25:01+00:00"
+        }
+      ],
+      "mission_id": "synthetic-mission-a",
+      "partial": true,
+      "schema_version": 1,
+      "source_mode": "live"
+    },
+    "planningCsvSemanticSha256Before": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+    "planningCsvSemanticSha256After": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+    "planningComparison": "existing combined timeline CSV; generated-at header excluded",
+    "simulationExportRejected": true
+  }
+}

@@ -58,7 +58,10 @@ it('saves only the selected geographic layer and preserves confirmed state on fa
   expect(country).not.toBeChecked();
   expect(apiClient.put).toHaveBeenLastCalledWith(
     '/api/overview-links/settings',
-    { state_borders_enabled: true }
+    {
+      state_borders_enabled: true,
+      expected_values: { state_borders_enabled: false },
+    }
   );
   client.clear();
 });

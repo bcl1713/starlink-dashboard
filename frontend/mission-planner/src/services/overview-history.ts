@@ -38,11 +38,17 @@ export const overviewHistorySettingsApi = {
     );
     return response.data;
   },
-  async update(windowSeconds: number): Promise<OverviewHistorySettings> {
+  async update(
+    windowSeconds: number,
+    expectedWindowSeconds?: number
+  ): Promise<OverviewHistorySettings> {
     const response = await apiClient.put<OverviewHistorySettings>(
       '/api/overview-history/settings',
       {
         window_seconds: windowSeconds,
+        ...(expectedWindowSeconds === undefined
+          ? {}
+          : { expected_window_seconds: expectedWindowSeconds }),
       }
     );
     return response.data;

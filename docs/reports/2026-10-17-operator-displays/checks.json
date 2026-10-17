@@ -1,0 +1,43 @@
+{
+  "productCandidate": "bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6",
+  "backend": {
+    "command": "UV_OFFLINE=1 timeout --kill-after=10s 30m ./tools/verify backend",
+    "exitCode": 0,
+    "passed": 3937,
+    "skipped": 20,
+    "warnings": 1,
+    "seconds": 591.17,
+    "python": "3.11.16",
+    "pytest": "9.1.1"
+  },
+  "frontend": {
+    "command": "timeout --kill-after=10s 15m npm --prefix frontend/mission-planner run test:unit",
+    "exitCode": 0,
+    "passed": 1731,
+    "files": 244,
+    "vitest": "4.1.11"
+  },
+  "harness": {
+    "exitCode": 0,
+    "passed": 22
+  },
+  "static": {
+    "blackFiles": 704,
+    "black": "passed",
+    "ruff": "passed",
+    "prettier": "passed",
+    "eslint": "passed",
+    "naming": "passed",
+    "productCiFrontend": "passed",
+    "productCiStatic": "failed: 11 existing external ADS-B link timeouts"
+  },
+  "build": {
+    "exitCode": 0,
+    "productionDockerBrowser": "passed; all three workflows"
+  },
+  "review": {
+    "critical": 0,
+    "important": 0,
+    "minorSuggestionsAddressed": true
+  }
+}

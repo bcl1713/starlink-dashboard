@@ -1,6 +1,6 @@
+import { OperatorDisplayTools } from '@/components/operator/OperatorDisplayTools';
 import { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { OperatorBrief } from '@/components/operator/OperatorBrief';
 import { readOperatorRecords } from '@/services/operator';
 import { useSearchParams } from 'react-router-dom';
@@ -144,35 +144,7 @@ export function OperatorJournalPage() {
           </div>
         )}
       </div>
-      <section
-        id="display-tools"
-        aria-label="Display tools"
-        className="flex scroll-mt-4 flex-wrap items-center gap-3 rounded-xl border bg-card p-4"
-      >
-        <h2 className="mr-auto font-semibold">Display tools</h2>
-        <Link
-          to="/overview"
-          className="inline-flex min-h-11 items-center rounded-md border px-3"
-        >
-          Open Overview
-        </Link>
-        <Link
-          to="/configuration"
-          className="inline-flex min-h-11 items-center rounded-md border px-3"
-        >
-          Display settings
-        </Link>
-        <Link
-          to={
-            missionId
-              ? `/missions/${encodeURIComponent(missionId)}`
-              : '/missions'
-          }
-          className="inline-flex min-h-11 items-center rounded-md border px-3"
-        >
-          Mission planning
-        </Link>
-      </section>
+      <OperatorDisplayTools missionId={missionId} />
       <section
         id="operator-journal"
         aria-label="Operator journal"

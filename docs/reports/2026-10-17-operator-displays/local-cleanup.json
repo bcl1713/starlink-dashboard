@@ -1,0 +1,17 @@
+{
+  "recordedCheckPids": [2119177, 2119187, 2119188, 2119191, 2119232, 2170976],
+  "remainingCheckPids": [],
+  "pytestTemporaryPaths": [
+    "/tmp/pytest-of-oracle-worker/pytest-295",
+    "/tmp/pytest-of-oracle-worker/pytest-296",
+    "/tmp/pytest-of-oracle-worker/pytest-297",
+    "/tmp/pytest-of-oracle-worker/pytest-298"
+  ],
+  "allCheckProcessGroupsExited": true,
+  "pytestTemporaryPathsRemoved": [
+    "/tmp/pytest-of-oracle-worker/pytest-295",
+    "/tmp/pytest-of-oracle-worker/pytest-296",
+    "/tmp/pytest-of-oracle-worker/pytest-297",
+    "/tmp/pytest-of-oracle-worker/pytest-298"
+  ]
+}
