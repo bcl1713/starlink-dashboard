@@ -24,6 +24,8 @@ MissionPoiKind = Literal[
     "ka_outage_end",
     "starshield_outage_start",
     "starshield_outage_end",
+    "starshield_transition_start",
+    "starshield_transition_end",
 ]
 GeneratedPoiSource = Literal["mission-timeline"]
 

@@ -335,6 +335,16 @@ def prepare_mission_timeline(
             starshield_enabled=mission.transports.starshield_enabled is not False,
         )
 
+    from app.mission.pop_pois import transition_window_pois
+
+    pop_pois = transition_window_pois(
+        mission, timeline.pop_forecast, projector, parent_mission_id
+    )
+    generated_pois += pop_pois
+    timeline.map_pois.extend(
+        TimelineMapPoi.model_validate(p.model_dump()) for p in pop_pois
+    )
+
     from app.mission.pop_capabilities import (
         capability_input_revision,
         capture_call_capabilities,

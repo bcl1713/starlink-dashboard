@@ -17,7 +17,6 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
   usePlanningEditEpoch(controller);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [planApproval, setPlanApproval] = useState('');
-  const [gapApproval, setGapApproval] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -85,18 +84,13 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
     const evaluation = preview.data?.[card.leg.id];
     return evaluation?.errors?.length || evaluation?.map_diagnostics?.length;
   });
-  const gaps = selected.some((card) => {
-    const evaluation = preview.data?.[card.leg.id];
-    return !!evaluation?.outage_seconds || !!evaluation?.backup_gaps?.length;
-  });
   const publish = async () => {
     if (
       unsaved ||
       !eligible ||
       missing ||
       blocked ||
-      planApproval !== signature ||
-      (gaps && gapApproval !== signature)
+      planApproval !== signature
     )
       return;
     setBusy(true);
@@ -126,7 +120,6 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
                 evaluation_identity:
                   preview.data![card.leg.id].context.input_identity,
                 satellite_plan_confirmed: true,
-                gap_acknowledged: gapApproval === signature,
                 no_ars_confirmed: draft.no_ars_confirmed ?? false,
                 confirmed_ar_ids: rows
                   .filter((row) => row.match_status !== 'excluded')
@@ -249,20 +242,6 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
         />
         I approve the selected satellite plans and Starshield settings
       </label>
-      {gaps && (
-        <label className="flex min-h-11 items-center gap-2">
-          <input
-            type="checkbox"
-            aria-label="I acknowledge the listed X-band outages and backup gaps"
-            disabled={unsaved || preview.isFetching || missing}
-            checked={gapApproval === signature}
-            onChange={(event) =>
-              setGapApproval(event.target.checked ? signature : '')
-            }
-          />
-          I acknowledge the listed X-band outages and backup gaps
-        </label>
-      )}
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
       <Button
@@ -275,8 +254,7 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
           blocked ||
           !!preview.error ||
           preview.isFetching ||
-          planApproval !== signature ||
-          (gaps && gapApproval !== signature)
+          planApproval !== signature
         }
       >
         Publish reviewed plans

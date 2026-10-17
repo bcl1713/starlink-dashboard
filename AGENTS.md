@@ -1,5 +1,24 @@
 # Workspace instructions
 
+## Customer-facing display and planning assumptions
+
+Overview is a customer-facing, 10-foot operational map. Keep it readable at a
+distance. Use the existing map POIs and brief advisories in the Overview theme;
+keep diagnostic panels, IP addresses, raw timestamps, forecast lists, and
+planning controls off this display. Put detailed information in mission planning
+or operator settings instead.
+
+Mission outputs are best estimates by design. Do not require users to
+acknowledge estimate uncertainty, predicted outages, or backup gaps before
+saving or using a plan. Keep genuine input validation separate from confidence
+disclaimers.
+
+Assume Starshield is available unless explicitly disabled or deliberately marked
+down. Unknown PoP/location or handover timing does not mean a service outage.
+Transition windows remain advisories on the map; the agreed full-window planning
+outage applies only where Starshield is the sole usable transport, with usable
+Ka or coordinated concurrency-only X fallback protecting the plan.
+
 ## Git workflow
 
 Start each task in an isolated Git worktree on its own feature branch, based on

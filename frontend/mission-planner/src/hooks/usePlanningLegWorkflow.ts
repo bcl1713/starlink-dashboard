@@ -84,7 +84,6 @@ export function usePlanningLegWorkflow({
   const [evaluation, setEvaluation] = useState<PlanningEvaluation | null>(null);
   const [previewError, setPreviewError] = useState('');
   const [planConfirmed, setPlanConfirmed] = useState(false);
-  const [gapAcknowledged, setGapAcknowledged] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [routePreview, setRoutePreview] = useState<RouteBindingPreview | null>(
     null
@@ -100,7 +99,6 @@ export function usePlanningLegWorkflow({
     setDirty(true);
     setEvaluation(null);
     setPlanConfirmed(false);
-    setGapAcknowledged(false);
     setProposal((current) => (current ? { ...current, state: 'stale' } : null));
     setMessage('');
   };
@@ -165,7 +163,6 @@ export function usePlanningLegWorkflow({
     setDirty(false);
     setEvaluation(null);
     setPlanConfirmed(false);
-    setGapAcknowledged(false);
     return current;
   };
   useEffect(() => {
@@ -249,7 +246,6 @@ export function usePlanningLegWorkflow({
       setRoutePreview(null);
       setEvaluation(null);
       setPlanConfirmed(false);
-      setGapAcknowledged(false);
       setProposal(null);
       onAcceptedRoute();
       setMessage('Route accepted. Review AR windows first.');
@@ -361,7 +357,6 @@ export function usePlanningLegWorkflow({
           input_identity: inputIdentity,
           evaluation_identity: evaluation.context.input_identity,
           satellite_plan_confirmed: planConfirmed,
-          gap_acknowledged: gapAcknowledged,
           no_ars_confirmed: draft.no_ars_confirmed ?? false,
           confirmed_ar_ids: rows
             .filter((r) => r.match_status !== 'excluded')
@@ -465,8 +460,6 @@ export function usePlanningLegWorkflow({
     previewError,
     planConfirmed,
     setPlanConfirmed,
-    gapAcknowledged,
-    setGapAcknowledged,
     file,
     setFile,
     routePreview,

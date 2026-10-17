@@ -1,5 +1,4 @@
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
-import { popDisplayTime } from './simulation-run-projection';
 import {
   Suspense,
   useCallback,
@@ -1256,7 +1255,6 @@ export function OverviewPage() {
               )}
               <OverviewPopAdvisories
                 status={status}
-                nowMs={popDisplayTime(simulationRun, missionNow, currentTime)}
                 realNowMs={currentTime}
                 refreshFailed={statusRequestFailed || simulationClock.stale}
               />

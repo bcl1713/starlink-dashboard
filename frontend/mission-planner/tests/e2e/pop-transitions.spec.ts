@@ -198,13 +198,18 @@ test('planner and Overview retain source windows and position drives synthetic I
         error?: unknown;
       }) => {
         await page.goto(process.env.POP_ORIGIN + '/overview');
-        const overview = page.getByRole('region', {
-          name: 'Starshield PoP advisories',
+        const overview = page.getByRole('status', {
+          name: 'Starshield advisory',
         });
-        await expect(overview).toBeVisible();
         await expect(
-          overview.getByLabel('PoP transition details')
-        ).toBeVisible();
+          page.getByRole('region', { name: 'Starshield PoP advisories' })
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole('list', { name: 'Map POIs', includeHidden: true })
+        ).toContainText('Starshield transition entry');
+        await expect(
+          page.getByRole('list', { name: 'Map POIs', includeHidden: true })
+        ).toContainText('Starshield transition exit');
         await page.screenshot({
           path: root + '/overview-upcoming-1920x1080.png',
         });
@@ -214,18 +219,16 @@ test('planner and Overview retain source windows and position drives synthetic I
               .at(-1)
               ?.status.pop_advisories?.some((item) => item.kind === 'window')
           ) {
-            await expect(overview.getByRole('status')).toContainText(
-              'Starshield PoP transition possible'
+            await expect(overview).toContainText(
+              'Starshield transition window'
             );
             await overview.scrollIntoViewIfNeeded();
-            await expect(
-              overview.locator('[data-pop-track] button')
-            ).toHaveCount(2);
+            await expect(overview.locator('details, button')).toHaveCount(0);
             await overview.screenshot({
-              path: root + '/overview-active-markers-details.png',
+              path: root + '/overview-active-transition-advisory.png',
             });
-            await expect(overview.getByRole('status')).toContainText(
-              'Starshield PoP transition possible'
+            await expect(overview).toContainText(
+              'Starshield transition window'
             );
             activeCaptured = true;
             break;
@@ -288,18 +291,17 @@ test('explicit synthetic response fixtures render early, late and mismatch evalu
     await page.goto(process.env.POP_ORIGIN + '/overview', {
       waitUntil: 'domcontentloaded',
     });
-    const panel = page.getByRole('region', {
-      name: 'Starshield PoP advisories',
+    const panel = page.getByRole('status', {
+      name: 'Starshield advisory',
     });
-    await expect(panel).toContainText(
-      'Observed PoP: ' + fixture.observation.entry.city
-    );
-    if (name === 'early')
-      await expect(panel.getByRole('status')).toHaveCount(0);
+    if (name === 'early') await expect(panel).toHaveCount(0);
     if (name === 'late')
-      await expect(panel).toContainText('Overdue PoP transition');
+      await expect(panel).toContainText('Starshield transition possible');
     if (name === 'mismatch')
-      await expect(panel).toContainText('A transition is possible at any time');
+      await expect(panel).toContainText('Starshield transition possible');
+    await expect(page.getByText('Observed PoP:', { exact: false })).toHaveCount(
+      0
+    );
     await page.screenshot({
       path: root + `/synthetic-response-${name}-1920x1080.png`,
     });
