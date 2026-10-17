@@ -1,0 +1,1 @@
+{"action":"restart","command":["docker","compose","-p","starlink-operator-362-fix1","-f","/tmp/starlink-operator-362-fix1-evidence/source/tools/acceptance/operator-journal/compose.yml","restart","starlink-location"],"pid":962251,"pgid":960392,"state":"complete","returncode":0}

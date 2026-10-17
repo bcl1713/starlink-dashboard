@@ -1,0 +1,26 @@
+{
+  "rawSourceSha256": {
+    "summary.json": "c5d0dd47cf5e3e5788ffe6be827c6dbf8e11309e1839fb37cdea6bc9071830a5",
+    "ownership.json": "b4dbeba24c8b594caa3bd580fa955ffcbb1cd1e2cc150910545d9841a4649d69",
+    "exports.json": "23700b1a618907167f3b028c2abb793d96201706695d05d93cba965de906e7b3",
+    "projections.json": "17934a8557e6bfa1840242e91afcef6c953bc33956760a77d0a20be878fb0941",
+    "failures.json": "c72037f6aa990ccdf9c84231455488ee30847f1fbae37dc07fa60f073e5be25b",
+    "qualification.json": "e82d1c7e83f88dbfe55c7a7e4ae18866821474c52fb22cc1dd28e6e27c76f0e2",
+    "mobile-trace.zip": "a4ae96c5646df4c446306f34231544e9c40cc1e33df9bea8e7979b379d97826c",
+    "desktop-trace.zip": "6f6ceb87488c4737e2e5a0ca1e53812c97e21c1ae6f672b7654294727881a1c1",
+    "mobile-overview-baseline.png": "591080ee4330f7574f6e38c69767bceb091d157b004fa2b26b3fe9efbc7b5b32",
+    "desktop-overview-baseline.png": "2964d1cc587542e340534521e3f25af4b1fafc15ef35961989281eba30bd588f",
+    "browser-proof.json": "ceda551e312c4f747e5cf3926f7f3a10a0307eda88dc8dab6135a182116a7d6d",
+    "browser-control-1792256851558002409.json": "db3b88482e30e6f456717382a24fccc0221e8aada8b46a37fa6c37446b4b4126",
+    "mobile-844x390-saved.png": "497815319e73748dd943b9fc943b9507665f1e3de7388f98f0de6e0227d5cc21",
+    "browser-control-1792256851394977622.json": "753db114101a1e113bb5f31edc9ceb4aa5afe5f1d05bdd82cde0bea73b7c4df5",
+    "browser-control-1792256851176891328.json": "ca40a33dcf60d43d8e33b64d68d79302f2362499fe055659d1fee86b61b81d86",
+    "browser-control-1792256850949667173.json": "bd3f06ab4146dbf36e12d6261c5a8abf7c71d6a42c1fcfbf3c661ede47a9753a",
+    "browser-control-1792256845610066307.json": "651a8c10de82afb800924da80242bd3c50e42750aaa981b0883566a38221af8c",
+    "browser-control-1792256845497041212.json": "744f3d17def7007cf592b91832a44f3872f9683b2884b099a9f3e263b23d0130",
+    "mobile-390x844-error.png": "28f969c2d7f824d6c5716c4fa8dc27d98eb2eb50f710216041ce933f904a009f",
+    "browser-control-1792256845214330127.json": "0a6f025788c19cc92ff45333eb8222d96b8293b922a24e07f344b1c034cb2863",
+    "desktop-1920x1080.png": "d08e438444a80542426aac68624731d669e589e9d719d99f59fe0bf7ff5f3352"
+  },
+  "sanitization": "Local workspace/home paths replaced; synthetic data preserved; no raw environment/build logs."
+}

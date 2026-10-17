@@ -1,5 +1,9 @@
 # Operator journal production acceptance
 
+Latest replacement proof: [ownership fix acceptance](fix-1/README.md) for
+`3b033fd13fdfcb2c0abd7bf9a5d464707afd8af4`. The original evidence below is
+retained for comparison.
+
 Task 9 passed on 2026-10-17 using only synthetic inputs. The tested product
 commit is `e8d6d0f88d9c04ed1f757bd378fa32f0980e7e9e`. This report and its
 artifacts are a later evidence-only commit; they do not change that observed
