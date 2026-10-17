@@ -1,0 +1,22 @@
+{
+  "synthetic": true,
+  "clock": "2026-10-17T16:00:00Z",
+  "captures": [
+    "shell-1920x1080-preflight.png",
+    "shell-1920x1080-leg.png",
+    "shell-1920x1080-between-legs.png",
+    "shell-390x844-preflight.png",
+    "shell-390x844-leg.png",
+    "shell-390x844-between-legs.png",
+    "shell-844x390-preflight.png",
+    "shell-844x390-leg.png",
+    "shell-844x390-between-legs.png"
+  ],
+  "recovery": {
+    "failedReadVisible": true,
+    "reconnect": true,
+    "restart": true,
+    "unchangedRecords": 3,
+    "summaryRequestsOver16Seconds": 0
+  }
+}

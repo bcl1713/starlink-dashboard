@@ -1,0 +1,92 @@
+{
+  "candidate": "3322a3677ac046aac369286a643340d4557694c8",
+  "frontend": {
+    "files": 243,
+    "tests": 1723,
+    "node": "22.22.2",
+    "lint": "passed",
+    "build": "passed (existing bundle-size advisory)"
+  },
+  "backendOperator": {
+    "tests": 195,
+    "python": "3.11.16"
+  },
+  "harness": {
+    "tests": 22
+  },
+  "productionBrowser": {
+    "tests": 2,
+    "synthetic": true
+  },
+  "screenshots": {
+    "shell-summary-unavailable.png": [
+      1920,
+      1080
+    ],
+    "shell-844x390-between-legs.png": [
+      844,
+      390
+    ],
+    "shell-390x844-empty.png": [
+      390,
+      844
+    ],
+    "desktop-overview-baseline.png": [
+      1920,
+      1080
+    ],
+    "shell-390x844-preflight.png": [
+      390,
+      844
+    ],
+    "shell-844x390-leg.png": [
+      844,
+      390
+    ],
+    "shell-390x844-leg.png": [
+      390,
+      844
+    ],
+    "shell-1920x1080-empty.png": [
+      1920,
+      1080
+    ],
+    "shell-844x390-empty.png": [
+      844,
+      390
+    ],
+    "shell-1920x1080-between-legs.png": [
+      1920,
+      1080
+    ],
+    "mobile-overview-baseline.png": [
+      390,
+      844
+    ],
+    "shell-1920x1080-preflight.png": [
+      1920,
+      1080
+    ],
+    "shell-1920x1080-leg.png": [
+      1920,
+      1080
+    ],
+    "shell-390x844-between-legs.png": [
+      390,
+      844
+    ],
+    "shell-844x390-preflight.png": [
+      844,
+      390
+    ]
+  },
+  "earlierRun": {
+    "candidate": "a6cc740efa8591cf1457963d72d4b2eb0f12036d",
+    "browserPassed": true,
+    "failure": "Shared fixture gained shell rows, breaking fixed crash-probe counts. Shell records are now explicitly opt-in. Final full run passed.",
+    "cleanupPassed": true
+  },
+  "review": {
+    "importantFinding": "Paused summary query presented as loading during store reconciliation. Fixed with disabled refresh and unavailable cards; six identity-change cases cover it."
+  }
+}
