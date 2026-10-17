@@ -1,6 +1,6 @@
 # Operator conferences verification
 
-Issue #366, parent #361; PR #377 targets dev. All records, routes, customers and
+Issue 366, parent 361; PR 377 targets dev. All records, routes, customers and
 telemetry in these checks are synthetic. Operator remains disabled by default.
 No aircraft, terminal or operational-readiness claim is made.
 
@@ -16,13 +16,13 @@ unknown.
 Intended transport and operator-reported configuration have separate provenance;
 neither proves the path carrying a call. Protection uses existing per-leg
 timeline PoP windows, continuity intervals and modeled transport segments. The
-browser fixture overlaps the real #348 1620–1630Z window and asserts both
+browser fixture overlaps the real 348 1620–1630Z window and asserts both
 advisory and existing modeled planned-outage labels. Saved timelines remain
 partial coverage without authoritative current-input alignment, including
 equal-clock snapshots. Operator-entered transport-change correlation remains
-issue #369; alerts remain #368, broader redesign #376 and operations ZIP wiring
-#370. No routing command, approval, blocking acknowledgment or new notification
-infrastructure was added.
+issue 369; alerts remain 368, broader redesign 376 and operations ZIP
+wiring 370. No routing command, approval, blocking acknowledgment or new
+notification infrastructure was added.
 
 ## Verification
 
@@ -36,7 +36,7 @@ infrastructure was added.
   tests**. External HTTP documentation availability remains advisory under
   accepted policy.
 - Focused acceptance proof/fixture tests: **20 passed**. The lifecycle test
-  drives real #349 multi-leg flight detection, archive sealing and telemetry
+  drives real 349 multi-leg flight detection, archive sealing and telemetry
   package generation while comparing conference/customer records before and
   after.
 - Fresh production backend/frontend images and real Nginx path, Docker 29.8.1,
@@ -44,7 +44,7 @@ infrastructure was added.
   `1f1012f5b8f50530aeaa126621b169231a84905d`.
 - Five production-browser journeys passed: communications, conferences, shared
   display controls, journal and shell. Viewports: 1920×1080, 390×844, 844×390.
-- #366 journey covers two overlapping scheduled calls sharing a conference,
+- Issue 366 journey covers two overlapping scheduled calls sharing a conference,
   either joining order, interrupted/restored participation, call completion and
   cancellation independence, discrepancy, real PoP-window overlap, two clients,
   a lost acknowledged join response followed by an intervening counterpart edit,
