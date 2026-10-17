@@ -85,7 +85,7 @@ containers/processes only. Ownership file records project, config, temporary
 paths, private volumes, session/PID/PGID, image identity, fixture IDs and
 evidence roots before allocation.
 
-- [ ] Write runner tests for dirty/mismatched/short candidate rejection,
+- [x] Write runner tests for dirty/mismatched/short candidate rejection,
       incorrect image identity, scoped private-volume teardown, early failure
       and timeout child reaping. No broad process kill or Docker prune; tests
       exercise runner behavior, not just grep its source. Run
@@ -96,25 +96,25 @@ evidence roots before allocation.
 
   expect runner absent.
 
-- [ ] Implement runner with exit/INT/TERM cleanup, explicit subprocess deadlines
+- [x] Implement runner with exit/INT/TERM cleanup, explicit subprocess deadlines
       and owned PGIDs, borrowed provisioned browsers, and actor Docker
       context/socket preserved. Use 60-minute build/acceptance maximum and
       10-second forced-stop grace, with progress records while running. No
       internet at test runtime; report missing provisioned dependencies instead
       of fetching them silently.
-- [ ] Write Playwright journey using two independent contexts: desktop 1920×1080
+- [x] Write Playwright journey using two independent contexts: desktop 1920×1080
       and mobile 390×844 then 844×390. Create late 1430–1442Z observation at
       1600Z, edit an end 1545→1535, fix typo/leg, inspect history,
       remove/restore without reason prompts. Verify default/supplied reason
       attribution, UTC, current-row uniqueness and pending/saved/error
       accessibility cues.
-- [ ] Exercise concurrent version conflict; lose one mutation acknowledgment
+- [x] Exercise concurrent version conflict; lose one mutation acknowledgment
       after backend commit using browser response handling (label the
       injection), retry exact key, inspect persisted SQLite counts through owned
       backend, refresh both clients. Stop/restart only owned backend to test
       reconnect persistence; optional provider stays unreachable, critical
       journal still usable.
-- [ ] In owned disposable stores run subprocess termination before/after commit,
+- [x] In owned disposable stores run subprocess termination before/after commit,
       committed WAL recovery, a genuinely constrained/full volume and read-only
       failure, backup restore/epoch rejection, missing DB and bad schema
       failure. Verify no silent empty store or false success, and baseline pages
@@ -122,7 +122,7 @@ evidence roots before allocation.
       audit: schedule/status chronology, actual versus recorded times,
       removed-record activities, association move boundaries, common H, and
       checksums. Inspect explicit audit separately.
-- [ ] Configure Playwright to use the already-owned production origin; no Vite
+- [x] Configure Playwright to use the already-owned production origin; no Vite
       webServer. Runner executes
 
   ```sh
@@ -133,11 +133,11 @@ evidence roots before allocation.
   fixture API routes. Close contexts and browser in finally; save
   screenshots/trace with synthetic identities.
 
-- [ ] Run focused backend `tests/operator`, related #348/#349 integration tests,
+- [x] Run focused backend `tests/operator`, related #348/#349 integration tests,
       frontend unit suite/build, and canonical scoped Python/TS/doc lint. Verify
       the runner tests pass. Commit code/harness before final production runs
       with `test: verify Operator journal production failure paths`.
-- [ ] From repository root run
+- [x] From repository root run
 
   ```sh
   timeout --kill-after=10s 60m python tools/acceptance/operator-journal/run.py --candidate "$(git rev-parse HEAD)" --project starlink-operator-362-final --evidence /tmp/starlink-operator-362-final-evidence
@@ -148,7 +148,7 @@ evidence roots before allocation.
   failure, projection and baseline checks green. If code changes, rerun against
   the new committed SHA; do not claim evidence for a different candidate.
 
-- [ ] Verify owned PID/PGID/listeners gone, project-filtered
+- [x] Verify owned PID/PGID/listeners gone, project-filtered
       containers/networks/ disposable volumes empty (approved host check if
       hidden). Preserve sanitized evidence and open-PR worktree, remove owned
       temporary artifacts. Commit evidence separately, distinguishing tested
@@ -164,17 +164,17 @@ evidence roots before allocation.
 
 ## Evidence checklist
 
-- [ ] Production image IDs/SHA, fixture/run mode, versions, commands and exit
+- [x] Production image IDs/SHA, fixture/run mode, versions, commands and exit
       codes.
-- [ ] Desktop/mobile portrait/landscape captures and two-client conflict/retry
+- [x] Desktop/mobile portrait/landscape captures and two-client conflict/retry
       proof.
-- [ ] Crash barriers, restart integrity, full/read-only error proof and restore
+- [x] Crash barriers, restart integrity, full/read-only error proof and restore
       epoch.
-- [ ] Sanitized current/activity/audit examples and component snapshot/checksum
+- [x] Sanitized current/activity/audit examples and component snapshot/checksum
       data.
-- [ ] Overview/layout/history and planning/telemetry export baseline
+- [x] Overview/layout/history and planning/telemetry export baseline
       comparisons.
-- [ ] Migration/backout instructions and explicit zero-owned-resource teardown.
+- [x] Migration/backout instructions and explicit zero-owned-resource teardown.
 
 Full call/conference workflows and real mission-package wiring remain later
 child deliverables. This gate proves #362 foundation behavior only, entirely

@@ -162,6 +162,10 @@ before running; acceptance never downloads runtime dependencies. Preserve the
 actor's Docker context/socket. The runner records ownership before allocation,
 checks OCI revision labels, uses an internal Docker network and closes all
 project containers, private volumes, process groups and the loopback listener.
+When rootless Docker suppresses published ports on an internal network, a
+task-owned loopback byte relay reaches port 80 inside the production Nginx
+container through Docker exec. It preserves network isolation and HTTP bytes;
+the evidence records the origin, Nginx header, relay process and teardown.
 Only acceptance fixtures are mounted; application code and the browser bundle
 come from the production images. Synthetic simulation uses a fixed 1600Z clock.
 Separate synthetic operational-format telemetry probes are explicitly labeled.
