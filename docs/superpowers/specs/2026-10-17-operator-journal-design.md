@@ -1,11 +1,14 @@
 # Operator records and durable journal — issue #362
 
-Status: proposed specification for review; no product implementation authorized.
+Status: design approved for implementation planning; no product implementation
+authorized. The review clarifications on automatic audit reasons and default
+activity exports are included.
 
 Parent: [#361](https://github.com/bcl1713/starlink-dashboard/issues/361). First
 slice: [#362](https://github.com/bcl1713/starlink-dashboard/issues/362).
 Baseline inspected: `origin/dev` at `a39b750d` (2026-10-17), including #348 and
-issue #349. The dedicated SQLite direction is approved for design only.
+issue #349. The detailed design is approved; the implementation plan requires
+separate review and execution-method selection.
 
 ## Purpose and scope
 
