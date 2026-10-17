@@ -249,3 +249,31 @@ it('retains missing between-leg references and allows explicit reassociation', a
     (screen.getByLabelText('Entry mission ID') as HTMLInputElement).value
   ).toBe('mission-a');
 });
+it('offers summary and display navigation while quick observation focuses a clean editor and protects a dirty draft', async () => {
+  vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+  mount();
+  const quick = await screen.findByRole('button', {
+    name: 'Record observation',
+  });
+  await waitFor(() => expect(quick.hasAttribute('disabled')).toBe(false));
+  Element.prototype.scrollIntoView = vi.fn();
+  fireEvent.click(quick);
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByLabelText('Title'))
+  );
+  fireEvent.change(screen.getByLabelText('Title'), {
+    target: { value: 'Keep observation draft' },
+  });
+  expect(quick.hasAttribute('disabled')).toBe(true);
+  expect(
+    screen.getByRole('link', { name: 'Display settings' }).getAttribute('href')
+  ).toBe('/configuration');
+  expect(
+    screen.getByRole('link', { name: 'Open Overview' }).getAttribute('href')
+  ).toBe('/overview');
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh summary' }));
+  expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe(
+    'Keep observation draft'
+  );
+});

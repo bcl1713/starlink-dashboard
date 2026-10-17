@@ -182,6 +182,7 @@ export function JournalEditor({
         <label className="block">
           Title
           <input
+            name="title"
             className={control}
             required
             maxLength={200}

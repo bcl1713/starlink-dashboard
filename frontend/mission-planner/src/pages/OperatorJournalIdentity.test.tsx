@@ -86,6 +86,16 @@ it.each([
       await client.invalidateQueries({ queryKey: ['operator-health'] });
     });
     await screen.findByRole('button', { name: 'Reread and use saved state' });
+    expect(
+      screen
+        .getByRole('button', { name: 'Refresh summary' })
+        .hasAttribute('disabled')
+    ).toBe(true);
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Next requirement' })
+      ).getByText(/Summary unavailable/)
+    ).toBeTruthy();
     expect(title().value).toBe('Unsent local draft');
     expect(
       screen

@@ -15,7 +15,9 @@ from app.operator.store import OperatorStore
 from scenario import ScenarioClock, make_demo
 
 
-def seed_demo(root: Path, *, clock: Clock, mode: str) -> dict:
+def seed_demo(
+    root: Path, *, clock: Clock, mode: str, include_shell: bool = False
+) -> dict:
     """Seed a caller-owned root before startup, restoring global storage binding."""
     if mode not in ("simulation", "live"):
         raise ValueError("Unknown fixture mode")
@@ -26,7 +28,7 @@ def seed_demo(root: Path, *, clock: Clock, mode: str) -> dict:
         seed_clock = ScenarioClock(datetime.fromisoformat(manifest["started_at"]))
     else:
         seed_clock = ScenarioClock(clock.now())
-    demo = make_demo(seed_clock)
+    demo = make_demo(seed_clock, include_shell=include_shell)
     settings = OperatorSettings(
         enabled=True,
         root=root / "operator",

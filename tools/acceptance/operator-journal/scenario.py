@@ -36,7 +36,7 @@ class ScenarioClock:
         self.elapsed += seconds
 
 
-def make_demo(clock: Clock) -> dict:
+def make_demo(clock: Clock, *, include_shell: bool = False) -> dict:
     missions = [
         Mission(
             id=f"synthetic-mission-{letter}",
@@ -75,6 +75,89 @@ def make_demo(clock: Clock) -> dict:
                         "end_state": "ongoing" if kind == "conference" else "instant",
                     },
                     payload=payload,
+                )
+            )
+    # Separate missions leave the journal regression fixture untouched.
+    for scope in (("preflight", "leg", "between_legs") if include_shell else ()):
+        mission_id = f"synthetic-shell-{scope.replace('_', '-')}"
+        missions.append(
+            Mission(
+                id=mission_id,
+                name=f"Synthetic Shell {scope}",
+                legs=[
+                    MissionLeg(
+                        id=f"synthetic-shell-leg-{i}",
+                        name=f"Synthetic Leg {i}",
+                        route_id="synthetic-route",
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                    for i in (1, 2)
+                ],
+            )
+        )
+        for kind, title, minutes in (
+            ("call", "Synthetic customer coordination", 20),
+            ("risk", "Synthetic transition advisory", 30),
+            ("issue", "Synthetic audio follow-up", 0),
+        ):
+            payload = {
+                "entry_type": kind,
+                "title": title,
+                "note": "Synthetic saved record; no measured service claim.",
+            }
+            if kind == "call":
+                payload["status"] = "scheduled"
+            if kind == "issue":
+                payload["status"] = "open"
+            if scope == "between_legs":
+                payload.update(
+                    previous_leg_id="synthetic-shell-leg-1",
+                    next_leg_id="synthetic-shell-leg-2",
+                )
+            commands.append(
+                CreateRecord(
+                    record_type=kind,
+                    mission_id=mission_id,
+                    scope=scope,
+                    leg_id="synthetic-shell-leg-1" if scope == "leg" else None,
+                    time={
+                        "occurred_at": clock.now(),
+                        "precision": "exact",
+                        "end_state": "instant",
+                        "planned_start_at": clock.now() + timedelta(minutes=minutes),
+                        "planned_end_at": clock.now() + timedelta(minutes=minutes + 10),
+                    },
+                    payload=payload,
+                )
+            )
+    # Append rather than interleave so existing seeded command keys remain stable.
+    if include_shell:
+        for scope in ("preflight", "leg", "between_legs"):
+            commands.append(
+                CreateRecord(
+                    record_type="call",
+                    mission_id=f"synthetic-shell-{scope.replace('_', '-')}",
+                    scope=scope,
+                    leg_id="synthetic-shell-leg-1" if scope == "leg" else None,
+                    time={
+                        "occurred_at": clock.now(),
+                        "precision": "exact",
+                        "end_state": "instant",
+                        "planned_start_at": clock.now() - timedelta(hours=1),
+                        "planned_end_at": clock.now() - timedelta(minutes=50),
+                    },
+                    payload={
+                        "entry_type": "call",
+                        "title": "Synthetic overdue coordination",
+                        "status": "scheduled",
+                        "note": "Synthetic earlier requirement with an unconfirmed completion status.",
+                        "previous_leg_id": (
+                            "synthetic-shell-leg-1" if scope == "between_legs" else None
+                        ),
+                        "next_leg_id": (
+                            "synthetic-shell-leg-2" if scope == "between_legs" else None
+                        ),
+                    },
                 )
             )
     return {

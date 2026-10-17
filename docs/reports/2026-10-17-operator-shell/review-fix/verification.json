@@ -1,0 +1,21 @@
+{
+  "candidate": "26a43e60ba84178a73f467395672f788f53290df",
+  "frontend": {
+    "files": 243,
+    "tests": 1725,
+    "node": "22.22.2",
+    "lint": "passed",
+    "build": "passed (existing bundle-size advisory)"
+  },
+  "harnessTests": 22,
+  "review": "Focused independent review found no further issue. Regression failed before the correction, passed afterward.",
+  "backend": "Backend product source unchanged; prior 195 Operator tests retained, fresh full production storage/projection/export probes passed.",
+  "preview": {
+    "url": "http://10.10.50.30:18363/operator?mission_id=synthetic-shell-leg",
+    "uiAssetsCandidate": "26a43e60ba84178a73f467395672f788f53290df",
+    "previewImageUnchanged": true,
+    "existingRecordsPreserved": true,
+    "futureAndOverdueRendered": true,
+    "browserClosed": true
+  }
+}
