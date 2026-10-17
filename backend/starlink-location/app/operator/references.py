@@ -31,7 +31,9 @@ class MissionReferences:
     def _load(self, mission_id):
         try:
             return storage.load_mission_v2(mission_id)
-        except (OSError, RuntimeError, ValueError) as error:
+        except (OSError, RuntimeError, ValueError, TypeError) as error:
+            # The planning loader assigns decoded metadata fields before model
+            # validation; a non-object JSON root raises TypeError at that step.
             raise OperatorError("store_unavailable") from error
 
     @staticmethod
