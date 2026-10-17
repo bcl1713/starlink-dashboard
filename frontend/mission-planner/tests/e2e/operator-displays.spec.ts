@@ -65,6 +65,7 @@ test('Operator display controls use shared server settings and same-browser ackn
             starshield_link_enabled: true,
             x_band_link_enabled: true,
             legend_enabled: true,
+            latency_panel_enabled: true,
           },
         })
       ).ok()
@@ -128,7 +129,24 @@ test('Operator display controls use shared server settings and same-browser ackn
     await expect(other.getByLabel('Overview history window')).toHaveValue(
       '900'
     );
+    await expect(overview.getByLabel('Network history context')).toContainText(
+      'LAST 15 MIN'
+    );
     proof.historySynced = true;
+
+    const latency = overview.getByRole('region', {
+      name: 'Network latency history',
+      exact: true,
+    });
+    await expect(latency).toBeVisible();
+    await page.getByRole('switch', { name: 'Network latency panel' }).click();
+    await expect(latency).toHaveCount(0);
+    await expect(
+      other.getByRole('switch', { name: 'Network latency panel' })
+    ).not.toBeChecked();
+    await page.getByRole('switch', { name: 'Network latency panel' }).click();
+    await expect(latency).toBeVisible();
+    proof.overviewRenderedVisibilitySynced = true;
 
     for (const name of ['Normal', 'Communications', 'Weather']) {
       await page
@@ -256,6 +274,12 @@ test('Operator display controls use shared server settings and same-browser ackn
       const name = `display-controls-${viewport.width}x${viewport.height}.png`;
       await capture.screenshot({ path: join(evidence, name), fullPage: true });
       (proof.captures as string[]).push(name);
+      await capture
+        .getByRole('region', { name: 'Display presets', exact: true })
+        .scrollIntoViewIfNeeded();
+      const presetCapture = `display-presets-${viewport.width}x${viewport.height}.png`;
+      await capture.screenshot({ path: join(evidence, presetCapture) });
+      (proof.captures as string[]).push(presetCapture);
     }
     await overview.screenshot({
       path: join(evidence, 'display-overview-1920x1080.png'),
