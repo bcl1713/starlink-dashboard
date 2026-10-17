@@ -29,12 +29,14 @@ function timestamp(value: string | null) {
 export function CallEditor({
   draft,
   disabled,
+  creating = true,
   onChange,
   onSubmit,
   onDirty,
 }: {
   draft: CallInput;
   disabled: boolean;
+  creating?: boolean;
   onChange: (draft: CallInput) => void;
   onSubmit: (draft: CallInput) => void;
   onDirty?: () => void;
@@ -69,7 +71,7 @@ export function CallEditor({
       const start = timestamp(draft.time.planned_start_at);
       const actual = timestamp(draft.time.occurred_at);
       const end = timestamp(draft.time.ended_at);
-      if (draft.payload.status === 'scheduled' && !start)
+      if (creating && draft.payload.status === 'scheduled' && !start)
         throw new Error('Scheduled calls require a planned start.');
       if (end && (!actual || Date.parse(end) < Date.parse(actual)))
         throw new Error('Actual end requires a start and cannot precede it.');

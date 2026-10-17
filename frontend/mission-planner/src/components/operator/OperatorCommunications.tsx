@@ -177,6 +177,7 @@ export function OperatorCommunications({
         <CallEditor
           key={generation}
           draft={draft}
+          creating={!selected}
           disabled={disabled || !!selected?.deleted}
           onDirty={() => markDirty(true)}
           onChange={(value) => {

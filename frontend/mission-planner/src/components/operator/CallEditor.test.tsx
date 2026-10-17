@@ -124,3 +124,25 @@ it('preserves precise known planned duration on an unrelated edit', () => {
     '2026-10-17T17:12:30.123456Z'
   );
 });
+it('corrects legacy scheduled unknown timing without requiring an invented start', () => {
+  const submit = vi.fn();
+  const initial = callDraft(undefined, 'planned', 'demo');
+  initial.payload.prep_lead_minutes = null;
+  function Wrapper() {
+    const [draft, setDraft] = useState(initial);
+    return (
+      <CallEditor
+        draft={draft}
+        creating={false}
+        disabled={false}
+        onChange={setDraft}
+        onSubmit={submit}
+      />
+    );
+  }
+  render(<Wrapper />);
+  field('Notes (optional)', 'Legacy correction');
+  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  expect(submit.mock.calls[0][0].time.planned_start_at).toBeNull();
+  expect(submit.mock.calls[0][0].payload.prep_lead_minutes).toBeNull();
+});

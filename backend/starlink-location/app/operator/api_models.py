@@ -58,6 +58,11 @@ class CallUpdate(CallCreate):
     expected_version: PositiveVersion
     audit_note: AuditNote | None = None
 
+    @model_validator(mode="after")
+    def scheduled_start(self):
+        # Creation requires a commitment time; corrections retain legacy unknowns.
+        return self
+
     @model_validator(mode="before")
     @classmethod
     def create_lead_default(cls, value):

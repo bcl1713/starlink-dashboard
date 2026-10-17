@@ -188,3 +188,33 @@ def test_conference_independent_and_call_associations(api, record_data):
         == 409
     )
     assert not service.get(str(participation.record_id)).deleted
+
+
+def test_legacy_scheduled_unknown_start_can_be_corrected(api, record_data):
+    from tests.operator.service_helpers import create as internal_create
+
+    service = api.app.state.operator_runtime.service
+    saved = internal_create(
+        service,
+        record_data,
+        record_type="call",
+        payload={"entry_type": "call", "title": "Synthetic legacy scheduled"},
+    )
+    path = BASE + "/records/" + str(saved.record_id)
+    read = api.get(path).json()["record"]
+    body = {
+        name: read[name]
+        for name in (
+            "record_type",
+            "schema_version",
+            "mission_id",
+            "scope",
+            "leg_id",
+            "time",
+            "payload",
+        )
+    }
+    body["payload"]["note"] = "Corrected without inventing timing"
+    response = api.put(path, json=dict(body, expected_version=1), headers=headers(api))
+    assert response.status_code == 200, response.text
+    assert response.json()["saved_records"][0]["time"]["planned_start_at"] is None

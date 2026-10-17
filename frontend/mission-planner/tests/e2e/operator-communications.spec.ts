@@ -123,7 +123,15 @@ test('communications requirements and retrospective corrections survive two clie
       expect(planned.time.planned_start_at).toBe('2026-10-18T01:45:00.000000Z');
       expect(planned.time.planned_end_at).toBeNull();
       await expect(
-        region.getByText(/Prepare: 2026-10-18 01:35:00/)
+        region
+          .getByRole('listitem')
+          .filter({
+            has: page.getByRole('heading', {
+              name: `Synthetic scheduled ${viewport.width}`,
+              exact: true,
+            }),
+          })
+          .getByText(/Prepare: 2026-10-18 01:35:00/)
       ).toBeVisible();
       await region
         .getByLabel('Status', { exact: true })
@@ -192,14 +200,12 @@ test('communications requirements and retrospective corrections survive two clie
       proof.retrospectiveCorrection = true;
       await completed(page);
       const row = () =>
-        region
-          .getByRole('listitem')
-          .filter({
-            has: page.getByRole('heading', {
-              name: `Synthetic corrected ${viewport.width}`,
-              exact: true,
-            }),
-          });
+        region.getByRole('listitem').filter({
+          has: page.getByRole('heading', {
+            name: `Synthetic corrected ${viewport.width}`,
+            exact: true,
+          }),
+        });
       await row().getByRole('button', { name: 'Call history' }).click();
       await expect(
         region
