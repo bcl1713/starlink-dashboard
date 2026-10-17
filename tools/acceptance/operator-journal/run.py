@@ -179,6 +179,8 @@ def qualify(owner):
             owner.compose(
                 "exec",
                 "-T",
+                "--user",
+                "appuser",
                 "starlink-location",
                 "python",
                 f"/acceptance/{script}.py",

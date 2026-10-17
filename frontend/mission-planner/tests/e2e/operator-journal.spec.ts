@@ -59,7 +59,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       .getByLabel('Title', { exact: true })
       .fill('Synthetic late observatoin');
     await page
-      .getByLabel('Note', { exact: true })
+      .getByRole('textbox', { name: /^Note/ })
       .fill('Synthetic report entered at 1600Z about 1430–1442Z.');
     await page.getByLabel('Entry type').selectOption('call_observation');
     await page.getByLabel('Time precision').selectOption('exact');
@@ -148,7 +148,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       })
       .click();
     await phone
-      .getByLabel('Note', { exact: true })
+      .getByRole('textbox', { name: /^Note/ })
       .fill('Synthetic mobile competing correction');
     await page
       .getByRole('button', {
@@ -157,7 +157,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       })
       .click();
     await page
-      .getByLabel('Note', { exact: true })
+      .getByRole('textbox', { name: /^Note/ })
       .fill('Synthetic desktop accepted correction');
     await save(page);
     const conflictResponse = phone.waitForResponse((r) =>
@@ -170,13 +170,13 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await expect(phone.getByRole('alert')).toContainText(
       'Your draft is retained'
     );
-    await expect(phone.getByLabel('Note', { exact: true })).toHaveValue(
+    await expect(phone.getByRole('textbox', { name: /^Note/ })).toHaveValue(
       'Synthetic mobile competing correction'
     );
     await phone
       .getByRole('button', { name: 'Reread and use saved state' })
       .click();
-    await expect(phone.getByLabel('Note', { exact: true })).toHaveValue(
+    await expect(phone.getByRole('textbox', { name: /^Note/ })).toHaveValue(
       'Synthetic desktop accepted correction'
     );
     proof.conflict = {
