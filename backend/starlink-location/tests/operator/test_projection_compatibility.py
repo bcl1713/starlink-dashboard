@@ -79,6 +79,7 @@ def test_legacy_status_receipts_and_projection(service, record_data):
 
     legacy = service.get(record_id)
     assert legacy.payload.status == "scheduled"
+    assert legacy.payload.prep_lead_minutes is None
     submit(
         service,
         update(
@@ -122,3 +123,75 @@ def test_legacy_status_receipts_and_projection(service, record_data):
             receipt_for_key(connection, key, "legacy").canonical_response == canonical
         )
     assert verify_store(service.store).ready
+
+
+def test_old_call_read_and_correction_roundtrip(api, record_data):
+    from tests.operator.service_helpers import create
+    from tests.operator.api_helpers import BASE, headers
+    from app.operator.projections import capture_projection
+
+    service = api.app.state.operator_runtime.service
+    saved = create(
+        service,
+        record_data,
+        record_type="call",
+        payload={
+            "entry_type": "call",
+            "title": "Synthetic legacy",
+            "status": "completed",
+        },
+    )
+    # Omit newly introduced fields exactly as a pre-upgrade writer did.
+    with service.store.connect(write=True) as connection:
+        raw = connection.execute(
+            "SELECT payload_json FROM revisions WHERE record_id=?",
+            (str(saved.record_id),),
+        ).fetchone()[0]
+        payload = json.loads(raw)
+        for field in (
+            "prep_lead_minutes",
+            "party",
+            "coordinator",
+            "communications_kind",
+        ):
+            payload.pop(field)
+        connection.execute("DROP TRIGGER IF EXISTS revisions_no_update")
+        connection.execute(
+            "UPDATE revisions SET payload_json=? WHERE record_id=?",
+            (json.dumps(payload), str(saved.record_id)),
+        )
+    path = BASE + "/records/" + str(saved.record_id)
+    before = capture_projection(
+        service.store, mission_id="demo-mission", include_audit=True
+    )
+    current = api.get(path).json()["record"]
+    assert current["payload"]["prep_lead_minutes"] is None
+    assert (
+        capture_projection(
+            service.store, mission_id="demo-mission", include_audit=True
+        ).checksums
+        == before.checksums
+    )
+    body = {
+        name: current[name]
+        for name in (
+            "schema_version",
+            "record_type",
+            "mission_id",
+            "leg_id",
+            "scope",
+            "time",
+            "payload",
+        )
+    }
+    result = api.put(path, json=dict(body, expected_version=1), headers=headers(api))
+    assert result.status_code == 200
+    assert result.json()["saved_records"][0]["payload"]["prep_lead_minutes"] is None
+    bundle = capture_projection(
+        service.store, mission_id="demo-mission", include_audit=True
+    )
+    history = [
+        json.loads(row) for row in bundle.files["operations/audit.jsonl"].splitlines()
+    ]
+    assert "prep_lead_minutes" not in history[0]["payload"]
+    assert history[1]["payload"]["prep_lead_minutes"] is None

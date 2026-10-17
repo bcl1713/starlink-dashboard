@@ -10,7 +10,7 @@ from fastapi.routing import APIRoute
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
-from app.operator.api_models import JournalCreate, JournalTransition, JournalUpdate
+from app.operator.api_models import JournalTransition, PublicCreate, PublicUpdate
 from app.operator.common import Identifier, RecordId
 from app.operator.errors import OperatorError
 from app.operator.models import (
@@ -135,7 +135,7 @@ def require_service(runtime):
 def mutate(request, command, key, epoch):
     with runtime_for(request) as runtime:
         result = require_service(runtime).execute_result(
-            command, key=key, epoch=epoch, writable_types={"journal_entry"}
+            command, key=key, epoch=epoch, writable_types={"journal_entry", "call"}
         )
         return JSONResponse(
             result.receipt.canonical_response,
@@ -159,7 +159,7 @@ def health(request: Request):
 @router.post("/records")
 def create(
     request: Request,
-    body: JournalCreate,
+    body: PublicCreate,
     key: str = Header(alias="Idempotency-Key"),
     epoch: str = Header(alias="X-Operator-Store-Epoch"),
 ):
@@ -170,7 +170,7 @@ def create(
 def update(
     request: Request,
     record_id: RecordId,
-    body: JournalUpdate,
+    body: PublicUpdate,
     key: str = Header(alias="Idempotency-Key"),
     epoch: str = Header(alias="X-Operator-Store-Epoch"),
 ):

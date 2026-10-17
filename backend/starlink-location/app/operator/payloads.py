@@ -32,7 +32,13 @@ class CallObservationPayload(PayloadBase):
 
 class CallPayload(PayloadBase):
     entry_type: Literal["call"] = "call"
-    status: Literal["scheduled", "completed", "cancelled"] = "scheduled"
+    status: Literal["tentative", "scheduled", "delayed", "completed", "cancelled"] = (
+        "scheduled"
+    )
+    party: str | None = Field(default=None, max_length=200)
+    coordinator: str | None = Field(default=None, max_length=200)
+    communications_kind: Literal["voice", "vtc", "other"] | None = None
+    prep_lead_minutes: Annotated[int, Field(strict=True, ge=0, le=10080)] | None = None
     conference_id: RecordId | None = None
 
 
