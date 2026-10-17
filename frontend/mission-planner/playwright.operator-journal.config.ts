@@ -13,6 +13,7 @@ export default defineConfig({
   reporter: 'list',
   outputDir: `${process.env.OPERATOR_ACCEPTANCE_EVIDENCE}/playwright`,
   use: {
+    actionTimeout: 20_000,
     baseURL: process.env.OPERATOR_ACCEPTANCE_ORIGIN,
     headless: true,
     launchOptions: { args: ['--disable-dev-shm-usage', '--no-sandbox'] },

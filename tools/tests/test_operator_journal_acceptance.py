@@ -167,3 +167,22 @@ def test_loopback_relay_preserves_bytes_and_reaps_transport():
         thread.join(timeout=3)
     assert not thread.is_alive()
     assert not server.children
+
+
+def test_failed_browser_still_exercises_independent_storage_checks(tmp_path):
+    module = implementation()
+    assert hasattr(module, "run_checks"), "Independent acceptance checks are missing"
+
+    def broken_browser():
+        raise RuntimeError("browser failed")
+
+    def storage():
+        (tmp_path / "storage-tested").touch()
+        return {"full": True}
+
+    with pytest.raises(RuntimeError, match="browser"):
+        module.run_checks(tmp_path, {"browser": broken_browser, "storage": storage})
+    assert (tmp_path / "storage-tested").exists()
+    report = json.loads((tmp_path / "qualification.json").read_text())
+    assert report["checks"]["storage"]["full"]
+    assert report["errors"] == {"browser": "browser failed"}

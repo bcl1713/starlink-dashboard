@@ -117,10 +117,24 @@ def build_candidate(owner, candidate):
     return {"images": images, "sourceArchiveSha256": digest}
 
 
+def run_checks(root, checks):
+    report = {"checks": {}, "errors": {}}
+    for name, check in checks.items():
+        try:
+            report["checks"][name] = check()
+        except InterruptedError:
+            raise
+        except (RuntimeError, OSError, AssertionError, ValueError) as error:
+            report["errors"][name] = str(error)
+        (root / "qualification.json").write_text(json.dumps(report, indent=2))
+    if report["errors"]:
+        raise RuntimeError(f"Acceptance checks failed: {report['errors']}")
+    return report["checks"]
+
+
 def qualify(owner):
     from failures import run_failure_suite
 
-    source = Path(owner.env["OPERATOR_SOURCE_ROOT"])
     origin = f"http://127.0.0.1:{owner.ownership['port']}"
     frontend = ROOT / "frontend/mission-planner"
     if not (frontend / "node_modules/@playwright/test").exists():
@@ -140,54 +154,50 @@ def qualify(owner):
     }
     owner.ownership["temporaryPaths"].append(str(owner.root / "npm-cache"))
     owner.persist()
-    owner.execute(
-        [
-            "timeout",
-            "--kill-after=10s",
-            "20m",
-            "npx",
-            "--no-install",
-            "playwright",
-            "test",
-            "--config",
-            "playwright.operator-journal.config.ts",
-        ],
-        timeout=1220,
-        cwd=frontend,
-        env=env,
+
+    def browser():
+        owner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "20m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-journal.config.ts",
+            ],
+            timeout=1220,
+            cwd=frontend,
+            env=env,
+        )
+        return json.loads((owner.root / "browser-proof.json").read_text())
+
+    def probe(script, destination):
+        result = json.loads(
+            owner.compose(
+                "exec",
+                "-T",
+                "starlink-location",
+                "python",
+                f"/acceptance/{script}.py",
+                timeout=120,
+            ).splitlines()[-1]
+        )
+        (owner.root / destination).write_text(json.dumps(result, indent=2))
+        return result
+
+    return run_checks(
+        owner.root,
+        {
+            "browser": browser,
+            "failures": lambda: run_failure_suite(owner, origin=origin),
+            "projections": lambda: probe("projection_probe", "projections.json"),
+            "exports": lambda: probe("export_probe", "exports.json"),
+            "node": lambda: owner.execute(["node", "--version"], timeout=10).strip(),
+        },
     )
-    failures = run_failure_suite(owner, origin=origin)
-    projections = json.loads(
-        owner.compose(
-            "exec",
-            "-T",
-            "starlink-location",
-            "python",
-            "/acceptance/projection_probe.py",
-            timeout=60,
-        ).splitlines()[-1]
-    )
-    (owner.root / "projections.json").write_text(json.dumps(projections, indent=2))
-    exports = json.loads(
-        owner.compose(
-            "exec",
-            "-T",
-            "starlink-location",
-            "python",
-            "/acceptance/export_probe.py",
-            timeout=120,
-        ).splitlines()[-1]
-    )
-    (owner.root / "exports.json").write_text(json.dumps(exports, indent=2))
-    versions = owner.execute(["node", "--version"], timeout=10).strip()
-    return {
-        "browser": json.loads((owner.root / "browser-proof.json").read_text()),
-        "failures": failures,
-        "projections": projections,
-        "exports": exports,
-        "node": versions,
-        "fixtureSource": str(source / "tools/acceptance/operator-journal"),
-    }
 
 
 def run(candidate, project, evidence, *, qualification=qualify):

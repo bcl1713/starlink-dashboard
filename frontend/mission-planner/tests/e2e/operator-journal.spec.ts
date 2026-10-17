@@ -64,7 +64,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await page.getByLabel('Entry type').selectOption('call_observation');
     await page.getByLabel('Time precision').selectOption('exact');
     await page.getByLabel('Occurred at (UTC)').fill('2026-10-17T14:30:00Z');
-    await page.getByLabel('End state', { exact: true }).selectOption('known');
+    await page.getByLabel('End state').selectOption('known');
     await page.getByLabel('Ended at (UTC)').fill('2026-10-17T14:42:00Z');
     const late = await save(page);
     expect(late.recorded_at).toBe('2026-10-17T16:00:00.000000Z');
@@ -72,7 +72,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await page
       .getByLabel('Title', { exact: true })
       .fill('Synthetic late observation');
-    await page.getByLabel('Scope', { exact: true }).selectOption('leg');
+    await page.getByLabel('Scope').selectOption('leg');
     await page.getByLabel('Leg ID', { exact: true }).fill('synthetic-leg-2');
     await page
       .getByLabel('Audit note (optional)')
@@ -96,7 +96,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       .fill('Synthetic ended call');
     await page.getByLabel('Time precision').selectOption('exact');
     await page.getByLabel('Occurred at (UTC)').fill('2026-10-17T15:00:00Z');
-    await page.getByLabel('End state', { exact: true }).selectOption('known');
+    await page.getByLabel('End state').selectOption('known');
     await page.getByLabel('Ended at (UTC)').fill('2026-10-17T15:45:00Z');
     const ended = await save(page);
     await page.getByLabel('Ended at (UTC)').fill('2026-10-17T15:35:00Z');
