@@ -86,10 +86,13 @@ requires the lead key. All five statuses retain the wire spelling `cancelled`.
 - [ ] Add failing tests for scheduled creation without start, party/time quick
       creation, unknown duration, reversed actual/planned intervals, future
       actual time, invalid numeric/text fields, and mismatched payload/type.
-- [ ] Run
-      `timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt pytest tests/operator/test_call_api.py -q`
-      from the backend; confirm failures are missing call contracts, not setup
-      errors.
+- [ ] From the backend, run the focused contracts and confirm failures are
+      missing call contracts, not setup errors:
+
+  ```bash
+  timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt pytest tests/operator/test_call_api.py -q
+  ```
+
 - [ ] Extend DTOs/payload fields and public writable types to calls and journal
       entries only. Normalize create defaults only at the boundary; enforce
       update type immutability inside the transaction, preserving receipt-first
@@ -116,8 +119,16 @@ requires the lead key. All five statuses retain the wire spelling `cancelled`.
 create/update bodies to `JournalInput | CallInput`. Use nullable/optional lead
 on saved legacy payloads, required nullable lead on call writes. Export
 `preparationAt(record: SavedRecord): string | null`,
-`shiftCallTime(time: RecordTime, minutes: number): RecordTime`, and
-`callDraft(record: SavedRecord | undefined, mode: 'planned' | 'retrospective', missionId: string): CallInput`.
+`shiftCallTime(time: RecordTime, minutes: number): RecordTime`, and the
+following draft constructor:
+
+```typescript
+callDraft(
+  record: SavedRecord | undefined,
+  mode: 'planned' | 'retrospective',
+  missionId: string
+): CallInput
+```
 
 - [ ] Write failing tests: planned draft lead 10; retrospective null;
       legacy/null/zero/positive edit round-trips retain values. Actual and
@@ -242,11 +253,16 @@ deployment stack.
       exact-SHA qualification. Read cloud Docker skill references and
       `docs/development/cloud-docker.md`; preserve the actor's Docker
       context/socket and proxy/CA configuration.
-- [ ] Record ownership; run
-      `timeout --kill-after=30s 90m python3 tools/acceptance/operator-journal/run.py --candidate <full-HEAD-SHA> --project operator-365-<unique> --evidence /tmp/operator-365-<unique>`
-      from repository root. A pass requires fresh production images, actual
-      Nginx browser journeys, all proof files and verified teardown; on timeout
-      verify owned process tree is gone before retry.
+- [ ] Record ownership; run from repository root. A pass requires fresh
+      production images, actual Nginx browser journeys, all proof files and
+      verified teardown; after timeout verify the owned process tree is gone:
+
+  ```bash
+  timeout --kill-after=30s 90m python3 tools/acceptance/operator-journal/run.py \
+    --candidate <full-HEAD-SHA> --project starlink-operator-365-<unique> \
+    --evidence /tmp/operator-365-<unique>
+  ```
+
 - [ ] Run `timeout --kill-after=10s 30m ./tools/verify backend`, `frontend`, and
       static with `ACCEPTANCE_POLICY_BASE_SHA` set to the exact merge base.
       Preserve versions/output and verify no test resources remain.
