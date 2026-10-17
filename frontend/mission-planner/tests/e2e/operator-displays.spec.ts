@@ -36,6 +36,8 @@ test('Operator display controls use shared server settings and same-browser ackn
   });
   const counterpart = await browser.newContext({
     viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
     timezoneId: 'UTC',
   });
   try {
@@ -70,7 +72,10 @@ test('Operator display controls use shared server settings and same-browser ackn
     await overview.goto('/overview');
     await openControls(page);
     await openControls(other);
-    const display = page.getByLabel('Overview display', { exact: true });
+    const display = page.getByRole('combobox', {
+      name: 'Overview display',
+      exact: true,
+    });
     await expect(
       page.getByRole('button', { name: 'Recenter view' })
     ).toBeEnabled();
@@ -243,11 +248,13 @@ test('Operator display controls use shared server settings and same-browser ackn
       { width: 390, height: 844 },
       { width: 844, height: 390 },
     ]) {
-      await page.setViewportSize(viewport);
-      await noOverflow(page);
-      await page.locator('#display-tools').scrollIntoViewIfNeeded();
+      const capture = viewport.width === 1920 ? page : other;
+      await capture.setViewportSize(viewport);
+      await openControls(capture);
+      await noOverflow(capture);
+      await capture.locator('#display-tools').scrollIntoViewIfNeeded();
       const name = `display-controls-${viewport.width}x${viewport.height}.png`;
-      await page.screenshot({ path: join(evidence, name), fullPage: true });
+      await capture.screenshot({ path: join(evidence, name), fullPage: true });
       (proof.captures as string[]).push(name);
     }
     await overview.screenshot({
@@ -255,11 +262,12 @@ test('Operator display controls use shared server settings and same-browser ackn
     });
     expect(errors).toEqual([]);
     proof.browserErrors = errors;
+    proof.completed = true;
+  } finally {
     writeFileSync(
       join(evidence, 'displays-proof.json'),
       JSON.stringify(proof, null, 2)
     );
-  } finally {
     await counterpart.close();
     await context.close();
   }
