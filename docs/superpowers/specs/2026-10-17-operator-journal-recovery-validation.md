@@ -62,13 +62,14 @@ explicitly. Reserve headroom through deployment storage sizing; this limit
 cannot guarantee the physical disk has space for a pending transaction.
 Disk-full rollback tests remain mandatory.
 
-Soft removal is not erasure. Current exports omit removed records; audit exports
-and backups retain them. Document this in settings/export help. Physical purge
-is an offline administrative whole-store action after export/backup and
-retention decision, including its backup sets; per-record hard deletion is
-outside MVP. No new uncertainty acknowledgment gates are introduced. Sensitive
-details stay on the local volume and explicitly requested exports, never
-repository fixtures.
+Soft removal is not erasure. Current-state exports omit removed records; the
+default activity export retains operational change/removal history, while full
+audit exports and backups retain original revision bodies. Document this in
+settings/export help. Physical purge is an offline administrative whole-store
+action after export/backup and retention decision, including its backup sets;
+per-record hard deletion is outside MVP. No new uncertainty acknowledgment gates
+are introduced. Sensitive details stay on the local volume and explicitly
+requested exports, never repository fixtures.
 
 Schema migrations are numbered forward-only, checksummed, and applied once under
 an exclusive maintenance lock with Operator requests drained. Each supported
@@ -122,6 +123,20 @@ children. Typed call/conference/issue fixtures exercise the internal service
 contracts now; complete call scheduling and conference lifecycle browser
 journeys belong to #365/#366 and the epic's final gate, not a claimed #362
 capability.
+
+Review-specific acceptance: save a typo/time/association correction, removal,
+and restore on mobile with no supplied reason and no extra prompt; assert an
+automatic labeled reason, author/time/version, and successful idempotent replay.
+Supply an optional note and verify operator-authored reason attribution; blank
+notes fall back to automatic defaults, overlong notes fail input validation.
+Export default current plus activity without requesting audit, and reconstruct a
+synthetic call's schedule shift/cancellation, an issue's open/resolve steps, a
+late-entered actual interval, corrected end time, and remove/restore sequence.
+Assert one current row per active record, one activity item per revision,
+accurate before/after times and recording chronology, deleted-record activity
+retention, cross-mission move boundaries, and common H across all projections
+during concurrent edits. Full prior free-text snapshots appear only in requested
+audit.
 
 Run focused backend contracts first, then production-image Docker/Nginx browser
 acceptance on the exact committed candidate with a task-specific Compose project

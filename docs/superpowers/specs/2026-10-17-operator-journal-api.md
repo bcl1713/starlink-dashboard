@@ -16,8 +16,8 @@ auth, push, HTTPS provisioning, or new infrastructure.
 | `POST /records`              | Create a typed record; returns 201 and saved version 1                  |
 | `GET /records/{id}`          | Current saved record, including tombstone if removed                    |
 | `PUT /records/{id}`          | Full editable-state replacement with expected version; returns 200      |
-| `POST /records/{id}/remove`  | Reason and expected version; appends tombstone                          |
-| `POST /records/{id}/restore` | Reason and expected version; restores last content                      |
+| `POST /records/{id}/remove`  | Expected version and optional audit note; appends tombstone             |
+| `POST /records/{id}/restore` | Expected version and optional audit note; restores last content         |
 | `GET /records?mission_id=…`  | Current active projection, optional scope/leg/type filters              |
 | `GET /records/{id}/history`  | Explicitly labeled immutable audit versions                             |
 | `GET /journal?mission_id=…`  | Mission audit stream in acceptance sequence                             |
@@ -35,6 +35,15 @@ precondition. No blind PUT/upsert. Removed-record edits require restore first.
 is a restore/session guard, not an authentication credential. Missing epoch
 is 422. Epoch rotation happens under the same exclusive maintenance boundary
 used to restore the database and must finish durably before the store reopens.
+
+Update/remove/restore bodies accept optional `audit_note` (at most 1000
+characters). Omitted or blank notes never cause validation failure: the backend
+sets the automatic reason and origin defined in the schema document. A supplied
+nonblank note is labeled operator-authored. Responses/history expose `reason`
+and `reason_origin`; clients cannot claim an automatic reason was user-written.
+The mobile editor saves routine changes directly, with an optional note in the
+existing editor and no additional reason prompt or required field. The reason
+and its origin are part of the same revision transaction, not a later write.
 
 Example create (synthetic data only):
 
