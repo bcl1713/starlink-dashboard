@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { OperatorConferences } from './OperatorConferences';
 import type { CallInput, OperatorCommand, SavedRecord } from '@/types/operator';
 import { useOperatorJournal } from '@/hooks/api/useOperatorJournal';
 import { CallEditor } from './CallEditor';
@@ -14,6 +15,8 @@ export function OperatorCommunications({
   onDirty?: (dirty: boolean) => void;
 }) {
   const calls = useOperatorJournal(missionId, 'call');
+  const [conferencesOpen, setConferencesOpen] = useState(false);
+  const [conferenceDirty, setConferenceDirty] = useState(false);
   const [draft, setDraft] = useState<CallInput>(() =>
     callDraft(undefined, 'planned', missionId)
   );
@@ -27,7 +30,7 @@ export function OperatorCommunications({
   const disabled = unavailable || locked || calls.blocked || needsCurrent;
   function markDirty(value: boolean) {
     setDirty(value);
-    onDirty?.(value);
+    onDirty?.(value || conferenceDirty);
   }
   function open(
     record?: SavedRecord,
@@ -59,6 +62,22 @@ export function OperatorCommunications({
       className="min-w-0 scroll-mt-4 space-y-4"
     >
       <h2 className="text-xl font-semibold">Communications</h2>
+      <details
+        onToggle={(event) =>
+          event.currentTarget.open && setConferencesOpen(true)
+        }
+      >
+        <summary>Conferences and customers</summary>
+        {conferencesOpen && (
+          <OperatorConferences
+            missionId={missionId}
+            onDirty={(value) => {
+              setConferenceDirty(value);
+              onDirty?.(value || dirty);
+            }}
+          />
+        )}
+      </details>
       <p className="text-sm text-muted-foreground">
         Plan requirements or record completed calls. Conference sessions remain
         independent. UTC snapshot; refresh to update.

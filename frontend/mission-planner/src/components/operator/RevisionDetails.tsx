@@ -28,6 +28,33 @@ export function RevisionDetails({ record, association }: ReadRecord) {
           <p>Conference: {payload.conference_id ?? 'None'}</p>
         </>
       )}
+      {payload.entry_type === 'conference' && (
+        <>
+          <p>
+            Conference state: {payload.status ?? 'Unknown'} · Operator
+            verification: {revisionUtc(payload.verified_at ?? null)}
+          </p>
+          <p>
+            Intended transport: {payload.intended_transport ?? 'Unknown'} ·
+            Operator-reported configuration:{' '}
+            {payload.configured_transport ?? 'Unknown'} · Configuration
+            reported: {revisionUtc(payload.configuration_reported_at ?? null)}
+          </p>
+        </>
+      )}
+      {payload.entry_type === 'participation' && (
+        <>
+          <p>
+            Customer state: {payload.state ?? 'Unknown'} · Participant:{' '}
+            {payload.participant ?? 'Unknown'}
+          </p>
+          <p>
+            Call: {payload.call_id ?? 'Unassigned'} · Conference:{' '}
+            {payload.conference_id ?? 'Unassigned'} · Restored from interval:{' '}
+            {payload.resumes_participation_id ?? 'None'}
+          </p>
+        </>
+      )}
       <p>Planned start: {revisionUtc(time.planned_start_at)}</p>
       <p>Planned end: {revisionUtc(time.planned_end_at)}</p>
       <p>
