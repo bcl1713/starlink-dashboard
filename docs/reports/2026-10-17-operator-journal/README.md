@@ -1,7 +1,9 @@
 # Operator journal production acceptance
 
-Latest replacement proof: [ownership fix acceptance](fix-1/README.md) for
-`3b033fd13fdfcb2c0abd7bf9a5d464707afd8af4`. The original evidence below is
+Latest replacement proof: [final feature fixes](final-fix/README.md) for
+`b67108909c9a2bac180ff04c03eb79bad6392a82`. The prior
+[ownership fix acceptance](fix-1/README.md) remains available.
+The original evidence below is
 retained for comparison.
 
 Task 9 passed on 2026-10-17 using only synthetic inputs. The tested product
