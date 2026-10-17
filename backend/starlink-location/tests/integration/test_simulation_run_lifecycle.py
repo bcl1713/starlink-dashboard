@@ -4,9 +4,10 @@ import pytest
 
 from app.mission.storage import get_leg_timeline_path, load_mission_v2, save_mission_v2
 from app.services.flight_state import get_flight_state_manager
+from tests.integration.test_simulation_pop_status import pop_api, start_paced
 from tests.integration.test_simulation_run_api import LEG, api, start
 
-__all__ = ["api"]
+__all__ = ["api", "pop_api"]
 
 
 @pytest.mark.parametrize(
@@ -205,3 +206,41 @@ def test_shutdown_leaves_no_replay_work(api):
     assert service.runtime.prepare_tick() is None
     assert service.runtime.selected_plan() is None
     assert service.status().state == "cancelled"
+
+
+def test_restarting_replay_resets_synthetic_observation_and_completion(pop_api):
+    client, service, clocks, pops, _ = pop_api
+    start_paced(client, 10)
+    first = client.get("/api/status").json()
+    clocks.advance(15.1)
+    service.collect(service.coordinator, service.publish)
+    switched = client.get("/api/status").json()
+    assert switched["pop_observation"]["ip"] == "192.0.2.2"
+    assert len(pops.state.completed_ids) == 1
+    start_paced(client, 100)
+    restarted = client.get("/api/status").json()
+    assert restarted["pop_observation"]["ip"] == "192.0.2.1"
+    assert restarted["pop_forecast"]["revision"] != first["pop_forecast"]["revision"]
+    assert pops.state.completed_ids == frozenset()
+
+
+def test_new_replay_initial_tie_publishes_reset_identity_before_first_status(pop_api):
+    from prometheus_client import generate_latest
+
+    from app.core.metrics import REGISTRY
+
+    client, service, clocks, _, set_sites = pop_api
+    set_sites([("a", 0, -1), ("b", 0, 1)])
+    start_paced(client, 10)
+    assert client.get("/api/status").json()["pop_observation"]["ip"] == "192.0.2.1"
+    clocks.advance(0.1)
+    service.collect(service.coordinator, service.publish)
+    assert client.get("/api/status").json()["pop_observation"]["ip"] == "192.0.2.2"
+    start_paced(client, 10)
+    info = next(
+        line
+        for line in generate_latest(REGISTRY).decode().splitlines()
+        if line.startswith("starlink_ground_entry_point_info{")
+    )
+    assert 'ip="192.0.2.1"' in info
+    assert client.get("/api/status").json()["pop_observation"]["ip"] == "192.0.2.1"

@@ -169,10 +169,10 @@ table {
   width: 18%;
 }
 .impact-col {
-  width: 36%;
+  width: 40%;
 }
 .remain-col {
-  width: 30%;
+  width: 26%;
 }
 .posture-col {
   width: 16%;
@@ -260,4 +260,9 @@ tbody td {
 }
 .conflict-label.light {
   fill: #fff;
+}
+
+.legend .pop-legend {
+  border: 2px solid #735124;
+  padding: 0 4px;
 }

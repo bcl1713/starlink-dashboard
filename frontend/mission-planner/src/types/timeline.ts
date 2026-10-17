@@ -1,3 +1,4 @@
+import type { CallContinuityProjection, PopForecast } from '@/types/pop';
 export interface KaTransition {
   latitude: number;
   longitude: number;
@@ -21,6 +22,8 @@ export interface TimelineSegment {
 }
 
 export interface Timeline {
+  pop_forecast?: PopForecast | null;
+  call_continuity?: CallContinuityProjection | null;
   mission_leg_id: string;
   created_at: string;
   segments: TimelineSegment[];

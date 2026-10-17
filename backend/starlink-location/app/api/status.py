@@ -1,13 +1,17 @@
 """JSON status endpoint handler."""
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, ConfigDict
 
+from app.mission.pop_status import PopStatusService
 from app.services.ground_entry_point import get_cached_ground_entry_point
+from app.services.pop.continuity_models import CallContinuityProjection
 
 router = APIRouter()
 
 # Global status state
 _coordinator: object | None = None
+_pop_service: PopStatusService = PopStatusService()
 
 
 def set_coordinator(coordinator):
@@ -16,7 +20,20 @@ def set_coordinator(coordinator):
     _coordinator = coordinator
 
 
-@router.get("/api/status")
+def set_pop_service(service: PopStatusService):
+    """Inject the active-route advisory lifecycle alongside the coordinator."""
+    global _pop_service
+    _pop_service = service
+
+
+class StatusResponse(BaseModel):
+    """Retain telemetry wire fields and publish typed optional call evidence."""
+
+    model_config = ConfigDict(extra="allow")
+    call_continuity: CallContinuityProjection | None = None
+
+
+@router.get("/api/status", response_model=StatusResponse)
 async def status():
     """
     Get current telemetry status as JSON.
@@ -65,10 +82,28 @@ async def status():
 
     try:
         telemetry = _coordinator.get_current_telemetry()
-        ground_entry_point = get_cached_ground_entry_point()
+        pop_payload = _pop_service.status_payload(telemetry)
+        if pop_payload["pop_observation"]["source"] == "simulation":
+            entry = pop_payload["pop_observation"]["entry"]
+            ground_entry_position = (
+                {"latitude": entry["latitude"], "longitude": entry["longitude"]}
+                if entry
+                else None
+            )
+        else:
+            ground_entry_point = get_cached_ground_entry_point()
+            ground_entry_position = (
+                {
+                    "latitude": ground_entry_point.latitude,
+                    "longitude": ground_entry_point.longitude,
+                }
+                if ground_entry_point
+                else None
+            )
         availability = telemetry.metric_availability
 
         return {
+            **pop_payload,
             "timestamp": telemetry.timestamp.isoformat(),
             "position": {
                 "latitude": telemetry.position.latitude,
@@ -110,14 +145,7 @@ async def status():
                 "uptime_seconds": telemetry.environmental.uptime_seconds,
                 "temperature_celsius": telemetry.environmental.temperature_celsius,
             },
-            "ground_entry_point": (
-                {
-                    "latitude": ground_entry_point.latitude,
-                    "longitude": ground_entry_point.longitude,
-                }
-                if ground_entry_point is not None
-                else None
-            ),
+            "ground_entry_point": ground_entry_position,
         }
     except (
         RuntimeError,

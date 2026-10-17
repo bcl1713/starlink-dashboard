@@ -143,7 +143,7 @@ def test_quiet_nominal_only_standard_sof():
     data = fixture("f01")
     leg = project_briefing_leg(snapshot(data))
     contiguous(leg)
-    assert all(i.posture == "Nominal" for i in leg.intervals)
+    assert all(i.physical_posture == "Nominal" for i in leg.intervals)
     assert [
         (
             i.start_time.strftime("%H:%M:%S"),
@@ -151,11 +151,10 @@ def test_quiet_nominal_only_standard_sof():
             i.window_number,
         )
         for i in leg.coordination_rows
+        if i.restrictions or i.physical_posture != "Nominal" or i.limitations
     ] == [tuple(r) for r in data["expected"]["rows"]]
-    assert (
-        leg.quiet_summary
-        == "No communications degradation or coordination windows beyond standard SOF restrictions identified for this leg."
-    )
+    assert leg.quiet_summary is None
+    assert all(i.posture == "Posture uncertain" for i in leg.intervals)
     assert "re-export" in leg.planned_departure_basis.lower()
     assert "prediction" in leg.prediction_caveat.lower()
 
@@ -173,11 +172,14 @@ def test_nested_outages_partition_and_filtered_ids():
             i.window_number,
         )
         for i in leg.coordination_rows
+        if i.restrictions or i.physical_posture != "Nominal" or i.limitations
     ]
     assert rows == [tuple(r) for r in data["expected"]["rows"]]
-    assert [i.id for i in leg.coordination_rows] == [
-        f"f02-window-{n:03d}" for n in (1, 2, 3, 4, 5, 7)
-    ]
+    assert [
+        i.id
+        for i in leg.coordination_rows
+        if i.restrictions or i.physical_posture != "Nominal" or i.limitations
+    ] == [f"f02-window-{n:03d}" for n in (1, 2, 3, 4, 5, 7)]
     for t, seconds in data["expected"]["down_seconds"].items():
         lane = ("Ka", "Ku", "X").index(t)
         assert (
@@ -189,8 +191,8 @@ def test_nested_outages_partition_and_filtered_ids():
             == seconds
         )
     overlap = leg.intervals[3]
-    assert overlap.posture == "Limited / elevated risk"
-    assert overlap.remaining_transports == ("Starshield",)
+    assert overlap.physical_posture == "Limited / elevated risk"
+    assert overlap.physical_remaining_transports == ("Starshield",)
     assert "ka-long" in overlap.active_source_ids
     assert any("line-of-sight" in c for c in overlap.causes)
     assert "sof-takeoff" in leg.intervals[1].active_source_ids
@@ -208,7 +210,7 @@ def test_nested_outages_partition_and_filtered_ids():
         utc("2026-10-07T10:30:00Z"),
     )
     assert "ka-long" in ar.active_source_ids and len(ar.causes) >= 3
-    assert ar.posture == "Limited / elevated risk"
+    assert ar.physical_posture == "Limited / elevated risk"
 
 
 def test_half_open_brief_outage_and_short_sof():
@@ -216,7 +218,9 @@ def test_half_open_brief_outage_and_short_sof():
 
     leg = project_briefing_leg(snapshot(fixture("f03")))
     contiguous(leg)
-    red = [i for i in leg.intervals if i.posture == "Communications unavailable"]
+    red = [
+        i for i in leg.intervals if i.physical_posture == "Communications unavailable"
+    ]
     assert len(red) == 1
     assert (red[0].start_time, red[0].end_time) == (
         utc("2026-10-07T09:00:00Z"),
@@ -224,15 +228,19 @@ def test_half_open_brief_outage_and_short_sof():
     )
     assert "ka-b" in red[0].active_source_ids and "ka-a" not in red[0].active_source_ids
     assert red[0] in leg.coordination_rows
-    assert red[0].remaining_transports == ()
+    assert red[0].physical_remaining_transports == ()
     after = next(i for i in leg.intervals if i.start_time == red[0].end_time)
-    assert after.posture == "Degraded" and after.remaining_transports == (
-        "Starshield",
-        "X-Band MILSATCOM",
+    assert (
+        after.physical_posture == "Degraded"
+        and after.physical_remaining_transports
+        == (
+            "Starshield",
+            "X-Band MILSATCOM",
+        )
     )
     short = project_briefing_leg(snapshot(fixture("f04")))
     contiguous(short)
-    assert all(i.posture == "Nominal" for i in short.intervals)
+    assert all(i.physical_posture == "Nominal" for i in short.intervals)
     assert (
         sum(
             (i.end_time - i.start_time).total_seconds()
@@ -276,7 +284,7 @@ def test_resolved_ar_and_missing_timing_note():
     } == data["expected"]
     leg = project_briefing_leg(snapshot(data))
     contiguous(leg)
-    assert all(i.posture == "Nominal" for i in leg.intervals)
+    assert all(i.physical_posture == "Nominal" for i in leg.intervals)
     assert any(
         "ar-unresolved" in note and "timing" in note.lower() for note in leg.notes
     )
@@ -294,15 +302,15 @@ def test_conflict_and_transition_reduce_remaining_capability():
     leg = project_briefing_leg(snapshot(fixture("f06")))
     contiguous(leg)
     pure = next(i for i in leg.intervals if i.start_time == utc("2026-10-07T08:20:00Z"))
-    assert pure.decisions[2].value == "Down" and pure.posture == "Degraded"
+    assert pure.decisions[2].value == "Down" and pure.physical_posture == "Degraded"
     assert pure.limitations and pure in leg.coordination_rows
     mixed = next(
         i for i in leg.intervals if i.start_time == utc("2026-10-07T08:40:00Z")
     )
     assert [d.value for d in mixed.decisions] == ["Down", "Down", "Down"]
     assert (
-        mixed.posture == "Communications unavailable"
-        and mixed.remaining_transports == ()
+        mixed.physical_posture == "Communications unavailable"
+        and mixed.physical_remaining_transports == ()
     )
     assert any(s.source_id == "transition-saved" for s in leg.sources)
     assert leg.quiet_summary is None
@@ -313,14 +321,14 @@ def test_missing_stale_and_uncovered_evidence_never_verified_nominal():
 
     data = fixture("f10")
     leg = project_briefing_leg(snapshot(data))
-    assert all(i.posture == "Posture uncertain" for i in leg.intervals)
+    assert all(i.physical_posture == "Posture uncertain" for i in leg.intervals)
     assert leg.quiet_summary is None
     assert any(s.source_type == "cached_segment" for s in leg.sources)
     # Shift current departure but retain all original cached timestamps.
     data["utc_bounds"] = ["2026-10-07T10:00:00Z", "2026-10-07T16:00:00Z"]
     shifted = project_briefing_leg(snapshot(data))
     contiguous(shifted)
-    assert all(i.posture == "Posture uncertain" for i in shifted.intervals)
+    assert all(i.physical_posture == "Posture uncertain" for i in shifted.intervals)
     source = next(s for s in shifted.sources if s.source_type == "cached_segment")
     assert source.start_time == utc("2026-10-07T08:00:00Z")
     assert any("cached" in n.lower() for n in shifted.notes)
@@ -337,7 +345,7 @@ def test_missing_stale_and_uncovered_evidence_never_verified_nominal():
     partial = project_briefing_leg(snapshot(data))
     contiguous(partial)
     assert all(
-        i.posture == "Posture uncertain"
+        i.physical_posture == "Posture uncertain"
         for i in partial.intervals
         if i.start_time >= utc("2026-10-07T10:00:00Z")
     )
@@ -359,7 +367,7 @@ def test_unsplit_outside_flight_source_and_immutable_result():
     )
     assert project_briefing_leg(original) == leg
     with pytest.raises(FrozenInstanceError):
-        leg.intervals[0].posture = "Nominal"
+        leg.intervals[0].physical_posture = "Nominal"
     assert all(isinstance(s.metadata_json, bytes) for s in leg.sources)
 
 
@@ -439,7 +447,7 @@ def test_capture_records_missing_transport_prerequisites(
     projection = project_briefing_leg(captured)
     lane = 0 if missing == "coverage" else 2
     assert all(i.decisions[lane].value == "?" for i in projection.intervals)
-    assert all(i.posture == "Posture uncertain" for i in projection.intervals)
+    assert all(i.physical_posture == "Posture uncertain" for i in projection.intervals)
 
 
 def test_configured_sof_reuses_captured_buffers(export_inputs, monkeypatch):
@@ -482,7 +490,7 @@ def test_cached_unambiguous_sources_and_stale_basis():
     assert all(
         [d.value for d in i.decisions] == ["Down", "?", "Down"] for i in leg.intervals
     )
-    assert all(i.posture == "Posture uncertain" for i in leg.intervals)
+    assert all(i.physical_posture == "Posture uncertain" for i in leg.intervals)
     # Even overlapping stale sources must not be asserted as current outage.
     data["utc_bounds"] = ["2026-10-07T10:00:00Z", "2026-10-07T16:00:00Z"]
     stale = project_briefing_leg(snapshot(data))
@@ -567,7 +575,7 @@ def test_uncovered_predictions_cannot_prove_geometry_outage():
         i for i in leg.intervals if i.start_time == utc("2026-10-07T10:00:00Z")
     )
     assert [d.value for d in interval.decisions] == ["Down", "?", "?"]
-    assert interval.posture == "Posture uncertain"
+    assert interval.physical_posture == "Posture uncertain"
 
 
 @pytest.mark.parametrize("normalized_state", ["available", "degraded"])
@@ -580,7 +588,7 @@ def test_cached_starshield_conflict_proves_down_despite_other_warning(normalized
     segment["metadata"]["source_reasons"] = ["X-Ku Conflict az=180° el=35°"]
     leg = project_briefing_leg(snapshot(data))
     assert all(i.decisions[2].value == "Down" and i.limitations for i in leg.intervals)
-    assert all(i.posture == "Posture uncertain" for i in leg.intervals)
+    assert all(i.physical_posture == "Posture uncertain" for i in leg.intervals)
     segment["x_state"] = normalized_state
     segment["metadata"]["source_reasons"].append("Unexpected X warning")
     ambiguous = project_briefing_leg(snapshot(data))
@@ -629,7 +637,7 @@ def test_cached_fallback_retains_current_configured_sof(export_inputs, monkeypat
         "sof-takeoff": (utc("2026-10-07T10:00:00Z"), utc("2026-10-07T10:15:00Z")),
         "sof-landing": (utc("2026-10-07T10:45:00Z"), utc("2026-10-07T11:00:00Z")),
     }
-    assert all(i.posture == "Posture uncertain" for i in projection.intervals)
+    assert all(i.physical_posture == "Posture uncertain" for i in projection.intervals)
     assert any("ar" in n and "timing" in n.lower() for n in projection.notes)
 
 
@@ -772,6 +780,6 @@ def test_x_down_windows_end_at_the_exact_clear_event(start_kind, end_kind, reaso
     assert [(i.start_time, i.end_time) for i in down] == [
         (utc("2026-10-07T09:00:29Z"), utc("2026-10-07T09:10:31Z"))
     ]
-    assert down[0].posture == "Degraded"
-    assert down[0].remaining_transports == ("Commercial Ka", "Starshield")
+    assert down[0].physical_posture == "Degraded"
+    assert down[0].physical_remaining_transports == ("Commercial Ka", "Starshield")
     assert all(i.decisions[2].value == "Up" for i in leg.intervals if i not in down)

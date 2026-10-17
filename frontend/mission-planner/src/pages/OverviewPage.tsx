@@ -1,3 +1,4 @@
+import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 import {
   Suspense,
   useCallback,
@@ -1252,6 +1253,11 @@ export function OverviewPage() {
                   <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
                 </div>
               )}
+              <OverviewPopAdvisories
+                status={status}
+                realNowMs={currentTime}
+                refreshFailed={statusRequestFailed || simulationClock.stale}
+              />
               <OverviewMapControls
                 exploring={exploring}
                 intent={cameraIntent}

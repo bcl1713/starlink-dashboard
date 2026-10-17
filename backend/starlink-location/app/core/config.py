@@ -186,6 +186,7 @@ class ConfigManager:
             "position",
             "heading_tracker",
             "exports",
+            "pop",
         ]:
             if section not in data:
                 data[section] = {}
@@ -229,6 +230,7 @@ class ConfigManager:
             "position",
             "heading_tracker",
             "exports",
+            "pop",
         ]:
             if section not in data:
                 data[section] = {}

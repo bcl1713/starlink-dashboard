@@ -30,7 +30,10 @@ export function renderTimeline(payload) {
   const unknownGroups = [];
   for (const i of payload.intervals) {
     if (i.posture !== 'Posture uncertain') continue;
-    const count = i.decisions.filter((v) => v === 'Up').length;
+    const count =
+      i.callClassification === 'unknown'
+        ? 'Unresolved'
+        : i.decisions.filter((v) => v === 'Up').length;
     const last = unknownGroups.at(-1);
     if (last && last.endUtc === i.startUtc && last.count === count)
       last.endUtc = i.endUtc;
@@ -75,26 +78,37 @@ export function renderTimeline(payload) {
     out += text(
       x(i.startUtc) + width(i) / 2,
       93,
-      `${i.count} confirmed`,
+      i.count === 'Unresolved' ? 'Unresolved' : `${i.count} confirmed`,
       'text-anchor="middle" class="band-label" data-svg-label'
     );
   }
   if (narrowUnknown.length) {
-    const center =
-      (x(narrowUnknown[0].startUtc) + x(narrowUnknown.at(-1).endUtc)) / 2;
-    narrowUnknown.forEach((i, n) => {
-      const anchor = x(i.startUtc) + width(i) / 2;
-      const labelX = center + (n - (narrowUnknown.length - 1) / 2) * 180;
-      out +=
-        `<path d="M${anchor} 68L${labelX} 58" fill="none" stroke="#526678"/>` +
-        text(
-          labelX,
-          54,
-          `${i.decisions.filter((v) => v === 'Up').length} confirmed`,
-          'text-anchor="middle" class="confirmed-callout" data-callout data-svg-label'
-        );
+    // Share repeated assessments while keeping a leader to every exact portion.
+    // There are at most five labels: Unresolved and zero through three confirmed.
+    const groups = [...Map.groupBy(narrowUnknown, (i) => i.count).entries()];
+    const halfSpan = ((groups.length - 1) * 180) / 2;
+    const center = Math.max(
+      370 + halfSpan,
+      Math.min(
+        1150 - halfSpan,
+        (x(narrowUnknown[0].startUtc) + x(narrowUnknown.at(-1).endUtc)) / 2
+      )
+    );
+    groups.forEach(([count, portions], n) => {
+      const labelX = center + (n - (groups.length - 1) / 2) * 180;
+      for (const i of portions) {
+        const anchor = x(i.startUtc) + width(i) / 2;
+        out += `<path d="M${anchor} 68L${labelX} 58" fill="none" stroke="#526678"/>`;
+      }
+      out += text(
+        labelX,
+        54,
+        count === 'Unresolved' ? 'Unresolved' : `${count} confirmed`,
+        'text-anchor="middle" class="confirmed-callout" data-callout data-svg-label'
+      );
     });
   }
+
   ['Commercial Ka', 'Starshield', 'X-Band MILSATCOM'].forEach((name, n) => {
     const y = 119 + n * 27;
     out += text(0, y + 15, name, 'class="lane-label"');
@@ -173,6 +187,22 @@ export function renderTimeline(payload) {
         );
     }
   });
+  for (const transition of payload.popTransitions ?? []) {
+    const low = Math.max(start, Date.parse(transition.windowStartUtc));
+    const high = Math.min(end, Date.parse(transition.windowEndUtc));
+    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low)
+      continue;
+    out += rect(
+      {
+        startUtc: new Date(low).toISOString(),
+        endUtc: new Date(high).toISOString(),
+      },
+      144,
+      22,
+      'none',
+      `data-pop-transition="${escapeText(transition.id)}" stroke="#735124" stroke-width="2" role="img" aria-label="Starshield PoP transition possible — brief call interruption."`
+    );
+  }
   out += text(0, 216, 'SOF / AR', 'class="lane-label"');
   out += '<rect x="280" y="202" width="960" height="18" fill="#edf1f5"/>';
   // Join identical restriction segments, but never their quiet gaps.

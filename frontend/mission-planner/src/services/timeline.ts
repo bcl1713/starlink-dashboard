@@ -1,5 +1,6 @@
+import type { CallContinuityProjection, PopForecast } from '@/types/pop';
 import { apiClient } from './api-client';
-import type { ManualRouteSplice } from '../types/aar';
+import type { TransportConfig } from '../types/mission';
 import type { OverviewPoiKind } from './overview-upcoming-pois';
 
 export interface TimelineSegment {
@@ -33,6 +34,8 @@ export interface KaCoverageEvent {
 }
 
 export interface Timeline {
+  pop_forecast?: PopForecast | null;
+  call_continuity?: CallContinuityProjection | null;
   map_pois?: Array<{
     name: string;
     kind: OverviewPoiKind;
@@ -85,38 +88,7 @@ export interface DerivedRouteEstimate {
 }
 
 export interface TimelinePreviewRequest {
-  transports: {
-    initial_x_satellite_id: string;
-    initial_ka_satellite_ids: string[];
-    x_transitions: Array<{
-      id: string;
-      latitude: number;
-      longitude: number;
-      target_satellite_id: string;
-    }>;
-    ka_outages: Array<{
-      start_time: string;
-      duration_seconds: number;
-    }>;
-    aar_windows: Array<{
-      id: string;
-      start_waypoint_name: string;
-      end_waypoint_name: string;
-      override_start_time?: string | null;
-      override_end_time?: string | null;
-      override_start_elapsed?: string | null;
-    }>;
-    manual_aar_tracks: Array<{
-      id: string;
-      name: string;
-      points: Array<{
-        latitude: number;
-        longitude: number;
-      }>;
-    }>;
-    manual_route_splice?: ManualRouteSplice | null;
-    ku_overrides: Array<Record<string, unknown>>;
-  };
+  transports: TransportConfig;
   adjusted_departure_time?: string;
 }
 

@@ -1,8 +1,9 @@
 """Pydantic configuration models for Starlink simulator."""
 
+from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 
 class RouteConfig(BaseModel):
@@ -170,6 +171,19 @@ class ExportsConfig(BaseModel):
     customer_briefing_enabled: bool = True
 
 
+class PopConfig(BaseModel):
+    """Configurable advisory PoP catalog; defaults to bundled city centers."""
+
+    catalog_path: Path = Field(
+        default=Path(__file__).resolve().parents[1] / "assets/starshield-pops.json"
+    )
+
+    @field_serializer("catalog_path")
+    def serialize_catalog_path(self, value: Path) -> str:
+        """Keep existing plain-dictionary YAML and API consumers compatible."""
+        return str(value)
+
+
 class SimulationConfig(BaseModel):
     """Main simulation configuration."""
 
@@ -198,6 +212,7 @@ class SimulationConfig(BaseModel):
         description="Heading tracker configuration",
     )
     exports: ExportsConfig = Field(default_factory=ExportsConfig)
+    pop: PopConfig = Field(default_factory=PopConfig)
 
     @field_validator("update_interval_seconds")
     @classmethod

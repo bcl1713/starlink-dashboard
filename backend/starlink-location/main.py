@@ -69,7 +69,6 @@ from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
 from app.services.aviation_weather.transport import AwcTransport
 from app.services.ground_entry_point import (
-    get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
@@ -356,9 +355,7 @@ async def startup_event():
                     exc_info=True,
                 )
         else:
-            publish_ground_entry_point_metrics(
-                get_cached_ground_entry_point(include_environment_override=True)
-            )
+            publish_ground_entry_point_metrics(None)
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data
             logger.info_json("Initializing LiveCoordinator for live mode")
@@ -437,6 +434,20 @@ async def startup_event():
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
+            from app.mission.pop_status import PopStatusService
+            from app.simulation.pop import SimulationPopObservationProvider
+
+            app.state.pop_status_service = PopStatusService(
+                _route_manager,
+                _current_runtime_config,
+                observation_provider=SimulationPopObservationProvider(
+                    _pop_lifecycle_token
+                ),
+                snapshot_context_provider=_simulation_pop_context,
+            )
+            status.set_pop_service(app.state.pop_status_service)
+            if _simulation_config.mode == "simulation":
+                _publish_pop_observation(_coordinator.get_current_telemetry())
 
             # Inject into metrics_export as well
             # from app.api import metrics_export
@@ -575,8 +586,6 @@ async def startup_event():
             _simulation_config.exports.customer_briefing_enabled
             and _background_updates_enabled
         ):
-            import sqlite3
-
             from app.mission.slide_cache.coordinator import start_runtime
 
             try:
@@ -708,26 +717,98 @@ async def shutdown_event():
         )
 
 
+def _current_runtime_config():
+    """Prefer validated current config; legacy adapters use application config."""
+    getter = getattr(_coordinator, "get_config", None)
+    candidate = getter() if callable(getter) else None
+    return candidate if isinstance(candidate, SimulationConfig) else _simulation_config
+
+
+def _pop_lifecycle_token(run_id=None):
+    service = getattr(app.state, "simulation_run_service", None)
+    run = service.status().run if service is not None else None
+    return (
+        id(_coordinator),
+        getattr(_coordinator, "pop_lifecycle_token", 0),
+        run_id or (run.run_id if run is not None else None),
+    )
+
+
+def _simulation_pop_context():
+    from app.simulation.run_timing import published_replay
+
+    replay = published_replay(getattr(app.state, "simulation_run_service", None))
+    context = {"lifecycle_token": _pop_lifecycle_token()}
+    if replay is not None:
+        plan, frame, _clock = replay
+        leg = plan.artifacts.validated_leg
+        context.update(
+            route=plan.artifacts.route,
+            call_capabilities=plan.artifacts.call_capabilities,
+            projector=plan.artifacts.projector,
+            now=frame.simulation_time,
+            observed_now=datetime.now(timezone.utc),
+            flight_phase=frame.phase.value,
+            unavailable_reason=None,
+            enabled=leg.transports.starshield_enabled is not False if leg else True,
+        )
+    return context
+
+
+def _publish_pop_observation(telemetry, tick=None):
+    """Publish synthetic legacy metrics from the same emitted observation as status."""
+    config = _current_runtime_config()
+    if config is None or config.mode != "simulation":
+        return
+    from app.services.pop.catalog import load_catalog
+    from app.simulation.pop import SimulationPopObservationProvider
+
+    service = getattr(app.state, "pop_status_service", None)
+    if service is None or telemetry is None:
+        publish_ground_entry_point_metrics(None)
+        return
+    try:
+        catalog = load_catalog(config.pop.catalog_path)
+    except (OSError, ValueError):
+        catalog = None
+    provider = service.observation_provider
+    if isinstance(provider, SimulationPopObservationProvider):
+        observation = provider.simulation_observation(
+            telemetry,
+            catalog,
+            lifecycle_token=_pop_lifecycle_token(
+                tick.status.run.run_id if tick else None
+            ),
+        )
+    else:
+        observation = provider("simulation", telemetry, catalog)
+    publish_ground_entry_point_metrics(observation.entry)
+
+
 def _publish_replay_telemetry(telemetry, tick):
     from app.core.metrics import update_metrics_from_telemetry
     from app.simulation.run_timing import mission_time_context
 
     update_metrics_from_telemetry(
         telemetry,
-        _simulation_config,
-        tick.plan.artifacts.route,
+        _current_runtime_config(),
+        tick.plan.artifacts.route.model_copy(deep=True),
         app.state.poi_manager,
         mission_context=mission_time_context(tick.status),
         simulation_plan=tick.plan,
         simulation_frame=tick.frame,
     )
+    _publish_pop_observation(telemetry, tick)
 
 
 def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
     """One complete ordered telemetry/metric update, owned by the async loop."""
-    if should_automatically_refresh_ground_entry_point(_simulation_config):
-        maybe_refresh_ground_entry_point_metrics(
-            refresh_interval_seconds=refresh_interval
+    current_config = _current_runtime_config()
+    if should_automatically_refresh_ground_entry_point(current_config):
+        publish_ground_entry_point_metrics(
+            maybe_refresh_ground_entry_point_metrics(
+                refresh_interval_seconds=refresh_interval
+            )
         )
 
     runtime = getattr(app.state, "flight_event_runtime", None)
@@ -749,6 +830,8 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             if paced
             else _coordinator.update()
         )
+        if not paced:
+            _publish_pop_observation(telemetry)
         update_count += 1
 
         if telemetry is None:
@@ -777,7 +860,7 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
 
                 flight_events_managed = False
                 runtime = getattr(app.state, "flight_event_runtime", None)
-                if runtime is not None and _simulation_config.mode == "live":
+                if runtime is not None and current_config.mode == "live":
                     from app.mission.active_context import (
                         resolve_active_mission_leg_context,
                     )
@@ -801,7 +884,7 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                         )
                 update_metrics_from_telemetry(
                     telemetry,
-                    _simulation_config,
+                    current_config,
                     active_route,
                     poi_manager,
                     flight_events_managed=flight_events_managed,

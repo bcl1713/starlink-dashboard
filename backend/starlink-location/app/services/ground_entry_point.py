@@ -9,6 +9,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import AddressValueError, IPv4Address
+from typing import TYPE_CHECKING
 
 import dns.resolver
 import httpx
@@ -19,6 +20,9 @@ from app.core.metrics.prometheus_metrics import (
     starlink_ground_entry_point_location,
     starlink_ground_entry_point_longitude_degrees,
 )
+
+if TYPE_CHECKING:
+    from app.services.pop.models import PopObservation
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +104,18 @@ class GroundEntryPointResolver:
 
         return self._current_entry
 
+    def observation(self) -> PopObservation:
+        """Return current-IP evidence without a network lookup or stale fallback."""
+        from app.services.pop.models import PopObservation
+
+        entry = self._entry_cache.get(self._current_ip)
+        return PopObservation(
+            ip=self._current_ip,
+            entry=entry,
+            status="known" if entry is not None else "unknown",
+            source="live",
+        )
+
     def invalidate(self, clear_geolocation_cache: bool = False) -> None:
         """Clear current resolver state, optionally dropping per-IP geolocation cache."""
         self._last_lookup_at = None
@@ -124,6 +140,8 @@ class GroundEntryPointResolver:
         try:
             ip = self._ip_resolver()
         except (
+            httpx.HTTPError,
+            dns.exception.DNSException,
             RuntimeError,
             ValueError,
             OSError,
@@ -142,9 +160,10 @@ class GroundEntryPointResolver:
         if not ip:
             return self._current_entry
 
-        if ip == self._current_ip and self._current_entry is not None:
+        if ip == self._current_ip and ip in self._entry_cache:
             return self._current_entry
 
+        self._current_ip = ip
         cached_entry = self._entry_cache.get(ip)
         if cached_entry is not None:
             self._current_ip = ip
@@ -154,6 +173,8 @@ class GroundEntryPointResolver:
         try:
             entry = self._geolocator(ip)
         except (
+            httpx.HTTPError,
+            dns.exception.DNSException,
             RuntimeError,
             ValueError,
             OSError,
@@ -183,6 +204,8 @@ def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:
     try:
         ip = resolve_public_ip_via_cloudflare_trace(timeout_seconds=timeout_seconds)
     except (
+        httpx.HTTPError,
+        dns.exception.DNSException,
         RuntimeError,
         ValueError,
         OSError,
@@ -203,6 +226,8 @@ def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:
     try:
         return resolve_public_ip_via_dns(timeout_seconds=timeout_seconds)
     except (
+        httpx.HTTPError,
+        dns.exception.DNSException,
         RuntimeError,
         ValueError,
         OSError,
@@ -318,6 +343,11 @@ def get_cached_ground_entry_point(
 ) -> GroundEntryPoint | None:
     """Return the last-known ground entry point without forcing a network lookup."""
     return _resolver.current(include_environment_override=include_environment_override)
+
+
+def get_cached_pop_observation() -> PopObservation:
+    """Read current public-IP observation without performing discovery."""
+    return _resolver.observation()
 
 
 def clear_ground_entry_point_metrics() -> None:

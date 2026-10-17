@@ -7,6 +7,8 @@ from unittest.mock import Mock
 import pytest
 
 from app.api import status as status_api
+from app.mission.pop_status import PopStatusService
+from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
 from app.services.ground_entry_point import GroundEntryPoint
 from tests.conftest import default_mock_telemetry
@@ -74,6 +76,11 @@ async def test_status_exposes_current_cached_ground_entry_point(
 ):
     monkeypatch.setattr(
         status_api,
+        "_pop_service",
+        PopStatusService(config_provider=lambda: SimulationConfig(mode="live")),
+    )
+    monkeypatch.setattr(
+        status_api,
         "get_cached_ground_entry_point",
         lambda: GroundEntryPoint(
             ip="203.0.113.10",
@@ -99,6 +106,11 @@ async def test_status_exposes_current_cached_ground_entry_point(
 async def test_status_marks_unavailable_ground_entry_point_as_null(
     test_client, monkeypatch
 ):
+    monkeypatch.setattr(
+        status_api,
+        "_pop_service",
+        PopStatusService(config_provider=lambda: SimulationConfig(mode="live")),
+    )
     monkeypatch.setattr(
         status_api,
         "get_cached_ground_entry_point",

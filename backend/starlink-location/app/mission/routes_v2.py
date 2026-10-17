@@ -2647,7 +2647,9 @@ async def preview_leg_timeline(
         # Update transports from request if provided
         if "transports" in preview_request:
             transports_data = preview_request["transports"]
-            preview_leg.transports = TransportConfig(**transports_data)
+            preview_leg.transports = TransportConfig.model_validate(
+                {**leg.transports.model_dump(), **transports_data}
+            )
 
         # Update adjusted departure time if provided
         if "adjusted_departure_time" in preview_request:

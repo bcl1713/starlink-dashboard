@@ -62,7 +62,8 @@ export async function fitBriefingRows(page, budget) {
             const available =
               cell.clientWidth -
               parseFloat(style.paddingLeft) -
-              parseFloat(style.paddingRight);
+              parseFloat(style.paddingRight) -
+              4; // Reserve 3pt for print glyph rounding inside the cell padding.
             const range = document.createRange();
             range.selectNodeContents(cell);
             return range.getBoundingClientRect().width <= available;
@@ -186,7 +187,20 @@ async function measurePages(page, budget) {
           '[data-fit],[data-svg-label]'
         )) {
           const r = box(e);
+          let cellTextOverflow = false;
+          if (e.tagName === 'TD') {
+            const style = getComputedStyle(e);
+            const range = document.createRange();
+            range.selectNodeContents(e);
+            cellTextOverflow =
+              range.getBoundingClientRect().width >
+              e.clientWidth -
+                parseFloat(style.paddingLeft) -
+                parseFloat(style.paddingRight) +
+                0.5;
+          }
           if (
+            cellTextOverflow ||
             r[0] < -0.5 ||
             r[1] < -0.5 ||
             r[2] > p.width + 0.5 ||

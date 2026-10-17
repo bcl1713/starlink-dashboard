@@ -91,7 +91,7 @@ it('binds previews to each selected leg input identity', async () => {
   for (const [, legId, request] of calls)
     expect(request).toMatchObject({ input_identity: legId });
 });
-it('requires explicit plan and gap decisions then publishes the selected batch once', async () => {
+it('publishes the approved plan without requiring a disclaimer for predicted gaps', async () => {
   const { publish, client } = setup();
   await screen.findByText('Leg 2: 120 seconds of X-band outage');
   const button = screen.getByRole('button', { name: 'Publish reviewed plans' });
@@ -102,12 +102,8 @@ it('requires explicit plan and gap decisions then publishes the selected batch o
       'I approve the selected satellite plans and Starshield settings'
     )
   );
-  expect(button).toBeDisabled();
-  fireEvent.click(
-    screen.getByLabelText(
-      'I acknowledge the listed X-band outages and backup gaps'
-    )
-  );
+  expect(screen.queryByLabelText(/I acknowledge the listed/)).toBeNull();
+  expect(button).toBeEnabled();
   fireEvent.click(button);
   await waitFor(() => expect(publish).toHaveBeenCalledOnce());
   expect(publish.mock.calls[0][1].entries.map((entry) => entry.leg_id)).toEqual(
@@ -117,8 +113,7 @@ it('requires explicit plan and gap decisions then publishes the selected batch o
     publish.mock.calls[0][1].entries.every(
       (entry) =>
         entry.review.expected_revision === 3 &&
-        entry.review.satellite_plan_confirmed &&
-        entry.review.gap_acknowledged
+        entry.review.satellite_plan_confirmed
     )
   ).toBe(true);
   expect(client.getQueryData<PlanningView>(['planning', 'm'])?.revision).toBe(
@@ -147,11 +142,6 @@ it('invalidates approval immediately for local edits and does not restore it aft
   fireEvent.click(
     screen.getByLabelText(
       'I approve the selected satellite plans and Starshield settings'
-    )
-  );
-  fireEvent.click(
-    screen.getByLabelText(
-      'I acknowledge the listed X-band outages and backup gaps'
     )
   );
   const button = screen.getByRole('button', { name: 'Publish reviewed plans' });

@@ -23,7 +23,6 @@ export function MissionFlightEvents({
   const [target, setTarget] = useState('');
   const [time, setTime] = useState('');
   const [reason, setReason] = useState('');
-  const [partial, setPartial] = useState(false);
   const [jobId, setJobId] = useState('');
   const view = useQuery({
     queryKey: ['flight-events', missionId, leg],
@@ -69,7 +68,7 @@ export function MissionFlightEvents({
     },
   });
   const prepare = useMutation({
-    mutationFn: () => telemetryArchivesApi.prepare(missionId, partial),
+    mutationFn: () => telemetryArchivesApi.prepare(missionId, true),
     onSuccess: (job) => setJobId(job.id),
   });
   const job = useQuery({
@@ -245,23 +244,12 @@ export function MissionFlightEvents({
         )
       )}
       <div className="space-x-3">
-        <label>
-          <input
-            type="checkbox"
-            checked={partial}
-            onChange={(event) => setPartial(event.target.checked)}
-          />{' '}
-          Allow a clearly labeled partial mission package
-        </label>
         <button disabled={prepare.isPending} onClick={() => prepare.mutate()}>
           Prepare telemetry download
         </button>
       </div>
       {prepare.isError && (
-        <p role="alert">
-          Could not prepare telemetry. Incomplete missions require the
-          partial-package option.
-        </p>
+        <p role="alert">Could not prepare telemetry. Please try again.</p>
       )}
       {job.data && (
         <p role="status">

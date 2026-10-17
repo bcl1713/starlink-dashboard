@@ -8,6 +8,7 @@ from app.mission.replay_state import TransportReplayState, apply_transport_event
 from app.models.flight_status import FlightPhase
 from app.models.telemetry import PositionData
 from app.services.active_x_handoff import ActiveXContext, empty_handoff_context
+from app.services.aviation_weather.route_arcs import GreatCircleArc
 from app.simulation.run_plan import PreparedMissionRun
 
 
@@ -47,6 +48,24 @@ def project_run_frame(
             sample.longitude,
             sample.altitude,
         )
+        # Preserve projector timing/altitude/heading; geographic progression is
+        # the same minor great-circle arc used by PoP boundary forecasts.
+        for i, end_distance in enumerate(projector.cumulative_distances[1:], 1):
+            start_distance = projector.cumulative_distances[i - 1]
+            if distance <= end_distance and end_distance > start_distance:
+                prior, current = plan.artifacts.route.points[i - 1 : i + 1]
+                try:
+                    longitude, latitude = GreatCircleArc(
+                        (prior.longitude, prior.latitude),
+                        (current.longitude, current.latitude),
+                    ).point(
+                        (distance - start_distance) / (end_distance - start_distance)
+                    )
+                except ValueError:
+                    # Keep the existing projector sample for antipodal geometry;
+                    # advisory ambiguity must not stop accepted replay telemetry.
+                    pass
+                break
     speed = 0.0
     for i, current in enumerate(plan.artifacts.route.points[1:], 1):
         prior = plan.artifacts.route.points[i - 1]

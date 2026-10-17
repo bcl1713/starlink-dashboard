@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { timeBlocks } from './time-blocks';
 import { formatUtc, formatDuration, formatElapsed } from './formatting';
 import { type Timeline, type TimelineSegment } from '../../services/timeline';
 
@@ -76,8 +77,23 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
     if (!timeline || !timeline.segments) {
       return [];
     }
-    // For virtualization support in future, just return all segments for now
-    return timeline.segments;
+    return timeBlocks(
+      timeline.segments,
+      (segment) => segment.start_time,
+      (segment) => segment.end_time,
+      (segment) =>
+        JSON.stringify([
+          segment.status,
+          callPosture(segment),
+          primaryReason(segment),
+          segment.x_state,
+          segment.ka_state,
+          segment.ku_state,
+          systemsAffected(segment),
+          notesAndSources(segment),
+        ]),
+      (segment, end_time) => ({ ...segment, end_time })
+    );
   }, [timeline]);
 
   if (isLoading) {
@@ -105,7 +121,7 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
         <thead className="bg-muted/70 border-b">
           <tr>
             <th className="px-4 py-2 text-left font-semibold text-muted-foreground">
-              Segment
+              Time block
             </th>
             <th className="px-4 py-2 text-left font-semibold text-muted-foreground">
               Call Posture

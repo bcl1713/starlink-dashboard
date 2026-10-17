@@ -122,6 +122,8 @@ class RouteTemporalProjector:
 
     def __init__(self, route: ParsedRoute, start_time: datetime, end_time: datetime):
         self.route = route
+        # Retain the input identity even if the caller later mutates its route.
+        self.route_snapshot = route.model_dump()
         self.start_time = start_time
         self.end_time = end_time
         self.original_start_time = self._derive_original_start_time()

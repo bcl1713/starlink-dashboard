@@ -96,8 +96,6 @@ function ReviewEditor({
     previewError,
     planConfirmed,
     setPlanConfirmed,
-    gapAcknowledged,
-    setGapAcknowledged,
     file,
     setFile,
     routePreview,
@@ -420,14 +418,6 @@ function ReviewEditor({
         />
         I confirm this satellite plan and Starshield enablement
       </label>
-      <label className="flex min-h-11 items-center gap-2">
-        <input
-          type="checkbox"
-          checked={gapAcknowledged}
-          onChange={(e) => setGapAcknowledged(e.target.checked)}
-        />
-        I acknowledge the X-band outages and backup gaps
-      </label>
       {dirty && <p>Draft changes are pending save before final review.</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" onClick={returnToMission}>
@@ -447,9 +437,7 @@ function ReviewEditor({
             !!invalid ||
             !planConfirmed ||
             !evaluation ||
-            !!evaluation.errors?.length ||
-            (!!(evaluation.outage_seconds || evaluation.backup_gaps?.length) &&
-              !gapAcknowledged)
+            !!evaluation.errors?.length
           }
         >
           Save reviewed plan
@@ -463,9 +451,7 @@ function ReviewEditor({
             !!invalid ||
             !planConfirmed ||
             !evaluation ||
-            !!evaluation.errors?.length ||
-            (!!(evaluation.outage_seconds || evaluation.backup_gaps?.length) &&
-              !gapAcknowledged)
+            !!evaluation.errors?.length
           }
         >
           Save reviewed plan and upload next leg

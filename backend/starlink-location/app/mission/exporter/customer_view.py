@@ -8,6 +8,7 @@ from app.mission.models import Transport
 
 from .briefing_clocks import EASTERN
 from .customer_clocks import CustomerRange, format_customer_range
+from .customer_pop import POP_EVENT
 from .customer_projection import TRANSPORT_NAMES, BriefingInterval, BriefingLeg
 from .snapshot import LegSnapshot
 
@@ -27,6 +28,8 @@ class CustomerRow:
     posture: str
     interval_ids: tuple[str, ...]
     source_ids: tuple[str, ...]
+    pop_transition_ids: tuple[str, ...] = ()
+    call_classification: str | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +113,9 @@ def _key(interval, source_by_id):
         restriction_labels(interval),
         tuple((r.kind, r.start_time, r.end_time) for r in interval.restrictions),
         _impact(interval, source_by_id),
+        interval.pop_transition_ids,
+        interval.call_classification,
+        interval.call_alternatives,
     )
 
 
@@ -130,7 +136,13 @@ def _impact(interval, source_by_id):
                 "released": "X–Starshield conflict released",
             }[conflict]
         )
-    return "; ".join(parts) or "Assessment changed"
+    if interval.pop_transition_ids:
+        parts.append(POP_EVENT)
+    return "; ".join(parts) or (
+        "Call continuity unresolved"
+        if interval.call_classification == "unknown"
+        else "Assessment changed"
+    )
 
 
 def project_customer_leg(
@@ -166,6 +178,8 @@ def project_customer_leg(
         notice = INCOMPLETE_X
     elif any(d.value == "?" for i in projection.intervals for d in i.decisions):
         notice = "Transport assessment incomplete — confirmed capability shown below."
+    if any(i.call_classification == "unknown" for i in projection.intervals):
+        notice = ((notice + " ") if notice else "") + "Call continuity unresolved."
     if not projection.utc_bounds:
         return CustomerLegView(
             projection.leg_id,
@@ -195,6 +209,8 @@ def project_customer_leg(
     for interval in projection.intervals:
         selected = (
             bool(interval.restrictions)
+            or bool(interval.pop_transition_ids)
+            or interval.call_classification == "unknown"
             or any(interval.decisions[n].value == "?" for n in varying_assessment)
             or any(d.value == "Down" for d in interval.decisions)
             or starshield_conflict(interval, source_by_id) is not None
@@ -219,6 +235,16 @@ def project_customer_leg(
             if uncertain
             else (" + ".join(first.remaining_transports) or "None")
         )
+        posture = "Assessment incomplete" if uncertain else first.posture
+        if first.call_classification in {"planned_outage", "existing_outage"}:
+            remaining, posture = (
+                "No secure-call transport",
+                "Communications unavailable",
+            )
+        elif first.call_classification == "x_fallback":
+            remaining, posture = "Planned X-Band fallback", first.posture
+        elif first.call_classification == "unknown":
+            remaining, posture = "Call continuity unresolved", "Assessment incomplete"
         rows.append(
             CustomerRow(
                 f"{projection.leg_id}-customer-{n:03d}",
@@ -227,9 +253,20 @@ def project_customer_leg(
                 format_customer_range(first.start_time, last.end_time, departure),
                 _impact(first, source_by_id),
                 remaining,
-                "Assessment incomplete" if uncertain else first.posture,
+                posture,
                 tuple(i.id for i in intervals),
-                tuple(dict.fromkeys(s for i in intervals for s in i.active_source_ids)),
+                tuple(
+                    dict.fromkeys(
+                        source
+                        for interval in intervals
+                        for source in (
+                            *interval.active_source_ids,
+                            *interval.call_source_ids,
+                        )
+                    )
+                ),
+                first.pop_transition_ids,
+                first.call_classification,
             )
         )
     return CustomerLegView(

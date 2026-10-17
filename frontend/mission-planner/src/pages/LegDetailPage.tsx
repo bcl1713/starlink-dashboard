@@ -110,33 +110,17 @@ function ManualLegDetailPage() {
 
     return {
       transports: {
+        ...leg.transports,
         starshield_enabled: leg.transports.starshield_enabled,
         initial_x_satellite_id:
           satelliteConfig.xband_starting_satellite || 'X-1',
         initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
-        x_transitions: satelliteConfig.xband_transitions.map((t) => ({
-          id: t.id,
-          latitude: t.latitude,
-          longitude: t.longitude,
-          target_satellite_id: t.target_satellite_id,
-        })),
+        x_transitions: satelliteConfig.xband_transitions,
         ka_outages: satelliteConfig.ka_outages,
-        aar_windows: aarConfig.segments.map((s) => ({
-          id: s.id,
-          start_waypoint_name: s.start_waypoint_name,
-          end_waypoint_name: s.end_waypoint_name,
-          override_start_time: s.override_start_time,
-          override_end_time: s.override_end_time,
-          override_start_elapsed: s.override_start_elapsed,
-        })),
+        aar_windows: aarConfig.segments,
         manual_aar_tracks: aarConfig.manualTracks,
         manual_route_splice: manualRouteSplice,
-        ku_overrides: satelliteConfig.ku_outages.map((k) => ({
-          id: k.id,
-          start_time: k.start_time,
-          duration_seconds: k.duration_seconds,
-          reason: k.reason,
-        })),
+        ku_overrides: satelliteConfig.ku_outages,
       },
       adjusted_departure_time: leg.adjusted_departure_time || undefined,
     };
@@ -197,6 +181,7 @@ function ManualLegDetailPage() {
     await updateLegMutation.mutateAsync({
       ...leg,
       transports: {
+        ...leg.transports,
         starshield_enabled: leg.transports.starshield_enabled,
         initial_x_satellite_id:
           satelliteConfig.xband_starting_satellite || 'X-1',
@@ -234,6 +219,7 @@ function ManualLegDetailPage() {
       const result = await updateLegMutation.mutateAsync({
         ...leg,
         transports: {
+          ...leg.transports,
           starshield_enabled: leg.transports.starshield_enabled,
           initial_x_satellite_id:
             satelliteConfig.xband_starting_satellite || 'X-1',

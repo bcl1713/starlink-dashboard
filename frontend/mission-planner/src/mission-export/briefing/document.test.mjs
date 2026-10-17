@@ -181,3 +181,52 @@ test('transport availability has no separate key', async () => {
     /transport-key|Unavailable transport|Operating constraint<\/span>/
   );
 });
+
+test('PoP documents use the canonical captured note exactly once', async () => {
+  const p = structuredClone(payload);
+  p.popTransitions = [
+    {
+      id: 'one',
+      windowStartUtc: '2026-10-25T15:00:00Z',
+      windowEndUtc: '2026-10-25T15:10:00Z',
+    },
+  ];
+  p.popNote =
+    'Calls may drop & require reestablishment. Conditional outage / coordinated fallback.';
+  const html = (await composer())(p, assets);
+  assert.equal(
+    html.split(
+      'Calls may drop &amp; require reestablishment. Conditional outage / coordinated fallback.'
+    ).length - 1,
+    1
+  );
+  assert.doesNotMatch(html, /typically 1–2 seconds/);
+  assert.match(html, /class="pop-legend">Starshield Transition<\/span>/);
+});
+
+test('exact Starshield transition copy keeps a standard one-line cell and clear outlined legend', async () => {
+  const p = structuredClone(payload);
+  p.popTransitions = [
+    {
+      id: 'one',
+      windowStartUtc: '2026-10-25T15:00:00Z',
+      windowEndUtc: '2026-10-25T15:10:00Z',
+    },
+  ];
+  p.rows = [
+    {
+      id: 'row',
+      popTransitionIds: ['one'],
+      displayCells: [
+        '11:00 - 11:10',
+        'Starshield Transition Window',
+        'Ka, Starshield, X-Band',
+        'Nominal',
+      ],
+    },
+  ];
+  const html = (await composer())(p, assets);
+  assert.match(html, /<td data-fit>Starshield Transition Window<\/td>/);
+  assert.match(html, /class="pop-legend">Starshield Transition<\/span>/);
+  assert.doesNotMatch(html, /pop-impact/);
+});

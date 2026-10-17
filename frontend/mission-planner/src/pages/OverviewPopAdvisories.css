@@ -1,0 +1,28 @@
+.overview-starshield-advisory {
+  padding: 14px 18px;
+  border: var(--overview-border);
+  border-left: 4px solid #f2ba57;
+  border-radius: var(--overview-radius);
+  background: var(--overview-glass-fallback);
+  color: var(--overview-text);
+  box-shadow: var(--overview-shadow);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
+  pointer-events: none;
+}
+.overview-starshield-advisory strong {
+  display: block;
+  font-size: clamp(1.125rem, 1.5vw, 1.75rem);
+  line-height: 1.3;
+}
+.overview-starshield-advisory span {
+  display: block;
+  margin-top: 4px;
+  color: var(--overview-secondary);
+  font-size: 1rem;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .overview-starshield-advisory {
+    background: var(--overview-glass);
+    backdrop-filter: var(--overview-blur);
+  }
+}

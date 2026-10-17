@@ -41,7 +41,10 @@ def source_closure(
             source = sources.get(record["source_id"])
             if source is None or source.content_hash != record["content_hash"]:
                 raise ValueError("Planning graph references a missing source revision")
-        for source_id in record.get("source_ids", []):
+    # Only typed planning histories own retained revision IDs. Nested timelines
+    # also carry source_ids, but those identify independent transport evidence.
+    for history in manifest.leg_history if manifest else ():
+        for source_id in history.source_ids:
             if source_id not in sources:
                 raise ValueError("History references a missing source revision")
     return tuple(sources.values())

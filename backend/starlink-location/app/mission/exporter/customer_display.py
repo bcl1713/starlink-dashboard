@@ -14,7 +14,9 @@ def display_row(row: dict) -> tuple[str, str, str, str]:
         raise ValueError("Expected two customer table clocks")
     return (
         " - ".join(clocks),
-        short(row["impact"]),
+        short(row["impact"])
+        .replace("Air refueling", "AR")
+        .replace(" unavailable", " down"),
         short(row["remaining"].replace(" + ", ", ")),
         {
             "Limited / elevated risk": "Elevated risk",
