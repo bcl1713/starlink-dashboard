@@ -107,3 +107,80 @@ def test_invalid_revision_is_rejected(tmp_path, clock, kwargs):
                 insert_revision(db, **kwargs)
     finally:
         store.close()
+
+
+@pytest.mark.parametrize(
+    "table, conflict",
+    [
+        ("commands", "primary-key"),
+        ("commands", "unique-key"),
+        ("revisions", "primary-key"),
+        ("revisions", "unique-key"),
+        ("records", "primary-key"),
+    ],
+)
+def test_replace_cannot_overwrite_history_receipts_or_pointers(
+    tmp_path, clock, table, conflict
+):
+    store = OperatorStore.open(
+        OperatorSettings(enabled=True, root=tmp_path), initialize=True, clock=clock
+    )
+    try:
+        with store.connect(write=True) as db:
+            insert_receipt(db)
+            # No references to this receipt: a unique-key replacement must fail
+            # because of immutability, independently of deferred FK checks.
+            db.execute("""INSERT INTO commands VALUES
+                ('unused', 'unused-key', 'unused-hash', 1, 'now', 201, '{}')""")
+            insert_revision(db)
+            db.execute("INSERT INTO records VALUES ('record', 1)")
+            insert_revision(
+                db,
+                version=2,
+                previous=1,
+                operation="update",
+                reason="Operator correction",
+                origin="automatic",
+            )
+            db.execute("UPDATE records SET current_version=2")
+            originals = {
+                name: db.execute(f"SELECT * FROM {name}").fetchall()
+                for name in ("commands", "revisions", "records")
+            }
+            where = (
+                " WHERE command_id='unused'"
+                if table == "commands" and conflict == "unique-key"
+                else ""
+            )
+            if table == "revisions":
+                where = " WHERE version=1"
+            selected = db.execute(f"SELECT * FROM {table}{where}")
+            replacement = dict(
+                zip([column[0] for column in selected.description], selected.fetchone())
+            )
+        if table == "commands":
+            replacement["request_hash"] = "changed-hash"
+            if conflict == "unique-key":
+                replacement["command_id"] = "replacement-command"
+            else:
+                replacement["idempotency_key"] = "changed-key"
+        elif table == "revisions":
+            replacement["payload_json"] = '{"changed":true}'
+            if conflict == "unique-key":
+                replacement["journal_seq"] = 1000
+        else:
+            replacement["current_version"] = 1
+        columns = ", ".join(replacement)
+        parameters = ", ".join("?" for _ in replacement)
+        with pytest.raises(sqlite3.IntegrityError):
+            with store.connect(write=True) as db:
+                db.execute(
+                    f"INSERT OR REPLACE INTO {table} ({columns}) VALUES ({parameters})",
+                    tuple(replacement.values()),
+                )
+        with store.connect() as db:
+            for name, original in originals.items():
+                assert db.execute(f"SELECT * FROM {name}").fetchall() == original
+            assert db.execute("PRAGMA foreign_key_check").fetchall() == []
+    finally:
+        store.close()

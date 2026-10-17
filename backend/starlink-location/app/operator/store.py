@@ -104,6 +104,8 @@ class OperatorStore:
         try:
             connection.execute("PRAGMA busy_timeout=2000")
             connection.execute("PRAGMA foreign_keys=ON")
+            # REPLACE's implicit deletes must run the immutable-history guards.
+            connection.execute("PRAGMA recursive_triggers=ON")
             connection.execute("PRAGMA synchronous=FULL")
             connection.execute("PRAGMA wal_autocheckpoint=1000")
             if connection.execute("PRAGMA journal_mode=WAL").fetchone()[0] != "wal":
