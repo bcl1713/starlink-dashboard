@@ -1,7 +1,8 @@
 # Operator journal — Recovery, migration, and validation
 
 Part of the [proposed #362 design](2026-10-17-operator-journal-design.md).
-Status: for review; no product implementation authorized.
+Status: design approved for implementation planning; no product implementation
+authorized.
 
 ## WAL, durability, startup, and errors
 
