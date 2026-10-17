@@ -49,3 +49,27 @@ def record_data():
             "note": "Synthetic content",
         },
     }
+
+
+@pytest.fixture
+def service(tmp_path, clock, monkeypatch):
+    from app.mission import storage
+    from app.operator.models import Actor
+    from app.operator.references import MissionReferences
+    from app.operator.service import OperatorService
+    from app.operator.settings import OperatorSettings
+    from app.operator.store import OperatorStore
+    from tests.operator.service_helpers import save_mission
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")
+    save_mission("demo-mission")
+    save_mission("other-mission")
+    store = OperatorStore.open(
+        OperatorSettings(enabled=True, root=tmp_path / "operator"),
+        initialize=True,
+        clock=clock,
+    )
+    yield OperatorService(
+        store, clock=clock, actor=Actor(), references=MissionReferences()
+    )
+    store.close()
