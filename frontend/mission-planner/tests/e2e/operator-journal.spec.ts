@@ -215,30 +215,40 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       join(evidence, 'browser-proof.json'),
       JSON.stringify(proof, null, 2)
     );
-    const baseline: Record<string, number> = {};
-    for (const [path, heading] of [
-      ['/overview', null],
-      ['/missions', 'Missions'],
-      ['/configuration', 'Configuration'],
-      ['/export', 'Data Export'],
+    const baseline: Record<string, Record<string, number>> = {};
+    await phone.setViewportSize({ width: 390, height: 844 });
+    for (const [device, client] of [
+      ['desktop', page],
+      ['mobile', phone],
     ] as const) {
-      const response = await page.goto(origin + path);
-      baseline[path] = response!.status();
-      expect(response!.status()).toBe(200);
-      if (heading)
-        await expect(
-          page.getByRole('heading', { name: heading, exact: true })
-        ).toBeVisible();
-      else await expect(page.locator('main').first()).toBeVisible();
-      if (path === '/overview') {
-        await noOverflow(page);
-        await expect(
-          page.getByRole('heading', { name: 'Operator journal', exact: true })
-        ).toHaveCount(0);
-        await page.screenshot({
-          path: join(evidence, 'overview-baseline.png'),
-          fullPage: true,
-        });
+      baseline[device] = {};
+      for (const [path, heading] of [
+        ['/overview', null],
+        ['/missions', 'Missions'],
+        ['/configuration', 'Configuration'],
+        ['/export', 'Data Export'],
+      ] as const) {
+        const response = await client.goto(origin + path);
+        baseline[device][path] = response!.status();
+        expect(response!.status()).toBe(200);
+        if (heading)
+          await expect(
+            client.getByRole('heading', { name: heading, exact: true })
+          ).toBeVisible();
+        else await expect(client.locator('main').first()).toBeVisible();
+        if (path === '/overview') {
+          await noOverflow(client);
+          await expect(
+            client.getByRole('heading', {
+              name: 'Operator journal',
+              exact: true,
+            })
+          ).toHaveCount(0);
+          await client.screenshot({
+            path: join(evidence, `${device}-overview-baseline.png`),
+            fullPage: true,
+          });
+        }
       }
     }
     proof.baseline = baseline;
