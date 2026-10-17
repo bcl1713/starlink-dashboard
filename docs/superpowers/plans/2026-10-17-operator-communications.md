@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development or superpowers:executing-plans to
 > implement this plan task-by-task. Steps use checkbox syntax for tracking.
-> Execution method awaits user selection.
+> Execution method: inline, approved.
 
 **Goal:** Deliver scheduled communications requirements and retrospective call
 corrections for issue #365.
@@ -80,33 +80,33 @@ journal DTOs and new `CallCreate`/`CallUpdate`. Keep shared remove/restore DTOs.
 normalizes omitted lead before creating/hashing `CreateRecord`; `CallUpdate`
 requires the lead key. All five statuses retain the wire spelling `cancelled`.
 
-- [ ] Write API tests for each omitted/null/zero/positive lead table cell in the
+- [x] Write API tests for each omitted/null/zero/positive lead table cell in the
       spec; assert planned POST omission yields 10, completed/cancelled omission
       yields null, missing PUT yields 422 and unchanged revision count.
-- [ ] Add failing tests for scheduled creation without start, party/time quick
+- [x] Add failing tests for scheduled creation without start, party/time quick
       creation, unknown duration, reversed actual/planned intervals, future
       actual time, invalid numeric/text fields, and mismatched payload/type.
-- [ ] From the backend, run the focused contracts and confirm failures are
+- [x] From the backend, run the focused contracts and confirm failures are
       missing call contracts, not setup errors:
 
   ```bash
   timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt pytest tests/operator/test_call_api.py -q
   ```
 
-- [ ] Extend DTOs/payload fields and public writable types to calls and journal
+- [x] Extend DTOs/payload fields and public writable types to calls and journal
       entries only. Normalize create defaults only at the boundary; enforce
       update type immutability inside the transaction, preserving receipt-first
       replay.
-- [ ] Add compatibility tests seeding raw legacy JSON with no lead: API reads
+- [x] Add compatibility tests seeding raw legacy JSON with no lead: API reads
       null; stored JSON, receipts and raw projection hashes remain unchanged.
       Correct to null and verify only a new revision changes. Assert omitted-key
       POST retry after correction returns original receipt once.
-- [ ] Add concurrency/transition tests: one winner for two expected-version
+- [x] Add concurrency/transition tests: one winner for two expected-version
       writes, remove/restore, all statuses, mission/leg correction, conference
       relink, participation dependency conflict, and unchanged shared
       conference. Assert history contains old/new planned times and projections
       contain corrected actual/party values.
-- [ ] Run the focused tests plus existing operator tests with the bounded
+- [x] Run the focused tests plus existing operator tests with the bounded
       backend command; verify restart/recovery/backup and journal API regression
       coverage, then commit `feat: expose durable Operator call requirements`.
 
@@ -130,21 +130,21 @@ callDraft(
 ): CallInput
 ```
 
-- [ ] Write failing tests: planned draft lead 10; retrospective null;
+- [x] Write failing tests: planned draft lead 10; retrospective null;
       legacy/null/zero/positive edit round-trips retain values. Actual and
       planned times remain independent.
-- [ ] Write `shiftCallTime` tests: +120 and -15 minutes across midnight,
+- [x] Write `shiftCallTime` tests: +120 and -15 minutes across midnight,
       unchanged actual fields, known duration preserved, unknown planned end
       stays null; invalid/noninteger/out-of-range shift or unknown start
       produces a validation error, never an invented start/end. Limit shifts to
       ±525600 minutes and require resulting valid UTC timestamps.
-- [ ] Write `preparationAt` tests: start 1600Z and lead 10 gives 1550Z, zero
+- [x] Write `preparationAt` tests: start 1600Z and lead 10 gives 1550Z, zero
       gives 1600Z, unknown lead/start and terminal/deleted records return null.
       Completed retrospective calls return null through correction/restore.
-- [ ] Run bounded Vitest for these files and confirm intended failures;
+- [x] Run bounded Vitest for these files and confirm intended failures;
       implement pure helpers with no local clock, implicit timezone, network or
       defaulting during edits.
-- [ ] Run focused tests plus TypeScript build, then commit
+- [x] Run focused tests plus TypeScript build, then commit
       `feat: add deterministic call timing and draft contracts`.
 
 ## Task 3: Short call entry, rescheduling and audit actions
@@ -161,24 +161,24 @@ incomplete state, and selection/history callbacks.
 `OperatorCommunications({missionId: string})` owns selected call/draft and uses
 Task 4's store-bound query/mutation hook.
 
-- [ ] Write failing editor tests for time/party-only save, UTC date/time fields,
+- [x] Write failing editor tests for time/party-only save, UTC date/time fields,
       all statuses, explicit unknowns, optional detail disclosure, unknown
       duration and null lead, absolute and signed shifts, midnight crossing, and
       actual interval correction.
-- [ ] Add tests for malformed numeric input, end-only actual interval
+- [x] Add tests for malformed numeric input, end-only actual interval
       validation, and required scheduled start. Keep invalid draft values
       visible with field errors; never silently coerce empty numeric inputs to
       zero.
-- [ ] Implement editor and list with 44px minimum controls and responsive
+- [x] Implement editor and list with 44px minimum controls and responsive
       stacking. Provide Schedule call, Log unscheduled/completed call, explicit
       status reinstatement, history, remove and restore actions. Reuse
       mission/leg/between-leg association patterns; do not expose conference
       lifecycle editing.
-- [ ] Test completed/removed records remain accessible; unrelated edits preserve
+- [x] Test completed/removed records remain accessible; unrelated edits preserve
       lead and planned/actual separation; retained conference reference can be
       cleared or replaced without closing the conference. History shows
       timing/participant corrections.
-- [ ] Run bounded focused Vitest and commit
+- [x] Run bounded focused Vitest and commit
       `feat: add Operator communications entry and corrections` once integrated
       with Task 4 interfaces. No runtime acceptance claim at this stage.
 
@@ -197,24 +197,24 @@ default journal behavior. Task 3 consumes
 `useOperatorJournal(missionId, 'call')` with existing
 save/retry/reconcile/health/records semantics.
 
-- [ ] Write failing hook tests for calls: no Saved before receipt, duplicate
+- [x] Write failing hook tests for calls: no Saved before receipt, duplicate
       click, offline/uncertain retry with same key, explicit stale-version
       conflict, epoch change reconciliation, receipt replay followed by
       current-row reread, and mission switch during an outstanding save.
-- [ ] Implement call query type partitioning and broad mutation types without
+- [x] Implement call query type partitioning and broad mutation types without
       changing journal reads. Refetch calls on focus/reconnect/explicit refresh
       and after local writes; preserve drafts and scope by mission/store
       identity. Do not add interval polling.
-- [ ] Test two clients through the API/mock boundary: refresh sees remote
+- [x] Test two clients through the API/mock boundary: refresh sees remote
       changes but leaves local draft intact; stale save conflicts. Test multiple
       pages and identical planned starts with record-ID tie break, explicit
       incomplete warning, and load-more access.
-- [ ] Add Communications navigation/section to Operator. Extend summary active
+- [x] Add Communications navigation/section to Operator. Extend summary active
       statuses to tentative/scheduled/delayed, derive preparation UTC using
       `preparationAt`, retain separately visible overdue calls and exclude
       cancelled/completed/removed from preparation/next requirement. Derive
       due/upcoming at backend `as_of` and label snapshot semantics.
-- [ ] Run bounded tests for operator hooks/components/pages/services, existing
+- [x] Run bounded tests for operator hooks/components/pages/services, existing
       journal recovery/identity tests, lint and production build. Commit
       `feat: integrate synchronized call requirements in Operator`.
 

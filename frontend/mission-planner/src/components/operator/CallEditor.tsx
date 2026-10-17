@@ -175,6 +175,7 @@ export function CallEditor({
         <label className="block">
           Status
           <select
+            aria-label="Status"
             className={fieldClass}
             value={draft.payload.status}
             onChange={(e) =>
@@ -204,6 +205,7 @@ export function CallEditor({
             <label className="block">
               Communications type
               <select
+                aria-label="Communications type"
                 className={fieldClass}
                 value={draft.payload.communications_kind ?? ''}
                 onChange={(e) =>
@@ -251,6 +253,7 @@ export function CallEditor({
               <label>
                 Shift unit
                 <select
+                  aria-label="Shift unit"
                   className={fieldClass}
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
@@ -303,6 +306,7 @@ export function CallEditor({
             <label className="block">
               Actual time precision
               <select
+                aria-label="Actual time precision"
                 className={fieldClass}
                 value={draft.time.precision}
                 onChange={(e) =>
@@ -345,6 +349,7 @@ export function CallEditor({
             <label className="block">
               Scope
               <select
+                aria-label="Scope"
                 className={fieldClass}
                 value={draft.scope}
                 onChange={(e) =>

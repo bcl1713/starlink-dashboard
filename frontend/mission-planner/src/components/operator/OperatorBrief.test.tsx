@@ -234,3 +234,39 @@ it('shows delayed preparation from saved lead and excludes terminal call reminde
   ).toContain('Original');
   expect(screen.getByText(/Prepare:.*11:05:00 UTC/)).toBeTruthy();
 });
+it('labels overdue tentative and delayed calls with their actual recorded statuses', () => {
+  render(
+    <MemoryRouter>
+      <OperatorBrief
+        missionId="mission-a"
+        pages={[
+          {
+            ...page([
+              row(
+                'call',
+                'Tentative synthetic',
+                '2026-10-17T15:00:00Z',
+                'tentative'
+              ),
+              row(
+                'call',
+                'Delayed synthetic',
+                '2026-10-17T15:30:00Z',
+                'delayed'
+              ),
+            ]),
+            as_of: at,
+          },
+        ]}
+        unavailable={false}
+        loading={false}
+        failed={false}
+        incomplete={false}
+      />
+    </MemoryRouter>
+  );
+  const attention = screen.getByRole('region', { name: 'Attention needed' });
+  expect(attention.textContent).toContain('Status: tentative');
+  expect(attention.textContent).toContain('Status: delayed');
+  expect(attention.textContent).not.toContain('remain scheduled');
+});

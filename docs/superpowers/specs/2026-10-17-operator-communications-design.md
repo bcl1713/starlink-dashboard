@@ -1,7 +1,7 @@
 # Operator communications requirements and call corrections
 
-Issue: #365. Parent: #361. Status: design direction approved; written
-specification awaiting review. Base: origin/dev at 03c78419.
+Issue: #365. Parent: #361. Status: specification and implementation plan
+approved; inline execution. Base: origin/dev at 03c78419.
 
 ## Purpose and scope
 

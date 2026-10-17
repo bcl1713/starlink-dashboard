@@ -61,13 +61,34 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await page
       .getByRole('textbox', { name: /^Note/ })
       .fill('Synthetic report entered at 1600Z about 1430–1442Z.');
-    await page.getByLabel('Entry type').selectOption('call_observation');
-    await page.getByLabel('Time precision').selectOption('exact');
-    await page.getByLabel('Occurred at (UTC)').fill('2026-10-17T14:30:00Z');
-    await page.getByLabel('End state').selectOption('known');
-    await page.getByLabel('Ended at (UTC)').fill('2026-10-17T14:42:00Z');
-    await page.getByLabel('Scope').selectOption('leg');
-    await page.getByLabel('Leg ID', { exact: true }).fill('synthetic-leg-1');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Entry type')
+      .selectOption('call_observation');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Time precision')
+      .selectOption('exact');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Occurred at (UTC)')
+      .fill('2026-10-17T14:30:00Z');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('End state')
+      .selectOption('known');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Ended at (UTC)')
+      .fill('2026-10-17T14:42:00Z');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Scope')
+      .selectOption('leg');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Leg ID', { exact: true })
+      .fill('synthetic-leg-1');
     const late = await save(page, true);
     proof.saveStatus = {
       heldRealResponse: true,
@@ -79,8 +100,14 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await page
       .getByLabel('Title', { exact: true })
       .fill('Synthetic late observation');
-    await page.getByLabel('Scope').selectOption('leg');
-    await page.getByLabel('Leg ID', { exact: true }).fill('synthetic-leg-2');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Scope')
+      .selectOption('leg');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Leg ID', { exact: true })
+      .fill('synthetic-leg-2');
     await page
       .getByLabel('Audit note (optional)')
       .fill('Corrected synthetic typo and leg');
@@ -109,12 +136,27 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await page
       .getByLabel('Title', { exact: true })
       .fill('Synthetic ended call');
-    await page.getByLabel('Time precision').selectOption('exact');
-    await page.getByLabel('Occurred at (UTC)').fill('2026-10-17T15:00:00Z');
-    await page.getByLabel('End state').selectOption('known');
-    await page.getByLabel('Ended at (UTC)').fill('2026-10-17T15:45:00Z');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Time precision')
+      .selectOption('exact');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Occurred at (UTC)')
+      .fill('2026-10-17T15:00:00Z');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('End state')
+      .selectOption('known');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Ended at (UTC)')
+      .fill('2026-10-17T15:45:00Z');
     const ended = await save(page);
-    await page.getByLabel('Ended at (UTC)').fill('2026-10-17T15:35:00Z');
+    await page
+      .getByRole('region', { name: 'Operator journal', exact: true })
+      .getByLabel('Ended at (UTC)')
+      .fill('2026-10-17T15:35:00Z');
     await save(page);
     await page
       .getByRole('button', { name: 'Remove Synthetic ended call', exact: true })

@@ -20,10 +20,11 @@ export function OperatorCommunications({
   const [selected, setSelected] = useState<SavedRecord>();
   const [dirty, setDirty] = useState(false);
   const [generation, setGeneration] = useState(0);
+  const [needsCurrent, setNeedsCurrent] = useState(false);
   const [historyId, setHistoryId] = useState<string>();
   const unavailable = calls.health.isError || !calls.health.data?.ready;
   const locked = calls.saving || !!calls.pending;
-  const disabled = unavailable || locked || calls.blocked;
+  const disabled = unavailable || locked || calls.blocked || needsCurrent;
   function markDirty(value: boolean) {
     setDirty(value);
     onDirty?.(value);
@@ -34,16 +35,21 @@ export function OperatorCommunications({
     saved = false
   ) {
     calls.openEditor(record, saved);
+    setNeedsCurrent(false);
     setSelected(record);
     setDraft(callDraft(record, mode, missionId));
     setGeneration((n) => n + 1);
     markDirty(false);
   }
+  function accepted(result: { current?: SavedRecord } | undefined) {
+    if (!result) return;
+    if (result.current) open(result.current, 'planned', true);
+    else setNeedsCurrent(true);
+  }
   async function save(command: OperatorCommand) {
     markDirty(true);
     const result = await calls.save(command);
-    if (result)
-      open(result.current ?? result.receipt.saved_records[0], 'planned', true);
+    accepted(result);
   }
   const items = calls.records.data?.pages.flatMap((p) => p.items) ?? [];
   return (
@@ -92,7 +98,15 @@ export function OperatorCommunications({
         </p>
       )}
       {calls.saving && <p role="status">Saving call…</p>}
-      {calls.saved && <p role="status">Call saved.</p>}
+      {calls.saved && !dirty && !needsCurrent && (
+        <p role="status">Call saved.</p>
+      )}
+      {needsCurrent && (
+        <p role="status">
+          Call save acknowledged. Current saved state unavailable; reread to
+          continue. Your draft is retained.
+        </p>
+      )}
       {unavailable && (
         <p role="alert">
           Communications unavailable. Saved state could not be verified.
@@ -114,18 +128,13 @@ export function OperatorCommunications({
           disabled={calls.saving}
           onClick={async () => {
             const result = await calls.retry();
-            if (result)
-              open(
-                result.current ?? result.receipt.saved_records[0],
-                'planned',
-                true
-              );
+            accepted(result);
           }}
         >
           Retry same call save
         </button>
       )}
-      {calls.blocked && (
+      {(calls.blocked || needsCurrent) && (
         <div className="space-y-2">
           <p>
             Call state changed. Your draft is retained; reread before editing
@@ -142,7 +151,7 @@ export function OperatorCommunications({
             disabled={calls.saving}
             onClick={async () => {
               const value = await calls.reconcile();
-              if (value) open(value.current);
+              if (value) open(value.current, 'planned', needsCurrent);
             }}
           >
             Reread and use saved call
@@ -154,7 +163,7 @@ export function OperatorCommunications({
               onClick={() => {
                 if (calls.recoverMissing()) {
                   setSelected(undefined);
-                  setGeneration((n) => n + 1);
+                  setNeedsCurrent(false);
                   markDirty(true);
                 }
               }}

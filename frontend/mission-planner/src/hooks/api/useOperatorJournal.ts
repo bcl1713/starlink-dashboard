@@ -120,9 +120,10 @@ export function useOperatorJournal(
       }
       if (!stillSameStore(request)) return;
       setLatest(null);
-      reconciliationTarget.current = current
-        ? { recordId: current.record_id, identity: request.identity }
-        : null;
+      reconciliationTarget.current = {
+        recordId: current?.record_id ?? receipt.saved_records[0].record_id,
+        identity: request.identity,
+      };
       return { receipt, current };
     } catch (caught) {
       const failure = operatorFailure(caught);

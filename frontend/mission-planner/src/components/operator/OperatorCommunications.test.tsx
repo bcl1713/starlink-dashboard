@@ -166,3 +166,206 @@ it('remove/restore preserves completed timing and never invents preparation', as
   );
   expect(screen.queryByText(/^Prepare:/)).toBeNull();
 });
+it('does not apply an old mission receipt to a new keyed mission workspace', async () => {
+  vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
+    page([original]).items[0]
+  );
+  let release!: (value: {
+    schema_version: 1;
+    command_id: string;
+    saved_records: SavedRecord[];
+  }) => void;
+  vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      })
+  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  clients.push(client);
+  const tree = (mission: string) => (
+    <QueryClientProvider client={client}>
+      <OperatorCommunications key={mission} missionId={mission} />
+    </QueryClientProvider>
+  );
+  const view = render(tree('mission-a'));
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Log unscheduled/completed call',
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false)
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Log unscheduled/completed call' })
+  );
+  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+    target: { value: 'Old mission draft' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  await waitFor(() => expect(screen.getByText('Saving call…')).toBeTruthy());
+  view.rerender(tree('mission-b'));
+  await act(async () => {
+    release({
+      schema_version: 1,
+      command_id: 'old-receipt',
+      saved_records: [original],
+    });
+  });
+  expect(
+    (
+      screen.getByLabelText(
+        'Party / participant (optional)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('');
+  expect(screen.queryByText('Call saved.')).toBeNull();
+});
+it('does not reopen a historical receipt when the current-state reread fails', async () => {
+  const { writes } = mount();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+  );
+  completed();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
+  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+    target: { value: 'Retained local draft' },
+  });
+  vi.mocked(api.readOperatorRecord).mockRejectedValueOnce(
+    new Error('GET unavailable')
+  );
+  writes.mockResolvedValueOnce({
+    schema_version: 1,
+    command_id: 'historical',
+    saved_records: [original],
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  await waitFor(() =>
+    expect(screen.getByText(/Call save acknowledged/)).toBeTruthy()
+  );
+  expect(
+    (
+      screen.getByLabelText(
+        'Party / participant (optional)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('Retained local draft');
+  expect(
+    (
+      screen
+        .getByRole('button', { name: 'Save call' })
+        .closest('fieldset') as HTMLFieldSetElement
+    ).disabled
+  ).toBe(true);
+  vi.mocked(api.readOperatorRecord).mockResolvedValue(
+    page([
+      {
+        ...original,
+        version: 2,
+        payload: {
+          ...original.payload,
+          title: 'Remote correction',
+          entry_type: 'call',
+          status: 'completed',
+          conference_id: null,
+          party: 'Remote correction',
+        },
+      },
+    ]).items[0]
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Reread and use saved call' })
+  );
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByLabelText(
+          'Party / participant (optional)'
+        ) as HTMLInputElement
+      ).value
+    ).toBe('Remote correction')
+  );
+});
+it('keeps raw preparation and duration edits when retaining a draft in a replacement store', async () => {
+  const { client } = mount();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+  );
+  completed();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
+  details();
+  fireEvent.change(
+    screen.getByLabelText('Preparation lead minutes (blank = unknown)'),
+    { target: { value: '25' } }
+  );
+  fireEvent.change(
+    screen.getByLabelText('Duration minutes (blank = unknown)'),
+    { target: { value: '30' } }
+  );
+  const replacement = {
+    ...health,
+    store_id: 'new-store',
+    api_epoch: 'epoch-b',
+  };
+  vi.mocked(api.getOperatorHealth).mockResolvedValue(replacement);
+  vi.mocked(api.readOperatorRecord).mockRejectedValue(
+    failure(404, 'record_not_found')
+  );
+  await act(async () => {
+    client.setQueryData(['operator-health'], replacement);
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Reread and use saved call' })
+    ).toBeTruthy()
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Reread and use saved call' })
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', {
+        name: 'Keep call draft as new in current store',
+      })
+    ).toBeTruthy()
+  );
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Keep call draft as new in current store',
+    })
+  );
+  expect(
+    (
+      screen.getByLabelText(
+        'Preparation lead minutes (blank = unknown)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('25');
+  expect(
+    (
+      screen.getByLabelText(
+        'Duration minutes (blank = unknown)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('30');
+});
+it('does not label an edited draft saved after a previous acknowledgment', async () => {
+  mount();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+  );
+  completed();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  await waitFor(() => expect(screen.getByText('Call saved.')).toBeTruthy());
+  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+    target: { value: 'Unsaved participant' },
+  });
+  expect(screen.queryByText('Call saved.')).toBeNull();
+});

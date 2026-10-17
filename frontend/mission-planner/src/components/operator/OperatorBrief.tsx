@@ -30,6 +30,9 @@ function SummaryRecord({ item, now }: { item: ReadRecord; now: number }) {
       <p className="text-sm">
         {operatorUtc(record.time.planned_start_at ?? record.time.occurred_at)}
       </p>
+      {record.payload.entry_type === 'call' && (
+        <p className="text-sm">Status: {record.payload.status}</p>
+      )}
       {prep && (
         <p className="text-sm">
           Prepare: {operatorUtc(prep)} ·{' '}
@@ -235,7 +238,7 @@ export function OperatorBrief({
             Attention needed
           </h2>
           <p className="text-sm text-muted-foreground">
-            These calls are past their planned start and remain scheduled.
+            These calls are past their planned start and remain active.
           </p>
           <div className="grid min-w-0 gap-4 lg:grid-cols-3">
             {overdueCalls.map((item) => (
