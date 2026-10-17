@@ -116,28 +116,69 @@ another standalone export route/worker now. Current production accepts artifact
 kinds `planning` and `telemetry`; adding an operations/combined artifact
 requires an explicit compatible extension, not pretending it already exists.
 
-Snapshot projection yields `operations/current.json` (latest active records),
-optional CSV, and separately requested `operations/audit.jsonl` (all revisions,
-including removal/correction/association moves). A manifest names schema
-version, store ID, epoch, mission ID, source mode/run ID, Operator high-water
-sequence, component capture times, source capture revisions, checksums, audit
-inclusion, and unresolved associations. Include mission-only and between-leg
-records at the mission root, not under an arbitrary leg. CSV uses existing
-formula-escaping conventions. Audit is always explicitly labeled, never a
-surprise current export.
+The normal mission operations export must include both `operations/current.json`
+(one latest active record per logical ID) and `operations/activity.jsonl`
+(chronological operational changes). Current state alone is insufficient for
+human/LLM after-action review. Optional CSV may mirror these separately labeled
+projections. Only the full `operations/audit.jsonl`, containing original
+full-state revisions, is separately requested. This is a required #362
+projection contract and #370 production-integration handoff, not an optional
+enhancement deferred for later design. Existing planning-only and telemetry-only
+artifact contracts remain unchanged until that integration.
+
+Derive activity deterministically from committed revisions at H; no extra event
+store or write path. Emit one activity item per accepted record revision, keyed
+by `(store_id, record_id, version)` with `command_id` and `journal_seq`.
+Multiple items for one call describe changes to that call, not additional call
+records. Each item carries schema version, record ID/type, version/predecessor,
+operation, reason/origin, author, provenance/source mode, immutable
+`recorded_at`, separate reported `occurred_at`/`ended_at` with precision,
+planned times, and an explicit retrospective flag. Sort by acceptance sequence
+(normally recording chronology), never backdate knowledge by sorting only on
+actual occurrence. Include source observation/prediction times without inventing
+missing values.
+
+Include structured changed fields with before/after values for operational type,
+status, schedule, actual interval/precision, mission/leg/scope, and typed
+relationships. Creates supply initial values. Schedule shifts/cancellations,
+issue opening/resolution/reopening, timing corrections, removal and restoration
+remain reconstructable without full audit. A cancellation is a domain status
+change; removal is a tombstone activity. Free-text edits identify changed fields
+and that revision's title but need not copy every prior note into the timeline;
+exact prior free-text bodies require audit. Display generated change
+descriptions as such, not as operator-authored explanations.
+
+For a late-entered 1430–1442Z call recorded at 1600Z, activity says when it was
+reported and when it reportedly happened. A later 1545→1535 end-time correction
+has a new item containing both values; current state has one corrected call.
+Remove/restore items preserve their chronology even when the call is absent from
+current state. Soft removal is not historical erasure.
+
+A manifest names schema version, store ID, epoch, mission ID, source mode/run
+ID, Operator high-water sequence, component capture times, source capture
+revisions, checksums, mandatory activity inclusion, optional audit inclusion,
+and unresolved associations. Include mission-only and between-leg records at the
+mission root, not under an arbitrary leg. CSV uses existing formula-escaping
+conventions. Label current state, activity, and full audit as distinct
+projections.
 
 Pin H and capture required Operator rows in one read transaction; select the
-latest version per ID at H before filtering mission/deletion. Include moved-out
-historical revisions only in audit. Frozen projection bytes and fingerprints are
-persisted with the preparation job before acknowledgment in #370; restart uses
-that snapshot, not a newly queried live store. Pin the existing #349 capture
-revisions through its preparation boundary. Independently record each
-component's capture point: there is no universal atomic instant across
-independent stores. Hold the repository gate only while pinning mission
-identity/configuration, then release before expensive export work. Never hold
-the Operator write lock while calling archive services. A partial/unavailable
-telemetry component retains its existing explicit labeling and must not block
-exporting the Operator journal.
+latest version per ID at H before filtering mission/deletion. Activity includes
+revisions associated with the mission when accepted, plus a move-out item when
+the predecessor belonged to it; the target mission receives the same move-in
+identity. A move item carries before/after association. Do not include later
+unrelated changes in the old mission. Audit includes that mission's historical
+revision membership and move-out boundary. All projections use the same H;
+removed records remain absent from current but their activities remain present.
+Frozen projection bytes and fingerprints are persisted with the preparation job
+before acknowledgment in #370; restart uses that snapshot, not a newly queried
+live store. Pin the existing #349 capture revisions through its preparation
+boundary. Independently record each component's capture point: there is no
+universal atomic instant across independent stores. Hold the repository gate
+only while pinning mission identity/configuration, then release before expensive
+export work. Never hold the Operator write lock while calling archive services.
+A partial/unavailable telemetry component retains its existing explicit labeling
+and must not block exporting the Operator journal.
 
 Simulation artifacts are conspicuously simulation-only and use separate stores.
 The existing telemetry builder rejects non-live captures: preserve that guard.

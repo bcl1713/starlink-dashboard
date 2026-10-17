@@ -51,6 +51,7 @@ CREATE TABLE revisions (
     operation TEXT NOT NULL CHECK
         (operation IN ('create', 'update', 'remove', 'restore')),
     reason TEXT,
+    reason_origin TEXT CHECK (reason_origin IN ('automatic', 'operator')),
     schema_version INTEGER NOT NULL,
     record_type TEXT NOT NULL,
     mission_id TEXT NOT NULL,
@@ -114,10 +115,20 @@ Required constraints/triggers:
   between-leg context uses `previous_leg_id` and `next_leg_id` in the typed
   payload, validated against the same mission. Scope is explicit, never inferred
   from whichever leg is active when the browser submits.
-- Require nonempty reason for corrections, remove, restore, association changes,
-  and type changes. Enforce bounded reasons (1–1000 characters), titles (1–200),
-  notes (at most 8000), and entire request bodies (64 KiB). Reject unknown
-  fields.
+- Persist a nonempty reason for corrections, remove, restore, association
+  changes, and type changes; the backend supplies it without requiring operator
+  input. With no optional `audit_note`, use `Operator correction`,
+  `Operator removal`, or `Operator restoration` and `reason_origin = automatic`.
+  Association/type corrections use `Operator correction`; actual changed fields
+  remain in history. If a nonblank `audit_note` is supplied, save it as the
+  reason with `reason_origin = operator`. Blank/omitted notes use the automatic
+  default. A create may have null reason/origin; require both together
+  otherwise. Enforce bounded supplied notes/reasons (at most 1000 characters),
+  titles (1–200), content notes (at most 8000), and entire request bodies (64
+  KiB). Reject unknown fields. Author, acceptance time and version remain
+  sufficient attribution for routine corrections; never prompt for an
+  explanation just to fix a typo, time, type or association, remove an entry, or
+  restore it.
 - Foreign-key enforcement is enabled on every connection. Cross-store mission
   references are validated under repository locks, not fabricated SQL FKs.
 
