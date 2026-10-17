@@ -172,7 +172,10 @@ def qualify(owner):
             cwd=frontend,
             env=env,
         )
-        return json.loads((owner.root / "browser-proof.json").read_text())
+        return {
+            "journal": json.loads((owner.root / "browser-proof.json").read_text()),
+            "shell": json.loads((owner.root / "shell-proof.json").read_text()),
+        }
 
     def probe(script, destination):
         result = json.loads(

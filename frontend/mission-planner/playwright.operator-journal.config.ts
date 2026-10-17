@@ -5,7 +5,7 @@ if (!process.env.OPERATOR_ACCEPTANCE_ORIGIN)
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'operator-journal.spec.ts',
+  testMatch: ['operator-journal.spec.ts', 'operator-shell.spec.ts'],
   workers: 1,
   retries: 0,
   timeout: 240_000,

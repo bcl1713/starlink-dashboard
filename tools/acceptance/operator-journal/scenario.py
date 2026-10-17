@@ -77,6 +77,59 @@ def make_demo(clock: Clock) -> dict:
                     payload=payload,
                 )
             )
+    # Separate missions leave the journal regression fixture untouched.
+    for scope in ("preflight", "leg", "between_legs"):
+        mission_id = f"synthetic-shell-{scope.replace('_', '-')}"
+        missions.append(
+            Mission(
+                id=mission_id,
+                name=f"Synthetic Shell {scope}",
+                legs=[
+                    MissionLeg(
+                        id=f"synthetic-shell-leg-{i}",
+                        name=f"Synthetic Leg {i}",
+                        route_id="synthetic-route",
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                    for i in (1, 2)
+                ],
+            )
+        )
+        for kind, title, minutes in (
+            ("call", "Synthetic customer coordination", 20),
+            ("risk", "Synthetic transition advisory", 30),
+            ("issue", "Synthetic audio follow-up", 0),
+        ):
+            payload = {
+                "entry_type": kind,
+                "title": title,
+                "note": "Synthetic saved record; no measured service claim.",
+            }
+            if kind == "call":
+                payload["status"] = "scheduled"
+            if kind == "issue":
+                payload["status"] = "open"
+            if scope == "between_legs":
+                payload.update(
+                    previous_leg_id="synthetic-shell-leg-1",
+                    next_leg_id="synthetic-shell-leg-2",
+                )
+            commands.append(
+                CreateRecord(
+                    record_type=kind,
+                    mission_id=mission_id,
+                    scope=scope,
+                    leg_id="synthetic-shell-leg-1" if scope == "leg" else None,
+                    time={
+                        "occurred_at": clock.now(),
+                        "precision": "exact",
+                        "end_state": "instant",
+                        "planned_start_at": clock.now() + timedelta(minutes=minutes),
+                        "planned_end_at": clock.now() + timedelta(minutes=minutes + 10),
+                    },
+                    payload=payload,
+                )
+            )
     return {
         "synthetic": True,
         "run_id": RUN_ID,

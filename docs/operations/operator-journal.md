@@ -165,9 +165,9 @@ project containers, private volumes, process groups and the loopback listener.
 When rootless Docker suppresses published ports on an internal network, a
 task-owned loopback byte relay reaches port 80 inside the production Nginx
 container through Docker exec. It preserves network isolation and HTTP bytes;
-the evidence records the origin, Nginx header, relay process and teardown.
-Only acceptance fixtures are mounted; application code and the browser bundle
-come from the production images. Synthetic simulation uses a fixed 1600Z clock.
+the evidence records the origin, Nginx header, relay process and teardown. Only
+acceptance fixtures are mounted; application code and the browser bundle come
+from the production images. Synthetic simulation uses a fixed 1600Z clock.
 Separate synthetic operational-format telemetry probes are explicitly labeled.
 
 Mobile recovery covers an actual backend 503 caused by unwritable SQLite files.
@@ -181,13 +181,42 @@ hardware power-loss or aircraft readiness.
 
 For first enablement, initialize the intended namespace, run `check`, take a
 backup, and then enable Operator. There is no in-place schema upgrade beyond
-migration 1. If a newer binary fails to open a store, disable Operator and retain
-the entire independent volume before reverting the binary. Do not initialize a
-replacement store to silence an error. Restore only an explicitly selected,
-validated backup with access stopped; preserve its original manifest and the
-restore report. Restart and reconcile clients against the new epoch. Disabling
-Operator is the backout path that preserves all existing revisions and receipts.
+migration 1. If a newer binary fails to open a store, disable Operator and
+retain the entire independent volume before reverting the binary. Do not
+initialize a replacement store to silence an error. Restore only an explicitly
+selected, validated backup with access stopped; preserve its original manifest
+and the restore report. Restart and reconcile clients against the new epoch.
+Disabling Operator is the backout path that preserves all existing revisions and
+receipts.
 
 The acceptance report distinguishes the tested product SHA from later evidence
 commits. Required CI still applies to the final pull-request head. Projection
 artifacts are foundation contracts; mission-package integration remains #370.
+
+## Operator workspace shell
+
+The gated `/operator` workspace keeps the existing journal and adds read-only
+mission summaries: next scheduled call (including overdue uncompleted calls),
+next recorded risk and open issues. It reads the existing schema-v1 records API;
+there is no new schema, migration, transport-health inference or writable call,
+conference or issue API. Missing associations and unknown/stale freshness remain
+explicit. Record scope describes its association, not measured flight phase. The
+snapshot time is backend UTC, including the injected clock in simulation.
+Refresh summaries explicitly; the shell adds no interval polling. Pagination
+must finish before the shell claims a complete summary. The existing 15-second
+shared health check remains unchanged. Journal receipt/recovery does not wait
+for summary reads.
+
+Desktop uses three summary columns. Mobile stacks upcoming information ahead of
+journal entry, with section links and 44-pixel touch controls. Record
+observation opens and focuses a clean journal editor; a dirty draft must be
+saved or discarded before opening another. Display links reuse Overview and
+Configuration; display mutations remain a separate slice. Missions continues to
+own planning.
+
+Rollback uses the existing feature gate (`OPERATOR_ENABLED=false`); journal data
+is retained. No new infrastructure or storage is required. The production
+acceptance runner now also captures three synthetic scope states at 1920×1080,
+390×844 and 844×390, summary network failure/reconnect, restart with unchanged
+record identities, keyboard entry, mobile navigation and the absence of extra
+summary polling. These are software simulation checks, not aircraft validation.

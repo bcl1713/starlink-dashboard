@@ -123,3 +123,15 @@ def test_acceptance_wrapper_and_private_production_compose():
     )
     wrapper = (HARNESS / "backend_fixture.py").read_text()
     assert "@app." not in wrapper  # No clock/identity/reset HTTP endpoints.
+
+
+def test_shell_scenarios_cover_preflight_leg_and_between_leg_records():
+    scenario = importlib.import_module("scenario")
+    demo = scenario.make_demo(scenario.ScenarioClock())
+    for scope in ("preflight", "leg", "between_legs"):
+        mission = f"synthetic-shell-{scope.replace('_', '-')}"
+        rows = [c for c in demo["commands"] if c.mission_id == mission]
+        assert {c.record_type for c in rows} == {"call", "risk", "issue"}
+        assert all(c.scope == scope for c in rows)
+        call = next(c for c in rows if c.record_type == "call")
+        assert call.time.planned_start_at.isoformat() == "2026-10-17T16:20:00+00:00"

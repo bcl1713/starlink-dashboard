@@ -82,6 +82,8 @@ export function useOperatorJournal(missionId: string) {
     );
   }
   async function refresh() {
+    // Summary reads must never delay journal receipt acknowledgment or recovery.
+    void client.invalidateQueries({ queryKey: ['operator-brief', missionId] });
     await client.invalidateQueries({
       queryKey: ['operator-records', missionId],
     });
