@@ -1,0 +1,98 @@
+{
+  "synthetic": true,
+  "clock": "2026-10-17T16:00:00Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "HeadlessChrome/153.0.8010.12",
+    "revision": "@971a7443b0c9b0a9b2860529b33331b76077ec62",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "jsVersion": "15.3.76.4"
+  },
+  "saveStatus": {
+    "heldRealResponse": true,
+    "savingAnnounced": true,
+    "receiptAcknowledged": true
+  },
+  "historyValues": {
+    "originalEnd": "15:45 UTC",
+    "correctedEnd": "15:35 UTC",
+    "originalLeg": "synthetic-leg-1",
+    "correctedLeg": "synthetic-leg-2",
+    "authorVisible": true
+  },
+  "conflict": {
+    "status": 409,
+    "draftRetained": true,
+    "explicitReconciliation": true
+  },
+  "actualMedia503": {
+    "requests": [
+      {
+        "key": "c313c326-aa35-4bd0-9394-379328ed8fe7",
+        "epoch": "af25338d-7d92-49d1-a36a-c69c32fac4d2",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic mobile retained 503 draft\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:39483/api/v2/operator/records"
+      },
+      {
+        "key": "c313c326-aa35-4bd0-9394-379328ed8fe7",
+        "epoch": "af25338d-7d92-49d1-a36a-c69c32fac4d2",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic mobile retained 503 draft\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:39483/api/v2/operator/records"
+      }
+    ],
+    "failureBody": {
+      "error": {
+        "code": "store_unavailable",
+        "message": "Operator store unavailable",
+        "retryable": false
+      },
+      "request_id": "e623fdbe-ed20-4543-ad06-4f08c85eb0e7"
+    },
+    "counts": {
+      "receipts": 1,
+      "revisions": 1
+    },
+    "retainedDraft": true
+  },
+  "browserResponseLossInjection": {
+    "mechanism": "route.fetch committed backend then route.abort acknowledgment",
+    "requests": [
+      {
+        "key": "74ffc2c3-e870-41fb-96c7-085ce5cfd141",
+        "epoch": "af25338d-7d92-49d1-a36a-c69c32fac4d2",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic lost acknowledgment\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:39483/api/v2/operator/records"
+      },
+      {
+        "key": "74ffc2c3-e870-41fb-96c7-085ce5cfd141",
+        "epoch": "af25338d-7d92-49d1-a36a-c69c32fac4d2",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic lost acknowledgment\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:39483/api/v2/operator/records"
+      }
+    ],
+    "onePersistedRevision": true
+  },
+  "dialogs": 0,
+  "recordIds": {
+    "late": "f82f32ad-c9ea-468a-acf4-8fcc6396b2fd",
+    "ended": "beb4944f-8236-4e10-92bd-ba0faf9e809d"
+  },
+  "baseline": {
+    "desktop": {
+      "/overview": 200,
+      "/missions": 200,
+      "/configuration": 200,
+      "/export": 200
+    },
+    "mobile": {
+      "/overview": 200,
+      "/missions": 200,
+      "/configuration": 200,
+      "/export": 200
+    }
+  }
+}

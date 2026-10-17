@@ -1,0 +1,28 @@
+Product commit bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6
+Static Quality Gate: source formatting, lint and Markdown checks passed.
+Only external-link checks failed: 11 existing ADS-B documentation timeouts.
+Job: https://github.com/bcl1713/starlink-dashboard/actions/runs/39064606297/job/117489497443
+
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+🔍 1316 Total (in 47s) ✅ 156 OK 🚫 0 Errors 👻 1149 Excluded ⏳ 11 Timeouts

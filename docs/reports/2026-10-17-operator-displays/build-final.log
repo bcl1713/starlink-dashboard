@@ -1,0 +1,29 @@
+
+> mission-planner@0.0.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+✓ 2966 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                           0.46 kB │ gzip:   0.30 kB
+dist/assets/overview-label-layout.worker-_XMzcRrn.js      4.17 kB
+dist/assets/orbital.worker-CMk1Mfgi.js                   29.17 kB
+dist/assets/index-D2_VGdr5.js                           308.06 kB
+dist/assets/index-BHsnQoNG.css                          109.15 kB │ gzip:  23.63 kB
+dist/assets/index-DSrMhXco.js                         2,389.30 kB │ gzip: 707.81 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 10.24s
