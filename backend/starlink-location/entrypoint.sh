@@ -18,5 +18,12 @@ for dir in \
   chmod 775 "$dir" 2>/dev/null || true
  done
 
+# Operator history is private and independent of the shared 775 directories.
+# Touch only the mount root; retained database/backup ownership stays intact.
+operator_dir="${OPERATOR_ROOT:-/app/data/operator}"
+mkdir -p "$operator_dir"
+chown appuser:appuser "$operator_dir"
+chmod 700 "$operator_dir"
+
 # Execute the main command as appuser
 exec runuser -u appuser -- "$@"

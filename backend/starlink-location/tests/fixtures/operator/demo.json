@@ -1,0 +1,9 @@
+{
+  "synthetic": true,
+  "run_id": "synthetic-operator-demo-v1",
+  "source_mode": "simulation",
+  "start_utc": "2026-10-17T16:00:00Z",
+  "mission_ids": ["synthetic-mission-a", "synthetic-mission-b"],
+  "leg_ids": ["synthetic-leg-1", "synthetic-leg-2"],
+  "claim": "Synthetic software acceptance only; no measured routing verification"
+}
