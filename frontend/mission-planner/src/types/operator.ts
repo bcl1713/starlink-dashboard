@@ -31,13 +31,24 @@ export interface PayloadBase {
 export interface JournalPayload extends PayloadBase {
   entry_type: 'note' | 'call_observation';
 }
+export interface CallPayload extends PayloadBase {
+  entry_type: 'call';
+  status: 'tentative' | 'scheduled' | 'delayed' | 'completed' | 'cancelled';
+  conference_id: string | null;
+  party?: string | null;
+  coordinator?: string | null;
+  communications_kind?: 'voice' | 'vtc' | 'other' | null;
+  prep_lead_minutes?: number | null;
+}
+export interface CallInput
+  extends Omit<JournalInput, 'record_type' | 'payload'> {
+  record_type: 'call';
+  payload: CallPayload & { prep_lead_minutes: number | null };
+}
+export type OperatorInput = JournalInput | CallInput;
 export type OperatorPayload =
   | JournalPayload
-  | (PayloadBase & {
-      entry_type: 'call';
-      status: 'scheduled' | 'completed' | 'cancelled';
-      conference_id: string | null;
-    })
+  | CallPayload
   | (PayloadBase & { entry_type: 'conference' | 'risk' })
   | (PayloadBase & {
       entry_type: 'participation';
@@ -71,11 +82,11 @@ export interface JournalTransition {
   operator_label?: string | null;
 }
 export type OperatorCommand =
-  | { operation: 'create'; body: JournalInput }
+  | { operation: 'create'; body: OperatorInput }
   | {
       operation: 'update';
       record_id: string;
-      body: JournalInput & {
+      body: OperatorInput & {
         expected_version: number;
         audit_note?: string | null;
       };
