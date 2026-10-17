@@ -68,6 +68,19 @@ class RecordInput(StrictModel):
 
     def validate_for_acceptance(self, clock: Clock) -> None:
         self.time.validate_for_acceptance(clock)
+        if self.record_type == "conference":
+            from datetime import timedelta
+            from .time_models import utc_timestamp
+            from .errors import OperatorError
+
+            latest = utc_timestamp(clock.now()) + timedelta(seconds=60)
+            fields = {
+                f"payload.{name}": "Actual time exceeds the acceptance clock tolerance"
+                for name in ("verified_at", "configuration_reported_at")
+                if (value := getattr(self.payload, name)) is not None and value > latest
+            }
+            if fields:
+                raise OperatorError("validation_error", fields=fields)
 
 
 class CreateRecord(RecordInput):

@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator, model_validator
 
 from .common import Identifier, RecordId, SchemaVersion, StrictModel
+from .time_models import UtcTimestamp
 
 
 class PayloadBase(StrictModel):
@@ -44,10 +45,25 @@ class CallPayload(PayloadBase):
 
 class ConferencePayload(PayloadBase):
     entry_type: Literal["conference"] = "conference"
+    status: Literal["unknown", "preparing", "established", "interrupted", "closed"] | None = None
+    coordinator: str | None = Field(default=None, max_length=200)
+    verified_at: UtcTimestamp | None = None
+    intended_transport: Literal["Starshield", "Ka", "X"] | None = None
+    configured_transport: Literal["Starshield", "Ka", "X"] | None = None
+    configuration_reported_at: UtcTimestamp | None = None
+
+    @model_validator(mode="after")
+    def verification_requires_established(self):
+        if self.verified_at is not None and self.status != "established":
+            raise ValueError("Verification requires an established conference")
+        return self
 
 
 class ParticipationPayload(PayloadBase):
     entry_type: Literal["participation"] = "participation"
+    participant: str | None = Field(default=None, max_length=200)
+    state: Literal["unknown", "connected", "interrupted", "left"] | None = None
+    resumes_participation_id: RecordId | None = None
     call_id: RecordId | None = None
     conference_id: RecordId | None = None
 
