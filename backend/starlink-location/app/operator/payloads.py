@@ -45,7 +45,9 @@ class CallPayload(PayloadBase):
 
 class ConferencePayload(PayloadBase):
     entry_type: Literal["conference"] = "conference"
-    status: Literal["unknown", "preparing", "established", "interrupted", "closed"] | None = None
+    status: (
+        Literal["unknown", "preparing", "established", "interrupted", "closed"] | None
+    ) = None
     coordinator: str | None = Field(default=None, max_length=200)
     verified_at: UtcTimestamp | None = None
     intended_transport: Literal["Starshield", "Ka", "X"] | None = None

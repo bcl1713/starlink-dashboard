@@ -6,7 +6,12 @@ from pydantic import Field, model_validator
 
 from .common import SchemaVersion, StrictModel
 from .models import AuditNote, PositiveVersion, RecordInput
-from .payloads import CallPayload, JournalPayload, ConferencePayload, ParticipationPayload
+from .payloads import (
+    CallPayload,
+    ConferencePayload,
+    JournalPayload,
+    ParticipationPayload,
+)
 
 
 class JournalCreate(RecordInput):
@@ -99,5 +104,11 @@ class ParticipationUpdate(ParticipationCreate):
     audit_note: AuditNote | None = None
 
 
-PublicCreate = Annotated[JournalCreate | CallCreate | ConferenceCreate | ParticipationCreate, Field(discriminator="record_type")]
-PublicUpdate = Annotated[JournalUpdate | CallUpdate | ConferenceUpdate | ParticipationUpdate, Field(discriminator="record_type")]
+PublicCreate = Annotated[
+    JournalCreate | CallCreate | ConferenceCreate | ParticipationCreate,
+    Field(discriminator="record_type"),
+]
+PublicUpdate = Annotated[
+    JournalUpdate | CallUpdate | ConferenceUpdate | ParticipationUpdate,
+    Field(discriminator="record_type"),
+]

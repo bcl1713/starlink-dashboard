@@ -70,8 +70,9 @@ class RecordInput(StrictModel):
         self.time.validate_for_acceptance(clock)
         if self.record_type == "conference":
             from datetime import timedelta
-            from .time_models import utc_timestamp
+
             from .errors import OperatorError
+            from .time_models import utc_timestamp
 
             latest = utc_timestamp(clock.now()) + timedelta(seconds=60)
             fields = {

@@ -3,6 +3,7 @@
 import json
 from uuid import uuid4
 
+from .conference_actions import conference_audit_reason, validate_conference_update
 from .errors import OperatorError
 from .models import CommandReceipt, CreateRecord, RecordInput, SavedRecord
 from .provenance import SourceProvenance
@@ -40,6 +41,7 @@ def execute_in_transaction(
             raise OperatorError("invalid_transition")
     if command.operation in ("create", "update"):
         command.validate_for_acceptance(clock)
+        validate_conference_update(current, command, clock)
         content = {name: getattr(command, name) for name in RecordInput.model_fields}
     else:
         content = {name: getattr(current, name) for name in RecordInput.model_fields}
@@ -50,11 +52,18 @@ def execute_in_transaction(
     reason = getattr(command, "audit_note", None)
     reason = reason.strip() if reason is not None else ""
     reason_origin = "operator" if reason else "automatic"
+    if not reason and command.operation in ("create", "update"):
+        reason = conference_audit_reason(current, command) or ""
     if not reason:
         reason = {
             "update": "Operator correction",
             "remove": "Operator removal",
-            "restore": "Operator restoration",
+            "restore": (
+                "Operator record restored"
+                if current is not None
+                and current.record_type in ("conference", "participation")
+                else "Operator restoration"
+            ),
         }.get(command.operation)
     seq = connection.execute(
         "SELECT coalesce(max(journal_seq), 0)+1 FROM revisions"
