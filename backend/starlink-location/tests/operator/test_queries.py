@@ -1,7 +1,9 @@
 """Pinned H projection filters after choosing historical current revisions."""
 
 from uuid import uuid4
+
 import pytest
+
 from app.operator.errors import OperatorError
 from app.operator.models import RecordFilter, RemoveRecord
 from tests.operator.service_helpers import create, submit, update

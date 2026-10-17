@@ -53,9 +53,8 @@ def test_revision_and_receipt_immutability(tmp_path, clock):
                     else "UPDATE commands SET request_hash='x'"
                 ),
             ):
-                with pytest.raises(sqlite3.IntegrityError):
-                    with store.connect() as db:
-                        db.execute(sql)
+                with pytest.raises(sqlite3.IntegrityError), store.connect() as db:
+                    db.execute(sql)
         with store.connect() as db:
             with pytest.raises(sqlite3.IntegrityError):
                 insert_revision(
@@ -101,10 +100,9 @@ def test_invalid_revision_is_rejected(tmp_path, clock, kwargs):
         OperatorSettings(enabled=True, root=tmp_path), initialize=True, clock=clock
     )
     try:
-        with pytest.raises(sqlite3.IntegrityError):
-            with store.connect() as db:
-                insert_receipt(db)
-                insert_revision(db, **kwargs)
+        with pytest.raises(sqlite3.IntegrityError), store.connect() as db:
+            insert_receipt(db)
+            insert_revision(db, **kwargs)
     finally:
         store.close()
 
@@ -172,12 +170,11 @@ def test_replace_cannot_overwrite_history_receipts_or_pointers(
             replacement["current_version"] = 1
         columns = ", ".join(replacement)
         parameters = ", ".join("?" for _ in replacement)
-        with pytest.raises(sqlite3.IntegrityError):
-            with store.connect(write=True) as db:
-                db.execute(
-                    f"INSERT OR REPLACE INTO {table} ({columns}) VALUES ({parameters})",
-                    tuple(replacement.values()),
-                )
+        with pytest.raises(sqlite3.IntegrityError), store.connect(write=True) as db:
+            db.execute(
+                f"INSERT OR REPLACE INTO {table} ({columns}) VALUES ({parameters})",
+                tuple(replacement.values()),
+            )
         with store.connect() as db:
             for name, original in originals.items():
                 assert db.execute(f"SELECT * FROM {name}").fetchall() == original

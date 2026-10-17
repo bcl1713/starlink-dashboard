@@ -3,8 +3,10 @@
 import importlib.util
 import json
 import os
+import socket
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -140,3 +142,28 @@ def test_existing_evidence_is_not_overwritten(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="new evidence"):
         value.run(sha, "starlink-operator-existing-test", evidence)
     assert (evidence / "other-owner").read_text() == "keep"
+
+
+def test_loopback_relay_preserves_bytes_and_reaps_transport():
+    implementation()
+    path = ENTRY.with_name("relay.py")
+    assert path.exists(), "Offline production loopback relay is missing"
+    spec = importlib.util.spec_from_file_location("operator_relay", path)
+    relay = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(relay)
+    server = relay.Server(
+        ("127.0.0.1", 0),
+        [sys.executable, "-u", "-c", "import os; os.write(1,os.read(0,4096))"],
+    )
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+    try:
+        with socket.create_connection(server.server_address, timeout=3) as client:
+            client.sendall(b"unaltered production HTTP bytes\r\n")
+            assert client.recv(4096) == b"unaltered production HTTP bytes\r\n"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+    assert not thread.is_alive()
+    assert not server.children

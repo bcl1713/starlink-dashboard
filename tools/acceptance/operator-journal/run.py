@@ -8,7 +8,10 @@ import json
 import os
 import signal
 import tarfile
+import time
 from pathlib import Path
+from urllib.error import URLError
+from urllib.request import urlopen
 
 from ownership import Owner, free_port
 
@@ -82,6 +85,35 @@ def build_candidate(owner, candidate):
     owner.compose(
         "up", "-d", "--no-build", "--wait", "--wait-timeout", "180", timeout=210
     )
+    container = owner.compose("ps", "-q", "mission-planner", timeout=15).strip()
+    runtime = json.loads(
+        owner.execute(
+            ["docker", "inspect", container, "--format", "{{json .}}"], timeout=15
+        )
+    )
+    if not runtime["NetworkSettings"]["Ports"].get("80/tcp"):
+        owner.start_relay(container)
+    origin = f"http://127.0.0.1:{owner.ownership['port']}"
+    deadline = time.monotonic() + 30
+    while True:
+        try:
+            with urlopen(origin, timeout=5) as response:
+                assert response.status == 200
+                assert response.headers["Server"].startswith("nginx/")
+                owner.ownership["originTraversal"] = {
+                    "origin": origin,
+                    "nginx": response.headers["Server"],
+                    "transport": (
+                        "docker-exec-byte-relay" if owner.relay else "published-port"
+                    ),
+                    "container": container,
+                }
+            owner.persist()
+            break
+        except URLError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.2)
     return {"images": images, "sourceArchiveSha256": digest}
 
 
@@ -103,6 +135,7 @@ def qualify(owner):
             "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
         ),
         "npm_config_offline": "true",
+        "npm_config_update_notifier": "false",
         "npm_config_cache": str(owner.root / "npm-cache"),
     }
     owner.ownership["temporaryPaths"].append(str(owner.root / "npm-cache"))

@@ -3,7 +3,6 @@
 import pytest
 from pydantic import ValidationError
 
-from app.operator.errors import OperatorError
 from app.operator.models import RemoveRecord, RestoreRecord
 from tests.operator.service_helpers import create, submit, update
 
@@ -20,7 +19,7 @@ def test_late_entry_correct_remove_restore(service, record_data, clock):
         ),
     )
     clock.advance(10)
-    corrected = submit(
+    submit(
         service,
         update(
             service,

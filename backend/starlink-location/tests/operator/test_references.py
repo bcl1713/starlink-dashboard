@@ -1,6 +1,7 @@
 """Planning associations and typed links remain valid without active legs."""
 
 import pytest
+
 from app.mission import storage
 from app.operator.errors import OperatorError
 from app.operator.models import RemoveRecord, RestoreRecord

@@ -8,6 +8,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+
 from app.operator.errors import OperatorError
 from app.operator.store import OperatorStore
 from tests.operator.process_helpers import stopped_worker

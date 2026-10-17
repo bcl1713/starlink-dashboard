@@ -36,6 +36,7 @@ class Owner:
         self.env = dict(os.environ)
         self.compose_file = ROOT / "tools/acceptance/operator-journal/compose.yml"
         self.child = None
+        self.relay = None
         self.cleaning = False
         self.deadline = time.monotonic() + 3600
         self.ownership = {
@@ -150,9 +151,60 @@ class Owner:
             timeout=timeout,
         )
 
+    def start_relay(self, container):
+        command = [
+            "python3",
+            str(
+                Path(self.env["OPERATOR_SOURCE_ROOT"])
+                / "tools/acceptance/operator-journal/relay.py"
+            ),
+            "--port",
+            self.env["OPERATOR_ACCEPTANCE_PORT"],
+            "--",
+            "docker",
+            "exec",
+            "-i",
+            container,
+            "nc",
+            "-w",
+            "120",
+            "127.0.0.1",
+            "80",
+        ]
+        entry = {
+            "command": command,
+            "role": "loopback-to-production-nginx",
+            "pid": None,
+            "pgid": None,
+            "log": str(self.root / "relay.log"),
+        }
+        self.ownership["commands"].append(entry)
+        self.persist()
+        with (self.root / "relay.log").open("w") as output:
+            self.relay = subprocess.Popen(
+                command,
+                env=self.env,
+                stdout=output,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        entry.update(pid=self.relay.pid, pgid=self.relay.pid)
+        self.ownership["relay"] = entry
+        self.persist()
+
     def close(self):
         self.cleaning = True
         self.stop_child()
+        if self.relay is not None:
+            self.child = self.relay
+            self.stop_child()
+            self.ownership["relay"].update(
+                reaped=True,
+                returncode=self.relay.returncode,
+                groupRemaining=group_alive(self.relay.pid),
+            )
+            self.child = self.relay = None
+            self.persist()
         # Before build config exists, the original file still needs interpolation.
         self.env.setdefault("ACCEPTANCE_CANDIDATE_SHA", "0" * 40)
         self.env.setdefault("OPERATOR_SOURCE_ROOT", str(ROOT))
