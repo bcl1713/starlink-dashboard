@@ -1,8 +1,9 @@
 # Operator conferences, participation and protected calls
 
-Issue: #366. Parent: #361. Status: proposed specification for review;
-implementation and implementation plan are not yet approved. Base: origin/dev at
-5955c99f82651a7bb432dca14be511b87664fe39. Branch: feat/operator-conferences.
+Issue: #366. Parent: #361. Status: design direction approved with PR #377
+source-coverage comments; revised specification and implementation plan prepared
+for review. Product implementation and merge are not approved. Base: origin/dev
+at 5955c99f82651a7bb432dca14be511b87664fe39. Branch: feat/operator-conferences.
 Worktree: .worktrees/issue-366.
 
 ## Purpose and boundaries
@@ -76,14 +77,18 @@ successful. All actual timestamps use existing clock acceptance validation.
 
 Preparing is an explicit editable state. Establish may start from unknown,
 preparing or closed. Restore connection requires interrupted status. A repeat
-tap with the same idempotency key replays its receipt; a distinct invalid state
-action returns an actionable conflict without a revision. Repeating Establish on
-an already established conference is unnecessary and disabled in the UI. Close
-is allowed from any nonclosed state. Editing intended transport alone preserves
-verification; changing configured transport clears it. Configuration reporting
-is optional and never sets measured connectivity. Retrospective corrections can
-replace any current snapshot with a valid state and explicitly supplied nullable
-verification; no historical ordering is required to correct a mistaken entry.
+tap with the same idempotency key replays its receipt. Quick-action builders
+reject invalid operational preconditions locally; a stale submitted snapshot
+returns a version conflict without a revision. The full-replacement API
+validates state/timestamp invariants and permits explicit retrospective
+corrections; it does not infer an action opcode from an otherwise valid
+correction. Repeating Establish on an already established conference is
+unnecessary and disabled in the UI. Close is allowed from any nonclosed state.
+Editing intended transport alone preserves verification; changing configured
+transport clears it. Configuration reporting is optional and never sets measured
+connectivity. Retrospective corrections can replace any current snapshot with a
+valid state and explicitly supplied nullable verification; no historical
+ordering is required to correct a mistaken entry.
 
 Current state is the latest accepted snapshot, not a replay sorted by occurred
 UTC. Backdating a correction does not silently reapply other revisions. History
@@ -121,18 +126,19 @@ participant, leaving the interruption and gap intact. A new optional same-type
 resumes_participation_id link identifies the interrupted predecessor; validate
 same mission and compatible targets and prevent removal while referenced. It is
 not required when entering independent retrospective intervals. Restore
-connection is distinct from the journal's existing Restore removed record
-control.
+connection is distinct from the journal tombstone action, labeled Restore
+record. Audit text distinguishes Customer connection restored from Operator
+record restored.
 
 Multiple connected records are allowed, including unknown participants and
 overlapping calls. Show each reported interval separately; do not merge
 identities, deduce uninterrupted service, or infer that one customer's join
 proves another's presence. A conference interruption never edits participation
-records implicitly: show conference interrupted beside customer reported
-connected, with continuity unknown. The operator can interrupt affected
-participation intervals explicitly. Similarly closing a conference leaves
-customer reports visible with a discrepancy cue; it does not fabricate leave
-times or require a confirmation dialog.
+records implicitly: show a conspicuous discrepancy / continuity unknown beside
+customer reported connected, never an all-clear. The operator can interrupt
+affected participation intervals explicitly. Similarly closing a conference
+leaves customer reports visible with a discrepancy cue; it does not fabricate
+leave times or require a confirmation dialog.
 
 Completing, cancelling, rescheduling, removing, restoring or relinking a call
 never mutates its conference or participation records. Active participation
@@ -167,12 +173,51 @@ Multiple participations protect independently; conference-only participation is
 labeled unassigned customer activity rather than inventing a call.
 
 Within Communications, show a compact protection indicator and overlapping
-planned transport changes or modeled restrictions. Reuse the existing mission
-plan intervals and #348 PoP status/advisory contracts (the existing status API
-uses app.mission.pop_status.PopStatusService); do not implement a second
-predictor. Use configured transport for relevance when known, otherwise intended
-transport. With neither known, show relevant mission-level candidates as
-transport relevance unknown, never as confirmed impact.
+supported modeled restrictions. Use the existing read-only
+`GET /api/v2/missions/{mission_id}/legs/{leg_id}/timeline` from
+`app/mission/routes_v2.py`, through `timelineService.getTimeline` in
+`src/services/timeline.ts`. Its `MissionLegTimeline` payload supplies all
+interval sources for this slice:
+
+| Source                        | Interval and identity fields                                                                        | Supported interpretation                                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `pop_forecast.transitions[]`  | `window_start_utc`, `window_end_utc`; `crossing.id` plus `pop_forecast.revision`                    | #348 modeled PoP advisory window; `crossing_utc` is a prediction, not an observed handover                                          |
+| `call_continuity.intervals[]` | `start_utc`, `end_utc`; projection `revision`, `transition_ids`, `source_ids` and classification    | Existing modeled call consequence: advisory, x_fallback, planned_outage, existing_outage or unknown; ordinary intervals do not warn |
+| `segments[]`                  | `start_time`, `end_time`, `id`; `x_state`, `ka_state`, `ku_state`, `reasons`, `impacted_transports` | Existing modeled degraded/offline transport availability; wire `ku_state` means Starshield, not measured call carriage              |
+
+`created_at` describes when the saved timeline was computed, not a promise that
+it matches current planning inputs. Preserve `call_capability_revision`,
+forecast revision and source timestamps in the normalized snapshot. Missing
+timelines, indeterminate forecasts, absent continuity, or unavailable revision
+alignment yield partial/unknown coverage; they do not trigger timeline
+generation or a planning mutation. Read all relevant mission legs and retain leg
+identity; a failure in one leg cannot produce a mission-wide all-clear.
+Adjacent/duplicate consequences from the same source are grouped, with source
+references preserved. Display PoP advisories separately from the existing
+computed outage/fallback classification; do not reimplement the planner's
+fallback calculation.
+
+No existing Operator plan-of-change source is consumed in #366. Intended and
+configured transport fields are snapshots, not a future change schedule. Do not
+infer routing changes from differences between successive snapshots, satellite
+handoff recommendations, telemetry fluctuations, or SDR/OSPF state. Correlation
+with operator-entered future transport changes is deferred to #369. Explicit UI
+coverage copy: “Modeled restrictions only. Operator-planned transport changes
+are not included.”
+
+`GET /api/status` exposes the real #348 `pop_forecast`, `pop_advisories` and
+`call_continuity` via `PopStatusService`, but describes the globally active
+route. It is not a source for arbitrary selected-mission protection in this
+slice; do not attach its intervals to another mission. The per-leg timeline uses
+the same #348 forecast and continuity implementation with explicit mission/leg
+association. Synthetic acceptance must exercise that real implementation and
+assert that no operator-planned change is invented or presented as covered.
+
+Use configured transport for relevance when known, otherwise intended transport.
+With neither known, show relevant mission-level candidates as transport
+relevance unknown, never as confirmed impact. Aggregate call-continuity
+classifications remain call-level modeled consequences, not evidence that a
+named transport carries the customer call.
 
 Evaluate current and future intervals against the injected backend/read as_of.
 The current protected horizon starts at as_of and ends at a still-future planned
@@ -268,18 +313,18 @@ UTC through the existing simulation clock. Optional providers may deliberately
 fail; terminal hardware, aircraft, real itineraries and external services are
 not required. Simulation demonstrates software behavior, not aircraft readiness.
 
-| Scenario                  | Required assertions                                                                                                                                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shared conference         | Two sequential calls reuse one established conference; idle interval remains established; completing/cancelling/rescheduling either call leaves conference revision unchanged                         |
-| Overlap and joining order | Two overlapping calls retain separate intervals; join before establish and establish before join both work; verification never fabricates customer success                                            |
-| Unknowns                  | Unknown identity, schedule, duration, actual timing and transport save without invented values; call-only and conference-only participation remain usable                                             |
-| Interrupt/restore         | Customer restoration creates a new interval, preserves gap and predecessor; conference interruption/closure does not invent customer leave or continuity                                              |
-| Corrections               | Backdated/approximate edits preserve occurrence/recorded separation, old revisions and current snapshot semantics; remove/restore and dependency conflicts remain explicit                            |
-| Protection                | Overlapping planned changes and real #348 predictions produce bounded contextual advisories; boundary touches, raw telemetry jitter and unrelated transport do not produce false impact claims        |
-| Planning rules            | Synthetic #348 positions/routes cover unknown location, transition timing, default Starshield availability, sole-transport outage and usable Ka/coordinated X fallback                                |
-| Lifecycle                 | Exercise real #349 preflight, flight transitions, leg switch, on-blocks and completion; conferences survive, associations remain valid, archives and mission packages retain existing behavior        |
-| Two clients/failures      | Duplicate writes replay; concurrent edits conflict; held/lost responses do not falsely show Saved; offline drafts, reconnect, failed optional sources and pagination retain honest state              |
-| Restart/recovery          | Restart with an established conference and overlapping connected customers; recover identical current states, revisions, receipts, predecessor links and protection snapshot without duplicate events |
+| Scenario                  | Required assertions                                                                                                                                                                                                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared conference         | Two sequential calls reuse one established conference; idle interval remains established; completing/cancelling/rescheduling either call leaves conference revision unchanged                                                                                        |
+| Overlap and joining order | Two overlapping calls retain separate intervals; join before establish and establish before join both work; verification never fabricates customer success                                                                                                           |
+| Unknowns                  | Unknown identity, schedule, duration, actual timing and transport save without invented values; call-only and conference-only participation remain usable                                                                                                            |
+| Interrupt/restore         | Customer restoration creates a new interval, preserves gap and predecessor; conference interruption/closure does not invent customer leave or continuity                                                                                                             |
+| Corrections               | Backdated/approximate edits preserve occurrence/recorded separation, old revisions and current snapshot semantics; remove/restore and dependency conflicts remain explicit                                                                                           |
+| Protection                | Supported timeline restrictions and real #348 predictions produce bounded contextual advisories; unsupported operator-planned changes remain explicitly uncovered; boundary touches, raw telemetry jitter and unrelated transport do not produce false impact claims |
+| Planning rules            | Synthetic #348 positions/routes cover unknown location, transition timing, default Starshield availability, sole-transport outage and usable Ka/coordinated X fallback                                                                                               |
+| Lifecycle                 | Exercise real #349 preflight, flight transitions, leg switch, on-blocks and completion; conferences survive, associations remain valid, archives and mission packages retain existing behavior                                                                       |
+| Two clients/failures      | Duplicate writes replay; concurrent edits conflict; held/lost responses do not falsely show Saved; offline drafts, reconnect, failed optional sources and pagination retain honest state                                                                             |
+| Restart/recovery          | Restart with an established conference and overlapping connected customers; recover identical current states, revisions, receipts, predecessor links and protection snapshot without duplicate events                                                                |
 
 Backend unit/contract/integration tests cover payload defaults, action
 validation, UTC tolerance and interval rules, typed links, projections, legacy
