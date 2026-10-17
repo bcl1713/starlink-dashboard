@@ -1,3 +1,4 @@
+import { timeBlocks } from '@/components/timeline/time-blocks';
 import type { StatusResponse } from '@/services/status';
 import type { CallContinuityProjection, PopTransition } from '@/types/pop';
 
@@ -87,6 +88,15 @@ export function presentCallContinuity(
         message: label,
       });
     }
+  }
+  for (const id of Object.keys(transitionDetails)) {
+    transitionDetails[id] = timeBlocks(
+      transitionDetails[id],
+      (detail) => detail.startUtc,
+      (detail) => detail.endUtc,
+      (detail) => detail.message,
+      (detail, endUtc) => ({ ...detail, endUtc })
+    );
   }
   return {
     continuity: unresolved
