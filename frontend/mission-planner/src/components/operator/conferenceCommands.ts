@@ -43,6 +43,32 @@ export function conferenceDraft(missionId: string): ConferenceInput {
     },
   };
 }
+export function participationDraft(
+  missionId: string,
+  conferenceId: string | null = null
+): ParticipationInput {
+  return {
+    schema_version: 1,
+    record_type: 'participation',
+    mission_id: missionId,
+    scope: 'mission',
+    leg_id: null,
+    time: { ...unknownTime },
+    payload: {
+      schema_version: 1,
+      entry_type: 'participation',
+      title: 'Unknown customer',
+      note: '',
+      previous_leg_id: null,
+      next_leg_id: null,
+      participant: null,
+      call_id: null,
+      conference_id: conferenceId,
+      state: 'connected',
+      resumes_participation_id: null,
+    },
+  };
+}
 export function recordInput(
   record: SavedRecord
 ): ConferenceInput | ParticipationInput {

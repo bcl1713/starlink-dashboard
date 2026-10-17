@@ -64,3 +64,21 @@ describe('captured conference commands', () => {
     });
   });
 });
+
+it('creates participation payloads accepted by the closed public contract', async () => {
+  const { participationDraft } = await import('./conferenceCommands');
+  const draft = participationDraft('mission-a', 'conference-a');
+  expect(draft.payload).toEqual({
+    schema_version: 1,
+    entry_type: 'participation',
+    title: 'Unknown customer',
+    note: '',
+    previous_leg_id: null,
+    next_leg_id: null,
+    participant: null,
+    call_id: null,
+    conference_id: 'conference-a',
+    state: 'connected',
+    resumes_participation_id: null,
+  });
+});

@@ -15,7 +15,7 @@ import {
   joinCommand,
   leaveCommand,
   resumeCommand,
-  unknownTime,
+  participationDraft,
 } from './conferenceCommands';
 import { ConferenceCard } from './ConferenceCard';
 import { ParticipationRow } from './ParticipationRow';
@@ -39,6 +39,9 @@ export function OperatorConferences({
   const [historyId, setHistoryId] = useState<string>();
   const [localError, setLocalError] = useState<string>();
   const [capturingTime, setCapturingTime] = useState(false);
+  const [needsCurrent, setNeedsCurrent] = useState<
+    'conference' | 'participation'
+  >();
   const hooks = [conferences, customers, calls];
   // Auto-page only bounded snapshots; no polling or repeated mutation.
   useEffect(() => {
@@ -65,6 +68,7 @@ export function OperatorConferences({
   const asOf = conferences.records.data?.pages[0]?.as_of ?? '';
   const protection = useOperatorProtection(missionId, records, asOf, complete);
   const disabled =
+    !!needsCurrent ||
     capturingTime ||
     hooks.some(
       (h) =>
@@ -84,26 +88,19 @@ export function OperatorConferences({
     setSelected(record);
     if (record) setDraft(recordInput(record));
     else if (kind === 'conference') setDraft(conferenceDraft(missionId));
-    else
-      setDraft({
-        ...conferenceDraft(missionId),
-        record_type: 'participation',
-        payload: {
-          ...conferenceDraft(missionId).payload,
-          entry_type: 'participation',
-          title: 'Customer interval',
-          call_id: null,
-          conference_id: null,
-          participant: null,
-          state: 'connected',
-          resumes_participation_id: null,
-        },
-        time: { ...unknownTime },
-      });
+    else setDraft(participationDraft(missionId));
     onDirty?.(true);
   }
-  function accept(result: { current?: SavedRecord } | undefined) {
+  function accept(
+    result: { current?: SavedRecord } | undefined,
+    kind: 'conference' | 'participation'
+  ) {
     if (!result) return;
+    if (!result.current) {
+      setNeedsCurrent(kind);
+      return;
+    }
+    setNeedsCurrent(undefined);
     setDraft(undefined);
     setSelected(undefined);
     onDirty?.(false);
@@ -120,7 +117,10 @@ export function OperatorConferences({
         : target?.record_type;
     const hook = type === 'conference' ? conferences : customers;
     if (!draft) hook.openEditor(target);
-    accept(await hook.save(command));
+    accept(
+      await hook.save(command),
+      type === 'conference' ? 'conference' : 'participation'
+    );
   }
   async function action(
     build: (now: string) => OperatorCommand,
@@ -199,6 +199,12 @@ export function OperatorConferences({
       {hooks.some((h) => h.saved) && !draft && (
         <p role="status">Conference/customer action saved.</p>
       )}
+      {needsCurrent && (
+        <p role="status">
+          Save acknowledged; current saved state unavailable. Draft retained;
+          reread before continuing.
+        </p>
+      )}
       {localError && <p role="alert">{localError}</p>}
       {[conferences, customers].map((hook, index) => (
         <div key={index}>
@@ -212,23 +218,32 @@ export function OperatorConferences({
           {hook.pending && !hook.blocked && (
             <button
               disabled={hook.saving}
-              onClick={async () => accept(await hook.retry())}
+              onClick={async () =>
+                accept(
+                  await hook.retry(),
+                  index === 0 ? 'conference' : 'participation'
+                )
+              }
             >
               Retry same {index === 0 ? 'conference' : 'customer'} save
             </button>
           )}
-          {hook.blocked && (
+          {(hook.blocked ||
+            needsCurrent ===
+              (index === 0 ? 'conference' : 'participation')) && (
             <button
               disabled={hook.saving}
               onClick={async () => {
                 const result = await hook.reconcile();
                 if (result && result.current) {
+                  setNeedsCurrent(undefined);
                   setSelected(result.current);
                   setDraft(recordInput(result.current));
                 }
               }}
             >
-              Reread {index === 0 ? 'conference' : 'customer'} state
+              Reread and use saved {index === 0 ? 'conference' : 'customer'}{' '}
+              state
             </button>
           )}
           {hook.reconcileError && <p role="alert">{hook.reconcileError}</p>}
@@ -319,20 +334,7 @@ export function OperatorConferences({
               action(
                 (now) =>
                   joinCommand(
-                    {
-                      ...conferenceDraft(missionId),
-                      record_type: 'participation',
-                      payload: {
-                        ...conferenceDraft(missionId).payload,
-                        entry_type: 'participation',
-                        title: 'Unknown customer',
-                        participant: null,
-                        call_id: null,
-                        conference_id: record.record_id,
-                        state: 'connected',
-                        resumes_participation_id: null,
-                      },
-                    },
+                    participationDraft(missionId, record.record_id),
                     now
                   ),
                 record
