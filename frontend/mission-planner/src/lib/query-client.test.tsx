@@ -85,7 +85,7 @@ it.each([
     await waitFor(() =>
       expect(apiClient.put).toHaveBeenCalledWith(
         '/api/overview-links/settings',
-        { [field]: false }
+        { [field]: false, expected_values: { [field]: true } }
       )
     );
     await waitFor(() => expect(control).toHaveProperty('disabled', false));

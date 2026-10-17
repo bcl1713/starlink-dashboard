@@ -22,7 +22,7 @@ function commandMessage(
     case 'timeout':
       return 'Request timed out. The display did not acknowledge within three seconds; check its actual state before retrying.';
     case 'expired':
-      return 'Request expired. Try again from Configuration.';
+      return 'Request expired. Choose the display and try again.';
     case 'unavailable':
       return 'Selected display unavailable. Choose an available Overview display.';
     case 'failed':

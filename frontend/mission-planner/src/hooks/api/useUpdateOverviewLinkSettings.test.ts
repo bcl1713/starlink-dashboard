@@ -220,7 +220,14 @@ describe('useUpdateOverviewLinkSettings', () => {
     expect(apiClient.put).toHaveBeenNthCalledWith(
       2,
       '/api/overview-links/settings',
-      { x_band_link_enabled: false, orbital_traffic_enabled: false }
+      {
+        x_band_link_enabled: false,
+        orbital_traffic_enabled: false,
+        expected_values: {
+          x_band_link_enabled: true,
+          orbital_traffic_enabled: false,
+        },
+      }
     );
     await act(async () => {
       firstRefetch.resolve({ data: saved });

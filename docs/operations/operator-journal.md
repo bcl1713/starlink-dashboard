@@ -221,3 +221,68 @@ acceptance runner now also captures three synthetic scope states at 1920×1080,
 390×844 and 844×390, summary network failure/reconnect, restart with unchanged
 record identities, keyboard entry, mobile navigation and the absence of extra
 summary polling. These are software simulation checks, not aircraft validation.
+
+## Operator Overview display controls (#364)
+
+Expand **Display tools → Show display controls** in Operator. This mounts the
+same visibility, boundary, history-window and display-command components used by
+Configuration. Collapsing the controls releases their observers and display
+channel. Advanced camera, terminal, weather/provider and diagnostic settings
+remain in Configuration. Operator's existing enablement gate still applies.
+Overview remains the passive customer-facing map; mission/planning and export
+contracts are unchanged.
+
+Visibility and history are installation-wide backend settings. Other browsers
+and devices read confirmed state through the existing settings queries (five
+seconds while the expanded controls are active). The display dropdown and
+**Recenter view** use the existing same-origin BroadcastChannel discovery in the
+same browser profile/storage partition. They do not control another physical
+device. Match the displayed label; multiple or lost targets require explicit
+selection. Recenter reports pending until the target acknowledges, then reports
+acceptance of its automatic camera behavior, not completion of an animation.
+Unacknowledged commands time out after three seconds. Silent windows expire
+after fifteen seconds. **Open Overview** waits for new-window discovery and
+reports popup/unavailable guidance when discovery fails. Remote fullscreen is
+not offered.
+
+**Normal**, **Communications** and **Weather** are three operator-owned preset
+slots, initially empty. Save current visibility into a slot, then apply the
+saved bundle when needed. Names do not imply factory-defined layers or measured
+service availability. Bundles contain only the existing Overview links, metric
+panels, information panels, route/POIs, own-aircraft and boundary visibility
+switches. History, camera behavior, weather layers/providers and diagnostic
+settings are outside these bundles. Saving a slot does not apply it. Applying a
+bundle makes one atomic update through the existing visibility API, with its
+actual saved response published to the shared query cache. Apply uses the last
+confirmed preset snapshot and displayed version; a counterpart’s slot edits
+appear on the next settings refresh.
+
+The existing `PUT /api/overview-links/settings` accepts an optional
+`expected_values` object with exactly the same keys as the supplied switches.
+The file lock covers comparison and merge; a mismatched field returns HTTP 409
+without writing. Disjoint changes merge. Legacy clients may omit the condition
+and retain the existing last-write behavior. History updates similarly accept
+`expected_window_seconds`; stale writes return 409. Updated editors use these
+conditions and refresh saved state after failures. Network failures never
+produce a saved message; inspect refreshed state before retrying an uncertain
+write. This is configuration state, not an Operator journal event or transport
+command.
+
+`GET /api/overview-links/presets` returns the three slots, each null or
+`{"version": 1, "settings": {"legend_enabled": true}}`.
+`PUT /api/overview-links/presets/{normal|communications|weather}` requires
+`settings` (a nonempty dictionary of recognized boolean switches) and
+`expected_version` (0 for an empty slot). Saving compares the slot version under
+the same file lock and returns the incremented version; conflicts return 409.
+Storage failures return 503 and preserve the previous file. The UI waits for
+this acknowledgment before showing a saved/applied state.
+
+Presets are additive `operator_presets` metadata in the existing Overview link
+settings JSON file, with no database schema migration, new volume or new
+infrastructure. Existing settings writes preserve that metadata and unfamiliar
+future fields. Back up the installation settings file with the deployment's
+normal configuration backup. Old binaries ignore and retain the metadata;
+rolling back the frontend/backend leaves saved visibility and preset data in
+place. Disable Operator to hide its controls while Configuration remains
+available. Do not delete shared configuration or Operator journal volumes for
+rollback.

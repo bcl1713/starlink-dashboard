@@ -175,6 +175,7 @@ def qualify(owner):
         return {
             "journal": json.loads((owner.root / "browser-proof.json").read_text()),
             "shell": json.loads((owner.root / "shell-proof.json").read_text()),
+            "displays": json.loads((owner.root / "displays-proof.json").read_text()),
         }
 
     def probe(script, destination):

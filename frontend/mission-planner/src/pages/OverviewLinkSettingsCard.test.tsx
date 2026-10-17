@@ -147,7 +147,13 @@ describe('OverviewLinkSettingsCard', () => {
       expect(switches()[1]).toBeChecked();
       expect(apiClient.put).toHaveBeenCalledWith(
         '/api/overview-links/settings',
-        changes
+        {
+          ...changes,
+          expected_values:
+            'starshield_link_enabled' in changes
+              ? { starshield_link_enabled: false }
+              : { x_band_link_enabled: true },
+        }
       );
       vi.mocked(apiClient.get).mockResolvedValue({ data: saved });
       await act(async () => {
@@ -236,6 +242,7 @@ it('saves orbital alone without changing either link', async () => {
   await waitFor(() =>
     expect(apiClient.put).toHaveBeenCalledWith('/api/overview-links/settings', {
       orbital_traffic_enabled: true,
+      expected_values: { orbital_traffic_enabled: false },
     })
   );
   expect(switches()[0]).not.toBeChecked();
@@ -257,7 +264,29 @@ it('saves only the aircraft history preference and confirms its switch', async (
   await waitFor(() => expect(control).not.toBeChecked());
   expect(apiClient.put).toHaveBeenCalledWith('/api/overview-links/settings', {
     aircraft_history_enabled: false,
+    expected_values: { aircraft_history_enabled: true },
   });
   expect(saved.starshield_link_enabled).toBe(false);
   expect(saved.x_band_link_enabled).toBe(true);
+});
+
+it('sends the displayed baseline and reports a rejected concurrent edit without claiming saved', async () => {
+  vi.mocked(apiClient.get).mockResolvedValue({ data: pair });
+  vi.mocked(apiClient.put).mockRejectedValue(
+    new Error('Settings changed; refresh before retrying')
+  );
+  renderCard();
+  await waitFor(() => expect(switches()[0]).toBeEnabled());
+  fireEvent.click(switches()[0]);
+  await waitFor(() =>
+    expect(apiClient.put).toHaveBeenCalledWith('/api/overview-links/settings', {
+      starshield_link_enabled: true,
+      expected_values: { starshield_link_enabled: false },
+    })
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    /Settings changed/
+  );
+  expect(screen.queryByText('Layer settings saved')).toBeNull();
+  expect(switches()[0]).not.toBeChecked();
 });
