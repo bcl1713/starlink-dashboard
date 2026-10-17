@@ -276,3 +276,47 @@ it('offers explicit recovery when the edited record is absent in a restored stor
   view.unmount();
   client.clear();
 });
+
+it('releases navigation when clock capture fails before any mutation', async () => {
+  vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
+  const { record } = await import('@/test/operator-fixtures');
+  const conference = {
+    ...record,
+    record_type: 'conference' as const,
+    payload: {
+      ...record.payload,
+      entry_type: 'conference' as const,
+      status: 'established' as const,
+    },
+  };
+  let failClock = false;
+  vi.spyOn(api, 'readOperatorRecords').mockImplementation(async (filters) => {
+    if (failClock) throw new Error('Clock snapshot unavailable');
+    return page(filters.record_type === 'conference' ? [conference] : []);
+  });
+  const dirty = vi.fn();
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const { OperatorConferences } = await import('./OperatorConferences');
+  const view = render(
+    <QueryClientProvider client={client}>
+      <OperatorConferences missionId="mission-a" onDirty={dirty} />
+    </QueryClientProvider>
+  );
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Customer Joined',
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false)
+  );
+  failClock = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Customer Joined' }));
+  await screen.findByText('Clock snapshot unavailable');
+  expect(dirty).toHaveBeenLastCalledWith(false);
+  view.unmount();
+  client.clear();
+});

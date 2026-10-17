@@ -143,6 +143,7 @@ export function OperatorConferences({
       setLocalError(
         error instanceof Error ? error.message : 'Action unavailable'
       );
+      if (!captured) onDirty?.(!!draft);
     } finally {
       setCapturingTime(false);
     }

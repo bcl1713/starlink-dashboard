@@ -186,9 +186,8 @@ test('independent conferences and customers survive overlaps, retry and restart'
           .click()
       );
       const resumed = await tap(page, () =>
-        region
+        customer
           .getByRole('button', { name: 'Restore connection', exact: true })
-          .first()
           .click()
       );
       expect(resumed.record_id).not.toBe(interrupted.record_id);
