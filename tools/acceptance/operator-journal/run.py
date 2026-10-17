@@ -218,6 +218,7 @@ def run(candidate, project, evidence, *, qualification=qualify):
         s: signal.signal(s, owner.signal) for s in (signal.SIGINT, signal.SIGTERM)
     }
     try:
+        owner.admit()
         report.update(build_candidate(owner, candidate))
         report["qualification"] = qualification(owner)
         report["checksPassed"] = True
@@ -229,7 +230,8 @@ def run(candidate, project, evidence, *, qualification=qualify):
         try:
             owner.cleaning = True
             try:
-                owner.compose("logs", "--no-color", timeout=30)
+                if owner.admitted:
+                    owner.compose("logs", "--no-color", timeout=30)
             except (RuntimeError, OSError, TimeoutError):
                 pass
             report["cleanup"] = owner.close()
@@ -237,6 +239,7 @@ def run(candidate, project, evidence, *, qualification=qualify):
             report.update(checksPassed=False, cleanupError=str(error))
             raise
         finally:
+            owner.release()
             for number, handler in handlers.items():
                 signal.signal(number, handler)
             (evidence / "summary.json").write_text(json.dumps(report, indent=2))

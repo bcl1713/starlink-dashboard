@@ -10,6 +10,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from admission import Admission
+
 ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -27,7 +29,7 @@ def group_alive(pgid):
         return False
 
 
-class Owner:
+class Owner(Admission):
     def __init__(self, project, root):
         if not re.fullmatch(r"starlink-operator-[a-z0-9-]+", project):
             raise ValueError("Use a private starlink-operator- project")
@@ -38,6 +40,8 @@ class Owner:
         self.child = None
         self.relay = None
         self.cleaning = False
+        self.admitted = False
+        self.reservation = None
         self.deadline = time.monotonic() + 3600
         self.ownership = {
             "pid": os.getpid(),
@@ -193,6 +197,8 @@ class Owner:
         self.persist()
 
     def close(self):
+        if not self.admitted:
+            return {"admitted": False, "teardownSkipped": True}
         self.cleaning = True
         self.stop_child()
         if self.relay is not None:
