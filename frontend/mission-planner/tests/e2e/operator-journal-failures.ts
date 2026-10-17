@@ -42,6 +42,10 @@ export async function failureJourneys(
     );
     await expect(phone.getByLabel('Title', { exact: true })).toBeDisabled();
     await noOverflow(phone);
+    await phone
+      .getByRole('alert')
+      .filter({ hasText: 'Save outcome is uncertain' })
+      .scrollIntoViewIfNeeded();
     await phone.screenshot({
       path: join(evidence, 'mobile-390x844-error.png'),
       fullPage: true,

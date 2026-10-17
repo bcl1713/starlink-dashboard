@@ -187,6 +187,7 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
 
     await failureJourneys(phone, proof);
     await phone.setViewportSize({ width: 844, height: 390 });
+    await phone.getByLabel('Title', { exact: true }).scrollIntoViewIfNeeded();
     await noOverflow(phone);
     await phone.screenshot({
       path: join(evidence, 'mobile-844x390-saved.png'),
@@ -208,17 +209,27 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
         ).toHaveCount(1);
       }
     }
+    proof.dialogs = dialogs;
+    proof.recordIds = { late: late.record_id, ended: ended.record_id };
+    writeFileSync(
+      join(evidence, 'browser-proof.json'),
+      JSON.stringify(proof, null, 2)
+    );
     const baseline: Record<string, number> = {};
-    for (const path of [
-      '/overview',
-      '/missions',
-      '/configuration',
-      '/export',
-    ]) {
+    for (const [path, heading] of [
+      ['/overview', null],
+      ['/missions', 'Missions'],
+      ['/configuration', 'Configuration'],
+      ['/export', 'Data Export'],
+    ] as const) {
       const response = await page.goto(origin + path);
       baseline[path] = response!.status();
       expect(response!.status()).toBe(200);
-      await expect(page.locator('main').first()).toBeVisible();
+      if (heading)
+        await expect(
+          page.getByRole('heading', { name: heading, exact: true })
+        ).toBeVisible();
+      else await expect(page.locator('main').first()).toBeVisible();
       if (path === '/overview') {
         await noOverflow(page);
         await expect(
@@ -231,8 +242,6 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       }
     }
     proof.baseline = baseline;
-    proof.dialogs = dialogs;
-    proof.recordIds = { late: late.record_id, ended: ended.record_id };
     expect(dialogs).toBe(0);
     writeFileSync(
       join(evidence, 'browser-proof.json'),
