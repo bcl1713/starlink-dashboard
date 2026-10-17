@@ -20,6 +20,7 @@ export function OperatorJournalPage() {
   const unavailable = journal.health.isError || !journal.health.data?.ready;
   const disabled = unavailable || locked || journal.blocked;
   function select(record?: SavedRecord) {
+    journal.openEditor(record);
     setSelected(record);
     setCreateFromDraft(false);
     setEditorVersion((n) => n + 1);
@@ -39,6 +40,17 @@ export function OperatorJournalPage() {
   return (
     <main className="mx-auto w-full min-w-0 max-w-7xl space-y-5 p-4 sm:p-6">
       <h1 className="text-2xl font-semibold">Operator journal</h1>
+      <p role="status" aria-live="polite">
+        {journal.saving
+          ? journal.pending
+            ? 'Saving…'
+            : 'Rereading…'
+          : dirty
+            ? 'Unsaved changes.'
+            : journal.saved
+              ? 'Saved.'
+              : ''}
+      </p>
       <p>
         Mission notes and call observations. Select a mission and choose the
         entry scope explicitly.
@@ -47,7 +59,7 @@ export function OperatorJournalPage() {
         className="flex min-w-0 flex-wrap items-end gap-3"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!locked && !dirty) {
+          if (!locked && !dirty && !journal.blocked) {
             setParams({ mission_id: missionDraft });
             select();
             setHistoryId(undefined);
@@ -60,13 +72,13 @@ export function OperatorJournalPage() {
             className="min-h-11 w-full min-w-0 rounded-md border bg-background px-3"
             required
             value={missionDraft}
-            disabled={locked || dirty}
+            disabled={locked || dirty || journal.blocked}
             onChange={(e) => setMissionDraft(e.target.value)}
           />
         </label>
         <button
           className="min-h-11 rounded-md border px-4 disabled:opacity-50"
-          disabled={locked || dirty}
+          disabled={locked || dirty || journal.blocked}
         >
           Open mission
         </button>
@@ -160,12 +172,12 @@ export function OperatorJournalPage() {
           <div className="flex flex-wrap gap-3">
             <button
               className="min-h-11 rounded-md border px-3 disabled:opacity-50"
-              disabled={locked || dirty}
+              disabled={locked || dirty || journal.blocked}
               onClick={() => select()}
             >
               New entry
             </button>
-            {dirty && !locked && (
+            {dirty && !locked && !journal.blocked && (
               <button
                 className="min-h-11 rounded-md border px-3"
                 onClick={() => select(createFromDraft ? undefined : selected)}
@@ -238,12 +250,16 @@ export function OperatorJournalPage() {
                   More entries
                 </button>
               )}
-              {historyId && (
-                <JournalHistory
-                  id={historyId}
-                  onClose={() => setHistoryId(undefined)}
-                />
-              )}
+              {historyId &&
+                journal.identity &&
+                !journal.blocked &&
+                !unavailable && (
+                  <JournalHistory
+                    id={historyId}
+                    identity={journal.identity}
+                    onClose={() => setHistoryId(undefined)}
+                  />
+                )}
             </div>
           </div>
         </>

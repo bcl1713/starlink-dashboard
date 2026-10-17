@@ -1,14 +1,18 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { readOperatorHistory } from '@/services/operator';
+import { RevisionDetails } from './RevisionDetails';
+import { revisionUtc } from './revisionUtc';
 export function JournalHistory({
   id,
+  identity,
   onClose,
 }: {
   id: string;
+  identity: string;
   onClose: () => void;
 }) {
   const history = useInfiniteQuery({
-    queryKey: ['operator-history', id],
+    queryKey: ['operator-history', identity, id],
     queryFn: ({ pageParam }) => readOperatorHistory(id, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.cursor ?? undefined,
@@ -35,24 +39,28 @@ export function JournalHistory({
       <ol className="space-y-4">
         {history.data?.pages
           .flatMap((page) => page.items)
-          .map(({ record }) => (
-            <li key={record.version} className="space-y-1 border-t pt-3">
-              <p>
-                Version {record.version} · {record.operation} ·{' '}
-                {record.recorded_at} (UTC)
-              </p>
-              <h3 className="font-semibold">{record.payload.title}</h3>
-              <p className="whitespace-pre-wrap">{record.payload.note}</p>
-              {record.reason && (
+          .map((item) => {
+            const { record } = item;
+            return (
+              <li key={record.version} className="space-y-1 border-t pt-3">
                 <p>
-                  {record.reason_origin === 'operator'
-                    ? 'Operator-authored'
-                    : 'Automatic'}{' '}
-                  reason: {record.reason}
+                  Version {record.version} · {record.operation} ·{' '}
+                  {revisionUtc(record.recorded_at)}
                 </p>
-              )}
-            </li>
-          ))}
+                <h3 className="font-semibold">{record.payload.title}</h3>
+                <p className="whitespace-pre-wrap">{record.payload.note}</p>
+                <RevisionDetails {...item} />
+                {record.reason && (
+                  <p>
+                    {record.reason_origin === 'operator'
+                      ? 'Operator-authored'
+                      : 'Automatic'}{' '}
+                    reason: {record.reason}
+                  </p>
+                )}
+              </li>
+            );
+          })}
       </ol>
       {history.hasNextPage && (
         <button

@@ -66,7 +66,14 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     await page.getByLabel('Occurred at (UTC)').fill('2026-10-17T14:30:00Z');
     await page.getByLabel('End state').selectOption('known');
     await page.getByLabel('Ended at (UTC)').fill('2026-10-17T14:42:00Z');
-    const late = await save(page);
+    await page.getByLabel('Scope').selectOption('leg');
+    await page.getByLabel('Leg ID', { exact: true }).fill('synthetic-leg-1');
+    const late = await save(page, true);
+    proof.saveStatus = {
+      heldRealResponse: true,
+      savingAnnounced: true,
+      receiptAcknowledged: true,
+    };
     expect(late.recorded_at).toBe('2026-10-17T16:00:00.000000Z');
     expect(late.time.occurred_at).toBe('2026-10-17T14:30:00.000000Z');
     await page
@@ -89,6 +96,14 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
     ).toContainText(
       'Operator-authored reason: Corrected synthetic typo and leg'
     );
+    const legHistory = page.getByRole('region', { name: 'Entry history' });
+    await expect(
+      legHistory.getByRole('listitem').filter({ hasText: 'Version 1 ·' })
+    ).toContainText('Leg: synthetic-leg-1');
+    await expect(
+      legHistory.getByRole('listitem').filter({ hasText: 'Version 2 ·' })
+    ).toContainText('Leg: synthetic-leg-2');
+    await expect(legHistory).toContainText('Author:');
     await page.getByRole('button', { name: 'Close history' }).click();
     await page.getByRole('button', { name: 'New entry', exact: true }).click();
     await page
@@ -133,6 +148,19 @@ test('production desktop/mobile journal, conflict, real media 503 and exact retr
       await expect(history).toContainText(
         `Automatic reason: Operator ${reason}`
       );
+    await expect(
+      history.getByRole('listitem').filter({ hasText: 'Version 1 ·' })
+    ).toContainText('Actual end: 2026-10-17 15:45:00.000000 UTC');
+    await expect(
+      history.getByRole('listitem').filter({ hasText: 'Version 2 ·' })
+    ).toContainText('Actual end: 2026-10-17 15:35:00.000000 UTC');
+    proof.historyValues = {
+      originalEnd: '15:45 UTC',
+      correctedEnd: '15:35 UTC',
+      originalLeg: 'synthetic-leg-1',
+      correctedLeg: 'synthetic-leg-2',
+      authorVisible: true,
+    };
     await noOverflow(page);
     await page.screenshot({
       path: join(evidence, 'desktop-1920x1080.png'),
