@@ -43,14 +43,38 @@ def validate_wal(database):
         state = _checksum(header[:24], (0, 0), endian)
         if state != struct.unpack(">II", header[24:32]):
             raise OperatorError("store_corrupt")
+        current_salt = header[16:24]
+        current_generation = int.from_bytes(current_salt[:4], "big")
+        previous_salt, previous_age = current_salt, 0
         while frame := source.read(24 + size):
             if time.monotonic() >= deadline:
                 raise OperatorError("maintenance_timeout", retryable=True)
-            # A reused WAL can retain complete frames from a previous salt.
-            if frame[8:16] != header[16:24]:
-                break
             if struct.unpack(">I", frame[:4])[0] == 0:
                 raise OperatorError("store_corrupt")
-            state = _checksum(frame[:8] + frame[24:], state, endian)
-            if state != struct.unpack(">II", frame[16:24]):
+            candidate = _checksum(frame[:8] + frame[24:], state, endian)
+            stored = struct.unpack(">II", frame[16:24])
+            salt = frame[8:16]
+            if salt == previous_salt:
+                if candidate != stored:
+                    raise OperatorError("store_corrupt")
+            else:
+                # Salts are NOT covered by frame checksums. A salt mismatch
+                # which still continues the preceding chain is damaged active
+                # data, not evidence that SQLite may safely discard the suffix.
+                if candidate == stored:
+                    raise OperatorError("store_corrupt")
+                age = (
+                    current_generation - int.from_bytes(salt[:4], "big")
+                ) & 0xFFFFFFFF
+                # Reuse overwrites a prefix. Surviving generations must only get
+                # older as offsets increase, never return to the current epoch.
+                if not previous_age < age < 0x80000000:
+                    raise OperatorError("store_corrupt")
+                previous_age = age
+                previous_salt = salt
+            if salt == current_salt and previous_age:
                 raise OperatorError("store_corrupt")
+            # At an older-generation boundary its predecessor was overwritten;
+            # seed from its stored checksum, then validate its entire run. Do
+            # not stop scanning: active frames after a false boundary are damage.
+            state = stored

@@ -1,5 +1,6 @@
 """Disposable subprocess fault barriers; never imported by production code."""
 
+import hashlib
 import json
 import os
 import signal
@@ -94,8 +95,14 @@ def main():
     keeper = connect() if config["barrier"] == "after_ack" else None
     try:
         acknowledged = []
-        if config["mode"] == "reuse":
-            for _ in range(4):
+        receipt_hashes = {}
+        rounds = (
+            config.get("resets", [4])
+            if config["mode"] == "reuse"
+            else ([2] if config["mode"] == "salt" else [])
+        )
+        for count in rounds:
+            for _ in range(count):
                 filler = CreateRecord(
                     record_type="journal_entry",
                     mission_id="demo-mission",
@@ -109,17 +116,27 @@ def main():
                 )
                 saved = service.execute(filler, key=str(uuid4()), epoch=config["epoch"])
                 acknowledged.append(str(saved.command_id))
-            assert keeper.execute("PRAGMA wal_checkpoint(RESTART)").fetchone()[0] == 0
+                receipt_hashes[str(saved.command_id)] = hashlib.sha256(
+                    saved.model_dump_json().encode()
+                ).hexdigest()
+            if config["mode"] == "reuse":
+                assert (
+                    keeper.execute("PRAGMA wal_checkpoint(RESTART)").fetchone()[0] == 0
+                )
         result = service.execute(
             UpdateRecord.model_validate(config["command"]),
             key=config["key"],
             epoch=config["epoch"],
         )
         if config["barrier"] == "after_ack":
+            receipt_hashes[str(result.command_id)] = hashlib.sha256(
+                result.model_dump_json().encode()
+            ).hexdigest()
             stop(
                 {
                     "receipt": result.model_dump(mode="json"),
                     "acknowledged": acknowledged,
+                    "receipt_hashes": receipt_hashes,
                 }
             )
         raise AssertionError("Worker missed requested fault barrier")

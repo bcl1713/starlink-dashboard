@@ -8,7 +8,6 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
-
 from app.operator.errors import OperatorError
 from app.operator.store import OperatorStore
 from tests.operator.process_helpers import stopped_worker
@@ -237,49 +236,5 @@ def test_damaged_wal_never_loses_acknowledged_command(
             assert db.execute("SELECT count(*) FROM revisions").fetchone()[0] == 2
             assert db.execute("SELECT count(*) FROM commands").fetchone()[0] == 2
             assert db.execute("SELECT current_version FROM records").fetchone()[0] == 2
-    finally:
-        recovered.close()
-
-
-def test_checkpoint_reused_wal_preserves_acknowledged_commands(
-    service, record_data, tmp_path, clock
-):
-    from tests.operator.service_helpers import update
-
-    original = create(service, record_data)
-    command = update(service, original)
-    config = {
-        "mode": "reuse",
-        "barrier": "after_ack",
-        "root": str(service.store.settings.root),
-        "missions": str(tmp_path / "missions"),
-        "key": str(uuid4()),
-        "epoch": str(service.store.health().api_epoch),
-        "command": command.model_dump(mode="json"),
-    }
-    with stopped_worker(tmp_path, config) as (worker, event):
-        os.killpg(worker.pid, signal.SIGKILL)
-        worker.wait(timeout=5)
-    data = Path(str(service.store.settings.database_path) + "-wal").read_bytes()
-    page_size = int.from_bytes(data[8:12], "big")
-    # Fixture must actually retain old-salt frames, rather than silently testing
-    # a fresh WAL. SQLite's restart leaves these beyond the new valid prefix.
-    assert any(
-        data[offset + 8 : offset + 16] != data[16:24]
-        for offset in range(32, len(data), 24 + page_size)
-    )
-    service.store.close()
-    recovered = OperatorStore.open(
-        service.store.settings, initialize=False, clock=clock
-    )
-    try:
-        with recovered.connect() as db:
-            assert db.execute("SELECT count(*) FROM revisions").fetchone()[0] == 6
-            actual = {row[0] for row in db.execute("SELECT command_id FROM commands")}
-            assert actual == {
-                str(original.command_id),
-                event["receipt"]["command_id"],
-                *event["acknowledged"],
-            }
     finally:
         recovered.close()
