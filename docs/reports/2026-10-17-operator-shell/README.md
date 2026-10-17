@@ -1,7 +1,10 @@
 # Operator shell acceptance — issue 363
 
-Product candidate: `3322a3677ac046aac369286a643340d4557694c8`. Evidence-only
-commits after this SHA do not alter product or fixture code.
+Latest requirement-ordering correction:
+[review-fix evidence](review-fix/README.md).
+
+Original product candidate: `3322a3677ac046aac369286a643340d4557694c8`.
+Evidence-only commits after this SHA do not alter product or fixture code.
 
 The production Docker/Nginx run passed both browser journeys, storage crash and
 media-failure probes, projections, and export compatibility. The private Compose
