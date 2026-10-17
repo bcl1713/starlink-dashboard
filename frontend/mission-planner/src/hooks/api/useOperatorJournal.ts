@@ -55,6 +55,12 @@ export function useOperatorJournal(missionId: string) {
   const [pending, setPending] = useState<Pending | null>(null);
   const pendingRef = useRef<Pending | null>(null);
   const inFlight = useRef(false);
+  const reconciliationTarget = useRef<{
+    recordId?: string;
+    epoch: string;
+  } | null>(null);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [missingInNewStore, setMissingInNewStore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<OperatorFailure | null>(null);
   const [blocked, setBlocked] = useState(false);
@@ -84,6 +90,7 @@ export function useOperatorJournal(missionId: string) {
       );
       keep(null);
       setLatest(null);
+      reconciliationTarget.current = null;
       await refresh();
       // A replay receipt can predate later corrections. Reopen the current row.
       let current: SavedRecord | undefined;
@@ -97,14 +104,19 @@ export function useOperatorJournal(missionId: string) {
     } catch (caught) {
       const failure = operatorFailure(caught);
       setError(failure);
-      if (failure.status && failure.status < 500) keep(null);
+      if (failure.status && failure.status < 500) {
+        keep(null);
+        if (failure.status !== 409) reconciliationTarget.current = null;
+      }
       if (failure.status === 409) {
         setBlocked(true);
         if ('record_id' in request.command) {
           try {
             setLatest(await readOperatorRecord(request.command.record_id));
           } catch {
-            /* Draft remains usable when latest cannot be read. */
+            setReconcileError(
+              'Latest saved entry could not be read. Reread again after recovery.'
+            );
           }
         }
         await refresh();
@@ -131,6 +143,12 @@ export function useOperatorJournal(missionId: string) {
       key: crypto.randomUUID(),
       epoch: health.data.api_epoch,
     };
+    reconciliationTarget.current = {
+      recordId: 'record_id' in command ? command.record_id : undefined,
+      epoch: request.epoch,
+    };
+    setReconcileError(null);
+    setMissingInNewStore(false);
     keep(request);
     return execute(request);
   }
@@ -151,30 +169,68 @@ export function useOperatorJournal(missionId: string) {
     }
     return execute(request);
   }
-  async function reconcile() {
-    if (inFlight.current) return false;
-    const fresh = await health.refetch();
-    if (fresh.isError || !fresh.data?.ready) return false;
-    const reread = await records.refetch();
-    if (reread.isError) return false;
-    const id =
-      latest?.record.record_id ??
-      (pendingRef.current && 'record_id' in pendingRef.current.command
-        ? pendingRef.current.command.record_id
-        : undefined);
-    let current: SavedRecord | undefined;
-    if (id) {
-      try {
-        current = (await readOperatorRecord(id)).record;
-      } catch {
-        return false;
-      }
-    }
+  function releaseReconciliation() {
     keep(null);
     setBlocked(false);
     setError(null);
     setLatest(null);
-    return { current };
+    setReconcileError(null);
+    setMissingInNewStore(false);
+    reconciliationTarget.current = null;
+  }
+  function recoverMissing() {
+    if (!missingInNewStore || !blocked || inFlight.current) return false;
+    releaseReconciliation();
+    return true;
+  }
+  async function reconcile() {
+    if (inFlight.current) return false;
+    inFlight.current = true;
+    setSaving(true);
+    setMissingInNewStore(false);
+    try {
+      const fresh = await health.refetch();
+      if (fresh.isError || !fresh.data?.ready) {
+        setReconcileError(
+          'Operator store could not be reread. Try again after recovery.'
+        );
+        return false;
+      }
+      const reread = await records.refetch();
+      if (reread.isError) {
+        setReconcileError(
+          'Journal entries could not be reread. Your draft is retained.'
+        );
+        return false;
+      }
+      const target = reconciliationTarget.current;
+      let current: SavedRecord | undefined;
+      if (target?.recordId) {
+        try {
+          current = (await readOperatorRecord(target.recordId)).record;
+        } catch (caught) {
+          if (
+            operatorFailure(caught).status === 404 &&
+            fresh.data.api_epoch &&
+            target.epoch !== fresh.data.api_epoch
+          ) {
+            setMissingInNewStore(true);
+            setReconcileError(
+              'Entry is absent from the current store. The old save cannot be replayed. Keep your draft as a new entry or discard it after releasing the old save.'
+            );
+          } else
+            setReconcileError(
+              'Latest saved entry could not be read. Your draft is retained; reread again after recovery.'
+            );
+          return false;
+        }
+      }
+      releaseReconciliation();
+      return { current };
+    } finally {
+      inFlight.current = false;
+      setSaving(false);
+    }
   }
   return {
     health,
@@ -184,6 +240,9 @@ export function useOperatorJournal(missionId: string) {
     error,
     blocked,
     latest,
+    reconcileError,
+    missingInNewStore,
+    recoverMissing,
     save,
     retry,
     reconcile,

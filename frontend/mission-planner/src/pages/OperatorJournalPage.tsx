@@ -14,12 +14,14 @@ export function OperatorJournalPage() {
   const [selected, setSelected] = useState<SavedRecord>();
   const [editorVersion, setEditorVersion] = useState(0);
   const [dirty, setDirty] = useState(false);
+  const [createFromDraft, setCreateFromDraft] = useState(false);
   const [historyId, setHistoryId] = useState<string>();
   const locked = journal.saving || !!journal.pending;
   const unavailable = journal.health.isError || !journal.health.data?.ready;
   const disabled = unavailable || locked || journal.blocked;
   function select(record?: SavedRecord) {
     setSelected(record);
+    setCreateFromDraft(false);
     setEditorVersion((n) => n + 1);
     setDirty(false);
   }
@@ -119,6 +121,20 @@ export function OperatorJournalPage() {
                 Reread and reconcile before another save. Your draft is
                 retained.
               </p>
+              {journal.reconcileError && (
+                <p role="alert">{journal.reconcileError}</p>
+              )}
+              {journal.missingInNewStore && (
+                <button
+                  className="min-h-11 rounded-md border px-3"
+                  disabled={journal.saving}
+                  onClick={() => {
+                    if (journal.recoverMissing()) setCreateFromDraft(true);
+                  }}
+                >
+                  Keep draft as new entry
+                </button>
+              )}
               {journal.latest && (
                 <p>
                   Latest saved version {journal.latest.record.version}:{' '}
@@ -152,7 +168,7 @@ export function OperatorJournalPage() {
             {dirty && !locked && (
               <button
                 className="min-h-11 rounded-md border px-3"
-                onClick={() => select(selected)}
+                onClick={() => select(createFromDraft ? undefined : selected)}
               >
                 Discard draft
               </button>
@@ -169,7 +185,10 @@ export function OperatorJournalPage() {
               key={`${missionId}:${selected?.record_id ?? 'new'}:${editorVersion}`}
               missionId={missionId}
               record={selected}
-              disabled={disabled || selected?.deleted === true}
+              asNewEntry={createFromDraft}
+              disabled={
+                disabled || (!createFromDraft && selected?.deleted === true)
+              }
               onSave={(command) => void save(command)}
               onDirty={setDirty}
             />

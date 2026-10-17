@@ -11,6 +11,7 @@ interface Props {
   disabled: boolean;
   onSave: (command: OperatorCommand) => void;
   onDirty?: (dirty: boolean) => void;
+  asNewEntry?: boolean;
 }
 const control =
   'min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2';
@@ -20,8 +21,8 @@ export function JournalEditor({
   disabled,
   onSave,
   onDirty,
+  asNewEntry,
 }: Props) {
-  // This snapshot is intentionally independent of query refetches and active leg.
   const [base] = useState(record);
   const [draft, setDraft] = useState<JournalInput>(() => ({
     schema_version: 1,
@@ -57,6 +58,7 @@ export function JournalEditor({
         },
   }));
   const [audit, setAudit] = useState('');
+  const target = asNewEntry ? undefined : base;
   function change(update: Partial<JournalInput>) {
     setDraft((d) => ({ ...d, ...update }));
     onDirty?.(true);
@@ -74,13 +76,13 @@ export function JournalEditor({
         event.preventDefault();
         if (disabled || !draft.payload.title.trim()) return;
         onSave(
-          base
+          target
             ? {
                 operation: 'update',
-                record_id: base.record_id,
+                record_id: target.record_id,
                 body: {
                   ...draft,
-                  expected_version: base.version,
+                  expected_version: target.version,
                   ...(audit.trim() ? { audit_note: audit } : {}),
                 },
               }
@@ -89,7 +91,9 @@ export function JournalEditor({
       }}
     >
       <h2 className="text-lg font-semibold">
-        {base ? `Edit entry · version ${base.version}` : 'New journal entry'}
+        {target
+          ? `Edit entry · version ${target.version}`
+          : 'New journal entry'}
       </h2>
       <fieldset
         disabled={disabled}
@@ -268,7 +272,7 @@ export function JournalEditor({
             </label>
           )}
         </div>
-        {base && (
+        {target && (
           <label className="block">
             Audit note (optional)
             <textarea

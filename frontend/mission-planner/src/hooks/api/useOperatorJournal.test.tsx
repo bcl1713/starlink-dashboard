@@ -142,3 +142,101 @@ it('returns latest current state separately from a replayed historical receipt',
     current: latest,
   });
 });
+it.each(['update', 'remove', 'restore'] as const)(
+  'reconciles an uncertain %s absent in a replacement store without replaying it',
+  async (operation) => {
+    const save = vi
+      .spyOn(api, 'saveOperatorCommand')
+      .mockRejectedValueOnce(new Error('lost acknowledgment'))
+      .mockResolvedValue({
+        schema_version: 1,
+        command_id: 'new',
+        saved_records: [record],
+      });
+    const { result, reads } = mount();
+    await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+    const command =
+      operation === 'update'
+        ? {
+            operation,
+            record_id: record.record_id,
+            body: { ...input, expected_version: 1 },
+          }
+        : {
+            operation,
+            record_id: record.record_id,
+            body: { schema_version: 1 as const, expected_version: 1 },
+          };
+    await act(async () => {
+      await result.current.save(command);
+    });
+    const original = structuredClone(save.mock.calls[0]);
+    vi.mocked(api.getOperatorHealth).mockResolvedValue({
+      ...health,
+      api_epoch: 'epoch-b',
+    });
+    reads.mockResolvedValue(page([]));
+    vi.mocked(api.readOperatorRecord).mockRejectedValue(
+      failure(404, 'record_not_found')
+    );
+    await act(async () => {
+      await result.current.retry();
+    });
+    await act(async () => {
+      expect(await result.current.reconcile()).toBe(false);
+    });
+    expect(result.current.missingInNewStore).toBe(true);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(result.current.pending?.command).toEqual(command);
+    act(() => {
+      expect(result.current.recoverMissing()).toBe(true);
+    });
+    expect(result.current.pending).toBeNull();
+    expect(result.current.blocked).toBe(false);
+    await act(async () => {
+      await result.current.retry();
+    });
+    expect(save).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await result.current.save({ operation: 'create', body: input });
+    });
+    expect(save.mock.calls[1][0]).toEqual({ operation: 'create', body: input });
+    expect(save.mock.calls[1][1]).not.toBe(original[1]);
+    expect(save.mock.calls[1][2]).toBe('epoch-b');
+  }
+);
+it('retains the conflict target after failed latest reads until a targeted reread succeeds', async () => {
+  vi.spyOn(api, 'saveOperatorCommand').mockRejectedValue(
+    failure(409, 'version_conflict')
+  );
+  const target = vi
+    .spyOn(api, 'readOperatorRecord')
+    .mockRejectedValue(failure(503, 'busy'));
+  const { result } = mount();
+  await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+  await act(async () => {
+    await result.current.save({
+      operation: 'update',
+      record_id: record.record_id,
+      body: { ...input, expected_version: 1 },
+    });
+  });
+  expect(result.current.pending).toBeNull();
+  expect(result.current.latest).toBeNull();
+  expect(result.current.reconcileError).toMatch(/could not be read/);
+  await act(async () => {
+    expect(await result.current.reconcile()).toBe(false);
+  });
+  expect(result.current.blocked).toBe(true);
+  const latest = { ...record, version: 3 };
+  target.mockResolvedValue(page([latest]).items[0]);
+  await act(async () => {
+    expect(await result.current.reconcile()).toEqual({ current: latest });
+  });
+  expect(target.mock.calls).toEqual([
+    [record.record_id],
+    [record.record_id],
+    [record.record_id],
+  ]);
+  expect(result.current.blocked).toBe(false);
+});
