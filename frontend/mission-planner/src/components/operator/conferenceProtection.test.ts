@@ -140,3 +140,10 @@ describe('supported modeled protection', () => {
     ).toHaveLength(0);
   });
 });
+
+it('does not infer current input alignment from an equal frozen clock timestamp', () => {
+  expect(
+    deriveProtection([customer], [{ legId: 'leg-a', timeline }], now, true)
+      .coverage
+  ).toBe('partial');
+});

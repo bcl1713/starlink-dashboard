@@ -2,8 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution, or superpowers:subagent-driven-development if the user
-> selects delegation. Steps use checkbox syntax for tracking. Execution method
-> and this plan require user review before implementation.
+> selects delegation. Steps use checkbox syntax for tracking. Native execution
+> approved in PR #377 and conversation; acceptance and merge remain separate.
 
 **Goal:** Deliver #366 reusable conferences, independent customer participation
 and supported modeled restriction advisories.

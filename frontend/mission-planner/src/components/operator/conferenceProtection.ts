@@ -36,9 +36,13 @@ export function deriveProtection(
   const active = records.filter((r) => !r.deleted);
   const now = Date.parse(asOf);
   let good = 0;
-  let partial =
+  // Saved timeline APIs do not supply authoritative current-input alignment.
+  // Equal clocks or a present revision alone cannot establish freshness.
+  let partial = true;
+  const incomplete =
     !recordsComplete || !Number.isFinite(now) || sources.length === 0;
   const seen = new Set<string>();
+  if (incomplete) partial = true;
   for (const { legId, timeline } of sources) {
     if (!timeline || timeline.mission_leg_id !== legId) {
       partial = true;

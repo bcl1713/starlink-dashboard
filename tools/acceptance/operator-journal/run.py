@@ -163,6 +163,7 @@ def conferences_proof(root):
         "discrepancy",
         "twoClients",
         "retryFrozenTime",
+        "retryConcurrentEdit",
         "restart",
         "sourceCoverage",
     ):

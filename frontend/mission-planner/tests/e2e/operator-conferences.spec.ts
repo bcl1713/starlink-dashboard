@@ -1,6 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
+import type { SavedRecord } from '@/types/operator';
 import {
   control,
   evidence,
@@ -67,6 +68,57 @@ test('independent conferences and customers survive overlaps, retry and restart'
         name: `Conference ${name}`,
         exact: true,
       });
+      const epoch = (
+        await (await page.request.get('/api/v2/operator/health')).json()
+      ).api_epoch;
+      const headers = {
+        'X-Operator-Store-Epoch': epoch,
+        'Idempotency-Key': crypto.randomUUID(),
+      };
+      const callBody = {
+        schema_version: 1,
+        mission_id: 'synthetic-mission-a',
+        scope: 'mission',
+        leg_id: null,
+        record_type: 'call',
+        time: {
+          planned_start_at: '2026-10-17T16:00:00Z',
+          planned_end_at: '2026-10-17T16:10:00Z',
+        },
+        payload: {
+          entry_type: 'call',
+          title: `Synthetic shared call ${viewport.width}`,
+          status: 'scheduled',
+          conference_id: conference.record_id,
+          prep_lead_minutes: null,
+        },
+      };
+      const call = (
+        await (
+          await page.request.post(path, { headers, data: callBody })
+        ).json()
+      ).saved_records[0];
+      expect(call).toBeTruthy();
+      const secondCallBody = {
+        ...callBody,
+        time: {
+          planned_start_at: '2026-10-17T16:05:00Z',
+          planned_end_at: '2026-10-17T16:15:00Z',
+        },
+        payload: {
+          ...callBody.payload,
+          title: `Synthetic overlapping call ${viewport.width}`,
+        },
+      };
+      const secondCall = (
+        await (
+          await page.request.post(path, {
+            headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
+            data: secondCallBody,
+          })
+        ).json()
+      ).saved_records[0];
+      expect(secondCall.payload.conference_id).toBe(call.payload.conference_id);
       // Customer-first then conference establishment; both states remain independent.
       const first = await tap(page, () =>
         card
@@ -87,6 +139,40 @@ test('independent conferences and customers survive overlaps, retry and restart'
       expect(first.payload.conference_id).toBe(second.payload.conference_id);
       await expect(
         card.getByText('Customer reported connected: 2')
+      ).toBeVisible();
+      for (const [joined, linkedCall] of [
+        [first, call],
+        [second, secondCall],
+      ]) {
+        const association = await page.request.put(
+          `${path}/${joined.record_id}`,
+          {
+            headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
+            data: {
+              schema_version: 1,
+              record_type: 'participation',
+              mission_id: joined.mission_id,
+              scope: joined.scope,
+              leg_id: joined.leg_id,
+              time: joined.time,
+              payload: { ...joined.payload, call_id: linkedCall.record_id },
+              expected_version: joined.version,
+            },
+          }
+        );
+        expect(association.ok(), await association.text()).toBeTruthy();
+      }
+      await region
+        .getByRole('button', {
+          name: 'Refresh conferences and customers',
+          exact: true,
+        })
+        .click();
+      await expect(
+        region.getByText(`Call: ${call.record_id}`, { exact: false })
+      ).toBeVisible();
+      await expect(
+        region.getByText(`Call: ${secondCall.record_id}`, { exact: false })
       ).toBeVisible();
       proof.joiningOrders = true;
       proof.overlap = true;
@@ -112,34 +198,6 @@ test('independent conferences and customers survive overlaps, retry and restart'
       expect(resumed.reason).toBe('Customer connection restored');
       proof.interruptRestore = true;
       // Completing/rescheduling/cancelling two calls never closes the shared conference.
-      const epoch = (
-        await (await page.request.get('/api/v2/operator/health')).json()
-      ).api_epoch;
-      const headers = {
-        'X-Operator-Store-Epoch': epoch,
-        'Idempotency-Key': crypto.randomUUID(),
-      };
-      const callBody = {
-        schema_version: 1,
-        mission_id: 'synthetic-mission-a',
-        scope: 'mission',
-        leg_id: null,
-        record_type: 'call',
-        time: {},
-        payload: {
-          entry_type: 'call',
-          title: `Synthetic shared call ${viewport.width}`,
-          status: 'completed',
-          conference_id: conference.record_id,
-          prep_lead_minutes: null,
-        },
-      };
-      const call = (
-        await (
-          await page.request.post(path, { headers, data: callBody })
-        ).json()
-      ).saved_records[0];
-      expect(call).toBeTruthy();
       for (const status of ['cancelled', 'delayed', 'completed']) {
         expect(
           (
@@ -155,6 +213,18 @@ test('independent conferences and customers survive overlaps, retry and restart'
         ).toBeTruthy();
         call.version++;
       }
+      expect(
+        (
+          await page.request.put(`${path}/${secondCall.record_id}`, {
+            headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
+            data: {
+              ...secondCallBody,
+              expected_version: secondCall.version,
+              payload: { ...secondCallBody.payload, status: 'cancelled' },
+            },
+          })
+        ).ok()
+      ).toBeTruthy();
       const still = (
         await (await page.request.get(`${path}/${conference.record_id}`)).json()
       ).record;
@@ -213,18 +283,66 @@ test('independent conferences and customers survive overlaps, retry and restart'
         // Lose an acknowledged join response, then replay the exact frozen command.
         const requests: ReturnType<typeof snapshot>[] = [];
         let lose = true;
+        let uncertain: SavedRecord | undefined;
         await page.route(`${origin}${path}**`, async (route) => {
           if (!mutation(route.request())) return route.continue();
           requests.push(snapshot(route.request()));
           if (lose) {
             lose = false;
-            await route.fetch();
+            const response = await route.fetch();
+            uncertain = (await response.json()).saved_records[0];
             await route.abort('failed');
           } else await route.continue();
         });
         await card
           .getByRole('button', { name: 'Customer Joined', exact: true })
           .click();
+        await expect(
+          region.getByRole('button', {
+            name: 'Retry same customer save',
+            exact: true,
+          })
+        ).toBeVisible();
+        await expect(
+          page.getByLabel('Mission ID', { exact: true })
+        ).toBeDisabled();
+        expect(uncertain).toBeTruthy();
+        const committed = uncertain!;
+        const beforeReplay = (
+          await (
+            await other.request.get(path, {
+              params: {
+                mission_id: 'synthetic-mission-a',
+                record_type: 'participation',
+              },
+            })
+          ).json()
+        ).items.length;
+        const correction = await other.request.put(
+          `${path}/${committed.record_id}`,
+          {
+            headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
+            data: {
+              schema_version: 1,
+              record_type: 'participation',
+              mission_id: committed.mission_id,
+              scope: committed.scope,
+              leg_id: committed.leg_id,
+              time: {
+                ...committed.time,
+                ended_at: committed.time.occurred_at,
+                end_state: 'known',
+              },
+              payload: {
+                ...committed.payload,
+                state: 'left',
+                participant: 'Synthetic counterpart correction',
+              },
+              expected_version: committed.version,
+            },
+          }
+        );
+        expect(correction.ok(), await correction.text()).toBeTruthy();
         await region
           .getByRole('button', {
             name: 'Retry same customer save',
@@ -234,9 +352,44 @@ test('independent conferences and customers survive overlaps, retry and restart'
         await expect(
           region.getByText('Conference/customer action saved.', { exact: true })
         ).toBeVisible();
+        await expect(
+          region.getByRole('button', {
+            name: 'Retry same customer save',
+            exact: true,
+          })
+        ).toHaveCount(0);
         expect(requests).toHaveLength(2);
         expect(requests[1]).toEqual(requests[0]);
         proof.retryFrozenTime = true;
+        const latestCustomer = (
+          await (
+            await page.request.get(`${path}/${committed.record_id}`)
+          ).json()
+        ).record;
+        expect(latestCustomer.version).toBe(2);
+        expect(latestCustomer.payload.state).toBe('left');
+        await expect(
+          region.getByRole('article', {
+            name: 'Customer Synthetic counterpart correction',
+            exact: true,
+          })
+        ).toContainText('left');
+        const afterReplay = (
+          await (
+            await other.request.get(path, {
+              params: {
+                mission_id: 'synthetic-mission-a',
+                record_type: 'participation',
+              },
+            })
+          ).json()
+        ).items.length;
+        expect(afterReplay).toBe(beforeReplay);
+        expect(JSON.parse(control('counts', requests[0].key))).toEqual({
+          receipts: 1,
+          revisions: 1,
+        });
+        proof.retryConcurrentEdit = true;
         control('restart');
         await ready(page);
         await page.reload();

@@ -1,10 +1,9 @@
 # Operator conferences, participation and protected calls
 
-Issue: #366. Parent: #361. Status: design direction approved with PR #377
-source-coverage comments; revised specification and implementation plan prepared
-for review. Product implementation and merge are not approved. Base: origin/dev
-at 5955c99f82651a7bb432dca14be511b87664fe39. Branch: feat/operator-conferences.
-Worktree: .worktrees/issue-366.
+Issue: #366. Parent: #361. Status: specification and native plan execution
+approved in PR #377 and conversation. Product acceptance and merge require
+separate review. Base: origin/dev at 5955c99f82651a7bb432dca14be511b87664fe39.
+Branch: feat/operator-conferences. Worktree: .worktrees/issue-366.
 
 ## Purpose and boundaries
 

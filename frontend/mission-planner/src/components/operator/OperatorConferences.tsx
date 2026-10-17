@@ -70,7 +70,7 @@ export function OperatorConferences({
   const disabled =
     !!needsCurrent ||
     capturingTime ||
-    hooks.some(
+    [conferences, customers].some(
       (h) =>
         h.saving ||
         !!h.pending ||
@@ -111,6 +111,7 @@ export function OperatorConferences({
   }
   async function save(command: OperatorCommand, target?: SavedRecord) {
     setLocalError(undefined);
+    onDirty?.(true);
     const type =
       command.operation === 'create' || command.operation === 'update'
         ? command.body.record_type
@@ -128,12 +129,16 @@ export function OperatorConferences({
   ) {
     if (capturingTime) return;
     setCapturingTime(true);
+    onDirty?.(true);
+    let captured = false;
     try {
       const clock = await readOperatorRecords({
         mission_id: missionId,
         record_type: 'conference',
       });
-      await save(build(clock.as_of), target);
+      const command = build(clock.as_of);
+      captured = true;
+      await save(command, target);
     } catch (error) {
       setLocalError(
         error instanceof Error ? error.message : 'Action unavailable'
@@ -238,13 +243,55 @@ export function OperatorConferences({
                 if (result && result.current) {
                   setNeedsCurrent(undefined);
                   setSelected(result.current);
-                  setDraft(recordInput(result.current));
+                  if (draft) {
+                    setDraft(recordInput(result.current));
+                    onDirty?.(true);
+                  } else {
+                    setSelected(undefined);
+                    onDirty?.(false);
+                  }
+                } else if (result) {
+                  setNeedsCurrent(undefined);
+                  onDirty?.(!!draft);
                 }
               }}
             >
               Reread and use saved {index === 0 ? 'conference' : 'customer'}{' '}
               state
             </button>
+          )}
+          {hook.missingInNewStore && (
+            <>
+              {draft && (
+                <button
+                  disabled={hook.saving}
+                  onClick={() => {
+                    if (hook.recoverMissing()) {
+                      setSelected(undefined);
+                      setNeedsCurrent(undefined);
+                      onDirty?.(true);
+                    }
+                  }}
+                >
+                  Keep {index === 0 ? 'conference' : 'customer'} draft as new in
+                  current store
+                </button>
+              )}
+              <button
+                disabled={hook.saving}
+                onClick={() => {
+                  if (hook.recoverMissing()) {
+                    setDraft(undefined);
+                    setSelected(undefined);
+                    setNeedsCurrent(undefined);
+                    onDirty?.(false);
+                  }
+                }}
+              >
+                Release absent {index === 0 ? 'conference' : 'customer'} action
+                in current store
+              </button>
+            </>
           )}
           {hook.reconcileError && <p role="alert">{hook.reconcileError}</p>}
         </div>

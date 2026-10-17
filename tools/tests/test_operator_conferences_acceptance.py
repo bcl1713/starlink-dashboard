@@ -18,6 +18,7 @@ def test_conference_proof_rejects_missing_source_boundary(tmp_path):
             "discrepancy",
             "twoClients",
             "retryFrozenTime",
+            "retryConcurrentEdit",
             "restart",
         )
     }
@@ -28,3 +29,17 @@ def test_conference_proof_rejects_missing_source_boundary(tmp_path):
     proof["sourceCoverage"] = True
     (tmp_path / "conferences-proof.json").write_text(json.dumps(proof))
     assert runner.conferences_proof(tmp_path)["sourceCoverage"] is True
+
+
+def test_conference_records_survive_real_multileg_lifecycle(tmp_path):
+    import importlib
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(
+        0, str(Path(__file__).resolve().parents[2] / "backend/starlink-location")
+    )
+    implementation()
+    result = importlib.import_module("export_probe").probe(tmp_path)
+    assert result["conferenceLifecycleUnchanged"] is True
+    assert result["telemetryZipSha256Before"] == result["telemetryZipSha256After"]
