@@ -10,8 +10,9 @@ from uuid import UUID, uuid4
 
 from .clock import Clock
 from .errors import OperatorError
+from .maintenance import admission, storage_error
 from .provenance import StoreHealth
-from .schema import apply_migrations, timestamp, validate_integrity
+from .schema import apply_migrations, timestamp
 from .settings import OperatorSettings
 from .time_models import utc_timestamp
 
@@ -55,6 +56,7 @@ class OperatorStore:
         self.clock = clock
         self._ready = False
         self._closed = False
+        self._error_code = "store_unavailable"
         self._identity: dict = {}
         self._latest_recorded_at: str | None = None
 
@@ -159,6 +161,9 @@ class OperatorStore:
         _write_marker(self.settings.identity_path, identity, first=False)
 
     def _verify(self) -> None:
+        from .wal import validate_wal
+
+        validate_wal(self.settings.database_path)
         identity = json.loads(self.settings.identity_path.read_text())
         if identity["status"] != "ready":
             raise OperatorError("store_recovery_required")
@@ -191,7 +196,9 @@ class OperatorStore:
                 )
             ]:
                 raise OperatorError("store_identity_mismatch")
-            validate_integrity(connection)
+            from .recovery import validate_connection
+
+            validate_connection(connection, clock=self.clock)
             self._latest_recorded_at = connection.execute(
                 "SELECT max(recorded_at) FROM revisions"
             ).fetchone()[0]
@@ -207,25 +214,52 @@ class OperatorStore:
         Callers keep work short; SQLite bounds lock admission to two seconds.
         Connections are never shared between threads or request contexts.
         """
-        if not self._ready or self._closed:
-            raise OperatorError("store_unavailable")
-        connection = self._connection()
+        connection = None
         try:
-            connection.execute("BEGIN IMMEDIATE" if write else "BEGIN")
-            yield connection
-            latest = connection.execute(
-                "SELECT max(recorded_at) FROM revisions"
-            ).fetchone()[0]
-            connection.commit()
-            if latest and (
-                self._latest_recorded_at is None or latest > self._latest_recorded_at
-            ):
-                self._latest_recorded_at = latest
-        except BaseException:
-            connection.rollback()
+            with admission(self.settings):
+                self._check_identity()
+                connection = self._connection()
+                try:
+                    connection.execute("BEGIN IMMEDIATE" if write else "BEGIN")
+                    yield connection
+                    latest = connection.execute(
+                        "SELECT max(recorded_at) FROM revisions"
+                    ).fetchone()[0]
+                    connection.commit()
+                    if latest and (
+                        self._latest_recorded_at is None
+                        or latest > self._latest_recorded_at
+                    ):
+                        self._latest_recorded_at = latest
+                except BaseException:
+                    connection.rollback()
+                    raise
+                finally:
+                    connection.close()
+        except sqlite3.IntegrityError:
+            # Constraint rejection is a rolled-back invalid mutation, not media
+            # failure; do not disable a healthy store for a rejected statement.
             raise
-        finally:
-            connection.close()
+        except (sqlite3.Error, OSError) as error:
+            mapped = storage_error(error)
+            if not mapped.retryable:
+                self._ready = False
+                self._error_code = mapped.code
+            raise mapped from error
+
+    def _check_identity(self):
+        if not self._ready or self._closed:
+            raise OperatorError(self._error_code)
+        try:
+            identity = json.loads(self.settings.identity_path.read_text())
+            if identity != self._identity:
+                self._ready = False
+                self._error_code = "store_epoch_changed"
+                raise OperatorError(self._error_code)
+        except (ValueError, OSError) as error:
+            self._ready = False
+            self._error_code = "store_recovery_required"
+            raise OperatorError(self._error_code) from error
 
     def health(self) -> StoreHealth:
         regression = self._latest_recorded_at is not None and (
@@ -238,9 +272,7 @@ class OperatorStore:
             source_mode=self.settings.source_mode,
             simulation_run_id=self.settings.simulation_run_id,
             clock_regression=regression,
-            error_code=(
-                None if self._ready and not self._closed else "store_unavailable"
-            ),
+            error_code=(None if self._ready and not self._closed else self._error_code),
         )
 
     def close(self) -> None:

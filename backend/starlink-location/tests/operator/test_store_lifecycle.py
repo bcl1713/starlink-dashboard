@@ -45,9 +45,8 @@ def test_explicit_initialization_and_mode(tmp_path, clock):
     assert reopened.health().api_epoch == identity.api_epoch
     reopened.close()
     assert not reopened.health().ready
-    with pytest.raises(OperatorError):
-        with reopened.connect():
-            pass
+    with pytest.raises(OperatorError), reopened.connect():
+        pass
     settings.database_path.unlink()
     for initialize in (False, True):
         with pytest.raises(OperatorError):
@@ -131,9 +130,10 @@ def test_writer_admission_is_bounded_and_readers_remain_available(tmp_path, cloc
         with store.connect(write=True) as writer:
             with store.connect() as reader:
                 assert reader.execute("SELECT count(*) FROM records").fetchone()[0] == 0
-            with pytest.raises(sqlite3.OperationalError, match="locked"):
-                with store.connect(write=True):
-                    pytest.fail("A second writer cannot enter before admission")
+            with pytest.raises(OperatorError, match="store_busy"), store.connect(
+                write=True
+            ):
+                pytest.fail("A second writer cannot enter before admission")
             writer.execute("INSERT INTO commands VALUES ('x','x','x',1,'now',200,'{}')")
     finally:
         store.close()
@@ -183,10 +183,9 @@ def test_connection_transaction_commit_rollback_and_busy(tmp_path, clock):
         OperatorSettings(enabled=True, root=tmp_path), initialize=True, clock=clock
     )
     try:
-        with pytest.raises(RuntimeError):
-            with store.connect() as db:
-                db.execute("INSERT INTO commands VALUES ('x','x','x',1,'now',200,'{}')")
-                raise RuntimeError("abort")
+        with pytest.raises(RuntimeError), store.connect() as db:
+            db.execute("INSERT INTO commands VALUES ('x','x','x',1,'now',200,'{}')")
+            raise RuntimeError("abort")
         with store.connect() as first, store.connect() as second:
             assert first.execute("SELECT count(*) FROM commands").fetchone()[0] == 0
             first.execute("INSERT INTO commands VALUES ('x','x','x',1,'now',200,'{}')")

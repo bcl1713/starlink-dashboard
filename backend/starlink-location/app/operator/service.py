@@ -5,8 +5,9 @@ import json
 from uuid import UUID
 
 from . import commands, queries
-from .errors import OperatorError
 from .clock import Clock
+from .errors import OperatorError
+from .maintenance import capacity_status
 from .models import (
     Actor,
     CommandReceipt,
@@ -71,32 +72,33 @@ class OperatorService:
         mission_ids = [current.mission_id] if current else []
         if command.operation in ("create", "update"):
             mission_ids.append(command.mission_id)
-        with self.references.locked(mission_ids):
-            with self.store.connect(write=True) as connection:
-                receipt = commands.receipt_for_key(connection, key, request_hash)
-                if receipt is not None:
-                    return receipt
-                if current:
-                    current = queries.get_record(connection, command.record_id)
-                    if current.version != command.expected_version:
-                        raise OperatorError(
-                            "version_conflict", current_version=current.version
-                        )
-                target = (
-                    command if command.operation in ("create", "update") else current
-                )
-                if command.operation != "remove":
-                    self.references.validate(
-                        target.mission_id, target.leg_id, target.scope, target.payload
+        with self.references.locked(mission_ids), self.store.connect(
+            write=True
+        ) as connection:
+            receipt = commands.receipt_for_key(connection, key, request_hash)
+            if receipt is not None:
+                return receipt
+            if capacity_status(self.store)["exceeded"]:
+                raise OperatorError("capacity_exceeded")
+            if current:
+                current = queries.get_record(connection, command.record_id)
+                if current.version != command.expected_version:
+                    raise OperatorError(
+                        "version_conflict", current_version=current.version
                     )
-                return commands.execute_in_transaction(
-                    connection,
-                    command,
-                    key=key,
-                    request_hash=request_hash,
-                    clock=self.clock,
-                    actor=self.actor,
+            target = command if command.operation in ("create", "update") else current
+            if command.operation != "remove":
+                self.references.validate(
+                    target.mission_id, target.leg_id, target.scope, target.payload
                 )
+            return commands.execute_in_transaction(
+                connection,
+                command,
+                key=key,
+                request_hash=request_hash,
+                clock=self.clock,
+                actor=self.actor,
+            )
 
     def get(self, record_id: str) -> SavedRecord:
         with self.store.connect() as connection:
