@@ -216,12 +216,13 @@ uses the same conditional window rule as planning.
 
 ## Planning, Overview, and PDF presentation
 
-Show predicted windows automatically when Starshield is enabled. Keep observed
-PoP information visibly distinct from predictions. Planner details expose the
-two cities, estimated UTC crossing, and the ten-minute planning interval. Every
-transition remains visible; only no-alternative portions become planned
-communications outages. Known live mismatches and overdue transitions expose
-their persistent active advisory separately.
+Mission planning shows predicted windows, two cities, estimated UTC crossing,
+and the ten-minute interval. Every transition stays visible; only no-alternative
+portions become planned communications outages. Overview is a customer-facing
+10-foot map: show entry/exit POIs and a brief themed active advisory, without
+PoP/IP readouts, forecast lists, totals, or planning controls. Estimates require
+no uncertainty or gap acknowledgment. Assume Starshield up unless explicitly
+disabled/down; missing PoP information is not a service outage.
 
 Timeline rows contain no added text labels for transition windows. Use an
 outlined advisory marker aligned with Starshield, distinguishable from existing

@@ -169,7 +169,14 @@ Planning totals and posture reflect this call-continuity assessment. Measured
 transport availability and the normal Starshield preference remain unchanged; no
 service switches or X activation happen automatically.
 
-Overview distinguishes the observed public-IP city from the geographic forecast.
+Overview is a customer-facing 10-foot map. Starshield transition entry and exit
+use the existing POI layer; a brief glass-themed advisory appears during an
+active transition risk. PoP/IP details, forecast lists and continuity totals
+stay off Overview. Detailed windows remain in mission planning. Best-estimate
+outputs do not require a disclaimer or acknowledgment of predicted gaps to save
+a plan. Starshield is assumed available unless explicitly disabled or marked
+down; missing PoP information does not change service availability.
+
 An early observation of the expected destination completes that occurrence; a
 late observation keeps its advisory active. An unexpected known city warns that
 a transition can happen at any time. A failed lookup after an IP change leaves
