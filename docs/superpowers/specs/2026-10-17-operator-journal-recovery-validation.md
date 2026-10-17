@@ -1,8 +1,9 @@
 # Operator journal — Recovery, migration, and validation
 
 Part of the [proposed #362 design](2026-10-17-operator-journal-design.md).
-Status: design approved for implementation planning; no product implementation
-authorized.
+Status: design and implementation plan approved; implementation executed on the
+issue 362 feature branch. The delivery report records final production acceptance
+and branch review.
 
 ## WAL, durability, startup, and errors
 

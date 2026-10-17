@@ -1,14 +1,16 @@
 # Operator records and durable journal — issue #362
 
-Status: design approved for implementation planning; no product implementation
-authorized. The review clarifications on automatic audit reasons and default
-activity exports are included.
+Status: design and implementation plan approved; implementation executed on the
+issue 362 feature branch. The delivery report records final production acceptance
+and branch review. The review clarifications on automatic audit reasons
+and default activity exports are included.
 
 Parent: [#361](https://github.com/bcl1713/starlink-dashboard/issues/361). First
 slice: [#362](https://github.com/bcl1713/starlink-dashboard/issues/362).
 Baseline inspected: `origin/dev` at `a39b750d` (2026-10-17), including #348 and
-issue #349. The detailed design is approved; the implementation plan requires
-separate review and execution-method selection.
+issue #349. The detailed design and implementation plan were approved. The
+selected execution method and task results are recorded in the implementation
+work log.
 
 ## Purpose and scope
 

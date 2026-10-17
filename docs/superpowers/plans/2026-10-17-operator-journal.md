@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development or superpowers:executing-plans to
 > implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for
-> tracking. Execution method awaits user selection.
+> tracking. The approved plan is being executed in isolated task scopes.
 
 **Goal:** Deliver #362's editable Operator journal with atomic immutable
 history, deterministic simulation, and offline production browser evidence.
@@ -20,8 +20,9 @@ production Nginx. No new mandatory dependency or infrastructure.
 
 **Spec:** [Approved design](../specs/2026-10-17-operator-journal-design.md),
 including its linked schema, API, and recovery/validation documents. Design
-approval covers planning only. This plan awaits review; no product work has
-started.
+and plan review authorized implementation. Tasks 1–8 are implemented and
+verified; Task 9 production acceptance and final branch review are the remaining
+delivery gates. The final report records their observed status.
 
 ## Global Constraints
 

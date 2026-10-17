@@ -143,3 +143,47 @@ damage. No secondary commit journal or automatic history reconstruction exists.
 Only schema migration 1 is currently supported. Initial migration is
 transactional; future schema upgrades must add validated pre-migration backups
 under the same exclusive maintenance admission.
+
+## Production acceptance and backout
+
+The isolated acceptance command uses the existing production Dockerfiles and
+Nginx from an archive of a clean, full committed HEAD:
+
+```sh
+timeout --kill-after=10s 60m python tools/acceptance/operator-journal/run.py \
+  --candidate "$(git rev-parse HEAD)" \
+  --project starlink-operator-362-final \
+  --evidence /tmp/starlink-operator-362-final-evidence
+```
+
+Choose a new evidence directory and an unused private project for each run.
+Provision Node 22.22.2, the locked frontend dependencies and Playwright Chromium
+before running; acceptance never downloads runtime dependencies. Preserve the
+actor's Docker context/socket. The runner records ownership before allocation,
+checks OCI revision labels, uses an internal Docker network and closes all
+project containers, private volumes, process groups and the loopback listener.
+Only acceptance fixtures are mounted; application code and the browser bundle
+come from the production images. Synthetic simulation uses a fixed 1600Z clock.
+Separate synthetic operational-format telemetry probes are explicitly labeled.
+
+Mobile recovery covers an actual backend 503 caused by unwritable SQLite files.
+It retains the draft, restores media access, reopens the backend and retries the
+original key/body/epoch. A different test loses a browser acknowledgment after
+the backend commits. Both inspect SQLite to verify exactly one receipt and
+revision. Disposable stores additionally cover process termination around
+commit, committed WAL, physical ENOSPC, read-only media, missing database,
+unsupported schema and backup epoch rotation. These tests do not establish
+hardware power-loss or aircraft readiness.
+
+For first enablement, initialize the intended namespace, run `check`, take a
+backup, and then enable Operator. There is no in-place schema upgrade beyond
+migration 1. If a newer binary fails to open a store, disable Operator and retain
+the entire independent volume before reverting the binary. Do not initialize a
+replacement store to silence an error. Restore only an explicitly selected,
+validated backup with access stopped; preserve its original manifest and the
+restore report. Restart and reconcile clients against the new epoch. Disabling
+Operator is the backout path that preserves all existing revisions and receipts.
+
+The acceptance report distinguishes the tested product SHA from later evidence
+commits. Required CI still applies to the final pull-request head. Projection
+artifacts are foundation contracts; mission-package integration remains #370.

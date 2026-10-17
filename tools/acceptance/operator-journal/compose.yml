@@ -1,7 +1,7 @@
 # Standalone acceptance Compose: invoke with a task-specific -p project name.
 services:
   starlink-location:
-    image: starlink-operator-backend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    image: ${OPERATOR_BACKEND_IMAGE:-starlink-operator-backend}:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
     build:
       context: ${OPERATOR_SOURCE_ROOT:?archived source required}
       dockerfile: backend/starlink-location/Dockerfile
@@ -34,7 +34,7 @@ services:
       retries: 45
       start_period: 30s
   mission-planner:
-    image: starlink-operator-frontend:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
+    image: ${OPERATOR_FRONTEND_IMAGE:-starlink-operator-frontend}:${ACCEPTANCE_CANDIDATE_SHA:?exact SHA required}
     build:
       context: ${OPERATOR_SOURCE_ROOT}/frontend/mission-planner
       args:
