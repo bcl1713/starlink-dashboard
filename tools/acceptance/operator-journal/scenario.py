@@ -130,6 +130,36 @@ def make_demo(clock: Clock, *, include_shell: bool = False) -> dict:
                     payload=payload,
                 )
             )
+    # Append rather than interleave so existing seeded command keys remain stable.
+    if include_shell:
+        for scope in ("preflight", "leg", "between_legs"):
+            commands.append(
+                CreateRecord(
+                    record_type="call",
+                    mission_id=f"synthetic-shell-{scope.replace('_', '-')}",
+                    scope=scope,
+                    leg_id="synthetic-shell-leg-1" if scope == "leg" else None,
+                    time={
+                        "occurred_at": clock.now(),
+                        "precision": "exact",
+                        "end_state": "instant",
+                        "planned_start_at": clock.now() - timedelta(hours=1),
+                        "planned_end_at": clock.now() - timedelta(minutes=50),
+                    },
+                    payload={
+                        "entry_type": "call",
+                        "title": "Synthetic overdue coordination",
+                        "status": "scheduled",
+                        "note": "Synthetic earlier requirement with an unconfirmed completion status.",
+                        "previous_leg_id": (
+                            "synthetic-shell-leg-1" if scope == "between_legs" else None
+                        ),
+                        "next_leg_id": (
+                            "synthetic-shell-leg-2" if scope == "between_legs" else None
+                        ),
+                    },
+                )
+            )
     return {
         "synthetic": True,
         "run_id": RUN_ID,

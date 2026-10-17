@@ -196,16 +196,17 @@ artifacts are foundation contracts; mission-package integration remains #370.
 ## Operator workspace shell
 
 The gated `/operator` workspace keeps the existing journal and adds read-only
-mission summaries: next scheduled call (including overdue uncompleted calls),
-next recorded risk and open issues. It reads the existing schema-v1 records API;
-there is no new schema, migration, transport-health inference or writable call,
-conference or issue API. Missing associations and unknown/stale freshness remain
-explicit. Record scope describes its association, not measured flight phase. The
-snapshot time is backend UTC, including the injected clock in simulation.
-Refresh summaries explicitly; the shell adds no interval polling. Pagination
-must finish before the shell claims a complete summary. The existing 15-second
-shared health check remains unchanged. Journal receipt/recovery does not wait
-for summary reads.
+mission summaries: the earliest future scheduled call, next recorded risk and
+open issues. Overdue scheduled calls stay separately visible under Attention
+needed, so an unconfirmed earlier call cannot obscure a future commitment. It
+reads the existing schema-v1 records API; there is no new schema, migration,
+transport-health inference or writable call, conference or issue API. Missing
+associations and unknown/stale freshness remain explicit. Record scope describes
+its association, not measured flight phase. The snapshot time is backend UTC,
+including the injected clock in simulation. Refresh summaries explicitly; the
+shell adds no interval polling. Pagination must finish before the shell claims a
+complete summary. The existing 15-second shared health check remains unchanged.
+Journal receipt/recovery does not wait for summary reads.
 
 Desktop uses three summary columns. Mobile stacks upcoming information ahead of
 journal entry, with section links and 44-pixel touch controls. Record

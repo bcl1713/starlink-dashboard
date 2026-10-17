@@ -93,7 +93,7 @@ export function OperatorBrief({
   const context = [...items].sort(
     (a, b) => b.record.journal_seq - a.record.journal_seq
   )[0]?.record;
-  const call = items
+  const scheduledCalls = items
     .filter(
       (i) =>
         i.record.payload.entry_type === 'call' &&
@@ -104,7 +104,13 @@ export function OperatorBrief({
       (a, b) =>
         Date.parse(a.record.time.planned_start_at!) -
         Date.parse(b.record.time.planned_start_at!)
-    )[0];
+    );
+  const call = scheduledCalls.find(
+    (i) => Date.parse(i.record.time.planned_start_at!) >= now
+  );
+  const overdueCalls = scheduledCalls.filter(
+    (i) => Date.parse(i.record.time.planned_start_at!) < now
+  );
   const risk = timed.find((i) => i.record.record_type === 'risk');
   const issues = items.filter(
     (i) =>
@@ -208,6 +214,28 @@ export function OperatorBrief({
           </section>
         ))}
       </div>
+      {!problem && overdueCalls.length > 0 && (
+        <section
+          aria-label="Attention needed"
+          className="space-y-3 rounded-xl border border-amber-400/40 bg-card p-4"
+        >
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-400">
+            Attention needed
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            These calls are past their planned start and remain scheduled.
+          </p>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+            {overdueCalls.map((item) => (
+              <SummaryRecord
+                key={item.record.record_id}
+                item={item}
+                now={now}
+              />
+            ))}
+          </div>
+        </section>
+      )}
       {!problem && unknownTimes.length > 0 && (
         <p className="text-sm text-muted-foreground">
           {unknownTimes.length} requirement/risk record(s) have unknown planned

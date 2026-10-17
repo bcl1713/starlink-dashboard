@@ -119,7 +119,7 @@ it('offers a coherent no-mission entry without claiming system health', () => {
   ).toBe('/missions');
   expect(screen.queryByRole('region', { name: 'Next risk' })).toBeNull();
 });
-it('keeps an overdue uncompleted requirement visible and separates unknown timing', () => {
+it('shows the imminent future requirement separately from overdue attention and unknown timing', () => {
   mount([
     {
       ...row(
@@ -131,7 +131,7 @@ it('keeps an overdue uncompleted requirement visible and separates unknown timin
       mission_id: 'synthetic-a',
     },
     {
-      ...row('call', 'Future call', '2026-10-17T18:00:00Z', 'scheduled'),
+      ...row('call', 'Future call', '2026-10-17T16:05:00Z', 'scheduled'),
       mission_id: 'synthetic-a',
     },
     {
@@ -141,9 +141,68 @@ it('keeps an overdue uncompleted requirement visible and separates unknown timin
   ]);
   expect(
     within(screen.getByRole('region', { name: 'Next requirement' })).getByText(
-      'Overdue uncompleted call'
+      'Future call'
     )
   ).toBeTruthy();
-  expect(screen.getByText(/Past planned start.*still scheduled/)).toBeTruthy();
+  const attention = screen.getByRole('region', { name: 'Attention needed' });
+  expect(within(attention).getByText('Overdue uncompleted call')).toBeTruthy();
+  expect(
+    within(attention).getByText(/Past planned start.*still scheduled/)
+  ).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole('region', { name: 'Next requirement' })
+    ).queryByText('Overdue uncompleted call')
+  ).toBeNull();
   expect(screen.getByText(/1 requirement\/risk record/)).toBeTruthy();
+});
+
+it('keeps all overdue calls visible for attention when there are no future requirements', () => {
+  mount([
+    {
+      ...row('call', 'First overdue call', '2026-10-17T14:00:00Z', 'scheduled'),
+      mission_id: 'synthetic-a',
+    },
+    {
+      ...row(
+        'call',
+        'Second overdue call',
+        '2026-10-17T15:00:00Z',
+        'scheduled'
+      ),
+      mission_id: 'synthetic-a',
+    },
+    {
+      ...row(
+        'call',
+        'Completed past call',
+        '2026-10-17T14:30:00Z',
+        'completed'
+      ),
+      mission_id: 'synthetic-a',
+    },
+  ]);
+  expect(
+    within(screen.getByRole('region', { name: 'Next requirement' })).getByText(
+      'No recorded upcoming requirements.'
+    )
+  ).toBeTruthy();
+  const attention = screen.getByRole('region', { name: 'Attention needed' });
+  expect(within(attention).getByText('First overdue call')).toBeTruthy();
+  expect(within(attention).getByText('Second overdue call')).toBeTruthy();
+  expect(screen.queryByText('Completed past call')).toBeNull();
+});
+it('treats a scheduled call at the snapshot instant as next rather than overdue', () => {
+  mount([
+    {
+      ...row('call', 'Call starting now', '2026-10-17T16:00:00Z', 'scheduled'),
+      mission_id: 'synthetic-a',
+    },
+  ]);
+  expect(
+    within(screen.getByRole('region', { name: 'Next requirement' })).getByText(
+      'Call starting now'
+    )
+  ).toBeTruthy();
+  expect(screen.queryByRole('region', { name: 'Attention needed' })).toBeNull();
 });

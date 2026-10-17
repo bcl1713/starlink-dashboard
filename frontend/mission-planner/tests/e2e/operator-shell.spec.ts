@@ -15,6 +15,11 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
     synthetic: true,
     clock: '2026-10-17T16:00:00Z',
     captures: [],
+    requirementOrdering: {
+      future: 'Synthetic customer coordination',
+      overdueAttention: 'Synthetic overdue coordination',
+      bothVisibleAtAllViewports: true,
+    },
   };
   for (const viewport of [
     { width: 1920, height: 1080 },
@@ -45,7 +50,9 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
           page.getByRole('heading', { name: 'Operator', exact: true })
         ).toBeVisible();
         await expect(
-          page.getByText('Synthetic customer coordination', { exact: true })
+          page
+            .getByRole('region', { name: 'Next requirement', exact: true })
+            .getByText('Synthetic customer coordination', { exact: true })
         ).toBeVisible();
         await expect(
           page.getByText('Synthetic transition advisory', { exact: true })
@@ -59,6 +66,23 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
         await expect(
           page.getByText(/Snapshot.*2026-10-17 16:00:00 UTC/)
         ).toBeVisible();
+        const attention = page.getByRole('region', {
+          name: 'Attention needed',
+          exact: true,
+        });
+        await expect(
+          attention.getByText('Synthetic overdue coordination', { exact: true })
+        ).toBeVisible();
+        await expect(
+          attention.getByText('Past planned start · still scheduled.', {
+            exact: true,
+          })
+        ).toBeVisible();
+        await expect(
+          page
+            .getByRole('region', { name: 'Next requirement', exact: true })
+            .getByText('Synthetic overdue coordination', { exact: true })
+        ).toHaveCount(0);
         await noOverflow(page);
         const name = `shell-${viewport.width}x${viewport.height}-${scope}.png`;
         await page.screenshot({ path: join(evidence, name), fullPage: true });
