@@ -21,6 +21,8 @@ import { OverviewPage } from './pages/OverviewPage';
 import { createQueryClient } from './lib/query-client';
 import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
+import { useOperatorHealth } from './hooks/api/useOperatorJournal';
+import { OperatorJournalPage } from './pages/OperatorJournalPage';
 
 const queryClient = createQueryClient();
 
@@ -36,6 +38,11 @@ const navigationItems = [
 
 function AppNavigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const health = useOperatorHealth();
+  const items =
+    health.data?.enabled && !health.isError
+      ? [...navigationItems, { to: '/operator', label: 'Operator' }]
+      : navigationItems;
 
   return (
     <nav
@@ -63,7 +70,7 @@ function AppNavigation() {
           <Menu className="size-5" aria-hidden="true" />
         </button>
         <div className="hidden items-center gap-1 lg:flex">
-          {navigationItems.map(({ to, label }) => (
+          {items.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
@@ -83,7 +90,7 @@ function AppNavigation() {
       {isOpen && (
         <div className="border-t bg-card px-4 py-2 lg:hidden">
           <div className="mx-auto grid max-w-[1440px] gap-1">
-            {navigationItems.map(({ to, label }) => (
+            {items.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -118,6 +125,7 @@ function AppShell() {
           className={`app-route-content ${isOverview ? '' : 'management-page dark bg-background text-foreground'}`}
         >
           <Routes>
+            <Route path="/operator" element={<OperatorJournalPage />} />
             <Route path="/overview" element={<OverviewPage />} />
             <Route path="/missions" element={<MissionsPage />} />
             <Route
