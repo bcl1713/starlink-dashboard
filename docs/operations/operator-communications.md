@@ -54,8 +54,8 @@ missing legacy values read as null without rewriting history. Other new fields
 are nullable. Party/coordinator are at most 200 characters, and lead is a strict
 integer from 0 to 10080. Conference references use the existing same-mission
 integrity checks; no conference lifecycle API is added. Raw journal projections
-retain original revisions and old missing fields; mission-package wiring is
-#370.
+retain original revisions and old missing fields; mission-package wiring remains
+[issue 370](https://github.com/bcl1713/starlink-dashboard/issues/370).
 
 There is no SQLite schema migration. Back up the store before upgrade. Disable
 Operator to hide these workflows while retaining data. Older binaries with

@@ -236,24 +236,24 @@ absent. Reuse ownership, clock injection, synthetic fixture endpoints,
 production image identity checks, failure probes, and cleanup; no parallel
 deployment stack.
 
-- [ ] Write failing harness tests requiring communications proof and wholly
+- [x] Write failing harness tests requiring communications proof and wholly
       synthetic fixtures. Pin clock 1600Z and retrospective call 1430–1442Z;
       include shared conference, multiple legs, unknown-duration and midnight
       requirements, and unreachable optional provider.
-- [ ] Implement browser journey at 1920×1080, 390×844 and 844×390: create,
+- [x] Implement browser journey at 1920×1080, 390×844 and 844×390: create,
       shift, cancel/reinstate, retrospective log/correct/relink/remove/restore,
       inspect history and projections; assert reminder recomputation and
       conference independence.
-- [ ] Add two-client stale-edit conflict, held receipt/duplicate click, offline
+- [x] Add two-client stale-edit conflict, held receipt/duplicate click, offline
       save/reconnect, app restart with no duplicate revision, and
       legacy/null/zero edit-round-trip scenarios. Verify existing Overview
       baselines, display controls and mission export hashes through existing
       probes.
-- [ ] Run bounded harness tests and commit product plus acceptance code before
+- [x] Run bounded harness tests and commit product plus acceptance code before
       exact-SHA qualification. Read cloud Docker skill references and
       `docs/development/cloud-docker.md`; preserve the actor's Docker
       context/socket and proxy/CA configuration.
-- [ ] Record ownership; run from repository root. A pass requires fresh
+- [x] Record ownership; run from repository root. A pass requires fresh
       production images, actual Nginx browser journeys, all proof files and
       verified teardown; after timeout verify the owned process tree is gone:
 
@@ -263,16 +263,16 @@ deployment stack.
     --evidence /tmp/operator-365-<unique>
   ```
 
-- [ ] Run `timeout --kill-after=10s 30m ./tools/verify backend`, `frontend`, and
+- [x] Run `timeout --kill-after=10s 30m ./tools/verify backend`, `frontend`, and
       static with `ACCEPTANCE_POLICY_BASE_SHA` set to the exact merge base.
       Preserve versions/output and verify no test resources remain.
-- [ ] Write sanitized report with exact product SHA, screenshots,
+- [x] Write sanitized report with exact product SHA, screenshots,
       contract/failure results, unchanged mission/Overview evidence,
       backup/downgrade instructions and cleanup proof. Commit evidence, push PR
       #375 updates, and require final-head CI. If product changes after
       acceptance, rerun exact-product acceptance; evidence-only commits must
       identify the tested ancestor precisely.
-- [ ] Keep PR draft until implementation/review gates are satisfied. Do not
+- [x] Keep PR draft until implementation/review gates are satisfied. Do not
       claim aircraft validation or merge without authorization. Preserve open-PR
       worktree, stop task runtime resources immediately after checks, and remove
       feature worktree/branches only after merge.

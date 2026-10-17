@@ -1,0 +1,51 @@
+{
+  "productSha": "de9567cec70aff570ff99f176a02e46e91ad4559",
+  "syntheticOnly": true,
+  "frontend": {
+    "status": "passed",
+    "testFiles": 248,
+    "testsPassed": 1771,
+    "productionBuild": "passed"
+  },
+  "backend": {
+    "status": "passed",
+    "testsPassed": 3969,
+    "testsSkipped": 20,
+    "warnings": 1,
+    "seconds": 664.02,
+    "warning": "Existing Cartopy facecolor warning in mission exporter test"
+  },
+  "focusedCallLegacyBackend": {
+    "status": "passed",
+    "testsPassed": 40
+  },
+  "acceptanceHarness": {
+    "status": "passed",
+    "testsPassed": 23
+  },
+  "productionAcceptance": {
+    "status": "passed",
+    "browserJourneys": 4,
+    "viewports": ["1920x1080", "390x844", "844x390"],
+    "failureRecoveryProjectionsExports": "passed"
+  },
+  "versions": {
+    "localNode": "22.22.2",
+    "localPython": "3.11.16",
+    "pytest": "9.1.1",
+    "vitest": "4.1.11",
+    "playwright": "1.63.0",
+    "dockerServer": "29.8.1"
+  },
+  "static": {
+    "status": "passed",
+    "internalLinksPassed": 1139,
+    "policyTestsPassed": 12,
+    "externalHttpAvailability": "advisory under repository policy; 15 external timeouts reported"
+  },
+  "ci": {
+    "productRun": 39071490074,
+    "finalReportHead": "Require all three PR-head gates before approval; final status recorded outside branch to avoid self-referential evidence commits"
+  },
+  "rawVerificationLogs": "/tmp/operator-365-verification"
+}

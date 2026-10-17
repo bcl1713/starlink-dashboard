@@ -1,0 +1,13 @@
+{
+  "synthetic": true,
+  "clock": "2026-10-17T16:00:00Z",
+  "captures": ["1920x1080", "390x844", "844x390"],
+  "duplicateSubmission": true,
+  "createReschedule": true,
+  "retrospectiveCorrection": true,
+  "removeRestore": true,
+  "conferenceIndependent": true,
+  "twoClientConflict": true,
+  "offlineRetry": true,
+  "restart": true
+}

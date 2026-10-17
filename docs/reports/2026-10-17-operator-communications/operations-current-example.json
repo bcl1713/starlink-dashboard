@@ -1,0 +1,53 @@
+[
+  {
+    "author": {
+      "backend": "restricted-access operator",
+      "operator_label": null
+    },
+    "command_id": "551d2161-0205-41c9-9f29-86a043234564",
+    "deleted": false,
+    "journal_seq": 36,
+    "leg_id": null,
+    "mission_id": "synthetic-mission-a",
+    "operation": "restore",
+    "payload": {
+      "communications_kind": null,
+      "conference_id": "b41337a9-1844-45ea-b756-8019f79e48de",
+      "coordinator": null,
+      "entry_type": "call",
+      "next_leg_id": "synthetic-leg-2",
+      "note": "",
+      "party": "Synthetic corrected 390",
+      "prep_lead_minutes": null,
+      "previous_leg_id": "synthetic-leg-1",
+      "schema_version": 1,
+      "status": "completed",
+      "title": "Synthetic corrected 390"
+    },
+    "previous_version": 3,
+    "provenance": {
+      "kind": "operator_reported",
+      "mutation_origin": "retrospective",
+      "observed_at": null,
+      "predicted_at": null,
+      "source_mode": "simulation",
+      "source_ref": null
+    },
+    "reason": "Operator restoration",
+    "reason_origin": "automatic",
+    "record_id": "2d7ebe73-af27-475a-8ce8-61b1d6157fb4",
+    "record_type": "call",
+    "recorded_at": "2026-10-17T16:00:00.000000Z",
+    "schema_version": 1,
+    "scope": "between_legs",
+    "time": {
+      "end_state": "known",
+      "ended_at": "2026-10-17T14:45:00.000000Z",
+      "occurred_at": "2026-10-17T14:30:00.000000Z",
+      "planned_end_at": null,
+      "planned_start_at": null,
+      "precision": "exact"
+    },
+    "version": 4
+  }
+]

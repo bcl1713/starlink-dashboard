@@ -1,0 +1,52 @@
+{
+  "scope": "Host verification of all issue-365 acceptance projects",
+  "projects": {
+    "starlink-operator-365-a1": {
+      "containers": [],
+      "networks": [],
+      "volumes": [],
+      "imageTags": [],
+      "ownedSurvivors": [],
+      "port": 49831,
+      "listeners": []
+    },
+    "starlink-operator-365-a2": {
+      "containers": [],
+      "networks": [],
+      "volumes": [],
+      "imageTags": [],
+      "ownedSurvivors": [],
+      "port": 54773,
+      "listeners": []
+    },
+    "starlink-operator-365-a3": {
+      "containers": [],
+      "networks": [],
+      "volumes": [],
+      "imageTags": [],
+      "ownedSurvivors": [],
+      "port": 53567,
+      "listeners": []
+    },
+    "starlink-operator-365-a4": {
+      "containers": [],
+      "networks": [],
+      "volumes": [],
+      "imageTags": [],
+      "ownedSurvivors": [],
+      "port": 51193,
+      "listeners": []
+    },
+    "starlink-operator-365-final": {
+      "containers": [],
+      "networks": [],
+      "volumes": [],
+      "imageTags": [],
+      "ownedSurvivors": [],
+      "port": 45875,
+      "listeners": []
+    }
+  },
+  "taskWorktreeProcesses": [],
+  "unitAndBuildWorkersStopped": true
+}

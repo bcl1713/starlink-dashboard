@@ -1,0 +1,45 @@
+{
+  "candidateSha": "de9567cec70aff570ff99f176a02e46e91ad4559",
+  "project": "starlink-operator-365-final",
+  "checksPassed": true,
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-365-final-backend:de9567cec70aff570ff99f176a02e46e91ad4559",
+      "id": "sha256:9ea8ce556a93ff2ad9947a4e3b49e9757291e7a5b8e5ab34c922c8fe28897eb7",
+      "revision": "de9567cec70aff570ff99f176a02e46e91ad4559"
+    },
+    "frontend": {
+      "tag": "starlink-operator-365-final-frontend:de9567cec70aff570ff99f176a02e46e91ad4559",
+      "id": "sha256:2a50d39c17bea42d8970b94d3de4c891a840ffa7442b265b4e05f0d206484bec",
+      "revision": "de9567cec70aff570ff99f176a02e46e91ad4559"
+    }
+  },
+  "sourceArchiveSha256": "3f54c7049943ebfdc38c901273f7e1d06d9fc0a9e4d229f70e6bb96d5a63cd76",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  },
+  "qualifiedChecks": [
+    "browser",
+    "failures",
+    "communications",
+    "projections",
+    "exports",
+    "node"
+  ],
+  "originTraversal": {
+    "origin": "http://127.0.0.1:45875",
+    "nginx": "nginx/1.31.7",
+    "transport": "docker-exec-byte-relay",
+    "container": "09b76aa84c6e38a4e522369b42c46a4c145c3373c2ec99d25b497dd33e8b38a3"
+  },
+  "rawEvidence": "/tmp/operator-365-final"
+}
