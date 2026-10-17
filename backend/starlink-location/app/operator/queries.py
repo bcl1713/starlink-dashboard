@@ -75,7 +75,10 @@ def page(connection, *, identity, clock, kind, filters, limit=50, cursor=None):
                 or (kind == "records" and not isinstance(state["last"], str))
                 or (
                     kind != "records"
-                    and (type(state["last"]) is not int or state["last"] < 0)
+                    and (
+                        type(state["last"]) is not int
+                        or not 0 <= state["last"] <= state["H"]
+                    )
                 )
             ):
                 raise ValueError("Invalid snapshot")

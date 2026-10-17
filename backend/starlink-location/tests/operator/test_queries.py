@@ -70,3 +70,47 @@ def test_history_snapshot_and_cursor_structure(service, record_data):
     with pytest.raises(OperatorError) as invalid:
         service.list(filters, cursor=bad)
     assert invalid.value.code == "validation_error"
+
+
+@pytest.mark.parametrize("kind", ["history", "journal"])
+@pytest.mark.parametrize("boundary", [2**63, 3, -1, True, False, 1.0, "1", None])
+def test_sequence_cursors_reject_invalid_boundaries(
+    service, record_data, kind, boundary
+):
+    import base64
+    import json
+
+    saved = create(service, record_data)
+    submit(service, update(service, saved))
+    read = service.history if kind == "history" else service.journal
+    identity = str(saved.record_id) if kind == "history" else "demo-mission"
+    first = read(identity, limit=1)
+    assert first.H == 2
+    state = json.loads(base64.urlsafe_b64decode(first.cursor))
+    state["last"] = boundary
+    cursor = base64.urlsafe_b64encode(json.dumps(state).encode()).decode()
+    with pytest.raises(OperatorError) as invalid:
+        read(identity, cursor=cursor)
+    assert invalid.value.code == "validation_error"
+    assert invalid.value.fields == {"cursor": "Invalid cursor"}
+
+
+@pytest.mark.parametrize("kind", ["history", "journal"])
+@pytest.mark.parametrize("boundary, versions", [(0, [1, 2]), (2, [])])
+def test_sequence_cursors_accept_snapshot_endpoints(
+    service, record_data, kind, boundary, versions
+):
+    import base64
+    import json
+
+    saved = create(service, record_data)
+    submit(service, update(service, saved))
+    read = service.history if kind == "history" else service.journal
+    identity = str(saved.record_id) if kind == "history" else "demo-mission"
+    first = read(identity, limit=1)
+    state = json.loads(base64.urlsafe_b64decode(first.cursor))
+    state["last"] = boundary
+    cursor = base64.urlsafe_b64encode(json.dumps(state).encode()).decode()
+    page = read(identity, cursor=cursor)
+    assert page.H == 2
+    assert [record.version for record in page.items] == versions
