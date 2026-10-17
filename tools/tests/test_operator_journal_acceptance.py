@@ -187,3 +187,30 @@ def test_failed_browser_still_exercises_independent_storage_checks(tmp_path):
     report = json.loads((tmp_path / "qualification.json").read_text())
     assert report["checks"]["storage"]["full"]
     assert report["errors"] == {"browser": "browser failed"}
+
+
+def test_communications_proof_requires_all_scenarios(tmp_path):
+    module = implementation()
+    assert hasattr(
+        module, "communications_proof"
+    ), "Communications evidence gate missing"
+    with pytest.raises((OSError, ValueError)):
+        module.communications_proof(tmp_path)
+    proof = {
+        "synthetic": True,
+        "createReschedule": True,
+        "retrospectiveCorrection": True,
+        "removeRestore": True,
+        "conferenceIndependent": True,
+        "twoClientConflict": True,
+        "offlineRetry": True,
+        "restart": True,
+        "duplicateSubmission": True,
+        "captures": ["1920x1080", "390x844", "844x390"],
+    }
+    (tmp_path / "communications-proof.json").write_text(json.dumps(proof))
+    assert module.communications_proof(tmp_path) == proof
+    proof["offlineRetry"] = False
+    (tmp_path / "communications-proof.json").write_text(json.dumps(proof))
+    with pytest.raises(ValueError, match="offlineRetry"):
+        module.communications_proof(tmp_path)

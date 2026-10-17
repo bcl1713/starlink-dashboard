@@ -61,11 +61,14 @@ class CallUpdate(CallCreate):
     @model_validator(mode="before")
     @classmethod
     def create_lead_default(cls, value):
-        if isinstance(value, dict) and isinstance(value.get("payload"), dict):
-            if "prep_lead_minutes" not in value["payload"]:
-                raise ValueError(
-                    "Call replacement requires explicit preparation lead or null"
-                )
+        if (
+            isinstance(value, dict)
+            and isinstance(value.get("payload"), dict)
+            and "prep_lead_minutes" not in value["payload"]
+        ):
+            raise ValueError(
+                "Call replacement requires explicit preparation lead or null"
+            )
         return value
 
 

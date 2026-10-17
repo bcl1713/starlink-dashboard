@@ -2,7 +2,9 @@
 
 from copy import deepcopy
 from uuid import uuid4
+
 import pytest
+
 from tests.operator.api_helpers import BASE, create, headers
 
 

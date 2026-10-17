@@ -126,9 +126,9 @@ def test_legacy_status_receipts_and_projection(service, record_data):
 
 
 def test_old_call_read_and_correction_roundtrip(api, record_data):
-    from tests.operator.service_helpers import create
-    from tests.operator.api_helpers import BASE, headers
     from app.operator.projections import capture_projection
+    from tests.operator.api_helpers import BASE, headers
+    from tests.operator.service_helpers import create
 
     service = api.app.state.operator_runtime.service
     saved = create(

@@ -132,6 +132,26 @@ def run_checks(root, checks):
     return report["checks"]
 
 
+def communications_proof(root):
+    proof = json.loads((root / "communications-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "createReschedule",
+        "retrospectiveCorrection",
+        "removeRestore",
+        "conferenceIndependent",
+        "twoClientConflict",
+        "offlineRetry",
+        "restart",
+        "duplicateSubmission",
+    ):
+        if proof.get(field) is not True:
+            raise ValueError(f"Missing communications evidence: {field}")
+    if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
+        raise ValueError("Missing communications viewport evidence")
+    return proof
+
+
 def qualify(owner):
     from failures import run_failure_suite
 
@@ -176,6 +196,7 @@ def qualify(owner):
             "journal": json.loads((owner.root / "browser-proof.json").read_text()),
             "shell": json.loads((owner.root / "shell-proof.json").read_text()),
             "displays": json.loads((owner.root / "displays-proof.json").read_text()),
+            "communications": communications_proof(owner.root),
         }
 
     def probe(script, destination):
@@ -199,6 +220,9 @@ def qualify(owner):
         {
             "browser": browser,
             "failures": lambda: run_failure_suite(owner, origin=origin),
+            "communications": lambda: probe(
+                "communications_probe", "communications-projections.json"
+            ),
             "projections": lambda: probe("projection_probe", "projections.json"),
             "exports": lambda: probe("export_probe", "exports.json"),
             "node": lambda: owner.execute(["node", "--version"], timeout=10).strip(),
