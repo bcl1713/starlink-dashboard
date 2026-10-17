@@ -12,6 +12,7 @@ export interface TimelineSegment {
   ka_state?: string;
   ku_state?: string;
   reasons?: string[];
+  impacted_transports?: string[];
   latitude?: number;
   longitude?: number;
   metadata?: Record<string, unknown>;
@@ -34,6 +35,7 @@ export interface KaCoverageEvent {
 }
 
 export interface Timeline {
+  call_capability_revision?: string | null;
   pop_forecast?: PopForecast | null;
   call_continuity?: CallContinuityProjection | null;
   map_pois?: Array<{
