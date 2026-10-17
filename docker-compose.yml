@@ -9,6 +9,7 @@ services:
     init: true
     env_file: .env
     environment:
+      OPERATOR_ENABLED: ${OPERATOR_ENABLED:-false}
       GFS_MAILBOX_PATH: /app/data/gfs-mailbox
       GFS_ARTIFACT_PATH: /app/data/gfs
     ports:
@@ -36,6 +37,7 @@ services:
     volumes:
       - ./data/missions:/app/data/missions
       - ./data/flight-events:/app/data/flight-events
+      - operator_data:/app/data/operator
       - ./data/satellites:/app/data/satellites
       - ./data/sat_coverage:/app/data/sat_coverage
       - ./data/settings:/app/data/settings
@@ -112,6 +114,7 @@ networks:
     driver: bridge
 
 volumes:
+  operator_data:
   prometheus_data:
   route_data:
   sim_route_data:

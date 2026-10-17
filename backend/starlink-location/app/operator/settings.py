@@ -21,8 +21,11 @@ class OperatorSettings:
         if self.source_mode not in ("live", "simulation"):
             raise ValueError("Unknown Operator source mode")
         if self.source_mode == "simulation":
-            if not self.simulation_run_id or not re.fullmatch(
-                r"[A-Za-z0-9][A-Za-z0-9_-]{0,199}", self.simulation_run_id
+            if (self.enabled or self.simulation_run_id is not None) and (
+                not self.simulation_run_id
+                or not re.fullmatch(
+                    r"[A-Za-z0-9][A-Za-z0-9_-]{0,199}", self.simulation_run_id
+                )
             ):
                 raise ValueError("Simulation requires a safe, explicit run ID")
         elif self.simulation_run_id is not None:
@@ -34,6 +37,8 @@ class OperatorSettings:
     def database_path(self) -> Path:
         directory = self.root
         if self.source_mode == "simulation":
+            if self.simulation_run_id is None:
+                raise ValueError("Simulation requires an explicit run ID")
             directory = directory / "simulation" / self.simulation_run_id
         return directory / "operations.sqlite3"
 

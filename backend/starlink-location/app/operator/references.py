@@ -28,6 +28,47 @@ def derive_links(record) -> set[tuple[str, str, str]]:
 
 
 class MissionReferences:
+    def _load(self, mission_id):
+        try:
+            return storage.load_mission_v2(mission_id)
+        except (OSError, RuntimeError, ValueError) as error:
+            raise OperatorError("store_unavailable") from error
+
+    @staticmethod
+    def _missing_legs(mission, leg_id, payload):
+        legs = {leg.id for leg in mission.legs}
+        requested = {
+            "leg_id": leg_id,
+            "payload.previous_leg_id": payload.previous_leg_id,
+            "payload.next_leg_id": payload.next_leg_id,
+        }
+        return [
+            name
+            for name, value in requested.items()
+            if value is not None and value not in legs
+        ]
+
+    def resolve(self, record) -> dict:
+        """Derived association state; missing storage never proves deletion."""
+        try:
+            mission = self._load(record.mission_id)
+        except OperatorError:
+            return {
+                "status": "unknown",
+                "unresolved_fields": [],
+                "error_code": "planning_unavailable",
+            }
+        missing = (
+            ["mission_id"]
+            if mission is None
+            else self._missing_legs(mission, record.leg_id, record.payload)
+        )
+        return {
+            "status": "missing" if missing else "resolved",
+            "unresolved_fields": missing,
+            "error_code": None,
+        }
+
     @contextmanager
     def locked(self, mission_ids: list[str]):
         try:
@@ -42,24 +83,14 @@ class MissionReferences:
             raise OperatorError("store_busy", retryable=True) from error
 
     def validate(self, mission_id, leg_id, scope, payload) -> None:
-        try:
-            mission = storage.load_mission_v2(mission_id)
-        except (OSError, RuntimeError, ValueError) as error:
-            raise OperatorError("store_unavailable") from error
+        mission = self._load(mission_id)
         if mission is None:
             raise OperatorError(
                 "validation_error", fields={"mission_id": "Mission does not exist"}
             )
-        legs = {leg.id for leg in mission.legs}
-        requested = {
-            "leg_id": leg_id,
-            "payload.previous_leg_id": payload.previous_leg_id,
-            "payload.next_leg_id": payload.next_leg_id,
-        }
         missing = {
             name: "Leg does not belong to mission"
-            for name, value in requested.items()
-            if value is not None and value not in legs
+            for name in self._missing_legs(mission, leg_id, payload)
         }
         if missing:
             raise OperatorError("validation_error", fields=missing)

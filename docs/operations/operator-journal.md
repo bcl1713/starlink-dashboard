@@ -5,6 +5,23 @@ receipts live separately from mission/planning storage. Disabling Operator
 preserves its files. A binary that does not support the stored schema refuses
 to open it; disabling the feature is the safe binary rollback path.
 
+Compose forwards `OPERATOR_ENABLED` with a default of `false` and retains the
+store in the independent `operator_data` volume mounted at `/app/data/operator`.
+Container recreation preserves that volume; removing it removes its retained
+history and receipts. The image and entrypoint give only the mount root to
+`appuser` with mode `0700`, without recursively changing retained history.
+Initialize the chosen namespace explicitly before enabling the API. Startup
+only opens existing initialized stores; failure leaves status, configuration,
+Overview and Missions available.
+
+Runtime uses the actual coordinator mode, regardless of `OPERATOR_SOURCE_MODE`.
+Simulation uses the actual managed run ID when present; otherwise an explicitly
+configured `OPERATOR_SIMULATION_RUN_ID` selects an offline/demo namespace. With
+neither, enabled simulation reports unavailable and touches no Operator files.
+Disabled simulation needs no run ID and opens no Operator files. A run/mode
+change closes the previous handle and checks the new namespace under a request
+gate; old epochs fail rather than writing into the replacement namespace.
+
 Run these commands from `backend/starlink-location` with the application's
 Python environment. Every command requires an explicit root and mode. Simulation
 also requires `--run RUN_ID` and uses `ROOT/simulation/RUN_ID/`.
@@ -62,7 +79,11 @@ surface the 80% advisory from `capacity_status`; at the configured limit
 the limit or free space; no automatic expiry removes records, revisions or
 receipts. The configured bound does not reserve physical free space. Full,
 read-only or failed media rolls back the command and disables the affected store
-until reopened and checked. Passive checkpoints leave WAL frames pinned by
+until reopened and checked. A non-busy I/O failure during write commit returns
+`commit_outcome_unknown` with retryable status: it may already be saved. Reopen
+and check before retrying the identical command/key; the receipt returns its
+original saved result if commit completed. A busy commit with successful rollback
+remains `store_busy` and does not poison readiness. Passive checkpoints leave WAL frames pinned by
 readers intact.
 
 Soft removal is not erasure. Current-state exports omit removed records; default

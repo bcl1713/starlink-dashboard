@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from dataclasses import dataclass
 from uuid import UUID
 
 from . import commands, queries
@@ -22,6 +23,12 @@ from .references import MissionReferences
 from .store import OperatorStore
 
 
+@dataclass(frozen=True)
+class ExecutionResult:
+    receipt: CommandReceipt
+    replayed: bool
+
+
 class OperatorService:
     def __init__(
         self,
@@ -29,7 +36,7 @@ class OperatorService:
         *,
         clock: Clock,
         actor: Actor,
-        references: MissionReferences
+        references: MissionReferences,
     ):
         self.store, self.clock, self.actor, self.references = (
             store,
@@ -41,6 +48,16 @@ class OperatorService:
     def execute(
         self, command: OperatorCommand, *, key: str, epoch: str
     ) -> CommandReceipt:
+        return self.execute_result(command, key=key, epoch=epoch).receipt
+
+    def execute_result(
+        self,
+        command: OperatorCommand,
+        *,
+        key: str,
+        epoch: str,
+        writable_types: set[str] | None = None,
+    ) -> ExecutionResult:
         identity = self.store.health()
         if not epoch:
             raise OperatorError("validation_error", fields={"epoch": "Required"})
@@ -63,7 +80,7 @@ class OperatorService:
         with self.store.connect() as connection:
             receipt = commands.receipt_for_key(connection, key, request_hash)
             if receipt is not None:
-                return receipt
+                return ExecutionResult(receipt, replayed=True)
             current = (
                 None
                 if isinstance(command, CreateRecord)
@@ -77,21 +94,30 @@ class OperatorService:
         ) as connection:
             receipt = commands.receipt_for_key(connection, key, request_hash)
             if receipt is not None:
-                return receipt
+                return ExecutionResult(receipt, replayed=True)
             if capacity_status(self.store)["exceeded"]:
                 raise OperatorError("capacity_exceeded")
             if current:
                 current = queries.get_record(connection, command.record_id)
-                if current.version != command.expected_version:
-                    raise OperatorError(
-                        "version_conflict", current_version=current.version
-                    )
+            if writable_types is not None and (
+                (current is not None and current.record_type not in writable_types)
+                or (
+                    hasattr(command, "record_type")
+                    and command.record_type not in writable_types
+                )
+            ):
+                raise OperatorError(
+                    "validation_error",
+                    fields={"record_type": "Workflow is not publicly editable"},
+                )
+            if current and current.version != command.expected_version:
+                raise OperatorError("version_conflict", current_version=current.version)
             target = command if command.operation in ("create", "update") else current
             if command.operation != "remove":
                 self.references.validate(
                     target.mission_id, target.leg_id, target.scope, target.payload
                 )
-            return commands.execute_in_transaction(
+            receipt = commands.execute_in_transaction(
                 connection,
                 command,
                 key=key,
@@ -99,6 +125,7 @@ class OperatorService:
                 clock=self.clock,
                 actor=self.actor,
             )
+            return ExecutionResult(receipt, replayed=False)
 
     def get(self, record_id: str) -> SavedRecord:
         with self.store.connect() as connection:

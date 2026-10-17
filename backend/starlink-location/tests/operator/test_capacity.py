@@ -55,10 +55,14 @@ def test_storage_error_disables_until_reopen(service, record_data, monkeypatch, 
 
 
 @pytest.mark.parametrize(
-    "code,retryable", [(sqlite3.SQLITE_BUSY, True), (sqlite3.SQLITE_IOERR, False)]
+    "code,retryable,ready,expected_code",
+    [
+        (sqlite3.SQLITE_BUSY, True, True, "store_busy"),
+        (sqlite3.SQLITE_IOERR, True, False, "commit_outcome_unknown"),
+    ],
 )
 def test_commit_failure_never_acknowledges(
-    service, record_data, monkeypatch, code, retryable
+    service, record_data, monkeypatch, code, retryable, ready, expected_code
 ):
     real = service.store._connection
 
@@ -80,7 +84,8 @@ def test_commit_failure_never_acknowledges(
     with pytest.raises(OperatorError) as error:
         submit(service, CreateRecord.model_validate(record_data))
     assert error.value.retryable == retryable
-    assert service.store.health().ready == retryable
+    assert error.value.code == expected_code
+    assert service.store.health().ready == ready
     with sqlite3.connect(service.store.settings.database_path) as db:
         assert db.execute("SELECT count(*) FROM revisions").fetchone()[0] == 0
         assert db.execute("SELECT count(*) FROM commands").fetchone()[0] == 0

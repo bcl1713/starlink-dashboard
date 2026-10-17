@@ -219,20 +219,35 @@ class OperatorStore:
             with admission(self.settings):
                 self._check_identity()
                 connection = self._connection()
+                commit_pending = False
                 try:
                     connection.execute("BEGIN IMMEDIATE" if write else "BEGIN")
                     yield connection
                     latest = connection.execute(
                         "SELECT max(recorded_at) FROM revisions"
                     ).fetchone()[0]
+                    commit_pending = write
                     connection.commit()
+                    commit_pending = False
                     if latest and (
                         self._latest_recorded_at is None
                         or latest > self._latest_recorded_at
                     ):
                         self._latest_recorded_at = latest
-                except BaseException:
-                    connection.rollback()
+                except BaseException as error:
+                    try:
+                        connection.rollback()
+                    except (sqlite3.Error, OSError) as rollback_error:
+                        if commit_pending:
+                            self._commit_uncertain(rollback_error)
+                        raise
+                    if (
+                        commit_pending
+                        and isinstance(error, (sqlite3.Error, OSError))
+                        and not isinstance(error, sqlite3.IntegrityError)
+                        and storage_error(error).code != "store_busy"
+                    ):
+                        self._commit_uncertain(error)
                     raise
                 finally:
                     connection.close()
@@ -247,9 +262,18 @@ class OperatorStore:
                 self._error_code = mapped.code
             raise mapped from error
 
+    def _commit_uncertain(self, error):
+        # A driver may report I/O failure after SQLite durably committed. A
+        # successful rollback is not proof that this command was never saved.
+        self._ready = False
+        self._error_code = "commit_outcome_unknown"
+        raise OperatorError(self._error_code, retryable=True) from error
+
     def _check_identity(self):
         if not self._ready or self._closed:
-            raise OperatorError(self._error_code)
+            raise OperatorError(
+                self._error_code, retryable=self._error_code == "commit_outcome_unknown"
+            )
         try:
             identity = json.loads(self.settings.identity_path.read_text())
             if identity != self._identity:

@@ -73,3 +73,21 @@ def service(tmp_path, clock, monkeypatch):
         store, clock=clock, actor=Actor(), references=MissionReferences()
     )
     store.close()
+
+
+@pytest.fixture
+def api(service, clock):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from app.api.operator import router
+    from app.operator.runtime import OperatorRuntime
+
+    app = FastAPI()
+    app.state.operator_runtime = OperatorRuntime.start(
+        service.store.settings, clock=clock
+    )
+    app.include_router(router)
+    with TestClient(app) as client:
+        yield client
+    app.state.operator_runtime.close()

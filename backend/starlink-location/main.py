@@ -39,6 +39,7 @@ from app.api import (
     status,
     ui,
 )
+from app.api.operator import router as operator_router
 from app.api.simulation_run import router as simulation_run_router
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
@@ -58,6 +59,8 @@ from app.mission.planning.sources import SourceStore
 from app.mission.planning.store import PlanningStore
 from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
+from app.operator.clock import SystemClock
+from app.operator.runtime import OperatorRuntimeBinding
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
@@ -572,6 +575,13 @@ async def startup_event():
             run_service.coordinator = _coordinator
         run_service.publish = _publish_replay_telemetry
         app.state.simulation_run_service = run_service
+        app.state.operator_binding = OperatorRuntimeBinding(
+            clock=SystemClock(), context=_operator_context
+        )
+        # This optional runtime reports its own failures; it never initializes
+        # or replaces a store as a side effect of application startup.
+        with app.state.operator_binding.access():
+            pass
 
         if _background_updates_enabled:
             run_service.wakeup = ReplayWakeup()
@@ -621,6 +631,10 @@ async def shutdown_event():
     from app.mission.planning.deadlines import shutdown_workers
 
     await asyncio.to_thread(shutdown_workers)
+    operator_binding = getattr(app.state, "operator_binding", None)
+    if operator_binding is not None:
+        await asyncio.to_thread(operator_binding.close)
+        del app.state.operator_binding
     global _background_task, _overview_history_client
     global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
     global _overview_link_settings_store
@@ -722,6 +736,13 @@ def _current_runtime_config():
     getter = getattr(_coordinator, "get_config", None)
     candidate = getter() if callable(getter) else None
     return candidate if isinstance(candidate, SimulationConfig) else _simulation_config
+
+
+def _operator_context():
+    config = _current_runtime_config()
+    run_service = getattr(app.state, "simulation_run_service", None)
+    run = run_service.status().run if run_service is not None else None
+    return config.mode, run.run_id if run is not None else None
 
 
 def _pop_lifecycle_token(run_id=None):
@@ -1041,7 +1062,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Total-Count"],
+    expose_headers=["X-Total-Count", "Idempotency-Replayed", "ETag"],
 )
 
 # Mount data/sat_coverage directory for satellite coverage overlays (Ka/CommKa GeoJSON)
@@ -1091,6 +1112,7 @@ from app.api.flight_events import router as flight_events_router
 
 app.include_router(flight_events_router)
 app.include_router(simulation_run_router)
+app.include_router(operator_router)
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])
