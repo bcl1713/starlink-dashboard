@@ -85,7 +85,7 @@ export function OperatorCommunications({
         >
           Refresh calls
         </button>
-        {dirty && !locked && !calls.blocked && (
+        {dirty && !locked && !calls.blocked && !needsCurrent && (
           <button className={button} onClick={() => open(selected)}>
             Discard call draft
           </button>

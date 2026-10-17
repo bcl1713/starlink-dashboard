@@ -257,6 +257,9 @@ it('does not reopen a historical receipt when the current-state reread fails', a
     ).value
   ).toBe('Retained local draft');
   expect(
+    screen.queryByRole('button', { name: 'Discard call draft' })
+  ).toBeNull();
+  expect(
     (
       screen
         .getByRole('button', { name: 'Save call' })
