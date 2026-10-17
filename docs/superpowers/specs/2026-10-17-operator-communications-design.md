@@ -52,6 +52,40 @@ historical lead value for old records. Tentative/delayed records may have
 unknown planned timing; scheduled creation requires a planned start. Time and
 party alone suffice in the quick flow.
 
+### Preparation lead omission and round-trip contract
+
+The serialized field is `payload.prep_lead_minutes`. Separate public
+create/update DTO handling from the persisted/read model so a model default
+cannot invent a historical value:
+
+| Context                                   | Missing key                                          | Explicit `null`        | Explicit `0` or positive integer                          |
+| ----------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------------------------------------- |
+| POST new tentative/scheduled/delayed call | Normalize to `10` before executing the command       | Unknown; retain `null` | Retain supplied value                                     |
+| POST new completed/cancelled call         | Normalize to `null`                                  | Retain `null`          | Retain supplied value; status suppresses preparation cues |
+| Stored legacy revision or receipt         | Interpret as unknown, never `10`                     | Unknown                | Retain supplied value                                     |
+| PUT full call replacement                 | Reject with 422; require an explicit value or `null` | Save unknown           | Save supplied value                                       |
+
+Use the nullable unknown default only in persisted/read models. Create defaults
+belong exclusively at the public create boundary, before command hashing and
+transaction execution. Retrying an omitted-key create must normalize identically
+and replay its original receipt even after later corrections. Do not change the
+existing receipt-hash/replay contract for journal entries.
+
+API record reads expose a legacy missing lead as `null`; raw historical JSON,
+original receipts and raw journal projections retain their original missing key.
+No read, backup or recovery operation writes a default into accepted history. A
+subsequent correction creates a new revision with explicit `null`, unless the
+operator intentionally chooses a numeric lead. Remove/restore copies the
+retained unknown semantics and never invokes create-time defaulting.
+
+The new planned-call form starts at `10`; the retrospective form starts at
+`null`. Edit initialization maps a missing lead to `null` and preserves explicit
+`null` and zero (never use truthiness or `value ?? 10` to initialize an edit).
+Every call PUT includes the field. Unrelated edits, schedule shifts, status
+changes, and conference relinking preserve its value. Changing an existing
+retrospective call to a planned status does not silently assign a lead; the
+operator can select one.
+
 Actual start/end use `occurred_at`/`ended_at` independently of planned values
 and server `recorded_at`. Retain the existing precision/end-state validation and
 acceptance-clock tolerance. Unscheduled completed calls may have entirely
@@ -112,10 +146,11 @@ details. Use existing mission/leg/between-leg scope controls and reference
 validation.
 
 Editing supports absolute UTC and signed minute/hour shifts, preserving known
-duration when shifting a start. Cancel/reinstate uses an explicit chosen status;
-reinstate must not silently mark a completed call scheduled. Correct timing,
-participant, note, and association through normal revisions. Reuse inspectable
-history and remove/restore controls for calls.
+duration when shifting a start. For unknown duration, shifting changes only the
+planned start and leaves the planned end null. Cancel/reinstate uses an explicit
+chosen status; reinstate must not silently mark a completed call scheduled.
+Correct timing, participant, note, and association through normal revisions.
+Reuse inspectable history and remove/restore controls for calls.
 
 Extend the existing store-bound mutation/retry/reconciliation hook and command
 types. Keep drafts through offline failures; show Saved only after receipt.
@@ -155,15 +190,30 @@ aircraft, internet feed, or real contact details are required for simulation.
   multiple calls, reminders after edits, history before/after values, public
   type restrictions, duplicate and concurrent writes, restart/recovery, backup
   and projection reads.
+- Backend preparation-lead contracts: cover every cell in the omission table,
+  omitted-key POST replay after correction, legacy read without stored JSON or
+  receipt changes, rejected omitted-key PUT with no new revision, and correction
+  of a legacy call to explicit null. Verify remove/restore never defaults a
+  lead.
 - Deterministic retrospective case: clock at 1600Z, log 1430–1442Z; correct
   actual end and participant; verify current view, immutable history and
   projection; remove/restore and relink across valid scope/leg boundaries; no
   preparation or reminder is invented and a shared synthetic conference stays
   unchanged.
+- Explicit timing assertions: shifting unknown-duration requirements by positive
+  and negative hours/minutes leaves planned end null, including midnight
+  crossings. Correcting and removing/restoring the retrospective case leaves
+  both planned times and lead null, with no preparation/reminder before or after
+  restart.
 - Frontend tests: mobile quick entry, unknown duration, UTC input/shift
   controls, corrections, status actions, history, conflict reconciliation,
   uncertain retries, offline save errors, store changes, reconnect/focus refresh
   and pagination.
+- Frontend edit-round-trip tests: legacy missing, explicit null, zero and a
+  positive lead each survive edit/save/reopen and unrelated field/status
+  changes; the PUT always includes the intended value. New planned entry alone
+  defaults to ten; retrospective entry/correction/restore never acquires that
+  default.
 - Fresh exact-commit production Docker/Nginx browser acceptance: desktop
   1920×1080, mobile 390×844 and 844×390, two clients, deterministic clocks,
   restart, unavailable optional provider, failures and recovery. Capture
