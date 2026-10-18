@@ -23,6 +23,7 @@ import { createQueryClient } from './lib/query-client';
 import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 import { useOperatorHealth } from './hooks/api/useOperatorJournal';
+import { OperatorHelpPage } from './pages/OperatorHelpPage';
 import { OperatorJournalPage } from './pages/OperatorJournalPage';
 import {
   OperatorWorkspaceProvider,
@@ -159,6 +160,7 @@ function AppShell() {
           <WorkspaceBackoutNotice />
           <Routes>
             <Route path="/operator" element={<OperatorJournalPage />} />
+            <Route path="/operator/help" element={<OperatorHelpPage />} />
             <Route path="/overview" element={<OverviewPage />} />
             <Route path="/missions" element={<MissionsPage />} />
             <Route

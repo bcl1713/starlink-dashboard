@@ -763,3 +763,119 @@ test('guided conference milestones survive closure, reload and private instance 
     )
   );
 });
+
+test('packaged guide and print reference work without external services and retain unsent work', async ({
+  page,
+  context,
+}) => {
+  const origin = new URL(process.env.OPERATOR_TRAINING_ORIGIN!).origin;
+  const blocked: string[] = [];
+  await context.route('**/*', (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin === origin) return route.continue();
+    blocked.push(url.origin);
+    return route.abort('connectionrefused');
+  });
+  const missions = await (await page.request.get('/api/v2/missions')).json();
+  const missionId = missions[0].id;
+  const location = `/operator?workspace=1&mission_id=${missionId}&view=notes`;
+  await page.goto(location);
+  await page.getByRole('button', { name: 'Note', exact: true }).click();
+  const editor = page.getByRole('dialog');
+  const title = 'Fictional draft retained while reading local Help';
+  await editor.getByLabel('Title', { exact: true }).fill(title);
+  await editor
+    .getByRole('button', { name: 'Keep draft and return', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'User guide', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/operator\/help\?/);
+  const guide = page.frameLocator('iframe[title="Operator user guide"]');
+  await expect(
+    guide.getByRole('heading', { name: 'Operator user guide', exact: true })
+  ).toBeVisible();
+  await guide.locator('a[href="#conferences"]').click();
+  await expect(guide.locator('#conferences')).toBeInViewport();
+  await expect
+    .poll(async () =>
+      guide
+        .locator('img')
+        .evaluateAll((images) =>
+          images.every(
+            (image) =>
+              (image as HTMLImageElement).complete &&
+              (image as HTMLImageElement).naturalWidth > 0
+          )
+        )
+    )
+    .toBe(true);
+  await page
+    .getByRole('link', { name: 'Return to Operator', exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`mission_id=${missionId}`));
+  await page
+    .getByRole('region', { name: 'Retained drafts', exact: true })
+    .getByRole('button', { name: new RegExp(title) })
+    .click();
+  await expect(editor.getByLabel('Title', { exact: true })).toHaveValue(title);
+  await editor
+    .getByRole('button', { name: 'Keep draft and return', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'Quick reference', exact: true })
+    .click();
+  const reference = page.frameLocator(
+    'iframe[title="Operator quick reference"]'
+  );
+  await expect(
+    reference.getByRole('heading', {
+      name: 'Operator quick reference',
+      exact: true,
+    })
+  ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    page.getByRole('link', { name: 'Return to Operator', exact: true })
+  ).toBeVisible();
+  await page.screenshot({
+    path: join(root, 'packaged-help-mobile.png'),
+    fullPage: true,
+  });
+  const print = await context.newPage();
+  try {
+    await print.goto('/operator-help/quick-reference.html');
+    await print.emulateMedia({ media: 'print' });
+    const pdf = await print.pdf({
+      path: join(root, 'operator-quick-reference.pdf'),
+      preferCSSPageSize: true,
+      printBackground: true,
+    });
+    const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) ?? [])
+      .length;
+    expect(pages).toBeGreaterThan(0);
+    expect(pages).toBeLessThanOrEqual(2);
+    writeFileSync(
+      join(root, 'packaged-help-proof.json'),
+      JSON.stringify(
+        {
+          noExternalDocumentationDependency: true,
+          externalRequestsBlocked: blocked,
+          packagedImagesLoaded: true,
+          guideSectionLinkWorked: true,
+          retainedUnsentTitle: title,
+          quickReferencePrintPages: pages,
+          printDocumentIsOperatorReferenceNotMissionBriefing: true,
+        },
+        null,
+        2
+      )
+    );
+  } finally {
+    await print.close();
+  }
+});

@@ -856,6 +856,20 @@ export function OperatorWorkspace() {
             independently. Keep a draft before changing mission; its target
             stays pinned.
           </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="ws-button inline-flex items-center"
+              to={`/operator/help?returnTo=${encodeURIComponent(`/operator?${params.toString()}`)}`}
+            >
+              User guide
+            </Link>
+            <Link
+              className="ws-button inline-flex items-center"
+              to={`/operator/help?doc=quick-reference&returnTo=${encodeURIComponent(`/operator?${params.toString()}`)}`}
+            >
+              Quick reference
+            </Link>
+          </div>
           <button
             className="ws-button"
             onClick={() => {

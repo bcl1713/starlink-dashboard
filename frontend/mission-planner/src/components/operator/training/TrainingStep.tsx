@@ -35,6 +35,14 @@ export function TrainingStep({
       </h2>
       <p role="status">{status}</p>
       <p>{instructions[stageId]}</p>
+      <a
+        className="ws-button inline-flex items-center"
+        href={`/operator-help/guide.html#${step.guide}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Read this procedure
+      </a>
       <ul
         aria-label="Lesson outcome evidence"
         className="list-disc space-y-1 pl-5"

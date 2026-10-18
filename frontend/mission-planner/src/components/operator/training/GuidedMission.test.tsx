@@ -26,6 +26,11 @@ it('offers real controls without treating Next or Skip as completion', () => {
   );
   expect(screen.getByText('Private training · Simulation')).toBeTruthy();
   expect(
+    screen
+      .getByRole('link', { name: 'Read this procedure' })
+      .getAttribute('href')
+  ).toBe('/operator-help/guide.html#context');
+  expect(
     screen.getByRole('list', { name: 'Lesson outcome evidence' }).textContent
   ).toContain('private context read · Needs evidence');
   fireEvent.click(screen.getByRole('button', { name: 'Open lesson controls' }));

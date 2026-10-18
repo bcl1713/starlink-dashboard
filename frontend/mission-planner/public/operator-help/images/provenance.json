@@ -1,0 +1,28 @@
+{
+  "synthetic": true,
+  "candidateSha": "445dbf3cd8e15357ebb56a6a336e2f3eb0d5d39c",
+  "sourceArchiveSha256": "b3bccf1488544ecf26c91206bcbf907c76e9f4dd97d153324955a5dbb776ad82",
+  "fixture": "private Fictional Meridian21",
+  "files": [
+    {
+      "file": "workspace-mobile.png",
+      "capture": "airborne-next-390x844.png",
+      "sha256": "f7e7c0540e644eb4318d3ef183fe1887738b3dc591a27e217f38464c3eaa6eb1"
+    },
+    {
+      "file": "workspace-desktop.png",
+      "capture": "airborne-next-1920x1080.png",
+      "sha256": "45d282fa3389312985ede24ac98f1adb1db212f1cbc74162771dfae450fe227f"
+    },
+    {
+      "file": "training-evidence.png",
+      "capture": "guided-closed-conference-history.png",
+      "sha256": "32d8acfce2388c729777016b61dea948b88ac899308f0606f5b4c533038abf5b"
+    },
+    {
+      "file": "simulation-network.png",
+      "capture": "configured-network-running.png",
+      "sha256": "0cd98752d979a5618260a30f2cc4f8f93517d19646ea46b98b1761bfeab44fed"
+    }
+  ]
+}

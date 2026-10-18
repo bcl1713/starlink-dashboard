@@ -2,7 +2,7 @@
   "synthetic": true,
   "receipt": {
     "schema_version": 1,
-    "command_id": "111ea3f1-d3eb-4976-bda8-98bc98301984",
+    "command_id": "9fff9207-4079-476c-8522-c80c7ffb12b0",
     "saved_records": [
       {
         "schema_version": 1,
@@ -26,11 +26,11 @@
           "next_leg_id": null,
           "entry_type": "note"
         },
-        "record_id": "4edf856b-0c72-4caf-8637-b1912b755c26",
+        "record_id": "426c30a0-96b1-4b89-82bf-0d7e2c8e2822",
         "version": 1,
         "previous_version": null,
         "journal_seq": 13,
-        "command_id": "111ea3f1-d3eb-4976-bda8-98bc98301984",
+        "command_id": "9fff9207-4079-476c-8522-c80c7ffb12b0",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
@@ -76,8 +76,8 @@
           "next_leg_id": null
         }
       },
-      "key": "23ad2418-1ad3-4bb2-a18c-78e7af5a5f39",
-      "epoch": "e27e533b-fc9f-4873-a512-a7ff42b0fc88"
+      "key": "47275046-bf2f-460d-a5af-b8525ada4a82",
+      "epoch": "10b09dd4-eab4-4194-b616-cad5503036e6"
     },
     {
       "body": {
@@ -103,8 +103,8 @@
           "next_leg_id": null
         }
       },
-      "key": "23ad2418-1ad3-4bb2-a18c-78e7af5a5f39",
-      "epoch": "e27e533b-fc9f-4873-a512-a7ff42b0fc88"
+      "key": "47275046-bf2f-460d-a5af-b8525ada4a82",
+      "epoch": "10b09dd4-eab4-4194-b616-cad5503036e6"
     }
   ],
   "history": {
@@ -134,11 +134,11 @@
             "next_leg_id": null,
             "entry_type": "note"
           },
-          "record_id": "4edf856b-0c72-4caf-8637-b1912b755c26",
+          "record_id": "426c30a0-96b1-4b89-82bf-0d7e2c8e2822",
           "version": 1,
           "previous_version": null,
           "journal_seq": 13,
-          "command_id": "111ea3f1-d3eb-4976-bda8-98bc98301984",
+          "command_id": "9fff9207-4079-476c-8522-c80c7ffb12b0",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
