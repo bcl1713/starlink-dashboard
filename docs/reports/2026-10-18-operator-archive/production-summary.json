@@ -1,0 +1,85 @@
+{
+  "candidateSha": "462c62741b973922a6f1ed9395bd339d1a0ffa1b",
+  "project": "starlink-operator-370-a8",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-370-a8-backend:462c62741b973922a6f1ed9395bd339d1a0ffa1b",
+      "id": "sha256:7a80661750e365052740e296e7836d0bf4614a519822e4aafaeea70c9d9f2406",
+      "revision": "462c62741b973922a6f1ed9395bd339d1a0ffa1b"
+    },
+    "frontend": {
+      "tag": "starlink-operator-370-a8-frontend:462c62741b973922a6f1ed9395bd339d1a0ffa1b",
+      "id": "sha256:1adf95693b5bf0f541d14f430f79c648387728f64e4556577a04a14d83894494",
+      "revision": "462c62741b973922a6f1ed9395bd339d1a0ffa1b"
+    }
+  },
+  "sourceArchiveSha256": "ad2f1e82aaf300902c8f98789d5b5202852ca88a52284979825dbf2746b78d47",
+  "qualification": {
+    "singlePackageRoundTrip": {
+      "synthetic": true,
+      "customerPdf": "exports/mission/Synthetic Mission A-brief.pdf",
+      "customerPdfPages": 2,
+      "archivedLegs": 2,
+      "records": 22,
+      "revisions": 24,
+      "modeledPopOccurrences": 1,
+      "sourceMode": "simulation",
+      "telemetrySourceMode": "live",
+      "syntheticOperationalFormatTelemetry": true,
+      "independentChecksums": true,
+      "cleanSeparateInstanceImport": {
+        "success": true,
+        "mission_id": "synthetic-mission-a",
+        "mission_name": "Synthetic Mission A",
+        "leg_count": 2,
+        "routes_imported": 1,
+        "pois_imported": 0,
+        "endpoint_pois_restored": 4,
+        "satellites_imported": 0,
+        "satellites_updated": 0,
+        "warnings": []
+      },
+      "destinationJournalUnmodified": true,
+      "legacyImport": true,
+      "repeatBytesIdentical": true,
+      "retrospectiveNewSnapshot": true,
+      "correctedEffectiveChronology": true,
+      "originalDownloadImmutable": true,
+      "sha256": "198b943d08c54f26dce786bd0f86718b2eb99ef414929cfc87de02967613bccf",
+      "latestSha256": "71770224b97ce4c8306a56030503c31063ad7414821059fa79e1d94e9a0c2f18"
+    },
+    "exportFailure": {
+      "enabledUnreadableJournalReturns503": true,
+      "noFalseArchiveDownload": true
+    },
+    "restartFrozenDownload": {
+      "readyDownloadAfterRestartIdentical": true,
+      "sha256": "71770224b97ce4c8306a56030503c31063ad7414821059fa79e1d94e9a0c2f18"
+    },
+    "productionBrowser": {
+      "synthetic": true,
+      "captures": ["1920x1080", "390x844", "844x390"],
+      "existingExportControls": true,
+      "failedNetworkRetry": true,
+      "downloadableZip": true,
+      "existingImportControls": true,
+      "uiImportSucceededWithoutJournalMutation": true,
+      "operatorResponsive": true,
+      "browserErrors": []
+    }
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

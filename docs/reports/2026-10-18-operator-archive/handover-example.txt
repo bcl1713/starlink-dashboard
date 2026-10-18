@@ -1,0 +1,25 @@
+Mission handover: synthetic-mission-a
+Journal sequence: 39; source: simulation
+Snapshot summary; operator reports and modeled predictions do not verify actual routing.
+call: Synthetic archive call 1 | completed | scope=mission leg=mission
+call: Synthetic canceled requirement | cancelled | scope=mission leg=mission
+journal_entry: Synthetic archive preflight | recorded | scope=preflight leg=mission
+conference: Synthetic customer room | closed | scope=mission leg=mission
+journal_entry: Synthetic archive postflight | recorded | scope=postflight leg=mission
+conference: Synthetic conference | None | scope=mission leg=mission
+participation: Synthetic archive participation 1 | left | scope=mission leg=mission
+participation: Synthetic archive participation 0 | left | scope=mission leg=mission
+issue: Synthetic overdue follow-up | open | scope=mission leg=mission
+call: Synthetic customer beta | scheduled | scope=mission leg=mission
+journal_entry: Synthetic journal_entry | recorded | scope=leg leg=synthetic-leg-1
+participation: Synthetic linked | connected | scope=mission leg=mission
+participation: Synthetic conference-only | connected | scope=mission leg=mission
+journal_entry: Synthetic archive between_legs | recorded | scope=between_legs leg=mission
+participation: Synthetic call-only | connected | scope=mission leg=mission
+transport_report: Synthetic transport_report | reported_available | scope=mission leg=mission
+journal_entry: Synthetic archive leg | recorded | scope=leg leg=synthetic-leg-1
+issue: Synthetic archive issue | resolved | scope=mission leg=mission
+call: Synthetic archive call 0 | completed | scope=mission leg=mission
+conference: Synthetic archive reused conference | established | scope=mission leg=mission
+transport_decision: Synthetic archive transport_decision | recorded | scope=mission leg=mission
+call: Synthetic customer alpha | scheduled | scope=mission leg=mission

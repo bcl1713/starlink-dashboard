@@ -1,0 +1,11 @@
+{
+  "synthetic": true,
+  "captures": ["1920x1080", "390x844", "844x390"],
+  "existingExportControls": true,
+  "failedNetworkRetry": true,
+  "downloadableZip": true,
+  "existingImportControls": true,
+  "uiImportSucceededWithoutJournalMutation": true,
+  "operatorResponsive": true,
+  "browserErrors": []
+}

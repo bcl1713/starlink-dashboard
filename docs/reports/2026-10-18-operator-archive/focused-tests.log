@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.16, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-370-mission-journal/backend/starlink-location
+configfile: pytest.ini
+plugins: platformdirs-4.13.4, anyio-4.15.1, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 30 items
+
+tests/operator/test_mission_archive.py ........                          [ 26%]
+tests/unit/test_export_preparation.py ................                   [ 80%]
+tests/unit/test_telemetry_preparation.py .                               [ 83%]
+tests/operator/test_projections.py ..                                    [ 90%]
+tests/operator/test_issue_activity.py ...                                [100%]
+
+============================== 30 passed in 2.50s ==============================
