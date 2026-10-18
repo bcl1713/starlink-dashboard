@@ -1,9 +1,10 @@
 # Operator issues, capability assessments and follow-up
 
-Issue: #367. Parent: #361. Status: proposed specification for user review;
-implementation is not approved by this document. Design direction and the nine
-requirements were approved in conversation on 2026-10-18. Base: `origin/dev` at
-`86199429`. Branch: `feat/operator-issues-367`. Worktree:
+Issue: #367. Parent: #361. Status: conditionally approved for implementation
+planning in PR #378; timeline/projection clarification incorporated below.
+Implementation execution and merge are not approved by this document. Design
+direction and the nine requirements were approved on 2026-10-18. Base:
+`origin/dev` at `86199429`. Branch: `feat/operator-issues-367`. Worktree:
 `.worktrees/issue-367`.
 
 ## Purpose and scope
@@ -114,17 +115,23 @@ fabricated duration is introduced.
 
 Correcting a previous update appends a replacement revision with an optional
 `corrects_version` positive integer identifying an existing nonremoved revision
-of this same issue. The corrected message and reported time are shown alongside
-the original; neither is erased. For message-only historical corrections, the
-command preserves all current issue fields and current effective RecordTime;
-optional `corrected_update_at` supplies the corrected historical message time,
-including null for unknown. The UI obtains current state before submitting and
-uses its version. These two optional fields default to null;
-`corrected_update_at` is valid only with `corrects_version`. Historical message
-correction does not replay old issue state or silently reopen a resolved
-problem. Correcting current status or details is an ordinary explicit
+of this same issue. Normal activity shows the corrected message once; audit
+history retains the original alongside its correction. For message-only
+historical corrections, the command preserves all current issue fields and
+current effective RecordTime; optional `corrected_update_at` supplies the
+corrected historical message time, including null for unknown. The UI obtains
+current state before submitting and uses its version. These two optional fields
+default to null; `corrected_update_at` is valid only with `corrects_version`.
+Historical message correction does not replay old issue state or silently reopen
+a resolved problem. Correcting current status or details is an ordinary explicit
 replacement revision, not historical event replay. No mandatory correction
 explanation is added.
+
+The
+[issue timeline and projection contract](2026-10-18-operator-issues-timeline.md)
+defines correction lineage, chronological display and additive #362 activity
+metadata. It is part of this specification, including the resolved-issue
+synthetic example and tests. Mission-package wiring remains #370.
 
 ## Capability and redundancy assessments
 

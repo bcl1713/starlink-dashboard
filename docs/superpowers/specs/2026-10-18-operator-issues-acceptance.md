@@ -2,7 +2,9 @@
 
 Part of the proposed
 [issue #367 specification](2026-10-18-operator-issues-design.md). Status:
-awaiting written-spec review; no implementation approval.
+conditionally approved for planning in PR #378; the timeline contract
+incorporates the review clarification. No implementation execution or merge
+approval.
 
 ## Mobile and desktop interaction
 
@@ -111,6 +113,11 @@ Required backend contract/unit/integration controls:
 - Frozen UTC boundary tests before/equal/after follow-up; clearing/rescheduling;
   resolve suppression/clearing, reopen without deadline resurrection, unknown
   clock and pagination/error states. No timer-generated durable events.
+- Correct an update after resolution using the linked timeline contract: one
+  operational update at corrected UTC, entered-later labeling, unchanged
+  resolution/follow-up, retained superseded text in audit, deterministic
+  correction chains, pinned-watermark behavior and normal activity lineage
+  without requiring audit export.
 - Optional typed relationships, cross-mission rejection, removed/missing
   targets, reverse-reference checks, restore and index-recovery consistency.
 - Same-key retry after lost acknowledgment, changed-content idempotency
@@ -157,7 +164,8 @@ tasks. This specification preparation starts no runtime resources.
 
 ## Review and next stage
 
-Review this document before implementation. After written-spec approval, prepare
-the implementation plan using the planning skill and present its execution
-handoff. This document itself authorizes no product changes, dependency
+The written-spec review in PR #378 permits implementation planning, with the
+timeline/projection clarification incorporated in the companion contract. Review
+the resulting implementation plan and select its execution method before
+implementation. This document itself authorizes no product changes, dependency
 installs, deployment, merge or live notification work.
