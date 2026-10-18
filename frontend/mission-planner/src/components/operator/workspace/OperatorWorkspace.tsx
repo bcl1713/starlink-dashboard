@@ -51,7 +51,12 @@ import { IssueActivity } from '../IssueActivity';
 import { issueInput, instant } from '../issueForms';
 import { GuidedMission } from '../training/GuidedMission';
 import { trainingContext } from '../training/trainingContext';
-import { collectEventEvidence } from '../training/trainingEventEvidence';
+import {
+  collectEventEvidence,
+  collectReplayEvidence,
+} from '../training/trainingEventEvidence';
+import { readEventSnapshot } from '@/services/operatorEvents';
+import { simulationRunApi } from '@/services/simulation-run';
 import { readTrainingRecords } from '../training/readTrainingRecords';
 import type { TrainingEvidence } from '../training/trainingSteps';
 import {
@@ -132,7 +137,8 @@ export function OperatorWorkspace() {
     checkedTraining,
     trainingIdentity,
     events.snapshot?.H,
-    performance.now()
+    performance.now(),
+    events.snapshot?.generation
   );
   const trainingEvidence: TrainingEvidence = {
     available: trainingEvents?.available ?? false,
@@ -399,9 +405,38 @@ export function OperatorWorkspace() {
                 health.data!.simulation_run_id!,
                 training.prerequisiteIds
               );
+              const [replay, snapshot] = await Promise.all([
+                simulationRunApi.get(),
+                readEventSnapshot(missionId),
+              ]);
+              const observed = collectEventEvidence({
+                identity: training.identity,
+                namespace: health.data!.simulation_run_id!,
+                snapshot,
+                receivedAt: performance.now(),
+                browserNow: performance.now(),
+                activeLegId: null,
+                activeModelIdentity: null,
+              });
+              if (!observed.available || checked.H !== snapshot.H)
+                throw new Error(
+                  'Training evidence changed while checking; check again.'
+                );
               setCheckedTraining({
                 ...checked,
+                outcomes: [
+                  ...new Set([
+                    ...checked.outcomes,
+                    ...observed.outcomes,
+                    ...collectReplayEvidence(
+                      snapshot,
+                      replay,
+                      mission.data!.legs
+                    ),
+                  ]),
+                ],
                 identity: trainingIdentity,
+                eventGeneration: snapshot.generation,
                 checkedAt: performance.now(),
               });
               events.refresh();

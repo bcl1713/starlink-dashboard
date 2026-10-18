@@ -287,3 +287,55 @@ it('accepts the preserved interrupted interval used by the real Restore connecti
     'participation-resumed-new-interval'
   );
 });
+it('invalidates checked source evidence when the event generation changes without a journal write', async () => {
+  const { isCurrentTrainingEvidence } = await import('./trainingEvidence');
+  const checked = {
+    identity: 'private',
+    H: 9,
+    checkedAt: 50,
+    eventGeneration: 'first-inputs',
+    available: true,
+    fresh: true,
+    outcomes: ['current-model-sources'],
+  };
+  expect(
+    isCurrentTrainingEvidence(checked, 'private', 9, 100, 'first-inputs')
+  ).toBe(true);
+  expect(
+    isCurrentTrainingEvidence(checked, 'private', 9, 100, 'new-inputs')
+  ).toBe(false);
+});
+it('never calls a consecutive suffix the complete call history', () => {
+  const second: SavedRecord = {
+    ...note,
+    record_type: 'call',
+    version: 2,
+    previous_version: 1,
+    payload: {
+      ...note.payload,
+      entry_type: 'call',
+      status: 'scheduled',
+      conference_id: null,
+    },
+  };
+  const third: SavedRecord = {
+    ...second,
+    version: 3,
+    previous_version: 2,
+    command_id: 'third',
+  };
+  const evidence = {
+    ...source,
+    records: [third],
+    history: [second, third],
+    historyComplete: true,
+    receipts: [second, third].map((r) => ({
+      schema_version: 1 as const,
+      command_id: r.command_id,
+      saved_records: [r],
+    })),
+  };
+  expect(collectRecordEvidence(evidence).outcomes).not.toContain(
+    'call-history'
+  );
+});

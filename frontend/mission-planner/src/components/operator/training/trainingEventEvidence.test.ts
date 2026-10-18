@@ -94,3 +94,48 @@ it('requires fresh aligned source identity rather than treating unknown inputs a
       }).outcomes
     ).not.toContain('current-model-sources');
 });
+it('pins replay evidence to the actual mission leg, route and served source time', async () => {
+  const { collectReplayEvidence } = await import('./trainingEventEvidence');
+  const { runningStatus } = await import('@/test/simulation-run-fixtures');
+  const status = runningStatus();
+  const legs = [
+    { id: 'leg-1', route_id: 'route-1' },
+    { id: 'leg-2', route_id: 'route-2' },
+  ];
+  const feed = eventSnapshot({
+    mission_id: 'mission-1',
+    source_mode: 'simulation',
+    as_of: status.served_at,
+    sources: [
+      {
+        source: 'model:leg-1',
+        revision: '1',
+        generation: '1',
+        input_identity: 'current-inputs',
+        captured_at: status.served_at,
+        freshness: 'fresh',
+        aligned: true,
+        guardable: true,
+        reason: null,
+      },
+    ],
+  });
+  expect(collectReplayEvidence(feed, status, legs)).toEqual(
+    expect.arrayContaining(['first-leg-replay', 'current-model-sources'])
+  );
+  expect(
+    collectReplayEvidence(
+      { ...feed, as_of: '2026-10-04T23:58:00Z' },
+      status,
+      legs
+    )
+  ).not.toContain('current-model-sources');
+  expect(
+    collectReplayEvidence(feed, status, [
+      { id: 'leg-1', route_id: 'prior-route' },
+    ])
+  ).not.toContain('first-leg-replay');
+  expect(
+    collectReplayEvidence({ ...feed, mission_id: 'other' }, status, legs)
+  ).toEqual([]);
+});

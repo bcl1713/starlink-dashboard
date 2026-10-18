@@ -71,3 +71,45 @@ export function collectEventEvidence(source: {
     outcomes.add('current-model-sources');
   return { available, fresh, outcomes: [...outcomes] };
 }
+
+/** Normal replay status is distinct from the fixture's stable journal namespace. */
+export function collectReplayEvidence(
+  snapshot: EventSnapshot,
+  status: import('@/services/simulation-run').SimulationRunStatus,
+  legs: readonly { id: string; route_id: string }[]
+): string[] {
+  const run = status.run;
+  if (
+    !run ||
+    status.service_mode !== 'simulation' ||
+    snapshot.source_mode !== 'simulation' ||
+    snapshot.mission_id !== run.mission_id ||
+    !['running', 'completed'].includes(status.state)
+  )
+    return [];
+  const index = legs.findIndex(
+    (leg) => leg.id === run.leg_id && leg.route_id === run.route_id
+  );
+  if (index < 0) return [];
+  const outcomes: string[] =
+    index === 0
+      ? ['first-leg-replay']
+      : index === 1
+        ? ['second-leg-replay']
+        : [];
+  if (
+    Date.parse(snapshot.as_of) === Date.parse(status.served_at) &&
+    snapshot.sources.some(
+      (capture) =>
+        capture.source === `model:${run.leg_id}` &&
+        capture.aligned &&
+        capture.freshness === 'fresh' &&
+        !!capture.input_identity &&
+        capture.captured_at &&
+        Date.parse(capture.captured_at) >= Date.parse(run.started_at) &&
+        Date.parse(capture.captured_at) <= Date.parse(status.served_at)
+    )
+  )
+    outcomes.push('current-model-sources');
+  return outcomes;
+}

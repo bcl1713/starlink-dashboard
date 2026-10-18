@@ -1,0 +1,9 @@
+{
+  "candidateSha": "21c4c46ea5cd70d4ec53f336081acf1f6445da77",
+  "checksPassed": true,
+  "cleanup": {
+    "container": [],
+    "network": [],
+    "volume": []
+  }
+}

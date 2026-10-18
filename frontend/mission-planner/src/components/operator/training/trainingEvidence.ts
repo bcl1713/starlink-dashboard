@@ -94,7 +94,10 @@ export function collectRecordEvidence(
       )
         outcomes.add('call-removed-restored');
       if (
+        source.historyComplete &&
         versions.length > 1 &&
+        versions[0].version === 1 &&
+        versions[versions.length - 1].version === r.version &&
         versions.every(
           (v, index) =>
             index === 0 || v.previous_version === versions[index - 1].version
@@ -199,12 +202,14 @@ export interface CheckedTrainingEvidence extends TrainingEvidence {
   identity: string;
   H: number | undefined;
   checkedAt: number;
+  eventGeneration?: string;
 }
 export function isCurrentTrainingEvidence(
   checked: CheckedTrainingEvidence | null,
   identity: string | undefined,
   H: number | undefined,
-  now: number
+  now: number,
+  eventGeneration?: string
 ): checked is CheckedTrainingEvidence {
   return (
     !!checked &&
@@ -212,6 +217,8 @@ export function isCurrentTrainingEvidence(
     checked.identity === identity &&
     H !== undefined &&
     checked.H === H &&
+    (checked.eventGeneration === undefined ||
+      checked.eventGeneration === eventGeneration) &&
     now >= checked.checkedAt &&
     now - checked.checkedAt < 30_000
   );

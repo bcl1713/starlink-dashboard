@@ -25,8 +25,15 @@ it('offers real controls without treating Next or Skip as completion', () => {
     />
   );
   expect(screen.getByText('Private training · Simulation')).toBeTruthy();
+  expect(
+    screen.getByRole('list', { name: 'Lesson outcome evidence' }).textContent
+  ).toContain('private context read · Needs evidence');
   fireEvent.click(screen.getByRole('button', { name: 'Open lesson controls' }));
   expect(open).toHaveBeenCalledWith('T01');
+  expect(screen.queryByRole('button', { name: 'Next lesson' })).toBeNull();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Resume guide instructions' })
+  );
   fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }));
   expect(screen.getByRole('heading', { name: /T02/ })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Back' }));

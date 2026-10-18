@@ -147,6 +147,21 @@ test('training fixture: normal replay across two legs preserves journal, receipt
         .getByRole('navigation', { name: 'Operator workspace' })
         .getByRole('button', { name: 'Communications', exact: true })
     ).toHaveAttribute('aria-current', 'page');
+    await expect(
+      guide.getByRole('button', {
+        name: 'Resume guide instructions',
+        exact: true,
+      })
+    ).toBeVisible();
+    await page.screenshot({
+      path: join(
+        root,
+        `guide-compact-${viewport.width}x${viewport.height}.png`
+      ),
+    });
+    await guide
+      .getByRole('button', { name: 'Resume guide instructions', exact: true })
+      .click();
     await guide
       .getByRole('button', { name: 'Skip lesson', exact: true })
       .click();
@@ -236,6 +251,30 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   );
   expect(firstModel).toMatchObject({ freshness: 'fresh', aligned: true });
   expect(firstModel.captured_at).toMatch(/^2026-10-17T16:15/);
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+    .click();
+  const flightGuide = page.getByRole('complementary', {
+    name: 'Guided mission walkthrough',
+  });
+  await flightGuide
+    .getByRole('combobox', { name: 'Lesson', exact: true })
+    .selectOption('T05');
+  await flightGuide
+    .getByRole('button', { name: 'Check current evidence', exact: true })
+    .click();
+  await expect(
+    flightGuide.getByRole('listitem').filter({ hasText: 'first leg replay' })
+  ).toContainText('Verified from current data');
+  await expect(
+    flightGuide
+      .getByRole('listitem')
+      .filter({ hasText: 'current model sources' })
+  ).toContainText('Verified from current data');
+  await flightGuide
+    .getByRole('button', { name: 'Dismiss guide', exact: true })
+    .click();
   await expect(
     page.getByRole('region', { name: 'Next requirement', exact: true })
   ).toContainText('Synthetic customer 1 briefing');

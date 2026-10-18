@@ -35,6 +35,21 @@ export function TrainingStep({
       </h2>
       <p role="status">{status}</p>
       <p>{instructions[stageId]}</p>
+      <ul
+        aria-label="Lesson outcome evidence"
+        className="list-disc space-y-1 pl-5"
+      >
+        {[...step.outcomes, ...step.manual].map((outcome) => (
+          <li key={outcome}>
+            {outcome.replaceAll('-', ' ')} ·{' '}
+            {evaluation.missing.includes(outcome)
+              ? 'Needs evidence'
+              : evaluation.manualOutcomes.includes(outcome)
+                ? 'Human observation'
+                : 'Verified from current data'}
+          </li>
+        ))}
+      </ul>
       {evaluation.missing.length > 0 && (
         <p>
           {evaluation.missing.length} required outcomes still need evidence.
