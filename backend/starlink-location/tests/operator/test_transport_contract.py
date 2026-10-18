@@ -150,3 +150,31 @@ def test_replacement_check_requires_explicit_marker(service, record_data):
     assert corrected.payload.services[0].checked.result == "satisfactory"
     assert "replacement_check_row_ids" not in corrected.model_dump()
     assert saved.payload.services[0].applied.transport == "X"
+
+
+def test_pre_upgrade_update_key_replays_with_new_optional_marker(service, record_data):
+    """An absent new command field must not change hashes of schema-002 retries."""
+    import hashlib
+    import json
+
+    from app.operator.commands import execute_in_transaction
+
+    saved = create(service, record_data)
+    command = update(
+        service, saved, payload={"entry_type": "note", "title": "Legacy correction"}
+    )
+    key = str(uuid4())
+    legacy_body = command.model_dump(mode="json", exclude={"replacement_check_row_ids"})
+    legacy_hash = hashlib.sha256(
+        json.dumps(legacy_body, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    with service.store.connect(write=True) as connection:
+        original = execute_in_transaction(
+            connection,
+            command,
+            key=key,
+            request_hash=legacy_hash,
+            clock=service.clock,
+            actor=service.actor,
+        )
+    assert submit(service, command, key=key) == original

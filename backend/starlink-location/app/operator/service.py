@@ -69,9 +69,11 @@ class OperatorService:
             raise OperatorError(
                 "validation_error", fields={"key": "Expected UUID"}
             ) from error
-        encoded = json.dumps(
-            command.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
-        ).encode()
+        body = command.model_dump(mode="json")
+        # This additive optional marker must not change pre-upgrade retry hashes.
+        if not body.get("replacement_check_row_ids"):
+            body.pop("replacement_check_row_ids", None)
+        encoded = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
         if len(encoded) > 65536:
             raise OperatorError(
                 "validation_error", fields={"body": "Body exceeds 64 KiB"}
