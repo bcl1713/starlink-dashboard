@@ -310,3 +310,20 @@ def test_training_routes_use_normal_parser_and_have_two_distinct_replay_windows(
     )
     assert routes[0].points[0].longitude == -10
     assert routes[1].points[0].longitude == 10
+
+
+def test_launcher_refuses_shared_or_external_volume_configuration(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_launcher",
+        ROOT / "tools/training/operator-mission/launcher.py",
+    )
+    launcher = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(launcher)
+    with pytest.raises(ValueError, match="private"):
+        launcher.validate_project("dev", "12345678-1234-1234-1234-123456789abc")
+    with pytest.raises(ValueError, match="volume"):
+        launcher.validate_compose(
+            {"services": {}, "volumes": {"bad": {"external": True}}},
+            tmp_path,
+            "starlink-operator-training-123456781234",
+        )

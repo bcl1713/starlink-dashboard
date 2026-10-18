@@ -656,6 +656,12 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
       await expect(bridge.getByRole('alert')).toContainText(
         'customer reported connected'
       );
+      const nextBounds = await page
+        .getByRole('region', { name: 'Next requirement', exact: true })
+        .boundingBox();
+      expect(nextBounds!.y + nextBounds!.height).toBeLessThanOrEqual(
+        viewport.height
+      );
       await bridge
         .getByRole('button', { name: 'Conference history', exact: true })
         .click();
@@ -869,6 +875,9 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
         applied: { transport: 'Ka' },
       });
       await expect(editor).toHaveCount(0);
+      await expect(
+        page.getByRole('button', { name: 'Record another move', exact: true })
+      ).toBeEnabled();
       await page.screenshot({
         path: join(
           evidence,
@@ -895,6 +904,12 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
       expect(assessment.payload.functional_observed_at).toBeTruthy();
       expect(assessment.payload.redundancy_observed_at).toBeNull();
       await expect(editor).toHaveCount(0);
+      await expect(
+        page.getByRole('button', {
+          name: 'Record manual assessment',
+          exact: true,
+        })
+      ).toBeEnabled();
       await page.screenshot({
         path: join(evidence, `issues-${viewport.width}x${viewport.height}.png`),
       });
