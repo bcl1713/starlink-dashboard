@@ -51,15 +51,19 @@ closed, interrupted or missing. Operator labels the discrepancy and unknown
 transport relevance. A planned call ending does not end an operator-reported
 connection.
 
-Saved timelines can have unknown input alignment. The feed marks
-stale/unavailable sources and retains last-known rows without claiming an
-all-clear. Ordinary production model sources currently lack a complete shared
-publication/invalidation guard, so their acknowledgment is
-read-only/unavailable. Matching mission/leg IDs alone does not certify current
-input alignment; automatic restriction cues are withheld when that alignment
-cannot be established. Scheduled operational records can still be acknowledged.
-A fully participating adapter may enable modeled acknowledgment; the acceptance
-fixture exercises that contract with synthetic data.
+Operator prepares the existing mission transport model from current captured
+route, leg, catalog, coverage and configuration inputs. Significant restrictions
+are eligible for local sound and vibration while Operator is open. The source
+revision is revalidated before publishing or acknowledging; stale or superseded
+inputs suppress obsolete notifications. Missing transport prerequisites remain
+visible without suppressing known restrictions on other transports.
+
+The existing #348 live route-aware ETA windows and observed PoP advisories
+remain in the same feed as visual advisories. Transport capability windows
+retain the existing mission model's UTC timing; this feed adds no new prediction
+algorithm. Saved timelines without current-input proof remain last-known
+information. Acknowledgment is optional and affects repeated alerts, never
+permission to use an estimate or operate a transport.
 
 ## Acknowledgment and schedule changes
 

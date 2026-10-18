@@ -3,6 +3,8 @@
 import json
 from copy import deepcopy
 from dataclasses import dataclass
+from xml.etree.ElementTree import ParseError
+from zipfile import BadZipFile
 
 from app.mission.exporter.snapshot_inputs import (
     SourcePayload,
@@ -31,6 +33,7 @@ class ModelInputs:
     revision: str
     pop_catalog: object
     context: dict
+    coverage_sampler: object
     pop_unavailable: bool = False
 
     def prepare(self, leg):
@@ -41,7 +44,7 @@ class ModelInputs:
             leg,
             RouteView(self.sources),
             captured_pois(self.sources),
-            captured_coverage(self.sources),
+            self.coverage_sampler,
             self.mission.id,
             discover_coverage=False,
             satellite_catalog=captured_catalog(self.sources),
@@ -132,7 +135,21 @@ def capture_current(adapter, mission_id, *, as_of):
             ),
         ),
     )
-    coverage = coverage_snapshot(captured_coverage(sources))
+    try:
+        sampler = captured_coverage(sources)
+        coverage = coverage_snapshot(sampler)
+    except (
+        OSError,
+        ValueError,
+        TypeError,
+        AttributeError,
+        BadZipFile,
+        ParseError,
+        StopIteration,
+    ):
+        sampler, coverage = None, {"valid": False}
+    if not coverage["valid"]:
+        sampler = None
     revision = identity(
         json.loads(metadata),
         [(s.name, s.digest) for s in sources],
@@ -140,4 +157,6 @@ def capture_current(adapter, mission_id, *, as_of):
         context,
         coverage,
     )
-    return ModelInputs(mission, sources, revision, catalog, context, catalog is None)
+    return ModelInputs(
+        mission, sources, revision, catalog, context, sampler, catalog is None
+    )

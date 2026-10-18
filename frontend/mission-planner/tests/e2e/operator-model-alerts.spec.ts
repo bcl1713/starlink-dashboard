@@ -66,6 +66,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     missing_pop: false,
     active: true,
     satellite_longitude: 90,
+    invalid_ka: false,
   });
   let snapshot = await feed(request);
   const restriction = snapshot.events.find(
@@ -159,6 +160,19 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     }
     proof.foregroundSoundOnce = true;
     proof.captures = ['1920x1080', '390x844', '844x390'];
+    await raw(request, { invalid_ka: true });
+    snapshot = await feed(request);
+    expect(snapshot.coverage).toBe('partial');
+    expect(
+      snapshot.events.some(
+        (e) => e.transport === 'X' && e.notification.eligible
+      )
+    ).toBe(true);
+    expect(
+      snapshot.sources.some((s) => s.reason?.includes('Ka coverage'))
+    ).toBe(true);
+    proof.partialIndependentWarning = true;
+    await raw(request, { invalid_ka: false });
     snapshot = await feed(request);
     const event = snapshot.events.find(
       (e) => e.event_id === restriction.event_id && e.active
@@ -172,6 +186,16 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
       snapshot.events.find((e) => e.event_id === event.event_id)?.notification
         .acknowledged
     ).toBe(true);
+    const ackState = await (
+      await request.get(
+        `${origin}/api/_synthetic/operator-model-acknowledgments`
+      )
+    ).json();
+    expect(ackState.modeledAcknowledgments).toBe(1);
+    const receiptBodies = await Promise.all(receipts.map((r) => r.json()));
+    expect(receiptBodies[0].acknowledgment_id).toBe(
+      receiptBodies[1].acknowledgment_id
+    );
     proof.twoClientAcknowledgment = true;
     const beforePop = snapshot.sources.find((s) =>
       s.source.endsWith(':live-pop')
@@ -236,7 +260,18 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     proof.deactivationRetires = true;
     await raw(request, { active: true, route_shift: 0 });
     await contexts[0].setOffline(true);
+    const offlinePage = contexts[0].pages()[0];
+    await offlinePage
+      .getByRole('button', { name: 'Refresh events', exact: true })
+      .click();
+    await expect(
+      offlinePage.getByText(/Feed unavailable. Last-known events/)
+    ).toBeVisible();
     await contexts[0].setOffline(false);
+    await offlinePage
+      .getByRole('button', { name: 'Refresh events', exact: true })
+      .click();
+    proof.offlineReconnect = true;
     control('restart');
     await ready(page);
     snapshot = await feed(request);

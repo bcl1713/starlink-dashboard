@@ -37,6 +37,7 @@ class ProductionEventSources(EventSourceAdapter):
         )
         self.cache = {}
         self.live_sources = set()
+        self.lifecycle_sources = set()
         self.pop_service = pop_service
         self.publication.input_gate = storage.get_active_leg_lock
 
@@ -53,40 +54,11 @@ class ProductionEventSources(EventSourceAdapter):
         try:
             with storage.get_active_leg_lock():
                 mission = storage.load_mission_v2(mission_id)
-                if mission is not None and not any(
-                    leg.is_active for leg in mission.legs
-                ):
-                    refs = {
-                        s.source
-                        for s in captured.sources
-                        if s.source.startswith("model:")
-                    }
-                    refs.update(
-                        source.source
-                        for (mid, _), (_, source, _) in self.cache.items()
-                        if mid == mission_id
-                    )
-                    refs.update(ref + ":live-pop" for ref in tuple(refs))
-                    for ref in refs:
-                        self.publication.invalidate(ref)
-                    return replace(
-                        captured,
-                        models={},
-                        sources=[
-                            s
-                            for s in captured.sources
-                            if not s.source.startswith("model:")
-                        ]
-                        + [
-                            SourceCapture(
-                                source=ref,
-                                freshness="disabled",
-                                aligned=True,
-                                reason="Mission leg inactive",
-                            )
-                            for ref in refs
-                        ],
-                    )
+                from .production_event_lifecycle import retire_inactive
+
+                captured, active = retire_inactive(self, captured, mission, as_of=as_of)
+                if not active:
+                    return captured
                 inputs = capture_current(self, mission_id, as_of=as_of)
             models, sources = dict(captured.models), list(captured.sources)
             for leg in inputs.mission.legs:
@@ -116,7 +88,7 @@ class ProductionEventSources(EventSourceAdapter):
                     ]
                     if inputs.pop_unavailable:
                         missing.append("PoP catalog")
-                    if any(s.name == "coverage/missing" for s in inputs.sources):
+                    if inputs.coverage_sampler is None:
                         missing.append("Ka coverage")
                     source = SourceCapture(
                         source="model:" + leg.id,
@@ -195,13 +167,16 @@ class ProductionEventSources(EventSourceAdapter):
                             "reason": reason,
                         }
                     )
-                    if s.source.startswith("model:")
+                    if s.source.startswith("model:") and s.freshness != "disabled"
                     else s
                 )
                 for s in sources
             ]
             for (mid, leg_id), (_revision, source, model) in self.cache.items():
-                if mid == mission_id:
+                if mid == mission_id and not any(
+                    s.source == source.source and s.freshness == "disabled"
+                    for s in sources
+                ):
                     self.publication.invalidate(source.source)
                     models[leg_id] = model
                     sources = [s for s in sources if s.source != source.source] + [
@@ -220,6 +195,7 @@ class ProductionEventSources(EventSourceAdapter):
         for _revision, source, _model in self.cache.values():
             self.publication.invalidate(source.source)
         self.cache.clear()
-        for source_ref in self.live_sources:
+        for source_ref in self.live_sources | self.lifecycle_sources:
             self.publication.invalidate(source_ref)
         self.live_sources.clear()
+        self.lifecycle_sources.clear()

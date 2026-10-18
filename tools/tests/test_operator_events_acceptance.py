@@ -62,3 +62,28 @@ def test_notification_probe_preserves_exports_and_recovers_ack_receipts(tmp_path
     assert result["operationsUnchanged"]
     assert result["backupRestore"]
     assert result["commitCrashBefore"] and result["commitCrashAfter"]
+
+
+def test_real_model_proof_rejects_missing_operational_checks(tmp_path):
+    runner = implementation()
+    proof = {
+        field: True
+        for field in (
+            "synthetic",
+            "rawInputsOnly",
+            "foregroundSoundOnce",
+            "incomingProtectedActivity",
+            "twoClientAcknowledgment",
+            "positionUpdatesActualPop",
+            "staleReason",
+            "unavailableReason",
+            "routeScheduleUpdated",
+            "deactivationRetires",
+            "restartNoResurrection",
+            "offlineReconnect",
+        )
+    }
+    proof["captures"] = ["1920x1080", "390x844", "844x390"]
+    (tmp_path / "model-alerts-proof.json").write_text(json.dumps(proof))
+    with pytest.raises(ValueError, match="partialIndependentWarning"):
+        runner.models_proof(tmp_path)

@@ -79,12 +79,15 @@ persistence were changed to satisfy the harness.
 
 ## Operational limits
 
-Model input alignment and publication guards must be proven independently of
-matching mission/leg identifiers. Ordinary current model publishers lack the
-complete guard, so modeled acknowledgment and unproven-alignment automatic cues
-fail closed. Scheduled operational record alerts remain available. Local audio
-requires a gesture; vibration and foreground delivery remain device/browser
-best-effort. No background, push, routing or export behavior is added.
+The initial delivery below used a synthetic participating adapter. Product
+review 6248772010 correctly rejected withholding modeled cues from ordinary
+valid inputs as completion. The subsequent production-source revisions reuse
+captured mission preparation and the real #348 service through normal
+application wiring. Their new qualification is documented in
+[modeled alerts](modeled-alerts.md).
+
+Local audio requires a gesture; vibration remains device/browser best-effort. No
+background, push, routing or export behavior is added.
 
 See [operating and upgrade instructions](../../operations/operator-events.md)
 and the

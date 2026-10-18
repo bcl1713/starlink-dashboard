@@ -319,6 +319,30 @@ def qualify_events(owner):
     )
 
 
+def models_proof(root):
+    proof = json.loads((root / "model-alerts-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "rawInputsOnly",
+        "foregroundSoundOnce",
+        "incomingProtectedActivity",
+        "twoClientAcknowledgment",
+        "positionUpdatesActualPop",
+        "staleReason",
+        "unavailableReason",
+        "routeScheduleUpdated",
+        "deactivationRetires",
+        "restartNoResurrection",
+        "offlineReconnect",
+        "partialIndependentWarning",
+    ):
+        if proof.get(field) is not True:
+            raise ValueError(f"Missing real-model evidence: {field}")
+    if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
+        raise ValueError("Missing real-model viewport evidence")
+    return proof
+
+
 def qualify_models(owner):
     from events_probe import run as event_probe
     from failures import run_failure_suite
@@ -351,13 +375,30 @@ def qualify_models(owner):
                 "--config",
                 "playwright.operator-journal.config.ts",
                 "--grep",
-                "real model foreground warning|Operator display controls",
+                "real model foreground warning|Operator display controls|aircraft LAN HTTP",
             ],
             timeout=920,
             cwd=ROOT / "frontend/mission-planner",
             env=env,
         )
-        return json.loads((owner.root / "model-alerts-proof.json").read_text())
+        lan = json.loads((owner.root / "events-lan-http.json").read_text())
+        assert (
+            lan["actualNonSecureOrigin"]
+            and lan["randomUUIDAbsent"]
+            and lan["acknowledgmentCommitted"]
+        )
+        assert lan["secureContext"] is False and not lan["browserErrors"]
+        displays = json.loads((owner.root / "displays-proof.json").read_text())
+        assert (
+            displays["completed"]
+            and displays["overviewRenderedVisibilitySynced"]
+            and not displays["browserErrors"]
+        )
+        return {
+            "models": models_proof(owner.root),
+            "lanHttp": lan,
+            "overview": displays,
+        }
 
     def exports():
         return json.loads(

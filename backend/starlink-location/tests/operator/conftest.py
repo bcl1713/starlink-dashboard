@@ -4,6 +4,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from tests.operator.production_fixture import (
+    production,  # noqa: F401
+)
+
 
 class FakeClock:
     def __init__(self, now: datetime, monotonic: float = 0.0):

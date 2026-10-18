@@ -98,3 +98,14 @@ if models_enabled:
             return app.state.synthetic_models.update(body)
         except (ValueError, TypeError, KeyError):
             raise HTTPException(422, "Invalid synthetic raw input") from None
+
+
+if models_enabled:
+
+    @app.get("/api/_synthetic/operator-model-acknowledgments")
+    def synthetic_model_acknowledgments():
+        with app.state.synthetic_models.runtime.service.store.connect() as db:
+            count = db.execute(
+                "SELECT count(*) FROM event_acknowledgments a JOIN event_occurrences o USING (occurrence_id) WHERE json_extract(o.event_json, '$.provenance')='modeled'"
+            ).fetchone()[0]
+        return {"synthetic": True, "modeledAcknowledgments": count}

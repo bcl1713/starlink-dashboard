@@ -58,13 +58,16 @@ Neither is selected. There is no new prediction engine or external scheduler.
 | Flight and leg lifecycle     | existing #349 flight-state and `services/telemetry_archive/coordinator.py` contracts                |
 | Durability                   | Operator admission locks, transactions, capacity checks, backup and recovery                        |
 
-The adapter consumes already published snapshots or invokes the existing pure
-calculation path with captured local inputs. It must not publish map POIs, write
-mission plans, call external providers, or advance the stateful live coordinator
-merely because another browser requests the feed. Share the live publication
-used by status; expose a read-only captured snapshot internally if needed. The
-selected mission's inactive legs use saved planning timelines. Live evidence
-applies only when its mission, leg, source mode and lifecycle identity match.
+The adapter consumes published snapshots or invokes the existing calculation
+path with captured local inputs. The normal production adapter may materialize
+the shared local #348 status publication under source admission; it does not
+publish map POIs, write mission plans, call external providers, or advance the
+telemetry/replay coordinator. It uses the same PoP producer as status. Inactive
+legs retain saved planning timelines unless they previously supplied an active
+operational occurrence that must retire. Live evidence applies only when its
+mission, leg, source mode and lifecycle identity match. The production source
+contract is detailed in the
+[review follow-up plan](../plans/2026-10-18-operator-model-alerts.md).
 
 ## Event contract and timeline
 

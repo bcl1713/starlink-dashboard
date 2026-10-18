@@ -15,7 +15,8 @@ export default defineConfig({
     ...(process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true'
       ? ['operator-model-alerts.spec.ts']
       : []),
-    ...(process.env.OPERATOR_EVENTS_ACCEPTANCE === 'true'
+    ...(process.env.OPERATOR_EVENTS_ACCEPTANCE === 'true' ||
+    process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true'
       ? ['operator-events.spec.ts']
       : []),
   ],

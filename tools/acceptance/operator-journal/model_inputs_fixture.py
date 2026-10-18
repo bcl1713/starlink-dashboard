@@ -37,6 +37,7 @@ class ModelInputsFixture:
                 "route_shift": 0,
                 "satellite_longitude": 90,
                 "stale": False,
+                "invalid_ka": False,
                 "missing_pop": False,
                 "active": True,
             }
@@ -78,6 +79,8 @@ class ModelInputsFixture:
                     }
                 )
             )
+            if state["invalid_ka"]:
+                (coverage / "commka.geojson").write_text("{malformed")
             satellites = data / "satellites"
             satellites.mkdir(exist_ok=True)
             (satellites / "catalog.yaml").write_text(

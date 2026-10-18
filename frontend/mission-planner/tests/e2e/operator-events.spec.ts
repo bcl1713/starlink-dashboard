@@ -26,7 +26,7 @@ async function source(
   body: Record<string, unknown>
 ) {
   const response = await request.post(
-    `${origin}/api/_synthetic/operator-events`,
+    `${origin}/api/_synthetic/${process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true' ? 'operator-model-inputs' : 'operator-events'}`,
     { data: body }
   );
   expect(response.ok(), await response.text()).toBe(true);
@@ -569,13 +569,11 @@ test('aircraft LAN HTTP supports events and acknowledgment without secure-contex
     ).toEqual({ secure: false, uuid: 'undefined', random: 'function' });
     await ready(page);
     const drawer = await openFeed(page);
-    const card = drawer
-      .locator('li')
-      .filter({
-        has: page.getByText('Prepare: Synthetic LAN HTTP requirement', {
-          exact: true,
-        }),
-      });
+    const card = drawer.locator('li').filter({
+      has: page.getByText('Prepare: Synthetic LAN HTTP requirement', {
+        exact: true,
+      }),
+    });
     const response = page.waitForResponse(
       (r) =>
         r.url().endsWith(`${path}/events/acknowledge`) &&
