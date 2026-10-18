@@ -30,7 +30,8 @@ test('baseline: normal and busy production journeys at three sizes', async ({
           exact: true,
         });
         await expect(
-          communication.getByText('Synthetic customer 1 briefing', {
+          communication.getByRole('heading', {
+            name: 'Synthetic customer 1',
             exact: true,
           })
         ).toBeVisible();

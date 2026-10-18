@@ -793,7 +793,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -810,7 +810,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -827,7 +827,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -844,7 +844,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -861,7 +861,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -878,7 +878,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -895,7 +895,7 @@
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
       "guide_section": "call-record",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1456,7 +1456,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1473,7 +1473,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1490,7 +1490,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1507,7 +1507,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1524,7 +1524,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1541,7 +1541,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -1558,7 +1558,7 @@
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
       "guide_section": "protection",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2272,7 +2272,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2289,7 +2289,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2306,7 +2306,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2323,7 +2323,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2340,7 +2340,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2357,7 +2357,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2374,7 +2374,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2391,7 +2391,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2408,7 +2408,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2425,7 +2425,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2442,7 +2442,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2459,7 +2459,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2476,7 +2476,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2493,7 +2493,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2510,7 +2510,7 @@
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
       "guide_section": "event",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2527,7 +2527,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2544,7 +2544,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2561,7 +2561,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2578,7 +2578,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2595,7 +2595,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2612,7 +2612,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2629,7 +2629,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2646,7 +2646,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2663,7 +2663,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2680,7 +2680,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2697,7 +2697,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2714,7 +2714,7 @@
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
       "guide_section": "alert",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2731,7 +2731,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2748,7 +2748,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2765,7 +2765,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2782,7 +2782,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2799,7 +2799,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2816,7 +2816,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2833,7 +2833,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2850,7 +2850,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -2867,7 +2867,7 @@
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
       "guide_section": "live-timing",
-      "training_stage": "T04",
+      "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3717,7 +3717,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3734,7 +3734,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3751,7 +3751,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3768,7 +3768,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3785,7 +3785,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3802,7 +3802,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3819,7 +3819,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3836,7 +3836,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3853,7 +3853,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3870,7 +3870,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3887,7 +3887,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3904,7 +3904,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3921,7 +3921,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3938,7 +3938,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3955,7 +3955,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3972,7 +3972,7 @@
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
       "guide_section": "history",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -3989,7 +3989,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4006,7 +4006,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4023,7 +4023,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4040,7 +4040,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4057,7 +4057,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4074,7 +4074,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4091,7 +4091,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4108,7 +4108,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4125,7 +4125,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4142,7 +4142,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4159,7 +4159,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4176,7 +4176,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4193,7 +4193,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4210,7 +4210,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4227,7 +4227,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4244,7 +4244,7 @@
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
       "guide_section": "display-settings",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4261,7 +4261,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4278,7 +4278,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4295,7 +4295,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4312,7 +4312,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4329,7 +4329,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4346,7 +4346,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4363,7 +4363,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4380,7 +4380,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4397,7 +4397,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4414,7 +4414,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4431,7 +4431,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4448,7 +4448,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4465,7 +4465,7 @@
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
       "guide_section": "display-window",
-      "training_stage": "T05",
+      "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4482,7 +4482,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4499,7 +4499,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4516,7 +4516,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4533,7 +4533,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4550,7 +4550,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4567,7 +4567,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4584,7 +4584,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4601,7 +4601,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4618,7 +4618,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4635,7 +4635,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4652,7 +4652,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4669,7 +4669,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4686,7 +4686,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4703,7 +4703,7 @@
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
       "guide_section": "archive",
-      "training_stage": "T11",
+      "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4720,7 +4720,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4737,7 +4737,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4754,7 +4754,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4771,7 +4771,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4788,7 +4788,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4805,7 +4805,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4822,7 +4822,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4839,7 +4839,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4856,7 +4856,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4873,7 +4873,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4890,7 +4890,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4907,7 +4907,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4924,7 +4924,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4941,7 +4941,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4958,7 +4958,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4975,7 +4975,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -4992,7 +4992,7 @@
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
       "guide_section": "save-recovery",
-      "training_stage": "T09",
+      "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
@@ -5169,7 +5169,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5185,7 +5185,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5201,7 +5201,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5217,7 +5217,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5233,7 +5233,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5249,7 +5249,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5265,7 +5265,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5281,7 +5281,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5297,7 +5297,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5313,7 +5313,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5329,7 +5329,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5345,7 +5345,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5361,7 +5361,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5377,7 +5377,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5393,7 +5393,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5409,7 +5409,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5425,7 +5425,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5441,7 +5441,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
@@ -5457,7 +5457,7 @@
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help \u2192 Guided mission",
       "guide_section": "training",
-      "training_stage": "T10",
+      "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
         "viewports": ["1920x1080", "390x844", "844x390"]
