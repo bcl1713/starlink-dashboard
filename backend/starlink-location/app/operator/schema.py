@@ -19,7 +19,11 @@ def timestamp(clock: Clock) -> str:
     )
 
 
-MIGRATIONS = (MIGRATION, MIGRATION.with_name("002_event_notifications.sql"))
+MIGRATIONS = (
+    MIGRATION,
+    MIGRATION.with_name("002_event_notifications.sql"),
+    MIGRATION.with_name("003_transport_decisions.sql"),
+)
 
 
 def migration_sql(version: int) -> str:
@@ -82,6 +86,8 @@ def apply_migrations(
                 "INSERT INTO schema_migrations VALUES (?, ?, ?)",
                 (version, checksum, timestamp(clock)),
             )
+        if connection.execute("PRAGMA foreign_key_check").fetchall():
+            raise OperatorError("store_corrupt")
         connection.execute("RELEASE operator_migration")
     except BaseException:
         connection.execute("ROLLBACK TO operator_migration")

@@ -142,6 +142,7 @@ class OperatorStore:
         os.close(descriptor)
         connection = self._connection()
         try:
+            connection.execute("PRAGMA foreign_keys=OFF")
             connection.execute("BEGIN IMMEDIATE")
             apply_migrations(connection, clock=self.clock)
             connection.execute(
@@ -154,6 +155,7 @@ class OperatorStore:
                 ),
             )
             connection.commit()
+            connection.execute("PRAGMA foreign_keys=ON")
             connection.execute("PRAGMA wal_checkpoint(FULL)")
         finally:
             connection.close()

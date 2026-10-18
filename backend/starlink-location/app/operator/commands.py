@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from .conference_actions import conference_audit_reason, validate_conference_update
 from .errors import OperatorError
+from .transport_actions import validate_transport_update, transport_audit_reason
 from .event_models import AckReceipt
 from .issue_actions import issue_audit_reason, validate_issue_update
 from .models import CommandReceipt, CreateRecord, RecordInput, SavedRecord
@@ -48,6 +49,7 @@ def execute_in_transaction(
             raise OperatorError("invalid_transition")
     if command.operation in ("create", "update"):
         command.validate_for_acceptance(clock)
+        validate_transport_update(current, command)
         validate_conference_update(current, command, clock)
         validate_issue_update(connection, current, command, clock)
         content = {name: getattr(command, name) for name in RecordInput.model_fields}
@@ -62,7 +64,8 @@ def execute_in_transaction(
     reason_origin = "operator" if reason else "automatic"
     if not reason and command.operation in ("create", "update"):
         reason = (
-            issue_audit_reason(current, command)
+            transport_audit_reason(current, command)
+            or issue_audit_reason(current, command)
             or conference_audit_reason(current, command)
             or ""
         )

@@ -145,6 +145,7 @@ def mutate(request, command, key, epoch):
                 "conference",
                 "participation",
                 "issue",
+                "transport_decision",
             },
         )
         return JSONResponse(

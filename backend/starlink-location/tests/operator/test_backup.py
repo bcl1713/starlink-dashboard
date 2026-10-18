@@ -27,7 +27,7 @@ def test_backup_restore_epoch(service, record_data, tmp_path, clock):
         manifest = backup_store(service.store, directory=tmp_path / "backups")
     info = json.loads(manifest.read_text())
     assert info["H"] == 1
-    assert info["schema_version"] == 2
+    assert info["schema_version"] == 3
     assert info["store_id"] == str(service.store.health().store_id)
     later_key = str(uuid4())
     command = CreateRecord.model_validate(record_data)
