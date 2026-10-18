@@ -4,6 +4,7 @@ import hashlib
 import json
 from types import MappingProxyType
 
+from .issue_activity import derive_issue_updates
 from .models import SavedRecord
 from .projection_models import (
     ActivityItem,
@@ -165,14 +166,27 @@ def capture_projection(
 
     current = [decode_document(row, current_columns) for row in current_rows]
     activity, audit, previous_by_id = [], [], {}
-    for row in history_rows:
-        document = decode_document(row, history_columns)
+    documents = [decode_document(row, history_columns) for row in history_rows]
+    updates = derive_issue_updates(
+        [
+            SavedRecord.model_validate(doc)
+            for doc in documents
+            if doc["record_type"] == "issue"
+        ],
+        store_id=str(identity.store_id),
+    )
+    for document in documents:
         previous = previous_by_id.get(document["record_id"])
         if document["mission_id"] == mission_id or (
             previous and previous["mission_id"] == mission_id
         ):
+            item = _activity(document, previous, identity.store_id)
+            metadata = updates.get(document["journal_seq"])
+            item.issue_update = metadata
             activity.append(
-                _activity(document, previous, identity.store_id).model_dump(mode="json")
+                item.model_dump(
+                    mode="json", exclude={"issue_update"} if metadata is None else set()
+                )
             )
             if include_audit:
                 audit.append(document)
