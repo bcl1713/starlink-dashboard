@@ -419,7 +419,10 @@ test('unified event timeline: local alerts, source races, two clients and restar
     await expect(page.getByText(/Feed unavailable/).first()).toBeVisible({
       timeout: 20000,
     });
-    await source(request, { now: '2026-10-17T16:20:00Z' });
+    const modelInputs = process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true';
+    await source(request, {
+      now: modelInputs ? '2026-10-17T16:10:00Z' : '2026-10-17T16:20:00Z',
+    });
     await context.setOffline(false);
     await refresh(page);
     await expect(page.getByText(/Feed unavailable/)).toHaveCount(0);
@@ -536,7 +539,10 @@ test('aircraft LAN HTTP supports events and acknowledgment without secure-contex
   });
   const context = await lanBrowser.newContext();
   try {
-    await source(request, { now: '2026-10-17T16:20:00Z' });
+    const modelInputs = process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true';
+    await source(request, {
+      now: modelInputs ? '2026-10-17T16:10:00Z' : '2026-10-17T16:20:00Z',
+    });
     const created = await request.post(`${origin}${path}/records`, {
       headers: await headers(request),
       data: {
@@ -544,7 +550,11 @@ test('aircraft LAN HTTP supports events and acknowledgment without secure-contex
         record_type: 'call',
         mission_id: mission,
         scope: 'mission',
-        time: { planned_start_at: '2026-10-17T16:30:00Z' },
+        time: {
+          planned_start_at: modelInputs
+            ? '2026-10-17T16:20:00Z'
+            : '2026-10-17T16:30:00Z',
+        },
         payload: {
           entry_type: 'call',
           title: 'Synthetic LAN HTTP requirement',
