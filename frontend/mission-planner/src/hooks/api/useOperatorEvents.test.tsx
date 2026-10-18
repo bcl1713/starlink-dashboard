@@ -14,6 +14,7 @@ afterEach(() => {
   sessionStorage.clear();
   vi.restoreAllMocks();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 function wrapper() {
   const client = new QueryClient({
@@ -134,4 +135,24 @@ it('quarantines an unreadable pending receipt instead of creating another acknow
     );
   });
   expect(post).not.toHaveBeenCalled();
+});
+it('creates a valid frozen acknowledgment key on ordinary aircraft HTTP', async () => {
+  vi.stubGlobal('crypto', {
+    getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto),
+  });
+  vi.spyOn(api, 'readEventSnapshot').mockResolvedValue(eventSnapshot());
+  const post = vi
+    .spyOn(api, 'acknowledgeOperatorEvent')
+    .mockRejectedValue(new Error('Lost response'));
+  const hook = renderHook(() => useOperatorEvents('mission-a', identity), {
+    wrapper: wrapper(),
+  });
+  await waitFor(() => expect(hook.result.current.snapshot).toBeDefined());
+  await act(async () =>
+    hook.result.current.acknowledge(hook.result.current.snapshot!.events[0])
+  );
+  expect(post).toHaveBeenCalledOnce();
+  expect(post.mock.calls[0][1]).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  );
 });

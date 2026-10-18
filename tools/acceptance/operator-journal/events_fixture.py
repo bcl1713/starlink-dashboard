@@ -255,6 +255,9 @@ class EventsFixture:
             publication = self.pop.snapshot(sample, call_capabilities=caps, **inputs)
             model = timeline.model_dump(mode="json")
             model.update(publication)
+            model["route_geometry_identity"] = self.pop.read_publication()[
+                "route_geometry_identity"
+            ]
             state["generation"] += 1
             source = SourceCapture(
                 source="model:" + LEG,

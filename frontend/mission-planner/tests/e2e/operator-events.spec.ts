@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import {
   test,
   expect,
+  chromium,
   type APIRequestContext,
   type Page,
 } from '@playwright/test';
@@ -521,5 +522,90 @@ test('unified event timeline: local alerts, source races, two clients and restar
   } finally {
     await context.close();
     await counterpart.close();
+  }
+});
+
+test('aircraft LAN HTTP supports events and acknowledgment without secure-context UUID', async ({
+  request,
+}) => {
+  const lanBrowser = await chromium.launch({
+    args: [
+      '--host-resolver-rules=MAP operator-aircraft.test 127.0.0.1',
+      '--no-proxy-server',
+    ],
+  });
+  const context = await lanBrowser.newContext();
+  try {
+    await source(request, { now: '2026-10-17T16:20:00Z' });
+    const created = await request.post(`${origin}${path}/records`, {
+      headers: await headers(request),
+      data: {
+        schema_version: 1,
+        record_type: 'call',
+        mission_id: mission,
+        scope: 'mission',
+        time: { planned_start_at: '2026-10-17T16:30:00Z' },
+        payload: {
+          entry_type: 'call',
+          title: 'Synthetic LAN HTTP requirement',
+          status: 'scheduled',
+          prep_lead_minutes: 10,
+        },
+      },
+    });
+    expect(created.ok()).toBe(true);
+    const lanOrigin = new URL(origin);
+    lanOrigin.hostname = 'operator-aircraft.test';
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`${lanOrigin.origin}/operator?mission_id=${mission}`);
+    expect(
+      await page.evaluate(() => ({
+        secure: isSecureContext,
+        uuid: typeof crypto.randomUUID,
+        random: typeof crypto.getRandomValues,
+      }))
+    ).toEqual({ secure: false, uuid: 'undefined', random: 'function' });
+    await ready(page);
+    const drawer = await openFeed(page);
+    const card = drawer
+      .locator('li')
+      .filter({
+        has: page.getByText('Prepare: Synthetic LAN HTTP requirement', {
+          exact: true,
+        }),
+      });
+    const response = page.waitForResponse(
+      (r) =>
+        r.url().endsWith(`${path}/events/acknowledge`) &&
+        r.request().method() === 'POST'
+    );
+    await card
+      .getByRole('button', { name: 'Acknowledge', exact: true })
+      .click();
+    expect((await response).status()).toBe(200);
+    await expect(
+      card.getByRole('button', { name: 'Acknowledged' })
+    ).toBeVisible();
+    expect(errors).toEqual([]);
+    writeFileSync(
+      join(evidence, 'events-lan-http.json'),
+      JSON.stringify(
+        {
+          actualNonSecureOrigin: true,
+          secureContext: false,
+          randomUUIDAbsent: true,
+          timelineRendered: true,
+          acknowledgmentCommitted: true,
+          browserErrors: errors,
+        },
+        null,
+        2
+      )
+    );
+  } finally {
+    await context.close();
+    await lanBrowser.close();
   }
 });

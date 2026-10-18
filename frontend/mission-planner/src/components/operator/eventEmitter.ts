@@ -1,3 +1,4 @@
+import { createClientId } from '@/lib/clientId';
 import type { AlertBatch } from './eventAlerts';
 import { reserveEventCues } from './eventDeliveryLock';
 export interface AlertPreferences {
@@ -21,7 +22,7 @@ export function createEventEmitter(options: EmitterOptions) {
     unlocked = false;
   let audio: AudioContext | undefined;
   const oscillators = new Set<OscillatorNode>();
-  const owner = crypto.randomUUID();
+  const owner = createClientId();
   const claim =
     options.claim ?? ((keys: string[]) => reserveEventCues(keys, owner));
   function status(): DeliveryResult {

@@ -156,3 +156,48 @@ def test_feed_keeps_unstable_topology_transient_until_two_spaced_captures(
     assert all(
         e["notification"]["generation"] not in (None, old) for e in third["events"]
     )
+
+
+def test_finished_fresh_model_windows_leave_feed_and_expire_from_recent_history(
+    api, service, clock
+):
+    from dataclasses import replace
+
+    from app.operator.event_models import SourceCapture
+    from app.operator.event_sources import EventSourceAdapter
+
+    class Adapter:
+        def capture(self, mission_id, *, as_of):
+            return replace(
+                EventSourceAdapter(service).capture(mission_id, as_of=as_of),
+                sources=[
+                    SourceCapture(source="model:leg-a", freshness="fresh", aligned=True)
+                ],
+                models={
+                    "leg-a": {
+                        "segments": [
+                            {
+                                "start_time": "2026-10-17T16:01:00Z",
+                                "end_time": "2026-10-17T16:05:00Z",
+                                "ka_state": "offline",
+                            }
+                        ]
+                    }
+                },
+            )
+
+    api.app.state.operator_runtime.event_source_adapter = Adapter()
+    params = {"mission_id": "demo-mission"}
+    assert api.get(BASE + "/events", params=params).json()["events"]
+    clock.advance(6 * 60)
+    assert not api.get(BASE + "/events", params=params).json()["events"]
+    history = api.get(
+        BASE + "/events", params=dict(params, include_history=True)
+    ).json()["events"]
+    assert history and all(
+        not event["active"] and event["notification"]["retired"] for event in history
+    )
+    clock.advance(25 * 3600)
+    assert not api.get(
+        BASE + "/events", params=dict(params, include_history=True)
+    ).json()["events"]

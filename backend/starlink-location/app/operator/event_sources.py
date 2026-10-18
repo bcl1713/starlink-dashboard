@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.mission import storage
+from app.services.pop.geometry import route_geometry_fingerprint
 
 from .event_ledger import identity
 from .event_models import SourceCapture
@@ -47,6 +48,9 @@ class EventSourceAdapter:
                 timeline = storage.load_mission_timeline(leg.id, mission_id)
                 if timeline:
                     payload = timeline.model_dump(mode="json")
+                    payload["route_geometry_identity"] = identity(
+                        leg.route_id, route_geometry_fingerprint(timeline.samples or [])
+                    )
                     models[leg.id] = payload
                     sources.append(
                         SourceCapture(
@@ -82,6 +86,11 @@ class EventSourceAdapter:
                     if publication and publication.get("mode") == health.source_mode:
                         payload = dict(models.get(leg_id, {}))
                         payload.update(publication["payload"])
+                        if publication.get("route_geometry_identity") is not None:
+                            payload["route_geometry_identity"] = identity(
+                                publication.get("route_id"),
+                                publication["route_geometry_identity"],
+                            )
                         models[leg_id] = payload
                         # A locally captured prediction does not prove every route,
                         # configuration, lifecycle and catalog writer participates.

@@ -56,13 +56,26 @@ class ModelStability:
                 )
                 key = "topology:" + identity(event.family_key, len(family), ordinal)
                 candidate = self.candidates.get(key)
-                if candidate is None or as_of < candidate[1]:
-                    candidate = ((event.due_at, event.end_at), as_of, 1)
+                bounds = (event.due_at, event.end_at)
+                if event.freshness != "fresh":
+                    self.candidates.pop(key, None)
+                    candidate = (bounds, as_of, 0)
+                elif (
+                    candidate is None
+                    or as_of < candidate[1]
+                    or any(
+                        abs((current - previous).total_seconds())
+                        >= policy.model_shift_seconds
+                        for current, previous in zip(bounds, candidate[0])
+                    )
+                ):
+                    candidate = (bounds, as_of, 1)
                 elif (
                     as_of - candidate[1]
                 ).total_seconds() >= policy.model_capture_spacing_seconds:
                     candidate = (candidate[0], as_of, candidate[2] + 1)
-                self._remember(key, candidate)
+                if event.freshness == "fresh":
+                    self._remember(key, candidate)
                 event.event_id = identity(
                     event.family_key, "reshaped", candidate[0], ordinal
                 )

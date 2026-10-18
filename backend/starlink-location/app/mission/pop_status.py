@@ -16,7 +16,7 @@ from app.mission.timeline_builder.calculator import (
     derive_mission_window,
 )
 from app.services.pop.catalog import load_catalog
-from app.services.pop.geometry import nearest_pop
+from app.services.pop.geometry import nearest_pop, route_geometry_fingerprint
 from app.services.pop.live import evaluate_live
 from app.services.pop.models import (
     PopCatalog,
@@ -285,6 +285,10 @@ class PopStatusService:
             "captured_at": observed_now,
             "mode": mode,
             "input_identity": revision,
+            "route_geometry_identity": (
+                route_geometry_fingerprint(route.points) if route else None
+            ),
+            "route_id": route.route_id if route else None,
             "mission_id": mission_id,
             "leg_id": leg_id,
             "simulation_run_id": simulation_run_id,

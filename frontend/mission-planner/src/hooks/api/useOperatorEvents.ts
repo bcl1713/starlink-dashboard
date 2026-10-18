@@ -1,3 +1,4 @@
+import { createClientId } from '@/lib/clientId';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -184,7 +185,7 @@ export function useOperatorEvents(missionId: string, identity: string | null) {
       missionId,
       identity,
       epoch: query.data.snapshot.api_epoch,
-      key: crypto.randomUUID(),
+      key: createClientId(),
       body: {
         schema_version: 1,
         occurrence_id: event.notification.generation,

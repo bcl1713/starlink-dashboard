@@ -23,6 +23,14 @@ def _state(due, end, now, active):
     return "overdue"
 
 
+def _window_state(start, end, now, source):
+    if end <= now:
+        if source and source.aligned and source.freshness == "fresh":
+            return {"active": False, "state": "inactive"}
+        return {"active": True, "state": "unknown"}
+    return {"active": True, "state": _state(start, end, now, True)}
+
+
 def _protect(event, records):
     by_id = {str(r.record_id): r for r in records if not r.deleted}
     for participation in by_id.values():
@@ -199,7 +207,7 @@ def derive_events(inputs, *, as_of, policy):
                 end_at=end,
                 transport="Starshield",
                 significance="advisory",
-                state=_state(start, end, as_of, True),
+                **_window_state(start, end, as_of, source),
                 schedule_key=key,
             )
             _protect(event, inputs.records)
@@ -311,7 +319,7 @@ def derive_events(inputs, *, as_of, policy):
                     end_at=end,
                     transport=transport,
                     significance=severity,
-                    state=_state(start, end, as_of, True),
+                    **_window_state(start, end, as_of, source),
                     schedule_key=key,
                     family_key=identity(
                         mission_id,

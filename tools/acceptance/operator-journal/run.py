@@ -264,7 +264,7 @@ def qualify_events(owner):
                 "--config",
                 "playwright.operator-journal.config.ts",
                 "--grep",
-                "unified event timeline|Operator display controls",
+                "unified event timeline|Operator display controls|aircraft LAN HTTP",
             ],
             timeout=1220,
             cwd=ROOT / "frontend/mission-planner",
@@ -277,7 +277,19 @@ def qualify_events(owner):
             and displays["overviewRenderedVisibilitySynced"]
         )
         assert displays["browserErrors"] == []
-        return {"events": events_proof(owner.root), "overviewCompatibility": displays}
+        lan = json.loads((owner.root / "events-lan-http.json").read_text())
+        assert (
+            lan["actualNonSecureOrigin"]
+            and lan["randomUUIDAbsent"]
+            and lan["acknowledgmentCommitted"]
+            and lan["timelineRendered"]
+        )
+        assert lan["secureContext"] is False and lan["browserErrors"] == []
+        return {
+            "events": events_proof(owner.root),
+            "overviewCompatibility": displays,
+            "lanHttp": lan,
+        }
 
     def exports():
         result = json.loads(

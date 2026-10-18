@@ -164,3 +164,64 @@ def test_unstable_split_previews_do_not_write_each_forecast_refresh(service, clo
                 1,
             )
             clock.advance(1)
+
+
+def test_split_requires_consecutive_fresh_materially_consistent_captures(
+    service, clock
+):
+    from app.operator.event_identity import ModelStability
+    from app.operator.event_ledger import reconcile
+    from app.operator.event_models import OperationalEvent
+    from app.operator.event_policy import EventPolicy
+
+    stability, policy = ModelStability(), EventPolicy()
+    base = OperationalEvent(
+        event_id="initial",
+        family_key="route",
+        mission_id="demo-mission",
+        kind="restriction",
+        provenance="modeled",
+        title="Synthetic",
+        due_at=clock.now() + timedelta(minutes=10),
+        end_at=clock.now() + timedelta(minutes=45),
+        schedule_key="route",
+        freshness="fresh",
+    )
+
+    def save(events):
+        with service.store.connect(write=True) as db:
+            return reconcile(
+                db, events, as_of=clock.now(), policy=policy, stability=stability
+            )
+
+    save([base])
+    split = [
+        base.model_copy(
+            update={"end_at": base.due_at + timedelta(minutes=8), "freshness": "stale"}
+        ),
+        base.model_copy(
+            update={
+                "event_id": "second",
+                "due_at": base.due_at + timedelta(minutes=15),
+                "freshness": "stale",
+            }
+        ),
+    ]
+    assert all(e.notification.preview for e in save(split))
+    clock.advance(15)
+    fresh = [e.model_copy(update={"freshness": "fresh"}, deep=True) for e in split]
+    assert all(e.notification.preview for e in save(fresh))
+    clock.advance(15)
+    moved = [
+        e.model_copy(
+            update={
+                "due_at": e.due_at + timedelta(minutes=6),
+                "end_at": e.end_at + timedelta(minutes=6),
+            },
+            deep=True,
+        )
+        for e in fresh
+    ]
+    assert all(e.notification.preview for e in save(moved))
+    clock.advance(15)
+    assert all(not e.notification.preview for e in save(moved))

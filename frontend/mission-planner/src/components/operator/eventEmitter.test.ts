@@ -63,3 +63,16 @@ it('does not claim delivery without coordination or emit already reserved occurr
   expect(visual).not.toHaveBeenCalled();
   unavailable.dispose();
 });
+it('constructs and emits on aircraft HTTP without the secure randomUUID API', async () => {
+  vi.stubGlobal('crypto', {
+    getRandomValues: (bytes: Uint8Array) => bytes.fill(7),
+  });
+  const visual = vi.fn();
+  const emitter = createEventEmitter({
+    preferences: () => ({ enabled: true, sound: false, vibration: false }),
+    onVisual: visual,
+    claim: async (keys) => keys,
+  });
+  expect((await emitter.emit(batch)).visual).toBe(true);
+  emitter.dispose();
+});

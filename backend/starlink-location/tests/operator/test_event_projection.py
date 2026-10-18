@@ -257,3 +257,54 @@ def test_fresh_source_without_continuity_evidence_stays_unknown(service, clock):
         ].continuity_status
         == "unknown"
     )
+
+
+@pytest.mark.parametrize(
+    "freshness,aligned,active",
+    [
+        ("fresh", True, False),
+        ("stale", True, True),
+        ("fresh", False, True),
+        ("unknown", False, True),
+    ],
+)
+def test_finished_model_windows_are_history_only_with_current_evidence(
+    service, clock, freshness, aligned, active
+):
+    from app.operator.event_models import SourceCapture
+
+    model = {
+        "segments": [
+            {
+                "start_time": "2026-10-17T15:00:00Z",
+                "end_time": "2026-10-17T15:10:00Z",
+                "ka_state": "offline",
+            }
+        ],
+        "pop_forecast": {
+            "status": "ready",
+            "transitions": [
+                {
+                    "crossing": {"from_pop_id": "a", "to_pop_id": "b"},
+                    "id": "past",
+                    "window_start": "2026-10-17T15:00:00Z",
+                    "window_end": "2026-10-17T15:10:00Z",
+                }
+            ],
+        },
+    }
+    # Use the actual forecast window field names consumed by projection.
+    model["pop_forecast"]["transitions"][0].update(
+        window_start_utc="2026-10-17T15:00:00Z", window_end_utc="2026-10-17T15:10:00Z"
+    )
+    events = derive(
+        service,
+        clock,
+        models={"leg-a": model},
+        sources=[
+            SourceCapture(source="model:leg-a", freshness=freshness, aligned=aligned)
+        ],
+    )
+    assert events
+    assert all(e.active is active for e in events)
+    assert all(e.state == ("unknown" if active else "inactive") for e in events)
