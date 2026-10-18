@@ -106,3 +106,23 @@ python tools/training/operator-mission/prove.py /tmp/issue-376-training-proof-lo
 Keep the ownership files, proof summary and synthetic screenshots as acceptance
 evidence. A launcher or unit-test pass alone does not establish full training,
 visual parity or uncoached human acceptance.
+
+Parent stop/reset also stops its recorded disposable import destination. The
+launcher refuses to reinterpret a recorded training instance as an import
+instance (or the reverse). Reset records its successor path before creating its
+resources, including when interrupted before the new URL is printed.
+
+The disposable lifecycle acceptance runner additionally exercises existing
+Operator backup/check/restore with the fixture clock, a new restore epoch,
+retained old data versus a fresh reset namespace, and owned import-child
+teardown:
+
+```sh
+timeout --kill-after=10s 45m python tools/training/operator-mission/prove_lifecycle.py /tmp/issue-376-training-lifecycle-local
+```
+
+It requires a fresh task-owned root and clean committed worktree, uses private
+volumes only, and removes all of its projects/volumes on completion or failure.
+The tooling-only `maintenance.py` calls the existing offline CLI with the marked
+root's namespace and clock. Restore still requires stopping the private backend;
+it never restores an operational root or exposes a maintenance HTTP API.

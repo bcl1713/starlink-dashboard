@@ -114,6 +114,10 @@ def open_owner(
             raise ValueError(
                 "Invalid recorded training candidate, port or ownership schema; preserve for recovery"
             )
+    if previous is not None and previous.get("destination") is not destination:
+        raise ValueError(
+            "Recorded training instance purpose does not match this command"
+        )
     owner = Owner(expected, root)
     if previous:
         owner.ownership = previous | {"pid": os.getpid(), "pgid": os.getpgrp()}
@@ -249,6 +253,9 @@ def validate(owner):
 
 def stop(owner, *, retain=False):
     validate(owner)
+    child = owner.root / "import-destination"
+    if (child / "ownership.json").exists():
+        stop(open_owner(child, destination=True))
     stop_relay(owner)
     remove = owner.ownership.get("disposable", False) and not retain
     owner.compose("down", *(["--volumes"] if remove else []), timeout=120)
@@ -280,6 +287,19 @@ def start(owner, *, relay=False):
         stop(owner)
         raise
     return f'http://127.0.0.1:{owner.ownership["port"]}/operator?workspace=1'
+
+
+def reset_root(owner, *, disposable=False, relay=False):
+    stop(owner, retain=True)
+    successor = owner.root.with_name(owner.root.name + "-reset-" + uuid4().hex[:8])
+    owner.ownership["resetSuccessor"] = str(successor)
+    owner.persist()
+    fresh = open_owner(successor, create=True, disposable=disposable)
+    return {
+        "retainedRoot": str(owner.root),
+        "newRoot": str(successor),
+        "origin": start(fresh, relay=relay),
+    }
 
 
 def main():
@@ -364,16 +384,9 @@ def main():
                 )
             )
         elif args.command == "reset":
-            stop(owner, retain=True)
-            successor = root.with_name(root.name + "-reset-" + uuid4().hex[:8])
-            fresh = open_owner(successor, create=True, disposable=args.disposable)
             print(
                 json.dumps(
-                    {
-                        "retainedRoot": str(root),
-                        "newRoot": str(successor),
-                        "origin": start(fresh, relay=args.relay),
-                    }
+                    reset_root(owner, disposable=args.disposable, relay=args.relay)
                 )
             )
     finally:

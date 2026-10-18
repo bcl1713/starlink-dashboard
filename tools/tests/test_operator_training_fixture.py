@@ -412,3 +412,182 @@ def test_raw_helper_uses_current_checkpoint_time_even_if_restart_precedes_applic
         initial_inputs={"now": "2026-10-17T17:05:00Z"},
     )
     assert helper.state["now"] == "2026-10-17T17:05:00Z"
+
+
+def test_launcher_refuses_switching_recorded_instance_purpose(tmp_path):
+    import json
+    import os
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_purpose_guard",
+        ROOT / "tools/training/operator-mission/launcher.py",
+    )
+    launcher = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(launcher)
+    root = tmp_path / "private"
+    marker = scenario.mark_root(root)
+    value = {
+        "project": "starlink-operator-training-"
+        + marker["root_id"].replace("-", "")[:12],
+        "trainingRootId": marker["root_id"],
+        "candidateSha": "a" * 40,
+        "port": 12345,
+        "disposable": True,
+        "destination": True,
+        "dockerHost": os.getenv("DOCKER_HOST"),
+        "dockerContext": os.getenv("DOCKER_CONTEXT"),
+        "commands": [],
+    }
+    raw = json.dumps(value)
+    (root / "ownership.json").write_text(raw)
+    with pytest.raises(ValueError, match="purpose"):
+        launcher.open_owner(root, destination=False)
+    assert (root / "ownership.json").read_text() == raw
+
+
+def test_stopping_parent_also_stops_its_owned_disposable_import_destination(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_child_cleanup",
+        ROOT / "tools/training/operator-mission/launcher.py",
+    )
+    launcher = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(launcher)
+    child_root = tmp_path / "import-destination"
+    child_root.mkdir()
+    (child_root / "ownership.json").write_text("owned child")
+    commands = []
+
+    def owner(root, name):
+        return SimpleNamespace(
+            root=root,
+            project=name,
+            ownership={"disposable": True},
+            compose=lambda *args, **kwargs: commands.append((name, args)),
+            persist=lambda: None,
+        )
+
+    parent = owner(tmp_path, "parent")
+    child = owner(child_root, "child")
+
+    def open_child(path, **kwargs):
+        assert path == child_root
+        assert kwargs == {"destination": True}
+        return child
+
+    monkeypatch.setattr(launcher, "open_owner", open_child)
+    monkeypatch.setattr(launcher, "validate", lambda owned: None)
+    monkeypatch.setattr(launcher, "stop_relay", lambda owned: None)
+    monkeypatch.setattr(
+        launcher,
+        "check_resources",
+        lambda owned: {"container": [], "network": [], "volume": []},
+    )
+    launcher.stop(parent, retain=True)
+    assert commands == [("child", ("down", "--volumes")), ("parent", ("down",))]
+
+
+def test_reset_records_successor_ownership_before_start_and_retains_old_data(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_reset_ownership",
+        ROOT / "tools/training/operator-mission/launcher.py",
+    )
+    launcher = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(launcher)
+    parent = SimpleNamespace(
+        root=tmp_path / "private", ownership={}, persist=lambda: None
+    )
+    stopped = []
+    monkeypatch.setattr(
+        launcher, "stop", lambda owned, **kwargs: stopped.append((owned, kwargs))
+    )
+
+    def create_successor(path, **kwargs):
+        assert parent.ownership["resetSuccessor"] == str(path)
+        assert path.parent == parent.root.parent
+        assert path.name.startswith("private-reset-")
+        assert kwargs == {"create": True, "disposable": True}
+        return SimpleNamespace(root=path)
+
+    monkeypatch.setattr(launcher, "open_owner", create_successor)
+    monkeypatch.setattr(
+        launcher,
+        "start",
+        lambda owned, **kwargs: "http://127.0.0.1:12345/operator?workspace=1",
+    )
+    result = launcher.reset_root(parent, disposable=True, relay=True)
+    assert stopped == [(parent, {"retain": True})]
+    assert result["newRoot"] == parent.ownership["resetSuccessor"]
+    assert result["retainedRoot"] == str(parent.root)
+
+
+def test_private_maintenance_reuses_cli_with_the_fixture_clock_and_bound_namespace(
+    tmp_path, monkeypatch
+):
+    from app.operator import __main__ as cli
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_maintenance",
+        ROOT / "tools/training/operator-mission/maintenance.py",
+    )
+    maintenance = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(maintenance)
+    root = tmp_path / "private"
+    marker = scenario.mark_root(root)
+    scenario.apply_checkpoint(root, "leg-one")
+    monkeypatch.setenv("OPERATOR_TRAINING_FIXTURE", "explicit-private-training-v1")
+    original_clock = cli.SystemClock
+
+    def check(args):
+        assert args == [
+            "backup",
+            "--root",
+            str(root / "operator"),
+            "--mode",
+            "simulation",
+            "--run",
+            marker["namespace"],
+        ]
+        assert cli.SystemClock().now().isoformat().startswith("2026-10-17T16:15")
+        return 0
+
+    monkeypatch.setattr(cli, "main", check)
+    assert maintenance.run(root, "backup") == 0
+    assert cli.SystemClock is original_clock
+    with pytest.raises(ValueError, match="manifest"):
+        maintenance.run(root, "restore", tmp_path / "operational-manifest.json")
+    monkeypatch.delenv("OPERATOR_TRAINING_FIXTURE")
+    with pytest.raises(ValueError, match="[Ee]xplicit"):
+        maintenance.run(root, "backup")
+
+
+def test_lifecycle_proof_refuses_existing_or_unowned_roots(tmp_path):
+    from uuid import uuid4
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_lifecycle_guard",
+        ROOT / "tools/training/operator-mission/prove_lifecycle.py",
+    )
+    proof = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(proof)
+    with pytest.raises(ValueError, match="task-owned"):
+        proof.validate_root(tmp_path)
+    root = Path("/tmp") / ("issue-376-training-lifecycle-test-" + uuid4().hex)
+    assert proof.validate_root(root) == root
+    root.mkdir()
+    owned = root / "preserve.txt"
+    try:
+        owned.write_text("existing learner data")
+        with pytest.raises(ValueError, match="existing"):
+            proof.validate_root(root)
+        assert owned.read_text() == "existing learner data"
+    finally:
+        owned.unlink()
+        root.rmdir()
