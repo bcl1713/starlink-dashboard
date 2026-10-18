@@ -19,36 +19,69 @@ def timestamp(clock: Clock) -> str:
     )
 
 
-def apply_migrations(connection: sqlite3.Connection, *, clock: Clock) -> None:
-    """Apply the initial migration once, rejecting unknown or altered history."""
-    sql = MIGRATION.read_text()
-    checksum = hashlib.sha256(sql.encode()).hexdigest()
+MIGRATIONS = (MIGRATION, MIGRATION.with_name("002_event_notifications.sql"))
+
+
+def migration_sql(version: int) -> str:
+    return MIGRATIONS[version - 1].read_text()
+
+
+def apply_migrations(
+    connection: sqlite3.Connection,
+    *,
+    clock: Clock,
+    upgrade: bool = False,
+    allow_legacy: bool = False
+) -> None:
+    """Validate history; only fresh initialization or explicit upgrade writes."""
+    expected = [
+        (i, hashlib.sha256(migration_sql(i).encode()).hexdigest())
+        for i in range(1, len(MIGRATIONS) + 1)
+    ]
     exists = connection.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'"
     ).fetchone()
-    if exists:
-        rows = connection.execute(
+    rows = (
+        connection.execute(
             "SELECT version, checksum FROM schema_migrations ORDER BY version"
         ).fetchall()
-        if any(row[0] != 1 for row in rows):
+        if exists
+        else []
+    )
+    if exists:
+        if (
+            not rows
+            or [r[0] for r in rows] != list(range(1, len(rows) + 1))
+            or len(rows) > len(expected)
+        ):
             raise OperatorError("unsupported_schema")
-        if len(rows) != 1 or rows[0][1] != checksum:
+        if rows != expected[: len(rows)]:
             raise OperatorError("migration_checksum_mismatch")
-        return
-    if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table'").fetchone():
+        if len(rows) < len(expected) and not upgrade:
+            if allow_legacy:
+                return
+            raise OperatorError("schema_upgrade_required")
+    elif connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table'"
+    ).fetchone():
         raise OperatorError("unsupported_schema")
+    if len(rows) == len(expected):
+        return
     connection.execute("SAVEPOINT operator_migration")
     try:
-        statement = ""
-        for line in sql.splitlines(keepends=True):
-            statement += line
-            if sqlite3.complete_statement(statement):
-                connection.execute(statement)
-                statement = ""
-        connection.execute(
-            "INSERT INTO schema_migrations VALUES (1, ?, ?)",
-            (checksum, timestamp(clock)),
-        )
+        for version, checksum in expected[len(rows) :]:
+            statement = ""
+            for line in migration_sql(version).splitlines(keepends=True):
+                statement += line
+                if sqlite3.complete_statement(statement):
+                    connection.execute(statement)
+                    statement = ""
+            if statement.strip():
+                raise OperatorError("unsupported_schema")
+            connection.execute(
+                "INSERT INTO schema_migrations VALUES (?, ?, ?)",
+                (version, checksum, timestamp(clock)),
+            )
         connection.execute("RELEASE operator_migration")
     except BaseException:
         connection.execute("ROLLBACK TO operator_migration")

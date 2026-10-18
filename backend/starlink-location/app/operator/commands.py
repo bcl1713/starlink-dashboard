@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from .conference_actions import conference_audit_reason, validate_conference_update
 from .errors import OperatorError
+from .event_models import AckReceipt
 from .issue_actions import issue_audit_reason, validate_issue_update
 from .models import CommandReceipt, CreateRecord, RecordInput, SavedRecord
 from .provenance import SourceProvenance
@@ -21,7 +22,12 @@ def receipt_for_key(connection, key, request_hash):
         return None
     if row[0] != request_hash:
         raise OperatorError("idempotency_conflict")
-    return CommandReceipt.model_validate_json(row[1])
+    receipt_type = (
+        AckReceipt
+        if json.loads(row[1]).get("receipt_type") == "event_acknowledgment"
+        else CommandReceipt
+    )
+    return receipt_type.model_validate_json(row[1])
 
 
 def execute_in_transaction(

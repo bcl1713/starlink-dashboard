@@ -10,17 +10,19 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from .errors import OperatorError
+from .event_models import AckReceipt, OperationalEvent
 from .maintenance import admission, bounded, storage_error
 from .models import CommandReceipt
 from .queries import decode_document, decode_record, select_records
 from .references import derive_links, validate_dependencies
 from .schema import apply_migrations, validate_integrity
+from .time_models import utc_timestamp
 
 
-def validate_connection(connection, *, clock):
+def validate_connection(connection, *, clock, allow_legacy=False):
     """Verify complete typed revision chains, receipt bodies and derived links."""
     with bounded(connection) as check:
-        apply_migrations(connection, clock=clock)
+        apply_migrations(connection, clock=clock, allow_legacy=allow_legacy)
         validate_integrity(connection)
         cursor = connection.execute("SELECT * FROM revisions ORDER BY journal_seq")
         columns = [column[0] for column in cursor.description]
@@ -32,6 +34,25 @@ def validate_connection(connection, *, clock):
                 "SELECT command_id, response_status, response_json FROM commands"
             ):
                 check()
+                if json.loads(body).get("receipt_type") == "event_acknowledgment":
+                    receipt = AckReceipt.model_validate_json(body)
+                    ack = connection.execute(
+                        "SELECT occurrence_id, severity_generation, acknowledged_at FROM event_acknowledgments WHERE acknowledgment_id=?",
+                        (str(receipt.acknowledgment_id),),
+                    ).fetchone()
+                    if (
+                        str(receipt.command_id) != command_id
+                        or status != 200
+                        or not ack
+                        or ack[:2]
+                        != (receipt.occurrence_id, receipt.severity_generation)
+                        or receipt.acknowledged_at != utc_timestamp(ack[2])
+                        or connection.execute(
+                            "SELECT 1 FROM revisions WHERE command_id=?", (command_id,)
+                        ).fetchone()
+                    ):
+                        raise OperatorError("store_corrupt")
+                    continue
                 receipt = CommandReceipt.model_validate_json(body)
                 revisions = select_records(
                     connection,
@@ -58,6 +79,19 @@ def validate_connection(connection, *, clock):
                 }
                 if receipt.canonical_response != expected:
                     raise OperatorError("store_corrupt")
+            version = connection.execute(
+                "SELECT max(version) FROM schema_migrations"
+            ).fetchone()[0]
+            if version >= 2:
+                for occurrence_id, event_json in connection.execute(
+                    "SELECT occurrence_id, event_json FROM event_occurrences"
+                ):
+                    OperationalEvent.model_validate_json(event_json)
+                    if not connection.execute(
+                        "SELECT 1 FROM event_transitions WHERE occurrence_id=? AND state='accepted'",
+                        (occurrence_id,),
+                    ).fetchone():
+                        raise OperatorError("store_corrupt")
             expected_links = set()
             for record in select_records(connection, "SELECT * FROM current_records"):
                 check()

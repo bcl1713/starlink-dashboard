@@ -17,7 +17,7 @@ def main(argv=None):
         description="Offline Operator administration; restore replaces the whole store."
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("initialize", "check", "backup", "restore"):
+    for name in ("initialize", "check", "backup", "restore", "upgrade"):
         command = commands.add_parser(name)
         command.add_argument("--root", type=Path, required=True)
         command.add_argument("--mode", choices=("live", "simulation"), required=True)
@@ -36,7 +36,14 @@ def main(argv=None):
             simulation_run_id=args.run,
         )
         clock = SystemClock()
-        if args.command == "restore":
+        if args.command == "upgrade":
+            from .upgrade import upgrade_store
+
+            result = {
+                "upgraded": True,
+                "backup_manifest": str(upgrade_store(settings, clock=clock)),
+            }
+        elif args.command == "restore":
             health = restore_store(settings, manifest=args.manifest, clock=clock)
             result = health.model_dump(mode="json")
         else:

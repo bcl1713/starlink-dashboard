@@ -5,7 +5,7 @@ import hashlib
 import json
 import os
 import sqlite3
-from contextlib import closing, contextmanager
+from contextlib import closing, contextmanager, nullcontext
 from pathlib import Path
 from uuid import uuid4
 
@@ -46,7 +46,7 @@ def snapshot_metadata(path, *, clock):
         with bounded(connection):
             if connection.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
                 raise OperatorError("store_corrupt")
-        validate_connection(connection, clock=clock)
+        validate_connection(connection, clock=clock, allow_legacy=True)
         store_id, mode, run = connection.execute(
             "SELECT store_id, source_mode, simulation_run_id FROM store_metadata"
         ).fetchone()
@@ -81,7 +81,7 @@ def validated_backup(manifest, *, clock):
         raise OperatorError("store_corrupt") from error
 
 
-def backup_store(store, *, directory: Path) -> Path:
+def backup_store(store, *, directory: Path, admitted: bool = False) -> Path:
     directory = Path(directory)
     token = (
         "backup-"
@@ -96,7 +96,7 @@ def backup_store(store, *, directory: Path) -> Path:
     published = False
     try:
         _private_directory(directory)
-        with admission(store.settings):
+        with nullcontext() if admitted else admission(store.settings):
             store._check_identity()
             with closing(store._connection()) as source, closing(
                 sqlite3.connect(temporary, timeout=2)
