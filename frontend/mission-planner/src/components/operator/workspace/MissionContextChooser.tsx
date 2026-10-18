@@ -15,7 +15,7 @@ export function MissionContextChooser({
   return (
     <div className="ws-mission-chooser">
       <label>
-        Mission
+        <span className="ws-mission-label">Mission</span>
         <select
           className="ws-field"
           value={missionId}

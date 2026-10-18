@@ -81,6 +81,8 @@ export function OperatorWorkspace() {
   const disabled = !missionId || !health.data?.ready || health.isError;
   const [tools, setTools] = useState(false);
   const [help, setHelp] = useState(false);
+  const [mobileTools, setMobileTools] = useState(false);
+  const [sources, setSources] = useState(false);
   const noteButton = useRef<HTMLButtonElement>(null);
   function navigateView(view: View) {
     setParams((previous) => {
@@ -149,6 +151,7 @@ export function OperatorWorkspace() {
           <p className="ws-mode ws-meta">
             {health.data?.source_mode === 'simulation' ? 'Simulation · ' : ''}
             UTC · Coverage {events.snapshot?.coverage ?? 'unknown'}
+            {events.failed ? ' · Feed unavailable' : ''}
           </p>
         </div>
         <MissionContextChooser
@@ -162,24 +165,58 @@ export function OperatorWorkspace() {
             })
           }
         />
-        <div className="ws-header-actions">
-          {missionId && (
-            <Link
-              className="ws-button"
-              to={`/missions/${encodeURIComponent(missionId)}`}
-            >
-              Mission records
-            </Link>
-          )}
-          <button className="ws-button" onClick={() => setTools(true)}>
-            Display tools
+        <div
+          className="ws-header-actions"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setMobileTools(false);
+          }}
+        >
+          <button
+            className="ws-button ws-mobile-tools-toggle"
+            aria-expanded={mobileTools}
+            aria-controls="operator-tool-controls"
+            onClick={() => setMobileTools((value) => !value)}
+          >
+            Tools
           </button>
-          <OperatorAlertSettings
-            preferences={alerts.preferences}
-            onChange={alerts.updatePreferences}
-            delivery={alerts.delivery}
-            onEnable={alerts.enableOutput}
-          />
+          <div
+            className="ws-tool-controls"
+            id="operator-tool-controls"
+            data-open={mobileTools}
+          >
+            {missionId && (
+              <Link
+                className="ws-button"
+                to={`/missions/${encodeURIComponent(missionId)}`}
+              >
+                Mission records
+              </Link>
+            )}
+            <button
+              className="ws-button"
+              onClick={() => {
+                setMobileTools(false);
+                setTools(true);
+              }}
+            >
+              Display tools
+            </button>
+            <OperatorAlertSettings
+              preferences={alerts.preferences}
+              onChange={alerts.updatePreferences}
+              delivery={alerts.delivery}
+              onEnable={alerts.enableOutput}
+            />
+            <button
+              className="ws-button ws-mobile-only"
+              onClick={() => {
+                setMobileTools(false);
+                setSources(true);
+              }}
+            >
+              Source status
+            </button>
+          </div>
           <button className="ws-button" onClick={() => setHelp(true)}>
             Help
           </button>
@@ -193,6 +230,16 @@ export function OperatorWorkspace() {
         failed={events.failed || health.isError}
         onOpenRecord={openRecord}
         onOpenEvents={() => navigateView('Now')}
+        onOpenNext={() => {
+          const next = nextRequirement(events.snapshot);
+          const record = loaded.find(
+            (record) =>
+              record.record_type === 'call' &&
+              next?.dependent_versions[record.record_id] !== undefined
+          );
+          if (record) openRecord(record);
+          else navigateView('Communications');
+        }}
       />
       <nav className="ws-navigation" aria-label="Operator workspace">
         {views.map((name) => (
@@ -435,6 +482,25 @@ export function OperatorWorkspace() {
             owns global settings. All times are UTC; unknown times remain
             unknown.
           </p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={sources} onOpenChange={setSources}>
+        <DialogContent>
+          <DialogTitle>Source status</DialogTitle>
+          <DialogDescription>
+            Current event coverage and source freshness.
+          </DialogDescription>
+          <p>
+            Coverage {events.snapshot?.coverage ?? 'unknown'}
+            {events.failed ? ' · feed unavailable, last known snapshot' : ''}
+          </p>
+          {events.snapshot?.sources.map((source) => (
+            <p key={source.source}>
+              {source.source} · {source.freshness} ·{' '}
+              {source.aligned ? 'aligned' : 'not aligned'}
+              {source.reason ? ` · ${source.reason}` : ''}
+            </p>
+          ))}
         </DialogContent>
       </Dialog>
     </main>

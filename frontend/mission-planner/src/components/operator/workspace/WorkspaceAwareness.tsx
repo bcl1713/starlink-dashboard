@@ -2,17 +2,23 @@ import type { EventSnapshot, OperationalEvent } from '@/types/operatorEvents';
 import type { SavedRecord } from '@/types/operator';
 import { eventUtc } from '../eventFormatting';
 
-function Timing({ event }: { event: OperationalEvent }) {
+function Timing({ event, asOf }: { event: OperationalEvent; asOf?: string }) {
   if (event.time_basis === 'live_unavailable')
     return <span>Live timing unavailable</span>;
+  const utc = eventUtc(event.due_at);
+  const compact =
+    event.due_at?.slice(0, 10) === asOf?.slice(0, 10) ? utc.slice(11) : utc;
   return (
     <span>
       {event.time_basis === 'live_route_eta'
         ? 'Live ETA · '
-        : event.time_basis === 'planned_utc'
+        : event.time_basis === 'planned_utc' || event.provenance === 'scheduled'
           ? 'Planned · '
           : ''}
-      {eventUtc(event.due_at)}
+      <span className="ws-time-full">{utc}</span>
+      <span className="ws-time-compact" title={utc}>
+        {compact}
+      </span>
     </span>
   );
 }
@@ -25,6 +31,7 @@ export function WorkspaceAwareness({
   failed,
   onOpenRecord,
   onOpenEvents,
+  onOpenNext,
 }: {
   snapshot?: EventSnapshot;
   next?: OperationalEvent;
@@ -33,6 +40,7 @@ export function WorkspaceAwareness({
   failed: boolean;
   onOpenRecord?: (record: SavedRecord) => void;
   onOpenEvents?: () => void;
+  onOpenNext?: () => void;
 }) {
   const customers = records.filter(
     (record) =>
@@ -89,13 +97,19 @@ export function WorkspaceAwareness({
         <h2>Next requirement</h2>
         {next ? (
           <>
-            <p className="ws-next-name">{next.title}</p>
+            <button
+              className="ws-next-name ws-next-open"
+              onClick={onOpenNext ?? onOpenEvents}
+              title={next.title}
+            >
+              {next.title.replace(/^Customer requirement: /, '')}
+            </button>
             <p className="ws-meta">
-              <Timing event={next} />
+              <Timing event={next} asOf={snapshot?.as_of} />
             </p>
             {prep && (
               <p className="ws-meta">
-                Prepare · <Timing event={prep} />
+                Prepare · <Timing event={prep} asOf={snapshot?.as_of} />
               </p>
             )}
           </>

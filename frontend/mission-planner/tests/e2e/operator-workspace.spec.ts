@@ -143,7 +143,7 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         await expect(
           page
             .getByRole('region', { name: 'Next requirement' })
-            .getByText('Customer requirement: Synthetic customer 1 briefing', {
+            .getByText('Synthetic customer 1 briefing', {
               exact: true,
             })
         ).toBeVisible();
@@ -152,6 +152,26 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
             () => document.documentElement.scrollWidth <= innerWidth
           )
         ).toBe(true);
+        const layout = await page.evaluate(() => {
+          const next = document
+            .querySelector('.ws-next')!
+            .getBoundingClientRect();
+          const awareness = document
+            .querySelector('.ws-awareness')!
+            .getBoundingClientRect();
+          const body = document
+            .querySelector('.ws-body')!
+            .getBoundingClientRect();
+          return {
+            nextBottom: next.bottom,
+            awarenessBottom: awareness.bottom,
+            bodyHeight: body.height,
+          };
+        });
+        expect(layout.nextBottom).toBeLessThanOrEqual(
+          layout.awarenessBottom + 1
+        );
+        expect(layout.bodyHeight).toBeGreaterThanOrEqual(120);
         const capture = `${fixture.seed}-${viewport.width}x${viewport.height}-workspace.png`;
         await page.screenshot({ path: join(evidence, capture) });
         captures.push(capture);
@@ -379,18 +399,16 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
     await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
     const leg = page.getByRole('dialog');
     await leg.getByRole('button', { name: 'Upload KML', exact: true }).click();
-    await leg
-      .locator('input[type=file]')
-      .setInputFiles({
-        name: 'synthetic-fresh-route.kml',
-        mimeType: 'application/vnd.google-earth.kml+xml',
-        buffer: readFileSync(
-          join(
-            process.env.OPERATOR_SOURCE_ROOT!,
-            'backend/starlink-location/tests/fixtures/route-sigmets/altitude-free-timing.kml'
-          )
-        ),
-      });
+    await leg.locator('input[type=file]').setInputFiles({
+      name: 'synthetic-fresh-route.kml',
+      mimeType: 'application/vnd.google-earth.kml+xml',
+      buffer: readFileSync(
+        join(
+          process.env.OPERATOR_SOURCE_ROOT!,
+          'backend/starlink-location/tests/fixtures/route-sigmets/altitude-free-timing.kml'
+        )
+      ),
+    });
     await leg.getByRole('button', { name: 'Add Leg', exact: true }).click();
     await expect(leg).toHaveCount(0);
     await page
