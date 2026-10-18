@@ -1,0 +1,254 @@
+{
+  "synthetic": true,
+  "proof": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "lostReceiptRequests": [
+        {
+          "key": "fd7626df-1e05-4fcb-b955-bdaeb3049f08",
+          "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+          "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional lost receipt 1920\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+          "method": "POST",
+          "url": "http://127.0.0.1:38115/api/v2/operator/records"
+        },
+        {
+          "key": "fd7626df-1e05-4fcb-b955-bdaeb3049f08",
+          "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+          "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional lost receipt 1920\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+          "method": "POST",
+          "url": "http://127.0.0.1:38115/api/v2/operator/records"
+        }
+      ],
+      "recoveredOfflineRequest": {
+        "key": "19868969-87c2-4ce4-96d4-cee29ba1832a",
+        "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional retained offline note 1920 revised\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:38115/api/v2/operator/records"
+      },
+      "realCommittedReceipt": {
+        "schema_version": 1,
+        "command_id": "2d163039-2b7c-4d38-8fc6-97546a5f954b",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional lost receipt 1920",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "6139a63b-04f2-4902-9f36-73b18b764962",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 144,
+            "command_id": "2d163039-2b7c-4d38-8fc6-97546a5f954b",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "historyVersions": 1,
+      "exactRetryOneWrite": true,
+      "offlineDraftAfterReconnectReload": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "lostReceiptRequests": [
+        {
+          "key": "c98af69c-3e26-4534-a550-a7c762965420",
+          "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+          "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional lost receipt 390\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+          "method": "POST",
+          "url": "http://127.0.0.1:38115/api/v2/operator/records"
+        },
+        {
+          "key": "c98af69c-3e26-4534-a550-a7c762965420",
+          "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+          "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional lost receipt 390\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+          "method": "POST",
+          "url": "http://127.0.0.1:38115/api/v2/operator/records"
+        }
+      ],
+      "recoveredOfflineRequest": {
+        "key": "6bd480d3-d699-4980-a73a-ed8e52597d0a",
+        "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional retained offline note 390 revised\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:38115/api/v2/operator/records"
+      },
+      "realCommittedReceipt": {
+        "schema_version": 1,
+        "command_id": "42aba05c-7ca2-426f-b968-87be74ff00c7",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional lost receipt 390",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "99bdc41d-cfc0-4237-8318-68073703ab7a",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 146,
+            "command_id": "42aba05c-7ca2-426f-b968-87be74ff00c7",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "historyVersions": 1,
+      "exactRetryOneWrite": true,
+      "offlineDraftAfterReconnectReload": true
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "lostReceiptRequests": [
+        {
+          "key": "df8d4eae-0223-4024-ad6d-c4838590d8a2",
+          "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+          "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional lost receipt 844\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+          "method": "POST",
+          "url": "http://127.0.0.1:38115/api/v2/operator/records"
+        },
+        {
+          "key": "df8d4eae-0223-4024-ad6d-c4838590d8a2",
+          "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+          "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional lost receipt 844\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+          "method": "POST",
+          "url": "http://127.0.0.1:38115/api/v2/operator/records"
+        }
+      ],
+      "recoveredOfflineRequest": {
+        "key": "4a869e70-2937-48ea-9fa1-d90381d303a7",
+        "epoch": "8e2655b7-c1e0-44dc-a443-e18b52b09e86",
+        "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Fictional retained offline note 844 revised\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+        "method": "POST",
+        "url": "http://127.0.0.1:38115/api/v2/operator/records"
+      },
+      "realCommittedReceipt": {
+        "schema_version": 1,
+        "command_id": "1a558754-4788-4a81-a6bd-ac24c5ea1f8d",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional lost receipt 844",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "cb9d8ecc-4f8b-4cdd-acdc-f910c040d3b5",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 148,
+            "command_id": "1a558754-4788-4a81-a6bd-ac24c5ea1f8d",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "historyVersions": 1,
+      "exactRetryOneWrite": true,
+      "offlineDraftAfterReconnectReload": true
+    }
+  ]
+}
