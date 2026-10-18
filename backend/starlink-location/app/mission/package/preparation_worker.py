@@ -53,6 +53,7 @@ class PreparationWorker:
                 self.path(job.id).unlink(missing_ok=True)
             elif job.state == "ready":
                 if not self.path(job.id).exists():
+                    self.jobs.discard_archive(job.id)
                     self.jobs.write(
                         job.model_copy(
                             update={
@@ -64,6 +65,8 @@ class PreparationWorker:
                     )
                 else:
                     self.status(job.mission_id, job.id)
+            elif job.state in TERMINAL:
+                self.jobs.discard_archive(job.id)
         for partial in self.artifacts.glob("*.part"):
             partial.unlink()
 

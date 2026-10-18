@@ -22,14 +22,25 @@ MIB = 1024 * 1024
 
 
 def hwm():
-    return (
-        next(
-            int(line.split()[1])
-            for line in Path("/proc/1/status").read_text().splitlines()
-            if line.startswith("VmHWM:")
-        )
-        * 1024
-    )
+    servers = []
+    for process in Path("/proc").glob("[0-9]*"):
+        try:
+            arguments = (process / "cmdline").read_bytes().split(b"\x00")
+            if b"backend_fixture:app" not in arguments or not any(
+                Path(arg.decode()).name == "uvicorn" for arg in arguments[:3] if arg
+            ):
+                continue
+            servers.append(
+                next(
+                    int(line.split()[1]) * 1024
+                    for line in (process / "status").read_text().splitlines()
+                    if line.startswith("VmHWM:")
+                )
+            )
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+    assert len(servers) == 1, servers
+    return servers[0]
 
 
 def journal(client):
@@ -53,6 +64,7 @@ def run():
     started = time.monotonic()
     result = {
         "synthetic": True,
+        "coverage": "Large fixture exercises frozen-supplement persistence, ZIP assembly and HTTP import; not source capture capacity. Full capture is covered by singlePackageRoundTrip.",
         "source": "36-hour, 13-channel, 1 Hz CSV size fixture; not aircraft observations",
     }
     with tempfile.TemporaryDirectory(prefix="archive-limits-", dir=ROOT) as temporary:
@@ -219,6 +231,28 @@ def run():
         store.write(job, archive={"files": {"a": "x" * MIB}})
         store.discard_archive(job.id)
         assert database.stat().st_size <= first_size + MIB
+        # Exercise production expiry after the substantial allocation: the
+        # snapshot and artifact disappear while the SQLite pages remain reusable.
+        from app.mission.package.preparation import ExportPreparationService
+
+        with store.cache.connection() as db:
+            db.execute("DELETE FROM export_jobs")
+        service = ExportPreparationService(
+            None, None, enabled=False, cache=store.cache, clock=lambda: 1000
+        )
+        try:
+            service.close()
+            expiring = job.model_copy(
+                update={"id": "expiry", "state": "ready", "expires_at": 999}
+            )
+            store.write(expiring, archive={"files": {"a": "x" * MIB}})
+            service.path("expiry").write_bytes(b"PK-expiry-fixture")
+            assert service.status(job.mission_id, "expiry").state == "expired"
+            assert store.archive("expiry") is None
+            assert not service.path("expiry").exists()
+        finally:
+            service.close()
+        result["expiredSnapshotAndArtifactRemoved"] = True
         result.update(
             rows=count,
             expandedTelemetryBytes=total,

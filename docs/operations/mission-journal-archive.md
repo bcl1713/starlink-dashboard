@@ -160,3 +160,10 @@ clean-instance plan import with unchanged destination journal, legacy import,
 repeated downloads, retrospective edits, restart and desktop/mobile captures.
 The runner tears down its processes, containers, networks, volumes and image
 tags.
+
+The large-capacity probe starts at the frozen supplementary-file boundary and
+exercises production persistence, ZIP assembly and HTTP import with a synthetic
+36-hour CSV workload. It does not demonstrate that this dense history fits the
+128 MiB source capture budget. The separate end-to-end multi-leg scenario tests
+real journal and telemetry capture; input-limit regressions verify complete
+rejection rather than truncation when source capture capacity is exceeded.

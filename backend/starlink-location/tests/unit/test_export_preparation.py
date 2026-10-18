@@ -486,3 +486,29 @@ def test_archive_capture_serializes_concurrent_requests(tmp_path, monkeypatch):
             thread.join(3)
         assert not thread.is_alive()
         assert len(result) == 1
+
+
+def test_restart_releases_terminal_and_missing_ready_archive_snapshots(
+    tmp_path, monkeypatch
+):
+    from app.mission.package.preparation_store import ExportPreparation
+
+    with runtime(tmp_path, monkeypatch) as (service, _):
+        service.close()
+        for state in ("cancelled", "failed", "superseded", "expired", "ready"):
+            job = ExportPreparation(
+                id=state,
+                mission_id="m",
+                state=state,
+                fingerprint="f",
+                queued_at=0,
+                deadline=600,
+                expires_at=time.time() + 1800,
+            )
+            service.jobs.write(job, archive={"files": {"a": "retained until recovery"}})
+        service.recover()
+        assert service.jobs.read("m", "ready").state == "failed"
+        assert all(
+            service.jobs.archive(state) is None
+            for state in ("cancelled", "failed", "superseded", "expired", "ready")
+        )
