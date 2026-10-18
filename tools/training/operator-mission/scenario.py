@@ -47,7 +47,8 @@ def mark_root(root):
         raise ValueError(
             "New training root must be empty; existing data is never adopted"
         )
-    root.mkdir(parents=True, exist_ok=True)
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    root.chmod(0o700)
     token = str(uuid4())
     marker = {
         "schema_version": VERSION,

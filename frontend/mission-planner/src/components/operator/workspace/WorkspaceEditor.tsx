@@ -376,6 +376,7 @@ export function WorkspaceEditor({
               <label>
                 Corrected update
                 <textarea
+                  aria-label="Corrected update"
                   className="ws-field"
                   required
                   maxLength={8000}

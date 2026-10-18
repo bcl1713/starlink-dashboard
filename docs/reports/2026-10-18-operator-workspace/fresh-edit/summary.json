@@ -1,0 +1,1026 @@
+{
+  "candidateSha": "9616d762b928c606fab22500b77dc8c3b3ffd9ac",
+  "project": "starlink-operator-376-fresh-edit",
+  "checksPassed": true,
+  "fixture": "fresh production startup; simulation; normal system clock; no Operator seed",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-376-fresh-edit-backend:9616d762b928c606fab22500b77dc8c3b3ffd9ac",
+      "id": "sha256:0559a2cc9ed5632bb84cd0328eefea6e3d94783bd49e219a1a86286a5cb81e36",
+      "revision": "9616d762b928c606fab22500b77dc8c3b3ffd9ac"
+    },
+    "frontend": {
+      "tag": "starlink-operator-376-fresh-edit-frontend:9616d762b928c606fab22500b77dc8c3b3ffd9ac",
+      "id": "sha256:7151214789f641764c39ad78e8e643ba3f58a1872083939e01ed4367fe0a8482",
+      "revision": "9616d762b928c606fab22500b77dc8c3b3ffd9ac"
+    }
+  },
+  "sourceArchiveSha256": "b5e422357f44b6546360f62b89959420de663355e7fbac1c9ba495fed27ddd35",
+  "qualification": {
+    "synthetic": true,
+    "noOperatorSeed": true,
+    "initialHealth": {
+      "schema_version": 1,
+      "ready": false,
+      "store_id": null,
+      "api_epoch": null,
+      "source_mode": "simulation",
+      "simulation_run_id": "synthetic-fresh-install-v1",
+      "clock_regression": false,
+      "error_code": "store_initialization_required",
+      "enabled": true
+    },
+    "initializedHealth": {
+      "schema_version": 1,
+      "ready": true,
+      "store_id": "40c6aa5a-ce3d-4b9f-b016-8fa9a6bc900a",
+      "api_epoch": "38c95f24-86fc-4a41-bdbb-a2868755970f",
+      "source_mode": "simulation",
+      "simulation_run_id": "synthetic-fresh-install-v1",
+      "clock_regression": false,
+      "error_code": null,
+      "enabled": true
+    },
+    "realMissionCreatedInUI": "synthetic-fresh-mission",
+    "realCrudReceipts": [
+      {
+        "schema_version": 1,
+        "command_id": "ec5bf0f9-14a3-4f6d-8ff5-d8bfb6c2204c",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "call",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": "2026-10-18T21:19:10.000000Z",
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial call",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "call",
+              "status": "scheduled",
+              "party": "Synthetic initial call",
+              "coordinator": null,
+              "communications_kind": null,
+              "prep_lead_minutes": 10,
+              "conference_id": null
+            },
+            "record_id": "4d123090-4d6d-4b57-bd16-2e6b86d6e687",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 1,
+            "command_id": "ec5bf0f9-14a3-4f6d-8ff5-d8bfb6c2204c",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:10.538560Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "13f9292f-0198-49dd-912f-b75b2b461f1f",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "conference",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial conference",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "conference",
+              "status": "preparing",
+              "coordinator": null,
+              "verified_at": null,
+              "intended_transport": null,
+              "configured_transport": null,
+              "configuration_reported_at": null
+            },
+            "record_id": "ecc74581-3af3-46e5-8c34-1dda6e68991d",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 2,
+            "command_id": "13f9292f-0198-49dd-912f-b75b2b461f1f",
+            "operation": "create",
+            "reason": "Conference preparation",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:10.720267Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "b61b042f-131c-43cc-b233-b9acc465ab5a",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "issue",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": "2026-10-18T20:19:10.805390Z",
+              "ended_at": null,
+              "precision": "exact",
+              "end_state": "instant",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial issue",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "issue",
+              "status": "open",
+              "priority": null,
+              "mitigation": "unknown",
+              "functional_area": null,
+              "responsible_party": null,
+              "follow_up_at": null,
+              "update_text": "",
+              "capability_id": null,
+              "call_id": null,
+              "conference_id": null,
+              "transport": null,
+              "corrects_version": null,
+              "corrected_update_at": null
+            },
+            "record_id": "3e014a79-0947-4d63-a531-208125c896a7",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 3,
+            "command_id": "b61b042f-131c-43cc-b233-b9acc465ab5a",
+            "operation": "create",
+            "reason": "Issue opened",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:10.818481Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "retrospective"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "0920cebf-04b5-483c-90d5-dd575e2afa75",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial note",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "ac4ae112-10fa-4695-b099-8b4d213dd0b8",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 4,
+            "command_id": "0920cebf-04b5-483c-90d5-dd575e2afa75",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:10.889496Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "ef4d2033-eefc-42ef-a627-f14470274581",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "call",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": "2026-10-18T21:19:10.000000Z",
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial call edited",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "call",
+              "status": "scheduled",
+              "party": "Synthetic initial call edited",
+              "coordinator": null,
+              "communications_kind": null,
+              "prep_lead_minutes": 10,
+              "conference_id": null
+            },
+            "record_id": "4d123090-4d6d-4b57-bd16-2e6b86d6e687",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 5,
+            "command_id": "ef4d2033-eefc-42ef-a627-f14470274581",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:11.355156Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "99d14112-2313-4ebf-a005-64da5b8f2085",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "conference",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial conference edited",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "conference",
+              "status": "preparing",
+              "coordinator": null,
+              "verified_at": null,
+              "intended_transport": null,
+              "configured_transport": null,
+              "configuration_reported_at": null
+            },
+            "record_id": "ecc74581-3af3-46e5-8c34-1dda6e68991d",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 6,
+            "command_id": "99d14112-2313-4ebf-a005-64da5b8f2085",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:11.708623Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "cd9654a1-59bd-40c3-8226-2ee5a20bedad",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "issue",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": "2026-10-18T20:19:12.107068Z",
+              "ended_at": null,
+              "precision": "exact",
+              "end_state": "instant",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial issue",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "issue",
+              "status": "open",
+              "priority": null,
+              "mitigation": "unknown",
+              "functional_area": null,
+              "responsible_party": null,
+              "follow_up_at": null,
+              "update_text": "Synthetic initial issue update",
+              "capability_id": null,
+              "call_id": null,
+              "conference_id": null,
+              "transport": null,
+              "corrects_version": null,
+              "corrected_update_at": null
+            },
+            "record_id": "3e014a79-0947-4d63-a531-208125c896a7",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 7,
+            "command_id": "cd9654a1-59bd-40c3-8226-2ee5a20bedad",
+            "operation": "update",
+            "reason": "Issue update recorded",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:12.122145Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "retrospective"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "9eea5d87-5e2f-4ef8-b761-62b500a7f947",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic initial note edited",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "ac4ae112-10fa-4695-b099-8b4d213dd0b8",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 8,
+            "command_id": "9eea5d87-5e2f-4ef8-b761-62b500a7f947",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:12.521577Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "ca02194f-a87e-4e3f-baf0-31c01af837f4",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "call",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": "2026-10-18T21:19:20.000000Z",
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay call",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "call",
+              "status": "scheduled",
+              "party": "Synthetic active replay call",
+              "coordinator": null,
+              "communications_kind": null,
+              "prep_lead_minutes": 10,
+              "conference_id": null
+            },
+            "record_id": "e04b85b3-5a2e-405a-9175-6197747343f3",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 1,
+            "command_id": "ca02194f-a87e-4e3f-baf0-31c01af837f4",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:20.402949Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "8be759fa-7c34-465d-9eee-d4c541ab43ca",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "conference",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay conference",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "conference",
+              "status": "preparing",
+              "coordinator": null,
+              "verified_at": null,
+              "intended_transport": null,
+              "configured_transport": null,
+              "configuration_reported_at": null
+            },
+            "record_id": "cf442715-1e24-4f35-90fa-8d078cc2d9cc",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 2,
+            "command_id": "8be759fa-7c34-465d-9eee-d4c541ab43ca",
+            "operation": "create",
+            "reason": "Conference preparation",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:20.636682Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "da0f782d-c962-45b6-9ed7-1ff2458761d0",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "issue",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": "2026-10-18T20:19:20.753489Z",
+              "ended_at": null,
+              "precision": "exact",
+              "end_state": "instant",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay issue",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "issue",
+              "status": "open",
+              "priority": null,
+              "mitigation": "unknown",
+              "functional_area": null,
+              "responsible_party": null,
+              "follow_up_at": null,
+              "update_text": "",
+              "capability_id": null,
+              "call_id": null,
+              "conference_id": null,
+              "transport": null,
+              "corrects_version": null,
+              "corrected_update_at": null
+            },
+            "record_id": "41bed174-1505-4131-8d12-bef51d3babf0",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 3,
+            "command_id": "da0f782d-c962-45b6-9ed7-1ff2458761d0",
+            "operation": "create",
+            "reason": "Issue opened",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:20.765965Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "retrospective"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "b6e020a1-96a4-44aa-9bda-3f687729a0c4",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay note",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "d451c9e8-c063-40e3-8d5a-453d76253743",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 4,
+            "command_id": "b6e020a1-96a4-44aa-9bda-3f687729a0c4",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:20.909321Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "ba8d4398-8884-43ca-9cfc-4a322e552cf9",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "call",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": "2026-10-18T21:19:20.000000Z",
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay call edited",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "call",
+              "status": "scheduled",
+              "party": "Synthetic active replay call edited",
+              "coordinator": null,
+              "communications_kind": null,
+              "prep_lead_minutes": 10,
+              "conference_id": null
+            },
+            "record_id": "e04b85b3-5a2e-405a-9175-6197747343f3",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 5,
+            "command_id": "ba8d4398-8884-43ca-9cfc-4a322e552cf9",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:21.586398Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "cf43964b-c978-47e3-8639-3e92441b840c",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "conference",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay conference edited",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "conference",
+              "status": "preparing",
+              "coordinator": null,
+              "verified_at": null,
+              "intended_transport": null,
+              "configured_transport": null,
+              "configuration_reported_at": null
+            },
+            "record_id": "cf442715-1e24-4f35-90fa-8d078cc2d9cc",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 6,
+            "command_id": "cf43964b-c978-47e3-8639-3e92441b840c",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:22.024311Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "7e5ea633-0d0e-4dfe-9e5a-c2b168bd4072",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "issue",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": "2026-10-18T20:19:22.416395Z",
+              "ended_at": null,
+              "precision": "exact",
+              "end_state": "instant",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay issue",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "issue",
+              "status": "open",
+              "priority": null,
+              "mitigation": "unknown",
+              "functional_area": null,
+              "responsible_party": null,
+              "follow_up_at": null,
+              "update_text": "Synthetic active replay issue update",
+              "capability_id": null,
+              "call_id": null,
+              "conference_id": null,
+              "transport": null,
+              "corrects_version": null,
+              "corrected_update_at": null
+            },
+            "record_id": "41bed174-1505-4131-8d12-bef51d3babf0",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 7,
+            "command_id": "7e5ea633-0d0e-4dfe-9e5a-c2b168bd4072",
+            "operation": "update",
+            "reason": "Issue update recorded",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:22.425854Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "retrospective"
+            }
+          }
+        ]
+      },
+      {
+        "schema_version": 1,
+        "command_id": "acc1a90c-8a7f-4ab4-a5aa-9997dbee4c9c",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "synthetic-fresh-mission",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Synthetic active replay note edited",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "d451c9e8-c063-40e3-8d5a-453d76253743",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 8,
+            "command_id": "acc1a90c-8a7f-4ab4-a5aa-9997dbee4c9c",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-18T20:19:22.837811Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      }
+    ],
+    "optionalModelCoverage": "available",
+    "restartedIdentity": {
+      "schema_version": 1,
+      "ready": true,
+      "store_id": "40c6aa5a-ce3d-4b9f-b016-8fa9a6bc900a",
+      "api_epoch": "38c95f24-86fc-4a41-bdbb-a2868755970f",
+      "source_mode": "simulation",
+      "simulation_run_id": "synthetic-fresh-install-v1",
+      "clock_regression": false,
+      "error_code": null,
+      "enabled": true
+    },
+    "originalRecordIds": [
+      "4d123090-4d6d-4b57-bd16-2e6b86d6e687",
+      "ecc74581-3af3-46e5-8c34-1dda6e68991d",
+      "3e014a79-0947-4d63-a531-208125c896a7",
+      "ac4ae112-10fa-4695-b099-8b4d213dd0b8"
+    ],
+    "activeReplay": {
+      "runId": "51c58024-04af-4024-b10d-f6aac85bc240",
+      "initialHealth": {
+        "schema_version": 1,
+        "ready": false,
+        "store_id": null,
+        "api_epoch": null,
+        "source_mode": "simulation",
+        "simulation_run_id": "51c58024-04af-4024-b10d-f6aac85bc240",
+        "clock_regression": false,
+        "error_code": "store_initialization_required",
+        "enabled": true
+      },
+      "initializedHealth": {
+        "schema_version": 1,
+        "ready": true,
+        "store_id": "bf4eabf0-8585-4d84-909d-1063b72378a3",
+        "api_epoch": "135d9689-54fa-49a0-8af2-66f092c92e0a",
+        "source_mode": "simulation",
+        "simulation_run_id": "51c58024-04af-4024-b10d-f6aac85bc240",
+        "clock_regression": false,
+        "error_code": null,
+        "enabled": true
+      },
+      "recordIds": [
+        "e04b85b3-5a2e-405a-9175-6197747343f3",
+        "cf442715-1e24-4f35-90fa-8d078cc2d9cc",
+        "41bed174-1505-4131-8d12-bef51d3babf0",
+        "d451c9e8-c063-40e3-8d5a-453d76253743"
+      ]
+    },
+    "namespace": "explicit initial simulation namespace followed by a real mission replay namespace; no replay-restoration claim"
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}
