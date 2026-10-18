@@ -192,7 +192,7 @@ def run():
             | {
                 "schema_version": 1,
                 "expected_version": record["version"],
-                "reason": "Synthetic retrospective correction",
+                "audit_note": "Synthetic retrospective correction",
             },
         )
         response.raise_for_status()

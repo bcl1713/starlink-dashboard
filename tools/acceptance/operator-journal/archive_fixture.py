@@ -117,7 +117,7 @@ def initialize(main, root):
                 UpdateRecord(
                     record_id=issue.record_id,
                     expected_version=issue.version,
-                    reason="Synthetic retrospective resolution",
+                    audit_note="Synthetic retrospective resolution",
                     **fields,
                 ),
                 key=str(uuid5(NAMESPACE_URL, "archive/issue-correction")),
