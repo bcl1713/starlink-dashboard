@@ -1,11 +1,11 @@
 # Operator issues, capability assessments and follow-up
 
-Issue: #367. Parent: #361. Status: conditionally approved for implementation
-planning in PR #378; timeline/projection clarification incorporated below.
-Implementation execution and merge are not approved by this document. Design
-direction and the nine requirements were approved on 2026-10-18. Base:
-`origin/dev` at `86199429`. Branch: `feat/operator-issues-367`. Worktree:
-`.worktrees/issue-367`.
+Issue: #367. Parent: #361. Status: specification and native implementation plan
+approved for execution in PR #378 comment 6243741682. Timeline/projection
+clarification incorporated. Merge requires separate product review and
+acceptance evidence. Design direction and the nine requirements were approved on
+2026-10-18. Base: `origin/dev` at `86199429`. Branch:
+`feat/operator-issues-367`. Worktree: `.worktrees/issue-367`.
 
 ## Purpose and scope
 

@@ -2,6 +2,7 @@
 
 import importlib
 import os
+from datetime import datetime
 from pathlib import Path
 
 from app.mission import storage
@@ -15,8 +16,20 @@ if os.getenv("OPERATOR_ACCEPTANCE_FIXTURE") != "synthetic-local-only":
 if os.getenv("STARLINK_MODE") != "simulation":
     raise RuntimeError("This acceptance fixture requires simulation mode")
 
-scenario_clock = ScenarioClock()
 root = Path(os.environ["OPERATOR_ACCEPTANCE_ROOT"])
+
+
+class ControlledClock(ScenarioClock):
+    def now(self):
+        path = root / "synthetic-issue-clock.txt"
+        return (
+            datetime.fromisoformat(path.read_text().strip())
+            if path.exists()
+            else super().now()
+        )
+
+
+scenario_clock = ControlledClock()
 seed = seed_demo(root, clock=scenario_clock, mode="simulation", include_shell=True)
 storage.MISSIONS_DIR = root / "missions"
 os.environ["OPERATOR_ROOT"] = seed["roots"]["operator"]

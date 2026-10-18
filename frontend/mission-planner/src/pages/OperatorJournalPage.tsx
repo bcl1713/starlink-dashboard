@@ -178,7 +178,9 @@ export function OperatorJournalPage() {
           onDirty={setCallDirty}
         />
       )}
-      {missionId && <OperatorIssues key={missionId} missionId={missionId} />}
+      {missionId && (
+        <OperatorIssues key={`issues:${missionId}`} missionId={missionId} />
+      )}
       <section
         id="operator-journal"
         aria-label="Operator journal"

@@ -36,6 +36,18 @@ print('synthetic Operator SQLite media {action}')
             "-c",
             script,
         ]
+    elif action == "clock":
+        from datetime import datetime
+
+        value = datetime.fromisoformat(sys.argv[2])
+        if value.utcoffset() is None:
+            raise ValueError("Aware synthetic UTC required")
+        script = (
+            "from pathlib import Path; Path('/app/data/synthetic-issue-clock.txt').write_text("
+            + repr(value.isoformat())
+            + ")"
+        )
+        command += ["exec", "-T", "starlink-location", "python", "-c", script]
     elif action == "restart":
         command += ["restart", "starlink-location"]
     elif action == "counts":

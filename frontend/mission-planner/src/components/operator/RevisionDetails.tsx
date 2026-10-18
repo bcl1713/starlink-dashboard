@@ -55,6 +55,50 @@ export function RevisionDetails({ record, association }: ReadRecord) {
           </p>
         </>
       )}
+      {payload.entry_type === 'issue' && (
+        <>
+          <p>
+            Issue status: {payload.status} · Mitigation:{' '}
+            {payload.mitigation ?? 'unknown'} · Priority:{' '}
+            {payload.priority ?? 'unspecified'}
+          </p>
+          <p>Follow-up: {revisionUtc(payload.follow_up_at ?? null)}</p>
+          <p className="whitespace-pre-wrap">
+            Update: {payload.update_text || 'None'}
+          </p>
+          {payload.corrects_version && (
+            <p>
+              Corrects version {payload.corrects_version} · Corrected occurred:{' '}
+              {revisionUtc(payload.corrected_update_at ?? null)}
+            </p>
+          )}
+          <p>
+            Functional area: {payload.functional_area ?? 'Unspecified'} ·
+            Responsible party: {payload.responsible_party ?? 'Unspecified'}
+          </p>
+          <p>
+            Related capability: {payload.capability_id ?? 'None'} · Call:{' '}
+            {payload.call_id ?? 'None'} · Conference:{' '}
+            {payload.conference_id ?? 'None'} · Transport:{' '}
+            {payload.transport ?? 'Unknown'}
+          </p>
+        </>
+      )}
+      {payload.entry_type === 'capability_assessment' && (
+        <>
+          <p>
+            Functional: {payload.functional_status} · Observed:{' '}
+            {revisionUtc(payload.functional_observed_at)} ·{' '}
+            {payload.functional_time_precision}
+          </p>
+          <p>
+            Redundancy: {payload.redundancy_status} · Observed:{' '}
+            {revisionUtc(payload.redundancy_observed_at)} ·{' '}
+            {payload.redundancy_time_precision}
+          </p>
+          <p>Manual operator assessment; no automatic aircraft readiness.</p>
+        </>
+      )}
       <p>Planned start: {revisionUtc(time.planned_start_at)}</p>
       <p>Planned end: {revisionUtc(time.planned_end_at)}</p>
       <p>

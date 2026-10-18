@@ -278,7 +278,7 @@ Tasks 1, 2, 5 and 6. Review-focus cases have explicit owning tests. New
 interfaces stay within the journal and Operator; no migration, notification
 service, transport allocation, mission ZIP route or broad redesign is planned.
 
-Plan status: ready for user review, execution method not selected. Native
+Plan status: approved for native execution in PR #378 comment 6243741682. Native
 execution is recommended because payloads, correction validation and projections
 share transaction contracts; sequential implementation avoids interface drift.
-No implementation begins until the user reviews this plan and selects a method.
+Implementation is underway; product review and merge remain separate gates.

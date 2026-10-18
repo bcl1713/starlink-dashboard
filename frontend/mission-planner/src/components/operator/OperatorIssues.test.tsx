@@ -36,13 +36,11 @@ function mount(component: React.ReactNode, issue = false) {
     page(issue ? [saved] : [])
   );
   vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([saved]).items[0]);
-  const save = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockResolvedValue({
-      schema_version: 1,
-      command_id: 'receipt',
-      saved_records: [saved],
-    });
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -126,4 +124,43 @@ it('keeps functional service and redundancy separate and unknown by default', as
     },
   });
   expect(screen.queryByText('Aircraft ready')).toBeNull();
+});
+it('clears an acknowledged update and uses the latest version for the next update', async () => {
+  const save = mount(<OperatorIssues missionId="mission-a" />, true);
+  const current = {
+    ...record,
+    record_type: 'issue' as const,
+    version: 2,
+    payload: {
+      ...record.payload,
+      entry_type: 'issue' as const,
+      status: 'monitoring' as const,
+      mitigation: 'workaround' as const,
+      update_text: 'Synthetic first update',
+    },
+  };
+  save.mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt2',
+    saved_records: [current],
+  });
+  vi.mocked(api.readOperatorRecord).mockResolvedValue(page([current]).items[0]);
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Add update / follow up' })
+  );
+  fireEvent.change(screen.getByLabelText('Add update'), {
+    target: { value: 'Synthetic first update' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  await waitFor(() =>
+    expect(
+      (screen.getByLabelText('Add update') as HTMLTextAreaElement).value
+    ).toBe('')
+  );
+  fireEvent.change(screen.getByLabelText('Add update'), {
+    target: { value: 'Synthetic second update' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+  expect(save.mock.calls[1][0].body).toHaveProperty('expected_version', 2);
 });

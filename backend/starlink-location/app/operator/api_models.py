@@ -8,8 +8,8 @@ from .common import SchemaVersion, StrictModel
 from .models import AuditNote, PositiveVersion, RecordInput
 from .payloads import (
     CallPayload,
-    IssuePayload,
     ConferencePayload,
+    IssuePayload,
     JournalPayload,
     ParticipationPayload,
 )

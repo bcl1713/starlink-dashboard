@@ -9,8 +9,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from app.mission import storage
-from app.operator.models import CreateRecord, RecordFilter
 from app.mission.package.__main__ import generate_mission_combined_csv
+from app.operator.models import CreateRecord, RecordFilter
 from app.services.flight_events.live_adapter import FlightEventRuntime
 from app.services.telemetry_archive.package import build_telemetry_package
 from scenario import (
@@ -68,6 +68,43 @@ def probe(root):
             )
         )
         service.execute(participant, key=str(uuid4()), epoch=epoch)
+
+    for payload in (
+        {
+            "entry_type": "issue",
+            "title": "Synthetic spanning-leg problem",
+            "status": "monitoring",
+            "mitigation": "workaround",
+        },
+        {
+            "entry_type": "capability_assessment",
+            "title": "Synthetic secure voice",
+            "functional_status": "functional",
+            "redundancy_status": "unavailable",
+        },
+    ):
+        service.execute(
+            CreateRecord.model_validate(
+                dict(
+                    base,
+                    record_type=(
+                        "issue" if payload["entry_type"] == "issue" else "journal_entry"
+                    ),
+                    payload=payload,
+                )
+            ),
+            key=str(uuid4()),
+            epoch=epoch,
+        )
+
+    def issue_records():
+        return {
+            str(r.record_id): r.model_dump(mode="json")
+            for r in service.list(RecordFilter(mission_id=mission.id)).items
+            if r.payload.entry_type in ("issue", "capability_assessment")
+        }
+
+    before_issues = issue_records()
 
     def conference_records():
         return {
@@ -129,8 +166,10 @@ def probe(root):
         except ValueError as error:
             assert "simulation" in str(error)
         assert conference_records() == before_conferences
+        assert issue_records() == before_issues
         return {
             "conferenceLifecycleUnchanged": True,
+            "issueCapabilityLifecycleUnchanged": True,
             "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
             "telemetryZipSha256Before": digest(baseline),
             "telemetryZipSha256After": digest(exported),
