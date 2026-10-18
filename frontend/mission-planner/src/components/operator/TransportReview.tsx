@@ -1,4 +1,7 @@
-import type { TransportReviewData } from '@/types/operatorTransport';
+import type {
+  TransportAssessment,
+  TransportReviewData,
+} from '@/types/operatorTransport';
 import type { OperationalEvent } from '@/types/operatorEvents';
 import { revisionUtc } from './revisionUtc';
 export function TransportReview({
@@ -13,6 +16,33 @@ export function TransportReview({
   events?: OperationalEvent[];
 }) {
   const unknown = stale || error || !review;
+  const groups = new Map<
+    string,
+    { assessment: TransportAssessment; count: number }
+  >();
+  for (const assessment of review?.assessments ?? []) {
+    if (assessment.status === 'no_overlap_found') continue;
+    const key = JSON.stringify([
+      assessment.decision_id,
+      assessment.row_id,
+      assessment.subject,
+      assessment.report_stage,
+      assessment.transport,
+      assessment.status,
+      assessment.message,
+      assessment.event_ids,
+      assessment.change_basis,
+      assessment.freshness,
+    ]);
+    const prior = groups.get(key);
+    if (prior) prior.count++;
+    else groups.set(key, { assessment, count: 1 });
+  }
+  const stageLabels = {
+    intended: 'Intended',
+    requested: 'Requested',
+    applied: 'Reported Applied',
+  };
   return (
     <aside
       aria-label="Transport risk review"
@@ -83,20 +113,22 @@ export function TransportReview({
           </p>
         ))}
       {!unknown &&
-        review.assessments
-          .filter((a) => a.status !== 'no_overlap_found')
-          .map((a, i) => (
-            <p
-              key={`${a.decision_id}:${a.row_id}:${i}`}
-              className="rounded border p-2"
-            >
+        [...groups].map(([key, { assessment: a, count }]) => (
+          <div key={key} className="rounded border p-2">
+            <p>
               {a.service}
               {a.report_stage !== 'unknown'
-                ? ` · ${a.report_stage} ${a.transport}`
+                ? ` · ${stageLabels[a.report_stage]}${a.transport ? ` ${a.transport}` : ''}`
                 : ''}
               : {a.message}
             </p>
-          ))}
+            {count > 1 && (
+              <p className="text-sm text-muted-foreground">
+                {count} communications contexts
+              </p>
+            )}
+          </div>
+        ))}
     </aside>
   );
 }

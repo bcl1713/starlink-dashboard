@@ -225,6 +225,12 @@ test('transport decision production: mobile entry, customer context, durability 
       expect(saved.payload.services[0].applied?.transport).toBe('Ka');
       proof.multiService = proof.independentReports = true;
       await section
+        .getByRole('form', { name: 'Transport decision editor' })
+        .screenshot({
+          path: join(evidence, `transport-reports-${width}x${height}.png`),
+        });
+
+      await section
         .getByLabel('Applied time 1 UTC', { exact: true })
         .fill('2026-10-17T16:44');
       await expect(
@@ -239,6 +245,28 @@ test('transport decision production: mobile entry, customer context, durability 
         history.items[0].record.payload.services[0].applied.time.at
       ).toBeNull();
       proof.retrospectiveCorrection = true;
+      if (width !== 844) {
+        const card = section
+          .getByRole('listitem')
+          .filter({
+            has: page.getByRole('heading', {
+              name: saved.payload.title,
+              exact: true,
+            }),
+          });
+        await card.getByRole('button', { name: 'Decision history' }).click();
+        const historyPanel = page.getByRole('region', {
+          name: 'Entry history',
+        });
+        await expect(historyPanel.getByText(/Version 3/)).toBeVisible();
+        await historyPanel.screenshot({
+          path: join(evidence, `transport-history-${width}.png`),
+        });
+        await historyPanel
+          .getByRole('button', { name: 'Close history' })
+          .click();
+      }
+
       await expect(
         section.getByText('Actual routing unknown.', { exact: true })
       ).toHaveCount(1);
@@ -513,6 +541,19 @@ test('transport decision production: mobile entry, customer context, durability 
       )
     ).toBe(true);
     proof.staleUnknown = true;
+    await first
+      .getByRole('button', { name: 'Refresh transport decisions' })
+      .click();
+    const unknownReview = first.getByRole('complementary', {
+      name: 'Transport risk review',
+    });
+    await expect(
+      unknownReview.getByText(/Model coverage: unknown/)
+    ).toBeVisible();
+    await unknownReview.screenshot({
+      path: join(evidence, 'transport-unknown.png'),
+    });
+
     expect(
       JSON.stringify(
         (await (await request.get(`${base}/records/${savedIds[0]}`)).json())
