@@ -132,7 +132,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
         .click();
       const drawer = page.getByRole('dialog', { name: 'Operational timeline' });
       await expect(
-        drawer.getByText(restriction.title, { exact: true })
+        drawer.getByText(restriction.title, { exact: true }).first()
       ).toBeVisible();
       await noOverflow(page);
       await page.screenshot({
@@ -217,9 +217,10 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
         .every((e) => !e.notification.eligible)
     ).toBe(true);
     proof.unavailableReason = true;
+    const obsoleteSnapshot = snapshot;
     await raw(request, { missing_pop: false, route_shift: 8 });
     snapshot = await feed(request);
-    expect((await ack(request, snapshot, event)).ok()).toBe(false);
+    expect((await ack(request, obsoleteSnapshot, event)).ok()).toBe(false);
     const moved = snapshot.events.find(
       (e) => e.kind === 'restriction' && e.transport === 'X' && e.active
     )!;
