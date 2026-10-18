@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { OperatorCommand, SavedRecord, Scope } from '@/types/operator';
-import { useOperatorTransportDraft } from '@/hooks/api/useOperatorTransportDraft';
+import {
+  transportDraftKey,
+  useOperatorTransportDraft,
+} from '@/hooks/api/useOperatorTransportDraft';
 import {
   newServiceRow,
   newTransportDraft,
@@ -24,7 +27,7 @@ export function TransportEditor({
   createFromDraft?: boolean;
   onSave: (command: OperatorCommand, draftKey: string) => Promise<boolean>;
 }) {
-  const key = `operator-369-draft:${identity}:${missionId}:${record?.record_id ?? 'new'}`;
+  const key = transportDraftKey(identity, missionId, record?.record_id);
   const { draft, setDraft, clear, storageError } = useOperatorTransportDraft(
     key,
     newTransportDraft(missionId, record)
