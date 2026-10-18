@@ -135,7 +135,10 @@ def require_service(runtime):
 def mutate(request, command, key, epoch):
     with runtime_for(request) as runtime:
         result = require_service(runtime).execute_result(
-            command, key=key, epoch=epoch, writable_types={"journal_entry", "call"}
+            command,
+            key=key,
+            epoch=epoch,
+            writable_types={"journal_entry", "call", "conference", "participation"},
         )
         return JSONResponse(
             result.receipt.canonical_response,

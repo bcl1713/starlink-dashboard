@@ -27,7 +27,11 @@ interface Pending {
 }
 export function useOperatorJournal(
   missionId: string,
-  recordType: 'journal_entry' | 'call' = 'journal_entry'
+  recordType:
+    | 'journal_entry'
+    | 'call'
+    | 'conference'
+    | 'participation' = 'journal_entry'
 ) {
   const client = useQueryClient();
   const health = useOperatorHealth();

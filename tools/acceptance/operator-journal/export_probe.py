@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from app.mission import storage
+from app.operator.models import CreateRecord, RecordFilter
 from app.mission.package.__main__ import generate_mission_combined_csv
 from app.services.flight_events.live_adapter import FlightEventRuntime
 from app.services.telemetry_archive.package import build_telemetry_package
@@ -36,6 +37,46 @@ def probe(root):
         storage.save_mission_timeline(leg.id, timeline, parent_mission_id=mission.id)
     # Only the generated-at CSV header is excluded from the semantic comparison.
     before_csv = generate_mission_combined_csv(mission).splitlines()[1:]
+    base = command().model_dump(mode="json")
+    base.update(scope="mission", leg_id=None, time={})
+    conference_command = CreateRecord.model_validate(
+        dict(
+            base,
+            record_type="conference",
+            payload={
+                "entry_type": "conference",
+                "title": "Synthetic lifecycle conference",
+                "status": "established",
+            },
+        )
+    )
+    epoch = str(service.store.health().api_epoch)
+    conference = service.execute(
+        conference_command, key=str(uuid4()), epoch=epoch
+    ).saved_records[0]
+    for _ in range(2):
+        participant = CreateRecord.model_validate(
+            dict(
+                base,
+                record_type="participation",
+                payload={
+                    "entry_type": "participation",
+                    "title": "Synthetic lifecycle customer",
+                    "state": "connected",
+                    "conference_id": str(conference.record_id),
+                },
+            )
+        )
+        service.execute(participant, key=str(uuid4()), epoch=epoch)
+
+    def conference_records():
+        return {
+            str(r.record_id): r.model_dump(mode="json")
+            for r in service.list(RecordFilter(mission_id=mission.id)).items
+            if r.record_type in ("conference", "participation")
+        }
+
+    before_conferences = conference_records()
     flight = FlightEventRuntime(root / "synthetic-operational-format")
     try:
         for index, leg in enumerate(mission.legs):
@@ -87,7 +128,9 @@ def probe(root):
             raise AssertionError("Simulation export accepted by operational builder")
         except ValueError as error:
             assert "simulation" in str(error)
+        assert conference_records() == before_conferences
         return {
+            "conferenceLifecycleUnchanged": True,
             "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
             "telemetryZipSha256Before": digest(baseline),
             "telemetryZipSha256After": digest(exported),

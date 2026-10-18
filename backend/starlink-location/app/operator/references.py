@@ -18,6 +18,7 @@ def derive_links(record) -> set[tuple[str, str, str]]:
         "participation": (
             ("call_id", "participation-to-call"),
             ("conference_id", "participation-to-conference"),
+            ("resumes_participation_id", "participation-resumes"),
         ),
     }
     return {
@@ -118,9 +119,10 @@ def validate_dependencies(connection, changed) -> None:
                 except OperatorError as error:
                     if error.code != "record_not_found":
                         raise
-            expected_type = (
-                "call" if relation == "participation-to-call" else "conference"
-            )
+            expected_type = {
+                "participation-to-call": "call",
+                "participation-resumes": "participation",
+            }.get(relation, "conference")
             if (
                 target is None
                 or target.deleted
@@ -129,5 +131,31 @@ def validate_dependencies(connection, changed) -> None:
                 or source == target_id
             ):
                 conflicts.update((source, target_id))
+                continue
+            if relation == "participation-resumes":
+                if (
+                    target.payload.state != "interrupted"
+                    or target.payload.call_id != record.payload.call_id
+                    or target.payload.conference_id != record.payload.conference_id
+                ):
+                    conflicts.update((source, target_id))
+                visited = {source}
+                ancestor = target
+                while ancestor is not None:
+                    ancestor_id = str(ancestor.record_id)
+                    if ancestor_id in visited:
+                        conflicts.update(visited)
+                        break
+                    visited.add(ancestor_id)
+                    parent_id = ancestor.payload.resumes_participation_id
+                    if parent_id is None:
+                        break
+                    ancestor = affected.get(str(parent_id))
+                    if ancestor is None:
+                        try:
+                            ancestor = get_record(connection, parent_id)
+                        except OperatorError:
+                            conflicts.update(visited)
+                            break
     if conflicts:
         raise OperatorError("dependency_conflict", record_ids=sorted(conflicts))
