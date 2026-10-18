@@ -45,7 +45,7 @@ finally:
 """
 
 
-def qualify(owner):
+def qualify(owner, *, workspace=False):
     fixtures = [build_workspace_fixture(seed) for seed in ("normal", "busy")]
     (owner.root / "workspace-inputs.json").write_text(json.dumps(fixtures, indent=2))
     owner.compose("exec", "-T", "--user", "appuser", "starlink-location", "python", "-c", SEED,
@@ -61,8 +61,10 @@ def qualify(owner):
     }
     owner.execute(["timeout", "--kill-after=10s", "10m", "npx", "--no-install",
                    "playwright", "test", "--config", "playwright.operator-workspace.config.ts",
-                   "--grep", "baseline"], timeout=620,
+                   "--grep", "hidden workspace" if workspace else "baseline"], timeout=620,
                   cwd=ROOT / "frontend/mission-planner", env=env)
+    if workspace:
+        return json.loads((owner.root / "workspace-candidate.json").read_text())
     result = json.loads((owner.root / "workspace-baseline.json").read_text())
     try:
         owner.execute(["timeout", "--kill-after=10s", "3m", "npx", "--no-install",
@@ -87,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True, type=Path)
+    parser.add_argument("--workspace", action="store_true", help="Exercise the hidden implementation shell")
     args = parser.parse_args()
     print(json.dumps(journal.run(args.candidate, args.project, args.evidence,
-                                 qualification=qualify), indent=2))
+                                 qualification=lambda owner: qualify(owner, workspace=args.workspace)), indent=2))

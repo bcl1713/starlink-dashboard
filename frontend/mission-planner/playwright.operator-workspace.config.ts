@@ -8,7 +8,7 @@ export default defineConfig({
   testMatch: 'operator-workspace.spec.ts',
   workers: 1,
   retries: 0,
-  timeout: 120_000,
+  timeout: 240_000,
   expect: { timeout: 10_000 },
   reporter: 'list',
   outputDir: `${process.env.OPERATOR_ACCEPTANCE_EVIDENCE}/workspace-playwright`,

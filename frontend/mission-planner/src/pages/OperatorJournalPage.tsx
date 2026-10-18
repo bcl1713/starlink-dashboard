@@ -15,7 +15,16 @@ import { JournalList } from '@/components/operator/JournalList';
 import { useOperatorJournal } from '@/hooks/api/useOperatorJournal';
 import { operatorFailure } from '@/services/operator';
 import type { OperatorCommand, SavedRecord } from '@/types/operator';
+import { OperatorWorkspace } from '@/components/operator/workspace/OperatorWorkspace';
 export function OperatorJournalPage() {
+  const [params] = useSearchParams();
+  return params.get('workspace') === '1' ? (
+    <OperatorWorkspace />
+  ) : (
+    <LegacyOperatorJournalPage />
+  );
+}
+function LegacyOperatorJournalPage() {
   const [params, setParams] = useSearchParams();
   const missionId = params.get('mission_id') ?? '';
   const [missionDraft, setMissionDraft] = useState(missionId);

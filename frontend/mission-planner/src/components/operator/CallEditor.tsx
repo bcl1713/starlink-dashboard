@@ -33,6 +33,7 @@ export function CallEditor({
   onChange,
   onSubmit,
   onDirty,
+  saveDisabled = false,
 }: {
   draft: CallInput;
   disabled: boolean;
@@ -40,6 +41,7 @@ export function CallEditor({
   onChange: (draft: CallInput) => void;
   onSubmit: (draft: CallInput) => void;
   onDirty?: () => void;
+  saveDisabled?: boolean;
 }) {
   const [lead, setLead] = useState(
     draft.payload.prep_lead_minutes == null
@@ -139,7 +141,7 @@ export function CallEditor({
       className="min-w-0 space-y-3 rounded-xl border bg-card p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!disabled) submit();
+        if (!disabled && !saveDisabled) submit();
       }}
     >
       <h3 className="text-lg font-semibold">
@@ -425,6 +427,7 @@ export function CallEditor({
         <button
           className="min-h-11 rounded-md bg-primary px-4 text-primary-foreground disabled:opacity-50"
           type="submit"
+          disabled={saveDisabled}
         >
           Save call
         </button>
