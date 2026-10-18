@@ -120,3 +120,29 @@ it('does not report an all-clear on failure and explains local delivery limits',
     screen.getByRole('button', { name: 'Enable sound and vibration' })
   ).toBeTruthy();
 });
+it('waits for alert output before accepting the enable gesture', async () => {
+  const events = state();
+  events.snapshot = null;
+  events.loading = true;
+  const view = render(
+    <MemoryRouter>
+      <OperatorEventStrip events={events} />
+    </MemoryRouter>
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Local alerts' }));
+  expect(
+    screen.getByRole('button', { name: 'Enable sound and vibration' })
+  ).toBeDisabled();
+  events.snapshot = eventSnapshot();
+  events.loading = false;
+  view.rerender(
+    <MemoryRouter>
+      <OperatorEventStrip events={events} />
+    </MemoryRouter>
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Enable sound and vibration' })
+    ).toBeEnabled()
+  );
+});

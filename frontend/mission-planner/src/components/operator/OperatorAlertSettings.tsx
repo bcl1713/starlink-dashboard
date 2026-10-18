@@ -50,7 +50,8 @@ export function OperatorAlertSettings({
             </label>
           ))}
           <button
-            className="min-h-11 w-full rounded-md border px-3"
+            className="min-h-11 w-full rounded-md border px-3 disabled:opacity-50"
+            disabled={!delivery}
             onClick={() => {
               void onEnable();
             }}

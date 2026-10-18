@@ -57,6 +57,11 @@ minor findings were reported. The complete backend suite also exposed status
 latency while admission was held; status assembly now runs off the event loop
 and uses the actual coordinator configuration for the fallback service.
 
+The later LAN-inclusive run exposed an early audio-enable gesture before the
+first feed snapshot initialized its output. A focused regression reproduced the
+race. The enable button now waits for output readiness, and all 1,829 frontend
+tests pass after correction.
+
 ## Decisions and limits
 
 - Retain existing source time bases rather than introduce transport ETA

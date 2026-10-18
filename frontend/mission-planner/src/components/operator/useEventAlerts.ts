@@ -50,6 +50,7 @@ export function useEventAlerts(events: OperatorEventsState) {
   }, [events.visible, preferences.enabled, events.failed]);
   useEffect(() => {
     setBatch(null);
+    setDelivery(null);
     if (!scope) return;
     const storageKey = `operator-alert-emissions:${scope}`;
     const emitted = new Map<string, number>();
