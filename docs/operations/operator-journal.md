@@ -126,12 +126,14 @@ capture revision/time; no cross-store atomic capture is claimed. The Operator
 capture timestamp is the retained `recorded_at` at H, explicitly labeled as
 revision time, not a fresh wall-clock preparation timestamp.
 
-Issue #370 must persist these frozen bytes, checksums and manifest with its
-preparation job before acknowledgment, and reuse them after restart. It must add
-the actual component capture times and mission/archive capture revisions through
-the existing preparation boundary. This contract adds no ZIP builder, export
-route or job; planning-only and telemetry-only artifact contracts remain
-unchanged.
+Normal mission ZIP preparation persists these frozen bytes, checksums and
+manifest with its existing job before acknowledgment and reuses them after
+restart. The outer archive records actual component capture intervals and
+planning/telemetry revision boundaries. No additional export route or workflow
+is required. Ordinary mission-plan imports ignore archival journal members and
+never restore them into the destination Operator database. See
+[Mission ZIP journal archive](mission-journal-archive.md) for the complete
+package, independent validation and rollback contract.
 
 Process-kill tests verify atomic old-or-complete commands and exact receipt
 retries, including committed uncheckpointed WAL. Conservative WAL preflight
@@ -192,7 +194,8 @@ receipts.
 
 The acceptance report distinguishes the tested product SHA from later evidence
 commits. Required CI still applies to the final pull-request head. Projection
-artifacts are foundation contracts; mission-package integration remains #370.
+artifacts remain foundation contracts; normal mission-package preparation now
+includes their complete archival snapshot through issue #370.
 
 ## Operator workspace shell
 

@@ -354,3 +354,161 @@ def test_renderer_revision_replaces_current_package(tmp_path, monkeypatch):
         assert service.start("m").id == updated.id
         with service.open_download("m", first.id).stream as stream:
             assert stream.read() == old_bytes
+
+
+def test_archive_snapshot_persisted_before_ack_and_changes_invalidate_cache(
+    tmp_path, monkeypatch
+):
+    import json
+
+    snapshot = {
+        "schema_version": 1,
+        "capture_policy": "sequential_component_snapshots",
+        "components": {},
+        "files": {"operations/current.json": "[]\n"},
+    }
+    with runtime(tmp_path, monkeypatch, archive_capture=lambda _: snapshot) as (
+        service,
+        _,
+    ):
+        first = wait_state(service, service.start("m"), {"ready"})
+        assert service.jobs.archive(first.id)["files"] == snapshot["files"]
+        assert service.start("m").id == first.id
+        with service.open_download("m", first.id).stream as stream, zipfile.ZipFile(
+            stream
+        ) as archive:
+            assert json.loads(archive.read("operations/current.json")) == []
+        snapshot = dict(
+            snapshot, files={"operations/current.json": '[{"version":2}]\n'}
+        )
+        second = wait_state(service, service.start("m"), {"ready"})
+        assert first.fingerprint != second.fingerprint
+        with service.open_download("m", first.id).stream as stream, zipfile.ZipFile(
+            stream
+        ) as archive:
+            assert json.loads(archive.read("operations/current.json")) == []
+
+
+def test_elected_worker_uses_persisted_journal_not_later_capture(tmp_path, monkeypatch):
+    from app.mission.package.preparation_worker import PreparationWorker
+
+    old_run = PreparationWorker.run
+    monkeypatch.setattr(PreparationWorker, "run", lambda self: None)
+    original = {
+        "schema_version": 1,
+        "capture_policy": "sequential_component_snapshots",
+        "components": {},
+        "files": {"operations/current.json": "[]\n"},
+    }
+    with runtime(tmp_path, monkeypatch, archive_capture=lambda _: original) as (
+        first,
+        _,
+    ):
+        job = first.start("m")
+        assert first.jobs.archive(job.id)["files"] == original["files"]
+        # Simulate lost in-memory state after a crash, rather than graceful cancellation.
+        first.captures.clear()
+        first.close()
+        monkeypatch.setattr(PreparationWorker, "run", old_run)
+
+        def forbidden_capture(_):
+            raise AssertionError("Restart must not recapture Operator history")
+
+        second = type(first)(
+            None,
+            None,
+            enabled=False,
+            cache=first.cache,
+            archive_capture=forbidden_capture,
+        )
+        try:
+            ready = wait_state(second, job, {"ready"})
+            with second.open_download("m", ready.id).stream as stream, zipfile.ZipFile(
+                stream
+            ) as archive:
+                assert archive.read("operations/current.json") == b"[]\n"
+        finally:
+            second.close()
+
+
+def test_archive_storage_budget_rejection_is_atomic_and_reclaimed(
+    tmp_path, monkeypatch
+):
+    from app.mission.package import preparation_store as module
+
+    monkeypatch.setattr(module, "MAX_ARCHIVE_SNAPSHOT_BYTES", 1024)
+    monkeypatch.setattr(module, "MAX_ARCHIVE_STORAGE_BYTES", 1600)
+    store = module.PreparationStore(SlideStore(tmp_path / "slides.sqlite3"))
+
+    def job(identity):
+        return module.ExportPreparation(
+            id=identity,
+            mission_id="m",
+            state="queued",
+            fingerprint="f",
+            queued_at=0,
+            deadline=600,
+        )
+
+    with pytest.raises(RuntimeError, match="snapshot.*limit"):
+        store.write(job("oversize"), archive={"files": {"a": "x" * 1024}})
+    with pytest.raises(KeyError):
+        store.read("m", "oversize")
+    snapshot = {"files": {"a": "x" * 900}}
+    store.write(job("one"), archive=snapshot)
+    with pytest.raises(RuntimeError, match="storage.*limit"):
+        store.write(job("two"), archive=snapshot)
+    with pytest.raises(KeyError):
+        store.read("m", "two")
+    assert store.archive("one") == snapshot
+    store.discard_archive("one")
+    store.write(job("two"), archive=snapshot)
+    assert store.archive("two") == snapshot
+
+
+def test_archive_capture_serializes_concurrent_requests(tmp_path, monkeypatch):
+    entered, release = threading.Event(), threading.Event()
+
+    def capture(_):
+        entered.set()
+        assert release.wait(3)
+
+    with runtime(tmp_path, monkeypatch, archive_capture=capture) as (service, _):
+        result = []
+        thread = threading.Thread(target=lambda: result.append(service.start("m")))
+        thread.start()
+        try:
+            assert entered.wait(2)
+            with pytest.raises(RuntimeError, match="capture.*progress"):
+                service.start("m")
+        finally:
+            release.set()
+            thread.join(3)
+        assert not thread.is_alive()
+        assert len(result) == 1
+
+
+def test_restart_releases_terminal_and_missing_ready_archive_snapshots(
+    tmp_path, monkeypatch
+):
+    from app.mission.package.preparation_store import ExportPreparation
+
+    with runtime(tmp_path, monkeypatch) as (service, _):
+        service.close()
+        for state in ("cancelled", "failed", "superseded", "expired", "ready"):
+            job = ExportPreparation(
+                id=state,
+                mission_id="m",
+                state=state,
+                fingerprint="f",
+                queued_at=0,
+                deadline=600,
+                expires_at=time.time() + 1800,
+            )
+            service.jobs.write(job, archive={"files": {"a": "retained until recovery"}})
+        service.recover()
+        assert service.jobs.read("m", "ready").state == "failed"
+        assert all(
+            service.jobs.archive(state) is None
+            for state in ("cancelled", "failed", "superseded", "expired", "ready")
+        )

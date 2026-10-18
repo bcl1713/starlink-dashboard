@@ -115,3 +115,20 @@ if models_enabled:
                 "SELECT count(*) FROM event_acknowledgments a JOIN event_occurrences o USING (occurrence_id) WHERE json_extract(o.event_json, '$.provenance')='modeled'"
             ).fetchone()[0]
         return {"synthetic": True, "modeledAcknowledgments": count}
+
+
+if os.getenv("OPERATOR_ARCHIVE_ACCEPTANCE") == "true":
+    from archive_fixture import initialize
+
+    from contextlib import asynccontextmanager
+    import asyncio
+
+    original_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def archive_lifespan(application):
+        async with original_lifespan(application):
+            await asyncio.to_thread(initialize, main, root)
+            yield
+
+    app.router.lifespan_context = archive_lifespan

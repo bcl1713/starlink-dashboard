@@ -44,3 +44,18 @@ sealed revision and releases its rolling-data retention pin. The manifest names
 unresolved raw intervals and missing metrics. A later explicit event correction
 creates a new revision and retries missing source history, reusing observations
 from prior sealed revisions even after the rolling buffer has expired.
+
+## Complete mission archive and plan transfer
+
+The normal mission ZIP also captures the enabled Operator journal and the
+per-leg telemetry archives from issue #349. It preserves customer PDF generation
+and the same planning/import files and controls. Journal files are checksummed
+under `operations/`; existing telemetry members retain their schemas under
+`telemetry/`. Capture boundaries are sequential and explicitly labeled. Zero-leg
+drafts remain exportable with telemetry marked not applicable.
+
+Ordinary import transfers planning data only; it never restores the archived
+Operator journal or telemetry into active destination stores. Keep the original
+ZIP as the historical record. See
+[Mission ZIP journal archive](../operations/mission-journal-archive.md) for
+contents, independent validation, retention, restart and rollback behavior.

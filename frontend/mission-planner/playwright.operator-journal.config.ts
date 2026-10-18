@@ -7,6 +7,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   testMatch: [
     'operator-journal.spec.ts',
+    ...(process.env.OPERATOR_ARCHIVE_ACCEPTANCE === 'true'
+      ? ['operator-archive.spec.ts']
+      : []),
     ...(process.env.OPERATOR_TRANSPORT_ACCEPTANCE === 'true'
       ? ['operator-transport.spec.ts']
       : []),

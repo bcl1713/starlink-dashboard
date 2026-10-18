@@ -1,0 +1,35 @@
+{
+  "activity_included": true,
+  "api_epoch": "0214654a-ebdb-4bbb-8ef5-d7190ed273a2",
+  "audit_included": true,
+  "capture_policy": "operator_snapshot; planning_associations_derived_unpinned",
+  "capture_time_basis": "operator_recorded_at_at_H; no_wall_clock_capture_time",
+  "checksums": {
+    "operations/activity.jsonl": "631690e598b67ef97df042af142d21f2007877cab760d140e34dc446d1e6c2b7",
+    "operations/audit.jsonl": "171ff4e76975f88a1a981e15614e00b67c812d226580010d511d6be81cee980f",
+    "operations/current.json": "ed6d72f13ff5b75640ab3cad1fd488235b89bf0df547fd1e094a0935fe579554",
+    "operations/events.json": "f1018953d46142584cd8898f630af72f101d4a79ce7630297f0f04b06cbeb5c4",
+    "operations/handover.txt": "5e7510d8dc2ff3a5bf311476856ab675eb62a67bc63992e45867fb587a85ec26",
+    "operations/journal.json": "384d77222c6a4568045066fee493a14fd5544cd870a75a7d3995283839e1e608"
+  },
+  "component_capture_times": {
+    "operator": "2026-10-17T19:00:00.000000Z",
+    "planning": null
+  },
+  "high_water": 39,
+  "mission_id": "synthetic-mission-a",
+  "projections": {
+    "operations/activity.jsonl": "activity",
+    "operations/audit.jsonl": "full_historical_audit",
+    "operations/current.json": "current_state",
+    "operations/events.json": "persisted_event_history",
+    "operations/handover.txt": "current_snapshot_handover",
+    "operations/journal.json": "versioned_chronological_journal"
+  },
+  "schema_version": 1,
+  "simulation_run_id": "synthetic-operator-demo-v1",
+  "source_capture_revisions": { "operator": 39, "planning": null },
+  "source_mode": "simulation",
+  "store_id": "2772b9e3-f38e-422e-856e-47079de945b4",
+  "unresolved_associations": []
+}

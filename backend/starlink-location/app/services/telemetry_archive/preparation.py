@@ -52,13 +52,21 @@ class TelemetryPreparationService:
                 (job.model_dump_json(), job.id, job.mission_id),
             )
 
-    def start(self, mission_id: str, allow_partial: bool = False):
+    def capture_snapshot(
+        self,
+        mission_id: str,
+        allow_partial: bool = False,
+        *,
+        allow_empty: bool = False,
+        max_input_bytes: int | None = None,
+    ):
         mission = self.load_mission(mission_id)
         if mission is None:
             raise KeyError("Mission not found")
         captures = []
+        budget = [max_input_bytes] if max_input_bytes is not None else None
         for leg in mission.legs:
-            capture = self.archive.capture(mission_id, leg.id)
+            capture = self.archive.capture(mission_id, leg.id, budget=budget)
             if capture is None:
                 capture = {
                     "schema_version": 1,
@@ -79,24 +87,28 @@ class TelemetryPreparationService:
                     "samples": self.archive.samples(
                         datetime.fromisoformat(capture["start"]),
                         datetime.fromisoformat(capture["available_until"]),
+                        budget=budget,
                     )
                 }
             captures.append(capture)
-        if not captures or (
+        if (not captures and not allow_empty) or (
             not allow_partial
             and any(not capture.get("complete") for capture in captures)
         ):
             raise ValueError(
                 "Mission telemetry is incomplete; request a labeled partial package"
             )
+        return {
+            "mission_id": mission_id,
+            "captures": captures,
+            "allow_partial": allow_partial,
+        }
+
+    def start(self, mission_id: str, allow_partial: bool = False):
         snapshot = json.dumps(
-            {
-                "mission_id": mission_id,
-                "captures": captures,
-                "allow_partial": allow_partial,
-            },
-            sort_keys=True,
+            self.capture_snapshot(mission_id, allow_partial), sort_keys=True
         )
+        captures = json.loads(snapshot)["captures"]
         fingerprint = hashlib.sha256(snapshot.encode()).hexdigest()
         now = self.clock()
         job = ExportPreparation(

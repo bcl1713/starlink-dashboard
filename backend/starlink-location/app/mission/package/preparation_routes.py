@@ -1,10 +1,12 @@
 """Preparation is explicit; downloads only open already owned ready files."""
 
+import sqlite3
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
 
 from app.mission.exporter.snapshot_inputs import SnapshotCaptureError
+from app.operator.errors import OperatorError
 
 from .export_job import download_response
 from .preparation_store import ExportPreparation
@@ -51,6 +53,10 @@ def start_preparation(
             if artifact_kind == "telemetry"
             else service.start(mission_id)
         )
+    except (OperatorError, RuntimeError, OSError, sqlite3.Error) as error:
+        raise HTTPException(
+            503, detail="Mission archive capture unavailable; retry after recovery"
+        ) from error
     except ValueError as error:
         raise HTTPException(409, str(error))
     except KeyError:

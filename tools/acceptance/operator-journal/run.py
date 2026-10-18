@@ -555,14 +555,26 @@ def run(
     events=False,
     models=False,
     transport=False,
+    archive=False,
 ):
     validate_candidate(ROOT, candidate)
     evidence = Path(evidence).resolve()
     if evidence.exists():
         raise ValueError("Use a new evidence directory reserved for this run")
     owner = Owner(project, evidence)
-    if transport:
+    if transport or archive:
         owner.deadline += 1800
+    if archive:
+        owner.env.update(
+            OPERATOR_ARCHIVE_ACCEPTANCE="true",
+            OPERATOR_MODEL_ALERTS_ACCEPTANCE="true",
+            COMPOSE_PROFILES="archive",
+        )
+        owner.ownership["volumes"] += [
+            f"{project}_destination-data",
+            f"{project}_destination-routes",
+        ]
+        owner.persist()
     if models or transport:
         owner.env["OPERATOR_MODEL_ALERTS_ACCEPTANCE"] = "true"
     if events:
@@ -579,6 +591,10 @@ def run(
     try:
         owner.admit()
         report.update(build_candidate(owner, candidate))
+        if archive:
+            from archive_qualification import qualify_archive
+
+            qualification = qualify_archive
         if transport:
             from transport_qualification import qualify_transport
 
@@ -636,6 +652,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Qualify transport decisions with real model inputs",
     )
+    parser.add_argument(
+        "--archive",
+        action="store_true",
+        help="Qualify single ZIP archival and clean-instance plan transfer",
+    )
     args = parser.parse_args()
     print(
         json.dumps(
@@ -646,6 +667,7 @@ if __name__ == "__main__":
                 events=args.events,
                 models=args.model_alerts,
                 transport=args.transport,
+                archive=args.archive,
             ),
             indent=2,
         )

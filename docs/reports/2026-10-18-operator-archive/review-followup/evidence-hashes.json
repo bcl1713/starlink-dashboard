@@ -1,0 +1,23 @@
+{
+  "archive-browser.json": "34e77f6fbffdad0f795e312ba976f151e85e88974d0af72a39ac3813c535cfea",
+  "archive-existing-import-controls.png": "c5d91b452cfa710056b03cfb36dbec2428f634bedd1edb55748fbd3473595418",
+  "archive-export-1920x1080.png": "759fceecd43f0f5a0f715d2506a3c1bb80e1f04a2be361d44b98b391044f584f",
+  "archive-export-390x844.png": "732bbf5967a7e69db7d70408581fe1f0dd777a4c522418369eb1f2380456bda9",
+  "archive-export-844x390.png": "e7f43d6f7f5c629bd8f085ef29be73129f1cc6780b25717025abef0e8405bc3d",
+  "archive-failure.json": "9c2b2651fe6bd3f77e5352a99ae675e5eba29e1a93ccf5d6b79515c3b9a8ff68",
+  "archive-limits.json": "f8580b1f699cbe0c6a47d464f6ccd52f8f6a56b60048f69fbeb6a76c38e7c454",
+  "archive-operator-1920x1080.png": "209067ff9c43cf39c777ffadcc011d3a9c328fbd8f0f3cc9e62b6374fc6cb207",
+  "archive-operator-390x844.png": "27fc0918c3e5e6a6fd1de548b8478aafb5f069316b692373134566aa12bce06b",
+  "archive-operator-844x390.png": "7ffd51acc4fedadd0401d01b4a2934343a65a25dce9c45bf14a88582a5369320",
+  "archive-restart.json": "027c8770f7ef519ecbd4ffcbbe1fe7ea8a39fb02f9578075bd0387e0b8a8b956",
+  "archive-roundtrip.json": "c603c2f880af514b54dd9acc32907880a93f5ff9eaf49d28e8e3ed51b07eebae",
+  "focused-tests.log": "5b35ce5880c2c891bd780b62cd56de1ddfba2510b7f7b086fb19631821cfb0c2",
+  "frontend-build.log": "dfabc59ec9a839fa536bf53c93576a395493c9f6cf3beefc1e68e717374f385b",
+  "frontend-tests.log": "c1e49edf742cad0c4b80eb7995ca9693285dbab7ebe62cb951f203189986ce95",
+  "harness-tests.log": "3399ae007cba3db519bbeb87bcddb47686f5531851572b4bde3adfae232b2a89",
+  "import-lifecycle-tests.log": "cac7beb04958c4482c596f1ef142e3bd9a7b2483e0a37f7bf05e9221e04b83e8",
+  "preparation-tests.log": "2df880d6940f7efdac9966763771c3d25ee29bf3620ce0d31f6b40ea3c520eb5",
+  "production-summary.json": "9ba120704bc703b6bff5dc3d7f51869a7599097abc9885a2801d528f718a9976",
+  "synthetic-complete-mission.zip": "2fe8377d35d591e9655af1b3a5fb2a4832d7875cfceaf4f5a06ae57f736b4f1e",
+  "synthetic-customer-brief.pdf": "b1e394a7cdf0a22809224caa426c097f74b20ed6b121812c7017d1c911d05daa"
+}

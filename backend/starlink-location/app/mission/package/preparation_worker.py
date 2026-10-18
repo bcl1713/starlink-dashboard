@@ -53,6 +53,7 @@ class PreparationWorker:
                 self.path(job.id).unlink(missing_ok=True)
             elif job.state == "ready":
                 if not self.path(job.id).exists():
+                    self.jobs.discard_archive(job.id)
                     self.jobs.write(
                         job.model_copy(
                             update={
@@ -64,6 +65,8 @@ class PreparationWorker:
                     )
                 else:
                     self.status(job.mission_id, job.id)
+            elif job.state in TERMINAL:
+                self.jobs.discard_archive(job.id)
         for partial in self.artifacts.glob("*.part"):
             partial.unlink()
 
@@ -122,6 +125,22 @@ class PreparationWorker:
                 cancel=cancel,
                 on_stage=lambda stage: self.stage(job, stage),
             )
+            archive = self.jobs.archive(job.id)
+            if archive is not None:
+                from .operations_archive import append_archive
+
+                try:
+                    enhanced = append_archive(
+                        download.stream,
+                        archive,
+                        planning_fingerprint=self.fingerprint(raw),
+                        cancel=cancel,
+                    )
+                finally:
+                    download.stream.close()
+                from .customer_artifacts import MissionPackageDownload
+
+                download = MissionPackageDownload(enhanced, download.briefing)
             with download.stream as source, partial.open("xb") as target:
                 for block in iter_zip_blocks(source):
                     if cancel.is_set():
@@ -172,6 +191,8 @@ class PreparationWorker:
         finally:
             partial.unlink(missing_ok=True)
             self.captures.pop(job.id, None)
+            if self.jobs.read(job.mission_id, job.id).state != "ready":
+                self.jobs.discard_archive(job.id)
 
     def finish(self, job, state, error=None):
         with self.guard:
@@ -187,6 +208,7 @@ class PreparationWorker:
                         }
                     )
                 )
+            self.jobs.discard_archive(job.id)
 
     def run(self):
         lock = FileLock(str(self.cache.path.with_suffix(".export-assembly.lock")))
@@ -212,7 +234,10 @@ class PreparationWorker:
                                 raw = self.captures.get(job.id) or self.capture(
                                     job.mission_id
                                 )
-                                if self.fingerprint(raw) != job.fingerprint:
+                                if (
+                                    self.fingerprint(raw, self.jobs.archive(job.id))
+                                    != job.fingerprint
+                                ):
                                     self.finish(job, "superseded")
                                     continue
                                 self.captures[job.id] = raw

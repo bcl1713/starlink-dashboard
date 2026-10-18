@@ -108,28 +108,41 @@ class ArchiveStore:
                 "INSERT OR IGNORE INTO samples VALUES (?, ?, ?, ?, ?, ?)", normalized
             )
 
-    def samples(self, start: datetime, end: datetime) -> list[dict]:
+    def samples(self, start: datetime, end: datetime, *, budget=None) -> list[dict]:
         with self.ledger.connect() as db:
-            return self._samples(db, start, end)
+            return self._samples(db, start, end, budget=budget)
 
-    def _samples(self, db, start, end):
+    def _samples(self, db, start, end, *, budget=None):
         rows = db.execute(
             "SELECT ts, metric, labels, value, observed_at FROM samples WHERE ts>=? AND ts<=? AND mode='live' ORDER BY ts, metric, labels",
             (start.timestamp(), end.timestamp()),
-        ).fetchall()
-        return [
-            {
-                "timestamp": datetime.fromtimestamp(row[0], timezone.utc).isoformat(),
-                "metric": row[1],
-                "labels": json.loads(row[2]),
-                "value": row[3],
-                "observed_at": row[4],
-            }
-            for row in rows
-        ]
+        )
+        result = []
+        for row in rows:
+            if budget is not None:
+                budget[0] -= (
+                    512
+                    + len(row[1].encode("utf-8"))
+                    + len(row[2].encode("utf-8"))
+                    + len((row[4] or "").encode("utf-8"))
+                )
+                if budget[0] < 0:
+                    raise RuntimeError("Telemetry archive input size limit exceeded")
+            result.append(
+                {
+                    "timestamp": datetime.fromtimestamp(
+                        row[0], timezone.utc
+                    ).isoformat(),
+                    "metric": row[1],
+                    "labels": json.loads(row[2]),
+                    "value": row[3],
+                    "observed_at": row[4],
+                }
+            )
+        return result
 
     def capture(
-        self, mission_id: str, leg_id: str, revision: str | None = None
+        self, mission_id: str, leg_id: str, revision: str | None = None, *, budget=None
     ) -> dict | None:
         with self.ledger.connect() as db:
             if revision is None:
@@ -140,6 +153,14 @@ class ArchiveStore:
                 if not row:
                     return None
                 revision = row[0]
+            if budget is not None:
+                size = db.execute(
+                    "SELECT length(CAST(payload AS BLOB)) FROM captures WHERE mission=? AND leg=? AND revision=?",
+                    (mission_id, leg_id, revision),
+                ).fetchone()
+                budget[0] -= size[0] if size else 0
+                if budget[0] < 0:
+                    raise RuntimeError("Telemetry archive input size limit exceeded")
             row = db.execute(
                 "SELECT payload FROM captures WHERE mission=? AND leg=? AND revision=?",
                 (mission_id, leg_id, revision),
