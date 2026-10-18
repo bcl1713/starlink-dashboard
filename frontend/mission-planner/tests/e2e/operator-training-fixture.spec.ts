@@ -106,6 +106,65 @@ test('training fixture: normal replay across two legs preserves journal, receipt
     await expect(editor).toHaveCount(0);
     await health();
   }
+  expect(mission.metadata.operator_training_fixture.namespace).toBe(
+    initial.simulation_run_id
+  );
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`/operator?workspace=1&mission_id=${id}`);
+    await page.getByRole('button', { name: 'Help', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+      .click();
+    const guide = page.getByRole('complementary', {
+      name: 'Guided mission walkthrough',
+    });
+    await expect(guide).toBeVisible();
+    await guide.getByText('Restart and reset', { exact: true }).click();
+    await guide
+      .getByRole('button', { name: 'Reset guide progress', exact: true })
+      .click();
+    await expect(guide.getByRole('heading', { name: /T01/ })).toBeVisible();
+    await guide
+      .getByRole('button', { name: 'Check current evidence', exact: true })
+      .click();
+    await expect(
+      guide.getByRole('button', { name: 'Check current evidence', exact: true })
+    ).toBeEnabled();
+    await expect(guide.getByText('Incomplete', { exact: true })).toBeVisible();
+    await guide
+      .getByRole('button', { name: 'Next lesson', exact: true })
+      .click();
+    await guide
+      .getByRole('button', { name: 'Open lesson controls', exact: true })
+      .click();
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Operator workspace' })
+        .getByRole('button', { name: 'Communications', exact: true })
+    ).toHaveAttribute('aria-current', 'page');
+    await guide
+      .getByRole('button', { name: 'Skip lesson', exact: true })
+      .click();
+    await guide.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(guide.getByText('Skipped', { exact: true })).toBeVisible();
+    await guide.getByRole('heading', { name: /T02/ }).scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: join(
+        root,
+        `guide-controls-${viewport.width}x${viewport.height}.png`
+      ),
+    });
+    await guide
+      .getByRole('button', { name: 'Dismiss guide', exact: true })
+      .click();
+    await expect(guide).toHaveCount(0);
+  }
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await note('Synthetic learner preflight', 'preflight');
   const ackResponse = page.waitForResponse(
     (response) =>

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMission } from '@/hooks/api/useMissions';
 import {
@@ -49,6 +49,11 @@ import { capabilityInput } from '../capabilityInput';
 import { IssuesView } from './IssuesView';
 import { IssueActivity } from '../IssueActivity';
 import { issueInput, instant } from '../issueForms';
+import { GuidedMission } from '../training/GuidedMission';
+import { trainingContext } from '../training/trainingContext';
+import { collectEventEvidence } from '../training/trainingEventEvidence';
+import { readTrainingRecords } from '../training/readTrainingRecords';
+import type { TrainingEvidence } from '../training/trainingSteps';
 import './workspace.css';
 
 const views = [
@@ -63,6 +68,7 @@ type View = (typeof views)[number];
 
 export function OperatorWorkspace() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const missionId = params.get('mission_id') ?? '';
   const requested = params.get('view');
   const view = views.find((view) => view.toLowerCase() === requested) ?? 'Now';
@@ -98,6 +104,44 @@ export function OperatorWorkspace() {
   const disabled = !missionId || !health.data?.ready || health.isError;
   const [tools, setTools] = useState(false);
   const [help, setHelp] = useState(false);
+  const [guide, setGuide] = useState(false);
+  const [checkedTraining, setCheckedTraining] = useState<
+    | (TrainingEvidence & {
+        identity: string;
+        H: number | undefined;
+        checkedAt: number;
+      })
+    | null
+  >(null);
+  const training = trainingContext(
+    health.data,
+    mission.data,
+    window.location.origin
+  );
+  const trainingIdentity = JSON.stringify(training?.identity);
+  const trainingEvents = training
+    ? collectEventEvidence({
+        identity: training.identity,
+        namespace: health.data!.simulation_run_id!,
+        snapshot: events.snapshot ?? null,
+        receivedAt: events.receivedAt,
+        browserNow: performance.now(),
+        activeLegId: null,
+        activeModelIdentity: null,
+      })
+    : null;
+  const trainingRecordsCurrent =
+    checkedTraining?.identity === trainingIdentity &&
+    checkedTraining.H === events.snapshot?.H &&
+    performance.now() - checkedTraining.checkedAt < 30_000;
+  const trainingEvidence: TrainingEvidence = {
+    available: trainingEvents?.available ?? false,
+    fresh: !events.failed && (trainingEvents?.fresh ?? false),
+    outcomes: [
+      ...(trainingEvents?.outcomes ?? []),
+      ...(trainingRecordsCurrent ? checkedTraining.outcomes : []),
+    ],
+  };
   const [mobileTools, setMobileTools] = useState(false);
   const [sources, setSources] = useState(false);
   const [activityId, setActivityId] = useState<string | null>(null);
@@ -343,6 +387,45 @@ export function OperatorWorkspace() {
         ))}
       </nav>
       <div className="ws-body">
+        {guide && training && (
+          <GuidedMission
+            identity={training.identity}
+            evidence={trainingEvidence}
+            onDismiss={() => setGuide(false)}
+            onCheckEvidence={async () => {
+              setCheckedTraining(null);
+              const checked = await readTrainingRecords(
+                training.identity,
+                health.data!.simulation_run_id!,
+                training.prerequisiteIds
+              );
+              setCheckedTraining({
+                ...checked,
+                identity: trainingIdentity,
+                checkedAt: performance.now(),
+              });
+              events.refresh();
+            }}
+            onOpenTarget={(stage) => {
+              if (['T05', 'T09', 'T10'].includes(stage))
+                navigate(`/missions/${encodeURIComponent(missionId)}`);
+              else
+                navigateView(
+                  stage === 'T02' || stage === 'T03'
+                    ? 'Communications'
+                    : stage === 'T06'
+                      ? 'Transport'
+                      : stage === 'T07'
+                        ? 'Issues'
+                        : stage === 'T08'
+                          ? 'Notes'
+                          : stage === 'T11'
+                            ? 'History'
+                            : 'Now'
+                );
+            }}
+          />
+        )}
         <OperatorStoreSetup
           health={health.data}
           error={health.error}
@@ -700,6 +783,26 @@ export function OperatorWorkspace() {
             independently. Keep a draft before changing mission; its target
             stays pinned.
           </p>
+          <button
+            className="ws-button"
+            onClick={() => {
+              if (training) {
+                setHelp(false);
+                setGuide(true);
+              } else setGuide(true);
+            }}
+          >
+            Guided mission walkthrough
+          </button>
+          {guide && !training && (
+            <p role="status">
+              Training requires a separate private instance on a nonproduction
+              computer. From the repository, run scripts/operator-training.sh
+              start --root /path/to/a/new-empty-training-root, then open its
+              printed address and select Fictional Meridian 21. The guide does
+              not switch this operational instance into training mode.
+            </p>
+          )}
           <p>
             Missions owns itinerary planning and mission records. Configuration
             owns global settings. All times are UTC; unknown times remain

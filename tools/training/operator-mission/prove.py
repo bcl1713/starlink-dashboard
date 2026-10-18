@@ -1,5 +1,6 @@
 """Exact-source browser seam proof; always tears down its disposable stack."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -55,6 +56,33 @@ def main():
             raise ValueError(
                 "Proof requires training images and browser tests from the same committed SHA"
             )
+        images = {}
+        for service in ("backend", "frontend"):
+            tag = f"{training.project}-{service}:{current}"
+            inspected = json.loads(runner.execute(["docker", "image", "inspect", tag]))[
+                0
+            ]
+            revision = inspected["Config"]["Labels"].get(
+                "org.opencontainers.image.revision"
+            )
+            if revision != current:
+                raise ValueError(
+                    "Training image revision does not match the committed candidate"
+                )
+            images[service] = {"tag": tag, "id": inspected["Id"], "revision": revision}
+        (root / "image-identity.json").write_text(
+            json.dumps(
+                {
+                    "candidateSha": current,
+                    "sourceArchiveSha256": hashlib.sha256(
+                        (root / "source.tar").read_bytes()
+                    ).hexdigest(),
+                    "images": images,
+                    "capturedAfterOwnedTeardown": False,
+                },
+                indent=2,
+            )
+        )
         runner.execute(
             [
                 "timeout",

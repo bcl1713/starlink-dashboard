@@ -1,0 +1,84 @@
+/** @vitest-environment jsdom */
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import { GuidedMission } from './GuidedMission';
+const identity = {
+  fixtureVersion: 1,
+  origin: 'http://localhost:4567',
+  storeId: 'private',
+  epoch: 'one',
+  missionId: 'fictional',
+};
+const evidence = { available: true, fresh: true, outcomes: [] };
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
+it('offers real controls without treating Next or Skip as completion', () => {
+  const open = vi.fn();
+  render(
+    <GuidedMission
+      identity={identity}
+      evidence={evidence}
+      onOpenTarget={open}
+      onDismiss={() => {}}
+    />
+  );
+  expect(screen.getByText('Private training · Simulation')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Open lesson controls' }));
+  expect(open).toHaveBeenCalledWith('T01');
+  fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }));
+  expect(screen.getByRole('heading', { name: /T02/ })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  expect(screen.getByText('Incomplete')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Skip lesson' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  expect(screen.getByText('Skipped')).toBeTruthy();
+});
+it('resumes navigation while preserving ordinary operator drafts and reset semantics', () => {
+  localStorage.setItem('operator-drafts', 'retained');
+  const { unmount } = render(
+    <GuidedMission
+      identity={identity}
+      evidence={evidence}
+      onOpenTarget={() => {}}
+      onDismiss={() => {}}
+    />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }));
+  unmount();
+  render(
+    <GuidedMission
+      identity={identity}
+      evidence={evidence}
+      onOpenTarget={() => {}}
+      onDismiss={() => {}}
+    />
+  );
+  expect(screen.getByRole('heading', { name: /T02/ })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Reset guide progress' }));
+  expect(screen.getByRole('heading', { name: /T01/ })).toBeTruthy();
+  expect(localStorage.getItem('operator-drafts')).toBe('retained');
+  expect(
+    screen.getByText(/Reset mission stops the owned training instance/)
+  ).toBeTruthy();
+});
+it('a changed store epoch starts separate progress and unavailable evidence is explicit', () => {
+  const props = {
+    identity,
+    evidence,
+    onOpenTarget: () => {},
+    onDismiss: () => {},
+  };
+  const { rerender } = render(<GuidedMission {...props} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Next lesson' }));
+  rerender(
+    <GuidedMission
+      {...props}
+      identity={{ ...identity, epoch: 'two' }}
+      evidence={{ ...evidence, available: false }}
+    />
+  );
+  expect(screen.getByRole('heading', { name: /T01/ })).toBeTruthy();
+  expect(screen.getByText('Evidence unavailable')).toBeTruthy();
+});
