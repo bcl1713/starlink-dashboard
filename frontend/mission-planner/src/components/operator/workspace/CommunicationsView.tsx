@@ -10,6 +10,7 @@ export function CommunicationsView({
   incomplete,
   asOf,
   onCreateCall,
+  onCreateActualCall,
   onCreateConference,
   onJoin,
   onEdit,
@@ -23,6 +24,7 @@ export function CommunicationsView({
   incomplete: boolean;
   asOf?: string;
   onCreateCall: () => void;
+  onCreateActualCall: () => void;
   onCreateConference: () => void;
   onJoin: (conference?: SavedRecord) => void;
   onEdit: (record: SavedRecord) => void;
@@ -59,6 +61,13 @@ export function CommunicationsView({
           onClick={onCreateCall}
         >
           Create call
+        </button>
+        <button
+          className="ws-button"
+          disabled={disabled}
+          onClick={onCreateActualCall}
+        >
+          Record completed call
         </button>
         <button
           className="ws-button"

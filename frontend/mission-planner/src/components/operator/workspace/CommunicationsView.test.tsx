@@ -14,6 +14,7 @@ import type { SavedRecord } from '@/types/operator';
 afterEach(cleanup);
 const callbacks = () => ({
   onCreateCall: vi.fn(),
+  onCreateActualCall: vi.fn(),
   onCreateConference: vi.fn(),
   onJoin: vi.fn(),
   onEdit: vi.fn(),

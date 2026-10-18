@@ -509,7 +509,7 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
       async function save(click: () => Promise<unknown>) {
         const response = page.waitForResponse(
           (response) =>
-            response.request().method() === 'POST' &&
+            ['POST', 'PUT'].includes(response.request().method()) &&
             /\/api\/v2\/operator\/records/.test(response.url())
         );
         await click();
@@ -573,10 +573,9 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
       expect(restored.record_id).not.toBe(
         restored.payload.resumes_participation_id
       );
-      await communications
+      await bridge
+        .locator('..')
         .getByRole('button', { name: 'Reuse conference', exact: true })
-        .filter({ visible: true })
-        .last()
         .click();
       await dialog
         .getByLabel('Participant (optional)')
@@ -629,4 +628,45 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
     join(evidence, 'workspace-communications.json'),
     JSON.stringify({ synthetic: true, receipts }, null, 2)
   );
+});
+
+test('hidden workspace: missing mission and unavailable store remain actionable at three sizes', async ({
+  browser,
+}) => {
+  for (const viewport of viewports) {
+    const context = await browser.newContext({ viewport });
+    try {
+      const page = await context.newPage();
+      await page.goto('/operator?workspace=1');
+      await expect(
+        page.getByRole('heading', { name: 'Choose a mission', exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'Browse missions', exact: true })
+      ).toBeVisible();
+      await page.route('**/api/v2/operator/health', (route) =>
+        route.abort('connectionrefused')
+      );
+      await page.goto(
+        `/operator?workspace=1&mission_id=${fixtures[0].mission.id}`
+      );
+      await expect(
+        page.getByRole('button', { name: 'Create call', exact: true })
+      ).toBeDisabled();
+      await expect(
+        page.getByRole('region', { name: 'Operator store setup' })
+      ).toContainText('unavailable');
+      await expect(
+        page.getByRole('button', { name: 'Recheck store', exact: true })
+      ).toBeEnabled();
+      await page.screenshot({
+        path: join(
+          evidence,
+          `unavailable-${viewport.width}x${viewport.height}.png`
+        ),
+      });
+    } finally {
+      await context.close();
+    }
+  }
 });

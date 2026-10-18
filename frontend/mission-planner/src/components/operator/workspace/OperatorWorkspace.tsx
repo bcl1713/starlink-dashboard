@@ -388,6 +388,9 @@ export function OperatorWorkspace() {
                 onCreateCall={() =>
                   openInput(callDraft(undefined, 'planned', missionId))
                 }
+                onCreateActualCall={() =>
+                  openInput(callDraft(undefined, 'retrospective', missionId))
+                }
                 onCreateConference={() => openInput(conferenceDraft(missionId))}
                 onJoin={(conference) =>
                   openInput(
