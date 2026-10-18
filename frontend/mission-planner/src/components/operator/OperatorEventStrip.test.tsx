@@ -146,3 +146,25 @@ it('waits for alert output before accepting the enable gesture', async () => {
     ).toBeEnabled()
   );
 });
+it('labels live route timing and keeps original UTC in source details', () => {
+  const events = state();
+  events.snapshot = eventSnapshot({
+    events: [
+      eventFixture({
+        provenance: 'modeled',
+        kind: 'restriction',
+        time_basis: 'live_route_eta',
+        planned_due_at: '2026-10-17T15:00:00Z',
+        planned_end_at: '2026-10-17T15:10:00Z',
+      }),
+    ],
+  });
+  render(
+    <MemoryRouter>
+      <OperatorEventStrip events={events} />
+    </MemoryRouter>
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Open events' }));
+  expect(screen.getByText(/Live route ETA/)).toBeVisible();
+  expect(screen.getByText(/Plan reference/)).toBeInTheDocument();
+});

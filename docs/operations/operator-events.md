@@ -59,11 +59,15 @@ inputs suppress obsolete notifications. Missing transport prerequisites remain
 visible without suppressing known restrictions on other transports.
 
 The existing #348 live route-aware ETA windows and observed PoP advisories
-remain in the same feed as visual advisories. Transport capability windows
-retain the existing mission model's UTC timing; this feed adds no new prediction
-algorithm. Saved timelines without current-input proof remain last-known
-information. Acknowledgment is optional and affects repeated alerts, never
-permission to use an estimate or operate a transport.
+remain in the same feed as visual advisories. Preflight restrictions use planned
+UTC. Airborne restrictions use the existing route-aware ETA calculator for their
+route boundaries; the displayed time and five-minute cue threshold share that
+estimate. The timeline labels live timing, with original UTC in source details.
+Unavailable live progress produces unknown timing, never an obsolete plan time
+presented as live. This feed adds no new transport prediction algorithm. Saved
+timelines without current-input proof remain last-known information.
+Acknowledgment is optional and affects repeated alerts, never permission to use
+an estimate or operate a transport.
 
 ## Acknowledgment and schedule changes
 
@@ -77,10 +81,12 @@ replacement.
 
 Explicit rescheduling creates a new notification occurrence for the affected
 milestone. Prediction revisions and small timing drift preserve acknowledgment.
-A sustained material shift can replace an occurrence; a sustained higher
-severity can notify once at that tier. Downgrading and returning to an already
-acknowledged tier does not re-arm it. Acknowledgment never removes an event from
-the timeline.
+Live ETA updates for the same geographic restriction preserve its occurrence and
+acknowledgment, including large departure delays or speed changes. A changed
+restriction boundary or route creates a replacement. Other sustained material
+model shifts can replace an occurrence; a sustained higher severity can notify
+once at that tier. Downgrading and returning to an already acknowledged tier
+does not re-arm it. Acknowledgment never removes an event from the timeline.
 
 ## Storage upgrade and backout
 

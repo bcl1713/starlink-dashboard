@@ -340,7 +340,24 @@ def models_proof(root):
             raise ValueError(f"Missing real-model evidence: {field}")
     if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
         raise ValueError("Missing real-model viewport evidence")
-    return proof
+    live = json.loads((root / "live-eta-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "rawInputsOnly",
+        "lateDeparture",
+        "earlyDeparture",
+        "speedThreshold",
+        "displayedTimeMatches",
+        "foregroundSoundOnce",
+        "deviationRejoin",
+        "revisedRoute",
+        "unavailableExplicit",
+    ):
+        if live.get(field) is not True:
+            raise ValueError(f"Missing live ETA evidence: {field}")
+    if live.get("viewports") != [1920, 390]:
+        raise ValueError("Missing live ETA viewport evidence")
+    return proof | {"liveEta": live}
 
 
 def qualify_models(owner):

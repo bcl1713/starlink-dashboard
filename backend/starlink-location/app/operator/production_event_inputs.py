@@ -34,6 +34,8 @@ class ModelInputs:
     pop_catalog: object
     context: dict
     coverage_sampler: object
+    position: object
+    sample_revision: str
     pop_unavailable: bool = False
 
     def prepare(self, leg):
@@ -158,5 +160,19 @@ def capture_current(adapter, mission_id, *, as_of):
         coverage,
     )
     return ModelInputs(
-        mission, sources, revision, catalog, context, sampler, catalog is None
+        mission,
+        sources,
+        revision,
+        catalog,
+        context,
+        sampler,
+        position,
+        identity(
+            position.latitude,
+            position.longitude,
+            position.speed,
+            position.observed_at,
+            position.speed_observed_at,
+        ),
+        catalog is None,
     )

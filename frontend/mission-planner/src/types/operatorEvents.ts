@@ -33,6 +33,9 @@ export interface OperationalEvent {
   source_captured_at: string | null;
   freshness: 'fresh' | 'stale' | 'unknown';
   confidence: string | null;
+  time_basis?: 'planned_utc' | 'live_route_eta' | 'live_unavailable' | null;
+  planned_due_at?: string | null;
+  planned_end_at?: string | null;
   transport: string | null;
   protected_participation_ids: string[];
   conference_ids: string[];

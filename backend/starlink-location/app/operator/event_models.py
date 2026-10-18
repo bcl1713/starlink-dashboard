@@ -55,6 +55,11 @@ class OperationalEvent(StrictModel):
     source_captured_at: UtcTimestamp | None = None
     freshness: Literal["fresh", "stale", "unknown"] = "fresh"
     confidence: str | None = None
+    time_basis: Literal["planned_utc", "live_route_eta", "live_unavailable"] | None = (
+        None
+    )
+    planned_due_at: UtcTimestamp | None = None
+    planned_end_at: UtcTimestamp | None = None
     transport: str | None = None
     protected_participation_ids: list[str] = Field(default_factory=list)
     conference_ids: list[str] = Field(default_factory=list)

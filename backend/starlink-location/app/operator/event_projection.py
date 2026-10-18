@@ -334,8 +334,25 @@ def derive_events(inputs, *, as_of, policy):
                     causes,
                     index,
                 )
+                boundaries = model.get("restriction_boundaries")
+                if boundaries is not None:
+                    key = identity(
+                        key,
+                        boundaries.get(start.isoformat()),
+                        boundaries.get(end.isoformat()),
+                    )
+                planned_start, planned_end = start, end
+                time_basis = model.get("time_basis")
+                if time_basis in ("live_route_eta", "live_unavailable"):
+                    start = _time(
+                        model.get("boundary_times", {}).get(start.isoformat())
+                    )
+                    end = _time(model.get("boundary_times", {}).get(end.isoformat()))
                 event = OperationalEvent(
                     **common,
+                    time_basis=time_basis,
+                    planned_due_at=planned_start if time_basis else None,
+                    planned_end_at=planned_end if time_basis else None,
                     event_id=key,
                     kind="restriction",
                     title=(transport + " " if transport else "Customer communications ")
@@ -349,7 +366,11 @@ def derive_events(inputs, *, as_of, policy):
                     end_at=end,
                     transport=transport,
                     significance=severity,
-                    **_window_state(start, end, as_of, source),
+                    **(
+                        _window_state(start, end, as_of, source)
+                        if start and end
+                        else {"active": True, "state": "unknown"}
+                    ),
                     schedule_key=key,
                     family_key=identity(
                         mission_id,

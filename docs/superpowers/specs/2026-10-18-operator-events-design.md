@@ -129,6 +129,11 @@ full-window planning outage rule applies only with Starshield as sole usable
 transport, accounting for usable Ka and coordinated concurrency-only X fallback
 through existing continuity logic.
 
+Airborne transport restriction timing follows the
+[live route ETA integration](2026-10-18-operator-live-eta-design.md). Planned
+UTC is preflight/reference data; live display and alert thresholds share the
+same refreshed ETA. This supersedes the former mission-UTC airborne time basis.
+
 ## Stable identity and notification generations
 
 Separate three concepts: operational event identity, source revision, and the
@@ -162,15 +167,16 @@ remain visual until two consistent fresh captures establish an actionable
 candidate. Never merge by title alone. Source revisions are retained as
 evidence, not notification generations.
 
-For modeled events, keep the accepted notification anchor and severity in the
-ledger. Timing drift below five minutes updates display without re-arming. A
-shift of at least five minutes must persist for two consecutive fresh captures
-at least 15 seconds apart before a replacement generation is accepted. Compare
-to the accepted anchor, not the immediately previous refresh, so gradual drift
-is handled. A replacement is cue-eligible only after the new threshold is
-crossed; moving an already due window around does not repeatedly cue. Once
-retired, a generation cannot become pending again. New route families obey
-catch-up and rate limits.
+Live route ETA refreshes preserve the geographic occurrence and acknowledgment;
+new route/boundary geometry replaces it. For other modeled events, keep the
+accepted notification anchor and severity in the ledger. Timing drift below five
+minutes updates display without re-arming. A shift of at least five minutes must
+persist for two consecutive fresh captures at least 15 seconds apart before a
+replacement generation is accepted. Compare to the accepted anchor, not the
+immediately previous refresh, so gradual drift is handled. A replacement is
+cue-eligible only after the new threshold is crossed; moving an already due
+window around does not repeatedly cue. Once retired, a generation cannot become
+pending again. New route families obey catch-up and rate limits.
 
 These are provisional software tuning defaults, not physically validated limits.
 An injected `EventPolicy` controls `model_shift_seconds=300`,

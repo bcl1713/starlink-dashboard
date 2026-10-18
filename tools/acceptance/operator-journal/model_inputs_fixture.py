@@ -4,12 +4,11 @@ import json
 from datetime import timedelta
 from pathlib import Path
 
-from events_fixture import EventsClock, seed_events
-from scenario import START
-
 from app.mission import storage
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
 from app.operator.time_models import utc_timestamp
+from events_fixture import EventsClock, seed_events
+from scenario import START
 
 MISSION, LEG = "synthetic-mission-a", "synthetic-leg-1"
 
@@ -33,7 +32,11 @@ class ModelInputsFixture:
             if self.path.exists()
             else {
                 "now": clock.now().isoformat(),
-                "longitude": -5,
+                "longitude": -9.5,
+                "latitude": 0,
+                "speed": 600,
+                "route_latitude": 0,
+                "phase": "in_flight",
                 "route_shift": 14,
                 "satellite_longitude": 90,
                 "stale": False,
@@ -131,7 +134,7 @@ class ModelInputsFixture:
                 ),
                 points=[
                     RoutePoint(
-                        latitude=0,
+                        latitude=state["route_latitude"] if i == 1 else 0,
                         longitude=lon,
                         sequence=i,
                         expected_arrival_time=start + timedelta(minutes=minute),
@@ -149,12 +152,36 @@ class ModelInputsFixture:
             manager.add_route(route_id, route)
             manager.activate_route(route_id)
             sample = coordinator.get_current_telemetry().model_copy(deep=True)
-            sample.position.latitude, sample.position.longitude = 0, state["longitude"]
-            sample.position.speed, sample.position.heading = 600, 90
+            sample.position.latitude, sample.position.longitude = (
+                state["latitude"],
+                state["longitude"],
+            )
+            sample.position.speed, sample.position.heading = state["speed"], 90
             observed = self.clock.now() - timedelta(seconds=60 if state["stale"] else 0)
             sample.position.observed_at = observed
             sample.position.speed_observed_at = observed
             coordinator.restore_telemetry(sample)
+            from dataclasses import replace
+
+            from app.models.flight_status import ETAMode, FlightPhase
+            from app.services.flight_state import get_flight_state_manager
+
+            flight = get_flight_state_manager()
+            checkpoint = flight.checkpoint()
+            status = checkpoint.status.model_copy(
+                update={
+                    "phase": FlightPhase(state["phase"]),
+                    "eta_mode": (
+                        ETAMode.ESTIMATED
+                        if state["phase"] == "in_flight"
+                        else ETAMode.ANTICIPATED
+                    ),
+                    "departure_time": (
+                        self.clock.now() if state["phase"] == "in_flight" else None
+                    ),
+                }
+            )
+            flight.restore_checkpoint(replace(checkpoint, status=status))
             self.state = state
             self.path.write_text(json.dumps(state))
             return {"synthetic": True, "rawInputsOnly": True, "ids": self.ids, **state}

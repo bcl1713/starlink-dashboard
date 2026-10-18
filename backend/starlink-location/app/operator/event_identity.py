@@ -23,6 +23,7 @@ class ModelStability:
             e
             for e in events
             if e.active
+            and e.time_basis is None
             and e.kind == "restriction"
             and e.family_key
             and e.due_at
@@ -116,7 +117,8 @@ class ModelStability:
         )
         proposed_tier = event.notification.severity_generation
         moved = (
-            anchor is not None
+            event.time_basis != "live_route_eta"
+            and anchor is not None
             and abs((event.due_at - anchor).total_seconds())
             >= policy.model_shift_seconds
         )

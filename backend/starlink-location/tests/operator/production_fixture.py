@@ -68,6 +68,7 @@ def production(service, clock, tmp_path, monkeypatch):
     clock.advance(600)
     inputs["telemetry"].position.observed_at = clock.now()
     inputs["telemetry"].position.speed_observed_at = clock.now()
+    inputs["telemetry"].position.longitude = -9.5
     state = {"telemetry": inputs["telemetry"], "lifecycle": "run-1"}
     publication = EventPublication()
     adapter = ProductionEventSources(

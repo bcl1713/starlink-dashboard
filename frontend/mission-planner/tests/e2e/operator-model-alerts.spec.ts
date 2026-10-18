@@ -62,6 +62,11 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
   await raw(request, {
     now: '2026-10-17T16:10:00Z',
     route_shift: 14,
+    longitude: -9.5,
+    latitude: 0,
+    speed: 600,
+    phase: 'in_flight',
+    route_latitude: 0,
     stale: false,
     missing_pop: false,
     active: true,
@@ -265,7 +270,8 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     const moved = snapshot.events.find(
       (e) => e.kind === 'restriction' && e.transport === 'X' && e.active
     )!;
-    expect(moved.due_at).not.toBe(event.due_at);
+    expect(moved.planned_due_at).not.toBe(event.planned_due_at);
+    expect(moved.due_at).not.toBe(moved.planned_due_at);
     proof.routeScheduleUpdated = true;
     await raw(request, { active: false });
     snapshot = await feed(request);
@@ -306,6 +312,210 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     writeFileSync(
       join(evidence, 'model-alerts-proof.json'),
       JSON.stringify(proof, null, 2)
+    );
+  } finally {
+    for (const context of contexts) await context.close();
+  }
+});
+
+test('real model foreground warning follows airborne progress after late departure', async ({
+  browser,
+  request,
+}) => {
+  test.setTimeout(180_000);
+  await raw(request, {
+    now: '2026-10-17T16:55:00Z',
+    route_shift: 0,
+    longitude: -10,
+    latitude: 0,
+    speed: 300,
+    route_latitude: 0.1,
+    phase: 'in_flight',
+    active: true,
+    stale: false,
+    missing_pop: false,
+    invalid_ka: false,
+  });
+  const find = (snapshot: EventSnapshot) =>
+    snapshot.events.find(
+      (e) => e.kind === 'restriction' && e.transport === 'X' && e.active
+    )!;
+  const before = await feed(request);
+  const distant = find(before);
+  expect(distant.time_basis).toBe('live_route_eta');
+  expect(Date.parse(distant.planned_due_at!)).toBeLessThan(
+    Date.parse(before.as_of)
+  );
+  const remaining = Date.parse(distant.due_at!) - Date.parse(before.as_of);
+  expect(remaining).toBeGreaterThan(300_000);
+  expect(remaining).toBeLessThan(600_000);
+  expect(distant.notification.eligible).toBe(false);
+  await raw(request, { route_shift: 60 });
+  const early = find(await feed(request));
+  expect(early.due_at).toBe(distant.due_at);
+  expect(Date.parse(early.planned_due_at!)).toBeGreaterThan(
+    Date.parse(before.as_of)
+  );
+  await raw(request, { route_shift: 0 });
+  const contexts = [];
+  const times = [];
+  try {
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 390, height: 844 },
+    ]) {
+      const context = await browser.newContext({ viewport });
+      contexts.push(context);
+      await context.addInitScript(() => {
+        localStorage.setItem(
+          'operator-alert-preferences',
+          JSON.stringify({ enabled: false, sound: true, vibration: true })
+        );
+        (window as unknown as { soundAttempts: number }).soundAttempts = 0;
+        const original = AudioContext.prototype.createOscillator;
+        AudioContext.prototype.createOscillator = function () {
+          (window as unknown as { soundAttempts: number }).soundAttempts++;
+          return original.call(this);
+        };
+      });
+      const page = await context.newPage();
+      await page.goto(`${origin}/operator?mission_id=${mission}`);
+      await ready(page);
+      await page
+        .getByRole('button', { name: 'Local alerts', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Enable sound and vibration' })
+        .click();
+      await page.getByLabel('In-app cues', { exact: true }).check();
+      await page.getByRole('button', { name: 'Close settings' }).click();
+      await page
+        .getByRole('button', { name: 'Open events', exact: true })
+        .click();
+      const dialog = page.getByRole('dialog', { name: 'Operational timeline' });
+      await expect(
+        dialog.getByText('Live route ETA · fresh').first()
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { soundAttempts: number }).soundAttempts
+        )
+      ).toBe(0);
+    }
+    await raw(request, { speed: 1200 });
+    const near = await feed(request);
+    const approaching = find(near);
+    expect(approaching.notification.generation).toBe(
+      distant.notification.generation
+    );
+    expect(approaching.notification.eligible).toBe(true);
+    expect(
+      Date.parse(approaching.due_at!) - Date.parse(near.as_of)
+    ).toBeLessThan(300_000);
+    for (const context of contexts) {
+      const page = context.pages()[0];
+      await page
+        .getByRole('button', { name: 'Refresh events', exact: true })
+        .click();
+      const card = page
+        .getByRole('listitem')
+        .filter({ has: page.getByText(approaching.title, { exact: true }) })
+        .first();
+      await expect(
+        card.getByText(
+          new RegExp(approaching.due_at!.slice(0, 19).replace('T', ' '))
+        )
+      ).toBeVisible();
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => (window as unknown as { soundAttempts: number }).soundAttempts
+          )
+        )
+        .toBe(1);
+      await noOverflow(page);
+      await page.screenshot({
+        animations: 'disabled',
+        path: join(evidence, `live-eta-${page.viewportSize()!.width}.png`),
+      });
+    }
+    times.push({ scenario: 'late45min', distant, approaching });
+    await raw(request, { speed: 300, latitude: 1 });
+    const deviated = find(await feed(request));
+    expect(deviated.notification.eligible).toBe(false);
+    expect(deviated.event_id).toBe(distant.event_id);
+    for (const context of contexts) {
+      const page = context.pages()[0];
+      await page
+        .getByRole('button', { name: 'Refresh events', exact: true })
+        .click();
+      const card = page
+        .getByRole('listitem')
+        .filter({ has: page.getByText(deviated.title, { exact: true }) })
+        .first();
+      await expect(
+        card.getByText(
+          new RegExp(deviated.due_at!.slice(0, 19).replace('T', ' '))
+        )
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { soundAttempts: number }).soundAttempts
+        )
+      ).toBe(1);
+    }
+    await raw(request, { latitude: 0 });
+    const rejoined = find(await feed(request));
+    expect(
+      Math.abs(Date.parse(rejoined.due_at!) - Date.parse(deviated.due_at!))
+    ).toBeLessThan(2000);
+    await raw(request, { route_latitude: 0.2 });
+    const rerouted = find(await feed(request));
+    expect(rerouted.event_id).not.toBe(distant.event_id);
+    await raw(request, { speed: 0 });
+    const unavailable = find(await feed(request));
+    expect(unavailable.time_basis).toBe('live_unavailable');
+    expect(unavailable.due_at).toBeNull();
+    expect(unavailable.notification.eligible).toBe(false);
+    for (const context of contexts) {
+      const page = context.pages()[0];
+      await page
+        .getByRole('button', { name: 'Refresh events', exact: true })
+        .click();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { soundAttempts: number }).soundAttempts
+        )
+      ).toBe(1);
+    }
+    for (const context of contexts) {
+      await expect(
+        context
+          .pages()[0]
+          .getByText('Live timing unavailable · unknown')
+          .first()
+      ).toBeVisible();
+    }
+    writeFileSync(
+      join(evidence, 'live-eta-proof.json'),
+      JSON.stringify(
+        {
+          synthetic: true,
+          rawInputsOnly: true,
+          lateDeparture: true,
+          earlyDeparture: true,
+          speedThreshold: true,
+          displayedTimeMatches: true,
+          foregroundSoundOnce: true,
+          deviationRejoin: true,
+          revisedRoute: true,
+          unavailableExplicit: true,
+          viewports: [1920, 390],
+          times,
+        },
+        null,
+        2
+      )
     );
   } finally {
     for (const context of contexts) await context.close();

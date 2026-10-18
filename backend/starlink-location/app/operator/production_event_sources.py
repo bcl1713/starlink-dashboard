@@ -10,6 +10,7 @@ from .event_ledger import identity
 from .event_models import SourceCapture
 from .event_sources import EventSourceAdapter
 from .production_event_inputs import capture_current
+from .production_live_timing import attach_boundary_geometry, refresh_boundary_times
 
 
 class ProductionEventSources(EventSourceAdapter):
@@ -47,6 +48,12 @@ class ProductionEventSources(EventSourceAdapter):
         except (OSError, ValueError, TypeError, AttributeError, RuntimeError) as exc:
             raise OperatorError("event_source_unavailable", retryable=True) from exc
         if current.revision != revision:
+            raise OperatorError("event_snapshot_changed", retryable=True)
+
+    def _validate_timing(self, mission_id, revision, sample):
+        self._validate(mission_id, revision)
+        current = capture_current(self, mission_id, as_of=self.clock.now())
+        if current.sample_revision != sample:
             raise OperatorError("event_snapshot_changed", retryable=True)
 
     def capture(self, mission_id, *, as_of):
@@ -101,19 +108,45 @@ class ProductionEventSources(EventSourceAdapter):
                         guardable=True,
                         reason="Current mission transport estimate",
                     )
+                    attach_boundary_geometry(model, artifacts)
                     model["unavailable_inputs"] = missing
                     item = (inputs.revision, source, model)
+                model, timing_available = refresh_boundary_times(
+                    item[2], inputs, as_of=as_of
+                )
+                timed_source = item[1].model_copy(
+                    update={
+                        "revision": identity(item[2], model["time_basis"]),
+                        "generation": identity(inputs.revision, inputs.sample_revision),
+                        "captured_at": as_of,
+                        "freshness": "fresh" if timing_available else "unknown",
+                        "guardable": timing_available,
+                        "reason": (
+                            "Live route-aware transport estimate"
+                            if model["time_basis"] == "live_route_eta"
+                            else (
+                                "Preflight planning estimate"
+                                if timing_available
+                                else "Live restriction timing unavailable; planning times are reference only"
+                            )
+                        ),
+                    }
+                )
                 with storage.get_active_leg_lock():
-                    self._validate(mission_id, inputs.revision)
+                    self._validate_timing(
+                        mission_id, inputs.revision, inputs.sample_revision
+                    )
                     self.publication.publish(
-                        item[1],
-                        validate=lambda m=mission_id, r=inputs.revision: self._validate(
-                            m, r
+                        timed_source,
+                        validate=lambda m=mission_id, r=inputs.revision, t=inputs.sample_revision: self._validate_timing(
+                            m, r, t
                         ),
                     )
                     self.cache[key] = item
-                models[leg.id] = item[2]
-                sources = [s for s in sources if s.source != item[1].source] + [item[1]]
+                models[leg.id] = model
+                sources = [s for s in sources if s.source != timed_source.source] + [
+                    timed_source
+                ]
                 if item[2].get("unavailable_inputs"):
                     sources.append(
                         SourceCapture(
@@ -178,7 +211,15 @@ class ProductionEventSources(EventSourceAdapter):
                     for s in sources
                 ):
                     self.publication.invalidate(source.source)
-                    models[leg_id] = model
+                    models[leg_id] = dict(
+                        {
+                            k: v
+                            for k, v in model.items()
+                            if k not in ("pop_forecast", "pop_advisories")
+                        },
+                        time_basis="live_unavailable",
+                        boundary_times={},
+                    )
                     sources = [s for s in sources if s.source != source.source] + [
                         source.model_copy(
                             update={

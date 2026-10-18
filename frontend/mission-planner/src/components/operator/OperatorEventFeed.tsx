@@ -139,7 +139,14 @@ export function OperatorEventFeed({
               </p>
               {event.provenance === 'modeled' && (
                 <p className="text-xs text-muted-foreground">
-                  Best current estimate · {event.freshness}
+                  {event.time_basis === 'live_route_eta'
+                    ? 'Live route ETA'
+                    : event.time_basis === 'planned_utc'
+                      ? 'Preflight plan UTC'
+                      : event.time_basis === 'live_unavailable'
+                        ? 'Live timing unavailable'
+                        : 'Best current estimate'}{' '}
+                  · {event.freshness}
                 </p>
               )}
               {event.discrepancies.map((discrepancy) => (
@@ -195,6 +202,13 @@ export function OperatorEventFeed({
                   {event.freshness}
                 </p>
                 <p>
+                  {event.planned_due_at && (
+                    <>
+                      Plan reference {eventUtc(event.planned_due_at)} —{' '}
+                      {eventUtc(event.planned_end_at)}
+                      <br />
+                    </>
+                  )}
                   Source {event.source_ref ?? 'unknown'} · revision{' '}
                   {event.source_revision ?? 'unknown'}
                 </p>
