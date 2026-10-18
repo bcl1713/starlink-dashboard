@@ -1,7 +1,7 @@
 """Decisions share existing typed dependency rules through recovery."""
 
-from uuid import uuid4
 import pytest
+
 from app.operator.errors import OperatorError
 from app.operator.models import RemoveRecord, RestoreRecord
 from app.operator.recovery import validate_connection
@@ -53,7 +53,7 @@ def test_transport_target_remove_move_and_type_conflict(service, record_data):
 
 
 def test_transport_unlink_remove_restore_sequence(service, record_data):
-    call, conference, saved = targets(service, record_data)
+    call, _conference, saved = targets(service, record_data)
     removed = submit(
         service, RemoveRecord(record_id=saved.record_id, expected_version=1)
     ).saved_records[0]
@@ -88,9 +88,8 @@ def test_transport_unlink_remove_restore_sequence(service, record_data):
 
 
 def test_recovery_rejects_missing_transport_link(service, record_data):
-    call, conference, saved = targets(service, record_data)
+    _call, _conference, saved = targets(service, record_data)
     with service.store.connect(write=True) as db:
         db.execute("DELETE FROM current_links WHERE from_id=?", (str(saved.record_id),))
-    with service.store.connect() as db:
-        with pytest.raises(OperatorError, match="store_corrupt"):
-            validate_connection(db, clock=service.clock)
+    with service.store.connect() as db, pytest.raises(OperatorError, match="store_corrupt"):
+        validate_connection(db, clock=service.clock)

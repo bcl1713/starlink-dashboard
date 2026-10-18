@@ -6,6 +6,7 @@ from pydantic import Field
 
 from .common import Identifier, RecordId, SchemaVersion, StrictModel
 from .time_models import UtcTimestamp
+from .transport_review_models import TransportReview
 
 
 class SourceCapture(StrictModel):
@@ -79,6 +80,7 @@ class OperationalEvent(StrictModel):
 
 
 class EventSnapshot(StrictModel):
+    transport_review: TransportReview | None = None
     schema_version: SchemaVersion = 1
     store_id: str
     api_epoch: str

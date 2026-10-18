@@ -2,14 +2,16 @@
 
 import hashlib
 import sqlite3
+
 import pytest
+
 from app.operator import schema
+from app.operator.backup import validated_backup
 from app.operator.errors import OperatorError
 from app.operator.schema import apply_migrations
 from app.operator.settings import OperatorSettings
 from app.operator.store import OperatorStore
 from app.operator.upgrade import upgrade_store
-from app.operator.backup import validated_backup
 from tests.operator.service_helpers import create
 
 
@@ -29,10 +31,10 @@ def test_new_schema_contains_transport_type(service):
 def test_populated_upgrade_preserves_records_and_guards(
     tmp_path, clock, monkeypatch, record_data
 ):
+    from app.mission import storage
     from app.operator.models import Actor
     from app.operator.references import MissionReferences
     from app.operator.service import OperatorService
-    from app.mission import storage
     from tests.operator.service_helpers import save_mission
 
     monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")

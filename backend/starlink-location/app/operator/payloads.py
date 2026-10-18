@@ -6,8 +6,8 @@ from pydantic import Field, field_validator, model_validator
 
 from .common import RecordId
 from .payload_base import PayloadBase
-from .transport_models import TransportDecisionPayload
 from .time_models import UtcTimestamp
+from .transport_models import TransportDecisionPayload
 
 
 class JournalNotePayload(PayloadBase):

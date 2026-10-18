@@ -1,6 +1,7 @@
 """Public transport commands use existing receipts, epochs and version conflicts."""
 
 from uuid import uuid4
+
 from tests.operator.test_transport_contract import decision, row
 
 

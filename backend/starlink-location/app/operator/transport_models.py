@@ -1,7 +1,9 @@
 """Human reports of service transport intentions, application and checks."""
 
 from typing import Literal
+
 from pydantic import Field, field_validator, model_validator
+
 from .common import RecordId, StrictModel
 from .payload_base import PayloadBase
 from .time_models import UtcTimestamp

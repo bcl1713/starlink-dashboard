@@ -5,7 +5,6 @@ from typing import Annotated, Literal
 from pydantic import Field, model_validator
 
 from .common import RecordId, SchemaVersion, StrictModel
-from .transport_models import TransportDecisionPayload
 from .models import AuditNote, PositiveVersion, RecordInput
 from .payloads import (
     CallPayload,
@@ -14,6 +13,7 @@ from .payloads import (
     JournalPayload,
     ParticipationPayload,
 )
+from .transport_models import TransportDecisionPayload
 
 
 class JournalCreate(RecordInput):

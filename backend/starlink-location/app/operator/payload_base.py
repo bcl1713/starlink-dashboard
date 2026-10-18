@@ -1,6 +1,7 @@
 """Common payload fields shared without importing payload unions."""
 
 from pydantic import Field, field_validator
+
 from .common import Identifier, SchemaVersion, StrictModel
 
 

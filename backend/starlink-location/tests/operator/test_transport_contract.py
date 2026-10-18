@@ -3,8 +3,10 @@
 from copy import deepcopy
 from datetime import timedelta
 from uuid import uuid4
+
 import pytest
 from pydantic import ValidationError
+
 from app.operator.errors import OperatorError
 from app.operator.models import CreateRecord
 from tests.operator.service_helpers import create, submit, update

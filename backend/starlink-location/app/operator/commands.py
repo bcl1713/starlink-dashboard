@@ -5,13 +5,13 @@ from uuid import uuid4
 
 from .conference_actions import conference_audit_reason, validate_conference_update
 from .errors import OperatorError
-from .transport_actions import validate_transport_update, transport_audit_reason
 from .event_models import AckReceipt
 from .issue_actions import issue_audit_reason, validate_issue_update
 from .models import CommandReceipt, CreateRecord, RecordInput, SavedRecord
 from .provenance import SourceProvenance
 from .queries import get_record
 from .references import derive_links, validate_dependencies
+from .transport_actions import transport_audit_reason, validate_transport_update
 
 
 def receipt_for_key(connection, key, request_hash):
