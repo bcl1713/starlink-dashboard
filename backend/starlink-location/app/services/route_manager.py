@@ -3,7 +3,6 @@
 # FR-004: File exceeds 300 lines (330 lines) because route manager combines
 # file watching, KML parsing, route storage, and active route coordination.
 # Splitting would fragment route lifecycle management. Deferred to v0.4.0.
-
 import logging
 from collections.abc import Callable
 from pathlib import Path
@@ -12,6 +11,7 @@ from typing import Literal
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+from app.mission.input_admission import model_input_write
 from app.models.route import ParsedRoute
 from app.services.kml_parser import KMLParseError, parse_kml_file
 
@@ -134,6 +134,7 @@ class RouteManager:
             )
         return profile
 
+    @model_input_write
     def _load_route_file(self, file_path: str) -> None:
         """
         Load a single KML file and add to routes cache.
@@ -216,6 +217,7 @@ class RouteManager:
             self._errors[route_id] = error_msg
             logger.error(error_msg)
 
+    @model_input_write
     def add_route(self, route_id: str, parsed_route: ParsedRoute) -> None:
         """
         Register a ParsedRoute in the manager cache.
@@ -230,6 +232,7 @@ class RouteManager:
             f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()"
         )
 
+    @model_input_write
     def _remove_route(self, route_id: str) -> None:
         """
         Remove a route from cache.
@@ -326,6 +329,7 @@ class RouteManager:
             return None
         return self.get_route(self._active_route_id)
 
+    @model_input_write
     def activate_route(self, route_id: str) -> bool:
         """
         Activate a route.
@@ -371,6 +375,7 @@ class RouteManager:
             logger.debug("Failed to sync flight state on route activation: %s", exc)
         return True
 
+    @model_input_write
     def deactivate_route(self, route_id: str | None = None) -> None:
         """Deactivate a specific route or the current active route.
 
@@ -451,6 +456,7 @@ class RouteManager:
         """Check if any routes failed to load."""
         return len(self._errors) > 0
 
+    @model_input_write
     def reload_all_routes(self) -> None:
         """Reload all routes from disk."""
         self._routes.clear()

@@ -9,6 +9,8 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.mission.input_admission import model_input_write
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,6 +27,7 @@ class Satellite:
     color: str = "#FFFFFF"  # Display color for Grafana overlays
     metadata: dict | None = None  # Additional metadata
 
+    @model_input_write
     def load_coverage(self) -> dict | None:
         """Load and cache coverage polygon from GeoJSON file."""
         if self.coverage_polygon is not None:
@@ -76,6 +79,7 @@ class SatelliteCatalog:
         self.satellites: dict[str, Satellite] = {}
         self._transport_index: dict[str, list[str]] = {}  # transport -> [sat_id, ...]
 
+    @model_input_write
     def add_satellite(self, satellite: Satellite) -> None:
         """Add satellite to catalog.
 
@@ -115,6 +119,7 @@ class SatelliteCatalog:
 _catalog: SatelliteCatalog | None = None
 
 
+@model_input_write
 def load_satellite_catalog(
     data_dir: Path = Path("data/satellites"),
     sat_coverage_dir: Path = Path("data/sat_coverage"),

@@ -1,7 +1,7 @@
 """Bounded pinned snapshots and leases over explicitly participating publishers."""
 
 from collections import OrderedDict
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from threading import RLock
 from uuid import uuid4
 
@@ -14,23 +14,28 @@ class EventPublication:
     def __init__(self):
         self._lock = RLock()
         self._sources = {}
+        self._validators = {}
+        self.input_gate = nullcontext
 
-    def publish(self, source, *, update=None):
-        with self._lock:
+    def publish(self, source, *, update=None, validate=None):
+        with self.input_gate(), self._lock:
             if update is not None:
                 # Input mutation and its replacement publication share the gate.
                 # A failed update leaves the source invalid, never falsely current.
                 self._sources.pop(source.source, None)
                 update()
             self._sources[source.source] = source.model_copy(deep=True)
+            if validate is not None:
+                self._validators[source.source] = validate
 
     def invalidate(self, source):
         with self._lock:
             self._sources.pop(source, None)
+            self._validators.pop(source, None)
 
     @contextmanager
     def guard(self, expected):
-        with self._lock:
+        with self.input_gate(), self._lock:
             for source in expected:
                 if (
                     not source.guardable
@@ -38,6 +43,9 @@ class EventPublication:
                     or source.freshness != "fresh"
                 ):
                     raise OperatorError("event_source_unavailable", retryable=True)
+                validator = self._validators.get(source.source)
+                if validator is not None:
+                    validator()
                 current = self._sources.get(source.source)
                 if current is None:
                     raise OperatorError("event_source_unavailable", retryable=True)

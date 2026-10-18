@@ -268,7 +268,33 @@ def derive_events(inputs, *, as_of, policy):
                     _time(interval["end_utc"]),
                 )
             )
-        for segment in model.get("segments", []):
+        for capability in model.get("capability_spans", []):
+            for transport, field in (
+                ("Ka", "ka"),
+                ("X", "x"),
+                ("Starshield", "starshield"),
+            ):
+                if capability.get(field) != "unavailable":
+                    continue
+                concurrent = (
+                    field == "x" and capability.get("x_concurrency_only") is True
+                )
+                spans.append(
+                    (
+                        transport,
+                        "degraded" if concurrent else "unavailable",
+                        (
+                            ("x_concurrency_only",)
+                            if concurrent
+                            else ("modeled_capability", transport)
+                        ),
+                        _time(capability["start_utc"]),
+                        _time(capability["end_utc"]),
+                    )
+                )
+        for segment in (
+            () if "capability_spans" in model else model.get("segments", [])
+        ):
             for transport, field in (
                 ("Ka", "ka_state"),
                 ("X", "x_state"),
@@ -314,7 +340,11 @@ def derive_events(inputs, *, as_of, policy):
                     kind="restriction",
                     title=(transport + " " if transport else "Customer communications ")
                     + "modeled "
-                    + severity.replace("_", " "),
+                    + (
+                        "concurrency restriction"
+                        if "x_concurrency_only" in causes
+                        else severity.replace("_", " ")
+                    ),
                     due_at=start,
                     end_at=end,
                     transport=transport,
