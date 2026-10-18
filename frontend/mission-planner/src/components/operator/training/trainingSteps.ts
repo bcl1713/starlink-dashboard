@@ -187,7 +187,12 @@ export function evaluateStep(
     )
   );
   const missing = [
-    ...step.outcomes.filter((outcome) => !evidence.outcomes.includes(outcome)),
+    ...step.outcomes.filter(
+      (outcome) =>
+        !evidence.available ||
+        !evidence.fresh ||
+        !evidence.outcomes.includes(outcome)
+    ),
     ...step.manual.filter((outcome) => !manualOutcomes.includes(outcome)),
   ];
   return {

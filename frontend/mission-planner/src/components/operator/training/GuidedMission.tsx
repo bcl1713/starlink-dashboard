@@ -45,12 +45,17 @@ function Guide({
     () => initial.progress ?? createProgress(identity)
   );
   const [error, setError] = useState<string | null>(initial.error);
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [observation, setObservation] = useState('');
   const [root, setRoot] = useState('');
   const step = trainingSteps.find((item) => item.id === progress.currentStage)!;
-  const evaluation = evaluateStep(step.id, evidence, progress);
+  const evaluation = evaluateStep(
+    step.id,
+    { ...evidence, available: evidence.available && !checkError },
+    progress
+  );
   function keep(next: TrainingProgress) {
     setProgress(next);
     setError(saveProgress(storage, next).error);
@@ -58,10 +63,11 @@ function Guide({
   async function check() {
     if (!onCheckEvidence) return;
     setChecking(true);
+    setCheckError(null);
     try {
       await onCheckEvidence();
     } catch (reason) {
-      setError(
+      setCheckError(
         reason instanceof Error
           ? reason.message
           : 'Could not check current evidence.'
@@ -87,6 +93,7 @@ function Guide({
           stays in this window.
         </p>
       )}
+      {checkError && <p role="alert">Evidence check failed: {checkError}</p>}
       {!expanded ? (
         <div className="flex flex-wrap items-center gap-2">
           <p>

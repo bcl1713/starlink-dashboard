@@ -141,7 +141,7 @@ export function OperatorWorkspace() {
     events.snapshot?.generation
   );
   const trainingEvidence: TrainingEvidence = {
-    available: trainingEvents?.available ?? false,
+    available: (trainingEvents?.available ?? false) && !records.isError,
     fresh: !events.failed && (trainingEvents?.fresh ?? false),
     outcomes: [
       ...(trainingEvents?.outcomes ?? []),
@@ -418,7 +418,12 @@ export function OperatorWorkspace() {
                 activeLegId: null,
                 activeModelIdentity: null,
               });
-              if (!observed.available || checked.H !== snapshot.H)
+              if (
+                !checked.available ||
+                !checked.fresh ||
+                !observed.available ||
+                checked.H !== snapshot.H
+              )
                 throw new Error(
                   'Training evidence changed while checking; check again.'
                 );

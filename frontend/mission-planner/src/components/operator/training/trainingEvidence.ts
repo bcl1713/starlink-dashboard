@@ -1,5 +1,7 @@
 import type { CommandReceipt, SavedRecord } from '@/types/operator';
 import type { TrainingEvidence } from './trainingSteps';
+import { lifecycleOutcomes } from './trainingLifecycleEvidence';
+import { sameRecord } from './trainingRecordIdentity';
 
 export interface RecordEvidenceSource {
   missionId: string;
@@ -19,41 +21,39 @@ export function collectRecordEvidence(
   const outcomes = new Set<string>();
   const eligible = (r: SavedRecord) =>
     r.mission_id === source.missionId &&
-    r.provenance.source_mode === 'simulation' &&
-    !source.prerequisiteIds.includes(r.record_id);
-  const receipted = (r: SavedRecord) =>
+    r.provenance.source_mode === 'simulation';
+  const receipted = (record: SavedRecord) =>
     (source.historyComplete &&
-      source.history.some(
-        (saved) =>
-          saved.record_id === r.record_id &&
-          saved.version === r.version &&
-          saved.command_id === r.command_id &&
-          saved.mission_id === r.mission_id &&
-          saved.record_type === r.record_type &&
-          saved.deleted === r.deleted &&
-          JSON.stringify(saved.payload) === JSON.stringify(r.payload) &&
-          JSON.stringify(saved.time) === JSON.stringify(r.time)
-      )) ||
+      source.history.some((saved) => sameRecord(saved, record))) ||
     source.receipts.some(
       (receipt) =>
-        receipt.command_id === r.command_id &&
-        receipt.saved_records.some(
-          (saved) =>
-            saved.record_id === r.record_id &&
-            saved.version === r.version &&
-            saved.command_id === r.command_id &&
-            saved.mission_id === r.mission_id
-        )
+        receipt.command_id === record.command_id &&
+        receipt.saved_records.some((saved) => sameRecord(saved, record))
     );
   const records = source.records.filter(
-    (r) => eligible(r) && !r.deleted && receipted(r)
+    (r) =>
+      eligible(r) &&
+      !r.deleted &&
+      (!source.prerequisiteIds.includes(r.record_id) || r.version > 1) &&
+      receipted(r)
   );
   const history = source.history.filter((r) => eligible(r) && receipted(r));
+  const consistent = !source.records.some((record) =>
+    history.some(
+      (saved) =>
+        saved.record_id === record.record_id &&
+        saved.version === record.version &&
+        !sameRecord(saved, record)
+    )
+  );
   for (const r of records) {
     const p = r.payload;
-    const versions = history
-      .filter((v) => v.record_id === r.record_id)
-      .sort((a, b) => a.version - b.version);
+    const versions = [
+      ...history.filter(
+        (v) => v.record_id === r.record_id && v.version !== r.version
+      ),
+      r,
+    ].sort((a, b) => a.version - b.version);
     if (r.record_type === 'journal_entry' && p.entry_type === 'note') {
       outcomes.add('scoped-note');
       if (
@@ -65,10 +65,15 @@ export function collectRecordEvidence(
         outcomes.add('between-legs-note');
     }
     if (p.entry_type === 'call') {
-      outcomes.add('call-created');
-      if (p.status === 'completed' && r.time.occurred_at && r.time.ended_at)
-        outcomes.add('call-completed');
-      if (!r.time.occurred_at && r.time.precision === 'unknown')
+      if (!source.prerequisiteIds.includes(r.record_id))
+        outcomes.add('call-created');
+      if (p.status === 'completed') outcomes.add('call-completed');
+      if (
+        p.status === 'completed' &&
+        (!r.time.occurred_at ||
+          !r.time.ended_at ||
+          r.time.precision === 'unknown')
+      )
         outcomes.add('call-unknown-time');
       if (p.prep_lead_minutes === 0) outcomes.add('call-prep-zero');
       if (
@@ -105,64 +110,18 @@ export function collectRecordEvidence(
       )
         outcomes.add('call-history');
     }
-    if (p.entry_type === 'participation') {
-      if (
-        p.state === 'left' &&
-        r.time.occurred_at &&
-        r.time.ended_at &&
-        Date.parse(r.time.ended_at) >= Date.parse(r.time.occurred_at)
+    if (
+      p.entry_type === 'capability_assessment' &&
+      versions.some(
+        (row) =>
+          row.payload.entry_type === 'capability_assessment' &&
+          ((row.payload.functional_status !== 'unknown' &&
+            row.payload.redundancy_status === 'unknown') ||
+            (row.payload.functional_status === 'unknown' &&
+              row.payload.redundancy_status !== 'unknown'))
       )
-        outcomes.add('participation-joined-left');
-      const prior = records.find(
-        (v) => v.record_id === p.resumes_participation_id
-      );
-      if (
-        prior &&
-        prior.record_id !== r.record_id &&
-        prior.payload.entry_type === 'participation' &&
-        (prior.payload.state === 'left' ||
-          prior.payload.state === 'interrupted') &&
-        prior.time.occurred_at &&
-        prior.time.ended_at &&
-        r.time.occurred_at &&
-        Date.parse(r.time.occurred_at) >= Date.parse(prior.time.ended_at) &&
-        prior.payload.call_id === p.call_id &&
-        prior.payload.conference_id === p.conference_id &&
-        prior.payload.participant === p.participant
-      )
-        outcomes.add('participation-resumed-new-interval');
-    }
-    if (p.entry_type === 'conference') {
-      if (p.status === 'established' && p.verified_at)
-        outcomes.add('conference-established-verified');
-      if (
-        p.status === 'established' &&
-        versions.some(
-          (v) =>
-            v.payload.entry_type === 'conference' &&
-            v.payload.status === 'interrupted'
-        )
-      )
-        outcomes.add('conference-interrupted-restored');
-    }
-    if (p.entry_type === 'transport_decision') {
-      if (
-        p.services.some(
-          (row) =>
-            row.applied && !row.intended && !row.requested && !row.checked
-        )
-      )
-        outcomes.add('applied-only-report');
-      if (
-        p.services.filter((row) => row.checked?.time.at).length >= 2 &&
-        new Set(
-          p.services
-            .filter((row) => row.checked?.time.at)
-            .map((row) => row.service)
-        ).size >= 2
-      )
-        outcomes.add('independent-service-checks');
-    }
+    )
+      outcomes.add('capability-independent');
     if (p.entry_type === 'issue') {
       const statuses = versions.flatMap((v) =>
         v.payload.entry_type === 'issue' ? [v.payload.status] : []
@@ -176,23 +135,52 @@ export function collectRecordEvidence(
       )
         outcomes.add('issue-monitor-resolve-reopen');
       if (
-        !p.follow_up_at &&
         versions.some(
-          (v) => v.payload.entry_type === 'issue' && v.payload.follow_up_at
+          (candidate, index) =>
+            candidate.payload.entry_type === 'issue' &&
+            !candidate.payload.follow_up_at &&
+            versions
+              .slice(0, index)
+              .some(
+                (prior) =>
+                  prior.payload.entry_type === 'issue' &&
+                  prior.payload.follow_up_at
+              )
         )
       )
         outcomes.add('issue-followup-cleared');
       if (
-        p.corrects_version &&
-        versions.some(
-          (v) => v.version === p.corrects_version && v.version < r.version
-        )
+        versions.some((candidate) => {
+          const corrected = candidate.payload;
+          const prior = versions.find(
+            (row) => row.version === candidate.previous_version
+          )?.payload;
+          return (
+            corrected.entry_type === 'issue' &&
+            corrected.corrects_version &&
+            versions.some(
+              (row) =>
+                row.version === corrected.corrects_version &&
+                row.version < candidate.version
+            ) &&
+            prior?.entry_type === 'issue' &&
+            corrected.status === prior.status &&
+            corrected.mitigation === prior.mitigation &&
+            corrected.follow_up_at === prior.follow_up_at
+          );
+        })
       )
         outcomes.add('issue-historical-correction');
     }
   }
+  for (const outcome of lifecycleOutcomes(
+    records,
+    history,
+    source.historyComplete
+  ))
+    outcomes.add(outcome);
   return {
-    available: source.ready && source.complete,
+    available: source.ready && source.complete && consistent,
     fresh: source.fresh,
     outcomes: [...outcomes],
   };
@@ -213,6 +201,8 @@ export function isCurrentTrainingEvidence(
 ): checked is CheckedTrainingEvidence {
   return (
     !!checked &&
+    checked.available &&
+    checked.fresh &&
     !!identity &&
     checked.identity === identity &&
     H !== undefined &&

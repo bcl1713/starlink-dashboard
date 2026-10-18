@@ -47,3 +47,54 @@ it('refuses repeated cursors and an epoch change without claiming completion', a
     /changed/
   );
 });
+it('reads the history of learner-edited prerequisites while leaving untouched seed rows uncredited', async () => {
+  const original = {
+    ...record,
+    record_type: 'call' as const,
+    provenance: { ...record.provenance, source_mode: 'simulation' as const },
+    time: {
+      ...record.time,
+      occurred_at: null,
+      ended_at: null,
+      precision: 'unknown' as const,
+      end_state: 'unknown' as const,
+      planned_start_at: '2026-10-18T16:00:00Z',
+    },
+    payload: {
+      ...record.payload,
+      entry_type: 'call' as const,
+      status: 'scheduled' as const,
+      conference_id: null,
+    },
+  };
+  const current = {
+    ...original,
+    version: 2,
+    previous_version: 1,
+    command_id: 'edited',
+    journal_seq: 2,
+    time: { ...original.time, planned_start_at: '2026-10-18T17:00:00Z' },
+  };
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    ...page([current]),
+    H: 2,
+  });
+  vi.spyOn(api, 'readOperatorHistory').mockResolvedValue({
+    ...page([original, current]),
+    H: 2,
+  });
+  vi.spyOn(api, 'getOperatorHealth').mockResolvedValue({
+    ...health,
+    source_mode: 'simulation',
+    simulation_run_id: 'training',
+  });
+  const evidence = await readTrainingRecords(identity, 'training', [
+    record.record_id,
+  ]);
+  expect(api.readOperatorHistory).toHaveBeenCalledWith(
+    record.record_id,
+    undefined
+  );
+  expect(evidence.outcomes).toContain('call-rescheduled');
+  expect(evidence.outcomes).not.toContain('call-created');
+});

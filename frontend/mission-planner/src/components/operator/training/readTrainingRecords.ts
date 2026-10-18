@@ -44,7 +44,11 @@ export async function readTrainingRecords(
   );
   const history: RecordPage['items'] = [];
   for (const item of current.items) {
-    if (prerequisiteIds.includes(item.record.record_id)) continue;
+    if (
+      prerequisiteIds.includes(item.record.record_id) &&
+      item.record.version === 1
+    )
+      continue;
     const versions = await allPages(
       (cursor) => readOperatorHistory(item.record.record_id, cursor),
       current.H

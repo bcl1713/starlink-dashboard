@@ -164,3 +164,19 @@ it('revisiting a skipped stage permits checking evidence without claiming succes
       .status
   ).toBe('incomplete');
 });
+it('never labels stale automatic outcomes as verified while retaining explicit human observations', () => {
+  const progress = createProgress(identity);
+  progress.manualEvidence.push({
+    outcomeId: 'context-understood',
+    observedAt: '2026-10-18T10:00:00Z',
+    note: 'Identified private mission',
+  });
+  const result = evaluateStep(
+    'T01',
+    { available: true, fresh: false, outcomes: ['private-context-read'] },
+    progress
+  );
+  expect(result.status).toBe('unavailable');
+  expect(result.missing).toContain('private-context-read');
+  expect(result.manualOutcomes).toEqual(['context-understood']);
+});

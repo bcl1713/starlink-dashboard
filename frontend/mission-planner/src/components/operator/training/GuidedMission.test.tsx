@@ -89,3 +89,30 @@ it('a changed store epoch starts separate progress and unavailable evidence is e
   expect(screen.getByRole('heading', { name: /T01/ })).toBeTruthy();
   expect(screen.getByText('Evidence unavailable')).toBeTruthy();
 });
+it('reports a failed evidence check separately from progress storage and permits a real retry', async () => {
+  const check = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('History unavailable'))
+    .mockResolvedValue(undefined);
+  render(
+    <GuidedMission
+      identity={identity}
+      evidence={evidence}
+      onOpenTarget={() => {}}
+      onDismiss={() => {}}
+      onCheckEvidence={check}
+    />
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check current evidence' })
+  );
+  expect(
+    await screen.findByText(/Evidence check failed: History unavailable/)
+  ).toBeTruthy();
+  expect(screen.getByText('Evidence unavailable')).toBeTruthy();
+  expect(screen.queryByText(/Guide progress could not be saved/)).toBeNull();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check current evidence' })
+  );
+  expect(await screen.findByText('Incomplete')).toBeTruthy();
+});
