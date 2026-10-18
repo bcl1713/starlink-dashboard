@@ -34,7 +34,8 @@ class ModelInputsFixture:
         *,
         seed=True,
         manage_route=True,
-        restore_phase=True
+        restore_phase=True,
+        initial_inputs=None
     ):
         self.main, self.runtime, self.clock = main, runtime, clock
         self.manage_route, self.restore_phase = manage_route, restore_phase
@@ -57,6 +58,10 @@ class ModelInputsFixture:
                 "active": True,
             }
         )
+        if initial_inputs:
+            if set(initial_inputs) - set(self.state):
+                raise ValueError("Unknown initial raw input")
+            self.state.update(initial_inputs)
         self.ids = seed_events(runtime.service, clock) if seed else {}
         self.update({})
 

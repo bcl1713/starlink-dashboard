@@ -371,3 +371,34 @@ def test_corrupt_launcher_ownership_is_preserved_before_any_command(tmp_path):
     with pytest.raises(ValueError, match="candidate"):
         launcher.open_owner(root)
     assert (root / "ownership.json").read_text() == raw
+
+
+def test_raw_helper_uses_current_checkpoint_time_even_if_restart_precedes_application(
+    tmp_path, monkeypatch
+):
+    import json
+    from datetime import datetime, timezone
+    from types import SimpleNamespace
+
+    monkeypatch.syspath_prepend(str(ROOT / "tools/acceptance/operator-journal"))
+    import model_inputs_fixture
+
+    directory = tmp_path / "operator"
+    directory.mkdir()
+    (directory / "synthetic-model-inputs.json").write_text(
+        json.dumps({"now": "2026-10-17T16:00:00Z"})
+    )
+    monkeypatch.setattr(
+        model_inputs_fixture.ModelInputsFixture, "update", lambda *_: None
+    )
+    helper = model_inputs_fixture.ModelInputsFixture(
+        SimpleNamespace(),
+        SimpleNamespace(service=None),
+        tmp_path,
+        SimpleNamespace(now=lambda: datetime(2026, 10, 17, 17, 5, tzinfo=timezone.utc)),
+        seed=False,
+        manage_route=False,
+        restore_phase=False,
+        initial_inputs={"now": "2026-10-17T17:05:00Z"},
+    )
+    assert helper.state["now"] == "2026-10-17T17:05:00Z"

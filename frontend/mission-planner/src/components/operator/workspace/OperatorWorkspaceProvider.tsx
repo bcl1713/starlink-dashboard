@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useOperatorJournal,
   type Pending,
@@ -144,6 +145,7 @@ export function OperatorWorkspaceProvider({
   const [migrationErrors, setMigrationErrors] = useState<string[]>([]);
   const scannedIdentities = useRef(new Set<string>());
   const [, refreshDrafts] = useState(0);
+  const client = useQueryClient();
   const location = useLocation();
   const active =
     location.pathname === '/operator' &&
@@ -231,6 +233,14 @@ export function OperatorWorkspaceProvider({
       update(lane, { status: 'failed', message, pending: undefined });
   }
   function receipt(lane: string, request: Pending, value: CommandReceipt) {
+    if (request.workspace)
+      void client.invalidateQueries({
+        queryKey: [
+          'operator-events',
+          request.workspace.target.missionId,
+          request.identity,
+        ],
+      });
     if (request.workspace)
       registry.retireSubmitted(
         request.workspace.draftId,

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useLayoutEffect } from 'react';
 import * as api from '@/services/operator';
+import * as eventApi from '@/services/operatorEvents';
 import { health, input, page, record, failure } from '@/test/operator-fixtures';
 import {
   OperatorWorkspaceProvider,
@@ -440,4 +441,28 @@ it('delegates one health polling owner between the workspace and application nav
   expect(workspace.ownsHealth).toBe(true);
   await act(async () => navigate('/missions'));
   expect(workspace.ownsHealth).toBe(false);
+});
+it('marks the submitted mission event snapshot stale after a receipt without starting another event owner', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'refresh-events',
+      saved_records: [record],
+    });
+  const read = vi.spyOn(eventApi, 'readEventSnapshot');
+  const { registry, client } = mount();
+  const identity = JSON.stringify([
+    health.store_id,
+    health.api_epoch,
+    health.source_mode,
+    health.simulation_run_id,
+  ]);
+  const key = ['operator-events', input.mission_id, identity];
+  client.setQueryDefaults(['operator-events'], { gcTime: Infinity });
+  client.setQueryData(key, { snapshot: {}, receivedAt: 0 });
+  await submit(registry.createDraft(target, input).draftId);
+  expect(save).toHaveBeenCalledOnce();
+  expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  expect(read).not.toHaveBeenCalled();
 });

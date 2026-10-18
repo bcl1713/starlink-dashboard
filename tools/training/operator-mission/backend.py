@@ -76,6 +76,18 @@ async def apply_raw_checkpoint(request, call_next):
                         seed=False,
                         manage_route=False,
                         restore_phase=False,
+                        initial_inputs={
+                            key: inputs[key]
+                            for key in (
+                                "now",
+                                "latitude",
+                                "longitude",
+                                "speed",
+                                "stale",
+                                "invalid_ka",
+                                "missing_pop",
+                            )
+                        },
                     )
             # The normal replay engine owns actual phase, route activation and timing.
             app.state.simulation_run_service.collect(

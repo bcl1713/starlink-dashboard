@@ -61,23 +61,35 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   async function note(
     title: string,
     scope: 'preflight' | 'leg' | 'between_legs',
-    leg?: string
+    leg?: string,
+    beforeSave?: () => Promise<void>
   ) {
     await page.goto(`/operator?workspace=1&mission_id=${id}`);
     await page.getByRole('button', { name: 'Note', exact: true }).click();
     const editor = page.getByRole('dialog');
-    await editor.getByLabel('Draft scope', { exact: true }).selectOption(scope);
+    await editor
+      .getByRole('combobox', { name: 'Draft scope', exact: true })
+      .selectOption(scope);
     if (scope === 'leg')
-      await editor.getByLabel('Leg', { exact: true }).selectOption(leg!);
+      await editor
+        .getByRole('combobox', { name: 'Leg', exact: true })
+        .selectOption(leg!);
     if (scope === 'between_legs') {
       await editor
-        .getByLabel('Previous leg', { exact: true })
+        .getByRole('combobox', { name: 'Previous leg', exact: true })
         .selectOption(mission.legs[0].id);
       await editor
-        .getByLabel('Next leg', { exact: true })
+        .getByRole('combobox', { name: 'Next leg', exact: true })
         .selectOption(mission.legs[1].id);
     }
-    await editor.getByLabel('Title', { exact: true }).fill(title);
+    const titleField = editor.getByLabel('Title', { exact: true });
+    await titleField.fill(title);
+    await titleField.focus();
+    if (beforeSave) {
+      await beforeSave();
+      await expect(titleField).toBeFocused();
+      await expect(titleField).toHaveValue(title);
+    }
     const response = page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
@@ -122,7 +134,7 @@ test('training fixture: normal replay across two legs preserves journal, receipt
       .nth(index)
       .click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Multiplier',{exact:true}).fill('1');
+    await dialog.getByLabel('Multiplier', { exact: true }).fill('1');
     await dialog.getByRole('button', { name: 'Preview', exact: true }).click();
     await expect(dialog.getByLabel('Simulation preview')).toBeVisible();
     await dialog
@@ -151,8 +163,18 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   await expect(
     page.getByRole('region', { name: 'Next requirement', exact: true })
   ).toContainText('Synthetic customer 1 briefing');
-  await note('Synthetic learner first leg', 'leg', mission.legs[0].id);
-  host('checkpoint', '--stage', 'leg-one-restriction');
+  await note(
+    'Synthetic learner first leg',
+    'leg',
+    mission.legs[0].id,
+    async () => {
+      host('checkpoint', '--stage', 'leg-one-restriction');
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await expect(page.locator('.ws-next')).toContainText(
+        'Synthetic customer 3 briefing'
+      );
+    }
+  );
   await page.reload();
   const feed = await (
     await page.request.get(`/api/v2/operator/events?mission_id=${id}`)
