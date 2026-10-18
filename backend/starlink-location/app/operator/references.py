@@ -15,6 +15,10 @@ def derive_links(record) -> set[tuple[str, str, str]]:
         return set()
     relations = {
         "call": (("conference_id", "call-to-conference"),),
+        "transport_decision": (
+            ("call_id", "transport-to-call"),
+            ("conference_id", "transport-to-conference"),
+        ),
         "issue": (
             ("call_id", "issue-to-call"),
             ("conference_id", "issue-to-conference"),
@@ -127,6 +131,8 @@ def validate_dependencies(connection, changed) -> None:
             expected_type = {
                 "participation-to-call": "call",
                 "issue-to-call": "call",
+                "transport-to-call": "call",
+                "transport-to-conference": "conference",
                 "issue-to-capability": "journal_entry",
                 "participation-resumes": "participation",
             }.get(relation, "conference")
