@@ -25,7 +25,7 @@ LEG = "synthetic-leg-1"
 
 class EventsClock(ScenarioClock):
     def __init__(self, root):
-        path = Path(root) / "synthetic-event-source.json"
+        path = Path(root) / "operator" / "synthetic-event-source.json"
         state = json.loads(path.read_text()) if path.exists() else {}
         super().__init__(utc_timestamp(state.get("now", START)))
 
@@ -147,7 +147,7 @@ class EventsFixture:
 
     def __init__(self, runtime, root, clock):
         self.runtime, self.root, self.clock = runtime, Path(root), clock
-        self.path = self.root / "synthetic-event-source.json"
+        self.path = self.root / "operator" / "synthetic-event-source.json"
         self.state = (
             json.loads(self.path.read_text())
             if self.path.exists()
