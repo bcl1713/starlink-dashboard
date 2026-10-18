@@ -750,7 +750,19 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
           { timeout: 15_000 }
         );
         await click();
-        const result = await response;
+        let result;
+        try {
+          result = await response;
+        } catch (error) {
+          writeFileSync(
+            join(evidence, `mutation-failure-${viewport.width}.html`),
+            await page.content()
+          );
+          await page.screenshot({
+            path: join(evidence, `mutation-failure-${viewport.width}.png`),
+          });
+          throw error;
+        }
         expect(result.ok()).toBe(true);
         const receipt = await result.json();
         receipts.push(receipt);

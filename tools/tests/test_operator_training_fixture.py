@@ -61,6 +61,7 @@ def test_prerequisites_seed_only_planned_requirements_and_reopen_without_replayi
     root = tmp_path / "private"
     scenario.mark_root(root)
     first = scenario.seed_prerequisites(root)
+    scenario.apply_checkpoint(root, "leg-one")
     second = scenario.seed_prerequisites(root)
     assert first["store_id"] == second["store_id"]
     assert first["api_epoch"] == second["api_epoch"]
@@ -77,8 +78,10 @@ def test_real_records_acknowledgments_and_receipts_share_fixture_namespace_acros
     from datetime import datetime, timezone
     from types import SimpleNamespace
     from uuid import uuid4
+
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
+
     from app.api.operator import router
     from app.mission import storage
     from app.operator.runtime import OperatorRuntimeBinding
@@ -200,3 +203,110 @@ def test_real_records_acknowledgments_and_receipts_share_fixture_namespace_acros
     finally:
         for owned in bindings:
             owned.close()
+
+
+def test_existing_scenario_clock_follows_persisted_forward_checkpoints_and_restart(
+    tmp_path,
+):
+    root = tmp_path / "clock"
+    scenario.mark_root(root)
+    clock = scenario.training_clock(root)
+    initial = clock.now()
+    scenario.apply_checkpoint(root, "leg-one")
+    assert (clock.now() - initial).total_seconds() == 15 * 60
+    assert clock.monotonic() == 15 * 60
+    assert scenario.training_clock(root).now() == clock.now()
+    with pytest.raises(ValueError, match="backwards"):
+        scenario.apply_checkpoint(root, "preflight")
+
+
+def test_existing_raw_input_helper_can_leave_learner_actions_routes_and_phase_untouched(
+    tmp_path, monkeypatch
+):
+    from datetime import datetime, timezone
+    from types import SimpleNamespace
+
+    monkeypatch.syspath_prepend(str(ROOT / "tools/acceptance/operator-journal"))
+    import model_inputs_fixture
+
+    monkeypatch.setattr(
+        model_inputs_fixture,
+        "seed_events",
+        lambda *_: (_ for _ in ()).throw(
+            AssertionError("Learner actions must not be seeded")
+        ),
+    )
+    monkeypatch.setattr(
+        model_inputs_fixture.ModelInputsFixture, "update", lambda *_: None
+    )
+    (tmp_path / "operator").mkdir()
+    helper = model_inputs_fixture.ModelInputsFixture(
+        SimpleNamespace(),
+        SimpleNamespace(service=None),
+        tmp_path,
+        SimpleNamespace(now=lambda: datetime(2026, 10, 17, 16, tzinfo=timezone.utc)),
+        seed=False,
+        manage_route=False,
+        restore_phase=False,
+    )
+    assert helper.ids == {}
+    assert not helper.manage_route
+    assert not helper.restore_phase
+
+
+def test_training_entrypoint_refuses_live_and_unmarked_roots_before_startup(
+    tmp_path, monkeypatch
+):
+    import runpy
+
+    monkeypatch.setenv("OPERATOR_TRAINING_FIXTURE", "explicit-private-training-v1")
+    monkeypatch.setenv("OPERATOR_TRAINING_ROOT", str(tmp_path / "unmarked"))
+    monkeypatch.setenv("STARLINK_MODE", "live")
+    entrypoint = ROOT / "tools/training/operator-mission/backend.py"
+    with pytest.raises(RuntimeError, match="simulation"):
+        runpy.run_path(str(entrypoint))
+    monkeypatch.setenv("STARLINK_MODE", "simulation")
+    with pytest.raises(ValueError, match="marked"):
+        runpy.run_path(str(entrypoint))
+    assert not (tmp_path / "unmarked").exists()
+
+
+def test_training_compose_has_only_private_volumes_and_readonly_source_mounts():
+    import yaml
+
+    compose = yaml.safe_load(
+        (ROOT / "docker-compose.operator-training.yml").read_text()
+    )
+    assert all(not volume.get("external") for volume in compose["volumes"].values())
+    assert compose["networks"]["default"]["internal"] is True
+    backend = compose["services"]["starlink-location"]
+    assert backend["environment"]["STARLINK_MODE"] == "simulation"
+    assert all(
+        mount["read_only"] for mount in backend["volumes"] if mount["type"] == "bind"
+    )
+    assert {
+        mount["source"] for mount in backend["volumes"] if mount["type"] == "volume"
+    } == {"training-data", "training-routes"}
+    assert all(
+        str(port).startswith("127.0.0.1:")
+        for port in compose["services"]["mission-planner"]["ports"]
+    )
+
+
+def test_training_routes_use_normal_parser_and_have_two_distinct_replay_windows(
+    tmp_path,
+):
+    from app.services.kml_parser import parse_kml_file
+
+    root = tmp_path / "routes"
+    scenario.mark_root(root)
+    scenario.seed_prerequisites(root)
+    files = sorted((root / "route-data/routes").glob("*.kml"))
+    assert len(files) == 2
+    routes = [parse_kml_file(path) for path in files]
+    assert all(route and route.timing_profile.has_timing_data for route in routes)
+    assert (
+        routes[1].timing_profile.departure_time > routes[0].timing_profile.arrival_time
+    )
+    assert routes[0].points[0].longitude == -10
+    assert routes[1].points[0].longitude == 10

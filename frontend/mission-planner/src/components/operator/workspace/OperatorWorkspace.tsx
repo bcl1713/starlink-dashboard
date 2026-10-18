@@ -390,11 +390,17 @@ export function OperatorWorkspace() {
                 Local cue: {cue.map((event) => event.title).join(' · ')}
               </p>
             ) : null}
+            {records.isFetching && records.data && (
+              <p role="status">
+                Refreshing saved records… Record actions resume when the current
+                snapshot is ready.
+              </p>
+            )}
             {actionError && <p role="alert">{actionError}</p>}
             {view === 'Communications' ? (
               <CommunicationsView
                 items={items}
-                disabled={disabled || acting}
+                disabled={disabled || acting || records.isFetching}
                 incomplete={incomplete}
                 asOf={records.data?.pages[0]?.as_of}
                 onCreateCall={() =>
@@ -429,7 +435,7 @@ export function OperatorWorkspace() {
               <TransportView
                 records={loaded}
                 events={events}
-                disabled={disabled || acting}
+                disabled={disabled || acting || records.isFetching}
                 onCreate={() => openInput(newTransportDraft(missionId).input)}
                 onEdit={openRecord}
                 onHistory={setHistoryId}
@@ -440,7 +446,7 @@ export function OperatorWorkspace() {
                 pages={records.data?.pages ?? []}
                 incomplete={incomplete}
                 unavailable={records.isError}
-                disabled={disabled || acting}
+                disabled={disabled || acting || records.isFetching}
                 onCreate={() => openInput(issueInput(missionId))}
                 onCreateCapability={() => openInput(capabilityInput(missionId))}
                 onEdit={openRecord}
@@ -490,7 +496,7 @@ export function OperatorWorkspace() {
               <HistoryView
                 items={items}
                 incomplete={incomplete}
-                disabled={disabled || acting}
+                disabled={disabled || acting || records.isFetching}
                 onEdit={openRecord}
                 onHistory={setHistoryId}
                 onTransition={transition}

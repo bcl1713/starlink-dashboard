@@ -1,0 +1,77 @@
+# Explicit private training only. Use scripts/operator-training.sh.
+services:
+  starlink-location:
+    image: ${OPERATOR_TRAINING_PROJECT}-backend:${ACCEPTANCE_CANDIDATE_SHA:?committed SHA required}
+    build:
+      context: ${OPERATOR_SOURCE_ROOT:?owned source archive required}
+      dockerfile: backend/starlink-location/Dockerfile
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    entrypoint: [/bin/sh, -c, 'python /source/tools/training/operator-mission/bootstrap.py && exec /usr/local/bin/entrypoint.sh "$$@"', '--']
+    command: [uvicorn, '${OPERATOR_TRAINING_ENTRYPOINT:-backend}:app', --host, 0.0.0.0, --port, '8000']
+    labels:
+      operator.training.root: ${OPERATOR_TRAINING_ROOT_ID:?marked root required}
+      operator.training.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
+    environment:
+      PYTHONPATH: /source/tools/acceptance/operator-journal:/source/tools/training/operator-mission:/app
+      STARLINK_MODE: simulation
+      SIMULATION_MODE: 'true'
+      STARLINK_DISABLE_BACKGROUND_TASKS: '1'
+      OPERATOR_ENABLED: 'true'
+      OPERATOR_TRAINING_FIXTURE: explicit-private-training-v1
+      OPERATOR_TRAINING_ROOT: /app/data
+      OPERATOR_ACCEPTANCE_FIXTURE: synthetic-local-only
+      STARLINK_GROUND_ENTRY_LATITUDE: '0'
+      STARLINK_GROUND_ENTRY_LONGITUDE: '0'
+      PROMETHEUS_URL: http://127.0.0.1:1
+    volumes:
+      - type: bind
+        source: ${OPERATOR_SOURCE_ROOT}
+        target: /source
+        read_only: true
+      - type: bind
+        source: ${OPERATOR_TRAINING_MARKER}
+        target: /training-marker.json
+        read_only: true
+      - type: volume
+        source: training-data
+        target: /app/data
+        volume:
+          nocopy: true
+      - type: volume
+        source: training-routes
+        target: /data
+        volume:
+          nocopy: true
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/api/v2/operator/health]
+      interval: 2s
+      timeout: 5s
+      retries: 45
+      start_period: 30s
+  mission-planner:
+    image: ${OPERATOR_TRAINING_PROJECT}-frontend:${ACCEPTANCE_CANDIDATE_SHA}
+    build:
+      context: ${OPERATOR_SOURCE_ROOT}/frontend/mission-planner
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    labels:
+      operator.training.root: ${OPERATOR_TRAINING_ROOT_ID}
+      operator.training.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
+    ports:
+      - '127.0.0.1:${OPERATOR_TRAINING_PORT:?private port required}:80'
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+volumes:
+  training-data:
+    labels:
+      operator.training.root: ${OPERATOR_TRAINING_ROOT_ID}
+  training-routes:
+    labels:
+      operator.training.root: ${OPERATOR_TRAINING_ROOT_ID}
+networks:
+  default:
+    internal: true
+    labels:
+      operator.training.root: ${OPERATOR_TRAINING_ROOT_ID}

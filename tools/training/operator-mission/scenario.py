@@ -74,7 +74,7 @@ def stable_context(root, current_context):
     return context
 
 
-def seed_prerequisites(root):
+def seed_prerequisites(root, *, routes_dir=None):
     """Create only fictional itinerary and planned requirements, idempotently."""
     import copy
     import importlib.util
@@ -103,9 +103,7 @@ def seed_prerequisites(root):
     fixture = load(
         "training_workspace_inputs", "tools/acceptance/operator-workspace/fixtures.py"
     ).build_workspace_fixture("busy")
-    clock = load(
-        "training_existing_clock", "tools/acceptance/operator-journal/scenario.py"
-    ).ScenarioClock()
+    clock = training_clock(root)
     fixture["mission"]["name"] = "Training mission · Fictional Meridian 21"
     fixture["mission"]["legs"][0]["name"] = "First flight · Meridian to Harbor"
     fixture["mission"]["legs"][1]["name"] = "Second flight · Harbor to Meridian"
@@ -115,10 +113,31 @@ def seed_prerequisites(root):
     for index, command in enumerate(later):
         command["leg_id"] = fixture["mission"]["legs"][1]["id"]
         command["payload"]["title"] = f"Synthetic return briefing {index + 1}"
-        start = clock.now() + timedelta(minutes=65 + index * 5)
+        start = _existing_clock_module().START + timedelta(minutes=65 + index * 5)
         command["time"]["planned_start_at"] = start.isoformat()
         command["time"]["planned_end_at"] = (start + timedelta(minutes=15)).isoformat()
     commands = fixture["planned_commands"] + later
+    routes = (
+        Path(routes_dir) if routes_dir is not None else root / "route-data" / "routes"
+    )
+    routes.mkdir(parents=True, exist_ok=True)
+    origin = _existing_clock_module().START
+    for index, leg in enumerate(fixture["mission"]["legs"]):
+        path = routes / (leg["route_id"] + ".kml")
+        if path.exists():
+            continue
+        departure = origin + timedelta(minutes=45 * index)
+        longitudes = (-10, 0, 10) if index == 0 else (10, 0, -10)
+        names = ("MERA", "MID", "HARB") if index == 0 else ("HARB", "MID", "MERA")
+        route_name = "MERA-HARB" if index == 0 else "HARB-MERA"
+        points = "".join(
+            f'<Placemark><name>{name}</name><description>Time Over Waypoint: {(departure + timedelta(minutes=15 * point)).strftime("%Y-%m-%d %H:%M:%SZ")}</description><Point><altitudeMode>clampToGround</altitudeMode><coordinates>{longitude},0</coordinates></Point></Placemark>'
+            for point, (name, longitude) in enumerate(zip(names, longitudes))
+        )
+        coordinates = " ".join(f"{longitude},0" for longitude in longitudes)
+        path.write_text(
+            f'<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Fictional {route_name} training leg {index + 1}</name><Placemark><name>Route</name><LineString><altitudeMode>clampToGround</altitudeMode><coordinates>{coordinates}</coordinates></LineString></Placemark>{points}</Document></kml>'
+        )
     previous = storage.MISSIONS_DIR
     storage.MISSIONS_DIR = root / "missions"
     settings = OperatorSettings(
@@ -168,3 +187,105 @@ def seed_prerequisites(root):
         if store is not None:
             store.close()
         storage.MISSIONS_DIR = previous
+
+
+CHECKPOINTS = {
+    "preflight": {"minutes": 0, "longitude": -10, "speed": 0},
+    "leg-one": {"minutes": 15, "longitude": -8, "speed": 600},
+    "leg-one-restriction": {"minutes": 23, "longitude": 1, "speed": 600},
+    "between-legs": {"minutes": 45, "longitude": 10, "speed": 0},
+    "leg-two": {"minutes": 65, "longitude": 1, "speed": 600},
+    "postflight": {"minutes": 80, "longitude": -10, "speed": 0},
+}
+
+
+def _existing_clock_module():
+    import importlib.util
+
+    source = Path(__file__).resolve().parents[3]
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_existing_clock",
+        source / "tools/acceptance/operator-journal/scenario.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def checkpoint_inputs(root):
+    training_namespace(root, mode="simulation")
+    path = Path(root) / "training-inputs.json"
+    if not path.exists():
+        apply_checkpoint(root, "preflight")
+    value = json.loads(path.read_text())
+    from app.operator.time_models import utc_timestamp
+
+    if (
+        value.get("schema_version") != 1
+        or value.get("checkpoint_id") not in CHECKPOINTS
+    ):
+        raise ValueError("Invalid persisted training inputs; preserve for recovery")
+    utc_timestamp(value["now"])
+    return value
+
+
+def apply_checkpoint(root, checkpoint_id):
+    """Persist predefined raw input and time only; never writes learner outcomes."""
+    from datetime import timedelta
+
+    from app.operator.time_models import utc_timestamp
+
+    training_namespace(root, mode="simulation")
+    if checkpoint_id not in CHECKPOINTS:
+        raise ValueError("Unknown training checkpoint")
+    step = CHECKPOINTS[checkpoint_id]
+    now = _existing_clock_module().START + timedelta(minutes=step["minutes"])
+    path = Path(root) / "training-inputs.json"
+    if path.exists() and utc_timestamp(json.loads(path.read_text())["now"]) > now:
+        raise ValueError(
+            "Checkpoints cannot move time backwards; reset into a fresh owned root instead"
+        )
+    value = {
+        "schema_version": 1,
+        "checkpoint_id": checkpoint_id,
+        "now": now.isoformat(),
+        "latitude": 0,
+        "longitude": step["longitude"],
+        "speed": step["speed"],
+        "stale": False,
+        "invalid_ka": False,
+        "missing_pop": False,
+    }
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(value, indent=2))
+    temporary.replace(path)
+    return value
+
+
+def training_clock(root):
+    """Reuse ScenarioClock.advance; persisted raw inputs remain the authority."""
+    from app.operator.time_models import utc_timestamp
+
+    initial = utc_timestamp(checkpoint_inputs(root)["now"])
+    base = _existing_clock_module().ScenarioClock
+
+    class TrainingClock(base):
+        def set(self, value):
+            value = utc_timestamp(value)
+            seconds = (value - self.current).total_seconds()
+            if seconds < 0:
+                raise ValueError("Training clock cannot move backwards")
+            self.advance(seconds)
+
+        def _refresh(self):
+            self.set(checkpoint_inputs(root)["now"])
+
+        def now(self):
+            self._refresh()
+            return super().now()
+
+        def monotonic(self):
+            self._refresh()
+            return super().monotonic()
+
+    return TrainingClock(initial)
