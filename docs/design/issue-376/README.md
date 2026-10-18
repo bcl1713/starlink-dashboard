@@ -2,7 +2,18 @@
 
 Draft design for
 [issue 376](https://github.com/bcl1713/starlink-dashboard/issues/376), based on
-merged `dev` commit `1a3e77d3`. Approval pending. No product UI changes.
+merged `dev` commit `1a3e77d3`. Concept A is approved; the detailed
+implementation plan requires separate review. No product UI changes.
+
+[Implementation specification](../../superpowers/specs/2026-10-18-operator-workspace-implementation.md)
+and
+[implementation plan](../../superpowers/plans/2026-10-18-operator-workspace.md)
+include the approved persistent owners, whole-system guided training, manual and
+quick reference. The
+[approval record](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253399573)
+approves design, not product changes; the
+[training clarification](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253414196)
+is mandatory scope in the plan.
 
 **Download and open [the current standalone prototype](review-v2.html).** It
 opens with Start here; Start here / Help remains visible. Working-view buttons
