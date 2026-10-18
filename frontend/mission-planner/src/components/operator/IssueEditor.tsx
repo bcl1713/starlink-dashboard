@@ -28,13 +28,17 @@ export function IssueEditor({
   identity: DraftIdentity;
   disabled: boolean;
   asOf: string | null;
-  onSave: (command: OperatorCommand) => Promise<boolean>;
+  onSave: (
+    command: OperatorCommand,
+    useCurrentTime: boolean
+  ) => Promise<boolean>;
   related: SavedRecord[];
 }) {
   const initial = {
     input: issueInput(missionId, record),
     baseVersion: record?.version ?? null,
-    occurredAt: asOf,
+    occurredAt: null as string | null,
+    useCurrentTime: true,
   };
   const { draft, setDraft, clear, storageError } = useOperatorIssueDraft(
     identity,
@@ -57,7 +61,7 @@ export function IssueEditor({
             body: { ...body, expected_version: draft.baseVersion },
           }
         : { operation: 'create', body };
-    if (await onSave(command)) clear();
+    if (await onSave(command, draft.useCurrentTime ?? true)) clear();
   }
   return (
     <form
@@ -203,12 +207,23 @@ export function IssueEditor({
                 Clear follow-up
               </button>
             </div>
+            <label className="flex min-h-11 items-center gap-2">
+              <input
+                type="checkbox"
+                checked={draft.useCurrentTime ?? true}
+                onChange={(e) =>
+                  setDraft({ ...draft, useCurrentTime: e.target.checked })
+                }
+              />
+              Use current backend UTC when saved
+            </label>
             <label>
               Action occurred UTC (optional)
               <input
                 type="datetime-local"
                 step="1"
                 className={issueField}
+                disabled={draft.useCurrentTime ?? true}
                 value={utcValue(draft.occurredAt)}
                 onChange={(e) =>
                   setDraft({ ...draft, occurredAt: parseUtc(e.target.value) })

@@ -188,3 +188,34 @@ def test_issue_call_link_guards_both_directions(api, record_data):
     data = issue_data(record_data, call_id=target["record_id"])
     data["mission_id"] = "other-mission"
     assert create(api, data).status_code == 409
+
+
+def test_restore_revision_is_not_a_message_correction_target(api, record_data):
+    data = issue_data(record_data, update_text="Synthetic original update")
+    record = saved(create(api, data))
+    removed = saved(
+        api.post(
+            BASE + "/records/" + record["record_id"] + "/remove",
+            json={"expected_version": 1},
+            headers=headers(api),
+        ),
+        200,
+    )
+    restored = saved(
+        api.post(
+            BASE + "/records/" + record["record_id"] + "/restore",
+            json={"expected_version": removed["version"]},
+            headers=headers(api),
+        ),
+        200,
+    )
+    assert (
+        replace(
+            api,
+            data,
+            restored,
+            corrects_version=restored["version"],
+            update_text="Synthetic replacement",
+        ).status_code
+        == 422
+    )

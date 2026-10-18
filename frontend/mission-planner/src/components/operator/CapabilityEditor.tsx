@@ -28,7 +28,11 @@ export function CapabilityEditor({
   identity: DraftIdentity;
   disabled: boolean;
   asOf: string | null;
-  onSave: (input: CapabilityInput, version: number | null) => Promise<boolean>;
+  onSave: (
+    input: CapabilityInput,
+    version: number | null,
+    currentDimensions: ('functional' | 'redundancy')[]
+  ) => Promise<boolean>;
 }) {
   const initial: CapabilityInput = {
     schema_version: 1,
@@ -57,12 +61,26 @@ export function CapabilityEditor({
   };
   const { draft, setDraft, clear, storageError } = useOperatorIssueDraft(
     identity,
-    { input: initial, version: record?.version ?? null }
+    {
+      input: initial,
+      version: record?.version ?? null,
+      currentDimensions: [] as ('functional' | 'redundancy')[],
+    }
   );
   const input = draft.input;
-  const patch = (fields: Partial<CapabilityPayload>) =>
+  const patch = (
+    fields: Partial<CapabilityPayload>,
+    dimension?: 'functional' | 'redundancy',
+    useCurrentTime = false
+  ) =>
     setDraft({
       ...draft,
+      currentDimensions: dimension
+        ? [
+            ...(draft.currentDimensions ?? []).filter((d) => d !== dimension),
+            ...(useCurrentTime ? [dimension] : []),
+          ]
+        : (draft.currentDimensions ?? []),
       input: { ...input, payload: { ...input.payload, ...fields } },
     });
   return (
@@ -71,11 +89,13 @@ export function CapabilityEditor({
       className="min-w-0 space-y-3 rounded-lg border p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        void onSave({ ...input, time: instant(asOf) }, draft.version).then(
-          (ok) => {
-            if (ok) clear();
-          }
-        );
+        void onSave(
+          { ...input, time: instant(asOf) },
+          draft.version,
+          draft.currentDimensions ?? []
+        ).then((ok) => {
+          if (ok) clear();
+        });
       }}
     >
       <fieldset disabled={disabled} className="min-w-0 space-y-3">
@@ -107,13 +127,15 @@ export function CapabilityEditor({
                   className={issueField}
                   value={input.payload[`${dimension}_status`]}
                   onChange={(e) =>
-                    patch({
-                      [`${dimension}_status`]: e.target.value,
-                      [`${dimension}_observed_at`]: asOf,
-                      [`${dimension}_time_precision`]: asOf
-                        ? 'exact'
-                        : 'unknown',
-                    })
+                    patch(
+                      {
+                        [`${dimension}_status`]: e.target.value,
+                        [`${dimension}_observed_at`]: null,
+                        [`${dimension}_time_precision`]: 'unknown',
+                      },
+                      dimension,
+                      true
+                    )
                   }
                 >
                   {(dimension === 'functional'
@@ -124,6 +146,14 @@ export function CapabilityEditor({
                   ))}
                 </select>
               </label>
+              <label className="flex min-h-11 items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={(draft.currentDimensions ?? []).includes(dimension)}
+                  onChange={(e) => patch({}, dimension, e.target.checked)}
+                />
+                Use current UTC for {dimension} observation
+              </label>
               <label className="block">
                 {dimension === 'functional'
                   ? 'Functional observation UTC'
@@ -132,14 +162,19 @@ export function CapabilityEditor({
                   className={issueField}
                   type="datetime-local"
                   step="1"
+                  disabled={(draft.currentDimensions ?? []).includes(dimension)}
                   value={utcValue(input.payload[`${dimension}_observed_at`])}
                   onChange={(e) =>
-                    patch({
-                      [`${dimension}_observed_at`]: parseUtc(e.target.value),
-                      [`${dimension}_time_precision`]: e.target.value
-                        ? 'exact'
-                        : 'unknown',
-                    })
+                    patch(
+                      {
+                        [`${dimension}_observed_at`]: parseUtc(e.target.value),
+                        [`${dimension}_time_precision`]: e.target.value
+                          ? 'exact'
+                          : 'unknown',
+                      },
+                      dimension,
+                      false
+                    )
                   }
                 />
               </label>
@@ -151,12 +186,18 @@ export function CapabilityEditor({
                   className={issueField}
                   value={input.payload[`${dimension}_time_precision`]}
                   onChange={(e) =>
-                    patch({
-                      [`${dimension}_time_precision`]: e.target.value,
-                      ...(e.target.value === 'unknown'
-                        ? { [`${dimension}_observed_at`]: null }
-                        : {}),
-                    })
+                    patch(
+                      {
+                        [`${dimension}_time_precision`]: e.target.value,
+                        ...(e.target.value === 'unknown'
+                          ? { [`${dimension}_observed_at`]: null }
+                          : {}),
+                      },
+                      dimension,
+                      e.target.value === 'unknown'
+                        ? false
+                        : (draft.currentDimensions ?? []).includes(dimension)
+                    )
                   }
                 >
                   {['unknown', 'exact', 'approximate'].map((v) => (

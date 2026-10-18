@@ -7,8 +7,10 @@ export interface DraftIdentity {
   missionId: string;
   recordId: string;
 }
+export const issueDraftKey = (identity: DraftIdentity) =>
+  'operator-367-draft:' + JSON.stringify(identity);
 export function useOperatorIssueDraft<T>(identity: DraftIdentity, initial: T) {
-  const key = 'operator-367-draft:' + JSON.stringify(identity);
+  const key = issueDraftKey(identity);
   const [state, setState] = useState<{
     key: string;
     draft: T;

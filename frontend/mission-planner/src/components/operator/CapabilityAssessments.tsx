@@ -2,7 +2,10 @@ import { CapabilityEditor } from './CapabilityEditor';
 import { useState } from 'react';
 import type { SavedRecord } from '@/types/operator';
 import { useOperatorJournal } from '@/hooks/api/useOperatorJournal';
-import { type DraftIdentity } from '@/hooks/api/useOperatorIssueDraft';
+import {
+  issueDraftKey,
+  type DraftIdentity,
+} from '@/hooks/api/useOperatorIssueDraft';
 import { issueButton } from './issueForms';
 import { operatorUtc } from './issueForms';
 import { JournalHistory } from './JournalHistory';
@@ -13,9 +16,14 @@ export function CapabilityAssessments({ missionId }: { missionId: string }) {
   const [selected, setSelected] = useState<SavedRecord>();
   const [generation, setGeneration] = useState(0);
   const [historyId, setHistoryId] = useState<string>();
+  const [needsCurrent, setNeedsCurrent] = useState(false);
   const ready = journal.health.data?.ready && !journal.health.isError;
   const disabled =
-    !ready || journal.saving || !!journal.pending || journal.blocked;
+    !ready ||
+    journal.saving ||
+    !!journal.pending ||
+    journal.blocked ||
+    needsCurrent;
   const asOf = journal.records.data?.pages[0]?.as_of ?? null;
   const records =
     journal.records.data?.pages
@@ -67,18 +75,33 @@ export function CapabilityAssessments({ missionId }: { missionId: string }) {
       {journal.saving && <p role="status">Saving assessment…</p>}
       {journal.saved && <p role="status">Assessment save acknowledged.</p>}
       {journal.pending && !journal.blocked && (
-        <button className={issueButton} onClick={() => void journal.retry()}>
+        <button
+          className={issueButton}
+          onClick={() =>
+            void journal.retry().then((result) => {
+              if (result) {
+                setNeedsCurrent(!result.current);
+                choose(selected ? result.current : undefined);
+              }
+            })
+          }
+        >
           Retry assessment save
         </button>
       )}
-      {journal.blocked && (
+      {(journal.blocked || needsCurrent) && (
         <div role="alert">
-          Assessment conflict or changed store. Draft retained.
+          {needsCurrent
+            ? 'Assessment save acknowledged. Current state unavailable; the submitted draft is retired. Reread before further edits.'
+            : 'Assessment conflict or changed store. Draft retained.'}
           <button
             className={issueButton}
             onClick={() =>
               void journal.reconcile().then((result) => {
-                if (result) choose(result.current);
+                if (result) {
+                  setNeedsCurrent(false);
+                  choose(result.current);
+                }
               })
             }
           >
@@ -94,7 +117,7 @@ export function CapabilityAssessments({ missionId }: { missionId: string }) {
           identity={identity}
           disabled={disabled}
           asOf={asOf}
-          onSave={async (input, version) => {
+          onSave={async (input, version, currentDimensions) => {
             const result = await journal.save(
               selected && version
                 ? {
@@ -102,9 +125,15 @@ export function CapabilityAssessments({ missionId }: { missionId: string }) {
                     record_id: selected.record_id,
                     body: { ...input, expected_version: version },
                   }
-                : { operation: 'create', body: input }
+                : { operation: 'create', body: input },
+              {
+                draftKey: issueDraftKey(identity),
+                captureCurrentTime: true,
+                captureDimensions: currentDimensions,
+              }
             );
-            if (result?.current) {
+            if (result) {
+              setNeedsCurrent(!result.current);
               choose(selected ? result.current : undefined);
               return true;
             }

@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useOperatorJournal } from '@/hooks/api/useOperatorJournal';
-import type { DraftIdentity } from '@/hooks/api/useOperatorIssueDraft';
+import {
+  issueDraftKey,
+  type DraftIdentity,
+} from '@/hooks/api/useOperatorIssueDraft';
 import type { OperatorCommand, SavedRecord } from '@/types/operator';
 import { readOperatorRecords } from '@/services/operator';
 import { issueButton, issueInput, instant } from './issueForms';
@@ -18,9 +21,14 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
   const [activityId, setActivityId] = useState<string>();
   const [historyId, setHistoryId] = useState<string>();
   const [correction, setCorrection] = useState<SavedRecord>();
+  const [needsCurrent, setNeedsCurrent] = useState(false);
   const ready = !!journal.health.data?.ready && !journal.health.isError;
   const disabled =
-    !ready || journal.saving || !!journal.pending || journal.blocked;
+    !ready ||
+    journal.saving ||
+    !!journal.pending ||
+    journal.blocked ||
+    needsCurrent;
   const health = journal.health.data;
   const identity: DraftIdentity = {
     storeId: health?.store_id ?? 'unknown',
@@ -50,33 +58,51 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
     setGeneration((n) => n + 1);
     setCorrection(undefined);
   }
-  async function save(command: OperatorCommand) {
-    const result = await journal.save(command);
-    if (!result?.current) return false;
-    if (selected?.record_id === result.current.record_id)
+  async function save(
+    command: OperatorCommand,
+    useCurrentTime = false,
+    draftKey?: string
+  ) {
+    const result = await journal.save(command, {
+      captureCurrentTime: useCurrentTime,
+      draftKey,
+    });
+    if (!result) return false;
+    setNeedsCurrent(!result.current);
+    if (result.current && selected?.record_id === result.current.record_id)
       setSelected(result.current);
     setGeneration((n) => n + 1);
     return true;
+  }
+  async function retry() {
+    const result = await journal.retry();
+    if (!result) return;
+    setNeedsCurrent(!result.current);
+    if (result.current && selected) setSelected(result.current);
+    setGeneration((n) => n + 1);
   }
   async function action(
     record: SavedRecord,
     status: 'open' | 'monitoring' | 'resolved' | 'reopened'
   ) {
     const input = issueInput(missionId, record);
-    await save({
-      operation: 'update',
-      record_id: record.record_id,
-      body: {
-        ...input,
-        expected_version: record.version,
-        time: instant(asOf),
-        payload: {
-          ...input.payload,
-          status,
-          ...(status === 'resolved' ? { follow_up_at: null } : {}),
+    await save(
+      {
+        operation: 'update',
+        record_id: record.record_id,
+        body: {
+          ...input,
+          expected_version: record.version,
+          time: instant(asOf),
+          payload: {
+            ...input.payload,
+            status,
+            ...(status === 'resolved' ? { follow_up_at: null } : {}),
+          },
         },
       },
-    });
+      true
+    );
   }
   const active = items
     .filter(
@@ -222,7 +248,7 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
   return (
     <section
       id="operator-issues"
-      aria-label="Issues"
+      aria-label="Issue management"
       className="min-w-0 scroll-mt-20 space-y-4"
     >
       <h2 className="text-xl font-semibold">Issues and manual capabilities</h2>
@@ -281,20 +307,22 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
         <button
           className={issueButton}
           disabled={journal.saving}
-          onClick={() => void journal.retry()}
+          onClick={() => void retry()}
         >
           Retry issue save
         </button>
       )}
-      {journal.blocked && (
+      {(journal.blocked || needsCurrent) && (
         <div role="alert">
-          Issue conflict or changed store. Your draft is retained; review
-          against saved state.
+          {needsCurrent
+            ? 'Save acknowledged. Current state unavailable; the submitted draft is retired. Reread before further edits.'
+            : 'Issue conflict or changed store. Your draft is retained; review against saved state.'}
           <button
             className={issueButton}
             onClick={() =>
               void journal.reconcile().then((result) => {
                 if (result) {
+                  setNeedsCurrent(false);
                   setSelected(result.current);
                   setGeneration((n) => n + 1);
                 }
@@ -323,7 +351,9 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
           identity={identity}
           disabled={disabled}
           asOf={asOf}
-          onSave={save}
+          onSave={(command, useCurrentTime) =>
+            save(command, useCurrentTime, issueDraftKey(identity))
+          }
           related={relatedRecords}
         />
       )}
@@ -368,7 +398,19 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
               target={correction}
               identity={identity}
               disabled={disabled}
-              onSave={save}
+              onSave={(command) =>
+                save(
+                  command,
+                  false,
+                  issueDraftKey({
+                    ...identity,
+                    recordId:
+                      activityCurrent.record_id +
+                      ':correction:' +
+                      correction.version,
+                  })
+                )
+              }
               onClose={() => setCorrection(undefined)}
             />
           )}

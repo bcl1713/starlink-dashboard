@@ -9,6 +9,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
   operatorFailure,
   readOperatorRecord,
+  readOperatorRecords,
   saveOperatorCommand,
 } from '@/services/operator';
 import type {
@@ -24,6 +25,7 @@ interface Pending {
   key: string;
   epoch: string;
   identity: string;
+  draftKey?: string;
 }
 export function useOperatorJournal(
   missionId: string,
@@ -115,6 +117,13 @@ export function useOperatorJournal(
         throw new Error('Invalid pending request');
       pendingRef.current = request;
       setPending(request);
+      reconciliationTarget.current = {
+        recordId:
+          'record_id' in request.command
+            ? request.command.record_id
+            : undefined,
+        identity: request.identity,
+      };
       if (request.identity !== identity) {
         session.current = request.identity;
         setBlocked(true);
@@ -163,6 +172,15 @@ export function useOperatorJournal(
       );
       setSaved(true);
       keep(null);
+      if (request.draftKey) {
+        try {
+          sessionStorage.removeItem(request.draftKey);
+        } catch {
+          setStorageError(
+            'Save acknowledged, but the submitted draft could not be retired. Discard it before saving again.'
+          );
+        }
+      }
       if (!stillSameStore(request)) return;
       await refresh();
       // A replay receipt can predate later corrections. Reopen the current row.
@@ -204,7 +222,14 @@ export function useOperatorJournal(
       setSaving(false);
     }
   }
-  async function save(command: OperatorCommand) {
+  async function save(
+    command: OperatorCommand,
+    context: {
+      draftKey?: string;
+      captureCurrentTime?: boolean;
+      captureDimensions?: ('functional' | 'redundancy')[];
+    } = {}
+  ) {
     if (
       inFlight.current ||
       pendingRef.current ||
@@ -216,8 +241,47 @@ export function useOperatorJournal(
       !health.data.api_epoch
     )
       return;
+    const frozen = JSON.parse(JSON.stringify(command)) as OperatorCommand;
+    if (context.captureCurrentTime || context.captureDimensions?.length) {
+      inFlight.current = true;
+      setSaving(true);
+      setSaved(false);
+      setError(null);
+      try {
+        const current = await readOperatorRecords({
+          mission_id: missionId,
+          record_type: recordType,
+        });
+        if (frozen.operation === 'create' || frozen.operation === 'update') {
+          if (context.captureCurrentTime)
+            frozen.body.time = {
+              ...frozen.body.time,
+              occurred_at: current.as_of,
+              ended_at: null,
+              precision: 'exact',
+              end_state: 'instant',
+            };
+          if (frozen.body.payload.entry_type === 'capability_assessment') {
+            for (const dimension of context.captureDimensions ?? []) {
+              frozen.body.payload[`${dimension}_observed_at`] = current.as_of;
+              if (
+                frozen.body.payload[`${dimension}_time_precision`] === 'unknown'
+              )
+                frozen.body.payload[`${dimension}_time_precision`] = 'exact';
+            }
+          }
+        }
+      } catch (caught) {
+        setError(operatorFailure(caught));
+        return undefined;
+      } finally {
+        inFlight.current = false;
+        setSaving(false);
+      }
+    }
     const request = {
-      command: JSON.parse(JSON.stringify(command)) as OperatorCommand,
+      command: frozen,
+      draftKey: context.draftKey,
       key: crypto.randomUUID(),
       epoch: health.data.api_epoch,
       identity: session.current,

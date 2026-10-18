@@ -34,7 +34,12 @@ def validate_issue_update(connection, current, command, clock):
         "SELECT * FROM revisions WHERE record_id=? AND version=?",
         (str(current.record_id), payload.corrects_version),
     )
-    if not targets or targets[0].deleted or not targets[0].payload.update_text.strip():
+    if (
+        not targets
+        or targets[0].deleted
+        or targets[0].operation not in ("create", "update")
+        or not targets[0].payload.update_text.strip()
+    ):
         raise OperatorError(
             "validation_error",
             fields={

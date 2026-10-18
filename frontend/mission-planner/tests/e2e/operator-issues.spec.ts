@@ -14,7 +14,10 @@ const url = `${origin}/operator?mission_id=synthetic-mission-b`;
 async function open(page: Page) {
   await page.goto(url);
   await ready(page);
-  const region = page.getByRole('region', { name: 'Issues', exact: true });
+  const region = page.getByRole('region', {
+    name: 'Issue management',
+    exact: true,
+  });
   await expect(region.getByText(/Issue snapshot 2026/)).toBeVisible();
   return region;
 }
