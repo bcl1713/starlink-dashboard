@@ -1,9 +1,10 @@
 # Operator event feed and local alerts
 
 Issue: [#368](https://github.com/bcl1713/starlink-dashboard/issues/368). Parent:
-[#361](https://github.com/bcl1713/starlink-dashboard/issues/361). Status:
-detailed design for review; implementation is not approved. Base: `origin/dev`
-at `30d628c8`. Branch: `feat/issue-368-events`.
+[#361](https://github.com/bcl1713/starlink-dashboard/issues/361). Status: review
+clarifications from PR #379 comment 6244453274 incorporated; user requested
+implementation planning. Product implementation awaits plan review and execution
+selection. Base: `origin/dev` at `30d628c8`. Branch: `feat/issue-368-events`.
 
 ## Purpose and boundaries
 
@@ -168,6 +169,15 @@ crossed; moving an already due window around does not repeatedly cue. Once
 retired, a generation cannot become pending again. New route families obey
 catch-up and rate limits.
 
+These are provisional software tuning defaults, not physically validated limits.
+An injected `EventPolicy` controls `model_shift_seconds=300`,
+`model_stable_captures=2`, `model_capture_spacing_seconds=15`, and
+`model_escalation_captures=2`. Validate finite positive values and a capture
+count of at least two. Load optional operator deployment overrides, with no new
+controls on Overview. Deterministic tests exercise defaults and shorter
+rapid-crossing settings; tuning cannot alter the underlying #348
+prediction/window semantics.
+
 Acknowledgment covers one occurrence and its severity tier. Prediction revision,
 wording, confidence changes or increased protection prominence alone preserve
 it. A genuine escalation from degraded to unavailable, or from
@@ -179,22 +189,29 @@ schedule was acknowledged.
 
 ## Protected customer activity
 
-Use nonremoved participation with state `connected` and a nonremoved referenced
-conference. An interrupted/unknown conference is still relevant customer
-activity; a closed conference or left/interrupted/unknown participation does not
-assert a currently connected customer. Missing relationships make relevance
-unknown. Do not infer a connection from a call's planned start or conference
-established status.
+Every nonremoved participation with state `connected` is protection-relevant,
+even when its conference is closed, interrupted, unknown, removed or missing.
+Conference closure does not edit the customer observation. Preserve emphasis and
+alert relevance; show the association/status discrepancy as continuity unknown.
+Do not silently drop conference-only or call-only participation. A call-only
+participation has unknown transport relevance unless an independent valid source
+establishes it; a conference-only participation needs no call record to protect
+it. Left/interrupted/unknown participation does not assert a currently connected
+customer. Do not infer a connection from a call's planned start or an
+established conference without connected participation.
 
-Match restrictions to configured transport first; intended transport is
-separately labeled planned relevance. With no transport report, relevance is
-unknown. Include existing call-continuity restrictions where applicable. Show
-all affected active customer activities on one restriction; multiple
-participations never multiply alerts. Planned call end may bound future context
-but must not silently terminate an explicitly connected observation. Show old
-connection observations with their age and uncertainty. Protected activity
-increases ordering/emphasis, not evidence confidence, outage classification or
-permission to act.
+For a valid established conference, match restrictions to configured transport
+first; intended transport is separately labeled planned relevance. With no
+transport report, relevance is unknown. A missing/removed/closed/interrupted
+conference makes continuity and transport relevance unknown; retain potentially
+relevant restrictions with that label rather than filtering them out using an
+obsolete configured transport. Include existing call-continuity restrictions
+where applicable. Show all affected active customer activities on one
+restriction; multiple participations never multiply alerts. Planned call end may
+bound future context but must not silently terminate an explicitly connected
+observation. Show old connection observations with their age and uncertainty.
+Protected activity increases ordering/emphasis, not evidence confidence, outage
+classification or permission to act.
 
 ## Durable acknowledgment and concurrency
 
@@ -208,14 +225,76 @@ notification transitions.
 
 Add `POST /api/v2/operator/events/acknowledge` accepting occurrence ID, severity
 generation and snapshot token, with existing idempotency and store-epoch
-headers. Resolve the current source eligibility transactionally before
-acknowledging; reject a superseded generation with 409 and return refreshed
-identity. A unique database constraint on
-`(store_id, occurrence_id, severity_generation)` ensures two clients acknowledge
-once even with distinct request keys. A second acknowledgment returns the
-existing durable result, without another acknowledgment or journal revision.
-Reuse the command receipt machinery for exact retries and incompatible key
-reuse.
+headers. Validate according to the versioned capture protocol below; reject a
+superseded generation with 409 and return refreshed identity. A unique database
+constraint on `(store_id, occurrence_id, severity_generation)` ensures two
+clients acknowledge once even with distinct request keys. A second
+acknowledgment returns the existing durable result, without another
+acknowledgment or journal revision. Reuse the command receipt machinery for
+exact retries and incompatible key reuse.
+
+### Versioned capture and acknowledgment authority
+
+The snapshot token is server-issued and opaque, bound to store ID/API epoch,
+mission/leg, source mode/run/lifecycle, event occurrence/severity generation,
+reconciliation generation, source record versions, effective route/catalog/input
+identities, and the relevant published model revisions/capture generations. Use
+a server-side registry capped at 256 snapshots per runtime, evicting the oldest
+issued first, with a two-minute real-monotonic TTL; restarts invalidate tokens,
+not acknowledgment history. Expired/unknown tokens return 409 requiring a fresh
+feed. Tokens grant no authority to mutate sources.
+
+The feed pins Operator records at high-water H and each independently captured
+immutable model publication at its own generation. There is no distributed
+transaction and H never claims to pin mission/telemetry stores. Responses expose
+all capture identities and times. Pagination uses the same pinned captures.
+
+For a new acknowledgment:
+
+1. Refresh/revalidate the relevant local source publication and its input
+   identity outside SQLite. Recompute only via existing source logic when
+   required.
+2. Acquire the source-publication read guard, then Operator admission and an
+   immediate SQLite write transaction, in that order. Re-read relevant Operator
+   records and occurrence state inside the transaction. Unrelated journal writes
+   need not invalidate a token; changed dependent record versions do.
+3. Compare the token's modeled publication/input generations to the guarded
+   current publications and verify freshness/alignment. A generation mismatch is
+   409; missing, stale, unaligned or unguardable required evidence is 503.
+   Return no acknowledgment receipt for either outcome. Scheduled-only events do
+   not fail merely because an unrelated modeled feed is unavailable.
+4. Reconcile affected generations, insert the uniquely constrained
+   acknowledgment and its idempotent receipt, and commit while holding the
+   publication guard. Release the SQLite/admission resources before the
+   publication guard.
+
+The guard serializes publication/invalidation of the adapter's local immutable
+snapshots, not remote reality. All relevant local publishers and source-input
+invalidation paths must participate: mark an input generation invalid before a
+changed route/catalog/lifecycle/configuration becomes eligible, and publish its
+replacement only with matching evidence. Where a source cannot provide this
+revision/guard contract, show its events read-only with acknowledgment
+unavailable and return 503 rather than promise cross-store atomicity.
+Multi-process deployments must share the publication gate/generation state or
+conservatively disable modeled acknowledgment; a process-local lock alone is
+insufficient there.
+
+A model change between refresh and guard acquisition causes 409. A pending
+publication detected before commit aborts acknowledgment. A publisher arriving
+while the guard is held waits; acknowledgment refers to the then-current
+captured publication and commits before the replacement becomes authoritative.
+Later publication reconciles the new generation and cannot acknowledge it
+through the old row. This is serialization of local published evidence, not a
+guarantee that an aircraft or independently stored input cannot change after
+capture.
+
+For calls/issues, source validation and occurrence retirement share the same
+Operator transaction. For models, retirement is reconciled against guarded
+publication generations; a response never knowingly advertises a superseded
+pending generation. An old response already delivered to a browser remains
+subject to the documented polling boundary. Exact replay of a committed request
+returns its original receipt even after source changes, explicitly identifying
+the acknowledged historical generation; it does not acknowledge the replacement.
 
 Acknowledgment only records notification disposition. It never edits a call,
 issue, participation or prediction and never hides the event. There is no
@@ -363,20 +442,20 @@ other application behavior.
 
 ## Failure and race semantics
 
-| Situation                                     | Required behavior                                                                                        |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Call moved while prep alert pending           | retire old generation before returning the new snapshot; old generation cannot cue/acknowledge           |
-| Cancel/complete/remove/resolve                | suppress automatic cues after authoritative reconciliation; preserve source history                      |
-| Two acknowledgments, different keys           | one durable acknowledgment; both receive its identity                                                    |
-| Lost acknowledgment response                  | retry same body/key; read back confirmed result                                                          |
-| Source changes during acknowledgment          | validate generation against current source and reject obsolete request                                   |
-| Feed result arrives after mission/run switch  | discard by request identity; never show or cue in new context                                            |
-| Forecast refresh or aircraft movement         | update timing/revision in place; apply drift/stability rules without refresh noise                       |
-| Prediction disappears due to unavailable data | last-known/unknown; no all-clear and no automatic cue                                                    |
-| Backend restart                               | retain occurrences/acknowledgments; bounded catch-up after fresh data                                    |
-| Browser storage unavailable                   | timeline/acknowledgment work; disclose session-only delivery dedup; no replay within the current session |
-| Audio/vibration fails                         | retain visual cue and event; report output limitation, never mark acknowledged                           |
-| Mid-transaction crash/disk failure            | atomic rollback or committed result; existing recovery and idempotency paths apply                       |
+| Situation                                     | Required behavior                                                                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Call moved while prep alert pending           | reconcile against the current Operator transaction before returning a fresh snapshot; obsolete generation cannot newly acknowledge |
+| Cancel/complete/remove/resolve                | suppress automatic cues after authoritative reconciliation; preserve source history                                                |
+| Two acknowledgments, different keys           | one durable acknowledgment; both receive its identity                                                                              |
+| Lost acknowledgment response                  | retry same body/key; read back confirmed result                                                                                    |
+| Source changes during acknowledgment          | validate pinned generations using the capture protocol; reject with 409/503, without a new acknowledgment                          |
+| Feed result arrives after mission/run switch  | discard by request identity; never show or cue in new context                                                                      |
+| Forecast refresh or aircraft movement         | update timing/revision in place; apply drift/stability rules without refresh noise                                                 |
+| Prediction disappears due to unavailable data | last-known/unknown; no all-clear and no automatic cue                                                                              |
+| Backend restart                               | retain occurrences/acknowledgments; bounded catch-up after fresh data                                                              |
+| Browser storage unavailable                   | timeline/acknowledgment work; disclose session-only delivery dedup; no replay within the current session                           |
+| Audio/vibration fails                         | retain visual cue and event; report output limitation, never mark acknowledged                                                     |
+| Mid-transaction crash/disk failure            | atomic rollback or committed result; existing recovery and idempotency paths apply                                                 |
 
 A cue already emitted before another client's cancellation/acknowledgment
 reaches this client cannot be recalled. Every cue is checked against the latest
@@ -395,20 +474,20 @@ acceptance. Unit tests may use contract fixtures; integration and browser
 acceptance exercise the real local PoP catalog/geometry/timing/continuity and
 #349 leg/archive lifecycle.
 
-| Area                  | Required controls and evidence                                                                                                                                                                           |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contracts and clock   | versioned feed/ack schemas, stable ordering/pagination, unknown times, exact thresholds, UTC midnight, large forward jump, regression and new run                                                        |
-| Calls/issues          | ten-minute creation default, overlap, prep/start milestones, pending move, prep-lead edit, cancel/complete/remove/restore, issue resolve/reopen, overdue follow-up, text-only correction                 |
-| Identity              | same forecast revision refresh, timing drift and cumulative drift, accepted-anchor shift, repeated PoP re-entry, route/catalog change, split/merge ambiguity, severity downgrade/re-escalation           |
-| Real #348 integration | actual synthetic route crossings and injected aircraft positions; full window bounds, normal PoP advisory, fallback-protected interval and sole-usable-Starshield restriction; unknown PoP is not outage |
-| Protected calls       | overlapping connected participations, shared conference, configured/intended/unknown transport, interrupted/closed conference, stale observations; one cue per restriction                               |
-| Acknowledgment        | leaves event/source unchanged, same/different-key concurrent clients, lost response, schedule/severity replacement, obsolete generation rejection                                                        |
-| Catch-up              | first open, long disconnection, muted then enabled, hidden then visible, overdue history, at most one grouped cue, three-item cap, rate limit and local reload dedup                                     |
-| Sources               | stale/missing/mismatched snapshots, unreachable optional provider, explicit disabled source, incomplete pagination, late response after mission/leg switch; no false all-clear                           |
-| Recovery              | real backend restart, two clients reconnect, backup/restore, migration rollback, storage-full/failure, commit crash; no duplicate durable acknowledgments                                                |
-| UI                    | production browser desktop 1920×1080, mobile 390×844 and 844×390; access feed from all four work sections, preserve dirty drafts, keyboard/focus, long titles, no horizontal overflow                    |
-| Local delivery        | gesture requirement, enabled/muted/unsupported/rejected sound and vibration, hidden page throttling, close/unmount cleanup; no external requests                                                         |
-| Existing behavior     | real #349 synthetic leg switch/completion/archive, unchanged mission-package/export hashes, Overview layout/history/POIs and Missions workflows                                                          |
+| Area                  | Required controls and evidence                                                                                                                                                                                                                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contracts and clock   | versioned feed/ack schemas, stable ordering/pagination, unknown times, exact thresholds, UTC midnight, large forward jump, regression and new run                                                                                                              |
+| Calls/issues          | ten-minute creation default, overlap, prep/start milestones, pending move, prep-lead edit, cancel/complete/remove/restore, issue resolve/reopen, overdue follow-up, text-only correction                                                                       |
+| Identity              | same forecast revision refresh, timing drift and cumulative drift, accepted-anchor shift, repeated PoP re-entry, route/catalog change, split/merge ambiguity, severity downgrade/re-escalation                                                                 |
+| Real #348 integration | actual synthetic route crossings and injected aircraft positions; full window bounds, normal PoP advisory, fallback-protected interval and sole-usable-Starshield restriction; unknown PoP is not outage                                                       |
+| Protected calls       | overlapping connected participations, shared conference, configured/intended/unknown transport, closed/interrupted/missing conference with still-connected participation, call-only/conference-only participation, stale observations; one cue per restriction |
+| Acknowledgment        | leaves event/source unchanged, same/different-key concurrent clients, lost response, schedule/severity replacement, obsolete generation rejection                                                                                                              |
+| Catch-up              | first open, long disconnection, muted then enabled, hidden then visible, overdue history, at most one grouped cue, three-item cap, rate limit and local reload dedup                                                                                           |
+| Sources               | stale/missing/mismatched snapshots, unreachable optional provider, explicit disabled source, incomplete pagination, late response after mission/leg switch; no false all-clear                                                                                 |
+| Recovery              | real backend restart, two clients reconnect, backup/restore, migration rollback, storage-full/failure, commit crash; no duplicate durable acknowledgments                                                                                                      |
+| UI                    | production browser desktop 1920×1080, mobile 390×844 and 844×390; access feed from all four work sections, preserve dirty drafts, keyboard/focus, long titles, no horizontal overflow                                                                          |
+| Local delivery        | gesture requirement, enabled/muted/unsupported/rejected sound and vibration, hidden page throttling, close/unmount cleanup; no external requests                                                                                                               |
+| Existing behavior     | real #349 synthetic leg switch/completion/archive, unchanged mission-package/export hashes, Overview layout/history/POIs and Missions workflows                                                                                                                |
 
 Use two real browser contexts for concurrency. Capture request destinations and
 run the synthetic product network without external access; the unavailable
@@ -429,10 +508,10 @@ only, not aircraft readiness.
 
 ## Delivery and review boundary
 
-This specification is the review artifact. No product implementation, dependency
-installation, database migration or runtime stack is authorized by this design
-preparation step. After written-spec approval, prepare the implementation plan
-for review and execution-method selection. Implementation stays in the issue
-worktree; push the feature branch and open a PR against `dev`. Product review
-and applicable exact-head checks precede merge. Keep #369 allocation, #370
-export and #376 layout consolidation separate.
+This specification and the requested implementation plan are review artifacts.
+The user authorized review fixes and plan preparation after PR #379 review. No
+product implementation, dependency installation, database migration or runtime
+stack is authorized by that step. Review the plan and select its execution
+method before implementation. Work stays in the issue worktree and PR #379
+targets `dev`. Product review and applicable exact-head checks precede merge.
+Keep #369 allocation, #370 export and #376 layout consolidation separate.
