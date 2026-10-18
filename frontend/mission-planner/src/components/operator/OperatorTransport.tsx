@@ -18,6 +18,10 @@ export function OperatorTransport({
   const journal = useOperatorJournal(missionId, 'transport_decision', {
     durable: true,
   });
+  const [editorIdentity, setEditorIdentity] = useState(journal.identity);
+  if (editorIdentity === null && journal.identity)
+    setEditorIdentity(journal.identity);
+  const [createFromDraft, setCreateFromDraft] = useState(false);
   const [selected, setSelected] = useState<SavedRecord>();
   const [generation, setGeneration] = useState(0);
   const [history, setHistory] = useState<string>();
@@ -34,10 +38,14 @@ export function OperatorTransport({
     [];
   function choose(record?: SavedRecord) {
     journal.openEditor(record);
+    setEditorIdentity(journal.identity);
+    setCreateFromDraft(false);
     setSelected(record);
     setGeneration((n) => n + 1);
   }
   function acknowledge(current?: SavedRecord) {
+    setEditorIdentity(journal.identity);
+    setCreateFromDraft(false);
     setNeedsCurrent(!current);
     setSelected(current);
     setGeneration((n) => n + 1);
@@ -58,15 +66,21 @@ export function OperatorTransport({
     });
     if (result) acknowledge(result.current);
   }
-  const [snapshotStale, setSnapshotStale] = useState(true);
+  const [expiredCapture, setExpiredCapture] = useState<number | null>(null);
   useEffect(() => {
     const remaining = 30_000 - (performance.now() - eventFeed.receivedAt);
-    setSnapshotStale(remaining <= 0);
-    if (remaining <= 0) return;
-    const timer = window.setTimeout(() => setSnapshotStale(true), remaining);
+    const timer = window.setTimeout(
+      () => setExpiredCapture(eventFeed.receivedAt),
+      Math.max(0, remaining)
+    );
     return () => window.clearTimeout(timer);
   }, [eventFeed.receivedAt]);
-  const stale = eventFeed.failed || snapshotStale || !ready || journal.blocked;
+  const stale =
+    eventFeed.failed ||
+    expiredCapture === eventFeed.receivedAt ||
+    !eventFeed.snapshot ||
+    !ready ||
+    journal.blocked;
   return (
     <section
       id="operator-transport"
@@ -135,6 +149,8 @@ export function OperatorTransport({
               void journal.reconcile().then((result) => {
                 if (result) {
                   setNeedsCurrent(false);
+                  setEditorIdentity(journal.identity);
+                  setCreateFromDraft(false);
                   setSelected(result.current);
                   setGeneration((n) => n + 1);
                   eventFeed.refresh();
@@ -143,6 +159,37 @@ export function OperatorTransport({
             }
           >
             Reread transport for reconciliation
+          </button>
+        </div>
+      )}
+      {journal.missingInNewStore && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            className={issueButton}
+            disabled={journal.saving}
+            onClick={() => {
+              if (journal.recoverMissing()) {
+                setNeedsCurrent(false);
+                setCreateFromDraft(true);
+              }
+            }}
+          >
+            Keep draft as new transport decision
+          </button>
+          <button
+            className={issueButton}
+            disabled={journal.saving}
+            onClick={() => {
+              if (journal.recoverMissing()) {
+                setNeedsCurrent(false);
+                setSelected(undefined);
+                setCreateFromDraft(false);
+                setEditorIdentity(journal.identity);
+                setGeneration((n) => n + 1);
+              }
+            }}
+          >
+            Release absent transport action and start new
           </button>
         </div>
       )}
@@ -155,12 +202,13 @@ export function OperatorTransport({
       {journal.reconcileError && <p role="alert">{journal.reconcileError}</p>}
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <div>
-          {ready && journal.identity && (
+          {ready && editorIdentity && (
             <TransportEditor
-              key={`${journal.identity}:${generation}`}
+              key={`${editorIdentity}:${generation}`}
               missionId={missionId}
               record={selected?.deleted ? undefined : selected}
-              identity={journal.identity}
+              identity={editorIdentity}
+              createFromDraft={createFromDraft}
               disabled={disabled}
               onSave={save}
             />

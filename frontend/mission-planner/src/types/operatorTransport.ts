@@ -56,6 +56,7 @@ export interface CommunicationWindow {
   ongoing: boolean;
 }
 export interface TransportAssessment {
+  change_basis?: 'planned_change' | 'reported_application' | null;
   decision_id: string;
   row_id: string;
   service: string;

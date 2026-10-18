@@ -40,6 +40,7 @@ export function TransportReportTime({
       <label>
         {label} precision
         <select
+          aria-label={`${label} precision`}
           className={issueField}
           value={time.precision}
           onChange={(e) =>
@@ -81,6 +82,7 @@ export function TransportServiceRow({
       <label>
         {label}
         <select
+          aria-label={label}
           className={issueField}
           value={value}
           onChange={(e) => change(e.target.value as TransportValue)}
@@ -223,6 +225,7 @@ export function TransportServiceRow({
               <label>
                 Check result {n}
                 <select
+                  aria-label={`Check result ${n}`}
                   className={issueField}
                   value={row.checked.result}
                   onChange={(e) =>

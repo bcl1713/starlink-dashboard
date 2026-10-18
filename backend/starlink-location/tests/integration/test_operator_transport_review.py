@@ -4,9 +4,16 @@ from datetime import timedelta
 
 from app.mission.pop_status import PopStatusService
 from app.operator.event_feed import build_snapshot
+from tests.operator import conftest as operator_fixtures
 from tests.operator.service_helpers import create
 from tests.operator.test_production_live_timing import restriction, runtime_for
 from tests.operator.test_transport_contract import decision, row
+
+# Register the same synthetic fixture objects in this integration module.
+clock = operator_fixtures.clock
+production = operator_fixtures.production
+record_data = operator_fixtures.record_data
+service = operator_fixtures.service
 
 
 def test_live_eta_pop_and_history_integrate(

@@ -23,6 +23,7 @@ class CommunicationWindow(StrictModel):
 
 
 class TransportAssessment(StrictModel):
+    change_basis: Literal["planned_change", "reported_application"] | None = None
     decision_id: str
     row_id: str
     service: str

@@ -153,7 +153,10 @@ test('transport decision production: mobile entry, customer context, durability 
       contexts.push(context);
       const page = await context.newPage();
       const errors: string[] = [];
-      page.on('pageerror', (e) => errors.push(e.message));
+      page.on('pageerror', (e) => {
+        errors.push(e.message);
+        console.error('Synthetic transport page error', e.message);
+      });
       await page.goto('/operator?mission_id=' + mission);
       await ready(page);
       const section = page.getByRole('region', {

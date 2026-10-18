@@ -14,12 +14,14 @@ export function TransportEditor({
   record,
   identity,
   disabled,
+  createFromDraft = false,
   onSave,
 }: {
   missionId: string;
   record?: SavedRecord;
   identity: string;
   disabled: boolean;
+  createFromDraft?: boolean;
   onSave: (command: OperatorCommand, draftKey: string) => Promise<boolean>;
 }) {
   const key = `operator-369-draft:${identity}:${missionId}:${record?.record_id ?? 'new'}`;
@@ -44,14 +46,22 @@ export function TransportEditor({
         e.preventDefault();
         setError(undefined);
         try {
-          if (await onSave(toTransportCommand(draft, record), key)) clear();
+          if (
+            await onSave(
+              toTransportCommand(draft, createFromDraft ? undefined : record),
+              key
+            )
+          )
+            clear();
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Unable to save decision.');
         }
       }}
     >
       <h3 className="font-semibold">
-        {record ? 'Correct this decision' : 'Record transport decision'}
+        {record && !createFromDraft
+          ? 'Correct this decision'
+          : 'Record transport decision'}
       </h3>
       <fieldset disabled={disabled} className="min-w-0 space-y-3">
         {rows.map((row, index) => (

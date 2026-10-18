@@ -202,3 +202,70 @@ def test_retrospective_application_uses_known_completed_call(
         a.subject == "change_vs_activity" and a.status == "overlap"
         for a in result.assessments
     )
+
+
+def test_planned_change_does_not_hide_reported_application(service, record_data, clock):
+    customer = create(
+        service,
+        record_data,
+        record_type="call",
+        payload={
+            "entry_type": "call",
+            "title": "Completed customer",
+            "status": "completed",
+        },
+    )
+    data = decision(
+        record_data,
+        row(
+            applied={
+                "transport": "Ka",
+                "time": {"at": "2026-10-17T14:35:00Z", "precision": "exact"},
+            }
+        ),
+    )
+    data["time"] = {"planned_start_at": "2026-10-17T17:00:00Z"}
+    saved = create(service, data)
+    result = review([customer, saved], [], clock)
+    assert any(
+        a.subject == "change_vs_activity" and a.status == "overlap"
+        for a in result.assessments
+    )
+
+
+def test_retrospective_application_uses_ended_participation(
+    service, record_data, clock
+):
+    conference = create(
+        service,
+        record_data,
+        record_type="conference",
+        payload={"entry_type": "conference", "title": "Shared", "status": "closed"},
+    )
+    participant = create(
+        service,
+        record_data,
+        record_type="participation",
+        payload={
+            "entry_type": "participation",
+            "title": "Customer left",
+            "conference_id": str(conference.record_id),
+            "state": "left",
+        },
+    )
+    data = decision(
+        record_data,
+        row(
+            applied={
+                "transport": "X",
+                "time": {"at": "2026-10-17T14:35:00Z", "precision": "exact"},
+            }
+        ),
+    )
+    data["time"] = {}
+    saved = create(service, data)
+    result = review([conference, participant, saved], [], clock)
+    assert any(
+        a.activity_id == str(participant.record_id) and a.status == "overlap"
+        for a in result.assessments
+    )

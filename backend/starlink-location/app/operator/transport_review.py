@@ -52,63 +52,96 @@ def derive_transport_review(records, events, sources, *, as_of, H):
                 "service": row.service,
                 "dependent_versions": {str(record.record_id): record.version},
             }
-            change_start = record.time.planned_start_at
-            change_end = record.time.planned_end_at or change_start
-            historical = False
-            if change_start is None and row.applied and row.applied.time.at:
-                change_start = change_end = row.applied.time.at
-                historical = change_start < as_of
-            change_activities = (
-                communication_windows(records, as_of=as_of, include_history=True)
-                if historical
-                else nearby
-            )
-            for activity in change_activities:
-                if (
-                    record.leg_id
-                    and activity.leg_id
-                    and record.leg_id != activity.leg_id
-                ):
-                    continue
-                if activity.kind == "conference":
-                    continue
-                hit = overlap(
-                    change_start, change_end, activity.start_at, activity.end_at
-                )
-                if hit is False:
-                    continue
-                if historical and (
-                    activity.basis != "operator_reported"
-                    or activity.start_at is None
-                    or activity.end_at is None
-                ):
-                    hit = None
-                result.assessments.append(
-                    TransportAssessment(
-                        **(
-                            base
-                            | {
-                                "dependent_versions": {
-                                    **base["dependent_versions"],
-                                    activity.record_id: activity.version,
-                                }
-                            }
-                        ),
-                        subject="change_vs_activity",
-                        activity_id=activity.record_id,
-                        status=(
-                            "overlap"
-                            if hit
-                            else "possible_impact" if change_start else "unknown"
-                        ),
-                        message=(
-                            "Change overlaps customer communications"
-                            if hit
-                            else "Customer communications may be affected; timing unknown"
-                        ),
-                        freshness="fresh"
+            changes = []
+            if record.time.planned_start_at is not None:
+                changes.append(
+                    (
+                        record.time.planned_start_at,
+                        record.time.planned_end_at or record.time.planned_start_at,
+                        "planned_change",
                     )
                 )
+            if row.applied is not None:
+                changes.append(
+                    (row.applied.time.at, row.applied.time.at, "reported_application")
+                )
+            for change_start, change_end, basis in changes or [
+                (None, None, "planned_change")
+            ]:
+                historical = (
+                    basis == "reported_application"
+                    and change_start is not None
+                    and change_start < as_of
+                )
+                change_activities = (
+                    communication_windows(records, as_of=as_of, include_history=True)
+                    if historical
+                    else nearby
+                )
+                for activity in change_activities:
+                    if (
+                        record.leg_id
+                        and activity.leg_id
+                        and record.leg_id != activity.leg_id
+                    ):
+                        continue
+                    if activity.kind == "conference":
+                        continue
+                    activity_end = activity.end_at
+                    if (
+                        activity.ongoing
+                        and change_start is not None
+                        and change_start <= as_of
+                    ):
+                        activity_end = as_of + timedelta(microseconds=1)
+                    hit = overlap(
+                        change_start, change_end, activity.start_at, activity_end
+                    )
+                    if hit is False:
+                        continue
+                    if historical and (
+                        activity.basis != "operator_reported"
+                        or activity.start_at is None
+                        or activity_end is None
+                    ):
+                        hit = None
+                    result.assessments.append(
+                        TransportAssessment(
+                            **(
+                                base
+                                | {
+                                    "dependent_versions": {
+                                        **base["dependent_versions"],
+                                        activity.record_id: activity.version,
+                                    }
+                                }
+                            ),
+                            subject="change_vs_activity",
+                            change_basis=basis,
+                            report_stage=(
+                                "applied"
+                                if basis == "reported_application"
+                                else "unknown"
+                            ),
+                            activity_id=activity.record_id,
+                            status=(
+                                "overlap"
+                                if hit
+                                else "possible_impact" if change_start else "unknown"
+                            ),
+                            message=(
+                                "Change overlaps customer communications"
+                                if hit
+                                else "Customer communications may be affected; timing unknown"
+                            )
+                            + (
+                                " · Reported application"
+                                if basis == "reported_application"
+                                else " · Planned change"
+                            ),
+                            freshness="fresh"
+                        )
+                    )
             stages = [
                 (name, getattr(row, name).transport)
                 for name in ("intended", "requested", "applied")

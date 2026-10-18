@@ -88,7 +88,12 @@ def communication_windows(records, *, as_of, include_history=False):
                     ongoing=True
                 )
             )
-        elif p.entry_type == "participation" and p.state == "connected":
+        elif p.entry_type == "participation" and (
+            p.state == "connected"
+            or (
+                include_history and t.occurred_at is not None and t.ended_at is not None
+            )
+        ):
             result.append(
                 CommunicationWindow(
                     **common,
@@ -98,7 +103,7 @@ def communication_windows(records, *, as_of, include_history=False):
                     start_at=t.occurred_at,
                     end_at=t.ended_at,
                     basis="operator_reported",
-                    ongoing=True
+                    ongoing=p.state == "connected" and t.ended_at is None
                 )
             )
     return result
