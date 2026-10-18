@@ -124,6 +124,11 @@ export function CapabilityEditor({
                   ? 'Functional capability'
                   : 'Redundancy'}
                 <select
+                  aria-label={
+                    dimension === 'functional'
+                      ? 'Functional capability'
+                      : 'Redundancy'
+                  }
                   className={issueField}
                   value={input.payload[`${dimension}_status`]}
                   onChange={(e) =>
@@ -183,6 +188,11 @@ export function CapabilityEditor({
                   ? 'Functional time precision'
                   : 'Redundancy time precision'}
                 <select
+                  aria-label={
+                    dimension === 'functional'
+                      ? 'Functional time precision'
+                      : 'Redundancy time precision'
+                  }
                   className={issueField}
                   value={input.payload[`${dimension}_time_precision`]}
                   onChange={(e) =>

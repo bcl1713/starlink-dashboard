@@ -349,7 +349,33 @@ test('issue exception workflow: corrections, snapshot check-ins, drafts and rest
       await page.screenshot({
         path: join(evidence, `issues-${viewport.width}x${viewport.height}.png`),
       });
+      await region
+        .getByRole('heading', { name: 'Manual capabilities', exact: true })
+        .scrollIntoViewIfNeeded();
+      await page.screenshot({
+        path: join(
+          evidence,
+          `issues-capabilities-${viewport.width}x${viewport.height}.png`
+        ),
+      });
       (proof.captures as string[]).push(`${viewport.width}x${viewport.height}`);
+    } catch (error) {
+      const activePage = context.pages().find((page) => !page.isClosed());
+      if (activePage) {
+        await activePage
+          .screenshot({
+            path: join(evidence, `issues-failure-${viewport.width}.png`),
+          })
+          .catch(() => {});
+        writeFileSync(
+          join(evidence, `issues-failure-${viewport.width}.txt`),
+          await activePage
+            .locator('body')
+            .innerText()
+            .catch(() => 'Synthetic page unavailable')
+        );
+      }
+      throw error;
     } finally {
       await counterpart.close();
       await context.close();

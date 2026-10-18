@@ -103,6 +103,7 @@ export function IssueEditor({
             <label>
               Priority
               <select
+                aria-label="Priority"
                 className={issueField}
                 value={input.payload.priority ?? ''}
                 onChange={(e) =>
@@ -121,6 +122,7 @@ export function IssueEditor({
             <label>
               Status
               <select
+                aria-label="Status"
                 className={issueField}
                 value={input.payload.status}
                 onChange={(e) =>
@@ -140,6 +142,7 @@ export function IssueEditor({
             <label>
               Mitigation
               <select
+                aria-label="Mitigation"
                 className={issueField}
                 value={input.payload.mitigation ?? 'unknown'}
                 onChange={(e) =>
@@ -233,6 +236,7 @@ export function IssueEditor({
             <label>
               Scope
               <select
+                aria-label="Scope"
                 className={issueField}
                 value={input.scope}
                 onChange={(e) =>
@@ -291,6 +295,13 @@ export function IssueEditor({
                         ? 'Related call'
                         : 'Related conference'}
                     <select
+                      aria-label={
+                        field === 'capability_id'
+                          ? 'Affected capability'
+                          : field === 'call_id'
+                            ? 'Related call'
+                            : 'Related conference'
+                      }
                       className={issueField}
                       value={input.payload[field] ?? ''}
                       onChange={(e) =>
@@ -319,6 +330,7 @@ export function IssueEditor({
             <label>
               Relevant transport
               <select
+                aria-label="Relevant transport"
                 className={issueField}
                 value={input.payload.transport ?? ''}
                 onChange={(e) =>
