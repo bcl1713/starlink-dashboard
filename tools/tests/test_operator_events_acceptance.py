@@ -87,3 +87,21 @@ def test_real_model_proof_rejects_missing_operational_checks(tmp_path):
     (tmp_path / "model-alerts-proof.json").write_text(json.dumps(proof))
     with pytest.raises(ValueError, match="partialIndependentWarning"):
         runner.models_proof(tmp_path)
+
+
+def test_real_model_seed_contains_no_injected_prediction_outputs(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    monkeypatch.syspath_prepend(
+        str(Path(__file__).resolve().parents[2] / "backend/starlink-location")
+    )
+    implementation()
+    from seed import seed_demo
+    from scenario import ScenarioClock
+
+    result = seed_demo(
+        tmp_path, clock=ScenarioClock(), mode="simulation", include_timelines=False
+    )
+    assert result["synthetic"]
+    assert not list((tmp_path / "missions").rglob("timeline.json"))
+    assert not list((tmp_path / "missions").rglob("*timeline*.json"))

@@ -16,7 +16,12 @@ from scenario import ScenarioClock, make_demo, pop_inputs
 
 
 def seed_demo(
-    root: Path, *, clock: Clock, mode: str, include_shell: bool = False
+    root: Path,
+    *,
+    clock: Clock,
+    mode: str,
+    include_shell: bool = False,
+    include_timelines: bool = True,
 ) -> dict:
     """Seed a caller-owned root before startup, restoring global storage binding."""
     if mode not in ("simulation", "live"):
@@ -42,17 +47,21 @@ def seed_demo(
         for mission in demo["missions"]:
             if storage.load_mission_v2(mission.id) is None:
                 storage.save_mission_v2(mission)
-        from app.mission.pop_continuity import attach_call_continuity
+        if include_timelines:
+            from app.mission.pop_continuity import attach_call_continuity
 
-        for mission in demo["missions"]:
-            for leg in mission.legs:
-                timeline = pop_inputs(seed_clock)["timeline"].model_copy(
-                    update={"mission_leg_id": leg.id, "created_at": seed_clock.now()}
-                )
-                attach_call_continuity(timeline)
-                storage.save_mission_timeline(
-                    leg.id, timeline, parent_mission_id=mission.id
-                )
+            for mission in demo["missions"]:
+                for leg in mission.legs:
+                    timeline = pop_inputs(seed_clock)["timeline"].model_copy(
+                        update={
+                            "mission_leg_id": leg.id,
+                            "created_at": seed_clock.now(),
+                        }
+                    )
+                    attach_call_continuity(timeline)
+                    storage.save_mission_timeline(
+                        leg.id, timeline, parent_mission_id=mission.id
+                    )
         store = OperatorStore.open(settings, initialize=True, clock=clock)
         service = OperatorService(
             store,

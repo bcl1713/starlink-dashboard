@@ -42,7 +42,13 @@ elif events_enabled:
     scenario_clock = EventsClock(root)
 else:
     scenario_clock = ControlledClock()
-seed = seed_demo(root, clock=scenario_clock, mode="simulation", include_shell=True)
+seed = seed_demo(
+    root,
+    clock=scenario_clock,
+    mode="simulation",
+    include_shell=True,
+    include_timelines=not models_enabled,
+)
 storage.MISSIONS_DIR = root / "missions"
 os.environ["OPERATOR_ROOT"] = seed["roots"]["operator"]
 os.environ["OPERATOR_SIMULATION_RUN_ID"] = seed["run_id"]
