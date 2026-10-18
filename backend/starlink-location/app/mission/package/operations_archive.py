@@ -34,14 +34,29 @@ def journal_files(bundle):
     revisions = [
         json.loads(line) for line in files["operations/audit.jsonl"].splitlines()
     ]
-    chronological = sorted(
-        revisions,
-        key=lambda r: (
-            r["time"].get("occurred_at") is None,
-            r["time"].get("occurred_at") or "",
-            r["journal_seq"],
-        ),
-    )
+    activity = [
+        json.loads(line) for line in files["operations/activity.jsonl"].splitlines()
+    ]
+    chronology = {}
+    for item in activity:
+        issue = item.get("issue_update")
+        chronology[item["journal_seq"]] = {
+            **item,
+            "effective_at": (
+                issue["effective_at"]
+                if issue is not None
+                else item["time"].get("occurred_at")
+            ),
+            "time_basis": (
+                "issue_update.effective_at" if issue is not None else "time.occurred_at"
+            ),
+        }
+
+    def chronological_key(record):
+        effective = chronology[record["journal_seq"]]["effective_at"]
+        return effective is None, effective or "", record["journal_seq"]
+
+    chronological = sorted(revisions, key=chronological_key)
     files["operations/journal.json"] = canonical(
         {
             "schema_version": 1,
@@ -53,12 +68,15 @@ def journal_files(bundle):
             "import_policy": "archive_only; ordinary_plan_import_does_not_restore_operator_records",
             "ordering": {
                 "activity_and_audit": "acceptance_sequence",
-                "chronological_revisions": "actual_occurred_at_utc; all_original_revisions_retained",
+                "chronological_revisions": "issue_update.effective_at_when_present; otherwise_actual_occurred_at_utc; all_original_revisions_retained",
                 "unknown_actual_time": "after_known_actual_times; acceptance_sequence_tiebreaker",
                 "planned_times": "retained_separately; never_substituted_for_actual_time",
             },
             "current_records": current,
             "chronological_revisions": chronological,
+            "chronological_activity": [
+                chronology[r["journal_seq"]] for r in chronological
+            ],
         }
     )
     summary = [

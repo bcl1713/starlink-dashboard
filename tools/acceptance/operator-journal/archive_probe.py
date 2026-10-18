@@ -88,6 +88,16 @@ def run():
             }
             assert any(r["record_type"] == "transport_decision" for r in current)
             assert any(r["version"] > 1 for r in revisions)
+            corrected = [
+                r
+                for r in journal["chronological_activity"]
+                if r.get("issue_update", {}).get("kind") == "correction"
+            ]
+            assert corrected and corrected[0]["effective_at"].startswith(
+                "2026-10-17T15:55:00"
+            )
+            assert corrected[0]["time_basis"] == "issue_update.effective_at"
+            assert corrected[0]["time"]["occurred_at"].startswith("2026-10-17T16:00:00")
             conferences = {
                 r["payload"]["conference_id"]
                 for r in current
@@ -235,6 +245,7 @@ def run():
             "legacyImport": True,
             "repeatBytesIdentical": True,
             "retrospectiveNewSnapshot": True,
+            "correctedEffectiveChronology": True,
             "originalDownloadImmutable": bool(job),
             "sha256": hashlib.sha256(payload).hexdigest(),
             "latestSha256": hashlib.sha256(changed).hexdigest(),

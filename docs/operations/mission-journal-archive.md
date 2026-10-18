@@ -20,9 +20,13 @@ publishing an empty history. Disabled Operator is labeled in the outer manifest.
 - `operations/activity.jsonl`: existing acceptance-sequence activity projection.
 - `operations/audit.jsonl`: full original revisions, in acceptance order.
 - `operations/journal.json`: schema-versioned current records and all revisions
-  ordered by actual UTC occurrence time, with acceptance sequence breaking ties.
-  Unknown actual times follow known actual times. Planned times remain separate;
-  they are never presented as observations. Superseded originals remain present.
+  ordered by effective UTC occurrence time, with acceptance sequence breaking
+  ties. Issue corrections use the existing issue-message effective time rather
+  than the issue's current-state timestamp. `chronological_activity` supplies
+  that effective time, its basis and immutable correction lineage alongside each
+  revision. Unknown actual times follow known actual times. Planned times remain
+  separate; they are never presented as observations. Superseded originals
+  remain present.
 - `operations/events.json`: persisted modeled advisory occurrences, event heads,
   transitions, notification tiers and acknowledgments. This captures existing
   #348/#368 results without recalculating predictions during export.

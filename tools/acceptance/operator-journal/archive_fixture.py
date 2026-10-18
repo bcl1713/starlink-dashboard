@@ -113,7 +113,7 @@ def initialize(main, root):
                 "status": "resolved",
                 "update_text": "Synthetic retrospective correction",
             }
-            service.execute(
+            resolved = service.execute(
                 UpdateRecord(
                     record_id=issue.record_id,
                     expected_version=issue.version,
@@ -121,6 +121,33 @@ def initialize(main, root):
                     **fields,
                 ),
                 key=str(uuid5(NAMESPACE_URL, "archive/issue-correction")),
+                epoch=epoch,
+            )
+            current_issue = resolved.saved_records[0]
+            fields = {
+                k: getattr(current_issue, k)
+                for k in (
+                    "record_type",
+                    "mission_id",
+                    "leg_id",
+                    "scope",
+                    "time",
+                    "payload",
+                )
+            }
+            fields["payload"] = current_issue.payload.model_dump(mode="json") | {
+                "update_text": "Synthetic corrected earlier issue message",
+                "corrects_version": 1,
+                "corrected_update_at": START - timedelta(minutes=5),
+            }
+            service.execute(
+                UpdateRecord(
+                    record_id=current_issue.record_id,
+                    expected_version=current_issue.version,
+                    audit_note="Synthetic historical message correction",
+                    **fields,
+                ),
+                key=str(uuid5(NAMESPACE_URL, "archive/issue-time-correction")),
                 epoch=epoch,
             )
             save(

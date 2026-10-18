@@ -285,3 +285,84 @@ def test_empty_draft_mission_still_exports_with_healthy_telemetry(
     finally:
         runtime.close()
         telemetry.close()
+
+
+def test_chronology_uses_issue_correction_time_instead_of_current_state_time(
+    service, record_data
+):
+    from app.mission.package.operations_archive import journal_files
+
+    issue = create(
+        service,
+        record_data,
+        record_type="issue",
+        payload={
+            "entry_type": "issue",
+            "title": "Synthetic chronological issue",
+            "update_text": "Original message",
+        },
+    )
+    note = create(
+        service,
+        record_data,
+        time={
+            "occurred_at": "2026-10-17T13:00:00Z",
+            "precision": "exact",
+            "end_state": "instant",
+        },
+    )
+    correction = submit(
+        service,
+        update(
+            service,
+            issue,
+            payload={
+                "entry_type": "issue",
+                "title": "Synthetic chronological issue",
+                "update_text": "Corrected early message",
+                "corrects_version": 1,
+                "corrected_update_at": "2026-10-17T12:00:00Z",
+            },
+        ),
+    ).saved_records[0]
+    bundle = capture_projection(
+        service.store, mission_id="demo-mission", include_audit=True
+    )
+    journal = json.loads(journal_files(bundle)["operations/journal.json"])
+    assert [
+        (r["record_id"], r["version"]) for r in journal["chronological_revisions"]
+    ] == [
+        (str(correction.record_id), 2),
+        (str(note.record_id), 1),
+        (str(issue.record_id), 1),
+    ]
+    assert correction.time == issue.time
+    entries = journal["chronological_activity"]
+    assert entries[0]["effective_at"].startswith("2026-10-17T12:00:00")
+    assert entries[0]["time_basis"] == "issue_update.effective_at"
+    assert entries[0]["issue_update"]["kind"] == "correction"
+    assert entries[-1]["issue_update"]["is_selected"] is False
+    submit(
+        service,
+        update(
+            service,
+            correction,
+            payload={
+                "entry_type": "issue",
+                "title": "Synthetic chronological issue",
+                "update_text": "Corrected time unknown",
+                "corrects_version": 1,
+                "corrected_update_at": None,
+            },
+        ),
+    )
+    bundle = capture_projection(
+        service.store, mission_id="demo-mission", include_audit=True
+    )
+    journal = json.loads(journal_files(bundle)["operations/journal.json"])
+    assert journal["chronological_activity"][-1]["effective_at"] is None
+    assert (
+        journal["chronological_activity"][-1]["time_basis"]
+        == "issue_update.effective_at"
+    )
+    assert journal["chronological_revisions"][-1]["version"] == 3

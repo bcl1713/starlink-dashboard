@@ -58,7 +58,7 @@ def test_archive_fixture_runs_real_flights_and_typed_journal(tmp_path, monkeypat
             r.scope for r in records
         }
         assert any(r.record_type == "transport_decision" for r in records)
-        assert any(r.version == 2 and r.payload.entry_type == "issue" for r in records)
+        assert any(r.version == 3 and r.payload.entry_type == "issue" for r in records)
         for leg in storage.load_mission_v2(archive_fixture.MISSION).legs:
             capture = state.flight_event_runtime.archive.capture(
                 archive_fixture.MISSION, leg.id
