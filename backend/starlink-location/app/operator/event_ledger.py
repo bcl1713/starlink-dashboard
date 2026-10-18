@@ -13,11 +13,16 @@ def identity(*parts):
     ).hexdigest()
 
 
-def reconcile(connection, events, *, as_of, policy):
+def reconcile(connection, events, *, as_of, policy, stability=None):
+    events = [event.model_copy(deep=True) for event in events]
+    if stability is not None:
+        stability.prepare(connection, events, as_of=as_of, policy=policy)
     result = []
     recorded_at = as_of.isoformat()
     for original in events:
         event = original.model_copy(deep=True)
+        if stability is not None and event.provenance == "modeled":
+            stability.select(connection, event, as_of=as_of, policy=policy)
         occurrence = identity(event.mission_id, event.event_id, event.schedule_key)
         head = connection.execute(
             "SELECT occurrence_id, retired FROM event_heads WHERE event_id=?",
@@ -53,6 +58,18 @@ def reconcile(connection, events, *, as_of, policy):
             connection.execute(
                 "INSERT INTO event_transitions (occurrence_id,state,recorded_at) VALUES (?, 'accepted', ?)",
                 (occurrence, recorded_at),
+            )
+        tier = event.notification.severity_generation
+        if (
+            event.notification.available
+            and not connection.execute(
+                "SELECT 1 FROM event_tiers WHERE occurrence_id=? AND severity_generation=?",
+                (occurrence, tier),
+            ).fetchone()
+        ):
+            connection.execute(
+                "INSERT INTO event_tiers VALUES (?, ?, ?)",
+                (occurrence, tier, recorded_at),
             )
         retired = bool(
             connection.execute(

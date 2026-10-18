@@ -66,6 +66,7 @@ class OperationalEvent(StrictModel):
     ] = "routine"
     active: bool = True
     schedule_key: str = ""
+    family_key: str = ""
     dependent_versions: dict[str, int] = Field(default_factory=dict)
     notification: EventNotification = Field(default_factory=EventNotification)
 

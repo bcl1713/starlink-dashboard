@@ -39,3 +39,14 @@ CREATE TRIGGER event_acknowledgments_no_update BEFORE UPDATE ON event_acknowledg
 BEGIN SELECT RAISE(ABORT, 'immutable event acknowledgment'); END;
 CREATE TRIGGER event_acknowledgments_no_delete BEFORE DELETE ON event_acknowledgments
 BEGIN SELECT RAISE(ABORT, 'immutable event acknowledgment'); END;
+
+CREATE TABLE event_tiers (
+    occurrence_id TEXT NOT NULL REFERENCES event_occurrences(occurrence_id),
+    severity_generation INTEGER NOT NULL CHECK (severity_generation BETWEEN 0 AND 3),
+    accepted_at TEXT NOT NULL,
+    PRIMARY KEY (occurrence_id, severity_generation)
+);
+CREATE TRIGGER event_tiers_no_update BEFORE UPDATE ON event_tiers
+BEGIN SELECT RAISE(ABORT, 'immutable event tier'); END;
+CREATE TRIGGER event_tiers_no_delete BEFORE DELETE ON event_tiers
+BEGIN SELECT RAISE(ABORT, 'immutable event tier'); END;

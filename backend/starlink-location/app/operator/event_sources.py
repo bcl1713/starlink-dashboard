@@ -13,6 +13,7 @@ from .time_models import utc_timestamp
 
 @dataclass(frozen=True)
 class CapturedEventInputs:
+    mission_id: str
     store_id: str
     api_epoch: str
     source_mode: str
@@ -125,6 +126,7 @@ class EventSourceAdapter:
                     SourceCapture(source="live", reason="Live publication unavailable")
                 )
         return CapturedEventInputs(
+            mission_id=mission_id,
             store_id=str(health.store_id),
             api_epoch=str(health.api_epoch),
             source_mode=health.source_mode,

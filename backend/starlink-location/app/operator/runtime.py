@@ -6,6 +6,7 @@ from threading import RLock
 
 from .clock import Clock
 from .event_policy import EventPolicy
+from .event_identity import ModelStability
 from .event_publication import EventPublication, SnapshotRegistry
 from .errors import OperatorError
 from .models import Actor, StoreHealth
@@ -22,6 +23,7 @@ class OperatorRuntime:
         self.error_code = error_code
         # Source adapters may install their actual producer-specific policies.
         self.freshness_policies = {}
+        self.event_stability = ModelStability()
         self.event_policy = EventPolicy()
         self.event_publication = EventPublication()
         self.event_snapshots = SnapshotRegistry(clock=clock)
