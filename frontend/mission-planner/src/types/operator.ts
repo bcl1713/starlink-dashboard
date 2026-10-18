@@ -1,3 +1,7 @@
+import type {
+  TransportDecisionInput,
+  TransportDecisionPayload,
+} from './operatorTransport';
 export type Scope =
   | 'mission'
   | 'preflight'
@@ -12,7 +16,8 @@ export type RecordType =
   | 'participation'
   | 'issue'
   | 'risk'
-  | 'transport_report';
+  | 'transport_report'
+  | 'transport_decision';
 export interface RecordTime {
   occurred_at: string | null;
   ended_at: string | null;
@@ -126,6 +131,7 @@ export interface IssueFollowup {
     | 'unknown';
 }
 export type OperatorInput =
+  | TransportDecisionInput
   | IssueInput
   | CapabilityInput
   | JournalInput
@@ -133,6 +139,7 @@ export type OperatorInput =
   | ConferenceInput
   | ParticipationInput;
 export type OperatorPayload =
+  | TransportDecisionPayload
   | JournalPayload
   | CallPayload
   | ConferencePayload
@@ -172,6 +179,7 @@ export type OperatorCommand =
       record_id: string;
       body: OperatorInput & {
         expected_version: number;
+        replacement_check_row_ids?: string[];
         audit_note?: string | null;
       };
     }

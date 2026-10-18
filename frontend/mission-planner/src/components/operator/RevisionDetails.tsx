@@ -12,6 +12,32 @@ export function RevisionDetails({ record, association }: ReadRecord) {
       <p>
         Actual end: {revisionUtc(time.ended_at)} · end state: {time.end_state}
       </p>
+      {payload.entry_type === 'transport_decision' && (
+        <div>
+          <p>
+            Decision reason: {payload.reason || 'None'} · Call:{' '}
+            {payload.call_id ?? 'None'} · Conference:{' '}
+            {payload.conference_id ?? 'None'}
+          </p>
+          {payload.services.map((s) => (
+            <div key={s.row_id}>
+              <p>
+                {s.service} · Intended {s.intended?.transport ?? 'Not reported'}{' '}
+                · Requested {s.requested?.transport ?? 'Not reported'} ·
+                Reported Applied {s.applied?.transport ?? 'Not reported'} ·
+                Operator Checked {s.checked?.result ?? 'Not checked'}
+              </p>
+              <p>
+                Requested {revisionUtc(s.requested?.time.at ?? null)} · Applied{' '}
+                {revisionUtc(s.applied?.time.at ?? null)} · Checked{' '}
+                {revisionUtc(s.checked?.time.at ?? null)}
+              </p>
+              {s.checked?.note && <p>{s.checked.note}</p>}
+            </div>
+          ))}
+          <p>Actual routing unknown.</p>
+        </div>
+      )}
       {payload.entry_type === 'call' && (
         <>
           <p>

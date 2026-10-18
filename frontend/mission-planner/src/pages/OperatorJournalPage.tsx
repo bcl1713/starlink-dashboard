@@ -1,3 +1,4 @@
+import { OperatorTransport } from '@/components/operator/OperatorTransport';
 import { OperatorIssues } from '@/components/operator/OperatorIssues';
 import { OperatorEventStrip } from '@/components/operator/OperatorEventStrip';
 import { useOperatorEvents } from '@/hooks/api/useOperatorEvents';
@@ -100,6 +101,12 @@ export function OperatorJournalPage() {
             Issues
           </a>
           <a
+            href="#operator-transport"
+            className="inline-flex min-h-11 items-center rounded-md border px-3"
+          >
+            Transport
+          </a>
+          <a
             href="#operator-journal"
             className="inline-flex min-h-11 items-center rounded-md border px-3"
           >
@@ -178,6 +185,13 @@ export function OperatorJournalPage() {
       )}
       {missionId && (
         <OperatorIssues key={`issues:${missionId}`} missionId={missionId} />
+      )}
+      {missionId && (
+        <OperatorTransport
+          key={`transport:${missionId}`}
+          missionId={missionId}
+          eventFeed={eventFeed}
+        />
       )}
       <section
         id="operator-journal"

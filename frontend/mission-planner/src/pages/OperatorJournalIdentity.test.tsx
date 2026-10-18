@@ -14,6 +14,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import * as api from '@/services/operator';
 import { OperatorJournalPage } from './OperatorJournalPage';
 import { health, page, record } from '@/test/operator-fixtures';
+vi.mock('@/components/operator/OperatorTransport', () => ({
+  OperatorTransport: () => null,
+}));
 const clients: QueryClient[] = [];
 afterEach(() => {
   cleanup();
