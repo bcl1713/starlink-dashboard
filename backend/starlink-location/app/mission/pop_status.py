@@ -1,5 +1,6 @@
 """Local status adapter for captured routes, telemetry, and PoP observations."""
 
+import copy
 import hashlib
 import json
 from collections.abc import Callable
@@ -60,6 +61,7 @@ class PopStatusService:
         self._epoch = 0
         self._last_now = None
         self._last_lifecycle = None
+        self._published_snapshot = None
 
     def reconcile(self, forecast, observation, *, catalog, nearest_id, next_id, now):
         """Reject results captured before a route/reset/mode revision superseded them."""
@@ -91,6 +93,9 @@ class PopStatusService:
         unavailable_reason=None,
         projector=None,
         call_capabilities=None,
+        mission_id=None,
+        leg_id=None,
+        simulation_run_id=None,
     ):
         """Capture one local sample, with separate mission and observation clocks.
 
@@ -265,7 +270,7 @@ class PopStatusService:
             projector=projector,
             completed_ids=self.state.completed_ids,
         )
-        return {
+        result = {
             "call_continuity": (
                 continuity.model_dump(mode="json") if continuity else None
             ),
@@ -273,6 +278,22 @@ class PopStatusService:
             "pop_observation": observation.model_dump(mode="json"),
             "pop_advisories": [a.model_dump(mode="json") for a in advisories],
         }
+
+        self._published_snapshot = {
+            "payload": copy.deepcopy(result),
+            "as_of": now,
+            "captured_at": observed_now,
+            "mode": mode,
+            "input_identity": revision,
+            "mission_id": mission_id,
+            "leg_id": leg_id,
+            "simulation_run_id": simulation_run_id,
+        }
+        return result
+
+    def read_publication(self):
+        """Copy the last local publication without evaluating or advancing state."""
+        return copy.deepcopy(self._published_snapshot)
 
     def status_payload(self, telemetry, *, now=None):
         """Resolve local inputs; optional simulation callback supplies snapshot kwargs.
@@ -322,6 +343,8 @@ class PopStatusService:
             "lifecycle_token": (token, flight.departure_time),
             "flight_phase": flight.phase.value,
             "unavailable_reason": reason,
+            "mission_id": active_context.parent_mission_id if active_context else None,
+            "leg_id": getattr(active_context.leg, "id", None) if active_context else None,
         }
         if config.mode == "simulation" and self.snapshot_context_provider is not None:
             context.update(self.snapshot_context_provider())

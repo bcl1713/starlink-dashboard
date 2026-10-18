@@ -5,6 +5,8 @@ from contextlib import contextmanager
 from threading import RLock
 
 from .clock import Clock
+from .event_policy import EventPolicy
+from .event_publication import EventPublication, SnapshotRegistry
 from .errors import OperatorError
 from .models import Actor, StoreHealth
 from .references import MissionReferences
@@ -20,6 +22,9 @@ class OperatorRuntime:
         self.error_code = error_code
         # Source adapters may install their actual producer-specific policies.
         self.freshness_policies = {}
+        self.event_policy = EventPolicy()
+        self.event_publication = EventPublication()
+        self.event_snapshots = SnapshotRegistry(clock=clock)
 
     @classmethod
     def start(cls, settings: OperatorSettings, *, clock: Clock):
@@ -27,6 +32,7 @@ class OperatorRuntime:
         if not settings.enabled:
             return runtime
         try:
+            runtime.event_policy = EventPolicy.from_env()
             store = OperatorStore.open(settings, initialize=False, clock=clock)
             runtime.service = OperatorService(
                 store,
@@ -51,6 +57,7 @@ class OperatorRuntime:
         )
 
     def close(self):
+        self.event_snapshots.clear()
         if self.service is not None:
             self.service.store.close()
 

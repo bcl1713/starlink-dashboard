@@ -575,6 +575,7 @@ async def startup_event():
             run_service.coordinator = _coordinator
         run_service.publish = _publish_replay_telemetry
         app.state.simulation_run_service = run_service
+        app.state.operator_live_source = _operator_live_source
         app.state.operator_binding = OperatorRuntimeBinding(
             clock=SystemClock(), context=_operator_context
         )
@@ -745,6 +746,18 @@ def _operator_context():
     return config.mode, run.run_id if run is not None else None
 
 
+def _operator_live_source(mission_id):
+    service = getattr(app.state, "pop_status_service", None)
+    publication = service.read_publication() if service is not None else None
+    if (
+        publication
+        and publication.get("mission_id") == mission_id
+        and publication.get("leg_id")
+    ):
+        return publication["leg_id"], publication
+    return None
+
+
 def _pop_lifecycle_token(run_id=None):
     service = getattr(app.state, "simulation_run_service", None)
     run = service.status().run if service is not None else None
@@ -764,6 +777,9 @@ def _simulation_pop_context():
         plan, frame, _clock = replay
         leg = plan.artifacts.validated_leg
         context.update(
+            mission_id=plan.mission_id,
+            leg_id=leg.id if leg else None,
+            simulation_run_id=_pop_lifecycle_token()[-1],
             route=plan.artifacts.route,
             call_capabilities=plan.artifacts.call_capabilities,
             projector=plan.artifacts.projector,
