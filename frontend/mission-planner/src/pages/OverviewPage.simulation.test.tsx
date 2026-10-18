@@ -42,6 +42,7 @@ const state = vi.hoisted(() => ({
   routeReads: 0,
   geometry: undefined as unknown,
   solarTimes: [] as number[],
+  visibility: {} as Record<string, boolean>,
 }));
 vi.mock('@/hooks/api/useSimulationRun', () => ({
   useSimulationRun: () => ({ data: state.run, isError: state.failed }),
@@ -93,7 +94,7 @@ vi.mock('@/hooks/api/useSatellites', () => ({
 }));
 vi.mock('@/hooks/api/useActiveXLink', () => ({ useActiveXLink: () => ({}) }));
 vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
-  useOverviewLinkSettings: () => ({}),
+  useOverviewLinkSettings: () => ({ data: state.visibility }),
 }));
 vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
   useOverviewAdsbLayer: () => ({ contacts: [] }),
@@ -131,6 +132,7 @@ beforeEach(() => {
   state.routeReads = 0;
   state.geometry = undefined;
   state.solarTimes = [];
+  state.visibility = {};
 });
 function mount() {
   const client = new QueryClient({
@@ -145,15 +147,18 @@ function mount() {
     rerenderOverview: () => view.rerender(wrap(<OverviewPage />)),
   };
 }
-it('hides all five network cards and header while retaining Canvas and history', () => {
+it('keeps configured network cards visible with unavailable measurements during replay', () => {
   const view = mount(),
     canvas = screen.getByTestId('canvas');
   expect(screen.getByLabelText('Overview metric history')).toBeVisible();
   expect(screen.getByLabelText('Network history context')).toBeVisible();
   state.run = runningStatus();
   view.rerenderOverview();
-  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
-  expect(screen.queryByLabelText('Network history context')).toBeNull();
+  expect(screen.getByLabelText('Overview metric history')).toBeVisible();
+  expect(screen.getByLabelText('Network history context')).toBeVisible();
+  expect(
+    screen.getByText('Simulation · network measurements unavailable')
+  ).toBeVisible();
   expect(screen.queryByLabelText('Simulation run')).toBeNull();
   expect(screen.getByText('SIMULATED TIME')).toBeVisible();
   expect(screen.getByTestId('canvas')).toBe(canvas);
@@ -162,7 +167,7 @@ it('hides all five network cards and header while retaining Canvas and history',
   expect(state.routeReads).toBeGreaterThan(1);
   state.failed = true;
   view.rerenderOverview();
-  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
+  expect(screen.getByLabelText('Overview metric history')).toBeVisible();
   state.run = completedStatus();
   state.failed = false;
   view.rerenderOverview();
@@ -176,7 +181,7 @@ it('hides all five network cards and header while retaining Canvas and history',
   expect(state.mounts).toBe(1);
 });
 it.each(['cancelled', 'failed', 'idle'] as const)(
-  'restores the network rail in %s state',
+  'preserves configured network rail visibility in %s state',
   (terminal) => {
     state.run = runningStatus();
     const view = mount();
@@ -204,4 +209,40 @@ it('places simulated time below the clocks and lights the globe at mission time'
   expect(state.solarTimes.at(-1)).toBe(
     Date.parse(state.run.run!.simulation_time)
   );
+});
+
+it('preserves selected and hidden panels across replay states and failed refreshes', () => {
+  state.visibility = {
+    latency_panel_enabled: false,
+    uplink_panel_enabled: false,
+  };
+  const view = mount();
+  for (const run of [
+    runningStatus(),
+    completedStatus(),
+    { ...runningStatus(), state: 'idle' as const, run: null },
+  ]) {
+    state.run = run;
+    state.failed = true;
+    view.rerenderOverview();
+    expect(view.container.querySelectorAll('[data-metric-panel]')).toHaveLength(
+      3
+    );
+    expect(
+      view.container.querySelector('[data-metric-panel="latency"]')
+    ).toBeNull();
+    expect(
+      view.container.querySelector('[data-metric-panel="uplink"]')
+    ).toBeNull();
+  }
+  state.visibility = {
+    latency_panel_enabled: false,
+    downlink_panel_enabled: false,
+    uplink_panel_enabled: false,
+    packet_loss_panel_enabled: false,
+    obstruction_panel_enabled: false,
+  };
+  view.rerenderOverview();
+  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
+  expect(state.mounts).toBe(1);
 });

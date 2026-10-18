@@ -484,3 +484,51 @@ def test_preset_write_failure_keeps_previous_bundle(client, monkeypatch):
         == 503
     )
     assert client.get("/api/overview-links/presets").json()["normal"] == saved.json()
+
+
+def test_preset_retains_display_weather_only_and_legacy_compatibility(client):
+    weather = {
+        "radar": True,
+        "metar": True,
+        "taf": False,
+        "sigmet": True,
+        "sigmet_intersecting_only": True,
+        "winds": True,
+        "temperature": False,
+    }
+    response = client.put(
+        "/api/overview-links/presets/weather",
+        json={
+            "settings": {"legend_enabled": False},
+            "weather_visibility": weather,
+            "expected_version": 0,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["weather_visibility"] == weather
+    assert (
+        client.get("/api/overview-links/presets").json()["weather"] == response.json()
+    )
+    for invalid in [
+        {**weather, "temperature": True},
+        {**weather, "gfs_selection": {}},
+        {**weather, "provider_key": "secret"},
+    ]:
+        rejected = client.put(
+            "/api/overview-links/presets/weather",
+            json={
+                "settings": {"legend_enabled": True},
+                "weather_visibility": invalid,
+                "expected_version": 1,
+            },
+        )
+        assert rejected.status_code == 422
+    assert (
+        client.get("/api/overview-links/presets").json()["weather"] == response.json()
+    )
+    legacy = client.put(
+        "/api/overview-links/presets/normal",
+        json={"settings": {"legend_enabled": True}, "expected_version": 0},
+    )
+    assert legacy.status_code == 200
+    assert "weather_visibility" not in legacy.json()

@@ -222,6 +222,30 @@ test('training fixture: normal replay across two legs preserves journal, receipt
     return status;
   }
   const first = await startLeg(0);
+  const display = await page.context().newPage();
+  await display.setViewportSize({ width: 1920, height: 1080 });
+  await display.goto('/overview');
+  const metricPanels = display.getByRole('region', {
+    name: 'Overview metric history',
+    exact: true,
+  });
+  await expect(display.locator('[data-paced-running="true"]')).toBeVisible();
+  await expect(metricPanels.locator('[data-metric-panel]')).toHaveCount(5);
+  await expect(
+    metricPanels.getByText('Unavailable', { exact: true })
+  ).toHaveCount(5);
+  const panelChange = await page.request.put('/api/overview-links/settings', {
+    data: { latency_panel_enabled: false, uplink_panel_enabled: false },
+  });
+  expect(panelChange.ok()).toBe(true);
+  await expect(metricPanels.locator('[data-metric-panel]')).toHaveCount(3);
+  await expect(
+    metricPanels.getByText('Unavailable', { exact: true })
+  ).toHaveCount(3);
+  await display.screenshot({
+    path: join(root, 'configured-network-running.png'),
+    fullPage: true,
+  });
   host('checkpoint', '--stage', 'leg-one');
   await page.goto(`/operator?workspace=1&mission_id=${id}`);
   const airborne = await (await page.request.get('/api/simulation/run')).json();
@@ -329,8 +353,12 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   await note('Synthetic learner gap', 'between_legs');
   const gap = await (await page.request.get('/api/simulation/run')).json();
   expect(gap.state).toBe('completed');
+  await expect(display.locator('[data-paced-running="false"]')).toBeVisible();
+  await expect(metricPanels.locator('[data-metric-panel]')).toHaveCount(3);
   const second = await startLeg(1);
   expect(second.run.run_id).not.toBe(first.run.run_id);
+  await expect(display.locator('[data-paced-running="true"]')).toBeVisible();
+  await expect(metricPanels.locator('[data-metric-panel]')).toHaveCount(3);
   host('checkpoint', '--stage', 'leg-two');
   await note('Synthetic learner second leg', 'leg', mission.legs[1].id);
   const secondFeed = await (
@@ -372,6 +400,13 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   expect(
     (await (await page.request.get('/api/simulation/run')).json()).state
   ).toBe('idle');
+  await display.reload();
+  await expect(display.locator('[data-paced-running="false"]')).toBeVisible();
+  await expect(metricPanels.locator('[data-metric-panel]')).toHaveCount(3);
+  await expect(
+    metricPanels.getByText('Unavailable', { exact: true })
+  ).toHaveCount(3);
+  await display.close();
   const persistedAck = await page.request.post(
     '/api/v2/operator/events/acknowledge',
     { data: ackBody, headers: frozenHeaders }
@@ -398,6 +433,8 @@ test('training fixture: normal replay across two legs preserves journal, receipt
         ),
         restartPreservedJournalAndAcknowledgment: true,
         stoppedReplayNotReconstructed: true,
+        configuredNetworkVisibilityPreservedAcrossRunningCompletedAndRestart: true,
+        syntheticNetworkReadoutsSuppressed: true,
       },
       null,
       2
@@ -451,7 +488,9 @@ test('training guide verifies a committed lost receipt before an exact retry', a
   const guide = page.getByRole('complementary', {
     name: 'Guided mission walkthrough',
   });
-  await guide.getByRole('combobox', { name: 'Lesson', exact: true }).selectOption('T08');
+  await guide
+    .getByRole('combobox', { name: 'Lesson', exact: true })
+    .selectOption('T08');
   const outcome = guide
     .getByRole('listitem')
     .filter({ hasText: 'lost receipt same key' });

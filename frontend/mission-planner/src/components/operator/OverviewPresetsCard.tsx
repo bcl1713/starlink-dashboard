@@ -1,4 +1,8 @@
 import {
+  applyDisplayPreset,
+  saveCurrentDisplayPreset,
+} from '@/services/overview-preset-actions';
+import {
   useMutation,
   useQuery,
   useQueryClient,
@@ -8,11 +12,10 @@ import { ConfigurationSection } from '@/pages/ConfigurationSection';
 import { Button } from '@/components/ui/button';
 import { useOverviewLinkSettings } from '@/hooks/api/useOverviewLinkSettings';
 import {
-  overviewLinkSettingsApi,
   overviewPresetsApi,
   PRESET_NAMES,
   type OverviewPresetName,
-  type OverviewLinkSettingsUpdate,
+  type OverviewPreset,
 } from '@/services/overview-link-settings';
 
 const labels = {
@@ -39,20 +42,18 @@ export function OverviewPresetsCard() {
     mutationFn: async ({
       name,
       action,
-      settings,
-      expected,
+      preset,
       version,
     }: {
       name: OverviewPresetName;
       action: 'save' | 'apply';
-      settings: OverviewLinkSettingsUpdate;
-      expected?: OverviewLinkSettingsUpdate;
+      preset?: OverviewPreset;
       version: number;
     }) => {
       await client.cancelQueries({ queryKey: ['overview-link-settings'] });
       await client.cancelQueries({ queryKey: ['overview-presets'] });
       if (action === 'save') {
-        const saved = await overviewPresetsApi.save(name, settings, version);
+        const saved = await saveCurrentDisplayPreset(name, version);
         await client.cancelQueries({ queryKey: ['overview-presets'] });
         client.setQueryData(
           ['overview-presets'],
@@ -60,15 +61,23 @@ export function OverviewPresetsCard() {
             current ? { ...current, [name]: saved } : current
         );
       } else {
-        const saved = await overviewLinkSettingsApi.update(settings, expected);
-        await client.cancelQueries({ queryKey: ['overview-link-settings'] });
-        client.setQueryData(['overview-link-settings'], saved);
+        if (!preset)
+          throw new Error('Read the saved preset before applying it.');
+        const result = await applyDisplayPreset(preset);
+        if (result.legacy)
+          return `${labels[name]} legacy preset applied to panels and map only. Weather was not saved in this preset; save the current view again to include weather.`;
       }
       return `${labels[name]} preset ${action === 'save' ? 'saved' : 'applied'}`;
     },
-    onSettled: () => {
-      void client.invalidateQueries({ queryKey: ['overview-presets'] });
-      void client.invalidateQueries({ queryKey: ['overview-link-settings'] });
+    onSettled: async () => {
+      await Promise.all(
+        [
+          ['overview-presets'],
+          ['overview-link-settings'],
+          ['overview-weather-settings'],
+          ['aviation-weather', 'settings'],
+        ].map((queryKey) => client.invalidateQueries({ queryKey }))
+      );
     },
   });
   const ready =
@@ -80,7 +89,7 @@ export function OverviewPresetsCard() {
   return (
     <ConfigurationSection
       title="Display presets"
-      description="Save current visibility switches as a named bundle, then apply them to all Overview displays. Presets do not change weather providers, history windows or camera behavior."
+      description="Save panel, map and weather visibility for all Overview displays. Weather includes radar, METAR, TAF, SIGMET and route filtering, plus wind or temperature. Provider configuration, forecast level/horizon, acknowledgments, history windows and camera behavior are unchanged. Applying uses separate settings stores; any incomplete acknowledgment is reported for retry."
     >
       <div className="space-y-3">
         {PRESET_NAMES.map((name) => (
@@ -101,7 +110,6 @@ export function OverviewPresetsCard() {
                   mutation.mutate({
                     name,
                     action: 'save',
-                    settings: { ...visibility.data },
                     version: presets.data?.[name]?.version ?? 0,
                   });
               }}
@@ -113,17 +121,10 @@ export function OverviewPresetsCard() {
               onClick={() => {
                 const preset = presets.data?.[name];
                 if (!preset || !visibility.data) return;
-                const expected = Object.fromEntries(
-                  Object.keys(preset.settings).map((field) => [
-                    field,
-                    visibility.data![field as keyof typeof visibility.data],
-                  ])
-                );
                 mutation.mutate({
                   name,
                   action: 'apply',
-                  settings: preset.settings,
-                  expected,
+                  preset,
                   version: preset.version,
                 });
               }}

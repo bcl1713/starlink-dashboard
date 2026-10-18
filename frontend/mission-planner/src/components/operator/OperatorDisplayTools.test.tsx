@@ -44,7 +44,19 @@ beforeEach(() => {
         ? presets
         : url === '/api/overview-history/settings'
           ? { window_seconds: 1800 }
-          : saved,
+          : url === '/api/overview-weather/settings'
+            ? { enabled: true, revision: 2 }
+            : url === '/api/aviation-weather/v1/settings'
+              ? {
+                  metar: false,
+                  taf: false,
+                  sigmet: true,
+                  sigmet_intersecting_only: true,
+                  winds: true,
+                  temperature: false,
+                  revision: 3,
+                }
+              : saved,
   }));
   vi.mocked(apiClient.put).mockImplementation(async (url, value) => {
     const body = value as Record<string, unknown>;
@@ -55,8 +67,25 @@ beforeEach(() => {
       saved = { ...saved, ...changes } as Record<string, boolean>;
       return { data: saved };
     }
+    if (url === '/api/overview-weather/settings')
+      return { data: { enabled: body.enabled, revision: 3 } };
+    if (url === '/api/aviation-weather/v1/settings') {
+      const flags = Object.fromEntries(
+        Object.entries(body).filter(([key]) => key !== 'expected_revision')
+      );
+      return { data: { ...flags, revision: 4 } };
+    }
     const name = String(url).split('/').pop()!;
-    presets = { ...presets, [name]: { version: 1, settings: body.settings } };
+    presets = {
+      ...presets,
+      [name]: {
+        version: 1,
+        settings: body.settings,
+        ...(body.weather_visibility
+          ? { weather_visibility: body.weather_visibility }
+          : {}),
+      },
+    };
     return { data: presets[name] };
   });
 });

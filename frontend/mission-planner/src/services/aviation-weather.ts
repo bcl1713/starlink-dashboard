@@ -425,7 +425,9 @@ export const aviationWeatherApi = {
     );
     return parseAviationSettings(data);
   },
-  async updateSettings(changes: AviationSettingsChanges) {
+  async updateSettings(
+    changes: AviationSettingsChanges & { expected_revision?: number }
+  ) {
     const { data } = await apiClient.put<unknown>(
       '/api/aviation-weather/v1/settings',
       changes

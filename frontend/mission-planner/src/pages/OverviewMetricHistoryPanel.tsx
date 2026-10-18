@@ -28,6 +28,7 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 const BUFFER_SECONDS = 7.5;
 
 interface Props {
+  sourceUnavailable?: boolean;
   descriptor: OverviewMetricGraphDescriptor;
   history: OverviewHistoryBundle | undefined;
   error: boolean;
@@ -44,6 +45,7 @@ export function OverviewMetricHistoryPanel({
   selectedWindowSeconds,
   nowMs,
   readout,
+  sourceUnavailable,
 }: Props) {
   const reducedMotion = usePrefersReducedMotion();
   const accepted = useRef<{
@@ -397,19 +399,21 @@ export function OverviewMetricHistoryPanel({
     reducedMotion,
   ]);
 
-  const status = !validHistory
-    ? error
-      ? 'History unavailable'
-      : 'Waiting for history'
-    : error
-      ? 'Last-known history; refresh unavailable'
-      : projection?.state === 'unavailable'
-        ? 'Five-minute aggregates unavailable'
-        : projection?.state === 'empty'
-          ? 'Waiting for history samples'
-          : exhausted
-            ? 'Waiting for fresh history'
-            : '';
+  const status = sourceUnavailable
+    ? 'History unavailable'
+    : !validHistory
+      ? error
+        ? 'History unavailable'
+        : 'Waiting for history'
+      : error
+        ? 'Last-known history; refresh unavailable'
+        : projection?.state === 'unavailable'
+          ? 'Five-minute aggregates unavailable'
+          : projection?.state === 'empty'
+            ? 'Waiting for history samples'
+            : exhausted
+              ? 'Waiting for fresh history'
+              : '';
   void tick;
   return (
     <section

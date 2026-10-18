@@ -11,6 +11,7 @@ from app.services.overview_weather.request import (
     await_weather_request,
 )
 from app.services.overview_weather.service import DAY_MS, WeatherTileError
+from app.services.settings_conflict import SettingsConflict
 
 router = APIRouter(prefix="/api/overview-weather")
 
@@ -45,6 +46,8 @@ async def put_settings(
     response.headers["Cache-Control"] = "no-store"
     try:
         settings = store(request).update(changes.model_dump())
+    except SettingsConflict as error:
+        raise HTTPException(409, str(error)) from error
     except (OSError, ValueError, TypeError):
         raise HTTPException(503, "Weather settings could not be saved") from None
     runtime = getattr(request.app.state, "overview_weather_service", None)

@@ -77,3 +77,31 @@ def test_concurrent_same_value_writers_advance_once(tmp_path):
         )
     assert {result.revision for result in results} == {1}
     assert WeatherSettingsStore(path).get().enabled is True
+
+
+def test_expected_revision_rejects_stale_writes_even_when_value_matches(tmp_path):
+    from app.services.settings_conflict import SettingsConflict
+
+    store = WeatherSettingsStore(tmp_path / "weather.json")
+    assert store.update({"enabled": True, "expected_revision": 0}).revision == 1
+    with pytest.raises(SettingsConflict):
+        store.update({"enabled": True, "expected_revision": 0})
+    assert store.get() == WeatherSettings(enabled=True, revision=1)
+    assert store.update({"enabled": False, "expected_revision": 1}).revision == 2
+
+
+def test_aviation_visibility_cas_preserves_forecast_selection(tmp_path):
+    from app.services.aviation_weather.settings import AviationSettingsStore
+    from app.services.settings_conflict import SettingsConflict
+
+    store = AviationSettingsStore(tmp_path / "aviation.json")
+    before = store.get()
+    enabled = store.update({"winds": True, "sigmet": True, "expected_revision": 0})
+    assert enabled.winds and not enabled.temperature
+    assert enabled.gfs_selection == before.gfs_selection
+    with pytest.raises(SettingsConflict):
+        store.update({"sigmet": False, "expected_revision": 0})
+    assert store.get() == enabled
+    switched = store.update({"temperature": True, "expected_revision": 1})
+    assert switched.temperature and not switched.winds
+    assert switched.gfs_selection == before.gfs_selection

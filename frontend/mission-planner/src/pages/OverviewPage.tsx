@@ -935,7 +935,7 @@ export function OverviewPage() {
       data-paced-running={pacedRunning}
       data-route-context-key={localContextKey ?? undefined}
       data-clocks-visible={showClocks}
-      data-metrics-visible={showMetricPanels && !pacedRunning}
+      data-metrics-visible={showMetricPanels}
     >
       <div
         ref={captureStage}
@@ -1343,7 +1343,7 @@ export function OverviewPage() {
                 )}
               </div>
             </div>
-            {((!pacedRunning && showMetricPanels) ||
+            {(showMetricPanels ||
               (aviationSettings?.sigmet &&
                 sigmetPresentation.pendingCount > 0 &&
                 layout.mode !== 'desktop')) && (
@@ -1355,8 +1355,17 @@ export function OverviewPage() {
                     onPageChange={changeSigmetPage}
                   />
                 )}
-                {!pacedRunning && showMetricPanels && (
+                {showMetricPanels && (
                   <OverviewMetricHistoryPanels
+                    key={`${simulationRun?.runtime_id ?? 'unknown'}:${simulationRun?.service_mode ?? 'unknown'}`}
+                    unavailableReason={
+                      simulationRun?.service_mode === 'simulation' ||
+                      status?.pop_observation?.source === 'simulation'
+                        ? 'Simulation · network measurements unavailable'
+                        : simulationRun?.service_mode !== 'live'
+                          ? 'Network source unavailable'
+                          : undefined
+                    }
                     settings={overviewLinkSettings}
                     status={status}
                     statusError={Boolean(statusError)}

@@ -4,6 +4,7 @@ from typing import Literal, Self
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
 
+from app.models.overview_presets import PresetWeatherVisibility
 from app.services.overview_link_settings import (
     OverviewLinkSettingsStore,
     OverviewSettingsConflict,
@@ -117,6 +118,7 @@ class OverviewPresetUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     settings: dict[str, StrictBool]
     expected_version: int = Field(ge=0, strict=True)
+    weather_visibility: PresetWeatherVisibility | None = None
 
     @model_validator(mode="after")
     def validate_settings(self) -> Self:
@@ -141,7 +143,14 @@ def save_overview_preset(
 ):
     try:
         return _get_store().save_preset(
-            name, settings.settings, settings.expected_version
+            name,
+            settings.settings,
+            settings.expected_version,
+            (
+                settings.weather_visibility.model_dump()
+                if settings.weather_visibility
+                else None
+            ),
         )
     except OverviewSettingsConflict as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
