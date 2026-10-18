@@ -310,6 +310,19 @@ def test_training_routes_use_normal_parser_and_have_two_distinct_replay_windows(
     )
     assert routes[0].points[0].longitude == -10
     assert routes[1].points[0].longitude == 10
+    from app.mission import storage
+
+    previous = storage.MISSIONS_DIR
+    try:
+        storage.MISSIONS_DIR = root / "missions"
+        mission = storage.load_mission_v2("4063022a-14a6-5c70-94b0-1d790a01311b")
+        assert [leg.route_id for leg in mission.legs] == [
+            "operator-training-leg-1",
+            "operator-training-leg-2",
+        ]
+        assert mission.legs[0].name == "First flight · Meridian to Harbor"
+    finally:
+        storage.MISSIONS_DIR = previous
 
 
 def test_launcher_refuses_shared_or_external_volume_configuration(tmp_path):
@@ -327,3 +340,34 @@ def test_launcher_refuses_shared_or_external_volume_configuration(tmp_path):
             tmp_path,
             "starlink-operator-training-123456781234",
         )
+
+
+def test_corrupt_launcher_ownership_is_preserved_before_any_command(tmp_path):
+    import os
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_launcher_guard",
+        ROOT / "tools/training/operator-mission/launcher.py",
+    )
+    launcher = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(launcher)
+    root = tmp_path / "corrupt-owner"
+    marker = scenario.mark_root(root)
+    value = {
+        "project": "starlink-operator-training-"
+        + marker["root_id"].replace("-", "")[:12],
+        "trainingRootId": marker["root_id"],
+        "candidateSha": "broken",
+        "port": 12345,
+        "disposable": False,
+        "dockerHost": os.getenv("DOCKER_HOST"),
+        "dockerContext": os.getenv("DOCKER_CONTEXT"),
+        "commands": [],
+    }
+    import json
+
+    raw = json.dumps(value)
+    (root / "ownership.json").write_text(raw)
+    with pytest.raises(ValueError, match="candidate"):
+        launcher.open_owner(root)
+    assert (root / "ownership.json").read_text() == raw

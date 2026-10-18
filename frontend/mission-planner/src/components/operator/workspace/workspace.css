@@ -390,6 +390,9 @@
   .ws-header > div:first-child {
     max-width: 12rem;
   }
+  .ws-customers {
+    max-height: 44px;
+  }
 
   .ws-header {
     grid-template-columns: auto minmax(0, 1fr) auto;

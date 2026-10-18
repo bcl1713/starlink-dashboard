@@ -85,8 +85,9 @@ def open_owner(
     validate_project(project or expected, marker["root_id"])
     state = root / "ownership.json"
     previous = json.loads(state.read_text()) if state.exists() else None
-    if previous and (
-        previous.get("project") != expected
+    if previous is not None and (
+        not isinstance(previous, dict)
+        or previous.get("project") != expected
         or previous.get("trainingRootId") != marker["root_id"]
     ):
         raise ValueError("Existing resource ownership does not match the marked root")
@@ -99,6 +100,20 @@ def open_owner(
         raise ValueError(
             "Use the original configured Docker daemon/context for these owned resources"
         )
+    if previous is not None:
+        recorded_sha = previous.get("candidateSha")
+        recorded_port = previous.get("port")
+        if (
+            not isinstance(recorded_sha, str)
+            or not re.fullmatch("[0-9a-f]{40}", recorded_sha)
+            or type(recorded_port) is not int
+            or not 1024 <= recorded_port <= 65535
+            or type(previous.get("disposable")) is not bool
+            or not isinstance(previous.get("commands"), list)
+        ):
+            raise ValueError(
+                "Invalid recorded training candidate, port or ownership schema; preserve for recovery"
+            )
     owner = Owner(expected, root)
     if previous:
         owner.ownership = previous | {"pid": os.getpid(), "pgid": os.getpgrp()}
@@ -271,7 +286,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=["start", "stop", "reset", "checkpoint", "import-start", "import-stop"],
+        choices=[
+            "start",
+            "stop",
+            "reset",
+            "checkpoint",
+            "restart",
+            "import-start",
+            "import-stop",
+        ],
     )
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--project")
@@ -299,7 +322,7 @@ def main():
         create=creating,
         project=args.project,
         port=args.port,
-        disposable=args.disposable,
+        disposable=args.disposable or destination,
         destination=destination,
     )
     handlers = {
@@ -319,6 +342,10 @@ def main():
             )
         elif args.command in ("stop", "import-stop"):
             print(json.dumps({"cleanup": stop(owner)}))
+        elif args.command == "restart":
+            validate(owner)
+            owner.compose("restart", "starlink-location", timeout=120)
+            print(json.dumps({"restarted": owner.project}))
         elif args.command == "checkpoint":
             if not args.stage:
                 raise ValueError("--stage is required")
