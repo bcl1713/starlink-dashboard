@@ -1,8 +1,8 @@
 # Operator transport decisions and model-risk review — #369
 
-Status: proposed specification for user review. This document authorizes no
-implementation. After specification approval, prepare a separate implementation
-plan for approval before changing product code.
+Status: reviewed for implementation planning, with the link-integrity correction
+requested in PR #380 comment 6250609309 incorporated. The user authorized
+planning; product implementation requires separate plan approval.
 
 Parent: #361. Existing baseline: `origin/dev` at `76277248` (PR #379).
 
@@ -82,9 +82,17 @@ Allow 1–32 rows per decision, service labels up to 200 characters, reason up t
 1000 and notes up to the existing 8000-character limit. Reject duplicate row
 IDs; allow the same label across separate decisions and across distinct rows
 where the operator deliberately describes separate activity. References, if
-supplied, must satisfy existing same-mission/type rules. Removing a referenced
-object must not erase a decision or its history; render the relationship as
-removed/missing.
+supplied, must satisfy existing same-mission/type rules. Preserve existing
+`dependency_conflict` semantics: an active decision blocks removal, type change
+or cross-mission movement of its call/conference target. Explicitly unlink or
+remove the decision first; do not cascade or permit active dangling links.
+Unlinking appends a revision and retains the historical reference. Restoring a
+decision revalidates its stored links and fails if a target is removed, missing,
+wrong-type or in another mission; restore/reconcile targets before retrying.
+Moving a decision across missions requires clearing or replacing its links in
+that same update. Recovery rebuilds links only from current nonremoved records
+and validates both ends with the same rules. Historical references can display
+removed/missing targets without becoming active links.
 
 ### Time and historical changes
 
@@ -111,11 +119,9 @@ rows can have different target/applied transports and times. Adding a later
 application is not an automatic completion of the request or a conference status
 change.
 
-No authoritative current-routing projection is added. The list may summarize the
-latest known-time intent and reported application per service and scope, with a
-link to the decision and UTC time. Unknown times or overlapping contradictory
-reports remain visible as ambiguous rather than choosing by save order. Never
-carry leg-specific reports into another leg as inferred configuration.
+No authoritative current-routing projection is added. The list shows separate
+decisions with their own scope/time; unknown or contradictory reports remain
+visible. Never infer configuration across legs or choose facts by save order.
 
 ## Persistence and API integration
 
@@ -288,11 +294,5 @@ migration checks and resource cleanup.
 
 ## Review and next gate
 
-Self-review criteria: independent report semantics; optional workflow fields;
-editable operational times with immutable audit history; exact reuse of live
-snapshot timing; explicit unknown paths; advisory-only protection; transactional
-durability and migration; reproducible simulation; no Overview/control scope
-creep.
-
-User approval of this specification permits writing the implementation plan.
-Product changes begin only after that subsequent plan is also approved.
+The posted review and user instruction authorize implementation planning after
+this integrity correction. Product changes require subsequent plan approval.
