@@ -63,7 +63,7 @@ settings=OperatorSettings(enabled=True,root=root/'operator',source_mode='simulat
 store=OperatorStore.open(settings,initialize=False,clock=clock)
 try:
  old=str(store.health().api_epoch)
- manifest=backup_store(store,directory=root/'issue-epoch-backups')
+ manifest=backup_store(store,directory=settings.database_path.parent/'synthetic-epoch-backups')
  restored=restore_store(settings,manifest=manifest,clock=clock)
  assert restored.ready and str(restored.api_epoch)!=old
  print(json.dumps({'previous':old,'restored':str(restored.api_epoch)}))
