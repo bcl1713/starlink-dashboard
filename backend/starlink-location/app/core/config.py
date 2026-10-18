@@ -3,7 +3,6 @@
 # FR-004: File exceeds 300 lines (305 lines) because config management handles
 # environment variable loading, YAML parsing, validation, and cached config state.
 # Splitting would fragment configuration lifecycle. Deferred to v0.4.0.
-
 import os
 from pathlib import Path
 from typing import Any, Optional
@@ -12,6 +11,7 @@ import yaml
 from pydantic import ValidationError
 from typing_extensions import Self
 
+from app.mission.input_admission import model_input_write
 from app.models.config import SimulationConfig
 
 
@@ -252,6 +252,7 @@ class ConfigManager:
                 ],
             )
 
+    @model_input_write
     def load(self, file_path: Path | None = None) -> SimulationConfig:
         """
         Load configuration from file or create default.
@@ -286,6 +287,7 @@ class ConfigManager:
             self.load()
         return self._config
 
+    @model_input_write
     def reload(self, file_path: Path | None = None) -> SimulationConfig:
         """
         Reload configuration from file.
@@ -299,6 +301,7 @@ class ConfigManager:
         self._config = None
         return self.load(file_path)
 
+    @model_input_write
     def update_config(self, updates: dict) -> SimulationConfig:
         """
         Update current configuration with new values.
@@ -316,6 +319,7 @@ class ConfigManager:
         return self._config
 
     @classmethod
+    @model_input_write
     def reset(cls) -> None:
         """Reset singleton instance and cached configuration."""
         cls._instance = None

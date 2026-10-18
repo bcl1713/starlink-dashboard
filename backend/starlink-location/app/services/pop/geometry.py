@@ -151,3 +151,16 @@ def find_crossings(
             previous = winner
         distance += arc * EARTH_RADIUS_METERS
     return tuple(crossings)
+
+
+def route_geometry_fingerprint(points):
+    """Identity of ordered captured geometry; excludes ETA and forecast revisions."""
+    import hashlib
+    import json
+
+    return hashlib.sha256(
+        json.dumps(
+            [(point.latitude, point.longitude, point.altitude) for point in points],
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()

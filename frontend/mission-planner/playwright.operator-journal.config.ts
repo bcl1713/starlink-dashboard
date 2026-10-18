@@ -12,6 +12,13 @@ export default defineConfig({
     'operator-communications.spec.ts',
     'operator-conferences.spec.ts',
     'operator-issues.spec.ts',
+    ...(process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true'
+      ? ['operator-model-alerts.spec.ts']
+      : []),
+    ...(process.env.OPERATOR_EVENTS_ACCEPTANCE === 'true' ||
+    process.env.OPERATOR_MODEL_ALERTS_ACCEPTANCE === 'true'
+      ? ['operator-events.spec.ts']
+      : []),
   ],
   workers: 1,
   retries: 0,

@@ -2,7 +2,9 @@
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
+from starlette.concurrency import run_in_threadpool
 
+from app.core.config import ConfigManager
 from app.mission.pop_status import PopStatusService
 from app.services.ground_entry_point import get_cached_ground_entry_point
 from app.services.pop.continuity_models import CallContinuityProjection
@@ -11,7 +13,14 @@ router = APIRouter()
 
 # Global status state
 _coordinator: object | None = None
-_pop_service: PopStatusService = PopStatusService()
+
+
+def _runtime_config():
+    provider = getattr(_coordinator, "get_config", None)
+    return provider() if callable(provider) else ConfigManager().get_config()
+
+
+_pop_service: PopStatusService = PopStatusService(config_provider=_runtime_config)
 
 
 def set_coordinator(coordinator):
@@ -77,6 +86,10 @@ async def status():
     }
     ```
     """
+    return await run_in_threadpool(_status_payload)
+
+
+def _status_payload():
     if _coordinator is None:
         raise HTTPException(status_code=503, detail="Service not yet initialized")
 

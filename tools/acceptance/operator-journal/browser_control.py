@@ -82,6 +82,18 @@ finally:
         ]
     elif action == "restart":
         command += ["restart", "starlink-location"]
+    elif action == "event-counts":
+        import re
+
+        occurrence = sys.argv[2]
+        if not re.fullmatch(r"[0-9a-f]{64}", occurrence):
+            raise ValueError("Synthetic occurrence ID required")
+        script = f"""import json,sqlite3
+with sqlite3.connect('file:{DB}?mode=ro',uri=True) as db:
+ occurrence={occurrence!r}
+ print(json.dumps(dict(acknowledgments=db.execute('SELECT count(*) FROM event_acknowledgments WHERE occurrence_id=?',(occurrence,)).fetchone()[0], receipts=db.execute("SELECT count(*) FROM commands WHERE json_extract(response_json,'$.occurrence_id')=?",(occurrence,)).fetchone()[0])))
+"""
+        command += ["exec", "-T", "starlink-location", "python", "-c", script]
     elif action == "counts":
         key = sys.argv[2]
         script = f"""import json,sqlite3

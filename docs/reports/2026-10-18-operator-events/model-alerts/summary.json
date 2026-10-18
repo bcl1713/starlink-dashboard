@@ -1,0 +1,267 @@
+{
+  "candidateSha": "3e216a26d0607fa9f6892baa0f8eef5019eceedd",
+  "project": "starlink-operator-model-alerts-368",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-model-alerts-368-backend:3e216a26d0607fa9f6892baa0f8eef5019eceedd",
+      "id": "sha256:3c4c1f3ff0926ff415c0a66042966c19d0bbc62fbe62d292dc11002f0f08aba1",
+      "revision": "3e216a26d0607fa9f6892baa0f8eef5019eceedd"
+    },
+    "frontend": {
+      "tag": "starlink-operator-model-alerts-368-frontend:3e216a26d0607fa9f6892baa0f8eef5019eceedd",
+      "id": "sha256:6890fc74c10aac14f6efb3313cb43b320907df86dd97a3e5fafad997a6b4c148",
+      "revision": "3e216a26d0607fa9f6892baa0f8eef5019eceedd"
+    }
+  },
+  "sourceArchiveSha256": "841af8da8eb48ab4f7eda3e4961eae34f07b3964f0a51339513a9f65e0171250",
+  "qualification": {
+    "realModelsBrowser": {
+      "models": {
+        "synthetic": true,
+        "rawInputsOnly": true,
+        "captures": [
+          "1920x1080",
+          "390x844",
+          "844x390"
+        ],
+        "incomingProtectedActivity": true,
+        "foregroundSoundOnce": true,
+        "partialIndependentWarning": true,
+        "twoClientAcknowledgment": true,
+        "positionUpdatesActualPop": true,
+        "staleReason": true,
+        "unavailableReason": true,
+        "routeScheduleUpdated": true,
+        "deactivationRetires": true,
+        "offlineReconnect": true,
+        "restartNoResurrection": true
+      },
+      "lanHttp": {
+        "actualNonSecureOrigin": true,
+        "secureContext": false,
+        "randomUUIDAbsent": true,
+        "timelineRendered": true,
+        "acknowledgmentCommitted": true,
+        "browserErrors": []
+      },
+      "overview": {
+        "synthetic": true,
+        "clock": "2026-10-17T16:00:00Z",
+        "captures": [
+          "display-controls-1920x1080.png",
+          "display-presets-1920x1080.png",
+          "display-controls-390x844.png",
+          "display-presets-390x844.png",
+          "display-controls-844x390.png",
+          "display-presets-844x390.png"
+        ],
+        "sameBrowserRecenterAcknowledged": true,
+        "separateBrowserCannotRecenter": true,
+        "disjointConcurrentChanges": true,
+        "conflictRejected": true,
+        "historySynced": true,
+        "overviewRenderedVisibilitySynced": true,
+        "presetRoundtrip": true,
+        "receiptRequired": true,
+        "offlineFailureDoesNotConfirm": true,
+        "unacknowledgedTimeoutAndStaleTarget": true,
+        "restartPersistence": true,
+        "browserErrors": [],
+        "completed": true
+      }
+    },
+    "ackDurabilityBackup": {
+      "synthetic": true,
+      "oneDurableAcknowledgment": true,
+      "operationsUnchanged": true,
+      "backupRestore": true,
+      "commitCrashBefore": true,
+      "commitCrashAfter": true,
+      "example": {
+        "event": {
+          "schema_version": 1,
+          "event_id": "6d9cd94b9b053635dfeda9ed1d8637310ab85ee70b52161bb78424c2f8aa1658",
+          "mission_id": "synthetic-mission-a",
+          "leg_id": null,
+          "kind": "call_prep",
+          "title": "Prepare: Synthetic durable requirement",
+          "due_at": "2026-10-17T16:02:00.000000Z",
+          "end_at": "2026-10-17T16:27:00.000000Z",
+          "state": "upcoming",
+          "provenance": "scheduled",
+          "source_ref": "f60a3e06-e456-41ac-9c99-fbba0efa4132",
+          "source_revision": "1",
+          "source_captured_at": "2026-10-17T16:00:00.000000Z",
+          "freshness": "fresh",
+          "confidence": null,
+          "transport": null,
+          "protected_participation_ids": [],
+          "conference_ids": [],
+          "transport_relevance": "unknown",
+          "continuity_status": "unknown",
+          "discrepancies": [],
+          "significance": "routine",
+          "active": true,
+          "schedule_key": "de09746a5dd350b22800d46546d145f86ec1d9c10f08480c56be62fb4fcfb6aa",
+          "family_key": "",
+          "dependent_versions": {
+            "f60a3e06-e456-41ac-9c99-fbba0efa4132": 1
+          },
+          "notification": {
+            "generation": "294120401a418b0abb5ec89bb1f7cad825e03848f8f07617e82940e54f3dab2a",
+            "severity_generation": 2,
+            "acknowledged": false,
+            "acknowledged_at": null,
+            "retired": false,
+            "preview": false,
+            "eligible": false,
+            "priority": 2,
+            "threshold_at": "2026-10-17T16:02:00.000000Z",
+            "acknowledgment_available": true,
+            "available": true,
+            "reason": null
+          }
+        },
+        "acknowledgment": {
+          "schema_version": 1,
+          "receipt_type": "event_acknowledgment",
+          "command_id": "1bcb780b-25a8-469a-86bf-722d61c25c8f",
+          "acknowledgment_id": "6febef10-76ae-4ee6-8d4e-da314a31fab1",
+          "occurrence_id": "294120401a418b0abb5ec89bb1f7cad825e03848f8f07617e82940e54f3dab2a",
+          "severity_generation": 2,
+          "acknowledged_at": "2026-10-17T16:00:00.000000Z",
+          "replayed": false
+        }
+      }
+    },
+    "storageFailures": {
+      "crashes": [
+        {
+          "barrier": "before_commit",
+          "beforeRetryCounts": [
+            6,
+            6,
+            6
+          ],
+          "afterRetryCounts": [
+            7,
+            7,
+            7
+          ],
+          "walBytes": 0,
+          "childReaped": true
+        },
+        {
+          "barrier": "after_commit",
+          "beforeRetryCounts": [
+            7,
+            7,
+            7
+          ],
+          "afterRetryCounts": [
+            7,
+            7,
+            7
+          ],
+          "walBytes": 49472,
+          "childReaped": true
+        }
+      ],
+      "recovery": {
+        "backupH": 6,
+        "preRestoreH": 7,
+        "restoredH": 6,
+        "epochRotated": true,
+        "oldEpochRejected": true,
+        "failClosed": {
+          "missing": "store_recovery_required",
+          "schema": "unsupported_schema"
+        }
+      },
+      "media": [
+        {
+          "physicalFailure": "read-only",
+          "error": "store_unavailable",
+          "countsUnchanged": [
+            6,
+            6,
+            6
+          ],
+          "reopenReady": true,
+          "filesystem": "private 4 MiB tmpfs"
+        },
+        {
+          "physicalFailure": "full",
+          "error": "commit_outcome_unknown",
+          "countsUnchanged": [
+            6,
+            6,
+            6
+          ],
+          "reopenReady": true,
+          "filesystem": "private 4 MiB tmpfs"
+        }
+      ],
+      "baselinePagesAfterFailures": true
+    },
+    "existingExports": {
+      "conferenceLifecycleUnchanged": true,
+      "issueCapabilityLifecycleUnchanged": true,
+      "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
+      "telemetryZipSha256Before": "8747b5080157dede954db5f9b90f5b42f0477756659981a974ddffef099ff667",
+      "telemetryZipSha256After": "8747b5080157dede954db5f9b90f5b42f0477756659981a974ddffef099ff667",
+      "captureIdentitiesAndRevisionsUnchanged": true,
+      "telemetryManifest": {
+        "artifact_kind": "telemetry",
+        "legs": [
+          {
+            "checksum": {
+              "events.csv": "3815d7083f79d2bb5ffa60fd8369cde6b8994685d2ff2669f708b8c2c5278f26",
+              "observations.csv": "f8e3d4a98b515fd9bc529dc224496f71cd453fcd7cb36a3befaeb4f36a292551"
+            },
+            "complete": false,
+            "end": "2026-10-17T16:36:41+00:00",
+            "leg_id": "synthetic-leg-1",
+            "path": "legs/001",
+            "revision": "8024497deb539a84ee5b79eb468905f9b96b9f3f5273f1d074314e7680d605a6",
+            "start": "2026-10-17T15:35:01+00:00"
+          },
+          {
+            "checksum": {
+              "events.csv": "b59a1500b2633e7e06e302f4af0a84cc328fe82287eaba8cd5cc1402f803e271",
+              "observations.csv": "e102208ec97220e15c79fab2b9bf6f83c4a6fa8ec44b8ee97f8fe764906a1926"
+            },
+            "complete": false,
+            "end": "2026-10-17T17:26:41+00:00",
+            "leg_id": "synthetic-leg-2",
+            "path": "legs/002",
+            "revision": "783697ffe661479f6da27d7b9382b2256a9aa3df918056b80b8a6aa84216602c",
+            "start": "2026-10-17T16:25:01+00:00"
+          }
+        ],
+        "mission_id": "synthetic-mission-a",
+        "partial": true,
+        "schema_version": 1,
+        "source_mode": "live"
+      },
+      "planningCsvSemanticSha256Before": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+      "planningCsvSemanticSha256After": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+      "planningComparison": "existing combined timeline CSV; generated-at header excluded",
+      "simulationExportRejected": true
+    }
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

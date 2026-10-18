@@ -1,9 +1,12 @@
 """Local status adapter for captured routes, telemetry, and PoP observations."""
 
+import copy
 import hashlib
 import json
 from collections.abc import Callable
+from contextlib import nullcontext
 from datetime import datetime, timezone
+from functools import wraps
 
 from app.core.config import ConfigManager
 from app.mission.active_context import resolve_active_mission_leg_context
@@ -15,7 +18,7 @@ from app.mission.timeline_builder.calculator import (
     derive_mission_window,
 )
 from app.services.pop.catalog import load_catalog
-from app.services.pop.geometry import nearest_pop
+from app.services.pop.geometry import nearest_pop, route_geometry_fingerprint
 from app.services.pop.live import evaluate_live
 from app.services.pop.models import (
     PopCatalog,
@@ -27,6 +30,26 @@ from app.services.position_freshness import position_observation, speed_is_fresh
 
 # Observation providers are local reads; simulation never uses real discovery.
 ObservationProvider = Callable[[str, object, PopCatalog | None], PopObservation]
+
+
+def _source_admission(function):
+    @wraps(function)
+    def guarded(self, *args, **kwargs):
+        from app.mission.storage import get_active_leg_lock
+
+        gate = (
+            get_active_leg_lock()
+            if (
+                self.route_manager is not None
+                or self.snapshot_context_provider is not None
+                or self.capability_provider is not None
+            )
+            else nullcontext()
+        )
+        with gate:
+            return function(self, *args, **kwargs)
+
+    return guarded
 
 
 def _observation(mode, telemetry, catalog):
@@ -60,6 +83,7 @@ class PopStatusService:
         self._epoch = 0
         self._last_now = None
         self._last_lifecycle = None
+        self._published_snapshot = None
 
     def reconcile(self, forecast, observation, *, catalog, nearest_id, next_id, now):
         """Reject results captured before a route/reset/mode revision superseded them."""
@@ -76,6 +100,7 @@ class PopStatusService:
         )
         return advisories
 
+    @_source_admission
     def snapshot(
         self,
         telemetry,
@@ -91,6 +116,9 @@ class PopStatusService:
         unavailable_reason=None,
         projector=None,
         call_capabilities=None,
+        mission_id=None,
+        leg_id=None,
+        simulation_run_id=None,
     ):
         """Capture one local sample, with separate mission and observation clocks.
 
@@ -265,7 +293,7 @@ class PopStatusService:
             projector=projector,
             completed_ids=self.state.completed_ids,
         )
-        return {
+        result = {
             "call_continuity": (
                 continuity.model_dump(mode="json") if continuity else None
             ),
@@ -274,6 +302,27 @@ class PopStatusService:
             "pop_advisories": [a.model_dump(mode="json") for a in advisories],
         }
 
+        self._published_snapshot = {
+            "payload": copy.deepcopy(result),
+            "as_of": now,
+            "captured_at": observed_now,
+            "mode": mode,
+            "input_identity": revision,
+            "route_geometry_identity": (
+                route_geometry_fingerprint(route.points) if route else None
+            ),
+            "route_id": route.route_id if route else None,
+            "mission_id": mission_id,
+            "leg_id": leg_id,
+            "simulation_run_id": simulation_run_id,
+        }
+        return result
+
+    def read_publication(self):
+        """Copy the last local publication without evaluating or advancing state."""
+        return copy.deepcopy(self._published_snapshot)
+
+    @_source_admission
     def status_payload(self, telemetry, *, now=None):
         """Resolve local inputs; optional simulation callback supplies snapshot kwargs.
 
@@ -322,6 +371,10 @@ class PopStatusService:
             "lifecycle_token": (token, flight.departure_time),
             "flight_phase": flight.phase.value,
             "unavailable_reason": reason,
+            "mission_id": active_context.parent_mission_id if active_context else None,
+            "leg_id": (
+                getattr(active_context.leg, "id", None) if active_context else None
+            ),
         }
         if config.mode == "simulation" and self.snapshot_context_provider is not None:
             context.update(self.snapshot_context_provider())

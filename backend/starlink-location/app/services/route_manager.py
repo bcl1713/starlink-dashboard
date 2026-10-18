@@ -3,15 +3,16 @@
 # FR-004: File exceeds 300 lines (330 lines) because route manager combines
 # file watching, KML parsing, route storage, and active route coordination.
 # Splitting would fragment route lifecycle management. Deferred to v0.4.0.
-
 import logging
 from collections.abc import Callable
+from hashlib import sha256
 from pathlib import Path
 from typing import Literal
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+from app.mission.input_admission import model_input_write
 from app.models.route import ParsedRoute
 from app.services.kml_parser import KMLParseError, parse_kml_file
 
@@ -74,6 +75,7 @@ class RouteManager:
 
         self._profile_resolver = profile_resolver
         self._routes: dict[str, ParsedRoute] = {}
+        self._source_file_revisions: dict[str, str | None] = {}
         self._active_route_id: str | None = None
         self._observer: Observer | None = None
         self._errors: dict[str, str] = {}  # Tracks errors by route_id
@@ -134,6 +136,7 @@ class RouteManager:
             )
         return profile
 
+    @model_input_write
     def _load_route_file(self, file_path: str) -> None:
         """
         Load a single KML file and add to routes cache.
@@ -144,6 +147,7 @@ class RouteManager:
         route_id = Path(file_path).stem
 
         try:
+            captured_hash = sha256(Path(file_path).read_bytes()).hexdigest()
             profile = self.resolve_ingestion_profile(route_id)
             parsed_route = (
                 parse_kml_file(file_path, profile=profile)
@@ -163,7 +167,10 @@ class RouteManager:
                         != parsed_route.content_hash
                     ):
                         raise KMLParseError("Route content changed during parsing")
+                if sha256(Path(file_path).read_bytes()).hexdigest() != captured_hash:
+                    raise KMLParseError("Route source changed during parsing")
                 self._routes[route_id] = parsed_route
+                self._source_file_revisions[route_id] = captured_hash
             # Clear any previous error for this route
             if route_id in self._errors:
                 del self._errors[route_id]
@@ -216,6 +223,7 @@ class RouteManager:
             self._errors[route_id] = error_msg
             logger.error(error_msg)
 
+    @model_input_write
     def add_route(self, route_id: str, parsed_route: ParsedRoute) -> None:
         """
         Register a ParsedRoute in the manager cache.
@@ -224,12 +232,21 @@ class RouteManager:
         available even if filesystem watchers miss an event.
         """
         self._routes[route_id] = parsed_route
+        path = self.routes_dir / f"{route_id}.kml"
+        self._source_file_revisions[route_id] = (
+            sha256(path.read_bytes()).hexdigest() if path.exists() else None
+        )
         if route_id in self._errors:
             del self._errors[route_id]
         logger.info(
             f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()"
         )
 
+    def source_file_revision(self, route_id: str) -> str | None:
+        """Bytes accepted by the route publisher; a pending file reload is unknown."""
+        return self._source_file_revisions.get(route_id)
+
+    @model_input_write
     def _remove_route(self, route_id: str) -> None:
         """
         Remove a route from cache.
@@ -326,6 +343,7 @@ class RouteManager:
             return None
         return self.get_route(self._active_route_id)
 
+    @model_input_write
     def activate_route(self, route_id: str) -> bool:
         """
         Activate a route.
@@ -371,6 +389,7 @@ class RouteManager:
             logger.debug("Failed to sync flight state on route activation: %s", exc)
         return True
 
+    @model_input_write
     def deactivate_route(self, route_id: str | None = None) -> None:
         """Deactivate a specific route or the current active route.
 
@@ -451,6 +470,7 @@ class RouteManager:
         """Check if any routes failed to load."""
         return len(self._errors) > 0
 
+    @model_input_write
     def reload_all_routes(self) -> None:
         """Reload all routes from disk."""
         self._routes.clear()

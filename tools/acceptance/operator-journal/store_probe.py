@@ -200,7 +200,9 @@ def recovery():
             settings.database_path.unlink()
         else:
             with sqlite3.connect(settings.database_path) as db:
-                db.execute("UPDATE schema_migrations SET version=99")
+                db.execute(
+                    "UPDATE schema_migrations SET version=99 WHERE version=(SELECT MAX(version) FROM schema_migrations)"
+                )
         try:
             OperatorStore.open(settings, initialize=False, clock=CLOCK)
             raise AssertionError("Broken store was opened")

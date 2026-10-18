@@ -575,6 +575,8 @@ async def startup_event():
             run_service.coordinator = _coordinator
         run_service.publish = _publish_replay_telemetry
         app.state.simulation_run_service = run_service
+        app.state.operator_live_source = _operator_live_source
+        app.state.operator_event_source_factory = _operator_event_sources
         app.state.operator_binding = OperatorRuntimeBinding(
             clock=SystemClock(), context=_operator_context
         )
@@ -745,6 +747,60 @@ def _operator_context():
     return config.mode, run.run_id if run is not None else None
 
 
+def _operator_model_context():
+    from app.services.flight_state import get_flight_state_manager
+
+    mode, run_id = _operator_context()
+    if mode == "simulation":
+        run_id = run_id or os.getenv("OPERATOR_SIMULATION_RUN_ID") or None
+    flight = get_flight_state_manager().get_status()
+    manager = getattr(app.state, "route_manager", None)
+    return {
+        "source_mode": mode,
+        "simulation_run_id": run_id,
+        "lifecycle": _pop_lifecycle_token(run_id),
+        "active_route_id": manager.get_active_route_id() if manager else None,
+        "phase": flight.phase.value,
+        "departure_time": flight.departure_time,
+        "arrival_time": flight.arrival_time,
+    }
+
+
+def _operator_event_sources(runtime):
+    from app.operator.production_event_sources import ProductionEventSources
+
+    def telemetry():
+        connected = getattr(_coordinator, "is_connected", None)
+        if callable(connected) and not connected():
+            return None
+        return _coordinator.get_current_telemetry()
+
+    return ProductionEventSources(
+        runtime.service,
+        clock=runtime.clock,
+        publication=runtime.event_publication,
+        route_manager=app.state.route_manager,
+        poi_manager=app.state.poi_manager,
+        config_provider=_current_runtime_config,
+        telemetry_provider=telemetry,
+        context_provider=_operator_model_context,
+        live_provider=_operator_live_source,
+        pop_service=app.state.pop_status_service,
+    )
+
+
+def _operator_live_source(mission_id):
+    service = getattr(app.state, "pop_status_service", None)
+    publication = service.read_publication() if service is not None else None
+    if (
+        publication
+        and publication.get("mission_id") == mission_id
+        and publication.get("leg_id")
+    ):
+        return publication["leg_id"], publication
+    return None
+
+
 def _pop_lifecycle_token(run_id=None):
     service = getattr(app.state, "simulation_run_service", None)
     run = service.status().run if service is not None else None
@@ -759,11 +815,19 @@ def _simulation_pop_context():
     from app.simulation.run_timing import published_replay
 
     replay = published_replay(getattr(app.state, "simulation_run_service", None))
-    context = {"lifecycle_token": _pop_lifecycle_token()}
+    context = {
+        "lifecycle_token": _pop_lifecycle_token(),
+        "simulation_run_id": _operator_context()[1]
+        or os.getenv("OPERATOR_SIMULATION_RUN_ID")
+        or None,
+    }
     if replay is not None:
         plan, frame, _clock = replay
         leg = plan.artifacts.validated_leg
         context.update(
+            mission_id=plan.mission_id,
+            leg_id=leg.id if leg else None,
+            simulation_run_id=_pop_lifecycle_token()[-1],
             route=plan.artifacts.route,
             call_capabilities=plan.artifacts.call_capabilities,
             projector=plan.artifacts.projector,

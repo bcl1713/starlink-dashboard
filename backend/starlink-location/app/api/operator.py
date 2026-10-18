@@ -43,6 +43,7 @@ def error_response(error):
                     "dependency_conflict",
                     "invalid_transition",
                     "store_epoch_changed",
+                    "event_snapshot_changed",
                 )
                 else 503
             )
@@ -269,3 +270,8 @@ def journal(
             require_service(runtime).journal(mission_id, limit=limit, cursor=cursor),
             runtime,
         )
+
+
+from .operator_events import make_router
+
+router.include_router(make_router())

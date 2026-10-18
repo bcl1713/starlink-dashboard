@@ -4,7 +4,6 @@
 # coordinates phase transitions, ETA mode switching, file persistence, and event
 # callbacks. Splitting would fragment related state logic across multiple modules.
 # Deferred to v0.4.0.
-
 import logging
 import threading
 from collections.abc import Callable
@@ -14,6 +13,7 @@ from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import Self
 
+from app.mission.input_admission import model_input_write
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
 from app.services.flight_state.checkpoint import FlightStateCheckpoint
 from app.services.position_freshness import OBSERVATION_FRESHNESS_SECONDS
@@ -113,6 +113,7 @@ class FlightStateManager:
             f"FlightStateManager initialized: {self._status.phase.value} / {self._status.eta_mode.value}"
         )
 
+    @model_input_write
     def apply_simulation_frame(
         self, plan: "PreparedMissionRun", frame: "ReplayFrame"
     ) -> None:
@@ -148,6 +149,7 @@ class FlightStateManager:
                 self._arrival_distance_at_start,
             )
 
+    @model_input_write
     def restore_checkpoint(self, checkpoint: FlightStateCheckpoint) -> None:
         with self._lock:
             self._status = checkpoint.status.model_copy(deep=True)
@@ -212,6 +214,7 @@ class FlightStateManager:
 
         return status_copy
 
+    @model_input_write
     def check_departure(
         self, current_speed_knots: float, *, observed_at: datetime | None = None
     ) -> bool:
@@ -283,6 +286,7 @@ class FlightStateManager:
             self._last_speed_sample_time = sample_time
             return False
 
+    @model_input_write
     def observe_detection(self, observed_at: datetime) -> bool:
         """Accept new observations, restarting persistence after a silent gap."""
         with self._lock:
@@ -299,6 +303,7 @@ class FlightStateManager:
             self._last_detection_observed_at = observed_at
             return True
 
+    @model_input_write
     def reset_detection(self) -> None:
         """Break automatic detection continuity without changing confirmed phase."""
         with self._lock:
@@ -313,6 +318,7 @@ class FlightStateManager:
         self._arrival_start_time = None
         self._arrival_distance_at_start = None
 
+    @model_input_write
     def check_arrival(
         self,
         distance_to_destination_m: float,
@@ -384,6 +390,7 @@ class FlightStateManager:
 
             return False
 
+    @model_input_write
     def transition_phase(
         self, new_phase: FlightPhase, reason: str | None = None
     ) -> bool:
@@ -437,6 +444,7 @@ class FlightStateManager:
 
             return True
 
+    @model_input_write
     def reset(self) -> None:
         """Reset flight state to initial PRE_DEPARTURE phase.
 
@@ -474,6 +482,7 @@ class FlightStateManager:
     # Route context management
     # ------------------------------------------------------------------ #
 
+    @model_input_write
     def update_route_context(
         self,
         route: Optional["ParsedRoute"],
@@ -563,6 +572,7 @@ class FlightStateManager:
             )
             self.transition_phase(FlightPhase.PRE_DEPARTURE, reason=reset_reason)
 
+    @model_input_write
     def clear_route_context(self, reason: str | None = None) -> None:
         """Convenience wrapper for clearing the active route context.
 
@@ -577,6 +587,7 @@ class FlightStateManager:
     # Manual triggers
     # ------------------------------------------------------------------ #
 
+    @model_input_write
     def trigger_departure(
         self, timestamp: datetime | None = None, reason: str | None = None
     ) -> bool:
@@ -612,6 +623,7 @@ class FlightStateManager:
         )
         return True
 
+    @model_input_write
     def trigger_arrival(
         self, timestamp: datetime | None = None, reason: str | None = None
     ) -> bool:

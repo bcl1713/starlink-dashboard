@@ -62,9 +62,15 @@ class OperatorStore:
 
     @classmethod
     def open(
-        cls, settings: OperatorSettings, *, initialize: bool, clock: Clock
+        cls,
+        settings: OperatorSettings,
+        *,
+        initialize: bool,
+        clock: Clock,
+        allow_legacy: bool = False
     ) -> "OperatorStore":
         store = cls(settings, clock)
+        store._allow_legacy = allow_legacy
         if not settings.enabled:
             return store
         database, marker = settings.database_path, settings.identity_path
@@ -184,7 +190,11 @@ class OperatorStore:
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'"
             ).fetchone():
                 raise OperatorError("unsupported_schema")
-            apply_migrations(connection, clock=self.clock)
+            apply_migrations(
+                connection,
+                clock=self.clock,
+                allow_legacy=getattr(self, "_allow_legacy", False),
+            )
             rows = connection.execute(
                 "SELECT store_id, source_mode, simulation_run_id FROM store_metadata"
             ).fetchall()
@@ -198,7 +208,11 @@ class OperatorStore:
                 raise OperatorError("store_identity_mismatch")
             from .recovery import validate_connection
 
-            validate_connection(connection, clock=self.clock)
+            validate_connection(
+                connection,
+                clock=self.clock,
+                allow_legacy=getattr(self, "_allow_legacy", False),
+            )
             self._latest_recorded_at = connection.execute(
                 "SELECT max(recorded_at) FROM revisions"
             ).fetchone()[0]

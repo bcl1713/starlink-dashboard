@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "clock": "2026-10-17T16:00:00Z",
+  "captures": [
+    "display-controls-1920x1080.png",
+    "display-presets-1920x1080.png",
+    "display-controls-390x844.png",
+    "display-presets-390x844.png",
+    "display-controls-844x390.png",
+    "display-presets-844x390.png"
+  ],
+  "sameBrowserRecenterAcknowledged": true,
+  "separateBrowserCannotRecenter": true,
+  "disjointConcurrentChanges": true,
+  "conflictRejected": true,
+  "historySynced": true,
+  "overviewRenderedVisibilitySynced": true,
+  "presetRoundtrip": true,
+  "receiptRequired": true,
+  "offlineFailureDoesNotConfirm": true,
+  "unacknowledgedTimeoutAndStaleTarget": true,
+  "restartPersistence": true,
+  "browserErrors": [],
+  "completed": true
+}

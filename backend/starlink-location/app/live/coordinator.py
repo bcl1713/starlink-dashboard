@@ -8,6 +8,7 @@ import starlink_grpc
 from grpc import RpcError
 
 from app.live.client import StarlinkClient
+from app.mission.input_admission import model_input_write
 from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
 from app.services.heading_tracker import HeadingTracker
@@ -96,20 +97,24 @@ class LiveCoordinator:
         """
         try:
             telemetry = self._collect_telemetry()
-            self._last_valid_telemetry = telemetry
-            self._connection_status = True
-            return telemetry
+            return self._publish_telemetry(telemetry, True)
         except (starlink_grpc.GrpcError, RpcError) as e:
             logger.warning(
                 f"gRPC error while collecting telemetry: {type(e).__name__}: {e}"
             )
-            self._connection_status = False
+            self._publish_telemetry(self._last_valid_telemetry, False)
 
             # Return None when disconnected to prevent publishing stale/invalid data
             self.heading_tracker.reset()
             self.speed_tracker.reset()
             # This ensures Prometheus doesn't get polluted with zeros or old values
             return None
+
+    @model_input_write
+    def _publish_telemetry(self, telemetry, connected):
+        self._last_valid_telemetry = telemetry
+        self._connection_status = connected
+        return telemetry
 
     def _collect_telemetry(self) -> TelemetryData:
         """
@@ -188,6 +193,7 @@ class LiveCoordinator:
             raise RuntimeError("No telemetry available. Call update() first.")
         return self._last_valid_telemetry
 
+    @model_input_write
     def reset(self) -> None:
         """Reset coordinator to initial state.
 
@@ -229,6 +235,7 @@ class LiveCoordinator:
         """
         return self.config
 
+    @model_input_write
     def update_config(self, new_config: SimulationConfig) -> None:
         """
         Update configuration and reinitialize services.

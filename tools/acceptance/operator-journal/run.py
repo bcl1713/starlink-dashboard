@@ -198,6 +198,250 @@ def issues_proof(root):
     return proof
 
 
+EVENT_FIELDS = (
+    "synthetic",
+    "timelineIndependent",
+    "tenMinutePrep",
+    "scheduleMoved",
+    "cancelSuppressed",
+    "protectedUnknown",
+    "actualPopPrediction",
+    "predictionChanged",
+    "twoClients",
+    "acknowledgment",
+    "boundedCatchup",
+    "offlineReconnect",
+    "restart",
+    "unavailableSources",
+    "localOnly",
+    "draftPreserved",
+    "sameBrowserDedup",
+    "hiddenTab",
+)
+
+
+def events_proof(root):
+    proof = json.loads((root / "events-proof.json").read_text())
+    for field in EVENT_FIELDS:
+        if proof.get(field) is not True:
+            raise ValueError(f"Missing event evidence: {field}")
+    if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
+        raise ValueError("Missing event viewport evidence")
+    return {field: proof[field] for field in EVENT_FIELDS} | {
+        "captures": proof["captures"]
+    }
+
+
+def qualify_events(owner):
+    from events_probe import run as run_event_probe
+    from failures import run_failure_suite
+
+    origin = f"http://127.0.0.1:{owner.ownership['port']}"
+    env = owner.env | {
+        "OPERATOR_ACCEPTANCE_ORIGIN": origin,
+        "OPERATOR_ACCEPTANCE_PROJECT": owner.project,
+        "OPERATOR_ACCEPTANCE_EVIDENCE": str(owner.root),
+        "PLAYWRIGHT_BROWSERS_PATH": os.environ.get(
+            "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
+        ),
+        "npm_config_offline": "true",
+        "npm_config_update_notifier": "false",
+        "npm_config_cache": str(owner.root / "npm-cache"),
+    }
+    owner.ownership["temporaryPaths"].append(str(owner.root / "npm-cache"))
+    owner.persist()
+
+    def browser():
+        owner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "20m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-journal.config.ts",
+                "--grep",
+                "unified event timeline|Operator display controls|aircraft LAN HTTP",
+            ],
+            timeout=1220,
+            cwd=ROOT / "frontend/mission-planner",
+            env=env,
+        )
+        displays = json.loads((owner.root / "displays-proof.json").read_text())
+        assert (
+            displays["completed"]
+            and displays["historySynced"]
+            and displays["overviewRenderedVisibilitySynced"]
+        )
+        assert displays["browserErrors"] == []
+        lan = json.loads((owner.root / "events-lan-http.json").read_text())
+        assert (
+            lan["actualNonSecureOrigin"]
+            and lan["randomUUIDAbsent"]
+            and lan["acknowledgmentCommitted"]
+            and lan["timelineRendered"]
+        )
+        assert lan["secureContext"] is False and lan["browserErrors"] == []
+        return {
+            "events": events_proof(owner.root),
+            "overviewCompatibility": displays,
+            "lanHttp": lan,
+        }
+
+    def exports():
+        result = json.loads(
+            owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "appuser",
+                "starlink-location",
+                "python",
+                "/acceptance/export_probe.py",
+                timeout=120,
+            ).splitlines()[-1]
+        )
+        (owner.root / "events-exports.json").write_text(json.dumps(result, indent=2))
+        return result
+
+    return run_checks(
+        owner.root,
+        {
+            "eventsBackend": lambda: run_event_probe(owner, origin, owner.root),
+            "eventsBrowser": browser,
+            "storageFailures": lambda: run_failure_suite(owner, origin=origin),
+            "existingExports": exports,
+            "node": lambda: owner.execute(["node", "--version"], timeout=10).strip(),
+        },
+    )
+
+
+def models_proof(root):
+    proof = json.loads((root / "model-alerts-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "rawInputsOnly",
+        "foregroundSoundOnce",
+        "incomingProtectedActivity",
+        "twoClientAcknowledgment",
+        "positionUpdatesActualPop",
+        "staleReason",
+        "unavailableReason",
+        "routeScheduleUpdated",
+        "deactivationRetires",
+        "restartNoResurrection",
+        "offlineReconnect",
+        "partialIndependentWarning",
+    ):
+        if proof.get(field) is not True:
+            raise ValueError(f"Missing real-model evidence: {field}")
+    if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
+        raise ValueError("Missing real-model viewport evidence")
+    live = json.loads((root / "live-eta-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "rawInputsOnly",
+        "lateDeparture",
+        "earlyDeparture",
+        "speedThreshold",
+        "displayedTimeMatches",
+        "foregroundSoundOnce",
+        "deviationRejoin",
+        "revisedRoute",
+        "unavailableExplicit",
+    ):
+        if live.get(field) is not True:
+            raise ValueError(f"Missing live ETA evidence: {field}")
+    if live.get("viewports") != [1920, 390]:
+        raise ValueError("Missing live ETA viewport evidence")
+    return proof | {"liveEta": live}
+
+
+def qualify_models(owner):
+    from events_probe import run as event_probe
+    from failures import run_failure_suite
+
+    origin = f"http://127.0.0.1:{owner.ownership['port']}"
+    env = owner.env | {
+        "OPERATOR_ACCEPTANCE_ORIGIN": origin,
+        "OPERATOR_ACCEPTANCE_PROJECT": owner.project,
+        "OPERATOR_ACCEPTANCE_EVIDENCE": str(owner.root),
+        "PLAYWRIGHT_BROWSERS_PATH": os.environ.get(
+            "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
+        ),
+        "npm_config_offline": "true",
+        "npm_config_update_notifier": "false",
+        "npm_config_cache": str(owner.root / "npm-cache"),
+    }
+    owner.ownership["temporaryPaths"].append(str(owner.root / "npm-cache"))
+    owner.persist()
+
+    def browser():
+        owner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "15m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-journal.config.ts",
+                "--grep",
+                "real model foreground warning|Operator display controls|aircraft LAN HTTP",
+            ],
+            timeout=920,
+            cwd=ROOT / "frontend/mission-planner",
+            env=env,
+        )
+        lan = json.loads((owner.root / "events-lan-http.json").read_text())
+        assert (
+            lan["actualNonSecureOrigin"]
+            and lan["randomUUIDAbsent"]
+            and lan["acknowledgmentCommitted"]
+        )
+        assert lan["secureContext"] is False and not lan["browserErrors"]
+        displays = json.loads((owner.root / "displays-proof.json").read_text())
+        assert (
+            displays["completed"]
+            and displays["overviewRenderedVisibilitySynced"]
+            and not displays["browserErrors"]
+        )
+        return {
+            "models": models_proof(owner.root),
+            "lanHttp": lan,
+            "overview": displays,
+        }
+
+    def exports():
+        return json.loads(
+            owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "appuser",
+                "starlink-location",
+                "python",
+                "/acceptance/export_probe.py",
+                timeout=120,
+            ).splitlines()[-1]
+        )
+
+    return run_checks(
+        owner.root,
+        {
+            "realModelsBrowser": browser,
+            "ackDurabilityBackup": lambda: event_probe(owner, origin, owner.root),
+            "storageFailures": lambda: run_failure_suite(owner, origin=origin),
+            "existingExports": exports,
+        },
+    )
+
+
 def qualify(owner):
     from failures import run_failure_suite
 
@@ -302,12 +546,18 @@ def qualify(owner):
     )
 
 
-def run(candidate, project, evidence, *, qualification=qualify):
+def run(
+    candidate, project, evidence, *, qualification=qualify, events=False, models=False
+):
     validate_candidate(ROOT, candidate)
     evidence = Path(evidence).resolve()
     if evidence.exists():
         raise ValueError("Use a new evidence directory reserved for this run")
     owner = Owner(project, evidence)
+    if models:
+        owner.env["OPERATOR_MODEL_ALERTS_ACCEPTANCE"] = "true"
+    if events:
+        owner.env["OPERATOR_EVENTS_ACCEPTANCE"] = "true"
     report = {
         "candidateSha": candidate,
         "project": project,
@@ -320,7 +570,9 @@ def run(candidate, project, evidence, *, qualification=qualify):
     try:
         owner.admit()
         report.update(build_candidate(owner, candidate))
-        report["qualification"] = qualification(owner)
+        report["qualification"] = (
+            qualify_models if models else qualify_events if events else qualification
+        )(owner)
         report["checksPassed"] = True
         return report
     except BaseException as error:
@@ -356,5 +608,26 @@ if __name__ == "__main__":
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument(
+        "--events",
+        action="store_true",
+        help="Run the synthetic event-feed/notification slice",
+    )
+    parser.add_argument(
+        "--model-alerts",
+        action="store_true",
+        help="Qualify normal production modeled-restriction warnings",
+    )
     args = parser.parse_args()
-    print(json.dumps(run(args.candidate, args.project, args.evidence), indent=2))
+    print(
+        json.dumps(
+            run(
+                args.candidate,
+                args.project,
+                args.evidence,
+                events=args.events,
+                models=args.model_alerts,
+            ),
+            indent=2,
+        )
+    )

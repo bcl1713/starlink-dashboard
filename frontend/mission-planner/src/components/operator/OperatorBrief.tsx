@@ -2,6 +2,7 @@ import { preparationAt } from './callTiming';
 import { Link } from 'react-router-dom';
 import type { ReadRecord, RecordPage } from '@/types/operator';
 interface Props {
+  liveEvents?: boolean;
   missionId: string;
   pages: RecordPage[];
   unavailable: boolean;
@@ -55,6 +56,7 @@ function SummaryRecord({ item, now }: { item: ReadRecord; now: number }) {
   );
 }
 export function OperatorBrief({
+  liveEvents = false,
   missionId,
   pages,
   unavailable,
@@ -188,46 +190,48 @@ export function OperatorBrief({
         </p>
       )}
       <div className="grid min-w-0 gap-3 lg:grid-cols-3">
-        {cards.map((card) => (
-          <section
-            key={card.title}
-            aria-label={card.title}
-            className="min-w-0 space-y-3 rounded-xl border bg-card p-4"
-          >
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {card.title}
-            </h2>
-            {problem ? (
-              <p className="text-sm">{problem}</p>
-            ) : card.rows.length ? (
-              card.rows.map((item) => (
-                <SummaryRecord
-                  key={item.record.record_id}
-                  item={item}
-                  now={now}
-                />
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">{card.empty}</p>
-            )}
-            {!problem && card.title === 'Issues' && issues.length > 3 && (
-              <details>
-                <summary className="min-h-11 cursor-pointer py-2 text-sm">
-                  {issues.length - 3} more recorded open issues
-                </summary>
-                <div className="space-y-3">
-                  {issues.slice(3).map((item) => (
-                    <SummaryRecord
-                      key={item.record.record_id}
-                      item={item}
-                      now={now}
-                    />
-                  ))}
-                </div>
-              </details>
-            )}
-          </section>
-        ))}
+        {cards
+          .filter((card) => !liveEvents || card.title !== 'Next requirement')
+          .map((card) => (
+            <section
+              key={card.title}
+              aria-label={card.title}
+              className="min-w-0 space-y-3 rounded-xl border bg-card p-4"
+            >
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                {card.title}
+              </h2>
+              {problem ? (
+                <p className="text-sm">{problem}</p>
+              ) : card.rows.length ? (
+                card.rows.map((item) => (
+                  <SummaryRecord
+                    key={item.record.record_id}
+                    item={item}
+                    now={now}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">{card.empty}</p>
+              )}
+              {!problem && card.title === 'Issues' && issues.length > 3 && (
+                <details>
+                  <summary className="min-h-11 cursor-pointer py-2 text-sm">
+                    {issues.length - 3} more recorded open issues
+                  </summary>
+                  <div className="space-y-3">
+                    {issues.slice(3).map((item) => (
+                      <SummaryRecord
+                        key={item.record.record_id}
+                        item={item}
+                        now={now}
+                      />
+                    ))}
+                  </div>
+                </details>
+              )}
+            </section>
+          ))}
       </div>
       {!problem && overdueCalls.length > 0 && (
         <section
