@@ -79,7 +79,55 @@ export interface ParticipationInput
   record_type: 'participation';
   payload: ParticipationPayload;
 }
+export interface IssuePayload extends PayloadBase {
+  entry_type: 'issue';
+  status: 'open' | 'monitoring' | 'resolved' | 'reopened';
+  priority?: 'low' | 'normal' | 'high' | 'urgent' | null;
+  mitigation?: 'none_reported' | 'mitigated' | 'workaround' | 'unknown';
+  functional_area?: string | null;
+  responsible_party?: string | null;
+  follow_up_at?: string | null;
+  update_text?: string;
+  capability_id?: string | null;
+  call_id?: string | null;
+  conference_id?: string | null;
+  transport?: Transport | null;
+  corrects_version?: number | null;
+  corrected_update_at?: string | null;
+}
+export interface CapabilityPayload extends PayloadBase {
+  entry_type: 'capability_assessment';
+  functional_status: 'unknown' | 'functional' | 'degraded' | 'unavailable';
+  redundancy_status: 'unknown' | 'available' | 'degraded' | 'unavailable';
+  functional_observed_at: string | null;
+  redundancy_observed_at: string | null;
+  functional_time_precision: 'exact' | 'approximate' | 'unknown';
+  redundancy_time_precision: 'exact' | 'approximate' | 'unknown';
+}
+export interface IssueInput
+  extends Omit<JournalInput, 'record_type' | 'payload'> {
+  record_type: 'issue';
+  payload: IssuePayload;
+}
+export interface CapabilityInput extends Omit<JournalInput, 'payload'> {
+  payload: CapabilityPayload;
+}
+export interface IssueFollowup {
+  record_id: string;
+  version: number;
+  follow_up_at: string | null;
+  as_of: string | null;
+  state:
+    | 'inactive'
+    | 'unscheduled'
+    | 'upcoming'
+    | 'due'
+    | 'overdue'
+    | 'unknown';
+}
 export type OperatorInput =
+  | IssueInput
+  | CapabilityInput
   | JournalInput
   | CallInput
   | ConferenceInput
@@ -90,7 +138,8 @@ export type OperatorPayload =
   | ConferencePayload
   | ParticipationPayload
   | (PayloadBase & { entry_type: 'risk' })
-  | (PayloadBase & { entry_type: 'issue'; status: 'open' | 'resolved' })
+  | IssuePayload
+  | CapabilityPayload
   | (PayloadBase & {
       entry_type: 'transport_report';
       transport: 'Starshield' | 'Ka' | 'X';
@@ -161,6 +210,7 @@ export interface SavedRecord
   };
 }
 export interface ReadRecord {
+  follow_up?: IssueFollowup;
   schema_version: 1;
   record: SavedRecord;
   association: {

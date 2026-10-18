@@ -31,7 +31,9 @@ export function useOperatorJournal(
     | 'journal_entry'
     | 'call'
     | 'conference'
-    | 'participation' = 'journal_entry'
+    | 'participation'
+    | 'issue' = 'journal_entry',
+  options: { durable?: boolean } = {}
 ) {
   const client = useQueryClient();
   const health = useOperatorHealth();
@@ -43,6 +45,11 @@ export function useOperatorJournal(
     ...operatorRecordsOptions(missionId, identity, recordType),
     enabled: !!missionId && !!identity && !health.isError,
   });
+  const pendingKey = options.durable
+    ? `operator-367-pending:${missionId}:${recordType}`
+    : null;
+  const loadedKey = useRef<string | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const pendingRef = useRef<Pending | null>(null);
   const inFlight = useRef(false);
@@ -80,7 +87,51 @@ export function useOperatorJournal(
   function keep(value: Pending | null) {
     pendingRef.current = value;
     setPending(value);
+    if (pendingKey) {
+      try {
+        if (value) sessionStorage.setItem(pendingKey, JSON.stringify(value));
+        else sessionStorage.removeItem(pendingKey);
+        setStorageError(null);
+      } catch {
+        setStorageError(
+          'Pending save could not be retained across reload. Keep this page open.'
+        );
+      }
+    }
   }
+  useEffect(() => {
+    if (!pendingKey || !identity || loadedKey.current === pendingKey) return;
+    loadedKey.current = pendingKey;
+    try {
+      const raw = sessionStorage.getItem(pendingKey);
+      if (!raw) return;
+      const request = JSON.parse(raw) as Pending;
+      if (
+        !request.command ||
+        typeof request.key !== 'string' ||
+        typeof request.epoch !== 'string' ||
+        typeof request.identity !== 'string'
+      )
+        throw new Error('Invalid pending request');
+      pendingRef.current = request;
+      setPending(request);
+      if (request.identity !== identity) {
+        session.current = request.identity;
+        setBlocked(true);
+        setError({
+          code: 'epoch_mismatch',
+          message:
+            'Older-store save quarantined. Reread and reconcile before continuing.',
+          retryable: false,
+        });
+      }
+    } catch {
+      setStorageError(
+        'Saved pending request unavailable. Reread saved state before continuing.'
+      );
+      setBlocked(true);
+    }
+  }, [pendingKey, identity]);
   function stillSameStore(request: Pending) {
     return (
       operatorIdentity(
@@ -290,6 +341,7 @@ export function useOperatorJournal(
   }
   return {
     health,
+    storageError,
     records,
     pending,
     saving,
