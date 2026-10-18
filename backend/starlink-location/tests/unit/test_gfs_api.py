@@ -407,7 +407,7 @@ async def test_disconnect_releases_lease_and_unstarted_response_owns_none(tmp_pa
 
 
 async def test_corrupted_binary_is_denied_and_clock_rollback_withdraws_demand(tmp_path):
-    _app, service, bridge, products, enabled, _now, _source = runtime(tmp_path)
+    _app, service, bridge, products, enabled, now, _source = runtime(tmp_path)
     with other_owner(bridge.mailbox.root / "worker.lock"):
         bridge.mailbox.heartbeat(enabled.revision, uuid.uuid4().hex, RUN)
         model = (await bridge.products(enabled, RUN))[0]
@@ -415,6 +415,7 @@ async def test_corrupted_binary_is_denied_and_clock_rollback_withdraws_demand(tm
         body = path.read_bytes()
         path.write_bytes(b"x" + body[1:])
         assert await bridge.response(model.instance_id, "u.bin", enabled, RUN) is None
+        now[0] = RUN - 1
         assert [
             product.state for product in await bridge.products(enabled, RUN - 1)
         ] == ["unavailable", "off"]
@@ -538,6 +539,31 @@ async def test_catalog_keeps_bulletins_when_gfs_control_lock_is_unavailable(
         )
         assert [p["state"] for p in catalog["products"][-2:]] == ["unavailable", "off"]
         assert service.store.path.read_bytes() == before
+    finally:
+        await bridge.aclose()
+        await service.aclose()
+
+
+async def test_delayed_catalog_asof_does_not_invalidate_newer_payload_admission(
+    tmp_path,
+):
+    _app, service, bridge, _products, enabled, now, _source = runtime(tmp_path)
+    try:
+        with other_owner(bridge.mailbox.root / "worker.lock"):
+            bridge.mailbox.heartbeat(enabled.revision, uuid.uuid4().hex, now[0])
+            original = await bridge.products(enabled, now[0])
+            assert original[0].state == "ready"
+            captured_asof = now[0]
+            now[0] += 1000
+            response = await bridge.response(
+                original[0].instance_id, "grid.json", enabled, now[0]
+            )
+            assert response is not None
+            # A catalog captured before that payload can reach the control lock
+            # afterward. This is request reordering, not a UTC rollback.
+            delayed = await bridge.products(enabled, captured_asof)
+            assert delayed[0].state == "ready"
+            assert bridge.mailbox.current(now[0]) is not None
     finally:
         await bridge.aclose()
         await service.aclose()

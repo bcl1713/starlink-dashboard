@@ -176,7 +176,9 @@ class GfsWorker:
                 if now < last_utc:
                     self.mailbox.invalidate(settings.revision)
                 last_utc = max(now, last_utc)
-                demand = self.mailbox.current(now)
+                demand = self.mailbox.current(
+                    now, clock=lambda: int(self.clock() * 1000)
+                )
                 desired = (
                     (
                         demand.revision,
