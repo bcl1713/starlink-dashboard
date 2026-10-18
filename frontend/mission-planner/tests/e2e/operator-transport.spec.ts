@@ -216,7 +216,7 @@ test('transport decision production: mobile entry, customer context, durability 
         .fill(conference.record_id);
       await section
         .getByLabel('Planned change start UTC', { exact: true })
-        .fill('2026-10-17T16:50:00');
+        .fill('2026-10-17T16:50');
       saved = await save(page);
       if (saved.payload.entry_type !== 'transport_decision')
         throw new Error('Wrong payload');
@@ -226,7 +226,7 @@ test('transport decision production: mobile entry, customer context, durability 
       proof.multiService = proof.independentReports = true;
       await section
         .getByLabel('Applied time 1 UTC', { exact: true })
-        .fill('2026-10-17T16:44:00');
+        .fill('2026-10-17T16:44');
       await expect(
         section.getByLabel('Operator Checked 1', { exact: true })
       ).not.toBeChecked();
