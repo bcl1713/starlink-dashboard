@@ -1,6 +1,7 @@
 import type { ReadRecord, SavedRecord } from '@/types/operator';
 interface Props {
   items: ReadRecord[];
+  context?: { name: string; legs: { id: string; name: string }[] };
   disabled: boolean;
   onEdit: (record: SavedRecord) => void;
   onHistory: (id: string) => void;
@@ -10,11 +11,14 @@ const button =
   'min-h-11 rounded-md border px-3 py-2 text-sm disabled:opacity-50';
 export function JournalList({
   items,
+  context,
   disabled,
   onEdit,
   onHistory,
   onTransition,
 }: Props) {
+  const legName = (id: string | null) =>
+    context?.legs.find((leg) => leg.id === id)?.name ?? id ?? 'unknown';
   return (
     <section className="min-w-0 space-y-3" aria-label="Current journal entries">
       <h2 className="text-lg font-semibold">Current entries</h2>
@@ -27,8 +31,13 @@ export function JournalList({
           <h3 className="font-semibold">{record.payload.title}</h3>
           <p className="whitespace-pre-wrap">{record.payload.note}</p>
           <p className="text-sm text-muted-foreground">
-            {record.scope} · {record.leg_id ?? record.mission_id} · version{' '}
-            {record.version}
+            {record.scope} ·{' '}
+            {context
+              ? record.scope === 'leg'
+                ? legName(record.leg_id)
+                : context.name
+              : (record.leg_id ?? record.mission_id)}{' '}
+            · version {record.version}
             {record.deleted ? ' · Removed' : ''}
           </p>
           <p className="text-sm">
@@ -38,8 +47,8 @@ export function JournalList({
           </p>
           {record.scope === 'between_legs' && (
             <p className="text-sm">
-              Previous leg: {record.payload.previous_leg_id ?? 'unknown'} · Next
-              leg: {record.payload.next_leg_id ?? 'unknown'}
+              Previous leg: {legName(record.payload.previous_leg_id)} · Next
+              leg: {legName(record.payload.next_leg_id)}
             </p>
           )}
           {association.status !== 'resolved' && (

@@ -7,6 +7,7 @@ import {
   Navigate,
   NavLink,
   useMatch,
+  useSearchParams,
 } from 'react-router-dom';
 import { Menu, Radio } from 'lucide-react';
 import { MissionsPage } from './pages/MissionsPage';
@@ -23,7 +24,10 @@ import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 import { useOperatorHealth } from './hooks/api/useOperatorJournal';
 import { OperatorJournalPage } from './pages/OperatorJournalPage';
-import { OperatorWorkspaceProvider } from './components/operator/workspace/OperatorWorkspaceProvider';
+import {
+  OperatorWorkspaceProvider,
+  useOperatorWorkspace,
+} from './components/operator/workspace/OperatorWorkspaceProvider';
 
 const queryClient = createQueryClient();
 
@@ -39,7 +43,8 @@ const navigationItems = [
 
 function AppNavigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const health = useOperatorHealth();
+  const workspace = useOperatorWorkspace();
+  const health = useOperatorHealth(!workspace.ownsHealth);
   const items =
     health.data?.enabled && !health.isError
       ? [...navigationItems, { to: '/operator', label: 'Operator' }]
@@ -114,6 +119,32 @@ function AppNavigation() {
   );
 }
 
+function WorkspaceBackoutNotice() {
+  const workspace = useOperatorWorkspace();
+  const operator = useMatch('/operator');
+  const [params] = useSearchParams();
+  if (
+    !operator ||
+    params.get('workspace') === '1' ||
+    (!workspace.registry.listDrafts().length &&
+      !workspace.tray.some((row) => row.pending))
+  )
+    return null;
+  return (
+    <aside
+      className="border-b border-amber-400/50 bg-card px-4 py-2"
+      aria-label="Retained workspace work"
+    >
+      Candidate workspace drafts or saves are retained in this tab.{' '}
+      <NavLink
+        className="inline-flex min-h-11 items-center underline"
+        to={`/operator?workspace=1&mission_id=${encodeURIComponent(params.get('mission_id') ?? '')}`}
+      >
+        Open retained drafts and save status
+      </NavLink>
+    </aside>
+  );
+}
 function AppShell() {
   const isFullscreen = useDocumentFullscreen();
   const isOverview = useMatch('/overview') !== null;
@@ -125,6 +156,7 @@ function AppShell() {
         <div
           className={`app-route-content ${isOverview ? '' : 'management-page dark bg-background text-foreground'}`}
         >
+          <WorkspaceBackoutNotice />
           <Routes>
             <Route path="/operator" element={<OperatorJournalPage />} />
             <Route path="/overview" element={<OverviewPage />} />

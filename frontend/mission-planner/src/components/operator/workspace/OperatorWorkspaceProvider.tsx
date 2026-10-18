@@ -40,6 +40,7 @@ type SubmitOptions = {
   captureDimensions?: ('functional' | 'redundancy')[];
 };
 interface Workspace {
+  ownsHealth: boolean;
   registry: DraftRegistry;
   selectedDraftId: string | null;
   openDraft: (draftId: string) => void;
@@ -147,12 +148,14 @@ export function OperatorWorkspaceProvider({
   const active =
     location.pathname === '/operator' &&
     new URLSearchParams(location.search).get('workspace') === '1';
-  const health = useOperatorHealth(
+  const ownsHealth =
     active ||
-      tray.some((t) =>
+    tray.some(
+      (t) =>
+        !!t.pending ||
         ['saving', 'uncertain', 'needs_review'].includes(t.status)
-      )
-  );
+    );
+  const health = useOperatorHealth(ownsHealth);
   const identity = operatorIdentity(health.data);
   useEffect(() => {
     if (!active || !identity || scannedIdentities.current.has(identity)) return;
@@ -378,6 +381,7 @@ export function OperatorWorkspaceProvider({
         },
         closeEditor: () => setSelectedDraftId(null),
         submitDraft,
+        ownsHealth,
         retryExact,
         rereadAndReconcile,
         tray,

@@ -4,9 +4,13 @@ import type { OperatorEventsState } from '@/hooks/api/useOperatorEvents';
 export function OperatorEventFeed({
   events,
   onClose,
+  onOpenSource,
 }: {
   events: OperatorEventsState;
   onClose: () => void;
+  onOpenSource?: (
+    event: import('@/types/operatorEvents').OperationalEvent
+  ) => void;
 }) {
   const [history, setHistory] = useState(false);
   const items = (events.snapshot?.events ?? []).filter(
@@ -40,6 +44,7 @@ export function OperatorEventFeed({
       {events.loading && <p>Loading events…</p>}
       {events.snapshot?.coverage !== 'available' && (
         <p className="text-sm text-muted-foreground">
+          Optional model inputs:{' '}
           {Array.from(
             new Set(
               events.snapshot?.sources
@@ -176,7 +181,13 @@ export function OperatorEventFeed({
                 </button>
                 <a
                   href={sourceTarget}
-                  onClick={onClose}
+                  onClick={(click) => {
+                    if (onOpenSource) {
+                      click.preventDefault();
+                      onOpenSource(event);
+                    }
+                    onClose();
+                  }}
                   className="inline-flex min-h-11 items-center underline"
                 >
                   {sourceName}

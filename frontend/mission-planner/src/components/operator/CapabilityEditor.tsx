@@ -1,3 +1,4 @@
+import { capabilityInput } from './capabilityInput';
 import type {
   CapabilityInput,
   CapabilityPayload,
@@ -9,12 +10,16 @@ import {
 } from '@/hooks/api/useOperatorIssueDraft';
 import {
   instant,
-  unknownTime,
   issueButton,
   issueField,
   utcValue,
   parseUtc,
 } from './issueForms';
+export interface CapabilityEditorDraft {
+  input: CapabilityInput;
+  version: number | null;
+  currentDimensions: ('functional' | 'redundancy')[];
+}
 export function CapabilityEditor({
   missionId,
   record,
@@ -34,31 +39,7 @@ export function CapabilityEditor({
     currentDimensions: ('functional' | 'redundancy')[]
   ) => Promise<boolean>;
 }) {
-  const initial: CapabilityInput = {
-    schema_version: 1,
-    record_type: 'journal_entry',
-    mission_id: missionId,
-    scope: record?.scope ?? 'mission',
-    leg_id: record?.leg_id ?? null,
-    time: record?.time ?? { ...unknownTime },
-    payload:
-      record?.payload.entry_type === 'capability_assessment'
-        ? record.payload
-        : {
-            schema_version: 1,
-            entry_type: 'capability_assessment',
-            title: '',
-            note: '',
-            previous_leg_id: null,
-            next_leg_id: null,
-            functional_status: 'unknown',
-            redundancy_status: 'unknown',
-            functional_observed_at: null,
-            redundancy_observed_at: null,
-            functional_time_precision: 'unknown',
-            redundancy_time_precision: 'unknown',
-          },
-  };
+  const initial = capabilityInput(missionId, record);
   const { draft, setDraft, clear, storageError } = useOperatorIssueDraft(
     identity,
     {
@@ -67,6 +48,44 @@ export function CapabilityEditor({
       currentDimensions: [] as ('functional' | 'redundancy')[],
     }
   );
+  return (
+    <CapabilityForm
+      draft={draft}
+      onDraftChange={setDraft}
+      onSaved={clear}
+      storageError={storageError}
+      record={record}
+      disabled={disabled}
+      asOf={asOf}
+      onSave={onSave}
+    />
+  );
+}
+export function CapabilityForm({
+  draft,
+  onDraftChange: setDraft,
+  onSaved,
+  storageError,
+  record,
+  disabled,
+  saveDisabled = false,
+  asOf,
+  onSave,
+}: {
+  draft: CapabilityEditorDraft;
+  onDraftChange: (draft: CapabilityEditorDraft) => void;
+  onSaved?: () => void;
+  storageError?: string | null;
+  record?: SavedRecord;
+  disabled: boolean;
+  saveDisabled?: boolean;
+  asOf: string | null;
+  onSave: (
+    input: CapabilityInput,
+    version: number | null,
+    currentDimensions: ('functional' | 'redundancy')[]
+  ) => Promise<boolean>;
+}) {
   const input = draft.input;
   const patch = (
     fields: Partial<CapabilityPayload>,
@@ -89,12 +108,13 @@ export function CapabilityEditor({
       className="min-w-0 space-y-3 rounded-lg border p-4"
       onSubmit={(e) => {
         e.preventDefault();
+        if (disabled || saveDisabled) return;
         void onSave(
           { ...input, time: instant(asOf) },
           draft.version,
           draft.currentDimensions ?? []
         ).then((ok) => {
-          if (ok) clear();
+          if (ok) onSaved?.();
         });
       }}
     >
@@ -229,8 +249,15 @@ export function CapabilityEditor({
           />
         </label>
         <div className="flex flex-wrap gap-2">
-          <button className={issueButton}>Save assessment</button>
-          <button className={issueButton} type="button" onClick={clear}>
+          <button className={issueButton} disabled={saveDisabled}>
+            Save assessment
+          </button>
+          <button
+            className={issueButton}
+            type="button"
+            onClick={onSaved}
+            hidden={!onSaved}
+          >
             Discard assessment draft
           </button>
           {record && draft.version !== record.version && (

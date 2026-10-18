@@ -68,6 +68,14 @@ export function assertCommandTarget(
   if (command.operation === 'create' || command.operation === 'update') {
     const body = command.body;
     if (
+      body.payload.entry_type === 'issue' &&
+      (body.payload.corrects_version ?? null) !== draft.target.correctionVersion
+    ) {
+      throw new Error(
+        'Command does not match the pinned historical correction target.'
+      );
+    }
+    if (
       body.mission_id !== draft.target.missionId ||
       body.record_type !== draft.target.recordType ||
       body.scope !== draft.target.scope ||

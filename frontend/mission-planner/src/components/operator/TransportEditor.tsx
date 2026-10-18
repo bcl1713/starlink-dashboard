@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { TransportDraft } from '@/types/operatorTransport';
 import type { OperatorCommand, SavedRecord, Scope } from '@/types/operator';
 import {
   transportDraftKey,
@@ -32,6 +33,42 @@ export function TransportEditor({
     key,
     newTransportDraft(missionId, record)
   );
+  return (
+    <TransportForm
+      draft={draft}
+      onDraftChange={setDraft}
+      onSaved={clear}
+      storageError={storageError}
+      record={record}
+      disabled={disabled}
+      createFromDraft={createFromDraft}
+      onSave={(command) => onSave(command, key)}
+    />
+  );
+}
+export function TransportForm({
+  draft,
+  onDraftChange: setDraft,
+  onSaved,
+  storageError,
+  record,
+  disabled,
+  saveDisabled = false,
+  createFromDraft = false,
+  onSave,
+  contextual = false,
+}: {
+  draft: TransportDraft;
+  onDraftChange: (draft: TransportDraft) => void;
+  onSaved?: () => void;
+  storageError?: string | null;
+  record?: SavedRecord;
+  disabled: boolean;
+  saveDisabled?: boolean;
+  createFromDraft?: boolean;
+  onSave: (command: OperatorCommand) => Promise<boolean>;
+  contextual?: boolean;
+}) {
   const [error, setError] = useState<string>();
   const input = draft.input;
   const rows = input.payload.services;
@@ -47,15 +84,15 @@ export function TransportEditor({
       className="min-w-0 space-y-3"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (disabled || saveDisabled) return;
         setError(undefined);
         try {
           if (
             await onSave(
-              toTransportCommand(draft, createFromDraft ? undefined : record),
-              key
+              toTransportCommand(draft, createFromDraft ? undefined : record)
             )
           )
-            clear();
+            onSaved?.();
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Unable to save decision.');
         }
@@ -175,7 +212,7 @@ export function TransportEditor({
                 }
               />
             </label>
-            <label>
+            <label hidden={contextual}>
               Decision scope
               <select
                 className={issueField}
@@ -205,7 +242,7 @@ export function TransportEditor({
               </select>
             </label>
             {input.scope === 'leg' && (
-              <label>
+              <label hidden={contextual}>
                 Decision leg ID
                 <input
                   className={issueField}
@@ -271,6 +308,7 @@ export function TransportEditor({
         <button
           className={`${issueButton} bg-primary text-primary-foreground`}
           type="submit"
+          disabled={saveDisabled}
         >
           Save transport decision
         </button>

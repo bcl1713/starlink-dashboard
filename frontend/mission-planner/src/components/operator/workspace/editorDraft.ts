@@ -28,7 +28,10 @@ export function createEditorDraft(
       legId: input.leg_id,
       previousLegId: input.payload.previous_leg_id,
       nextLegId: input.payload.next_leg_id,
-      correctionVersion: null,
+      correctionVersion:
+        input.payload.entry_type === 'issue'
+          ? (input.payload.corrects_version ?? null)
+          : null,
     },
     input,
     record ?? null

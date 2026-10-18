@@ -37,6 +37,13 @@ const target: DraftTarget = {
   correctionVersion: null,
 };
 
+function ObserveWorkspace() {
+  const value = useOperatorWorkspace();
+  useLayoutEffect(() => {
+    workspace = value;
+  });
+  return null;
+}
 function Probe() {
   const value = useOperatorWorkspace();
   const go = useNavigate();
@@ -56,6 +63,7 @@ function mount(registry = new DraftRegistry(sessionStorage)) {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={['/operator?workspace=1']}>
         <OperatorWorkspaceProvider registry={registry}>
+          <ObserveWorkspace />
           <Routes>
             <Route path="/operator" element={<Probe />} />
             <Route path="/missions" element={<p>Missions page</p>} />
@@ -374,13 +382,11 @@ it.each([
   expect(sessionStorage.getItem(key)).toBe(value);
 });
 it('prepares a lifecycle command with the backend clock before freezing and dispatching it', async () => {
-  const save = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockResolvedValue({
-      schema_version: 1,
-      command_id: 'clock-command',
-      saved_records: [record],
-    });
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'clock-command',
+    saved_records: [record],
+  });
   const { registry } = mount();
   const draft = registry.createDraft(target, input);
   let submission!: Promise<void>;
@@ -398,4 +404,40 @@ it('prepares a lifecycle command with the backend clock before freezing and disp
   expect(save.mock.calls[0][0]).toMatchObject({
     body: { time: { occurred_at: page().as_of } },
   });
+});
+it('rejects a changed historical correction target before dispatch', async () => {
+  const { issueInput } = await import('../issueForms');
+  const issue = issueInput('mission-a');
+  issue.payload.corrects_version = 2;
+  const { registry } = mount();
+  const saved = { ...record, ...issue, record_type: 'issue' as const };
+  const draft = registry.createDraft(
+    {
+      ...target,
+      recordType: 'issue',
+      recordId: record.record_id,
+      correctionVersion: 2,
+    },
+    issue,
+    saved
+  );
+  const command = {
+    operation: 'update' as const,
+    record_id: record.record_id,
+    body: {
+      ...issue,
+      expected_version: 1,
+      payload: { ...issue.payload, corrects_version: 3 },
+    },
+  };
+  const { assertCommandTarget } = await import('./commandRegistry');
+  expect(() => assertCommandTarget(draft, command)).toThrow(
+    /correction target/
+  );
+});
+it('delegates one health polling owner between the workspace and application navigation', async () => {
+  mount();
+  expect(workspace.ownsHealth).toBe(true);
+  await act(async () => navigate('/missions'));
+  expect(workspace.ownsHealth).toBe(false);
 });

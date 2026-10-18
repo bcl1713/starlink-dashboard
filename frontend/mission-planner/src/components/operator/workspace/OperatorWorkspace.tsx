@@ -42,6 +42,13 @@ import { MissionContextChooser } from './MissionContextChooser';
 import { createEditorDraft } from './editorDraft';
 import { CommunicationsView } from './CommunicationsView';
 import { JournalHistory } from '../JournalHistory';
+import { HistoryView } from './HistoryView';
+import { TransportView } from './TransportView';
+import { newTransportDraft } from '../transportForms';
+import { capabilityInput } from '../capabilityInput';
+import { IssuesView } from './IssuesView';
+import { IssueActivity } from '../IssueActivity';
+import { issueInput, instant } from '../issueForms';
 import './workspace.css';
 
 const views = [
@@ -93,6 +100,7 @@ export function OperatorWorkspace() {
   const [help, setHelp] = useState(false);
   const [mobileTools, setMobileTools] = useState(false);
   const [sources, setSources] = useState(false);
+  const [activityId, setActivityId] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
@@ -111,6 +119,10 @@ export function OperatorWorkspace() {
     workspace.openDraft(draft.draftId);
   }
   function openRecord(record: SavedRecord) {
+    if (record.record_type === 'issue') {
+      openInput(issueInput(record.mission_id, record), record);
+      return;
+    }
     if (
       record.record_type === 'risk' ||
       record.record_type === 'transport_report'
@@ -413,48 +425,78 @@ export function OperatorWorkspace() {
                   )
                 }
               />
+            ) : view === 'Transport' ? (
+              <TransportView
+                records={loaded}
+                events={events}
+                disabled={disabled || acting}
+                onCreate={() => openInput(newTransportDraft(missionId).input)}
+                onEdit={openRecord}
+                onHistory={setHistoryId}
+                onTransition={transition}
+              />
+            ) : view === 'Issues' ? (
+              <IssuesView
+                pages={records.data?.pages ?? []}
+                incomplete={incomplete}
+                unavailable={records.isError}
+                disabled={disabled || acting}
+                onCreate={() => openInput(issueInput(missionId))}
+                onCreateCapability={() => openInput(capabilityInput(missionId))}
+                onEdit={openRecord}
+                onHistory={setHistoryId}
+                onActivity={setActivityId}
+                onTransition={transition}
+                onAction={(record, status) =>
+                  void action(record, (latest, now) => {
+                    const input = issueInput(missionId, latest);
+                    return {
+                      operation: 'update',
+                      record_id: latest.record_id,
+                      body: {
+                        ...input,
+                        expected_version: latest.version,
+                        time: instant(now),
+                        payload: {
+                          ...input.payload,
+                          status,
+                          ...(status === 'resolved'
+                            ? { follow_up_at: null }
+                            : {}),
+                        },
+                      },
+                    };
+                  })
+                }
+              />
             ) : view === 'Now' ? (
               <section aria-label="Mission activity">
                 <h2>Mission activity</h2>
-                <OperatorEventFeed events={events} onClose={() => undefined} />
+                <OperatorEventFeed
+                  events={events}
+                  onClose={() => undefined}
+                  onOpenSource={(event) =>
+                    navigateView(
+                      event.kind === 'issue_followup'
+                        ? 'Issues'
+                        : event.kind.startsWith('call_')
+                          ? 'Communications'
+                          : 'Transport'
+                    )
+                  }
+                />
               </section>
             ) : (
-              <section aria-label={view}>
-                <h2>{view}</h2>
-                {loaded
-                  .filter(
-                    (record) =>
-                      view === 'History' ||
-                      (!record.deleted &&
-                        (view === 'Transport'
-                          ? record.record_type.startsWith('transport_')
-                          : view === 'Issues'
-                            ? record.record_type === 'issue' ||
-                              record.payload.entry_type ===
-                                'capability_assessment'
-                            : record.record_type === 'journal_entry'))
-                  )
-                  .map((record) => (
-                    <article className="ws-record" key={record.record_id}>
-                      <h3>{record.payload.title || 'Untitled record'}</h3>
-                      <p className="ws-meta">
-                        {record.payload.entry_type.replaceAll('_', ' ')} ·
-                        version {record.version}
-                        {record.deleted ? ' · removed' : ''}
-                      </p>
-                      <p>{record.payload.note}</p>
-                      {!record.deleted && (
-                        <button
-                          className="ws-button"
-                          disabled={disabled}
-                          onClick={() => openRecord(record)}
-                        >
-                          Open record
-                        </button>
-                      )}
-                    </article>
-                  ))}
-              </section>
+              <HistoryView
+                items={items}
+                incomplete={incomplete}
+                disabled={disabled || acting}
+                onEdit={openRecord}
+                onHistory={setHistoryId}
+                onTransition={transition}
+                mission={mission.data}
+                notesOnly={view === 'Notes'}
+              />
             )}
             {incomplete && (
               <p role="status">
@@ -551,6 +593,49 @@ export function OperatorWorkspace() {
         mission={editorMission.data}
         onReturnFocus={() => noteButton.current?.focus()}
       />
+      <Dialog
+        open={!!activityId}
+        onOpenChange={(open) => {
+          if (!open) setActivityId(null);
+        }}
+      >
+        <DialogContent className="ws-editor">
+          <DialogTitle>Issue activity</DialogTitle>
+          <DialogDescription>
+            Operational updates and their corrections, with immutable audit
+            history.
+          </DialogDescription>
+          <div className="ws-editor-body">
+            {activityId && identity && (
+              <IssueActivity
+                id={activityId}
+                identity={identity}
+                disabled={disabled}
+                onCorrect={(target) => {
+                  const current = loaded.find(
+                    (record) => record.record_id === activityId
+                  );
+                  if (
+                    !current ||
+                    current.deleted ||
+                    target.payload.entry_type !== 'issue'
+                  )
+                    return;
+                  const input = issueInput(current.mission_id, current);
+                  input.payload.corrects_version = target.version;
+                  input.payload.update_text = target.payload.update_text ?? '';
+                  input.payload.corrected_update_at = target.payload
+                    .corrects_version
+                    ? target.payload.corrected_update_at
+                    : target.time.occurred_at;
+                  setActivityId(null);
+                  openInput(input, current);
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={!!historyId}
         onOpenChange={(open) => {

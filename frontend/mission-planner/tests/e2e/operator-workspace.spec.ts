@@ -312,8 +312,8 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
     async function save(button: string) {
       const response = page.waitForResponse(
         (response) =>
-          response.request().method() === 'POST' &&
-          response.url().endsWith('/api/v2/operator/records')
+          ['POST', 'PUT'].includes(response.request().method()) &&
+          /\/api\/v2\/operator\/records(?:\/[^/]+)?$/.test(response.url())
       );
       await page.getByRole('button', { name: button, exact: true }).click();
       const result = await response;
@@ -363,7 +363,59 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
       ids.push((await save('Save entry')).record_id);
       return ids;
     }
+    async function editCreated(prefix: string) {
+      await page.goto(
+        `/operator?workspace=1&mission_id=${missionId}&view=communications`
+      );
+      const communications = page.getByRole('region', {
+        name: 'Communications',
+        exact: true,
+      });
+      await communications
+        .getByRole('button', { name: 'Edit call', exact: true })
+        .click();
+      const editor = page.getByRole('dialog');
+      await editor
+        .getByLabel('Party / participant (optional)')
+        .fill(`${prefix} call edited`);
+      expect((await save('Save call')).version).toBe(2);
+      await expect(editor).toHaveCount(0);
+      await communications
+        .getByRole('button', { name: 'Correct conference', exact: true })
+        .click();
+      await editor
+        .getByLabel('Conference name (optional)')
+        .fill(`${prefix} conference edited`);
+      expect((await save('Save conference')).version).toBe(2);
+      await expect(editor).toHaveCount(0);
+      await page
+        .getByRole('navigation', { name: 'Operator workspace' })
+        .getByRole('button', { name: 'Issues', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Add update / follow up', exact: true })
+        .click();
+      await editor
+        .getByLabel('Add update', { exact: true })
+        .fill(`${prefix} issue update`);
+      expect((await save('Save issue')).version).toBe(2);
+      await expect(editor).toHaveCount(0);
+      await page
+        .getByRole('navigation', { name: 'Operator workspace' })
+        .getByRole('button', { name: 'Notes', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: `Edit ${prefix} note`, exact: true })
+        .click();
+      await editor
+        .getByLabel('Title', { exact: true })
+        .fill(`${prefix} note edited`);
+      expect((await save('Save entry')).version).toBe(2);
+      await expect(editor).toHaveCount(0);
+      await page.goto(`/operator?mission_id=${missionId}`);
+    }
     const firstIds = await crud('Synthetic initial');
+    await editCreated('Synthetic initial');
     expect(firstIds).toHaveLength(4);
     const model = await (
       await page.request.get(`/api/v2/operator/events?mission_id=${missionId}`)
@@ -448,6 +500,7 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
     ).json();
     expect(activeHealth.store_id).not.toBe(initialized.store_id);
     const activeIds = await crud('Synthetic active replay');
+    await editCreated('Synthetic active replay');
     const activeRecords = await (
       await page.request.get(`/api/v2/operator/records?mission_id=${missionId}`)
     ).json();
@@ -614,6 +667,7 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
       await page
         .getByRole('button', { name: 'Close history', exact: true })
         .click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
       await page.screenshot({
         path: join(
           evidence,
@@ -669,4 +723,165 @@ test('hidden workspace: missing mission and unavailable store remain actionable 
       await context.close();
     }
   }
+});
+
+test('hidden workspace: issue follow-up, correction and applied-only transport at three sizes', async ({
+  browser,
+}) => {
+  const receipts: object[] = [];
+  for (const viewport of viewports) {
+    const context = await browser.newContext({ viewport, timezoneId: 'UTC' });
+    try {
+      const page = await context.newPage();
+      page.setDefaultTimeout(15_000);
+      const missionId = fixtures[0].mission.id;
+      await page.goto(
+        `/operator?workspace=1&mission_id=${missionId}&view=issues`
+      );
+      const navigation = page.getByRole('navigation', {
+        name: 'Operator workspace',
+      });
+      const editor = page.getByRole('dialog');
+      async function save(click: () => Promise<unknown>) {
+        const response = page.waitForResponse(
+          (response) =>
+            ['POST', 'PUT'].includes(response.request().method()) &&
+            /\/api\/v2\/operator\/records/.test(response.url()),
+          { timeout: 15_000 }
+        );
+        await click();
+        const result = await response;
+        expect(result.ok()).toBe(true);
+        const receipt = await result.json();
+        receipts.push(receipt);
+        return receipt.saved_records[0];
+      }
+      await page
+        .getByRole('button', { name: 'New issue', exact: true })
+        .click();
+      const title = `Synthetic audio problem ${viewport.width}`;
+      await editor.getByLabel('Problem description').fill(title);
+      await editor
+        .locator('summary')
+        .filter({ hasText: 'Optional issue details' })
+        .click();
+      await editor
+        .getByLabel('Mitigation', { exact: true })
+        .selectOption('workaround');
+      await editor.getByLabel('Follow-up UTC').fill('2026-10-17T15:30:00');
+      const created = await save(() =>
+        editor.getByRole('button', { name: 'Save issue', exact: true }).click()
+      );
+      await expect(editor).toHaveCount(0);
+      const issue = page.getByRole('article', {
+        name: `Issue ${title}`,
+        exact: true,
+      });
+      await save(() =>
+        issue.getByRole('button', { name: 'Monitor', exact: true }).click()
+      );
+      await issue
+        .getByRole('button', { name: 'Add update / follow up', exact: true })
+        .click();
+      await editor
+        .getByLabel('Add update', { exact: true })
+        .fill('Synthetic workaround update');
+      await save(() =>
+        editor.getByRole('button', { name: 'Save issue', exact: true }).click()
+      );
+      await expect(editor).toHaveCount(0);
+      const resolved = await save(() =>
+        issue.getByRole('button', { name: 'Resolve', exact: true }).click()
+      );
+      expect(resolved.payload.follow_up_at).toBeNull();
+      await page.getByText('Resolved issues', { exact: true }).click();
+      const reopen = await save(() =>
+        issue.getByRole('button', { name: 'Reopen', exact: true }).click()
+      );
+      expect(reopen.payload.follow_up_at).toBeNull();
+      expect(reopen.payload.mitigation).toBe('workaround');
+      await issue
+        .getByRole('button', { name: 'Issue activity', exact: true })
+        .click();
+      await editor
+        .getByRole('button', { name: 'Correct this update', exact: true })
+        .click();
+      await editor
+        .getByLabel('Corrected update', { exact: true })
+        .fill('Synthetic corrected workaround message');
+      const corrected = await save(() =>
+        editor
+          .getByRole('button', { name: 'Save correction', exact: true })
+          .click()
+      );
+      expect(corrected.payload.status).toBe('reopened');
+      expect(corrected.payload.corrects_version).toBe(3);
+      await expect(editor).toHaveCount(0);
+      const history = await (
+        await page.request.get(
+          `/api/v2/operator/records/${created.record_id}/history`
+        )
+      ).json();
+      expect(history.items).toHaveLength(6);
+      await navigation
+        .getByRole('button', { name: 'Transport', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Record another move', exact: true })
+        .click();
+      await editor
+        .getByLabel('Service 1', { exact: true })
+        .fill(`Synthetic IPTV ${viewport.width}`);
+      await editor.getByLabel('Reported Applied 1', { exact: true }).check();
+      await editor
+        .getByLabel('Applied transport 1', { exact: true })
+        .selectOption('Ka');
+      const decision = await save(() =>
+        editor
+          .getByRole('button', { name: 'Save transport decision', exact: true })
+          .click()
+      );
+      expect(decision.payload.services[0]).toMatchObject({
+        intended: null,
+        requested: null,
+        applied: { transport: 'Ka' },
+      });
+      await expect(editor).toHaveCount(0);
+      await page.screenshot({
+        path: join(
+          evidence,
+          `transport-${viewport.width}x${viewport.height}.png`
+        ),
+      });
+      await navigation
+        .getByRole('button', { name: 'Issues', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Record manual assessment', exact: true })
+        .click();
+      await editor
+        .getByLabel('Capability name', { exact: true })
+        .fill(`Synthetic audio ${viewport.width}`);
+      await editor
+        .getByLabel('Functional capability', { exact: true })
+        .selectOption('degraded');
+      const assessment = await save(() =>
+        editor
+          .getByRole('button', { name: 'Save assessment', exact: true })
+          .click()
+      );
+      expect(assessment.payload.functional_observed_at).toBeTruthy();
+      expect(assessment.payload.redundancy_observed_at).toBeNull();
+      await expect(editor).toHaveCount(0);
+      await page.screenshot({
+        path: join(evidence, `issues-${viewport.width}x${viewport.height}.png`),
+      });
+    } finally {
+      await context.close();
+    }
+  }
+  writeFileSync(
+    join(evidence, 'workspace-issues-transport.json'),
+    JSON.stringify({ synthetic: true, receipts }, null, 2)
+  );
 });

@@ -16,6 +16,9 @@ import type {
   OperatorInput,
   Scope,
 } from '@/types/operator';
+import { CapabilityForm } from '../CapabilityEditor';
+import { TransportForm } from '../TransportEditor';
+import { IssueForm } from '../IssueEditor';
 import { JournalEditor } from '../JournalEditor';
 import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
@@ -54,7 +57,8 @@ export function WorkspaceEditor({
     queryFn: () => readOperatorRecords({ mission_id: draft!.target.missionId }),
     enabled:
       (draft?.input.record_type === 'participation' ||
-        draft?.input.record_type === 'call') &&
+        draft?.input.record_type === 'call' ||
+        draft?.input.record_type === 'issue') &&
       !!health.data?.ready,
     retry: false,
   });
@@ -238,7 +242,10 @@ export function WorkspaceEditor({
               )}
             </div>
           )}
-          <div className="ws-draft-context">
+          <div
+            className="ws-draft-context"
+            hidden={!!draft.target.correctionVersion}
+          >
             <label>
               Draft scope
               <select
@@ -327,6 +334,163 @@ export function WorkspaceEditor({
                 onSubmit={(value) => void saveInput(value)}
               />
             </>
+          ) : draft.input.record_type === 'transport_decision' ? (
+            <TransportForm
+              draft={{
+                input: draft.input,
+                replacement_check_row_ids: Array.isArray(
+                  draft.editorState?.replacement_check_row_ids
+                )
+                  ? (draft.editorState.replacement_check_row_ids as string[])
+                  : [],
+              }}
+              record={draft.baseRecord ?? undefined}
+              disabled={false}
+              saveDisabled={saveDisabled}
+              contextual
+              onDraftChange={(value) => {
+                update(value.input);
+                editorState({
+                  replacement_check_row_ids: value.replacement_check_row_ids,
+                });
+              }}
+              onSave={async (command) => {
+                if (saveDisabled) return false;
+                await workspace.submitDraft(draft.draftId, { command });
+                return false;
+              }}
+            />
+          ) : draft.input.record_type === 'issue' &&
+            draft.target.correctionVersion ? (
+            <form
+              aria-label="Correct historical update"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!saveDisabled) void workspace.submitDraft(draft.draftId);
+              }}
+            >
+              <p>
+                Correct historical update · current status, mitigation and
+                follow-up are preserved.
+              </p>
+              <label>
+                Corrected update
+                <textarea
+                  className="ws-field"
+                  required
+                  maxLength={8000}
+                  value={draft.input.payload.update_text ?? ''}
+                  onChange={(event) => {
+                    if (draft.input.record_type === 'issue')
+                      update({
+                        ...draft.input,
+                        payload: {
+                          ...draft.input.payload,
+                          update_text: event.target.value,
+                        },
+                      });
+                  }}
+                />
+              </label>
+              <label>
+                Corrected occurred UTC
+                <input
+                  className="ws-field"
+                  placeholder="YYYY-MM-DDTHH:MM:SSZ or unknown"
+                  value={draft.input.payload.corrected_update_at ?? ''}
+                  onChange={(event) => {
+                    if (draft.input.record_type === 'issue')
+                      update({
+                        ...draft.input,
+                        payload: {
+                          ...draft.input.payload,
+                          corrected_update_at: event.target.value || null,
+                        },
+                      });
+                  }}
+                />
+              </label>
+              <button className="ws-button" disabled={saveDisabled}>
+                Save correction
+              </button>
+            </form>
+          ) : draft.input.record_type === 'issue' ? (
+            <IssueForm
+              draft={{
+                input: draft.input,
+                baseVersion: draft.baseVersion,
+                occurredAt:
+                  typeof draft.editorState?.occurredAt === 'string'
+                    ? draft.editorState.occurredAt
+                    : null,
+                useCurrentTime: draft.editorState?.useCurrentTime !== false,
+              }}
+              record={draft.baseRecord ?? undefined}
+              disabled={false}
+              saveDisabled={saveDisabled}
+              contextual
+              asOf={null}
+              related={
+                relationships.data?.items.map((item) => item.record) ?? []
+              }
+              onDraftChange={(value) => {
+                update(value.input);
+                editorState({
+                  occurredAt: value.occurredAt,
+                  useCurrentTime: value.useCurrentTime,
+                });
+              }}
+              onSave={async (command, useCurrentTime) => {
+                if (saveDisabled) return false;
+                await workspace.submitDraft(draft.draftId, {
+                  command,
+                  captureCurrentTime: useCurrentTime,
+                });
+                return false;
+              }}
+            />
+          ) : draft.input.record_type === 'journal_entry' &&
+            draft.input.payload.entry_type === 'capability_assessment' ? (
+            <CapabilityForm
+              draft={{
+                input:
+                  draft.input as import('@/types/operator').CapabilityInput,
+                version: draft.baseVersion,
+                currentDimensions: Array.isArray(
+                  draft.editorState?.currentDimensions
+                )
+                  ? draft.editorState.currentDimensions.filter(
+                      (value): value is 'functional' | 'redundancy' =>
+                        value === 'functional' || value === 'redundancy'
+                    )
+                  : [],
+              }}
+              record={draft.baseRecord ?? undefined}
+              disabled={false}
+              saveDisabled={saveDisabled}
+              asOf={null}
+              onDraftChange={(value) => {
+                update(value.input);
+                editorState({ currentDimensions: value.currentDimensions });
+              }}
+              onSave={async (input, version, currentDimensions) => {
+                if (saveDisabled) return false;
+                const command =
+                  draft.target.recordId && version
+                    ? {
+                        operation: 'update' as const,
+                        record_id: draft.target.recordId,
+                        body: { ...input, expected_version: version },
+                      }
+                    : { operation: 'create' as const, body: input };
+                await workspace.submitDraft(draft.draftId, {
+                  command,
+                  captureCurrentTime: true,
+                  captureDimensions: currentDimensions,
+                });
+                return false;
+              }}
+            />
           ) : draft.input.record_type === 'journal_entry' &&
             ['note', 'call_observation'].includes(
               draft.input.payload.entry_type
