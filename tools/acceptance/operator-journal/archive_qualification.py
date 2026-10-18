@@ -46,6 +46,21 @@ def qualify_archive(owner):
             )
         return result
 
+    def archive_limits():
+        output = owner.compose(
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "/acceptance/archive_limits_probe.py",
+            timeout=1800,
+        )
+        result = json.loads(output.splitlines()[-1])
+        (owner.root / "archive-limits.json").write_text(json.dumps(result, indent=2))
+        return result
+
     def export_failure():
         database = "/app/data/operator/simulation/synthetic-operator-demo-v1/operations.sqlite3"
 
@@ -157,6 +172,7 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=30) as client:
         owner.root,
         {
             "singlePackageRoundTrip": backend,
+            "largeArchiveAndLimits": archive_limits,
             "exportFailure": export_failure,
             "restartFrozenDownload": restart,
             "productionBrowser": browser,

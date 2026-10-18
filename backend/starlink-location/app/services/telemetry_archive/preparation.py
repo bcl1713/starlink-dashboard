@@ -53,14 +53,20 @@ class TelemetryPreparationService:
             )
 
     def capture_snapshot(
-        self, mission_id: str, allow_partial: bool = False, *, allow_empty: bool = False
+        self,
+        mission_id: str,
+        allow_partial: bool = False,
+        *,
+        allow_empty: bool = False,
+        max_input_bytes: int | None = None,
     ):
         mission = self.load_mission(mission_id)
         if mission is None:
             raise KeyError("Mission not found")
         captures = []
+        budget = [max_input_bytes] if max_input_bytes is not None else None
         for leg in mission.legs:
-            capture = self.archive.capture(mission_id, leg.id)
+            capture = self.archive.capture(mission_id, leg.id, budget=budget)
             if capture is None:
                 capture = {
                     "schema_version": 1,
@@ -81,6 +87,7 @@ class TelemetryPreparationService:
                     "samples": self.archive.samples(
                         datetime.fromisoformat(capture["start"]),
                         datetime.fromisoformat(capture["available_until"]),
+                        budget=budget,
                     )
                 }
             captures.append(capture)

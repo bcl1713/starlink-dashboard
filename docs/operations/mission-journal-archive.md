@@ -66,6 +66,57 @@ archive database. Keep the original ZIP to retain its archival members;
 importing and re-exporting a plan is not a historical journal restoration
 workflow. Dedicated historical restoration remains outside issue #370.
 
+## Size and resource limits
+
+The import HTTP endpoint accepts a complete ZIP up to **2 GiB** (2,147,483,648
+bytes). Production Mission Planner Nginx permits 2 GiB plus 1 MiB for multipart
+framing; the application checks the ZIP's actual spooled-file length. An exact
+2 GiB ZIP is accepted; larger files return an attributable `413` with
+`mission_package_too_large`. Other upload endpoints retain their existing limits.
+The original 100 MiB whole-ZIP limit was insufficient for telemetry-rich archives.
+
+Import uses Starlette's disk-spooled upload directly, without reading the whole
+ZIP into memory. Before constructing ZIP entries, a bounded standard-library
+classic/ZIP64 footer read enforces at most 10,000 entries and a 16 MiB central
+directory. Planning members (`mission.json`, `planning/`, `routes/`, `pois/` and
+`itinerary/`) have a separate **100 MiB expanded-byte total**. This preserves the
+previous planning capacity while rejecting compressed planning expansion before
+reading or publishing it. Journal, telemetry and briefing members are neither
+inflated nor applied during plan import. Keep adequate temporary disk capacity
+for both the Nginx request body and backend upload spool; a near-limit upload
+can temporarily use approximately 4 GiB across the two services. The limits
+apply to legacy and enhanced packages alike. The import rate limit is unchanged.
+
+Export still uses the existing local capture/build architecture. Each journal
+and telemetry capture has a **128 MiB input budget**; journal rows and unsealed
+telemetry rows include a conservative per-row allowance, and sealed telemetry
+JSON is checked by byte length before loading. The complete added UTF-8 member
+set is limited to **256 MiB**. JSON-escaped persisted snapshots have a **384 MiB
+per-job** limit and a **768 MiB aggregate live-payload quota** in the existing
+slide-cache database. These are deliberately finite initial archive capacities,
+not promises that arbitrarily long or dense telemetry histories fit. Source
+records and telemetry are never deleted to fit an export. Large histories that
+exceed a capacity fail the entire preparation and require a future streaming
+archive implementation or a deliberately reviewed capacity change.
+
+Only one request capture per export service runs at a time; a concurrent request
+receives a retryable archive-unavailable response. Snapshot strings are escaped
+in 16 KiB chunks, and cache fingerprints are hashed incrementally. Capacity
+checks and the queued-job insert are atomic: rejection creates no acknowledged
+job or partial archive. The elected worker still bounds assembly concurrency.
+These bounds constrain data volume; Python row/model expansion and overlapping
+capture/assembly can use several times the raw bytes in memory. Deployment
+memory must account for that amplification. Production acceptance reports
+measured peak RSS rather than claiming constant-memory export.
+
+Failed, cancelled, superseded and expired jobs delete their snapshot rows.
+SQLite reuses freed pages; the database file need not shrink on disk, and the
+live-payload quota is not a physical database-file-size cap. Do not run blocking
+`VACUUM` on the active shared cache. Ready ZIPs and their snapshots retain the
+existing 30-minute expiry and restart behavior. Storage exhaustion fails
+preparation; it never produces a truncated success. The limits do not restrict
+retention in the independent source Operator or telemetry stores.
+
 ## Persistence, migration and rollback
 
 Frozen supplementary files are committed with the queued export job in the

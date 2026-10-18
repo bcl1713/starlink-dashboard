@@ -13,6 +13,9 @@ from app.operator.runtime import enabled, runtime_for
 
 from .streams import iter_zip_blocks, new_package_stream
 
+MAX_ARCHIVE_INPUT_BYTES = 128 * 1024 * 1024
+MAX_ARCHIVE_FILES_BYTES = 256 * 1024 * 1024
+
 
 def canonical(value):
     return (
@@ -121,6 +124,7 @@ def capture_archive(request, mission_id):
                 mission_id=mission_id,
                 include_audit=True,
                 include_events=True,
+                max_input_bytes=MAX_ARCHIVE_INPUT_BYTES,
             )
             files.update(journal_files(bundle))
             components["operator"] = {
@@ -149,7 +153,10 @@ def capture_archive(request, mission_id):
     else:
         started = datetime.now(timezone.utc).isoformat()
         data = flight.preparations.capture_snapshot(
-            mission_id, allow_partial=True, allow_empty=True
+            mission_id,
+            allow_partial=True,
+            allow_empty=True,
+            max_input_bytes=MAX_ARCHIVE_INPUT_BYTES,
         )
         if not data["captures"]:
             components["telemetry"] = {
@@ -188,6 +195,8 @@ def capture_archive(request, mission_id):
                     for c in data["captures"]
                 ],
             }
+    if sum(len(body) for body in files.values()) > MAX_ARCHIVE_FILES_BYTES:
+        raise RuntimeError("Mission archive file size limit exceeded")
     return {
         "schema_version": 1,
         "capture_policy": "sequential_component_snapshots",

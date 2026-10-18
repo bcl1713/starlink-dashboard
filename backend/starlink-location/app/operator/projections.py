@@ -20,9 +20,25 @@ from .references import MissionReferences
 from .store import OperatorStore
 
 
-def _rows(connection, sql, parameters):
+def _rows(connection, sql, parameters, budget=None):
     result = connection.execute(sql, parameters)
-    return [column[0] for column in result.description], result.fetchall()
+    columns = [column[0] for column in result.description]
+    rows = []
+    for row in result:
+        if budget is not None:
+            # Include per-row overhead so tiny records cannot bypass the bound.
+            budget[0] -= 256 + sum(
+                (
+                    len(value.encode("utf-8"))
+                    if isinstance(value, str)
+                    else len(value) if isinstance(value, bytes) else 16
+                )
+                for value in row
+            )
+            if budget[0] < 0:
+                raise RuntimeError("Operator archive input size limit exceeded")
+        rows.append(row)
+    return columns, rows
 
 
 def _canonical(value):
@@ -132,6 +148,7 @@ def capture_projection(
     mission_id: str,
     include_audit: bool = False,
     include_events: bool = False,
+    max_input_bytes: int | None = None,
 ) -> ProjectionBundle:
     """Pin H and copy rows in one read; release SQLite before diffs/serialization.
 
@@ -139,6 +156,7 @@ def capture_projection(
     It neither asserts cross-store atomicity nor suppresses retained Operator IDs.
     Capture times name retained revision time, never a new serialization clock.
     """
+    budget = [max_input_bytes] if max_input_bytes is not None else None
     with store.connect() as connection:
         high_water = connection.execute(
             "SELECT coalesce(max(journal_seq), 0) AS high_water FROM revisions"
@@ -157,6 +175,7 @@ def capture_projection(
             WHERE v.mission_id=? AND v.deleted=0 ORDER BY v.record_id
         """,
             (high_water, mission_id),
+            budget,
         )
         history_columns, history_rows = _rows(
             connection,
@@ -166,6 +185,7 @@ def capture_projection(
             ) ORDER BY journal_seq
         """,
             (high_water, high_water, mission_id),
+            budget,
         )
 
         event_data = None
@@ -186,6 +206,7 @@ def capture_projection(
                     connection,
                     f"SELECT * FROM {table} WHERE occurrence_id IN (SELECT occurrence_id FROM event_occurrences WHERE mission_id=?) ORDER BY occurrence_id, rowid",
                     (mission_id,),
+                    budget,
                 )
                 event_data[label] = [dict(zip(columns, row)) for row in rows]
             for occurrence in event_data["occurrences"]:

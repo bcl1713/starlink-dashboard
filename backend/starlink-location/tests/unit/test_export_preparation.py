@@ -429,3 +429,60 @@ def test_elected_worker_uses_persisted_journal_not_later_capture(tmp_path, monke
                 assert archive.read("operations/current.json") == b"[]\n"
         finally:
             second.close()
+
+
+def test_archive_storage_budget_rejection_is_atomic_and_reclaimed(
+    tmp_path, monkeypatch
+):
+    from app.mission.package import preparation_store as module
+
+    monkeypatch.setattr(module, "MAX_ARCHIVE_SNAPSHOT_BYTES", 1024)
+    monkeypatch.setattr(module, "MAX_ARCHIVE_STORAGE_BYTES", 1600)
+    store = module.PreparationStore(SlideStore(tmp_path / "slides.sqlite3"))
+
+    def job(identity):
+        return module.ExportPreparation(
+            id=identity,
+            mission_id="m",
+            state="queued",
+            fingerprint="f",
+            queued_at=0,
+            deadline=600,
+        )
+
+    with pytest.raises(RuntimeError, match="snapshot.*limit"):
+        store.write(job("oversize"), archive={"files": {"a": "x" * 1024}})
+    with pytest.raises(KeyError):
+        store.read("m", "oversize")
+    snapshot = {"files": {"a": "x" * 900}}
+    store.write(job("one"), archive=snapshot)
+    with pytest.raises(RuntimeError, match="storage.*limit"):
+        store.write(job("two"), archive=snapshot)
+    with pytest.raises(KeyError):
+        store.read("m", "two")
+    assert store.archive("one") == snapshot
+    store.discard_archive("one")
+    store.write(job("two"), archive=snapshot)
+    assert store.archive("two") == snapshot
+
+
+def test_archive_capture_serializes_concurrent_requests(tmp_path, monkeypatch):
+    entered, release = threading.Event(), threading.Event()
+
+    def capture(_):
+        entered.set()
+        assert release.wait(3)
+
+    with runtime(tmp_path, monkeypatch, archive_capture=capture) as (service, _):
+        result = []
+        thread = threading.Thread(target=lambda: result.append(service.start("m")))
+        thread.start()
+        try:
+            assert entered.wait(2)
+            with pytest.raises(RuntimeError, match="capture.*progress"):
+                service.start("m")
+        finally:
+            release.set()
+            thread.join(3)
+        assert not thread.is_alive()
+        assert len(result) == 1

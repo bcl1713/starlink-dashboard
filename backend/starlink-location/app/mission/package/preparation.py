@@ -18,6 +18,7 @@ from .customer_artifacts import (
     MissionPackageDownload,
     build_mission_package_download,
 )
+from .json_stream import iter_json
 from .preparation_store import ExportPreparation, PreparationStore
 from .preparation_worker import PreparationWorker
 
@@ -40,6 +41,7 @@ class ExportPreparationService(PreparationWorker):
         self.route_manager, self.poi_manager = route_manager, poi_manager
         self.enabled, self.clock = enabled, clock
         self.archive_capture = archive_capture
+        self.capture_guard = threading.Lock()
         self.builder = builder or build_mission_package_download
         self.cache = cache or default_store()
         self.jobs = PreparationStore(self.cache)
@@ -88,15 +90,25 @@ class ExportPreparationService(PreparationWorker):
                 },
             }
         )
-        return sha256(
-            (canonical_json(archive_identity) if archive is not None else b"")
-            + raw.metadata
-            + canonical_json(raw.dependency_token[0])
-            + raw.dependency_token[1]
-            + raw.renderer_revision.encode()
-        ).hexdigest()
+        identity = sha256()
+        if archive is not None:
+            for chunk in iter_json(archive_identity, compact=True):
+                identity.update(chunk.encode("ascii"))
+        identity.update(raw.metadata)
+        identity.update(canonical_json(raw.dependency_token[0]))
+        identity.update(raw.dependency_token[1])
+        identity.update(raw.renderer_revision.encode())
+        return identity.hexdigest()
 
     def start(self, mission_id):
+        if not self.capture_guard.acquire(blocking=False):
+            raise RuntimeError("Archive capture already in progress; retry")
+        try:
+            return self._start(mission_id)
+        finally:
+            self.capture_guard.release()
+
+    def _start(self, mission_id):
         if self.stop.is_set():
             raise RuntimeError("Export preparation is stopping")
         now = self.clock()

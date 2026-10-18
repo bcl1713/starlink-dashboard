@@ -366,3 +366,18 @@ def test_chronology_uses_issue_correction_time_instead_of_current_state_time(
         == "issue_update.effective_at"
     )
     assert journal["chronological_revisions"][-1]["version"] == 3
+
+
+def test_projection_capture_budget_fails_before_materializing_history(
+    service, record_data
+):
+    import pytest
+
+    create(service, record_data)
+    with pytest.raises(RuntimeError, match="archive.*limit"):
+        capture_projection(
+            service.store,
+            mission_id="demo-mission",
+            include_audit=True,
+            max_input_bytes=1,
+        )

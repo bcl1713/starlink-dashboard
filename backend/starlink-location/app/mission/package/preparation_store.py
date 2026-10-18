@@ -5,6 +5,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from .json_stream import iter_json
+
+MAX_ARCHIVE_SNAPSHOT_BYTES = 384 * 1024 * 1024
+MAX_ARCHIVE_STORAGE_BYTES = 768 * 1024 * 1024
+
 TERMINAL = {"ready", "failed", "cancelled", "superseded", "expired"}
 
 
@@ -55,7 +60,29 @@ class PreparationStore:
             db.execute("DELETE FROM export_archive_snapshots WHERE id=?", (job_id,))
 
     def write(self, job, *, archive=None):
+        payload = None
+        if archive is not None:
+            # Count while encoding, before constructing a potentially huge joined
+            # string or starting a DB transaction. Never truncate a snapshot.
+            chunks, size = [], 0
+            for chunk in iter_json(archive):
+                size += len(chunk)  # Escaped JSON is ASCII.
+                if size > MAX_ARCHIVE_SNAPSHOT_BYTES:
+                    raise RuntimeError("Archive snapshot size limit exceeded")
+                chunks.append(chunk)
+            payload = "".join(chunks)
         with self.cache.connection() as db:
+            if payload is not None:
+                # Reserve capacity and job acknowledgment in one transaction.
+                # SQLite's freed pages are reused; quota is for live payloads.
+                db.execute("BEGIN IMMEDIATE")
+                used = db.execute(
+                    "SELECT coalesce(sum(length(CAST(payload AS BLOB))), 0) FROM export_archive_snapshots"
+                ).fetchone()[0]
+                if used + size > MAX_ARCHIVE_STORAGE_BYTES:
+                    raise RuntimeError(
+                        "Archive storage size limit exceeded; retry after expiry"
+                    )
             db.execute(
                 "INSERT OR REPLACE INTO export_jobs VALUES (?,?,?)",
                 (job.id, job.mission_id, job.model_dump_json()),
@@ -63,7 +90,7 @@ class PreparationStore:
             if archive is not None:
                 db.execute(
                     "INSERT INTO export_archive_snapshots VALUES (?,?)",
-                    (job.id, json.dumps(archive, sort_keys=True)),
+                    (job.id, payload),
                 )
 
     def write_pending(self, job):

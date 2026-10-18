@@ -41,3 +41,29 @@ def test_prepared_download_is_immutable_and_source_survives_expiry(tmp_path):
         assert archive.capture("m", "one") is not None
     finally:
         service.close()
+
+
+def test_bounded_capture_rejects_complete_payload_without_truncation(tmp_path):
+    import json
+
+    import pytest
+
+    archive = ArchiveStore(tmp_path / "archive.db")
+    original = capture("one")
+    with archive.ledger.connect() as db:
+        db.execute(
+            "INSERT INTO captures VALUES (?, ?, ?, ?)",
+            ("m", "one", "one", json.dumps(original)),
+        )
+        db.execute("INSERT INTO capture_heads VALUES (?, ?, ?)", ("m", "one", "one"))
+    service = TelemetryPreparationService(
+        tmp_path, archive, lambda _: SimpleNamespace(legs=[SimpleNamespace(id="one")])
+    )
+    try:
+        with pytest.raises(RuntimeError, match="archive.*limit"):
+            service.capture_snapshot("m", allow_partial=True, max_input_bytes=1)
+        assert service.capture_snapshot("m", allow_partial=True)["captures"] == [
+            original
+        ]
+    finally:
+        service.close()
