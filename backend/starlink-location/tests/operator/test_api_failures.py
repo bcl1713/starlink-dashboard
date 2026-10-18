@@ -20,7 +20,7 @@ def test_unexpected_json_field_does_not_reflect_private_content(api, record_data
     [
         {"provenance": {"kind": "observed"}},
         {"operation": "create"},
-        {"record_type": "issue", "payload": {"entry_type": "issue", "title": "x"}},
+        {"record_type": "risk", "payload": {"entry_type": "risk", "title": "x"}},
         {"payload": {"entry_type": "note", "title": "x", "note": "x" * 8001}},
     ],
 )
@@ -91,8 +91,8 @@ def test_internal_workflow_cannot_be_mutated_through_journal(api, record_data, a
     service = api.app.state.operator_runtime.service
     body = dict(
         record_data,
-        record_type="issue",
-        payload={"entry_type": "issue", "title": "fixture"},
+        record_type="risk",
+        payload={"entry_type": "risk", "title": "fixture"},
     )
     epoch = str(service.store.health().api_epoch)
     saved = service.execute(

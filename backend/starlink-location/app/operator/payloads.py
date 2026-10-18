@@ -122,12 +122,44 @@ class TransportReportPayload(PayloadBase):
     ]
 
 
+class CapabilityAssessmentPayload(PayloadBase):
+    entry_type: Literal["capability_assessment"] = "capability_assessment"
+    functional_status: Literal["unknown", "functional", "degraded", "unavailable"] = (
+        "unknown"
+    )
+    redundancy_status: Literal["unknown", "available", "degraded", "unavailable"] = (
+        "unknown"
+    )
+    functional_observed_at: UtcTimestamp | None = None
+    redundancy_observed_at: UtcTimestamp | None = None
+    functional_time_precision: Literal["exact", "approximate", "unknown"] = "unknown"
+    redundancy_time_precision: Literal["exact", "approximate", "unknown"] = "unknown"
+
+    @field_validator(
+        "functional_time_precision", "redundancy_time_precision", mode="before"
+    )
+    @classmethod
+    def unknown_precision(cls, value):
+        return "unknown" if value is None else value
+
+    @model_validator(mode="after")
+    def observation_precision(self):
+        for dimension in ("functional", "redundancy"):
+            if (getattr(self, dimension + "_observed_at") is None) != (
+                getattr(self, dimension + "_time_precision") == "unknown"
+            ):
+                raise ValueError("Observation time and precision must agree")
+        return self
+
+
 JournalPayload = Annotated[
-    JournalNotePayload | CallObservationPayload, Field(discriminator="entry_type")
+    JournalNotePayload | CallObservationPayload | CapabilityAssessmentPayload,
+    Field(discriminator="entry_type"),
 ]
 OperatorPayload = Annotated[
     JournalNotePayload
     | CallObservationPayload
+    | CapabilityAssessmentPayload
     | CallPayload
     | ConferencePayload
     | ParticipationPayload

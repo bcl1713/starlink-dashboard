@@ -1,5 +1,6 @@
 """Read-time metadata is never inserted into immutable revisions or receipts."""
 
+from .issue_followup import derive_issue_followup
 from .time_models import utc_timestamp
 
 
@@ -31,7 +32,8 @@ def freshness(record, *, as_of, policies):
 
 
 def read_record(record, runtime, *, as_of=None):
-    return {
+    captured_at = as_of or runtime.clock.now()
+    result = {
         "schema_version": 1,
         "record": record.model_dump(mode="json"),
         "association": runtime.service.references.resolve(record),
@@ -41,6 +43,13 @@ def read_record(record, runtime, *, as_of=None):
             policies=runtime.freshness_policies,
         ),
     }
+    if record.record_type == "issue":
+        result["follow_up"] = derive_issue_followup(
+            record,
+            as_of=captured_at,
+            clock_regression=runtime.health().clock_regression,
+        )
+    return result
 
 
 def read_page(page, runtime):

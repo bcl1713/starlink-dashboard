@@ -59,7 +59,7 @@ class RecordInput(StrictModel):
         payload_type = self.payload.entry_type
         expected_type = (
             "journal_entry"
-            if payload_type in ("note", "call_observation")
+            if payload_type in ("note", "call_observation", "capability_assessment")
             else payload_type
         )
         if self.record_type != expected_type:
@@ -68,6 +68,20 @@ class RecordInput(StrictModel):
 
     def validate_for_acceptance(self, clock: Clock) -> None:
         self.time.validate_for_acceptance(clock)
+        if self.payload.entry_type == "capability_assessment":
+            from datetime import timedelta
+
+            from .errors import OperatorError
+            from .time_models import utc_timestamp
+
+            latest = utc_timestamp(clock.now()) + timedelta(seconds=60)
+            fields = {
+                f"payload.{name}": "Actual time exceeds the acceptance clock tolerance"
+                for name in ("functional_observed_at", "redundancy_observed_at")
+                if (value := getattr(self.payload, name)) is not None and value > latest
+            }
+            if fields:
+                raise OperatorError("validation_error", fields=fields)
         if self.record_type == "conference":
             from datetime import timedelta
 
