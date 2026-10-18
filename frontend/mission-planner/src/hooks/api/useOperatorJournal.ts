@@ -21,12 +21,14 @@ import type {
   ReadRecord,
   SavedRecord,
 } from '@/types/operator';
-interface Pending {
+import type { DraftTarget } from '@/components/operator/workspace/types';
+export interface Pending {
   command: OperatorCommand;
   key: string;
   epoch: string;
   identity: string;
   draftKey?: string;
+  workspace?: { draftId: string; revision: number; target: DraftTarget };
 }
 export function useOperatorJournal(
   missionId: string,
@@ -37,21 +39,34 @@ export function useOperatorJournal(
     | 'participation'
     | 'issue'
     | 'transport_decision' = 'journal_entry',
-  options: { durable?: boolean } = {}
+  options: {
+    durable?: boolean;
+    pendingStorageKey?: string;
+    requirePersistence?: boolean;
+    readRecords?: boolean;
+    healthPolling?: boolean;
+    onReceipt?: (request: Pending, receipt: CommandReceipt) => void;
+  } = {}
 ) {
   const client = useQueryClient();
-  const health = useOperatorHealth();
+  const health = useOperatorHealth(options.healthPolling !== false);
   const identity = operatorIdentity(health.data);
   const session = useRef<string | null>(null);
   if (session.current === null && identity) session.current = identity;
   const identityChanged = !!identity && session.current !== identity;
   const records = useInfiniteQuery({
     ...operatorRecordsOptions(missionId, identity, recordType),
-    enabled: !!missionId && !!identity && !health.isError,
+    enabled:
+      options.readRecords !== false &&
+      !!missionId &&
+      !!identity &&
+      !health.isError,
   });
-  const pendingKey = options.durable
-    ? `operator-367-pending:${missionId}:${recordType}`
-    : null;
+  const pendingKey =
+    options.pendingStorageKey ??
+    (options.durable
+      ? `operator-367-pending:${missionId}:${recordType}`
+      : null);
   const loadedKey = useRef<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -100,8 +115,10 @@ export function useOperatorJournal(
         setStorageError(
           'Pending save could not be retained across reload. Keep this page open.'
         );
+        return !options.requirePersistence;
       }
     }
+    return true;
   }
   useEffect(() => {
     if (!pendingKey || !identity || loadedKey.current === pendingKey) return;
@@ -173,7 +190,9 @@ export function useOperatorJournal(
         request.epoch
       );
       setSaved(true);
-      keep(null);
+      // The owner may be on a different route/mission by the time this arrives.
+      options.onReceipt?.(request, receipt);
+      if (!keep(null) && options.requirePersistence) setBlocked(true);
       if (request.draftKey) {
         try {
           sessionStorage.removeItem(request.draftKey);
@@ -230,6 +249,7 @@ export function useOperatorJournal(
       draftKey?: string;
       captureCurrentTime?: boolean;
       captureDimensions?: ('functional' | 'redundancy')[];
+      workspace?: Pending['workspace'];
     } = {}
   ) {
     if (
@@ -287,6 +307,7 @@ export function useOperatorJournal(
       key: createClientId(),
       epoch: health.data.api_epoch,
       identity: session.current,
+      ...(context.workspace ? { workspace: context.workspace } : {}),
     };
     reconciliationTarget.current = {
       recordId: 'record_id' in command ? command.record_id : undefined,
@@ -294,7 +315,7 @@ export function useOperatorJournal(
     };
     setReconcileError(null);
     setMissingInNewStore(false);
-    keep(request);
+    if (!keep(request)) return;
     return execute(request);
   }
   async function retry() {
@@ -312,17 +333,19 @@ export function useOperatorJournal(
       });
       return;
     }
+    if (options.requirePersistence && !keep(request)) return;
     return execute(request);
   }
   function releaseReconciliation() {
+    if (!keep(null)) return false;
     session.current = identity;
-    keep(null);
     setBlocked(false);
     setError(null);
     setLatest(null);
     setReconcileError(null);
     setMissingInNewStore(false);
     reconciliationTarget.current = null;
+    return true;
   }
   function recoverMissing() {
     if (
@@ -332,8 +355,7 @@ export function useOperatorJournal(
       inFlight.current
     )
       return false;
-    releaseReconciliation();
-    return true;
+    return releaseReconciliation();
   }
   async function reconcile() {
     if (inFlight.current) return false;
@@ -393,7 +415,7 @@ export function useOperatorJournal(
         );
         return false;
       }
-      releaseReconciliation();
+      if (!releaseReconciliation()) return false;
       session.current = freshIdentity;
       reconciliationTarget.current =
         current && freshIdentity

@@ -2,12 +2,13 @@ import { infiniteQueryOptions, useQuery } from '@tanstack/react-query';
 import { getOperatorHealth, readOperatorRecords } from '@/services/operator';
 import type { OperatorHealth } from '@/types/operator';
 
-export function useOperatorHealth() {
+export function useOperatorHealth(enabled = true) {
   return useQuery({
     queryKey: ['operator-health'],
     queryFn: getOperatorHealth,
     retry: false,
-    refetchInterval: 15000,
+    enabled,
+    refetchInterval: enabled ? 15000 : false,
     networkMode: 'always',
   });
 }

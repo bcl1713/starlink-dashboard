@@ -23,6 +23,7 @@ import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 import { useOperatorHealth } from './hooks/api/useOperatorJournal';
 import { OperatorJournalPage } from './pages/OperatorJournalPage';
+import { OperatorWorkspaceProvider } from './components/operator/workspace/OperatorWorkspaceProvider';
 
 const queryClient = createQueryClient();
 
@@ -153,7 +154,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AppShell />
+        <OperatorWorkspaceProvider>
+          <AppShell />
+        </OperatorWorkspaceProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );
