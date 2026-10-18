@@ -12,7 +12,7 @@ import httpx
 from pypdf import PdfReader
 
 MISSION = "synthetic-mission-a"
-ROOT = Path("/app/data")
+ROOT = Path("/app/data/operator/archive-acceptance")
 
 
 def prepared(client):

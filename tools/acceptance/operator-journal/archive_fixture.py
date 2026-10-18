@@ -16,11 +16,13 @@ MISSION = "synthetic-mission-a"
 
 def initialize(main, root):
     """Called after normal startup, and repeated idempotently on restart."""
+    archive_root = root / "operator" / "archive-acceptance"
+    archive_root.mkdir(parents=True, exist_ok=True)
     clock = ScenarioClock(START + timedelta(hours=3))
     # Register the real #349 lifecycle, driven exclusively by synthetic raw inputs.
-    flight = FlightEventRuntime(root / "synthetic-archive-flights")
+    flight = FlightEventRuntime(archive_root / "synthetic-archive-flights")
     main.app.state.flight_event_runtime = flight
-    marker = root / "synthetic-archive-seeded.json"
+    marker = archive_root / "synthetic-archive-seeded.json"
     mission = storage.load_mission_v2(MISSION)
     if not marker.exists():
         for index, leg in enumerate(mission.legs):

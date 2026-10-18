@@ -251,10 +251,11 @@ def test_empty_draft_mission_still_exports_with_healthy_telemetry(
     service, clock, tmp_path
 ):
     from types import SimpleNamespace
+
     from app.mission import storage
     from app.mission.models import Mission
-    from app.operator.runtime import OperatorRuntime
     from app.mission.package.operations_archive import capture_archive
+    from app.operator.runtime import OperatorRuntime
     from app.services.telemetry_archive.preparation import TelemetryPreparationService
     from app.services.telemetry_archive.store import ArchiveStore
 
