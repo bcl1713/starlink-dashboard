@@ -112,10 +112,19 @@ export function OperatorWorkspace() {
       return next;
     });
   }
-  function openInput(input: OperatorInput, record?: SavedRecord) {
+  function openInput(
+    input: OperatorInput,
+    record?: SavedRecord,
+    joinNow = false
+  ) {
     const source = health.data;
     if (!source?.store_id || !source.api_epoch || !source.ready) return;
     const draft = createEditorDraft(workspace.registry, source, input, record);
+    if (joinNow)
+      workspace.registry.parkDraft({
+        ...draft,
+        editorState: { ...draft.editorState, joinNow: true },
+      });
     workspace.openDraft(draft.draftId);
   }
   function openRecord(record: SavedRecord) {
@@ -412,7 +421,9 @@ export function OperatorWorkspace() {
                 onCreateConference={() => openInput(conferenceDraft(missionId))}
                 onJoin={(conference) =>
                   openInput(
-                    participationDraft(missionId, conference?.record_id)
+                    participationDraft(missionId, conference?.record_id),
+                    undefined,
+                    true
                   )
                 }
                 onEdit={openRecord}

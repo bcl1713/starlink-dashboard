@@ -183,6 +183,20 @@ def seed_prerequisites(root, *, routes_dir=None):
                 epoch=epoch,
             )
             record_ids.extend(str(record.record_id) for record in receipt.saved_records)
+        mission = storage.load_mission_v2(fixture["mission"]["id"])
+        metadata = {
+            "version": 1,
+            "namespace": namespace,
+            "prerequisite_record_ids": record_ids,
+        }
+        existing_metadata = mission.metadata.get("operator_training_fixture")
+        if existing_metadata is not None and existing_metadata != metadata:
+            raise ValueError(
+                "Training mission marker mismatch; preserve existing mission"
+            )
+        if existing_metadata is None:
+            mission.metadata["operator_training_fixture"] = metadata
+            storage.save_mission_v2(mission)
         health = store.health()
         return {
             "schema_version": 1,

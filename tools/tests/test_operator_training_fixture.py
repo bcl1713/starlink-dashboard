@@ -70,6 +70,16 @@ def test_prerequisites_seed_only_planned_requirements_and_reopen_without_replayi
     assert first["learner_actions_seeded"] is False
     assert len(first["leg_ids"]) == 2
     assert len(first["record_ids"]) == 8
+    import json
+
+    mission = json.loads(
+        (root / "missions" / first["mission_id"] / "mission.json").read_text()
+    )
+    assert mission["metadata"]["operator_training_fixture"] == {
+        "version": 1,
+        "namespace": first["namespace"],
+        "prerequisite_record_ids": first["record_ids"],
+    }
 
 
 def test_real_records_acknowledgments_and_receipts_share_fixture_namespace_across_segments(

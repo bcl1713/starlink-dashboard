@@ -120,6 +120,7 @@ export function WorkspaceEditor({
       input.record_type === 'participation' &&
         !draft.target.recordId &&
         input.payload.state === 'connected' &&
+        draft.editorState?.joinNow === true &&
         !input.time.occurred_at
         ? { atCurrentTime: (now) => joinCommand(input, now) }
         : undefined
@@ -318,6 +319,34 @@ export function WorkspaceEditor({
             />
           ) : draft.input.record_type === 'participation' ? (
             <>
+              {!draft.target.recordId &&
+                draft.input.payload.state === 'connected' && (
+                  <label className="ws-touch">
+                    <input
+                      type="checkbox"
+                      checked={draft.editorState?.joinNow === true}
+                      onChange={(event) => {
+                        editorState({ joinNow: event.target.checked });
+                        if (event.target.checked)
+                          update({
+                            ...draft.input,
+                            time: {
+                              ...draft.input.time,
+                              occurred_at: null,
+                              precision: 'unknown',
+                            },
+                          });
+                      }}
+                    />
+                    Report joined now using backend UTC
+                  </label>
+                )}
+              {!draft.target.recordId && (
+                <p>
+                  Leave this unchecked to retain a reported or unknown join
+                  time. A conference report does not connect a customer.
+                </p>
+              )}
               {(!relationships.data || relationships.data.cursor) && (
                 <p role="status">
                   Relationships show loaded records only. Unresolved saved
@@ -330,7 +359,10 @@ export function WorkspaceEditor({
                   relationships.data?.items.map((item) => item.record) ?? []
                 }
                 disabled={saveDisabled}
-                onChange={update}
+                onChange={(value) => {
+                  update(value);
+                  if (value.time.occurred_at) editorState({ joinNow: false });
+                }}
                 onSubmit={(value) => void saveInput(value)}
               />
             </>

@@ -20,6 +20,8 @@ import { WorkspaceEditor } from './WorkspaceEditor';
 import { health, input } from '@/test/operator-fixtures';
 import * as api from '@/services/operator';
 import type { DraftTarget } from './types';
+import type { OperatorInput } from '@/types/operator';
+import { participationDraft } from '../conferenceCommands';
 
 const clients: QueryClient[] = [];
 const target: DraftTarget = {
@@ -37,9 +39,12 @@ const target: DraftTarget = {
   nextLegId: input.payload.next_leg_id,
   correctionVersion: null,
 };
-function mount() {
+function mount(initial: OperatorInput = input) {
   const registry = new DraftRegistry(sessionStorage);
-  const draft = registry.createDraft(target, input);
+  const draft = registry.createDraft(
+    { ...target, recordType: initial.record_type },
+    initial
+  );
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -77,6 +82,13 @@ function mount() {
 beforeEach(() => {
   sessionStorage.clear();
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    schema_version: 1,
+    items: [],
+    cursor: null,
+    H: 0,
+    as_of: '2026-10-18T10:00:00Z',
+  });
 });
 afterEach(() => {
   cleanup();
@@ -141,3 +153,54 @@ it('keeps input editable while the store is unavailable and disables saving', as
     'Still retained'
   );
 });
+
+it('makes current join time explicit and retains intentional unknown join time', async () => {
+  const { registry, draft } = mount(
+    participationDraft('mission-a', 'conference-a')
+  );
+  const choice = await screen.findByRole('checkbox', {
+    name: 'Report joined now using backend UTC',
+  });
+  expect((choice as HTMLInputElement).checked).toBe(false);
+  fireEvent.click(choice);
+  expect(registry.resumeDraft(draft.draftId)?.editorState?.joinNow).toBe(true);
+  fireEvent.click(choice);
+  expect(registry.resumeDraft(draft.draftId)?.editorState?.joinNow).toBe(false);
+  expect(
+    registry.resumeDraft(draft.draftId)?.input.time.occurred_at
+  ).toBeNull();
+  expect(registry.resumeDraft(draft.draftId)?.input.time.precision).toBe(
+    'unknown'
+  );
+});
+
+for (const captureNow of [false, true]) {
+  it(`submits ${captureNow ? 'backend UTC' : 'unknown time'} only as explicitly chosen`, async () => {
+    const save = vi
+      .spyOn(api, 'saveOperatorCommand')
+      .mockRejectedValue({
+        code: 'test-stop',
+        message: 'Retain command for assertion',
+        retryable: false,
+      });
+    mount(participationDraft('mission-a', 'conference-a'));
+    const choice = await screen.findByRole('checkbox', {
+      name: 'Report joined now using backend UTC',
+    });
+    if (captureNow) fireEvent.click(choice);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save customer interval' })
+    );
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    const command = save.mock.calls[0][0];
+    expect(command.operation).toBe('create');
+    if (command.operation === 'create') {
+      expect(command.body.time.occurred_at).toBe(
+        captureNow ? '2026-10-18T10:00:00Z' : null
+      );
+      expect(command.body.time.precision).toBe(
+        captureNow ? 'exact' : 'unknown'
+      );
+    }
+  });
+}
