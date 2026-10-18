@@ -22,7 +22,7 @@ def restriction(snapshot):
 
 @pytest.mark.parametrize(
     "delay,speed,latitude",
-    [(2700, 300, 0), (-300, 600, 0), (2700, 1200, 0), (2700, 300, 1)],
+    [(2100, 300, 0), (-900, 600, 0), (2100, 1200, 0), (2100, 300, 1)],
 )
 def test_airborne_boundary_reuses_actual_route_eta(
     production, clock, delay, speed, latitude

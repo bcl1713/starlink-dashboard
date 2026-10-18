@@ -161,11 +161,11 @@ prediction family.
 Restriction families use leg, effective route/input geometry, transport,
 existing source cause identities and ordered contiguous restriction occurrence.
 Coalesce adjacent same-cause/classification segments before assigning an
-occurrence. When source IDs change, reconcile only uniquely overlapping windows
-in the same family; ambiguous split/merge results supersede predecessors and
-remain visual until two consistent fresh captures establish an actionable
-candidate. Never merge by title alone. Source revisions are retained as
-evidence, not notification generations.
+occurrence. Legacy models without boundary geometry reconcile uniquely
+overlapping windows in the same family; ambiguous split/merge results supersede
+predecessors and remain visual until two consistent fresh captures establish an
+actionable candidate. Never merge by title alone. Source revisions are retained
+as evidence, not notification generations.
 
 Live route ETA refreshes preserve the geographic occurrence and acknowledgment;
 new route/boundary geometry replaces it. For other modeled events, keep the

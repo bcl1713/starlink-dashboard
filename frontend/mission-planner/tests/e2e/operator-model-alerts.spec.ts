@@ -324,7 +324,7 @@ test('real model foreground warning follows airborne progress after late departu
 }) => {
   test.setTimeout(180_000);
   await raw(request, {
-    now: '2026-10-17T16:55:00Z',
+    now: '2026-10-17T16:45:00Z',
     route_shift: 0,
     longitude: -10,
     latitude: 0,
@@ -466,9 +466,7 @@ test('real model foreground warning follows airborne progress after late departu
     }
     await raw(request, { latitude: 0 });
     const rejoined = find(await feed(request));
-    expect(
-      Math.abs(Date.parse(rejoined.due_at!) - Date.parse(deviated.due_at!))
-    ).toBeLessThan(2000);
+    expect(rejoined.due_at).toBe(distant.due_at);
     await raw(request, { route_latitude: 0.2 });
     const rerouted = find(await feed(request));
     expect(rerouted.event_id).not.toBe(distant.event_id);
