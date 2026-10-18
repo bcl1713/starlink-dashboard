@@ -427,7 +427,7 @@ test('training guide verifies a committed lost receipt before an exact retry', a
       attempts.push({
         body: request.postDataJSON(),
         key: request.headers()['idempotency-key'],
-        epoch: request.headers()['x-operator-epoch'],
+        epoch: request.headers()['x-operator-store-epoch'],
       });
   });
   await page.route('**/api/v2/operator/records', async (route) => {
@@ -451,7 +451,7 @@ test('training guide verifies a committed lost receipt before an exact retry', a
   const guide = page.getByRole('complementary', {
     name: 'Guided mission walkthrough',
   });
-  await guide.getByLabel('Lesson', { exact: true }).selectOption('T08');
+  await guide.getByRole('combobox', { name: 'Lesson', exact: true }).selectOption('T08');
   const outcome = guide
     .getByRole('listitem')
     .filter({ hasText: 'lost receipt same key' });
