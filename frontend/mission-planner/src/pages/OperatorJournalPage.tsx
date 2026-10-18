@@ -1,5 +1,6 @@
 import { OperatorIssues } from '@/components/operator/OperatorIssues';
-import { IssueFollowups } from '@/components/operator/IssueFollowups';
+import { OperatorEventStrip } from '@/components/operator/OperatorEventStrip';
+import { useOperatorEvents } from '@/hooks/api/useOperatorEvents';
 import { OperatorCommunications } from '@/components/operator/OperatorCommunications';
 import { OperatorDisplayTools } from '@/components/operator/OperatorDisplayTools';
 import { useState } from 'react';
@@ -18,6 +19,10 @@ export function OperatorJournalPage() {
   const missionId = params.get('mission_id') ?? '';
   const [missionDraft, setMissionDraft] = useState(missionId);
   const journal = useOperatorJournal(missionId);
+  const eventFeed = useOperatorEvents(
+    missionId,
+    !journal.health.isError && !journal.blocked ? journal.identity : null
+  );
   const brief = useInfiniteQuery({
     queryKey: ['operator-brief', missionId, journal.identity],
     queryFn: ({ pageParam }) =>
@@ -77,7 +82,7 @@ export function OperatorJournalPage() {
         </div>
         <nav aria-label="Operator sections" className="flex flex-wrap gap-2">
           <a
-            href="#operator-brief"
+            href="#operator-events"
             className="inline-flex min-h-11 items-center rounded-md border px-3"
           >
             Upcoming
@@ -108,18 +113,11 @@ export function OperatorJournalPage() {
           </a>
         </nav>
       </header>
-      {missionId && (
-        <IssueFollowups
-          pages={brief.data?.pages ?? []}
-          incomplete={!!brief.hasNextPage}
-          unavailable={
-            unavailable || brief.isError || brief.isPending || journal.blocked
-          }
-        />
-      )}
+      {missionId && <OperatorEventStrip events={eventFeed} />}
       <div id="operator-brief" className="scroll-mt-4">
         <OperatorBrief
           missionId={missionId}
+          liveEvents={!!eventFeed.snapshot && !eventFeed.failed}
           pages={brief.data?.pages ?? []}
           unavailable={unavailable || journal.blocked}
           loading={brief.isPending}

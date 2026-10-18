@@ -37,7 +37,7 @@ export function reserveEventCues(
         db.close();
         return;
       }
-      let reserved: string[] = [];
+      const reserved: string[] = [];
       const transaction = db.transaction('cues', 'readwrite');
       const store = transaction.objectStore('cues');
       transaction.oncomplete = () => {

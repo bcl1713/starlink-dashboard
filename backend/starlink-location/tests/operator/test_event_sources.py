@@ -1,8 +1,6 @@
 """Existing PoP publications feed Operator without advancing the predictor."""
 
-import pytest
 
-from app.mission import storage
 from app.mission.pop_status import PopStatusService
 from tests.operator.fixtures import pop_inputs
 
