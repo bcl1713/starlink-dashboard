@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from .conference_actions import conference_audit_reason, validate_conference_update
 from .errors import OperatorError
+from .issue_actions import issue_audit_reason, validate_issue_update
 from .models import CommandReceipt, CreateRecord, RecordInput, SavedRecord
 from .provenance import SourceProvenance
 from .queries import get_record
@@ -42,6 +43,7 @@ def execute_in_transaction(
     if command.operation in ("create", "update"):
         command.validate_for_acceptance(clock)
         validate_conference_update(current, command, clock)
+        validate_issue_update(connection, current, command, clock)
         content = {name: getattr(command, name) for name in RecordInput.model_fields}
     else:
         content = {name: getattr(current, name) for name in RecordInput.model_fields}
@@ -53,7 +55,11 @@ def execute_in_transaction(
     reason = reason.strip() if reason is not None else ""
     reason_origin = "operator" if reason else "automatic"
     if not reason and command.operation in ("create", "update"):
-        reason = conference_audit_reason(current, command) or ""
+        reason = (
+            issue_audit_reason(current, command)
+            or conference_audit_reason(current, command)
+            or ""
+        )
     if not reason:
         reason = {
             "update": "Operator correction",

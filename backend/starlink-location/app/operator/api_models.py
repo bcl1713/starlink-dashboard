@@ -8,6 +8,7 @@ from .common import SchemaVersion, StrictModel
 from .models import AuditNote, PositiveVersion, RecordInput
 from .payloads import (
     CallPayload,
+    IssuePayload,
     ConferencePayload,
     JournalPayload,
     ParticipationPayload,
@@ -104,11 +105,22 @@ class ParticipationUpdate(ParticipationCreate):
     audit_note: AuditNote | None = None
 
 
+class IssueCreate(RecordInput):
+    record_type: Literal["issue"]
+    payload: IssuePayload
+    operator_label: str | None = Field(default=None, max_length=200)
+
+
+class IssueUpdate(IssueCreate):
+    expected_version: PositiveVersion
+    audit_note: AuditNote | None = None
+
+
 PublicCreate = Annotated[
-    JournalCreate | CallCreate | ConferenceCreate | ParticipationCreate,
+    JournalCreate | CallCreate | ConferenceCreate | ParticipationCreate | IssueCreate,
     Field(discriminator="record_type"),
 ]
 PublicUpdate = Annotated[
-    JournalUpdate | CallUpdate | ConferenceUpdate | ParticipationUpdate,
+    JournalUpdate | CallUpdate | ConferenceUpdate | ParticipationUpdate | IssueUpdate,
     Field(discriminator="record_type"),
 ]
