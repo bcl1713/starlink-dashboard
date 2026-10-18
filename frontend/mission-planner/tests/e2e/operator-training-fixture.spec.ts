@@ -549,3 +549,217 @@ test('training guide verifies a committed lost receipt before an exact retry', a
     )
   );
 });
+
+test('guided conference milestones survive closure, reload and private instance restart', async ({
+  page,
+}) => {
+  const missions = await (await page.request.get('/api/v2/missions')).json();
+  const missionId = missions[0].id;
+  const url = `/operator?workspace=1&mission_id=${missionId}&view=communications`;
+  await page.goto(url);
+  const communications = page.getByRole('region', {
+    name: 'Communications',
+    exact: true,
+  });
+  const editor = page.getByRole('dialog');
+  const receipts: object[] = [];
+  async function save(click: () => Promise<unknown>) {
+    const response = page.waitForResponse(
+      (response) =>
+        ['POST', 'PUT'].includes(response.request().method()) &&
+        /\/api\/v2\/operator\/records(?:\/[^/]+)?$/.test(response.url())
+    );
+    await click();
+    const accepted = await response;
+    expect(accepted.ok()).toBe(true);
+    const receipt = await accepted.json();
+    receipts.push(receipt);
+    return receipt.saved_records[0];
+  }
+  const bridgeTitle = 'Fictional Meridian guided reusable bridge';
+  await communications
+    .getByRole('button', { name: 'Create conference', exact: true })
+    .click();
+  await editor.getByLabel('Conference name (optional)').fill(bridgeTitle);
+  const conference = await save(() =>
+    editor.getByRole('button', { name: 'Save conference', exact: true }).click()
+  );
+  await expect(editor).toHaveCount(0);
+  const bridge = communications.getByRole('article', {
+    name: `Conference ${bridgeTitle}`,
+    exact: true,
+  });
+  for (const action of [
+    'Establish',
+    'Verify',
+    'Interrupt conference',
+    'Restore conference connection',
+  ]) {
+    await save(() =>
+      bridge.getByRole('button', { name: action, exact: true }).click()
+    );
+  }
+  const calls: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    await communications
+      .getByRole('button', { name: 'Create call', exact: true })
+      .click();
+    await editor
+      .getByLabel('Party / participant (optional)')
+      .fill(`Fictional guided bridge call ${index + 1}`);
+    await editor
+      .getByLabel('Planned start (UTC)', { exact: true })
+      .fill(`2026-10-17T17:${index ? '25' : '15'}:00Z`);
+    await editor
+      .getByText('Timing, association and optional details', { exact: true })
+      .click();
+    await editor
+      .getByRole('combobox', { name: 'Conference (optional)', exact: true })
+      .selectOption(conference.record_id);
+    calls.push(
+      (
+        await save(() =>
+          editor.getByRole('button', { name: 'Save call', exact: true }).click()
+        )
+      ).record_id
+    );
+    await expect(editor).toHaveCount(0);
+  }
+  await bridge
+    .getByRole('button', { name: 'Customer Joined', exact: true })
+    .click();
+  await editor
+    .getByLabel('Participant (optional)')
+    .fill('Fictional first guided customer');
+  await editor
+    .getByRole('combobox', { name: 'Customer call', exact: true })
+    .selectOption(calls[0]);
+  await save(() =>
+    editor
+      .getByRole('button', { name: 'Save customer interval', exact: true })
+      .click()
+  );
+  await expect(editor).toHaveCount(0);
+  const first = communications.getByRole('article', {
+    name: 'Customer Fictional first guided customer',
+    exact: true,
+  });
+  await save(() =>
+    first
+      .getByRole('button', { name: 'Interrupt customer', exact: true })
+      .click()
+  );
+  const resumed = await save(() =>
+    first
+      .getByRole('button', { name: 'Restore connection', exact: true })
+      .click()
+  );
+  expect(resumed.record_id).not.toBe(resumed.payload.resumes_participation_id);
+  await bridge
+    .getByRole('button', { name: 'Customer Joined', exact: true })
+    .click();
+  await editor
+    .getByLabel('Participant (optional)')
+    .fill('Fictional second guided customer');
+  await editor
+    .getByRole('combobox', { name: 'Customer call', exact: true })
+    .selectOption(calls[1]);
+  await save(() =>
+    editor
+      .getByRole('button', { name: 'Save customer interval', exact: true })
+      .click()
+  );
+  await expect(editor).toHaveCount(0);
+  const second = communications.getByRole('article', {
+    name: 'Customer Fictional second guided customer',
+    exact: true,
+  });
+  await save(() =>
+    second.getByRole('button', { name: 'Customer Left', exact: true }).click()
+  );
+  const closed = await save(() =>
+    bridge
+      .getByRole('button', { name: 'Close conference', exact: true })
+      .click()
+  );
+  expect(closed.payload.status).toBe('closed');
+  await expect(bridge.getByRole('alert')).toContainText(
+    'customer reported connected'
+  );
+  const automatic = [
+    'conference established verified',
+    'conference interrupted restored',
+    'conference reused closed',
+    'participation joined left',
+    'participation resumed new interval',
+    'participation overlap',
+    'participation discrepancy',
+  ];
+  async function checkGuide() {
+    await page.getByRole('button', { name: 'Help', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+      .click();
+    const guide = page.getByRole('complementary', {
+      name: 'Guided mission walkthrough',
+    });
+    await guide
+      .getByRole('combobox', { name: 'Lesson', exact: true })
+      .selectOption('T03');
+    await guide
+      .getByRole('button', { name: 'Check current evidence', exact: true })
+      .click();
+    for (const outcome of automatic)
+      await expect(
+        guide.getByRole('listitem').filter({ hasText: outcome })
+      ).toContainText('Verified from current data');
+    await expect(
+      guide.getByRole('listitem').filter({ hasText: 'bridge report semantics' })
+    ).toContainText('Needs evidence');
+    await expect(guide.getByText('Incomplete', { exact: true })).toBeVisible();
+  }
+  await page.reload();
+  await checkGuide();
+  host('restart');
+  await expect
+    .poll(async () =>
+      (await page.request.get('/api/v2/operator/health')).status()
+    )
+    .toBe(200);
+  await page.reload();
+  await checkGuide();
+  await page.screenshot({
+    path: join(root, 'guided-closed-conference-history.png'),
+    fullPage: true,
+  });
+  const history = await (
+    await page.request.get(
+      `/api/v2/operator/records/${conference.record_id}/history`
+    )
+  ).json();
+  expect(history.cursor).toBeNull();
+  expect(
+    history.items.some(
+      (item: {
+        record: { payload: { status: string; verified_at?: string } };
+      }) =>
+        item.record.payload.status === 'established' &&
+        item.record.payload.verified_at
+    )
+  ).toBe(true);
+  writeFileSync(
+    join(root, 'guided-closed-conference-proof.json'),
+    JSON.stringify(
+      {
+        synthetic: true,
+        receipts,
+        history,
+        automatic,
+        retainedAfterClosureReloadAndRestart: true,
+        manualBridgeSemanticsStillRequiresHumanObservation: true,
+      },
+      null,
+      2
+    )
+  );
+});

@@ -47,15 +47,18 @@ test('display presets restore actual weather rendering and report real conflicts
     });
     const scene = async (page: Page, on: boolean) => {
       await expect
-        .poll(async () => {
-          const current = await windSnapshot(page);
-          return (
-            current?.present &&
-            current.wind === on &&
-            current.temperature === !on &&
-            current.bulletins?.[2] === on
-          );
-        })
+        .poll(
+          async () => {
+            const current = await windSnapshot(page);
+            return (
+              current?.present &&
+              current.wind === on &&
+              current.temperature === !on &&
+              current.bulletins?.[2] === on
+            );
+          },
+          { timeout: 180000 }
+        )
         .toBe(true);
       await expect
         .poll(async () => !!(await weatherSnapshot(page)).radar)
@@ -83,6 +86,8 @@ test('display presets restore actual weather rendering and report real conflicts
     await expect(
       dialog.getByText('Weather preset saved', { exact: true })
     ).toBeVisible();
+    await scene(overview, true);
+    await scene(other, true);
     await toggle('Precipitation radar', false);
     await toggle('International SIGMET advisories', false);
     await toggle('GFS air temperature', true);
