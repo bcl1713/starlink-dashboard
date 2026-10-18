@@ -388,6 +388,9 @@ test('unified event timeline: local alerts, source races, two clients and restar
     await expect(
       drawer.getByText('Acknowledgment pending confirmation.')
     ).toBeVisible();
+    await closeFeed(page);
+    await expect(draft).toHaveValue('Synthetic unsent event-review note');
+    proof.draftPreserved = true;
     await page.reload();
     await ready(page);
     drawer = await openFeed(page);
@@ -405,9 +408,8 @@ test('unified event timeline: local alerts, source races, two clients and restar
       drawer.getByText('Acknowledgment pending confirmation.')
     ).toHaveCount(0);
     await closeFeed(page);
-    // Reload intentionally restores the journal's own durable draft.
-    await expect(draft).toHaveValue('Synthetic unsent event-review note');
-    proof.draftPreserved = true;
+    // Journal drafts are page-local; only the frozen acknowledgment survives reload.
+    await draft.fill('Synthetic unsent event-review note');
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Open events' }).click();
     await page
