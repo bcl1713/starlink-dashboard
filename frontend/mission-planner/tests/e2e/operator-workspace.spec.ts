@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect } from '@playwright/test';
+import { control } from './operator-journal-helpers';
 
 const evidence = process.env.OPERATOR_ACCEPTANCE_EVIDENCE!;
 const fixtures = JSON.parse(
@@ -142,7 +143,9 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         await expect(
           page
             .getByRole('region', { name: 'Next requirement' })
-            .getByText('Synthetic customer 1 briefing', { exact: true })
+            .getByText('Customer requirement: Synthetic customer 1 briefing', {
+              exact: true,
+            })
         ).toBeVisible();
         expect(
           await page.evaluate(
@@ -241,4 +244,231 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
       2
     )
   );
+});
+
+test('fresh install: explicit simulation journal setup and real CRUD without model inputs', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto('/missions');
+    const missing = await page.request.get('/api/v2/operator/health');
+    expect(missing.status()).toBe(503);
+    const before = await missing.json();
+    expect(before.store_id).toBeNull();
+    expect(before.error_code).toBe('store_initialization_required');
+    expect(before.source_mode).toBe('simulation');
+    await page
+      .getByRole('button', { name: 'Create New Mission', exact: true })
+      .click();
+    const create = page.getByRole('dialog');
+    await create.getByLabel('Mission Name').fill('Synthetic fresh mission');
+    await create
+      .getByRole('button', { name: 'Create Mission', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/missions\/synthetic-fresh-mission$/);
+    const missionId = 'synthetic-fresh-mission';
+    await page.goto(`/operator?mission_id=${missionId}`);
+    const setup = page.getByRole('region', { name: 'Operator store setup' });
+    await expect(
+      setup.getByRole('button', { name: 'Initialize simulation journal' })
+    ).toBeVisible();
+    await page.screenshot({
+      path: join(evidence, 'fresh-install-setup.png'),
+      fullPage: true,
+    });
+    await setup
+      .getByRole('button', { name: 'Initialize simulation journal' })
+      .click();
+    await expect(setup).toHaveCount(0);
+    const initialized = await (
+      await page.request.get('/api/v2/operator/health')
+    ).json();
+    expect(initialized.ready).toBe(true);
+    const receipts: object[] = [];
+    async function save(button: string) {
+      const response = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response.url().endsWith('/api/v2/operator/records')
+      );
+      await page.getByRole('button', { name: button, exact: true }).click();
+      const result = await response;
+      expect(result.ok()).toBe(true);
+      const receipt = await result.json();
+      receipts.push(receipt);
+      return receipt.saved_records[0];
+    }
+    async function crud(prefix: string) {
+      const ids: string[] = [];
+      const communications = page.getByRole('region', {
+        name: 'Communications',
+        exact: true,
+      });
+      await expect(
+        communications.getByRole('button', {
+          name: 'Schedule call',
+          exact: true,
+        })
+      ).toBeEnabled();
+      await communications
+        .getByRole('button', { name: 'Schedule call', exact: true })
+        .click();
+      await page
+        .getByLabel('Party / participant (optional)')
+        .fill(`${prefix} call`);
+      await page
+        .getByLabel('Planned start (UTC)', { exact: true })
+        .fill(
+          new Date(Date.now() + 3_600_000).toISOString().slice(0, 19) + 'Z'
+        );
+      ids.push((await save('Save call')).record_id);
+      await communications
+        .locator('summary')
+        .filter({ hasText: 'Conferences and customers' })
+        .click();
+      await page
+        .getByRole('button', { name: 'New conference', exact: true })
+        .click();
+      await page
+        .getByLabel('Conference name (optional)')
+        .fill(`${prefix} conference`);
+      ids.push((await save('Save conference')).record_id);
+      await page.getByLabel('Problem description').fill(`${prefix} issue`);
+      ids.push((await save('Save issue')).record_id);
+      await page.getByLabel('Title', { exact: true }).fill(`${prefix} note`);
+      ids.push((await save('Save entry')).record_id);
+      return ids;
+    }
+    const firstIds = await crud('Synthetic initial');
+    expect(firstIds).toHaveLength(4);
+    const model = await (
+      await page.request.get(`/api/v2/operator/events?mission_id=${missionId}`)
+    ).json();
+    const docs = await page.request.get('/operator-help/setup.html');
+    expect(docs.ok()).toBe(true);
+    expect(await docs.text()).toContain('Operator setup and recovery');
+    control('restart');
+    await expect
+      .poll(async () =>
+        (await page.request.get('/api/v2/operator/health')).status()
+      )
+      .toBe(200);
+    const reopened = await (
+      await page.request.get('/api/v2/operator/health')
+    ).json();
+    expect(reopened.store_id).toBe(initialized.store_id);
+    expect(reopened.api_epoch).toBe(initialized.api_epoch);
+    await page.reload();
+    const records = await (
+      await page.request.get(`/api/v2/operator/records?mission_id=${missionId}`)
+    ).json();
+    expect(
+      records.items
+        .map((item: { record: { record_id: string } }) => item.record.record_id)
+        .sort()
+    ).toEqual([...firstIds].sort());
+    await page.screenshot({
+      path: join(evidence, 'fresh-install-records.png'),
+      fullPage: true,
+    });
+    await page.goto(`/missions/${missionId}`);
+    await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
+    const leg = page.getByRole('dialog');
+    await leg.getByRole('button', { name: 'Upload KML', exact: true }).click();
+    await leg
+      .locator('input[type=file]')
+      .setInputFiles({
+        name: 'synthetic-fresh-route.kml',
+        mimeType: 'application/vnd.google-earth.kml+xml',
+        buffer: readFileSync(
+          join(
+            process.env.OPERATOR_SOURCE_ROOT!,
+            'backend/starlink-location/tests/fixtures/route-sigmets/altitude-free-timing.kml'
+          )
+        ),
+      });
+    await leg.getByRole('button', { name: 'Add Leg', exact: true }).click();
+    await expect(leg).toHaveCount(0);
+    await page
+      .getByRole('button', { name: 'Simulate leg…', exact: true })
+      .click();
+    const simulation = page.getByRole('dialog');
+    await simulation
+      .getByRole('button', { name: 'Preview', exact: true })
+      .click();
+    await expect(simulation.getByLabel('Simulation preview')).toBeVisible();
+    await simulation
+      .getByRole('button', { name: 'Start simulation', exact: true })
+      .click();
+    await expect(simulation).toHaveCount(0);
+    const run = await (await page.request.get('/api/simulation/run')).json();
+    const runId = run.run.run_id as string;
+    expect(runId).not.toBe(before.simulation_run_id);
+    await page.goto(`/operator?mission_id=${missionId}`);
+    await expect(
+      page
+        .getByRole('region', { name: 'Operator store setup' })
+        .getByRole('button', { name: 'Initialize simulation journal' })
+    ).toBeVisible();
+    const activeMissing = await (
+      await page.request.get('/api/v2/operator/health')
+    ).json();
+    expect(activeMissing.simulation_run_id).toBe(runId);
+    expect(activeMissing.error_code).toBe('store_initialization_required');
+    await page
+      .getByRole('button', { name: 'Initialize simulation journal' })
+      .click();
+    await expect(
+      page.getByRole('region', { name: 'Operator store setup' })
+    ).toHaveCount(0);
+    const activeHealth = await (
+      await page.request.get('/api/v2/operator/health')
+    ).json();
+    expect(activeHealth.store_id).not.toBe(initialized.store_id);
+    const activeIds = await crud('Synthetic active replay');
+    const activeRecords = await (
+      await page.request.get(`/api/v2/operator/records?mission_id=${missionId}`)
+    ).json();
+    expect(
+      activeRecords.items
+        .map((item: { record: { record_id: string } }) => item.record.record_id)
+        .sort()
+    ).toEqual([...activeIds].sort());
+    await page.screenshot({
+      path: join(evidence, 'fresh-install-active-replay.png'),
+      fullPage: true,
+    });
+    writeFileSync(
+      join(evidence, 'workspace-fresh-install.json'),
+      JSON.stringify(
+        {
+          synthetic: true,
+          noOperatorSeed: true,
+          initialHealth: before,
+          initializedHealth: initialized,
+          realMissionCreatedInUI: missionId,
+          realCrudReceipts: receipts,
+          optionalModelCoverage: model.coverage,
+          restartedIdentity: reopened,
+          originalRecordIds: firstIds,
+          activeReplay: {
+            runId,
+            initialHealth: activeMissing,
+            initializedHealth: activeHealth,
+            recordIds: activeIds,
+          },
+          namespace:
+            'explicit initial simulation namespace followed by a real mission replay namespace; no replay-restoration claim',
+        },
+        null,
+        2
+      )
+    );
+  } finally {
+    await context.close();
+  }
 });

@@ -16,6 +16,7 @@ import { useOperatorJournal } from '@/hooks/api/useOperatorJournal';
 import { operatorFailure } from '@/services/operator';
 import type { OperatorCommand, SavedRecord } from '@/types/operator';
 import { OperatorWorkspace } from '@/components/operator/workspace/OperatorWorkspace';
+import { OperatorStoreSetup } from '@/components/operator/OperatorStoreSetup';
 export function OperatorJournalPage() {
   const [params] = useSearchParams();
   return params.get('workspace') === '1' ? (
@@ -74,9 +75,22 @@ function LegacyOperatorJournalPage() {
     journal.health.isError &&
     operatorFailure(journal.health.error).status === 404
   )
-    return <main className="p-6">Operator journal is disabled.</main>;
+    return (
+      <main className="p-6">
+        <p>Operator journal is disabled.</p>
+        <OperatorStoreSetup
+          error={journal.health.error}
+          refresh={() => journal.health.refetch()}
+        />
+      </main>
+    );
   return (
     <main className="mx-auto w-full min-w-0 max-w-7xl space-y-5 p-4 sm:p-6">
+      <OperatorStoreSetup
+        health={journal.health.data}
+        error={journal.health.error}
+        refresh={() => journal.health.refetch()}
+      />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">

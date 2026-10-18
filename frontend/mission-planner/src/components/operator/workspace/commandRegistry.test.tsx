@@ -12,6 +12,11 @@ import {
 } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
 import type { DraftTarget } from './types';
+import {
+  commandLane,
+  loadPendingOwners,
+  pendingPrefix,
+} from './commandRegistry';
 
 const clients: QueryClient[] = [];
 let workspace: ReturnType<typeof useOperatorWorkspace>;
@@ -316,4 +321,55 @@ it('command supplied by an editor cannot cross the pinned mission target', async
   });
   expect(save).not.toHaveBeenCalled();
   expect(workspace.tray[0].status).toBe('failed');
+});
+
+it.each([
+  'record_id',
+  'scope',
+  'leg_id',
+  'previous_leg_id',
+  'next_leg_id',
+  'expected_version',
+])('quarantines a recovered update with mismatched %s', (field) => {
+  const savedTarget = {
+    ...target,
+    recordId: record.record_id,
+    newDraftId: null,
+  };
+  const command = {
+    operation: 'update',
+    record_id: record.record_id,
+    body: { ...structuredClone(input), expected_version: 1 },
+  };
+  if (field === 'record_id') command.record_id = 'wrong-record';
+  else if (field === 'scope') command.body.scope = 'postflight';
+  else if (field === 'leg_id') command.body.leg_id = 'wrong-leg';
+  else if (field === 'expected_version') command.body.expected_version = 9;
+  else
+    command.body.payload[field as 'previous_leg_id' | 'next_leg_id'] =
+      'wrong-leg';
+  const key = pendingPrefix + commandLane(savedTarget);
+  const value = JSON.stringify({
+    command,
+    key: 'client-key',
+    epoch: health.api_epoch,
+    identity: JSON.stringify([
+      health.store_id,
+      health.api_epoch,
+      health.source_mode,
+      health.simulation_run_id,
+    ]),
+    workspace: {
+      schemaVersion: 1,
+      draftId: 'draft-a',
+      revision: 1,
+      baseVersion: 1,
+      target: savedTarget,
+    },
+  });
+  sessionStorage.setItem(key, value);
+  const loaded = loadPendingOwners(sessionStorage);
+  expect(loaded.requests).toEqual([]);
+  expect(loaded.errors).toHaveLength(1);
+  expect(sessionStorage.getItem(key)).toBe(value);
 });

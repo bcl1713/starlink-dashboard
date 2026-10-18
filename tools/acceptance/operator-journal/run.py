@@ -556,12 +556,16 @@ def run(
     models=False,
     transport=False,
     archive=False,
+    entrypoint=None,
 ):
     validate_candidate(ROOT, candidate)
     evidence = Path(evidence).resolve()
     if evidence.exists():
         raise ValueError("Use a new evidence directory reserved for this run")
     owner = Owner(project, evidence)
+    if entrypoint:
+        owner.env["OPERATOR_ACCEPTANCE_ENTRYPOINT"] = entrypoint
+        owner.env["OPERATOR_ACCEPTANCE_HEALTH_PATH"] = "/health"
     if transport or archive:
         owner.deadline += 1800
     if archive:

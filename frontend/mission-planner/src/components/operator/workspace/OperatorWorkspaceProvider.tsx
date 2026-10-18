@@ -294,7 +294,13 @@ export function OperatorWorkspaceProvider({
       const result = await api.save(command, {
         captureCurrentTime: options.captureCurrentTime,
         captureDimensions: options.captureDimensions,
-        workspace: { draftId, revision: draft.revision, target: draft.target },
+        workspace: {
+          schemaVersion: 1,
+          draftId,
+          revision: draft.revision,
+          baseVersion: draft.baseVersion,
+          target: draft.target,
+        },
       });
       if (result)
         update(lane, {

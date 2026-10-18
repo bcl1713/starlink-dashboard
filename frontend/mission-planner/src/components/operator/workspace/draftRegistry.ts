@@ -1,5 +1,5 @@
 import { createClientId } from '@/lib/clientId';
-import type { OperatorInput } from '@/types/operator';
+import type { OperatorInput, SavedRecord } from '@/types/operator';
 import type { DraftEnvelope, DraftTarget, PersistenceResult } from './types';
 
 export const draftPrefix = 'operator-workspace-draft:v1:';
@@ -20,6 +20,33 @@ const types = [
 ];
 const nullableString = (value: unknown) =>
   value === null || typeof value === 'string';
+
+export function isDraftTarget(value: unknown): value is DraftTarget {
+  if (!value || typeof value !== 'object') return false;
+  const target = value as DraftTarget;
+  return (
+    ['storeId', 'epoch', 'missionId'].every(
+      (key) =>
+        typeof target[key as keyof DraftTarget] === 'string' &&
+        String(target[key as keyof DraftTarget]).length > 0
+    ) &&
+    types.includes(target.recordType) &&
+    scopes.includes(target.scope) &&
+    (target.sourceMode === 'live'
+      ? target.simulationRunId === null
+      : target.sourceMode === 'simulation' &&
+        typeof target.simulationRunId === 'string' &&
+        target.simulationRunId.length > 0) &&
+    nullableString(target.recordId) &&
+    nullableString(target.newDraftId) &&
+    nullableString(target.legId) &&
+    nullableString(target.previousLegId) &&
+    nullableString(target.nextLegId) &&
+    (target.correctionVersion === null ||
+      (Number.isInteger(target.correctionVersion) &&
+        target.correctionVersion > 0))
+  );
+}
 
 export function isOperatorInput(value: unknown): value is OperatorInput {
   if (!value || typeof value !== 'object') return false;
@@ -60,19 +87,7 @@ function validEnvelope(value: unknown, key: string): value is DraftEnvelope {
     key === draftPrefix + row.draftId &&
     Number.isInteger(row.revision) &&
     row.revision > 0 &&
-    !!t &&
-    ['storeId', 'epoch', 'missionId'].every(
-      (k) => typeof t[k as keyof DraftTarget] === 'string'
-    ) &&
-    ['live', 'simulation'].includes(t.sourceMode) &&
-    nullableString(t.simulationRunId) &&
-    nullableString(t.recordId) &&
-    nullableString(t.newDraftId) &&
-    nullableString(t.legId) &&
-    nullableString(t.previousLegId) &&
-    nullableString(t.nextLegId) &&
-    (t.correctionVersion === null ||
-      (Number.isInteger(t.correctionVersion) && t.correctionVersion > 0)) &&
+    isDraftTarget(t) &&
     (row.baseVersion === null ||
       (Number.isInteger(row.baseVersion) && row.baseVersion > 0)) &&
     (t.recordId !== null
@@ -126,17 +141,29 @@ export class DraftRegistry {
     }
   }
 
-  createDraft(target: DraftTarget, input: OperatorInput): DraftEnvelope {
+  createDraft(
+    target: DraftTarget,
+    input: OperatorInput,
+    baseRecord: SavedRecord | null = null
+  ): DraftEnvelope {
     if (!matches(target, input))
       throw new Error('Draft input does not match its pinned target.');
+    if (
+      baseRecord &&
+      (baseRecord.record_id !== target.recordId ||
+        baseRecord.record_type !== target.recordType ||
+        !Number.isInteger(baseRecord.version) ||
+        baseRecord.version < 1)
+    )
+      throw new Error('Saved base does not match the draft record target.');
     const draftId = createClientId();
     return this.parkDraft({
       schemaVersion: 1,
       draftId,
       target: { ...target, newDraftId: target.recordId ? null : draftId },
       input,
-      baseRecord: null,
-      baseVersion: null,
+      baseRecord,
+      baseVersion: baseRecord?.version ?? null,
       revision: 1,
       persistence: durable(),
     });

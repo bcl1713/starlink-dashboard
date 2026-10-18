@@ -24,12 +24,14 @@ import { conferenceDraft, unknownTime } from '../conferenceCommands';
 import { OperatorEventFeed } from '../OperatorEventFeed';
 import { OperatorAlertSettings } from '../OperatorAlertSettings';
 import { OperatorDisplayTools } from '../OperatorDisplayTools';
+import { OperatorStoreSetup } from '../OperatorStoreSetup';
 import { useEventAlerts } from '../useEventAlerts';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import { WorkspaceAwareness } from './WorkspaceAwareness';
 import { nextRequirement } from './awarenessModel';
 import { WorkspaceEditor } from './WorkspaceEditor';
 import { MissionContextChooser } from './MissionContextChooser';
+import { createEditorDraft } from './editorDraft';
 import './workspace.css';
 
 const views = [
@@ -90,30 +92,7 @@ export function OperatorWorkspace() {
   function openInput(input: OperatorInput, record?: SavedRecord) {
     const source = health.data;
     if (!source?.store_id || !source.api_epoch || !source.ready) return;
-    let draft = workspace.registry.createDraft(
-      {
-        storeId: source.store_id,
-        epoch: source.api_epoch,
-        sourceMode: source.source_mode,
-        simulationRunId: source.simulation_run_id,
-        missionId: input.mission_id,
-        recordType: input.record_type,
-        recordId: record?.record_id ?? null,
-        newDraftId: null,
-        scope: input.scope,
-        legId: input.leg_id,
-        previousLegId: input.payload.previous_leg_id,
-        nextLegId: input.payload.next_leg_id,
-        correctionVersion: null,
-      },
-      input
-    );
-    if (record)
-      draft = workspace.registry.parkDraft({
-        ...draft,
-        baseRecord: record,
-        baseVersion: record.version,
-      });
+    const draft = createEditorDraft(workspace.registry, source, input, record);
     workspace.openDraft(draft.draftId);
   }
   function openRecord(record: SavedRecord) {
@@ -228,6 +207,11 @@ export function OperatorWorkspace() {
         ))}
       </nav>
       <div className="ws-body">
+        <OperatorStoreSetup
+          health={health.data}
+          error={health.error}
+          refresh={() => health.refetch()}
+        />
         {!missionId ? (
           <section>
             <h2>Choose a mission</h2>

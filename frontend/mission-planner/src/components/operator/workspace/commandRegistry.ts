@@ -4,7 +4,7 @@ import type {
   OperatorCommand,
   SavedRecord,
 } from '@/types/operator';
-import { isOperatorInput } from './draftRegistry';
+import { isDraftTarget, isOperatorInput } from './draftRegistry';
 import type { DraftEnvelope, DraftTarget } from './types';
 
 export const pendingPrefix = 'operator-workspace-pending:v1:';
@@ -56,7 +56,7 @@ export function draftCommand(draft: DraftEnvelope): OperatorCommand {
 }
 
 export function assertCommandTarget(
-  draft: DraftEnvelope,
+  draft: Pick<DraftEnvelope, 'target' | 'baseVersion'>,
   command: OperatorCommand
 ): void {
   if (
@@ -107,8 +107,17 @@ export function loadPendingOwners(storage: Storage | null): {
         const p = JSON.parse(storage.getItem(key)!) as PendingEnvelope;
         const t = p.workspace?.target;
         if (
-          !t ||
+          !isDraftTarget(t) ||
+          p.workspace.schemaVersion !== 1 ||
           typeof p.workspace.draftId !== 'string' ||
+          !p.workspace.draftId ||
+          (t.recordId === null
+            ? t.newDraftId !== p.workspace.draftId
+            : t.newDraftId !== null) ||
+          (p.command?.operation === 'create'
+            ? p.workspace.baseVersion !== null
+            : !Number.isInteger(p.workspace.baseVersion) ||
+              Number(p.workspace.baseVersion) < 1) ||
           !Number.isInteger(p.workspace.revision) ||
           p.workspace.revision < 1 ||
           typeof p.key !== 'string' ||
@@ -132,6 +141,12 @@ export function loadPendingOwners(storage: Storage | null): {
           )
             throw new Error('Mismatched pending target');
         }
+        if (p.command.body.schema_version !== 1)
+          throw new Error('Invalid command schema');
+        assertCommandTarget(
+          { target: t, baseVersion: p.workspace.baseVersion },
+          p.command
+        );
         result.requests.push(p);
       } catch {
         result.errors.push(

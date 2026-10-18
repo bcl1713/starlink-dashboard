@@ -43,6 +43,17 @@ export async function getOperatorHealth(): Promise<OperatorHealth> {
     throw error;
   }
 }
+export async function provisionOperatorStore(
+  health: Pick<OperatorHealth, 'source_mode' | 'simulation_run_id'>
+): Promise<OperatorHealth> {
+  return (
+    await apiClient.post<OperatorHealth>(`${base}/provision`, {
+      schema_version: 1,
+      expected_source_mode: health.source_mode,
+      expected_simulation_run_id: health.simulation_run_id,
+    })
+  ).data;
+}
 export async function readOperatorRecords(
   filters: RecordFilters,
   cursor?: string

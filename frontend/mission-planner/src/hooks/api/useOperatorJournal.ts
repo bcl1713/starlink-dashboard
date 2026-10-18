@@ -28,7 +28,13 @@ export interface Pending {
   epoch: string;
   identity: string;
   draftKey?: string;
-  workspace?: { draftId: string; revision: number; target: DraftTarget };
+  workspace?: {
+    schemaVersion: 1;
+    draftId: string;
+    revision: number;
+    baseVersion: number | null;
+    target: DraftTarget;
+  };
 }
 export function useOperatorJournal(
   missionId: string,

@@ -16,6 +16,31 @@ from .settings import OperatorSettings
 from .store import OperatorStore
 
 
+def namespace_status(settings):
+    """Read-only distinction between a pristine namespace and recovery evidence."""
+    database, marker = settings.database_path, settings.identity_path
+    present = [os.path.lexists(path) for path in (database, marker)]
+    if all(present):
+        return "existing"
+    if any(present):
+        return "recovery"
+    directory = database.parent
+    if directory.is_symlink():
+        return "recovery"
+    if directory.exists():
+        # The live root may also contain independent simulation namespaces.
+        entries = [
+            p
+            for p in directory.iterdir()
+            if not (
+                settings.source_mode == "live" and p.name == "simulation" and p.is_dir()
+            )
+        ]
+        if entries:
+            return "recovery"
+    return "new"
+
+
 class OperatorRuntime:
     def __init__(self, settings, clock, *, error_code="store_unavailable"):
         self.settings, self.clock = settings, clock
@@ -35,6 +60,14 @@ class OperatorRuntime:
             return runtime
         try:
             runtime.event_policy = EventPolicy.from_env()
+            status = namespace_status(settings)
+            if status != "existing":
+                runtime.error_code = (
+                    "store_initialization_required"
+                    if status == "new"
+                    else "store_recovery_required"
+                )
+                return runtime
             store = OperatorStore.open(settings, initialize=False, clock=clock)
             runtime.service = OperatorService(
                 store,
@@ -44,9 +77,49 @@ class OperatorRuntime:
             )
         except OperatorError as error:
             runtime.error_code = error.code
+        except (ValueError, TypeError):
+            runtime.error_code = "invalid_configuration"
         except Exception:  # noqa: BLE001 - optional runtime preserves baseline startup
             runtime.error_code = "store_unavailable"
         return runtime
+
+    def provision(self, *, expected_mode, expected_run):
+        """Explicit first use only. Existing namespaces are opened, never reset."""
+        if not enabled(self):
+            raise OperatorError("operator_disabled")
+        if (expected_mode, expected_run) != (
+            self.settings.source_mode,
+            self.settings.simulation_run_id,
+        ):
+            raise OperatorError("store_context_changed")
+        if (
+            self.settings.source_mode == "simulation"
+            and not self.settings.simulation_run_id
+        ):
+            raise OperatorError("simulation_run_required")
+        if not self.settings.enabled or self.error_code == "invalid_configuration":
+            raise OperatorError(self.error_code)
+        if self.service is not None:
+            state = self.health()
+            if not state.ready:
+                raise OperatorError(state.error_code or "store_recovery_required")
+            return state
+        try:
+            status = namespace_status(self.settings)
+            if status == "recovery":
+                raise OperatorError("store_recovery_required")
+            store = OperatorStore.open(
+                self.settings, initialize=status == "new", clock=self.clock
+            )
+            self.service = OperatorService(
+                store,
+                clock=self.clock,
+                actor=Actor(backend="restricted-access operator"),
+                references=MissionReferences(),
+            )
+        except (OSError, ValueError) as error:
+            raise OperatorError("store_unavailable") from error
+        return self.health()
 
     def health(self) -> StoreHealth:
         if self.service is not None:
@@ -86,7 +159,9 @@ class OperatorRuntimeBinding:
         # Resolve mode/run from the actual coordinator, never source-mode env.
         enabled = os.getenv("OPERATOR_ENABLED", "false").lower() == "true"
         identity = (mode, run, enabled)
-        if identity != self.identity:
+        if identity != self.identity or (
+            enabled and self.runtime is not None and self.runtime.service is None
+        ):
             if self.runtime is not None:
                 self.runtime.close()
             options = {
@@ -109,7 +184,15 @@ class OperatorRuntimeBinding:
                 options["enabled"] = False
                 options["simulation_run_id"] = None
                 settings = OperatorSettings(**options)
-                runtime = OperatorRuntime(settings, self.clock)
+                runtime = OperatorRuntime(
+                    settings,
+                    self.clock,
+                    error_code=(
+                        "simulation_run_required"
+                        if mode == "simulation" and not run
+                        else "invalid_configuration"
+                    ),
+                )
                 runtime.enabled_override = enabled
             self.runtime, self.identity = runtime, identity
         return self.runtime

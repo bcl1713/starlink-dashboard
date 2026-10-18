@@ -45,14 +45,16 @@ finally:
 """
 
 
-def qualify(owner, *, workspace=False):
-    fixtures = [build_workspace_fixture(seed) for seed in ("normal", "busy")]
+def qualify(owner, *, workspace=False, fresh=False):
+    fixtures = [] if fresh else [build_workspace_fixture(seed) for seed in ("normal", "busy")]
     (owner.root / "workspace-inputs.json").write_text(json.dumps(fixtures, indent=2))
-    owner.compose("exec", "-T", "--user", "appuser", "starlink-location", "python", "-c", SEED,
-                  json.dumps(fixtures), timeout=60)
+    if not fresh:
+        owner.compose("exec", "-T", "--user", "appuser", "starlink-location", "python", "-c", SEED,
+                      json.dumps(fixtures), timeout=60)
     env = owner.env | {
         "OPERATOR_ACCEPTANCE_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
         "OPERATOR_ACCEPTANCE_EVIDENCE": str(owner.root),
+        "OPERATOR_ACCEPTANCE_PROJECT": owner.project,
         "OPERATOR_WORKSPACE_INPUTS": str(owner.root / "workspace-inputs.json"),
         "PLAYWRIGHT_BROWSERS_PATH": os.environ.get(
             "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"),
@@ -61,8 +63,10 @@ def qualify(owner, *, workspace=False):
     }
     owner.execute(["timeout", "--kill-after=10s", "10m", "npx", "--no-install",
                    "playwright", "test", "--config", "playwright.operator-workspace.config.ts",
-                   "--grep", "hidden workspace" if workspace else "baseline"], timeout=620,
+                   "--grep", "fresh install" if fresh else "hidden workspace" if workspace else "baseline"], timeout=620,
                   cwd=ROOT / "frontend/mission-planner", env=env)
+    if fresh:
+        return json.loads((owner.root / "workspace-fresh-install.json").read_text())
     if workspace:
         return json.loads((owner.root / "workspace-candidate.json").read_text())
     result = json.loads((owner.root / "workspace-baseline.json").read_text())
@@ -90,6 +94,8 @@ if __name__ == "__main__":
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True, type=Path)
     parser.add_argument("--workspace", action="store_true", help="Exercise the hidden implementation shell")
+    parser.add_argument("--fresh", action="store_true", help="Exercise explicit provisioning without seeding an Operator store")
     args = parser.parse_args()
     print(json.dumps(journal.run(args.candidate, args.project, args.evidence,
-                                 qualification=lambda owner: qualify(owner, workspace=args.workspace)), indent=2))
+                                 entrypoint="fresh_operator_fixture" if args.fresh else None,
+                                 qualification=lambda owner: qualify(owner, workspace=args.workspace, fresh=args.fresh)), indent=2))

@@ -1,17 +1,18 @@
 """Gated public Operator API on the existing restricted LAN boundary."""
 
 import sqlite3
+from typing import Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from app.operator.api_models import JournalTransition, PublicCreate, PublicUpdate
-from app.operator.common import Identifier, RecordId
+from app.operator.common import Identifier, RecordId, SchemaVersion, StrictModel
 from app.operator.errors import OperatorError
 from app.operator.models import (
     CreateRecord,
@@ -44,6 +45,8 @@ def error_response(error):
                     "invalid_transition",
                     "store_epoch_changed",
                     "event_snapshot_changed",
+                    "store_context_changed",
+                    "simulation_run_required",
                 )
                 else 503
             )
@@ -165,6 +168,24 @@ def health(request: Request):
             dict(state.model_dump(mode="json"), enabled=True),
             status_code=200 if state.ready else 503,
         )
+
+
+class ProvisionRequest(StrictModel):
+    schema_version: SchemaVersion = 1
+    expected_source_mode: Literal["live", "simulation"]
+    expected_simulation_run_id: str | None = Field(default=None, max_length=200)
+
+
+@router.post("/provision")
+def provision(request: Request, body: ProvisionRequest):
+    with runtime_for(request) as runtime:
+        if runtime is None or not enabled(runtime):
+            raise OperatorError("operator_disabled")
+        state = runtime.provision(
+            expected_mode=body.expected_source_mode,
+            expected_run=body.expected_simulation_run_id,
+        )
+        return dict(state.model_dump(mode="json"), enabled=True)
 
 
 @router.post("/records")
