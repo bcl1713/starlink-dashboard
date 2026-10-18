@@ -72,7 +72,10 @@ def main():
             links = db.execute(
                 "SELECT * FROM current_links ORDER BY from_id,relation,to_id"
             ).fetchall()
-        manifest = backup_store(service.store, directory=root / "transport-backups")
+        manifest = backup_store(
+            service.store,
+            directory=service.store.settings.database_path.parent / "transport-backups",
+        )
         restored = restore_store(service.store.settings, manifest=manifest, clock=CLOCK)
         assert restored.ready
         service.store.close()

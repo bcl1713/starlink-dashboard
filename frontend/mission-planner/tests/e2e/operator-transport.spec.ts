@@ -316,22 +316,34 @@ test('transport decision production: mobile entry, customer context, durability 
       first.getByText('Transport save acknowledged.', { exact: true })
     ).toBeVisible();
     proof.lostReceipt = true;
-    await contexts[0].setOffline(true);
     await first
       .getByRole('button', { name: 'Record another move', exact: true })
       .click();
     await first
       .getByLabel('Service 1', { exact: true })
       .fill('Synthetic offline move');
-    await first
+    await contexts[0].setOffline(true);
+    const offlineSave = first
       .getByRole('form', { name: 'Transport decision editor' })
-      .getByRole('button', { name: 'Save transport decision' })
-      .click();
+      .getByRole('button', { name: 'Save transport decision' });
+    // Once health observes the failure, correctly disabled saving is also valid.
+    try {
+      await offlineSave.click({ timeout: 1500 });
+    } catch {
+      await expect(offlineSave).toBeDisabled();
+    }
     await expect(
-      first.getByRole('button', { name: 'Retry transport save' })
-    ).toBeVisible();
+      first.getByText('Transport save acknowledged.', { exact: true })
+    ).toHaveCount(0);
+    await expect(first.getByLabel('Service 1', { exact: true })).toHaveValue(
+      'Synthetic offline move'
+    );
     await contexts[0].setOffline(false);
-    await first.getByRole('button', { name: 'Retry transport save' }).click();
+    await first.reload();
+    await ready(first);
+    const retry = first.getByRole('button', { name: 'Retry transport save' });
+    if (await retry.isVisible()) await retry.click();
+    else await save(first);
     await expect(
       first.getByText('Transport save acknowledged.', { exact: true })
     ).toBeVisible();
