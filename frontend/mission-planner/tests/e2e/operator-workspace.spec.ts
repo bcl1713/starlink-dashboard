@@ -768,7 +768,7 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
       await editor
         .getByLabel('Mitigation', { exact: true })
         .selectOption('workaround');
-      await editor.getByLabel('Follow-up UTC').fill('2026-10-17T15:30:00');
+      await editor.getByLabel('Follow-up UTC').fill('2026-10-17T15:30');
       const created = await save(() =>
         editor.getByRole('button', { name: 'Save issue', exact: true }).click()
       );
