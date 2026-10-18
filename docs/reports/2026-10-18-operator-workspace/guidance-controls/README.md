@@ -1,6 +1,6 @@
 # Private guide controls checkpoint
 
-Candidate `504b98247440b74f17e2e0e4e1ff7a411d93a836`; image IDs and source archive hash recorded automatically before browser execution. One production browser test passed in19.4seconds (runner20.0seconds).
+Candidate `cb8fccdd3a7239109f478d25227548571c7389a5`; image IDs and source archive hash recorded automatically before browser execution. Two production browser tests passed in22.8seconds: two-leg/guide controls19.4seconds and guided lost-receipt recovery2.6seconds.
 
 At1920×1080,390×844,844×390, Help opens the context-gated private guide; reset progress, explicit evidence check, Next, actual Communications navigation, Skip, Back and dismissal pass. Incomplete and Skipped remain distinct. This same test then passes normal two-leg replay, actual current-leg X/Ka/PoP source checks, future Next alongside overdue work, retained editor focus and journal/acknowledgment restart continuity.
 
@@ -9,3 +9,5 @@ The preceding cc7b5719 run exposed a cold-load null-evidence crash. Trace confir
 Opening lesson controls now collapses instructions into a resumable panel. Compact screenshots show Create call/Create conference visible at portrait and landscape sizes. The airborne guide explicitly verifies first-leg replay and current model sources from normal service responses. These are focused screenshots, not final whole-product visual approval. Complete T01–T11 evidence/failure adapters, full parity, original ZIP/import validation, illustrated offline manual/quick reference and uncoached human sessions remain required. No feature cutover or merge approval is claimed.
 
 This rerun additionally confirms the stricter receipt/history record comparison against actual API data and separate evidence-error handling. Unit regressions cover retained historical conference/transport/issue milestones, learner edits of planned prerequisites without creation credit, valid unknown times, conflicting immutable responses, and incomplete/stale evidence. Those regressions do not substitute for the remaining full guided lifecycle/failure journeys.
+
+The recovery exercise commits a real note, drops its HTTP response, checks backend evidence while uncertain, reloads, and retries through the existing pending owner. The identical body/key/epoch yields the original receipt and one immutable journal version. The guide recognizes only the lost-receipt outcome and leaves the overall T08 lesson incomplete. Raw pre-retry evidence resumes from identity-scoped local progress; no training write API or second sender is used. The preceding r9 recovery test failed on its label locator; the actual accessible Lesson combobox lookup fixes the test. Both runs cleaned all owned runtime resources.

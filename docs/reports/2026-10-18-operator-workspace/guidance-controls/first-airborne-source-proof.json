@@ -2,16 +2,16 @@
   "initial": {
     "schema_version": 1,
     "ready": true,
-    "store_id": "81415613-64ec-4a36-a01e-727197847d41",
-    "api_epoch": "21588b2f-9ec3-4323-949d-f6fa8da8b6a6",
+    "store_id": "953148ea-2fe9-4956-a496-7c6003d262c3",
+    "api_epoch": "e27e533b-fc9f-4873-a512-a7ff42b0fc88",
     "source_mode": "simulation",
-    "simulation_run_id": "operator-training-v1-e07cd622-406c-4cef-ba72-11eb91375c1d",
+    "simulation_run_id": "operator-training-v1-f47d8416-cbf3-457a-b59f-0a5cd36fa17e",
     "clock_regression": false,
     "error_code": null,
     "enabled": true
   },
   "firstRun": {
-    "runtime_id": "195564f3-90b0-45d7-84a0-803f1bdb24ba",
+    "runtime_id": "ba7f517c-9876-40ce-9aae-f4eeddd6a937",
     "revision": 1,
     "service_mode": "simulation",
     "state": "running",
@@ -24,7 +24,7 @@
       "effective_multiplier": 1,
       "flight_duration_seconds": 1800,
       "expected_runtime_seconds": 1800,
-      "run_id": "7e32b63f-63f8-41cc-a77b-af241ada2752",
+      "run_id": "ca6748bb-3f80-432a-a075-b7a635937108",
       "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
       "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
       "route_id": "operator-training-leg-1",
@@ -49,7 +49,7 @@
     }
   },
   "airborne": {
-    "runtime_id": "195564f3-90b0-45d7-84a0-803f1bdb24ba",
+    "runtime_id": "ba7f517c-9876-40ce-9aae-f4eeddd6a937",
     "revision": 2,
     "service_mode": "simulation",
     "state": "running",
@@ -62,7 +62,7 @@
       "effective_multiplier": 1,
       "flight_duration_seconds": 1800,
       "expected_runtime_seconds": 1800,
-      "run_id": "7e32b63f-63f8-41cc-a77b-af241ada2752",
+      "run_id": "ca6748bb-3f80-432a-a075-b7a635937108",
       "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
       "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
       "route_id": "operator-training-leg-1",
@@ -95,7 +95,7 @@
       "horizon_end_at": "2026-10-18T16:15:00.000000Z",
       "activities": [
         {
-          "record_id": "6018e163-1553-44bd-bbda-31c3f92afe82",
+          "record_id": "1462e1e1-6825-4c1d-97e8-9c46dec37b7b",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "call",
@@ -103,12 +103,12 @@
           "start_at": "2026-10-17T16:20:00.000000Z",
           "end_at": "2026-10-17T16:35:00.000000Z",
           "basis": "scheduled",
-          "call_id": "6018e163-1553-44bd-bbda-31c3f92afe82",
+          "call_id": "1462e1e1-6825-4c1d-97e8-9c46dec37b7b",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "6018e163-1553-44bd-bbda-31c3f92afe82",
+          "record_id": "1462e1e1-6825-4c1d-97e8-9c46dec37b7b",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "preparation",
@@ -116,12 +116,12 @@
           "start_at": "2026-10-17T16:10:00.000000Z",
           "end_at": "2026-10-17T16:20:00.000000Z",
           "basis": "scheduled",
-          "call_id": "6018e163-1553-44bd-bbda-31c3f92afe82",
+          "call_id": "1462e1e1-6825-4c1d-97e8-9c46dec37b7b",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "e2a14fa4-aff7-4494-883e-8d5f979e81d0",
+          "record_id": "2ce49ef4-18cd-44aa-842e-e74c3c87167a",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "call",
@@ -129,12 +129,12 @@
           "start_at": "2026-10-17T16:23:00.000000Z",
           "end_at": "2026-10-17T16:38:00.000000Z",
           "basis": "scheduled",
-          "call_id": "e2a14fa4-aff7-4494-883e-8d5f979e81d0",
+          "call_id": "2ce49ef4-18cd-44aa-842e-e74c3c87167a",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "e2a14fa4-aff7-4494-883e-8d5f979e81d0",
+          "record_id": "2ce49ef4-18cd-44aa-842e-e74c3c87167a",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "preparation",
@@ -142,12 +142,12 @@
           "start_at": "2026-10-17T16:13:00.000000Z",
           "end_at": "2026-10-17T16:23:00.000000Z",
           "basis": "scheduled",
-          "call_id": "e2a14fa4-aff7-4494-883e-8d5f979e81d0",
+          "call_id": "2ce49ef4-18cd-44aa-842e-e74c3c87167a",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "95c40a53-37e8-43a1-82e0-00f65c800157",
+          "record_id": "c992ce49-7e8b-4341-9312-9070570165c1",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "call",
@@ -155,12 +155,12 @@
           "start_at": "2026-10-17T16:26:00.000000Z",
           "end_at": "2026-10-17T16:41:00.000000Z",
           "basis": "scheduled",
-          "call_id": "95c40a53-37e8-43a1-82e0-00f65c800157",
+          "call_id": "c992ce49-7e8b-4341-9312-9070570165c1",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "95c40a53-37e8-43a1-82e0-00f65c800157",
+          "record_id": "c992ce49-7e8b-4341-9312-9070570165c1",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "preparation",
@@ -168,12 +168,12 @@
           "start_at": "2026-10-17T16:16:00.000000Z",
           "end_at": "2026-10-17T16:26:00.000000Z",
           "basis": "scheduled",
-          "call_id": "95c40a53-37e8-43a1-82e0-00f65c800157",
+          "call_id": "c992ce49-7e8b-4341-9312-9070570165c1",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "796fb4dc-9458-41c9-a0d7-9883a2e57dca",
+          "record_id": "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "call",
@@ -181,12 +181,12 @@
           "start_at": "2026-10-17T16:29:00.000000Z",
           "end_at": "2026-10-17T16:44:00.000000Z",
           "basis": "scheduled",
-          "call_id": "796fb4dc-9458-41c9-a0d7-9883a2e57dca",
+          "call_id": "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "796fb4dc-9458-41c9-a0d7-9883a2e57dca",
+          "record_id": "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "preparation",
@@ -194,12 +194,12 @@
           "start_at": "2026-10-17T16:19:00.000000Z",
           "end_at": "2026-10-17T16:29:00.000000Z",
           "basis": "scheduled",
-          "call_id": "796fb4dc-9458-41c9-a0d7-9883a2e57dca",
+          "call_id": "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "f14e0e00-2f74-4362-b43c-21c8b9fae8a0",
+          "record_id": "75a84e1a-5f02-4c5f-b35e-33dd561d7d03",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "call",
@@ -207,12 +207,12 @@
           "start_at": "2026-10-17T16:32:00.000000Z",
           "end_at": "2026-10-17T16:47:00.000000Z",
           "basis": "scheduled",
-          "call_id": "f14e0e00-2f74-4362-b43c-21c8b9fae8a0",
+          "call_id": "75a84e1a-5f02-4c5f-b35e-33dd561d7d03",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "f14e0e00-2f74-4362-b43c-21c8b9fae8a0",
+          "record_id": "75a84e1a-5f02-4c5f-b35e-33dd561d7d03",
           "version": 1,
           "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
           "kind": "preparation",
@@ -220,12 +220,12 @@
           "start_at": "2026-10-17T16:22:00.000000Z",
           "end_at": "2026-10-17T16:32:00.000000Z",
           "basis": "scheduled",
-          "call_id": "f14e0e00-2f74-4362-b43c-21c8b9fae8a0",
+          "call_id": "75a84e1a-5f02-4c5f-b35e-33dd561d7d03",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "17a922fc-bc3a-4c21-9bdf-b603a5fedc06",
+          "record_id": "1e7575ad-f858-4053-a1bc-1260c84ae6df",
           "version": 1,
           "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
           "kind": "call",
@@ -233,12 +233,12 @@
           "start_at": "2026-10-17T17:05:00.000000Z",
           "end_at": "2026-10-17T17:20:00.000000Z",
           "basis": "scheduled",
-          "call_id": "17a922fc-bc3a-4c21-9bdf-b603a5fedc06",
+          "call_id": "1e7575ad-f858-4053-a1bc-1260c84ae6df",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "17a922fc-bc3a-4c21-9bdf-b603a5fedc06",
+          "record_id": "1e7575ad-f858-4053-a1bc-1260c84ae6df",
           "version": 1,
           "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
           "kind": "preparation",
@@ -246,12 +246,12 @@
           "start_at": "2026-10-17T16:55:00.000000Z",
           "end_at": "2026-10-17T17:05:00.000000Z",
           "basis": "scheduled",
-          "call_id": "17a922fc-bc3a-4c21-9bdf-b603a5fedc06",
+          "call_id": "1e7575ad-f858-4053-a1bc-1260c84ae6df",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "e4657b2f-0222-4adc-a7e8-ba333a9da126",
+          "record_id": "4af725b9-1c2d-4b87-b023-9d7b738a2ef1",
           "version": 1,
           "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
           "kind": "call",
@@ -259,12 +259,12 @@
           "start_at": "2026-10-17T17:10:00.000000Z",
           "end_at": "2026-10-17T17:25:00.000000Z",
           "basis": "scheduled",
-          "call_id": "e4657b2f-0222-4adc-a7e8-ba333a9da126",
+          "call_id": "4af725b9-1c2d-4b87-b023-9d7b738a2ef1",
           "conference_id": null,
           "ongoing": false
         },
         {
-          "record_id": "e4657b2f-0222-4adc-a7e8-ba333a9da126",
+          "record_id": "4af725b9-1c2d-4b87-b023-9d7b738a2ef1",
           "version": 1,
           "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
           "kind": "preparation",
@@ -272,7 +272,7 @@
           "start_at": "2026-10-17T17:00:00.000000Z",
           "end_at": "2026-10-17T17:10:00.000000Z",
           "basis": "scheduled",
-          "call_id": "e4657b2f-0222-4adc-a7e8-ba333a9da126",
+          "call_id": "4af725b9-1c2d-4b87-b023-9d7b738a2ef1",
           "conference_id": null,
           "ongoing": false
         }
@@ -280,14 +280,14 @@
       "assessments": []
     },
     "schema_version": 1,
-    "store_id": "81415613-64ec-4a36-a01e-727197847d41",
-    "api_epoch": "21588b2f-9ec3-4323-949d-f6fa8da8b6a6",
+    "store_id": "953148ea-2fe9-4956-a496-7c6003d262c3",
+    "api_epoch": "e27e533b-fc9f-4873-a512-a7ff42b0fc88",
     "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
     "source_mode": "simulation",
-    "simulation_run_id": "operator-training-v1-e07cd622-406c-4cef-ba72-11eb91375c1d",
+    "simulation_run_id": "operator-training-v1-f47d8416-cbf3-457a-b59f-0a5cd36fa17e",
     "as_of": "2026-10-17T16:15:00.000000Z",
     "H": 9,
-    "generation": "8dc6520106b0973ea4fc05c5808cfe59f1e09da8333ef4650a09c4ab991a2f7c",
+    "generation": "3c618faf69b2f97aa5b090d56ab0db8051a859ce3930b7d36251d12b9a22e25c",
     "sources": [
       {
         "source": "operator",
@@ -313,8 +313,8 @@
       },
       {
         "source": "planning:lifecycle:4063022a-14a6-5c70-94b0-1d790a01311b",
-        "revision": "4ba38ff30b77f67cf21666ba6fd2c2bd7644ac56839e1405d16b41157a65d9d7",
-        "generation": "4ba38ff30b77f67cf21666ba6fd2c2bd7644ac56839e1405d16b41157a65d9d7",
+        "revision": "bbf3c0fa251b1f90e95472fec645a00adb2ea68dc510b8cc21ee4d19e502aaa0",
+        "generation": "bbf3c0fa251b1f90e95472fec645a00adb2ea68dc510b8cc21ee4d19e502aaa0",
         "input_identity": null,
         "captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "fresh",
@@ -324,9 +324,9 @@
       },
       {
         "source": "model:257b7da5-6013-5532-bf2b-cc613e75e2e2",
-        "revision": "4a0d1d5f1461031f652f3acf313e2de1509df63ff3f7f89e0dc5dcd6ec8426e4",
-        "generation": "223cd580f8ea001edfe2b335f8d7b4caaa20b651c9db714c1c47f7b0d14586d5",
-        "input_identity": "440a394ec81ce1b5f9e307c5a44406bc6f7cd7dca497cf32f5d94c2c90e86f53",
+        "revision": "b5721d6bf643b747798b2111cfb5e2fb715700e78528f2d8907228fbd31a86d2",
+        "generation": "6f4eaa70c7bf815d3bc5e1299c0d38c3c0ab5f7ba7035179b779ee0d7751d2b1",
+        "input_identity": "5e6874a7d4601e3bb7603b80641911b56939afd85df10d7e62861d44e73a3ef1",
         "captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "fresh",
         "aligned": true,
@@ -335,9 +335,9 @@
       },
       {
         "source": "model:257b7da5-6013-5532-bf2b-cc613e75e2e2:live-pop",
-        "revision": "1f8b94931f64ff595b85eb6611a34488f7dfa9bf01bf4531c4f1466ae87aca94",
-        "generation": "ea43ce13c044c0275de3a71a30581c14a9b58d0b95494ad78400cc2fc2a8a6b0",
-        "input_identity": "440a394ec81ce1b5f9e307c5a44406bc6f7cd7dca497cf32f5d94c2c90e86f53",
+        "revision": "e82f3bfdae06201065c8a46f9f369a93cf51d7623818457e4cfd47771bc32de7",
+        "generation": "6f12e58bd080eda041318fce839bc99221501e8c0bc85f5f16834b2663afeac3",
+        "input_identity": "5e6874a7d4601e3bb7603b80641911b56939afd85df10d7e62861d44e73a3ef1",
         "captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "unknown",
         "aligned": false,
@@ -349,7 +349,7 @@
     "events": [
       {
         "schema_version": 1,
-        "event_id": "fe19edce788841c68eadd74f7995a537edea20a54d0845b7cb86ac78cfef8d06",
+        "event_id": "204a555f0f81c8d2a7c6206c411489fac04cc90e699483753a2d05c9aa9d3aef",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": null,
         "kind": "call_prep",
@@ -358,7 +358,7 @@
         "end_at": "2026-10-17T15:55:00.000000Z",
         "state": "overdue",
         "provenance": "scheduled",
-        "source_ref": "f06fe1bd-27b1-45ec-a238-a2cd14ce6b70",
+        "source_ref": "c36211ad-bc63-44c8-8468-a6d84353089f",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -377,10 +377,10 @@
         "schedule_key": "3924f12cb5987ac7759bb762b5e863a108df05ee77e7eac937541ae5ae7ce7ec",
         "family_key": "",
         "dependent_versions": {
-          "f06fe1bd-27b1-45ec-a238-a2cd14ce6b70": 1
+          "c36211ad-bc63-44c8-8468-a6d84353089f": 1
         },
         "notification": {
-          "generation": "5ba5b83af1d9802decda882f8bc4726b2c59adc4cc4e54a81f13ce8fd61e714f",
+          "generation": "dcf727bea746c7f4db064ff952540ca465d292ec5e53d3f7baf22e5306b78f7e",
           "severity_generation": 2,
           "acknowledged": true,
           "acknowledged_at": "2026-10-17T16:00:00.000000Z",
@@ -396,7 +396,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "db70f1378c44c80d4f23f8f6d346e215d9d36dec5a877699a7fb9df66bc6b6eb",
+        "event_id": "467e4ccc2d0e43e502467086fa131f731eda4968bed2de2005b958a6b7706591",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": null,
         "kind": "call_start",
@@ -405,7 +405,7 @@
         "end_at": "2026-10-17T15:55:00.000000Z",
         "state": "overdue",
         "provenance": "scheduled",
-        "source_ref": "f06fe1bd-27b1-45ec-a238-a2cd14ce6b70",
+        "source_ref": "c36211ad-bc63-44c8-8468-a6d84353089f",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -424,10 +424,10 @@
         "schedule_key": "a73f52bbdc09726c54903422a603eb67ab4b801aa37c6e11e79a5dd94653df71",
         "family_key": "",
         "dependent_versions": {
-          "f06fe1bd-27b1-45ec-a238-a2cd14ce6b70": 1
+          "c36211ad-bc63-44c8-8468-a6d84353089f": 1
         },
         "notification": {
-          "generation": "f27631697596908fc390d3c52f25d2f0dbf4d310102ff53b9b4fee5bbb98b014",
+          "generation": "127d91af7005c3f94c23d0d906dfa8b385d3753cfcad917e029ce056d3078c7d",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -443,7 +443,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "183e9cadee267ab8610e50d172f1edebfc57d3e1099097e5b698b0c1090a15c1",
+        "event_id": "6611eba39fa37591fee7573d5afcbd2f3265d84acf556c66007a3b82c5dd7d3e",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_prep",
@@ -452,7 +452,7 @@
         "end_at": "2026-10-17T16:35:00.000000Z",
         "state": "active",
         "provenance": "scheduled",
-        "source_ref": "6018e163-1553-44bd-bbda-31c3f92afe82",
+        "source_ref": "1462e1e1-6825-4c1d-97e8-9c46dec37b7b",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -471,10 +471,10 @@
         "schedule_key": "0b19ff498abc1f376ccde2b42ac11a5b7cdca3ee335a8cc19cbaa69cd480911d",
         "family_key": "",
         "dependent_versions": {
-          "6018e163-1553-44bd-bbda-31c3f92afe82": 1
+          "1462e1e1-6825-4c1d-97e8-9c46dec37b7b": 1
         },
         "notification": {
-          "generation": "534904c0738c2a189ef64de472099efddf4ea4258533ea474d012b49697609ab",
+          "generation": "7f6fa884d8e2ce4a1a445576ae943cdb6a894e661a5d9fb7fc24e55c337b5ab4",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -490,7 +490,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "d0a8a591fecef6b3ac9f78b8e62ee0bf36cb921af5908a16a4667028eaca0786",
+        "event_id": "dba8dafebae36bce53cf1bee805eaf2a8d595faf8a52540c0ff90a54e54a145b",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_prep",
@@ -499,7 +499,7 @@
         "end_at": "2026-10-17T16:38:00.000000Z",
         "state": "active",
         "provenance": "scheduled",
-        "source_ref": "e2a14fa4-aff7-4494-883e-8d5f979e81d0",
+        "source_ref": "2ce49ef4-18cd-44aa-842e-e74c3c87167a",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -518,10 +518,10 @@
         "schedule_key": "848e4874acd7a0d370a081b412d99ce3d034e01b5fb0ea571c41a25dbc75bb00",
         "family_key": "",
         "dependent_versions": {
-          "e2a14fa4-aff7-4494-883e-8d5f979e81d0": 1
+          "2ce49ef4-18cd-44aa-842e-e74c3c87167a": 1
         },
         "notification": {
-          "generation": "0641685de350f15ff950768e2b4a1fb4453b619df62a79cf86ec0ba3072e66c4",
+          "generation": "81e7a1ef8b986e3e6df979d7470010a6c1c96d15f2ce1c02a2fea3d5bc6af1e8",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -547,7 +547,7 @@
         "state": "active",
         "provenance": "modeled",
         "source_ref": "model:257b7da5-6013-5532-bf2b-cc613e75e2e2",
-        "source_revision": "4a0d1d5f1461031f652f3acf313e2de1509df63ff3f7f89e0dc5dcd6ec8426e4",
+        "source_revision": "b5721d6bf643b747798b2111cfb5e2fb715700e78528f2d8907228fbd31a86d2",
         "source_captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "fresh",
         "confidence": "Modeled estimate",
@@ -582,7 +582,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "20adb591318418f91f712f492f4cf30b1e9d621ae0b424c3af06a201c4da2471",
+        "event_id": "d76b9d64116fd4725107856bd8214217fcad5d38c22a2a07375ce95ed9f1a6e6",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_prep",
@@ -591,7 +591,7 @@
         "end_at": "2026-10-17T16:41:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "95c40a53-37e8-43a1-82e0-00f65c800157",
+        "source_ref": "c992ce49-7e8b-4341-9312-9070570165c1",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -610,10 +610,10 @@
         "schedule_key": "13d0e621dad47372106619ea337ef695a388523893c2a5e8ff4191cca84ef1c1",
         "family_key": "",
         "dependent_versions": {
-          "95c40a53-37e8-43a1-82e0-00f65c800157": 1
+          "c992ce49-7e8b-4341-9312-9070570165c1": 1
         },
         "notification": {
-          "generation": "081066141b26a0728170be65deee427e6ca83265d44e3a6cb779ba960e6cbfd5",
+          "generation": "2356a42e2c302feb7862cda009b6f781d8be98f13fbac400d992fb1a4446386e",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -639,7 +639,7 @@
         "state": "upcoming",
         "provenance": "modeled",
         "source_ref": "model:257b7da5-6013-5532-bf2b-cc613e75e2e2:live-pop",
-        "source_revision": "1f8b94931f64ff595b85eb6611a34488f7dfa9bf01bf4531c4f1466ae87aca94",
+        "source_revision": "e82f3bfdae06201065c8a46f9f369a93cf51d7623818457e4cfd47771bc32de7",
         "source_captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "unknown",
         "confidence": "Modeled estimate",
@@ -674,7 +674,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "8dd776c094aaf2fa897ff3cc8f5f178433031432e7783b29094580298dcff353",
+        "event_id": "06280b77598f196c62d70045ae6dbb487d1fe91cd2dbdd7e125aa335fe969838",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_prep",
@@ -683,7 +683,7 @@
         "end_at": "2026-10-17T16:44:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "796fb4dc-9458-41c9-a0d7-9883a2e57dca",
+        "source_ref": "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -702,10 +702,10 @@
         "schedule_key": "979d8e739a4d4d5b8cb19bec7e0fa670bdb1104ab66bf250b1fd2ed0806fe8d2",
         "family_key": "",
         "dependent_versions": {
-          "796fb4dc-9458-41c9-a0d7-9883a2e57dca": 1
+          "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad": 1
         },
         "notification": {
-          "generation": "e51d52fded17621143c574ed8413a535831826b3e783c960a1f1d8b5c2f638d2",
+          "generation": "ebef1d100b25a8825f3928414e5a5ee982218292ae5348ded617a1559abcb85c",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -721,7 +721,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "95b7f8ca74031db34fc6ae03b932bf21ce720bf5fba82ad85111c2f2d99cc07e",
+        "event_id": "bee61f7b2943b8cd822100fb141a50045d98d86b7323318808a7a87d4b62e8fd",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_start",
@@ -730,7 +730,7 @@
         "end_at": "2026-10-17T16:35:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "6018e163-1553-44bd-bbda-31c3f92afe82",
+        "source_ref": "1462e1e1-6825-4c1d-97e8-9c46dec37b7b",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -749,10 +749,10 @@
         "schedule_key": "bf356fcf6bfae912f98e9daba09eb92b12ed0e04bc251ed8f86ecadaad48cdda",
         "family_key": "",
         "dependent_versions": {
-          "6018e163-1553-44bd-bbda-31c3f92afe82": 1
+          "1462e1e1-6825-4c1d-97e8-9c46dec37b7b": 1
         },
         "notification": {
-          "generation": "9c4af04e7e21def09ab2cecaa12a87cca0751f7f154c2f2f419a820028257220",
+          "generation": "c82386058de382b2b01c550b569c5bd27adb03d452ca2a673fa1602ef9a18d83",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -768,7 +768,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "fc9ec467ceb5a49877ff2d1f2192b3c60d5223d87f30bc3afc2daca69e684fdd",
+        "event_id": "8402857ba05503e2c18247dc42596658345d91a87eb189fc18a4ad6d474ac0fb",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_prep",
@@ -777,7 +777,7 @@
         "end_at": "2026-10-17T16:47:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "f14e0e00-2f74-4362-b43c-21c8b9fae8a0",
+        "source_ref": "75a84e1a-5f02-4c5f-b35e-33dd561d7d03",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -796,10 +796,10 @@
         "schedule_key": "c3456367bd638a78d318d336dff0467e24bc5d065c6dd511d14b4ca02e15f482",
         "family_key": "",
         "dependent_versions": {
-          "f14e0e00-2f74-4362-b43c-21c8b9fae8a0": 1
+          "75a84e1a-5f02-4c5f-b35e-33dd561d7d03": 1
         },
         "notification": {
-          "generation": "ec40dc40a1d9de1a245fcd0cab2afa9ed13f906a5478e8cdb16182d0d683219b",
+          "generation": "1c23d4af77a034f7fb550a118da8f6704effc819df96541a371cd4835d6fdcc9",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -815,7 +815,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "afa32a20977d22eece48876bbfc6e659c1b77bda72ef8eeb905bfba865c3d5c8",
+        "event_id": "ce40072633e958976bddc97cb81e87924c667d85bf5f296ef3f04f8b0e4a28e2",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_start",
@@ -824,7 +824,7 @@
         "end_at": "2026-10-17T16:38:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "e2a14fa4-aff7-4494-883e-8d5f979e81d0",
+        "source_ref": "2ce49ef4-18cd-44aa-842e-e74c3c87167a",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -843,10 +843,10 @@
         "schedule_key": "df79d8d8f6e32a8f074ed0c2514ffca1e5f88a3fc97734f37c9a6b91b1bfc56a",
         "family_key": "",
         "dependent_versions": {
-          "e2a14fa4-aff7-4494-883e-8d5f979e81d0": 1
+          "2ce49ef4-18cd-44aa-842e-e74c3c87167a": 1
         },
         "notification": {
-          "generation": "af7d88ce3b99528e6134b3d97309f99ef9a2c69d1223ae928ea6b7c66d70fb0f",
+          "generation": "fc4b5854fe9b40059d8a841ddf8028f354e7af6a6bbdc7d9e4ba5c913e94fa13",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -862,7 +862,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "bdda56f4cf097c5eb6ac672ebae5ac7e9c0901ef85d35c81a32f11ca00a0b187",
+        "event_id": "b626b056704f1500eb0832bf31af099b0599278c11dc35f4154249b8829b9209",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_start",
@@ -871,7 +871,7 @@
         "end_at": "2026-10-17T16:41:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "95c40a53-37e8-43a1-82e0-00f65c800157",
+        "source_ref": "c992ce49-7e8b-4341-9312-9070570165c1",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -890,10 +890,10 @@
         "schedule_key": "7e131e084f2a32a4ae0576603391a86b86ad45e4001dd5cfcb556ba599f4d29a",
         "family_key": "",
         "dependent_versions": {
-          "95c40a53-37e8-43a1-82e0-00f65c800157": 1
+          "c992ce49-7e8b-4341-9312-9070570165c1": 1
         },
         "notification": {
-          "generation": "e9e27e3b912b9e13a9e76d091a6f5e436ee286bd2d4e8de84bd66c99b59c5d80",
+          "generation": "eaa089ef1a9dfe8c9b714653c68779cb49d1ac87830f1288fb1c6337e006434b",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -909,7 +909,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "cad6b83921f9a40ec86f34ac24e58cd361f7731e105c68103b5f71a7a714d342",
+        "event_id": "ed81f250bc49e8d76a2e83a71b0da325349ca0d90d58469dcc00455ed8ae0f7e",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_start",
@@ -918,7 +918,7 @@
         "end_at": "2026-10-17T16:44:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "796fb4dc-9458-41c9-a0d7-9883a2e57dca",
+        "source_ref": "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -937,10 +937,10 @@
         "schedule_key": "606984fad593c66168655ce0df01b48885d7d095207b6c06f63950a31e7dd91f",
         "family_key": "",
         "dependent_versions": {
-          "796fb4dc-9458-41c9-a0d7-9883a2e57dca": 1
+          "964d3ad3-e8b4-40b9-9164-0e2efdcba2ad": 1
         },
         "notification": {
-          "generation": "5ae8d75908da107e853a8c041498719d4928b38578045af4afbf9522876ce11e",
+          "generation": "233ab9c4c8d71b93e611e19dc98b5fc8c8da021930ab02f6e1721b67e5fe6b75",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -956,7 +956,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "dcc5e99d14907b2427f104f80851e8e5d7fe6a3b60adf1c053606daf29794ed9",
+        "event_id": "ef5f93d3bed8e18f1e4e0a2407a2b686d5bd34ed432c6042ee76f25295b98baf",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
         "kind": "call_start",
@@ -965,7 +965,7 @@
         "end_at": "2026-10-17T16:47:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "f14e0e00-2f74-4362-b43c-21c8b9fae8a0",
+        "source_ref": "75a84e1a-5f02-4c5f-b35e-33dd561d7d03",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -984,10 +984,10 @@
         "schedule_key": "138000c97962ecdcc1896b1dde8c8d9f86bec5c9066c4b5fa558fc785851b6fd",
         "family_key": "",
         "dependent_versions": {
-          "f14e0e00-2f74-4362-b43c-21c8b9fae8a0": 1
+          "75a84e1a-5f02-4c5f-b35e-33dd561d7d03": 1
         },
         "notification": {
-          "generation": "761f5e9e9b400e4ac21d8261a8e926d5cb8223fe6b8a7642232fbe244ed6f237",
+          "generation": "f3005ad352d629cb308e32bad37013703ba6d4893fc6c16fb385329df4438e6d",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -1013,7 +1013,7 @@
         "state": "upcoming",
         "provenance": "modeled",
         "source_ref": "model:257b7da5-6013-5532-bf2b-cc613e75e2e2",
-        "source_revision": "4a0d1d5f1461031f652f3acf313e2de1509df63ff3f7f89e0dc5dcd6ec8426e4",
+        "source_revision": "b5721d6bf643b747798b2111cfb5e2fb715700e78528f2d8907228fbd31a86d2",
         "source_captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "fresh",
         "confidence": "Modeled estimate",
@@ -1058,7 +1058,7 @@
         "state": "upcoming",
         "provenance": "modeled",
         "source_ref": "model:257b7da5-6013-5532-bf2b-cc613e75e2e2",
-        "source_revision": "4a0d1d5f1461031f652f3acf313e2de1509df63ff3f7f89e0dc5dcd6ec8426e4",
+        "source_revision": "b5721d6bf643b747798b2111cfb5e2fb715700e78528f2d8907228fbd31a86d2",
         "source_captured_at": "2026-10-17T16:15:00.000000Z",
         "freshness": "fresh",
         "confidence": "Modeled estimate",
@@ -1093,7 +1093,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "cea42bad2759a83e9355b8c741123966aa25452565e019f5ac880547bb6f29fd",
+        "event_id": "166d43a1f9c6dcf3edc154fd424d7d5e2a8324e72b08722828d6501fe19f6fc9",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
         "kind": "call_prep",
@@ -1102,7 +1102,7 @@
         "end_at": "2026-10-17T17:20:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "17a922fc-bc3a-4c21-9bdf-b603a5fedc06",
+        "source_ref": "1e7575ad-f858-4053-a1bc-1260c84ae6df",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -1121,10 +1121,10 @@
         "schedule_key": "83fc4b854c649a495c513bcee833ed1eb9da5863dfdc3f083d52f203effb1d97",
         "family_key": "",
         "dependent_versions": {
-          "17a922fc-bc3a-4c21-9bdf-b603a5fedc06": 1
+          "1e7575ad-f858-4053-a1bc-1260c84ae6df": 1
         },
         "notification": {
-          "generation": "462411926fb22a3d45bdc53c533dff2c5d26212e03c613a87f3fd286b966f84b",
+          "generation": "55817da0d066aa728f2c38f0bf4e79fb737443dad812560a78eb0f370a93c786",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -1140,7 +1140,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "624b41d733e3b049912eee4d80beb229549d91bc60aab891b5282a1b410f0061",
+        "event_id": "618c7ce936db82110b1723b37e17d4567eaa74c9be60f167f1d380f6b641768b",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
         "kind": "call_prep",
@@ -1149,7 +1149,7 @@
         "end_at": "2026-10-17T17:25:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "e4657b2f-0222-4adc-a7e8-ba333a9da126",
+        "source_ref": "4af725b9-1c2d-4b87-b023-9d7b738a2ef1",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -1168,10 +1168,10 @@
         "schedule_key": "f46c7e3467a37906ccc2a4bd845746acfafa7bd786189789fedb40d5ba08b276",
         "family_key": "",
         "dependent_versions": {
-          "e4657b2f-0222-4adc-a7e8-ba333a9da126": 1
+          "4af725b9-1c2d-4b87-b023-9d7b738a2ef1": 1
         },
         "notification": {
-          "generation": "ceca4c2ff79e4b302e1da6d2309d007115154173fcaa2795944e4d5cfac2434d",
+          "generation": "3762b7e778c0075466e8482695babc14bb92fec32079c6a498fcc20e8940afd0",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -1187,7 +1187,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "bfb38f13dcb8efe9107738d50f29cf00590cea4cffc241ba38d74debf6d883da",
+        "event_id": "be7958a30f700c36a597629e4708ae1518666db95dec08c09be9eb7d61b9c3cd",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
         "kind": "call_start",
@@ -1196,7 +1196,7 @@
         "end_at": "2026-10-17T17:20:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "17a922fc-bc3a-4c21-9bdf-b603a5fedc06",
+        "source_ref": "1e7575ad-f858-4053-a1bc-1260c84ae6df",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -1215,10 +1215,10 @@
         "schedule_key": "c024068b45c9a6f9a487c3c0c7cec8fd9338c1f15d3f04451701257bd0987a16",
         "family_key": "",
         "dependent_versions": {
-          "17a922fc-bc3a-4c21-9bdf-b603a5fedc06": 1
+          "1e7575ad-f858-4053-a1bc-1260c84ae6df": 1
         },
         "notification": {
-          "generation": "91a139a3e7378b9e900b078a8af66fe40334f49edffaa1c39db73a8b427e3d72",
+          "generation": "46dc197f14dfea39e9b6916e1f7be34f7e2eef29838b6660ef021baeeb6fdd90",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -1234,7 +1234,7 @@
       },
       {
         "schema_version": 1,
-        "event_id": "02932b6a41d084855abd78f4a460b8d4973e408f1e4270e7ac1f2d7fe96e3c3b",
+        "event_id": "2c1e97a2e21d933a3babce8c0e5006baf4f42104c3eed691a12109e1fd201dd8",
         "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
         "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
         "kind": "call_start",
@@ -1243,7 +1243,7 @@
         "end_at": "2026-10-17T17:25:00.000000Z",
         "state": "upcoming",
         "provenance": "scheduled",
-        "source_ref": "e4657b2f-0222-4adc-a7e8-ba333a9da126",
+        "source_ref": "4af725b9-1c2d-4b87-b023-9d7b738a2ef1",
         "source_revision": "1",
         "source_captured_at": "2026-10-17T16:00:00.000000Z",
         "freshness": "fresh",
@@ -1262,10 +1262,10 @@
         "schedule_key": "45b045d81334d30e1ad0e8ccf3797ef265882ad81aaf5f1b86f63f3ea5a082f1",
         "family_key": "",
         "dependent_versions": {
-          "e4657b2f-0222-4adc-a7e8-ba333a9da126": 1
+          "4af725b9-1c2d-4b87-b023-9d7b738a2ef1": 1
         },
         "notification": {
-          "generation": "e210d31cb705536c9ab81b37c4f34d26f7f55e73a1fcca050a20c4bff051ff14",
+          "generation": "868e4b243909a3c1d16a50896305d69873457db3505712cf98b675877fe9ad4f",
           "severity_generation": 2,
           "acknowledged": false,
           "acknowledged_at": null,
@@ -1280,7 +1280,7 @@
         }
       }
     ],
-    "snapshot_token": "866c44ba-96f7-43fb-b182-1a442de3a2e9",
+    "snapshot_token": "ab0da2a0-eef7-43c5-9f16-39ef0c85cfeb",
     "cursor": null,
     "truncated": false
   }
