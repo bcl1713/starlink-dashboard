@@ -1,0 +1,53 @@
+{
+  "capturedAfterOwnedTeardown": true,
+  "roots": {
+    "issue-376-training-lifecycle-20261018-r2": {
+      "candidateSha": "92612aa206d1d546e1c8b515e55499a9108d0449",
+      "sourceArchiveSha256": "7dc143a0403db98975073838d7cb6aed27375da36008f079c081909dfc94b1ef",
+      "images": {
+        "backend": {
+          "tag": "starlink-operator-training-53fccaaada4f-backend:92612aa206d1d546e1c8b515e55499a9108d0449",
+          "id": "sha256:109d4f0944318fa2975704fd5aeac9e3d66314d0eda3ae98edbab8d103769e2c",
+          "revision": "92612aa206d1d546e1c8b515e55499a9108d0449"
+        },
+        "frontend": {
+          "tag": "starlink-operator-training-53fccaaada4f-frontend:92612aa206d1d546e1c8b515e55499a9108d0449",
+          "id": "sha256:8c8d4cda4dfa40e8c16aaed50300537ea1ec4a761b61ee743c79afb759cdc26c",
+          "revision": "92612aa206d1d546e1c8b515e55499a9108d0449"
+        }
+      }
+    },
+    "import-destination": {
+      "candidateSha": "92612aa206d1d546e1c8b515e55499a9108d0449",
+      "sourceArchiveSha256": "7dc143a0403db98975073838d7cb6aed27375da36008f079c081909dfc94b1ef",
+      "images": {
+        "backend": {
+          "tag": "starlink-operator-training-16a814e330ab-backend:92612aa206d1d546e1c8b515e55499a9108d0449",
+          "id": "sha256:16629e65cbf101faeb1cda25415878a2e25f8bffe5168c3dde6dbbf89fbe74ae",
+          "revision": "92612aa206d1d546e1c8b515e55499a9108d0449"
+        },
+        "frontend": {
+          "tag": "starlink-operator-training-16a814e330ab-frontend:92612aa206d1d546e1c8b515e55499a9108d0449",
+          "id": "sha256:c7dac9ad5cf7b35565a16659bb2f31983dd40708a4916f65ad953d3b6352fab1",
+          "revision": "92612aa206d1d546e1c8b515e55499a9108d0449"
+        }
+      }
+    },
+    "issue-376-training-lifecycle-20261018-r2-reset-304da7f1": {
+      "candidateSha": "92612aa206d1d546e1c8b515e55499a9108d0449",
+      "sourceArchiveSha256": "7dc143a0403db98975073838d7cb6aed27375da36008f079c081909dfc94b1ef",
+      "images": {
+        "backend": {
+          "tag": "starlink-operator-training-eb329670e4c7-backend:92612aa206d1d546e1c8b515e55499a9108d0449",
+          "id": "sha256:013d9771aae57a1e3036f6c3edb500b23a1505ef40a8d30b3dca63d388ac4d28",
+          "revision": "92612aa206d1d546e1c8b515e55499a9108d0449"
+        },
+        "frontend": {
+          "tag": "starlink-operator-training-eb329670e4c7-frontend:92612aa206d1d546e1c8b515e55499a9108d0449",
+          "id": "sha256:8166a32f12ac6a9183add810ea7a89a1ea1621a6cfcf3d3bef9c8dba23bba6b0",
+          "revision": "92612aa206d1d546e1c8b515e55499a9108d0449"
+        }
+      }
+    }
+  }
+}
