@@ -58,7 +58,9 @@ test('synthetic Operator shell at desktop, portrait and landscape with failure/r
           page.getByText('Synthetic transition advisory', { exact: true })
         ).toBeVisible();
         await expect(
-          page.getByText('Synthetic audio follow-up', { exact: true })
+          page
+            .getByRole('region', { name: 'Mission workspace', exact: true })
+            .getByText('Synthetic audio follow-up', { exact: true })
         ).toBeVisible();
         await expect(page.getByText(/Latest recorded context:/)).toContainText(
           scope.replaceAll('-', ' ')

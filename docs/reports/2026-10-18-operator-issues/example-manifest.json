@@ -1,0 +1,34 @@
+{
+  "origin": "synthetic local real SQLite store using shared deterministic fixture; not an aircraft or terminal",
+  "sourceCommit": "e257d75f326df3c31b033739ec41233ff71df208",
+  "manifest": {
+    "schema_version": 1,
+    "store_id": "1e1ba95f-1364-4873-828c-0759316629a3",
+    "api_epoch": "91506b11-dbd4-45f1-9998-8f336af3a3c5",
+    "mission_id": "demo-mission",
+    "source_mode": "simulation",
+    "simulation_run_id": "synthetic-issue-example",
+    "high_water": 4,
+    "activity_included": true,
+    "audit_included": false,
+    "projections": {
+      "operations/current.json": "current_state",
+      "operations/activity.jsonl": "activity"
+    },
+    "checksums": {
+      "operations/current.json": "ca1838f38e38b1efe07916284d8c14ce5d2b49299d5ee31db16e4c3469760f5a",
+      "operations/activity.jsonl": "9728dd0e9ad08f15a8141fe0646d4e01d3bb8a4e76ea4038a85427e81abdbfc1"
+    },
+    "component_capture_times": {
+      "operator": "2026-01-02T10:30:00.000000Z",
+      "planning": null
+    },
+    "source_capture_revisions": {
+      "operator": 4,
+      "planning": null
+    },
+    "capture_policy": "operator_snapshot; planning_associations_derived_unpinned",
+    "capture_time_basis": "operator_recorded_at_at_H; no_wall_clock_capture_time",
+    "unresolved_associations": []
+  }
+}

@@ -128,7 +128,7 @@ export function OperatorBrief({
   const issues = items.filter(
     (i) =>
       i.record.payload.entry_type === 'issue' &&
-      i.record.payload.status === 'open'
+      i.record.payload.status !== 'resolved'
   );
   const unknownTimes = items.filter(
     (i) =>

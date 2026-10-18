@@ -174,6 +174,30 @@ def conferences_proof(root):
     return proof
 
 
+def issues_proof(root):
+    proof = json.loads((root / "issues-proof.json").read_text())
+    for field in (
+        "synthetic",
+        "descriptionOnly",
+        "workaroundMonitoring",
+        "independentCapability",
+        "snapshotBoundaries",
+        "resolvedCorrection",
+        "correctionLineage",
+        "twoClients",
+        "reloadFrozenRetry",
+        "epochQuarantine",
+        "restart",
+        "multileg",
+        "noReadinessInference",
+    ):
+        if proof.get(field) is not True:
+            raise ValueError(f"Missing issue evidence: {field}")
+    if proof.get("captures") != ["1920x1080", "390x844", "844x390"]:
+        raise ValueError("Missing issue viewport evidence")
+    return proof
+
+
 def qualify(owner):
     from failures import run_failure_suite
 
@@ -209,6 +233,26 @@ def qualify(owner):
                 "test",
                 "--config",
                 "playwright.operator-journal.config.ts",
+                "--grep-invert",
+                "issue exception workflow",
+            ],
+            timeout=1220,
+            cwd=frontend,
+            env=env,
+        )
+        owner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "20m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-journal.config.ts",
+                "--grep",
+                "issue exception workflow",
             ],
             timeout=1220,
             cwd=frontend,
@@ -220,6 +264,7 @@ def qualify(owner):
             "displays": json.loads((owner.root / "displays-proof.json").read_text()),
             "communications": communications_proof(owner.root),
             "conferences": conferences_proof(owner.root),
+            "issues": issues_proof(owner.root),
         }
 
     def probe(script, destination):
@@ -246,6 +291,7 @@ def qualify(owner):
             "communications": lambda: probe(
                 "communications_probe", "communications-projections.json"
             ),
+            "issues": lambda: probe("issues_probe", "issues-projections.json"),
             "conferences": lambda: probe(
                 "conferences_probe", "conferences-projections.json"
             ),

@@ -15,6 +15,11 @@ def derive_links(record) -> set[tuple[str, str, str]]:
         return set()
     relations = {
         "call": (("conference_id", "call-to-conference"),),
+        "issue": (
+            ("call_id", "issue-to-call"),
+            ("conference_id", "issue-to-conference"),
+            ("capability_id", "issue-to-capability"),
+        ),
         "participation": (
             ("call_id", "participation-to-call"),
             ("conference_id", "participation-to-conference"),
@@ -121,6 +126,8 @@ def validate_dependencies(connection, changed) -> None:
                         raise
             expected_type = {
                 "participation-to-call": "call",
+                "issue-to-call": "call",
+                "issue-to-capability": "journal_entry",
                 "participation-resumes": "participation",
             }.get(relation, "conference")
             if (
@@ -129,6 +136,10 @@ def validate_dependencies(connection, changed) -> None:
                 or target.record_type != expected_type
                 or target.mission_id != record.mission_id
                 or source == target_id
+                or (
+                    relation == "issue-to-capability"
+                    and target.payload.entry_type != "capability_assessment"
+                )
             ):
                 conflicts.update((source, target_id))
                 continue

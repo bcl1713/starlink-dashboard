@@ -30,7 +30,8 @@ export function operatorRecordsOptions(
     | 'journal_entry'
     | 'call'
     | 'conference'
-    | 'participation' = 'journal_entry'
+    | 'participation'
+    | 'issue' = 'journal_entry'
 ) {
   return infiniteQueryOptions({
     queryKey: ['operator-records', missionId, identity, recordType],

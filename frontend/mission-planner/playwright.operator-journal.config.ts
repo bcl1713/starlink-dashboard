@@ -11,6 +11,7 @@ export default defineConfig({
     'operator-displays.spec.ts',
     'operator-communications.spec.ts',
     'operator-conferences.spec.ts',
+    'operator-issues.spec.ts',
   ],
   workers: 1,
   retries: 0,

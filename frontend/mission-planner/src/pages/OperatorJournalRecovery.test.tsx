@@ -116,3 +116,25 @@ it('shows failed targeted rereads and keeps the dirty correction until the targe
     [record.record_id],
   ]);
 });
+it('waits for conflict recovery reads before enabling explicit reconciliation', async () => {
+  vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page());
+  let release!: (value: ReturnType<typeof page>['items'][number]) => void;
+  vi.spyOn(api, 'readOperatorRecord').mockReturnValue(
+    new Promise((resolve) => {
+      release = resolve;
+    })
+  );
+  vi.spyOn(api, 'saveOperatorCommand').mockRejectedValue(
+    failure(409, 'version_conflict')
+  );
+  mount();
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit Original' }));
+  click('Save entry');
+  const reconcile = await screen.findByRole('button', {
+    name: 'Reread and use saved state',
+  });
+  expect(reconcile.hasAttribute('disabled')).toBe(true);
+  release(page().items[0]);
+  await waitFor(() => expect(reconcile.hasAttribute('disabled')).toBe(false));
+});

@@ -36,6 +36,50 @@ print('synthetic Operator SQLite media {action}')
             "-c",
             script,
         ]
+    elif action == "clock":
+        from datetime import datetime
+
+        value = datetime.fromisoformat(sys.argv[2])
+        if value.utcoffset() is None:
+            raise ValueError("Aware synthetic UTC required")
+        script = (
+            "from pathlib import Path; Path('/app/data/synthetic-issue-clock.txt').write_text("
+            + repr(value.isoformat())
+            + ")"
+        )
+        command += ["exec", "-T", "starlink-location", "python", "-c", script]
+    elif action == "restore-epoch":
+        script = """import json
+from pathlib import Path
+from datetime import datetime
+from app.operator.backup import backup_store
+from app.operator.recovery import restore_store
+from app.operator.settings import OperatorSettings
+from app.operator.store import OperatorStore
+from scenario import ScenarioClock, RUN_ID
+root=Path('/app/data')
+clock=ScenarioClock(datetime.fromisoformat((root/'synthetic-issue-clock.txt').read_text().strip()))
+settings=OperatorSettings(enabled=True,root=root/'operator',source_mode='simulation',simulation_run_id=RUN_ID)
+store=OperatorStore.open(settings,initialize=False,clock=clock)
+try:
+ old=str(store.health().api_epoch)
+ manifest=backup_store(store,directory=settings.database_path.parent/'synthetic-epoch-backups')
+ restored=restore_store(settings,manifest=manifest,clock=clock)
+ assert restored.ready and str(restored.api_epoch)!=old
+ print(json.dumps({'previous':old,'restored':str(restored.api_epoch)}))
+finally:
+ store.close()
+"""
+        command += [
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            script,
+        ]
     elif action == "restart":
         command += ["restart", "starlink-location"]
     elif action == "counts":

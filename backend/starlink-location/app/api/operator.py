@@ -138,7 +138,13 @@ def mutate(request, command, key, epoch):
             command,
             key=key,
             epoch=epoch,
-            writable_types={"journal_entry", "call", "conference", "participation"},
+            writable_types={
+                "journal_entry",
+                "call",
+                "conference",
+                "participation",
+                "issue",
+            },
         )
         return JSONResponse(
             result.receipt.canonical_response,

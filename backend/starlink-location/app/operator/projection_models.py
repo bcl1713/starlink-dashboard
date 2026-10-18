@@ -37,6 +37,18 @@ class FieldChange(StrictModel):
     after: JsonValue
 
 
+class IssueUpdate(StrictModel):
+    kind: Literal["update", "correction"]
+    root_identity: RevisionIdentity
+    corrects_identity: RevisionIdentity | None
+    selected_identity: RevisionIdentity
+    superseded_by: RevisionIdentity | None
+    effective_at: UtcTimestamp | None
+    text: str
+    is_selected: bool
+    entered_later: bool | None
+
+
 class ActivityItem(StrictModel):
     schema_version: SchemaVersion = 1
     identity: RevisionIdentity
@@ -60,6 +72,7 @@ class ActivityItem(StrictModel):
     text_changes: list[str]
     description: str
     description_origin: Literal["generated"] = "generated"
+    issue_update: IssueUpdate | None = None
 
 
 class ProjectionManifest(StrictModel):
