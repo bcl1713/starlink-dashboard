@@ -293,7 +293,7 @@ test('issue exception workflow: corrections, snapshot check-ins, drafts and rest
       });
       proof.reloadFrozenRetry = true;
       await page.unroute(`${origin}/api/v2/operator/records**`);
-      // An old-epoch uncertain command remains quarantined after an actual backend restart.
+      // Real backup/restore rotates the epoch; ordinary restart alone retains it.
       await card
         .getByRole('button', { name: 'Add update / follow up', exact: true })
         .click();
@@ -315,6 +315,8 @@ test('issue exception workflow: corrections, snapshot check-ins, drafts and rest
       await expect(
         region.getByRole('button', { name: 'Retry issue save', exact: true })
       ).toBeVisible();
+      const restoration = JSON.parse(control('restore-epoch'));
+      expect(restoration.restored).not.toBe(restoration.previous);
       control('restart');
       await ready(page);
       await page.reload();
