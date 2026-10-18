@@ -3,8 +3,9 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution, or superpowers:subagent-driven-development if the user
 > selects delegation. Steps use checkbox syntax for tracking. Native execution
-> authorized by the user after approval in PR #379 comment 6244505182. Tasks 1–7
-> implemented; Task 8 acceptance and final review in progress.
+> authorized by the user after approval in PR #379 comment 6244505182. Tasks 1–8
+> implemented, production acceptance passed, four final-review findings fixed.
+> Final-head CI and handoff checks remain required.
 
 **Goal:** Deliver #368's authoritative UTC event feed and separate local alerts,
 with durable shared acknowledgment and bounded reconnect behavior.

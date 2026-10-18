@@ -1,21 +1,21 @@
 {
-  "candidateSha": "5d399811f40d107bf0088456a175518119519077",
+  "candidateSha": "7d0c61fde80a1dd541474d54a812ac4e98a932c8",
   "project": "starlink-operator-events-368",
   "checksPassed": true,
   "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
   "images": {
     "backend": {
-      "tag": "starlink-operator-events-368-backend:5d399811f40d107bf0088456a175518119519077",
-      "id": "sha256:4c001d166b836ba9fad6d5e2075a36da4faaeea9f935cd4575db69a0f25374e9",
-      "revision": "5d399811f40d107bf0088456a175518119519077"
+      "tag": "starlink-operator-events-368-backend:7d0c61fde80a1dd541474d54a812ac4e98a932c8",
+      "id": "sha256:25486e33642157be9b2a84a88fdbd3db9e3a7ba8f71478367410e6cc277d0d6a",
+      "revision": "7d0c61fde80a1dd541474d54a812ac4e98a932c8"
     },
     "frontend": {
-      "tag": "starlink-operator-events-368-frontend:5d399811f40d107bf0088456a175518119519077",
-      "id": "sha256:53556aa08a5805c08b517d1ea05e146255410ac8f04913f5254cb35397d1e879",
-      "revision": "5d399811f40d107bf0088456a175518119519077"
+      "tag": "starlink-operator-events-368-frontend:7d0c61fde80a1dd541474d54a812ac4e98a932c8",
+      "id": "sha256:ccbd469aa7eb34e00bd1140e0c396715e8a9c69d471b5cabbd0dc8cbb4443943",
+      "revision": "7d0c61fde80a1dd541474d54a812ac4e98a932c8"
     }
   },
-  "sourceArchiveSha256": "f603d7124533ab32b116bf8780c50737b73e278f90065790f4845099e4126223",
+  "sourceArchiveSha256": "91081472161a639815ea008af6edaa4b814db164c132f685636ef11f2a2dc6c9",
   "qualification": {
     "eventsBackend": {
       "synthetic": true,
@@ -75,6 +75,14 @@
         "restartPersistence": true,
         "browserErrors": [],
         "completed": true
+      },
+      "lanHttp": {
+        "actualNonSecureOrigin": true,
+        "secureContext": false,
+        "randomUUIDAbsent": true,
+        "timelineRendered": true,
+        "acknowledgmentCommitted": true,
+        "browserErrors": []
       }
     },
     "storageFailures": {
@@ -151,34 +159,34 @@
       "conferenceLifecycleUnchanged": true,
       "issueCapabilityLifecycleUnchanged": true,
       "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
-      "telemetryZipSha256Before": "4539c2adf8132c2c3b2b5a1bcc94daab0185288c9c5426ab8ee7ab389801e3a0",
-      "telemetryZipSha256After": "4539c2adf8132c2c3b2b5a1bcc94daab0185288c9c5426ab8ee7ab389801e3a0",
+      "telemetryZipSha256Before": "11722f720dc569da8d761b95f4f2121874d602326e1ae39d68404e32d673ea03",
+      "telemetryZipSha256After": "11722f720dc569da8d761b95f4f2121874d602326e1ae39d68404e32d673ea03",
       "captureIdentitiesAndRevisionsUnchanged": true,
       "telemetryManifest": {
         "artifact_kind": "telemetry",
         "legs": [
           {
             "checksum": {
-              "events.csv": "56813fe3e000eb7b6c1e27df1333fc1252b2b6effae115a748dd8170e9070a23",
+              "events.csv": "f5294d207e99a83eea5e787a425761f52fa126152efb0054f45d8fa6c06d9167",
               "observations.csv": "f8e3d4a98b515fd9bc529dc224496f71cd453fcd7cb36a3befaeb4f36a292551"
             },
             "complete": false,
             "end": "2026-10-17T16:36:41+00:00",
             "leg_id": "synthetic-leg-1",
             "path": "legs/001",
-            "revision": "aa76bb39b5599d4557952bb33b055b9eea2f48397a812b1d707945d1eb7e860b",
+            "revision": "41650920d5a8efedd5c8a8ab850e49613d5dfebc030e3acf8cc661be4da308be",
             "start": "2026-10-17T15:35:01+00:00"
           },
           {
             "checksum": {
-              "events.csv": "b8518361f92f398c760c79230616fc0fbcc841775d0b74b7274e76cd574443d3",
+              "events.csv": "cce84f9ecfe3e58b0aadd8801f5240d63c87d0b775b5539b49226e694f94a261",
               "observations.csv": "e102208ec97220e15c79fab2b9bf6f83c4a6fa8ec44b8ee97f8fe764906a1926"
             },
             "complete": false,
             "end": "2026-10-17T17:26:41+00:00",
             "leg_id": "synthetic-leg-2",
             "path": "legs/002",
-            "revision": "c6728cc4a7efefa5418e7371cfca7c35622127670210815ebee0a6b3720fcff9",
+            "revision": "24a5d8c75b17f651a4d4e3cc65651fd630139e5ee43534f9fee1c3accd15b93d",
             "start": "2026-10-17T16:25:01+00:00"
           }
         ],
