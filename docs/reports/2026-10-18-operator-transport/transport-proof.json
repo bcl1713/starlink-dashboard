@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "captures": [
+    "1920x1080",
+    "390x844",
+    "844x390"
+  ],
+  "appliedOnly": true,
+  "independentReports": true,
+  "multiService": true,
+  "retrospectiveCorrection": true,
+  "unknownActualRouting": true,
+  "activeCallAdvisory": true,
+  "twoClientConflict": true,
+  "lostReceipt": true,
+  "offlineReconnect": true,
+  "crossMission": true,
+  "linkRemoveRestore": true,
+  "lanHttp": true,
+  "staleUnknown": true,
+  "realLiveEta": true,
+  "restart": true
+}

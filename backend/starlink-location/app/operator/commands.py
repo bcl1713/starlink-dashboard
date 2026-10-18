@@ -11,6 +11,7 @@ from .models import CommandReceipt, CreateRecord, RecordInput, SavedRecord
 from .provenance import SourceProvenance
 from .queries import get_record
 from .references import derive_links, validate_dependencies
+from .transport_actions import transport_audit_reason, validate_transport_update
 
 
 def receipt_for_key(connection, key, request_hash):
@@ -48,6 +49,7 @@ def execute_in_transaction(
             raise OperatorError("invalid_transition")
     if command.operation in ("create", "update"):
         command.validate_for_acceptance(clock)
+        validate_transport_update(current, command)
         validate_conference_update(current, command, clock)
         validate_issue_update(connection, current, command, clock)
         content = {name: getattr(command, name) for name in RecordInput.model_fields}
@@ -62,7 +64,8 @@ def execute_in_transaction(
     reason_origin = "operator" if reason else "automatic"
     if not reason and command.operation in ("create", "update"):
         reason = (
-            issue_audit_reason(current, command)
+            transport_audit_reason(current, command)
+            or issue_audit_reason(current, command)
             or conference_audit_reason(current, command)
             or ""
         )

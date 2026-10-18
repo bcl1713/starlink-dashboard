@@ -24,6 +24,7 @@ def test_new_store_contains_notification_constraints(clock):
         assert db.execute("SELECT version FROM schema_migrations").fetchall() == [
             (1,),
             (2,),
+            (3,),
         ]
         assert db.execute("SELECT count(*) FROM event_acknowledgments").fetchone() == (
             0,
@@ -41,6 +42,7 @@ def test_existing_store_requires_explicit_upgrade(clock):
         assert db.execute("SELECT version FROM schema_migrations").fetchall() == [
             (1,),
             (2,),
+            (3,),
         ]
 
 

@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
-from .common import SchemaVersion, StrictModel
+from .common import RecordId, SchemaVersion, StrictModel
 from .models import AuditNote, PositiveVersion, RecordInput
 from .payloads import (
     CallPayload,
@@ -13,6 +13,7 @@ from .payloads import (
     JournalPayload,
     ParticipationPayload,
 )
+from .transport_models import TransportDecisionPayload
 
 
 class JournalCreate(RecordInput):
@@ -116,11 +117,33 @@ class IssueUpdate(IssueCreate):
     audit_note: AuditNote | None = None
 
 
+class TransportDecisionCreate(RecordInput):
+    record_type: Literal["transport_decision"]
+    payload: TransportDecisionPayload
+    operator_label: str | None = Field(default=None, max_length=200)
+
+
+class TransportDecisionUpdate(TransportDecisionCreate):
+    expected_version: PositiveVersion
+    audit_note: AuditNote | None = None
+    replacement_check_row_ids: list[RecordId] = Field(default_factory=list)
+
+
 PublicCreate = Annotated[
-    JournalCreate | CallCreate | ConferenceCreate | ParticipationCreate | IssueCreate,
+    JournalCreate
+    | CallCreate
+    | ConferenceCreate
+    | ParticipationCreate
+    | IssueCreate
+    | TransportDecisionCreate,
     Field(discriminator="record_type"),
 ]
 PublicUpdate = Annotated[
-    JournalUpdate | CallUpdate | ConferenceUpdate | ParticipationUpdate | IssueUpdate,
+    JournalUpdate
+    | CallUpdate
+    | ConferenceUpdate
+    | ParticipationUpdate
+    | IssueUpdate
+    | TransportDecisionUpdate,
     Field(discriminator="record_type"),
 ]

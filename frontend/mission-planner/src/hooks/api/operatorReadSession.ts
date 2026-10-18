@@ -31,7 +31,8 @@ export function operatorRecordsOptions(
     | 'call'
     | 'conference'
     | 'participation'
-    | 'issue' = 'journal_entry'
+    | 'issue'
+    | 'transport_decision' = 'journal_entry'
 ) {
   return infiniteQueryOptions({
     queryKey: ['operator-records', missionId, identity, recordType],

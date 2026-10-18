@@ -4,23 +4,10 @@ from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from .common import Identifier, RecordId, SchemaVersion, StrictModel
+from .common import RecordId
+from .payload_base import PayloadBase
 from .time_models import UtcTimestamp
-
-
-class PayloadBase(StrictModel):
-    schema_version: SchemaVersion = 1
-    title: str = Field(min_length=1, max_length=200)
-    note: str = Field(default="", max_length=8000)
-    previous_leg_id: Identifier | None = None
-    next_leg_id: Identifier | None = None
-
-    @field_validator("title")
-    @classmethod
-    def nonblank_title(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("Title cannot be blank")
-        return value
+from .transport_models import TransportDecisionPayload
 
 
 class JournalNotePayload(PayloadBase):
@@ -165,6 +152,7 @@ OperatorPayload = Annotated[
     | ParticipationPayload
     | IssuePayload
     | RiskPayload
-    | TransportReportPayload,
+    | TransportReportPayload
+    | TransportDecisionPayload,
     Field(discriminator="entry_type"),
 ]

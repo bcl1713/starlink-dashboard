@@ -37,6 +37,7 @@ RecordType = Literal[
     "issue",
     "risk",
     "transport_report",
+    "transport_decision",
 ]
 Operation = Literal["create", "update", "remove", "restore"]
 PositiveVersion = Annotated[int, Field(strict=True, ge=1)]
@@ -68,6 +69,10 @@ class RecordInput(StrictModel):
 
     def validate_for_acceptance(self, clock: Clock) -> None:
         self.time.validate_for_acceptance(clock)
+        if self.record_type == "transport_decision":
+            from .transport_actions import validate_transport_times
+
+            validate_transport_times(self, clock)
         if self.payload.entry_type == "capability_assessment":
             from datetime import timedelta
 
@@ -104,6 +109,7 @@ class CreateRecord(RecordInput):
 
 
 class UpdateRecord(RecordInput):
+    replacement_check_row_ids: list[RecordId] = Field(default_factory=list)
     operation: Literal["update"] = "update"
     record_id: RecordId
     expected_version: PositiveVersion

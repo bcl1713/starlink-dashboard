@@ -104,6 +104,38 @@ def probe(root):
             if r.payload.entry_type in ("issue", "capability_assessment")
         }
 
+    service.execute(
+        CreateRecord.model_validate(
+            dict(
+                base,
+                record_type="transport_decision",
+                payload={
+                    "entry_type": "transport_decision",
+                    "title": "Synthetic service move",
+                    "services": [
+                        {
+                            "row_id": str(uuid4()),
+                            "service": name,
+                            "applied": {"transport": "Ka"},
+                        }
+                        for name in ("VTC", "IPTV")
+                    ],
+                },
+            )
+        ),
+        key=str(uuid4()),
+        epoch=epoch,
+    )
+
+    def transport_records():
+        return {
+            str(r.record_id): r.model_dump(mode="json")
+            for r in service.list(RecordFilter(mission_id=mission.id)).items
+            if r.record_type == "transport_decision"
+        }
+
+    before_transport = transport_records()
+
     before_issues = issue_records()
 
     def conference_records():
@@ -165,9 +197,11 @@ def probe(root):
             raise AssertionError("Simulation export accepted by operational builder")
         except ValueError as error:
             assert "simulation" in str(error)
+        assert transport_records() == before_transport
         assert conference_records() == before_conferences
         assert issue_records() == before_issues
         return {
+            "transportDecisionLifecycleUnchanged": True,
             "conferenceLifecycleUnchanged": True,
             "issueCapabilityLifecycleUnchanged": True,
             "fixture": "separately generated synthetic operational-format input; never relabeled simulation",

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "record_type": "transport_decision",
+  "mission_id": "synthetic-mission-a",
+  "leg_id": null,
+  "scope": "mission",
+  "time": {
+    "occurred_at": null,
+    "ended_at": null,
+    "precision": "unknown",
+    "end_state": "unknown",
+    "planned_start_at": "2026-10-17T16:50:00.000000Z",
+    "planned_end_at": null
+  },
+  "payload": {
+    "schema_version": 1,
+    "title": "Synthetic IPTV 1920, Secure voice",
+    "note": "",
+    "previous_leg_id": null,
+    "next_leg_id": null,
+    "entry_type": "transport_decision",
+    "services": [
+      {
+        "row_id": "e404014d-616c-47ab-b894-e0aecc2712dd",
+        "service": "Synthetic IPTV 1920",
+        "intended": null,
+        "requested": {
+          "transport": "X",
+          "time": {
+            "at": null,
+            "precision": "unknown"
+          }
+        },
+        "applied": {
+          "transport": "Ka",
+          "time": {
+            "at": null,
+            "precision": "unknown"
+          }
+        },
+        "checked": {
+          "time": {
+            "at": null,
+            "precision": "unknown"
+          },
+          "result": "satisfactory",
+          "note": ""
+        }
+      },
+      {
+        "row_id": "dc758bf3-3a1b-4c5a-b3db-ad3c0649d3e6",
+        "service": "Secure voice",
+        "intended": {
+          "transport": "Starshield"
+        },
+        "requested": null,
+        "applied": null,
+        "checked": null
+      }
+    ],
+    "reason": "Synthetic bandwidth preservation",
+    "call_id": "37a4861e-c07e-4fa6-b841-bd8b91053cf4",
+    "conference_id": "41b15a7a-f9de-4cf1-8161-665aea355c30"
+  },
+  "record_id": "198ad598-102c-42d5-852a-c88cd384fb59",
+  "version": 2,
+  "previous_version": 1,
+  "journal_seq": 32,
+  "command_id": "1f6bb700-9a5d-48dd-9d89-fc1b80aa97a7",
+  "operation": "update",
+  "reason": "Transport decision corrected",
+  "reason_origin": "automatic",
+  "deleted": false,
+  "recorded_at": "2026-10-17T16:45:00.000000Z",
+  "author": {
+    "backend": "restricted-access operator",
+    "operator_label": null
+  },
+  "provenance": {
+    "kind": "operator_reported",
+    "source_mode": "simulation",
+    "observed_at": null,
+    "predicted_at": null,
+    "source_ref": null,
+    "mutation_origin": "interactive"
+  }
+}

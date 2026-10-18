@@ -8,6 +8,7 @@ from .event_ledger import identity, reconcile
 from .event_models import EventSnapshot, OperationalEvent, SourceCapture
 from .event_projection import derive_events
 from .maintenance import capacity_status
+from .transport_review import derive_transport_review
 
 
 def build_snapshot(runtime, mission_id, adapter):
@@ -129,6 +130,9 @@ def build_snapshot(runtime, mission_id, adapter):
                 historical.notification.eligible = False
                 historical.notification.acknowledgment_available = False
                 events.append(historical)
+        transport_review = derive_transport_review(
+            inputs.records, events, sources, as_of=now, H=inputs.H
+        )
     events = [
         e
         for e in events
@@ -159,6 +163,7 @@ def build_snapshot(runtime, mission_id, adapter):
             inputs.api_epoch, inputs.H, [s.model_dump(mode="json") for s in sources]
         ),
         sources=sources,
+        transport_review=transport_review,
         events=events,
         coverage=coverage,
     )

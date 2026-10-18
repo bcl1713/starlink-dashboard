@@ -1,3 +1,4 @@
+import type { TransportReviewData } from './operatorTransport';
 export interface EventNotification {
   generation: string | null;
   severity_generation: number;
@@ -66,6 +67,7 @@ export interface SourceCapture {
   reason: string | null;
 }
 export interface EventSnapshot {
+  transport_review?: TransportReviewData | null;
   schema_version: 1;
   store_id: string;
   api_epoch: string;

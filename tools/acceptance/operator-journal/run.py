@@ -547,14 +547,23 @@ def qualify(owner):
 
 
 def run(
-    candidate, project, evidence, *, qualification=qualify, events=False, models=False
+    candidate,
+    project,
+    evidence,
+    *,
+    qualification=qualify,
+    events=False,
+    models=False,
+    transport=False,
 ):
     validate_candidate(ROOT, candidate)
     evidence = Path(evidence).resolve()
     if evidence.exists():
         raise ValueError("Use a new evidence directory reserved for this run")
     owner = Owner(project, evidence)
-    if models:
+    if transport:
+        owner.deadline += 1800
+    if models or transport:
         owner.env["OPERATOR_MODEL_ALERTS_ACCEPTANCE"] = "true"
     if events:
         owner.env["OPERATOR_EVENTS_ACCEPTANCE"] = "true"
@@ -570,6 +579,10 @@ def run(
     try:
         owner.admit()
         report.update(build_candidate(owner, candidate))
+        if transport:
+            from transport_qualification import qualify_transport
+
+            qualification = qualify_transport
         report["qualification"] = (
             qualify_models if models else qualify_events if events else qualification
         )(owner)
@@ -618,6 +631,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Qualify normal production modeled-restriction warnings",
     )
+    parser.add_argument(
+        "--transport",
+        action="store_true",
+        help="Qualify transport decisions with real model inputs",
+    )
     args = parser.parse_args()
     print(
         json.dumps(
@@ -627,6 +645,7 @@ if __name__ == "__main__":
                 args.evidence,
                 events=args.events,
                 models=args.model_alerts,
+                transport=args.transport,
             ),
             indent=2,
         )

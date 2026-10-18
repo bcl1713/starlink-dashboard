@@ -20,13 +20,18 @@ def upgrade_store(settings, *, clock):
             )
             connection = store._connection()
             try:
+                connection.execute("PRAGMA foreign_keys=OFF")
                 connection.execute("BEGIN IMMEDIATE")
                 apply_migrations(connection, clock=clock, upgrade=True)
+                from .recovery import validate_connection
+
+                validate_connection(connection, clock=clock)
                 connection.commit()
             except BaseException:
                 connection.rollback()
                 raise
             finally:
+                connection.execute("PRAGMA foreign_keys=ON")
                 connection.close()
             store._allow_legacy = False
             store._verify()

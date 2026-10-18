@@ -1,3 +1,4 @@
+import { createClientId } from '@/lib/clientId';
 import { useEffect, useRef, useState } from 'react';
 import {
   operatorIdentity,
@@ -34,7 +35,8 @@ export function useOperatorJournal(
     | 'call'
     | 'conference'
     | 'participation'
-    | 'issue' = 'journal_entry',
+    | 'issue'
+    | 'transport_decision' = 'journal_entry',
   options: { durable?: boolean } = {}
 ) {
   const client = useQueryClient();
@@ -282,7 +284,7 @@ export function useOperatorJournal(
     const request = {
       command: frozen,
       draftKey: context.draftKey,
-      key: crypto.randomUUID(),
+      key: createClientId(),
       epoch: health.data.api_epoch,
       identity: session.current,
     };

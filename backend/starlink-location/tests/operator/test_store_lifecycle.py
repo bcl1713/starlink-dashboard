@@ -209,6 +209,7 @@ def test_migrations_are_checksummed_and_idempotent(clock):
         assert db.execute("SELECT version FROM schema_migrations").fetchall() == [
             (1,),
             (2,),
+            (3,),
         ]
         db.execute("UPDATE schema_migrations SET checksum='bad'")
         with pytest.raises(OperatorError):
