@@ -1,0 +1,45 @@
+{
+  "conferenceLifecycleUnchanged": true,
+  "issueCapabilityLifecycleUnchanged": true,
+  "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
+  "telemetryZipSha256Before": "4539c2adf8132c2c3b2b5a1bcc94daab0185288c9c5426ab8ee7ab389801e3a0",
+  "telemetryZipSha256After": "4539c2adf8132c2c3b2b5a1bcc94daab0185288c9c5426ab8ee7ab389801e3a0",
+  "captureIdentitiesAndRevisionsUnchanged": true,
+  "telemetryManifest": {
+    "artifact_kind": "telemetry",
+    "legs": [
+      {
+        "checksum": {
+          "events.csv": "56813fe3e000eb7b6c1e27df1333fc1252b2b6effae115a748dd8170e9070a23",
+          "observations.csv": "f8e3d4a98b515fd9bc529dc224496f71cd453fcd7cb36a3befaeb4f36a292551"
+        },
+        "complete": false,
+        "end": "2026-10-17T16:36:41+00:00",
+        "leg_id": "synthetic-leg-1",
+        "path": "legs/001",
+        "revision": "aa76bb39b5599d4557952bb33b055b9eea2f48397a812b1d707945d1eb7e860b",
+        "start": "2026-10-17T15:35:01+00:00"
+      },
+      {
+        "checksum": {
+          "events.csv": "b8518361f92f398c760c79230616fc0fbcc841775d0b74b7274e76cd574443d3",
+          "observations.csv": "e102208ec97220e15c79fab2b9bf6f83c4a6fa8ec44b8ee97f8fe764906a1926"
+        },
+        "complete": false,
+        "end": "2026-10-17T17:26:41+00:00",
+        "leg_id": "synthetic-leg-2",
+        "path": "legs/002",
+        "revision": "c6728cc4a7efefa5418e7371cfca7c35622127670210815ebee0a6b3720fcff9",
+        "start": "2026-10-17T16:25:01+00:00"
+      }
+    ],
+    "mission_id": "synthetic-mission-a",
+    "partial": true,
+    "schema_version": 1,
+    "source_mode": "live"
+  },
+  "planningCsvSemanticSha256Before": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+  "planningCsvSemanticSha256After": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+  "planningComparison": "existing combined timeline CSV; generated-at header excluded",
+  "simulationExportRejected": true
+}

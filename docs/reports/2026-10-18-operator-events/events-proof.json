@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "captures": [
+    "1920x1080",
+    "390x844",
+    "844x390"
+  ],
+  "tenMinutePrep": true,
+  "protectedUnknown": true,
+  "timelineIndependent": true,
+  "hiddenTab": true,
+  "boundedCatchup": true,
+  "scheduleMoved": true,
+  "cancelSuppressed": true,
+  "twoClients": true,
+  "acknowledgment": true,
+  "actualPopPrediction": true,
+  "predictionChanged": true,
+  "unavailableSources": true,
+  "draftPreserved": true,
+  "offlineReconnect": true,
+  "restart": true,
+  "sameBrowserDedup": true,
+  "localOnly": true
+}

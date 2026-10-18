@@ -1,0 +1,209 @@
+{
+  "candidateSha": "5d399811f40d107bf0088456a175518119519077",
+  "project": "starlink-operator-events-368",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-events-368-backend:5d399811f40d107bf0088456a175518119519077",
+      "id": "sha256:4c001d166b836ba9fad6d5e2075a36da4faaeea9f935cd4575db69a0f25374e9",
+      "revision": "5d399811f40d107bf0088456a175518119519077"
+    },
+    "frontend": {
+      "tag": "starlink-operator-events-368-frontend:5d399811f40d107bf0088456a175518119519077",
+      "id": "sha256:53556aa08a5805c08b517d1ea05e146255410ac8f04913f5254cb35397d1e879",
+      "revision": "5d399811f40d107bf0088456a175518119519077"
+    }
+  },
+  "sourceArchiveSha256": "f603d7124533ab32b116bf8780c50737b73e278f90065790f4845099e4126223",
+  "qualification": {
+    "eventsBackend": {
+      "synthetic": true,
+      "oneDurableAcknowledgment": true,
+      "operationsUnchanged": true,
+      "backupRestore": true,
+      "commitCrashBefore": true,
+      "commitCrashAfter": true
+    },
+    "eventsBrowser": {
+      "events": {
+        "synthetic": true,
+        "timelineIndependent": true,
+        "tenMinutePrep": true,
+        "scheduleMoved": true,
+        "cancelSuppressed": true,
+        "protectedUnknown": true,
+        "actualPopPrediction": true,
+        "predictionChanged": true,
+        "twoClients": true,
+        "acknowledgment": true,
+        "boundedCatchup": true,
+        "offlineReconnect": true,
+        "restart": true,
+        "unavailableSources": true,
+        "localOnly": true,
+        "draftPreserved": true,
+        "sameBrowserDedup": true,
+        "hiddenTab": true,
+        "captures": [
+          "1920x1080",
+          "390x844",
+          "844x390"
+        ]
+      },
+      "overviewCompatibility": {
+        "synthetic": true,
+        "clock": "2026-10-17T16:00:00Z",
+        "captures": [
+          "display-controls-1920x1080.png",
+          "display-presets-1920x1080.png",
+          "display-controls-390x844.png",
+          "display-presets-390x844.png",
+          "display-controls-844x390.png",
+          "display-presets-844x390.png"
+        ],
+        "sameBrowserRecenterAcknowledged": true,
+        "separateBrowserCannotRecenter": true,
+        "disjointConcurrentChanges": true,
+        "conflictRejected": true,
+        "historySynced": true,
+        "overviewRenderedVisibilitySynced": true,
+        "presetRoundtrip": true,
+        "receiptRequired": true,
+        "offlineFailureDoesNotConfirm": true,
+        "unacknowledgedTimeoutAndStaleTarget": true,
+        "restartPersistence": true,
+        "browserErrors": [],
+        "completed": true
+      }
+    },
+    "storageFailures": {
+      "crashes": [
+        {
+          "barrier": "before_commit",
+          "beforeRetryCounts": [
+            6,
+            6,
+            6
+          ],
+          "afterRetryCounts": [
+            7,
+            7,
+            7
+          ],
+          "walBytes": 0,
+          "childReaped": true
+        },
+        {
+          "barrier": "after_commit",
+          "beforeRetryCounts": [
+            7,
+            7,
+            7
+          ],
+          "afterRetryCounts": [
+            7,
+            7,
+            7
+          ],
+          "walBytes": 49472,
+          "childReaped": true
+        }
+      ],
+      "recovery": {
+        "backupH": 6,
+        "preRestoreH": 7,
+        "restoredH": 6,
+        "epochRotated": true,
+        "oldEpochRejected": true,
+        "failClosed": {
+          "missing": "store_recovery_required",
+          "schema": "unsupported_schema"
+        }
+      },
+      "media": [
+        {
+          "physicalFailure": "read-only",
+          "error": "store_unavailable",
+          "countsUnchanged": [
+            6,
+            6,
+            6
+          ],
+          "reopenReady": true,
+          "filesystem": "private 4 MiB tmpfs"
+        },
+        {
+          "physicalFailure": "full",
+          "error": "commit_outcome_unknown",
+          "countsUnchanged": [
+            6,
+            6,
+            6
+          ],
+          "reopenReady": true,
+          "filesystem": "private 4 MiB tmpfs"
+        }
+      ],
+      "baselinePagesAfterFailures": true
+    },
+    "existingExports": {
+      "conferenceLifecycleUnchanged": true,
+      "issueCapabilityLifecycleUnchanged": true,
+      "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
+      "telemetryZipSha256Before": "4539c2adf8132c2c3b2b5a1bcc94daab0185288c9c5426ab8ee7ab389801e3a0",
+      "telemetryZipSha256After": "4539c2adf8132c2c3b2b5a1bcc94daab0185288c9c5426ab8ee7ab389801e3a0",
+      "captureIdentitiesAndRevisionsUnchanged": true,
+      "telemetryManifest": {
+        "artifact_kind": "telemetry",
+        "legs": [
+          {
+            "checksum": {
+              "events.csv": "56813fe3e000eb7b6c1e27df1333fc1252b2b6effae115a748dd8170e9070a23",
+              "observations.csv": "f8e3d4a98b515fd9bc529dc224496f71cd453fcd7cb36a3befaeb4f36a292551"
+            },
+            "complete": false,
+            "end": "2026-10-17T16:36:41+00:00",
+            "leg_id": "synthetic-leg-1",
+            "path": "legs/001",
+            "revision": "aa76bb39b5599d4557952bb33b055b9eea2f48397a812b1d707945d1eb7e860b",
+            "start": "2026-10-17T15:35:01+00:00"
+          },
+          {
+            "checksum": {
+              "events.csv": "b8518361f92f398c760c79230616fc0fbcc841775d0b74b7274e76cd574443d3",
+              "observations.csv": "e102208ec97220e15c79fab2b9bf6f83c4a6fa8ec44b8ee97f8fe764906a1926"
+            },
+            "complete": false,
+            "end": "2026-10-17T17:26:41+00:00",
+            "leg_id": "synthetic-leg-2",
+            "path": "legs/002",
+            "revision": "c6728cc4a7efefa5418e7371cfca7c35622127670210815ebee0a6b3720fcff9",
+            "start": "2026-10-17T16:25:01+00:00"
+          }
+        ],
+        "mission_id": "synthetic-mission-a",
+        "partial": true,
+        "schema_version": 1,
+        "source_mode": "live"
+      },
+      "planningCsvSemanticSha256Before": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+      "planningCsvSemanticSha256After": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+      "planningComparison": "existing combined timeline CSV; generated-at header excluded",
+      "simulationExportRejected": true
+    },
+    "node": "v22.22.2"
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}
