@@ -34,7 +34,7 @@ class ModelInputsFixture:
             else {
                 "now": clock.now().isoformat(),
                 "longitude": -5,
-                "route_shift": 0,
+                "route_shift": 14,
                 "satellite_longitude": 90,
                 "stale": False,
                 "invalid_ka": False,

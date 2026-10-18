@@ -61,7 +61,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
   };
   await raw(request, {
     now: '2026-10-17T16:10:00Z',
-    route_shift: 0,
+    route_shift: 14,
     stale: false,
     missing_pop: false,
     active: true,
@@ -73,6 +73,10 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     (e) => e.kind === 'restriction' && e.transport === 'X' && e.active
   )!;
   expect(restriction?.notification.eligible).toBe(true);
+  const approaching =
+    Date.parse(restriction.due_at!) - Date.parse(snapshot.as_of);
+  expect(approaching).toBeGreaterThan(0);
+  expect(approaching).toBeLessThanOrEqual(300_000);
   expect(restriction.protected_participation_ids.length).toBe(3);
   expect(
     snapshot.events.some(
@@ -271,7 +275,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
         .every((e) => !e.active && !e.notification.eligible)
     ).toBe(true);
     proof.deactivationRetires = true;
-    await raw(request, { active: true, route_shift: 0 });
+    await raw(request, { active: true, route_shift: 14 });
     await contexts[0].setOffline(true);
     const offlinePage = contexts[0].pages()[0];
     await offlinePage
