@@ -70,7 +70,16 @@ try:
 finally:
  store.close()
 """
-        command += ["exec", "-T", "starlink-location", "python", "-c", script]
+        command += [
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            script,
+        ]
     elif action == "restart":
         command += ["restart", "starlink-location"]
     elif action == "counts":
