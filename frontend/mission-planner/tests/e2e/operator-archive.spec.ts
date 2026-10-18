@@ -36,7 +36,16 @@ test('single mission ZIP archive uses existing export and import controls', asyn
         dialog.getByRole('heading', { name: 'Export Mission' })
       ).toBeVisible();
       await noOverflow(page);
+      await dialog.evaluate(async (node) => {
+        await Promise.all(
+          node
+            .getAnimations({ subtree: true })
+            .map((animation) => animation.finished.catch(() => {}))
+        );
+      });
+      await expect(dialog).toBeInViewport({ ratio: 1 });
       await page.screenshot({
+        animations: 'disabled',
         path: join(evidence, `archive-export-${width}x${height}.png`),
         fullPage: false,
       });

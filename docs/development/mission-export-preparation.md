@@ -47,10 +47,10 @@ from prior sealed revisions even after the rolling buffer has expired.
 
 ## Complete mission archive and plan transfer
 
-The normal mission ZIP also captures the enabled Operator journal and existing
-#349 per-leg telemetry archives. It preserves customer PDF generation and the
-same planning/import files and controls. Journal files are checksummed under
-`operations/`; existing telemetry members retain their schemas under
+The normal mission ZIP also captures the enabled Operator journal and the
+per-leg telemetry archives from issue #349. It preserves customer PDF generation
+and the same planning/import files and controls. Journal files are checksummed
+under `operations/`; existing telemetry members retain their schemas under
 `telemetry/`. Capture boundaries are sequential and explicitly labeled. Zero-leg
 drafts remain exportable with telemetry marked not applicable.
 
