@@ -806,6 +806,16 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
       await editor
         .getByRole('button', { name: 'Correct this update', exact: true })
         .click();
+      await expect(
+        editor.getByRole('heading', { name: 'Issue activity', exact: true })
+      ).toHaveCount(0);
+      await page.screenshot({
+        path: join(evidence, `correction-handoff-${viewport.width}.png`),
+      });
+      writeFileSync(
+        join(evidence, `correction-handoff-${viewport.width}.html`),
+        await page.content()
+      );
       await editor
         .getByLabel('Corrected update', { exact: true })
         .fill('Synthetic corrected workaround message');
