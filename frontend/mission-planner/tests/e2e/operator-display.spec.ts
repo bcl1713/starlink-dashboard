@@ -85,7 +85,7 @@ test('display presets restore actual weather rendering and report real conflicts
     ).toBeVisible();
     await toggle('Precipitation radar', false);
     await toggle('International SIGMET advisories', false);
-    await toggle('GFS temperature', true);
+    await toggle('GFS air temperature', true);
     await scene(overview, false);
     await dialog
       .getByRole('button', { name: 'Save current as Normal', exact: true })
