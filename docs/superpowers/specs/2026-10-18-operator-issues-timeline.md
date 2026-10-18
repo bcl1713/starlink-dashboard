@@ -3,8 +3,8 @@
 Part of the [#367 design](2026-10-18-operator-issues-design.md). Incorporates
 the
 [conditional review in PR #378](https://github.com/bcl1713/starlink-dashboard/pull/378#issuecomment-6243627474).
-Status: clarification for approved implementation planning, not execution or
-merge.
+Status: approved for native execution in PR #378 comment 6243741682. Product
+review and merge remain separate.
 
 ## Immutable correction lineage
 

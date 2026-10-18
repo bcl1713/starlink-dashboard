@@ -1,10 +1,9 @@
 # Operator issues interaction and acceptance contract
 
-Part of the proposed
+Part of the approved
 [issue #367 specification](2026-10-18-operator-issues-design.md). Status:
-conditionally approved for planning in PR #378; the timeline contract
-incorporates the review clarification. No implementation execution or merge
-approval.
+approved for native execution in PR #378 comment 6243741682, including the
+timeline clarification. Product review and merge remain separate.
 
 ## Mobile and desktop interaction
 

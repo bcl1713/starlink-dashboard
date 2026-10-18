@@ -70,26 +70,26 @@ dependencies or execute this plan until the user approves execution.
 `issue_audit_reason(current, command) -> str | None`. Keep existing service
 routes, receipt shape, optimistic version check and write transaction ownership.
 
-- [ ] Write failing tests `test_description_only_issue`,
+- [x] Write failing tests `test_description_only_issue`,
       `test_monitoring_workaround_is_not_resolved`,
       `test_correct_after_resolve_preserves_current_fields`, and
       `test_mixed_correction_and_status_edit_rejected`. Assert Open default,
       null optional fields, independent mitigation, current
       status/time/follow-up retained after correction, 422 for mixed edits, and
       no required audit_note.
-- [ ] Run the backend command with `tests/operator/test_issue_api.py -q`; expect
+- [x] Run the backend command with `tests/operator/test_issue_api.py -q`; expect
       failure because issues are not publicly writable.
-- [ ] Implement payload fields/defaults exactly as the spec; expose only issue
+- [x] Implement payload fields/defaults exactly as the spec; expose only issue
       writes in addition to existing public types. Validate correction targets
       in the same write transaction, earlier version/nonblank text, actual-time
       tolerance and current-field preservation. Add automatic action reasons and
       explicit same-mission typed links with reverse-reference protection.
-- [ ] Extend tests for all four statuses, priorities, mitigation, optional
+- [x] Extend tests for all four statuses, priorities, mitigation, optional
       party, naive/past/future timestamps, empty title, legacy payload/receipt,
       removal and restore, invalid correction targets, same-key retry, stale
       version and rejected cross-mission links. Resolved plus nonnull follow-up
       must fail validation.
-- [ ] Run `tests/operator/test_issue_api.py`,
+- [x] Run `tests/operator/test_issue_api.py`,
       `tests/operator/test_references.py` and
       `tests/operator/test_recovery.py -q` as backend arguments; expect all
       pass. Commit scoped files as
@@ -109,22 +109,22 @@ journal_seq to metadata at the caller's pinned H. `IssueUpdate` contains exactly
 the timeline spec's nine fields. Optional `ActivityItem.issue_update` is omitted
 when absent.
 
-- [ ] Write `test_correction_after_resolution_without_audit` using the specified
+- [x] Write `test_correction_after_resolution_without_audit` using the specified
       10:00/10:05/10:20/10:30 example. Assert all four JSONL revision rows
       remain, one selected message at 10:04, original root v2, correction v4,
       recorded 10:30, no status/time change on v4, and unchanged
       resolution/follow-up.
-- [ ] Run `tests/operator/test_issue_activity.py -q`; expect missing metadata.
-- [ ] Implement a two-pass pure fold: resolve strictly earlier correction roots,
+- [x] Run `tests/operator/test_issue_activity.py -q`; expect missing metadata.
+- [x] Implement a two-pass pure fold: resolve strictly earlier correction roots,
       then annotate selection/supersession by acceptance sequence. Capture all
       rows at existing H before deriving metadata. Keep nonissue serialization
       unchanged; no new mission-package route or export worker.
-- [ ] Add correction-of-correction and correction-of-root tests, unknown time,
+- [x] Add correction-of-correction and correction-of-root tests, unknown time,
       equal-time ordering, watermark before correction, audit on/off, restored
       records, idempotent replay and byte-identical nonissue projections. Load
       the golden fixture for frontend use; never generate a fixture from live
       records.
-- [ ] Run `tests/operator/test_issue_activity.py`,
+- [x] Run `tests/operator/test_issue_activity.py`,
       `tests/operator/test_projections.py` and
       `tests/operator/test_projection_compatibility.py -q` as backend arguments;
       expect pass. Commit as
@@ -141,26 +141,26 @@ when absent.
 `as_of: datetime` and `clock_regression: bool`; returns `IssueFollowup`.
 Metadata has follow_up_at/state/as_of/record_id/version.
 
-- [ ] Write `test_functional_with_unavailable_backup`,
+- [x] Write `test_functional_with_unavailable_backup`,
       `test_one_dimension_does_not_freshen_other`,
       `test_unknown_time_and_both_unknown`, `test_followup_utc_boundaries`, and
       `test_resolve_clear_reopen_no_resurrection`. Assert the spec's precise
       enums and before/equal/after states, plus inactive removed/resolved
       records.
-- [ ] Run `tests/operator/test_issue_followup.py` and
+- [x] Run `tests/operator/test_issue_followup.py` and
       `tests/operator/test_capability_api.py -q` as backend arguments; expect
       missing capability subtype/follow-up metadata.
-- [ ] Implement the typed payload, independent dimension time/precision checks,
+- [x] Implement the typed payload, independent dimension time/precision checks,
       no inference from sources, assessment link subtype validation, public
       subtype protection and pure backend follow-up derivation on
       list/detail/history reads. Inactive/unscheduled states take precedence
       over clock-dependent comparison; unknown clock applies only when an active
       scheduled comparison needs it.
-- [ ] Add null precision/time, retrospective observation, duplicate capability
+- [x] Add null precision/time, retrospective observation, duplicate capability
       labels, linked subtype mutation rejection, regressed clock and
       failed-source tests. Assert existing note editor/API payload shapes still
       work.
-- [ ] Run these two test files plus `tests/operator/test_read_metadata.py -q`;
+- [x] Run these two test files plus `tests/operator/test_read_metadata.py -q`;
       expect pass. Commit as
       `feat: add manual capability and follow-up snapshots`.
 
@@ -177,19 +177,19 @@ query record type to issue/assessment support. Draft hook accepts
 `{draft, setDraft, pending, setPending, clear, storageError}`. Pending retains
 the exact frozen command/key/epoch until receipt reconciliation.
 
-- [ ] Write `test_reload_restores_unsent_update`,
+- [x] Write `test_reload_restores_unsent_update`,
       `test_lost_receipt_reload_replays_one_command`,
       `test_epoch_change_quarantines_draft`, and
       `test_storage_failure_retains_memory`. Assert draft isolation, unchanged
       retry time/key and no false Saved indicator.
-- [ ] Run unit tests for the new hook and existing journal hook; expect missing
+- [x] Run unit tests for the new hook and existing journal hook; expect missing
       durable draft behavior. Implement sessionStorage with explicit keys above,
       no logging, visible storage failure, and quarantined old-epoch drafts.
-- [ ] Extend narrow record-type unions and reuse receipt-first mutation/conflict
+- [x] Extend narrow record-type unions and reuse receipt-first mutation/conflict
       paths. Do not silently merge status changes, discard local updates on
       refetch, or label old cached data as newly saved. Restrict new draft
       behavior to #367.
-- [ ] Test mission/record switching, failed network, conflict reconciliation,
+- [x] Test mission/record switching, failed network, conflict reconciliation,
       accepted save cleanup, explicit discard and separate tab isolation. Run
       hook and service unit tests; expect pass. Commit as
       `feat: preserve Operator issue drafts and uncertain saves across reload`.
@@ -210,20 +210,20 @@ IssueActivityResult has `updates` and `lifecycle`; unknown-time updates remain
 separate. Reuse existing history service; incomplete pages keep an explicit
 partial state.
 
-- [ ] Write tests for description-only Save, optional details, one-tap Resolve,
+- [x] Write tests for description-only Save, optional details, one-tap Resolve,
       Monitoring/workaround independence, independent assessments, corrected
       text once at 10:04 after Resolve at 10:20, and original text visible only
       in audit.
-- [ ] Run the new component and pure activity unit tests; expect missing views.
-- [ ] Implement progressive details, optional UTC/relative follow-up controls,
+- [x] Run the new component and pure activity unit tests; expect missing views.
+- [x] Implement progressive details, optional UTC/relative follow-up controls,
       reschedule/clear, Add update and explicit historical correction. Relative
       times freeze at the shared snapshot. Use existing draft/mutation
       interfaces. Keep the resolved group's controls separate from tombstone
       restore.
-- [ ] Add Issues navigation and persistent snapshot-derived follow-up summary
+- [x] Add Issues navigation and persistent snapshot-derived follow-up summary
       throughout Operator. Load all mission scopes; no active-leg filtering or
       new timer/polling. Exclude typed assessments from generic journal editing.
-- [ ] Test partial records/history, stale/unknown clock, duplicate capability
+- [x] Test partial records/history, stale/unknown clock, duplicate capability
       names, no horizontal overflow semantics, missing optional links, conflict
       drafts and two-client refresh. Run new tests plus OperatorBrief and
       journal page suites; expect pass. Commit as
@@ -245,20 +245,20 @@ candidate SHA, viewport, UTC boundary steps, projection lineage and cleanup.
 Reuse Owner admission/signal/cleanup; no parallel acceptance stack or new
 daemon.
 
-- [ ] Write harness tests requiring issues proof, all three viewports,
+- [x] Write harness tests requiring issues proof, all three viewports,
       post-resolve correction, offline/lost receipt/restart, spanning leg switch
       and cleanup; run `timeout --kill-after=10s 10m python3 -m pytest` with
       `tools/tests/test_operator_issues_acceptance.py -q`; expect missing proof.
-- [ ] Implement the eight specification journeys with deterministic synthetic
+- [x] Implement the eight specification journeys with deterministic synthetic
       clock steps, two browser contexts and unreachable optional feed. Exercise
       actual #348/#349 contracts; inspect normal activity without audit, then
       with audit. Extend existing failure/restart probes rather than duplicating
       them.
-- [ ] Run backend Operator suite, frontend unit suite/lint/build, harness tests
+- [x] Run backend Operator suite, frontend unit suite/lint/build, harness tests
       and canonical static checks with explicit limits. Resolve regressions
       before committing an exact clean product candidate. Record commands and
       versions.
-- [ ] After reading cloud Docker guidance, record ownership and run from root:
+- [x] After reading cloud Docker guidance, record ownership and run from root:
       `timeout --kill-after=10s 90m python3` with runner
       `tools/acceptance/operator-journal/run.py` and arguments
       `--candidate <full-clean-SHA>`,
@@ -266,7 +266,7 @@ daemon.
       `--evidence <new-private-evidence-directory>`. Expect checksPassed true
       and cleanup proof. Verify actor daemon processes/listeners/resources are
       gone.
-- [ ] Preserve sanitized screenshots and results for 1920×1080, 390×844 and
+- [x] Preserve sanitized screenshots and results for 1920×1080, 390×844 and
       844×390; document backup/backout and no aircraft-readiness claim. Commit
       docs, push to PR #378 against dev, require final-head checks/review, and
       retain its worktree while open. Merge only when separately authorized.
@@ -281,4 +281,6 @@ service, transport allocation, mission ZIP route or broad redesign is planned.
 Plan status: approved for native execution in PR #378 comment 6243741682. Native
 execution is recommended because payloads, correction validation and projections
 share transaction contracts; sequential implementation avoids interface drift.
-Implementation is underway; product review and merge remain separate gates.
+All six tasks are implemented and verified; see the
+[verification report](../../reports/2026-10-18-operator-issues/README.md).
+Final-head CI, product review and merge remain separate gates.
