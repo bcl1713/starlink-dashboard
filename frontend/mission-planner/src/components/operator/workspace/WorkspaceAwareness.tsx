@@ -94,7 +94,7 @@ export function WorkspaceAwareness({
         )}
       </section>
       <section className="ws-next" aria-label="Next requirement">
-        <h2>Next requirement</h2>
+        <h2>Next requirement{snapshot?.truncated ? ' · loaded events' : ''}</h2>
         {next ? (
           <>
             <button
@@ -117,7 +117,9 @@ export function WorkspaceAwareness({
           <p className="ws-meta">
             {!snapshot || failed
               ? 'Next requirement unavailable.'
-              : 'No timed future requirement recorded.'}
+              : snapshot.truncated
+                ? 'Next requirement unavailable in loaded events.'
+                : 'No timed future requirement recorded.'}
           </p>
         )}
       </section>

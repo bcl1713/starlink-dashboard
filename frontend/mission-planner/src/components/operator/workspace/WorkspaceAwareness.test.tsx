@@ -153,3 +153,8 @@ it('sorts future call requirements and excludes prep, inactive and unknown times
   });
   expect(nextRequirement(snapshot)?.title).toBe('Sooner');
 });
+it('does not claim there is no future requirement when event pages are incomplete', () => {
+ render(<WorkspaceAwareness snapshot={eventSnapshot({events:[],truncated:true,coverage:'partial'})} next={undefined} records={[]} recordsIncomplete={false} failed={false}/>);
+ expect(screen.queryByText('No timed future requirement recorded.')).toBeNull();
+ expect(screen.getByText('Next requirement unavailable in loaded events.')).toBeTruthy();
+});
