@@ -404,3 +404,109 @@ test('training fixture: normal replay across two legs preserves journal, receipt
     )
   );
 });
+
+test('training guide verifies a committed lost receipt before an exact retry', async ({
+  page,
+}) => {
+  const missions = await (await page.request.get('/api/v2/missions')).json();
+  const missionId = missions[0].id;
+  await page.goto(`/operator?workspace=1&mission_id=${missionId}&view=notes`);
+  await page.getByRole('button', { name: 'Note', exact: true }).click();
+  const editor = page.getByRole('dialog');
+  await editor
+    .getByLabel('Title', { exact: true })
+    .fill('Fictional guide lost-receipt exercise');
+  const attempts: object[] = [];
+  let committed: unknown = null;
+  let intercepted = false;
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      request.url().endsWith('/api/v2/operator/records')
+    )
+      attempts.push({
+        body: request.postDataJSON(),
+        key: request.headers()['idempotency-key'],
+        epoch: request.headers()['x-operator-epoch'],
+      });
+  });
+  await page.route('**/api/v2/operator/records', async (route) => {
+    if (route.request().method() !== 'POST' || intercepted)
+      return route.continue();
+    intercepted = true;
+    const response = await route.fetch();
+    expect(response.ok()).toBe(true);
+    committed = await response.json();
+    await route.abort('connectionreset');
+  });
+  await editor.getByRole('button', { name: 'Save entry', exact: true }).click();
+  await expect(editor).toContainText(/uncertain/i);
+  await editor
+    .getByRole('button', { name: 'Keep draft and return', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+    .click();
+  const guide = page.getByRole('complementary', {
+    name: 'Guided mission walkthrough',
+  });
+  await guide.getByLabel('Lesson', { exact: true }).selectOption('T08');
+  const outcome = guide
+    .getByRole('listitem')
+    .filter({ hasText: 'lost receipt same key' });
+  await guide
+    .getByRole('button', { name: 'Check current evidence', exact: true })
+    .click();
+  await expect(
+    guide.getByRole('button', { name: 'Check current evidence', exact: true })
+  ).toBeEnabled();
+  await expect(outcome).toContainText('Needs evidence');
+  await page.reload();
+  await page.unroute('**/api/v2/operator/records');
+  const replayed = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/v2/operator/records')
+  );
+  await page
+    .getByRole('button', { name: 'Retry same save', exact: true })
+    .click();
+  const receipt = await (await replayed).json();
+  expect(receipt).toEqual(committed);
+  expect(attempts).toHaveLength(2);
+  expect(attempts[1]).toEqual(attempts[0]);
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+    .click();
+  await expect(guide.getByRole('heading', { name: /T08/ })).toBeVisible();
+  await guide
+    .getByRole('button', { name: 'Check current evidence', exact: true })
+    .click();
+  await expect(outcome).toContainText('Verified from current data');
+  await expect(guide.getByText('Incomplete', { exact: true })).toBeVisible();
+  const history = await (
+    await page.request.get(
+      `/api/v2/operator/records/${receipt.saved_records[0].record_id}/history`
+    )
+  ).json();
+  expect(history.items).toHaveLength(1);
+  expect(history.cursor).toBeNull();
+  writeFileSync(
+    join(root, 'guided-retry-proof.json'),
+    JSON.stringify(
+      {
+        synthetic: true,
+        receipt,
+        attempts,
+        history,
+        observedBeforeRetry: true,
+        resumedProgressAfterReload: true,
+        wholeLessonStillIncomplete: true,
+      },
+      null,
+      2
+    )
+  );
+});

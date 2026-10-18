@@ -3,7 +3,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it, vi } from 'vitest';
 import * as api from '@/services/operator';
-import { useOperatorJournal } from './useOperatorJournal';
+import { useOperatorJournal, type Pending } from './useOperatorJournal';
 import { failure, health, input, page, record } from '@/test/operator-fixtures';
 const clients: QueryClient[] = [];
 afterEach(() => {
@@ -11,7 +11,7 @@ afterEach(() => {
   clients.forEach((c) => c.clear());
   vi.restoreAllMocks();
 });
-function mount() {
+function mount(options: Parameters<typeof useOperatorJournal>[2] = {}) {
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
   if (!vi.isMockFunction(api.readOperatorRecord))
     vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page().items[0]);
@@ -20,11 +20,14 @@ function mount() {
     defaultOptions: { queries: { retry: false } },
   });
   clients.push(client);
-  const hook = renderHook(() => useOperatorJournal('mission-a'), {
-    wrapper: ({ children }) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    ),
-  });
+  const hook = renderHook(
+    () => useOperatorJournal('mission-a', 'journal_entry', options),
+    {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    }
+  );
   return { ...hook, reads };
 }
 it.each([
@@ -288,4 +291,58 @@ it('partitions calls from journal reads and refreshes independently loaded summa
     client.getQueryState(['operator-brief', 'mission-a', 'independent'])
       ?.isInvalidated
   ).toBe(true);
+});
+
+it('observes actual send attempts without allowing observation to alter the transaction', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [record],
+    });
+  const observe = vi.fn((request: Pending) => {
+    request.key = 'observer-mutated-key';
+    if (request.command.operation === 'create')
+      request.command.body.payload.title = 'Observer mutated title';
+    throw new Error('Observer failure');
+  });
+  const { result } = mount({ onAttempt: observe });
+  await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+  await act(async () => {
+    await result.current.save({
+      operation: 'create',
+      body: structuredClone(input),
+    });
+  });
+  expect(observe).toHaveBeenCalledTimes(1);
+  expect(save.mock.calls[0][0].body).toEqual(input);
+  expect(save.mock.calls[0][1]).not.toBe('observer-mutated-key');
+  expect(result.current.saved).toBe(true);
+  expect(result.current.error).toBeNull();
+});
+it('observes both frozen attempts of a genuinely uncertain send and its exact retry', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(new Error('Receipt lost'))
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [record],
+    });
+  const observe = vi.fn();
+  const { result } = mount({ onAttempt: observe });
+  await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+  await act(async () => {
+    await result.current.save({
+      operation: 'create',
+      body: structuredClone(input),
+    });
+  });
+  await act(async () => {
+    await result.current.retry();
+  });
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(observe).toHaveBeenCalledTimes(2);
+  expect(observe.mock.calls[1][0]).toEqual(observe.mock.calls[0][0]);
 });

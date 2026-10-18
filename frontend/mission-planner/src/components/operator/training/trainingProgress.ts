@@ -1,3 +1,7 @@
+import {
+  decodeRetryObservation,
+  type RetryObservation,
+} from './trainingRetryEvidence';
 import { trainingSteps, type TrainingStageId } from './trainingSteps';
 
 export interface TrainingIdentity {
@@ -18,6 +22,7 @@ export interface TrainingProgress extends TrainingIdentity {
   visited: TrainingStageId[];
   skipped: TrainingStageId[];
   manualEvidence: ManualEvidence[];
+  retryObservations?: RetryObservation[];
 }
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const fields = [
@@ -61,6 +66,20 @@ function validProgress(
     )
   )
     return false;
+  try {
+    if (value.retryObservations !== undefined) {
+      if (
+        !Array.isArray(value.retryObservations) ||
+        value.retryObservations.length > 20
+      )
+        return false;
+      value.retryObservations.forEach((item) =>
+        decodeRetryObservation(item, identity)
+      );
+    }
+  } catch {
+    return false;
+  }
   return (
     Array.isArray(value.manualEvidence) &&
     value.manualEvidence.every(

@@ -180,3 +180,25 @@ it('never labels stale automatic outcomes as verified while retaining explicit h
   expect(result.missing).toContain('private-context-read');
   expect(result.manualOutcomes).toEqual(['context-understood']);
 });
+
+it('rejects corrupt command observations without accepting them as progress', () => {
+  const storage = memory();
+  const progress = createProgress(identity);
+  expect(saveProgress(storage, progress).error).toBeNull();
+  const entryKey = [...storage.values.keys()][0];
+  storage.setItem(
+    entryKey,
+    JSON.stringify({
+      ...progress,
+      retryObservations: [
+        {
+          request: { key: 'not-a-request' },
+          attemptIds: ['fake'],
+          committedVersions: [],
+        },
+      ],
+    })
+  );
+  expect(loadProgress(storage, identity).error).toContain('invalid');
+  expect(storage.getItem(entryKey)).toContain('not-a-request');
+});

@@ -443,13 +443,11 @@ it('delegates one health polling owner between the workspace and application nav
   expect(workspace.ownsHealth).toBe(false);
 });
 it('marks the submitted mission event snapshot stale after a receipt without starting another event owner', async () => {
-  const save = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockResolvedValue({
-      schema_version: 1,
-      command_id: 'refresh-events',
-      saved_records: [record],
-    });
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'refresh-events',
+    saved_records: [record],
+  });
   const read = vi.spyOn(eventApi, 'readEventSnapshot');
   const { registry, client } = mount();
   const identity = JSON.stringify([
@@ -465,4 +463,76 @@ it('marks the submitted mission event snapshot stale after a receipt without sta
   expect(save).toHaveBeenCalledOnce();
   expect(client.getQueryState(key)?.isInvalidated).toBe(true);
   expect(read).not.toHaveBeenCalled();
+});
+it('exposes independent snapshots of actual command attempts with their pinned targets', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [record],
+    });
+  const { registry } = mount();
+  const draft = registry.createDraft(target, input);
+  await submit(draft.draftId);
+  expect(workspace.attempts).toHaveLength(1);
+  const attempt = workspace.attempts[0];
+  expect(attempt.request.workspace?.target).toEqual(draft.target);
+  expect(attempt.request.key).toBe(save.mock.calls[0][1]);
+  if (attempt.request.command.operation === 'create')
+    attempt.request.command.body.payload.title = 'Changed observation copy';
+  expect(save.mock.calls[0][0].body).toEqual(input);
+});
+it('keeps distinct actual retry observations without creating a second write owner', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(new Error('Receipt lost'))
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [record],
+    });
+  const { registry } = mount();
+  const draft = registry.createDraft(target, input);
+  await submit(draft.draftId);
+  expect(workspace.attempts).toHaveLength(1);
+  const key = workspace.tray[0].commandId;
+  await act(async () => workspace.retryExact(key));
+  expect(workspace.attempts).toHaveLength(2);
+  expect(workspace.attempts[0].id).not.toBe(workspace.attempts[1].id);
+  expect(workspace.attempts[0].request).toEqual(workspace.attempts[1].request);
+  expect(save).toHaveBeenCalledTimes(2);
+});
+it('reuses the complete pending-envelope validator for read-only command evidence', async () => {
+  const { decodePendingEnvelope, targetIdentity } = await import(
+    './commandRegistry'
+  );
+  const registry = new DraftRegistry(sessionStorage);
+  const draft = registry.createDraft(target, input);
+  const request = {
+    command: { operation: 'create' as const, body: draft.input },
+    key: 'captured-key',
+    epoch: draft.target.epoch,
+    identity: targetIdentity(draft.target),
+    workspace: {
+      schemaVersion: 1 as const,
+      draftId: draft.draftId,
+      revision: draft.revision,
+      baseVersion: null,
+      target: draft.target,
+    },
+  };
+  expect(decodePendingEnvelope(request)).toEqual(request);
+  expect(() =>
+    decodePendingEnvelope({
+      ...request,
+      command: {
+        ...request.command,
+        body: { ...request.command.body, scope: 'preflight' },
+      },
+    })
+  ).toThrow();
+  expect(() =>
+    decodePendingEnvelope({ ...request, epoch: 'wrong-epoch' })
+  ).toThrow();
 });

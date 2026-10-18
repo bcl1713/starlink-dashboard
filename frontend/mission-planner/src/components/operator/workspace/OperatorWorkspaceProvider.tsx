@@ -19,6 +19,7 @@ import {
 } from '@/hooks/api/operatorReadSession';
 import { readOperatorRecords } from '@/services/operator';
 import type { CommandReceipt, OperatorCommand } from '@/types/operator';
+import { createClientId } from '@/lib/clientId';
 import { DraftRegistry, getDraftRegistry } from './draftRegistry';
 import {
   assertCommandTarget,
@@ -29,6 +30,7 @@ import {
   targetIdentity,
   type PendingEnvelope,
   type TransactionTrayItem,
+  type CommandAttempt,
 } from './commandRegistry';
 import type { DraftTarget } from './types';
 import { recoverLegacyDrafts } from './legacyRecovery';
@@ -50,6 +52,7 @@ interface Workspace {
   retryExact: (commandId: string) => Promise<void>;
   rereadAndReconcile: (commandId: string) => Promise<void>;
   tray: TransactionTrayItem[];
+  attempts: readonly CommandAttempt[];
   recoveryErrors: string[];
   refreshDrafts: () => void;
 }
@@ -61,12 +64,14 @@ function Owner({
   register,
   publish,
   receipt,
+  attempt,
 }: {
   lane: string;
   target: DraftTarget;
   register: (lane: string, api: JournalOwner) => void;
   publish: (lane: string, api: JournalOwner) => void;
   receipt: (lane: string, request: Pending, value: CommandReceipt) => void;
+  attempt: (request: Pending) => void;
 }) {
   const api = useOperatorJournal(
     target.missionId,
@@ -77,6 +82,7 @@ function Owner({
       readRecords: false,
       healthPolling: false,
       onReceipt: (request, value) => receipt(lane, request, value),
+      onAttempt: attempt,
     }
   );
   useLayoutEffect(() => {
@@ -141,6 +147,7 @@ export function OperatorWorkspaceProvider({
       pending: p,
     }))
   );
+  const [attempts, setAttempts] = useState<CommandAttempt[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [migrationErrors, setMigrationErrors] = useState<string[]>([]);
   const scannedIdentities = useRef(new Set<string>());
@@ -231,6 +238,13 @@ export function OperatorWorkspaceProvider({
       });
     else if (api.error)
       update(lane, { status: 'failed', message, pending: undefined });
+  }
+  function observeAttempt(request: Pending) {
+    const observed = {
+      id: createClientId(),
+      request: structuredClone(request),
+    };
+    setAttempts((previous) => [...previous.slice(-99), observed]);
   }
   function receipt(lane: string, request: Pending, value: CommandReceipt) {
     if (request.workspace)
@@ -395,6 +409,7 @@ export function OperatorWorkspaceProvider({
         retryExact,
         rereadAndReconcile,
         tray,
+        attempts,
         recoveryErrors: [
           ...restored.errors,
           ...migrationErrors,
@@ -412,6 +427,7 @@ export function OperatorWorkspaceProvider({
           register={register}
           publish={publish}
           receipt={receipt}
+          attempt={observeAttempt}
         />
       ))}
     </Context.Provider>

@@ -52,6 +52,7 @@ export function useOperatorJournal(
     readRecords?: boolean;
     healthPolling?: boolean;
     onReceipt?: (request: Pending, receipt: CommandReceipt) => void;
+    onAttempt?: (request: Pending) => void;
   } = {}
 ) {
   const client = useQueryClient();
@@ -190,6 +191,15 @@ export function useOperatorJournal(
     setSaved(false);
     setError(null);
     try {
+      if (options.onAttempt) {
+        try {
+          void Promise.resolve(
+            options.onAttempt(structuredClone(request))
+          ).catch(() => undefined);
+        } catch {
+          // Read-only observers must not change the outcome of a journal write.
+        }
+      }
       const receipt = await saveOperatorCommand(
         request.command,
         request.key,

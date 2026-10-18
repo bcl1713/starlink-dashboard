@@ -29,6 +29,11 @@ export type TransactionStatus =
   | 'quarantined'
   | 'storage_error'
   | 'failed';
+export interface CommandAttempt {
+  id: string;
+  request: Pending;
+}
+
 export interface TransactionTrayItem {
   lane: string;
   commandId: string;
@@ -98,6 +103,55 @@ export function assertCommandTarget(
   }
 }
 
+/** Validate stored requests and read-only observations with the same rules. */
+export function decodePendingEnvelope(
+  value: unknown,
+  storageKey?: string
+): PendingEnvelope {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('Invalid pending envelope');
+  const p = value as PendingEnvelope;
+  const t = p.workspace?.target;
+  if (
+    !isDraftTarget(t) ||
+    p.workspace.schemaVersion !== 1 ||
+    typeof p.workspace.draftId !== 'string' ||
+    !p.workspace.draftId ||
+    (t.recordId === null
+      ? t.newDraftId !== p.workspace.draftId
+      : t.newDraftId !== null) ||
+    (p.command?.operation === 'create'
+      ? p.workspace.baseVersion !== null
+      : !Number.isInteger(p.workspace.baseVersion) ||
+        Number(p.workspace.baseVersion) < 1) ||
+    !Number.isInteger(p.workspace.revision) ||
+    p.workspace.revision < 1 ||
+    typeof p.key !== 'string' ||
+    typeof p.epoch !== 'string' ||
+    p.identity !== targetIdentity(t) ||
+    p.epoch !== t.epoch ||
+    (storageKey !== undefined &&
+      storageKey !== pendingPrefix + commandLane(t)) ||
+    !['create', 'update', 'remove', 'restore'].includes(p.command?.operation)
+  )
+    throw new Error('Invalid pending envelope');
+  if (p.command.operation === 'create' || p.command.operation === 'update') {
+    if (
+      !isOperatorInput(p.command.body) ||
+      p.command.body.mission_id !== t.missionId ||
+      p.command.body.record_type !== t.recordType
+    )
+      throw new Error('Mismatched pending target');
+  }
+  if (p.command.body.schema_version !== 1)
+    throw new Error('Invalid command schema');
+  assertCommandTarget(
+    { target: t, baseVersion: p.workspace.baseVersion },
+    p.command
+  );
+  return p;
+}
+
 export function loadPendingOwners(storage: Storage | null): {
   requests: PendingEnvelope[];
   errors: string[];
@@ -112,49 +166,7 @@ export function loadPendingOwners(storage: Storage | null): {
       const key = storage.key(i);
       if (!key?.startsWith(pendingPrefix)) continue;
       try {
-        const p = JSON.parse(storage.getItem(key)!) as PendingEnvelope;
-        const t = p.workspace?.target;
-        if (
-          !isDraftTarget(t) ||
-          p.workspace.schemaVersion !== 1 ||
-          typeof p.workspace.draftId !== 'string' ||
-          !p.workspace.draftId ||
-          (t.recordId === null
-            ? t.newDraftId !== p.workspace.draftId
-            : t.newDraftId !== null) ||
-          (p.command?.operation === 'create'
-            ? p.workspace.baseVersion !== null
-            : !Number.isInteger(p.workspace.baseVersion) ||
-              Number(p.workspace.baseVersion) < 1) ||
-          !Number.isInteger(p.workspace.revision) ||
-          p.workspace.revision < 1 ||
-          typeof p.key !== 'string' ||
-          typeof p.epoch !== 'string' ||
-          p.identity !== targetIdentity(t) ||
-          p.epoch !== t.epoch ||
-          key !== pendingPrefix + commandLane(t) ||
-          !['create', 'update', 'remove', 'restore'].includes(
-            p.command?.operation
-          )
-        )
-          throw new Error('Invalid pending envelope');
-        if (
-          p.command.operation === 'create' ||
-          p.command.operation === 'update'
-        ) {
-          if (
-            !isOperatorInput(p.command.body) ||
-            p.command.body.mission_id !== t.missionId ||
-            p.command.body.record_type !== t.recordType
-          )
-            throw new Error('Mismatched pending target');
-        }
-        if (p.command.body.schema_version !== 1)
-          throw new Error('Invalid command schema');
-        assertCommandTarget(
-          { target: t, baseVersion: p.workspace.baseVersion },
-          p.command
-        );
+        const p = decodePendingEnvelope(JSON.parse(storage.getItem(key)!), key);
         result.requests.push(p);
       } catch {
         result.errors.push(

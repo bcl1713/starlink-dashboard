@@ -68,6 +68,7 @@ export async function readTrainingRecords(
     );
   return {
     H: current.H,
+    evidenceRecords: [...current.items, ...history].map((item) => item.record),
     ...collectRecordEvidence({
       missionId: identity.missionId,
       ready: true,

@@ -1,3 +1,7 @@
+import {
+  captureRetryObservation,
+  collectRetryEvidence,
+} from '../training/trainingRetryEvidence';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -398,7 +402,7 @@ export function OperatorWorkspace() {
             identity={training.identity}
             evidence={trainingEvidence}
             onDismiss={() => setGuide(false)}
-            onCheckEvidence={async () => {
+            onCheckEvidence={async (previousObservations) => {
               setCheckedTraining(null);
               const checked = await readTrainingRecords(
                 training.identity,
@@ -427,11 +431,39 @@ export function OperatorWorkspace() {
                 throw new Error(
                   'Training evidence changed while checking; check again.'
                 );
+              const namespace = health.data!.simulation_run_id!;
+              const observations = [...previousObservations];
+              for (const transaction of workspace.tray) {
+                if (
+                  observations.some(
+                    (item) => item.request.key === transaction.commandId
+                  )
+                )
+                  continue;
+                const captured = captureRetryObservation(
+                  training.identity,
+                  namespace,
+                  transaction,
+                  workspace.attempts,
+                  checked.evidenceRecords
+                );
+                if (captured) observations.push(captured);
+              }
+              const retainedObservations = observations.slice(-20);
+              const retryOutcomes = collectRetryEvidence(
+                training.identity,
+                namespace,
+                retainedObservations,
+                workspace.attempts,
+                workspace.tray,
+                checked.evidenceRecords
+              );
               setCheckedTraining({
                 ...checked,
                 outcomes: [
                   ...new Set([
                     ...checked.outcomes,
+                    ...retryOutcomes,
                     ...observed.outcomes,
                     ...collectReplayEvidence(
                       snapshot,
@@ -445,6 +477,7 @@ export function OperatorWorkspace() {
                 checkedAt: performance.now(),
               });
               events.refresh();
+              return retainedObservations;
             }}
             onOpenTarget={(stage) => {
               if (['T05', 'T09', 'T10'].includes(stage))
