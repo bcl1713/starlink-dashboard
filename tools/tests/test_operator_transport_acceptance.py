@@ -25,3 +25,18 @@ def test_transport_runner_selection_is_explicit():
 
     runner = implementation()
     assert "transport" in inspect.signature(runner.run).parameters
+
+
+def test_transport_records_preserve_existing_export_contracts(tmp_path, monkeypatch):
+    implementation()
+    from app.mission import storage
+    from export_probe import probe
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")
+    result = probe(tmp_path / "export-controls")
+    assert result["transportDecisionLifecycleUnchanged"]
+    assert result["telemetryZipSha256Before"] == result["telemetryZipSha256After"]
+    assert (
+        result["planningCsvSemanticSha256Before"]
+        == result["planningCsvSemanticSha256After"]
+    )

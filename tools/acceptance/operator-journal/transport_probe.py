@@ -72,6 +72,23 @@ def main():
             links = db.execute(
                 "SELECT * FROM current_links ORDER BY from_id,relation,to_id"
             ).fetchall()
+        from app.operator.projections import capture_projection
+
+        projected = capture_projection(
+            service.store, mission_id="synthetic-mission-b", include_audit=True
+        )
+        normal_example = next(
+            item
+            for item in json.loads(projected.files["operations/current.json"])
+            if item["record_type"] == "transport_decision"
+        )
+        historical_example = next(
+            r.model_dump(mode="json")
+            for record_id, _version, _payload in records
+            for r in service.history(record_id).items
+            if r.payload.entry_type == "transport_decision"
+            and any(row.checked for row in r.payload.services)
+        )
         manifest = backup_store(
             service.store,
             directory=service.store.settings.database_path.parent / "transport-backups",
@@ -107,6 +124,8 @@ def main():
                     "immutableRevisions": len(rows),
                     "backupRestore": True,
                     "linksRecovered": True,
+                    "normalOperationsExample": normal_example,
+                    "operatorCheckedHistoryExample": historical_example,
                     "multiServiceCommitBarriers": crashes,
                 }
             )
