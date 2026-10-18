@@ -2,8 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution, or superpowers:subagent-driven-development if the user
-> selects delegation. Steps use checkbox syntax for tracking. This plan awaits
-> user approval and selection of execution method; do not implement yet.
+> selects delegation. Steps use checkbox syntax for tracking. The user approved
+> this plan and selected native execution. Implementation and simulation
+> verification are complete; merge approval remains separate.
 
 **Goal:** Record independent service transport intentions and human reports,
 with advisory communications risk review driven by the existing live event feed.
@@ -273,3 +274,11 @@ dependent_versions, time_basis, freshness and status
 
 Continue with
 [Tasks 4–5 and release checks](2026-10-18-operator-transport-ui-acceptance.md).
+
+## Execution handoff
+
+Native execution was selected after PR #380 review comment 6250720466 approved
+the specification and plan. Implementation, review corrections and simulation
+acceptance are recorded in the [verification report](../../reports/2026-10-18-operator-transport/README.md).
+The original steps below remain the approved plan; the report records actual
+commands, outcomes, adjustments and cleanup. No merge has been performed.

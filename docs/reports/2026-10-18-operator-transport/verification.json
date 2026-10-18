@@ -1,0 +1,17 @@
+{
+  "backend": {
+    "passed": 4169,
+    "skipped": 20,
+    "warnings": 1
+  },
+  "frontend": {
+    "files": 269,
+    "passed": 1844,
+    "productionBuild": true
+  },
+  "acceptanceHarnessAndPopulatedMigration": {
+    "passed": 26
+  },
+  "static": "passed including final handoff documentation; external link availability warnings nonblocking under repository policy",
+  "simulationCandidate": "f72c9be4e88c84ac820b097d9d668925367bf112"
+}

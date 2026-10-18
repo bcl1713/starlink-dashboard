@@ -2,7 +2,8 @@
 
 > **For agentic workers:** Continue Tasks 1–3 from the
 > [main plan](2026-10-18-operator-transport.md). Its global constraints, review
-> focus and execution-approval gate apply here. No implementation is authorized.
+> focus apply here. The user approved native execution; implementation and
+> simulation verification are complete. Merge approval remains separate.
 
 ## Task 4: Compact transport workflow and durable client recovery
 
@@ -218,3 +219,11 @@ Ask the user to review the full plan and select native or subagent-driven
 execution. Recommend native execution because the five tasks share journal and
 snapshot interfaces and benefit from one continuous implementation context. Do
 not start product code until the user approves this plan and execution method.
+
+## Execution handoff
+
+Native execution was selected after PR #380 review comment 6250720466 approved
+the specification and plan. Implementation, review corrections and simulation
+acceptance are recorded in the [verification report](../../reports/2026-10-18-operator-transport/README.md).
+The original steps below remain the approved plan; the report records actual
+commands, outcomes, adjustments and cleanup. No merge has been performed.
