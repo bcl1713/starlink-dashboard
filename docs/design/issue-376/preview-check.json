@@ -1,0 +1,183 @@
+{
+  "task": "issue-376-design",
+  "pid": 2017236,
+  "processGroup": "2017222",
+  "command": "timeout --kill-after=10s 2m node <worktree>/docs/design/issue-376/capture.cjs",
+  "temporaryPaths": [],
+  "servers": [],
+  "containers": [],
+  "volumes": [],
+  "started": "2026-10-18T17:08:37.492Z",
+  "finished": "2026-10-18T17:08:39.422Z",
+  "browserClosed": true,
+  "results": [
+    {
+      "state": "normal",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "busy",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "failure",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "call",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "transport",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "followup",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "note",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "display",
+      "w": 1920,
+      "h": 1080,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "normal",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "busy",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "failure",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "call",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "transport",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "followup",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "note",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "display",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "normal",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "busy",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "state": "failure",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "call",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "transport",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "followup",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "note",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "editor": "display",
+      "w": 844,
+      "h": 390,
+      "overflow": false,
+      "errors": []
+    }
+  ]
+}

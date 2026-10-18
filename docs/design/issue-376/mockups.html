@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Operator workspace design review — issue 376</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c121b;
+      --panel: #131e2b;
+      --line: #304155;
+      --muted: #acbed0;
+      --text: #eff5fc;
+      --blue: #94c9ff;
+      --amber: #ffce83;
+      --green: #8de0c4;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font:
+        16px/1.45 system-ui,
+        sans-serif;
+    }
+    button,
+    a,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+    button,
+    a {
+      touch-action: manipulation;
+    }
+    button {
+      cursor: pointer;
+      color: inherit;
+      background: #1d2b3c;
+      border: 1px solid #486078;
+      border-radius: 7px;
+      padding: 10px 14px;
+      min-height: 44px;
+    }
+    button:hover,
+    a:hover {
+      filter: brightness(1.2);
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 2px;
+    }
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    h2 {
+      font-size: 19px;
+    }
+    h3 {
+      font-size: 16px;
+    }
+    small,
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    button.primary {
+      background: #b9dcff;
+      color: #102037;
+      border-color: #b9dcff;
+      font-weight: 650;
+    }
+    .review {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 0 24px;
+      background: #263447;
+      font-size: 12px;
+      color: #ecf3ff;
+    }
+    .review a {
+      padding: 4px;
+    }
+    .global {
+      height: 62px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      gap: 28px;
+    }
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-right: auto;
+    }
+    .global a {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 12px;
+    }
+    .global .selected {
+      color: white;
+      background: #27364a;
+      border-radius: 6px;
+    }
+    .mission {
+      height: 91px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--line);
+    }
+    .mission .identity {
+      margin-right: auto;
+    }
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      font-weight: 650;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .mission .subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .pill {
+      display: inline-block;
+      border: 1px solid #426b65;
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 12px;
+      color: var(--green);
+      background: #19342f;
+    }
+    .pill.model {
+      color: var(--blue);
+      border-color: #395976;
+      background: #192d43;
+    }
+    .pill.warn {
+      color: var(--amber);
+      border-color: #7b6341;
+      background: #372e22;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 286px minmax(0, 1fr);
+      height: calc(100dvh - 187px);
+      min-height: 0;
+    }
+    .rail {
+      padding: 22px 20px;
+      border-right: 1px solid var(--line);
+      background: #101924;
+      overflow-y: auto;
+    }
+    .rail h2 {
+      margin: 10px 0;
+      font-size: 22px;
+    }
+    .rail .group {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 22px;
+      margin-bottom: 22px;
+    }
+    .rail .person {
+      margin: 16px 0;
+    }
+    .rail .person strong {
+      display: block;
+    }
+    .rail .next {
+      border-left: 3px solid var(--blue);
+      padding-left: 12px;
+      margin-top: 12px;
+    }
+    .rail .next strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .rail button {
+      width: 100%;
+      margin-top: 10px;
+    }
+    .rail .meta {
+      margin-top: 9px;
+    }
+    .rail .time {
+      font-size: 28px;
+      letter-spacing: -0.04em;
+      font-weight: 650;
+    }
+    .work {
+      padding: 18px 24px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .tabs button {
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+    }
+    .tabs button.active {
+      background: #233b53;
+      color: #e1efff;
+      border-color: #486e91;
+    }
+    .tabs .more {
+      margin-left: auto;
+    }
+    .workspace-title {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .workspace-title p {
+      margin-right: auto;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+      gap: 20px;
+    }
+    .stack {
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .card-head {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .card-head button {
+      font-size: 13px;
+    }
+    .row {
+      padding: 16px 18px;
+      border-bottom: 1px solid #29394b;
+    }
+    .row:last-child {
+      border-bottom: 0;
+    }
+    .row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .row p {
+      margin-top: 7px;
+    }
+    .row .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .row .actions button {
+      font-size: 14px;
+    }
+    .amber {
+      color: var(--amber);
+    }
+    .green {
+      color: var(--green);
+    }
+    .blue {
+      color: var(--blue);
+    }
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 83px minmax(0, 1fr);
+      gap: 12px;
+      padding: 17px 18px;
+      border-bottom: 1px solid #29394b;
+    }
+    .timeline-row:last-child {
+      border: 0;
+    }
+    .timeline-row time {
+      font-size: 16px;
+      color: var(--blue);
+      font-variant-numeric: tabular-nums;
+    }
+    .timeline-row p {
+      margin-top: 4px;
+    }
+    .inline-action {
+      padding: 0;
+      min-height: 44px;
+      border: 0;
+      background: none;
+      color: var(--blue);
+      text-align: left;
+    }
+    .notice {
+      padding: 14px 16px;
+      background: #30291e;
+      border: 1px solid #836944;
+      border-radius: 7px;
+      margin-bottom: 18px;
+      color: #ffe1ad;
+    }
+    .notice button {
+      margin-top: 10px;
+      margin-right: 8px;
+    }
+    .notice .meta {
+      color: #e4cfaf;
+    }
+    .footer-note {
+      margin: 16px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .mobile-awareness,
+    .dock {
+      display: none;
+    }
+    .editor {
+      background: #142030;
+      border: 1px solid #55708c;
+      border-radius: 9px;
+      padding: 20px;
+      min-width: 0;
+    }
+    .editor h2 {
+      margin-bottom: 5px;
+    }
+    .editor header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .editor .target {
+      padding: 10px 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .editor label {
+      display: block;
+      margin: 15px 0;
+      color: #dce8f6;
+      font-size: 14px;
+    }
+    .editor input,
+    .editor select,
+    .editor textarea {
+      display: block;
+      background: #0c1522;
+      border: 1px solid #58708b;
+      color: white;
+      border-radius: 6px;
+      padding: 10px;
+      width: 100%;
+      min-height: 44px;
+      margin-top: 6px;
+      max-width: 100%;
+    }
+    .editor textarea {
+      height: 84px;
+      resize: vertical;
+    }
+    .editor .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .editor .seg {
+      display: flex;
+      gap: 6px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    .editor .seg button {
+      font-size: 13px;
+      padding: 8px;
+    }
+    .editor details {
+      border-top: 1px solid var(--line);
+      margin-top: 16px;
+      padding-top: 8px;
+    }
+    .editor summary {
+      min-height: 44px;
+      cursor: pointer;
+      padding: 10px 0;
+    }
+    .editor .save {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+    .editor .save .primary {
+      flex: 1;
+    }
+    .preview-message {
+      color: var(--amber);
+      margin-top: 10px;
+    }
+    .editor-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 440px;
+      gap: 20px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .menu {
+      position: fixed;
+      right: 20px;
+      top: 170px;
+      z-index: 10;
+      background: #1d2c3e;
+      padding: 10px;
+      border: 1px solid #607a96;
+      box-shadow: 0 10px 40px #0008;
+      border-radius: 8px;
+    }
+    .menu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 5px 0;
+    }
+    .view-list .row {
+      display: grid;
+      gap: 8px;
+    }
+    .view-list button {
+      justify-self: start;
+    }
+    .concepts {
+      max-width: 1200px;
+      margin: 25px auto;
+      padding: 20px;
+    }
+    .concepts section {
+      background: var(--panel);
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      margin: 20px 0;
+    }
+    .diagram {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+      min-height: 140px;
+    }
+    .diagram div {
+      padding: 18px;
+      background: #23364b;
+      border: 1px solid #506e90;
+      border-radius: 7px;
+    }
+    .concepts p {
+      color: var(--muted);
+      max-width: 85ch;
+    }
+    .review-mode .review {
+      height: auto;
+      min-height: 44px;
+      flex-wrap: wrap;
+    }
+    .review-mode .global,
+    .review-mode .mission,
+    .review-mode .layout {
+      display: none;
+    }
+    @media (min-width: 1450px) {
+      .work {
+        padding: 22px 28px;
+      }
+      .main-grid {
+        gap: 24px;
+      }
+      .card-head {
+        padding: 18px 22px;
+      }
+      .row {
+        padding: 20px 22px;
+      }
+      .timeline-row {
+        padding: 21px 22px;
+      }
+    }
+    @media (max-width: 1000px) {
+      .global {
+        height: 48px;
+        padding: 0 16px;
+        gap: 8px;
+      }
+      .global a {
+        font-size: 12px;
+        padding: 8px;
+      }
+      .mission {
+        height: 72px;
+        padding: 8px 16px;
+      }
+      .mission button {
+        padding: 8px;
+        font-size: 13px;
+      }
+      .mission h1 {
+        font-size: 20px;
+      }
+      .mission .subtitle {
+        font-size: 12px;
+      }
+      .layout {
+        height: calc(100dvh - 154px);
+        grid-template-columns: 230px minmax(0, 1fr);
+      }
+      .rail {
+        padding: 14px;
+      }
+      .rail h2 {
+        font-size: 18px;
+      }
+      .rail .group {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+      }
+      .rail .time {
+        font-size: 22px;
+      }
+      .work {
+        padding: 10px 14px;
+      }
+      .tabs {
+        gap: 0;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+      }
+      .tabs button {
+        padding: 7px;
+        font-size: 13px;
+      }
+      .main-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .card-head {
+        padding: 10px 14px;
+      }
+      .row {
+        padding: 12px 14px;
+      }
+      .timeline-row {
+        padding: 12px 14px;
+      }
+      .workspace-title {
+        margin-bottom: 10px;
+      }
+      .workspace-title .meta {
+        display: none;
+      }
+      .editor-layout {
+        display: block;
+      }
+      .editor-layout > .stack {
+        display: none;
+      }
+      .editor {
+        padding: 14px;
+      }
+      .mission .secondary {
+        display: none;
+      }
+      .footer-note {
+        margin: 10px 0;
+      }
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 14px;
+      }
+      .review {
+        padding: 0 12px;
+        gap: 10px;
+        font-size: 10px;
+        height: 30px;
+      }
+      .review .wide {
+        display: none;
+      }
+      .global {
+        height: 44px;
+        padding: 0 14px;
+      }
+      .global a {
+        display: none;
+      }
+      .brand {
+        font-size: 14px;
+      }
+      .mission {
+        height: 68px;
+        padding: 8px 14px;
+        gap: 5px;
+      }
+      .mission h1 {
+        font-size: 18px;
+      }
+      .mission .eyebrow {
+        font-size: 10px;
+      }
+      .mission .subtitle {
+        font-size: 11px;
+      }
+      .mission > button,
+      .mission > .pill {
+        display: none;
+      }
+      .layout {
+        display: block;
+        height: calc(100dvh - 142px);
+      }
+      .rail {
+        display: none;
+      }
+      .work {
+        padding: 12px 12px 88px;
+        height: 100%;
+        overflow-y: auto;
+      }
+      .mobile-awareness {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding-bottom: 13px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 8px;
+      }
+      .mobile-awareness strong {
+        display: block;
+        font-size: 15px;
+        margin-top: 3px;
+      }
+      .mobile-awareness small {
+        font-size: 11px;
+        display: block;
+        margin-top: 3px;
+      }
+      .mobile-awareness .eyebrow {
+        font-size: 10px;
+      }
+      .tabs {
+        gap: 3px;
+        justify-content: space-between;
+      }
+      .tabs button {
+        padding: 7px 8px;
+        font-size: 12px;
+      }
+      .tabs .desktop-tab {
+        display: none;
+      }
+      .tabs .more {
+        margin: 0;
+      }
+      .workspace-title {
+        margin: 13px 0;
+      }
+      .workspace-title h2 {
+        font-size: 16px;
+      }
+      .workspace-title > .pill {
+        font-size: 10px;
+      }
+      .card-head {
+        padding: 10px 12px;
+      }
+      .card-head h2 {
+        font-size: 15px;
+      }
+      .card-head button {
+        padding: 8px;
+        font-size: 12px;
+      }
+      .row {
+        padding: 12px;
+      }
+      .row h3 {
+        font-size: 15px;
+      }
+      .row .meta {
+        font-size: 12px;
+      }
+      .row-top {
+        align-items: start;
+      }
+      .pill {
+        font-size: 10px;
+        padding: 3px 5px;
+      }
+      .row .actions {
+        margin-top: 8px;
+      }
+      .row .actions button {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+      .timeline-row {
+        grid-template-columns: 58px 1fr;
+        padding: 12px;
+        gap: 8px;
+      }
+      .timeline-row time {
+        font-size: 13px;
+      }
+      .timeline-row h3 {
+        font-size: 14px;
+      }
+      .timeline-row .meta {
+        font-size: 12px;
+      }
+      .main-grid {
+        gap: 12px;
+      }
+      .stack {
+        gap: 12px;
+      }
+      .dock {
+        display: flex;
+        gap: 8px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px 12px max(12px, env(safe-area-inset-bottom));
+        background: #142030;
+        border-top: 1px solid #506681;
+        z-index: 4;
+      }
+      .dock button {
+        flex: 1;
+        padding: 9px;
+        font-size: 13px;
+      }
+      .notice {
+        padding: 12px;
+        font-size: 13px;
+      }
+      .notice .meta {
+        font-size: 12px;
+      }
+      .editor {
+        padding: 14px;
+        border-radius: 0;
+        border: 0;
+        background: var(--bg);
+      }
+      .editing .tabs,
+      .editing .workspace-title,
+      .editing .dock {
+        display: none;
+      }
+      .editing .work {
+        padding: 12px 0 0;
+      }
+      .editing .mobile-awareness {
+        padding: 0 14px 12px;
+      }
+      .editor .two {
+        gap: 8px;
+      }
+      .editor .save {
+        position: sticky;
+        bottom: 0;
+        background: #142030;
+        padding: 12px 0;
+        margin-top: 14px;
+      }
+      .editor label {
+        margin: 12px 0;
+      }
+      .editor .seg {
+        gap: 4px;
+      }
+      .editor .seg button {
+        font-size: 11px;
+        padding: 7px;
+      }
+      .menu {
+        top: 255px;
+        right: 12px;
+        left: 12px;
+      }
+      .review-mode .concepts {
+        padding: 12px;
+        margin: 0;
+      }
+      .diagram {
+        grid-template-columns: 1fr !important;
+      }
+    }
+    @media (max-height: 500px) and (min-width: 601px) {
+      .review {
+        height: 24px;
+        font-size: 10px;
+      }
+      .global {
+        display: none;
+      }
+      .mission {
+        height: 58px;
+        padding: 6px 14px;
+      }
+      .mission .subtitle {
+        display: none;
+      }
+      .layout {
+        height: calc(100dvh - 82px);
+        grid-template-columns: 240px minmax(0, 1fr);
+      }
+      .rail {
+        padding: 12px;
+      }
+      .rail .group {
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+      }
+      .rail .person {
+        margin: 8px 0;
+      }
+      .rail .quick {
+        display: none;
+      }
+      .rail .meta {
+        font-size: 11px;
+      }
+      .rail .next {
+        margin-top: 6px;
+      }
+      .work {
+        padding: 6px 12px;
+      }
+      .tabs {
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+      }
+      .tabs button {
+        min-height: 44px;
+      }
+      .workspace-title {
+        margin-bottom: 8px;
+      }
+      .workspace-title h2 {
+        font-size: 16px;
+      }
+      .row {
+        padding: 10px 12px;
+      }
+      .row .actions {
+        margin-top: 7px;
+      }
+      .row p {
+        margin-top: 4px;
+      }
+      .card-head {
+        padding: 8px 12px;
+      }
+      .card-head h2 {
+        font-size: 16px;
+      }
+      .editor header h2 {
+        font-size: 19px;
+      }
+      .editor .save {
+        position: sticky;
+        bottom: 0;
+        background: #142030;
+        padding: 10px 0;
+      }
+      .mission button {
+        min-height: 44px;
+      }
+    }
+    /* Keep live events in the first desktop viewport and specialize small screens. */
+    @media (min-width: 1450px) {
+      .row {
+        padding: 12px 18px;
+      }
+      .card-head {
+        padding: 12px 18px;
+      }
+      .timeline-row {
+        padding: 13px 18px;
+      }
+      .row .actions {
+        margin-top: 8px;
+      }
+      .main-grid {
+        grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+      }
+    }
+    .rail .group:first-child > .meta {
+      display: none;
+    }
+    @media (max-width: 600px) {
+      #operations > .stack {
+        display: contents;
+      }
+      #operations > .stack:first-child > .card:first-child {
+        display: none;
+      }
+      #operations > .stack:first-child > .card:last-child {
+        order: 1;
+      }
+      #operations > .stack:last-child > .card:first-child {
+        order: 0;
+      }
+      #operations > .stack:last-child > .card:nth-child(2) {
+        order: 2;
+      }
+      #operations .footer-note {
+        order: 3;
+      }
+      .mobile-awareness {
+        position: sticky;
+        top: -12px;
+        background: var(--bg);
+        z-index: 2;
+        padding-top: 10px;
+      }
+      .editing .mobile-awareness {
+        top: 0;
+      }
+      .row .actions {
+        gap: 6px;
+      }
+      .card-head button {
+        max-width: 150px;
+      }
+    }
+    @media (max-height: 500px) and (min-width: 601px) {
+      .editing .tabs,
+      .editing .workspace-title {
+        display: none;
+      }
+      .editing .editor {
+        height: calc(100dvh - 94px);
+        overflow-y: auto;
+      }
+      .editing .editor-layout {
+        height: 100%;
+      }
+      .editor .target {
+        padding: 5px 0;
+        font-size: 12px;
+      }
+      .editor h2 {
+        margin: 0;
+      }
+      .rail .person strong {
+        font-size: 14px;
+      }
+      .rail .group {
+        padding-bottom: 9px;
+        margin-bottom: 9px;
+      }
+      .rail h2 {
+        font-size: 16px;
+        margin: 4px 0;
+      }
+      .rail .time {
+        font-size: 20px;
+      }
+      .rail .person {
+        margin: 5px 0;
+      }
+      .rail .pill {
+        font-size: 10px;
+      }
+      .rail .next strong {
+        font-size: 14px;
+      }
+      .rail .next p,
+      .rail .next small {
+        font-size: 12px;
+      }
+    }
+  </style>
+  <body>
+    <div class="review">
+      <b>DESIGN PREVIEW · SYNTHETIC</b><a href="?state=normal">Normal</a
+      ><a href="?state=busy">Busy</a><a href="?state=failure">Failure</a
+      ><a class="wide" href="?concepts=1">Compare concepts</a
+      ><span class="wide">No operational writes · 18 Oct 2026</span>
+    </div>
+    <header class="global">
+      <span class="brand">◉ &nbsp; Mission Planner</span
+      ><a href="#" data-boundary="Missions">Missions</a
+      ><a href="#" data-boundary="Overview">Overview</a
+      ><a href="#" data-boundary="Configuration">Configuration</a
+      ><a class="selected" href="?">Operator</a>
+    </header>
+    <header class="mission">
+      <div class="identity">
+        <div class="eyebrow">Operator · mission workspace · UTC</div>
+        <h1>
+          Meridian
+          <span style="font-size: 14px; color: var(--muted)"
+            >/ Leg 2 · Westbound</span
+          >
+        </h1>
+        <div class="subtitle">
+          18 Oct 2026 &nbsp; · &nbsp; Airborne &nbsp; · &nbsp; Snapshot 14:22
+          UTC
+        </div>
+      </div>
+      <span class="pill model">Simulation</span
+      ><button data-open="mission">Change mission</button
+      ><button class="secondary" data-open="records">Mission records ↗</button
+      ><button data-open="display">Display tools</button
+      ><button class="secondary" data-open="alerts">Alerts · muted</button>
+    </header>
+    <div class="layout">
+      <aside class="rail" aria-label="Persistent mission awareness">
+        <div class="group">
+          <div class="eyebrow">Now · reported connected</div>
+          <h2 id="rail-count">1 customer</h2>
+          <div class="person">
+            <strong>Customer Alpha</strong
+            ><small>Voice · Ground bridge A</small>
+          </div>
+          <div class="person busy-only">
+            <strong>Customer Bravo</strong><small>VTC · Ground bridge B</small>
+          </div>
+          <span class="pill">Protected customer activity</span>
+          <p class="meta">
+            Conference establishment and customer connection are separate.
+          </p>
+        </div>
+        <div class="group">
+          <div class="eyebrow">Next requirement</div>
+          <div class="next">
+            <strong>Customer Charlie · VTC</strong>
+            <div class="time">14:35 <small>UTC</small></div>
+            <p>Prepare 14:25 · in 3 min</p>
+            <small>Scheduled · prep lead 10 min</small>
+          </div>
+          <button data-open="call">Reschedule call</button>
+        </div>
+        <div class="quick">
+          <div class="eyebrow">Quick actions</div>
+          <button class="primary" data-open="call">+ Add call</button
+          ><button data-open="transport">Record transport move</button
+          ><button data-open="issue">+ New issue</button
+          ><button data-open="note">+ Observation</button>
+        </div>
+      </aside>
+      <main class="work">
+        <div class="mobile-awareness">
+          <div>
+            <div class="eyebrow">Now · reported connected</div>
+            <strong id="mobile-count">Alpha · voice</strong
+            ><small id="mobile-detail">Ground bridge A · protected</small>
+          </div>
+          <div>
+            <div class="eyebrow">Next · Charlie VTC</div>
+            <strong>14:35 UTC</strong><small>Prepare 14:25 · in 3 min</small>
+          </div>
+        </div>
+        <nav class="tabs" aria-label="Working view">
+          <button class="active" data-view="Operations">Operations</button
+          ><button data-view="Communications">Comms</button
+          ><button class="desktop-tab" data-view="Transport">Transport</button
+          ><button data-view="Issues">Issues</button
+          ><button class="desktop-tab" data-view="History">History</button
+          ><button class="more" id="more-button" aria-expanded="false">
+            More ▾
+          </button>
+        </nav>
+        <div class="notice hidden" id="failure">
+          <strong>Save outcome uncertain · draft retained</strong>
+          <p>Secure voice → Ka · Meridian / Leg 2</p>
+          <p class="meta">
+            Last known snapshot 14:22. Retry sends the original request.
+          </p>
+          <button data-preview="Exact retry preview — no backend connected.">
+            Retry exact save</button
+          ><button data-open="transport">Review draft</button>
+        </div>
+        <div class="workspace-title">
+          <h2 id="view-title">Mission operations</h2>
+          <p></p>
+          <span class="pill model" id="source-label">Live ETA · modeled</span
+          ><span class="meta">Sources available · updated 14:22 UTC</span>
+        </div>
+        <div id="operations" class="main-grid">
+          <div class="stack">
+            <section class="card">
+              <div class="card-head">
+                <h2>Customer communications</h2>
+                <button data-view="Communications">All communications</button>
+              </div>
+              <div class="row">
+                <div class="row-top">
+                  <h3>Customer Alpha · Voice</h3>
+                  <span class="pill">Reported connected</span>
+                </div>
+                <p class="meta">Ground bridge A · established · reported Ka</p>
+                <div class="actions">
+                  <button
+                    data-preview="Preview: Customer Left records departure only; conference stays open."
+                  >
+                    Customer left</button
+                  ><button data-open="participation">
+                    Details &amp; correction
+                  </button>
+                </div>
+              </div>
+              <div class="row busy-only">
+                <div class="row-top">
+                  <h3>Customer Bravo · VTC</h3>
+                  <span class="pill">Reported connected</span>
+                </div>
+                <p class="meta">
+                  Ground bridge B · established · reported Starshield
+                </p>
+                <div class="actions">
+                  <button
+                    data-preview="Preview: Customer Left records departure only; conference stays open."
+                  >
+                    Customer left</button
+                  ><button data-open="participation">
+                    Details &amp; correction
+                  </button>
+                </div>
+              </div>
+              <div class="row">
+                <div class="row-top">
+                  <h3>Charlie · next preparation</h3>
+                  <span class="pill model">14:25 UTC</span>
+                </div>
+                <p class="meta">
+                  VTC at 14:35 · conference not assigned · end unknown
+                </p>
+                <div class="actions">
+                  <button data-open="call">Reschedule</button
+                  ><button data-open="conference">
+                    Choose / manage conference
+                  </button>
+                </div>
+              </div>
+            </section>
+            <section class="card">
+              <div class="card-head">
+                <h2>Upcoming events</h2>
+                <button
+                  data-preview="Preview: Full timeline includes eligible acknowledgment, source details and retired occurrences."
+                >
+                  Full timeline
+                </button>
+              </div>
+              <div class="timeline-row">
+                <time>14:25</time>
+                <div>
+                  <h3>Prepare Charlie VTC</h3>
+                  <p class="meta">Scheduled · 10-minute lead</p>
+                </div>
+              </div>
+              <div class="timeline-row busy-only">
+                <time>14:28</time>
+                <div>
+                  <h3 class="amber">PoP transition advisory</h3>
+                  <p class="meta">Live ETA · modeled · 14:28–14:31</p>
+                  <button
+                    class="inline-action"
+                    data-preview="Preview: PoP transition is advisory; unknown handover does not establish an outage."
+                  >
+                    View source &amp; activity overlap
+                  </button>
+                </div>
+              </div>
+              <div class="timeline-row">
+                <time>14:35</time>
+                <div>
+                  <h3>Charlie VTC requirement</h3>
+                  <p class="meta">Scheduled · end unknown</p>
+                </div>
+              </div>
+              <div class="timeline-row busy-only">
+                <time>14:38</time>
+                <div>
+                  <h3>X-band restriction</h3>
+                  <p class="meta">
+                    Live ETA · modeled · inspect fallback context
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div class="stack">
+            <section class="card">
+              <div class="card-head">
+                <h2>Attention</h2>
+                <span class="pill warn" id="attention-count">1 open</span>
+              </div>
+              <div class="row">
+                <h3>Cabin handset intermittent</h3>
+                <p class="meta">Monitoring · workaround reported</p>
+                <p class="meta" id="followup-time">Follow up 14:40 UTC</p>
+                <div class="actions">
+                  <button data-open="followup">Update / follow up</button>
+                </div>
+              </div>
+              <div class="row busy-only">
+                <h3 class="amber">Delta voice · past planned start</h3>
+                <p class="meta">14:15 UTC · still scheduled</p>
+                <div class="actions">
+                  <button data-open="call">Update call</button>
+                </div>
+              </div>
+            </section>
+            <section class="card">
+              <div class="card-head">
+                <h2>Transport reports</h2>
+                <button data-open="transport">Record move</button>
+              </div>
+              <div class="row">
+                <div class="row-top">
+                  <h3>Secure voice</h3>
+                  <span class="pill model">Ka</span>
+                </div>
+                <p class="meta">Reported applied · 14:12 UTC</p>
+                <p class="meta">Operator checked: satisfactory · 14:14</p>
+              </div>
+              <div class="row busy-only">
+                <div class="row-top">
+                  <h3>VTC</h3>
+                  <span class="pill model">Starshield</span>
+                </div>
+                <p class="meta">Reported applied · time unknown</p>
+                <p class="meta">Operator check: unknown</p>
+              </div>
+              <div class="row">
+                <p class="meta">Actual traffic routing unknown.</p>
+                <button class="inline-action" data-view="Transport">
+                  Reports, modeled overlap &amp; history →
+                </button>
+              </div>
+            </section>
+            <p class="footer-note">
+              Current activity and next requirement stay visible while you work.
+              Source details are available in each record.
+            </p>
+          </div>
+        </div>
+        <section id="context-view" class="hidden card view-list"></section>
+        <div id="editor-layout" class="hidden editor-layout">
+          <div class="stack">
+            <section class="card">
+              <div class="card-head"><h2>Protected customer context</h2></div>
+              <div class="row">
+                <h3>Alpha · reported connected</h3>
+                <p class="meta">Ground bridge A · reported Ka</p>
+                <p>Customer activity remains open.</p>
+              </div>
+              <div class="row busy-only">
+                <h3>Bravo · reported connected</h3>
+                <p class="meta">Ground bridge B · reported Starshield</p>
+              </div>
+              <div class="row">
+                <h3>Next: Charlie VTC · 14:35</h3>
+                <p class="meta">Prepare 14:25 UTC</p>
+              </div>
+            </section>
+            <section class="card">
+              <div class="row">
+                <h3>Modeled advisory context</h3>
+                <p class="meta">Live ETA · inspect sources and overlap</p>
+                <p class="meta">Advisories do not block a report.</p>
+              </div>
+            </section>
+          </div>
+          <section
+            class="editor"
+            id="editor"
+            aria-label="Action design preview"
+          ></section>
+        </div>
+        <p role="status" id="preview-message" class="preview-message"></p>
+      </main>
+    </div>
+    <div class="dock">
+      <button class="primary" data-open="call">+ Call</button
+      ><button data-open="transport">Move</button
+      ><button data-open="note">Note</button>
+    </div>
+    <nav
+      class="menu hidden"
+      id="more-menu"
+      aria-label="More workspace destinations"
+    >
+      <button data-view="Transport">Transport reports</button
+      ><button data-view="History">History &amp; observations</button
+      ><button data-open="display">Display tools</button
+      ><button data-open="alerts">Local alerts</button
+      ><button data-open="records">Mission records ↗</button
+      ><button data-concepts="true">Compare design concepts</button>
+    </nav>
+    <script>
+      const params = new URLSearchParams(location.search),
+        state = params.get("state") || "normal";
+      const busy = state !== "normal";
+      document
+        .querySelectorAll(".busy-only")
+        .forEach((el) => el.classList.toggle("hidden", !busy));
+      if (busy) {
+        document.querySelector("#rail-count").textContent = "2 customers";
+        document.querySelector("#mobile-count").textContent = "Alpha + Bravo";
+        document.querySelector("#mobile-detail").textContent =
+          "Voice + VTC · protected";
+        document.querySelector("#attention-count").textContent =
+          "2 need action";
+        document.querySelector("#followup-time").textContent =
+          "Follow up 14:20 · overdue";
+      }
+      if (state === "failure") {
+        document.querySelector("#failure").classList.remove("hidden");
+        document.querySelector("#source-label").textContent =
+          "Last known · 14:22";
+      }
+      const templates = {
+        call: [
+          "Add or change call",
+          '<div class="seg"><button class="primary">Scheduled</button><button>Log actual call</button></div><label>Party / requirement<input value="Customer Charlie"></label><div class="two"><label>Date · UTC<input type="date" value="2026-10-18"></label><label>Start · UTC<input type="time" value="14:35"></label></div><div class="two"><label>Type<select><option>VTC</option><option>Voice</option><option>Other</option><option>Unknown</option></select></label><label>Prep lead · minutes<input type="number" value="10"></label></div><label>Conference<select><option>Unknown / unassigned</option><option>Ground bridge A · established</option><option>Ground bridge B · established</option></select></label><p class="meta">End / duration unknown · Scheduled</p><details><summary>Duration, shift, actual times &amp; scope</summary><p class="meta">All exact / approximate / unknown timing, status, coordinator, notes and leg associations remain available.</p></details>',
+          "Save call",
+        ],
+        transport: [
+          "Record transport move",
+          '<div class="seg"><button class="primary">Reported Applied</button><button>Requested</button><button>Intended</button></div><label>Service<input value="Secure voice"></label><label>Applied transport<select><option>Ka</option><option>Starshield</option><option>X-band</option><option>Unknown</option></select></label><p class="meta">Applied time: unknown · set UTC time if known</p><details><summary>Report time &amp; precision</summary><input type="datetime-local"><select><option>Unknown</option><option>Exact</option><option>Approximate</option></select></details><button data-preview="Preview: Add another independent service row, up to the existing limit of 32.">+ Add service</button><details><summary>Other stages, check, reason &amp; associations</summary><p class="meta">Requested, intended and operator check are independently optional. Changing the application clears its prior check. Call/conference lookups and scope remain available.</p></details><p class="meta">Active customer context is advisory. Actual routing unknown.</p>',
+          "Save report",
+        ],
+        followup: [
+          "Update issue / follow up",
+          '<p>Cabin handset intermittent</p><label>Update<textarea>Cabin coordinator testing spare handset.</textarea></label><label>Follow-up UTC<input type="datetime-local" value="2026-10-18T14:40"></label><label>Status<select><option>Monitoring</option><option>Open</option><option>Resolved</option><option>Reopened</option></select></label><details><summary>Priority, mitigation, timing &amp; links</summary><p class="meta">Independent fields; resolving clears the follow-up. Historical correction is selected from Activity.</p></details>',
+          "Save update",
+        ],
+        issue: [
+          "New issue",
+          '<label>Problem<input placeholder="Short description"></label><label>Notes<textarea></textarea></label><details><summary>Priority, follow-up, capability &amp; links</summary><p class="meta">Optional existing fields, including independent mitigation and status.</p></details>',
+          "Save issue",
+        ],
+        note: [
+          "Record observation",
+          '<label>Observation title<input value="Ground coordinator updated"></label><label>Notes<textarea>Next requirement confirmed for 14:35 UTC.</textarea></label><p class="meta">Occurrence time unknown · mission scope</p><details><summary>UTC timing, precision, scope &amp; entry details</summary><p class="meta">Exact, approximate and unknown remain explicit. Recording time comes from the accepted save.</p></details>',
+          "Save observation",
+        ],
+        display: [
+          "Overview display tools",
+          '<p class="meta">Recenter targets a window in this browser.</p><label>Connected Overview window<select><option>Overview · window A</option></select></label><button data-preview="Preview: Request recenter; wait for acknowledgment before showing acceptance.">Recenter selected window</button><hr><p class="meta">Visibility and presets apply to all Overview displays.</p><label>Preset<select><option>Normal</option><option>Communications</option><option>Weather</option></select></label><button data-preview="Preview: Apply existing versioned preset; preserve conflict feedback.">Apply preset</button><button data-preview="Preview: Save current visibility into selected preset.">Save current</button><details><summary>Panels, layers, history &amp; boundaries</summary><p class="meta">Existing supported visibility controls and history window.</p></details>',
+          "Close preview",
+        ],
+        conference: [
+          "Conference detail",
+          '<h3>Ground bridge A</h3><p>Established · 1 customer reported connected</p><p class="meta">Reported Ka · actual routing unknown</p><div class="seg"><button data-preview="Preview: Record operator verification, separately from customer presence.">Verify</button><button data-preview="Preview: Join unknown customer using the existing command.">Customer joined</button></div><details><summary>Interrupt, close, correct &amp; history</summary><p class="meta">Closing conference does not log customer departures. Restore connection and restore record remain separate actions.</p></details>',
+          "Close preview",
+        ],
+        participation: [
+          "Customer interval",
+          '<h3>Alpha · reported connected</h3><p class="meta">Ground bridge A · protected customer activity</p><label>Related call<select><option>Alpha voice requirement</option><option>Unknown / unassigned</option></select></label><details><summary>Correct timing, interrupt &amp; history</summary><p class="meta">Reported join/leave precision, new restored interval link, remove/restore record and immutable revisions.</p></details>',
+          "Close preview",
+        ],
+        alerts: [
+          "Local alert settings",
+          '<label>In-app cues<select><option>Enabled</option><option>Muted</option></select></label><label>Sound<select><option>Off</option><option>On</option></select></label><label>Vibration<select><option>Off</option><option>On</option></select></label><button data-preview="Preview: Enable browser sound/vibration after user interaction; best effort while Operator is open.">Enable sound and vibration</button><p class="meta">Foreground browser cues only; delivery capability and coordination failures stay visible.</p>',
+          "Close preview",
+        ],
+        records: [
+          "Mission records",
+          '<h3>Meridian</h3><p>Continue in Missions for preparation, export and import.</p><p class="meta">One mission ZIP includes the existing customer briefing PDF, planning data, per-leg telemetry and Operator records/history.</p><p class="meta">Plan import does not restore destination Operator records.</p><button data-preview="Navigation preview: existing /missions/{missionId} page owns export status and controls.">Open mission in Missions ↗</button>',
+          "Close preview",
+        ],
+        mission: [
+          "Choose mission context",
+          '<label>Mission<select><option>Meridian</option></select></label><label>Leg / scope<select><option>Leg 2 · Westbound</option><option>Mission</option><option>Preflight</option><option>Between legs</option><option>Postflight</option></select></label><p class="meta">Draft targets remain pinned. Unsaved or pending work requires explicit preservation before switching.</p>',
+          "Close preview",
+        ],
+      };
+      function closeEditor() {
+        document.body.classList.remove("editing");
+        document.querySelector("#editor-layout").classList.add("hidden");
+        document.querySelector("#operations").classList.remove("hidden");
+        document.querySelector("#context-view").classList.add("hidden");
+        document.querySelector("#view-title").textContent =
+          "Mission operations";
+      }
+      function openEditor(key) {
+        const t = templates[key];
+        if (!t) return;
+        document.querySelector("#more-menu").classList.add("hidden");
+        document.querySelector("#operations").classList.add("hidden");
+        document.querySelector("#context-view").classList.add("hidden");
+        document.querySelector("#editor-layout").classList.remove("hidden");
+        document.body.classList.add("editing");
+        document.querySelector("#view-title").textContent = t[0];
+        document.querySelector("#editor").innerHTML =
+          "<header><h2>" +
+          t[0] +
+          '</h2><button id="close-editor" aria-label="Close editor preview">×</button></header><div class="target">Meridian / Leg 2 · UTC · design preview</div>' +
+          t[1] +
+          '<div class="save"><button class="primary" id="preview-save">' +
+          t[2] +
+          '</button><button id="cancel-editor">Close</button></div>';
+        document.querySelector("#preview-save").onclick = () =>
+          message("Design preview only — no operational write sent or saved.");
+        document.querySelector("#close-editor").onclick = closeEditor;
+        document.querySelector("#cancel-editor").onclick = closeEditor;
+        document.querySelector(".work").scrollTop = 0;
+      }
+      function message(s) {
+        document.querySelector("#preview-message").textContent = s;
+      }
+      const views = {
+        Communications:
+          '<h2>Calls, conferences and customer intervals</h2><p class="meta">Independent lifecycle · planned and retrospective entry</p><button data-open="call">+ Add / log call</button><button data-open="conference">Ground bridge A · established →</button><button data-open="participation">Alpha · reported connected →</button><button data-open="call">Charlie · scheduled 14:35 →</button><button data-preview="Preview: completed, canceled and removed calls; restore revalidates links.">Completed, canceled &amp; removed</button>',
+        Transport:
+          '<h2>Service reports and advisory review</h2><p>Secure voice · Ka · reported applied 14:12 UTC</p><p class="meta">Actual routing unknown · operator check satisfactory</p><button data-open="transport">Record / correct move</button><button data-preview="Preview: existing paged immutable transport revisions.">Decision history</button>',
+        Issues:
+          '<h2>Problems and follow-ups</h2><button data-open="issue">+ New issue</button><p>Cabin handset intermittent · Monitoring</p><button data-open="followup">Update / follow up</button><button data-preview="Preview: independent functional and redundancy assessments, with separate observed UTC and precision.">Capabilities &amp; redundancy</button><button data-preview="Preview: issue operational activity with correction; immutable audit history separately accessible.">Activity &amp; history</button>',
+        History:
+          '<h2>Mission records and observations</h2><label>Find in loaded records <input placeholder="Title or note text" style="min-height:44px;width:100%"></label><p class="meta">Preview dataset · page coverage must be explicit in the product.</p><button data-open="note">Observation · ground coordinator updated →</button><button data-preview="Preview: include removed records, restore selected record, inspect immutable revisions.">Removed records &amp; revisions</button><button data-open="records">Mission archive in Missions ↗</button>',
+      };
+      function view(name) {
+        closeEditor();
+        document.querySelector("#more-menu").classList.add("hidden");
+        document
+          .querySelectorAll("[data-view]")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.view === name),
+          );
+        if (name === "Operations") return;
+        document.querySelector("#operations").classList.add("hidden");
+        document.querySelector("#context-view").classList.remove("hidden");
+        document.querySelector("#context-view").innerHTML =
+          '<div class="row">' + views[name] + "</div>";
+        document.querySelector("#view-title").textContent = name;
+      }
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest(
+          "[data-open],[data-view],[data-preview],[data-boundary],[data-concepts]",
+        );
+        if (!b) return;
+        e.preventDefault();
+        if (b.dataset.open) openEditor(b.dataset.open);
+        else if (b.dataset.view) view(b.dataset.view);
+        else if (b.dataset.preview) message(b.dataset.preview);
+        else if (b.dataset.boundary)
+          message(
+            "Navigation preview: existing " + b.dataset.boundary + " screen.",
+          );
+        else if (b.dataset.concepts) location.href = "?concepts=1";
+      });
+      document.querySelector("#more-button").onclick = () => {
+        const m = document.querySelector("#more-menu");
+        m.classList.toggle("hidden");
+        document
+          .querySelector("#more-button")
+          .setAttribute(
+            "aria-expanded",
+            String(!m.classList.contains("hidden")),
+          );
+      };
+      if (params.get("editor")) openEditor(params.get("editor"));
+      if (params.has("concepts")) {
+        document.body.classList.add("review-mode");
+        const c = document.createElement("main");
+        c.className = "concepts";
+        c.innerHTML =
+          '<h1>Three ways to organize the same mission work</h1><p>Source-backed design alternatives · all retain calls, conferences, participation, issues, transport, observations, display controls, alerts and mission archive navigation.</p><section><h2>A · Mission workspace — recommended</h2><div class="diagram" style="grid-template-columns:1fr 2fr 1fr"><div>Persistent Now / Next<br>Connected customers<br>Quick actions</div><div>Operations / Comms / Transport / Issues / History<br><br>Activity + upcoming events + attention</div><div>Contextual detail<br>Action editor<br>Record history</div></div><p>Balanced awareness during simultaneous calls and issues. Report a move beside protected activity; future prep stays visible despite overdue work. Requires shared draft/transaction ownership.</p><button onclick="location.href=\'?state=busy\'">Explore recommended concept</button></section><section><h2>B · Event desk</h2><div class="diagram" style="grid-template-columns:2fr 1fr"><div>14:20 · Overdue follow-up<br>14:25 · Charlie preparation<br>14:28 · Live PoP advisory<br>14:35 · Charlie call</div><div>Selected event → source record<br>Reschedule / update / acknowledge<br>Persistent entity shelf for conferences and untimed records</div></div><p>Best for sequencing and provenance. Busy event streams need separate protection for customer state; persistent and untimed records are less natural.</p></section><section><h2>C · Communications board</h2><div class="diagram" style="grid-template-columns:2fr 1fr"><div>Call schedule<br>Alpha → Bridge A → connected customer<br>Charlie → reuse Bridge A<br>Bravo → Bridge B → connected customer</div><div>Transport context<br>Issues / follow-ups<br>History / display / archive</div></div><p>Strongest for repeated calls and bridge reuse. Transport, independent issues and postflight work become secondary; unknown durations must not be drawn as exact time blocks.</p></section>';
+        document.body.appendChild(c);
+      }
+    </script>
+  </body>
+</html>
