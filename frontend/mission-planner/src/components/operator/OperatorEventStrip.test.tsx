@@ -122,7 +122,7 @@ it('does not report an all-clear on failure and explains local delivery limits',
 });
 it('waits for alert output before accepting the enable gesture', async () => {
   const events = state();
-  events.snapshot = null;
+  events.snapshot = undefined;
   events.loading = true;
   const view = render(
     <MemoryRouter>
