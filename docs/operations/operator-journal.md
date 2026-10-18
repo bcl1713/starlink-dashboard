@@ -10,9 +10,14 @@ store in the independent `operator_data` volume mounted at `/app/data/operator`.
 Container recreation preserves that volume; removing it removes its retained
 history and receipts. The image and entrypoint give only the mount root to
 `appuser` with mode `0700`, without recursively changing retained history.
-Initialize the chosen namespace explicitly before enabling the API. Startup only
-opens existing initialized stores; failure leaves status, configuration,
-Overview and Missions available.
+Enable the API, open Operator and use its explicit **Initialize live journal**
+or **Initialize simulation journal** action for a pristine namespace. The action
+is bound to the displayed source/run and never resets an existing journal.
+Startup only opens existing initialized stores; failure leaves status,
+configuration, Overview and Missions available. Operator distinguishes first-use
+initialization from recovery artifacts, corruption, source mismatch and missing
+simulation context. The packaged `/operator-help/setup.html` page is available
+offline from the setup panel.
 
 Runtime uses the actual coordinator mode, regardless of `OPERATOR_SOURCE_MODE`.
 Simulation uses the actual managed run ID when present; otherwise an explicitly
@@ -33,7 +38,10 @@ python -m app.operator backup --root data/operator --mode live
 python -m app.operator restore --root data/operator --mode live --manifest PATH
 ```
 
-`initialize` is explicit first enablement. `check`, `backup`, and runtime
+`initialize` is also available for explicit offline first enablement. Both UI and
+CLI initialization refuse ambiguous prior-store artifacts, including a lock or
+backups without the database/identity pair; preserve those files for recovery.
+`check`, `backup`, and runtime
 startup never create a missing replacement database. An interrupted
 initialization marker requires administrator recovery. `check` returns JSON
 health and a nonzero exit status when unavailable. It takes exclusive

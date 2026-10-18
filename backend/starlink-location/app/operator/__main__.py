@@ -8,6 +8,7 @@ from .backup import backup_store
 from .clock import SystemClock
 from .errors import OperatorError
 from .recovery import restore_store, verify_store
+from .runtime import namespace_status
 from .settings import OperatorSettings
 from .store import OperatorStore
 
@@ -47,8 +48,13 @@ def main(argv=None):
             health = restore_store(settings, manifest=args.manifest, clock=clock)
             result = health.model_dump(mode="json")
         else:
+            status = (
+                namespace_status(settings) if args.command == "initialize" else None
+            )
+            if status == "recovery":
+                raise OperatorError("store_recovery_required")
             store = OperatorStore.open(
-                settings, initialize=args.command == "initialize", clock=clock
+                settings, initialize=status == "new", clock=clock
             )
             if args.command == "backup":
                 result = {

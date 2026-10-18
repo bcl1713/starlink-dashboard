@@ -566,6 +566,8 @@ def run(
     if entrypoint:
         owner.env["OPERATOR_ACCEPTANCE_ENTRYPOINT"] = entrypoint
         owner.env["OPERATOR_ACCEPTANCE_HEALTH_PATH"] = "/health"
+        owner.ownership["fixture"] = "fresh production startup; simulation; normal system clock; no Operator seed"
+        owner.persist()
     if transport or archive:
         owner.deadline += 1800
     if archive:
@@ -587,7 +589,7 @@ def run(
         "candidateSha": candidate,
         "project": project,
         "checksPassed": False,
-        "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+        "fixture": (owner.ownership["fixture"] if entrypoint else "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims"),
     }
     handlers = {
         s: signal.signal(s, owner.signal) for s in (signal.SIGINT, signal.SIGTERM)
