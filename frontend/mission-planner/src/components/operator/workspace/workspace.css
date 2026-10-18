@@ -369,6 +369,26 @@
   }
 }
 @media (max-height: 500px) and (max-width: 1100px) {
+  .operator-workspace {
+    grid-template: 'header header' auto 'awareness navigation' auto 'awareness body' minmax(
+        0,
+        1fr
+      ) / 15rem minmax(0, 1fr);
+    gap: 0 0.75rem;
+  }
+  .ws-awareness {
+    display: block;
+    border-bottom: 0;
+    border-right: 1px solid var(--ws-border);
+    padding-right: 0.5rem;
+  }
+  .ws-awareness > * + * {
+    margin-top: 0.5rem;
+  }
+  .ws-header > div:first-child {
+    max-width: 12rem;
+  }
+
   .ws-header {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }

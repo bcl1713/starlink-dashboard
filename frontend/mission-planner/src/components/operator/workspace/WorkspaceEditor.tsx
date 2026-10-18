@@ -17,8 +17,12 @@ import type {
   Scope,
 } from '@/types/operator';
 import { JournalEditor } from '../JournalEditor';
-import { CallEditor } from '../CallEditor';
+import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
+import { joinCommand } from '../conferenceCommands';
+import { ParticipationEditor } from '../ParticipationEditor';
+import { useQuery } from '@tanstack/react-query';
+import { readOperatorRecords } from '@/services/operator';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import { commandLane, targetIdentity } from './commandRegistry';
 
@@ -40,6 +44,20 @@ export function WorkspaceEditor({
     ? workspace.registry.resumeDraft(workspace.selectedDraftId)
     : null;
   const health = useOperatorHealth(false);
+  const relationships = useQuery({
+    queryKey: [
+      'operator-records',
+      draft?.target.missionId,
+      operatorIdentity(health.data),
+      'editor-relationships',
+    ],
+    queryFn: () => readOperatorRecords({ mission_id: draft!.target.missionId }),
+    enabled:
+      (draft?.input.record_type === 'participation' ||
+        draft?.input.record_type === 'call') &&
+      !!health.data?.ready,
+    retry: false,
+  });
   const returnFocus = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (!draft) return null;
@@ -54,10 +72,11 @@ export function WorkspaceEditor({
   const legs = mission?.id === draft.target.missionId ? mission.legs : [];
   function update(input: OperatorInput) {
     if (!draft) return;
+    const current = workspace.registry.resumeDraft(draft.draftId) ?? draft;
     workspace.registry.parkDraft({
-      ...draft,
+      ...current,
       input,
-      revision: draft.revision + 1,
+      revision: current.revision + 1,
       target: {
         ...draft.target,
         scope: input.scope,
@@ -70,10 +89,11 @@ export function WorkspaceEditor({
   }
   function editorState(patch: Record<string, unknown>) {
     if (!draft) return;
+    const current = workspace.registry.resumeDraft(draft.draftId) ?? draft;
     workspace.registry.parkDraft({
-      ...draft,
-      revision: draft.revision + 1,
-      editorState: { ...draft.editorState, ...patch },
+      ...current,
+      revision: current.revision + 1,
+      editorState: { ...current.editorState, ...patch },
     });
     workspace.refreshDrafts();
   }
@@ -91,7 +111,15 @@ export function WorkspaceEditor({
   async function saveInput(input: OperatorInput) {
     if (!draft || saveDisabled) return;
     update(input);
-    await workspace.submitDraft(draft.draftId);
+    await workspace.submitDraft(
+      draft.draftId,
+      input.record_type === 'participation' &&
+        !draft.target.recordId &&
+        input.payload.state === 'connected' &&
+        !input.time.occurred_at
+        ? { atCurrentTime: (now) => joinCommand(input, now) }
+        : undefined
+    );
   }
   function legSelect(
     label: string,
@@ -263,6 +291,14 @@ export function WorkspaceEditor({
               creating={!draft.target.recordId}
               disabled={false}
               saveDisabled={saveDisabled}
+              contextual
+              records={
+                relationships.data?.items.map((item) => item.record) ?? []
+              }
+              editorState={
+                draft.editorState?.call as Partial<CallEditorState> | undefined
+              }
+              onEditorStateChange={(call) => editorState({ call })}
               onChange={update}
               onSubmit={(value) => void saveInput(value)}
             />
@@ -273,6 +309,24 @@ export function WorkspaceEditor({
               onChange={update}
               onSubmit={(value) => void saveInput(value)}
             />
+          ) : draft.input.record_type === 'participation' ? (
+            <>
+              {(!relationships.data || relationships.data.cursor) && (
+                <p role="status">
+                  Relationships show loaded records only. Unresolved saved
+                  associations remain retained.
+                </p>
+              )}
+              <ParticipationEditor
+                draft={draft.input}
+                records={
+                  relationships.data?.items.map((item) => item.record) ?? []
+                }
+                disabled={saveDisabled}
+                onChange={update}
+                onSubmit={(value) => void saveInput(value)}
+              />
+            </>
           ) : draft.input.record_type === 'journal_entry' &&
             ['note', 'call_observation'].includes(
               draft.input.payload.entry_type

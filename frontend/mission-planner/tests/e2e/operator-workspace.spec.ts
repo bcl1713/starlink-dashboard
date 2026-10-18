@@ -490,3 +490,143 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
     await context.close();
   }
 });
+
+test('hidden workspace: conference reuse and independent customer lifecycle at three sizes', async ({
+  browser,
+}) => {
+  const receipts: object[] = [];
+  for (const viewport of viewports) {
+    const context = await browser.newContext({ viewport, timezoneId: 'UTC' });
+    try {
+      const page = await context.newPage();
+      await page.goto(
+        `/operator?workspace=1&mission_id=${fixtures[0].mission.id}&view=communications`
+      );
+      const communications = page.getByRole('region', {
+        name: 'Communications',
+        exact: true,
+      });
+      async function save(click: () => Promise<unknown>) {
+        const response = page.waitForResponse(
+          (response) =>
+            response.request().method() === 'POST' &&
+            /\/api\/v2\/operator\/records/.test(response.url())
+        );
+        await click();
+        const saved = await response;
+        expect(saved.ok()).toBe(true);
+        const receipt = await saved.json();
+        receipts.push(receipt);
+        return receipt.saved_records[0];
+      }
+      await communications
+        .getByRole('button', { name: 'Create conference', exact: true })
+        .click();
+      const dialog = page.getByRole('dialog');
+      const title = `Synthetic reusable bridge ${viewport.width}`;
+      await dialog.getByLabel('Conference name (optional)').fill(title);
+      const created = await save(() =>
+        dialog
+          .getByRole('button', { name: 'Save conference', exact: true })
+          .click()
+      );
+      await expect(dialog).toHaveCount(0);
+      const bridge = communications.getByRole('article', {
+        name: `Conference ${title}`,
+        exact: true,
+      });
+      await save(() =>
+        bridge.getByRole('button', { name: 'Establish', exact: true }).click()
+      );
+      await expect(bridge).toContainText('Conference: established');
+      await save(() =>
+        bridge.getByRole('button', { name: 'Verify', exact: true }).click()
+      );
+      await bridge
+        .getByRole('button', { name: 'Customer Joined', exact: true })
+        .click();
+      await dialog
+        .getByLabel('Participant (optional)')
+        .fill(`Synthetic first ${viewport.width}`);
+      await save(() =>
+        dialog
+          .getByRole('button', { name: 'Save customer interval', exact: true })
+          .click()
+      );
+      await expect(dialog).toHaveCount(0);
+      const first = communications.getByRole('article', {
+        name: `Customer Synthetic first ${viewport.width}`,
+        exact: true,
+      });
+      await expect(first).toContainText(title);
+      await save(() =>
+        first
+          .getByRole('button', { name: 'Interrupt customer', exact: true })
+          .click()
+      );
+      const restored = await save(() =>
+        first
+          .getByRole('button', { name: 'Restore connection', exact: true })
+          .click()
+      );
+      expect(restored.payload.resumes_participation_id).toBeTruthy();
+      expect(restored.record_id).not.toBe(
+        restored.payload.resumes_participation_id
+      );
+      await communications
+        .getByRole('button', { name: 'Reuse conference', exact: true })
+        .filter({ visible: true })
+        .last()
+        .click();
+      await dialog
+        .getByLabel('Participant (optional)')
+        .fill(`Synthetic second ${viewport.width}`);
+      await save(() =>
+        dialog
+          .getByRole('button', { name: 'Save customer interval', exact: true })
+          .click()
+      );
+      const second = communications.getByRole('article', {
+        name: `Customer Synthetic second ${viewport.width}`,
+        exact: true,
+      });
+      await save(() =>
+        second
+          .getByRole('button', { name: 'Customer Left', exact: true })
+          .click()
+      );
+      await expect(bridge).toContainText('Conference: established');
+      await save(() =>
+        bridge
+          .getByRole('button', { name: 'Close conference', exact: true })
+          .click()
+      );
+      await expect(bridge.getByRole('alert')).toContainText(
+        'customer reported connected'
+      );
+      await bridge
+        .getByRole('button', { name: 'Conference history', exact: true })
+        .click();
+      await expect(page.getByRole('dialog')).toContainText('Version 4');
+      const history = await page.request.get(
+        `/api/v2/operator/records/${created.record_id}/history`
+      );
+      expect(history.ok()).toBe(true);
+      await page
+        .getByRole('button', { name: 'Close history', exact: true })
+        .click();
+      await page.screenshot({
+        path: join(
+          evidence,
+          `communications-${viewport.width}x${viewport.height}.png`
+        ),
+      });
+    } finally {
+      await context.close();
+    }
+  }
+  writeFileSync(
+    join(evidence, 'workspace-communications.json'),
+    JSON.stringify({ synthetic: true, receipts }, null, 2)
+  );
+});

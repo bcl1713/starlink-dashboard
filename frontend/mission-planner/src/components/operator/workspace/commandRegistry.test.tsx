@@ -373,3 +373,29 @@ it.each([
   expect(loaded.errors).toHaveLength(1);
   expect(sessionStorage.getItem(key)).toBe(value);
 });
+it('prepares a lifecycle command with the backend clock before freezing and dispatching it', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'clock-command',
+      saved_records: [record],
+    });
+  const { registry } = mount();
+  const draft = registry.createDraft(target, input);
+  let submission!: Promise<void>;
+  act(() => {
+    submission = workspace.submitDraft(draft.draftId, {
+      atCurrentTime: (now) => ({
+        operation: 'create',
+        body: { ...input, time: { ...input.time, occurred_at: now } },
+      }),
+    });
+  });
+  await act(async () => {
+    await submission;
+  });
+  expect(save.mock.calls[0][0]).toMatchObject({
+    body: { time: { occurred_at: page().as_of } },
+  });
+});

@@ -146,3 +146,36 @@ it('corrects legacy scheduled unknown timing without requiring an invented start
   expect(submit.mock.calls[0][0].time.planned_start_at).toBeNull();
   expect(submit.mock.calls[0][0].payload.prep_lead_minutes).toBeNull();
 });
+it('restores unsent duration, prep and shift controls after the editor is parked', () => {
+  const initial = callDraft(undefined, 'planned', 'demo');
+  const changed = vi.fn();
+  const first = render(
+    <CallEditor
+      draft={initial}
+      disabled={false}
+      onChange={vi.fn()}
+      onSubmit={vi.fn()}
+      onEditorStateChange={changed}
+    />
+  );
+  field('Preparation lead minutes (blank = unknown)', '0');
+  expect(changed).toHaveBeenCalled();
+  const saved = changed.mock.calls.at(-1)![0];
+  first.unmount();
+  render(
+    <CallEditor
+      draft={initial}
+      disabled={false}
+      onChange={vi.fn()}
+      onSubmit={vi.fn()}
+      editorState={saved}
+    />
+  );
+  expect(
+    (
+      screen.getByLabelText(
+        'Preparation lead minutes (blank = unknown)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('0');
+});

@@ -7,9 +7,10 @@ import {
   useOperatorHealth,
 } from '@/hooks/api/operatorReadSession';
 import { useOperatorEvents } from '@/hooks/api/useOperatorEvents';
-import { readOperatorRecords } from '@/services/operator';
+import { readOperatorRecords, readOperatorRecord } from '@/services/operator';
 import type {
   JournalInput,
+  OperatorCommand,
   OperatorInput,
   SavedRecord,
 } from '@/types/operator';
@@ -20,7 +21,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { callDraft } from '../callDraft';
-import { conferenceDraft, unknownTime } from '../conferenceCommands';
+import {
+  conferenceDraft,
+  participationDraft,
+  conferenceCommand,
+  leaveCommand,
+  resumeCommand,
+  unknownTime,
+} from '../conferenceCommands';
 import { OperatorEventFeed } from '../OperatorEventFeed';
 import { OperatorAlertSettings } from '../OperatorAlertSettings';
 import { OperatorDisplayTools } from '../OperatorDisplayTools';
@@ -32,6 +40,8 @@ import { nextRequirement } from './awarenessModel';
 import { WorkspaceEditor } from './WorkspaceEditor';
 import { MissionContextChooser } from './MissionContextChooser';
 import { createEditorDraft } from './editorDraft';
+import { CommunicationsView } from './CommunicationsView';
+import { JournalHistory } from '../JournalHistory';
 import './workspace.css';
 
 const views = [
@@ -83,6 +93,9 @@ export function OperatorWorkspace() {
   const [help, setHelp] = useState(false);
   const [mobileTools, setMobileTools] = useState(false);
   const [sources, setSources] = useState(false);
+  const [historyId, setHistoryId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [acting, setActing] = useState(false);
   const noteButton = useRef<HTMLButtonElement>(null);
   function navigateView(view: View) {
     setParams((previous) => {
@@ -115,6 +128,61 @@ export function OperatorWorkspace() {
       } as OperatorInput,
       record
     );
+  }
+  async function action(
+    record: SavedRecord,
+    build: (latest: SavedRecord, now: string) => OperatorCommand
+  ) {
+    if (acting || disabled || !health.data) return;
+    setActing(true);
+    setActionError(null);
+    try {
+      const latest = await readOperatorRecord(record.record_id);
+      if (latest.record.version !== record.version) {
+        void records.refetch();
+        throw new Error(
+          'This record changed. Review its current state before choosing the action again.'
+        );
+      }
+      const clock = await readOperatorRecords({
+        mission_id: record.mission_id,
+        record_type: record.record_type,
+      });
+      const command = build(latest.record, clock.as_of);
+      const input =
+        command.operation === 'create' || command.operation === 'update'
+          ? command.body
+          : ({
+              schema_version: 1,
+              record_type: record.record_type,
+              mission_id: record.mission_id,
+              leg_id: record.leg_id,
+              scope: record.scope,
+              time: record.time,
+              payload: record.payload,
+            } as OperatorInput);
+      const draft = createEditorDraft(
+        workspace.registry,
+        health.data,
+        input,
+        command.operation === 'create' ? undefined : latest.record
+      );
+      workspace.refreshDrafts();
+      await workspace.submitDraft(draft.draftId, { command });
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : 'Action unavailable.'
+      );
+    } finally {
+      setActing(false);
+    }
+  }
+  function transition(record: SavedRecord) {
+    void action(record, (latest) => ({
+      operation: latest.deleted ? 'restore' : 'remove',
+      record_id: latest.record_id,
+      body: { schema_version: 1, expected_version: latest.version },
+    }));
   }
   function note() {
     const input: JournalInput = {
@@ -310,7 +378,39 @@ export function OperatorWorkspace() {
                 Local cue: {cue.map((event) => event.title).join(' · ')}
               </p>
             ) : null}
-            {view === 'Now' ? (
+            {actionError && <p role="alert">{actionError}</p>}
+            {view === 'Communications' ? (
+              <CommunicationsView
+                items={items}
+                disabled={disabled || acting}
+                incomplete={incomplete}
+                asOf={records.data?.pages[0]?.as_of}
+                onCreateCall={() =>
+                  openInput(callDraft(undefined, 'planned', missionId))
+                }
+                onCreateConference={() => openInput(conferenceDraft(missionId))}
+                onJoin={(conference) =>
+                  openInput(
+                    participationDraft(missionId, conference?.record_id)
+                  )
+                }
+                onEdit={openRecord}
+                onHistory={setHistoryId}
+                onTransition={transition}
+                onConferenceAction={(record, intent) =>
+                  void action(record, (latest, now) =>
+                    conferenceCommand(latest, intent, now)
+                  )
+                }
+                onCustomerAction={(record, intent) =>
+                  void action(record, (latest, now) =>
+                    intent === 'restore'
+                      ? resumeCommand(latest, now)
+                      : leaveCommand(latest, intent, now)
+                  )
+                }
+              />
+            ) : view === 'Now' ? (
               <section aria-label="Mission activity">
                 <h2>Mission activity</h2>
                 <OperatorEventFeed events={events} onClose={() => undefined} />
@@ -323,17 +423,13 @@ export function OperatorWorkspace() {
                     (record) =>
                       view === 'History' ||
                       (!record.deleted &&
-                        (view === 'Communications'
-                          ? ['call', 'conference', 'participation'].includes(
-                              record.record_type
-                            )
-                          : view === 'Transport'
-                            ? record.record_type.startsWith('transport_')
-                            : view === 'Issues'
-                              ? record.record_type === 'issue' ||
-                                record.payload.entry_type ===
-                                  'capability_assessment'
-                              : record.record_type === 'journal_entry'))
+                        (view === 'Transport'
+                          ? record.record_type.startsWith('transport_')
+                          : view === 'Issues'
+                            ? record.record_type === 'issue' ||
+                              record.payload.entry_type ===
+                                'capability_assessment'
+                            : record.record_type === 'journal_entry'))
                   )
                   .map((record) => (
                     <article className="ws-record" key={record.record_id}>
@@ -452,6 +548,28 @@ export function OperatorWorkspace() {
         mission={editorMission.data}
         onReturnFocus={() => noteButton.current?.focus()}
       />
+      <Dialog
+        open={!!historyId}
+        onOpenChange={(open) => {
+          if (!open) setHistoryId(null);
+        }}
+      >
+        <DialogContent className="ws-editor">
+          <DialogTitle>Record history</DialogTitle>
+          <DialogDescription>
+            Saved immutable revisions for the selected record.
+          </DialogDescription>
+          <div className="ws-editor-body">
+            {historyId && identity && (
+              <JournalHistory
+                id={historyId}
+                identity={identity}
+                onClose={() => setHistoryId(null)}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={tools} onOpenChange={setTools}>
         <DialogContent className="ws-editor">
           <DialogTitle>Display tools</DialogTitle>

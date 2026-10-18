@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import type { CallInput, CallPayload, Scope } from '@/types/operator';
+import type {
+  CallInput,
+  CallPayload,
+  Scope,
+  SavedRecord,
+} from '@/types/operator';
 import { shiftCallTime } from './callTiming';
 const fieldClass =
   'min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2';
@@ -26,6 +31,14 @@ function timestamp(value: string | null) {
     throw new Error('Enter a valid UTC calendar date and time.');
   return value;
 }
+export interface CallEditorState {
+  lead: string;
+  duration: string;
+  shift: string;
+  unit: string;
+  originalTime: CallInput['time'];
+  originalDuration: string;
+}
 export function CallEditor({
   draft,
   disabled,
@@ -34,6 +47,10 @@ export function CallEditor({
   onSubmit,
   onDirty,
   saveDisabled = false,
+  editorState,
+  onEditorStateChange,
+  records,
+  contextual = false,
 }: {
   draft: CallInput;
   disabled: boolean;
@@ -42,26 +59,47 @@ export function CallEditor({
   onSubmit: (draft: CallInput) => void;
   onDirty?: () => void;
   saveDisabled?: boolean;
+  editorState?: Partial<CallEditorState>;
+  onEditorStateChange?: (state: CallEditorState) => void;
+  records?: SavedRecord[];
+  contextual?: boolean;
 }) {
   const [lead, setLead] = useState(
-    draft.payload.prep_lead_minutes == null
-      ? ''
-      : String(draft.payload.prep_lead_minutes)
+    editorState?.lead ??
+      (draft.payload.prep_lead_minutes == null
+        ? ''
+        : String(draft.payload.prep_lead_minutes))
   );
   const [duration, setDuration] = useState(
-    draft.time.planned_start_at && draft.time.planned_end_at
-      ? String(
-          (Date.parse(draft.time.planned_end_at) -
-            Date.parse(draft.time.planned_start_at)) /
-            60000
-        )
-      : ''
+    editorState?.duration ??
+      (draft.time.planned_start_at && draft.time.planned_end_at
+        ? String(
+            (Date.parse(draft.time.planned_end_at) -
+              Date.parse(draft.time.planned_start_at)) /
+              60000
+          )
+        : '')
   );
-  const [originalTime] = useState({ ...draft.time });
-  const [originalDuration] = useState(duration);
-  const [shift, setShift] = useState('');
-  const [unit, setUnit] = useState('minutes');
+  const [originalTime] = useState(
+    editorState?.originalTime ?? { ...draft.time }
+  );
+  const [originalDuration] = useState(
+    editorState?.originalDuration ?? duration
+  );
+  const [shift, setShift] = useState(editorState?.shift ?? '');
+  const [unit, setUnit] = useState(editorState?.unit ?? 'minutes');
   const [error, setError] = useState<string | null>(null);
+  function retain(patch: Partial<CallEditorState>) {
+    onEditorStateChange?.({
+      lead,
+      duration,
+      shift,
+      unit,
+      originalTime,
+      originalDuration,
+      ...patch,
+    });
+  }
   const payload = (patch: Partial<CallPayload>) =>
     onChange({ ...draft, payload: { ...draft.payload, ...patch } });
   const time = (
@@ -231,7 +269,10 @@ export function CallEditor({
                 className={fieldClass}
                 inputMode="numeric"
                 value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                onChange={(e) => {
+                  setDuration(e.target.value);
+                  retain({ duration: e.target.value });
+                }}
               />
             </label>
             <label className="block">
@@ -240,7 +281,10 @@ export function CallEditor({
                 className={fieldClass}
                 inputMode="numeric"
                 value={lead}
-                onChange={(e) => setLead(e.target.value)}
+                onChange={(e) => {
+                  setLead(e.target.value);
+                  retain({ lead: e.target.value });
+                }}
               />
             </label>
             <div className="flex min-w-0 flex-wrap items-end gap-2">
@@ -251,7 +295,10 @@ export function CallEditor({
                   inputMode="text"
                   placeholder="+2 or -15"
                   value={shift}
-                  onChange={(e) => setShift(e.target.value)}
+                  onChange={(e) => {
+                    setShift(e.target.value);
+                    retain({ shift: e.target.value });
+                  }}
                 />
               </label>
               <label>
@@ -260,7 +307,10 @@ export function CallEditor({
                   aria-label="Shift unit"
                   className={fieldClass}
                   value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
+                  onChange={(e) => {
+                    setUnit(e.target.value);
+                    retain({ unit: e.target.value });
+                  }}
                 >
                   <option value="minutes">Minutes</option>
                   <option value="hours">Hours</option>
@@ -341,16 +391,49 @@ export function CallEditor({
               />
             </label>
             <label className="block">
-              Conference record ID (optional)
-              <input
-                className={fieldClass}
-                value={draft.payload.conference_id ?? ''}
-                onChange={(e) =>
-                  payload({ conference_id: e.target.value || null })
-                }
-              />
+              {records
+                ? 'Conference (optional)'
+                : 'Conference record ID (optional)'}
+              {records ? (
+                <select
+                  className={fieldClass}
+                  value={draft.payload.conference_id ?? ''}
+                  onChange={(event) =>
+                    payload({ conference_id: event.target.value || null })
+                  }
+                >
+                  <option value="">Unknown / unassigned</option>
+                  {draft.payload.conference_id &&
+                    !records.some(
+                      (record) =>
+                        record.record_id === draft.payload.conference_id
+                    ) && (
+                      <option value={draft.payload.conference_id}>
+                        Unresolved conference · {draft.payload.conference_id}
+                      </option>
+                    )}
+                  {records
+                    .filter(
+                      (record) =>
+                        record.record_type === 'conference' && !record.deleted
+                    )
+                    .map((record) => (
+                      <option key={record.record_id} value={record.record_id}>
+                        {record.payload.title}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <input
+                  className={fieldClass}
+                  value={draft.payload.conference_id ?? ''}
+                  onChange={(e) =>
+                    payload({ conference_id: e.target.value || null })
+                  }
+                />
+              )}
             </label>
-            <label className="block">
+            <label className="block" hidden={contextual}>
               Scope
               <select
                 aria-label="Scope"

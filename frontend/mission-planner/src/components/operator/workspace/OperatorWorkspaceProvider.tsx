@@ -16,6 +16,7 @@ import {
   operatorIdentity,
   useOperatorHealth,
 } from '@/hooks/api/operatorReadSession';
+import { readOperatorRecords } from '@/services/operator';
 import type { CommandReceipt, OperatorCommand } from '@/types/operator';
 import { DraftRegistry, getDraftRegistry } from './draftRegistry';
 import {
@@ -34,6 +35,7 @@ import { recoverLegacyDrafts } from './legacyRecovery';
 type JournalOwner = ReturnType<typeof useOperatorJournal>;
 type SubmitOptions = {
   command?: OperatorCommand;
+  atCurrentTime?: (asOf: string) => OperatorCommand;
   captureCurrentTime?: boolean;
   captureDimensions?: ('functional' | 'redundancy')[];
 };
@@ -288,7 +290,16 @@ export function OperatorWorkspaceProvider({
         return;
       }
       const api = await ensureOwner(draft.target);
-      const command = options.command ?? draftCommand(draft);
+      const command = options.atCurrentTime
+        ? options.atCurrentTime(
+            (
+              await readOperatorRecords({
+                mission_id: draft.target.missionId,
+                record_type: draft.target.recordType,
+              })
+            ).as_of
+          )
+        : (options.command ?? draftCommand(draft));
       assertCommandTarget(draft, command);
       api.openEditor(draft.baseRecord ?? undefined);
       const result = await api.save(command, {
