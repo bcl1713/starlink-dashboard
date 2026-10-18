@@ -344,7 +344,9 @@ class PopStatusService:
             "flight_phase": flight.phase.value,
             "unavailable_reason": reason,
             "mission_id": active_context.parent_mission_id if active_context else None,
-            "leg_id": getattr(active_context.leg, "id", None) if active_context else None,
+            "leg_id": (
+                getattr(active_context.leg, "id", None) if active_context else None
+            ),
         }
         if config.mode == "simulation" and self.snapshot_context_provider is not None:
             context.update(self.snapshot_context_provider())

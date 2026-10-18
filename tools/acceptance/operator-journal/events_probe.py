@@ -281,7 +281,9 @@ if __name__ == "__main__":
     print(
         json.dumps(
             probe(
-                Path(os.environ["OPERATOR_ACCEPTANCE_ROOT"]) / "event-durability-probe"
+                Path(os.environ["OPERATOR_ACCEPTANCE_ROOT"])
+                / "operator"
+                / "event-durability-probe"
             )
         )
     )
