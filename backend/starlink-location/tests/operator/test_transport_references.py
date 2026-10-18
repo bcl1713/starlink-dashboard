@@ -91,5 +91,7 @@ def test_recovery_rejects_missing_transport_link(service, record_data):
     _call, _conference, saved = targets(service, record_data)
     with service.store.connect(write=True) as db:
         db.execute("DELETE FROM current_links WHERE from_id=?", (str(saved.record_id),))
-    with service.store.connect() as db, pytest.raises(OperatorError, match="store_corrupt"):
+    with service.store.connect() as db, pytest.raises(
+        OperatorError, match="store_corrupt"
+    ):
         validate_connection(db, clock=service.clock)
