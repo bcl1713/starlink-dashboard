@@ -79,6 +79,7 @@ export function IssueCorrection({
         <label className="block">
           Corrected update
           <textarea
+            aria-label="Corrected update"
             className={issueField}
             required
             maxLength={8000}

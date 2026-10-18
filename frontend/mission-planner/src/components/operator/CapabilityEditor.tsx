@@ -221,6 +221,7 @@ export function CapabilityEditor({
         <label className="block">
           Assessment notes
           <textarea
+            aria-label="Assessment notes"
             className={issueField}
             maxLength={8000}
             value={input.payload.note}

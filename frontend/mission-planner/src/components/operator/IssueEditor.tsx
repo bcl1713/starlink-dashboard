@@ -88,6 +88,7 @@ export function IssueEditor({
           <label className="block">
             Add update
             <textarea
+              aria-label="Add update"
               className={issueField}
               maxLength={8000}
               value={input.payload.update_text ?? ''}
@@ -349,6 +350,7 @@ export function IssueEditor({
             <label>
               Notes
               <textarea
+                aria-label="Notes"
                 className={issueField}
                 maxLength={8000}
                 value={input.payload.note}
