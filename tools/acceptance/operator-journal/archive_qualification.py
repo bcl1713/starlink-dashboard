@@ -79,6 +79,7 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=30) as client:
 
     def restart():
         script = """import hashlib,json
+from pathlib import Path
 import httpx
 root=Path('/app/data/operator/archive-acceptance')
 job=json.loads((root/'synthetic-ready-job.json').read_text())

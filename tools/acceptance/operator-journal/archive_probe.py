@@ -38,7 +38,8 @@ def prepared(client):
 def counts(client):
     response = client.get("/api/v2/operator/records", params={"mission_id": MISSION})
     response.raise_for_status()
-    return response.json()
+    page = response.json()
+    return {"items": page["items"], "H": page["H"]}
 
 
 def run():
@@ -133,10 +134,25 @@ def run():
             assert any(n.startswith("routes/") and n.endswith(".kml") for n in names)
             assert "exports/mission/mission-timeline.csv" in names
             legacy = io.BytesIO()
+            legacy_names = [
+                name
+                for name in names
+                if not name.startswith(("operations/", "telemetry/"))
+            ]
+            legacy_manifest = json.loads(archive.read("manifest.json"))
+            legacy_manifest.pop("archive_components", None)
+            legacy_manifest["file_structure"].pop("archive_files", None)
+            legacy_manifest["statistics"]["total_files"] = len(legacy_names)
             with zipfile.ZipFile(legacy, "w", zipfile.ZIP_DEFLATED) as output:
-                for name in names:
-                    if not name.startswith(("operations/", "telemetry/")):
-                        output.writestr(name, archive.read(name))
+                for name in legacy_names:
+                    output.writestr(
+                        name,
+                        (
+                            json.dumps(legacy_manifest)
+                            if name == "manifest.json"
+                            else archive.read(name)
+                        ),
+                    )
         response = destination.post(
             "/api/v2/missions/import",
             files={"file": ("synthetic-mission.zip", payload, "application/zip")},

@@ -38,7 +38,7 @@ test('single mission ZIP archive uses existing export and import controls', asyn
       await noOverflow(page);
       await page.screenshot({
         path: join(evidence, `archive-export-${width}x${height}.png`),
-        fullPage: true,
+        fullPage: false,
       });
       if (width === 1920) {
         await page.route(
@@ -67,28 +67,44 @@ test('single mission ZIP archive uses existing export and import controls', asyn
       await noOverflow(page);
       await page.screenshot({
         path: join(evidence, `archive-operator-${width}x${height}.png`),
-        fullPage: true,
+        fullPage: false,
       });
-      // Import the enhanced archive through the unchanged UI on a non-active
-      // copy. Clean separate-instance import is verified by archive_probe.py.
-      if (width === 1920) {
-        await page.goto(`${origin}/missions`);
-        await page.getByRole('button', { name: /Import/i }).click();
-        const importing = page.getByRole('dialog');
-        await expect(
-          importing.getByRole('heading', { name: 'Import Mission' })
-        ).toBeVisible();
-        await page.screenshot({
-          path: join(evidence, 'archive-existing-import-controls.png'),
-        });
-        await importing
-          .getByRole('button', { name: 'Close', exact: true })
-          .click();
-      }
       captures.push(`${width}x${height}`);
     } finally {
       await context.close();
     }
+  }
+  const importingContext = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+  });
+  try {
+    const page = await importingContext.newPage();
+    page.on('pageerror', (error) => errors.push(error.message));
+    const journalPath = `${origin}/api/v2/operator/records?mission_id=synthetic-mission-a`;
+    const before = await (await page.request.get(journalPath)).json();
+    const deactivated = await page.request.post(
+      `${origin}/api/v2/missions/synthetic-mission-a/legs/deactivate`
+    );
+    expect(deactivated.ok(), await deactivated.text()).toBe(true);
+    await page.goto(`${origin}/missions`);
+    await page
+      .getByRole('button', { name: 'Import Mission', exact: true })
+      .click();
+    const dialog = page.getByRole('dialog');
+    await dialog
+      .locator('input[type=file]')
+      .setInputFiles(join(evidence, 'browser-mission-1920.zip'));
+    await expect(
+      dialog.getByText('Import successful!', { exact: true })
+    ).toBeVisible();
+    await page.screenshot({
+      path: join(evidence, 'archive-existing-import-controls.png'),
+    });
+    const after = await (await page.request.get(journalPath)).json();
+    expect(after.items).toEqual(before.items);
+    expect(after.H).toEqual(before.H);
+  } finally {
+    await importingContext.close();
   }
   expect(errors).toEqual([]);
   writeFileSync(
@@ -101,6 +117,7 @@ test('single mission ZIP archive uses existing export and import controls', asyn
         failedNetworkRetry: true,
         downloadableZip: true,
         existingImportControls: true,
+        uiImportSucceededWithoutJournalMutation: true,
         operatorResponsive: true,
         browserErrors: errors,
       },
