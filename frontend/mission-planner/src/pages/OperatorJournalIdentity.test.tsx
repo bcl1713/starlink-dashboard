@@ -74,12 +74,13 @@ it.each([
     if (kind === 'existing') click('Edit Original');
     fireEvent.change(title(), { target: { value: 'Unsent local draft' } });
     let release!: (value: ReturnType<typeof page>) => void;
-    rows.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          release = resolve;
-        })
-    );
+    rows.mockImplementation((filters) => {
+      if (filters.record_type !== 'journal_entry')
+        return Promise.resolve(page([]));
+      return new Promise((resolve) => {
+        release = resolve;
+      });
+    });
     history.mockResolvedValue(page([]));
     readHealth.mockResolvedValue({ ...health, ...change });
     await act(async () => {

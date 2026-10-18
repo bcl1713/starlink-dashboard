@@ -1,3 +1,5 @@
+import { OperatorIssues } from '@/components/operator/OperatorIssues';
+import { IssueFollowups } from '@/components/operator/IssueFollowups';
 import { OperatorCommunications } from '@/components/operator/OperatorCommunications';
 import { OperatorDisplayTools } from '@/components/operator/OperatorDisplayTools';
 import { useState } from 'react';
@@ -87,6 +89,12 @@ export function OperatorJournalPage() {
             Communications
           </a>
           <a
+            href="#operator-issues"
+            className="inline-flex min-h-11 items-center rounded-md border px-3"
+          >
+            Issues
+          </a>
+          <a
             href="#operator-journal"
             className="inline-flex min-h-11 items-center rounded-md border px-3"
           >
@@ -100,6 +108,15 @@ export function OperatorJournalPage() {
           </a>
         </nav>
       </header>
+      {missionId && (
+        <IssueFollowups
+          pages={brief.data?.pages ?? []}
+          incomplete={!!brief.hasNextPage}
+          unavailable={
+            unavailable || brief.isError || brief.isPending || journal.blocked
+          }
+        />
+      )}
       <div id="operator-brief" className="scroll-mt-4">
         <OperatorBrief
           missionId={missionId}
@@ -161,6 +178,7 @@ export function OperatorJournalPage() {
           onDirty={setCallDirty}
         />
       )}
+      {missionId && <OperatorIssues key={missionId} missionId={missionId} />}
       <section
         id="operator-journal"
         aria-label="Operator journal"
@@ -353,8 +371,12 @@ export function OperatorJournalPage() {
                   !unavailable &&
                   !journal.records.isError && (
                     <JournalList
-                      items={journal.records.data.pages.flatMap(
-                        (page) => page.items
+                      items={journal.records.data.pages.flatMap((page) =>
+                        page.items.filter(
+                          (item) =>
+                            item.record.payload.entry_type !==
+                            'capability_assessment'
+                        )
                       )}
                       disabled={disabled || dirty}
                       onEdit={select}
