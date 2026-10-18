@@ -24,7 +24,7 @@ import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
 import { joinCommand } from '../conferenceCommands';
 import { ParticipationEditor } from '../ParticipationEditor';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { readOperatorRecords } from '@/services/operator';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import { commandLane, targetIdentity } from './commandRegistry';
@@ -47,21 +47,30 @@ export function WorkspaceEditor({
     ? workspace.registry.resumeDraft(workspace.selectedDraftId)
     : null;
   const health = useOperatorHealth(false);
-  const relationships = useQuery({
+  const usesRelationships = [
+    'participation',
+    'call',
+    'issue',
+    'transport_decision',
+  ].includes(draft?.input.record_type ?? '');
+  const relationships = useInfiniteQuery({
     queryKey: [
       'operator-records',
       draft?.target.missionId,
       operatorIdentity(health.data),
-      'editor-relationships',
+      'editor-relationships-v2',
     ],
-    queryFn: () => readOperatorRecords({ mission_id: draft!.target.missionId }),
-    enabled:
-      (draft?.input.record_type === 'participation' ||
-        draft?.input.record_type === 'call' ||
-        draft?.input.record_type === 'issue') &&
-      !!health.data?.ready,
+    queryFn: ({ pageParam }) =>
+      readOperatorRecords({ mission_id: draft!.target.missionId }, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.cursor ?? undefined,
+    enabled: usesRelationships && !!health.data?.ready,
     retry: false,
   });
+  const relatedRecords =
+    relationships.data?.pages.flatMap((page) =>
+      page.items.map((item) => item.record)
+    ) ?? [];
   const returnFocus = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (!draft) return null;
@@ -191,6 +200,31 @@ export function WorkspaceEditor({
           · Times are UTC. Reports record operator actions.
         </DialogDescription>
         <div className="ws-editor-body">
+          {usesRelationships && (
+            <p role="status" aria-label="Related record coverage">
+              {relatedRecords.length} related records loaded.
+            </p>
+          )}
+          {usesRelationships && relationships.isError && (
+            <p role="status">
+              Related records unavailable. Saved associations remain retained.
+            </p>
+          )}
+          {usesRelationships && relationships.hasNextPage && (
+            <section aria-label="More related records">
+              <p>Relationship choices cover loaded records only.</p>
+              <button
+                className="ws-button"
+                type="button"
+                disabled={relationships.isFetchingNextPage}
+                onClick={() => void relationships.fetchNextPage()}
+              >
+                {relationships.isFetchingNextPage
+                  ? 'Loading related records…'
+                  : 'Load more related records'}
+              </button>
+            </section>
+          )}
           {(draft.persistence.message || error) && (
             <p role="alert">{error ?? draft.persistence.message}</p>
           )}
@@ -300,9 +334,7 @@ export function WorkspaceEditor({
               disabled={false}
               saveDisabled={saveDisabled}
               contextual
-              records={
-                relationships.data?.items.map((item) => item.record) ?? []
-              }
+              records={relatedRecords}
               editorState={
                 draft.editorState?.call as Partial<CallEditorState> | undefined
               }
@@ -347,7 +379,7 @@ export function WorkspaceEditor({
                   time. A conference report does not connect a customer.
                 </p>
               )}
-              {(!relationships.data || relationships.data.cursor) && (
+              {(!relationships.data || relationships.hasNextPage) && (
                 <p role="status">
                   Relationships show loaded records only. Unresolved saved
                   associations remain retained.
@@ -355,9 +387,7 @@ export function WorkspaceEditor({
               )}
               <ParticipationEditor
                 draft={draft.input}
-                records={
-                  relationships.data?.items.map((item) => item.record) ?? []
-                }
+                records={relatedRecords}
                 disabled={saveDisabled}
                 onChange={(value) => {
                   update(value);
@@ -368,6 +398,7 @@ export function WorkspaceEditor({
             </>
           ) : draft.input.record_type === 'transport_decision' ? (
             <TransportForm
+              records={relatedRecords}
               draft={{
                 input: draft.input,
                 replacement_check_row_ids: Array.isArray(
@@ -463,9 +494,7 @@ export function WorkspaceEditor({
               saveDisabled={saveDisabled}
               contextual
               asOf={null}
-              related={
-                relationships.data?.items.map((item) => item.record) ?? []
-              }
+              related={relatedRecords}
               onDraftChange={(value) => {
                 update(value.input);
                 editorState({

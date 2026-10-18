@@ -17,7 +17,7 @@ import {
   useOperatorWorkspace,
 } from './OperatorWorkspaceProvider';
 import { WorkspaceEditor } from './WorkspaceEditor';
-import { health, input } from '@/test/operator-fixtures';
+import { health, input, page, record } from '@/test/operator-fixtures';
 import * as api from '@/services/operator';
 import type { DraftTarget } from './types';
 import type { OperatorInput } from '@/types/operator';
@@ -176,13 +176,11 @@ it('makes current join time explicit and retains intentional unknown join time',
 
 for (const captureNow of [false, true]) {
   it(`submits ${captureNow ? 'backend UTC' : 'unknown time'} only as explicitly chosen`, async () => {
-    const save = vi
-      .spyOn(api, 'saveOperatorCommand')
-      .mockRejectedValue({
-        code: 'test-stop',
-        message: 'Retain command for assertion',
-        retryable: false,
-      });
+    const save = vi.spyOn(api, 'saveOperatorCommand').mockRejectedValue({
+      code: 'test-stop',
+      message: 'Retain command for assertion',
+      retryable: false,
+    });
     mount(participationDraft('mission-a', 'conference-a'));
     const choice = await screen.findByRole('checkbox', {
       name: 'Report joined now using backend UTC',
@@ -204,3 +202,36 @@ for (const captureNow of [false, true]) {
     }
   });
 }
+
+it('loads later relationship pages without dropping the pinned draft', async () => {
+  const customer = {
+    ...record,
+    record_type: 'call' as const,
+    payload: {
+      ...record.payload,
+      entry_type: 'call' as const,
+      title: 'Related customer 51',
+      status: 'scheduled' as const,
+      conference_id: null,
+    },
+  };
+  vi.mocked(api.readOperatorRecords)
+    .mockResolvedValueOnce({ ...page([]), cursor: 'page-2' })
+    .mockResolvedValueOnce(page([customer]));
+  const { registry, draft } = mount(
+    participationDraft('mission-a', 'conference-a')
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Load more related records' })
+  );
+  expect(
+    await screen.findByRole('option', { name: 'Related customer 51' })
+  ).toBeTruthy();
+  expect(api.readOperatorRecords).toHaveBeenCalledWith(
+    { mission_id: 'mission-a' },
+    'page-2'
+  );
+  expect(registry.resumeDraft(draft.draftId)?.target.missionId).toBe(
+    'mission-a'
+  );
+});

@@ -15,6 +15,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.OPERATOR_ACCEPTANCE_ORIGIN,
     headless: true,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
     launchOptions: { args: ['--disable-dev-shm-usage', '--no-sandbox'] },
   },
 });

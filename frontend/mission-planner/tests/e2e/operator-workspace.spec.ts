@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect } from '@playwright/test';
-import { control } from './operator-journal-helpers';
+import { control, mutation, snapshot } from './operator-journal-helpers';
+import { randomUUID } from 'node:crypto';
+import type { SavedRecord } from '@/types/operator';
 
 const evidence = process.env.OPERATOR_ACCEPTANCE_EVIDENCE!;
 const fixtures = JSON.parse(
@@ -920,5 +922,367 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
   writeFileSync(
     join(evidence, 'workspace-issues-transport.json'),
     JSON.stringify({ synthetic: true, receipts }, null, 2)
+  );
+});
+
+test('hidden workspace: paged named transport relationships retain exact targets at three sizes', async ({
+  browser,
+  request,
+}) => {
+  const missionId = fixtures[1].mission.id;
+  const health = await (await request.get('/api/v2/operator/health')).json();
+  const time = {
+    occurred_at: null,
+    ended_at: null,
+    precision: 'unknown',
+    end_state: 'unknown',
+    planned_start_at: null,
+    planned_end_at: null,
+  };
+  const base = {
+    schema_version: 1,
+    mission_id: missionId,
+    leg_id: null,
+    scope: 'mission',
+    time,
+  };
+  const payload = {
+    schema_version: 1,
+    note: '',
+    previous_leg_id: null,
+    next_leg_id: null,
+  };
+  async function setup(body: object) {
+    const response = await request.post('/api/v2/operator/records', {
+      data: body,
+      headers: {
+        'Idempotency-Key': randomUUID(),
+        'X-Operator-Store-Epoch': health.api_epoch,
+      },
+    });
+    expect(response.ok(), await response.text()).toBe(true);
+    return (await response.json()).saved_records[0] as SavedRecord;
+  }
+  const setupIds: string[] = [];
+  // Record pages sort by UUID. Put both genuine targets beyond fifty lower IDs.
+  async function highTarget(type: 'call' | 'conference') {
+    for (let attempt = 0; attempt < 32; attempt++) {
+      const saved = await setup({
+        ...base,
+        record_type: type,
+        payload:
+          type === 'call'
+            ? {
+                ...payload,
+                entry_type: 'call',
+                title: `Fictional lookup customer ${attempt}`,
+                status: 'tentative',
+                conference_id: null,
+                prep_lead_minutes: null,
+              }
+            : {
+                ...payload,
+                entry_type: 'conference',
+                title: `Fictional lookup bridge ${attempt}`,
+                status: 'unknown',
+              },
+      });
+      setupIds.push(saved.record_id);
+      if (saved.record_id >= '8') return saved;
+    }
+    throw new Error(
+      'Could not construct bounded paged relationship prerequisites'
+    );
+  }
+  const call = await highTarget('call');
+  const conference = await highTarget('conference');
+  let lowerIds = 0;
+  for (let index = 0; index < 200 && lowerIds < 50; index++) {
+    const note = await setup({
+      ...base,
+      record_type: 'journal_entry',
+      payload: {
+        ...payload,
+        entry_type: 'note',
+        title: `Fictional paging prerequisite ${index + 1}`,
+      },
+    });
+    setupIds.push(note.record_id);
+    if (
+      note.record_id < call.record_id &&
+      note.record_id < conference.record_id
+    )
+      lowerIds++;
+  }
+  expect(lowerIds).toBe(50);
+  const receipts: object[] = [];
+  for (const viewport of viewports) {
+    const context = await browser.newContext({ viewport });
+    try {
+      const page = await context.newPage();
+      await page.goto(
+        `/operator?workspace=1&mission_id=${missionId}&view=transport`
+      );
+      await page
+        .getByRole('button', { name: 'Record another move', exact: true })
+        .click();
+      const editor = page.getByRole('dialog');
+      await editor
+        .getByLabel('Service 1', { exact: true })
+        .fill(`Fictional named-link voice ${viewport.width}`);
+      await editor.getByLabel('Reported Applied 1', { exact: true }).check();
+      await editor
+        .getByLabel('Applied transport 1', { exact: true })
+        .selectOption('Ka');
+      await editor
+        .getByText('Reason, timing and associations (optional)', {
+          exact: true,
+        })
+        .click();
+      const targetOption = editor.getByRole('option', {
+        name: conference.payload.title,
+        exact: true,
+      });
+      const callOption = editor.getByRole('option', {
+        name: call.payload.title,
+        exact: true,
+      });
+      await expect(targetOption).toHaveCount(0);
+      const coverage = editor.getByRole('status', {
+        name: 'Related record coverage',
+      });
+      for (
+        let number = 0;
+        number < 10 &&
+        ((await targetOption.count()) === 0 ||
+          (await callOption.count()) === 0);
+        number++
+      ) {
+        const before = Number.parseInt((await coverage.textContent())!, 10);
+        const nextPage = page.waitForResponse(
+          (response) =>
+            response.request().method() === 'GET' &&
+            response.url().includes('/api/v2/operator/records?') &&
+            response.url().includes('cursor=')
+        );
+        await editor
+          .getByRole('button', {
+            name: 'Load more related records',
+            exact: true,
+          })
+          .click();
+        const loaded = await nextPage;
+        expect(loaded.ok()).toBe(true);
+        const next = await loaded.json();
+        await expect(coverage).toContainText(
+          `${before + next.items.length} related records loaded`
+        );
+      }
+      await expect(targetOption).toHaveCount(1);
+      await expect(callOption).toHaveCount(1);
+      await editor
+        .getByRole('combobox', { name: 'Related call', exact: true })
+        .selectOption(call.record_id);
+      await editor
+        .getByRole('combobox', { name: 'Related conference', exact: true })
+        .selectOption(conference.record_id);
+      if (call.leg_id) {
+        await editor
+          .getByRole('combobox', { name: 'Draft scope', exact: true })
+          .selectOption('leg');
+        await editor
+          .getByRole('combobox', { name: 'Leg', exact: true })
+          .selectOption(call.leg_id);
+      }
+      await page.screenshot({
+        path: join(
+          evidence,
+          `transport-associations-${viewport.width}x${viewport.height}.png`
+        ),
+      });
+      const accepted = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response.url().endsWith('/api/v2/operator/records')
+      );
+      await editor
+        .getByRole('button', { name: 'Save transport decision', exact: true })
+        .click();
+      const response = await accepted;
+      expect(response.ok(), await response.text()).toBe(true);
+      const receipt = await response.json();
+      expect(receipt.saved_records[0].payload).toMatchObject({
+        call_id: call.record_id,
+        conference_id: conference.record_id,
+      });
+      expect(receipt.saved_records[0].payload.services[0]).toMatchObject({
+        intended: null,
+        requested: null,
+        applied: { transport: 'Ka' },
+      });
+      receipts.push(receipt);
+      await expect(editor).toHaveCount(0);
+    } finally {
+      await context.close();
+    }
+  }
+  writeFileSync(
+    join(evidence, 'workspace-relationships.json'),
+    JSON.stringify(
+      {
+        synthetic: true,
+        setupRecordIds: setupIds,
+        setupIsNotLearnerCompletion: true,
+        callId: call.record_id,
+        conferenceId: conference.record_id,
+        receipts,
+      },
+      null,
+      2
+    )
+  );
+});
+
+test('hidden workspace: real lost receipt exact retry and offline draft recovery at three sizes', async ({
+  browser,
+}) => {
+  const proof: object[] = [];
+  for (const viewport of viewports) {
+    const context = await browser.newContext({ viewport });
+    try {
+      const page = await context.newPage();
+      const missionId = fixtures[0].mission.id;
+      await page.goto(
+        `/operator?workspace=1&mission_id=${missionId}&view=notes`
+      );
+      await page.getByRole('button', { name: 'Note', exact: true }).click();
+      const editor = page.getByRole('dialog');
+      const title = `Fictional lost receipt ${viewport.width}`;
+      await editor.getByLabel('Title', { exact: true }).fill(title);
+      const requests: ReturnType<typeof snapshot>[] = [];
+      page.on('request', (request) => {
+        if (mutation(request)) requests.push(snapshot(request));
+      });
+      let committed: { saved_records: SavedRecord[] } | null = null;
+      let intercepted = false;
+      await page.route('**/api/v2/operator/records', async (route) => {
+        if (route.request().method() !== 'POST' || intercepted)
+          return route.continue();
+        intercepted = true;
+        const response = await route.fetch();
+        expect(response.ok()).toBe(true);
+        committed = await response.json();
+        await route.abort('connectionreset');
+      });
+      await editor
+        .getByRole('button', { name: 'Save entry', exact: true })
+        .click();
+      await expect(editor).toContainText(/uncertain/i);
+      expect(committed).not.toBeNull();
+      const beforeRetry = await (
+        await page.request.get(
+          `/api/v2/operator/records?mission_id=${missionId}`
+        )
+      ).json();
+      expect(
+        beforeRetry.items.filter(
+          (item: { record: SavedRecord }) => item.record.payload.title === title
+        )
+      ).toHaveLength(1);
+      await editor
+        .getByRole('button', { name: 'Keep draft and return', exact: true })
+        .click();
+      await expect(editor).toHaveCount(0);
+      await page.unroute('**/api/v2/operator/records');
+      const replayed = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response.url().endsWith('/api/v2/operator/records')
+      );
+      await page
+        .getByRole('button', { name: 'Retry same save', exact: true })
+        .click();
+      const accepted = await replayed;
+      expect(accepted.ok()).toBe(true);
+      const receipt = await accepted.json();
+      expect(receipt).toEqual(committed);
+      expect(requests).toHaveLength(2);
+      expect(requests[1]).toEqual(requests[0]);
+      const savedId = receipt.saved_records[0].record_id;
+      const history = await (
+        await page.request.get(`/api/v2/operator/records/${savedId}/history`)
+      ).json();
+      expect(history.cursor).toBeNull();
+      expect(history.items).toHaveLength(1);
+      await expect(
+        page.getByRole('button', { name: 'Retry same save', exact: true })
+      ).toHaveCount(0);
+      const afterRetry = await (
+        await page.request.get(
+          `/api/v2/operator/records?mission_id=${missionId}`
+        )
+      ).json();
+      expect(
+        afterRetry.items.filter(
+          (item: { record: SavedRecord }) => item.record.payload.title === title
+        )
+      ).toHaveLength(1);
+      await page.getByRole('button', { name: 'Note', exact: true }).click();
+      const offlineTitle = `Fictional retained offline note ${viewport.width}`;
+      await editor.getByLabel('Title', { exact: true }).fill(offlineTitle);
+      await context.setOffline(true);
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await expect(editor.getByText(/Store unavailable/)).toBeVisible({
+        timeout: 20_000,
+      });
+      await editor
+        .getByLabel('Title', { exact: true })
+        .fill(`${offlineTitle} revised`);
+      await expect(
+        editor.getByRole('button', { name: 'Save entry', exact: true })
+      ).toBeDisabled();
+      await editor
+        .getByRole('button', { name: 'Keep draft and return', exact: true })
+        .click();
+      await context.setOffline(false);
+      await page.reload();
+      await page
+        .getByRole('button', { name: new RegExp(`${offlineTitle} revised`) })
+        .click();
+      await expect(editor.getByLabel('Title', { exact: true })).toHaveValue(
+        `${offlineTitle} revised`
+      );
+      const recovered = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response.url().endsWith('/api/v2/operator/records')
+      );
+      await editor
+        .getByRole('button', { name: 'Save entry', exact: true })
+        .click();
+      expect((await recovered).ok()).toBe(true);
+      await expect(editor).toHaveCount(0);
+      await page.screenshot({
+        path: join(
+          evidence,
+          `recovery-${viewport.width}x${viewport.height}.png`
+        ),
+      });
+      proof.push({
+        viewport,
+        lostReceiptRequests: requests.slice(0, 2),
+        recoveredOfflineRequest: requests[2],
+        realCommittedReceipt: receipt,
+        historyVersions: history.items.length,
+        exactRetryOneWrite: true,
+        offlineDraftAfterReconnectReload: true,
+      });
+    } finally {
+      await context.close();
+    }
+  }
+  writeFileSync(
+    join(evidence, 'workspace-recovery.json'),
+    JSON.stringify({ synthetic: true, proof }, null, 2)
   );
 });
