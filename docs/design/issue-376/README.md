@@ -4,12 +4,31 @@ Draft design for
 [issue 376](https://github.com/bcl1713/starlink-dashboard/issues/376), based on
 merged `dev` commit `1a3e77d3`. Approval pending. No product UI changes.
 
-Start with [revision 2 and the review responses](revision-2.md), then open
-[the revised preview](review-v2.html) locally. The
+**Download and open [the current standalone prototype](review-v2.html).** It
+opens with Start here; Start here / Help remains visible. Working-view buttons
+navigate; Demo options compares or resets synthetic scenarios. Illustrated-only
+controls are labeled and explain what they represent.
+
+Read [revision 3 orientation and required guide deliverable](revision-3.md) and
+[revision 2 design contracts](revision-2.md). The
 [feature and action parity matrix](audit.md) remains a mandatory
 implementation/acceptance checklist. Preview commands do not call a backend. The
 original narrative and mockups below are retained as the first review iteration;
 revision 2 supersedes their layout and ownership decisions where they differ.
+
+## Prototype orientation
+
+| Scenario                              | Desktop                                         | Portrait                                       | Landscape                                       |
+| ------------------------------------- | ----------------------------------------------- | ---------------------------------------------- | ----------------------------------------------- |
+| Start here on a standalone download   | [Desktop](v3-start-here-1920x1080.png)          | [Portrait](v3-start-here-390x844.png)          | [Landscape](v3-start-here-844x390.png)          |
+| Illustrated History destination       | [Desktop](v3-illustrated-history-1920x1080.png) | [Portrait](v3-illustrated-history-390x844.png) | [Landscape](v3-illustrated-history-844x390.png) |
+| Named layout / scenario reset options | [Desktop](v3-demo-options-1920x1080.png)        | [Portrait](v3-demo-options-390x844.png)        | [Landscape](v3-demo-options-844x390.png)        |
+
+The current runner checks a copied standalone download, opens/closes Help while
+editing, finds History through Tools, and parks/resumes a draft. It produces
+**58 captures and 16 scenario checks**, including the revision-2 journeys below.
+Those are automated prototype checks; first-time human task completion without
+coaching and the full shipped Operator guide remain required acceptance work.
 
 ## Revision 2 visual comparison
 
@@ -58,11 +77,12 @@ injects a customer interruption/new urgent advisory, and retains focus/input.
 | Call with long label while typing             | [390×844](v2-keyboard-call-390x844.png)       | [844×390](v2-keyboard-call-844x390.png)       |
 | Input error, Next and Save/Keep draft visible | [390×844](v2-keyboard-validation-390x844.png) | [844×390](v2-keyboard-validation-844x390.png) |
 
-`capture-v2.cjs` produces 49 captures and exercises lifecycle separation,
-resolve/reopen/correction, valid applied-only action, in-page draft parking and
-resumption, live-update focus preservation, layout and 44px button heights.
-`preview-v2-check.json` records results and resource ownership. Run from a
-mission-planner directory with installed Playwright:
+`capture-v2.cjs` originally produced 49 captures and now also covers
+orientation. It exercises lifecycle separation, resolve/reopen/correction, valid
+applied-only action, in-page draft parking and resumption, live-update focus
+preservation, layout and 44px button heights. `preview-v2-check.json` records
+results and resource ownership. Run from a mission-planner directory with
+installed Playwright:
 
 ```sh
 timeout --kill-after=10s 3m node /absolute/worktree/docs/design/issue-376/capture-v2.cjs

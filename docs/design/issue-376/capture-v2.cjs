@@ -7,8 +7,12 @@ const path = require("node:path");
 const assert = require("node:assert/strict");
 const root = __dirname;
 const results = [];
+const downloadedPath = path.join(
+  require("node:os").tmpdir(),
+  "issue-376-downloaded-" + process.pid + ".html",
+);
 const ownership = {
-  task: "issue-376-design-revision-2",
+  task: "issue-376-design-revision-3",
   pid: process.pid,
   processGroup: require("node:child_process")
     .execFileSync("ps", ["-o", "pgid=", "-p", String(process.pid)], {
@@ -18,7 +22,7 @@ const ownership = {
   command:
     "timeout --kill-after=10s 3m node <worktree>/docs/design/issue-376/capture-v2.cjs",
   started: new Date().toISOString(),
-  temporaryPaths: [],
+  temporaryPaths: [downloadedPath],
   servers: [],
   containers: [],
   networks: [],
@@ -93,6 +97,7 @@ async function visibleInApp(page, selector) {
   const scriptErrors = [];
   const assertions = [];
   try {
+    fs.copyFileSync(path.join(root, "review-v2.html"), downloadedPath);
     browser = await chromium.launch({ headless: true });
     for (const [width, height] of [
       [1920, 1080],
@@ -104,6 +109,58 @@ async function visibleInApp(page, selector) {
         const page = await context.newPage();
         page.on("pageerror", (e) => scriptErrors.push(e.message));
         const size = width + "x" + height;
+        await page.goto("file://" + downloadedPath);
+        await page
+          .getByRole("dialog", { name: "Start here · Using this prototype" })
+          .waitFor();
+        await capture(page, "v3-start-here-" + size);
+        await page
+          .getByRole("button", { name: "Start at Operations", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Transport", exact: true })
+          .click();
+        await page.locator("#service").fill("First visit report draft");
+        await page
+          .getByRole("button", { name: "Start here / Help", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Close prototype help", exact: true })
+          .click();
+        assert.equal(
+          await page.locator("#service").inputValue(),
+          "First visit report draft",
+        );
+        await page.locator('.save-footer [data-view="ops"]').click();
+        await page.getByRole("button", { name: "Tools", exact: true }).click();
+        await page
+          .getByRole("button", { name: /^History \/ observations/ })
+          .click();
+        await page
+          .getByRole("dialog", { name: "History and observations" })
+          .waitFor();
+        await capture(page, "v3-illustrated-history-" + size);
+        await page.locator("#illustration [data-close-dialog]").click();
+        await page
+          .getByRole("button", { name: "Review retained work", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Resume move", exact: true })
+          .click();
+        assert.equal(
+          await page.locator("#service").inputValue(),
+          "First visit report draft",
+        );
+        await page
+          .getByRole("button", { name: "Demo options", exact: true })
+          .click();
+        await page.getByLabel("Synthetic scenario").selectOption("planned");
+        await capture(page, "v3-demo-options-" + size);
+        await page.locator("#demo-options [data-close-dialog]").click();
+        assertions.push(
+          size +
+            ": downloaded standalone file orientation; Help and illustrated History preserve draft; Tools, return and resume discoverable; reset options labeled",
+        );
         for (const concept of width === 844 ? ["A"] : ["A", "B", "C"]) {
           await goto(page, "concept=" + concept);
           assert.equal(
@@ -321,6 +378,8 @@ async function visibleInApp(page, selector) {
     process.exitCode = 1;
   } finally {
     await cleanup();
+    if (fs.existsSync(downloadedPath)) fs.unlinkSync(downloadedPath);
+    ownership.temporaryFilesRemoved = !fs.existsSync(downloadedPath);
     fs.writeFileSync(
       reportPath,
       JSON.stringify(

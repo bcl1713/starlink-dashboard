@@ -1,5 +1,9 @@
 # Operator design revision 2
 
+[Revision 3](revision-3.md) adds prototype orientation/discoverability and
+records the mandatory shipped Operator guide. The current HTML includes those
+changes.
+
 Design approval remains pending. This revision responds to the
 [PR review](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6252762425).
 It replaces the first preview's priority/layout proposals where they differ. The

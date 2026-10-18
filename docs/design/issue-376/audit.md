@@ -133,6 +133,13 @@ be measured separately in the implementation acceptance run.
 
 ## Design questions
 
+The updated issue also requires a task-based shipped Operator guide, annotated
+desktop/mobile screenshots, mission quick reference and discoverable Help entry.
+Treat those as acceptance checklist items, with each procedure validated against
+real shipped controls and first-time completion without verbal coaching. See
+[revision 3](revision-3.md); prototype orientation is not the full product
+guide.
+
 The initial recommendation prioritizes reported connected customers and
 next-call preparation during high workload. Confirm whether transport/problems
 or schedule management should dominate instead. Also review the quick-action

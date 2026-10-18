@@ -1172,17 +1172,269 @@
         min-width: 0;
       }
     }
+
+    .review {
+      height: 44px;
+      gap: 8px;
+    }
+    .review button {
+      min-height: 44px;
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+    .review b {
+      font-size: 11px;
+    }
+    .app {
+      height: calc(100dvh - 44px - var(--chrome) - var(--keys));
+    }
+    dialog {
+      color: #edf4fc;
+      background: #142130;
+      border: 1px solid #6b89a7;
+      border-radius: 10px;
+      width: min(760px, calc(100vw - 24px));
+      max-height: calc(100dvh - 24px);
+      padding: 20px;
+      overflow: auto;
+    }
+    dialog::backdrop {
+      background: #030912cc;
+    }
+    dialog header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 14px;
+    }
+    dialog h1 {
+      font-size: 21px;
+    }
+    dialog h2 {
+      font-size: 16px;
+      margin: 18px 0 8px;
+    }
+    dialog p {
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    dialog ol {
+      padding-left: 22px;
+    }
+    dialog li {
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    dialog label {
+      margin-top: 16px;
+    }
+    .help-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 18px 0;
+    }
+    .demo-tag {
+      display: inline-block;
+      font-size: 10px;
+      color: #c3d9ed;
+      border: 1px solid #617e99;
+      border-radius: 4px;
+      padding: 2px 5px;
+    }
+    button > .demo-tag {
+      display: block;
+      margin-top: 3px;
+      font-weight: 400;
+    }
+    dialog .demo-tag {
+      font-size: 12px;
+    }
+    #surface .demo-tag {
+      white-space: normal;
+    }
+    .views {
+      flex-wrap: wrap;
+    }
+    .save-footer button {
+      font-size: 13px;
+    }
+    .editor-title button {
+      font-size: 12px;
+    }
+    @media (max-width: 600px) {
+      .review {
+        height: 44px;
+        padding: 0 10px;
+      }
+      .review button {
+        font-size: 11px;
+      }
+      .app {
+        height: calc(100dvh - 44px - var(--chrome) - var(--keys));
+      }
+      .save-footer button {
+        font-size: 12px;
+        padding: 7px;
+      }
+      .views button {
+        padding: 6px;
+      }
+      .editor-title button {
+        font-size: 11px;
+      }
+      .help-actions {
+        display: grid;
+      }
+      .help-actions button {
+        width: 100%;
+      }
+      dialog {
+        padding: 15px;
+      }
+      dialog h1 {
+        font-size: 18px;
+      }
+    }
+    @media (max-height: 500px) and (min-width: 601px) {
+      .review {
+        height: 44px;
+      }
+      .app {
+        height: calc(100dvh - 44px - var(--chrome) - var(--keys));
+      }
+      .keyboard-on .app {
+        height: calc(100dvh - 44px - var(--chrome) - var(--keys));
+      }
+      .keyboard-on .review {
+        height: 44px;
+      }
+      dialog {
+        max-height: calc(100dvh - 16px);
+      }
+    }
+    dialog header {
+      position: sticky;
+      top: -1px;
+      background: #142130;
+      z-index: 1;
+      padding-bottom: 8px;
+    }
   </style>
   <body>
     <div class="review">
-      <b>R2 · SYNTHETIC DESIGN</b><a href="?concept=A">A</a
-      ><a href="?concept=B">B</a><a href="?concept=C">C</a
-      ><a href="?view=comms">Comms</a><a href="?view=transport">Move</a
-      ><a href="?view=issues">Issues</a
-      ><a class="wide" href="?view=mission">Mission</a
-      ><a class="wide" href="?view=transport&keyboard=1&change=1">Keyboard</a
-      ><a class="wide" href="?view=down">Store down</a>
+      <b>R3 · DESIGN DEMO</b><button id="open-help">Start here / Help</button
+      ><button id="open-demo-options">Demo options</button>
     </div>
+    <dialog id="prototype-help" aria-labelledby="help-title">
+      <header>
+        <h1 id="help-title">Start here · Using this prototype</h1>
+        <button data-close-dialog aria-label="Close prototype help">
+          Close
+        </button>
+      </header>
+      <p>
+        A synthetic busy mission: five customer intervals and Echo's 14:35 UTC
+        call. This file is a design demo; nothing is sent to a backend.
+      </p>
+      <ol>
+        <li>
+          <strong>Operations</strong> is home. View buttons open Communications,
+          Transport and Issues.
+        </li>
+        <li>
+          <strong>Mission / scope</strong> shows mission context.
+          <strong>Tools</strong> contains History, Display, Alerts and mission
+          ZIP examples.
+        </li>
+        <li>
+          Open an editor with <strong>Record applied</strong> or
+          <strong>Reschedule</strong>.
+          <strong>Keep draft &amp; return</strong> goes home; the bottom tray's
+          <strong>Review retained work</strong> resumes it.
+        </li>
+      </ol>
+      <p>
+        <span class="demo-tag">Interactive preview</span> Forms and lifecycle
+        buttons change this page only. <strong>Preview save</strong> validates
+        without a real write.
+      </p>
+      <p>
+        <span class="demo-tag">Illustrated only</span> Labeled controls open an
+        explanation, not a working external feature.
+      </p>
+      <div class="help-actions">
+        <button class="primary" id="begin-demo">Start at Operations</button
+        ><button data-help-go="comms">Try Communications</button
+        ><button data-help-go="transport">Try a transport report</button>
+      </div>
+      <details>
+        <summary>Practice sequence and demo limits</summary>
+        <p>
+          Communications → Customer left Alpha: Bridge A stays established.
+          Transport → enter service and transport → Preview save. Keep draft
+          &amp; return → Review retained work → Resume move.
+        </p>
+        <p>
+          Demo options compares A/B/C layouts or resets planned, unavailable and
+          simulated-keyboard scenarios. Reset/reload clears local edits;
+          ordinary view changes retain them. The drawn keyboard is not a real
+          mobile OS.
+        </p>
+        <p>
+          History search, note entry, actual ZIP export/import, recenter, alerts
+          and external mission changes are illustrated only. Unmarked
+          cards/times are reference data.
+        </p>
+        <p>
+          The final UI must include Help / User guide, authored and verified
+          against shipped desktop/mobile controls. This is prototype orientation
+          only.
+        </p>
+      </details>
+    </dialog>
+    <dialog id="demo-options" aria-labelledby="options-title">
+      <header>
+        <h1 id="options-title">Demo layouts and scenarios</h1>
+        <button data-close-dialog>Close</button>
+      </header>
+      <p>
+        Applying a scenario reloads this file and clears local demo edits. Use
+        the working-view buttons for ordinary navigation.
+      </p>
+      <label
+        >Layout concept<select id="demo-concept">
+          <option value="A">A · Mission workspace (recommended)</option>
+          <option value="B">B · Event desk</option>
+          <option value="C">C · Communications board</option>
+        </select></label
+      ><label
+        >Synthetic scenario<select id="demo-scenario">
+          <option value="ops">Busy airborne mission</option>
+          <option value="planned">Preflight · planned UTC</option>
+          <option value="unavailable">Airborne · live ETA unavailable</option>
+          <option value="down">Store unavailable · last-known events</option>
+          <option value="keyboard">
+            Transport editor · simulated keyboard and urgent update
+          </option>
+        </select></label
+      ><button class="primary" id="apply-demo">
+        Reset demo with these options
+      </button>
+    </dialog>
+    <dialog id="illustration" aria-labelledby="illustration-title">
+      <header>
+        <h1 id="illustration-title">Illustrated workflow</h1>
+        <button data-close-dialog>Close</button>
+      </header>
+      <p class="demo-tag">Illustrated only · no external action</p>
+      <p id="illustration-text"></p>
+      <p class="muted">
+        This destination is represented for design review. Close to return to
+        your current view or draft.
+      </p>
+    </dialog>
     <div class="chrome">Simulated browser chrome · review constraint</div>
     <div class="app">
       <header class="topbar">
@@ -1257,7 +1509,7 @@
             ><button data-view="transport">Transport</button
             ><button data-view="issues">Issues</button
             ><button class="wide" data-action="history">History</button
-            ><button data-view="tools">More</button>
+            ><button data-view="tools">Tools</button>
           </nav>
           <div class="title">
             <h2 id="view-heading">Mission operations · stress</h2>
@@ -1434,7 +1686,7 @@
         document.body.classList.add("editor-mode");
         surface.className = "editor-grid";
         surface.style.flex = "1";
-        surface.innerHTML = `<aside class="editor-context stack">${nextRisk()}${bridgesSummary()}${context}</aside><section class="editor-wrap"><header class="editor-title"><div><h2>${title}</h2><small>Record target: Meridian / Leg 2 · unsent draft</small></div>${button("Drafts", 'data-view="drafts"')}</header><div class="fields">${content}</div><footer class="save-footer">${button(save, 'class="primary" id="save-action"')}${button("Keep draft", 'data-view="ops"')}</footer></section>`;
+        surface.innerHTML = `<aside class="editor-context stack">${nextRisk()}${bridgesSummary()}${context}</aside><section class="editor-wrap"><header class="editor-title"><div><h2>${title}</h2><small>Record target: Meridian / Leg 2 · unsent draft</small></div>${button("Drafts / close", 'data-view="drafts"')}</header><div class="fields">${content}</div><footer class="save-footer">${button("Preview save", 'class="primary" id="save-action"')}${button("Keep draft & return", 'data-view="ops"')}</footer></section>`;
       }
       function transport() {
         heading("Transport · applied-only during protected calls");
@@ -1546,7 +1798,7 @@
         surface.innerHTML = `<section class="card"><div class="row"><h3>${txt}</h3><p class="muted">${mode === "planned" ? "Planning boundaries may be shown before departure." : mode === "unavailable" ? "No usable live timing. Scheduled UTC is not presented as a live alert." : mode === "down" ? "Last-known event snapshot remains visible. Writes unavailable; no false zero-count." : "Aligned airborne backend ETA and live PoP publication. No frontend prediction."}</p><div class="actions">${button("Preflight planned", 'data-view="planned"')}${button("Airborne live", 'data-view="sources"')}${button("Live ETA unavailable", 'data-view="unavailable"')}${button("Store down", 'data-view="down"')}</div></div><div class="row"><h3>Write target · Meridian / Leg 2</h3><p class="muted">${mode === "down" ? "Local operator store unavailable · unsent draft retained" : "Store healthy · optional model failure does not block reporting"}</p><button ${mode === "down" ? "disabled" : ""} data-view="transport">${mode === "down" ? "Save unavailable · keep draft" : "Record applied report"}</button>${button("Review retained work", 'data-view="drafts"')}</div><div class="row"><h3>Source detail</h3><p class="muted">Event as-of 14:22 · model coverage partial · expand source capture/alignment, not an all-clear.</p></div></section>`;
       }
       function tools() {
-        heading("Workspace tools and records");
+        heading("Tools · History, Display, Alerts and mission records");
         surface.innerHTML = `<section class="card"><div class="row"><h3>Existing display and record workflows</h3><div class="actions">${button("Display recenter / presets", 'data-action="display"')}${button("Local alerts", 'data-action="alerts"')}${button("Mission ZIP in Missions", 'data-action="records"')}${button("History / observations", 'data-action="history"')}${button("Retained drafts and saves", 'data-view="drafts"')}</div><p class="muted">Same-browser recenter target; shared visibility settings; one existing ZIP, no second exporter.</p></div></section>`;
       }
       function show(view) {
@@ -1608,7 +1860,22 @@
             (el, i) => (el.open = previewDrafts[view].details[i] ?? el.open),
           );
         }
+        annotateIllustrations();
         document.querySelector(".work").scrollTop = 0;
+      }
+      function annotateIllustrations() {
+        document.querySelectorAll("[data-action]").forEach((b) => {
+          if (
+            !["mitigation", "addservice"].includes(b.dataset.action) &&
+            !b.querySelector(".demo-tag")
+          ) {
+            b.insertAdjacentHTML(
+              "beforeend",
+              '<span class="demo-tag">Illustrated only</span>',
+            );
+            b.setAttribute("aria-haspopup", "dialog");
+          }
+        });
       }
       function message(text) {
         document.querySelector("#status").textContent = text;
@@ -1728,7 +1995,17 @@
             );
           return;
         }
-        message(messages[name] || "Preview only; no operational write.");
+        document.querySelector("#illustration-title").textContent =
+          {
+            history: "History and observations",
+            display: "Overview display tools",
+            records: "Mission ZIP in Missions",
+            alerts: "Local alert settings",
+            note: "Record an observation",
+          }[name] || "Illustrated workflow";
+        document.querySelector("#illustration-text").textContent =
+          messages[name] || "Illustrated only; no operational write.";
+        document.querySelector("#illustration").showModal();
       }
       document.addEventListener("click", (e) => {
         const b = e.target.closest("[data-view],[data-command],[data-action]");
@@ -1774,7 +2051,38 @@
         document.querySelector("#tray-label").textContent =
           "Unsent move retained · Meridian / Leg 2 · no target change";
       };
+      document.querySelector("#open-help").onclick = () =>
+        document.querySelector("#prototype-help").showModal();
+      document.querySelector("#open-demo-options").onclick = () => {
+        document.querySelector("#demo-concept").value = concept;
+        document.querySelector("#demo-options").showModal();
+      };
+      document
+        .querySelectorAll("[data-close-dialog]")
+        .forEach((b) => (b.onclick = () => b.closest("dialog").close()));
+      document.querySelector("#begin-demo").onclick = () => {
+        document.querySelector("#prototype-help").close();
+        show("ops");
+      };
+      document.querySelectorAll("[data-help-go]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            document.querySelector("#prototype-help").close();
+            show(b.dataset.helpGo);
+          }),
+      );
+      document.querySelector("#apply-demo").onclick = () => {
+        const c = document.querySelector("#demo-concept").value,
+          v = document.querySelector("#demo-scenario").value;
+        location.search =
+          "?concept=" +
+          c +
+          "&view=" +
+          (v === "keyboard" ? "transport&keyboard=1&change=1" : v);
+      };
       show(q.get("view") || "ops");
+      if (!location.search || q.has("intro"))
+        document.querySelector("#prototype-help").showModal();
       if (q.has("keyboard") && innerWidth <= 600)
         document.querySelector(".connected button").textContent = "5 connected";
       if (q.has("change")) window.injectLiveUpdate();
