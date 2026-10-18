@@ -1,5 +1,9 @@
 # Operator workspace design review
 
+The [revision 2 review](revision-2.md) and
+[revised visual preview](review-v2.html) supersede the initial layout and
+ownership proposals below.
+
 Draft for issue 376. No structure or visual design is approved yet. Product code
 and API behavior remain unchanged. The [source audit](audit.md) identifies the
 preservation requirements and current limitations.

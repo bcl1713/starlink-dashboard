@@ -1,0 +1,1783 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Operator revision 2 — stress and lifecycle review</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1520;
+      --panel: #142130;
+      --line: #3a5066;
+      --muted: #b2c4d6;
+      --blue: #abd6ff;
+      --amber: #ffcf89;
+      --green: #9be2ca;
+      --chrome: 0px;
+      --keys: 0px;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font:
+        15px/1.4 system-ui,
+        sans-serif;
+      background: var(--bg);
+      color: #edf4fc;
+    }
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+    h1 {
+      font-size: 20px;
+    }
+    h2 {
+      font-size: 18px;
+    }
+    h3 {
+      font-size: 16px;
+    }
+    small,
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: inherit;
+      border: 1px solid #59748e;
+      background: #1b2d40;
+      border-radius: 6px;
+    }
+    button {
+      min-height: 44px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+    button:hover {
+      background: #2d455e;
+    }
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px;
+      display: block;
+      margin: 5px 0 0;
+      background: #0b1623;
+    }
+    textarea {
+      min-height: 75px;
+      resize: vertical;
+    }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #c2e3ff;
+      outline-offset: 1px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .primary {
+      background: #bddfff;
+      color: #14243a;
+      font-weight: 700;
+    }
+    .primary:hover {
+      background: #d9eeff;
+    }
+    .review {
+      height: 30px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: #2b3e54;
+      padding: 0 18px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .review a {
+      display: inline-flex;
+      align-items: center;
+      min-width: 23px;
+      min-height: 28px;
+    }
+    .review b {
+      margin-right: auto;
+    }
+    .chrome,
+    .keyboard {
+      display: none;
+    }
+    .app {
+      height: calc(100dvh - 30px - var(--chrome) - var(--keys));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .topbar {
+      min-height: 64px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar .identity {
+      margin-right: auto;
+    }
+    .eyebrow {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .topbar .muted {
+      font-size: 12px;
+    }
+    .awareness {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 10px 20px;
+      border-bottom: 1px solid #5c7187;
+      background: #162b40;
+      flex: none;
+      min-height: 66px;
+    }
+    .awareness > div {
+      min-width: 0;
+    }
+    .awareness .next {
+      flex: 1;
+    }
+    .awareness strong {
+      display: block;
+    }
+    .awareness .urgent {
+      color: var(--amber);
+      font-size: 13px;
+      max-width: 330px;
+    }
+    .awareness button {
+      font-size: 13px;
+    }
+    .source {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 20px;
+      font-size: 12px;
+      color: var(--muted);
+      background: #101d2b;
+      min-height: 34px;
+    }
+    .source button {
+      margin-left: auto;
+      background: none;
+      border: 0;
+      color: var(--blue);
+      min-height: 26px;
+      padding: 0;
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      flex: 1;
+      min-height: 0;
+    }
+    .rail {
+      padding: 16px;
+      border-right: 1px solid var(--line);
+      overflow: auto;
+    }
+    .rail h2 {
+      margin: 6px 0 10px;
+    }
+    .rail .customer {
+      padding: 10px 0;
+      border-bottom: 1px solid #304358;
+    }
+    .rail .customer strong {
+      display: block;
+    }
+    .rail button {
+      margin-top: 10px;
+      width: 100%;
+    }
+    .rail .next-block {
+      margin: 18px 0;
+      padding: 12px;
+      border-left: 3px solid var(--blue);
+      background: #17283b;
+    }
+    .rail .next-block strong {
+      display: block;
+    }
+    .time {
+      font-size: 25px;
+      font-weight: 650;
+    }
+    .views {
+      display: flex;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 14px;
+    }
+    .views button {
+      font-size: 14px;
+      background: none;
+      border-color: transparent;
+    }
+    .views .active {
+      background: #284766;
+      border-color: #6285aa;
+    }
+    .work {
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      padding: 14px 20px;
+    }
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .title .muted {
+      font-size: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, 1fr);
+      gap: 16px;
+    }
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .head {
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .head button {
+      font-size: 13px;
+    }
+    .row {
+      padding: 12px 15px;
+      border-bottom: 1px solid #304459;
+    }
+    .row:last-child {
+      border: 0;
+    }
+    .row p {
+      margin-top: 5px;
+    }
+    .row .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 9px;
+    }
+    .row .actions button {
+      font-size: 13px;
+    }
+    .badge {
+      display: inline-block;
+      border: 1px solid #538276;
+      border-radius: 4px;
+      color: var(--green);
+      font-size: 11px;
+      padding: 3px 6px;
+      white-space: nowrap;
+    }
+    .amber {
+      color: var(--amber);
+    }
+    .blue {
+      color: var(--blue);
+    }
+    .risk {
+      border-left: 3px solid #c49a5b;
+      padding: 9px 12px;
+      background: #302a21;
+      margin-top: 10px;
+    }
+    .risk p {
+      font-size: 13px;
+      color: #f2dcb9;
+    }
+    .risk button {
+      margin-top: 8px;
+    }
+    .line {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .line > div {
+      min-width: 0;
+    }
+    .event {
+      display: grid;
+      grid-template-columns: 70px minmax(0, 1fr);
+      gap: 8px;
+      padding: 11px 15px;
+      border-bottom: 1px solid #304459;
+    }
+    .event time {
+      color: var(--blue);
+      font-size: 14px;
+    }
+    .event h3 {
+      font-size: 15px;
+    }
+    .event .muted {
+      font-size: 12px;
+    }
+    .event button {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .notice {
+      border: 1px solid #90744d;
+      border-radius: 6px;
+      background: #342c20;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      color: #ffe0ae;
+    }
+    .notice p {
+      font-size: 13px;
+      margin-top: 5px;
+    }
+    .notice button {
+      margin: 8px 8px 0 0;
+    }
+    .tray {
+      min-height: 46px;
+      border-top: 1px solid #607892;
+      background: #1a2e44;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 0 16px;
+      flex: none;
+      font-size: 12px;
+    }
+    .tray button {
+      min-height: 44px;
+      font-size: 12px;
+      margin-left: auto;
+      background: none;
+      border: 0;
+      color: var(--blue);
+    }
+    .hidden {
+      display: none !important;
+    }
+    .status {
+      color: var(--amber);
+      font-size: 12px;
+      padding: 0 18px;
+      min-height: 0;
+    }
+    .status:empty {
+      display: none;
+    }
+    .status:not(:empty) {
+      padding: 8px 18px;
+      border-top: 1px solid var(--line);
+    }
+    .customer-list .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+    .editor-wrap {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      border: 1px solid #66829f;
+      border-radius: 8px;
+      background: #122033;
+    }
+    .editor-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      flex: none;
+    }
+    .editor-title h2 {
+      margin-right: auto;
+    }
+    .editor-title small {
+      font-size: 11px;
+    }
+    .fields {
+      overflow: auto;
+      flex: 1;
+      min-height: 0;
+      padding: 14px;
+    }
+    .save-footer {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      flex: none;
+      background: #20364e;
+      border-top: 1px solid #65809b;
+    }
+    .save-footer .primary {
+      flex: 1;
+    }
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    details {
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    summary {
+      cursor: pointer;
+      min-height: 44px;
+      padding: 10px 0;
+    }
+    #inline-error {
+      color: #ffd0bf;
+      margin: 6px 0 10px;
+    }
+    .editor-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(420px, 1.1fr);
+      gap: 16px;
+      height: calc(100% - 62px);
+      min-height: 0;
+    }
+    .editor-context {
+      overflow: auto;
+    }
+    .editor-mode .work {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .editor-mode .views {
+      flex: none;
+    }
+    .editor-mode .title {
+      display: none;
+    }
+    .selector-list {
+      display: grid;
+      gap: 10px;
+    }
+    .selector-list button {
+      text-align: left;
+    }
+    .chooser {
+      max-width: 850px;
+    }
+    .lane-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+    .layout-b .shell,
+    .layout-c .shell {
+      grid-template-columns: 1fr;
+    }
+    .layout-b .rail,
+    .layout-c .rail {
+      display: none;
+    }
+    .layout-b .grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+    }
+    .keyboard-on {
+      --chrome: 48px;
+      --keys: 300px;
+    }
+    .keyboard-on .chrome {
+      display: flex;
+      height: var(--chrome);
+      align-items: center;
+      justify-content: center;
+      background: #d6dce4;
+      color: #29394c;
+      font-size: 12px;
+    }
+    .keyboard-on .keyboard {
+      height: var(--keys);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      background: #303c4c;
+      color: #dce6f2;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      font-size: 14px;
+      border-top: 1px solid #8093a9;
+    }
+    .keyboard .key-row {
+      word-spacing: 14px;
+      font-family: monospace;
+      font-size: 19px;
+    }
+    .keyboard-on .topbar,
+    .keyboard-on .views,
+    .keyboard-on .source,
+    .keyboard-on .rail,
+    .keyboard-on .tray {
+      display: none;
+    }
+    .keyboard-on .shell {
+      display: flex;
+      min-height: 0;
+      flex: 1;
+    }
+    .keyboard-on .work {
+      padding: 0;
+      width: 100%;
+    }
+    .keyboard-on .editor-grid {
+      display: flex;
+      flex: 1;
+      height: auto;
+      min-height: 0;
+    }
+    .keyboard-on .editor-context {
+      display: none;
+    }
+    .keyboard-on .editor-wrap {
+      border: 0;
+      border-radius: 0;
+    }
+    .keyboard-on .awareness {
+      padding: 5px 12px;
+      gap: 8px;
+      min-height: 64px;
+      flex-wrap: wrap;
+    }
+    .keyboard-on .awareness .connected {
+      font-size: 12px;
+    }
+    .keyboard-on .awareness .next {
+      font-size: 12px;
+    }
+    .keyboard-on .awareness .urgent {
+      max-width: none;
+      flex-basis: 100%;
+      font-size: 12px;
+    }
+    .keyboard-on .awareness button {
+      min-height: 44px;
+      padding: 5px;
+      font-size: 11px;
+    }
+    .keyboard-on .editor-title {
+      padding: 5px 12px;
+    }
+    .keyboard-on .editor-title h2 {
+      font-size: 15px;
+    }
+    .keyboard-on .editor-title small {
+      display: none;
+    }
+    .keyboard-on .fields {
+      padding: 10px 12px;
+    }
+    .keyboard-on .save-footer {
+      padding: 6px 12px;
+    }
+    .keyboard-on .fields label {
+      font-size: 13px;
+    }
+    .keyboard-on .status {
+      display: none;
+    }
+    .keyboard-on .fields .risk {
+      font-size: 12px;
+    }
+    .keyboard-on .fields input {
+      scroll-margin: 10px;
+    }
+    @media (max-width: 1000px) {
+      .shell {
+        grid-template-columns: 220px 1fr;
+      }
+      .rail {
+        padding: 12px;
+      }
+      .grid,
+      .editor-grid {
+        grid-template-columns: 1fr;
+      }
+      .editor-context {
+        display: none;
+      }
+      .lane-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .topbar {
+        padding: 7px 12px;
+      }
+      .topbar button {
+        font-size: 12px;
+      }
+      .topbar .wide {
+        display: none;
+      }
+      .work {
+        padding: 10px 12px;
+      }
+      .awareness {
+        padding: 8px 12px;
+        gap: 10px;
+      }
+      .awareness .urgent {
+        max-width: 180px;
+      }
+      .views {
+        gap: 3px;
+      }
+      .views button {
+        font-size: 12px;
+        padding: 7px;
+      }
+      .head h2 {
+        font-size: 16px;
+      }
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 14px;
+      }
+      .review {
+        font-size: 10px;
+        padding: 0 10px;
+        gap: 8px;
+        height: 28px;
+      }
+      .review .wide {
+        display: none;
+      }
+      .app {
+        height: calc(100dvh - 28px - var(--chrome) - var(--keys));
+      }
+      .topbar {
+        min-height: 57px;
+        padding: 7px 12px;
+      }
+      .topbar h1 {
+        font-size: 16px;
+      }
+      .topbar .muted {
+        font-size: 10px;
+      }
+      .topbar button {
+        font-size: 11px;
+        padding: 7px;
+      }
+      .topbar .tools {
+        display: none;
+      }
+      .awareness {
+        min-height: 96px;
+        padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+      }
+      .awareness .connected {
+        width: 105px;
+        font-size: 12px;
+      }
+      .awareness .next {
+        font-size: 12px;
+      }
+      .awareness .next strong {
+        font-size: 14px;
+      }
+      .awareness .urgent {
+        max-width: none;
+        flex: 1;
+        font-size: 11px;
+        min-width: 190px;
+      }
+      .awareness > button {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+      .source {
+        padding: 4px 12px;
+        font-size: 10px;
+        min-height: 28px;
+      }
+      .source button {
+        font-size: 10px;
+        min-height: 26px;
+      }
+      .shell {
+        display: flex;
+        min-height: 0;
+      }
+      .rail {
+        display: none;
+      }
+      .work {
+        width: 100%;
+        padding: 8px 10px;
+      }
+      .views {
+        justify-content: space-between;
+        padding-bottom: 6px;
+        margin-bottom: 9px;
+        gap: 0;
+      }
+      .views button {
+        font-size: 11px;
+        min-height: 44px;
+        padding: 6px;
+      }
+      .views .wide {
+        display: none;
+      }
+      .title {
+        margin-bottom: 8px;
+      }
+      .title h2 {
+        font-size: 16px;
+      }
+      .title .muted {
+        display: none;
+      }
+      .grid,
+      .layout-b .grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .stack {
+        gap: 10px;
+      }
+      .head {
+        padding: 8px 10px;
+      }
+      .head h2 {
+        font-size: 15px;
+      }
+      .head button {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+      .row {
+        padding: 9px 10px;
+      }
+      .row h3 {
+        font-size: 14px;
+      }
+      .row p,
+      .row .muted {
+        font-size: 12px;
+      }
+      .row .actions {
+        gap: 5px;
+        margin-top: 6px;
+      }
+      .row .actions button {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+      .event {
+        padding: 9px 10px;
+        grid-template-columns: 48px 1fr;
+      }
+      .event h3 {
+        font-size: 13px;
+      }
+      .event time {
+        font-size: 12px;
+      }
+      .event .muted {
+        font-size: 11px;
+      }
+      .risk {
+        padding: 7px 9px;
+        margin-top: 8px;
+      }
+      .risk p {
+        font-size: 12px;
+      }
+      .risk button {
+        font-size: 11px;
+        min-height: 44px;
+      }
+      .tray {
+        padding: 0 10px;
+        font-size: 10px;
+        gap: 6px;
+      }
+      .tray button {
+        font-size: 10px;
+      }
+      .badge {
+        font-size: 10px;
+      }
+      .editor-grid {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        height: auto;
+      }
+      .editor-mode .work {
+        padding: 0;
+      }
+      .editor-mode .views {
+        display: none;
+      }
+      .editor-wrap {
+        border: 0;
+        border-radius: 0;
+      }
+      .editor-title {
+        padding: 8px 12px;
+      }
+      .editor-title h2 {
+        font-size: 16px;
+      }
+      .editor-title small {
+        display: none;
+      }
+      .fields {
+        padding: 12px;
+      }
+      .lane-grid {
+        display: flex;
+        flex-direction: column;
+      }
+      .customer-list .row {
+        display: block;
+      }
+      .customer-list button {
+        margin-top: 8px;
+      }
+      .keyboard-on .awareness {
+        min-height: 78px;
+      }
+      .keyboard-on .editor-title button {
+        padding: 5px;
+        min-height: 36px;
+      }
+      .keyboard-on .editor-title {
+        min-height: 42px;
+      }
+      .keyboard-on .two {
+        grid-template-columns: 1fr;
+      }
+      .keyboard-on .fields label {
+        margin-bottom: 10px;
+      }
+      .keyboard-on .fields .risk {
+        margin-top: 6px;
+      }
+    }
+    @media (max-height: 500px) and (min-width: 601px) {
+      .review {
+        height: 24px;
+        font-size: 10px;
+      }
+      .app {
+        height: calc(100dvh - 24px - var(--chrome) - var(--keys));
+      }
+      .topbar {
+        min-height: 44px;
+        padding: 4px 12px;
+      }
+      .topbar h1 {
+        font-size: 16px;
+      }
+      .topbar .muted,
+      .topbar .eyebrow {
+        display: none;
+      }
+      .awareness {
+        min-height: 49px;
+        padding: 3px 12px;
+        gap: 10px;
+      }
+      .awareness strong {
+        font-size: 12px;
+      }
+      .awareness .urgent {
+        font-size: 11px;
+        max-width: 220px;
+      }
+      .awareness .eyebrow {
+        display: none;
+      }
+      .awareness .next {
+        font-size: 11px;
+      }
+      .awareness button {
+        padding: 5px;
+        font-size: 11px;
+      }
+      .source {
+        min-height: 24px;
+        padding: 0 12px;
+        font-size: 10px;
+      }
+      .source button {
+        font-size: 10px;
+        min-height: 24px;
+      }
+      .shell {
+        display: flex;
+      }
+      .rail {
+        display: none;
+      }
+      .work {
+        padding: 5px 12px;
+        width: 100%;
+      }
+      .views {
+        padding-bottom: 4px;
+        margin-bottom: 6px;
+      }
+      .views button {
+        min-height: 44px;
+      }
+      .title {
+        display: none;
+      }
+      .grid,
+      .layout-b .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 10px;
+      }
+      .head,
+      .row {
+        padding: 8px 10px;
+      }
+      .head h2 {
+        font-size: 15px;
+      }
+      .row h3 {
+        font-size: 14px;
+      }
+      .row .muted {
+        font-size: 11px;
+      }
+      .tray {
+        min-height: 44px;
+      }
+      .lane-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .editor-mode .views {
+        display: none;
+      }
+      .editor-mode .work {
+        padding: 0;
+      }
+      .editor-grid {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        height: auto;
+      }
+      .editor-wrap {
+        border: 0;
+        border-radius: 0;
+      }
+      .editor-title {
+        padding: 5px 12px;
+      }
+      .editor-title h2 {
+        font-size: 15px;
+      }
+      .editor-title small {
+        font-size: 10px;
+      }
+      .keyboard-on {
+        --chrome: 28px;
+        --keys: 140px;
+      }
+      .keyboard-on .awareness {
+        min-height: 44px;
+        flex-wrap: nowrap;
+        padding: 0 10px;
+      }
+      .keyboard-on .awareness .connected {
+        font-size: 11px;
+      }
+      .keyboard-on .awareness .next {
+        font-size: 11px;
+      }
+      .keyboard-on .awareness .urgent {
+        font-size: 10px;
+        flex-basis: auto;
+        max-width: 190px;
+      }
+      .keyboard-on .editor-title {
+        display: none;
+      }
+      .keyboard-on .save-footer {
+        padding: 3px 10px;
+      }
+      .keyboard-on .fields {
+        padding: 6px 10px;
+      }
+      .keyboard-on .fields label {
+        font-size: 11px;
+        margin-bottom: 6px;
+      }
+      .keyboard-on .fields .risk {
+        display: none;
+      }
+      .keyboard-on .keyboard {
+        gap: 5px;
+      }
+      .keyboard-on .keyboard .key-row {
+        font-size: 15px;
+      }
+    }
+    .app .source button {
+      min-height: 44px;
+    }
+    .keyboard-on .editor-title button {
+      min-height: 44px;
+    }
+    @media (max-width: 600px) {
+      .awareness,
+      .keyboard-on .awareness {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+        gap: 5px 10px;
+        min-height: 0;
+        padding: 7px 12px;
+      }
+      .awareness .connected {
+        width: auto;
+      }
+      .awareness .connected button {
+        display: block;
+      }
+      .awareness .next .eyebrow {
+        display: none;
+      }
+      .awareness .next strong {
+        font-size: 14px;
+      }
+      .awareness .urgent,
+      .keyboard-on .awareness .urgent {
+        grid-column: 1;
+        grid-row: 2;
+        min-width: 0;
+        font-size: 10px;
+      }
+      .awareness > button {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: end;
+      }
+      .keyboard-on .awareness .connected > span {
+        display: none;
+      }
+      .keyboard-on .awareness .next {
+        font-size: 11px;
+      }
+      .topbar .eyebrow {
+        display: none;
+      }
+      .topbar .muted {
+        font-size: 10px;
+      }
+    }
+    .attention-summary {
+      display: none;
+    }
+    @media (max-width: 600px) {
+      .attention-summary {
+        display: block;
+        margin-bottom: 8px;
+      }
+      .attention-summary button {
+        width: 100%;
+        font-size: 11px;
+        color: var(--amber);
+        text-align: left;
+      }
+    }
+    @media (max-height: 500px) and (min-width: 601px) {
+      .source {
+        display: none;
+      }
+      .topbar .muted {
+        display: block;
+        font-size: 10px;
+      }
+      .topbar .identity {
+        min-width: 0;
+      }
+    }
+  </style>
+  <body>
+    <div class="review">
+      <b>R2 · SYNTHETIC DESIGN</b><a href="?concept=A">A</a
+      ><a href="?concept=B">B</a><a href="?concept=C">C</a
+      ><a href="?view=comms">Comms</a><a href="?view=transport">Move</a
+      ><a href="?view=issues">Issues</a
+      ><a class="wide" href="?view=mission">Mission</a
+      ><a class="wide" href="?view=transport&keyboard=1&change=1">Keyboard</a
+      ><a class="wide" href="?view=down">Store down</a>
+    </div>
+    <div class="chrome">Simulated browser chrome · review constraint</div>
+    <div class="app">
+      <header class="topbar">
+        <div class="identity">
+          <div class="eyebrow">
+            Operator · mission communications · simulation
+          </div>
+          <h1>Meridian / Leg 2 · Westbound</h1>
+          <p class="muted" id="flight-context">
+            Active flight: Meridian / Leg 2 · Airborne · live 14:22 · partial
+          </p>
+        </div>
+        <button data-view="mission">Mission / scope</button
+        ><button class="wide" data-view="transport">Record applied</button
+        ><button class="tools" data-action="note">Note</button
+        ><button class="wide" data-action="records">Mission records ↗</button>
+      </header>
+      <section class="awareness" aria-label="Persistent Now and Next">
+        <div class="connected">
+          <span id="connected-count">5 reported connected</span
+          ><button
+            data-view="customers"
+            aria-label="Show all reported connected customers"
+          >
+            All customers
+          </button>
+        </div>
+        <div class="next">
+          <div class="eyebrow">Next future requirement · not overdue</div>
+          <strong
+            title="Echo — Executive coordination and diplomatic ground conference"
+            >Echo · VTC 14:35 UTC</strong
+          ><span>Prepare 14:25 · 3 min</span>
+        </div>
+        <div class="urgent" id="urgent-summary" aria-live="polite">
+          Next risk: PoP 14:28 · Live ETA<br />3 modeled advisories
+        </div>
+        <button data-view="risks">All 3 advisories</button>
+      </section>
+      <div class="source">
+        <span id="source-text"
+          >Events 14:22 · Live route ETA · partial source coverage</span
+        ><button data-view="sources">Source details</button>
+      </div>
+      <div class="shell">
+        <aside class="rail">
+          <div class="eyebrow">Reported customer activity</div>
+          <h2>5 connected intervals</h2>
+          <div id="rail-customers"></div>
+          <button data-view="customers">All 5 customers · 2 more</button>
+          <div class="next-block">
+            <div class="eyebrow">Next requirement</div>
+            <strong>Echo · VTC</strong>
+            <div class="time">14:35 UTC</div>
+            <p>Prepare 14:25 UTC</p>
+            <p class="muted">Scheduled · end unknown</p>
+            <button data-view="call">Reschedule Echo</button>
+          </div>
+          <button class="primary" data-view="call">
+            + Unexpected / planned call</button
+          ><button data-view="transport">Record applied move</button
+          ><button data-action="note">+ Observation</button>
+          <p class="muted" style="margin-top: 12px">
+            Display recenter, presets, alerts and records remain in workspace
+            tools.
+          </p>
+        </aside>
+        <main class="work">
+          <nav class="views" aria-label="Working views">
+            <button data-view="ops">Operations</button
+            ><button data-view="comms">Communications</button
+            ><button data-view="transport">Transport</button
+            ><button data-view="issues">Issues</button
+            ><button class="wide" data-action="history">History</button
+            ><button data-view="tools">More</button>
+          </nav>
+          <div class="title">
+            <h2 id="view-heading">Mission operations · stress</h2>
+            <span class="muted"
+              >14:22 UTC · 5 intervals · 3 advisories · 2 follow-ups</span
+            >
+          </div>
+          <div id="surface"></div>
+        </main>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <footer class="tray">
+        <span id="tray-label"
+          >Drafts / saves · 1 unsent move · Meridian / Leg 2</span
+        ><button data-view="drafts">Review retained work</button>
+      </footer>
+    </div>
+    <div class="keyboard">
+      <span>SIMULATED KEYBOARD · focused field above · no real mobile OS</span>
+      <div class="key-row">q w e r t y u i o p</div>
+      <div class="key-row">a s d f g h j k l</div>
+      <div class="key-row">⇧ z x c v b n m ⌫</div>
+      <div class="key-row">123 &nbsp; space &nbsp; return</div>
+    </div>
+    <script>
+      const q = new URLSearchParams(location.search),
+        concept = q.get("concept") || "A";
+      const names = [
+        "Alpha · Principal office",
+        "Bravo · Diplomatic coordination",
+        "Charlie · Medical coordination",
+        "Delta · Executive staff",
+        "Foxtrot · Ground operations",
+      ];
+      const fixture = {
+        customers: names.map((name, i) => ({
+          name,
+          state: "connected",
+          bridge: i < 3 ? "Bridge A" : "Bridge B",
+          join: i === 4 ? "Unknown" : `14:${10 + i * 2}`,
+          restored: false,
+        })),
+        bridges: {
+          "Bridge A": "established",
+          "Bridge B": "established",
+          "Bridge C": "preparing",
+        },
+        history: [],
+        issue: "monitoring",
+        mitigation: "workaround",
+        followup: "14:20 UTC · overdue",
+      };
+      window.previewFixture = fixture;
+      document.body.classList.add("layout-" + concept.toLowerCase());
+      if (q.has("keyboard")) document.body.classList.add("keyboard-on");
+      const surface = document.querySelector("#surface");
+      let currentView = "ops";
+      const previewDrafts = {};
+      const eventRows = [
+        ["14:25", "Prepare Echo VTC", "Scheduled · call 14:35 · end unknown"],
+        [
+          "14:28",
+          "PoP transition advisory",
+          "Live route ETA · modeled · 14:28–14:31",
+        ],
+        [
+          "14:30",
+          "Ka degraded interval",
+          "Live route ETA · modeled · inspect fallback",
+        ],
+        [
+          "14:35",
+          "Echo customer requirement",
+          "Scheduled · preparation remains separate",
+        ],
+        [
+          "14:38",
+          "X-band restriction",
+          "Live route ETA · modeled · coordinated fallback context",
+        ],
+      ];
+      function button(text, attrs = "") {
+        return `<button ${attrs}>${text}</button>`;
+      }
+      function customerLine(c, i) {
+        return `<div class="customer"><strong>${c.name}</strong><small>${c.bridge} · ${c.state === "connected" ? "reported connected" : c.state} · join ${c.join}</small></div>`;
+      }
+      function rail() {
+        document.querySelector("#rail-customers").innerHTML = fixture.customers
+          .filter((c) => c.state === "connected")
+          .slice(0, 3)
+          .map(customerLine)
+          .join("");
+      }
+      function updateAwareness() {
+        const n = fixture.customers.filter(
+          (c) => c.state === "connected",
+        ).length;
+        document.querySelector("#connected-count").textContent =
+          n + " reported connected";
+        document.querySelector(".rail h2").textContent =
+          n + " connected intervals";
+        const more = document.querySelector('.rail > [data-view="customers"]');
+        more.textContent =
+          "All " + n + " customers · " + Math.max(0, n - 3) + " more";
+        rail();
+      }
+      rail();
+      function heading(text) {
+        document.querySelector("#view-heading").textContent = text;
+      }
+      function events(all = false) {
+        return `<section class="card"><div class="head"><h2>${all ? "All timed events" : "Upcoming · next three"}</h2>${button("All events", 'data-view="events"')}</div>${eventRows
+          .slice(0, all ? eventRows.length : 3)
+          .map(
+            ([time, title, basis]) =>
+              `<div class="event"><time>${time}</time><div><h3>${title}</h3><p class="muted">${basis}</p></div></div>`,
+          )
+          .join("")}</section>`;
+      }
+      function nextRisk() {
+        return `<section class="card"><div class="head"><h2>Next preparation + transport context</h2>${button("Reschedule", 'data-view="call"')}</div><div class="row"><h3>Echo · VTC 14:35 UTC</h3><p>Prepare 14:25 · conference unassigned · end unknown</p><div class="risk"><strong>PoP advisory 14:28–14:31 · Live ETA</strong><p>Before Echo call; Ka degraded 14:30; X restriction 14:38. Inspect overlap and fallback. No observed outage inferred.</p><div class="actions">${button("All 3 advisories", 'data-view="risks"')}${button("Record applied", 'class="primary" data-view="transport"')}</div></div><div class="actions">${button("Reuse / manage bridge", 'data-view="comms"')}${button("Log unexpected call", 'data-view="call"')}</div></div></section>`;
+      }
+      function attention() {
+        return `<section class="card"><div class="head"><h2>Attention · overdue is separate</h2>${button("All attention", 'data-view="issues"')}</div><div class="row"><h3 class="amber">Golf voice · past 14:15 planned start</h3><p class="muted">Delayed · still a requirement · not the next future call</p><div class="actions">${button("Change call time", 'data-view="call"')}</div></div><div class="row"><h3>Cabin handset intermittent</h3><p class="muted">Monitoring · workaround · follow up 14:20 overdue</p><div class="actions">${button("Update / follow up", 'data-view="followup"')}</div></div><div class="row"><p class="muted">Ground callback due 14:24 · Open</p>${button("Review follow-ups", 'data-view="issues"')}</div></section>`;
+      }
+      function bridgesSummary() {
+        return `<section class="card"><div class="head"><h2>Reusable conference context</h2>${button("Operate bridges", 'data-view="comms"')}</div><div class="row"><h3>Bridge A · established</h3><p class="muted">3 reported connected · stays up between calls</p></div><div class="row"><h3>Bridge B · established</h3><p class="muted">2 reported connected · one join time unknown</p></div></section>`;
+      }
+      function ops() {
+        heading("Mission operations · five-customer stress");
+        if (concept === "B") {
+          heading("B · Event desk · same stress data");
+          surface.innerHTML = `<div class="grid"><div class="stack">${events(true)}${attention()}</div><div class="stack">${nextRisk()}${bridgesSummary()}<section class="card"><div class="head"><h2>Persistent entities / untimed records</h2></div><div class="row"><p>5 customer intervals · 1 unknown join</p><div class="actions">${button("All customers", 'data-view="customers"')}${button("Capabilities / issues", 'data-view="issues"')}</div></div></section></div></div>`;
+        } else if (concept === "C") {
+          heading("C · Communications board · same stress data");
+          surface.innerHTML = `<div class="lane-grid">${["Bridge A", "Bridge B"]
+            .map(
+              (b) =>
+                `<section class="card"><div class="head"><h2>${b} · established</h2></div>${fixture.customers
+                  .filter((c) => c.bridge === b)
+                  .map(
+                    (c) =>
+                      `<div class="row"><h3>${c.name}</h3><p class="muted">Reported connected · join ${c.join}</p></div>`,
+                  )
+                  .join(
+                    "",
+                  )}<div class="row">${button("Manage / reuse", 'data-view="comms"')}</div></section>`,
+            )
+            .join(
+              "",
+            )}<div class="stack">${nextRisk()}<section class="card"><div class="row"><h3>Unassigned / untimed lane</h3><p class="muted">Bridge C preparing · Echo unassigned · Golf overdue</p>${button("Open communications", 'data-view="comms"')}</div></section></div></div><div style="margin-top:14px" class="grid">${attention()}${events(true)}</div>`;
+        } else
+          surface.innerHTML = `<div class="grid"><div class="stack">${nextRisk()}${events()}</div><div class="stack">${attention()}${bridgesSummary()}</div></div>`;
+        surface.insertAdjacentHTML(
+          "afterbegin",
+          '<div class="attention-summary"><button data-view="issues">2 overdue · Golf 14:15 / handset follow-up</button></div>',
+        );
+      }
+      function comms() {
+        heading("Communications · commands beside their targets");
+        surface.innerHTML = `<div class="grid"><section class="card"><div class="head"><h2>Reusable ground conferences</h2>${button("+ New conference", 'data-action="newconference"')}</div>${Object.entries(
+          fixture.bridges,
+        )
+          .map(
+            ([name, state]) =>
+              `<div class="row"><div class="line"><h3>${name}</h3><span class="badge" data-bridge-state="${name}">${state}</span></div><p class="muted">${name === "Bridge A" ? "Reuse for Echo after Alpha leaves; never auto-close." : "Operator report · not measured customer connectivity."}</p><div class="actions">${state === "preparing" ? button("Establish " + name, `data-command="establish" data-bridge="${name}"`) : state === "interrupted" ? button("Restore " + name, `data-command="restorebridge" data-bridge="${name}"`) : button("Verify " + name, `data-command="verify" data-bridge="${name}"`)}${button("Customer joined " + name, `data-command="join" data-bridge="${name}"`)}${button("Interrupt " + name, `data-command="interruptbridge" data-bridge="${name}"`)}${button("Close / correct / history", `data-action="bridgehistory"`)}</div></div>`,
+          )
+          .join(
+            "",
+          )}<div class="row"><h3>Echo · scheduled 14:35 · prep 14:25</h3><p class="muted">End unknown · bridge unassigned</p><div class="actions">${button("Reschedule Echo", 'data-view="call"')}${button("Assign existing bridge", 'data-action="assign"')}</div></div></section><section class="card"><div class="head"><h2>Customer participation · independent</h2></div>${fixture.customers.map((c, i) => `<div class="row" data-customer="${i}"><h3>${c.name}</h3><p class="muted">${c.bridge} · ${c.state} · join ${c.join}${c.restored ? " · new restored interval; prior gap retained" : ""}</p><div class="actions">${c.state === "connected" ? button("Customer left " + c.name.split(" · ")[0], `data-command="leave" data-index="${i}"`) + button("Interrupt " + c.name.split(" · ")[0], `data-command="interrupt" data-index="${i}"`) : c.state === "interrupted" ? button("Restore " + c.name.split(" · ")[0] + " connection", `data-command="restore" data-index="${i}"`) : ""}${button("Correct / interval history", 'data-action="intervalhistory"')}</div></div>`).join("")}</section></div>`;
+      }
+      function editor(title, content, save, context = "") {
+        document.body.classList.add("editor-mode");
+        surface.className = "editor-grid";
+        surface.style.flex = "1";
+        surface.innerHTML = `<aside class="editor-context stack">${nextRisk()}${bridgesSummary()}${context}</aside><section class="editor-wrap"><header class="editor-title"><div><h2>${title}</h2><small>Record target: Meridian / Leg 2 · unsent draft</small></div>${button("Drafts", 'data-view="drafts"')}</header><div class="fields">${content}</div><footer class="save-footer">${button(save, 'class="primary" id="save-action"')}${button("Keep draft", 'data-view="ops"')}</footer></section>`;
+      }
+      function transport() {
+        heading("Transport · applied-only during protected calls");
+        editor(
+          "Record applied move",
+          `<div class="risk"><strong id="active-call-context">${fixture.customers.filter((c) => c.state === "connected").length} reported connected · active-call advisory</strong><p>PoP 14:28, Ka degraded 14:30 · Live ETA. Reporting remains available; actual routing unknown.</p></div><label>Service<input id="service" value="Executive secure voice and diplomatic coordination" aria-describedby="inline-error"></label><p id="inline-error" class="hidden" role="alert">Enter a service. This is input validation; the active-call advisory does not block Save.</p><label>Reported Applied transport<select id="transport"><option>Ka</option><option>Starshield</option><option>X-band</option><option>Unknown</option></select></label><p class="muted">Applied time: Unknown · no requested stage or check required</p><details><summary>Set report UTC / precision</summary><div class="two"><label>UTC<input type="datetime-local"></label><label>Precision<select><option>Unknown</option><option>Exact</option><option>Approximate</option></select></label></div></details>${button("+ Add service", 'data-action="addservice"')}<details><summary>Intended / Requested / Operator Checked</summary><p class="muted">Independent optional stages. Changing applied configuration clears its prior check.</p><label><input type="checkbox"> Include requested report</label><label>Check result<select><option>Unknown</option><option>Satisfactory</option><option>Issue reported</option></select></label></details><details open><summary>Reason, association and record scope</summary><label>Reason · optional<textarea id="reason">Ground coordinator requested service allocation change.</textarea></label><label>Related call<select><option>Unknown / unassigned</option><option>Echo · VTC 14:35</option></select></label><label>Record scope<select><option>Leg 2 · Westbound</option><option>Mission</option><option>Between legs</option></select></label></details>`,
+          "Save applied report",
+        );
+        document.querySelector("#save-action").onclick = () => {
+          const field = document.querySelector("#service");
+          if (!field.value.trim()) {
+            field.setAttribute("aria-invalid", "true");
+            document.querySelector("#inline-error").classList.remove("hidden");
+            field.focus();
+            return;
+          }
+          message(
+            "Preview: applied-only report submitted with no acknowledgment gate. No backend write.",
+          );
+        };
+      }
+      function call() {
+        editor(
+          "Change / log call",
+          `<label>Customer / requirement<input value="Echo — Executive coordination and diplomatic ground conference"></label><div class="two"><label>Start date · UTC<input type="date" value="2026-10-18"></label><label>Start time · UTC<input type="time" value="14:35"></label></div><div class="two"><label>Shift minutes<input type="number" value="0"></label><label>Preparation lead<input type="number" value="10"></label></div><p class="muted">End / duration Unknown · existing unknown stays unknown</p><label>Conference<select><option>Unknown / unassigned</option><option>Bridge A · established</option><option>Bridge C · preparing</option></select></label><details><summary>Status, actual timing, precision and scope</summary><label>Status<select><option>Scheduled</option><option>Delayed</option><option>Completed</option><option>Cancelled</option><option>Tentative</option></select></label><label>Actual start · UTC<input type="datetime-local"></label><label>Actual precision<select><option>Unknown</option><option>Exact</option><option>Approximate</option></select></label></details>`,
+          "Save call",
+        );
+        document.querySelector("#save-action").onclick = () =>
+          message(
+            "Preview: requirement timing changes; shared conference and customer intervals stay unchanged.",
+          );
+      }
+      function issues() {
+        heading("Issues · lifecycle, mitigation and corrections");
+        surface.innerHTML = `<div class="grid"><section class="card"><div class="head"><h2>Cabin handset intermittent</h2><span class="badge">${fixture.issue}</span></div><div class="row"><p>Mitigation: ${fixture.mitigation}</p><p class="muted">Follow-up: ${fixture.followup}</p><div class="actions">${button("Update / follow up", 'data-view="followup"')}${fixture.issue === "resolved" ? button("Reopen issue", 'data-command="reopen"') : button(fixture.issue === "monitoring" ? "Return to open" : "Monitor issue", `data-command="${fixture.issue === "monitoring" ? "openissue" : "monitor"}"`) + button("Resolve issue", 'data-command="resolve"')}${button("Set mitigation", 'data-action="mitigation"')}</div></div><div class="row"><h3>Operational activity</h3><p class="muted">14:05 · Ground reported replacement handset available</p><div class="actions">${button("Correct this message", 'data-view="correction"')}${button("Immutable audit history", 'data-action="issuehistory"')}</div><p class="muted">Correction keeps current status and follow-up; original revision remains.</p></div></section><section class="card"><div class="row"><h3>Ground callback · Open</h3><p class="muted">Follow up 14:24 UTC · responsibility: ground coordinator</p>${button("Update callback", 'data-view="followup"')}</div><div class="row"><h3>Capabilities and redundancy</h3><p class="muted">Functional secure voice · redundancy unknown. Independent observations and precision.</p>${button("Assess / correct capability", 'data-action="capability"')}</div></section></div>`;
+      }
+      function followup(correction = false) {
+        editor(
+          correction
+            ? "Correct historical message"
+            : "Issue update / follow up",
+          `<p>${correction ? "Selected message: 14:05 · replacement handset available" : "Cabin handset intermittent"}</p><label>${correction ? "Corrected message" : "New operational update"}<textarea>${correction ? "Ground reported replacement handset pending test." : "Cabin coordinator testing replacement handset."}</textarea></label><label>${correction ? "Corrected occurrence UTC" : "Follow-up UTC"}<input type="datetime-local" value="2026-10-18T14:${correction ? "05" : "40"}"></label><p class="muted">Current state: ${fixture.issue} · mitigation ${fixture.mitigation}</p><p class="muted">${correction ? "This correction preserves current status/follow-up and original audit revision." : "Resolve clears follow-up. Reopen does not restore the old deadline."}</p>`,
+          "Save " + (correction ? "correction" : "update"),
+        );
+        document.querySelector("#save-action").onclick = () =>
+          message(
+            "Preview only: " +
+              (correction
+                ? "correct selected historical message; lifecycle unchanged."
+                : "append update and optional follow-up."),
+          );
+      }
+      function customers() {
+        heading("All customers · no hidden intervals");
+        surface.innerHTML = `<section class="card customer-list"><div class="head"><h2>${fixture.customers.filter((c) => c.state === "connected").length} reported connected · complete fixture</h2></div>${fixture.customers.map((c) => `<div class="row"><div><h3>${c.name}</h3><p class="muted">${c.bridge} · ${c.state} · join ${c.join}</p></div>${button("Participation controls", 'data-view="comms"')}</div>`).join("")}</section>`;
+      }
+      function risks() {
+        heading("All modeled advisories · " + (eventRows.length - 2));
+        surface.innerHTML = `<section class="card">${eventRows
+          .filter((r, i) => ![0, 3].includes(i))
+          .map(
+            ([time, title, basis]) =>
+              `<div class="row"><h3>${time} · ${title}</h3><p class="muted">${basis}</p><p class="muted">Current reports and available fallback require review; no independently observed routing or outage implied.</p>${button("Record applied report", 'data-view="transport"')}</div>`,
+          )
+          .join("")}</section>`;
+      }
+      function mission() {
+        heading("Choose mission and record association");
+        surface.innerHTML = `<section class="card chooser"><div class="row"><h3>Active flight · independent of selection</h3><p>Meridian / Leg 2 · Airborne · aligned source 14:22</p><p class="muted">Choosing a mission or record scope does not activate a flight leg.</p></div><div class="row"><label>Find among loaded missions<input placeholder="Mission name"></label><div class="selector-list">${button("Meridian · Leg 2 active · 3 itinerary legs", 'data-action="selectmission"')}${button("Aurora · no active leg · 2 itinerary legs", 'data-action="selectmission"')}${button("Load remaining missions", 'data-action="loadmissions"')}</div></div><div class="row"><h3>Record target · Meridian</h3><label>Scope<select id="scope"><option>Mission</option><option>Preflight</option><option>Leg</option><option selected>Between legs</option><option>Postflight</option></select></label><div class="two" id="scope-fields"><label>Previous leg<select><option>Leg 1 · Eastbound</option></select></label><label>Next leg<select><option>Leg 2 · Westbound</option><option>Leg 3 · Return</option></select></label></div><p class="muted">Unsent move remains Meridian / Leg 2 in the tray. Scope changes are explicit editor operations; they do not retarget existing work.</p></div></section>`;
+      }
+      function drafts() {
+        heading("Retained work · target never follows current selection");
+        surface.innerHTML = `<section class="card"><div class="row"><h3>Unsent move · Meridian / Leg 2</h3><p class="muted">Draft input · not an accepted write</p>${button("Resume move", 'data-view="transport"')}</div><div class="row"><h3>Call edit · Meridian / Leg 2 · outcome uncertain</h3><p class="muted">Frozen original body/key/time; no automatic replay on view change</p>${button("Review exact retry", 'data-action="retry"')}</div><div class="row"><h3>Issue update · Aurora / Mission · conflict</h3><p class="muted">Local draft retained; review saved version before new command.</p>${button("Review conflict", 'data-action="conflict"')}</div></section>`;
+      }
+      function sources(mode) {
+        document.querySelector("#flight-context").textContent =
+          "Active flight: Meridian / Leg 2 · Airborne · live 14:22 · partial";
+        document.querySelector("#urgent-summary").innerHTML =
+          "Next risk: PoP 14:28 · Live ETA<br>3 modeled advisories";
+        document.querySelector("#connected-count").textContent =
+          "5 reported connected";
+        heading("Source timing and write availability");
+        let txt =
+          mode === "planned"
+            ? "Preflight · Planned UTC"
+            : mode === "unavailable"
+              ? "Airborne · Live ETA unavailable"
+              : mode === "down"
+                ? "Last known 14:22 · store unavailable"
+                : "Airborne · Live route ETA · partial";
+        document.querySelector("#source-text").textContent = txt;
+        if (mode === "planned") {
+          document.querySelector("#flight-context").textContent =
+            "Selected active leg: Meridian / Leg 2 · Preflight source";
+          document.querySelector("#urgent-summary").innerHTML =
+            "Reference: PoP 14:28<br>Planned UTC · modeled";
+        }
+        if (mode === "unavailable")
+          document.querySelector("#urgent-summary").textContent =
+            "Live boundary times unavailable · no scheduled fallback";
+        if (mode === "down") {
+          document.querySelector("#flight-context").textContent =
+            "Meridian / Leg 2 · last known 14:22 · store unavailable";
+          document.querySelector("#connected-count").textContent =
+            "5 connected at 14:22";
+          document.querySelector("#urgent-summary").textContent =
+            "3 last-known advisories · freshness unknown";
+        }
+        surface.innerHTML = `<section class="card"><div class="row"><h3>${txt}</h3><p class="muted">${mode === "planned" ? "Planning boundaries may be shown before departure." : mode === "unavailable" ? "No usable live timing. Scheduled UTC is not presented as a live alert." : mode === "down" ? "Last-known event snapshot remains visible. Writes unavailable; no false zero-count." : "Aligned airborne backend ETA and live PoP publication. No frontend prediction."}</p><div class="actions">${button("Preflight planned", 'data-view="planned"')}${button("Airborne live", 'data-view="sources"')}${button("Live ETA unavailable", 'data-view="unavailable"')}${button("Store down", 'data-view="down"')}</div></div><div class="row"><h3>Write target · Meridian / Leg 2</h3><p class="muted">${mode === "down" ? "Local operator store unavailable · unsent draft retained" : "Store healthy · optional model failure does not block reporting"}</p><button ${mode === "down" ? "disabled" : ""} data-view="transport">${mode === "down" ? "Save unavailable · keep draft" : "Record applied report"}</button>${button("Review retained work", 'data-view="drafts"')}</div><div class="row"><h3>Source detail</h3><p class="muted">Event as-of 14:22 · model coverage partial · expand source capture/alignment, not an all-clear.</p></div></section>`;
+      }
+      function tools() {
+        heading("Workspace tools and records");
+        surface.innerHTML = `<section class="card"><div class="row"><h3>Existing display and record workflows</h3><div class="actions">${button("Display recenter / presets", 'data-action="display"')}${button("Local alerts", 'data-action="alerts"')}${button("Mission ZIP in Missions", 'data-action="records"')}${button("History / observations", 'data-action="history"')}${button("Retained drafts and saves", 'data-view="drafts"')}</div><p class="muted">Same-browser recenter target; shared visibility settings; one existing ZIP, no second exporter.</p></div></section>`;
+      }
+      function show(view) {
+        if (document.body.classList.contains("editor-mode")) {
+          previewDrafts[currentView] = {
+            fields: [
+              ...surface.querySelectorAll("input, select, textarea"),
+            ].map((el) => ({ value: el.value, checked: el.checked })),
+            details: [...surface.querySelectorAll("details")].map(
+              (el) => el.open,
+            ),
+          };
+        }
+        currentView = view;
+        document.body.classList.remove("editor-mode");
+        surface.className = "";
+        surface.style.flex = "";
+        document
+          .querySelectorAll(".views [data-view]")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.view === view),
+          );
+        ({
+          ops,
+          comms,
+          transport,
+          call,
+          issues,
+          customers,
+          risks,
+          mission,
+          drafts,
+          tools,
+          events: () => {
+            heading("Operational timeline");
+            surface.innerHTML = events(true);
+          },
+          followup: () => followup(false),
+          correction: () => followup(true),
+          sources: () => sources("live"),
+          planned: () => sources("planned"),
+          unavailable: () => sources("unavailable"),
+          down: () => sources("down"),
+        })[view]?.();
+        if (
+          previewDrafts[view] &&
+          document.body.classList.contains("editor-mode")
+        ) {
+          [...surface.querySelectorAll("input, select, textarea")].forEach(
+            (el, i) => {
+              const saved = previewDrafts[view].fields[i];
+              if (saved) {
+                el.value = saved.value;
+                if (el.type === "checkbox") el.checked = saved.checked;
+              }
+            },
+          );
+          [...surface.querySelectorAll("details")].forEach(
+            (el, i) => (el.open = previewDrafts[view].details[i] ?? el.open),
+          );
+        }
+        document.querySelector(".work").scrollTop = 0;
+      }
+      function message(text) {
+        document.querySelector("#status").textContent = text;
+      }
+      function command(b) {
+        const cmd = b.dataset.command,
+          i = Number(b.dataset.index),
+          bridge = b.dataset.bridge;
+        if (cmd === "establish" || cmd === "restorebridge")
+          fixture.bridges[bridge] = "established";
+        if (cmd === "interruptbridge") fixture.bridges[bridge] = "interrupted";
+        if (cmd === "join")
+          fixture.customers.push({
+            name: "Unknown customer",
+            state: "connected",
+            bridge,
+            join: "14:22",
+            restored: false,
+          });
+        if (cmd === "leave" || cmd === "interrupt")
+          fixture.customers[i].state = cmd === "leave" ? "left" : "interrupted";
+        if (cmd === "restore") {
+          const previous = { ...fixture.customers[i] };
+          fixture.history.push(previous);
+          fixture.customers[i] = {
+            ...previous,
+            state: "connected",
+            join: "14:22",
+            restored: true,
+            resumesInterval: fixture.history.length,
+          };
+        }
+        if (cmd === "resolve") {
+          fixture.issue = "resolved";
+          fixture.followup = "Cleared";
+        }
+        if (cmd === "reopen") {
+          fixture.issue = "reopened";
+          fixture.followup = "None · prior deadline not restored";
+        }
+        if (cmd === "monitor") fixture.issue = "monitoring";
+        if (cmd === "openissue") fixture.issue = "open";
+        show(
+          ["resolve", "reopen", "monitor", "openissue"].includes(cmd)
+            ? "issues"
+            : "comms",
+        );
+        updateAwareness();
+        message(
+          "Preview " +
+            cmd +
+            ": " +
+            (bridge || fixture.customers[i]?.name || "issue") +
+            ". " +
+            (cmd === "verify"
+              ? "Operator verification report only."
+              : cmd === "leave"
+                ? "Bridge A remains established; other customer intervals unchanged."
+                : cmd === "restore"
+                  ? "New linked interval; prior interruption/gap preserved."
+                  : "No backend write."),
+        );
+      }
+      function action(name) {
+        const messages = {
+          note: "Preview: short observation editor; unknown occurrence time unless explicitly supplied.",
+          records:
+            "Navigation preview: existing Missions ZIP preparation/export/import; no destination Operator restore.",
+          history:
+            "Preview: loaded-record filter with coverage label; paged immutable revisions and tombstones.",
+          assign:
+            "Preview: choose existing conference by name for Echo; does not join a customer.",
+          newconference:
+            "Preview: create preparing conference with optional name; establish and verify separately.",
+          bridgehistory:
+            "Preview: close/interrupt/correct and immutable history; never invent customer departures.",
+          intervalhistory:
+            "Preview: correct timing, tombstone restore and interval history; restore connection is separate.",
+          capability:
+            "Preview: independent functional and redundancy statuses, observations and precision.",
+          retry:
+            "Preview: inspect frozen request/target and retry with original key/time/body; no new command.",
+          conflict:
+            "Preview: saved latest and retained local draft; explicit reconcile, no automatic overwrite.",
+          selectmission:
+            "Preview: select mission for browsing; existing work stays pinned to its original mission.",
+          loadmissions:
+            "Preview: page existing missions API; search covers loaded results only.",
+          display:
+            "Preview: choose same-browser Overview target; Recenter waits for receipt. Shared preset settings remain distinct.",
+          alerts:
+            "Preview: best-effort foreground sound/vibration; no background service.",
+        };
+        if (name === "mitigation") {
+          surface.insertAdjacentHTML(
+            "beforeend",
+            '<section class="card"><div class="row"><label>Mitigation · independent of issue status<select id="mitigation-select"><option>none_reported</option><option>mitigated</option><option selected>workaround</option><option>unknown</option></select></label><button id="save-mitigation">Save mitigation</button></div></section>',
+          );
+          document.querySelector("#save-mitigation").onclick = () => {
+            fixture.mitigation =
+              document.querySelector("#mitigation-select").value;
+            show("issues");
+            message(
+              "Preview: mitigation changed; status " +
+                fixture.issue +
+                " unchanged.",
+            );
+          };
+          return;
+        }
+        if (name === "addservice") {
+          document
+            .querySelector(".fields")
+            .insertAdjacentHTML(
+              "beforeend",
+              '<label>Additional service<input placeholder="Service"></label>',
+            );
+          return;
+        }
+        message(messages[name] || "Preview only; no operational write.");
+      }
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-view],[data-command],[data-action]");
+        if (!b) return;
+        if (b.dataset.view) show(b.dataset.view);
+        else if (b.dataset.command) command(b);
+        else action(b.dataset.action);
+      });
+      document.addEventListener("change", (e) => {
+        if (e.target.id === "scope") {
+          document.querySelector("#scope-fields").innerHTML =
+            e.target.value === "Between legs"
+              ? "<label>Previous leg<select><option>Leg 1 · Eastbound</option></select></label><label>Next leg<select><option>Leg 2 · Westbound</option><option>Leg 3 · Return</option></select></label>"
+              : e.target.value === "Leg"
+                ? "<label>Record leg<select><option>Leg 2 · Westbound</option><option>Leg 1 · Eastbound</option></select></label>"
+                : '<p class="muted">' +
+                  e.target.value +
+                  " scope · no active leg inferred</p>";
+        }
+      });
+      window.injectLiveUpdate = () => {
+        fixture.customers[4].state = "interrupted";
+        if (eventRows.length === 5)
+          eventRows.push([
+            "14:29",
+            "New Ka restriction update",
+            "Live route ETA · modeled · new occurrence",
+          ]);
+        document
+          .querySelectorAll('[data-view="risks"]')
+          .forEach((b) => (b.textContent = "All 4 advisories"));
+        const activeContext = document.querySelector("#active-call-context");
+        if (activeContext)
+          activeContext.textContent =
+            "4 reported connected · active-call advisory";
+        if (q.has("keyboard") && innerWidth <= 600)
+          document.querySelector(".connected button").textContent =
+            "4 connected";
+        document.querySelector("#urgent-summary").textContent =
+          "New: Ka restriction update · 4 advisories · Foxtrot interrupted";
+        document.querySelector("#connected-count").textContent =
+          "4 reported connected";
+        document.querySelector("#tray-label").textContent =
+          "Unsent move retained · Meridian / Leg 2 · no target change";
+      };
+      show(q.get("view") || "ops");
+      if (q.has("keyboard") && innerWidth <= 600)
+        document.querySelector(".connected button").textContent = "5 connected";
+      if (q.has("change")) window.injectLiveUpdate();
+    </script>
+  </body>
+</html>

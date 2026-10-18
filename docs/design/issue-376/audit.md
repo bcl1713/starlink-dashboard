@@ -79,9 +79,12 @@ summary.
 
 Issue/capability drafts use `H/useOperatorIssueDraft.ts`; transport uses
 `H/useOperatorTransportDraft.ts`, both session storage with explicit failures.
-Frozen pending commands are retained by `H/useOperatorJournal.ts`. In contrast,
-the unsent Journal editor, calls and conference/customer drafts use React state;
-their unsent content is not uniformly recoverable after reload.
+Frozen pending commands are retained across reload by `H/useOperatorJournal.ts`
+only for callers enabling `durable: true` (issues, capabilities and transport);
+the default is false for generic journal, calls and conference/participation.
+Other pending commands remain in memory while their owner stays mounted. In
+contrast, the unsent Journal editor, calls and conference/customer drafts use
+React state; their unsent content is not uniformly recoverable after reload.
 `OperatorJournalPage` aggregates journal/call dirty flags, while issue/transport
 have independent owners. Central mission/navigation handling therefore requires
 deliberate preservation across every editor; the baseline does not establish a

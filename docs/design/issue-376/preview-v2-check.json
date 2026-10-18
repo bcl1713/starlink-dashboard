@@ -1,0 +1,573 @@
+{
+  "task": "issue-376-design-revision-2",
+  "pid": 2116683,
+  "processGroup": "2116673",
+  "command": "timeout --kill-after=10s 3m node <worktree>/docs/design/issue-376/capture-v2.cjs",
+  "started": "2026-10-18T17:25:30.371Z",
+  "temporaryPaths": [],
+  "servers": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "scope": "Local synthetic design prototype; not product acceptance or real mobile keyboard validation",
+  "assertions": [
+    "1920x1080: establish/verify/join/leave/interrupt/restore; bridge persists and prior interval retained in preview",
+    "1920x1080: issue resolve/reopen clears deadline; correction keeps lifecycle",
+    "1920x1080: valid applied-only action without gate; preview draft retained through Operations/tray; reschedule controls",
+    "390x844: establish/verify/join/leave/interrupt/restore; bridge persists and prior interval retained in preview",
+    "390x844: issue resolve/reopen clears deadline; correction keeps lifecycle",
+    "390x844: valid applied-only action without gate; preview draft retained through Operations/tray; reschedule controls",
+    "390x844: transport simulated keyboard, live update preserves focus/input, Next and actions retained",
+    "390x844: call simulated keyboard, live update preserves focus/input, Next and actions retained",
+    "844x390: establish/verify/join/leave/interrupt/restore; bridge persists and prior interval retained in preview",
+    "844x390: issue resolve/reopen clears deadline; correction keeps lifecycle",
+    "844x390: valid applied-only action without gate; preview draft retained through Operations/tray; reschedule controls",
+    "844x390: transport simulated keyboard, live update preserves focus/input, Next and actions retained",
+    "844x390: call simulated keyboard, live update preserves focus/input, Next and actions retained"
+  ],
+  "finished": "2026-10-18T17:25:35.093Z",
+  "browserClosed": true,
+  "results": [
+    {
+      "name": "v2-a-stress-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-b-stress-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-c-stress-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-transport-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-issues-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-mission-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-down-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1144.125,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-after-leave-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-interrupted-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-restored-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-issue-correction-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-transport-report-preview-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-call-reschedule-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-planned-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1282.734375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-unavailable-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1103.921875,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-drafts-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 1235.84375,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-a-stress-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-b-stress-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-c-stress-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-transport-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-issues-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-mission-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-down-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-after-leave-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-interrupted-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-restored-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-issue-correction-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-transport-report-preview-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-call-reschedule-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-keyboard-transport-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-keyboard-validation-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-keyboard-call-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 204.515625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-a-stress-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-transport-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-issues-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-mission-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-down-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 227.15625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-after-leave-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-interrupted-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-comms-restored-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-issue-correction-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-transport-report-preview-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-call-reschedule-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 278.0625,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-keyboard-transport-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 308.921875,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-keyboard-validation-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 308.921875,
+      "undersizedButtons": []
+    },
+    {
+      "name": "v2-keyboard-call-844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "horizontalOverflow": false,
+      "documentVerticalOverflow": false,
+      "nextWidth": 308.921875,
+      "undersizedButtons": []
+    }
+  ],
+  "scriptErrors": [],
+  "failure": null
+}
