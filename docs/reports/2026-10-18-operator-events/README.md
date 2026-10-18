@@ -3,9 +3,11 @@
 Issue #368, epic #361; draft PR #379. All inputs are synthetic. These checks
 establish software behavior, not aircraft readiness or physical sound delivery.
 
-Latest production modeled-alert qualification, review fixes and decisions are in
-[the follow-up report](modeled-alerts.md). It supersedes the initial limitation
-that withheld normal modeled cues.
+Latest qualification and review fixes are in the
+[airborne live ETA report](live-eta.md). It supersedes the former airborne
+mission UTC time basis. The [earlier modeled-alert report](modeled-alerts.md)
+records the normal foreground notification integration that preceded this timing
+revision.
 
 ## Initial production acceptance
 

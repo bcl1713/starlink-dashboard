@@ -1,5 +1,9 @@
 # Current modeled restriction alerts: PR #379 follow-up
 
+Historical qualification of the foreground notification integration. The later
+[airborne live ETA revision](live-eta.md) supersedes the mission-UTC timing
+decision below; its report contains current evidence.
+
 Product review 6248772010 required significant modeled restrictions to notify an
 operator with the page open under normal current inputs. The initial delivery's
 withholding of ordinary modeled cues was a functional gap.
