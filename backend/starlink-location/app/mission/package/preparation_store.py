@@ -39,12 +39,32 @@ class PreparationStore:
                 "CREATE TABLE IF NOT EXISTS export_jobs (id TEXT PRIMARY KEY, mission TEXT, payload TEXT)"
             )
 
-    def write(self, job):
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS export_archive_snapshots (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
+            )
+
+    def archive(self, job_id):
+        with self.cache.connection() as db:
+            row = db.execute(
+                "SELECT payload FROM export_archive_snapshots WHERE id=?", (job_id,)
+            ).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def discard_archive(self, job_id):
+        with self.cache.connection() as db:
+            db.execute("DELETE FROM export_archive_snapshots WHERE id=?", (job_id,))
+
+    def write(self, job, *, archive=None):
         with self.cache.connection() as db:
             db.execute(
                 "INSERT OR REPLACE INTO export_jobs VALUES (?,?,?)",
                 (job.id, job.mission_id, job.model_dump_json()),
             )
+            if archive is not None:
+                db.execute(
+                    "INSERT INTO export_archive_snapshots VALUES (?,?)",
+                    (job.id, json.dumps(archive, sort_keys=True)),
+                )
 
     def write_pending(self, job):
         with self.cache.connection() as db:

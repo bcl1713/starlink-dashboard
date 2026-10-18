@@ -4,11 +4,12 @@ import json
 import logging
 import threading
 import time
+from datetime import datetime, timezone
 from hashlib import sha256
 from uuid import uuid4
 
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.slide_cache.capture import capture_raw
+from app.mission.slide_cache.capture import capture_is_current, capture_raw
 from app.mission.slide_cache.identity import renderer_revision
 from app.mission.slide_cache.store import default_store
 
@@ -34,9 +35,11 @@ class ExportPreparationService(PreparationWorker):
         cache=None,
         clock=time.time,
         builder=None,
+        archive_capture=None,
     ):
         self.route_manager, self.poi_manager = route_manager, poi_manager
         self.enabled, self.clock = enabled, clock
+        self.archive_capture = archive_capture
         self.builder = builder or build_mission_package_download
         self.cache = cache or default_store()
         self.jobs = PreparationStore(self.cache)
@@ -68,9 +71,26 @@ class ExportPreparationService(PreparationWorker):
         )
 
     @staticmethod
-    def fingerprint(raw):
+    def fingerprint(raw, archive=None):
+        archive_identity = (
+            None
+            if archive is None
+            else {
+                "schema_version": archive["schema_version"],
+                "files": archive["files"],
+                "components": {
+                    name: {
+                        k: v
+                        for k, v in component.items()
+                        if k not in ("capture_started_at", "capture_finished_at")
+                    }
+                    for name, component in archive["components"].items()
+                },
+            }
+        )
         return sha256(
-            raw.metadata
+            (canonical_json(archive_identity) if archive is not None else b"")
+            + raw.metadata
             + canonical_json(raw.dependency_token[0])
             + raw.dependency_token[1]
             + raw.renderer_revision.encode()
@@ -82,7 +102,28 @@ class ExportPreparationService(PreparationWorker):
         now = self.clock()
         capture_started = time.monotonic()
         raw = self.capture(mission_id)
-        fingerprint = self.fingerprint(raw)
+        planning_captured_at = self.clock()
+        archive = self.archive_capture(mission_id) if self.archive_capture else None
+        if archive is not None:
+            if not capture_is_current(raw):
+                raise RuntimeError("Mission changed during archive capture; retry")
+            archive = {
+                **archive,
+                "components": {
+                    **archive["components"],
+                    "planning": {
+                        "capture_started_at": datetime.fromtimestamp(
+                            now, timezone.utc
+                        ).isoformat(),
+                        "capture_finished_at": datetime.fromtimestamp(
+                            planning_captured_at, timezone.utc
+                        ).isoformat(),
+                        "fingerprint": self.fingerprint(raw),
+                        "metadata_sha256": sha256(raw.metadata).hexdigest(),
+                    },
+                },
+            }
+        fingerprint = self.fingerprint(raw, archive)
         metadata = json.loads(raw.metadata)
         revision = (
             metadata.get("metadata", {}).get("itinerary_planning", {}).get("revision")
@@ -108,7 +149,7 @@ class ExportPreparationService(PreparationWorker):
                 deadline=now + 600,
                 stage_timings={"capture": time.monotonic() - capture_started},
             )
-            self.jobs.write(job)
+            self.jobs.write(job, archive=archive)
             self.captures[job.id] = raw
             self.wake.set()
             return job
@@ -143,6 +184,8 @@ class ExportPreparationService(PreparationWorker):
                 }
             if job.state in TERMINAL and job_id not in self.executing:
                 self.captures.pop(job_id, None)
+                if job.state != "ready":
+                    self.jobs.discard_archive(job_id)
             return job
 
     def sweep_captures(self):
@@ -167,6 +210,8 @@ class ExportPreparationService(PreparationWorker):
                     return self.jobs.read(mission_id, job_id)
             if job_id not in self.executing:
                 self.captures.pop(job_id, None)
+                if job.state != "ready":
+                    self.jobs.discard_archive(job_id)
             self.wake.set()
             return job
 

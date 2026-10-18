@@ -8,6 +8,7 @@ import asyncio
 import io
 import json
 import logging
+import sqlite3
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -652,6 +653,7 @@ async def export_mission(
 
     from app.mission.package.export_job import download_response
     from app.mission.package.preparation_routes import get_export_preparation_service
+    from app.operator.errors import OperatorError
 
     service = get_export_preparation_service(request)
     try:
@@ -665,7 +667,7 @@ async def export_mission(
         return JSONResponse(
             job.model_dump(mode="json"), status_code=202, headers={"Location": location}
         )
-    except RuntimeError:
+    except (RuntimeError, OSError, sqlite3.Error, OperatorError):
         raise HTTPException(503, detail="Mission export preparation is unavailable")
 
 

@@ -609,6 +609,9 @@ async def startup_event():
                     "Customer PDF background preparation unavailable", exc_info=True
                 )
 
+        from types import SimpleNamespace
+
+        from app.mission.package.operations_archive import capture_archive
         from app.mission.package.preparation import ExportPreparationService
 
         app.state.export_preparation_service = ExportPreparationService(
@@ -617,6 +620,9 @@ async def startup_event():
             enabled=lambda: ConfigManager()
             .get_config()
             .exports.customer_briefing_enabled,
+            archive_capture=lambda mission_id: capture_archive(
+                SimpleNamespace(app=app), mission_id
+            ),
         )
         logger.info_json("Starlink Location Backend ready")
     except Exception as e:

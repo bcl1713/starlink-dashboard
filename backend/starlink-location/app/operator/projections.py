@@ -127,7 +127,11 @@ def _activity(document, previous, store_id):
 
 
 def capture_projection(
-    store: OperatorStore, *, mission_id: str, include_audit: bool = False
+    store: OperatorStore,
+    *,
+    mission_id: str,
+    include_audit: bool = False,
+    include_events: bool = False,
 ) -> ProjectionBundle:
     """Pin H and copy rows in one read; release SQLite before diffs/serialization.
 
@@ -163,6 +167,29 @@ def capture_projection(
         """,
             (high_water, high_water, mission_id),
         )
+
+        event_data = None
+        if include_events:
+            # All event tables share this same SQLite read transaction and H.
+            event_data = {
+                "schema_version": 1,
+                "capture_policy": "persisted_only; no_model_recalculation",
+            }
+            for label, table in (
+                ("occurrences", "event_occurrences"),
+                ("heads", "event_heads"),
+                ("transitions", "event_transitions"),
+                ("acknowledgments", "event_acknowledgments"),
+                ("tiers", "event_tiers"),
+            ):
+                columns, rows = _rows(
+                    connection,
+                    f"SELECT * FROM {table} WHERE occurrence_id IN (SELECT occurrence_id FROM event_occurrences WHERE mission_id=?) ORDER BY occurrence_id, rowid",
+                    (mission_id,),
+                )
+                event_data[label] = [dict(zip(columns, row)) for row in rows]
+            for occurrence in event_data["occurrences"]:
+                occurrence["event"] = json.loads(occurrence.pop("event_json"))
 
     current = [decode_document(row, current_columns) for row in current_rows]
     activity, audit, previous_by_id = [], [], {}
@@ -203,6 +230,9 @@ def capture_projection(
     if include_audit:
         files["operations/audit.jsonl"] = b"".join(_canonical(item) for item in audit)
         labels["operations/audit.jsonl"] = "full_historical_audit"
+    if event_data is not None:
+        files["operations/events.json"] = _canonical(event_data)
+        labels["operations/events.json"] = "persisted_event_history"
     checksums = {path: hashlib.sha256(body).hexdigest() for path, body in files.items()}
     references = MissionReferences()
     unresolved = []

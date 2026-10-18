@@ -354,3 +354,78 @@ def test_renderer_revision_replaces_current_package(tmp_path, monkeypatch):
         assert service.start("m").id == updated.id
         with service.open_download("m", first.id).stream as stream:
             assert stream.read() == old_bytes
+
+
+def test_archive_snapshot_persisted_before_ack_and_changes_invalidate_cache(
+    tmp_path, monkeypatch
+):
+    import json
+
+    snapshot = {
+        "schema_version": 1,
+        "capture_policy": "sequential_component_snapshots",
+        "components": {},
+        "files": {"operations/current.json": "[]\n"},
+    }
+    with runtime(tmp_path, monkeypatch, archive_capture=lambda _: snapshot) as (
+        service,
+        _,
+    ):
+        first = wait_state(service, service.start("m"), {"ready"})
+        assert service.jobs.archive(first.id)["files"] == snapshot["files"]
+        assert service.start("m").id == first.id
+        with service.open_download("m", first.id).stream as stream, zipfile.ZipFile(
+            stream
+        ) as archive:
+            assert json.loads(archive.read("operations/current.json")) == []
+        snapshot = dict(
+            snapshot, files={"operations/current.json": '[{"version":2}]\n'}
+        )
+        second = wait_state(service, service.start("m"), {"ready"})
+        assert first.fingerprint != second.fingerprint
+        with service.open_download("m", first.id).stream as stream, zipfile.ZipFile(
+            stream
+        ) as archive:
+            assert json.loads(archive.read("operations/current.json")) == []
+
+
+def test_elected_worker_uses_persisted_journal_not_later_capture(tmp_path, monkeypatch):
+    from app.mission.package.preparation_worker import PreparationWorker
+
+    old_run = PreparationWorker.run
+    monkeypatch.setattr(PreparationWorker, "run", lambda self: None)
+    original = {
+        "schema_version": 1,
+        "capture_policy": "sequential_component_snapshots",
+        "components": {},
+        "files": {"operations/current.json": "[]\n"},
+    }
+    with runtime(tmp_path, monkeypatch, archive_capture=lambda _: original) as (
+        first,
+        _,
+    ):
+        job = first.start("m")
+        assert first.jobs.archive(job.id)["files"] == original["files"]
+        # Simulate lost in-memory state after a crash, rather than graceful cancellation.
+        first.captures.clear()
+        first.close()
+        monkeypatch.setattr(PreparationWorker, "run", old_run)
+
+        def forbidden_capture(_):
+            raise AssertionError("Restart must not recapture Operator history")
+
+        second = type(first)(
+            None,
+            None,
+            enabled=False,
+            cache=first.cache,
+            archive_capture=forbidden_capture,
+        )
+        try:
+            ready = wait_state(second, job, {"ready"})
+            with second.open_download("m", ready.id).stream as stream, zipfile.ZipFile(
+                stream
+            ) as archive:
+                assert archive.read("operations/current.json") == b"[]\n"
+        finally:
+            second.close()

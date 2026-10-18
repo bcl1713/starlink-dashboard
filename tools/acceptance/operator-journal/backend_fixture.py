@@ -115,3 +115,14 @@ if models_enabled:
                 "SELECT count(*) FROM event_acknowledgments a JOIN event_occurrences o USING (occurrence_id) WHERE json_extract(o.event_json, '$.provenance')='modeled'"
             ).fetchone()[0]
         return {"synthetic": True, "modeledAcknowledgments": count}
+
+
+if os.getenv("OPERATOR_ARCHIVE_ACCEPTANCE") == "true":
+    from archive_fixture import initialize
+
+    async def initialize_archive():
+        import asyncio
+
+        await asyncio.to_thread(initialize, main, root)
+
+    app.add_event_handler("startup", initialize_archive)

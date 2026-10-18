@@ -52,7 +52,7 @@ class TelemetryPreparationService:
                 (job.model_dump_json(), job.id, job.mission_id),
             )
 
-    def start(self, mission_id: str, allow_partial: bool = False):
+    def capture_snapshot(self, mission_id: str, allow_partial: bool = False):
         mission = self.load_mission(mission_id)
         if mission is None:
             raise KeyError("Mission not found")
@@ -89,14 +89,17 @@ class TelemetryPreparationService:
             raise ValueError(
                 "Mission telemetry is incomplete; request a labeled partial package"
             )
+        return {
+            "mission_id": mission_id,
+            "captures": captures,
+            "allow_partial": allow_partial,
+        }
+
+    def start(self, mission_id: str, allow_partial: bool = False):
         snapshot = json.dumps(
-            {
-                "mission_id": mission_id,
-                "captures": captures,
-                "allow_partial": allow_partial,
-            },
-            sort_keys=True,
+            self.capture_snapshot(mission_id, allow_partial), sort_keys=True
         )
+        captures = json.loads(snapshot)["captures"]
         fingerprint = hashlib.sha256(snapshot.encode()).hexdigest()
         now = self.clock()
         job = ExportPreparation(
