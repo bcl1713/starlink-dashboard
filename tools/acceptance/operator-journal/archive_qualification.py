@@ -1,5 +1,6 @@
 """Production single-package acceptance, restart controls and rendered workflows."""
 
+import base64
 import json
 import os
 
@@ -24,11 +25,24 @@ def qualify_archive(owner):
             ("synthetic-complete-mission.zip", "synthetic-complete-mission.zip"),
             ("synthetic-customer-brief.pdf", "synthetic-customer-brief.pdf"),
         ):
-            owner.compose(
-                "cp",
-                f"starlink-location:/app/data/operator/archive-acceptance/{source}",
-                str(owner.root / target),
+            # docker cp cannot remount the read-only fixture mount on the
+            # managed rootless daemon. Transfer only these synthetic bytes via
+            # exec stdout, with the same bounded, recorded owner command.
+            encoded = owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "appuser",
+                "starlink-location",
+                "python",
+                "-c",
+                "import base64; from pathlib import Path; print(base64.b64encode(Path("
+                + repr("/app/data/operator/archive-acceptance/" + source)
+                + ").read_bytes()).decode())",
                 timeout=30,
+            )
+            (owner.root / target).write_bytes(
+                base64.b64decode(encoded.strip(), validate=True)
             )
         return result
 
