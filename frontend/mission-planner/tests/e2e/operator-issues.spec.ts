@@ -95,7 +95,7 @@ test('issue exception workflow: corrections, snapshot check-ins, drafts and rest
         .fill(`Synthetic original backup ${viewport.width}`);
       await editor
         .getByLabel('Follow-up UTC', { exact: true })
-        .fill(`2026-10-17T${hour}:15:00`);
+        .fill(`2026-10-17T${hour}:15`);
       await tap(page, () =>
         editor.getByRole('button', { name: 'Save issue', exact: true }).click()
       );
@@ -214,7 +214,7 @@ test('issue exception workflow: corrections, snapshot check-ins, drafts and rest
         .fill(`Synthetic corrected backup ${viewport.width}`);
       await correction
         .getByLabel('Corrected occurred UTC', { exact: true })
-        .fill(`2026-10-17T${hour}:04:00`);
+        .fill(`2026-10-17T${hour}:04`);
       const corrected = await tap(page, () =>
         correction
           .getByRole('button', { name: 'Save correction', exact: true })
