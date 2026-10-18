@@ -29,6 +29,7 @@ class EventNotification(StrictModel):
     eligible: bool = False
     priority: Annotated[int, Field(ge=0, le=4)] = 4
     threshold_at: UtcTimestamp | None = None
+    acknowledgment_available: bool = True
     available: bool = True
     reason: str | None = None
 
