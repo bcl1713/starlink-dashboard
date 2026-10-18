@@ -13,7 +13,8 @@ from tests.operator.service_helpers import create, submit, update
 def fixture_issue(service, record_data, clock):
     actions = json.loads(
         (
-            Path(__file__).parents[1] / "fixtures/operator/issue-corrections.json"
+            Path(__file__).resolve().parents[4]
+            / "frontend/mission-planner/src/test/fixtures/issue-corrections.json"
         ).read_text()
     )["actions"]
     issue = None

@@ -1,8 +1,0 @@
-{
-  "actions": [
-    {"recorded_at": "2026-01-02T10:00:00Z", "occurred_at": "2026-01-02T10:00:00Z", "status": "open", "update_text": ""},
-    {"recorded_at": "2026-01-02T10:06:00Z", "occurred_at": "2026-01-02T10:05:00Z", "status": "open", "update_text": "Backup unavailable"},
-    {"recorded_at": "2026-01-02T10:20:00Z", "occurred_at": "2026-01-02T10:20:00Z", "status": "resolved", "update_text": ""},
-    {"recorded_at": "2026-01-02T10:30:00Z", "occurred_at": "2026-01-02T10:20:00Z", "status": "resolved", "update_text": "Backup intermittent", "corrects_version": 2, "corrected_update_at": "2026-01-02T10:04:00Z"}
-  ]
-}

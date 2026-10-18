@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import fixture from '../../../../../backend/starlink-location/tests/fixtures/operator/issue-corrections.json';
+import fixture from '../../test/fixtures/issue-corrections.json';
 import { record } from '@/test/operator-fixtures';
 import type { SavedRecord, IssuePayload } from '@/types/operator';
 import { projectIssueActivity } from './issueActivity';

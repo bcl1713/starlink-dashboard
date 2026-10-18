@@ -100,8 +100,8 @@ routes, receipt shape, optimistic version check and write transaction ownership.
 **Files:** Create `app/operator/issue_activity.py`,
 `tests/operator/test_issue_activity.py`; modify
 `app/operator/{projection_models,projections}.py` and `test_projections.py`.
-Create `tests/fixtures/operator/issue-corrections.json` as the shared golden
-case.
+Create `frontend/mission-planner/src/test/fixtures/issue-corrections.json` as
+the shared golden case.
 
 **Interfaces:** `derive_issue_updates` accepts `revisions: list[SavedRecord]`
 and keyword-only `store_id: str`, returning `dict[int, IssueUpdate]`. maps
