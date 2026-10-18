@@ -1,0 +1,130 @@
+{
+  "candidateSha": "297623cdee5601ff7c604ccf5539ba8c1cc2fcd4",
+  "project": "starlink-operator-376-workspace-baseline",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-376-workspace-baseline-backend:297623cdee5601ff7c604ccf5539ba8c1cc2fcd4",
+      "id": "sha256:b230d0281a2604359462450ad454fc9ba3df57daa054d880a6c932b40a0ad727",
+      "revision": "297623cdee5601ff7c604ccf5539ba8c1cc2fcd4"
+    },
+    "frontend": {
+      "tag": "starlink-operator-376-workspace-baseline-frontend:297623cdee5601ff7c604ccf5539ba8c1cc2fcd4",
+      "id": "sha256:f07f669e5f06e5d468cd8ae9e3fa042f204a155b6398130eab8e83232123abe4",
+      "revision": "297623cdee5601ff7c604ccf5539ba8c1cc2fcd4"
+    }
+  },
+  "sourceArchiveSha256": "0a656050847c913a76135b7b5532896466473ae6f5724b39020a63e7339ac509",
+  "qualification": {
+    "synthetic": true,
+    "measurements": [
+      {
+        "scenario": "normal",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "journey": "Open scheduled call editor",
+        "activations": 1,
+        "typingOperations": 0,
+        "selectorOperations": 0,
+        "elapsedMs": 46.96652299999994,
+        "misSelections": 0,
+        "recoveryActions": 0,
+        "measurement": "scripted browser interaction; not human usability timing"
+      },
+      {
+        "scenario": "normal",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "journey": "Open scheduled call editor",
+        "activations": 1,
+        "typingOperations": 0,
+        "selectorOperations": 0,
+        "elapsedMs": 46.247163,
+        "misSelections": 0,
+        "recoveryActions": 0,
+        "measurement": "scripted browser interaction; not human usability timing"
+      },
+      {
+        "scenario": "normal",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "journey": "Open scheduled call editor",
+        "activations": 1,
+        "typingOperations": 0,
+        "selectorOperations": 0,
+        "elapsedMs": 46.79113499999994,
+        "misSelections": 0,
+        "recoveryActions": 0,
+        "measurement": "scripted browser interaction; not human usability timing"
+      },
+      {
+        "scenario": "busy",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "journey": "Open scheduled call editor",
+        "activations": 1,
+        "typingOperations": 0,
+        "selectorOperations": 0,
+        "elapsedMs": 41.28153599999996,
+        "misSelections": 0,
+        "recoveryActions": 0,
+        "measurement": "scripted browser interaction; not human usability timing"
+      },
+      {
+        "scenario": "busy",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "journey": "Open scheduled call editor",
+        "activations": 1,
+        "typingOperations": 0,
+        "selectorOperations": 0,
+        "elapsedMs": 40.53605399999924,
+        "misSelections": 0,
+        "recoveryActions": 0,
+        "measurement": "scripted browser interaction; not human usability timing"
+      },
+      {
+        "scenario": "busy",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "journey": "Open scheduled call editor",
+        "activations": 1,
+        "typingOperations": 0,
+        "selectorOperations": 0,
+        "elapsedMs": 47.82313299999987,
+        "misSelections": 0,
+        "recoveryActions": 0,
+        "measurement": "scripted browser interaction; not human usability timing"
+      }
+    ],
+    "approvedDestinationRed": {
+      "reason": "Operator workspace navigation absent after healthy legacy page loaded",
+      "log": "/tmp/issue-376-workspace-baseline-20261018-r3/command-020.log"
+    }
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

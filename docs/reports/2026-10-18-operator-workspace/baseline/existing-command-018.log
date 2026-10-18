@@ -1,0 +1,38 @@
+
+Running 5 tests using 1 worker
+
+  ✓  1 tests/e2e/operator-communications.spec.ts:76:1 › communications requirements and retrospective corrections survive two clients, failures and restart (14.1s)
+  ✓  2 tests/e2e/operator-conferences.spec.ts:35:1 › independent conferences and customers survive overlaps, retry and restart (11.9s)
+  ✓  3 tests/e2e/operator-displays.spec.ts:25:1 › Operator display controls use shared server settings and same-browser acknowledged commands (47.6s)
+  ✓  4 tests/e2e/operator-journal.spec.ts:16:1 › production desktop/mobile journal, conflict, real media 503 and exact retries (23.8s)
+  ✘  5 tests/e2e/operator-shell.spec.ts:11:1 › synthetic Operator shell at desktop, portrait and landscape with failure/restart recovery (20.7s)
+
+
+  1) tests/e2e/operator-shell.spec.ts:11:1 › synthetic Operator shell at desktop, portrait and landscape with failure/restart recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: 'Next requirement', exact: true }).getByText('Synthetic customer coordination', { exact: true })
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: 'Next requirement', exact: true }).getByText('Synthetic customer coordination', { exact: true }) with timeout 20000ms
+      - waiting for getByRole('region', { name: 'Next requirement', exact: true }).getByText('Synthetic customer coordination', { exact: true })
+
+
+      54 |             .getByRole('region', { name: 'Next requirement', exact: true })
+      55 |             .getByText('Synthetic customer coordination', { exact: true })
+    > 56 |         ).toBeVisible();
+         |           ^
+      57 |         await expect(
+      58 |           page.getByText('Synthetic transition advisory', { exact: true })
+      59 |         ).toBeVisible();
+        at /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/tests/e2e/operator-shell.spec.ts:56:11
+
+    Error Context: ../../../../../../../../tmp/issue-376-baseline-production-20261018/playwright/operator-shell-synthetic-O-11784-th-failure-restart-recovery/error-context.md
+
+  1 failed
+    tests/e2e/operator-shell.spec.ts:11:1 › synthetic Operator shell at desktop, portrait and landscape with failure/restart recovery 
+  4 passed (2.0m)

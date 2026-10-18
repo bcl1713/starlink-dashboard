@@ -1,0 +1,32 @@
+{
+  "candidateSha": "1a3e77d3b4017ad1f7cb33d1b1ef20b9378e0244",
+  "project": "starlink-operator-376-baseline",
+  "checksPassed": false,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-376-baseline-backend:1a3e77d3b4017ad1f7cb33d1b1ef20b9378e0244",
+      "id": "sha256:ff5589091819e9a05cd2ec05ccc5c25f6c5d3ee8298db598940abb25b95329b0",
+      "revision": "1a3e77d3b4017ad1f7cb33d1b1ef20b9378e0244"
+    },
+    "frontend": {
+      "tag": "starlink-operator-376-baseline-frontend:1a3e77d3b4017ad1f7cb33d1b1ef20b9378e0244",
+      "id": "sha256:1bc77cc0398c2e679effdf8492e71e04e6add1c0665590c9c83c70d6784c2890",
+      "revision": "1a3e77d3b4017ad1f7cb33d1b1ef20b9378e0244"
+    }
+  },
+  "sourceArchiveSha256": "4f87482373a749390f40f3d41ef47083d381bd54c61f65bfebcbb04fb34128c2",
+  "error": "Acceptance checks failed: {'browser': 'Command failed (1): /tmp/issue-376-baseline-production-20261018/command-018.log', 'issues': 'Command failed (1): /tmp/issue-376-baseline-production-20261018/command-021.log'}",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}
