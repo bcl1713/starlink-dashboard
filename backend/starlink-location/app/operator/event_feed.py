@@ -25,7 +25,14 @@ def build_snapshot(runtime, mission_id, adapter):
             freshness="fresh",
         )
     ] + inputs.sources
-    with service.store.connect(write=True) as connection:
+    guarded = tuple(
+        s
+        for s in inputs.sources
+        if s.guardable and s.aligned and s.freshness == "fresh"
+    )
+    with runtime.event_publication.guard(guarded), service.store.connect(
+        write=True
+    ) as connection:
         versions = dict(
             connection.execute(
                 "SELECT record_id, version FROM current_records WHERE mission_id=?",

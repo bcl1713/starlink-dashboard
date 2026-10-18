@@ -25,6 +25,7 @@ class EventPublication:
                 self._sources.pop(source.source, None)
                 update()
             self._sources[source.source] = source.model_copy(deep=True)
+            self._validators.pop(source.source, None)
             if validate is not None:
                 self._validators[source.source] = validate
 

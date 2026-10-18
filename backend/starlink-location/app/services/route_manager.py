@@ -5,6 +5,7 @@
 # Splitting would fragment route lifecycle management. Deferred to v0.4.0.
 import logging
 from collections.abc import Callable
+from hashlib import sha256
 from pathlib import Path
 from typing import Literal
 
@@ -74,6 +75,7 @@ class RouteManager:
 
         self._profile_resolver = profile_resolver
         self._routes: dict[str, ParsedRoute] = {}
+        self._source_file_revisions: dict[str, str | None] = {}
         self._active_route_id: str | None = None
         self._observer: Observer | None = None
         self._errors: dict[str, str] = {}  # Tracks errors by route_id
@@ -145,6 +147,7 @@ class RouteManager:
         route_id = Path(file_path).stem
 
         try:
+            captured_hash = sha256(Path(file_path).read_bytes()).hexdigest()
             profile = self.resolve_ingestion_profile(route_id)
             parsed_route = (
                 parse_kml_file(file_path, profile=profile)
@@ -164,7 +167,10 @@ class RouteManager:
                         != parsed_route.content_hash
                     ):
                         raise KMLParseError("Route content changed during parsing")
+                if sha256(Path(file_path).read_bytes()).hexdigest() != captured_hash:
+                    raise KMLParseError("Route source changed during parsing")
                 self._routes[route_id] = parsed_route
+                self._source_file_revisions[route_id] = captured_hash
             # Clear any previous error for this route
             if route_id in self._errors:
                 del self._errors[route_id]
@@ -226,11 +232,19 @@ class RouteManager:
         available even if filesystem watchers miss an event.
         """
         self._routes[route_id] = parsed_route
+        path = self.routes_dir / f"{route_id}.kml"
+        self._source_file_revisions[route_id] = (
+            sha256(path.read_bytes()).hexdigest() if path.exists() else None
+        )
         if route_id in self._errors:
             del self._errors[route_id]
         logger.info(
             f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()"
         )
+
+    def source_file_revision(self, route_id: str) -> str | None:
+        """Bytes accepted by the route publisher; a pending file reload is unknown."""
+        return self._source_file_revisions.get(route_id)
 
     @model_input_write
     def _remove_route(self, route_id: str) -> None:

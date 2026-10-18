@@ -11,6 +11,22 @@ from app.operator.event_sources import EventSourceAdapter
 from app.operator.runtime import runtime_for
 
 
+def event_adapter(request, runtime):
+    adapter = getattr(runtime, "event_source_adapter", None)
+    if adapter is None:
+        factory = getattr(request.app.state, "operator_event_source_factory", None)
+        adapter = (
+            factory(runtime)
+            if factory
+            else EventSourceAdapter(
+                runtime.service,
+                live_provider=getattr(request.app.state, "operator_live_source", None),
+            )
+        )
+        runtime.event_source_adapter = adapter
+    return adapter
+
+
 def events(
     request: Request,
     mission_id: Identifier,
@@ -21,11 +37,8 @@ def events(
     from app.api.operator import require_service
 
     with runtime_for(request) as runtime:
-        service = require_service(runtime)
-        adapter = getattr(runtime, "event_source_adapter", None) or EventSourceAdapter(
-            service,
-            live_provider=getattr(request.app.state, "operator_live_source", None),
-        )
+        require_service(runtime)
+        adapter = event_adapter(request, runtime)
         return snapshot_page(
             runtime,
             mission_id,
@@ -45,11 +58,8 @@ def acknowledge_event(
     from app.api.operator import require_service
 
     with runtime_for(request) as runtime:
-        service = require_service(runtime)
-        adapter = getattr(runtime, "event_source_adapter", None) or EventSourceAdapter(
-            service,
-            live_provider=getattr(request.app.state, "operator_live_source", None),
-        )
+        require_service(runtime)
+        adapter = event_adapter(request, runtime)
         receipt, replayed = acknowledge(
             body, key=key, epoch=epoch, runtime=runtime, adapter=adapter
         )

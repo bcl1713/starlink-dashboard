@@ -151,12 +151,12 @@ def derive_events(inputs, *, as_of, policy):
     mission_id = inputs.records[0].mission_id if inputs.records else None
     # Empty record sets still have model events for the requested mission.
     mission_id = getattr(inputs, "mission_id", None) or mission_id
-    for leg_id, model in inputs.models.items():
+    for model_key, model in inputs.models.items():
+        leg_id = model.get("_leg_id", model_key)
+        source_ref = model.get("_event_source_ref", "model:" + leg_id)
         if not mission_id:
             continue
-        source = next(
-            (s for s in inputs.sources if s.source == "model:" + leg_id), None
-        )
+        source = next((s for s in inputs.sources if s.source == source_ref), None)
         freshness = (
             source.freshness
             if source and source.freshness in ("fresh", "stale")
@@ -166,7 +166,7 @@ def derive_events(inputs, *, as_of, policy):
             "mission_id": mission_id,
             "leg_id": leg_id,
             "provenance": "modeled",
-            "source_ref": "model:" + leg_id,
+            "source_ref": source_ref,
             "source_revision": source.revision if source else None,
             "source_captured_at": source.captured_at if source else None,
             "freshness": freshness,
@@ -185,7 +185,7 @@ def derive_events(inputs, *, as_of, policy):
             crossing = window["crossing"]
             key = identity(
                 mission_id,
-                leg_id,
+                model_key,
                 "pop",
                 forecast.get("catalog_fingerprint"),
                 crossing.get("from_pop_id"),
@@ -220,7 +220,7 @@ def derive_events(inputs, *, as_of, policy):
                 continue
             key = identity(
                 mission_id,
-                leg_id,
+                model_key,
                 "pop-state",
                 kind,
                 advisory.get("transition_id") if kind == "overdue" else None,
@@ -327,7 +327,7 @@ def derive_events(inputs, *, as_of, policy):
             for index, (start, end, severity) in enumerate(merged):
                 key = identity(
                     mission_id,
-                    leg_id,
+                    model_key,
                     "restriction",
                     model.get("route_geometry_identity"),
                     transport,
@@ -353,7 +353,7 @@ def derive_events(inputs, *, as_of, policy):
                     schedule_key=key,
                     family_key=identity(
                         mission_id,
-                        leg_id,
+                        model_key,
                         model.get("route_geometry_identity"),
                         transport,
                         causes,

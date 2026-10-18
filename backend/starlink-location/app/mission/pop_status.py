@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from app.core.config import ConfigManager
 from app.mission.active_context import resolve_active_mission_leg_context
 from app.mission.effective_route import prepare_effective_route
+from app.mission.input_admission import model_input_write
 from app.mission.pop_forecast import forecast_for_live, forecast_for_mission
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
@@ -78,6 +79,7 @@ class PopStatusService:
         )
         return advisories
 
+    @model_input_write
     def snapshot(
         self,
         telemetry,
@@ -299,6 +301,7 @@ class PopStatusService:
         """Copy the last local publication without evaluating or advancing state."""
         return copy.deepcopy(self._published_snapshot)
 
+    @model_input_write
     def status_payload(self, telemetry, *, now=None):
         """Resolve local inputs; optional simulation callback supplies snapshot kwargs.
 

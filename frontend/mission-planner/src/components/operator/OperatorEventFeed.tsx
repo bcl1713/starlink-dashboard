@@ -40,8 +40,20 @@ export function OperatorEventFeed({
       {events.loading && <p>Loading events…</p>}
       {events.snapshot?.coverage !== 'available' && (
         <p className="text-sm text-muted-foreground">
-          Some model inputs are stale, unavailable or unaligned. No all-clear is
-          implied.
+          {Array.from(
+            new Set(
+              events.snapshot?.sources
+                .filter(
+                  (source) =>
+                    source.freshness !== 'fresh' &&
+                    source.freshness !== 'disabled'
+                )
+                .map((source) => source.reason)
+                .filter(Boolean)
+            )
+          )
+            .slice(0, 3)
+            .join('; ') || 'Some model inputs are unavailable.'}
         </p>
       )}
       {events.acknowledgmentError && (
@@ -127,10 +139,7 @@ export function OperatorEventFeed({
               </p>
               {event.provenance === 'modeled' && (
                 <p className="text-xs text-muted-foreground">
-                  Modeled advisory · {event.freshness} ·{' '}
-                  {event.confidence ?? 'Confidence unknown'}. Transport
-                  relevance {event.transport_relevance}; continuity{' '}
-                  {event.continuity_status}. Not a verified outage.
+                  Best current estimate · {event.freshness}
                 </p>
               )}
               {event.discrepancies.map((discrepancy) => (

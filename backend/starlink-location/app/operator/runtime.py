@@ -59,6 +59,9 @@ class OperatorRuntime:
         )
 
     def close(self):
+        adapter = getattr(self, "event_source_adapter", None)
+        if callable(getattr(adapter, "close", None)):
+            adapter.close()
         self.event_snapshots.clear()
         if self.service is not None:
             self.service.store.close()

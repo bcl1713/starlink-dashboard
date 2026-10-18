@@ -16,7 +16,7 @@ from app.mission.exporter.snapshot_views import (
     captured_pois,
 )
 from app.mission.models import Mission
-from app.mission.pop_coverage_evidence import current_coverage_snapshot
+from app.mission.pop_coverage_evidence import coverage_snapshot
 from app.services.pop.catalog import parse_catalog
 from app.services.position_freshness import position_observation, speed_is_fresh
 
@@ -31,6 +31,7 @@ class ModelInputs:
     revision: str
     pop_catalog: object
     context: dict
+    pop_unavailable: bool = False
 
     def prepare(self, leg):
         from app.mission.timeline_preparation import prepare_mission_timeline
@@ -69,18 +70,50 @@ def capture_current(adapter, mission_id, *, as_of):
     if freshness != "fresh" or not speed_is_fresh(
         position.speed, position.speed_observed_at, as_of
     ):
-        raise OperatorError("event_source_unavailable", retryable=True)
+        raise OperatorError(
+            "event_source_unavailable",
+            retryable=True,
+            fields={"source": "Position or speed evidence stale or unavailable"},
+        )
     metadata, sources, _ = capture_inputs(
-        mission_id, adapter.route_manager, adapter.poi_manager
+        mission_id, adapter.route_manager, adapter.poi_manager, persisted=True
     )
     mission = Mission.model_validate_json(metadata)
+    from app.mission.active_context import resolve_active_mission_leg_context
+
+    active = resolve_active_mission_leg_context(adapter.route_manager).context
+    if active is None or active.parent_mission_id != mission_id:
+        raise OperatorError(
+            "event_source_unavailable",
+            retryable=True,
+            fields={"source": "Active mission and route association unavailable"},
+        )
+    for leg in mission.legs:
+        file = next((s for s in sources if s.name == "kml/" + leg.route_id), None)
+        if (
+            file is not None
+            and adapter.route_manager.source_file_revision(leg.route_id) != file.digest
+        ):
+            raise OperatorError(
+                "event_source_unavailable",
+                retryable=True,
+                fields={
+                    "source": "Route file changed; awaiting accepted route publication"
+                },
+            )
     if not any(
         leg.is_active and leg.route_id == context.get("active_route_id")
         for leg in mission.legs
     ):
         raise OperatorError("event_source_unavailable", retryable=True)
-    content = config.pop.catalog_path.read_bytes()
-    catalog = parse_catalog(content)
+    try:
+        content = config.pop.catalog_path.read_bytes()
+    except OSError:
+        content = b"null"
+    try:
+        catalog = parse_catalog(content)
+    except (ValueError, TypeError):
+        catalog = None
     sources = tuple(
         s
         for s in sources
@@ -91,12 +124,15 @@ def capture_current(adapter, mission_id, *, as_of):
         SourcePayload("pop_catalog", content),
         SourcePayload(
             "pop_catalog_identity",
-            canonical_json({"fingerprint": catalog.fingerprint, "status": "ready"}),
+            canonical_json(
+                {
+                    "fingerprint": catalog.fingerprint if catalog else "",
+                    "status": "ready" if catalog else "unavailable",
+                }
+            ),
         ),
     )
-    coverage = current_coverage_snapshot()
-    if coverage is None:
-        raise OperatorError("event_source_unavailable", retryable=True)
+    coverage = coverage_snapshot(captured_coverage(sources))
     revision = identity(
         json.loads(metadata),
         [(s.name, s.digest) for s in sources],
@@ -104,4 +140,4 @@ def capture_current(adapter, mission_id, *, as_of):
         context,
         coverage,
     )
-    return ModelInputs(mission, sources, revision, catalog, context)
+    return ModelInputs(mission, sources, revision, catalog, context, catalog is None)
