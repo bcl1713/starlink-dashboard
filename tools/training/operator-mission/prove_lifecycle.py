@@ -129,7 +129,7 @@ def maintenance(owner, command, *, manifest=None, offline=False):
             *program,
             timeout=120,
         )
-    return json.loads(raw)
+    return json.loads(raw.strip().splitlines()[-1])
 
 
 def main():
@@ -262,6 +262,9 @@ def main():
             oldDataRetained=True,
             parentResetRemovedImportDestination=True,
         )
+    except BaseException as error:
+        report["error"] = f"{type(error).__name__}: {error}"
+        raise
     finally:
         runner.stop_child()
         # A signal may arrive after successor creation but before reset returns JSON.

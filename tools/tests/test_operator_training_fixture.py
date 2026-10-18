@@ -591,3 +591,20 @@ def test_lifecycle_proof_refuses_existing_or_unowned_roots(tmp_path):
     finally:
         owned.unlink()
         root.rmdir()
+
+
+def test_lifecycle_reads_cli_json_after_compose_progress():
+    from types import SimpleNamespace
+
+    spec = importlib.util.spec_from_file_location(
+        "operator_training_cli_output",
+        ROOT / "tools/training/operator-mission/prove_lifecycle.py",
+    )
+    proof = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(proof)
+    owned = SimpleNamespace(
+        compose=lambda *args, **kwargs: ' Container private-maintenance Created\n{"ready": true}\n'
+    )
+    assert proof.maintenance(
+        owned, "restore", manifest="/app/data/operator/private.json", offline=True
+    ) == {"ready": True}
