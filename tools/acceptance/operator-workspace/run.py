@@ -48,7 +48,7 @@ finally:
 def qualify(owner):
     fixtures = [build_workspace_fixture(seed) for seed in ("normal", "busy")]
     (owner.root / "workspace-inputs.json").write_text(json.dumps(fixtures, indent=2))
-    owner.compose("exec", "-T", "starlink-location", "python", "-c", SEED,
+    owner.compose("exec", "-T", "--user", "appuser", "starlink-location", "python", "-c", SEED,
                   json.dumps(fixtures), timeout=60)
     env = owner.env | {
         "OPERATOR_ACCEPTANCE_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
